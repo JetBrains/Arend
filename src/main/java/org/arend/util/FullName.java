@@ -1,6 +1,7 @@
 package org.arend.util;
 
-import org.arend.module.ModulePath;
+import org.arend.ext.module.LongName;
+import org.arend.ext.module.ModulePath;
 import org.arend.naming.reference.LocatedReferable;
 
 import java.util.ArrayList;

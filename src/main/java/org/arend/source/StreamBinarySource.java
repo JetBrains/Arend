@@ -2,10 +2,10 @@ package org.arend.source;
 
 import com.google.protobuf.CodedInputStream;
 import org.arend.error.ErrorReporter;
+import org.arend.ext.module.ModulePath;
 import org.arend.library.SourceLibrary;
 import org.arend.library.error.LibraryError;
 import org.arend.library.error.PartialModuleError;
-import org.arend.module.ModulePath;
 import org.arend.module.error.DeserializationError;
 import org.arend.module.error.ExceptionError;
 import org.arend.module.serialization.DeserializationException;

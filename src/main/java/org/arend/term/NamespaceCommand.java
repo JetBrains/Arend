@@ -3,7 +3,7 @@ package org.arend.term;
 import org.arend.error.doc.DocFactory;
 import org.arend.error.doc.DocStringBuilder;
 import org.arend.error.doc.LineDoc;
-import org.arend.module.ModulePath;
+import org.arend.ext.module.ModulePath;
 import org.arend.naming.reference.ModuleReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.term.prettyprint.PrettyPrintable;

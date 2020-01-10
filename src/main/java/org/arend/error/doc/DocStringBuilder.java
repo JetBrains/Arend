@@ -1,8 +1,8 @@
 package org.arend.error.doc;
 
+import org.arend.ext.module.LongName;
 import org.arend.naming.reference.FieldReferable;
 import org.arend.naming.reference.LocatedReferable;
-import org.arend.util.LongName;
 
 import java.util.ArrayList;
 import java.util.List;

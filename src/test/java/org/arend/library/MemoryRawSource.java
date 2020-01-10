@@ -1,7 +1,7 @@
 package org.arend.library;
 
+import org.arend.ext.module.ModulePath;
 import org.arend.frontend.source.StreamRawSource;
-import org.arend.module.ModulePath;
 
 import javax.annotation.Nonnull;
 import java.io.ByteArrayInputStream;

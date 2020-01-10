@@ -1,6 +1,6 @@
 package org.arend.module.scopeprovider;
 
-import org.arend.module.ModulePath;
+import org.arend.ext.module.ModulePath;
 import org.arend.naming.scope.Scope;
 
 import javax.annotation.Nonnull;

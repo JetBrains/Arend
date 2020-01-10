@@ -3,10 +3,11 @@ package org.arend.library;
 import org.arend.error.ErrorReporter;
 import org.arend.ext.ArendExtension;
 import org.arend.ext.DefaultArendExtension;
+import org.arend.ext.module.ModulePath;
 import org.arend.library.classLoader.FileClassLoaderDelegate;
 import org.arend.library.error.LibraryError;
-import org.arend.module.ModulePath;
 import org.arend.module.error.ExceptionError;
+import org.arend.module.scopeprovider.CachingModuleScopeProvider;
 import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.prelude.Prelude;
@@ -191,27 +192,6 @@ public abstract class SourceLibrary extends BaseLibrary {
       }
     }
 
-    try {
-      Class<?> extMainClass = null;
-      if (header.extBasePath != null && header.extMainClass != null) {
-        extMainClass = libraryManager.getClassLoader().loadClass(header.extMainClass);
-        if (!ArendExtension.class.isAssignableFrom(extMainClass)) {
-          libraryManager.getLibraryErrorReporter().report(LibraryError.incorrectExtensionClass(getName()));
-          extMainClass = null;
-        }
-      }
-
-      if (extMainClass != null) {
-        myExtension = (ArendExtension) extMainClass.newInstance();
-      }
-    } catch (Exception e) {
-      libraryManager.getClassLoader().removeDelegate(this);
-      libraryManager.getLibraryErrorReporter().report(new ExceptionError(e, "loading of library " + getName()));
-    }
-    if (myExtension == null && !dependenciesExtensions.isEmpty()) {
-      myExtension = new DefaultArendExtension();
-    }
-
     libraryManager.beforeLibraryLoading(this);
 
     try {
@@ -233,9 +213,32 @@ public abstract class SourceLibrary extends BaseLibrary {
       throw e;
     }
 
+    try {
+      Class<?> extMainClass = null;
+      if (header.extBasePath != null && header.extMainClass != null) {
+        extMainClass = libraryManager.getClassLoader().loadClass(header.extMainClass);
+        if (!ArendExtension.class.isAssignableFrom(extMainClass)) {
+          libraryManager.getLibraryErrorReporter().report(LibraryError.incorrectExtensionClass(getName()));
+          extMainClass = null;
+        }
+      }
+
+      if (extMainClass != null) {
+        myExtension = (ArendExtension) extMainClass.newInstance();
+      }
+    } catch (Exception e) {
+      libraryManager.getClassLoader().removeDelegate(this);
+      libraryManager.getLibraryErrorReporter().report(new ExceptionError(e, "loading of library " + getName()));
+    }
+    if (myExtension == null && !dependenciesExtensions.isEmpty()) {
+      myExtension = new DefaultArendExtension();
+    }
+
     if (myExtension != null) {
       myExtension.setDependencies(dependenciesExtensions);
       myExtension.setPrelude(new Prelude());
+      myExtension.setModuleScopeProvider(new CachingModuleScopeProvider(getModuleScopeProvider()));
+      myExtension.setDefinitionProvider(getTypecheckerState());
       myExtension.initialize();
     }
 

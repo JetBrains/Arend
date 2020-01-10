@@ -4,7 +4,7 @@ import org.arend.error.GeneralError;
 import org.arend.error.doc.DocFactory;
 import org.arend.error.doc.LineDoc;
 import org.arend.ext.ArendExtension;
-import org.arend.module.ModulePath;
+import org.arend.ext.module.ModulePath;
 import org.arend.prelude.Prelude;
 import org.arend.term.prettyprint.PrettyPrinterConfig;
 import org.arend.util.Range;

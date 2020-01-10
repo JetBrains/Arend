@@ -1,7 +1,7 @@
 package org.arend.module.serialization;
 
 import org.arend.core.definition.*;
-import org.arend.module.ModulePath;
+import org.arend.ext.module.ModulePath;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.reference.*;
 import org.arend.naming.reference.converter.ReferableConverter;

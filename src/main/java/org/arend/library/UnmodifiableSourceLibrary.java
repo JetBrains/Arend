@@ -1,7 +1,7 @@
 package org.arend.library;
 
 import org.arend.error.ErrorReporter;
-import org.arend.module.ModulePath;
+import org.arend.ext.module.ModulePath;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.module.scopeprovider.SimpleModuleScopeProvider;
 import org.arend.naming.reference.converter.IdReferableConverter;

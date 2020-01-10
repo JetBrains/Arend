@@ -1,5 +1,6 @@
 package org.arend.module;
 
+import org.arend.ext.module.ModulePath;
 import org.arend.term.group.Group;
 
 public interface ModuleRegistry {

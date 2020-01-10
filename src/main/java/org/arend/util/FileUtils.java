@@ -2,8 +2,8 @@ package org.arend.util;
 
 import org.arend.error.ErrorReporter;
 import org.arend.error.GeneralError;
+import org.arend.ext.module.ModulePath;
 import org.arend.library.error.LibraryIOError;
-import org.arend.module.ModulePath;
 import org.arend.module.error.ExceptionError;
 
 import java.io.IOException;

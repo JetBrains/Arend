@@ -1,7 +1,7 @@
 package org.arend.prelude;
 
+import org.arend.ext.module.ModulePath;
 import org.arend.library.LibraryManager;
-import org.arend.module.ModulePath;
 import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.source.BinarySource;
 import org.arend.source.GZIPStreamBinarySource;

@@ -1,6 +1,6 @@
 package org.arend.library;
 
-import org.arend.module.ModulePath;
+import org.arend.ext.module.ModulePath;
 import org.arend.util.Range;
 
 import java.nio.file.Path;

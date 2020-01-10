@@ -2,8 +2,8 @@ package org.arend.library.error;
 
 import org.arend.error.GeneralError;
 import org.arend.error.doc.LineDoc;
+import org.arend.ext.module.ModulePath;
 import org.arend.library.Library;
-import org.arend.module.ModulePath;
 import org.arend.naming.reference.ModuleReferable;
 import org.arend.term.prettyprint.PrettyPrinterConfig;
 

@@ -1,11 +1,11 @@
 package org.arend.naming.reference.converter;
 
+import org.arend.ext.module.LongName;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.util.FullName;
-import org.arend.util.LongName;
 
 import java.util.ArrayList;
 import java.util.HashMap;

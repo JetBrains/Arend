@@ -1,6 +1,6 @@
 package org.arend.library;
 
-import org.arend.module.ModulePath;
+import org.arend.ext.module.ModulePath;
 import org.arend.source.StreamBinarySource;
 
 import javax.annotation.Nonnull;

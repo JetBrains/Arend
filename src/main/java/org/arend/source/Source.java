@@ -1,6 +1,6 @@
 package org.arend.source;
 
-import org.arend.module.ModulePath;
+import org.arend.ext.module.ModulePath;
 
 import javax.annotation.Nullable;
 import java.io.File;

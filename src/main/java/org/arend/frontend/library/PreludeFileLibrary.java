@@ -1,7 +1,7 @@
 package org.arend.frontend.library;
 
+import org.arend.ext.module.ModulePath;
 import org.arend.frontend.source.FileRawSource;
-import org.arend.module.ModulePath;
 import org.arend.prelude.Prelude;
 import org.arend.prelude.PreludeResourceSource;
 import org.arend.prelude.PreludeTypecheckingLibrary;

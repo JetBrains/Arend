@@ -1,7 +1,7 @@
 package org.arend.prelude;
 
+import org.arend.ext.module.ModulePath;
 import org.arend.library.SourceLibrary;
-import org.arend.module.ModulePath;
 import org.arend.source.StreamBinarySource;
 import org.arend.util.FileUtils;
 

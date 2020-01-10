@@ -2,7 +2,7 @@ package org.arend.module.error;
 
 import org.arend.error.GeneralError;
 import org.arend.error.doc.Doc;
-import org.arend.module.ModulePath;
+import org.arend.ext.module.ModulePath;
 import org.arend.naming.reference.ModuleReferable;
 import org.arend.term.prettyprint.PrettyPrinterConfig;
 

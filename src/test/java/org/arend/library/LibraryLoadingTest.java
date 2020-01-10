@@ -1,12 +1,11 @@
 package org.arend.library;
 
-import org.arend.module.ModulePath;
+import org.arend.ext.module.ModulePath;
 import org.arend.source.Source;
 import org.arend.source.SourceLoader;
 import org.arend.term.group.Group;
 import org.junit.Test;
 
-import static org.arend.module.ModulePath.moduleName;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -14,7 +13,7 @@ import static org.junit.Assert.assertTrue;
 public class LibraryLoadingTest extends LibraryTestCase {
   @Test
   public void loadSimpleModule() {
-    ModulePath module = moduleName("A");
+    ModulePath module = new ModulePath("A");
     library.addModule(module, "\\func f => 0");
     assertTrue(libraryManager.loadLibrary(library));
     assertThat(library.getModuleGroup(module), is(notNullValue()));
@@ -23,7 +22,7 @@ public class LibraryLoadingTest extends LibraryTestCase {
 
   @Test
   public void loadModuleTwice() {
-    ModulePath modulePath = moduleName("A");
+    ModulePath modulePath = new ModulePath("A");
 
     library.addModule(modulePath, "\\func f => 0");
     SourceLoader sourceLoader1 = new SourceLoader(library, libraryManager);
@@ -46,8 +45,8 @@ public class LibraryLoadingTest extends LibraryTestCase {
 
   @Test
   public void loadTwoModules() {
-    ModulePath moduleA = moduleName("A");
-    ModulePath moduleB = moduleName("B");
+    ModulePath moduleA = new ModulePath("A");
+    ModulePath moduleB = new ModulePath("B");
     library.addModule(moduleA, "\\func f => 0");
     library.addModule(moduleB, "\\func g => 0");
     assertTrue(libraryManager.loadLibrary(library));
@@ -58,13 +57,13 @@ public class LibraryLoadingTest extends LibraryTestCase {
 
   @Test
   public void locateNonExistentModule() {
-    Source source = library.getRawSource(moduleName("DoesNotExist"));
+    Source source = library.getRawSource(new ModulePath("DoesNotExist"));
     assertThat(source, is(nullValue()));
   }
 
   @Test
   public void moduleWithErrorsError() {
-    ModulePath modulePath = moduleName("A");
+    ModulePath modulePath = new ModulePath("A");
     library.addModule(modulePath, "hello world");
     assertTrue(libraryManager.loadLibrary(library));
     assertThat(library.getModuleGroup(modulePath), is(nullValue()));

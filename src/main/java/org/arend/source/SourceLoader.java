@@ -1,9 +1,9 @@
 package org.arend.source;
 
 import org.arend.error.ErrorReporter;
+import org.arend.ext.module.ModulePath;
 import org.arend.library.LibraryManager;
 import org.arend.library.SourceLibrary;
-import org.arend.module.ModulePath;
 import org.arend.module.error.ModuleNotFoundError;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.reference.converter.ReferableConverter;

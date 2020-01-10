@@ -1,6 +1,7 @@
 package org.arend.library;
 
 import org.arend.core.definition.Definition;
+import org.arend.ext.module.ModulePath;
 import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.source.Source;
 import org.arend.term.group.ChildGroup;
@@ -10,7 +11,6 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.arend.module.ModulePath.moduleName;
 import static org.arend.typechecking.Matchers.goal;
 import static org.arend.typechecking.Matchers.typecheckingError;
 import static org.hamcrest.CoreMatchers.is;
@@ -20,12 +20,12 @@ import static org.junit.Assert.*;
 public class CachingTest extends LibraryTestCase {
   @Test
   public void statusSerialization() {
-    library.addModule(moduleName("A"),
+    library.addModule(new ModulePath("A"),
         "\\func a : \\Set0 => \\Prop\n" +
         "\\func b1 : \\Set0 => \\Set0\n" +
         "\\func b2 : \\Set0 => b1");
     assertTrue(libraryManager.loadLibrary(library));
-    ChildGroup aClass = library.getModuleGroup(moduleName("A"));
+    ChildGroup aClass = library.getModuleGroup(new ModulePath("A"));
     assertThat(aClass, is(notNullValue()));
 
     typechecking.typecheckLibrary(library);
@@ -38,7 +38,7 @@ public class CachingTest extends LibraryTestCase {
     libraryManager.unloadLibrary(library);
 
     assertTrue(libraryManager.loadLibrary(library));
-    aClass = library.getModuleGroup(moduleName("A"));
+    aClass = library.getModuleGroup(new ModulePath("A"));
     assertThat(aClass, is(notNullValue()));
 
     assertThat(typecheckerState.getTypechecked(get(aClass.getGroupScope(), "a")).status(), is(equalTo(aStatus)));
@@ -48,11 +48,11 @@ public class CachingTest extends LibraryTestCase {
 
   @Test
   public void circularDependencies() {
-    library.addModule(moduleName("A"), "\\import B() \\func a (n : Nat) : Nat | zero => zero | suc n => B.b n");
-    library.addModule(moduleName("B"), "\\import A() \\func b (n : Nat) : Nat | zero => zero | suc n => A.a n");
+    library.addModule(new ModulePath("A"), "\\import B() \\func a (n : Nat) : Nat | zero => zero | suc n => B.b n");
+    library.addModule(new ModulePath("B"), "\\import A() \\func b (n : Nat) : Nat | zero => zero | suc n => A.a n");
     libraryManager.loadLibrary(library);
-    assertThat(library.getModuleGroup(moduleName("A")), is(notNullValue()));
-    assertThat(library.getModuleGroup(moduleName("B")), is(notNullValue()));
+    assertThat(library.getModuleGroup(new ModulePath("A")), is(notNullValue()));
+    assertThat(library.getModuleGroup(new ModulePath("B")), is(notNullValue()));
     typechecking.typecheckLibrary(library);
     library.persistUpdateModules(errorReporter);
     assertThat(errorList, is(empty()));
@@ -60,11 +60,11 @@ public class CachingTest extends LibraryTestCase {
 
   @Test
   public void errorInBody() {
-    library.addModule(moduleName("A"),
+    library.addModule(new ModulePath("A"),
         "\\func a : \\Set0 => b\n" +
         "\\func b : \\Set0 => {?}");
     libraryManager.loadLibrary(library);
-    ChildGroup aGroup = library.getModuleGroup(moduleName("A"));
+    ChildGroup aGroup = library.getModuleGroup(new ModulePath("A"));
     assertThat(aGroup, is(notNullValue()));
     typechecking.typecheckLibrary(library);
     library.persistUpdateModules(errorReporter);
@@ -78,7 +78,7 @@ public class CachingTest extends LibraryTestCase {
     libraryManager.loadLibrary(library);
     typechecking.typecheckLibrary(library);
     library.persistUpdateModules(errorReporter);
-    ChildGroup aGroup2 = library.getModuleGroup(moduleName("A"));
+    ChildGroup aGroup2 = library.getModuleGroup(new ModulePath("A"));
     assertThat(aGroup2, is(notNullValue()));
     assertThat(typecheckerState.getTypechecked(get(aGroup2.getGroupScope(), "a")), is(notNullValue()));
     assertThat(typecheckerState.getTypechecked(get(aGroup2.getGroupScope(), "b")), is(notNullValue()));
@@ -86,12 +86,12 @@ public class CachingTest extends LibraryTestCase {
 
   @Test
   public void errorInHeader() {
-    library.addModule(moduleName("A"),
+    library.addModule(new ModulePath("A"),
         "\\data D\n" +
         "\\func a (d : D) \\with\n" +
         "\\func b : \\Set0 => (\\lam x y => x) \\Prop a");
     libraryManager.loadLibrary(library);
-    ChildGroup aGroup = library.getModuleGroup(moduleName("A"));
+    ChildGroup aGroup = library.getModuleGroup(new ModulePath("A"));
     assertThat(aGroup, is(notNullValue()));
 
     typechecking.typecheckLibrary(library);
@@ -105,7 +105,7 @@ public class CachingTest extends LibraryTestCase {
     assertThat(typecheckerState.getTypechecked(get(aGroup.getGroupScope(), "b")), is(nullValue()));
 
     libraryManager.loadLibrary(library);
-    aGroup = library.getModuleGroup(moduleName("A"));
+    aGroup = library.getModuleGroup(new ModulePath("A"));
     assertThat(aGroup, is(notNullValue()));
 
     assertThat(typecheckerState.getTypechecked(get(aGroup.getGroupScope(), "D")), is(notNullValue()));
@@ -115,46 +115,46 @@ public class CachingTest extends LibraryTestCase {
 
   @Test
   public void sourceDoesNotChanged() {
-    library.addModule(moduleName("A"), "\\data D\n");
+    library.addModule(new ModulePath("A"), "\\data D\n");
     libraryManager.loadLibrary(library);
     typechecking.typecheckLibrary(library);
     library.persistUpdateModules(errorReporter);
     libraryManager.unloadLibrary(library);
 
-    library.updateModule(moduleName("A"), "\\func f => 0", false);
+    library.updateModule(new ModulePath("A"), "\\func f => 0", false);
     libraryManager.loadLibrary(library);
     typechecking.typecheckLibrary(library);
     library.persistUpdateModules(errorReporter);
-    assertThat(get(library.getModuleScopeProvider().forModule(moduleName("a")), "f"), is(nullValue()));
-    assertThat(get(library.getModuleScopeProvider().forModule(moduleName("A")), "D"), is(nullValue()));
+    assertThat(get(library.getModuleScopeProvider().forModule(new ModulePath("a")), "f"), is(nullValue()));
+    assertThat(get(library.getModuleScopeProvider().forModule(new ModulePath("A")), "D"), is(nullValue()));
   }
 
   @Test
   public void sourceChanged() {
-    library.addModule(moduleName("A"), "\\data D\n");
+    library.addModule(new ModulePath("A"), "\\data D\n");
     libraryManager.loadLibrary(library);
     typechecking.typecheckLibrary(library);
     library.persistUpdateModules(errorReporter);
     libraryManager.unloadLibrary(library);
 
-    library.updateModule(moduleName("A"), "\\func f => 0", true);
+    library.updateModule(new ModulePath("A"), "\\func f => 0", true);
     libraryManager.loadLibrary(library);
     typechecking.typecheckLibrary(library);
     library.persistUpdateModules(errorReporter);
-    assertThat(get(library.getModuleScopeProvider().forModule(moduleName("a")), "D"), is(nullValue()));
-    assertThat(typecheckerState.getTypechecked(get(library.getModuleScopeProvider().forModule(moduleName("A")), "f")), is(notNullValue()));
+    assertThat(get(library.getModuleScopeProvider().forModule(new ModulePath("a")), "D"), is(nullValue()));
+    assertThat(typecheckerState.getTypechecked(get(library.getModuleScopeProvider().forModule(new ModulePath("A")), "f")), is(notNullValue()));
   }
 
   @Test
   public void dependencySourceChanged() {
-    library.addModule(moduleName("A"), "\\data D\n");
-    library.addModule(moduleName("B"), "\\import A() \\func f : \\Type0 => A.D\n");
+    library.addModule(new ModulePath("A"), "\\data D\n");
+    library.addModule(new ModulePath("B"), "\\import A() \\func f : \\Type0 => A.D\n");
     libraryManager.loadLibrary(library);
     typechecking.typecheckLibrary(library);
     library.persistUpdateModules(errorReporter);
     libraryManager.unloadLibrary(library);
 
-    library.updateModule(moduleName("A"), "\\data D'", true);
+    library.updateModule(new ModulePath("A"), "\\data D'", true);
     libraryManager.loadLibrary(library);
     assertThat(errorList, is(not(empty())));
     errorList.clear();
@@ -251,24 +251,24 @@ public class CachingTest extends LibraryTestCase {
 
   @Test
   public void persistDependencyWhenReferrerHasErrorInHeader() {
-    library.addModule(moduleName("A"), "\\func a : \\1-Type1 => \\Set0");
-    library.addModule(moduleName("B"),
+    library.addModule(new ModulePath("A"), "\\func a : \\1-Type1 => \\Set0");
+    library.addModule(new ModulePath("B"),
       "\\import A\n" +
       "\\func b : \\Set0 => A.a"); // There is an error here
     libraryManager.loadLibrary(library);
     List<Group> groups = new ArrayList<>(2);
-    groups.add(library.getModuleGroup(moduleName("A")));
-    groups.add(library.getModuleGroup(moduleName("B")));
+    groups.add(library.getModuleGroup(new ModulePath("A")));
+    groups.add(library.getModuleGroup(new ModulePath("B")));
     assertTrue(typechecking.typecheckModules(groups, null));
     assertThat(errorList, hasSize(1));
     errorList.clear();
-    library.persistModule(moduleName("B"), IdReferableConverter.INSTANCE, errorReporter);
+    library.persistModule(new ModulePath("B"), IdReferableConverter.INSTANCE, errorReporter);
     assertThat(errorList, is(empty()));
 
-    Source sourceA = library.getBinarySource(moduleName("A"));
+    Source sourceA = library.getBinarySource(new ModulePath("A"));
     assertThat(sourceA, is(notNullValue()));
     assertFalse(sourceA.isAvailable());
-    Source sourceB = library.getBinarySource(moduleName("B"));
+    Source sourceB = library.getBinarySource(new ModulePath("B"));
     assertThat(sourceB, is(notNullValue()));
     assertTrue(sourceB.isAvailable());
   }

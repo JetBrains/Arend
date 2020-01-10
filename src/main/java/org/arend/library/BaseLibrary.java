@@ -1,7 +1,7 @@
 package org.arend.library;
 
 import org.arend.ext.ArendExtension;
-import org.arend.module.ModulePath;
+import org.arend.ext.module.ModulePath;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.reference.TCReferable;

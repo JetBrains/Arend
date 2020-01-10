@@ -1,7 +1,7 @@
 package org.arend.frontend.reference;
 
+import org.arend.ext.module.ModulePath;
 import org.arend.frontend.parser.Position;
-import org.arend.module.ModulePath;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.Reference;
 import org.arend.naming.reference.TCClassReferable;

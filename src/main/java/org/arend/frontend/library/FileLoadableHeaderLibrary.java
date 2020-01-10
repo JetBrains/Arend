@@ -1,11 +1,11 @@
 package org.arend.frontend.library;
 
 import org.arend.error.ErrorReporter;
+import org.arend.ext.module.ModulePath;
 import org.arend.library.LibraryConfig;
 import org.arend.library.LibraryDependency;
 import org.arend.library.LibraryHeader;
 import org.arend.library.error.LibraryIOError;
-import org.arend.module.ModulePath;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.util.FileUtils;
 import org.arend.util.Range;

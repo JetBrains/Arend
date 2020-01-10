@@ -5,6 +5,7 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.expr.Expression;
 import org.arend.core.sort.Sort;
+import org.arend.ext.concrete.ArendRef;
 import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.naming.reference.TCReferable;
 
@@ -26,6 +27,12 @@ public abstract class Definition implements Variable, CoreDefinition {
   @Override
   public String getName() {
     return myReferable.textRepresentation();
+  }
+
+  @Nonnull
+  @Override
+  public ArendRef getRef() {
+    return myReferable;
   }
 
   public TCReferable getReferable() {

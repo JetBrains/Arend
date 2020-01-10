@@ -1,6 +1,6 @@
 package org.arend.naming.scope;
 
-import org.arend.module.ModulePath;
+import org.arend.ext.module.ModulePath;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.reference.ModuleReferable;
 import org.arend.naming.reference.Referable;

@@ -1,15 +1,15 @@
 package org.arend.naming;
 
+import org.antlr.v4.runtime.*;
 import org.arend.ArendTestCase;
+import org.arend.ext.module.ModulePath;
 import org.arend.frontend.parser.*;
-import org.arend.module.ModulePath;
 import org.arend.naming.reference.ModuleReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.expr.ConcreteCompareVisitor;
 import org.arend.term.group.ChildGroup;
 import org.arend.term.group.FileGroup;
 import org.arend.term.group.Group;
-import org.antlr.v4.runtime.*;
 
 import java.util.ArrayList;
 import java.util.Collections;

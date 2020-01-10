@@ -1,6 +1,6 @@
 package org.arend.frontend.source;
 
-import org.arend.module.ModulePath;
+import org.arend.ext.module.ModulePath;
 import org.arend.util.FileUtils;
 
 import javax.annotation.Nonnull;

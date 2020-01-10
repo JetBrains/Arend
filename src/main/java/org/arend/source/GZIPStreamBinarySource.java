@@ -1,7 +1,7 @@
 package org.arend.source;
 
+import org.arend.ext.module.ModulePath;
 import org.arend.library.SourceLibrary;
-import org.arend.module.ModulePath;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

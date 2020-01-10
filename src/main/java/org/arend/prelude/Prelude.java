@@ -18,7 +18,7 @@ import org.arend.core.sort.Sort;
 import org.arend.error.DummyErrorReporter;
 import org.arend.ext.ArendPrelude;
 import org.arend.ext.core.elimtree.CoreBranchKey;
-import org.arend.module.ModulePath;
+import org.arend.ext.module.ModulePath;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.naming.reference.converter.IdReferableConverter;

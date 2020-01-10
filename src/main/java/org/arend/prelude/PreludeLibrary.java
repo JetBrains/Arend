@@ -1,11 +1,10 @@
 package org.arend.prelude;
 
 import org.arend.error.ErrorReporter;
-import org.arend.ext.ArendExtension;
+import org.arend.ext.module.ModulePath;
 import org.arend.library.LibraryDependency;
 import org.arend.library.LibraryHeader;
 import org.arend.library.SourceLibrary;
-import org.arend.module.ModulePath;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.scope.CachingScope;

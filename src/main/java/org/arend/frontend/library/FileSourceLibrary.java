@@ -1,11 +1,11 @@
 package org.arend.frontend.library;
 
 import org.arend.error.ErrorReporter;
+import org.arend.ext.module.ModulePath;
 import org.arend.frontend.source.FileRawSource;
 import org.arend.library.LibraryDependency;
 import org.arend.library.LibraryHeader;
 import org.arend.library.UnmodifiableSourceLibrary;
-import org.arend.module.ModulePath;
 import org.arend.source.BinarySource;
 import org.arend.source.FileBinarySource;
 import org.arend.source.GZIPStreamBinarySource;

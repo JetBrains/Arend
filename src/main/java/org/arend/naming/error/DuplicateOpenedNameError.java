@@ -1,12 +1,12 @@
 package org.arend.naming.error;
 
 import org.arend.error.doc.LineDoc;
-import org.arend.module.ModulePath;
+import org.arend.ext.module.LongName;
+import org.arend.ext.module.ModulePath;
 import org.arend.naming.reference.ModuleReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.term.NamespaceCommand;
 import org.arend.term.prettyprint.PrettyPrinterConfig;
-import org.arend.util.LongName;
 
 import static org.arend.error.doc.DocFactory.*;
 

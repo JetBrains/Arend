@@ -1,8 +1,7 @@
 package org.arend.library;
 
 import org.arend.error.ErrorReporter;
-import org.arend.ext.ArendExtension;
-import org.arend.module.ModulePath;
+import org.arend.ext.module.ModulePath;
 import org.arend.source.BinarySource;
 import org.arend.source.Source;
 import org.arend.typechecking.TypecheckerState;

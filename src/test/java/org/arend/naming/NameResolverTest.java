@@ -1,7 +1,7 @@
 package org.arend.naming;
 
+import org.arend.ext.module.ModulePath;
 import org.arend.frontend.reference.ConcreteLocatedReferable;
-import org.arend.module.ModulePath;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.LocatedReferableImpl;
 import org.arend.naming.reference.Referable;
