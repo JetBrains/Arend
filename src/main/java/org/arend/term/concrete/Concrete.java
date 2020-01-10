@@ -2,10 +2,11 @@ package org.arend.term.concrete;
 
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.core.context.binding.inference.InferenceVariable;
-import org.arend.core.definition.Definition;
 import org.arend.error.GeneralError;
 import org.arend.error.doc.Doc;
 import org.arend.error.doc.DocFactory;
+import org.arend.ext.concrete.*;
+import org.arend.ext.reference.ArendRef;
 import org.arend.naming.reference.*;
 import org.arend.term.ClassFieldKind;
 import org.arend.term.Fixity;
@@ -51,7 +52,7 @@ public final class Concrete {
 
   // Parameters
 
-  public static abstract class Parameter extends SourceNodeImpl implements org.arend.naming.reference.Parameter {
+  public static abstract class Parameter extends SourceNodeImpl implements org.arend.naming.reference.Parameter, ConcreteParameter {
     private boolean myExplicit;
 
     public Parameter(Object data, boolean explicit) {
@@ -66,6 +67,13 @@ public final class Concrete {
 
     public void setExplicit(boolean explicit) {
       myExplicit = explicit;
+    }
+
+    @Nonnull
+    @Override
+    public ConcreteParameter implicit() {
+      myExplicit = false;
+      return this;
     }
 
     @Override
@@ -166,7 +174,7 @@ public final class Concrete {
 
   // Expressions
 
-  public static abstract class Expression extends SourceNodeImpl {
+  public static abstract class Expression extends SourceNodeImpl implements ConcreteExpression {
     public static final byte PREC = -12;
 
     public Expression(Object data) {
@@ -196,6 +204,24 @@ public final class Concrete {
       return ref instanceof TCClassReferable && !((TCClassReferable) ref).isRecord() ? (TCClassReferable) ref : null;
     }
 
+    @Nonnull
+    @Override
+    public ConcreteExpression app(@Nonnull ConcreteExpression argument) {
+      if (!(argument instanceof Expression)) {
+        throw new IllegalArgumentException();
+      }
+      return AppExpression.make(null, this, (Expression) argument, true);
+    }
+
+    @Nonnull
+    @Override
+    public ConcreteExpression appImp(@Nonnull ConcreteExpression argument) {
+      if (!(argument instanceof Expression)) {
+        throw new IllegalArgumentException();
+      }
+      return AppExpression.make(null, this, (Expression) argument, false);
+    }
+
     @Override
     public String toString() {
       StringBuilder builder = new StringBuilder();
@@ -213,7 +239,7 @@ public final class Concrete {
 
   public static class Argument {
     public Expression expression;
-    private final boolean myExplicit;
+    private boolean myExplicit;
 
     public Argument(Expression expression, boolean explicit) {
       this.expression = expression;
@@ -506,7 +532,7 @@ public final class Concrete {
     }
   }
 
-  public interface ClassElement extends SourceNode {
+  public interface ClassElement extends SourceNode, ConcreteClassElement {
   }
 
   public interface CoClauseElement extends ClassElement {
@@ -678,7 +704,7 @@ public final class Concrete {
     }
   }
 
-  public static class LetClausePattern implements SourceNode {
+  public static class LetClausePattern implements SourceNode, ConcreteSinglePattern {
     private final Object myData;
     private final Referable myReferable;
     public Expression type;
@@ -735,7 +761,7 @@ public final class Concrete {
     }
   }
 
-  public static class LetClause implements SourceNode {
+  public static class LetClause implements SourceNode, ConcreteLetClause {
     private final List<Parameter> myParameters;
     public Expression resultType;
     public Expression term;
@@ -938,7 +964,7 @@ public final class Concrete {
     }
   }
 
-  public static class CaseArgument {
+  public static class CaseArgument implements ConcreteCaseArgument {
     public @Nonnull Expression expression;
     public final @Nullable Referable referable;
     public @Nullable Expression type;
@@ -961,23 +987,23 @@ public final class Concrete {
 
   public static class CaseExpression extends Expression {
     public static final byte PREC = -8;
-    private final boolean mySFunc;
+    private final boolean mySCase;
     private final List<CaseArgument> myArguments;
     private Expression myResultType;
     private Expression myResultTypeLevel;
     private final List<FunctionClause> myClauses;
 
-    public CaseExpression(Object data, boolean isSFunc, List<CaseArgument> arguments, Expression resultType, Expression resultTypeLevel, List<FunctionClause> clauses) {
+    public CaseExpression(Object data, boolean isSCase, List<CaseArgument> arguments, Expression resultType, Expression resultTypeLevel, List<FunctionClause> clauses) {
       super(data);
-      mySFunc = isSFunc;
+      mySCase = isSCase;
       myArguments = arguments;
       myResultType = resultType;
       myResultTypeLevel = resultTypeLevel;
       myClauses = clauses;
     }
 
-    public boolean isSFunc() {
-      return mySFunc;
+    public boolean isSCase() {
+      return mySCase;
     }
 
     @Nonnull
@@ -1078,7 +1104,7 @@ public final class Concrete {
 
   // Level expressions
 
-  public static abstract class LevelExpression extends SourceNodeImpl {
+  public static abstract class LevelExpression extends SourceNodeImpl implements ConcreteLevel {
     LevelExpression(Object data) {
       super(data);
     }
@@ -1854,7 +1880,7 @@ public final class Concrete {
     }
   }
 
-  public static abstract class Clause extends SourceNodeImpl implements PatternHolder {
+  public static abstract class Clause extends SourceNodeImpl implements PatternHolder, ConcreteClause {
     private final List<Pattern> myPatterns;
 
     public Clause(Object data, List<Pattern> patterns) {
@@ -1949,7 +1975,7 @@ public final class Concrete {
     SourceNode getSourceNode();
   }
 
-  public static abstract class Pattern extends SourceNodeImpl {
+  public static abstract class Pattern extends SourceNodeImpl implements ConcretePattern {
     public static final byte PREC = 11;
     private boolean myExplicit;
     private final List<TypedReferable> myAsReferables;
@@ -1966,6 +1992,23 @@ public final class Concrete {
 
     public void setExplicit(boolean isExplicit) {
       myExplicit = isExplicit;
+    }
+
+    @Nonnull
+    @Override
+    public ConcretePattern implicit() {
+      myExplicit = false;
+      return this;
+    }
+
+    @Nonnull
+    @Override
+    public ConcretePattern as(@Nonnull ArendRef ref, @Nullable ConcreteExpression type) {
+      if (!(ref instanceof Referable && type instanceof Expression)) {
+        throw new IllegalArgumentException();
+      }
+      myAsReferables.add(new TypedReferable(null, (Referable) ref, (Expression) type));
+      return this;
     }
 
     @Nonnull
@@ -2002,6 +2045,12 @@ public final class Concrete {
     @Nullable
     public Referable getReferable() {
       return myReferable;
+    }
+
+    @Nonnull
+    @Override
+    public ConcretePattern as(@Nonnull ArendRef ref, @Nullable ConcreteExpression type) {
+      throw new IllegalArgumentException("\\as is not allowed for variable patterns");
     }
   }
 

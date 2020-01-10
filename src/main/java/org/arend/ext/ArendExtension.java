@@ -1,5 +1,6 @@
 package org.arend.ext;
 
+import org.arend.ext.concrete.ConcreteFactory;
 import org.arend.ext.module.ModuleScopeProvider;
 
 import javax.annotation.Nonnull;
@@ -9,6 +10,8 @@ public interface ArendExtension {
   default void setDependencies(@Nonnull Map<String, ArendExtension> dependencies) {}
 
   default void setPrelude(@Nonnull ArendPrelude prelude) {}
+
+  default void setConcreteFactory(@Nonnull ConcreteFactory factory) {}
 
   default void setModuleScopeProvider(@Nonnull ModuleScopeProvider moduleScopeProvider) {}
 

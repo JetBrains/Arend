@@ -1,6 +1,6 @@
 package org.arend.naming.scope;
 
-import org.arend.ext.concrete.ArendScope;
+import org.arend.ext.reference.ArendScope;
 import org.arend.naming.reference.Referable;
 
 import javax.annotation.Nonnull;

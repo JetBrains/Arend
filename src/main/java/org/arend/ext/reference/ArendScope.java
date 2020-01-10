@@ -1,4 +1,4 @@
-package org.arend.ext.concrete;
+package org.arend.ext.reference;
 
 import javax.annotation.Nullable;
 

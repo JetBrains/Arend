@@ -15,6 +15,7 @@ import org.arend.source.BinarySource;
 import org.arend.source.Source;
 import org.arend.source.SourceLoader;
 import org.arend.source.error.PersistingError;
+import org.arend.term.concrete.ExtConcreteFactory;
 import org.arend.term.group.ChildGroup;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.order.dependency.DependencyListener;
@@ -237,6 +238,7 @@ public abstract class SourceLibrary extends BaseLibrary {
     if (myExtension != null) {
       myExtension.setDependencies(dependenciesExtensions);
       myExtension.setPrelude(new Prelude());
+      myExtension.setConcreteFactory(new ExtConcreteFactory());
       myExtension.setModuleScopeProvider(new CachingModuleScopeProvider(getModuleScopeProvider()));
       myExtension.setDefinitionProvider(getTypecheckerState());
       myExtension.initialize();

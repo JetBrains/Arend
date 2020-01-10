@@ -2,8 +2,8 @@ package org.arend.typechecking;
 
 import org.arend.core.definition.Definition;
 import org.arend.ext.DefinitionProvider;
-import org.arend.ext.concrete.ArendRef;
 import org.arend.ext.core.definition.CoreDefinition;
+import org.arend.ext.reference.ArendRef;
 import org.arend.naming.reference.TCReferable;
 
 import javax.annotation.Nullable;

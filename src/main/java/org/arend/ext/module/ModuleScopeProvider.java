@@ -1,6 +1,6 @@
 package org.arend.ext.module;
 
-import org.arend.ext.concrete.ArendScope;
+import org.arend.ext.reference.ArendScope;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

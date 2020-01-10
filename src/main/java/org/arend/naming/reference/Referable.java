@@ -1,6 +1,6 @@
 package org.arend.naming.reference;
 
-import org.arend.ext.concrete.ArendRef;
+import org.arend.ext.reference.ArendRef;
 
 import javax.annotation.Nonnull;
 

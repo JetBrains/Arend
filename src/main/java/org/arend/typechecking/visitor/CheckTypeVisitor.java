@@ -1903,7 +1903,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
 
     List<ExtClause> resultClauses = new ArrayList<>();
-    ElimTree elimTree = new ElimTypechecking(this, resultExpr, PatternTypechecking.Mode.CASE, level, actualLevel, actualLevelSub, expr.isSFunc(), true).typecheckElim(expr.getClauses(), expr, list.getFirst(), resultClauses);
+    ElimTree elimTree = new ElimTypechecking(this, resultExpr, PatternTypechecking.Mode.CASE, level, actualLevel, actualLevelSub, expr.isSCase(), true).typecheckElim(expr.getClauses(), expr, list.getFirst(), resultClauses);
     for (Map.Entry<Referable, Binding> entry : origElimBindings.entrySet()) {
       addBinding(entry.getKey(), entry.getValue());
     }
@@ -1912,7 +1912,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
 
     new ConditionsChecking(myEquations, errorReporter).check(resultClauses, elimTree);
-    TypecheckingResult result = new TypecheckingResult(new CaseExpression(expr.isSFunc(), list.getFirst(), resultExpr, resultTypeLevel, elimTree, expressions), resultType != null ? resultExpr.subst(substitution) : resultExpr);
+    TypecheckingResult result = new TypecheckingResult(new CaseExpression(expr.isSCase(), list.getFirst(), resultExpr, resultTypeLevel, elimTree, expressions), resultType != null ? resultExpr.subst(substitution) : resultExpr);
     return resultType == null ? result : checkResult(expectedType, result, expr);
   }
 
