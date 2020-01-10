@@ -5,6 +5,7 @@ import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.visitor.ExpressionVisitor;
+import org.arend.core.expr.visitor.ExpressionVisitor2;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.sort.Level;
@@ -81,6 +82,11 @@ public class PiExpression extends Expression implements Type, CorePiExpression, 
   @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitPi(this, params);
+  }
+
+  @Override
+  public <P1, P2, R> R accept(ExpressionVisitor2<? super P1, ? super P2, ? extends R> visitor, P1 param1, P2 param2) {
+    return visitor.visitPi(this, param1, param2);
   }
 
   @Override

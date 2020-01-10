@@ -25,12 +25,11 @@ import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.GoalError;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.implicitargs.equations.Equations;
-import org.arend.util.Pair;
 
 import java.util.*;
 
 @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,ExpectedType>, Boolean> {
+public class CompareVisitor implements ExpressionVisitor2<Expression, ExpectedType, Boolean> {
   private final Map<Binding, Binding> mySubstitution;
   private final Equations myEquations;
   private final Concrete.SourceNode mySourceNode;
@@ -119,7 +118,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
       boolean normalCompare = myNormalCompare;
       myNormalCompare = false;
 
-      boolean ok = expr1.accept(this, new Pair<>(expr2, type));
+      boolean ok = expr1.accept(this, expr2, type);
 
       myNormalCompare = normalCompare;
       myCMP = origCMP;
@@ -220,7 +219,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
     } else if (uExpr2 instanceof TupleExpression) {
       ok = visitTuple((TupleExpression) uExpr2, expr1, false);
     } else {
-      ok = expr1.accept(this, new Pair<>(expr2, type));
+      ok = expr1.accept(this, expr2, type);
     }
 
     if (!ok && !myOnlySolveVars) {
@@ -279,16 +278,16 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
   }
 
   @Override
-  public Boolean visitApp(AppExpression expr1, Pair<Expression,ExpectedType> pair) {
+  public Boolean visitApp(AppExpression expr1, Expression expr2, ExpectedType type) {
     List<Expression> args1 = new ArrayList<>();
     List<Expression> args2 = new ArrayList<>();
     Expression fun1 = expr1.getArguments(args1);
-    Expression fun2 = pair.proj1.getArguments(args2);
+    Expression fun2 = expr2.getArguments(args2);
 
     InferenceVariable var1 = fun1.getInferenceVariable();
     InferenceVariable var2 = fun2.getInferenceVariable();
     if (var1 != null || var2 != null) {
-      if (myNormalCompare && !myOnlySolveVars && myEquations.addEquation(expr1, pair.proj1.subst(getSubstitution()), pair.proj2, myCMP, var1 != null ? var1.getSourceNode() : var2.getSourceNode(), var1, var2)) {
+      if (myNormalCompare && !myOnlySolveVars && myEquations.addEquation(expr1, expr2.subst(getSubstitution()), type, myCMP, var1 != null ? var1.getSourceNode() : var2.getSourceNode(), var1, var2)) {
         return true;
       }
     }
@@ -373,15 +372,29 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
     return correctOrder ? compareLists(expr1.getDefCallArguments(), defCall2.getDefCallArguments(), expr1.getDefinition().getParameters(), expr1.getDefinition(), substitution) : compareLists(defCall2.getDefCallArguments(), expr1.getDefCallArguments(), defCall2.getDefinition().getParameters(), defCall2.getDefinition(), substitution);
   }
 
-  @Override
-  public Boolean visitDefCall(DefCallExpression expr1, Pair<Expression,ExpectedType> pair) {
+  private boolean visitDefCall(DefCallExpression expr1, Expression expr2, ExpectedType type) {
     if (expr1 instanceof ConCallExpression) {
-      IntegerExpression intExpr = pair.proj1.cast(IntegerExpression.class);
+      IntegerExpression intExpr = expr2.cast(IntegerExpression.class);
       if (intExpr != null) {
         return visitInteger(intExpr, expr1);
       }
     }
-    return visitDefCall(expr1, pair.proj1, pair.proj2, true);
+    return visitDefCall(expr1, expr2, type, true);
+  }
+
+  @Override
+  public Boolean visitFunCall(FunCallExpression expr1, Expression expr2, ExpectedType type) {
+    return visitDefCall(expr1, expr2, type);
+  }
+
+  @Override
+  public Boolean visitConCall(ConCallExpression expr1, Expression expr2, ExpectedType type) {
+    return visitDefCall(expr1, expr2, type);
+  }
+
+  @Override
+  public Boolean visitDataCall(DataCallExpression expr1, Expression expr2, ExpectedType type) {
+    return visitDefCall(expr1, expr2, type);
   }
 
   private Boolean checkDefCallAndApp(Expression expr1, Expression expr2, boolean correctOrder) {
@@ -535,8 +548,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
   }
 
   @Override
-  public Boolean visitFieldCall(FieldCallExpression fieldCall1, Pair<Expression,ExpectedType> pair) {
-    FieldCallExpression fieldCall2 = pair.proj1.cast(FieldCallExpression.class);
+  public Boolean visitFieldCall(FieldCallExpression fieldCall1, Expression expr2, ExpectedType type) {
+    FieldCallExpression fieldCall2 = expr2.cast(FieldCallExpression.class);
     if (fieldCall2 == null || fieldCall1.getDefinition() != fieldCall2.getDefinition()) {
       return false;
     }
@@ -619,8 +632,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
   }
 
   @Override
-  public Boolean visitClassCall(ClassCallExpression expr1, Pair<Expression,ExpectedType> pair) {
-    ClassCallExpression classCall2 = pair.proj1.cast(ClassCallExpression.class);
+  public Boolean visitClassCall(ClassCallExpression expr1, Expression expr2, ExpectedType type) {
+    ClassCallExpression classCall2 = expr2.cast(ClassCallExpression.class);
     if (classCall2 == null) {
       return false;
     }
@@ -657,8 +670,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
   }
 
   @Override
-  public Boolean visitReference(ReferenceExpression expr1, Pair<Expression,ExpectedType> pair) {
-    ReferenceExpression ref2 = pair.proj1.cast(ReferenceExpression.class);
+  public Boolean visitReference(ReferenceExpression expr1, Expression expr2, ExpectedType type) {
+    ReferenceExpression ref2 = expr2.cast(ReferenceExpression.class);
     if (ref2 == null) {
       return false;
     }
@@ -672,18 +685,18 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
   }
 
   @Override
-  public Boolean visitInferenceReference(InferenceReferenceExpression expr1, Pair<Expression,ExpectedType> pair) {
+  public Boolean visitInferenceReference(InferenceReferenceExpression expr1, Expression expr2, ExpectedType type) {
     if (expr1.getSubstExpression() == null) {
-      InferenceReferenceExpression infRefExpr2 = pair.proj1.cast(InferenceReferenceExpression.class);
+      InferenceReferenceExpression infRefExpr2 = expr2.cast(InferenceReferenceExpression.class);
       return infRefExpr2 != null && infRefExpr2.getVariable() == expr1.getVariable();
     } else {
-      return expr1.getSubstExpression().accept(this, pair);
+      return expr1.getSubstExpression().accept(this, expr2, type);
     }
   }
 
   @Override
-  public Boolean visitSubst(SubstExpression expr, Pair<Expression, ExpectedType> pair) {
-    return expr.getSubstExpression().accept(this, pair);
+  public Boolean visitSubst(SubstExpression expr, Expression expr2, ExpectedType type) {
+    return expr.getSubstExpression().accept(this, expr2, type);
   }
 
   private Boolean visitLam(LamExpression expr1, Expression expr2, ExpectedType type, boolean correctOrder) {
@@ -718,13 +731,13 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
   }
 
   @Override
-  public Boolean visitLam(LamExpression expr1, Pair<Expression,ExpectedType> pair) {
-    return visitLam(expr1, pair.proj1, pair.proj2, true);
+  public Boolean visitLam(LamExpression expr1, Expression expr2, ExpectedType type) {
+    return visitLam(expr1, expr2, type, true);
   }
 
   @Override
-  public Boolean visitPi(PiExpression expr1, Pair<Expression,ExpectedType> pair) {
-    PiExpression piExpr2 = pair.proj1.cast(PiExpression.class);
+  public Boolean visitPi(PiExpression expr1, Expression expr2, ExpectedType type) {
+    PiExpression piExpr2 = expr2.cast(PiExpression.class);
     if (piExpr2 == null) {
       return false;
     }
@@ -774,23 +787,23 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
 
 
   @Override
-  public Boolean visitUniverse(UniverseExpression expr1, Pair<Expression,ExpectedType> pair) {
-    UniverseExpression universe2 = pair.proj1.cast(UniverseExpression.class);
+  public Boolean visitUniverse(UniverseExpression expr1, Expression expr2, ExpectedType type) {
+    UniverseExpression universe2 = expr2.cast(UniverseExpression.class);
     return universe2 != null && Sort.compare(expr1.getSort(), universe2.getSort(), myCMP, myNormalCompare ? (myEquations == DummyEquations.getInstance() ? null : myEquations) : DummyEquations.getInstance(), mySourceNode);
   }
 
   @Override
-  public Boolean visitError(ErrorExpression expr1, Pair<Expression,ExpectedType> pair) {
+  public Boolean visitError(ErrorExpression expr1, Expression expr2, ExpectedType type) {
     if (expr1.getError() instanceof GoalError) {
       return true;
     }
-    ErrorExpression errorExpr2 = pair.proj1.cast(ErrorExpression.class);
+    ErrorExpression errorExpr2 = expr2.cast(ErrorExpression.class);
     return errorExpr2 != null && (errorExpr2.getError() instanceof GoalError || expr1.getError().equals(errorExpr2.getError()));
   }
 
   @Override
-  public Boolean visitTuple(TupleExpression expr1, Pair<Expression,ExpectedType> pair) {
-    return visitTuple(expr1, pair.proj1, true);
+  public Boolean visitTuple(TupleExpression expr1, Expression expr2, ExpectedType type) {
+    return visitTuple(expr1, expr2, true);
   }
 
   private Boolean visitTuple(TupleExpression expr1, Expression expr2, boolean correctOrder) {
@@ -812,8 +825,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
   }
 
   @Override
-  public Boolean visitSigma(SigmaExpression expr1, Pair<Expression,ExpectedType> pair) {
-    SigmaExpression sigma2 = pair.proj1.cast(SigmaExpression.class);
+  public Boolean visitSigma(SigmaExpression expr1, Expression expr2, ExpectedType type) {
+    SigmaExpression sigma2 = expr2.cast(SigmaExpression.class);
     if (sigma2 == null) {
       return false;
     }
@@ -827,8 +840,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
   }
 
   @Override
-  public Boolean visitProj(ProjExpression expr1, Pair<Expression,ExpectedType> pair) {
-    ProjExpression proj2 = pair.proj1.cast(ProjExpression.class);
+  public Boolean visitProj(ProjExpression expr1, Expression expr2, ExpectedType type) {
+    ProjExpression proj2 = expr2.cast(ProjExpression.class);
     return proj2 != null && expr1.getField() == proj2.getField() && compare(expr1.getExpression(), proj2.getExpression(), null);
   }
 
@@ -874,12 +887,12 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
   }
 
   @Override
-  public Boolean visitNew(NewExpression expr1, Pair<Expression,ExpectedType> pair) {
+  public Boolean visitNew(NewExpression expr1, Expression expr2, ExpectedType type) {
     return false;
   }
 
   @Override
-  public Boolean visitLet(LetExpression letExpr1, Pair<Expression,ExpectedType> pair) {
+  public Boolean visitLet(LetExpression expr1, Expression expr2, ExpectedType type) {
     throw new IllegalStateException();
   }
 
@@ -908,8 +921,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
   }
 
   @Override
-  public Boolean visitCase(CaseExpression case1, Pair<Expression,ExpectedType> pair) {
-    CaseExpression case2 = pair.proj1.cast(CaseExpression.class);
+  public Boolean visitCase(CaseExpression case1, Expression expr2, ExpectedType type) {
+    CaseExpression case2 = expr2.cast(CaseExpression.class);
     if (case2 == null) {
       return false;
     }
@@ -934,12 +947,12 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
       return false;
     }
 
-    return compare(case1.getElimTree(), case2.getElimTree(), pair.proj2);
+    return compare(case1.getElimTree(), case2.getElimTree(), type);
   }
 
   @Override
-  public Boolean visitOfType(OfTypeExpression expr, Pair<Expression,ExpectedType> pair) {
-    return expr.getExpression().accept(this, pair);
+  public Boolean visitOfType(OfTypeExpression expr, Expression expr2, ExpectedType type) {
+    return expr.getExpression().accept(this, expr2, type);
   }
 
   private boolean visitInteger(IntegerExpression expr1, Expression expr2) {
@@ -960,13 +973,13 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
   }
 
   @Override
-  public Boolean visitInteger(IntegerExpression expr, Pair<Expression,ExpectedType> pair) {
-    return visitInteger(expr, pair.proj1);
+  public Boolean visitInteger(IntegerExpression expr, Expression expr2, ExpectedType type) {
+    return visitInteger(expr, expr2);
   }
 
   @Override
-  public Boolean visitPEval(PEvalExpression expr, Pair<Expression, ExpectedType> pair) {
-    PEvalExpression peval2 = pair.proj1.cast(PEvalExpression.class);
+  public Boolean visitPEval(PEvalExpression expr, Expression other, ExpectedType type) {
+    PEvalExpression peval2 = other.cast(PEvalExpression.class);
     if (peval2 == null) {
       return false;
     }

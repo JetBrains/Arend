@@ -33,6 +33,8 @@ import java.util.Set;
 public abstract class Expression implements ExpectedType, Body, CoreExpression {
   public abstract <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params);
 
+  public abstract <P1, P2, R> R accept(ExpressionVisitor2<? super P1, ? super P2, ? extends R> visitor, P1 param1, P2 param2);
+
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();

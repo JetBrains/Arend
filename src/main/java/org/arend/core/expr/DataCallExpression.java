@@ -4,6 +4,7 @@ import org.arend.core.definition.Constructor;
 import org.arend.core.definition.DataDefinition;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.visitor.ExpressionVisitor;
+import org.arend.core.expr.visitor.ExpressionVisitor2;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.pattern.Pattern;
@@ -47,6 +48,11 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
   @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitDataCall(this, params);
+  }
+
+  @Override
+  public <P1, P2, R> R accept(ExpressionVisitor2<? super P1, ? super P2, ? extends R> visitor, P1 param1, P2 param2) {
+    return visitor.visitDataCall(this, param1, param2);
   }
 
   @Override

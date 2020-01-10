@@ -3,6 +3,7 @@ package org.arend.core.expr;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.visitor.ExpressionVisitor;
+import org.arend.core.expr.visitor.ExpressionVisitor2;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.sort.Sort;
@@ -46,6 +47,11 @@ public class SigmaExpression extends Expression implements Type, CoreSigmaExpres
   @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitSigma(this, params);
+  }
+
+  @Override
+  public <P1, P2, R> R accept(ExpressionVisitor2<? super P1, ? super P2, ? extends R> visitor, P1 param1, P2 param2) {
+    return visitor.visitSigma(this, param1, param2);
   }
 
   @Override
