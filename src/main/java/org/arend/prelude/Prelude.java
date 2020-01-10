@@ -16,6 +16,7 @@ import org.arend.core.pattern.Patterns;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.error.DummyErrorReporter;
+import org.arend.ext.ArendPrelude;
 import org.arend.ext.core.elimtree.CoreBranchKey;
 import org.arend.module.ModulePath;
 import org.arend.naming.reference.Referable;
@@ -34,7 +35,7 @@ import java.util.function.Consumer;
 import static org.arend.core.expr.ExpressionFactory.Nat;
 import static org.arend.core.expr.ExpressionFactory.parameter;
 
-public class Prelude {
+public class Prelude implements ArendPrelude {
   public static final String VERSION = "1.1";
 
   public static final ModulePath MODULE_PATH = new ModulePath("Prelude");
@@ -76,9 +77,6 @@ public class Prelude {
   public static FunctionDefinition MOD_PROPERTY;
 
   public static SigmaExpression DIV_MOD_TYPE;
-
-  private Prelude() {
-  }
 
   public static boolean isInitialized() {
     return INTERVAL != null;
@@ -274,5 +272,165 @@ public class Prelude {
     public void typecheckingUnitFinished(TCReferable referable, Definition definition) {
       update(definition);
     }
+  }
+
+  @Override
+  public DataDefinition getInterval() {
+    return INTERVAL;
+  }
+
+  @Override
+  public Constructor getLeft() {
+    return LEFT;
+  }
+
+  @Override
+  public Constructor getRight() {
+    return RIGHT;
+  }
+
+  @Override
+  public FunctionDefinition getSqueeze() {
+    return SQUEEZE;
+  }
+
+  @Override
+  public FunctionDefinition getSqueezeR() {
+    return SQUEEZE_R;
+  }
+
+  @Override
+  public DataDefinition getNat() {
+    return NAT;
+  }
+
+  @Override
+  public Constructor getZero() {
+    return ZERO;
+  }
+
+  @Override
+  public Constructor getSuc() {
+    return SUC;
+  }
+
+  @Override
+  public FunctionDefinition getPlus() {
+    return PLUS;
+  }
+
+  @Override
+  public FunctionDefinition getMul() {
+    return MUL;
+  }
+
+  @Override
+  public FunctionDefinition getMinus() {
+    return MINUS;
+  }
+
+  @Override
+  public DataDefinition getInt() {
+    return INT;
+  }
+
+  @Override
+  public Constructor getPos() {
+    return POS;
+  }
+
+  @Override
+  public Constructor getNeg() {
+    return NEG;
+  }
+
+  @Override
+  public FunctionDefinition getFromNat() {
+    return FROM_NAT;
+  }
+
+  @Override
+  public FunctionDefinition getCoerce() {
+    return COERCE;
+  }
+
+  @Override
+  public FunctionDefinition getCoerce2() {
+    return COERCE2;
+  }
+
+  @Override
+  public DataDefinition getPath() {
+    return PATH;
+  }
+
+  @Override
+  public FunctionDefinition getEquality() {
+    return PATH_INFIX;
+  }
+
+  @Override
+  public Constructor getPathCon() {
+    return PATH_CON;
+  }
+
+  @Override
+  public FunctionDefinition getInProp() {
+    return IN_PROP;
+  }
+
+  @Override
+  public DConstructor getIdp() {
+    return IDP;
+  }
+
+  @Override
+  public FunctionDefinition getAt() {
+    return AT;
+  }
+
+  @Override
+  public FunctionDefinition getIso() {
+    return ISO;
+  }
+
+  @Override
+  public DataDefinition getLessOrEq() {
+    return LESS_OR_EQ;
+  }
+
+  @Override
+  public Constructor getZeroLessOrEq() {
+    return ZERO_LESS_OR_EQ;
+  }
+
+  @Override
+  public Constructor getSucLessOrEq() {
+    return SUC_LESS_OR_EQ;
+  }
+
+  @Override
+  public FunctionDefinition getDivMod() {
+    return DIV_MOD;
+  }
+
+  @Override
+  public FunctionDefinition getDiv() {
+    return DIV;
+  }
+
+  @Override
+  public FunctionDefinition getMod() {
+    return MOD;
+  }
+
+  @Override
+  public FunctionDefinition getDivModProp() {
+    return DIV_MOD_PROPERTY;
+  }
+
+  @Override
+  public FunctionDefinition getModProp() {
+    return MOD_PROPERTY;
   }
 }

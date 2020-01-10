@@ -211,10 +211,6 @@ public abstract class SourceLibrary extends BaseLibrary {
     if (myExtension == null && !dependenciesExtensions.isEmpty()) {
       myExtension = new DefaultArendExtension();
     }
-    if (myExtension != null) {
-      myExtension.setDependencies(dependenciesExtensions);
-      myExtension.initialize();
-    }
 
     libraryManager.beforeLibraryLoading(this);
 
@@ -235,6 +231,12 @@ public abstract class SourceLibrary extends BaseLibrary {
     } catch (Throwable e) {
       libraryManager.afterLibraryLoading(this, false);
       throw e;
+    }
+
+    if (myExtension != null) {
+      myExtension.setDependencies(dependenciesExtensions);
+      myExtension.setPrelude(new Prelude());
+      myExtension.initialize();
     }
 
     libraryManager.afterLibraryLoading(this, true);
