@@ -12,6 +12,7 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.error.ErrorReporter;
 import org.arend.ext.core.expr.CoreDataCallExpression;
+import org.arend.ext.core.expr.CoreExpressionVisitor;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -53,6 +54,11 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
   @Override
   public <P1, P2, R> R accept(ExpressionVisitor2<? super P1, ? super P2, ? extends R> visitor, P1 param1, P2 param2) {
     return visitor.visitDataCall(this, param1, param2);
+  }
+
+  @Override
+  public <P, R> R accept(@Nonnull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
+    return visitor.visitDataCall(this, params);
   }
 
   @Override

@@ -19,6 +19,7 @@ import org.arend.error.ErrorReporter;
 import org.arend.ext.core.definition.CoreClassField;
 import org.arend.ext.core.expr.CoreClassCallExpression;
 import org.arend.ext.core.expr.CoreExpression;
+import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.naming.renamer.Renamer;
 
 import javax.annotation.Nonnull;
@@ -247,5 +248,10 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
   @Override
   public <P1, P2, R> R accept(ExpressionVisitor2<? super P1, ? super P2, ? extends R> visitor, P1 param1, P2 param2) {
     return visitor.visitClassCall(this, param1, param2);
+  }
+
+  @Override
+  public <P, R> R accept(@Nonnull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
+    return visitor.visitClassCall(this, params);
   }
 }

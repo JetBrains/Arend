@@ -7,6 +7,7 @@ import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.definition.Definition;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
+import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CoreReferenceExpression;
 import org.arend.util.Decision;
 
@@ -37,6 +38,11 @@ public class ReferenceExpression extends Expression implements CoreReferenceExpr
   @Override
   public <P1, P2, R> R accept(ExpressionVisitor2<? super P1, ? super P2, ? extends R> visitor, P1 param1, P2 param2) {
     return visitor.visitReference(this, param1, param2);
+  }
+
+  @Override
+  public <P, R> R accept(@Nonnull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
+    return visitor.visitReference(this, params);
   }
 
   @Override

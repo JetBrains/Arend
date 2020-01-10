@@ -2,6 +2,7 @@ package org.arend.core.expr;
 
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
+import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CoreProjExpression;
 import org.arend.util.Decision;
 
@@ -45,6 +46,11 @@ public class ProjExpression extends Expression implements CoreProjExpression {
   @Override
   public <P1, P2, R> R accept(ExpressionVisitor2<? super P1, ? super P2, ? extends R> visitor, P1 param1, P2 param2) {
     return visitor.visitProj(this, param1, param2);
+  }
+
+  @Override
+  public <P, R> R accept(@Nonnull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
+    return visitor.visitProj(this, params);
   }
 
   @Override

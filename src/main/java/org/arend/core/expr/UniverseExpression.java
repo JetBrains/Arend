@@ -7,6 +7,7 @@ import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.error.ErrorReporter;
+import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CoreUniverseExpression;
 import org.arend.util.Decision;
 
@@ -34,6 +35,11 @@ public class UniverseExpression extends Expression implements Type, CoreUniverse
   @Override
   public <P1, P2, R> R accept(ExpressionVisitor2<? super P1, ? super P2, ? extends R> visitor, P1 param1, P2 param2) {
     return visitor.visitUniverse(this, param1, param2);
+  }
+
+  @Override
+  public <P, R> R accept(@Nonnull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
+    return visitor.visitUniverse(this, params);
   }
 
   @Override
