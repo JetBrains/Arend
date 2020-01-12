@@ -10,6 +10,7 @@ import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.scope.Scope;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
+import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -150,27 +151,29 @@ public class LibraryManager {
    *
    * @param library         a library.
    * @param dependencyName  the name of the dependency to load.
+   * @param typechecking    a typechecker that will be used for loading extensions.
    *
    * @return the loaded library if loading succeeded, null otherwise.
    */
-  public Library loadDependency(Library library, String dependencyName) {
+  public Library loadDependency(Library library, String dependencyName, TypecheckingOrderingListener typechecking) {
     Library dependency = myLibraryResolver.resolve(library, dependencyName);
     if (dependency == null) {
       myLibraryErrorReporter.report(LibraryError.notFound(dependencyName));
       return null;
     }
 
-    return loadLibrary(dependency) ? dependency : null;
+    return loadLibrary(dependency, typechecking) ? dependency : null;
   }
 
   /**
    * Loads a library together with its dependencies and registers them in this library manager.
    *
-   * @param library the library to load.
+   * @param library       the library to load.
+   * @param typechecking  a typechecker that will be used for loading extensions.
    *
    * @return true if loading succeeded, false otherwise.
    */
-  public boolean loadLibrary(Library library) {
+  public boolean loadLibrary(Library library, TypecheckingOrderingListener typechecking) {
     if (myLoadingLibraries.contains(library)) {
       myLibraryErrorReporter.report(LibraryError.cyclic(myLoadingLibraries.stream().map(Library::getName)));
       return false;
@@ -188,7 +191,7 @@ public class LibraryManager {
 
     try {
       myReverseDependencies.put(library, new HashSet<>());
-      boolean result = library.load(this);
+      boolean result = library.load(this, typechecking);
       if (!result) {
         myReverseDependencies.remove(library);
         myFailedLibraries.add(library);

@@ -94,6 +94,6 @@ public class NameResolutionOnLoadTest extends LibraryTestCase {
   @Test
   public void duplicateNamesOnTopLevel() {
     library.addModule(new ModulePath("Test"), "\\func a => 0 \n \\func a => 0");
-    libraryManager.loadLibrary(library);
+    libraryManager.loadLibrary(library, null);
   }
 }

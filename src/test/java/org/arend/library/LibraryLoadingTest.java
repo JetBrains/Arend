@@ -15,7 +15,7 @@ public class LibraryLoadingTest extends LibraryTestCase {
   public void loadSimpleModule() {
     ModulePath module = new ModulePath("A");
     library.addModule(module, "\\func f => 0");
-    assertTrue(libraryManager.loadLibrary(library));
+    assertTrue(libraryManager.loadLibrary(library, null));
     assertThat(library.getModuleGroup(module), is(notNullValue()));
     assertThat(errorList, containsErrors(0));
   }
@@ -49,7 +49,7 @@ public class LibraryLoadingTest extends LibraryTestCase {
     ModulePath moduleB = new ModulePath("B");
     library.addModule(moduleA, "\\func f => 0");
     library.addModule(moduleB, "\\func g => 0");
-    assertTrue(libraryManager.loadLibrary(library));
+    assertTrue(libraryManager.loadLibrary(library, null));
     assertThat(errorList, containsErrors(0));
     assertThat(library.getModuleGroup(moduleA), is(notNullValue()));
     assertThat(library.getModuleGroup(moduleB), is(notNullValue()));
@@ -65,7 +65,7 @@ public class LibraryLoadingTest extends LibraryTestCase {
   public void moduleWithErrorsError() {
     ModulePath modulePath = new ModulePath("A");
     library.addModule(modulePath, "hello world");
-    assertTrue(libraryManager.loadLibrary(library));
+    assertTrue(libraryManager.loadLibrary(library, null));
     assertThat(library.getModuleGroup(modulePath), is(nullValue()));
     assertThat(errorList, is(not(empty())));
   }

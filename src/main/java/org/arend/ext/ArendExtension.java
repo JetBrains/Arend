@@ -20,7 +20,5 @@ public interface ArendExtension {
     return module -> null;
   }
 
-  default void setDefinitionProvider(@Nonnull DefinitionProvider definitionProvider) {}
-
-  default void initialize() {}
+  default void load(@Nonnull DefinitionProvider definitionProvider) {}
 }

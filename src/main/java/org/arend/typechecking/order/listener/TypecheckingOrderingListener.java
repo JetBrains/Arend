@@ -92,6 +92,10 @@ public class TypecheckingOrderingListener implements OrderingListener {
     return myReferableConverter;
   }
 
+  public TypecheckerState getTypecheckerState() {
+    return myState;
+  }
+
   public boolean runTypechecking(CancellationIndicator cancellationIndicator, BooleanSupplier runnable) {
     synchronized (TypecheckingOrderingListener.class) {
       if (cancellationIndicator != null) {

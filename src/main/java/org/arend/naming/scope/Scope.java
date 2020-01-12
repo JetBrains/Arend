@@ -1,6 +1,6 @@
 package org.arend.naming.scope;
 
-import org.arend.ext.reference.ArendScope;
+import org.arend.ext.reference.RawScope;
 import org.arend.naming.reference.Referable;
 
 import javax.annotation.Nonnull;
@@ -12,7 +12,7 @@ import java.util.Objects;
 import java.util.function.Predicate;
 
 // Minimal definition: (find or getElements) and resolveNamespace
-public interface Scope extends ArendScope {
+public interface Scope extends RawScope {
   default @Nullable Referable find(Predicate<Referable> pred) {
     for (Referable referable : getElements()) {
       if (pred.test(referable)) {
@@ -64,7 +64,7 @@ public interface Scope extends ArendScope {
 
   @Nullable
   @Override
-  default ArendScope getSubscope(String... path) {
+  default RawScope getSubscope(String... path) {
     Scope scope = this;
     for (String name : path) {
       scope = scope.resolveNamespace(name, true);

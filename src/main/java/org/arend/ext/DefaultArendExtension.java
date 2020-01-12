@@ -25,4 +25,9 @@ public class DefaultArendExtension implements ArendExtension {
   public ModuleScopeProvider getModuleScopeProvider() {
     return moduleScopeProvider;
   }
+
+  @Override
+  public void load(@Nonnull DefinitionProvider definitionProvider) {
+
+  }
 }

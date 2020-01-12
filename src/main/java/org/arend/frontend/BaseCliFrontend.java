@@ -140,7 +140,7 @@ public abstract class BaseCliFrontend {
       return null;
     }
 
-    if (!myLibraryManager.loadLibrary(new PreludeResourceLibrary(myTypecheckerState))) {
+    if (!myLibraryManager.loadLibrary(new PreludeResourceLibrary(myTypecheckerState), null)) {
       return null;
     }
 
@@ -233,13 +233,14 @@ public abstract class BaseCliFrontend {
       return cmdLine;
     }
 
+    MyTypechecking typechecking = new MyTypechecking();
     boolean recompile = cmdLine.hasOption("recompile");
     for (UnmodifiableSourceLibrary library : requestedLibraries) {
       myModuleResults.clear();
       if (recompile) {
         library.addFlag(SourceLibrary.Flag.RECOMPILE);
       }
-      if (!myLibraryManager.loadLibrary(library)) {
+      if (!myLibraryManager.loadLibrary(library, typechecking)) {
         continue;
       }
 
@@ -250,7 +251,7 @@ public abstract class BaseCliFrontend {
       System.out.println("--- Typechecking " + library.getName() + " ---");
       Collection<? extends ModulePath> modules = library.getUpdatedModules();
       long time = System.currentTimeMillis();
-      new MyTypechecking().typecheckLibrary(library);
+      typechecking.typecheckLibrary(library);
       time = System.currentTimeMillis() - time;
       flushErrors();
 

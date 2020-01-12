@@ -9,6 +9,7 @@ import org.arend.naming.scope.LexicalScope;
 import org.arend.term.group.Group;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.order.Ordering;
+import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -40,7 +41,7 @@ public abstract class BaseLibrary implements Library {
   }
 
   @Override
-  public boolean load(LibraryManager libraryManager) {
+  public boolean load(LibraryManager libraryManager, TypecheckingOrderingListener typechecking) {
     myLoaded = true;
     return true;
   }

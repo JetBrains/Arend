@@ -7,7 +7,6 @@ import org.arend.ext.module.ModulePath;
 import org.arend.library.classLoader.FileClassLoaderDelegate;
 import org.arend.library.error.LibraryError;
 import org.arend.module.error.ExceptionError;
-import org.arend.module.scopeprovider.CachingModuleScopeProvider;
 import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.prelude.Prelude;
@@ -17,9 +16,11 @@ import org.arend.source.SourceLoader;
 import org.arend.source.error.PersistingError;
 import org.arend.term.concrete.ExtConcreteFactory;
 import org.arend.term.group.ChildGroup;
+import org.arend.typechecking.ExtDefinitionProvider;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.order.dependency.DependencyListener;
 import org.arend.typechecking.order.dependency.DummyDependencyListener;
+import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -156,7 +157,7 @@ public abstract class SourceLibrary extends BaseLibrary {
   }
 
   @Override
-  public boolean load(LibraryManager libraryManager) {
+  public boolean load(LibraryManager libraryManager, TypecheckingOrderingListener typechecking) {
     if (isLoaded()) {
       return true;
     }
@@ -178,7 +179,7 @@ public abstract class SourceLibrary extends BaseLibrary {
 
     Map<String, ArendExtension> dependenciesExtensions = new LinkedHashMap<>();
     for (LibraryDependency dependency : header.dependencies) {
-      Library loadedDependency = libraryManager.loadDependency(this, dependency.name);
+      Library loadedDependency = libraryManager.loadDependency(this, dependency.name, typechecking);
       if (loadedDependency == null && !mustBeLoaded()) {
         libraryManager.getClassLoader().removeDelegate(this);
         return false;
@@ -239,14 +240,15 @@ public abstract class SourceLibrary extends BaseLibrary {
       myExtension.setDependencies(dependenciesExtensions);
       myExtension.setPrelude(new Prelude());
       myExtension.setConcreteFactory(new ExtConcreteFactory());
-      myExtension.setModuleScopeProvider(new CachingModuleScopeProvider(getModuleScopeProvider()));
-      myExtension.setDefinitionProvider(getTypecheckerState());
-      myExtension.initialize();
+      myExtension.setModuleScopeProvider(getModuleScopeProvider());
+      ExtDefinitionProvider provider = new ExtDefinitionProvider(typechecking);
+      myExtension.load(provider);
+      provider.disable();
     }
 
     libraryManager.afterLibraryLoading(this, true);
 
-    return super.load(libraryManager);
+    return super.load(libraryManager, typechecking);
   }
 
   @Override

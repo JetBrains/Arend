@@ -7,6 +7,7 @@ import org.arend.source.BinarySource;
 import org.arend.source.GZIPStreamBinarySource;
 import org.arend.source.Source;
 import org.arend.typechecking.TypecheckerState;
+import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 
 import javax.annotation.Nullable;
 
@@ -24,10 +25,10 @@ public class PreludeResourceLibrary extends PreludeLibrary {
   }
 
   @Override
-  public boolean load(LibraryManager libraryManager) {
+  public boolean load(LibraryManager libraryManager, TypecheckingOrderingListener typechecking) {
     synchronized (PreludeLibrary.class) {
       if (getPreludeScope() == null) {
-        if (super.load(libraryManager)) {
+        if (super.load(libraryManager, typechecking)) {
           if (!Prelude.isInitialized()) {
             Prelude.initialize(getPreludeScope(), getTypecheckerState());
           }

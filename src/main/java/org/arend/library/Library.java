@@ -6,6 +6,7 @@ import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.term.group.ChildGroup;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.order.Ordering;
+import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -27,13 +28,14 @@ public interface Library {
   /**
    * Loads the library and its dependencies.
    * This method must register all of the library's dependencies using {@link LibraryManager#registerDependency}
-   * Do not invoke this method directly; use {@link LibraryManager#loadLibrary(Library)} instead.
+   * Do not invoke this method directly; use {@link LibraryManager#loadLibrary(Library,TypecheckingOrderingListener)} instead.
    *
    * @param libraryManager  a library manager containing the information necessary for the loading.
+   * @param typechecking    a typechecker that will be used for loading extensions.
    *
    * @return true if loading succeeded, false otherwise.
    */
-  boolean load(LibraryManager libraryManager);
+  boolean load(LibraryManager libraryManager, TypecheckingOrderingListener typechecking);
 
   /**
    * Unloads the library.
