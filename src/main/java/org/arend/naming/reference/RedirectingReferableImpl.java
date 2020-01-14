@@ -1,6 +1,6 @@
 package org.arend.naming.reference;
 
-import org.arend.term.Precedence;
+import org.arend.ext.reference.Precedence;
 import org.arend.term.abs.Abstract;
 
 import javax.annotation.Nonnull;

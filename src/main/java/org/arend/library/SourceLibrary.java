@@ -4,6 +4,9 @@ import org.arend.error.ErrorReporter;
 import org.arend.ext.ArendExtension;
 import org.arend.ext.DefaultArendExtension;
 import org.arend.ext.module.ModulePath;
+import org.arend.extImpl.ConcreteFactoryImpl;
+import org.arend.extImpl.DefinitionContributorImpl;
+import org.arend.extImpl.DefinitionProviderImpl;
 import org.arend.library.classLoader.FileClassLoaderDelegate;
 import org.arend.library.error.LibraryError;
 import org.arend.module.error.ExceptionError;
@@ -14,9 +17,7 @@ import org.arend.source.BinarySource;
 import org.arend.source.Source;
 import org.arend.source.SourceLoader;
 import org.arend.source.error.PersistingError;
-import org.arend.term.concrete.ExtConcreteFactory;
 import org.arend.term.group.ChildGroup;
-import org.arend.typechecking.ExtDefinitionProvider;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.order.dependency.DependencyListener;
 import org.arend.typechecking.order.dependency.DummyDependencyListener;
@@ -197,25 +198,6 @@ public abstract class SourceLibrary extends BaseLibrary {
     libraryManager.beforeLibraryLoading(this);
 
     try {
-      SourceLoader sourceLoader = new SourceLoader(this, libraryManager);
-      if (hasRawSources()) {
-        for (ModulePath module : header.modules) {
-          sourceLoader.preloadRaw(module);
-        }
-        sourceLoader.loadRawSources();
-      }
-
-      if (!myFlags.contains(Flag.RECOMPILE)) {
-        for (ModulePath module : header.modules) {
-          sourceLoader.loadBinary(module);
-        }
-      }
-    } catch (Throwable e) {
-      libraryManager.afterLibraryLoading(this, false);
-      throw e;
-    }
-
-    try {
       Class<?> extMainClass = null;
       if (header.extBasePath != null && header.extMainClass != null) {
         extMainClass = libraryManager.getClassLoader().loadClass(header.extMainClass);
@@ -237,11 +219,37 @@ public abstract class SourceLibrary extends BaseLibrary {
     }
 
     if (myExtension != null) {
+      DefinitionContributorImpl contributor = new DefinitionContributorImpl(this, libraryManager.getLibraryErrorReporter(), libraryManager.getExtensionModuleScopeProvider());
+      myExtension.declareDefinitions(contributor);
+      contributor.disable();
+    }
+
+    try {
+      SourceLoader sourceLoader = new SourceLoader(this, libraryManager);
+      if (hasRawSources()) {
+        for (ModulePath module : header.modules) {
+          sourceLoader.preloadRaw(module);
+        }
+        sourceLoader.loadRawSources();
+      }
+
+      if (!myFlags.contains(Flag.RECOMPILE)) {
+        for (ModulePath module : header.modules) {
+          sourceLoader.loadBinary(module);
+        }
+      }
+    } catch (Throwable e) {
+      libraryManager.afterLibraryLoading(this, false);
+      throw e;
+    }
+
+    if (myExtension != null) {
       myExtension.setDependencies(dependenciesExtensions);
       myExtension.setPrelude(new Prelude());
-      myExtension.setConcreteFactory(new ExtConcreteFactory());
+      myExtension.setConcreteFactory(new ConcreteFactoryImpl());
       myExtension.setModuleScopeProvider(getModuleScopeProvider());
-      ExtDefinitionProvider provider = new ExtDefinitionProvider(typechecking);
+
+      DefinitionProviderImpl provider = new DefinitionProviderImpl(typechecking);
       myExtension.load(provider);
       provider.disable();
     }

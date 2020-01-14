@@ -1,6 +1,7 @@
 package org.arend.naming;
 
 import org.arend.ext.module.ModulePath;
+import org.arend.ext.reference.Precedence;
 import org.arend.frontend.reference.ConcreteLocatedReferable;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.LocatedReferableImpl;
@@ -10,7 +11,6 @@ import org.arend.naming.scope.ListScope;
 import org.arend.naming.scope.SingletonScope;
 import org.arend.prelude.Prelude;
 import org.arend.term.FunctionKind;
-import org.arend.term.Precedence;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.ChildGroup;
 import org.junit.Ignore;

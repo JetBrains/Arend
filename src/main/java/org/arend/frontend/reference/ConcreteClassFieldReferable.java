@@ -1,9 +1,9 @@
 package org.arend.frontend.reference;
 
+import org.arend.ext.reference.Precedence;
 import org.arend.frontend.parser.Position;
 import org.arend.naming.reference.TCFieldReferable;
 import org.arend.naming.reference.TCReferable;
-import org.arend.term.Precedence;
 
 import javax.annotation.Nonnull;
 

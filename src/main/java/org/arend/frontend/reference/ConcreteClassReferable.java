@@ -1,6 +1,7 @@
 package org.arend.frontend.reference;
 
 import org.arend.ext.module.ModulePath;
+import org.arend.ext.reference.Precedence;
 import org.arend.frontend.parser.Position;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.Reference;
@@ -9,7 +10,6 @@ import org.arend.naming.reference.TCReferable;
 import org.arend.naming.resolving.visitor.ExpressionResolveNameVisitor;
 import org.arend.naming.scope.CachingScope;
 import org.arend.naming.scope.Scope;
-import org.arend.term.Precedence;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.ChildGroup;
 

@@ -1,6 +1,7 @@
 package org.arend.ext.module;
 
 import javax.annotation.Nonnull;
+import java.util.Arrays;
 import java.util.List;
 
 public class LongName implements Comparable<LongName> {
@@ -9,6 +10,14 @@ public class LongName implements Comparable<LongName> {
   public LongName(List<String> path) {
     assert !path.isEmpty();
     myPath = path;
+  }
+
+  public LongName(String... name) {
+    this(Arrays.asList(name));
+  }
+
+  public static LongName fromString(String path) {
+    return new LongName(path.split("\\."));
   }
 
   public List<String> toList() {

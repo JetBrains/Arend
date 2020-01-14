@@ -14,8 +14,8 @@ import org.arend.core.pattern.ConstructorPattern;
 import org.arend.core.pattern.EmptyPattern;
 import org.arend.core.pattern.Pattern;
 import org.arend.core.sort.Sort;
+import org.arend.ext.reference.Precedence;
 import org.arend.naming.reference.GlobalReferable;
-import org.arend.term.Precedence;
 import org.arend.util.Pair;
 
 import javax.annotation.Nonnull;

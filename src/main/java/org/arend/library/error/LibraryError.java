@@ -4,6 +4,7 @@ import org.arend.error.GeneralError;
 import org.arend.error.doc.DocFactory;
 import org.arend.error.doc.LineDoc;
 import org.arend.ext.ArendExtension;
+import org.arend.ext.module.LongName;
 import org.arend.ext.module.ModulePath;
 import org.arend.prelude.Prelude;
 import org.arend.term.prettyprint.PrettyPrinterConfig;
@@ -58,6 +59,10 @@ public class LibraryError extends GeneralError {
 
   public static LibraryError incorrectExtensionClass(String libraryName) {
     return new LibraryError("Extension main class does not implement " + ArendExtension.class.toString(), Stream.of(libraryName));
+  }
+
+  public static LibraryError duplicateExtensionDefinition(String libraryName, ModulePath modulePath, LongName longName) {
+    return new LibraryError("Definition '" + longName + "' is already defined in '" + modulePath + "'", Stream.of(libraryName));
   }
 
   @Override

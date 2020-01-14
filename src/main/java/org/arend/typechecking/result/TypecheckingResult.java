@@ -8,14 +8,17 @@ import org.arend.core.expr.Expression;
 import org.arend.core.expr.PiExpression;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.error.ErrorReporter;
+import org.arend.ext.core.expr.CoreExpression;
+import org.arend.ext.typechecking.CheckedExpression;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.TypecheckingError;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TypecheckingResult implements TResult {
+public class TypecheckingResult implements TResult, CheckedExpression {
   public Expression expression;
   public Expression type;
 
@@ -53,5 +56,17 @@ public class TypecheckingResult implements TResult {
     List<SingleDependentLink> params = new ArrayList<>();
     type.getPiParameters(params, true);
     return params;
+  }
+
+  @Nonnull
+  @Override
+  public CoreExpression getExpression() {
+    return expression;
+  }
+
+  @Nonnull
+  @Override
+  public CoreExpression getType() {
+    return type;
   }
 }

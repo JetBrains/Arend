@@ -1,8 +1,8 @@
 package org.arend.typechecking;
 
 import org.arend.error.ErrorReporter;
+import org.arend.ext.reference.Precedence;
 import org.arend.naming.reference.GlobalReferable;
-import org.arend.term.Precedence;
 import org.arend.typechecking.error.local.LocalErrorReporter;
 
 import javax.annotation.Nonnull;

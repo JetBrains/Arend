@@ -9,6 +9,7 @@ import org.arend.term.group.Group;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -20,9 +21,21 @@ public class SimpleModuleScopeProvider implements ModuleScopeProvider, ModuleReg
     myMap.put(module, CachingScope.make(LexicalScope.opened(group)));
   }
 
+  public void addModule(ModulePath module, Scope scope) {
+    myMap.put(module, scope);
+  }
+
+  public Collection<? extends ModulePath> getRegisteredModules() {
+    return myMap.keySet();
+  }
+
   @Override
   public void unregisterModule(ModulePath path) {
     myMap.remove(path);
+  }
+
+  public boolean isEmpty() {
+    return myMap.isEmpty();
   }
 
   public void clear() {

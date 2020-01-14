@@ -7,6 +7,7 @@ import org.arend.library.error.LibraryError;
 import org.arend.library.resolver.LibraryResolver;
 import org.arend.module.scopeprovider.CachingModuleScopeProvider;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
+import org.arend.module.scopeprovider.SimpleModuleScopeProvider;
 import org.arend.naming.scope.Scope;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
@@ -29,6 +30,7 @@ public class LibraryManager {
   private final Set<Library> myLoadingLibraries = new HashSet<>();
   private final Set<Library> myFailedLibraries = new HashSet<>();
   private final MultiClassLoader<Library> myClassLoader = new MultiClassLoader<>(ArendExtension.class.getClassLoader());
+  private final SimpleModuleScopeProvider myExtensionModuleScopeProvider = new SimpleModuleScopeProvider();
 
   /**
    * Constructs new {@code LibraryManager}.
@@ -43,6 +45,15 @@ public class LibraryManager {
     myInstanceProviderSet = instanceProviderSet;
     myTypecheckingErrorReporter = typecheckingErrorReporter;
     myLibraryErrorReporter = libraryErrorReporter;
+  }
+
+  /**
+   * Gets the module module scope provider containing modules from all language extensions.
+   *
+   * @return the extension module scope provider.
+   */
+  public @Nonnull SimpleModuleScopeProvider getExtensionModuleScopeProvider() {
+    return myExtensionModuleScopeProvider;
   }
 
   /**
@@ -61,7 +72,11 @@ public class LibraryManager {
         Library lib = getRegisteredLibrary(Prelude.LIBRARY_NAME);
         return lib == null ? null : lib.getModuleScopeProvider().forModule(modulePath);
       }
-      Scope scope = libraryModuleScopeProvider.forModule(modulePath);
+      Scope scope = myExtensionModuleScopeProvider.forModule(modulePath);
+      if (scope != null) {
+        return scope;
+      }
+      scope = libraryModuleScopeProvider.forModule(modulePath);
       if (scope != null) {
         return scope;
       }

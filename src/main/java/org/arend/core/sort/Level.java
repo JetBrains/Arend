@@ -5,7 +5,7 @@ import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.core.expr.visitor.ToAbstractVisitor;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.ext.core.level.CoreLevel;
-import org.arend.term.Precedence;
+import org.arend.ext.reference.Precedence;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
 import org.arend.typechecking.implicitargs.equations.Equations;

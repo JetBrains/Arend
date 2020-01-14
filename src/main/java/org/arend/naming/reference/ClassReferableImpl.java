@@ -1,7 +1,7 @@
 package org.arend.naming.reference;
 
 import org.arend.ext.module.ModulePath;
-import org.arend.term.Precedence;
+import org.arend.ext.reference.Precedence;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;

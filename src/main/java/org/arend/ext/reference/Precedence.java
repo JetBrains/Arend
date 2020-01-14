@@ -1,4 +1,4 @@
-package org.arend.term;
+package org.arend.ext.reference;
 
 import javax.annotation.Nonnull;
 

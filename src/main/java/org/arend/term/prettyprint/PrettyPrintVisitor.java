@@ -2,12 +2,12 @@ package org.arend.term.prettyprint;
 
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
+import org.arend.ext.reference.Precedence;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.term.Fixity;
 import org.arend.term.FunctionKind;
-import org.arend.term.Precedence;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.Concrete.BinOpSequenceElem;
 import org.arend.term.concrete.Concrete.Constructor;

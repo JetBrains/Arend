@@ -17,7 +17,7 @@ import org.arend.error.IncorrectExpressionException;
 import org.arend.error.doc.Doc;
 import org.arend.error.doc.DocFactory;
 import org.arend.ext.core.expr.CoreExpression;
-import org.arend.term.Precedence;
+import org.arend.ext.reference.Precedence;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
 import org.arend.term.prettyprint.PrettyPrinterConfig;

@@ -2,6 +2,7 @@ package org.arend.frontend.reference;
 
 import org.arend.error.SourceInfo;
 import org.arend.ext.module.ModulePath;
+import org.arend.ext.reference.Precedence;
 import org.arend.frontend.ConcreteReferableProvider;
 import org.arend.frontend.parser.Position;
 import org.arend.naming.reference.ClassReferable;
@@ -9,7 +10,6 @@ import org.arend.naming.reference.DataContainer;
 import org.arend.naming.reference.LocatedReferableImpl;
 import org.arend.naming.reference.TCReferable;
 import org.arend.naming.resolving.visitor.TypeClassReferenceExtractVisitor;
-import org.arend.term.Precedence;
 import org.arend.term.concrete.Concrete;
 
 import javax.annotation.Nonnull;

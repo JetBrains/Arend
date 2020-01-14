@@ -1,9 +1,10 @@
-package org.arend.term.concrete;
+package org.arend.extImpl;
 
 import org.arend.ext.concrete.*;
 import org.arend.ext.reference.ArendRef;
 import org.arend.naming.reference.LocalReferable;
 import org.arend.naming.reference.Referable;
+import org.arend.term.concrete.Concrete;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -13,7 +14,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-public class ExtConcreteFactory implements ConcreteFactory {
+public class ConcreteFactoryImpl implements ConcreteFactory {
   @Nonnull
   @Override
   public ConcreteExpression ref(@Nonnull ArendRef ref) {

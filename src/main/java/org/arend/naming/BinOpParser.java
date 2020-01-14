@@ -2,13 +2,13 @@ package org.arend.naming;
 
 import org.arend.error.ErrorReporter;
 import org.arend.error.ParsingError;
+import org.arend.ext.reference.Precedence;
 import org.arend.naming.error.NamingError;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.LocalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.renamer.Renamer;
 import org.arend.term.Fixity;
-import org.arend.term.Precedence;
 import org.arend.term.concrete.Concrete;
 
 import javax.annotation.Nonnull;
