@@ -44,11 +44,6 @@ public abstract class PreludeTypecheckingLibrary extends PreludeLibrary {
   }
 
   @Override
-  public boolean needsTypechecking() {
-    return !myTypechecked;
-  }
-
-  @Override
   public boolean orderModules(Ordering ordering) {
     if (myTypechecked) {
       return true;

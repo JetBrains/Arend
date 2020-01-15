@@ -119,20 +119,11 @@ public interface Library {
   ModuleScopeProvider getModuleScopeProvider();
 
   /**
-   * Checks if this library supports typechecking.
+   * Checks if the library is external.
    *
-   * @return true if this library can be typechecked, false if this library is read-only.
+   * @return true if this library is external, false if this library is read-only.
    */
-  boolean supportsTypechecking();
-
-  /**
-   * Checks if this library needs typechecking.
-   * If the library does not support typechecking (that is, {@link #supportsTypechecking} returns false), this method should always return false.
-   *
-   * @return true if the typechecking is needed, false otherwise.
-   */
-  @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-  boolean needsTypechecking();
+  boolean isExternal();
 
   /**
    * Runs an ordering on modules of this library that require typechecking.

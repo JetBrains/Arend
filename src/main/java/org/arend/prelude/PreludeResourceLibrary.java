@@ -51,13 +51,8 @@ public class PreludeResourceLibrary extends PreludeLibrary {
   }
 
   @Override
-  public boolean supportsTypechecking() {
-    return false;
-  }
-
-  @Override
-  public boolean needsTypechecking() {
-    return false;
+  public boolean isExternal() {
+    return true;
   }
 
   @Nullable

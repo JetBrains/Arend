@@ -29,8 +29,10 @@ public class LibraryManager {
   private final Map<Library, Set<Library>> myReverseDependencies = new LinkedHashMap<>();
   private final Set<Library> myLoadingLibraries = new HashSet<>();
   private final Set<Library> myFailedLibraries = new HashSet<>();
-  private final MultiClassLoader<Library> myClassLoader = new MultiClassLoader<>(ArendExtension.class.getClassLoader());
-  private final SimpleModuleScopeProvider myExtensionModuleScopeProvider = new SimpleModuleScopeProvider();
+  private MultiClassLoader<Library> myExternalClassLoader = new MultiClassLoader<>(ArendExtension.class.getClassLoader());
+  private MultiClassLoader<Library> myInternalClassLoader = new MultiClassLoader<>(myExternalClassLoader);
+  private final SimpleModuleScopeProvider myExternalExtensionModuleScopeProvider = new SimpleModuleScopeProvider();
+  private final SimpleModuleScopeProvider myInternalExtensionModuleScopeProvider = new SimpleModuleScopeProvider();
 
   /**
    * Constructs new {@code LibraryManager}.
@@ -48,12 +50,14 @@ public class LibraryManager {
   }
 
   /**
-   * Gets the module module scope provider containing modules from all language extensions.
+   * Gets the module module scope provider containing modules from language extensions of either external or internal libraries.
+   *
+   * @param external  true if language extensions of external libraries should be returned.
    *
    * @return the extension module scope provider.
    */
-  public @Nonnull SimpleModuleScopeProvider getExtensionModuleScopeProvider() {
-    return myExtensionModuleScopeProvider;
+  public @Nonnull SimpleModuleScopeProvider getExtensionModuleScopeProvider(boolean external) {
+    return external ? myExternalExtensionModuleScopeProvider : myInternalExtensionModuleScopeProvider;
   }
 
   /**
@@ -72,7 +76,11 @@ public class LibraryManager {
         Library lib = getRegisteredLibrary(Prelude.LIBRARY_NAME);
         return lib == null ? null : lib.getModuleScopeProvider().forModule(modulePath);
       }
-      Scope scope = myExtensionModuleScopeProvider.forModule(modulePath);
+      Scope scope = myExternalExtensionModuleScopeProvider.forModule(modulePath);
+      if (scope != null) {
+        return scope;
+      }
+      scope = myInternalExtensionModuleScopeProvider.forModule(modulePath);
       if (scope != null) {
         return scope;
       }
@@ -105,8 +113,8 @@ public class LibraryManager {
     return myLibraryErrorReporter;
   }
 
-  public MultiClassLoader<Library> getClassLoader() {
-    return myClassLoader;
+  public MultiClassLoader<Library> getClassLoader(boolean external) {
+    return external ? myExternalClassLoader : myInternalClassLoader;
   }
 
   /**
@@ -267,7 +275,7 @@ public class LibraryManager {
    * @param library the library to unload.
    */
   public void unloadLibrary(Library library) {
-    myClassLoader.removeDelegate(library);
+    getClassLoader(library.isExternal()).removeDelegate(library);
     myFailedLibraries.remove(library);
     if (!myLoadingLibraries.isEmpty()) {
       myLibraryErrorReporter.report(LibraryError.unloadDuringLoading(myLoadingLibraries.stream().map(Library::getName)));
@@ -292,5 +300,60 @@ public class LibraryManager {
     }
 
     myReverseDependencies.keySet().removeIf(Library::unload);
+  }
+
+  private void reloadLibraries(List<Library> libraries, TypecheckingOrderingListener typechecking, boolean reloadExternal) {
+    if (!myLoadingLibraries.isEmpty()) {
+      myLibraryErrorReporter.report(LibraryError.unloadDuringLoading(myLoadingLibraries.stream().map(Library::getName)));
+    }
+    if (libraries.isEmpty()) {
+      return;
+    }
+
+    for (Library library : libraries) {
+      library.unload();
+    }
+
+    if (reloadExternal) {
+      myExternalClassLoader = new MultiClassLoader<>(ArendExtension.class.getClassLoader());
+      myExternalExtensionModuleScopeProvider.clear();
+    }
+    myInternalClassLoader = new MultiClassLoader<>(myExternalClassLoader);
+    myInternalExtensionModuleScopeProvider.clear();
+    for (Library library : libraries) {
+      loadLibrary(library, typechecking);
+    }
+  }
+
+  /**
+   * Reloads internal libraries.
+   *
+   * @param typechecking  a typechecker for language extensions.
+   */
+  public void reloadInternalLibraries(TypecheckingOrderingListener typechecking) {
+    List<Library> libraries = new ArrayList<>();
+    Iterator<Library> it = myReverseDependencies.keySet().iterator();
+    while (it.hasNext()) {
+      Library library = it.next();
+      if (!library.isExternal()) {
+        libraries.add(library);
+        it.remove();
+        myFailedLibraries.remove(library);
+      }
+    }
+
+    reloadLibraries(libraries, typechecking, false);
+  }
+
+  /**
+   * Reloads all libraries.
+   *
+   * @param typechecking  a typechecker for language extensions.
+   */
+  public void reload(TypecheckingOrderingListener typechecking) {
+    List<Library> libraries = new ArrayList<>(myReverseDependencies.keySet());
+    myFailedLibraries.clear();
+    myReverseDependencies.clear();
+    reloadLibraries(libraries, typechecking, true);
   }
 }

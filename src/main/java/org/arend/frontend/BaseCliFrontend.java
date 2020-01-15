@@ -244,12 +244,12 @@ public abstract class BaseCliFrontend {
         continue;
       }
 
-      if (!library.needsTypechecking()) {
+      Collection<? extends ModulePath> modules = library.getUpdatedModules();
+      if (modules.isEmpty()) {
         continue;
       }
 
       System.out.println("--- Typechecking " + library.getName() + " ---");
-      Collection<? extends ModulePath> modules = library.getUpdatedModules();
       long time = System.currentTimeMillis();
       typechecking.typecheckLibrary(library);
       time = System.currentTimeMillis() - time;

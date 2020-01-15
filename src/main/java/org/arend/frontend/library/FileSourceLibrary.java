@@ -82,16 +82,6 @@ public class FileSourceLibrary extends UnmodifiableSourceLibrary {
   }
 
   @Override
-  public boolean supportsTypechecking() {
-    return mySourceBasePath != null;
-  }
-
-  @Override
-  public boolean needsTypechecking() {
-    return supportsTypechecking() && super.needsTypechecking();
-  }
-
-  @Override
   public boolean supportsPersisting() {
     return myBinaryBasePath != null;
   }

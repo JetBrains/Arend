@@ -8,6 +8,7 @@ import org.arend.extImpl.ConcreteFactoryImpl;
 import org.arend.extImpl.DefinitionContributorImpl;
 import org.arend.extImpl.DefinitionProviderImpl;
 import org.arend.library.classLoader.FileClassLoaderDelegate;
+import org.arend.library.classLoader.MultiClassLoader;
 import org.arend.library.error.LibraryError;
 import org.arend.module.error.ExceptionError;
 import org.arend.naming.reference.converter.IdReferableConverter;
@@ -174,15 +175,16 @@ public abstract class SourceLibrary extends BaseLibrary {
       }
     }
 
+    MultiClassLoader<Library> classLoader = libraryManager.getClassLoader(isExternal());
     if (header.extBasePath != null && header.extMainClass != null) {
-      libraryManager.getClassLoader().addDelegate(this, new FileClassLoaderDelegate(header.extBasePath));
+      classLoader.addDelegate(this, new FileClassLoaderDelegate(header.extBasePath));
     }
 
     Map<String, ArendExtension> dependenciesExtensions = new LinkedHashMap<>();
     for (LibraryDependency dependency : header.dependencies) {
       Library loadedDependency = libraryManager.loadDependency(this, dependency.name, typechecking);
       if (loadedDependency == null && !mustBeLoaded()) {
-        libraryManager.getClassLoader().removeDelegate(this);
+        classLoader.removeDelegate(this);
         return false;
       }
 
@@ -200,7 +202,7 @@ public abstract class SourceLibrary extends BaseLibrary {
     try {
       Class<?> extMainClass = null;
       if (header.extBasePath != null && header.extMainClass != null) {
-        extMainClass = libraryManager.getClassLoader().loadClass(header.extMainClass);
+        extMainClass = classLoader.loadClass(header.extMainClass);
         if (!ArendExtension.class.isAssignableFrom(extMainClass)) {
           libraryManager.getLibraryErrorReporter().report(LibraryError.incorrectExtensionClass(getName()));
           extMainClass = null;
@@ -211,7 +213,7 @@ public abstract class SourceLibrary extends BaseLibrary {
         myExtension = (ArendExtension) extMainClass.newInstance();
       }
     } catch (Exception e) {
-      libraryManager.getClassLoader().removeDelegate(this);
+      classLoader.removeDelegate(this);
       libraryManager.getLibraryErrorReporter().report(new ExceptionError(e, "loading of library " + getName()));
     }
     if (myExtension == null && !dependenciesExtensions.isEmpty()) {
@@ -219,7 +221,7 @@ public abstract class SourceLibrary extends BaseLibrary {
     }
 
     if (myExtension != null) {
-      DefinitionContributorImpl contributor = new DefinitionContributorImpl(this, libraryManager.getLibraryErrorReporter(), libraryManager.getExtensionModuleScopeProvider());
+      DefinitionContributorImpl contributor = new DefinitionContributorImpl(this, libraryManager.getLibraryErrorReporter(), libraryManager.getExtensionModuleScopeProvider(isExternal()));
       myExtension.declareDefinitions(contributor);
       contributor.disable();
     }

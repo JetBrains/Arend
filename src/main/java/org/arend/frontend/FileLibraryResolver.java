@@ -114,6 +114,7 @@ public class FileLibraryResolver implements LibraryResolver {
       for (Path libDir : myLibDirs) {
         library = findLibrary(libDir, dependencyName);
         if (library != null) {
+          library.setExternal(true);
           break;
         }
       }

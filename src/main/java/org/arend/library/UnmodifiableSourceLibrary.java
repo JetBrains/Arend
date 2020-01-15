@@ -16,6 +16,7 @@ import java.util.*;
  * Represents a library which cannot be modified after loading.
  */
 public abstract class UnmodifiableSourceLibrary extends SourceLibrary {
+  private boolean myExternal = false;
   private final String myName;
   private final SimpleModuleScopeProvider myModuleScopeProvider = new SimpleModuleScopeProvider();
   private final Map<ModulePath, ChildGroup> myGroups = new HashMap<>();
@@ -113,6 +114,15 @@ public abstract class UnmodifiableSourceLibrary extends SourceLibrary {
     }
     myUpdatedModules.clear();
     return ok;
+  }
+
+  @Override
+  public boolean isExternal() {
+    return myExternal;
+  }
+
+  public void setExternal(boolean isExternal) {
+    myExternal = isExternal;
   }
 
   @Nullable
