@@ -436,8 +436,8 @@ public class PatternTypechecking {
           listSubst(result, exprs, conResult.varSubst);
 
           ConstructorPattern newPattern = sigmaExpr != null
-            ? new ConstructorPattern(conResult.varSubst != null ? new SubstVisitor(conResult.varSubst, LevelSubstitution.EMPTY).visitSigma(sigmaExpr, null) : sigmaExpr, new Patterns(conResult.patterns))
-            : new ConstructorPattern(conResult.varSubst != null ? new SubstVisitor(conResult.varSubst, LevelSubstitution.EMPTY).visitClassCall(classCall, null) : classCall, new Patterns(conResult.patterns));
+            ? new ConstructorPattern(conResult.varSubst != null ? (SigmaExpression) new SubstVisitor(conResult.varSubst, LevelSubstitution.EMPTY).visitSigma(sigmaExpr, null) : sigmaExpr, new Patterns(conResult.patterns))
+            : new ConstructorPattern(conResult.varSubst != null ? (ClassCallExpression) new SubstVisitor(conResult.varSubst, LevelSubstitution.EMPTY).visitClassCall(classCall, null) : classCall, new Patterns(conResult.patterns));
           result.add(newPattern);
           if (conResult.exprs == null) {
             exprs = null;
@@ -710,7 +710,7 @@ public class PatternTypechecking {
       }
 
       if (conResult.varSubst != null) {
-        conCall = new SubstVisitor(conResult.varSubst, LevelSubstitution.EMPTY).visitConCall(conCall, null);
+        conCall = (ConCallExpression) new SubstVisitor(conResult.varSubst, LevelSubstitution.EMPTY).visitConCall(conCall, null);
       }
       result.add(new ConstructorPattern(conCall, new Patterns(conResult.patterns)));
       if (conResult.exprs == null) {

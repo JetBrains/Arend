@@ -62,7 +62,7 @@ public class SigmaExpression extends Expression implements Type, CoreSigmaExpres
 
   @Override
   public SigmaExpression subst(SubstVisitor substVisitor) {
-    return substVisitor.isEmpty() ? this : substVisitor.visitSigma(this, null);
+    return substVisitor.isEmpty() ? this : (SigmaExpression) substVisitor.visitSigma(this, null);
   }
 
   @Override

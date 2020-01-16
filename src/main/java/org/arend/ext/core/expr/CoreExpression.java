@@ -1,6 +1,7 @@
 package org.arend.ext.core.expr;
 
 import org.arend.ext.core.elimtree.CoreBody;
+import org.arend.ext.core.ops.ExpressionMapper;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -10,4 +11,6 @@ public interface CoreExpression extends CoreBody {
 
   @Nonnull CoreExpression getUnderlyingExpression();
   @Nullable CoreExpression getType();
+
+  @Nullable CoreExpression recreate(@Nonnull ExpressionMapper mapper);
 }

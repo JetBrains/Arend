@@ -107,7 +107,7 @@ public class PiExpression extends Expression implements Type, CorePiExpression, 
 
   @Override
   public PiExpression subst(SubstVisitor substVisitor) {
-    return substVisitor.isEmpty() ? this : substVisitor.visitPi(this, null);
+    return substVisitor.isEmpty() ? this : (PiExpression) substVisitor.visitPi(this, null);
   }
 
   @Override

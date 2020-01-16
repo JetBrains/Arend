@@ -22,6 +22,8 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
   private final ExprSubstitution myExprSubstitution;
   private final LevelSubstitution myLevelSubstitution;
 
+  public static class SubstException extends RuntimeException {}
+
   public SubstVisitor(ExprSubstitution exprSubstitution, LevelSubstitution levelSubstitution) {
     myExprSubstitution = exprSubstitution;
     myLevelSubstitution = levelSubstitution;
@@ -54,12 +56,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
   }
 
   @Override
-  public DataCallExpression visitDataCall(DataCallExpression expr, Void params) {
-    return (DataCallExpression) visitDefCall(expr, null);
-  }
-
-  @Override
-  public ConCallExpression visitConCall(ConCallExpression expr, Void params) {
+  public Expression visitConCall(ConCallExpression expr, Void params) {
     List<Expression> dataTypeArgs = new ArrayList<>(expr.getDataTypeArguments().size());
     for (Expression parameter : expr.getDataTypeArguments()) {
       dataTypeArgs.add(parameter.accept(this, null));
@@ -74,7 +71,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
   }
 
   @Override
-  public ClassCallExpression visitClassCall(ClassCallExpression expr, Void params) {
+  public Expression visitClassCall(ClassCallExpression expr, Void params) {
     Map<ClassField, Expression> fieldSet = new HashMap<>();
     ClassCallExpression result = new ClassCallExpression(expr.getDefinition(), expr.getSortArgument().subst(myLevelSubstitution), fieldSet, expr.getSort().subst(myLevelSubstitution), expr.hasUniverses());
     if (expr.getImplementedHere().isEmpty()) {
@@ -134,7 +131,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
   }
 
   @Override
-  public LamExpression visitLam(LamExpression expr, Void params) {
+  public Expression visitLam(LamExpression expr, Void params) {
     SingleDependentLink parameters = DependentLink.Helper.subst(expr.getParameters(), this);
     LamExpression result = new LamExpression(expr.getResultSort().subst(myLevelSubstitution), parameters, expr.getBody().accept(this, null));
     DependentLink.Helper.freeSubsts(expr.getParameters(), myExprSubstitution);
@@ -142,7 +139,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
   }
 
   @Override
-  public PiExpression visitPi(PiExpression expr, Void params) {
+  public Expression visitPi(PiExpression expr, Void params) {
     SingleDependentLink parameters = DependentLink.Helper.subst(expr.getParameters(), this);
     PiExpression result = new PiExpression(expr.getResultSort().subst(myLevelSubstitution), parameters, expr.getCodomain().accept(this, null));
     DependentLink.Helper.freeSubsts(expr.getParameters(), myExprSubstitution);
@@ -150,14 +147,14 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
   }
 
   @Override
-  public SigmaExpression visitSigma(SigmaExpression expr, Void params) {
+  public Expression visitSigma(SigmaExpression expr, Void params) {
     SigmaExpression result = new SigmaExpression(expr.getSort().subst(myLevelSubstitution), DependentLink.Helper.subst(expr.getParameters(), this));
     DependentLink.Helper.freeSubsts(expr.getParameters(), myExprSubstitution);
     return result;
   }
 
   @Override
-  public UniverseExpression visitUniverse(UniverseExpression expr, Void params) {
+  public Expression visitUniverse(UniverseExpression expr, Void params) {
     return myLevelSubstitution.isEmpty() ? expr : new UniverseExpression(expr.getSort().subst(myLevelSubstitution));
   }
 
@@ -167,12 +164,16 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
   }
 
   @Override
-  public TupleExpression visitTuple(TupleExpression expr, Void params) {
+  public Expression visitTuple(TupleExpression expr, Void params) {
     List<Expression> fields = new ArrayList<>(expr.getFields().size());
     for (Expression field : expr.getFields()) {
       fields.add(field.accept(this, null));
     }
-    return new TupleExpression(fields, visitSigma(expr.getSigmaType(), null));
+    Expression arg = visitSigma(expr.getSigmaType(), null);
+    if (!(arg instanceof SigmaExpression)) {
+      throw new SubstException();
+    }
+    return new TupleExpression(fields, (SigmaExpression) arg);
   }
 
   @Override
@@ -182,7 +183,11 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitNew(NewExpression expr, Void params) {
-    return new NewExpression(expr.getRenewExpression() == null ? null : expr.getRenewExpression().accept(this, null), visitClassCall(expr.getClassCall(), null));
+    Expression arg = visitClassCall(expr.getClassCall(), null);
+    if (!(arg instanceof ClassCallExpression)) {
+      throw new SubstException();
+    }
+    return new NewExpression(expr.getRenewExpression() == null ? null : expr.getRenewExpression().accept(this, null), (ClassCallExpression) arg);
   }
 
   @Override
@@ -191,7 +196,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
   }
 
   @Override
-  public LetExpression visitLet(LetExpression letExpression, Void params) {
+  public Expression visitLet(LetExpression letExpression, Void params) {
     List<LetClause> clauses = new ArrayList<>(letExpression.getClauses().size());
     for (LetClause clause : letExpression.getClauses()) {
       LetClause newClause = new LetClause(clause.getName(), clause.getPattern(), clause.getExpression().accept(this, null));
@@ -245,7 +250,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
   }
 
   @Override
-  public IntegerExpression visitInteger(IntegerExpression expr, Void params) {
+  public Expression visitInteger(IntegerExpression expr, Void params) {
     return expr;
   }
 }

@@ -73,7 +73,7 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
 
   @Override
   public DataCallExpression subst(SubstVisitor substVisitor) {
-    return substVisitor.isEmpty() ? this : substVisitor.visitDataCall(this, null);
+    return substVisitor.isEmpty() ? this : (DataCallExpression) substVisitor.visitDataCall(this, null);
   }
 
   @Override

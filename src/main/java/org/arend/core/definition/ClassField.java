@@ -50,7 +50,7 @@ public class ClassField extends Definition implements CoreClassField {
   }
 
   public PiExpression getType(Sort sortArgument) {
-    return sortArgument == Sort.STD ? myType : new SubstVisitor(new ExprSubstitution(), sortArgument.toLevelSubstitution()).visitPi(myType, null);
+    return sortArgument == Sort.STD ? myType : (PiExpression) new SubstVisitor(new ExprSubstitution(), sortArgument.toLevelSubstitution()).visitPi(myType, null);
   }
 
   @Nonnull

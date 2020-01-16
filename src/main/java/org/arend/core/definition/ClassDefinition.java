@@ -231,7 +231,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
 
   public PiExpression getOverriddenType(ClassField field, Sort sortArg) {
     PiExpression type = myOverridden.get(field);
-    return type == null || sortArg.equals(Sort.STD) ? type : new SubstVisitor(new ExprSubstitution(), sortArg.toLevelSubstitution()).visitPi(type, null);
+    return type == null || sortArg.equals(Sort.STD) ? type : (PiExpression) new SubstVisitor(new ExprSubstitution(), sortArg.toLevelSubstitution()).visitPi(type, null);
   }
 
   @Nullable

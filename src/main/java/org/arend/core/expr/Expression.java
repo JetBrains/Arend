@@ -17,6 +17,7 @@ import org.arend.error.IncorrectExpressionException;
 import org.arend.error.doc.Doc;
 import org.arend.error.doc.DocFactory;
 import org.arend.ext.core.expr.CoreExpression;
+import org.arend.ext.core.ops.ExpressionMapper;
 import org.arend.ext.reference.Precedence;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
@@ -26,6 +27,7 @@ import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.util.Decision;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -139,6 +141,17 @@ public abstract class Expression implements ExpectedType, Body, CoreExpression {
   @Override
   public Expression normalize(NormalizeVisitor.Mode mode) {
     return accept(NormalizeVisitor.INSTANCE, mode);
+  }
+
+  @Nullable
+  @Override
+  public CoreExpression recreate(@Nonnull ExpressionMapper mapper) {
+    try {
+      // TODO[lang_ext]: Check that the result is correct
+      return accept(new RecreateExpressionVisitor(mapper), null);
+    } catch (SubstVisitor.SubstException e) {
+      return null;
+    }
   }
 
   public static boolean compare(Expression expr1, Expression expr2, ExpectedType type, Equations.CMP cmp) {
