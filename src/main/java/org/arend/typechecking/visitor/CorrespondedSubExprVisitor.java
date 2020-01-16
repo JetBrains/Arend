@@ -107,8 +107,11 @@ public class CorrespondedSubExprVisitor implements ConcreteExpressionVisitor<Exp
       Expression accepted = exprLetClause.getTerm().accept(this, coreLetClause.getExpression());
       if (accepted != null) return accepted;
 
-      accepted = exprLetClause.getResultType().accept(this, coreLetClause.getTypeExpr());
-      if (accepted != null) return accepted;
+      Concrete.Expression resultType = exprLetClause.getResultType();
+      if (resultType != null) {
+        accepted = resultType.accept(this, coreLetClause.getTypeExpr());
+        if (accepted != null) return accepted;
+      }
     }
     return expr.getExpression().accept(this, coreLetExpr.getExpression());
   }
@@ -137,9 +140,16 @@ public class CorrespondedSubExprVisitor implements ConcreteExpressionVisitor<Exp
   public Expression visitLam(Concrete.LamExpression expr, Expression coreExpr) {
     if (matchesSubExpr(expr)) return coreExpr;
     Expression body = coreExpr;
-    for (int i = 0; i < expr.getParameters().size(); i++) {
-      if (!(body instanceof LamExpression)) return null;
-      else body = body.cast(LamExpression.class).getBody();
+    for (Concrete.Parameter parameter : expr.getParameters()) {
+      if (body instanceof LamExpression) {
+        LamExpression coreLamExpr = (LamExpression) body;
+        Concrete.Expression type = parameter.getType();
+        if (type != null) {
+          Expression ty = type.accept(this, coreLamExpr.getParameters().getTypeExpr());
+          if (ty != null) return ty;
+        }
+        body = coreLamExpr.getBody();
+      } else return null;
     }
     return expr.getBody().accept(this, body);
   }
