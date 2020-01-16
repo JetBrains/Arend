@@ -136,9 +136,12 @@ public class CorrespondedSubExprVisitor implements ConcreteExpressionVisitor<Exp
   @Override
   public Expression visitLam(Concrete.LamExpression expr, Expression coreExpr) {
     if (matchesSubExpr(expr)) return coreExpr;
-    LamExpression coreLamExpr = coreExpr.cast(LamExpression.class);
-    if (coreLamExpr == null) return null;
-    return expr.getBody().accept(this, coreLamExpr.getBody());
+    Expression body = coreExpr;
+    for (int i = 0; i < expr.getParameters().size(); i++) {
+      if (!(body instanceof LamExpression)) return null;
+      else body = body.cast(LamExpression.class).getBody();
+    }
+    return expr.getBody().accept(this, body);
   }
 
   protected Expression visitParameter(Concrete.Parameter parameter, DependentLink link) {

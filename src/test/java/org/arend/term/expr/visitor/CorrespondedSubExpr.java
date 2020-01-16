@@ -16,7 +16,19 @@ import static org.junit.Assert.assertNotNull;
 
 public class CorrespondedSubExpr extends TypeCheckingTestCase {
   @Test
-  public void test() {
+  public void testMultiParamLam() {
+    Concrete.LamExpression xyx = (Concrete.LamExpression) resolveNamesExpr("\\lam x y => x");
+    Concrete.UniverseExpression ty = cUniverseStd(0);
+    Concrete.TypeParameter t = cTypeArg(ty);
+    Expression pi = typeCheckExpr(cPi(Arrays.asList(t, t), ty), null).expression;
+    Expression accept = xyx.accept(new CorrespondedSubExprVisitor(xyx.getBody()), typeCheckExpr(xyx, pi).expression);
+    ReferenceExpression referenceExpression = accept.cast(ReferenceExpression.class);
+    assertNotNull(referenceExpression);
+    assertEquals(referenceExpression.getBinding().getName(), "x");
+  }
+
+  @Test
+  public void testSimpleLam() {
     Concrete.LamExpression xx = (Concrete.LamExpression) resolveNamesExpr("\\lam x => x");
     Concrete.UniverseExpression ty = cUniverseStd(0);
     Expression pi = typeCheckExpr(cPi(Collections.singletonList(cTypeArg(ty)), ty), null).expression;
