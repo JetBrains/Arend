@@ -7,20 +7,14 @@ import org.arend.typechecking.TypeCheckingTestCase;
 import org.arend.typechecking.visitor.CorrespondedSubExprVisitor;
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.Collections;
-
-import static org.arend.term.concrete.ConcreteExpressionFactory.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 public class CorrespondedSubExpr extends TypeCheckingTestCase {
   @Test
-  public void testMultiParamLam() {
+  public void multiParamLam() {
     Concrete.LamExpression xyx = (Concrete.LamExpression) resolveNamesExpr("\\lam x y => x");
-    Concrete.UniverseExpression ty = cUniverseStd(0);
-    Concrete.TypeParameter t = cTypeArg(ty);
-    Expression pi = typeCheckExpr(cPi(Arrays.asList(t, t), ty), null).expression;
+    Expression pi = typeCheckExpr(resolveNamesExpr("\\Pi (x y : \\Type) -> \\Type"), null).expression;
     Expression accept = xyx.accept(new CorrespondedSubExprVisitor(xyx.getBody()), typeCheckExpr(xyx, pi).expression);
     ReferenceExpression referenceExpression = accept.cast(ReferenceExpression.class);
     assertNotNull(referenceExpression);
@@ -28,13 +22,37 @@ public class CorrespondedSubExpr extends TypeCheckingTestCase {
   }
 
   @Test
-  public void testSimpleLam() {
+  public void simpleLam() {
     Concrete.LamExpression xx = (Concrete.LamExpression) resolveNamesExpr("\\lam x => x");
-    Concrete.UniverseExpression ty = cUniverseStd(0);
-    Expression pi = typeCheckExpr(cPi(Collections.singletonList(cTypeArg(ty)), ty), null).expression;
+    Expression pi = typeCheckExpr(resolveNamesExpr("\\Pi (x : \\Type) -> \\Type"), null).expression;
     Expression accept = xx.accept(new CorrespondedSubExprVisitor(xx.getBody()), typeCheckExpr(xx, pi).expression);
     ReferenceExpression referenceExpression = accept.cast(ReferenceExpression.class);
     assertNotNull(referenceExpression);
     assertEquals(referenceExpression.getBinding().getName(), "x");
+  }
+
+  @Test
+  public void simplePi() {
+    Concrete.PiExpression xyx = (Concrete.PiExpression) resolveNamesExpr("\\Pi (A : \\Type) (x y : A) -> A");
+    Expression pi = typeCheckExpr(xyx, null).expression;
+    Expression accept = xyx.accept(new CorrespondedSubExprVisitor(xyx.getParameters().get(1).getType()), pi);
+    ReferenceExpression referenceExpression = accept.cast(ReferenceExpression.class);
+    assertNotNull(referenceExpression);
+    assertEquals(referenceExpression.getBinding().getName(), "A");
+  }
+
+  @Test
+  public void complexPi() {
+    Concrete.PiExpression xyx = (Concrete.PiExpression) resolveNamesExpr("\\Pi (A B : \\Type) (x y : A) -> B");
+    Expression pi = typeCheckExpr(xyx, null).expression;
+    Expression accept = xyx.accept(new CorrespondedSubExprVisitor(xyx.getParameters().get(1).getType()), pi);
+    ReferenceExpression referenceExpression = accept.cast(ReferenceExpression.class);
+    assertNotNull(referenceExpression);
+    assertEquals(referenceExpression.getBinding().getName(), "A");
+  }
+
+  @Test
+  public void telescopeSigma() {
+
   }
 }
