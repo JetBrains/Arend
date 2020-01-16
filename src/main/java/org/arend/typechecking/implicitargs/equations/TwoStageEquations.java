@@ -669,8 +669,8 @@ public class TwoStageEquations implements Equations {
       if (lower.isInstance(ClassCallExpression.class) && upper.isInstance(ClassCallExpression.class)) {
         if (!CompareVisitor.compare(DummyEquations.getInstance(), equation.cmp == CMP.EQ ? CMP.EQ : CMP.LE, lower, upper, ExpectedType.OMEGA, equation.sourceNode)) {
           InferenceReferenceExpression infRefExpr = lower.cast(InferenceReferenceExpression.class);
-          if (infRefExpr != null) {
-            myVisitor.getErrorReporter().report(infRefExpr.getOriginalVariable().getErrorInfer(infRefExpr.getSubstExpression(), upper));
+          if (infRefExpr != null && infRefExpr.getOriginalVariable() instanceof InferenceVariable) {
+            myVisitor.getErrorReporter().report(((InferenceVariable) infRefExpr.getOriginalVariable()).getErrorInfer(infRefExpr.getSubstExpression(), upper));
           } else {
             myVisitor.getErrorReporter().report(new SolveEquationError(lower, upper, equation.sourceNode));
           }

@@ -8,7 +8,6 @@ import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.SubstVisitor;
-import org.arend.error.ErrorReporter;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CoreSigmaExpression;
 import org.arend.util.Decision;
@@ -66,8 +65,8 @@ public class SigmaExpression extends Expression implements Type, CoreSigmaExpres
   }
 
   @Override
-  public SigmaExpression strip(ErrorReporter errorReporter) {
-    return new StripVisitor(errorReporter).visitSigma(this, null);
+  public SigmaExpression strip(StripVisitor visitor) {
+    return visitor.visitSigma(this, null);
   }
 
   @Override

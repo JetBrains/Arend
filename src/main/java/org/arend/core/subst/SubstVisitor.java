@@ -118,7 +118,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
       return result;
     }
     //noinspection SuspiciousMethodCalls
-    expr.getVariable().getBounds().removeAll(myExprSubstitution.getKeys());
+    expr.getVariable().getBounds().removeAll(myExprSubstitution.getKeys()); // TODO[lang_ext]
     return expr;
   }
 

@@ -12,7 +12,6 @@ import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.SubstVisitor;
-import org.arend.error.ErrorReporter;
 import org.arend.ext.core.expr.CoreAbsExpression;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CorePiExpression;
@@ -111,8 +110,8 @@ public class PiExpression extends Expression implements Type, CorePiExpression, 
   }
 
   @Override
-  public PiExpression strip(ErrorReporter errorReporter) {
-    return new StripVisitor(errorReporter).visitPi(this, null);
+  public PiExpression strip(StripVisitor visitor) {
+    return visitor.visitPi(this, null);
   }
 
   @Override

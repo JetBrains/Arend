@@ -15,7 +15,6 @@ import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.SubstVisitor;
-import org.arend.error.ErrorReporter;
 import org.arend.ext.core.definition.CoreClassField;
 import org.arend.ext.core.expr.CoreClassCallExpression;
 import org.arend.ext.core.expr.CoreExpression;
@@ -218,8 +217,8 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
   }
 
   @Override
-  public ClassCallExpression strip(ErrorReporter errorReporter) {
-    return new StripVisitor(errorReporter).visitClassCall(this, null);
+  public ClassCallExpression strip(StripVisitor visitor) {
+    return visitor.visitClassCall(this, null);
   }
 
   @Override

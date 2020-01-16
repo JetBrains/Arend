@@ -1,7 +1,7 @@
 package org.arend.term.concrete;
 
+import org.arend.core.context.binding.inference.BaseInferenceVariable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
-import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.error.GeneralError;
 import org.arend.error.doc.Doc;
 import org.arend.error.doc.DocFactory;
@@ -237,7 +237,7 @@ public final class Concrete {
     return new LamExpression(data, Collections.singletonList(new NameParameter(data, true, firstArg)), AppExpression.make(data, new ReferenceExpression(data, function), arguments));
   }
 
-  public static class Argument {
+  public static class Argument implements ConcreteArgument {
     public Expression expression;
     private boolean myExplicit;
 
@@ -246,11 +246,13 @@ public final class Concrete {
       myExplicit = explicit;
     }
 
+    @Override
     @Nonnull
     public Expression getExpression() {
       return expression;
     }
 
+    @Override
     public boolean isExplicit() {
       return myExplicit;
     }
@@ -469,15 +471,15 @@ public final class Concrete {
   }
 
   public static class InferenceReferenceExpression extends Expression {
-    private final InferenceVariable myVariable;
+    private final BaseInferenceVariable myVariable;
 
-    public InferenceReferenceExpression(Object data, InferenceVariable variable) {
+    public InferenceReferenceExpression(Object data, BaseInferenceVariable variable) {
       super(data);
       myVariable = variable;
     }
 
     @Nonnull
-    public InferenceVariable getVariable() {
+    public BaseInferenceVariable getVariable() {
       return myVariable;
     }
 

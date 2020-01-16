@@ -6,10 +6,7 @@ import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.context.binding.TypedEvaluatingBinding;
-import org.arend.core.context.binding.inference.InferenceLevelVariable;
-import org.arend.core.context.binding.inference.InferenceVariable;
-import org.arend.core.context.binding.inference.LambdaInferenceVariable;
-import org.arend.core.context.binding.inference.TypeClassInferenceVariable;
+import org.arend.core.context.binding.inference.*;
 import org.arend.core.context.param.*;
 import org.arend.core.definition.*;
 import org.arend.core.elimtree.ElimTree;
@@ -22,17 +19,23 @@ import org.arend.core.expr.type.TypeExpression;
 import org.arend.core.expr.visitor.CompareVisitor;
 import org.arend.core.expr.visitor.FieldsCollector;
 import org.arend.core.expr.visitor.NormalizeVisitor;
+import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
-import org.arend.error.DummyErrorReporter;
-import org.arend.error.ErrorReporter;
-import org.arend.error.GeneralError;
-import org.arend.error.IncorrectExpressionException;
+import org.arend.error.*;
 import org.arend.error.doc.DocFactory;
+import org.arend.ext.concrete.ConcreteExpression;
+import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
+import org.arend.ext.core.expr.CoreExpression;
+import org.arend.ext.reference.ArendRef;
+import org.arend.ext.typechecking.CheckedExpression;
+import org.arend.ext.typechecking.MetaDefinition;
+import org.arend.ext.typechecking.TypecheckingSession;
+import org.arend.extImpl.ContextDataImpl;
 import org.arend.naming.reference.*;
 import org.arend.naming.renamer.Renamer;
 import org.arend.prelude.Prelude;
@@ -63,13 +66,14 @@ import org.arend.typechecking.result.TResult;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.util.Pair;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.util.*;
 
 import static org.arend.typechecking.error.local.inference.ArgInferenceError.expression;
 
-public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType, TypecheckingResult>, ConcreteLevelExpressionVisitor<LevelVariable, Level> {
+public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType, TypecheckingResult>, ConcreteLevelExpressionVisitor<LevelVariable, Level>, TypecheckingSession {
   private Set<Binding> myFreeBindings;
   private Definition.TypeCheckingStatus myStatus = Definition.TypeCheckingStatus.NO_ERRORS;
   private final Equations myEquations;
@@ -150,6 +154,15 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     this.context = context;
   }
 
+  @Override
+  public void setBindings(@Nonnull Map<ArendRef, CoreBinding> context) {
+    if (this.context != null) {
+      throw new IllegalStateException("The context is already set");
+    }
+    //noinspection unchecked
+    this.context = (Map) context;
+  }
+
   public Set<? extends Binding> getFreeBindings() {
     return myFreeBindings;
   }
@@ -184,7 +197,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     myListener = listener;
   }
 
-  private TypecheckingResult checkResult(ExpectedType expectedType, TypecheckingResult result, Concrete.Expression expr) {
+  public TypecheckingResult checkResult(ExpectedType expectedType, TypecheckingResult result, Concrete.Expression expr) {
     if (result == null || expectedType == null || expectedType == ExpectedType.OMEGA && result.type instanceof UniverseExpression || result.type == expectedType) {
       return result;
     }
@@ -262,6 +275,30 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     return result == null ? null : checkResult(expectedType, result.toResult(this), expr);
   }
 
+  @Nullable
+  @Override
+  public TypecheckingResult typecheck(@Nonnull ConcreteExpression expression) {
+    if (!(expression instanceof Concrete.Expression)) {
+      throw new IllegalArgumentException();
+    }
+    return checkExpr((Concrete.Expression) expression, null);
+  }
+
+  @Nullable
+  @Override
+  public TypecheckingResult check(@Nonnull CoreExpression expression) {
+    if (!(expression instanceof Expression)) {
+      throw new IllegalArgumentException();
+    }
+    // TODO[lang_ext]: Check correctness of the expression
+    Expression expr = (Expression) expression;
+    Expression type = expr.getType();
+    if (type == null) {
+      return null;
+    }
+    return new TypecheckingResult(expr, type);
+  }
+
   public TypecheckingResult checkExpr(Concrete.Expression expr, ExpectedType expectedType) {
     if (expr == null) {
       assert false;
@@ -302,10 +339,12 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
 
     ErrorReporterCounter counter = new ErrorReporterCounter(GeneralError.Level.ERROR, errorReporter);
+    StripVisitor stripVisitor = new StripVisitor(counter, this);
     if (result.expression != null) {
-      result.expression = result.expression.strip(counter);
+      result.expression = result.expression.accept(stripVisitor, null);
     }
-    result.type = result.type.strip(counter.getErrorsNumber() == 0 ? errorReporter : DummyErrorReporter.INSTANCE);
+    stripVisitor.setErrorReporter(counter.getErrorsNumber() == 0 ? errorReporter : DummyErrorReporter.INSTANCE);
+    result.type = result.type.accept(stripVisitor, null);
     return result;
   }
 
@@ -366,7 +405,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   private Type finalCheckType(Concrete.Expression expr, ExpectedType expectedType) {
     Type result = checkType(expr, expectedType);
     if (result == null) return null;
-    return result.subst(new SubstVisitor(new ExprSubstitution(), myEquations.solve(expr))).strip(errorReporter);
+    return result.subst(new SubstVisitor(new ExprSubstitution(), myEquations.solve(expr))).strip(new StripVisitor(errorReporter, this));
   }
 
   public TypecheckingResult checkArgument(Concrete.Expression expr, ExpectedType expectedType, TResult result) {
@@ -527,8 +566,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
             ClassCallExpression classCall = type.cast(ClassCallExpression.class);
             if (classCall == null) {
               if (!type.isInstance(ErrorExpression.class)) {
-                InferenceVariable var = type instanceof InferenceReferenceExpression ? ((InferenceReferenceExpression) type).getVariable() : null;
-                errorReporter.report(var == null ? new TypeMismatchError(DocFactory.text("a class"), type, pair.proj2.implementation) : var.getErrorInfer());
+                BaseInferenceVariable var = type instanceof InferenceReferenceExpression ? ((InferenceReferenceExpression) type).getVariable() : null;
+                errorReporter.report(var instanceof InferenceVariable ? ((InferenceVariable) var).getErrorInfer() : new TypeMismatchError(DocFactory.text("a class"), type, pair.proj2.implementation));
               }
             } else {
               if (!classCall.getDefinition().isSubClassOf((ClassDefinition) pair.proj1)) {
@@ -878,6 +917,10 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
   @Override
   public TypecheckingResult visitReference(Concrete.ReferenceExpression expr, ExpectedType expectedType) {
+    if (expr.getReferent() instanceof MetaReferable) {
+      return checkMeta(expr, Collections.emptyList(), expectedType);
+    }
+
     TResult result = visitReference(expr);
     if (result == null || !checkPath(result, expr)) {
       return null;
@@ -894,7 +937,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
   @Override
   public TypecheckingResult visitInferenceReference(Concrete.InferenceReferenceExpression expr, ExpectedType params) {
-    return new TypecheckingResult(new InferenceReferenceExpression(expr.getVariable(), getEquations()), expr.getVariable().getType());
+    return new TypecheckingResult(new InferenceReferenceExpression(expr.getVariable()), expr.getVariable().getType());
   }
 
   @Override
@@ -1620,8 +1663,37 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     return true;
   }
 
+  private TypecheckingResult checkMeta(Concrete.ReferenceExpression refExpr, List<Concrete.Argument> arguments, ExpectedType expectedType) {
+    MetaDefinition meta = ((MetaReferable) refExpr.getReferent()).getDefinition();
+    CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
+    errorReporter = new CompositeErrorReporter(errorReporter, countingErrorReporter);
+    CheckedExpression result = meta.invoke(this, new ContextDataImpl(context, refExpr.getPLevel(), refExpr.getHLevel(), arguments, null));
+    errorReporter = ((CompositeErrorReporter) errorReporter).getErrorReporters().get(0);
+    if (result instanceof TypecheckingResult) {
+      return checkResult(expectedType, (TypecheckingResult) result, refExpr);
+    }
+    if (result != null) {
+      throw new IllegalStateException("CheckedExpression must be TypecheckingResult");
+    }
+    CoreExpression newExpectedType = meta.getExpectedType();
+    if (!(newExpectedType instanceof Expression)) {
+      if (countingErrorReporter.getErrorsNumber() == 0) {
+        errorReporter.report(new TypecheckingError("Meta function '" + refExpr.getReferent().getRefName() + "' failed", refExpr));
+      }
+      return null;
+    }
+
+    Expression type = (Expression) newExpectedType;
+    TypecheckingResult result1 = new TypecheckingResult(new InferenceReferenceExpression(new MetaInferenceVariable(type, meta, refExpr, getAllBindings())), type);
+    return expectedType == type ? result1 : checkResult(expectedType, result1, refExpr);
+  }
+
   @Override
   public TypecheckingResult visitApp(Concrete.AppExpression expr, ExpectedType expectedType) {
+    if (expr.getFunction() instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) expr.getFunction()).getReferent() instanceof MetaReferable) {
+      return checkMeta((Concrete.ReferenceExpression) expr.getFunction(), expr.getArguments(), expectedType);
+    }
+
     TResult result = myArgsInference.infer(expr, expectedType);
     if (result == null || !checkPath(result, expr)) {
       return null;

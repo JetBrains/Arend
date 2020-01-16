@@ -1,5 +1,6 @@
 package org.arend.core.expr;
 
+import org.arend.core.context.binding.inference.BaseInferenceVariable;
 import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.definition.ClassField;
 import org.arend.core.expr.visitor.ExpressionVisitor;
@@ -13,7 +14,7 @@ import org.arend.util.Decision;
 import javax.annotation.Nonnull;
 
 public class InferenceReferenceExpression extends Expression implements CoreInferenceReferenceExpression {
-  private final InferenceVariable myVar;
+  private final BaseInferenceVariable myVar;
   private Expression mySubstExpression;
 
   public InferenceReferenceExpression(InferenceVariable binding, Equations equations) {
@@ -44,12 +45,16 @@ public class InferenceReferenceExpression extends Expression implements CoreInfe
     mySubstExpression = substExpression;
   }
 
+  public InferenceReferenceExpression(BaseInferenceVariable binding) {
+    myVar = binding;
+  }
+
   @Override
-  public InferenceVariable getVariable() {
+  public BaseInferenceVariable getVariable() {
     return mySubstExpression == null ? myVar : null;
   }
 
-  public InferenceVariable getOriginalVariable() {
+  public BaseInferenceVariable getOriginalVariable() {
     return myVar;
   }
 

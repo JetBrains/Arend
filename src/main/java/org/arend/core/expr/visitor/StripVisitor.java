@@ -1,6 +1,8 @@
 package org.arend.core.expr.visitor;
 
 import org.arend.core.context.binding.EvaluatingBinding;
+import org.arend.core.context.binding.inference.InferenceVariable;
+import org.arend.core.context.binding.inference.MetaInferenceVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.elimtree.BranchElimTree;
@@ -8,17 +10,29 @@ import org.arend.core.elimtree.ElimTree;
 import org.arend.core.elimtree.LeafElimTree;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
+import org.arend.error.CompositeErrorReporter;
+import org.arend.error.CountingErrorReporter;
 import org.arend.error.ErrorReporter;
 import org.arend.ext.core.elimtree.CoreBranchKey;
+import org.arend.ext.typechecking.CheckedExpression;
 import org.arend.typechecking.error.local.LocalError;
+import org.arend.typechecking.error.local.TypecheckingError;
+import org.arend.typechecking.result.TypecheckingResult;
+import org.arend.typechecking.visitor.CheckTypeVisitor;
 
 import java.util.*;
 
 public class StripVisitor implements ExpressionVisitor<Void, Expression> {
   private final Set<EvaluatingBinding> myBoundEvaluatingBindings = new HashSet<>();
-  private final ErrorReporter myErrorReporter;
+  private ErrorReporter myErrorReporter;
+  private final CheckTypeVisitor myCheckTypeVisitor;
 
-  public StripVisitor(ErrorReporter errorReporter) {
+  public StripVisitor(ErrorReporter errorReporter, CheckTypeVisitor checkTypeVisitor) {
+    myErrorReporter = errorReporter;
+    myCheckTypeVisitor = checkTypeVisitor;
+  }
+
+  public void setErrorReporter(ErrorReporter errorReporter) {
     myErrorReporter = errorReporter;
   }
 
@@ -89,11 +103,33 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
   @Override
   public Expression visitInferenceReference(InferenceReferenceExpression expr, Void params) {
     if (expr.getSubstExpression() == null) {
-      LocalError error = expr.getVariable().getErrorInfer();
-      myErrorReporter.report(error);
-      Expression result = new ErrorExpression(null, error);
-      expr.setSubstExpression(result);
-      return result;
+      if (expr.getVariable() instanceof InferenceVariable) {
+        LocalError error = ((InferenceVariable) expr.getVariable()).getErrorInfer();
+        myErrorReporter.report(error);
+        Expression result = new ErrorExpression(null, error);
+        expr.setSubstExpression(result);
+        return result;
+      } else if (expr.getVariable() instanceof MetaInferenceVariable) {
+        MetaInferenceVariable variable = (MetaInferenceVariable) expr.getVariable();
+        Expression type = variable.getType().accept(new StripVisitor(myErrorReporter, myCheckTypeVisitor), null);
+        variable.setType(type);
+        CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
+        CheckTypeVisitor checkTypeVisitor = new CheckTypeVisitor(myCheckTypeVisitor.getTypecheckingState(), null, new CompositeErrorReporter(myCheckTypeVisitor.getErrorReporter(), countingErrorReporter), myCheckTypeVisitor.getInstancePool());
+        CheckedExpression result = variable.getDefinition().invokeLater(checkTypeVisitor);
+        if (result instanceof TypecheckingResult) {
+          result = checkTypeVisitor.checkResult(type, (TypecheckingResult) result, variable.getExpression());
+          return result == null ? new ErrorExpression(null, null) : ((TypecheckingResult) result).expression;
+        }
+        if (result != null) {
+          throw new IllegalStateException("CheckedExpression must be TypecheckingResult");
+        }
+        if (countingErrorReporter.getErrorsNumber() == 0) {
+          myErrorReporter.report(new TypecheckingError("Meta function '" + variable.getName() + "' failed", variable.getExpression()));
+        }
+        return new ErrorExpression(null, null);
+      } else {
+        throw new IllegalStateException("Unknown BaseInferenceVariable: " + expr.getVariable().getClass());
+      }
     } else {
       return expr.getSubstExpression().accept(this, null);
     }
@@ -107,7 +143,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
   private void visitParameters(DependentLink link) {
     for (; link.hasNext(); link = link.getNext()) {
       DependentLink link1 = link.getNextTyped(null);
-      link1.setType(link1.getType().strip(myErrorReporter));
+      link1.setType(link1.getType().strip(this));
     }
   }
 

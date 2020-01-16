@@ -1,6 +1,7 @@
 package org.arend.core.expr;
 
 import org.arend.core.context.binding.Variable;
+import org.arend.core.context.binding.inference.BaseInferenceVariable;
 import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
@@ -11,7 +12,6 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
-import org.arend.error.ErrorReporter;
 import org.arend.error.GeneralError;
 import org.arend.error.IncorrectExpressionException;
 import org.arend.error.doc.Doc;
@@ -110,10 +110,6 @@ public abstract class Expression implements ExpectedType, Body, CoreExpression {
     return accept(new FindBindingVisitor(bindings), null);
   }
 
-  public Expression strip(ErrorReporter errorReporter) {
-    return accept(new StripVisitor(errorReporter), null);
-  }
-
   public Expression copy() {
     return accept(new SubstVisitor(new ExprSubstitution(), LevelSubstitution.EMPTY), null);
   }
@@ -147,7 +143,6 @@ public abstract class Expression implements ExpectedType, Body, CoreExpression {
   @Override
   public CoreExpression recreate(@Nonnull ExpressionMapper mapper) {
     try {
-      // TODO[lang_ext]: Check that the result is correct
       return accept(new RecreateExpressionVisitor(mapper), null);
     } catch (SubstVisitor.SubstException e) {
       return null;
@@ -292,7 +287,7 @@ public abstract class Expression implements ExpectedType, Body, CoreExpression {
   public InferenceVariable getStuckInferenceVariable() {
     Expression stuck = getCanonicalStuckExpression();
     InferenceReferenceExpression infRefExpr = stuck == null ? null : stuck.cast(InferenceReferenceExpression.class);
-    return infRefExpr == null ? null : infRefExpr.getVariable();
+    return infRefExpr != null && infRefExpr.getVariable() instanceof InferenceVariable ? (InferenceVariable) infRefExpr.getVariable() : null;
   }
 
   public InferenceVariable getInferenceVariable() {
@@ -302,9 +297,9 @@ public abstract class Expression implements ExpectedType, Body, CoreExpression {
       if (expr == null) {
         return null;
       }
-      InferenceVariable var = ((InferenceReferenceExpression) expr).getVariable();
-      if (var != null) {
-        return var;
+      BaseInferenceVariable var = ((InferenceReferenceExpression) expr).getVariable();
+      if (var instanceof InferenceVariable) {
+        return (InferenceVariable) var;
       }
       expr = ((InferenceReferenceExpression) expr).getSubstExpression();
     }

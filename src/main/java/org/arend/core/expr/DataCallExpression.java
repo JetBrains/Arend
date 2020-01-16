@@ -10,7 +10,6 @@ import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.pattern.Pattern;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.SubstVisitor;
-import org.arend.error.ErrorReporter;
 import org.arend.ext.core.expr.CoreDataCallExpression;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 
@@ -77,8 +76,8 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
   }
 
   @Override
-  public DataCallExpression strip(ErrorReporter errorReporter) {
-    return new StripVisitor(errorReporter).visitDataCall(this, null);
+  public DataCallExpression strip(StripVisitor visitor) {
+    return visitor.visitDataCall(this, null);
   }
 
   @Override

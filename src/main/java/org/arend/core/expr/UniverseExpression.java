@@ -4,9 +4,9 @@ import org.arend.core.expr.type.Type;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
 import org.arend.core.expr.visitor.NormalizeVisitor;
+import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.SubstVisitor;
-import org.arend.error.ErrorReporter;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CoreUniverseExpression;
 import org.arend.util.Decision;
@@ -58,7 +58,7 @@ public class UniverseExpression extends Expression implements Type, CoreUniverse
   }
 
   @Override
-  public UniverseExpression strip(ErrorReporter errorReporter) {
+  public UniverseExpression strip(StripVisitor visitor) {
     return this;
   }
 

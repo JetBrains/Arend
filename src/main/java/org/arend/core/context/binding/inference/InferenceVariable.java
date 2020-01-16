@@ -1,42 +1,30 @@
 package org.arend.core.context.binding.inference;
 
 import org.arend.core.context.binding.Binding;
-import org.arend.core.context.binding.Variable;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.InferenceReferenceExpression;
 import org.arend.core.subst.ExprSubstitution;
-import org.arend.ext.core.context.CoreInferenceVariable;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.LocalError;
 import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.typechecking.implicitargs.equations.InferenceVariableListener;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-public abstract class InferenceVariable implements Variable, CoreInferenceVariable {
-  private final String myName;
+public abstract class InferenceVariable extends BaseInferenceVariable {
   private final Concrete.SourceNode mySourceNode;
-  private Expression myType;
   private InferenceReferenceExpression myReference;
   private List<InferenceVariableListener> myListeners;
-  private final Set<Binding> myBounds;
   private boolean mySolved;
   private ExprSubstitution mySubstitution;
 
   public InferenceVariable(String name, Expression type, Concrete.SourceNode sourceNode, Set<Binding> bounds) {
-    myName = name == null || name.isEmpty() ? "x" : name;
+    super(name, type, bounds);
     mySourceNode = sourceNode;
-    myType = type;
     myListeners = Collections.emptyList();
-    myBounds = bounds;
-  }
-
-  public Set<Binding> getBounds() {
-    return myBounds;
   }
 
   public void addListener(InferenceVariableListener listener) {
@@ -72,22 +60,8 @@ public abstract class InferenceVariable implements Variable, CoreInferenceVariab
     return myReference == null ? null : myReference.getSubstExpression();
   }
 
-  @Nonnull
-  @Override
-  public String getName() {
-    return myName;
-  }
-
   public Concrete.SourceNode getSourceNode() {
     return mySourceNode;
-  }
-
-  public Expression getType() {
-    return myType;
-  }
-
-  public void setType(Expression type) {
-    myType = type;
   }
 
   public void setReference(InferenceReferenceExpression reference) {
@@ -101,9 +75,4 @@ public abstract class InferenceVariable implements Variable, CoreInferenceVariab
   public abstract LocalError getErrorInfer(Expression... candidates);
 
   public abstract LocalError getErrorMismatch(Expression expectedType, Expression actualType, Expression candidate);
-
-  @Override
-  public String toString() {
-    return "?" + myName;
-  }
 }

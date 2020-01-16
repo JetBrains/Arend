@@ -11,6 +11,10 @@ public class CompositeErrorReporter implements ErrorReporter {
     myErrorReporters = new ArrayList<>(Arrays.asList(errorReporters));
   }
 
+  public List<ErrorReporter> getErrorReporters() {
+    return myErrorReporters;
+  }
+
   public void addErrorReporter(ErrorReporter errorReporter) {
     myErrorReporters.add(errorReporter);
   }

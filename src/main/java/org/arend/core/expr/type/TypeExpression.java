@@ -2,9 +2,9 @@ package org.arend.core.expr.type;
 
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.visitor.NormalizeVisitor;
+import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.SubstVisitor;
-import org.arend.error.ErrorReporter;
 
 public class TypeExpression implements Type {
   private final Expression myType;
@@ -35,8 +35,8 @@ public class TypeExpression implements Type {
   }
 
   @Override
-  public Type strip(ErrorReporter errorReporter) {
-    Expression expr = myType.strip(errorReporter);
+  public Type strip(StripVisitor visitor) {
+    Expression expr = myType.accept(visitor, null);
     return expr instanceof Type ? (Type) expr : new TypeExpression(expr, mySort);
   }
 
