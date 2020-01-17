@@ -39,7 +39,7 @@ public class SubstExpression extends Expression {
   }
 
   public Expression getSubstExpression() {
-    return myExpression.subst(mySubstitution);
+    return myExpression instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) myExpression).getSubstExpression() == null ? myExpression : myExpression.subst(mySubstitution);
   }
 
   @Override

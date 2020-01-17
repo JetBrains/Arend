@@ -115,6 +115,9 @@ public abstract class Expression implements ExpectedType, Body, CoreExpression {
   }
 
   public final Expression subst(Variable binding, Expression substExpr) {
+    if (substExpr instanceof ReferenceExpression && ((ReferenceExpression) substExpr).getBinding() == binding) {
+      return this;
+    }
     return accept(new SubstVisitor(new ExprSubstitution(binding, substExpr), LevelSubstitution.EMPTY), null);
   }
 

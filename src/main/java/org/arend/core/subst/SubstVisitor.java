@@ -1,7 +1,9 @@
 package org.arend.core.subst;
 
 import org.arend.core.constructor.ClassConstructor;
+import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.EvaluatingBinding;
+import org.arend.core.context.binding.inference.MetaInferenceVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.definition.ClassField;
@@ -13,10 +15,7 @@ import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.visitor.BaseExpressionVisitor;
 import org.arend.ext.core.elimtree.CoreBranchKey;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
   private final ExprSubstitution myExprSubstitution;
@@ -117,8 +116,24 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
     if (result != null) {
       return result;
     }
+
+    if (expr.getVariable() instanceof MetaInferenceVariable) {
+      if (Collections.disjoint(expr.getVariable().getBounds(), myExprSubstitution.getKeys())) {
+        return expr;
+      }
+
+      ExprSubstitution newSubst = new ExprSubstitution();
+      for (Binding var : expr.getVariable().getBounds()) {
+        Expression substExpr = myExprSubstitution.get(var);
+        if (substExpr != null) {
+          newSubst.add(var, substExpr);
+        }
+      }
+      return SubstExpression.make(expr, newSubst);
+    }
+
     //noinspection SuspiciousMethodCalls
-    expr.getVariable().getBounds().removeAll(myExprSubstitution.getKeys()); // TODO[lang_ext]
+    expr.getVariable().getBounds().removeAll(myExprSubstitution.getKeys());
     return expr;
   }
 
