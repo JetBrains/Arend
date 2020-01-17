@@ -160,14 +160,24 @@ public class CorrespondedSubExprVisitor implements ConcreteExpressionVisitor<Exp
     return type.accept(this, link.getTypeExpr());
   }
 
-  protected Expression visitPiParameters(List<? extends Concrete.Parameter> parameters, PiExpression tele) {
+  protected Expression visitPiParameters(List<? extends Concrete.Parameter> parameters, PiExpression pi) {
     for (Concrete.Parameter parameter : parameters) {
-      DependentLink link = tele.getParameters();
+      DependentLink link = pi.getParameters();
       Expression expression = visitParameter(parameter, link);
       if (expression != null) return expression;
-      Expression codomain = tele.getCodomain();
-      if (codomain instanceof PiExpression) tele = (PiExpression) codomain;
+      Expression codomain = pi.getCodomain();
+      if (codomain instanceof PiExpression) pi = (PiExpression) codomain;
       else return null;
+    }
+    return null;
+  }
+
+  protected Expression visitSigmaParameters(List<? extends Concrete.Parameter> parameters, DependentLink sig) {
+    for (Concrete.Parameter parameter : parameters) {
+      Expression expression = visitParameter(parameter, sig);
+      if (expression != null) return expression;
+      int numberOfParameters = parameter.getNumberOfParameters();
+      for (int i = 0; i < numberOfParameters; i++) sig = sig.getNext();
     }
     return null;
   }
@@ -187,8 +197,7 @@ public class CorrespondedSubExprVisitor implements ConcreteExpressionVisitor<Exp
     if (matchesSubExpr(expr)) return coreExpr;
     SigmaExpression coreSigmaExpr = coreExpr.cast(SigmaExpression.class);
     if (coreSigmaExpr == null) return null;
-    // return visitParameters(expr.getParameters(), coreSigmaExpr);
-    return null;
+    return visitSigmaParameters(expr.getParameters(), coreSigmaExpr.getParameters());
   }
 
   @Override

@@ -52,7 +52,13 @@ public class CorrespondedSubExpr extends TypeCheckingTestCase {
   }
 
   @Test
-  public void telescopeSigma() {
+  public void complexSigma() {
+    Concrete.SigmaExpression xyx = (Concrete.SigmaExpression) resolveNamesExpr("\\Sigma (A B : \\Type) (x y : A) A");
+    Expression sig = typeCheckExpr(xyx, null).expression;
+    Expression accept = xyx.accept(new CorrespondedSubExprVisitor(xyx.getParameters().get(1).getType()), sig);
+    assertEquals(accept.cast(ReferenceExpression.class).getBinding().getName(), "A");
 
+    accept = xyx.accept(new CorrespondedSubExprVisitor(xyx.getParameters().get(2).getType()), sig);
+    assertEquals(accept.cast(ReferenceExpression.class).getBinding().getName(), "A");
   }
 }
