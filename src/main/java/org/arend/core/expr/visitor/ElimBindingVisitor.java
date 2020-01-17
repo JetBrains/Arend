@@ -35,7 +35,7 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
   }
 
   public static Expression elimLamBinding(LamExpression expr) {
-    return elimBinding(expr.getParameters().getNext().hasNext() ? new LamExpression(expr.getResultSort(), expr.getParameters().getNext(), expr.getBody()) : expr.getBody(), expr.getParameters());
+    return expr == null ? null : elimBinding(expr.getParameters().getNext().hasNext() ? new LamExpression(expr.getResultSort(), expr.getParameters().getNext(), expr.getBody()) : expr.getBody(), expr.getParameters());
   }
 
   public static Expression elimBinding(Expression expression, Binding binding) {

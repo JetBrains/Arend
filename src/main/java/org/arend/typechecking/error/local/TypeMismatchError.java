@@ -1,9 +1,9 @@
 package org.arend.typechecking.error.local;
 
+import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.prettyprinting.PrettyPrintable;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.Doc;
-import org.arend.term.concrete.Concrete;
 
 import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
@@ -11,13 +11,13 @@ public class TypeMismatchError extends TypecheckingError {
   public final PrettyPrintable expected;
   public final PrettyPrintable actual;
 
-  public TypeMismatchError(PrettyPrintable expected, PrettyPrintable actual, Concrete.SourceNode sourceNode) {
+  public TypeMismatchError(PrettyPrintable expected, PrettyPrintable actual, ConcreteSourceNode sourceNode) {
     super("Type mismatch", sourceNode);
     this.expected = expected;
     this.actual = actual;
   }
 
-  public TypeMismatchError(String msg, PrettyPrintable expected, PrettyPrintable actual, Concrete.SourceNode sourceNode) {
+  public TypeMismatchError(String msg, PrettyPrintable expected, PrettyPrintable actual, ConcreteSourceNode sourceNode) {
     super(msg, sourceNode);
     this.expected = expected;
     this.actual = actual;

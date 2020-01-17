@@ -491,7 +491,7 @@ public class PatternTypechecking {
 
             DataCallExpression dataCall = expr.cast(DataCallExpression.class);
             LamExpression typeLam = dataCall == null || dataCall.getDefinition() != Prelude.PATH ? null : dataCall.getDefCallArguments().get(0).normalize(NormalizationMode.WHNF).cast(LamExpression.class);
-            Expression type = typeLam == null ? null : ElimBindingVisitor.elimLamBinding(typeLam);
+            Expression type = ElimBindingVisitor.elimLamBinding(typeLam);
             if (type == null) {
               myErrorReporter.report(new TypeMismatchError(expr, constructor.getResultType().subst(substitution), conPattern));
               return null;

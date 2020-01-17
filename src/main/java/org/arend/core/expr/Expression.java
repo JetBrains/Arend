@@ -13,23 +13,28 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.error.IncorrectExpressionException;
+import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.ExpressionMapper;
 import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.ext.prettyprinting.doc.DocFactory;
 import org.arend.ext.reference.Precedence;
+import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
+import org.arend.typechecking.error.local.TypeMismatchError;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.util.Decision;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -162,6 +167,43 @@ public abstract class Expression implements ExpectedType, Body, CoreExpression {
   @Override
   public boolean compare(@Nonnull CoreExpression expr2, @Nonnull CMP cmp) {
     return expr2 instanceof Expression && CompareVisitor.compare(DummyEquations.getInstance(), cmp, this, (Expression) expr2, null, null);
+  }
+
+  @Nullable
+  @Override
+  public Expression removeConstLam() {
+    return ElimBindingVisitor.elimLamBinding(normalize(NormalizationMode.WHNF).cast(LamExpression.class));
+  }
+
+  @Nullable
+  @Override
+  public FunCallExpression toEquality() {
+    Expression expr = getUnderlyingExpression();
+    if (expr instanceof FunCallExpression && ((FunCallExpression) expr).getDefinition() == Prelude.PATH_INFIX) {
+      return (FunCallExpression) expr;
+    }
+    DataCallExpression dataCall = expr.normalize(NormalizationMode.WHNF).cast(DataCallExpression.class);
+    if (dataCall != null && dataCall.getDefinition() == Prelude.PATH) {
+      List<Expression> args = dataCall.getDefCallArguments();
+      Expression type = args.get(0).removeConstLam();
+      if (type != null) {
+        return new FunCallExpression(Prelude.PATH_INFIX, dataCall.getSortArgument(), Arrays.asList(type, args.get(1), args.get(2)));
+      }
+    }
+
+    return null;
+  }
+
+  @Nullable
+  @Override
+  public FunCallExpression toEquality(@Nonnull ErrorReporter errorReporter, @Nonnull ConcreteSourceNode sourceNode) {
+    FunCallExpression result = toEquality();
+    if (result != null) {
+      return result;
+    }
+
+    errorReporter.report(new TypeMismatchError(DocFactory.text("_ = _"), this, sourceNode));
+    return null;
   }
 
   public Expression dropPiParameter(int n) {

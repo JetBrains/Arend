@@ -1,6 +1,6 @@
 package org.arend.typechecking.error.local;
 
-import org.arend.term.concrete.Concrete;
+import org.arend.ext.concrete.ConcreteSourceNode;
 
 import javax.annotation.Nonnull;
 
@@ -40,29 +40,29 @@ public class TypecheckingError extends LocalError {
     }
   }
 
-  public final Concrete.SourceNode cause;
+  public final ConcreteSourceNode cause;
   public final Kind kind;
 
-  public TypecheckingError(@Nonnull Level level, String message, @Nonnull Concrete.SourceNode cause) {
+  public TypecheckingError(@Nonnull Level level, String message, @Nonnull ConcreteSourceNode cause) {
     super(level, message);
     this.cause = cause;
     this.kind = null;
   }
 
-  public TypecheckingError(String message, @Nonnull Concrete.SourceNode cause) {
+  public TypecheckingError(String message, @Nonnull ConcreteSourceNode cause) {
     super(Level.ERROR, message);
     this.cause = cause;
     this.kind = null;
   }
 
-  public TypecheckingError(Kind kind, @Nonnull Concrete.SourceNode cause) {
+  public TypecheckingError(Kind kind, @Nonnull ConcreteSourceNode cause) {
     super(kind.level, kind.message);
     this.cause = cause;
     this.kind = kind;
   }
 
   @Override
-  public Concrete.SourceNode getCauseSourceNode() {
+  public ConcreteSourceNode getCauseSourceNode() {
     return cause;
   }
 
