@@ -8,7 +8,6 @@ import org.arend.typechecking.visitor.CorrespondedSubExprVisitor;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 public class CorrespondedSubExpr extends TypeCheckingTestCase {
   @Test
@@ -16,9 +15,7 @@ public class CorrespondedSubExpr extends TypeCheckingTestCase {
     Concrete.LamExpression xyx = (Concrete.LamExpression) resolveNamesExpr("\\lam x y => x");
     Expression pi = typeCheckExpr(resolveNamesExpr("\\Pi (x y : \\Type) -> \\Type"), null).expression;
     Expression accept = xyx.accept(new CorrespondedSubExprVisitor(xyx.getBody()), typeCheckExpr(xyx, pi).expression);
-    ReferenceExpression referenceExpression = accept.cast(ReferenceExpression.class);
-    assertNotNull(referenceExpression);
-    assertEquals(referenceExpression.getBinding().getName(), "x");
+    assertEquals(accept.cast(ReferenceExpression.class).getBinding().getName(), "x");
   }
 
   @Test
@@ -26,9 +23,7 @@ public class CorrespondedSubExpr extends TypeCheckingTestCase {
     Concrete.LamExpression xx = (Concrete.LamExpression) resolveNamesExpr("\\lam x => x");
     Expression pi = typeCheckExpr(resolveNamesExpr("\\Pi (x : \\Type) -> \\Type"), null).expression;
     Expression accept = xx.accept(new CorrespondedSubExprVisitor(xx.getBody()), typeCheckExpr(xx, pi).expression);
-    ReferenceExpression referenceExpression = accept.cast(ReferenceExpression.class);
-    assertNotNull(referenceExpression);
-    assertEquals(referenceExpression.getBinding().getName(), "x");
+    assertEquals(accept.cast(ReferenceExpression.class).getBinding().getName(), "x");
   }
 
   @Test
@@ -36,9 +31,7 @@ public class CorrespondedSubExpr extends TypeCheckingTestCase {
     Concrete.PiExpression xyx = (Concrete.PiExpression) resolveNamesExpr("\\Pi (A : \\Type) (x y : A) -> A");
     Expression pi = typeCheckExpr(xyx, null).expression;
     Expression accept = xyx.accept(new CorrespondedSubExprVisitor(xyx.getParameters().get(1).getType()), pi);
-    ReferenceExpression referenceExpression = accept.cast(ReferenceExpression.class);
-    assertNotNull(referenceExpression);
-    assertEquals(referenceExpression.getBinding().getName(), "A");
+    assertEquals(accept.cast(ReferenceExpression.class).getBinding().getName(), "A");
   }
 
   @Test
@@ -46,9 +39,7 @@ public class CorrespondedSubExpr extends TypeCheckingTestCase {
     Concrete.PiExpression xyx = (Concrete.PiExpression) resolveNamesExpr("\\Pi (A B : \\Type) (x y : A) -> B");
     Expression pi = typeCheckExpr(xyx, null).expression;
     Expression accept = xyx.accept(new CorrespondedSubExprVisitor(xyx.getParameters().get(1).getType()), pi);
-    ReferenceExpression referenceExpression = accept.cast(ReferenceExpression.class);
-    assertNotNull(referenceExpression);
-    assertEquals(referenceExpression.getBinding().getName(), "A");
+    assertEquals(accept.cast(ReferenceExpression.class).getBinding().getName(), "A");
   }
 
   @Test
