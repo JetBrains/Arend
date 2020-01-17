@@ -8,6 +8,7 @@ import org.arend.core.elimtree.ElimTree;
 import org.arend.core.elimtree.LeafElimTree;
 import org.arend.core.expr.*;
 import org.arend.ext.core.elimtree.CoreBranchKey;
+import org.arend.ext.core.ops.NormalizationMode;
 
 import java.util.Collections;
 import java.util.Map;
@@ -27,7 +28,7 @@ public class NormalizingFindBindingVisitor extends BaseExpressionVisitor<Void, B
     if (expression.accept(myVisitor, null) == null) {
       return false;
     }
-    return (normalize ? expression.normalize(NormalizeVisitor.Mode.WHNF) : expression).accept(this, null);
+    return (normalize ? expression.normalize(NormalizationMode.WHNF) : expression).accept(this, null);
   }
 
   @Override

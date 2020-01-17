@@ -6,6 +6,7 @@ import org.arend.core.expr.Expression;
 import org.arend.core.expr.type.ExpectedType;
 import org.arend.core.sort.Level;
 import org.arend.core.subst.LevelSubstitution;
+import org.arend.ext.core.ops.CMP;
 import org.arend.term.concrete.Concrete;
 
 public class DummyEquations implements Equations {

@@ -10,10 +10,12 @@ import org.arend.core.elimtree.LeafElimTree;
 import org.arend.core.expr.CaseExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.LamExpression;
-import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.expr.visitor.ToAbstractVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.ext.core.elimtree.CoreBranchKey;
+import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.PrettyPrinterFlag;
 import org.arend.ext.reference.Precedence;
 import org.arend.frontend.reference.ConcreteLocatedReferable;
 import org.arend.naming.reference.GlobalReferable;
@@ -22,10 +24,10 @@ import org.arend.prelude.Prelude;
 import org.arend.term.FunctionKind;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
+import javax.annotation.Nonnull;
 import java.util.*;
 
 import static org.arend.ExpressionFactory.*;
@@ -35,16 +37,17 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class PrettyPrintingParserTest extends TypeCheckingTestCase {
-  private void testExpr(String expected, Expression expr, EnumSet<ToAbstractVisitor.Flag> flags) {
+  private void testExpr(String expected, Expression expr, EnumSet<PrettyPrinterFlag> flags) {
     StringBuilder builder = new StringBuilder();
     ToAbstractVisitor.convert(expr, new PrettyPrinterConfig() {
+      @Nonnull
       @Override
-      public EnumSet<ToAbstractVisitor.Flag> getExpressionFlags() {
+      public EnumSet<PrettyPrinterFlag> getExpressionFlags() {
         return flags;
       }
 
       @Override
-      public NormalizeVisitor.Mode getNormalizationMode() {
+      public NormalizationMode getNormalizationMode() {
         return null;
       }
     }).accept(new PrettyPrintVisitor(builder, 0), new Precedence(Concrete.Expression.PREC));
@@ -52,19 +55,20 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
   }
 
   private void testExpr(String expected, Expression expr) {
-    testExpr(expected, expr, EnumSet.of(ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM, ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS));
+    testExpr(expected, expr, EnumSet.of(PrettyPrinterFlag.SHOW_TYPES_IN_LAM, PrettyPrinterFlag.SHOW_IMPLICIT_ARGS));
   }
 
-  private void testExpr(Concrete.Expression expected, Expression expr, EnumSet<ToAbstractVisitor.Flag> flags) {
+  private void testExpr(Concrete.Expression expected, Expression expr, EnumSet<PrettyPrinterFlag> flags) {
     StringBuilder builder = new StringBuilder();
     ToAbstractVisitor.convert(expr, new PrettyPrinterConfig() {
+      @Nonnull
       @Override
-      public EnumSet<ToAbstractVisitor.Flag> getExpressionFlags() {
+      public EnumSet<PrettyPrinterFlag> getExpressionFlags() {
         return flags;
       }
 
       @Override
-      public NormalizeVisitor.Mode getNormalizationMode() {
+      public NormalizationMode getNormalizationMode() {
         return null;
       }
     }).accept(new PrettyPrintVisitor(builder, 0), new Precedence(Concrete.Expression.PREC));
@@ -73,7 +77,7 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
   }
 
   private void testExpr(Concrete.Expression expected, Expression expr) {
-    testExpr(expected, expr, EnumSet.of(ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM, ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS));
+    testExpr(expected, expr, EnumSet.of(PrettyPrinterFlag.SHOW_TYPES_IN_LAM, PrettyPrinterFlag.SHOW_IMPLICIT_ARGS));
   }
 
   private void testDef(Concrete.FunctionDefinition expected, Concrete.FunctionDefinition def) {
@@ -174,7 +178,7 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
     LocalReferable cA = ref("A");
     LocalReferable cD = ref("D");
     Concrete.Expression expected = cPi(cA, cUniverseInf(0), cPi(ca, cVar(cA), cPi(cD, cPi(cPi(cVar(cA), cVar(cA)), cPi(cVar(cA), cVar(cA))), cPi(cx, cPi(cVar(cA), cVar(cA)), cApps(cVar(cD), cVar(cx), cLam(cName(null), cVar(ca)))))));
-    testExpr(expected, actual, EnumSet.of(ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS));
+    testExpr(expected, actual, EnumSet.of(PrettyPrinterFlag.SHOW_IMPLICIT_ARGS));
   }
 
   @Test

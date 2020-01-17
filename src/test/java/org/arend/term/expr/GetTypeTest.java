@@ -7,9 +7,9 @@ import org.arend.core.definition.*;
 import org.arend.core.expr.ClassCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.SigmaExpression;
-import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
+import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
@@ -17,6 +17,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import static org.arend.ExpressionFactory.*;
 import static org.arend.core.expr.ExpressionFactory.*;
@@ -72,7 +73,7 @@ public class GetTypeTest extends TypeCheckingTestCase {
         FieldCall((ClassField) getDefinition("C.x"), Sort.PROP, Apps(Ref(p), Zero())));
     List<DependentLink> testParams = new ArrayList<>();
     Expression testType = getDefinition("test").getTypeWithParams(testParams, Sort.SET0);
-    assertEquals(Pi(p, Pi(type, type)).normalize(NormalizeVisitor.Mode.NF), fromPiParameters(testType, testParams).normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Pi(p, Pi(type, type)).normalize(NormalizationMode.NF), fromPiParameters(testType, testParams).normalize(NormalizationMode.NF));
   }
 
   @Test
@@ -88,7 +89,7 @@ public class GetTypeTest extends TypeCheckingTestCase {
     SingleDependentLink F = singleParam("F", Pi(Nat(), Universe(new Level(0), new Level(LevelVariable.HVAR))));
     SingleDependentLink x = singleParam("x", Nat());
     SingleDependentLink f = singleParam("f", Pi(x, Apps(Ref(F), Ref(x))));
-    assertEquals(Pi(F, Pi(f, Apps(Ref(F), Zero()))), ((Expression) ((FunctionDefinition) def).getBody()).getType().normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Pi(F, Pi(f, Apps(Ref(F), Zero()))), Objects.requireNonNull(((Expression) ((FunctionDefinition) def).getBody()).getType()).normalize(NormalizationMode.NF));
   }
 
   @Test

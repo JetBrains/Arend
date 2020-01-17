@@ -1,16 +1,16 @@
 package org.arend.library.error;
 
-import org.arend.error.GeneralError;
-import org.arend.error.doc.LineDoc;
+import org.arend.ext.error.GeneralError;
 import org.arend.ext.module.ModulePath;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.arend.library.Library;
 import org.arend.naming.reference.ModuleReferable;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.arend.error.doc.DocFactory.*;
+import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public class ModuleInSeveralLibrariesError extends GeneralError {
   public ModulePath modulePath;

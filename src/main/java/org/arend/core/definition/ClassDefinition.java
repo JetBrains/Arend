@@ -3,13 +3,13 @@ package org.arend.core.definition;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.expr.*;
-import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.definition.CoreClassDefinition;
 import org.arend.ext.core.definition.CoreClassField;
+import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.naming.reference.TCClassReferable;
 
 import javax.annotation.Nonnull;
@@ -123,7 +123,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
 
       Expression type = fieldType
         .applyExpression(new ReferenceExpression(ExpressionFactory.parameter("this", thisClass)))
-        .normalize(NormalizeVisitor.Mode.WHNF)
+        .normalize(NormalizationMode.WHNF)
         .getType();
       Sort sort1 = type == null ? null : type.toSort();
       if (sort1 != null) {

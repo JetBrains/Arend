@@ -6,12 +6,12 @@ import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
 import org.arend.core.definition.Definition;
 import org.arend.core.expr.*;
-import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.expr.visitor.NormalizingFindBindingVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
-import org.arend.error.ErrorReporter;
+import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.ext.error.ErrorReporter;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 
@@ -178,7 +178,7 @@ public class ConstructorPattern implements Pattern {
       }
       Expression arg = ((ConCallExpression) expression).getDefCallArguments().get(0);
       if (normalize) {
-        arg = arg.normalize(NormalizeVisitor.Mode.WHNF);
+        arg = arg.normalize(NormalizationMode.WHNF);
       }
       LamExpression lamExpr = arg.cast(LamExpression.class);
       if (lamExpr == null) {
@@ -222,7 +222,7 @@ public class ConstructorPattern implements Pattern {
 
   @Override
   public MatchResult match(Expression expression, List<Expression> result) {
-    expression = expression.normalize(NormalizeVisitor.Mode.WHNF); // TODO[idp]: Implement IDP_WHNF
+    expression = expression.normalize(NormalizationMode.WHNF); // TODO[idp]: Implement IDP_WHNF
     List<? extends Expression> arguments = getMatchingExpressionArguments(expression, true);
     if (arguments != null) {
       return myPatterns.match(arguments, result);

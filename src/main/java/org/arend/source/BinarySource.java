@@ -1,6 +1,6 @@
 package org.arend.source;
 
-import org.arend.error.ErrorReporter;
+import org.arend.ext.error.ErrorReporter;
 import org.arend.library.SourceLibrary;
 import org.arend.naming.reference.converter.ReferableConverter;
 

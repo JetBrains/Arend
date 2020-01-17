@@ -1,13 +1,13 @@
 package org.arend.library;
 
-import org.arend.error.doc.Doc;
-import org.arend.error.doc.DocFactory;
+import org.arend.ext.prettyprinting.doc.Doc;
+import org.arend.ext.prettyprinting.doc.DocFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.arend.error.doc.DocFactory.*;
+import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public class LibraryConfig {
   private String myName;

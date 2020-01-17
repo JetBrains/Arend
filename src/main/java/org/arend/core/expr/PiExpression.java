@@ -15,6 +15,8 @@ import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.expr.CoreAbsExpression;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CorePiExpression;
+import org.arend.ext.core.ops.CMP;
+import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.util.Decision;
@@ -41,8 +43,8 @@ public class PiExpression extends Expression implements Type, CorePiExpression, 
     InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, false, sourceNode);
     equations.addVariable(pl);
     Level pLevel = new Level(pl);
-    equations.addEquation(domSort.getPLevel(), pLevel, Equations.CMP.LE, sourceNode);
-    equations.addEquation(codSort.getPLevel(), pLevel, Equations.CMP.LE, sourceNode);
+    equations.addEquation(domSort.getPLevel(), pLevel, CMP.LE, sourceNode);
+    equations.addEquation(codSort.getPLevel(), pLevel, CMP.LE, sourceNode);
     return new Sort(pLevel, codSort.getHLevel());
   }
 
@@ -114,8 +116,9 @@ public class PiExpression extends Expression implements Type, CorePiExpression, 
     return visitor.visitPi(this, null);
   }
 
+  @Nonnull
   @Override
-  public PiExpression normalize(NormalizeVisitor.Mode mode) {
+  public PiExpression normalize(@Nonnull NormalizationMode mode) {
     return NormalizeVisitor.INSTANCE.visitPi(this, mode);
   }
 

@@ -22,8 +22,8 @@ import org.arend.core.expr.type.TypeExpression;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
-import org.arend.error.GeneralError;
 import org.arend.ext.core.elimtree.CoreBranchKey;
+import org.arend.ext.error.GeneralError;
 
 import java.util.ArrayList;
 import java.util.HashMap;

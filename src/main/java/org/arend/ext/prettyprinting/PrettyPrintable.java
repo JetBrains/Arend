@@ -1,7 +1,7 @@
-package org.arend.term.prettyprint;
+package org.arend.ext.prettyprinting;
 
-import org.arend.error.doc.Doc;
-import org.arend.error.doc.DocFactory;
+import org.arend.ext.prettyprinting.doc.Doc;
+import org.arend.ext.prettyprinting.doc.DocFactory;
 
 public interface PrettyPrintable {
   void prettyPrint(StringBuilder builder, PrettyPrinterConfig ppConfig);

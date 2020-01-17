@@ -3,13 +3,18 @@ package org.arend.typechecking.error.local;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.type.ExpectedType;
-import org.arend.error.GeneralError;
-import org.arend.error.doc.Doc;
+import org.arend.ext.error.GeneralError;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
-import java.util.*;
-import static org.arend.error.doc.DocFactory.*;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public class GoalError extends TypecheckingError {
   public final String name;
@@ -61,7 +66,7 @@ public class GoalError extends TypecheckingError {
   }
 
   @Override
-  public boolean isShort() {
-    return false;
+  public boolean hasExpressions() {
+    return true;
   }
 }

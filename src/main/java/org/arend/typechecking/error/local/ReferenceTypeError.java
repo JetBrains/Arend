@@ -1,13 +1,11 @@
 package org.arend.typechecking.error.local;
 
-import org.arend.error.doc.LineDoc;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.arend.naming.error.ReferenceError;
 import org.arend.naming.reference.Referable;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
 
-import static org.arend.error.doc.DocFactory.hList;
-import static org.arend.error.doc.DocFactory.refDoc;
-import static org.arend.error.doc.DocFactory.text;
+import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public class ReferenceTypeError extends ReferenceError {
   public ReferenceTypeError(Referable referable) {

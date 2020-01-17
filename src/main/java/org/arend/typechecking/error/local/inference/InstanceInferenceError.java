@@ -1,18 +1,18 @@
 package org.arend.typechecking.error.local.inference;
 
 import org.arend.core.expr.Expression;
-import org.arend.error.doc.Doc;
-import org.arend.error.doc.LineDoc;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.doc.Doc;
+import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.arend.naming.reference.TCClassReferable;
 import org.arend.term.concrete.Concrete;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
 import org.arend.typechecking.instance.pool.RecursiveInstanceData;
 import org.arend.typechecking.instance.pool.RecursiveInstanceHoleExpression;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.arend.error.doc.DocFactory.*;
+import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public class InstanceInferenceError extends ArgInferenceError {
   public final TCClassReferable classRef;
@@ -58,7 +58,7 @@ public class InstanceInferenceError extends ArgInferenceError {
   }
 
   @Override
-  public boolean isShort() {
-    return super.isShort() && classifyingExpression == null && holeExpression == null;
+  public boolean hasExpressions() {
+    return super.hasExpressions() || classifyingExpression != null || holeExpression != null;
   }
 }

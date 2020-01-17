@@ -20,6 +20,8 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.ext.core.elimtree.CoreBranchKey;
+import org.arend.ext.core.ops.CMP;
+import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.GoalError;
@@ -33,24 +35,24 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, ExpectedTy
   private final Map<Binding, Binding> mySubstitution;
   private final Equations myEquations;
   private final Concrete.SourceNode mySourceNode;
-  private Equations.CMP myCMP;
+  private CMP myCMP;
   private boolean myNormalCompare = true;
   private boolean myOnlySolveVars = false;
 
-  public CompareVisitor(Equations equations, Equations.CMP cmp, Concrete.SourceNode sourceNode) {
+  public CompareVisitor(Equations equations, CMP cmp, Concrete.SourceNode sourceNode) {
     mySubstitution = new HashMap<>();
     myEquations = equations;
     mySourceNode = sourceNode;
     myCMP = cmp;
   }
 
-  public static boolean compare(Equations equations, Equations.CMP cmp, Expression expr1, Expression expr2, ExpectedType type, Concrete.SourceNode sourceNode) {
+  public static boolean compare(Equations equations, CMP cmp, Expression expr1, Expression expr2, ExpectedType type, Concrete.SourceNode sourceNode) {
     return new CompareVisitor(equations, cmp, sourceNode).compare(expr1, expr2, type);
   }
 
   // Only for tests
   public static boolean compare(Equations equations, ElimTree elimTree1, ElimTree elimTree2, Concrete.SourceNode sourceNode) {
-    return new CompareVisitor(equations, Equations.CMP.EQ, sourceNode).compare(elimTree1, elimTree2, null);
+    return new CompareVisitor(equations, CMP.EQ, sourceNode).compare(elimTree1, elimTree2, null);
   }
 
   private Boolean compare(ElimTree elimTree1, ElimTree elimTree2, ExpectedType type) {
@@ -113,8 +115,8 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, ExpectedTy
     }
 
     if (check) {
-      Equations.CMP origCMP = myCMP;
-      myCMP = Equations.CMP.EQ;
+      CMP origCMP = myCMP;
+      myCMP = CMP.EQ;
       boolean normalCompare = myNormalCompare;
       myNormalCompare = false;
 
@@ -158,7 +160,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, ExpectedTy
           type1 = null;
         }
         if (type1 != null) {
-          type1 = type1.normalize(NormalizeVisitor.Mode.WHNF);
+          type1 = type1.normalize(NormalizationMode.WHNF);
           if (allowProp) {
             Sort sort1 = type1.getSortOfType();
             if (sort1 != null && sort1.isProp() && !type1.isInstance(ClassCallExpression.class)) {
@@ -173,7 +175,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, ExpectedTy
             type2 = null;
           }
           if (type2 != null) {
-            type2 = type2.normalize(NormalizeVisitor.Mode.WHNF);
+            type2 = type2.normalize(NormalizationMode.WHNF);
             if (allowProp) {
               Sort sort2 = type2.getSortOfType();
               if (sort2 != null && sort2.isProp() && !type2.isInstance(ClassCallExpression.class)) {
@@ -193,7 +195,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, ExpectedTy
       }
     }
 
-    Equations.CMP origCMP = myCMP;
+    CMP origCMP = myCMP;
     if (!myOnlySolveVars) {
       Boolean dataAndApp = checkDefCallAndApp(expr1, expr2, true);
       if (dataAndApp != null) {
@@ -207,7 +209,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, ExpectedTy
 
     Expression uExpr1 = expr1.getUnderlyingExpression();
     if (!(uExpr1 instanceof UniverseExpression || uExpr1 instanceof PiExpression || uExpr1 instanceof ClassCallExpression || uExpr1 instanceof DataCallExpression || uExpr1 instanceof AppExpression || uExpr1 instanceof SigmaExpression || uExpr1 instanceof LamExpression)) {
-      myCMP = Equations.CMP.EQ;
+      myCMP = CMP.EQ;
     }
 
     boolean ok;
@@ -247,10 +249,10 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, ExpectedTy
       return true;
     }
     if (infRefExpr1 != null && infRefExpr1.getVariable() instanceof InferenceVariable) {
-      return myNormalCompare && myEquations.addEquation(infRefExpr1, expr2.subst(getSubstitution()).normalize(NormalizeVisitor.Mode.WHNF), type, myCMP, ((InferenceVariable) infRefExpr1.getVariable()).getSourceNode(), (InferenceVariable) infRefExpr1.getVariable(), expr2.getStuckInferenceVariable());
+      return myNormalCompare && myEquations.addEquation(infRefExpr1, expr2.subst(getSubstitution()).normalize(NormalizationMode.WHNF), type, myCMP, ((InferenceVariable) infRefExpr1.getVariable()).getSourceNode(), (InferenceVariable) infRefExpr1.getVariable(), expr2.getStuckInferenceVariable());
     }
     if (infRefExpr2 != null && infRefExpr2.getVariable() instanceof InferenceVariable) {
-      return myNormalCompare && myEquations.addEquation(expr1.normalize(NormalizeVisitor.Mode.WHNF), infRefExpr2, type, myCMP, ((InferenceVariable) infRefExpr2.getVariable()).getSourceNode(), expr1.getStuckInferenceVariable(), (InferenceVariable) infRefExpr2.getVariable());
+      return myNormalCompare && myEquations.addEquation(expr1.normalize(NormalizationMode.WHNF), infRefExpr2, type, myCMP, ((InferenceVariable) infRefExpr2.getVariable()).getSourceNode(), expr1.getStuckInferenceVariable(), (InferenceVariable) infRefExpr2.getVariable());
     }
 
     InferenceVariable stuckVar1 = expr1.getStuckInferenceVariable();
@@ -266,7 +268,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, ExpectedTy
       return true;
     }
 
-    return myNormalCompare && normalizedCompare(expr1.normalize(NormalizeVisitor.Mode.WHNF), expr2.normalize(NormalizeVisitor.Mode.WHNF), type == null ? null : type.normalize(NormalizeVisitor.Mode.WHNF));
+    return myNormalCompare && normalizedCompare(expr1.normalize(NormalizationMode.WHNF), expr2.normalize(NormalizationMode.WHNF), type == null ? null : type.normalize(NormalizationMode.WHNF));
   }
 
   private ExprSubstitution getSubstitution() {
@@ -303,7 +305,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, ExpectedTy
       return true;
     }
 
-    myCMP = Equations.CMP.EQ;
+    myCMP = CMP.EQ;
     Expression type1 = fun1.getType();
     List<SingleDependentLink> params = Collections.emptyList();
     if (type1 != null) {
@@ -453,7 +455,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, ExpectedTy
             }
           }
         }
-        if (args.size() > oldDataArgs.size() || classCall1.getImplementedHere().size() > oldDataArgs.size() && !(correctOrder && myCMP == Equations.CMP.LE || !correctOrder && myCMP == Equations.CMP.GE)) {
+        if (args.size() > oldDataArgs.size() || classCall1.getImplementedHere().size() > oldDataArgs.size() && !(correctOrder && myCMP == CMP.LE || !correctOrder && myCMP == CMP.GE)) {
           return null;
         }
         dataParams = classCall1.getClassFieldParameters();
@@ -558,7 +560,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, ExpectedTy
   }
 
   private boolean checkSubclassImpl(ClassCallExpression classCall1, ClassCallExpression classCall2, boolean correctOrder) {
-    Equations.CMP origCMP = myCMP;
+    CMP origCMP = myCMP;
     for (Map.Entry<ClassField, Expression> entry : classCall2.getImplementedHere().entrySet()) {
       if (entry.getKey().isProperty()) {
         continue;
@@ -577,7 +579,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, ExpectedTy
         return false;
       }
       if (!entry.getKey().isCovariant()) {
-        myCMP = Equations.CMP.EQ;
+        myCMP = CMP.EQ;
       }
       mySubstitution.put(classCall2.getThisBinding(), binding);
       boolean ok = compare(correctOrder ? impl1 : entry.getValue(), correctOrder ? entry.getValue() : impl1, entry.getKey().getType(classCall2.getSortArgument()).applyExpression(new ReferenceExpression(binding)));
@@ -600,8 +602,8 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, ExpectedTy
           ok = false;
           break;
         }
-        Equations.CMP origCmp = myCMP;
-        myCMP = Equations.CMP.LE;
+        CMP origCmp = myCMP;
+        myCMP = CMP.LE;
         ok = compare(type, entry.getKey().getType(classCall2.getSortArgument()).applyExpression(thisExpr), ExpectedType.OMEGA);
         myCMP = origCmp;
         if (!ok) {
@@ -617,8 +619,8 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, ExpectedTy
             ok = false;
             break;
           }
-          Equations.CMP origCmp = myCMP;
-          myCMP = Equations.CMP.LE;
+          CMP origCmp = myCMP;
+          myCMP = CMP.LE;
           ok = compare(type, entry.getKey().getType(classCall2.getSortArgument()).applyExpression(thisExpr), ExpectedType.OMEGA);
           myCMP = origCmp;
           if (!ok) {
@@ -628,7 +630,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, ExpectedTy
       }
     }
 
-    return ok || myNormalCompare && Sort.compare(classCall1.getSortArgument(), classCall2.getSortArgument(), Equations.CMP.LE, myEquations, mySourceNode);
+    return ok || myNormalCompare && Sort.compare(classCall1.getSortArgument(), classCall2.getSortArgument(), CMP.LE, myEquations, mySourceNode);
   }
 
   @Override
@@ -639,27 +641,27 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, ExpectedTy
     }
 
     if (expr1.hasUniverses() || classCall2.hasUniverses()) {
-      if (myCMP == Equations.CMP.EQ || expr1.hasUniverses() && classCall2.hasUniverses()) {
+      if (myCMP == CMP.EQ || expr1.hasUniverses() && classCall2.hasUniverses()) {
         if (!Sort.compare(expr1.getSortArgument(), classCall2.getSortArgument(), myCMP, myNormalCompare ? myEquations : DummyEquations.getInstance(), mySourceNode)) {
           return false;
         }
       } else {
         if (!Sort.compare(expr1.getSortArgument(), classCall2.getSortArgument(), myCMP, DummyEquations.getInstance(), mySourceNode)) {
-          if (myCMP == Equations.CMP.LE ? !checkClassCallSortArguments(expr1, classCall2) : !checkClassCallSortArguments(classCall2, expr1)) {
+          if (myCMP == CMP.LE ? !checkClassCallSortArguments(expr1, classCall2) : !checkClassCallSortArguments(classCall2, expr1)) {
             return false;
           }
         }
       }
     }
 
-    if (myCMP == Equations.CMP.LE) {
+    if (myCMP == CMP.LE) {
       if (!expr1.getDefinition().isSubClassOf(classCall2.getDefinition())) {
         return false;
       }
       return checkSubclassImpl(expr1, classCall2, true);
     }
 
-    if (myCMP == Equations.CMP.GE) {
+    if (myCMP == CMP.GE) {
       if (!classCall2.getDefinition().isSubClassOf(expr1.getDefinition())) {
         return false;
       }
@@ -742,8 +744,8 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, ExpectedTy
       return false;
     }
 
-    Equations.CMP origCMP = myCMP;
-    myCMP = Equations.CMP.EQ;
+    CMP origCMP = myCMP;
+    myCMP = CMP.EQ;
     if (!compare(expr1.getParameters().getTypeExpr(), piExpr2.getParameters().getTypeExpr(), ExpectedType.OMEGA)) {
       return false;
     }
@@ -773,7 +775,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, ExpectedTy
       return false;
     }
 
-    Equations.CMP origCMP = myCMP;
+    CMP origCMP = myCMP;
     for (int i = 0; i < list1.size() && i < list2.size(); ++i) {
       if (!compare(list1.get(i).getTypeExpr(), list2.get(i).getTypeExpr(), ExpectedType.OMEGA)) {
         return false;
@@ -901,17 +903,17 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, ExpectedTy
       return false;
     }
 
-    Equations.CMP origCMP = myCMP;
+    CMP origCMP = myCMP;
     for (int i = 0; i < list1.size(); i++) {
       if (definition instanceof DataDefinition) {
-        myCMP = ((DataDefinition) definition).isCovariant(i) ? origCMP : Equations.CMP.EQ;
+        myCMP = ((DataDefinition) definition).isCovariant(i) ? origCMP : CMP.EQ;
       }
       if (!compare(list1.get(i), list2.get(i), substitution != null && link.hasNext() ? link.getTypeExpr().subst(substitution) : null)) {
         myCMP = origCMP;
         return false;
       }
       if (substitution != null && link.hasNext()) {
-        substitution.add(link, (myCMP == Equations.CMP.LE ? list2 : list1).get(i));
+        substitution.add(link, (myCMP == CMP.LE ? list2 : list1).get(i));
         link = link.getNext();
       }
     }

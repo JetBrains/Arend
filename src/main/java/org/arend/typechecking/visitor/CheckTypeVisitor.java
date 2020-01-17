@@ -18,7 +18,6 @@ import org.arend.core.expr.type.Type;
 import org.arend.core.expr.type.TypeExpression;
 import org.arend.core.expr.visitor.CompareVisitor;
 import org.arend.core.expr.visitor.FieldsCollector;
-import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
@@ -26,11 +25,15 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.error.*;
-import org.arend.error.doc.DocFactory;
 import org.arend.ext.concrete.ConcreteExpression;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.expr.CoreExpression;
+import org.arend.ext.core.ops.CMP;
+import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.ext.error.ErrorReporter;
+import org.arend.ext.error.GeneralError;
+import org.arend.ext.prettyprinting.doc.DocFactory;
 import org.arend.ext.reference.ArendRef;
 import org.arend.ext.typechecking.CheckedExpression;
 import org.arend.ext.typechecking.MetaDefinition;
@@ -47,7 +50,6 @@ import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.TypecheckingListener;
 import org.arend.typechecking.error.CycleError;
 import org.arend.typechecking.error.ErrorReporterCounter;
-import org.arend.typechecking.error.ListErrorReporter;
 import org.arend.typechecking.error.local.*;
 import org.arend.typechecking.error.local.inference.ArgInferenceError;
 import org.arend.typechecking.error.local.inference.InstanceInferenceError;
@@ -177,6 +179,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     return allBindings;
   }
 
+  @Nonnull
+  @Override
   public ErrorReporter getErrorReporter() {
     return errorReporter;
   }
@@ -197,18 +201,26 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     myListener = listener;
   }
 
+  @Override
+  public boolean compare(@Nonnull CoreExpression expr1, @Nonnull CoreExpression expr2, @Nonnull CMP cmp, @Nullable ConcreteExpression marker) {
+    if (!(expr1 instanceof Expression && expr2 instanceof Expression)) {
+      throw new IllegalArgumentException();
+    }
+    return new CompareVisitor(myEquations, cmp, marker instanceof Concrete.SourceNode ? (Concrete.SourceNode) marker : null).compare((Expression) expr1, (Expression) expr2, null);
+  }
+
   public TypecheckingResult checkResult(ExpectedType expectedType, TypecheckingResult result, Concrete.Expression expr) {
     if (result == null || expectedType == null || expectedType == ExpectedType.OMEGA && result.type instanceof UniverseExpression || result.type == expectedType) {
       return result;
     }
 
-    CompareVisitor cmpVisitor = new CompareVisitor(DummyEquations.getInstance(), Equations.CMP.LE, expr);
+    CompareVisitor cmpVisitor = new CompareVisitor(DummyEquations.getInstance(), CMP.LE, expr);
     if (expectedType instanceof Expression && cmpVisitor.nonNormalizingCompare(result.type, (Expression) expectedType, ExpectedType.OMEGA)) {
       return result;
     }
 
-    result.type = result.type.normalize(NormalizeVisitor.Mode.WHNF);
-    expectedType = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
+    result.type = result.type.normalize(NormalizationMode.WHNF);
+    expectedType = expectedType.normalize(NormalizationMode.WHNF);
     if (expectedType instanceof Expression) {
       ClassCallExpression actualClassCall = result.type.cast(ClassCallExpression.class);
       ClassCallExpression expectedClassCall = ((Expression) expectedType).cast(ClassCallExpression.class);
@@ -241,7 +253,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   }
 
   private TypecheckingResult checkResultExpr(Expression expectedType, TypecheckingResult result, Concrete.Expression expr) {
-    if (new CompareVisitor(myEquations, Equations.CMP.LE, expr).normalizedCompare(result.type, expectedType, ExpectedType.OMEGA)) {
+    if (new CompareVisitor(myEquations, CMP.LE, expr).normalizedCompare(result.type, expectedType, ExpectedType.OMEGA)) {
       result.expression = OfTypeExpression.make(result.expression, result.type, expectedType);
       return result;
     }
@@ -254,7 +266,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
   @SuppressWarnings("BooleanMethodIsAlwaysInverted")
   public boolean checkNormalizedResult(ExpectedType expectedType, TypecheckingResult result, Concrete.Expression expr, boolean strict) {
-    if (expectedType instanceof Expression && new CompareVisitor(strict ? DummyEquations.getInstance() : myEquations, Equations.CMP.LE, expr).normalizedCompare(result.type, (Expression) expectedType, ExpectedType.OMEGA) || expectedType == ExpectedType.OMEGA && result.type.isInstance(UniverseExpression.class)) {
+    if (expectedType instanceof Expression && new CompareVisitor(strict ? DummyEquations.getInstance() : myEquations, CMP.LE, expr).normalizedCompare(result.type, (Expression) expectedType, ExpectedType.OMEGA) || expectedType == ExpectedType.OMEGA && result.type.isInstance(UniverseExpression.class)) {
       if (!strict && expectedType instanceof Expression) {
         result.expression = OfTypeExpression.make(result.expression, result.type, (Expression) expectedType);
       }
@@ -359,7 +371,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     try {
       ExpectedType expectedType1 = expectedType;
       if (expectedType instanceof Expression) {
-        expectedType = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
+        expectedType = expectedType.normalize(NormalizationMode.WHNF);
         if (((Expression) expectedType).getStuckInferenceVariable() != null) {
           expectedType1 = ExpectedType.OMEGA;
         }
@@ -367,7 +379,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
       result = expr.accept(this, expectedType1);
       if (result != null && expectedType1 != expectedType) {
-        result.type = result.type.normalize(NormalizeVisitor.Mode.WHNF);
+        result.type = result.type.normalize(NormalizationMode.WHNF);
         result = checkResultExpr((Expression) expectedType, result, expr);
       }
     } catch (IncorrectExpressionException e) {
@@ -381,7 +393,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       return (Type) result.expression;
     }
 
-    Expression type = result.type.normalize(NormalizeVisitor.Mode.WHNF);
+    Expression type = result.type.normalize(NormalizationMode.WHNF);
     UniverseExpression universe = type.cast(UniverseExpression.class);
     if (universe == null) {
       Expression stuck = type.getCanonicalStuckExpression();
@@ -395,7 +407,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       universe = new UniverseExpression(Sort.generateInferVars(myEquations, false, expr));
       InferenceVariable infVar = stuck.getInferenceVariable();
       if (infVar != null) {
-        myEquations.addEquation(type, universe, ExpectedType.OMEGA, Equations.CMP.LE, expr, infVar, null);
+        myEquations.addEquation(type, universe, ExpectedType.OMEGA, CMP.LE, expr, infVar, null);
       }
     }
 
@@ -463,7 +475,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       return null;
     }
 
-    ClassCallExpression classCall = typeCheckedBaseClass.expression.normalize(NormalizeVisitor.Mode.WHNF).cast(ClassCallExpression.class);
+    ClassCallExpression classCall = typeCheckedBaseClass.expression.normalize(NormalizationMode.WHNF).cast(ClassCallExpression.class);
     if (classCall == null) {
       errorReporter.report(new TypecheckingError("Expected a class", baseClassExpr));
       return null;
@@ -548,7 +560,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
               }
             }
             if (oldImpl != null) {
-              if (!classCallExpr.isImplemented(field) || !CompareVisitor.compare(myEquations, Equations.CMP.EQ, implResult.expression, oldImpl, implResult.type, pair.proj2.implementation)) {
+              if (!classCallExpr.isImplemented(field) || !CompareVisitor.compare(myEquations, CMP.EQ, implResult.expression, oldImpl, implResult.type, pair.proj2.implementation)) {
                 errorReporter.report(new FieldsImplementationError(true, baseClass.getReferable(), Collections.singletonList(field.getReferable()), pair.proj2));
               }
             } else if (!resultClassCall.isImplemented(field)) {
@@ -562,7 +574,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         } else if (pair.proj1 instanceof ClassDefinition) {
           TypecheckingResult result = checkExpr(pair.proj2.implementation, null);
           if (result != null) {
-            Expression type = result.type.normalize(NormalizeVisitor.Mode.WHNF);
+            Expression type = result.type.normalize(NormalizationMode.WHNF);
             ClassCallExpression classCall = type.cast(ClassCallExpression.class);
             if (classCall == null) {
               if (!type.isInstance(ErrorExpression.class)) {
@@ -577,7 +589,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
                   Expression impl = FieldCallExpression.make(field, classCall.getSortArgument(), result.expression);
                   Expression oldImpl = field.isProperty() ? null : resultClassCall.getImplementation(field, result.expression);
                   if (oldImpl != null) {
-                    if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, impl, oldImpl, field.getType(classCall.getSortArgument()).applyExpression(result.expression), pair.proj2.implementation)) {
+                    if (!CompareVisitor.compare(myEquations, CMP.EQ, impl, oldImpl, field.getType(classCall.getSortArgument()).applyExpression(result.expression), pair.proj2.implementation)) {
                       errorReporter.report(new FieldsImplementationError(true, baseClass.getReferable(), Collections.singletonList(field.getReferable()), pair.proj2));
                     }
                   } else if (!resultClassCall.isImplemented(field)) {
@@ -641,7 +653,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     Set<ClassField> pseudoImplemented = Collections.emptySet();
     if (expr.getExpression() instanceof Concrete.ClassExtExpression || expr.getExpression() instanceof Concrete.ReferenceExpression) {
       if (expectedType != null) {
-        expectedType = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
+        expectedType = expectedType.normalize(NormalizationMode.WHNF);
       }
       Concrete.Expression baseExpr = expr.getExpression() instanceof Concrete.ClassExtExpression ? ((Concrete.ClassExtExpression) expr.getExpression()).getBaseClassExpression() : expr.getExpression();
       if (baseExpr instanceof Concrete.HoleExpression || baseExpr instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) baseExpr).getReferent() instanceof ClassReferable && expectedType instanceof ClassCallExpression) {
@@ -715,10 +727,10 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         return null;
       }
 
-      typeCheckedBaseClass.expression = typeCheckedBaseClass.expression.normalize(NormalizeVisitor.Mode.WHNF);
+      typeCheckedBaseClass.expression = typeCheckedBaseClass.expression.normalize(NormalizationMode.WHNF);
       ClassCallExpression classCall = typeCheckedBaseClass.expression.cast(ClassCallExpression.class);
       if (classCall == null) {
-        classCall = typeCheckedBaseClass.type.normalize(NormalizeVisitor.Mode.WHNF).cast(ClassCallExpression.class);
+        classCall = typeCheckedBaseClass.type.normalize(NormalizationMode.WHNF).cast(ClassCallExpression.class);
         if (classCall == null) {
           errorReporter.report(new TypecheckingError("Expected a class or a class instance", baseClassExpr));
           return null;
@@ -732,7 +744,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       }
     }
 
-    Expression normExpr = exprResult.expression.normalize(NormalizeVisitor.Mode.WHNF);
+    Expression normExpr = exprResult.expression.normalize(NormalizationMode.WHNF);
     ClassCallExpression classCallExpr = normExpr.cast(ClassCallExpression.class);
     if (classCallExpr == null) {
       TypecheckingError error = new TypecheckingError("Expected a class", expr.getExpression());
@@ -1013,7 +1025,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         return Sort.STD;
       }
       Sort result = Sort.generateInferVars(getEquations(), false, sourceNode);
-      if (!CompareVisitor.compare(getEquations(), Equations.CMP.LE, type, new UniverseExpression(result), ExpectedType.OMEGA, sourceNode)) {
+      if (!CompareVisitor.compare(getEquations(), CMP.LE, type, new UniverseExpression(result), ExpectedType.OMEGA, sourceNode)) {
         errorReporter.report(new TypeMismatchError(DocFactory.text("a type"), type, sourceNode));
       }
       return result;
@@ -1063,8 +1075,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
     Sort sortResult = Sort.generateInferVars(getEquations(), false, sourceNode);
     for (Sort sort : sorts) {
-      getEquations().addEquation(sort.getPLevel(), sortResult.getPLevel(), Equations.CMP.LE, sourceNode);
-      getEquations().addEquation(sort.getHLevel(), sortResult.getHLevel(), Equations.CMP.LE, sourceNode);
+      getEquations().addEquation(sort.getPLevel(), sortResult.getPLevel(), CMP.LE, sourceNode);
+      getEquations().addEquation(sort.getHLevel(), sortResult.getHLevel(), CMP.LE, sourceNode);
     }
     return sortResult;
   }
@@ -1078,7 +1090,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       PiExpression fieldType = field.getType(classCall.getSortArgument());
       if (fieldType.getCodomain().isInstance(ErrorExpression.class)) continue;
       if (sorts != null) {
-        sorts.add(getSortOfType(fieldType.applyExpression(thisExpr).normalize(NormalizeVisitor.Mode.WHNF), sourceNode));
+        sorts.add(getSortOfType(fieldType.applyExpression(thisExpr).normalize(NormalizationMode.WHNF), sourceNode));
       }
     }
 
@@ -1109,7 +1121,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     Type argResult = checkType(param.getType(), ExpectedType.OMEGA);
     if (argResult == null) return null;
     if (expectedType != null) {
-      Expression expected = expectedType.getExpr().normalize(NormalizeVisitor.Mode.WHNF).getUnderlyingExpression();
+      Expression expected = expectedType.getExpr().normalize(NormalizationMode.WHNF).getUnderlyingExpression();
       if ((expected instanceof ClassCallExpression || expected instanceof PiExpression || expected instanceof SigmaExpression || expected instanceof UniverseExpression)
           && expected.isLessOrEquals(argResult.getExpr(), myEquations, param)) {
         argResult = expectedType;
@@ -1155,7 +1167,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
           Sort resultSort = null;
           if (expectedType instanceof Expression) {
-            expectedType = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
+            expectedType = expectedType.normalize(NormalizationMode.WHNF);
             UniverseExpression universe = ((Expression) expectedType).cast(UniverseExpression.class);
             if (universe != null && universe.getSort().isProp()) {
               resultSort = Sort.PROP;
@@ -1186,7 +1198,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
     Concrete.Parameter param = parameters.get(0);
     if (expectedType != null) {
-      expectedType = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
+      expectedType = expectedType.normalize(NormalizationMode.WHNF);
       if (param.isExplicit()) {
         PiExpression piExpectedType = expectedType.cast(PiExpression.class);
         if (piExpectedType != null && !piExpectedType.getParameters().isExplicit()) {
@@ -1269,7 +1281,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           if (piExpectedType.getParameters().isExplicit() && !param.isExplicit()) {
             errorReporter.report(new ImplicitLambdaError(param.getReferableList().get(checked), expr));
           }
-          if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, argExpr, argExpectedType, ExpectedType.OMEGA, paramType)) {
+          if (!CompareVisitor.compare(myEquations, CMP.EQ, argExpr, argExpectedType, ExpectedType.OMEGA, paramType)) {
             if (!argType.isError()) {
               errorReporter.report(new TypeMismatchError("Type mismatch in an argument of the lambda", argExpectedType, argType, paramType));
             }
@@ -1299,7 +1311,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
             }
             break;
           }
-          expectedType = piExpectedType.getCodomain().normalize(NormalizeVisitor.Mode.WHNF);
+          expectedType = piExpectedType.getCodomain().normalize(NormalizationMode.WHNF);
         }
       }
 
@@ -1383,7 +1395,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   public TypecheckingResult visitTuple(Concrete.TupleExpression expr, ExpectedType expectedType) {
     Expression expectedTypeNorm = null;
     if (expectedType instanceof Expression) {
-      expectedTypeNorm = ((Expression) expectedType).normalize(NormalizeVisitor.Mode.WHNF);
+      expectedTypeNorm = ((Expression) expectedType).normalize(NormalizationMode.WHNF);
       SigmaExpression expectedTypeSigma = expectedTypeNorm.cast(SigmaExpression.class);
       if (expectedTypeSigma != null) {
         DependentLink sigmaParams = expectedTypeSigma.getParameters();
@@ -1432,7 +1444,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     TypecheckingResult exprResult = checkExpr(expr1, null);
     if (exprResult == null) return null;
 
-    exprResult.type = exprResult.type.normalize(NormalizeVisitor.Mode.WHNF);
+    exprResult.type = exprResult.type.normalize(NormalizationMode.WHNF);
     SigmaExpression sigmaExpr = exprResult.type.cast(SigmaExpression.class);
     if (sigmaExpr == null) {
       Expression stuck = exprResult.type.getCanonicalStuckExpression();
@@ -1552,7 +1564,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       return new NameLetClausePattern(name);
     }
 
-    type = type.normalize(NormalizeVisitor.Mode.WHNF);
+    type = type.normalize(NormalizationMode.WHNF);
     SigmaExpression sigma = type.cast(SigmaExpression.class);
     ClassCallExpression classCall = type.cast(ClassCallExpression.class);
     List<ClassField> notImplementedFields = classCall == null ? null : classCall.getNotImplementedFields();
@@ -1637,7 +1649,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
   @SuppressWarnings("BooleanMethodIsAlwaysInverted")
   private boolean compareExpressions(boolean isLeft, Expression expected, Expression actual, ExpectedType type, Concrete.Expression expr) {
-    if (!CompareVisitor.compare(getEquations(), Equations.CMP.EQ, actual, expected, type, expr)) {
+    if (!CompareVisitor.compare(getEquations(), CMP.EQ, actual, expected, type, expr)) {
       errorReporter.report(new PathEndpointMismatchError(isLeft, expected, actual, expr));
       return false;
     }
@@ -1665,9 +1677,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
   private TypecheckingResult checkMeta(Concrete.ReferenceExpression refExpr, List<Concrete.Argument> arguments, ExpectedType expectedType) {
     MetaDefinition meta = ((MetaReferable) refExpr.getReferent()).getDefinition();
-    CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
+    CountingErrorReporter countingErrorReporter = new CountingErrorReporter(GeneralError.Level.ERROR);
     errorReporter = new CompositeErrorReporter(errorReporter, countingErrorReporter);
-    CheckedExpression result = meta.invoke(this, new ContextDataImpl(context, refExpr.getPLevel(), refExpr.getHLevel(), arguments, null));
+    CheckedExpression result = meta.invoke(this, new ContextDataImpl(context, refExpr.getPLevel(), refExpr.getHLevel(), arguments, expectedType instanceof Expression ? (Expression) expectedType : expectedType == ExpectedType.OMEGA ? new UniverseExpression(new Sort(Level.INFINITY, Level.INFINITY)) : null));
     errorReporter = ((CompositeErrorReporter) errorReporter).getErrorReporters().get(0);
     if (result instanceof TypecheckingResult) {
       return checkResult(expectedType, (TypecheckingResult) result, refExpr);
@@ -1797,7 +1809,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       for (int i = 0; i < parameters.size(); i++) {
         link = parameters.get(i);
         if (link instanceof TypedDependentLink) {
-          if (!CompareVisitor.compare(equations, Equations.CMP.EQ, link.getTypeExpr(), expr, ExpectedType.OMEGA, sourceNode)) {
+          if (!CompareVisitor.compare(equations, CMP.EQ, link.getTypeExpr(), expr, ExpectedType.OMEGA, sourceNode)) {
             ok = false;
             break;
           }
@@ -1812,7 +1824,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           break;
         }
         link = parameters.get(i);
-        if (!CompareVisitor.compare(equations, Equations.CMP.EQ, link.getTypeExpr(), expr, ExpectedType.OMEGA, sourceNode)) {
+        if (!CompareVisitor.compare(equations, CMP.EQ, link.getTypeExpr(), expr, ExpectedType.OMEGA, sourceNode)) {
           ok = false;
           break;
         }
@@ -1822,7 +1834,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         level++;
       }
 
-      if (ok && resultType != null && !CompareVisitor.compare(equations, Equations.CMP.EQ, resultType, expr, ExpectedType.OMEGA, sourceNode)) {
+      if (ok && resultType != null && !CompareVisitor.compare(equations, CMP.EQ, resultType, expr, ExpectedType.OMEGA, sourceNode)) {
         ok = false;
       }
     }
@@ -1875,7 +1887,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           DependentLink link = ExpressionFactory.parameter(asRef == null ? null : asRef.textRepresentation(), argType != null ? argType : exprResult.type instanceof Type ? (Type) exprResult.type : new TypeExpression(exprResult.type, getSortOfType(exprResult.type, expr)));
           list.append(link);
           if (caseArg.isElim) {
-            if (argType != null && !CompareVisitor.compare(myEquations, Equations.CMP.EQ, exprResult.type, argType.getExpr(), ExpectedType.OMEGA, caseArg.type)) {
+            if (argType != null && !CompareVisitor.compare(myEquations, CMP.EQ, exprResult.type, argType.getExpr(), ExpectedType.OMEGA, caseArg.type)) {
               errorReporter.report(new TypeMismatchError(exprResult.type, argType.getExpr(), caseArg.expression));
               context.putAll(origElimBindings);
               return null;
@@ -1937,13 +1949,13 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         for (DataCallExpression dataCall = pathType.cast(DataCallExpression.class); dataCall != null; dataCall = pathType.cast(DataCallExpression.class)) {
           if (dataCall.getDefinition() == Prelude.PATH) {
             actualLevelSub++;
-            pathType = dataCall.getDefCallArguments().get(0).normalize(NormalizeVisitor.Mode.WHNF);
+            pathType = dataCall.getDefCallArguments().get(0).normalize(NormalizationMode.WHNF);
             LamExpression lam = pathType.cast(LamExpression.class);
             if (lam == null) {
               pathType = AppExpression.make(pathType, new ReferenceExpression(new TypedBinding("i", ExpressionFactory.Interval())));
               break;
             }
-            pathType = lam.getBody().normalize(NormalizeVisitor.Mode.WHNF);
+            pathType = lam.getBody().normalize(NormalizationMode.WHNF);
           } else {
             break;
           }
@@ -2027,13 +2039,13 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
 
     Sort sortArg;
-    typeType = typeType.normalize(NormalizeVisitor.Mode.WHNF);
+    typeType = typeType.normalize(NormalizationMode.WHNF);
     UniverseExpression universe = typeType.cast(UniverseExpression.class);
     if (universe != null) {
       sortArg = universe.getSort();
     } else {
       sortArg = Sort.generateInferVars(myEquations, false, expr.getExpression());
-      myEquations.addEquation(typeType, new UniverseExpression(sortArg), ExpectedType.OMEGA, Equations.CMP.LE, expr.getExpression(), typeType.getStuckInferenceVariable(), null);
+      myEquations.addEquation(typeType, new UniverseExpression(sortArg), ExpectedType.OMEGA, CMP.LE, expr.getExpression(), typeType.getStuckInferenceVariable(), null);
     }
 
     List<Expression> args = new ArrayList<>(3);

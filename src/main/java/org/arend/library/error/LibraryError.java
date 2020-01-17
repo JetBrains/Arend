@@ -1,20 +1,20 @@
 package org.arend.library.error;
 
-import org.arend.error.GeneralError;
-import org.arend.error.doc.DocFactory;
-import org.arend.error.doc.LineDoc;
 import org.arend.ext.ArendExtension;
+import org.arend.ext.error.GeneralError;
 import org.arend.ext.module.LongName;
 import org.arend.ext.module.ModulePath;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.doc.DocFactory;
+import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.arend.prelude.Prelude;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
 import org.arend.util.Range;
 
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.arend.error.doc.DocFactory.*;
+import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public class LibraryError extends GeneralError {
   public final Stream<String> libraryNames;

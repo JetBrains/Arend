@@ -8,13 +8,13 @@ import org.arend.ext.reference.ArendRef;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 public interface ContextData {
   @Nonnull Map<? extends ArendRef, ? extends CoreBinding> getBindings();
   @Nullable ConcreteLevel getPLevel();
   @Nullable ConcreteLevel getHLevel();
-  @Nonnull Collection<? extends ConcreteArgument> getArguments();
+  @Nonnull List<? extends ConcreteArgument> getArguments();
   @Nullable CoreExpression getExpectedType();
 }

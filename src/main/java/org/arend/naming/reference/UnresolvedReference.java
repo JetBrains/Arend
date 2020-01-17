@@ -1,5 +1,6 @@
 package org.arend.naming.reference;
 
+import org.arend.ext.reference.DataContainer;
 import org.arend.naming.scope.Scope;
 import org.arend.term.concrete.Concrete;
 

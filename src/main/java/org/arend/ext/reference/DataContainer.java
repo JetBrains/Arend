@@ -1,4 +1,4 @@
-package org.arend.naming.reference;
+package org.arend.ext.reference;
 
 import javax.annotation.Nullable;
 

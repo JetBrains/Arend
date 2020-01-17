@@ -1,12 +1,12 @@
 package org.arend.library.error;
 
-import org.arend.error.GeneralError;
-import org.arend.error.doc.Doc;
-import org.arend.error.doc.LineDoc;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
+import org.arend.ext.error.GeneralError;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.doc.Doc;
+import org.arend.ext.prettyprinting.doc.LineDoc;
 
-import static org.arend.error.doc.DocFactory.nullDoc;
-import static org.arend.error.doc.DocFactory.text;
+import static org.arend.ext.prettyprinting.doc.DocFactory.nullDoc;
+import static org.arend.ext.prettyprinting.doc.DocFactory.text;
 
 public class LibraryIOError extends GeneralError {
   public final String fileName;

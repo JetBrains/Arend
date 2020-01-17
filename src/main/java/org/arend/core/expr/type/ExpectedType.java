@@ -1,18 +1,18 @@
 package org.arend.core.expr.type;
 
 import org.arend.core.context.param.SingleDependentLink;
-import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
-import org.arend.error.doc.Doc;
-import org.arend.error.doc.DocFactory;
-import org.arend.term.prettyprint.PrettyPrintable;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
+import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.ext.prettyprinting.PrettyPrintable;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.doc.Doc;
+import org.arend.ext.prettyprinting.doc.DocFactory;
 
 import java.util.List;
 
 public interface ExpectedType extends PrettyPrintable {
-  ExpectedType normalize(NormalizeVisitor.Mode mode);
+  ExpectedType normalize(NormalizationMode mode);
   ExpectedType getPiParameters(List<? super SingleDependentLink> params, boolean implicitOnly);
   ExpectedType subst(ExprSubstitution subst);
   ExpectedType subst(LevelSubstitution subst);
@@ -29,7 +29,7 @@ public interface ExpectedType extends PrettyPrintable {
     }
 
     @Override
-    public ExpectedType normalize(NormalizeVisitor.Mode mode) {
+    public ExpectedType normalize(NormalizationMode mode) {
       return this;
     }
 

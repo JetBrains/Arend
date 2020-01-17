@@ -1,4 +1,4 @@
-package org.arend.error.doc;
+package org.arend.ext.prettyprinting.doc;
 
 public class TextDoc extends LineDoc {
   private final String myText;

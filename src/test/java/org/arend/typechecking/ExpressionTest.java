@@ -4,7 +4,7 @@ import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.expr.Expression;
-import org.arend.core.expr.visitor.NormalizeVisitor;
+import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.naming.reference.LocalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
@@ -209,7 +209,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
     Concrete.LetClause xClause = clet(x, cargs(cTele(cvars(y), cNat())), cZero());
     Concrete.Expression expr = cLet(clets(xClause), cVar(x));
     TypecheckingResult result = typeCheckExpr(expr, null);
-    assertEquals(result.type.normalize(NormalizeVisitor.Mode.WHNF), Pi(Nat(), Nat()));
+    assertEquals(result.type.normalize(NormalizationMode.WHNF), Pi(Nat(), Nat()));
   }
 
   @Test

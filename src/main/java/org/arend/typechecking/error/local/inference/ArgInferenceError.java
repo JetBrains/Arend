@@ -1,15 +1,15 @@
 package org.arend.typechecking.error.local.inference;
 
 import org.arend.core.expr.Expression;
-import org.arend.error.doc.Doc;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.term.concrete.Concrete;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
 import org.arend.typechecking.error.local.TypecheckingError;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
-import static org.arend.error.doc.DocFactory.*;
+import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public class ArgInferenceError extends TypecheckingError {
   public final Expression[] candidates;
@@ -75,7 +75,7 @@ public class ArgInferenceError extends TypecheckingError {
   }
 
   @Override
-  public boolean isShort() {
-    return candidates.length == 0 && expected == null && actual == null;
+  public boolean hasExpressions() {
+    return candidates.length != 0 || expected != null || actual != null;
   }
 }

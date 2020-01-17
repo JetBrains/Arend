@@ -3,9 +3,9 @@ package org.arend.typechecking;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.expr.Expression;
-import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
+import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.junit.Test;
@@ -35,8 +35,8 @@ public class PathsTest extends TypeCheckingTestCase {
     pathArgs.add(Ref(a));
     pathArgs.add(Ref(a));
     Expression pathCall = ConCall(Prelude.PATH_CON, Sort.TypeOfLevel(0), pathArgs, Lam(C, Ref(a)));
-    assertEquals(Lam(A, Lam(a, pathCall)).normalize(NormalizeVisitor.Mode.NF), idp.expression);
-    assertEquals(Pi(A, Pi(a, FunCall(Prelude.PATH_INFIX, Sort.TypeOfLevel(0), Ref(A), Ref(a), Ref(a)))).normalize(NormalizeVisitor.Mode.NF), idp.type.normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Lam(A, Lam(a, pathCall)).normalize(NormalizationMode.NF), idp.expression);
+    assertEquals(Pi(A, Pi(a, FunCall(Prelude.PATH_INFIX, Sort.TypeOfLevel(0), Ref(A), Ref(a), Ref(a)))).normalize(NormalizationMode.NF), idp.type.normalize(NormalizationMode.NF));
   }
 
   @Test

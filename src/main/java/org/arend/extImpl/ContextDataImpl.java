@@ -9,17 +9,17 @@ import org.arend.ext.typechecking.ContextData;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 public class ContextDataImpl implements ContextData {
   private final Map<? extends ArendRef, ? extends CoreBinding> myBindings;
   private final ConcreteLevel myPLevel;
   private final ConcreteLevel myHLevel;
-  private final Collection<? extends ConcreteArgument> myArguments;
+  private final List<? extends ConcreteArgument> myArguments;
   private final CoreExpression myExpectedType;
 
-  public ContextDataImpl(Map<? extends ArendRef, ? extends CoreBinding> bindings, ConcreteLevel pLevel, ConcreteLevel hLevel, Collection<? extends ConcreteArgument> arguments, CoreExpression expectedType) {
+  public ContextDataImpl(Map<? extends ArendRef, ? extends CoreBinding> bindings, ConcreteLevel pLevel, ConcreteLevel hLevel, List<? extends ConcreteArgument> arguments, CoreExpression expectedType) {
     myBindings = bindings;
     myPLevel = pLevel;
     myHLevel = hLevel;
@@ -47,7 +47,7 @@ public class ContextDataImpl implements ContextData {
 
   @Nonnull
   @Override
-  public Collection<? extends ConcreteArgument> getArguments() {
+  public List<? extends ConcreteArgument> getArguments() {
     return myArguments;
   }
 

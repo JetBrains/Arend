@@ -1,6 +1,6 @@
 package org.arend.typechecking;
 
-import org.arend.error.ErrorReporter;
+import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.reference.Precedence;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.typechecking.error.local.LocalErrorReporter;

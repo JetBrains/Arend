@@ -1,11 +1,11 @@
 package org.arend.typechecking.error.local;
 
-import org.arend.error.doc.Doc;
+import org.arend.ext.prettyprinting.PrettyPrintable;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.term.concrete.Concrete;
-import org.arend.term.prettyprint.PrettyPrintable;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
 
-import static org.arend.error.doc.DocFactory.*;
+import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public class TypeMismatchError extends TypecheckingError {
   public final PrettyPrintable expected;
@@ -32,7 +32,7 @@ public class TypeMismatchError extends TypecheckingError {
   }
 
   @Override
-  public boolean isShort() {
-    return false;
+  public boolean hasExpressions() {
+    return true;
   }
 }

@@ -13,11 +13,12 @@ import org.arend.core.expr.*;
 import org.arend.core.expr.type.ExpectedType;
 import org.arend.core.expr.visitor.CompareVisitor;
 import org.arend.core.expr.visitor.ElimBindingVisitor;
-import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SimpleLevelSubstitution;
+import org.arend.ext.core.ops.CMP;
+import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.*;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
@@ -97,7 +98,7 @@ public class TwoStageEquations implements Equations {
       }
 
       if (result != null) {
-        SolveResult solveResult = solve(variable, result.normalize(NormalizeVisitor.Mode.WHNF), false);
+        SolveResult solveResult = solve(variable, result.normalize(NormalizationMode.WHNF), false);
         return solveResult != SolveResult.SOLVED || CompareVisitor.compare(this, cmp, expr1, expr2, type, sourceNode);
       }
     }
@@ -107,7 +108,7 @@ public class TwoStageEquations implements Equations {
     // expr1 == ?x && expr2 /= ?y || expr1 /= ?x && expr2 == ?y
     if (inf1 != null && inf2 == null || inf2 != null && inf1 == null) {
       InferenceVariable cInf = inf1 != null ? inf1 : inf2;
-      Expression cType = (inf1 != null ? expr2 : expr1).normalize(NormalizeVisitor.Mode.WHNF);
+      Expression cType = (inf1 != null ? expr2 : expr1).normalize(NormalizationMode.WHNF);
       Expression cTypeExpr = cType.getUnderlyingExpression();
 
       // cType /= Pi, cType /= Type, cType /= Class, cType /= stuck on ?X
@@ -162,7 +163,7 @@ public class TwoStageEquations implements Equations {
           InferenceVariable infVar = new DerivedInferenceVariable(cInf.getName() + "-cod", cInf, new UniverseExpression(codSort), myVisitor.getAllBindings());
           Expression newRef = new InferenceReferenceExpression(infVar, this);
           solve(cInf, new PiExpression(piSort, pi.getParameters(), newRef), false);
-          return addEquation(pi.getCodomain().normalize(NormalizeVisitor.Mode.WHNF), newRef, ExpectedType.OMEGA, cmp, sourceNode, pi.getCodomain().getStuckInferenceVariable(), infVar);
+          return addEquation(pi.getCodomain().normalize(NormalizationMode.WHNF), newRef, ExpectedType.OMEGA, cmp, sourceNode, pi.getCodomain().getStuckInferenceVariable(), infVar);
         }
       }
 
@@ -557,7 +558,7 @@ public class TwoStageEquations implements Equations {
   private void normalizeEquations() {
     for (int i = 0; i < myEquations.size(); i++) {
       Equation equation = myEquations.get(i);
-      myEquations.set(i, new Equation(equation.expr1.normalize(NormalizeVisitor.Mode.WHNF), equation.expr2.normalize(NormalizeVisitor.Mode.WHNF), equation.type, equation.cmp, equation.sourceNode));
+      myEquations.set(i, new Equation(equation.expr1.normalize(NormalizationMode.WHNF), equation.expr2.normalize(NormalizationMode.WHNF), equation.type, equation.cmp, equation.sourceNode));
     }
   }
 

@@ -5,6 +5,7 @@ import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.core.expr.visitor.ToAbstractVisitor;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.ext.core.level.CoreLevel;
+import org.arend.ext.core.ops.CMP;
 import org.arend.ext.reference.Precedence;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
@@ -144,30 +145,30 @@ public class Level implements CoreLevel {
     return builder.toString();
   }
 
-  public static boolean compare(Level level1, Level level2, Equations.CMP cmp, Equations equations, Concrete.SourceNode sourceNode) {
-    if (cmp == Equations.CMP.GE) {
-      return compare(level2, level1, Equations.CMP.LE, equations, sourceNode);
+  public static boolean compare(Level level1, Level level2, CMP cmp, Equations equations, Concrete.SourceNode sourceNode) {
+    if (cmp == CMP.GE) {
+      return compare(level2, level1, CMP.LE, equations, sourceNode);
     }
 
     if (level1.isInfinity()) {
-      return level2.isInfinity() || !level2.isClosed() && (equations == null || equations.addEquation(INFINITY, level2, Equations.CMP.LE, sourceNode));
+      return level2.isInfinity() || !level2.isClosed() && (equations == null || equations.addEquation(INFINITY, level2, CMP.LE, sourceNode));
     }
     if (level2.isInfinity()) {
-      return cmp == Equations.CMP.LE || !level1.isClosed() && (equations == null || equations.addEquation(INFINITY, level1, Equations.CMP.LE, sourceNode));
+      return cmp == CMP.LE || !level1.isClosed() && (equations == null || equations.addEquation(INFINITY, level1, CMP.LE, sourceNode));
     }
 
     if (level2.getVar() == null && level1.getVar() != null && !(level1.getVar() instanceof InferenceLevelVariable)) {
       return false;
     }
 
-    if (level1.getVar() == null && cmp == Equations.CMP.LE) {
+    if (level1.getVar() == null && cmp == CMP.LE) {
       if (level1.myConstant <= level2.myConstant + level2.myMaxConstant) {
         return true;
       }
     }
 
     if (level1.getVar() == level2.getVar()) {
-      if (cmp == Equations.CMP.LE) {
+      if (cmp == CMP.LE) {
         return level1.myConstant <= level2.myConstant && level1.myMaxConstant <= level2.myMaxConstant;
       } else {
         return level1.myConstant == level2.myConstant && level1.myMaxConstant == level2.myMaxConstant;

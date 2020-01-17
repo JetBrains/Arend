@@ -1,12 +1,12 @@
 package org.arend.typechecking.error.local;
 
 import org.arend.core.context.param.DependentLink;
-import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.pattern.Pattern;
-import org.arend.error.doc.Doc;
-import org.arend.error.doc.LineDoc;
+import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.doc.Doc;
+import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.arend.term.concrete.Concrete;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.arend.error.doc.DocFactory.*;
+import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public class MissingClausesError extends TypecheckingError {
   public final @Nonnull List<List<Pattern>> missingClauses;
@@ -51,7 +51,7 @@ public class MissingClausesError extends TypecheckingError {
   public Doc getBodyDoc(PrettyPrinterConfig ppConfig) {
     PrettyPrinterConfig modPPConfig = new PrettyPrinterConfig() {
       @Override
-      public NormalizeVisitor.Mode getNormalizationMode() {
+      public NormalizationMode getNormalizationMode() {
         return null;
       }
     };
@@ -68,11 +68,6 @@ public class MissingClausesError extends TypecheckingError {
 
   @Override
   public boolean isShort() {
-    return false;
-  }
-
-  @Override
-  public boolean hasExpressions() {
     return false;
   }
 }

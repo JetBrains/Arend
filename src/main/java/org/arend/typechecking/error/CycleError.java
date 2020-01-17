@@ -1,18 +1,19 @@
 package org.arend.typechecking.error;
 
 import org.arend.core.definition.Definition;
-import org.arend.error.GeneralError;
-import org.arend.error.doc.Doc;
-import org.arend.error.doc.LineDoc;
+import org.arend.ext.error.GeneralError;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.doc.Doc;
+import org.arend.ext.prettyprinting.doc.LineDoc;
+import org.arend.ext.reference.ArendRef;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.term.concrete.Concrete;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
 
-import static org.arend.error.doc.DocFactory.*;
+import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public class CycleError extends GeneralError {
   public final List<? extends GlobalReferable> cycle;
@@ -83,7 +84,7 @@ public class CycleError extends GeneralError {
   }
 
   @Override
-  public void forAffectedDefinitions(BiConsumer<GlobalReferable, GeneralError> consumer) {
+  public void forAffectedDefinitions(BiConsumer<ArendRef, GeneralError> consumer) {
     Object causeData = cause != null ? cause.getData() : null;
     if (causeData instanceof GlobalReferable) {
       consumer.accept((GlobalReferable) causeData, this);

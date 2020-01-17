@@ -4,8 +4,8 @@ import org.arend.core.definition.ClassDefinition;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.*;
-import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Sort;
+import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
@@ -171,16 +171,16 @@ public class ExtensionsTest extends TypeCheckingTestCase {
     FunCallExpression funCall = new FunCallExpression((FunctionDefinition) getDefinition("f"), Sort.STD, Collections.emptyList());
 
     Expression fieldCallA = FieldCallExpression.make((ClassField) getDefinition("B.a"), Sort.STD, funCall);
-    Expression fieldCallANorm = fieldCallA.normalize(NormalizeVisitor.Mode.WHNF);
+    Expression fieldCallANorm = fieldCallA.normalize(NormalizationMode.WHNF);
     assertTrue(fieldCallANorm instanceof NewExpression);
 
     Expression fieldCallM = FieldCallExpression.make((ClassField) getDefinition("B.m"), Sort.STD, funCall);
-    fieldCallM = fieldCallM.normalize(NormalizeVisitor.Mode.WHNF);
+    fieldCallM = fieldCallM.normalize(NormalizationMode.WHNF);
     assertTrue(fieldCallM instanceof SmallIntegerExpression);
     assertEquals(0, ((SmallIntegerExpression) fieldCallM).getInteger());
 
     Expression fieldCallK = FieldCallExpression.make((ClassField) getDefinition("A.k"), Sort.STD, fieldCallA);
-    fieldCallK = fieldCallK.normalize(NormalizeVisitor.Mode.WHNF);
+    fieldCallK = fieldCallK.normalize(NormalizationMode.WHNF);
     assertEquals(Suc(Zero()), fieldCallK);
   }
 
@@ -194,24 +194,24 @@ public class ExtensionsTest extends TypeCheckingTestCase {
     FunCallExpression funCall = new FunCallExpression((FunctionDefinition) getDefinition("f"), Sort.STD, Collections.emptyList());
 
     Expression fieldCallL = FieldCallExpression.make((ClassField) getDefinition("C.l"), Sort.STD, funCall);
-    fieldCallL = fieldCallL.normalize(NormalizeVisitor.Mode.WHNF);
+    fieldCallL = fieldCallL.normalize(NormalizationMode.WHNF);
     assertTrue(fieldCallL instanceof SmallIntegerExpression);
     assertEquals(2, ((SmallIntegerExpression) fieldCallL).getInteger());
 
     Expression fieldCallB = FieldCallExpression.make((ClassField) getDefinition("C.b"), Sort.STD, funCall);
-    Expression fieldCallBNorm = fieldCallB.normalize(NormalizeVisitor.Mode.WHNF);
+    Expression fieldCallBNorm = fieldCallB.normalize(NormalizationMode.WHNF);
     assertTrue(fieldCallBNorm instanceof NewExpression);
 
     Expression fieldCallM = FieldCallExpression.make((ClassField) getDefinition("B.m"), Sort.STD, fieldCallB);
-    fieldCallM = fieldCallM.normalize(NormalizeVisitor.Mode.WHNF);
+    fieldCallM = fieldCallM.normalize(NormalizationMode.WHNF);
     assertEquals(Suc(Zero()), fieldCallM);
 
     Expression fieldCallA = FieldCallExpression.make((ClassField) getDefinition("B.a"), Sort.STD, fieldCallB);
-    Expression fieldCallANorm = fieldCallA.normalize(NormalizeVisitor.Mode.WHNF);
+    Expression fieldCallANorm = fieldCallA.normalize(NormalizationMode.WHNF);
     assertTrue(fieldCallANorm instanceof NewExpression);
 
     Expression fieldCallK = FieldCallExpression.make((ClassField) getDefinition("A.k"), Sort.STD, fieldCallA);
-    fieldCallK = fieldCallK.normalize(NormalizeVisitor.Mode.WHNF);
+    fieldCallK = fieldCallK.normalize(NormalizationMode.WHNF);
     assertEquals(Zero(), fieldCallK);
   }
 
@@ -231,7 +231,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
     assertEquals(0, ((SmallIntegerExpression) fieldCallM).getInteger());
 
     Expression fieldCallK = FieldCallExpression.make((ClassField) getDefinition("A.k"), Sort.STD, fieldCallA);
-    fieldCallK = fieldCallK.normalize(NormalizeVisitor.Mode.WHNF);
+    fieldCallK = fieldCallK.normalize(NormalizationMode.WHNF);
     assertEquals(Suc(Zero()), fieldCallK);
   }
 
@@ -244,16 +244,16 @@ public class ExtensionsTest extends TypeCheckingTestCase {
     FunCallExpression funCall = new FunCallExpression((FunctionDefinition) getDefinition("f"), Sort.STD, Collections.emptyList());
 
     Expression fieldCallA = FieldCallExpression.make((ClassField) getDefinition("B.a"), Sort.STD, funCall);
-    Expression fieldCallANorm = fieldCallA.normalize(NormalizeVisitor.Mode.WHNF);
+    Expression fieldCallANorm = fieldCallA.normalize(NormalizationMode.WHNF);
     assertTrue(fieldCallANorm instanceof NewExpression);
 
     Expression fieldCallM = FieldCallExpression.make((ClassField) getDefinition("B.m"), Sort.STD, funCall);
-    fieldCallM = fieldCallM.normalize(NormalizeVisitor.Mode.WHNF);
+    fieldCallM = fieldCallM.normalize(NormalizationMode.WHNF);
     assertTrue(fieldCallM instanceof SmallIntegerExpression);
     assertEquals(0, ((SmallIntegerExpression) fieldCallM).getInteger());
 
     Expression fieldCallK = FieldCallExpression.make((ClassField) getDefinition("A.k"), Sort.STD, fieldCallA);
-    fieldCallK = fieldCallK.normalize(NormalizeVisitor.Mode.WHNF);
+    fieldCallK = fieldCallK.normalize(NormalizationMode.WHNF);
     assertEquals(Suc(Zero()), fieldCallK);
   }
 
@@ -266,16 +266,16 @@ public class ExtensionsTest extends TypeCheckingTestCase {
     FunCallExpression funCall = new FunCallExpression((FunctionDefinition) getDefinition("f"), Sort.STD, Collections.emptyList());
 
     Expression fieldCallA = FieldCallExpression.make((ClassField) getDefinition("B.a"), Sort.STD, funCall);
-    Expression fieldCallANorm = fieldCallA.normalize(NormalizeVisitor.Mode.WHNF);
+    Expression fieldCallANorm = fieldCallA.normalize(NormalizationMode.WHNF);
     assertTrue(fieldCallANorm instanceof NewExpression);
 
     Expression fieldCallM = FieldCallExpression.make((ClassField) getDefinition("B.m"), Sort.STD, funCall);
-    fieldCallM = fieldCallM.normalize(NormalizeVisitor.Mode.WHNF);
+    fieldCallM = fieldCallM.normalize(NormalizationMode.WHNF);
     assertTrue(fieldCallM instanceof SmallIntegerExpression);
     assertEquals(0, ((SmallIntegerExpression) fieldCallM).getInteger());
 
     Expression fieldCallK = FieldCallExpression.make((ClassField) getDefinition("A.k"), Sort.STD, fieldCallA);
-    fieldCallK = fieldCallK.normalize(NormalizeVisitor.Mode.WHNF);
+    fieldCallK = fieldCallK.normalize(NormalizationMode.WHNF);
     assertEquals(Suc(Zero()), fieldCallK);
   }
 

@@ -1,18 +1,17 @@
 package org.arend.typechecking.error.local;
 
 import org.arend.core.context.binding.LevelVariable;
-import org.arend.core.context.binding.Variable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
-import org.arend.error.SourceInfo;
-import org.arend.error.doc.Doc;
+import org.arend.ext.error.SourceInfo;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
 import org.arend.typechecking.implicitargs.equations.LevelEquation;
 
 import java.util.*;
 
-import static org.arend.error.doc.DocFactory.*;
+import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public class SolveLevelEquationsError extends TypecheckingError {
   public final Collection<? extends LevelEquation<? extends LevelVariable>> equations;
@@ -105,7 +104,7 @@ public class SolveLevelEquationsError extends TypecheckingError {
   }
 
   @Override
-  public boolean isShort() {
-    return false;
+  public boolean hasExpressions() {
+    return true;
   }
 }

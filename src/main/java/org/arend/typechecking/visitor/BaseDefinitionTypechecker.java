@@ -1,6 +1,6 @@
 package org.arend.typechecking.visitor;
 
-import org.arend.error.ErrorReporter;
+import org.arend.ext.error.ErrorReporter;
 import org.arend.term.FunctionKind;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.TypecheckingError;

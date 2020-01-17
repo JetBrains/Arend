@@ -16,6 +16,7 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.elimtree.CoreBranchKey;
+import org.arend.ext.core.ops.NormalizationMode;
 
 import java.util.*;
 
@@ -40,7 +41,7 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
   public static Expression elimBinding(Expression expression, Binding binding) {
     ElimBindingVisitor visitor = new ElimBindingVisitor(Collections.singleton(binding), false);
     visitor.myFoundVariable = expression.accept(visitor.myElimVisitor, null);
-    return visitor.myFoundVariable == null ? expression : expression.normalize(NormalizeVisitor.Mode.WHNF).accept(visitor, null);
+    return visitor.myFoundVariable == null ? expression : expression.normalize(NormalizationMode.WHNF).accept(visitor, null);
   }
 
   public static Expression keepBindings(Expression expression, Set<Binding> bindings, boolean removeImplementations) {
@@ -57,7 +58,7 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
       }
     }
 
-    return expression.normalize(NormalizeVisitor.Mode.WHNF).accept(visitor, null);
+    return expression.normalize(NormalizationMode.WHNF).accept(visitor, null);
   }
 
   private Expression acceptSelf(Expression expression, boolean normalize) {
@@ -65,7 +66,7 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
     if (myFoundVariable == null) {
       return expression;
     }
-    return (normalize ? expression.normalize(NormalizeVisitor.Mode.WHNF) : expression).accept(this, null);
+    return (normalize ? expression.normalize(NormalizationMode.WHNF) : expression).accept(this, null);
   }
 
   @Override

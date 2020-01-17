@@ -5,6 +5,7 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.expr.*;
 import org.arend.core.sort.Sort;
+import org.arend.ext.core.ops.NormalizationMode;
 
 import java.util.HashSet;
 import java.util.List;
@@ -46,7 +47,7 @@ public class FieldsCollector extends VoidExpressionVisitor<Void> {
 
     ClassCallExpression classCall = type.cast(ClassCallExpression.class);
     if (classCall == null) {
-      classCall = type.normalize(NormalizeVisitor.Mode.WHNF).cast(ClassCallExpression.class);
+      classCall = type.normalize(NormalizationMode.WHNF).cast(ClassCallExpression.class);
     }
     if (classCall != null) {
       myResult.addAll(classCall.getDefinition().getFields());

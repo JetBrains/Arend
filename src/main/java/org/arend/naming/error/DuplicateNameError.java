@@ -1,10 +1,10 @@
 package org.arend.naming.error;
 
-import org.arend.error.SourceInfo;
-import org.arend.error.doc.Doc;
-import org.arend.error.doc.DocFactory;
+import org.arend.ext.error.SourceInfo;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.doc.Doc;
+import org.arend.ext.prettyprinting.doc.DocFactory;
 import org.arend.naming.reference.Referable;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
 
 public class DuplicateNameError extends ReferenceError {
   private final Referable previous;

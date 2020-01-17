@@ -1,8 +1,9 @@
-package org.arend.error.doc;
+package org.arend.ext.prettyprinting.doc;
 
-import org.arend.term.prettyprint.PrettyPrintable;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.PrettyPrintable;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 
 public abstract class Doc implements PrettyPrintable {
@@ -14,8 +15,10 @@ public abstract class Doc implements PrettyPrintable {
   public abstract boolean isSingleLine(); // isSingleLine() == (getHeight() <= 1)
   public abstract boolean isEmpty(); // isEmpty() == (getWidth() == 0)
 
+  @Nonnull
   public abstract List<LineDoc> linearize(int indent, boolean indentFirst); // linearize(n, b).size() == getHeight()
 
+  @Nonnull
   public final List<LineDoc> linearize() {
     return linearize(0, false);
   }

@@ -1,7 +1,7 @@
 package org.arend.naming;
 
-import org.arend.error.ErrorReporter;
 import org.arend.error.ParsingError;
+import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.reference.Precedence;
 import org.arend.naming.error.NamingError;
 import org.arend.naming.reference.GlobalReferable;

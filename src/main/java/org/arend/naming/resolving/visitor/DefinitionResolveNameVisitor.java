@@ -2,9 +2,9 @@ package org.arend.naming.resolving.visitor;
 
 import org.arend.core.context.Utils;
 import org.arend.error.DummyErrorReporter;
-import org.arend.error.ErrorReporter;
-import org.arend.error.GeneralError;
 import org.arend.error.ParsingError;
+import org.arend.ext.error.ErrorReporter;
+import org.arend.ext.error.GeneralError;
 import org.arend.ext.reference.Precedence;
 import org.arend.naming.BinOpParser;
 import org.arend.naming.error.*;

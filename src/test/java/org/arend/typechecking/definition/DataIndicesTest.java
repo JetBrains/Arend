@@ -5,8 +5,8 @@ import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.definition.DataDefinition;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.Expression;
-import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Sort;
+import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
@@ -67,6 +67,6 @@ public class DataIndicesTest extends TypeCheckingTestCase {
         "  | suc n => fzero\n" +
         "  | suc n => fsuc (Fin n)\n" +
         "\\func f (n : Nat) (x : Fin n) => fsuc (fsuc x)");
-    assertEquals("fsuc {suc n} (fsuc {n} x)", ((Expression) ((FunctionDefinition) getDefinition("f")).getBody()).normalize(NormalizeVisitor.Mode.NF).toString());
+    assertEquals("fsuc {suc n} (fsuc {n} x)", ((Expression) ((FunctionDefinition) getDefinition("f")).getBody()).normalize(NormalizationMode.NF).toString());
   }
 }

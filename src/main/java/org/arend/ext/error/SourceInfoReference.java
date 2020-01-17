@@ -1,11 +1,11 @@
-package org.arend.error;
+package org.arend.ext.error;
 
-import org.arend.naming.reference.DataContainer;
-import org.arend.naming.reference.Referable;
+import org.arend.ext.reference.ArendRef;
+import org.arend.ext.reference.DataContainer;
 
 import javax.annotation.Nonnull;
 
-public class SourceInfoReference implements SourceInfo, Referable, DataContainer {
+public class SourceInfoReference implements SourceInfo, ArendRef, DataContainer {
   private final SourceInfo mySourceInfo;
 
   public SourceInfoReference(SourceInfo sourceInfo) {
@@ -29,7 +29,7 @@ public class SourceInfoReference implements SourceInfo, Referable, DataContainer
 
   @Nonnull
   @Override
-  public String textRepresentation() {
+  public String getRefName() {
     String module = mySourceInfo.moduleTextRepresentation();
     String position = mySourceInfo.positionTextRepresentation();
     if (module == null) {

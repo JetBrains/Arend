@@ -14,10 +14,11 @@ import org.arend.core.definition.Definition;
 import org.arend.core.expr.*;
 import org.arend.core.expr.type.ExpectedType;
 import org.arend.core.expr.visitor.CompareVisitor;
-import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
+import org.arend.ext.core.ops.CMP;
+import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.naming.reference.TCClassReferable;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
@@ -26,7 +27,6 @@ import org.arend.typechecking.error.local.TypeMismatchError;
 import org.arend.typechecking.error.local.TypecheckingError;
 import org.arend.typechecking.error.local.inference.ArgInferenceError;
 import org.arend.typechecking.error.local.inference.InstanceInferenceError;
-import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.typechecking.instance.pool.InstancePool;
 import org.arend.typechecking.instance.pool.RecursiveInstanceHoleExpression;
 import org.arend.typechecking.result.DefCallResult;
@@ -38,7 +38,7 @@ import org.arend.util.Pair;
 import java.util.*;
 
 import static org.arend.core.expr.ExpressionFactory.*;
-import static org.arend.error.doc.DocFactory.refDoc;
+import static org.arend.ext.prettyprinting.doc.DocFactory.refDoc;
 
 public class StdImplicitArgsInference implements ImplicitArgsInference {
   private final CheckTypeVisitor myVisitor;
@@ -194,7 +194,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
     if (result instanceof DefCallResult && !isExplicit && ((DefCallResult) result).getDefinition() instanceof ClassField) {
       DefCallResult defCallResult = (DefCallResult) result;
       ClassField field = (ClassField) defCallResult.getDefinition();
-      ClassCallExpression classCall = argResult.type.normalize(NormalizeVisitor.Mode.WHNF).cast(ClassCallExpression.class);
+      ClassCallExpression classCall = argResult.type.normalize(NormalizationMode.WHNF).cast(ClassCallExpression.class);
       PiExpression piType = null;
       if (classCall != null) {
         piType = classCall.getDefinition().getOverriddenType(field, defCallResult.getSortArgument());
@@ -238,7 +238,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
     if (result instanceof DefCallResult && expr.getArguments().get(0).isExplicit() && expectedType != null) {
       DefCallResult defCallResult = (DefCallResult) result;
       if (defCallResult.getDefinition() instanceof Constructor && defCallResult.getArguments().size() < DependentLink.Helper.size(((Constructor) defCallResult.getDefinition()).getDataTypeParameters())) {
-        DataCallExpression dataCall = expectedType instanceof Expression ? ((Expression) expectedType).normalize(NormalizeVisitor.Mode.WHNF).cast(DataCallExpression.class) : null;
+        DataCallExpression dataCall = expectedType instanceof Expression ? ((Expression) expectedType).normalize(NormalizationMode.WHNF).cast(DataCallExpression.class) : null;
         if (dataCall != null) {
           if (((Constructor) defCallResult.getDefinition()).getDataType() != dataCall.getDefinition()) {
             myVisitor.getErrorReporter().report(new TypeMismatchError(dataCall, refDoc(((Constructor) defCallResult.getDefinition()).getDataType().getReferable()), fun));
@@ -252,12 +252,12 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
           args1 = ((Constructor) defCallResult.getDefinition()).matchDataTypeArguments(args1);
           if (args1 != null) {
             boolean ok = true;
-            if (dataCall.hasUniverses() && !Sort.compare(defCallResult.getSortArgument(), dataCall.getSortArgument(), Equations.CMP.LE, myVisitor.getEquations(), fun)) {
+            if (dataCall.hasUniverses() && !Sort.compare(defCallResult.getSortArgument(), dataCall.getSortArgument(), CMP.LE, myVisitor.getEquations(), fun)) {
               ok = false;
             }
 
             if (ok && !defCallResult.getArguments().isEmpty()) {
-              ok = new CompareVisitor(myVisitor.getEquations(), Equations.CMP.LE, fun).compareLists(defCallResult.getArguments(), dataCall.getDefCallArguments().subList(0, defCallResult.getArguments().size()), dataCall.getDefinition().getParameters(), dataCall.getDefinition(), new ExprSubstitution());
+              ok = new CompareVisitor(myVisitor.getEquations(), CMP.LE, fun).compareLists(defCallResult.getArguments(), dataCall.getDefCallArguments().subList(0, defCallResult.getArguments().size()), dataCall.getDefinition().getParameters(), dataCall.getDefinition(), new ExprSubstitution());
             }
 
             if (!ok) {

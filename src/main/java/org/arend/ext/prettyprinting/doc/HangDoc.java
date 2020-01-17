@@ -1,12 +1,13 @@
-package org.arend.error.doc;
+package org.arend.ext.prettyprinting.doc;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static org.arend.error.doc.DocFactory.hList;
-import static org.arend.error.doc.DocFactory.text;
+import static org.arend.ext.prettyprinting.doc.DocFactory.hList;
+import static org.arend.ext.prettyprinting.doc.DocFactory.text;
 
 public class HangDoc extends Doc {
   private final Doc myTop;
@@ -76,6 +77,7 @@ public class HangDoc extends Doc {
     return myBottom.isNull() && myTop.isEmpty();
   }
 
+  @Nonnull
   @Override
   public List<LineDoc> linearize(int indent, boolean indentFirst) {
     List<LineDoc> result = myTop.linearize(indent, indentFirst);

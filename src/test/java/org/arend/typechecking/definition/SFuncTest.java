@@ -3,8 +3,8 @@ package org.arend.typechecking.definition;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.ExpressionFactory;
-import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Sort;
+import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
@@ -19,7 +19,7 @@ public class SFuncTest extends TypeCheckingTestCase {
   public void normTest() {
     typeCheckModule("\\sfunc pred (n : Nat) : Nat | 0 => 0 | suc n => n");
     Expression expr = getDefinition("pred").getDefCall(Sort.STD, Collections.singletonList(ExpressionFactory.Zero()));
-    assertSame(expr, expr.normalize(NormalizeVisitor.Mode.WHNF));
+    assertSame(expr, expr.normalize(NormalizationMode.WHNF));
   }
 
   @Test
@@ -28,7 +28,7 @@ public class SFuncTest extends TypeCheckingTestCase {
       "\\sfunc pred (n : Nat) : Nat | 0 => 0 | suc n => n\n" +
       "\\func test => \\eval pred 2");
     Expression expr = getDefinition("test").getDefCall(Sort.STD, Collections.emptyList());
-    assertEquals(ExpressionFactory.Suc(ExpressionFactory.Zero()), expr.normalize(NormalizeVisitor.Mode.WHNF));
+    assertEquals(ExpressionFactory.Suc(ExpressionFactory.Zero()), expr.normalize(NormalizationMode.WHNF));
   }
 
   @Test
@@ -152,14 +152,14 @@ public class SFuncTest extends TypeCheckingTestCase {
   public void caseNormTest() {
     typeCheckModule("\\func test : Nat => \\scase 0 \\with { | 0 => 0 | suc n => n }");
     Expression expr = (Expression) ((FunctionDefinition) getDefinition("test")).getBody();
-    assertSame(expr, expr.normalize(NormalizeVisitor.Mode.WHNF));
+    assertSame(expr, expr.normalize(NormalizationMode.WHNF));
   }
 
   @Test
   public void evalCaseTest() {
     typeCheckModule("\\func test : Nat => \\eval \\scase 2 \\with { | 0 => 0 | suc n => n }");
     Expression expr = (Expression) ((FunctionDefinition) getDefinition("test")).getBody();
-    assertEquals(ExpressionFactory.Suc(ExpressionFactory.Zero()), expr.normalize(NormalizeVisitor.Mode.WHNF));
+    assertEquals(ExpressionFactory.Suc(ExpressionFactory.Zero()), expr.normalize(NormalizationMode.WHNF));
   }
 
   @Test

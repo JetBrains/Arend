@@ -1,6 +1,6 @@
 package org.arend.typechecking.visitor;
 
-import org.arend.error.ErrorReporter;
+import org.arend.ext.error.ErrorReporter;
 import org.arend.naming.reference.*;
 import org.arend.naming.scope.ClassFieldImplScope;
 import org.arend.prelude.Prelude;

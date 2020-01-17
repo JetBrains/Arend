@@ -1,6 +1,7 @@
 package org.arend.typechecking.error.local;
 
-import org.arend.error.GeneralError;
+import org.arend.ext.error.GeneralError;
+import org.arend.ext.reference.ArendRef;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.term.concrete.Concrete;
 
@@ -27,7 +28,7 @@ public class CoerceCycleError extends TypecheckingError {
   }
 
   @Override
-  public void forAffectedDefinitions(BiConsumer<GlobalReferable, GeneralError> consumer) {
+  public void forAffectedDefinitions(BiConsumer<ArendRef, GeneralError> consumer) {
     for (Concrete.UseDefinition def : cycle) {
       consumer.accept(def.getData(), new CoerceCycleError(cycle, def.getData()));
     }

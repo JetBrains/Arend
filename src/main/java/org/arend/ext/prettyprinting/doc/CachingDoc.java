@@ -1,5 +1,6 @@
-package org.arend.error.doc;
+package org.arend.ext.prettyprinting.doc;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -60,6 +61,7 @@ public abstract class CachingDoc extends Doc {
     return DocFactory.text(indent == null ? text : indent + text);
   }
 
+  @Nonnull
   @Override
   public List<LineDoc> linearize(int indent, boolean indentFirst) {
     List<? extends String> text = getText();

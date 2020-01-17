@@ -1,23 +1,23 @@
-package org.arend.error.doc;
+package org.arend.ext.prettyprinting.doc;
 
-import org.arend.core.expr.Expression;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
+import org.arend.ext.core.expr.CoreExpression;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 
 import javax.annotation.Nullable;
 
-import static org.arend.error.doc.DocFactory.hList;
-import static org.arend.error.doc.DocFactory.text;
+import static org.arend.ext.prettyprinting.doc.DocFactory.hList;
+import static org.arend.ext.prettyprinting.doc.DocFactory.text;
 
 public class TermDoc extends CachingDoc {
-  private final Expression myTerm;
+  private final CoreExpression myTerm;
   private final PrettyPrinterConfig myPPConfig;
 
-  TermDoc(Expression term, PrettyPrinterConfig ppConfig) {
+  TermDoc(CoreExpression term, PrettyPrinterConfig ppConfig) {
     myTerm = term;
     myPPConfig = ppConfig;
   }
 
-  public Expression getTerm() {
+  public CoreExpression getTerm() {
     return myTerm;
   }
 

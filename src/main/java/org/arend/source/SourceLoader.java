@@ -1,6 +1,6 @@
 package org.arend.source;
 
-import org.arend.error.ErrorReporter;
+import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.module.ModulePath;
 import org.arend.library.LibraryManager;
 import org.arend.library.SourceLibrary;

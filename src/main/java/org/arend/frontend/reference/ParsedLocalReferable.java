@@ -1,6 +1,6 @@
 package org.arend.frontend.reference;
 
-import org.arend.error.SourceInfo;
+import org.arend.ext.error.SourceInfo;
 import org.arend.frontend.parser.Position;
 import org.arend.naming.reference.Referable;
 

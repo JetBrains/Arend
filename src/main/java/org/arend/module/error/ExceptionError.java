@@ -1,12 +1,13 @@
 package org.arend.module.error;
 
-import org.arend.error.GeneralError;
-import org.arend.error.doc.Doc;
-import org.arend.error.doc.DocFactory;
+import org.arend.ext.error.GeneralError;
 import org.arend.ext.module.ModulePath;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.doc.Doc;
+import org.arend.ext.prettyprinting.doc.DocFactory;
+import org.arend.ext.reference.ArendRef;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.ModuleReferable;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -31,7 +32,7 @@ public class ExceptionError extends GeneralError {
   }
 
   @Override
-  public void forAffectedDefinitions(BiConsumer<GlobalReferable, GeneralError> consumer) {
+  public void forAffectedDefinitions(BiConsumer<ArendRef, GeneralError> consumer) {
     if (affectedReferable != null) {
       consumer.accept(affectedReferable, this);
     }
@@ -46,11 +47,6 @@ public class ExceptionError extends GeneralError {
 
   @Override
   public boolean isShort() {
-    return false;
-  }
-
-  @Override
-  public boolean hasExpressions() {
     return false;
   }
 }

@@ -4,11 +4,12 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.*;
 import org.arend.core.expr.*;
 import org.arend.core.expr.type.ExpectedType;
-import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
-import org.arend.error.ErrorReporter;
+import org.arend.ext.core.ops.CMP;
+import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.ext.error.ErrorReporter;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.term.FunctionKind;
@@ -16,7 +17,6 @@ import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.CoerceCycleError;
 import org.arend.typechecking.error.local.TypecheckingError;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
-import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.typechecking.order.DFS;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.arend.util.Pair;
@@ -146,7 +146,7 @@ public class UseTypechecking {
             ok = false;
             break;
           }
-          if (!Expression.compare(link.getTypeExpr(), defLink.getTypeExpr().subst(substitution), ExpectedType.OMEGA, Equations.CMP.EQ)) {
+          if (!Expression.compare(link.getTypeExpr(), defLink.getTypeExpr().subst(substitution), ExpectedType.OMEGA, CMP.EQ)) {
             if (parameters == null) {
               parameters = DependentLink.Helper.take(typedDef.getParameters(), DependentLink.Helper.size(defLink));
             }
@@ -176,9 +176,9 @@ public class UseTypechecking {
           }
         }
         if (!classCallLink.hasNext() && def.getResultType() != null) {
-          PiExpression piType = resultType.normalize(NormalizeVisitor.Mode.WHNF).cast(PiExpression.class);
+          PiExpression piType = resultType.normalize(NormalizationMode.WHNF).cast(PiExpression.class);
           if (piType != null) {
-            classCall = piType.getParameters().getTypeExpr().normalize(NormalizeVisitor.Mode.WHNF).cast(ClassCallExpression.class);
+            classCall = piType.getParameters().getTypeExpr().normalize(NormalizationMode.WHNF).cast(ClassCallExpression.class);
             if (classCall != null && classCall.getDefinition() == useParent && (!classCall.hasUniverses() || classCall.getSortArgument().equals(Sort.STD))) {
               classCallLink = piType.getParameters();
             }
@@ -201,7 +201,7 @@ public class UseTypechecking {
                 break;
               }
               levelFields.add(classField);
-              if (!Expression.compare(classField.getType(Sort.STD).applyExpression(thisExpr), link.getTypeExpr(), ExpectedType.OMEGA, Equations.CMP.EQ)) {
+              if (!Expression.compare(classField.getType(Sort.STD).applyExpression(thisExpr), link.getTypeExpr(), ExpectedType.OMEGA, CMP.EQ)) {
                 if (parameters == null) {
                   int numberOfClassParameters = 0;
                   for (DependentLink link1 = link; link1 != classCallLink && link1.hasNext(); link1 = link1.getNext()) {

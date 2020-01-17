@@ -1,6 +1,7 @@
 package org.arend.typechecking.error.local;
 
-import org.arend.error.GeneralError;
+import org.arend.ext.error.GeneralError;
+import org.arend.ext.reference.ArendRef;
 import org.arend.naming.reference.GlobalReferable;
 
 import javax.annotation.Nonnull;
@@ -20,7 +21,7 @@ public class LocalError extends GeneralError {
   }
 
   @Override
-  public void forAffectedDefinitions(BiConsumer<GlobalReferable, GeneralError> consumer) {
+  public void forAffectedDefinitions(BiConsumer<ArendRef, GeneralError> consumer) {
     if (definition != null) {
       consumer.accept(definition, this);
     }

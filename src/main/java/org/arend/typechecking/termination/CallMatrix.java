@@ -3,10 +3,10 @@ package org.arend.typechecking.termination;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.Definition;
 import org.arend.core.expr.DefCallExpression;
-import org.arend.error.doc.Doc;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.doc.Doc;
 
-import static org.arend.error.doc.DocFactory.*;
+import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 class CallMatrix extends LabeledCallMatrix {
   private final DefCallExpression myCallExpression;

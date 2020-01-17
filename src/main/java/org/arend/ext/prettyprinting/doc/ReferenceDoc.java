@@ -1,16 +1,16 @@
-package org.arend.error.doc;
+package org.arend.ext.prettyprinting.doc;
 
-import org.arend.naming.reference.Referable;
+import org.arend.ext.reference.ArendRef;
 
 public class ReferenceDoc extends LineDoc {
-  private final Referable myReference;
+  private final ArendRef myReference;
 
-  ReferenceDoc(Referable reference) {
+  ReferenceDoc(ArendRef reference) {
     assert reference != null;
     myReference = reference;
   }
 
-  public Referable getReference() {
+  public ArendRef getReference() {
     return myReference;
   }
 
@@ -21,11 +21,11 @@ public class ReferenceDoc extends LineDoc {
 
   @Override
   public int getWidth() {
-    return myReference.textRepresentation().length();
+    return myReference.getRefName().length();
   }
 
   @Override
   public boolean isEmpty() {
-    return myReference.textRepresentation().isEmpty();
+    return myReference.getRefName().isEmpty();
   }
 }

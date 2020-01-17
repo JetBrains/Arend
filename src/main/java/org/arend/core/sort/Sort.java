@@ -6,6 +6,7 @@ import org.arend.core.expr.UniverseExpression;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.StdLevelSubstitution;
 import org.arend.ext.core.level.CoreSort;
+import org.arend.ext.core.ops.CMP;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.implicitargs.equations.Equations;
@@ -108,18 +109,18 @@ public class Sort implements CoreSort {
     if (equations == null) {
       return true;
     }
-    return equations.addEquation(new Level(sort.getHLevel().getVar()), new Level(-1), Equations.CMP.LE, sourceNode);
+    return equations.addEquation(new Level(sort.getHLevel().getVar()), new Level(-1), CMP.LE, sourceNode);
   }
 
-  public static boolean compare(Sort sort1, Sort sort2, Equations.CMP cmp, Equations equations, Concrete.SourceNode sourceNode) {
+  public static boolean compare(Sort sort1, Sort sort2, CMP cmp, Equations equations, Concrete.SourceNode sourceNode) {
     if (sort1.isProp()) {
-      if (cmp == Equations.CMP.LE || sort2.isProp()) {
+      if (cmp == CMP.LE || sort2.isProp()) {
         return true;
       }
       return compareProp(sort2, equations, sourceNode);
     }
     if (sort2.isProp()) {
-      if (cmp == Equations.CMP.GE) {
+      if (cmp == CMP.GE) {
         return true;
       }
       return compareProp(sort1, equations, sourceNode);
@@ -128,7 +129,7 @@ public class Sort implements CoreSort {
   }
 
   public boolean isLessOrEquals(Sort other) {
-    return compare(this, other, Equations.CMP.LE, DummyEquations.getInstance(), null);
+    return compare(this, other, CMP.LE, DummyEquations.getInstance(), null);
   }
 
   public Sort subst(LevelSubstitution subst) {
@@ -145,7 +146,7 @@ public class Sort implements CoreSort {
 
   @Override
   public boolean equals(Object other) {
-    return other instanceof Sort && compare(this, (Sort) other, Equations.CMP.EQ, DummyEquations.getInstance(), null);
+    return other instanceof Sort && compare(this, (Sort) other, CMP.EQ, DummyEquations.getInstance(), null);
   }
 
   @Override

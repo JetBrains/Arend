@@ -12,8 +12,9 @@ import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
 import org.arend.error.CompositeErrorReporter;
 import org.arend.error.CountingErrorReporter;
-import org.arend.error.ErrorReporter;
 import org.arend.ext.core.elimtree.CoreBranchKey;
+import org.arend.ext.error.ErrorReporter;
+import org.arend.ext.error.GeneralError;
 import org.arend.ext.typechecking.CheckedExpression;
 import org.arend.typechecking.error.local.LocalError;
 import org.arend.typechecking.error.local.TypecheckingError;
@@ -113,11 +114,12 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
         MetaInferenceVariable variable = (MetaInferenceVariable) expr.getVariable();
         Expression type = variable.getType().accept(new StripVisitor(myErrorReporter, myCheckTypeVisitor), null);
         variable.setType(type);
-        CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
+        CountingErrorReporter countingErrorReporter = new CountingErrorReporter(GeneralError.Level.ERROR);
         CheckTypeVisitor checkTypeVisitor = new CheckTypeVisitor(myCheckTypeVisitor.getTypecheckingState(), null, new CompositeErrorReporter(myCheckTypeVisitor.getErrorReporter(), countingErrorReporter), myCheckTypeVisitor.getInstancePool());
         CheckedExpression result = variable.getDefinition().invokeLater(checkTypeVisitor);
         if (result instanceof TypecheckingResult) {
           result = checkTypeVisitor.checkResult(type, (TypecheckingResult) result, variable.getExpression());
+          result = checkTypeVisitor.finalize((TypecheckingResult) result, null, variable.getExpression());
           return result == null ? new ErrorExpression(null, null) : ((TypecheckingResult) result).expression;
         }
         if (result != null) {

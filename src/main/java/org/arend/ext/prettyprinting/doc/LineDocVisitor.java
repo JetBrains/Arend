@@ -1,4 +1,4 @@
-package org.arend.error.doc;
+package org.arend.ext.prettyprinting.doc;
 
 import java.util.List;
 

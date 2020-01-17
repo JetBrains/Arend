@@ -1,5 +1,6 @@
 package org.arend.error;
 
+import org.arend.ext.error.GeneralError;
 import org.arend.term.concrete.Concrete;
 
 public class ParsingError extends GeneralError {

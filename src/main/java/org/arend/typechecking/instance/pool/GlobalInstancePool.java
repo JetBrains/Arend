@@ -6,9 +6,9 @@ import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Definition;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.*;
-import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
+import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.naming.reference.TCClassReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.TypecheckerState;
@@ -62,7 +62,7 @@ public class GlobalInstancePool implements InstancePool {
     ClassField classifyingField;
     Expression normClassifyingExpression = classifyingExpression;
     if (normClassifyingExpression != null) {
-      normClassifyingExpression = normClassifyingExpression.normalize(NormalizeVisitor.Mode.WHNF).getUnderlyingExpression();
+      normClassifyingExpression = normClassifyingExpression.normalize(NormalizationMode.WHNF).getUnderlyingExpression();
       while (normClassifyingExpression instanceof LamExpression) {
         normClassifyingExpression = ((LamExpression) normClassifyingExpression).getBody().getUnderlyingExpression();
       }
@@ -99,7 +99,7 @@ public class GlobalInstancePool implements InstancePool {
 
         Expression instanceClassifyingExpr = ((ClassCallExpression) instanceDef.getResultType()).getAbsImplementationHere(classifyingField);
         if (instanceClassifyingExpr != null) {
-          instanceClassifyingExpr = instanceClassifyingExpr.normalize(NormalizeVisitor.Mode.WHNF);
+          instanceClassifyingExpr = instanceClassifyingExpr.normalize(NormalizationMode.WHNF);
         }
         while (instanceClassifyingExpr instanceof LamExpression) {
           instanceClassifyingExpr = ((LamExpression) instanceClassifyingExpr).getBody();

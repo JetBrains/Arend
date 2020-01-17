@@ -1,10 +1,11 @@
-package org.arend.error.doc;
+package org.arend.ext.prettyprinting.doc;
 
+import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.List;
 
-import static org.arend.error.doc.DocFactory.hList;
-import static org.arend.error.doc.DocFactory.text;
+import static org.arend.ext.prettyprinting.doc.DocFactory.hList;
+import static org.arend.ext.prettyprinting.doc.DocFactory.text;
 
 public abstract class LineDoc extends Doc {
   @Override
@@ -22,6 +23,7 @@ public abstract class LineDoc extends Doc {
     return true;
   }
 
+  @Nonnull
   @Override
   public final List<LineDoc> linearize(int indent, boolean indentFirst) {
     return Collections.singletonList(!indentFirst || indent == 0 ? this : hList(text(HangDoc.getIndent(indent)), this));

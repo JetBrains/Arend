@@ -12,6 +12,7 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.expr.CoreDataCallExpression;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
+import org.arend.ext.core.ops.NormalizationMode;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -80,8 +81,9 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
     return visitor.visitDataCall(this, null);
   }
 
+  @Nonnull
   @Override
-  public DataCallExpression normalize(NormalizeVisitor.Mode mode) {
+  public DataCallExpression normalize(@Nonnull NormalizationMode mode) {
     return NormalizeVisitor.INSTANCE.visitDataCall(this, mode);
   }
 

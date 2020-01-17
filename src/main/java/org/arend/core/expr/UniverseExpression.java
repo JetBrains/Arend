@@ -3,12 +3,12 @@ package org.arend.core.expr;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
-import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CoreUniverseExpression;
+import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.util.Decision;
 
 import javax.annotation.Nonnull;
@@ -62,8 +62,9 @@ public class UniverseExpression extends Expression implements Type, CoreUniverse
     return this;
   }
 
+  @Nonnull
   @Override
-  public UniverseExpression normalize(NormalizeVisitor.Mode mode) {
+  public UniverseExpression normalize(@Nonnull NormalizationMode mode) {
     return this;
   }
 

@@ -17,8 +17,9 @@ import org.arend.core.pattern.Patterns;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
-import org.arend.error.ErrorReporter;
 import org.arend.ext.core.elimtree.CoreBranchKey;
+import org.arend.ext.core.ops.CMP;
+import org.arend.ext.error.ErrorReporter;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.ConditionsError;
@@ -87,7 +88,7 @@ public class ConditionsChecking {
     Expression evaluatedExpr1 = case1.subst(substitution1);
     ExprSubstitution substitution2 = new ExprSubstitution(link1, isLeft1 ? ExpressionFactory.Left() : ExpressionFactory.Right());
     Expression evaluatedExpr2 = case2.subst(substitution2);
-    if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, evaluatedExpr1, evaluatedExpr2, null, def)) {
+    if (!CompareVisitor.compare(myEquations, CMP.EQ, evaluatedExpr1, evaluatedExpr2, null, def)) {
       List<Expression> defCallArgs1 = new ArrayList<>();
       for (DependentLink link3 = definition.getParameters(); link3.hasNext(); link3 = link3.getNext()) {
         defCallArgs1.add(link3 == link1 ? (isLeft1 ? ExpressionFactory.Left() : ExpressionFactory.Right()) : new ReferenceExpression(link3));
@@ -137,7 +138,7 @@ public class ConditionsChecking {
 
     Expression evaluatedExpr1 = expr.subst(substitution1);
     Expression evaluatedExpr2 = clause.expression.subst(pathSubstitution);
-    if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, evaluatedExpr1, evaluatedExpr2, null, clause.clause)) {
+    if (!CompareVisitor.compare(myEquations, CMP.EQ, evaluatedExpr1, evaluatedExpr2, null, clause.clause)) {
       if (!pathSubstitution.isEmpty()) {
         link = definition.getParameters();
         for (int i = 0; i < clause.patterns.size(); i++) {
@@ -232,7 +233,7 @@ public class ConditionsChecking {
         evaluatedExpr1 = definition.getDefCall(Sort.STD, pair.proj1);
       }
       Expression evaluatedExpr2 = clause.expression.subst(pair.proj2);
-      if (evaluatedExpr1 == null || !CompareVisitor.compare(myEquations, Equations.CMP.EQ, evaluatedExpr1, evaluatedExpr2, null, clause.clause)) {
+      if (evaluatedExpr1 == null || !CompareVisitor.compare(myEquations, CMP.EQ, evaluatedExpr1, evaluatedExpr2, null, clause.clause)) {
         List<Expression> args = new ArrayList<>(clause.patterns.size());
         for (Pattern pattern : clause.patterns) {
           args.add(pattern.toExpression());

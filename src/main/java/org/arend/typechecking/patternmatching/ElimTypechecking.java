@@ -24,13 +24,14 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
-import org.arend.error.ErrorReporter;
 import org.arend.ext.core.elimtree.CoreBranchKey;
+import org.arend.ext.core.ops.CMP;
+import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.ext.error.ErrorReporter;
 import org.arend.naming.reference.Referable;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.*;
-import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.arend.typechecking.visitor.DumbTypechecker;
 import org.arend.util.Pair;
@@ -263,7 +264,7 @@ public class ElimTypechecking {
   }
 
   private static List<ConCallExpression> getMatchedConstructors(Expression expr) {
-    DataCallExpression dataCall = expr.normalize(NormalizeVisitor.Mode.WHNF).cast(DataCallExpression.class);
+    DataCallExpression dataCall = expr.normalize(NormalizationMode.WHNF).cast(DataCallExpression.class);
     return dataCall == null ? null : dataCall.getMatchedConstructors();
   }
 
@@ -579,7 +580,7 @@ public class ElimTypechecking {
       }
 
       if (dataType != null && dataType.isSquashed()) {
-        if (myActualLevel != null && !Level.compare(myActualLevel, dataType.getSort().getHLevel().add(myActualLevelSub), Equations.CMP.LE, myVisitor.getEquations(), conClauseData.clause)) {
+        if (myActualLevel != null && !Level.compare(myActualLevel, dataType.getSort().getHLevel().add(myActualLevelSub), CMP.LE, myVisitor.getEquations(), conClauseData.clause)) {
           myVisitor.getErrorReporter().report(new SquashedDataError(dataType, myActualLevel, myActualLevelSub, conClauseData.clause));
         }
 
@@ -587,10 +588,10 @@ public class ElimTypechecking {
         if (!ok) {
           Expression type = myExpectedType.getType();
           if (type != null) {
-            type = type.normalize(NormalizeVisitor.Mode.WHNF);
+            type = type.normalize(NormalizationMode.WHNF);
             UniverseExpression universe = type.cast(UniverseExpression.class);
             if (universe != null) {
-              ok = Level.compare(universe.getSort().getHLevel(), dataType.getSort().getHLevel(), Equations.CMP.LE, myVisitor.getEquations(), conClauseData.clause);
+              ok = Level.compare(universe.getSort().getHLevel(), dataType.getSort().getHLevel(), CMP.LE, myVisitor.getEquations(), conClauseData.clause);
             } else {
               InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, false, conClauseData.clause);
               myVisitor.getEquations().addVariable(pl);

@@ -6,6 +6,7 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.StdLevelSubstitution;
 import org.arend.error.IncorrectExpressionException;
+import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
 
 import java.util.ArrayList;
@@ -149,7 +150,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
   public Expression visitProj(ProjExpression expr, Void ignored) {
     Expression type = expr.getExpression().accept(this, null);
     if (myNormalizing) {
-      type = type.normalize(NormalizeVisitor.Mode.WHNF);
+      type = type.normalize(NormalizationMode.WHNF);
     }
     type = type.getUnderlyingExpression();
     if (type instanceof ErrorExpression) {

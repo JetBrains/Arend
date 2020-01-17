@@ -1,5 +1,7 @@
 package org.arend.error;
 
+import org.arend.ext.error.SourceInfo;
+
 public class SourcePosition implements SourceInfo {
   public final String sourceName;
   public final int line;

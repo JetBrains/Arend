@@ -1,7 +1,7 @@
 package org.arend.library;
 
-import org.arend.error.ErrorReporter;
 import org.arend.ext.ArendExtension;
+import org.arend.ext.error.ErrorReporter;
 import org.arend.library.classLoader.MultiClassLoader;
 import org.arend.library.error.LibraryError;
 import org.arend.library.resolver.LibraryResolver;

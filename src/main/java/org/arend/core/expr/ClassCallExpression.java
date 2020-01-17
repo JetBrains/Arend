@@ -19,6 +19,7 @@ import org.arend.ext.core.definition.CoreClassField;
 import org.arend.ext.core.expr.CoreClassCallExpression;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
+import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.naming.renamer.Renamer;
 
 import javax.annotation.Nonnull;
@@ -221,8 +222,9 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
     return visitor.visitClassCall(this, null);
   }
 
+  @Nonnull
   @Override
-  public ClassCallExpression normalize(NormalizeVisitor.Mode mode) {
+  public ClassCallExpression normalize(@Nonnull NormalizationMode mode) {
     return NormalizeVisitor.INSTANCE.visitClassCall(this, mode);
   }
 

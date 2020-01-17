@@ -1,20 +1,19 @@
-package org.arend.error;
+package org.arend.ext.error;
 
-import org.arend.error.doc.Doc;
-import org.arend.error.doc.DocStringBuilder;
-import org.arend.error.doc.LineDoc;
-import org.arend.naming.reference.DataContainer;
-import org.arend.naming.reference.GlobalReferable;
-import org.arend.naming.reference.Referable;
-import org.arend.term.concrete.Concrete;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
+import org.arend.ext.concrete.ConcreteSourceNode;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.doc.Doc;
+import org.arend.ext.prettyprinting.doc.DocStringBuilder;
+import org.arend.ext.prettyprinting.doc.LineDoc;
+import org.arend.ext.reference.ArendRef;
+import org.arend.ext.reference.DataContainer;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.function.BiConsumer;
 
-import static org.arend.error.doc.DocFactory.*;
+import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public class GeneralError {
   public final String message;
@@ -27,19 +26,19 @@ public class GeneralError {
     }
   }, GOAL, WARNING, ERROR }
 
-  public enum Stage { TYPECHECKER, RESOLVER, PARSER, OTHER }
+  public enum Stage { META, TYPECHECKER, RESOLVER, PARSER, OTHER }
 
   public GeneralError(@Nonnull Level level, String message) {
     this.level = level;
     this.message = message;
   }
 
-  public Concrete.SourceNode getCauseSourceNode() {
+  public ConcreteSourceNode getCauseSourceNode() {
     return null;
   }
 
   public Object getCause() {
-    Concrete.SourceNode sourceNode = getCauseSourceNode();
+    ConcreteSourceNode sourceNode = getCauseSourceNode();
     return sourceNode != null ? sourceNode.getData() : null;
   }
 
@@ -67,11 +66,11 @@ public class GeneralError {
 
   public Doc getCauseDoc(PrettyPrinterConfig ppConfig) {
     Object cause = getCause();
-    if (cause instanceof Referable) {
-      return refDoc((Referable) cause);
+    if (cause instanceof ArendRef) {
+      return refDoc((ArendRef) cause);
     }
 
-    Concrete.SourceNode sourceNode = getCauseSourceNode();
+    ConcreteSourceNode sourceNode = getCauseSourceNode();
     return sourceNode != null ? sourceNode.prettyPrint(ppConfig) : null;
   }
 
@@ -97,14 +96,14 @@ public class GeneralError {
     return Stage.OTHER;
   }
 
-  public void forAffectedDefinitions(BiConsumer<GlobalReferable, GeneralError> consumer) {
+  public void forAffectedDefinitions(BiConsumer<ArendRef, GeneralError> consumer) {
     Object cause = getCause();
-    if (cause instanceof GlobalReferable) {
-      consumer.accept((GlobalReferable) cause, this);
+    if (cause instanceof ArendRef) {
+      consumer.accept((ArendRef) cause, this);
     } else if (cause instanceof Collection) {
       for (Object elem : ((Collection) cause)) {
-        if (elem instanceof GlobalReferable) {
-          consumer.accept((GlobalReferable) elem, this);
+        if (elem instanceof ArendRef) {
+          consumer.accept((ArendRef) elem, this);
         }
       }
     }
@@ -115,10 +114,10 @@ public class GeneralError {
   }
 
   public boolean isShort() {
-    return true;
+    return !hasExpressions();
   }
 
   public boolean hasExpressions() {
-    return !isShort();
+    return false;
   }
 }

@@ -1,6 +1,6 @@
 package org.arend.frontend.library;
 
-import org.arend.error.ErrorReporter;
+import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.module.ModulePath;
 import org.arend.frontend.source.FileRawSource;
 import org.arend.library.LibraryDependency;

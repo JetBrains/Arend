@@ -1,16 +1,16 @@
 package org.arend.typechecking.error.local;
 
-import org.arend.error.doc.DocFactory;
-import org.arend.error.doc.LineDoc;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.doc.DocFactory;
+import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.arend.naming.reference.ClassReferable;
 import org.arend.naming.reference.FieldReferable;
 import org.arend.term.concrete.Concrete;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
 
 import java.util.Collection;
 import java.util.stream.Collectors;
 
-import static org.arend.error.doc.DocFactory.*;
+import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public class FieldsImplementationError extends TypecheckingError {
   public boolean alreadyImplemented;

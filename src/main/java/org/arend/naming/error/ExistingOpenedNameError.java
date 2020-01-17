@@ -1,10 +1,10 @@
 package org.arend.naming.error;
 
-import org.arend.error.doc.LineDoc;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.arend.term.NameRenaming;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
 
-import static org.arend.error.doc.DocFactory.*;
+import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public class ExistingOpenedNameError extends NamingError {
   public ExistingOpenedNameError(NameRenaming cause) {

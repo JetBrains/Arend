@@ -1,12 +1,12 @@
 package org.arend.typechecking.error.local.inference;
 
 import org.arend.core.expr.Expression;
-import org.arend.error.doc.LineDoc;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
 
-import static org.arend.error.doc.DocFactory.*;
+import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public class LambdaInferenceError extends ArgInferenceError {
   public final Referable parameter;

@@ -1,18 +1,19 @@
-package org.arend.error.doc;
+package org.arend.ext.prettyprinting.doc;
 
-import org.arend.core.expr.Expression;
-import org.arend.core.expr.visitor.NormalizeVisitor;
-import org.arend.core.expr.visitor.ToAbstractVisitor;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
+import org.arend.ext.core.expr.CoreExpression;
+import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.PrettyPrinterFlag;
 
+import javax.annotation.Nonnull;
 import java.util.EnumSet;
 
 public class TermLineDoc extends LineDoc {
   private final PrettyPrinterConfig myPPConfig;
-  private final Expression myTerm;
+  private final CoreExpression myTerm;
   private String myText;
 
-  TermLineDoc(Expression term, PrettyPrinterConfig ppConfig) {
+  TermLineDoc(CoreExpression term, PrettyPrinterConfig ppConfig) {
     myTerm = term;
     myPPConfig = new PrettyPrinterConfig() {
         @Override
@@ -20,19 +21,20 @@ public class TermLineDoc extends LineDoc {
           return true;
         }
 
+        @Nonnull
         @Override
-        public EnumSet<ToAbstractVisitor.Flag> getExpressionFlags() {
+        public EnumSet<PrettyPrinterFlag> getExpressionFlags() {
           return ppConfig.getExpressionFlags();
         }
 
         @Override
-        public NormalizeVisitor.Mode getNormalizationMode() {
+        public NormalizationMode getNormalizationMode() {
           return ppConfig.getNormalizationMode();
         }
     };
   }
 
-  public Expression getTerm() {
+  public CoreExpression getTerm() {
     return myTerm;
   }
 

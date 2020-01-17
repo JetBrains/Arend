@@ -1,11 +1,11 @@
 package org.arend.naming.error;
 
-import org.arend.error.doc.Doc;
-import org.arend.error.doc.DocFactory;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.doc.Doc;
+import org.arend.ext.prettyprinting.doc.DocFactory;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.UnresolvedReference;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
 import org.arend.typechecking.error.local.LocalError;
 
 public class ReferenceError extends LocalError {

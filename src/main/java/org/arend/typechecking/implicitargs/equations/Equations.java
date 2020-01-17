@@ -6,6 +6,7 @@ import org.arend.core.expr.Expression;
 import org.arend.core.expr.type.ExpectedType;
 import org.arend.core.sort.Level;
 import org.arend.core.subst.LevelSubstitution;
+import org.arend.ext.core.ops.CMP;
 import org.arend.term.concrete.Concrete;
 
 public interface Equations {
@@ -17,14 +18,4 @@ public interface Equations {
   boolean remove(Equation equation);
   LevelSubstitution solve(Concrete.SourceNode sourceNode);
   boolean isDummy();
-
-  enum CMP {
-    LE, EQ, GE;
-
-    public CMP not() {
-      if (this == LE) return GE;
-      if (this == GE) return LE;
-      return this;
-    }
-  }
 }

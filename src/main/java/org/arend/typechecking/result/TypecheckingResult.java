@@ -6,9 +6,9 @@ import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.expr.AppExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.PiExpression;
-import org.arend.core.expr.visitor.NormalizeVisitor;
-import org.arend.error.ErrorReporter;
 import org.arend.ext.core.expr.CoreExpression;
+import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.typechecking.CheckedExpression;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.TypecheckingError;
@@ -34,7 +34,7 @@ public class TypecheckingResult implements TResult, CheckedExpression {
 
   @Override
   public DependentLink getParameter() {
-    type = type.normalize(NormalizeVisitor.Mode.WHNF);
+    type = type.normalize(NormalizationMode.WHNF);
     PiExpression pi = type.cast(PiExpression.class);
     return pi != null ? pi.getParameters() : EmptyDependentLink.getInstance();
   }

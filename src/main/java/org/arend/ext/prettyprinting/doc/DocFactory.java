@@ -1,15 +1,15 @@
-package org.arend.error.doc;
+package org.arend.ext.prettyprinting.doc;
 
-import org.arend.core.expr.Expression;
-import org.arend.naming.reference.Referable;
-import org.arend.term.prettyprint.PrettyPrintable;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
+import org.arend.ext.core.expr.CoreExpression;
+import org.arend.ext.prettyprinting.PrettyPrintable;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.reference.ArendRef;
 
 import java.util.*;
 
 public class DocFactory {
-  public static ReferenceDoc refDoc(Referable sourceNode) {
-    return new ReferenceDoc(sourceNode);
+  public static ReferenceDoc refDoc(ArendRef ref) {
+    return new ReferenceDoc(ref);
   }
 
   public static LineDoc empty() {
@@ -56,11 +56,11 @@ public class DocFactory {
     return new VListDoc(docs);
   }
 
-  public static TermDoc termDoc(Expression expression, PrettyPrinterConfig ppConfig) {
+  public static TermDoc termDoc(CoreExpression expression, PrettyPrinterConfig ppConfig) {
     return new TermDoc(expression, ppConfig);
   }
 
-  public static TermLineDoc termLine(Expression expression, PrettyPrinterConfig ppConfig) {
+  public static TermLineDoc termLine(CoreExpression expression, PrettyPrinterConfig ppConfig) {
     return new TermLineDoc(expression, ppConfig);
   }
 

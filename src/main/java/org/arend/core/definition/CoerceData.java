@@ -4,11 +4,11 @@ import org.arend.core.context.binding.inference.FunctionInferenceVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.expr.*;
 import org.arend.core.expr.type.ExpectedType;
-import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.StdLevelSubstitution;
+import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
@@ -114,7 +114,7 @@ public class CoerceData {
         ClassField field = (ClassField) def;
         ClassCallExpression classCall = result.type.cast(ClassCallExpression.class);
         Sort sort = classCall == null ? Sort.generateInferVars(visitor.getEquations(), field.getParentClass().hasUniverses(), sourceNode) : classCall.getSortArgument();
-        result = new TypecheckingResult(FieldCallExpression.make(field, sort, result.expression), field.getType(sort).applyExpression(result.expression).normalize(NormalizeVisitor.Mode.WHNF));
+        result = new TypecheckingResult(FieldCallExpression.make(field, sort, result.expression), field.getType(sort).applyExpression(result.expression).normalize(NormalizationMode.WHNF));
       } else {
         List<Expression> arguments = new ArrayList<>();
         DependentLink link = def.getParameters();
@@ -144,7 +144,7 @@ public class CoerceData {
         }
 
         substitution.add(link, result.expression);
-        result = new TypecheckingResult(new FunCallExpression((FunctionDefinition) def, sortArg, arguments), ((FunctionDefinition) def).getResultType().subst(substitution, levelSubst).normalize(NormalizeVisitor.Mode.WHNF));
+        result = new TypecheckingResult(new FunCallExpression((FunctionDefinition) def, sortArg, arguments), ((FunctionDefinition) def).getResultType().subst(substitution, levelSubst).normalize(NormalizationMode.WHNF));
       }
     }
 

@@ -5,11 +5,11 @@ import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.let.LetClausePattern;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
-import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CoreLetExpression;
+import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.util.Decision;
 
 import javax.annotation.Nonnull;
@@ -40,7 +40,7 @@ public class LetExpression extends Expression implements CoreLetExpression {
   }
 
   private Expression normalizeClauseExpression(LetClausePattern pattern, Expression expression) {
-    expression = expression.normalize(NormalizeVisitor.Mode.WHNF);
+    expression = expression.normalize(NormalizationMode.WHNF);
     if (!pattern.isMatching()) {
       return expression;
     }
@@ -75,7 +75,7 @@ public class LetExpression extends Expression implements CoreLetExpression {
       }
       resultClassCall.copyImplementationsFrom(classCall);
       Expression renew = newExpr.getRenewExpression();
-      return new NewExpression(renew == null ? null : someNotImplemented ? renew.normalize(NormalizeVisitor.Mode.WHNF) : renew, resultClassCall);
+      return new NewExpression(renew == null ? null : someNotImplemented ? renew.normalize(NormalizationMode.WHNF) : renew, resultClassCall);
     }
 
     return expression;

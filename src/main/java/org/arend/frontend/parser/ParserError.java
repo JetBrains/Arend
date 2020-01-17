@@ -1,7 +1,7 @@
 package org.arend.frontend.parser;
 
-import org.arend.error.GeneralError;
-import org.arend.naming.reference.GlobalReferable;
+import org.arend.ext.error.GeneralError;
+import org.arend.ext.reference.ArendRef;
 import org.arend.naming.reference.ModuleReferable;
 
 import java.util.function.BiConsumer;
@@ -20,7 +20,7 @@ public class ParserError extends GeneralError {
   }
 
   @Override
-  public void forAffectedDefinitions(BiConsumer<GlobalReferable, GeneralError> consumer) {
+  public void forAffectedDefinitions(BiConsumer<ArendRef, GeneralError> consumer) {
     consumer.accept(new ModuleReferable(position.module), this);
   }
 

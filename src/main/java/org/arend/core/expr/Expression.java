@@ -12,16 +12,18 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
-import org.arend.error.GeneralError;
 import org.arend.error.IncorrectExpressionException;
-import org.arend.error.doc.Doc;
-import org.arend.error.doc.DocFactory;
 import org.arend.ext.core.expr.CoreExpression;
+import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.ExpressionMapper;
+import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.ext.error.GeneralError;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.doc.Doc;
+import org.arend.ext.prettyprinting.doc.DocFactory;
 import org.arend.ext.reference.Precedence;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.util.Decision;
@@ -42,7 +44,7 @@ public abstract class Expression implements ExpectedType, Body, CoreExpression {
     StringBuilder builder = new StringBuilder();
     Concrete.Expression expr = ToAbstractVisitor.convert(this, new PrettyPrinterConfig() {
       @Override
-      public NormalizeVisitor.Mode getNormalizationMode() {
+      public NormalizationMode getNormalizationMode() {
         return null;
       }
     });
@@ -53,7 +55,7 @@ public abstract class Expression implements ExpectedType, Body, CoreExpression {
   // Only for tests
   @Override
   public boolean equals(Object obj) {
-    return this == obj || obj instanceof Expression && compare(this, (Expression) obj, null, Equations.CMP.EQ);
+    return this == obj || obj instanceof Expression && compare(this, (Expression) obj, null, CMP.EQ);
   }
 
   public boolean isError() {
@@ -72,11 +74,11 @@ public abstract class Expression implements ExpectedType, Body, CoreExpression {
   }
 
   public boolean isLessOrEquals(Expression type, Equations equations, Concrete.SourceNode sourceNode) {
-    return CompareVisitor.compare(equations, Equations.CMP.LE, this, type, ExpectedType.OMEGA, sourceNode);
+    return CompareVisitor.compare(equations, CMP.LE, this, type, ExpectedType.OMEGA, sourceNode);
   }
 
   public Sort toSort() {
-    UniverseExpression universe = normalize(NormalizeVisitor.Mode.WHNF).cast(UniverseExpression.class);
+    UniverseExpression universe = normalize(NormalizationMode.WHNF).cast(UniverseExpression.class);
     return universe == null ? null : universe.getSort();
   }
 
@@ -137,8 +139,9 @@ public abstract class Expression implements ExpectedType, Body, CoreExpression {
     return accept(substVisitor, null);
   }
 
+  @Nonnull
   @Override
-  public Expression normalize(NormalizeVisitor.Mode mode) {
+  public Expression normalize(@Nonnull NormalizationMode mode) {
     return accept(NormalizeVisitor.INSTANCE, mode);
   }
 
@@ -152,8 +155,13 @@ public abstract class Expression implements ExpectedType, Body, CoreExpression {
     }
   }
 
-  public static boolean compare(Expression expr1, Expression expr2, ExpectedType type, Equations.CMP cmp) {
+  public static boolean compare(Expression expr1, Expression expr2, ExpectedType type, CMP cmp) {
     return CompareVisitor.compare(DummyEquations.getInstance(), cmp, expr1, expr2, type, null);
+  }
+
+  @Override
+  public boolean compare(@Nonnull CoreExpression expr2, @Nonnull CMP cmp) {
+    return expr2 instanceof Expression && CompareVisitor.compare(DummyEquations.getInstance(), cmp, this, (Expression) expr2, null, null);
   }
 
   public Expression dropPiParameter(int n) {
@@ -161,7 +169,7 @@ public abstract class Expression implements ExpectedType, Body, CoreExpression {
       return this;
     }
 
-    Expression cod = normalize(NormalizeVisitor.Mode.WHNF);
+    Expression cod = normalize(NormalizationMode.WHNF);
     for (PiExpression piCod = cod.cast(PiExpression.class); piCod != null; piCod = cod.cast(PiExpression.class)) {
       SingleDependentLink link = piCod.getParameters();
       while (n > 0 && link.hasNext()) {
@@ -171,7 +179,7 @@ public abstract class Expression implements ExpectedType, Body, CoreExpression {
       if (n == 0) {
         return link.hasNext() ? new PiExpression(piCod.getResultSort(), link, piCod.getCodomain()) : piCod.getCodomain();
       }
-      cod = piCod.getCodomain().normalize(NormalizeVisitor.Mode.WHNF);
+      cod = piCod.getCodomain().normalize(NormalizationMode.WHNF);
     }
 
     return null;
@@ -179,7 +187,7 @@ public abstract class Expression implements ExpectedType, Body, CoreExpression {
 
   @Override
   public Expression getPiParameters(List<? super SingleDependentLink> params, boolean implicitOnly) {
-    Expression cod = normalize(NormalizeVisitor.Mode.WHNF);
+    Expression cod = normalize(NormalizationMode.WHNF);
     for (PiExpression piCod = cod.cast(PiExpression.class); piCod != null; piCod = cod.cast(PiExpression.class)) {
       if (implicitOnly) {
         if (piCod.getParameters().isExplicit()) {
@@ -201,7 +209,7 @@ public abstract class Expression implements ExpectedType, Body, CoreExpression {
         }
       }
 
-      cod = piCod.getCodomain().normalize(NormalizeVisitor.Mode.WHNF);
+      cod = piCod.getCodomain().normalize(NormalizationMode.WHNF);
     }
     return cod;
   }
@@ -224,7 +232,7 @@ public abstract class Expression implements ExpectedType, Body, CoreExpression {
   }
 
   public Expression applyExpression(Expression expression, boolean normalizing) {
-    Expression normExpr = (normalizing ? normalize(NormalizeVisitor.Mode.WHNF) : this).getUnderlyingExpression();
+    Expression normExpr = (normalizing ? normalize(NormalizationMode.WHNF) : this).getUnderlyingExpression();
     return normExpr instanceof ErrorExpression ? normExpr : normExpr instanceof PiExpression ? normExpr.applyExpression(expression, normalizing) : null;
   }
 

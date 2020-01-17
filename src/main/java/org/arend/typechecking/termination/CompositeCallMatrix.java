@@ -1,8 +1,8 @@
 package org.arend.typechecking.termination;
 
-import org.arend.error.doc.Doc;
-import org.arend.error.doc.DocFactory;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.doc.Doc;
+import org.arend.ext.prettyprinting.doc.DocFactory;
 
 public class CompositeCallMatrix<T> extends BaseCallMatrix<T> {
   private final BaseCallMatrix<T> myM1;

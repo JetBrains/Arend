@@ -11,9 +11,9 @@ import org.arend.core.expr.Expression;
 import org.arend.core.expr.PiExpression;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.sort.Sort;
+import org.arend.ext.core.ops.CMP;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.TypeCheckingTestCase;
-import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.junit.Test;
 
@@ -116,7 +116,7 @@ public class ComparisonTest extends TypeCheckingTestCase {
     // Expression expr2 = Pi("X", UniverseOld(0), Pi(Index(0), Index(0)));
     Expression expr1 = Universe(0);
     Expression expr2 = Universe(1);
-    assertTrue(compare(expr1, expr2, null, Equations.CMP.LE));
+    assertTrue(compare(expr1, expr2, null, CMP.LE));
   }
 
   @Test
@@ -125,7 +125,7 @@ public class ComparisonTest extends TypeCheckingTestCase {
     SingleDependentLink X1 = singleParam("X", Universe(1));
     Expression expr1 = Pi(X0, Pi(singleParam(null, Ref(X0)), Ref(X0)));
     Expression expr2 = Pi(X1, Pi(singleParam(null, Ref(X1)), Ref(X1)));
-    assertFalse(compare(expr1, expr2, null, Equations.CMP.LE));
+    assertFalse(compare(expr1, expr2, null, CMP.LE));
   }
 
   @Test
@@ -166,7 +166,7 @@ public class ComparisonTest extends TypeCheckingTestCase {
   public void letsLess() {
     Expression expr1 = let(lets(let("x", Nat())), Universe(0));
     Expression expr2 = let(lets(let("x", Nat())), Universe(1));
-    assertTrue(compare(expr1, expr2, null, Equations.CMP.LE));
+    assertTrue(compare(expr1, expr2, null, CMP.LE));
   }
 
   @Test

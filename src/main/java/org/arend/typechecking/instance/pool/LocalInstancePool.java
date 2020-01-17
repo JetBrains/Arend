@@ -4,6 +4,7 @@ import org.arend.core.expr.Expression;
 import org.arend.core.expr.ReferenceExpression;
 import org.arend.core.expr.type.ExpectedType;
 import org.arend.core.subst.ExprSubstitution;
+import org.arend.ext.core.ops.CMP;
 import org.arend.naming.reference.TCClassReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.implicitargs.equations.Equations;
@@ -60,7 +61,7 @@ public class LocalInstancePool implements InstancePool {
   private Expression getInstance(Expression classifyingExpression, TCClassReferable classRef) {
     for (int i = myPool.size() - 1; i >= 0; i--) {
       InstanceData instanceData = myPool.get(i);
-      if (instanceData.classRef.isSubClassOf(classRef) && (instanceData.key == classifyingExpression || instanceData.key != null && classifyingExpression != null && Expression.compare(instanceData.key, classifyingExpression, instanceData.keyType, Equations.CMP.EQ))) {
+      if (instanceData.classRef.isSubClassOf(classRef) && (instanceData.key == classifyingExpression || instanceData.key != null && classifyingExpression != null && Expression.compare(instanceData.key, classifyingExpression, instanceData.keyType, CMP.EQ))) {
         return instanceData.value;
       }
     }

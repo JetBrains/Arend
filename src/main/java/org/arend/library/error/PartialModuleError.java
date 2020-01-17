@@ -1,6 +1,6 @@
 package org.arend.library.error;
 
-import org.arend.error.GeneralError;
+import org.arend.ext.error.GeneralError;
 import org.arend.ext.module.ModulePath;
 import org.arend.naming.reference.ModuleReferable;
 

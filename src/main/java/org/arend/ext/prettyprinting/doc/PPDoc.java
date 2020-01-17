@@ -1,7 +1,7 @@
-package org.arend.error.doc;
+package org.arend.ext.prettyprinting.doc;
 
-import org.arend.term.prettyprint.PrettyPrintable;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.PrettyPrintable;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 
 public class PPDoc extends CachingDoc {
   private final PrettyPrintable myPrettyPrintable;

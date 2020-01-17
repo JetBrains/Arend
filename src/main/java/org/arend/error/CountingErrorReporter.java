@@ -1,5 +1,8 @@
 package org.arend.error;
 
+import org.arend.ext.error.ErrorReporter;
+import org.arend.ext.error.GeneralError;
+
 public class CountingErrorReporter implements ErrorReporter {
   private int myCounter = 0;
   private final GeneralError.Level myLevel;

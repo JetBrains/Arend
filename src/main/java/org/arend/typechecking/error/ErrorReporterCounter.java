@@ -1,7 +1,7 @@
 package org.arend.typechecking.error;
 
-import org.arend.error.ErrorReporter;
-import org.arend.error.GeneralError;
+import org.arend.ext.error.ErrorReporter;
+import org.arend.ext.error.GeneralError;
 
 public class ErrorReporterCounter implements ErrorReporter {
   private int myCount = 0;

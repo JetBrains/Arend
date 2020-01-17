@@ -1,8 +1,8 @@
 package org.arend.library;
 
-import org.arend.error.ErrorReporter;
 import org.arend.ext.ArendExtension;
 import org.arend.ext.DefaultArendExtension;
+import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.module.ModulePath;
 import org.arend.extImpl.ConcreteFactoryImpl;
 import org.arend.extImpl.DefinitionContributorImpl;

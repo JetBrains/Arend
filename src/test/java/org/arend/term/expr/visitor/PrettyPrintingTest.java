@@ -4,6 +4,7 @@ import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.LetExpression;
 import org.arend.core.expr.let.LetClause;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.reference.Precedence;
 import org.arend.frontend.reference.ConcreteLocatedReferable;
 import org.arend.naming.reference.GlobalReferable;
@@ -12,7 +13,6 @@ import org.arend.term.FunctionKind;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.expr.ConcreteCompareVisitor;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 

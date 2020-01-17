@@ -1,8 +1,8 @@
 package org.arend.naming.resolving.visitor;
 
 import org.arend.core.context.Utils;
-import org.arend.error.ErrorReporter;
-import org.arend.error.GeneralError;
+import org.arend.ext.error.ErrorReporter;
+import org.arend.ext.error.GeneralError;
 import org.arend.naming.BinOpParser;
 import org.arend.naming.error.DuplicateNameError;
 import org.arend.naming.error.NamingError;

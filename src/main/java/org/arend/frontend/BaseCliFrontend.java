@@ -2,11 +2,11 @@ package org.arend.frontend;
 
 import org.apache.commons.cli.*;
 import org.arend.core.definition.Definition;
-import org.arend.core.expr.visitor.ToAbstractVisitor;
-import org.arend.error.GeneralError;
 import org.arend.error.ListErrorReporter;
-import org.arend.error.doc.DocStringBuilder;
+import org.arend.ext.error.GeneralError;
 import org.arend.ext.module.ModulePath;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.PrettyPrinterFlag;
 import org.arend.frontend.library.FileSourceLibrary;
 import org.arend.library.*;
 import org.arend.library.error.LibraryError;
@@ -15,7 +15,6 @@ import org.arend.naming.reference.TCReferable;
 import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.prelude.Prelude;
 import org.arend.prelude.PreludeResourceLibrary;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
 import org.arend.typechecking.SimpleTypecheckerState;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.error.local.GoalError;
@@ -24,6 +23,7 @@ import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.arend.util.FileUtils;
 import org.arend.util.Range;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -297,12 +297,13 @@ public abstract class BaseCliFrontend {
       //Print error
       String errorText;
       if (error instanceof GoalError) {
-        errorText = DocStringBuilder.build(error.getDoc(new PrettyPrinterConfig() {
+        errorText = error.getDoc(new PrettyPrinterConfig() {
+          @Nonnull
           @Override
-          public EnumSet<ToAbstractVisitor.Flag> getExpressionFlags() {
-            return EnumSet.of(ToAbstractVisitor.Flag.SHOW_FIELD_INSTANCE);
+          public EnumSet<PrettyPrinterFlag> getExpressionFlags() {
+            return EnumSet.of(PrettyPrinterFlag.SHOW_FIELD_INSTANCE);
           }
-        }));
+        }).toString();
       } else errorText = error.toString();
 
       if (error.isSevere()) {

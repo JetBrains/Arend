@@ -2,12 +2,12 @@ package org.arend.typechecking.error.local;
 
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
-import org.arend.error.SourceInfo;
-import org.arend.error.doc.Doc;
+import org.arend.ext.error.SourceInfo;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.term.concrete.Concrete;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
 
-import static org.arend.error.doc.DocFactory.*;
+import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public class ConstantSolveLevelEquationError extends TypecheckingError {
   public final LevelVariable variable;
@@ -30,7 +30,7 @@ public class ConstantSolveLevelEquationError extends TypecheckingError {
   }
 
   @Override
-  public boolean isShort() {
-    return !(variable instanceof InferenceLevelVariable && ((InferenceLevelVariable) variable).getSourceNode().getData() != getCause());
+  public boolean hasExpressions() {
+    return variable instanceof InferenceLevelVariable && ((InferenceLevelVariable) variable).getSourceNode().getData() != getCause();
   }
 }

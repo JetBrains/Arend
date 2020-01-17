@@ -1,7 +1,7 @@
 package org.arend.extImpl;
 
-import org.arend.error.ErrorReporter;
 import org.arend.ext.DefinitionContributor;
+import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.module.LongName;
 import org.arend.ext.module.ModulePath;
 import org.arend.ext.reference.Precedence;

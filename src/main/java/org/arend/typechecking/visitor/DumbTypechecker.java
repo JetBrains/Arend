@@ -1,6 +1,6 @@
 package org.arend.typechecking.visitor;
 
-import org.arend.error.ErrorReporter;
+import org.arend.ext.error.ErrorReporter;
 import org.arend.naming.reference.Parameter;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.Reference;

@@ -4,16 +4,17 @@ import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.InferenceReferenceExpression;
 import org.arend.core.expr.type.ExpectedType;
+import org.arend.ext.core.ops.CMP;
 import org.arend.term.concrete.Concrete;
 
 public class Equation implements InferenceVariableListener {
   public final Expression expr1;
   public final Expression expr2;
   public final ExpectedType type;
-  public final Equations.CMP cmp;
+  public final CMP cmp;
   public final Concrete.SourceNode sourceNode;
 
-  public Equation(Expression expr1, Expression expr2, ExpectedType type, Equations.CMP cmp, Concrete.SourceNode sourceNode) {
+  public Equation(Expression expr1, Expression expr2, ExpectedType type, CMP cmp, Concrete.SourceNode sourceNode) {
     this.expr1 = expr1;
     this.expr2 = expr2;
     this.type = type;
@@ -22,11 +23,11 @@ public class Equation implements InferenceVariableListener {
   }
 
   public Expression getLowerBound() {
-    return cmp != Equations.CMP.GE ? expr1 : expr2;
+    return cmp != CMP.GE ? expr1 : expr2;
   }
 
   public Expression getUpperBound() {
-    return cmp != Equations.CMP.GE ? expr2 : expr1;
+    return cmp != CMP.GE ? expr2 : expr1;
   }
 
   @Override

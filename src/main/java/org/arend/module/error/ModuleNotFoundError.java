@@ -1,12 +1,12 @@
 package org.arend.module.error;
 
-import org.arend.error.GeneralError;
-import org.arend.error.doc.Doc;
+import org.arend.ext.error.GeneralError;
 import org.arend.ext.module.ModulePath;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.naming.reference.ModuleReferable;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
 
-import static org.arend.error.doc.DocFactory.*;
+import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public class ModuleNotFoundError extends GeneralError {
   public final ModulePath notFoundModule;

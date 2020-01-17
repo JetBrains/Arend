@@ -1,14 +1,14 @@
 package org.arend.term;
 
-import org.arend.error.doc.DocFactory;
-import org.arend.error.doc.DocStringBuilder;
-import org.arend.error.doc.LineDoc;
 import org.arend.ext.module.ModulePath;
+import org.arend.ext.prettyprinting.PrettyPrintable;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.doc.DocFactory;
+import org.arend.ext.prettyprinting.doc.DocStringBuilder;
+import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.arend.ext.reference.Precedence;
 import org.arend.naming.reference.ModuleReferable;
 import org.arend.naming.reference.Referable;
-import org.arend.term.prettyprint.PrettyPrintable;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -16,7 +16,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.arend.error.doc.DocFactory.*;
+import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public interface NamespaceCommand extends PrettyPrintable {
   enum Kind { OPEN, IMPORT }

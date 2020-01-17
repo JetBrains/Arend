@@ -2,14 +2,14 @@ package org.arend.typechecking.error.local;
 
 import org.arend.core.definition.Constructor;
 import org.arend.core.expr.DataCallExpression;
-import org.arend.error.doc.LineDoc;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.term.concrete.Concrete;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
 
 import javax.annotation.Nullable;
 
-import static org.arend.error.doc.DocFactory.*;
+import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public class ExpectedConstructorError extends TypecheckingError {
   public final GlobalReferable referable;
@@ -45,7 +45,7 @@ public class ExpectedConstructorError extends TypecheckingError {
   }
 
   @Override
-  public boolean isShort() {
-    return !myConstructorOfData;
+  public boolean hasExpressions() {
+    return myConstructorOfData;
   }
 }

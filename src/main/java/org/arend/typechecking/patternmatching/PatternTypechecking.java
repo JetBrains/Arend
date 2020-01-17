@@ -27,8 +27,10 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.StdLevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
-import org.arend.error.ErrorReporter;
-import org.arend.error.doc.DocFactory;
+import org.arend.ext.core.ops.CMP;
+import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.ext.error.ErrorReporter;
+import org.arend.ext.prettyprinting.doc.DocFactory;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
@@ -36,7 +38,6 @@ import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.error.local.*;
-import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.instance.pool.InstancePool;
 import org.arend.typechecking.result.TypecheckingResult;
@@ -421,7 +422,7 @@ public class PatternTypechecking {
         continue;
       }
 
-      Expression expr = parameters.getTypeExpr().subst(paramsSubst).normalize(NormalizeVisitor.Mode.WHNF);
+      Expression expr = parameters.getTypeExpr().subst(paramsSubst).normalize(NormalizationMode.WHNF);
       if (pattern instanceof Concrete.TuplePattern) {
         List<Concrete.Pattern> patternArgs = ((Concrete.TuplePattern) pattern).getPatterns();
         // Either sigma or class patterns
@@ -489,7 +490,7 @@ public class PatternTypechecking {
             }
 
             DataCallExpression dataCall = expr.cast(DataCallExpression.class);
-            LamExpression typeLam = dataCall == null || dataCall.getDefinition() != Prelude.PATH ? null : dataCall.getDefCallArguments().get(0).normalize(NormalizeVisitor.Mode.WHNF).cast(LamExpression.class);
+            LamExpression typeLam = dataCall == null || dataCall.getDefinition() != Prelude.PATH ? null : dataCall.getDefCallArguments().get(0).normalize(NormalizationMode.WHNF).cast(LamExpression.class);
             Expression type = typeLam == null ? null : ElimBindingVisitor.elimLamBinding(typeLam);
             if (type == null) {
               myErrorReporter.report(new TypeMismatchError(expr, constructor.getResultType().subst(substitution), conPattern));
@@ -497,8 +498,8 @@ public class PatternTypechecking {
             }
             sortArg = dataCall.getSortArgument();
 
-            Expression expr1 = dataCall.getDefCallArguments().get(2).normalize(NormalizeVisitor.Mode.WHNF);
-            Expression expr2 = dataCall.getDefCallArguments().get(1).normalize(NormalizeVisitor.Mode.WHNF);
+            Expression expr1 = dataCall.getDefCallArguments().get(2).normalize(NormalizationMode.WHNF);
+            Expression expr2 = dataCall.getDefCallArguments().get(1).normalize(NormalizationMode.WHNF);
             ReferenceExpression refExpr1 = expr1.cast(ReferenceExpression.class);
             ReferenceExpression refExpr2 = expr2.cast(ReferenceExpression.class);
             if (refExpr1 == null && refExpr2 == null) {
@@ -590,8 +591,8 @@ public class PatternTypechecking {
               }
             }
 
-            Expression actualType = constructor.getResultType().subst(substitution, levelSubst).normalize(NormalizeVisitor.Mode.WHNF);
-            if (!CompareVisitor.compare(myVisitor.getEquations(), Equations.CMP.EQ, actualType, expr, ExpectedType.OMEGA, conPattern)) {
+            Expression actualType = constructor.getResultType().subst(substitution, levelSubst).normalize(NormalizationMode.WHNF);
+            if (!CompareVisitor.compare(myVisitor.getEquations(), CMP.EQ, actualType, expr, ExpectedType.OMEGA, conPattern)) {
               myErrorReporter.report(new TypeMismatchError(expr, actualType, conPattern));
               return null;
             }

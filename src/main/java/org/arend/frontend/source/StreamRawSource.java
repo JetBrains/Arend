@@ -3,7 +3,7 @@ package org.arend.frontend.source;
 import org.antlr.v4.runtime.*;
 import org.arend.error.CompositeErrorReporter;
 import org.arend.error.CountingErrorReporter;
-import org.arend.error.ErrorReporter;
+import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.module.ModulePath;
 import org.arend.frontend.ConcreteReferableProvider;
 import org.arend.frontend.parser.*;

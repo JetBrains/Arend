@@ -5,9 +5,10 @@ import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.definition.ClassField;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
-import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CoreInferenceReferenceExpression;
+import org.arend.ext.core.ops.CMP;
+import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.util.Decision;
 
@@ -24,14 +25,14 @@ public class InferenceReferenceExpression extends Expression implements CoreInfe
     }
 
     binding.setReference(this);
-    Expression type = binding.getType().normalize(NormalizeVisitor.Mode.WHNF);
+    Expression type = binding.getType().normalize(NormalizationMode.WHNF);
     ClassCallExpression classCall = type.cast(ClassCallExpression.class);
     if (classCall != null && !classCall.getDefinition().getFields().isEmpty()) {
       for (ClassField field : classCall.getDefinition().getFields()) {
         if (!field.isProperty()) {
           Expression impl = classCall.getImplementation(field, this);
           if (impl != null) {
-            equations.addEquation(FieldCallExpression.make(field, classCall.getSortArgument(), this), impl.normalize(NormalizeVisitor.Mode.WHNF), field.getType(classCall.getSortArgument()).applyExpression(this), Equations.CMP.EQ, binding.getSourceNode(), binding, impl.getStuckInferenceVariable());
+            equations.addEquation(FieldCallExpression.make(field, classCall.getSortArgument(), this), impl.normalize(NormalizationMode.WHNF), field.getType(classCall.getSortArgument()).applyExpression(this), CMP.EQ, binding.getSourceNode(), binding, impl.getStuckInferenceVariable());
           }
         }
       }

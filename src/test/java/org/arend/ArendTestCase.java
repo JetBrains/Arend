@@ -1,9 +1,9 @@
 package org.arend;
 
-import org.arend.error.GeneralError;
 import org.arend.error.ListErrorReporter;
-import org.arend.error.doc.Doc;
-import org.arend.error.doc.DocStringBuilder;
+import org.arend.ext.error.GeneralError;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.frontend.ConcreteReferableProvider;
 import org.arend.frontend.PositionComparator;
 import org.arend.frontend.library.PreludeFileLibrary;
@@ -15,7 +15,6 @@ import org.arend.naming.reference.TCReferable;
 import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.naming.scope.Scope;
 import org.arend.prelude.Prelude;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
 import org.arend.typechecking.SimpleTypecheckerState;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
@@ -31,8 +30,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import static org.arend.error.doc.DocFactory.text;
-import static org.arend.error.doc.DocFactory.vList;
+import static org.arend.ext.prettyprinting.doc.DocFactory.text;
+import static org.arend.ext.prettyprinting.doc.DocFactory.vList;
 import static org.junit.Assert.assertThat;
 
 public abstract class ArendTestCase {
@@ -78,7 +77,7 @@ public abstract class ArendTestCase {
           for (GeneralError error : errors) {
             docs.add(error.getDoc(PrettyPrinterConfig.DEFAULT));
           }
-          description.appendText(DocStringBuilder.build(vList(docs)));
+          description.appendText(vList(docs).toString());
         }
         return n < 0 ? !errors.isEmpty() : errors.size() == n;
       }

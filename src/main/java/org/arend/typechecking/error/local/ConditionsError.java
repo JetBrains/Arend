@@ -2,20 +2,21 @@ package org.arend.typechecking.error.local;
 
 import org.arend.core.context.binding.Variable;
 import org.arend.core.expr.Expression;
-import org.arend.core.expr.visitor.NormalizeVisitor;
-import org.arend.core.expr.visitor.ToAbstractVisitor;
 import org.arend.core.subst.ExprSubstitution;
-import org.arend.error.doc.Doc;
-import org.arend.error.doc.LineDoc;
+import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.PrettyPrinterFlag;
+import org.arend.ext.prettyprinting.doc.Doc;
+import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.arend.term.concrete.Concrete;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 
-import static org.arend.error.doc.DocFactory.*;
+import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public class ConditionsError extends TypecheckingError {
   public final Expression expr1;
@@ -50,13 +51,14 @@ public class ConditionsError extends TypecheckingError {
         return ppConfig.isSingleLine();
       }
 
+      @Nonnull
       @Override
-      public EnumSet<ToAbstractVisitor.Flag> getExpressionFlags() {
+      public EnumSet<PrettyPrinterFlag> getExpressionFlags() {
         return ppConfig.getExpressionFlags();
       }
 
       @Override
-      public NormalizeVisitor.Mode getNormalizationMode() {
+      public NormalizationMode getNormalizationMode() {
         return null;
       }
     });
@@ -74,7 +76,7 @@ public class ConditionsError extends TypecheckingError {
   }
 
   @Override
-  public boolean isShort() {
-    return false;
+  public boolean hasExpressions() {
+    return true;
   }
 }

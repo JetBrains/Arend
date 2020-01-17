@@ -1,6 +1,10 @@
 package org.arend.term.abs;
 
-import org.arend.error.*;
+import org.arend.error.CountingErrorReporter;
+import org.arend.error.DummyErrorReporter;
+import org.arend.error.ParsingError;
+import org.arend.ext.error.ErrorReporter;
+import org.arend.ext.error.GeneralError;
 import org.arend.naming.reference.*;
 import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.term.ClassFieldKind;

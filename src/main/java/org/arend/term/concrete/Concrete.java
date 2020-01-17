@@ -2,10 +2,11 @@ package org.arend.term.concrete;
 
 import org.arend.core.context.binding.inference.BaseInferenceVariable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
-import org.arend.error.GeneralError;
-import org.arend.error.doc.Doc;
-import org.arend.error.doc.DocFactory;
 import org.arend.ext.concrete.*;
+import org.arend.ext.error.GeneralError;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.doc.Doc;
+import org.arend.ext.prettyprinting.doc.DocFactory;
 import org.arend.ext.reference.ArendRef;
 import org.arend.ext.reference.Precedence;
 import org.arend.naming.reference.*;
@@ -13,8 +14,6 @@ import org.arend.term.ClassFieldKind;
 import org.arend.term.Fixity;
 import org.arend.term.FunctionKind;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
-import org.arend.term.prettyprint.PrettyPrintable;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
 import org.arend.typechecking.error.local.LocalError;
 
 import javax.annotation.Nonnull;
@@ -28,7 +27,7 @@ import java.util.List;
 public final class Concrete {
   private Concrete() {}
 
-  public interface SourceNode extends PrettyPrintable, DataContainer {
+  public interface SourceNode extends ConcreteSourceNode {
   }
 
   public static abstract class SourceNodeImpl implements SourceNode {

@@ -1,14 +1,16 @@
 package org.arend.library.error;
 
-import org.arend.error.GeneralError;
-import org.arend.error.doc.Doc;
-import org.arend.error.doc.DocFactory;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
+import org.arend.ext.error.GeneralError;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.doc.Doc;
+import org.arend.ext.prettyprinting.doc.DocFactory;
+import org.arend.ext.prettyprinting.doc.LineDoc;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.arend.error.doc.DocFactory.vList;
+import static org.arend.ext.prettyprinting.doc.DocFactory.text;
+import static org.arend.ext.prettyprinting.doc.DocFactory.vList;
 
 public class MultipleLibraries extends GeneralError {
   public List<String> libraries;
@@ -21,8 +23,8 @@ public class MultipleLibraries extends GeneralError {
   }
 
   @Override
-  public String getShortMessage() {
-    return "There are several libraries named '" + name + "'";
+  public LineDoc getShortHeaderDoc(PrettyPrinterConfig ppConfig) {
+    return text("There are several libraries named '" + name + "'");
   }
 
   @Override

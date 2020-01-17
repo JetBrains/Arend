@@ -7,8 +7,7 @@ import java.util.List;
 public class LongName implements Comparable<LongName> {
   private final List<String> myPath;
 
-  public LongName(List<String> path) {
-    assert !path.isEmpty();
+  public LongName(@Nonnull List<String> path) {
     myPath = path;
   }
 

@@ -4,9 +4,9 @@ import org.arend.core.expr.ConCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.FunCallExpression;
 import org.arend.core.expr.LamExpression;
-import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.expr.visitor.NormalizingFindBindingVisitor;
 import org.arend.ext.core.elimtree.CoreIdpBranchKey;
+import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
 
 import java.util.Collections;
@@ -29,7 +29,7 @@ public class IdpConstructor extends SingleConstructor implements CoreIdpBranchKe
       return null;
     }
 
-    LamExpression lamExpr = ((ConCallExpression) argument).getDefCallArguments().get(0).normalize(NormalizeVisitor.Mode.WHNF).cast(LamExpression.class);
+    LamExpression lamExpr = ((ConCallExpression) argument).getDefCallArguments().get(0).normalize(NormalizationMode.WHNF).cast(LamExpression.class);
     if (lamExpr == null) {
       return null;
     }

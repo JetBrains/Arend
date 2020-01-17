@@ -1,7 +1,7 @@
 package org.arend.frontend;
 
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import org.arend.error.ErrorReporter;
+import org.arend.ext.error.ErrorReporter;
 import org.arend.frontend.library.FileLoadableHeaderLibrary;
 import org.arend.library.Library;
 import org.arend.library.LibraryConfig;

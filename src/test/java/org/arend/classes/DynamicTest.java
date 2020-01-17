@@ -3,8 +3,8 @@ package org.arend.classes;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.*;
 import org.arend.core.expr.*;
-import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Sort;
+import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
@@ -673,7 +673,7 @@ public class DynamicTest extends TypeCheckingTestCase {
         "}\n" +
         "\\func test (p : A) => A.y {p}");
     FunctionDefinition testFun = (FunctionDefinition) getDefinition("test");
-    Expression function = testFun.getResultType().normalize(NormalizeVisitor.Mode.WHNF);
+    Expression function = testFun.getResultType().normalize(NormalizationMode.WHNF);
     assertEquals(Prelude.PATH, function.cast(DataCallExpression.class).getDefinition());
     List<? extends Expression> arguments = function.cast(DataCallExpression.class).getDefCallArguments();
     assertEquals(3, arguments.size());
@@ -690,7 +690,7 @@ public class DynamicTest extends TypeCheckingTestCase {
     assertEquals(Ref(testFun.getParameters()), arg1.getDataTypeArguments().get(0));
     assertEquals(foo, arg1.getDefinition());
 
-    Expression domFunction = arguments.get(0).cast(LamExpression.class).getBody().cast(PiExpression.class).getParameters().getTypeExpr().normalize(NormalizeVisitor.Mode.WHNF);
+    Expression domFunction = arguments.get(0).cast(LamExpression.class).getBody().cast(PiExpression.class).getParameters().getTypeExpr().normalize(NormalizationMode.WHNF);
     assertEquals(Prelude.PATH, domFunction.cast(DataCallExpression.class).getDefinition());
     List<? extends Expression> domArguments = domFunction.cast(DataCallExpression.class).getDefCallArguments();
     assertEquals(3, domArguments.size());
@@ -710,7 +710,7 @@ public class DynamicTest extends TypeCheckingTestCase {
         "\\func test (q : A) => A.y {q}");
     FunctionDefinition testFun = (FunctionDefinition) getDefinition("test");
     Expression xCall = FieldCall((ClassField) getDefinition("A.x"), Sort.PROP, Ref(testFun.getParameters()));
-    Expression function = testFun.getResultType().cast(PiExpression.class).getParameters().getTypeExpr().normalize(NormalizeVisitor.Mode.NF);
+    Expression function = testFun.getResultType().cast(PiExpression.class).getParameters().getTypeExpr().normalize(NormalizationMode.NF);
     assertEquals(Prelude.PATH, function.cast(DataCallExpression.class).getDefinition());
     List<? extends Expression> arguments = function.cast(DataCallExpression.class).getDefCallArguments();
     assertEquals(3, arguments.size());
@@ -754,8 +754,8 @@ public class DynamicTest extends TypeCheckingTestCase {
     List<? extends Expression> parameters = paramConCall.getDataTypeArguments();
     assertEquals(3, parameters.size());
     assertEquals(Nat(), parameters.get(0).cast(LamExpression.class).getBody());
-    assertEquals(xCall, parameters.get(1).normalize(NormalizeVisitor.Mode.WHNF));
-    assertEquals(xCall, parameters.get(2).normalize(NormalizeVisitor.Mode.WHNF));
+    assertEquals(xCall, parameters.get(1).normalize(NormalizationMode.WHNF));
+    assertEquals(xCall, parameters.get(2).normalize(NormalizationMode.WHNF));
   }
 
   @Test

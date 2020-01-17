@@ -9,15 +9,16 @@ import org.arend.core.elimtree.LeafElimTree;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
 import org.arend.ext.core.elimtree.CoreBranchKey;
+import org.arend.ext.prettyprinting.PrettyPrinterFlag;
 
 import java.util.*;
 import java.util.function.Consumer;
 
 public class CollectFreeVariablesVisitor extends VoidExpressionVisitor<Set<Variable>> {
   private final Map<Binding, Set<Variable>> myFreeVariables = new HashMap<>();
-  private final EnumSet<ToAbstractVisitor.Flag> myFlags;
+  private final EnumSet<PrettyPrinterFlag> myFlags;
 
-  public CollectFreeVariablesVisitor(EnumSet<ToAbstractVisitor.Flag> flags) {
+  public CollectFreeVariablesVisitor(EnumSet<PrettyPrinterFlag> flags) {
     myFlags = flags;
   }
 
@@ -126,11 +127,11 @@ public class CollectFreeVariablesVisitor extends VoidExpressionVisitor<Set<Varia
 
   @Override
   public Void visitFieldCall(FieldCallExpression expr, Set<Variable> variables) {
-    if (expr.getDefinition().isHideable() && !myFlags.contains(ToAbstractVisitor.Flag.SHOW_COERCE_DEFINITIONS)) {
+    if (expr.getDefinition().isHideable() && !myFlags.contains(PrettyPrinterFlag.SHOW_COERCE_DEFINITIONS)) {
       return expr.getArgument().accept(this, variables);
     }
 
-    if (myFlags.contains(ToAbstractVisitor.Flag.SHOW_FIELD_INSTANCE)) {
+    if (myFlags.contains(PrettyPrinterFlag.SHOW_FIELD_INSTANCE)) {
       ReferenceExpression refExpr = expr.getArgument().cast(ReferenceExpression.class);
       if (refExpr != null) {
         variables.add(refExpr.getBinding().isHidden() ? expr.getDefinition() : refExpr.getBinding());

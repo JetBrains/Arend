@@ -1,17 +1,17 @@
 package org.arend.typechecking.error;
 
 import org.arend.core.definition.Definition;
-import org.arend.error.GeneralError;
-import org.arend.error.doc.Doc;
+import org.arend.ext.error.GeneralError;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.naming.reference.GlobalReferable;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
 import org.arend.typechecking.termination.CompositeCallMatrix;
 import org.arend.typechecking.termination.RecursiveBehavior;
 
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.arend.error.doc.DocFactory.*;
+import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public class TerminationCheckError extends GeneralError {
   public final GlobalReferable definition;
@@ -43,7 +43,7 @@ public class TerminationCheckError extends GeneralError {
   }
 
   @Override
-  public boolean isShort() {
-    return false;
+  public boolean hasExpressions() {
+    return true;
   }
 }

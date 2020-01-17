@@ -1,4 +1,4 @@
-package org.arend.error.doc;
+package org.arend.ext.prettyprinting.doc;
 
 public interface DocVisitor<P, R> {
   R visitVList(VListDoc doc, P params);

@@ -1,11 +1,11 @@
 package org.arend.naming.error;
 
-import org.arend.error.doc.LineDoc;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.arend.naming.reference.Referable;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
 import org.arend.typechecking.error.local.LocalError;
 
-import static org.arend.error.doc.DocFactory.*;
+import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public class NotInScopeError extends LocalError {
   private final Object myCause;

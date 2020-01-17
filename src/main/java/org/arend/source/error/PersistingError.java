@@ -1,6 +1,6 @@
 package org.arend.source.error;
 
-import org.arend.error.GeneralError;
+import org.arend.ext.error.GeneralError;
 import org.arend.ext.module.ModulePath;
 
 public class PersistingError extends GeneralError {

@@ -11,9 +11,9 @@ import org.arend.core.elimtree.BranchElimTree;
 import org.arend.core.elimtree.ElimTree;
 import org.arend.core.elimtree.LeafElimTree;
 import org.arend.core.expr.Expression;
-import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.ext.core.elimtree.CoreBranchKey;
+import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
@@ -160,8 +160,8 @@ public class ElimTest extends TypeCheckingTestCase {
     Binding binding = new TypedBinding("y", Nat());
     Expression call1 = ConCall(d, Sort.SET0, Collections.emptyList(), Zero(), Ref(binding));
     Expression call2 = ConCall(d, Sort.SET0, Collections.emptyList(), Suc(Zero()), Ref(binding));
-    assertEquals(FunCall(test, Sort.SET0, call1), FunCall(test, Sort.SET0, call1).normalize(NormalizeVisitor.Mode.NF));
-    assertEquals(Suc(Zero()), FunCall(test, Sort.SET0, call2).normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(FunCall(test, Sort.SET0, call1), FunCall(test, Sort.SET0, call1).normalize(NormalizationMode.NF));
+    assertEquals(Suc(Zero()), FunCall(test, Sort.SET0, call2).normalize(NormalizationMode.NF));
   }
 
   @Test

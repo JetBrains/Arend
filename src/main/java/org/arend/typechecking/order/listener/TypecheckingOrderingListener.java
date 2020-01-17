@@ -11,7 +11,7 @@ import org.arend.core.expr.PiExpression;
 import org.arend.core.sort.Sort;
 import org.arend.error.CompositeErrorReporter;
 import org.arend.error.CountingErrorReporter;
-import org.arend.error.ErrorReporter;
+import org.arend.ext.error.ErrorReporter;
 import org.arend.library.Library;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.TCClassReferable;

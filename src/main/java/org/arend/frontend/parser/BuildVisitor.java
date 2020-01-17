@@ -2,8 +2,8 @@ package org.arend.frontend.parser;
 
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
-import org.arend.error.ErrorReporter;
 import org.arend.error.ParsingError;
+import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.module.ModulePath;
 import org.arend.ext.reference.Precedence;
 import org.arend.frontend.group.SimpleNamespaceCommand;

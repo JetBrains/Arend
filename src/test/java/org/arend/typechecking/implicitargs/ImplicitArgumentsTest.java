@@ -6,8 +6,8 @@ import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.PiExpression;
-import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Level;
+import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.arend.typechecking.error.local.inference.ArgInferenceError;
 import org.arend.typechecking.result.TypecheckingResult;
@@ -239,7 +239,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
         "  | z (x : Nat) => x\n" +
         "\\in x z";
     TypecheckingResult result = typeCheckExpr(context, term, null);
-    assertEquals(Pi(Nat(), Nat()), result.type.normalize(NormalizeVisitor.Mode.WHNF));
+    assertEquals(Pi(Nat(), Nat()), result.type.normalize(NormalizationMode.WHNF));
   }
 
   @Test

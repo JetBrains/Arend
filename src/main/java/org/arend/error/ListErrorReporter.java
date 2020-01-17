@@ -1,5 +1,8 @@
 package org.arend.error;
 
+import org.arend.ext.error.ErrorReporter;
+import org.arend.ext.error.GeneralError;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;

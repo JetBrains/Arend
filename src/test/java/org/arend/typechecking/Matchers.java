@@ -1,7 +1,7 @@
 package org.arend.typechecking;
 
 import org.arend.core.expr.Expression;
-import org.arend.error.GeneralError;
+import org.arend.ext.error.GeneralError;
 import org.arend.naming.error.DuplicateNameError;
 import org.arend.naming.error.NotInScopeError;
 import org.arend.naming.reference.GlobalReferable;

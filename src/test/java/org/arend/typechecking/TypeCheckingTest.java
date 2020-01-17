@@ -6,9 +6,9 @@ import org.arend.core.expr.DataCallExpression;
 import org.arend.core.expr.FunCallExpression;
 import org.arend.core.expr.LamExpression;
 import org.arend.core.expr.UniverseExpression;
-import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
+import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.junit.Test;
@@ -185,7 +185,7 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
   @Test
   public void isoSet() {
     typeCheckModule("\\func setExt (A B : \\Set) (f : A -> B) (g : B -> A) (p : \\Pi (x : A) -> g (f x) = x) (q : \\Pi (y : B) -> f (g y) = y) => path {\\lam _ => \\Set} (iso f g p q)");
-    assertEquals(new UniverseExpression(Sort.SetOfLevel(new Level(LevelVariable.PVAR))), ((FunctionDefinition) getDefinition("setExt")).getResultType().normalize(NormalizeVisitor.Mode.WHNF).cast(DataCallExpression.class).getDefCallArguments().get(0).cast(LamExpression.class).getBody());
+    assertEquals(new UniverseExpression(Sort.SetOfLevel(new Level(LevelVariable.PVAR))), ((FunctionDefinition) getDefinition("setExt")).getResultType().normalize(NormalizationMode.WHNF).cast(DataCallExpression.class).getDefCallArguments().get(0).cast(LamExpression.class).getBody());
   }
 
   @Test
@@ -193,7 +193,7 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\func propExt (A B : \\Prop) (f : A -> B) (g : B -> A) =>\n" +
       "  path {\\lam _ => \\Prop} (iso f g (\\lam _ => Path.inProp _ _) (\\lam _ => Path.inProp _ _))");
-    assertEquals(new UniverseExpression(Sort.PROP), ((FunctionDefinition) getDefinition("propExt")).getResultType().normalize(NormalizeVisitor.Mode.WHNF).cast(DataCallExpression.class).getDefCallArguments().get(0).cast(LamExpression.class).getBody());
+    assertEquals(new UniverseExpression(Sort.PROP), ((FunctionDefinition) getDefinition("propExt")).getResultType().normalize(NormalizationMode.WHNF).cast(DataCallExpression.class).getDefCallArguments().get(0).cast(LamExpression.class).getBody());
   }
 
   @Test
@@ -215,7 +215,7 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\func propExt (A B : \\Prop) (f : A -> B) (g : B -> A) =>\n" +
       "  path {\\lam _ => \\Prop} (iso \\level \\Prop f g (\\lam _ => Path.inProp _ _) (\\lam _ => Path.inProp _ _))");
-    assertEquals(new UniverseExpression(Sort.PROP), ((FunctionDefinition) getDefinition("propExt")).getResultType().normalize(NormalizeVisitor.Mode.WHNF).cast(DataCallExpression.class).getDefCallArguments().get(0).cast(LamExpression.class).getBody());
+    assertEquals(new UniverseExpression(Sort.PROP), ((FunctionDefinition) getDefinition("propExt")).getResultType().normalize(NormalizationMode.WHNF).cast(DataCallExpression.class).getDefCallArguments().get(0).cast(LamExpression.class).getBody());
   }
 
   @Test

@@ -2,12 +2,12 @@ package org.arend.typechecking.error.local;
 
 import org.arend.core.definition.DataDefinition;
 import org.arend.core.expr.Expression;
-import org.arend.error.doc.Doc;
-import org.arend.error.doc.LineDoc;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.doc.Doc;
+import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.arend.term.concrete.Concrete;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
 
-import static org.arend.error.doc.DocFactory.*;
+import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public class TruncatedDataError extends TypecheckingError {
   public final DataDefinition dataDef;
@@ -33,7 +33,7 @@ public class TruncatedDataError extends TypecheckingError {
   }
 
   @Override
-  public boolean isShort() {
-    return false;
+  public boolean hasExpressions() {
+    return true;
   }
 }

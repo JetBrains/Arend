@@ -1,4 +1,4 @@
-package org.arend.error;
+package org.arend.ext.error;
 
 public interface SourceInfo {
   String moduleTextRepresentation();

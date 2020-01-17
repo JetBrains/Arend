@@ -1,14 +1,14 @@
 package org.arend.typechecking.error.local;
 
 import org.arend.core.definition.ClassField;
-import org.arend.error.doc.LineDoc;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.arend.naming.reference.TCFieldReferable;
 import org.arend.term.concrete.Concrete;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
 
 import javax.annotation.Nonnull;
 
-import static org.arend.error.doc.DocFactory.*;
+import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public class AnotherClassifyingFieldError extends TypecheckingError {
   public final TCFieldReferable candidate;

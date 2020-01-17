@@ -3,8 +3,8 @@ package org.arend.typechecking;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.*;
 import org.arend.core.expr.visitor.CompareVisitor;
+import org.arend.ext.core.ops.CMP;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
-import org.arend.typechecking.implicitargs.equations.Equations;
 import org.junit.Test;
 
 import static org.arend.ExpressionFactory.ClassCall;
@@ -24,12 +24,12 @@ public class EtaEquivalence extends TypeCheckingTestCase {
     ClassCallExpression classCall = ClassCall(newExpr.getClassCall().getDefinition());
     ReferenceExpression refExpr = Ref(f.getParameters());
 
-    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, newExpr, refExpr, classCall, null));
-    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, refExpr, newExpr, classCall, null));
-    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.GE, newExpr, refExpr, classCall, null));
-    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.GE, refExpr, newExpr, classCall, null));
-    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.LE, newExpr, refExpr, classCall, null));
-    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.LE, refExpr, newExpr, classCall, null));
+    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), CMP.EQ, newExpr, refExpr, classCall, null));
+    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), CMP.EQ, refExpr, newExpr, classCall, null));
+    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), CMP.GE, newExpr, refExpr, classCall, null));
+    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), CMP.GE, refExpr, newExpr, classCall, null));
+    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), CMP.LE, newExpr, refExpr, classCall, null));
+    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), CMP.LE, refExpr, newExpr, classCall, null));
   }
 
   @Test
