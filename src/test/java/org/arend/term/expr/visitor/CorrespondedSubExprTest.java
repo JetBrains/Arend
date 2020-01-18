@@ -9,7 +9,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-public class CorrespondedSubExpr extends TypeCheckingTestCase {
+public class CorrespondedSubExprTest extends TypeCheckingTestCase {
   @Test
   public void multiParamLam() {
     Concrete.LamExpression xyx = (Concrete.LamExpression) resolveNamesExpr("\\lam x y => x");

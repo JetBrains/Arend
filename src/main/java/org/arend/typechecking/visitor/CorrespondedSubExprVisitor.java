@@ -12,7 +12,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class CorrespondedSubExprVisitor implements ConcreteExpressionVisitor<Expression, Expression> {
-  private Concrete.Expression subExpr;
+  private final Concrete.Expression subExpr;
 
   public CorrespondedSubExprVisitor(Concrete.Expression subExpr) {
     this.subExpr = subExpr;
@@ -176,8 +176,7 @@ public class CorrespondedSubExprVisitor implements ConcreteExpressionVisitor<Exp
     for (Concrete.Parameter parameter : parameters) {
       Expression expression = visitParameter(parameter, sig);
       if (expression != null) return expression;
-      int numberOfParameters = parameter.getNumberOfParameters();
-      for (int i = 0; i < numberOfParameters; i++) sig = sig.getNext();
+      sig = sig.getNextTyped(null).getNext();
     }
     return null;
   }
