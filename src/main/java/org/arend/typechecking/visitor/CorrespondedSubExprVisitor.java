@@ -222,9 +222,7 @@ public class CorrespondedSubExprVisitor implements ConcreteExpressionVisitor<Exp
   @Override
   public Expression visitEval(Concrete.EvalExpression expr, Expression coreExpr) {
     if (matchesSubExpr(expr)) return coreExpr;
-    PEvalExpression coreEvalExpr = coreExpr.cast(PEvalExpression.class);
-    if (coreEvalExpr == null) return null;
-    return expr.getExpression().accept(this, coreEvalExpr.getExpression());
+    throw new IllegalStateException("Eval shouldn't appear");
   }
 
   @Override
@@ -238,19 +236,7 @@ public class CorrespondedSubExprVisitor implements ConcreteExpressionVisitor<Exp
 
   @Override
   public Expression visitBinOpSequence(Concrete.BinOpSequenceExpression expr, Expression coreExpr) {
-    AppExpression coreAppExpr = coreExpr.cast(AppExpression.class);
-    if (coreAppExpr == null) return null;
-    List<Expression> coreArguments = new ArrayList<>();
-    coreAppExpr.getArguments(coreArguments);
-    coreArguments.add(coreAppExpr.getFunction());
-    // Can I obtain an ordered `BinOpSequence`?
-    return null;
-    /*
-    return visitExprs(coreArguments, expr
-        .getSequence()
-        .stream()
-        .map(i -> i.expression)
-        .collect(Collectors.toList()));
-    */
+    if (matchesSubExpr(expr)) return coreExpr;
+    throw new IllegalStateException("BinOpSequence shouldn't appear");
   }
 }
