@@ -3,10 +3,9 @@ package org.arend.naming.error;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.ext.prettyprinting.doc.DocFactory;
-import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.UnresolvedReference;
-import org.arend.typechecking.error.local.LocalError;
+import org.arend.ext.error.LocalError;
 
 public class ReferenceError extends LocalError {
   public final Referable referable;
@@ -19,9 +18,7 @@ public class ReferenceError extends LocalError {
   public ReferenceError(Level level, Stage stage, String message, Referable referable) {
     super(level, message);
     this.referable = referable;
-    if (referable instanceof GlobalReferable) {
-      definition = (GlobalReferable) referable;
-    }
+    definition = referable;
     myStage = stage;
   }
 

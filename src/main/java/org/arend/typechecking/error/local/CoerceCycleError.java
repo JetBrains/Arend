@@ -1,6 +1,7 @@
 package org.arend.typechecking.error.local;
 
 import org.arend.ext.error.GeneralError;
+import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.reference.ArendRef;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.term.concrete.Concrete;

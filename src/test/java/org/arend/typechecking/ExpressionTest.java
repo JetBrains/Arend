@@ -8,7 +8,7 @@ import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.naming.reference.LocalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
-import org.arend.typechecking.error.local.TypeMismatchError;
+import org.arend.ext.error.TypeMismatchError;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.junit.Test;
 

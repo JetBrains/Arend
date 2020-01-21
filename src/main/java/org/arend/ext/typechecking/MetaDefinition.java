@@ -7,7 +7,7 @@ import javax.annotation.Nullable;
 
 public interface MetaDefinition {
   @Nullable
-  default CheckedExpression invoke(@Nonnull TypecheckingSession session, @Nonnull ContextData contextData) {
+  default CheckedExpression invoke(@Nonnull ExpressionTypechecker session, @Nonnull ContextData contextData) {
     return null;
   }
 
@@ -16,7 +16,7 @@ public interface MetaDefinition {
   }
 
   @Nullable
-  default CheckedExpression invokeLater(@Nonnull TypecheckingSession session) {
+  default CheckedExpression invokeLater(@Nonnull ExpressionTypechecker session) {
     return null;
   }
 }

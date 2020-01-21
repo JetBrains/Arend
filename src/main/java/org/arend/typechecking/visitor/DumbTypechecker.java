@@ -6,9 +6,9 @@ import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.Reference;
 import org.arend.term.abs.Abstract;
 import org.arend.term.concrete.Concrete;
+import org.arend.typechecking.error.local.CertainTypecheckingError;
 import org.arend.typechecking.error.local.GoalError;
 import org.arend.typechecking.error.local.NotEnoughPatternsError;
-import org.arend.typechecking.error.local.TypecheckingError;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -107,7 +107,7 @@ public class DumbTypechecker extends VoidConcreteVisitor<Void, Void> {
       }
       for (Concrete.Pattern pattern : clause.getPatterns()) {
         if (!pattern.isExplicit()) {
-          errorReporter.report(new TypecheckingError(TypecheckingError.Kind.IMPLICIT_PATTERN, pattern));
+          errorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.IMPLICIT_PATTERN, pattern));
           if (!reportAll) {
             return;
           }
@@ -130,7 +130,7 @@ public class DumbTypechecker extends VoidConcreteVisitor<Void, Void> {
 
       if (arguments == null) {
         if (patterns.size() > numberOfArguments) {
-          myTypechecker.errorReporter.report(new TypecheckingError(TypecheckingError.Kind.TOO_MANY_PATTERNS, patterns.get(numberOfArguments)));
+          myTypechecker.errorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.TOO_MANY_PATTERNS, patterns.get(numberOfArguments)));
         } else if (patterns.size() < numberOfArguments) {
           myTypechecker.errorReporter.report(new NotEnoughPatternsError(numberOfArguments - patterns.size(), clause.getSourceNode()));
         }
@@ -141,7 +141,7 @@ public class DumbTypechecker extends VoidConcreteVisitor<Void, Void> {
             i++;
             j++;
           } else if (arguments.get(i)) {
-            myTypechecker.errorReporter.report(new TypecheckingError(TypecheckingError.Kind.EXPECTED_EXPLICIT_PATTERN, patterns.get(j)));
+            myTypechecker.errorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.EXPECTED_EXPLICIT_PATTERN, patterns.get(j)));
             continue loop;
           } else {
             i++;
@@ -156,7 +156,7 @@ public class DumbTypechecker extends VoidConcreteVisitor<Void, Void> {
           myTypechecker.errorReporter.report(new NotEnoughPatternsError(arguments.size() - i, clause.getSourceNode()));
         }
         if (j < patterns.size()) {
-          myTypechecker.errorReporter.report(new TypecheckingError(TypecheckingError.Kind.TOO_MANY_PATTERNS, patterns.get(j)));
+          myTypechecker.errorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.TOO_MANY_PATTERNS, patterns.get(j)));
         }
       }
     }

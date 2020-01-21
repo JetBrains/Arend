@@ -11,10 +11,10 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Map;
 
-public interface TypecheckingSession {
+public interface ExpressionTypechecker {
+  @Nonnull Map<? extends ArendRef, ? extends CoreBinding> getContext();
   @Nonnull ErrorReporter getErrorReporter();
   @Nullable CheckedExpression typecheck(@Nonnull ConcreteExpression expression);
   @Nullable CheckedExpression check(@Nonnull CoreExpression expression);
-  void setBindings(@Nonnull Map<ArendRef, CoreBinding> context);
   boolean compare(@Nonnull CoreExpression expr1, @Nonnull CoreExpression expr2, @Nonnull CMP cmp, @Nullable ConcreteExpression marker);
 }

@@ -1,7 +1,7 @@
 package org.arend.naming.reference;
 
 import org.arend.naming.error.NotInScopeError;
-import org.arend.typechecking.error.local.LocalError;
+import org.arend.ext.error.LocalError;
 
 import javax.annotation.Nonnull;
 

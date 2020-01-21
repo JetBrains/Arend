@@ -1,6 +1,7 @@
 package org.arend.typechecking.error.local;
 
 import org.arend.core.definition.ClassField;
+import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.arend.naming.reference.TCFieldReferable;

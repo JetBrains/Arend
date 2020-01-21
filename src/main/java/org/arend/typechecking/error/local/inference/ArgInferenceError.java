@@ -4,7 +4,7 @@ import org.arend.core.expr.Expression;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.term.concrete.Concrete;
-import org.arend.typechecking.error.local.TypecheckingError;
+import org.arend.ext.error.TypecheckingError;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;

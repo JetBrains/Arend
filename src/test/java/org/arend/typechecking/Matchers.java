@@ -2,6 +2,8 @@ package org.arend.typechecking;
 
 import org.arend.core.expr.Expression;
 import org.arend.ext.error.GeneralError;
+import org.arend.ext.error.LocalError;
+import org.arend.ext.error.TypeMismatchError;
 import org.arend.naming.error.DuplicateNameError;
 import org.arend.naming.error.NotInScopeError;
 import org.arend.naming.reference.GlobalReferable;
@@ -266,7 +268,7 @@ public class Matchers {
     return new TypeSafeDiagnosingMatcher<GeneralError>() {
       @Override
       protected boolean matchesSafely(GeneralError error, Description description) {
-        if (error.level == GeneralError.Level.WARNING || error.level == GeneralError.Level.WEAK_WARNING) {
+        if (error.level == GeneralError.Level.WARNING || error.level == GeneralError.Level.WARNING_UNUSED) {
           description.appendText("warning");
           return true;
         } else {

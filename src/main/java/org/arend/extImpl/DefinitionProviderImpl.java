@@ -19,13 +19,17 @@ public class DefinitionProviderImpl extends Disableable implements DefinitionPro
 
   @Nonnull
   @Override
-  public CoreDefinition getDefinition(@Nonnull RawRef ref) {
+  public <T extends CoreDefinition> T getDefinition(@Nonnull RawRef ref, Class<T> clazz) {
     checkEnabled();
     Concrete.ReferableDefinition def = ref instanceof GlobalReferable ? myTypechecking.getConcreteProvider().getConcrete((GlobalReferable) ref) : null;
     if (!(def instanceof Concrete.Definition)) {
       throw new IllegalArgumentException("Expected a global definition");
     }
     myTypechecking.typecheckDefinitions(Collections.singletonList((Concrete.Definition) def), null);
-    return myTypechecking.getTypecheckerState().getTypechecked(def.getData());
+    CoreDefinition result = myTypechecking.getTypecheckerState().getTypechecked(def.getData());
+    if (!clazz.isInstance(result)) {
+      throw new IllegalArgumentException(result == null ? "Cannot find definition '" + ref.getRefName() + "'" : "Cannot cast '" + result.getClass() + "' to '" + clazz + "'");
+    }
+    return clazz.cast(result);
   }
 }

@@ -5,7 +5,7 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.Definition;
 import org.arend.core.expr.Expression;
 import org.arend.term.concrete.Concrete;
-import org.arend.typechecking.error.local.LocalError;
+import org.arend.ext.error.LocalError;
 import org.arend.typechecking.error.local.inference.FunctionArgInferenceError;
 
 import java.util.Set;

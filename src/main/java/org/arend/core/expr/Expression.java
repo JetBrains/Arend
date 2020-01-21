@@ -13,12 +13,10 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.error.IncorrectExpressionException;
-import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.ExpressionMapper;
 import org.arend.ext.core.ops.NormalizationMode;
-import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.Doc;
@@ -27,7 +25,6 @@ import org.arend.ext.reference.Precedence;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
-import org.arend.typechecking.error.local.TypeMismatchError;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.util.Decision;
@@ -191,18 +188,6 @@ public abstract class Expression implements ExpectedType, Body, CoreExpression {
       }
     }
 
-    return null;
-  }
-
-  @Nullable
-  @Override
-  public FunCallExpression toEquality(@Nonnull ErrorReporter errorReporter, @Nonnull ConcreteSourceNode sourceNode) {
-    FunCallExpression result = toEquality();
-    if (result != null) {
-      return result;
-    }
-
-    errorReporter.report(new TypeMismatchError(DocFactory.text("_ = _"), this, sourceNode));
     return null;
   }
 

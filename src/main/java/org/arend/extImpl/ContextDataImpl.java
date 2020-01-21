@@ -6,43 +6,41 @@ import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.reference.ArendRef;
 import org.arend.ext.typechecking.ContextData;
+import org.arend.term.concrete.Concrete;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 public class ContextDataImpl implements ContextData {
-  private final Map<? extends ArendRef, ? extends CoreBinding> myBindings;
-  private final ConcreteLevel myPLevel;
-  private final ConcreteLevel myHLevel;
+  private final Concrete.ReferenceExpression myExpression;
   private final List<? extends ConcreteArgument> myArguments;
-  private final CoreExpression myExpectedType;
+  private CoreExpression myExpectedType;
 
-  public ContextDataImpl(Map<? extends ArendRef, ? extends CoreBinding> bindings, ConcreteLevel pLevel, ConcreteLevel hLevel, List<? extends ConcreteArgument> arguments, CoreExpression expectedType) {
-    myBindings = bindings;
-    myPLevel = pLevel;
-    myHLevel = hLevel;
+  public ContextDataImpl(Concrete.ReferenceExpression expression, List<? extends ConcreteArgument> arguments, CoreExpression expectedType) {
+    myExpression = expression;
     myArguments = arguments;
     myExpectedType = expectedType;
   }
 
   @Nonnull
   @Override
-  public Map<? extends ArendRef, ? extends CoreBinding> getBindings() {
-    return myBindings;
+  public Concrete.ReferenceExpression getReferenceExpression() {
+    return myExpression;
   }
 
   @Nullable
   @Override
-  public ConcreteLevel getPLevel() {
-    return myPLevel;
+  public Concrete.LevelExpression getPLevel() {
+    return myExpression.getPLevel();
   }
 
   @Nullable
   @Override
-  public ConcreteLevel getHLevel() {
-    return myHLevel;
+  public Concrete.LevelExpression getHLevel() {
+    return myExpression.getHLevel();
   }
 
   @Nonnull
@@ -51,7 +49,6 @@ public class ContextDataImpl implements ContextData {
     return myArguments;
   }
 
-  @Nullable
   @Override
   public CoreExpression getExpectedType() {
     return myExpectedType;

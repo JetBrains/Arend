@@ -1,6 +1,7 @@
 package org.arend.typechecking.error.local;
 
 import org.arend.core.sort.Sort;
+import org.arend.ext.error.TypecheckingError;
 import org.arend.term.concrete.Concrete;
 
 import javax.annotation.Nonnull;

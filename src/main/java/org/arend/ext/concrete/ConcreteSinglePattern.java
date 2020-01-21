@@ -1,4 +1,4 @@
 package org.arend.ext.concrete;
 
-public interface ConcreteSinglePattern {
+public interface ConcreteSinglePattern extends ConcreteSourceNode {
 }

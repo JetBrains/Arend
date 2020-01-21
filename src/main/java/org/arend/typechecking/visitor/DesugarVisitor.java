@@ -6,8 +6,9 @@ import org.arend.naming.scope.ClassFieldImplScope;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
-import org.arend.typechecking.error.local.LocalError;
-import org.arend.typechecking.error.local.TypecheckingError;
+import org.arend.ext.error.LocalError;
+import org.arend.ext.error.TypecheckingError;
+import org.arend.typechecking.error.local.CertainTypecheckingError;
 import org.arend.typechecking.error.local.WrongReferable;
 import org.arend.typechecking.error.local.inference.ArgInferenceError;
 import org.arend.typechecking.provider.ConcreteProvider;
@@ -177,7 +178,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
       FieldReferable fieldRef = it.next();
       boolean fieldExplicit = fieldRef.isExplicitField();
       if (fieldExplicit && !arguments.get(i).isExplicit()) {
-        myErrorReporter.report(new TypecheckingError(TypecheckingError.Kind.EXPECTED_EXPLICIT, arguments.get(i).expression));
+        myErrorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.EXPECTED_EXPLICIT, arguments.get(i).expression));
         while (i < arguments.size() && !arguments.get(i).isExplicit()) {
           i++;
         }
@@ -296,7 +297,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
       boolean ok = true;
       if (classFieldImpl.getImplementedField() instanceof ClassReferable) {
         if (classFieldImpl.subClassFieldImpls.isEmpty()) {
-          myErrorReporter.report(new TypecheckingError(TypecheckingError.Kind.REDUNDANT_COCLAUSE, classFieldImpl));
+          myErrorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.REDUNDANT_COCLAUSE, classFieldImpl));
         }
         for (Concrete.ClassFieldImpl subClassFieldImpl : classFieldImpl.subClassFieldImpls) {
           visitClassFieldImpl(subClassFieldImpl, result);

@@ -28,6 +28,7 @@ import org.arend.ext.core.elimtree.CoreBranchKey;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.ErrorReporter;
+import org.arend.ext.error.TypecheckingError;
 import org.arend.naming.reference.Referable;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
@@ -95,7 +96,7 @@ public class ElimTypechecking {
       for (Concrete.Clause clause : clauses) {
         if (clause.getPatterns() != null && clause.getPatterns().size() != expectedNumberOfPatterns) {
           if (clause.getPatterns().size() > expectedNumberOfPatterns) {
-            errorReporter.report(new TypecheckingError(TypecheckingError.Kind.TOO_MANY_PATTERNS, clause.getPatterns().get(expectedNumberOfPatterns)));
+            errorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.TOO_MANY_PATTERNS, clause.getPatterns().get(expectedNumberOfPatterns)));
           } else {
             errorReporter.report(new NotEnoughPatternsError(expectedNumberOfPatterns - clause.getPatterns().size(), clause));
           }
@@ -257,7 +258,7 @@ public class ElimTypechecking {
 
     if (myOK) {
       for (Concrete.FunctionClause clause : myUnusedClauses) {
-        myVisitor.getErrorReporter().report(new TypecheckingError(TypecheckingError.Kind.REDUNDANT_CLAUSE, clause));
+        myVisitor.getErrorReporter().report(new CertainTypecheckingError(CertainTypecheckingError.Kind.REDUNDANT_CLAUSE, clause));
       }
     }
     return cases == null ? elimTree : new IntervalElim(DependentLink.Helper.size(parameters), cases, elimTree);
@@ -321,7 +322,7 @@ public class ElimTypechecking {
       }
 
       if (allVars) {
-        myVisitor.getErrorReporter().report(new TypecheckingError(TypecheckingError.Kind.BODY_REQUIRED, sourceNode));
+        myVisitor.getErrorReporter().report(new CertainTypecheckingError(CertainTypecheckingError.Kind.BODY_REQUIRED, sourceNode));
         return;
       }
     }

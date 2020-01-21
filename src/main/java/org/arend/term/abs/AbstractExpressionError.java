@@ -1,6 +1,6 @@
 package org.arend.term.abs;
 
-import org.arend.typechecking.error.local.LocalError;
+import org.arend.ext.error.LocalError;
 
 import javax.annotation.Nonnull;
 

@@ -6,5 +6,6 @@ import org.arend.ext.reference.RawRef;
 import javax.annotation.Nonnull;
 
 public interface DefinitionProvider {
-  @Nonnull CoreDefinition getDefinition(@Nonnull RawRef ref);
+  @Nonnull
+  <T extends CoreDefinition> T getDefinition(@Nonnull RawRef ref, Class<T> clazz);
 }

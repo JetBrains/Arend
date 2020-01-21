@@ -2,6 +2,7 @@ package org.arend.typechecking.error.local;
 
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
+import org.arend.ext.error.LocalError;
 import org.arend.naming.reference.GlobalReferable;
 
 public class LocalErrorReporter implements ErrorReporter {

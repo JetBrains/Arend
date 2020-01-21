@@ -16,8 +16,8 @@ import org.arend.ext.core.elimtree.CoreBranchKey;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.typechecking.CheckedExpression;
-import org.arend.typechecking.error.local.LocalError;
-import org.arend.typechecking.error.local.TypecheckingError;
+import org.arend.ext.error.LocalError;
+import org.arend.ext.error.TypecheckingError;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 

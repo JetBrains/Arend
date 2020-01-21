@@ -34,6 +34,8 @@ import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
+import org.arend.ext.error.TypeMismatchError;
+import org.arend.ext.error.TypecheckingError;
 import org.arend.naming.reference.*;
 import org.arend.prelude.Prelude;
 import org.arend.term.ClassFieldKind;
@@ -592,7 +594,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   @SuppressWarnings("BooleanMethodIsAlwaysInverted")
   private boolean checkLevel(boolean isLemma, boolean isProperty, Integer level, Concrete.SourceNode sourceNode) {
     if ((isLemma || isProperty) && (level == null || level != -1)) {
-      errorReporter.report(new TypecheckingError(isLemma ? TypecheckingError.Kind.LEMMA_LEVEL : TypecheckingError.Kind.PROPERTY_LEVEL, sourceNode));
+      errorReporter.report(new CertainTypecheckingError(isLemma ? CertainTypecheckingError.Kind.LEMMA_LEVEL : CertainTypecheckingError.Kind.PROPERTY_LEVEL, sourceNode));
       return false;
     } else {
       return true;
@@ -1219,7 +1221,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
               typechecker.getInstancePool().setInstancePool(instancePool.subst(substitution));
             }
             if (result != null && result.expressions == null) {
-              originalErrorReporter.report(new TypecheckingError(TypecheckingError.Kind.REDUNDANT_CLAUSE, clause));
+              originalErrorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.REDUNDANT_CLAUSE, clause));
               result = null;
             }
             if (result == null) {
@@ -1352,10 +1354,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     // Check truncatedness
     if (def.isTruncated()) {
       if (userSort == null) {
-        originalErrorReporter.report(new TypecheckingError(TypecheckingError.Kind.TRUNCATED_WITHOUT_UNIVERSE, def));
+        originalErrorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.TRUNCATED_WITHOUT_UNIVERSE, def));
       } else {
         if (inferredSort.isLessOrEquals(userSort)) {
-          originalErrorReporter.report(new TypecheckingError(TypecheckingError.Kind.DATA_WONT_BE_TRUNCATED, def.getUniverse() == null ? def : def.getUniverse()));
+          originalErrorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.DATA_WONT_BE_TRUNCATED, def.getUniverse() == null ? def : def.getUniverse()));
         } else if (newDef) {
           dataDefinition.setTruncated(true);
           dataDefinition.setSquashed(true);
@@ -1911,7 +1913,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
       if (def.withoutClassifying()) {
         if (classifyingField == null) {
-          errorReporter.report(new TypecheckingError(TypecheckingError.Kind.NO_CLASSIFYING_IGNORED, def));
+          errorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.NO_CLASSIFYING_IGNORED, def));
         } else {
           classifyingField = null;
         }

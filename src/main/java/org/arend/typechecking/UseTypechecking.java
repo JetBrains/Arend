@@ -14,8 +14,9 @@ import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.term.FunctionKind;
 import org.arend.term.concrete.Concrete;
+import org.arend.typechecking.error.local.CertainTypecheckingError;
 import org.arend.typechecking.error.local.CoerceCycleError;
-import org.arend.typechecking.error.local.TypecheckingError;
+import org.arend.ext.error.TypecheckingError;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.order.DFS;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
@@ -224,7 +225,7 @@ public class UseTypechecking {
           if (parameters == null) {
             Sort newSort = level == -1 ? Sort.PROP : new Sort(dataDef.getSort().getPLevel(), new Level(level));
             if (dataDef.getSort().isLessOrEquals(newSort)) {
-              errorReporter.report(new TypecheckingError(TypecheckingError.Kind.USELESS_LEVEL, def));
+              errorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.USELESS_LEVEL, def));
             } else {
               if (!(level == -1 && dataDef.getSort().isSet())) {
                 dataDef.setSquashed(true);

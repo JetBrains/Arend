@@ -26,18 +26,15 @@ import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.error.*;
 import org.arend.ext.concrete.ConcreteExpression;
-import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
-import org.arend.ext.error.ErrorReporter;
-import org.arend.ext.error.GeneralError;
+import org.arend.ext.error.*;
 import org.arend.ext.prettyprinting.doc.DocFactory;
-import org.arend.ext.reference.ArendRef;
 import org.arend.ext.typechecking.CheckedExpression;
 import org.arend.ext.typechecking.MetaDefinition;
-import org.arend.ext.typechecking.TypecheckingSession;
+import org.arend.ext.typechecking.ExpressionTypechecker;
 import org.arend.extImpl.ContextDataImpl;
 import org.arend.naming.reference.*;
 import org.arend.naming.renamer.Renamer;
@@ -75,7 +72,7 @@ import java.util.*;
 
 import static org.arend.typechecking.error.local.inference.ArgInferenceError.expression;
 
-public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType, TypecheckingResult>, ConcreteLevelExpressionVisitor<LevelVariable, Level>, TypecheckingSession {
+public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType, TypecheckingResult>, ConcreteLevelExpressionVisitor<LevelVariable, Level>, ExpressionTypechecker {
   private Set<Binding> myFreeBindings;
   private Definition.TypeCheckingStatus myStatus = Definition.TypeCheckingStatus.NO_ERRORS;
   private final Equations myEquations;
@@ -148,21 +145,14 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     myInstancePool = pool;
   }
 
+  @Nonnull
+  @Override
   public Map<Referable, Binding> getContext() {
     return context;
   }
 
   public void setContext(Map<Referable, Binding> context) {
     this.context = context;
-  }
-
-  @Override
-  public void setBindings(@Nonnull Map<ArendRef, CoreBinding> context) {
-    if (this.context != null) {
-      throw new IllegalStateException("The context is already set");
-    }
-    //noinspection unchecked
-    this.context = (Map) context;
   }
 
   public Set<? extends Binding> getFreeBindings() {
@@ -1679,7 +1669,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     MetaDefinition meta = ((MetaReferable) refExpr.getReferent()).getDefinition();
     CountingErrorReporter countingErrorReporter = new CountingErrorReporter(GeneralError.Level.ERROR);
     errorReporter = new CompositeErrorReporter(errorReporter, countingErrorReporter);
-    CheckedExpression result = meta.invoke(this, new ContextDataImpl(context, refExpr.getPLevel(), refExpr.getHLevel(), arguments, expectedType instanceof Expression ? (Expression) expectedType : expectedType == ExpectedType.OMEGA ? new UniverseExpression(new Sort(Level.INFINITY, Level.INFINITY)) : null));
+    CheckedExpression result = meta.invoke(this, new ContextDataImpl(refExpr, arguments, expectedType instanceof Expression ? (Expression) expectedType : expectedType == ExpectedType.OMEGA ? new UniverseExpression(new Sort(Level.INFINITY, Level.INFINITY)) : null));
     errorReporter = ((CompositeErrorReporter) errorReporter).getErrorReporters().get(0);
     if (result instanceof TypecheckingResult) {
       return checkResult(expectedType, (TypecheckingResult) result, refExpr);
@@ -1850,7 +1840,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   @Override
   public TypecheckingResult visitCase(Concrete.CaseExpression expr, ExpectedType expectedType) {
     if (expectedType == null && expr.getResultType() == null) {
-      errorReporter.report(new TypecheckingError(TypecheckingError.Kind.CASE_RESULT_TYPE, expr));
+      errorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.CASE_RESULT_TYPE, expr));
       return null;
     }
 

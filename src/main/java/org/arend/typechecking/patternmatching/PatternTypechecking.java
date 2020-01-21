@@ -30,6 +30,8 @@ import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.ErrorReporter;
+import org.arend.ext.error.TypeMismatchError;
+import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.prettyprinting.doc.DocFactory;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.Referable;
@@ -145,7 +147,7 @@ public class PatternTypechecking {
         // If we have the absurd pattern, then RHS is ignored
         if (result.expressions == null) {
           if (clause.getExpression() != null) {
-            myErrorReporter.report(new TypecheckingError(TypecheckingError.Kind.BODY_IGNORED, clause.getExpression()));
+            myErrorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.BODY_IGNORED, clause.getExpression()));
           }
           return new ClauseResult(result.patterns, result.substitution, null);
         } else {
@@ -294,7 +296,7 @@ public class PatternTypechecking {
 
     if (expression == null || asPatterns.isEmpty()) {
       if (!asPatterns.isEmpty()) {
-        myErrorReporter.report(new TypecheckingError(TypecheckingError.Kind.AS_PATTERN_IGNORED, asPatterns.get(0)));
+        myErrorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.AS_PATTERN_IGNORED, asPatterns.get(0)));
       }
       return;
     }
@@ -362,7 +364,7 @@ public class PatternTypechecking {
 
     for (Concrete.Pattern pattern : patterns) {
       if (!parameters.hasNext()) {
-        myErrorReporter.report(new TypecheckingError(TypecheckingError.Kind.TOO_MANY_PATTERNS, pattern));
+        myErrorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.TOO_MANY_PATTERNS, pattern));
         return null;
       }
 
@@ -380,13 +382,13 @@ public class PatternTypechecking {
             }
             parameters = parameters.getNext();
             if (!parameters.hasNext()) {
-              myErrorReporter.report(new TypecheckingError(TypecheckingError.Kind.TOO_MANY_PATTERNS, pattern));
+              myErrorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.TOO_MANY_PATTERNS, pattern));
               return null;
             }
           }
         } else {
           if (parameters.isExplicit()) {
-            myErrorReporter.report(new TypecheckingError(TypecheckingError.Kind.EXPECTED_EXPLICIT_PATTERN, pattern));
+            myErrorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.EXPECTED_EXPLICIT_PATTERN, pattern));
             return null;
           }
         }
@@ -395,9 +397,9 @@ public class PatternTypechecking {
       if (exprs == null || pattern == null || pattern instanceof Concrete.NamePattern) {
         if (pattern != null) {
           if (!(pattern instanceof Concrete.NamePattern)) {
-            myErrorReporter.report(new TypecheckingError(TypecheckingError.Kind.PATTERN_IGNORED, pattern));
+            myErrorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.PATTERN_IGNORED, pattern));
           } else if (!pattern.getAsReferables().isEmpty()) {
-            myErrorReporter.report(new TypecheckingError(TypecheckingError.Kind.AS_PATTERN_IGNORED, pattern.getAsReferables().get(0)));
+            myErrorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.AS_PATTERN_IGNORED, pattern.getAsReferables().get(0)));
           }
         }
 

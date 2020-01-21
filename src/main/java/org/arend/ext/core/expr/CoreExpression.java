@@ -1,11 +1,9 @@
 package org.arend.ext.core.expr;
 
-import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.core.elimtree.CoreBody;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.ExpressionMapper;
 import org.arend.ext.core.ops.NormalizationMode;
-import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.prettyprinting.PrettyPrintable;
 
 import javax.annotation.Nonnull;
@@ -23,5 +21,4 @@ public interface CoreExpression extends CoreBody, PrettyPrintable {
 
   @Nullable CoreExpression removeConstLam();
   @Nullable CoreFunCallExpression toEquality();
-  @Nullable CoreFunCallExpression toEquality(@Nonnull ErrorReporter errorReporter, @Nonnull ConcreteSourceNode sourceNode);
 }

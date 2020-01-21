@@ -2,7 +2,7 @@ package org.arend.core.context.binding.inference;
 
 import org.arend.core.context.binding.Binding;
 import org.arend.core.expr.Expression;
-import org.arend.typechecking.error.local.LocalError;
+import org.arend.ext.error.LocalError;
 
 import java.util.Set;
 

@@ -19,14 +19,14 @@ public class GeneralError {
   public final String message;
   public final @Nonnull Level level;
 
-  public enum Level { INFO, WEAK_WARNING {
+  public enum Level { INFO, WARNING_UNUSED {
     @Override
     public String toString() {
       return "WARNING";
     }
   }, GOAL, WARNING, ERROR }
 
-  public enum Stage { META, TYPECHECKER, RESOLVER, PARSER, OTHER }
+  public enum Stage { TYPECHECKER, RESOLVER, PARSER, OTHER }
 
   public GeneralError(@Nonnull Level level, String message) {
     this.level = level;

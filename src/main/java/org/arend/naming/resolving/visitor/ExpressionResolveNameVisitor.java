@@ -13,7 +13,7 @@ import org.arend.term.Fixity;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.ExpectedConstructorError;
-import org.arend.typechecking.error.local.LocalError;
+import org.arend.ext.error.LocalError;
 import org.arend.typechecking.provider.ConcreteProvider;
 
 import java.util.*;

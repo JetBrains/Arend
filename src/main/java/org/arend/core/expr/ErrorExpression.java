@@ -4,7 +4,7 @@ import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
 import org.arend.ext.core.expr.CoreErrorExpression;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
-import org.arend.typechecking.error.local.LocalError;
+import org.arend.ext.error.LocalError;
 import org.arend.util.Decision;
 
 import javax.annotation.Nonnull;

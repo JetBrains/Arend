@@ -1,6 +1,7 @@
 package org.arend.typechecking.error.local;
 
 import org.arend.core.definition.DataDefinition;
+import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.arend.term.concrete.Concrete;

@@ -4,7 +4,7 @@ import org.arend.core.context.binding.Binding;
 import org.arend.core.expr.Expression;
 import org.arend.naming.reference.TCClassReferable;
 import org.arend.term.concrete.Concrete;
-import org.arend.typechecking.error.local.LocalError;
+import org.arend.ext.error.LocalError;
 import org.arend.typechecking.error.local.inference.InstanceInferenceError;
 import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.typechecking.instance.pool.InstancePool;

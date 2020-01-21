@@ -1,7 +1,7 @@
 package org.arend.naming.error;
 
 import org.arend.term.concrete.Concrete;
-import org.arend.typechecking.error.local.LocalError;
+import org.arend.ext.error.LocalError;
 
 public class NamingError extends LocalError {
   public final Object cause;

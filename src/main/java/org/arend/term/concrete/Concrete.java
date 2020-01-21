@@ -14,7 +14,7 @@ import org.arend.term.ClassFieldKind;
 import org.arend.term.Fixity;
 import org.arend.term.FunctionKind;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
-import org.arend.typechecking.error.local.LocalError;
+import org.arend.ext.error.LocalError;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -1349,7 +1349,7 @@ public final class Concrete {
     public void setStatus(GeneralError.Level level) {
       if (level == GeneralError.Level.ERROR) {
         myStatus = myStatus.max(Concrete.Status.HAS_ERRORS);
-      } else if (level.ordinal() >= GeneralError.Level.WEAK_WARNING.ordinal()) {
+      } else if (level.ordinal() >= GeneralError.Level.WARNING_UNUSED.ordinal()) {
         myStatus = myStatus.max(Concrete.Status.HAS_WARNINGS);
       }
     }

@@ -4,11 +4,11 @@ import org.arend.ext.core.definition.CoreConstructor;
 import org.arend.ext.core.level.CoreSort;
 
 import javax.annotation.Nonnull;
-import java.util.Collection;
+import java.util.List;
 
 public interface CoreConCallExpression extends CoreExpression {
   @Nonnull CoreConstructor getDefinition();
   @Nonnull CoreSort getSortArgument();
-  @Nonnull Collection<? extends CoreExpression> getDataTypeArguments();
-  @Nonnull Collection<? extends CoreExpression> getDefCallArguments();
+  @Nonnull List<? extends CoreExpression> getDataTypeArguments();
+  @Nonnull List<? extends CoreExpression> getDefCallArguments();
 }

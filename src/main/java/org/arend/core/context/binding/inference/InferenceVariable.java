@@ -5,7 +5,7 @@ import org.arend.core.expr.Expression;
 import org.arend.core.expr.InferenceReferenceExpression;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.term.concrete.Concrete;
-import org.arend.typechecking.error.local.LocalError;
+import org.arend.ext.error.LocalError;
 import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.typechecking.implicitargs.equations.InferenceVariableListener;
 

@@ -3,7 +3,8 @@ package org.arend.typechecking.visitor;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.term.FunctionKind;
 import org.arend.term.concrete.Concrete;
-import org.arend.typechecking.error.local.TypecheckingError;
+import org.arend.ext.error.TypecheckingError;
+import org.arend.typechecking.error.local.CertainTypecheckingError;
 
 public class BaseDefinitionTypechecker {
   public ErrorReporter errorReporter;
@@ -14,7 +15,7 @@ public class BaseDefinitionTypechecker {
 
   protected void checkFunctionLevel(Concrete.BaseFunctionDefinition def, FunctionKind kind) {
     if (def.getResultTypeLevel() != null && !(kind == FunctionKind.LEMMA || kind == FunctionKind.COCLAUSE_FUNC || def.getBody() instanceof Concrete.ElimFunctionBody)) {
-      errorReporter.report(new TypecheckingError(TypecheckingError.Kind.LEVEL_IGNORED, def.getResultTypeLevel()));
+      errorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.LEVEL_IGNORED, def.getResultTypeLevel()));
       def.setResultTypeLevel(null);
     }
   }

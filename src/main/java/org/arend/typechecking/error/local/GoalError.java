@@ -4,6 +4,7 @@ import org.arend.core.context.binding.Binding;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.type.ExpectedType;
 import org.arend.ext.error.GeneralError;
+import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.naming.reference.Referable;

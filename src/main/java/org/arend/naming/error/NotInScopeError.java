@@ -3,7 +3,7 @@ package org.arend.naming.error;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.arend.naming.reference.Referable;
-import org.arend.typechecking.error.local.LocalError;
+import org.arend.ext.error.LocalError;
 
 import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 

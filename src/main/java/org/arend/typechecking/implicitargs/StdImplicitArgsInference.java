@@ -22,9 +22,9 @@ import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.naming.reference.TCClassReferable;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
+import org.arend.typechecking.error.local.CertainTypecheckingError;
 import org.arend.typechecking.error.local.NotPiType;
-import org.arend.typechecking.error.local.TypeMismatchError;
-import org.arend.typechecking.error.local.TypecheckingError;
+import org.arend.ext.error.TypeMismatchError;
 import org.arend.typechecking.error.local.inference.ArgInferenceError;
 import org.arend.typechecking.error.local.inference.InstanceInferenceError;
 import org.arend.typechecking.instance.pool.InstancePool;
@@ -209,7 +209,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
   }
 
   private void reportExplicitnessError(boolean isExplicit, Concrete.SourceNode sourceNode) {
-    myVisitor.getErrorReporter().report(new TypecheckingError(isExplicit ? TypecheckingError.Kind.EXPECTED_EXPLICIT : TypecheckingError.Kind.EXPECTED_IMPLICIT, sourceNode));
+    myVisitor.getErrorReporter().report(new CertainTypecheckingError(isExplicit ? CertainTypecheckingError.Kind.EXPECTED_EXPLICIT : CertainTypecheckingError.Kind.EXPECTED_IMPLICIT, sourceNode));
   }
 
   private void typecheckDeferredArgument(Pair<InferenceVariable, Concrete.Expression> pair, TResult result) {

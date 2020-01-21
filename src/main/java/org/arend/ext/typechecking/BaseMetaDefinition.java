@@ -8,20 +8,29 @@ public abstract class BaseMetaDefinition implements MetaDefinition {
     return true;
   }
 
+  @Nullable
   protected boolean[] argumentExplicitness() {
     return null;
   }
 
-  @Nullable
-  @Override
-  public CheckedExpression invoke(@Nonnull TypecheckingSession session, @Nonnull ContextData contextData) {
+  protected boolean requiredExpectedType() {
+    return false;
+  }
+
+  protected boolean checkContext(@Nonnull ContextData contextData) {
     if (withoutLevels() && (contextData.getPLevel() != null || contextData.getHLevel() != null)) {
       // TODO[lang_ext]: report warning
     }
+
+    boolean ok = true;
     boolean[] explicitness = argumentExplicitness();
     if (explicitness != null) {
       // TODO[lang_ext]: check
     }
-    return null;
+    if (contextData.getExpectedType() == null && requiredExpectedType()) {
+      // TODO[lang_ext]: report error
+      ok = false;
+    }
+    return ok;
   }
 }

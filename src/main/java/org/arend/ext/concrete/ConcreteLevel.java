@@ -1,4 +1,4 @@
 package org.arend.ext.concrete;
 
-public interface ConcreteLevel {
+public interface ConcreteLevel extends ConcreteSourceNode {
 }

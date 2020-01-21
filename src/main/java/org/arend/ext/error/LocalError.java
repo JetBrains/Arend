@@ -1,14 +1,12 @@
-package org.arend.typechecking.error.local;
+package org.arend.ext.error;
 
-import org.arend.ext.error.GeneralError;
 import org.arend.ext.reference.ArendRef;
-import org.arend.naming.reference.GlobalReferable;
 
 import javax.annotation.Nonnull;
 import java.util.function.BiConsumer;
 
 public class LocalError extends GeneralError {
-  public GlobalReferable definition;
+  public ArendRef definition;
 
   public LocalError(@Nonnull Level level, String message) {
     super(level, message);
@@ -27,7 +25,7 @@ public class LocalError extends GeneralError {
     }
   }
 
-  public LocalError withDefinition(GlobalReferable definition) {
+  public LocalError withDefinition(ArendRef definition) {
     this.definition = definition;
     return this;
   }

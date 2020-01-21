@@ -1,4 +1,4 @@
-package org.arend.typechecking.error.local;
+package org.arend.ext.error;
 
 import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.prettyprinting.PrettyPrintable;

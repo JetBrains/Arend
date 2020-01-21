@@ -1,4 +1,4 @@
 package org.arend.ext.concrete;
 
-public interface ConcreteLetClause {
+public interface ConcreteLetClause extends ConcreteSourceNode {
 }

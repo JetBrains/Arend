@@ -1,4 +1,4 @@
 package org.arend.ext.concrete;
 
-public interface ConcreteClassElement {
+public interface ConcreteClassElement extends ConcreteSourceNode {
 }

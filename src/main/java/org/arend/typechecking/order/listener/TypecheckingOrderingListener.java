@@ -24,7 +24,7 @@ import org.arend.typechecking.*;
 import org.arend.typechecking.error.CycleError;
 import org.arend.typechecking.error.TerminationCheckError;
 import org.arend.typechecking.error.local.LocalErrorReporter;
-import org.arend.typechecking.error.local.TypecheckingError;
+import org.arend.ext.error.TypecheckingError;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
 import org.arend.typechecking.order.Ordering;
