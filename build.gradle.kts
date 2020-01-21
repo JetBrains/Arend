@@ -71,7 +71,7 @@ idea {
 }
 
 tasks.withType<AntlrTask> {
-    outputDirectory = genSrcDir
+    outputDirectory = genSrcDir.resolve("main/java")
     arguments.addAll(listOf(
             "-package", "$arendPackage.frontend.parser",
             "-no-listener",
