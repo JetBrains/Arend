@@ -122,18 +122,43 @@ public class CorrespondedSubExprVisitor implements ConcreteExpressionVisitor<Exp
     return expr.expression.accept(this, coreExpr);
   }
 
+  private Expression visitClonedApp(Concrete.AppExpression expr, Expression coreExpr) {
+    // This is a mutable reference
+    List<Concrete.Argument> arguments = expr.getArguments();
+    if (arguments.isEmpty()) return expr.getFunction().accept(this, coreExpr);
+
+    AppExpression coreAppExpr = coreExpr.cast(AppExpression.class);
+    LamExpression coreEtaExpr = coreExpr.cast(LamExpression.class);
+    DefCallExpression coreDefExpr = coreExpr.cast(DefCallExpression.class);
+    int lastArgIndex = arguments.size() - 1;
+    if (coreAppExpr != null) {
+      Expression accepted = arguments.get(lastArgIndex).getExpression().accept(this, coreAppExpr.getArgument());
+      if (accepted != null) return null;
+      arguments.remove(lastArgIndex);
+      return visitClonedApp(expr, coreAppExpr.getFunction());
+    } else if (coreEtaExpr != null) {
+      // `f a` (concrete) gets elaborated to `\b -> f a b` (core) if `f` takes 2
+      // arguments, so we try to match `f a` (concrete) and `f a b` (core),
+      // ignoring the extra argument `b`.
+      return visitClonedApp(expr, coreEtaExpr.getBody());
+    } else if (coreDefExpr != null) {
+      // FIXME: filter out inserted implicit arguments
+      List<? extends Expression> defCallArguments = coreDefExpr.getDefCallArguments();
+      return visitExprs(defCallArguments, arguments
+          .stream()
+          .map(Concrete.Argument::getExpression)
+          // Theoretically, concrete arguments should always be less than
+          // or equal to core arguments.
+          .limit(defCallArguments.size())
+          .collect(Collectors.toList()));
+    } else return null;
+  }
+
   @Override
   public Expression visitApp(Concrete.AppExpression expr, Expression coreExpr) {
     if (matchesSubExpr(expr)) return coreExpr;
-    AppExpression coreAppExpr = coreExpr.cast(AppExpression.class);
-    if (coreAppExpr == null) return null;
-    List<Expression> coreArguments = new ArrayList<>();
-    coreAppExpr.getArguments(coreArguments);
-    return visitExprs(coreArguments, expr
-        .getArguments()
-        .stream()
-        .map(Concrete.Argument::getExpression)
-        .collect(Collectors.toList()));
+    Concrete.Expression cloned = Concrete.AppExpression.make(expr.getData(), expr.getFunction(), new ArrayList<>(expr.getArguments()));
+    return visitClonedApp(((Concrete.AppExpression) cloned), coreExpr);
   }
 
   @Override
