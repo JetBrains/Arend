@@ -2,7 +2,7 @@ import com.google.protobuf.gradle.ExecutableLocator
 
 val arendPackage = "org.arend"
 group = arendPackage
-version = "1.2"
+version = "1.2.0"
 
 plugins {
     java
