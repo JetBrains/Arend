@@ -340,6 +340,9 @@ public abstract class Expression implements ExpectedType, Body, CoreExpression {
         return (InferenceVariable) var;
       }
       expr = ((InferenceReferenceExpression) expr).getSubstExpression();
+      if (expr == null) {
+        return null;
+      }
     }
   }
 }
