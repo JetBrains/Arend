@@ -45,23 +45,23 @@ task<Jar>("jarDep") {
     dependsOn("prelude")
 }
 
-task<Jar>("sdk-classes") {
-    archiveBaseName.set("arend-sdk")
+task<Jar>("api-classes") {
+    archiveBaseName.set("arend-api")
     from(sourceSets["main"].output) {
         include("org/arend/ext/**")
     }
 }
 
-task<Jar>("sdk-sources") {
-    archiveBaseName.set("arend-sdk-sources")
+task<Jar>("api-sources") {
+    archiveBaseName.set("arend-api-sources")
     from(sourceSets["main"].allSource) {
         include("org/arend/ext/**")
     }
 }
 
-task("sdk") {
-    dependsOn("sdk-classes")
-    dependsOn("sdk-sources")
+task("api") {
+    dependsOn("api-classes")
+    dependsOn("api-sources")
 }
 
 tasks.getByName<Jar>("jar") {
