@@ -998,7 +998,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       if (!(checked instanceof TypecheckingResult)) {
         throw new IllegalStateException("CheckedExpression must be TypecheckingResult");
       }
-      return (TypecheckingResult) checked;
+      return checkResult(expectedType, (TypecheckingResult) checked, expr);
     }
 
     TResult result = visitReference(expr);
