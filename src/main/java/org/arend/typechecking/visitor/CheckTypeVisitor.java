@@ -993,6 +993,14 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       return checkMeta(expr, Collections.emptyList(), expectedType);
     }
 
+    if (expr.getReferent() instanceof CoreReferable) {
+      CheckedExpression checked = ((CoreReferable) expr.getReferent()).expression;
+      if (!(checked instanceof TypecheckingResult)) {
+        throw new IllegalStateException("CheckedExpression must be TypecheckingResult");
+      }
+      return (TypecheckingResult) checked;
+    }
+
     TResult result = visitReference(expr);
     if (result == null || !checkPath(result, expr)) {
       return null;

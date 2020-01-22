@@ -248,7 +248,7 @@ public abstract class SourceLibrary extends BaseLibrary {
     if (myExtension != null) {
       myExtension.setDependencies(dependenciesExtensions);
       myExtension.setPrelude(new Prelude());
-      myExtension.setConcreteFactory(new ConcreteFactoryImpl());
+      myExtension.setConcreteFactory(new ConcreteFactoryImpl(null));
       myExtension.setModuleScopeProvider(getModuleScopeProvider());
 
       DefinitionProviderImpl provider = new DefinitionProviderImpl(typechecking);

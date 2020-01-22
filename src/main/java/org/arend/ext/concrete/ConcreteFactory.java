@@ -3,6 +3,8 @@ package org.arend.ext.concrete;
 import org.arend.ext.concrete.expr.ConcreteCaseArgument;
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.reference.ArendRef;
+import org.arend.ext.typechecking.CheckedExpression;
+import org.arend.ext.typechecking.MetaDefinition;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -10,9 +12,10 @@ import java.math.BigInteger;
 import java.util.Collection;
 
 public interface ConcreteFactory {
-  @Nonnull
-  ConcreteExpression ref(@Nonnull ArendRef ref);
+  @Nonnull ConcreteExpression ref(@Nonnull ArendRef ref);
   @Nonnull ConcreteExpression ref(@Nonnull ArendRef ref, @Nullable ConcreteLevel pLevel, @Nullable ConcreteLevel hLevel);
+  @Nonnull ConcreteExpression core(@Nonnull CheckedExpression expr);
+  @Nonnull ConcreteExpression meta(@Nonnull MetaDefinition meta);
   @Nonnull ConcreteExpression thisExpr();
   @Nonnull ConcreteExpression lam(@Nonnull Collection<? extends ConcreteParameter> parameters, @Nonnull ConcreteExpression body);
   @Nonnull ConcreteExpression pi(@Nonnull Collection<? extends ConcreteParameter> parameters, @Nonnull ConcreteExpression codomain);
@@ -56,4 +59,6 @@ public interface ConcreteFactory {
   @Nonnull ConcreteLevel numLevel(int level);
   @Nonnull ConcreteLevel sucLevel(@Nonnull ConcreteLevel level);
   @Nonnull ConcreteLevel maxLevel(@Nonnull ConcreteLevel level1, @Nonnull ConcreteLevel level2);
+
+  @Nonnull ConcreteFactory useData(@Nullable Object data);
 }

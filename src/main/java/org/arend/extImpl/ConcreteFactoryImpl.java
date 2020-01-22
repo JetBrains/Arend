@@ -4,7 +4,12 @@ import org.arend.ext.concrete.*;
 import org.arend.ext.concrete.expr.ConcreteCaseArgument;
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.reference.ArendRef;
+import org.arend.ext.reference.Precedence;
+import org.arend.ext.typechecking.CheckedExpression;
+import org.arend.ext.typechecking.MetaDefinition;
+import org.arend.naming.reference.CoreReferable;
 import org.arend.naming.reference.LocalReferable;
+import org.arend.naming.reference.MetaReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
 
@@ -17,6 +22,12 @@ import java.util.Collection;
 import java.util.List;
 
 public class ConcreteFactoryImpl implements ConcreteFactory {
+  private final Object myData;
+
+  public ConcreteFactoryImpl(Object data) {
+    myData = data;
+  }
+
   @Nonnull
   @Override
   public ConcreteExpression ref(@Nonnull ArendRef ref) {
@@ -33,6 +44,18 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
       throw new IllegalArgumentException();
     }
     return new Concrete.ReferenceExpression(null, (Referable) ref, (Concrete.LevelExpression) pLevel, (Concrete.LevelExpression) hLevel);
+  }
+
+  @Nonnull
+  @Override
+  public ConcreteExpression core(@Nonnull CheckedExpression expr) {
+    return new Concrete.ReferenceExpression(null, new CoreReferable(expr), null, null);
+  }
+
+  @Nonnull
+  @Override
+  public ConcreteExpression meta(@Nonnull MetaDefinition meta) {
+    return new Concrete.ReferenceExpression(null, new MetaReferable(Precedence.DEFAULT, "unnamedMeta", meta), null, null);
   }
 
   @Nonnull
@@ -433,5 +456,11 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
       throw new IllegalArgumentException();
     }
     return new Concrete.MaxLevelExpression(null, (Concrete.LevelExpression) level1, (Concrete.LevelExpression) level2);
+  }
+
+  @Nonnull
+  @Override
+  public ConcreteFactory useData(@Nullable Object data) {
+    return new ConcreteFactoryImpl(data);
   }
 }
