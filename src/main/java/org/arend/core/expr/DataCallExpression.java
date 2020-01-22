@@ -9,6 +9,7 @@ import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.pattern.Pattern;
 import org.arend.core.sort.Sort;
+import org.arend.core.subst.InPlaceLevelSubstVisitor;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.expr.CoreDataCallExpression;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
@@ -19,19 +20,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DataCallExpression extends DefCallExpression implements Type, CoreDataCallExpression {
-  private final Sort mySortArgument;
   private final List<Expression> myArguments;
 
   public DataCallExpression(DataDefinition definition, Sort sortArgument, List<Expression> arguments) {
-    super(definition);
-    mySortArgument = sortArgument;
+    super(definition, sortArgument);
     myArguments = arguments;
-  }
-
-  @Nonnull
-  @Override
-  public Sort getSortArgument() {
-    return mySortArgument;
   }
 
   @Nonnull
@@ -68,12 +61,17 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
 
   @Override
   public Sort getSortOfType() {
-    return getDefinition().getSort().subst(mySortArgument.toLevelSubstitution());
+    return getDefinition().getSort().subst(getSortArgument().toLevelSubstitution());
   }
 
   @Override
   public DataCallExpression subst(SubstVisitor substVisitor) {
     return substVisitor.isEmpty() ? this : (DataCallExpression) substVisitor.visitDataCall(this, null);
+  }
+
+  @Override
+  public void subst(InPlaceLevelSubstVisitor substVisitor) {
+    substVisitor.visitDataCall(this, null);
   }
 
   @Override
@@ -116,7 +114,7 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
       matchedParameters = myArguments;
     }
 
-    conCalls.add(new ConCallExpression(constructor, mySortArgument, matchedParameters, new ArrayList<>()));
+    conCalls.add(new ConCallExpression(constructor, getSortArgument(), matchedParameters, new ArrayList<>()));
     return true;
   }
 }

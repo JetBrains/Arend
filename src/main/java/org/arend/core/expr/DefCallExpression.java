@@ -5,16 +5,20 @@ import org.arend.core.definition.Definition;
 import org.arend.core.definition.ParametersLevel;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
+import org.arend.core.subst.LevelSubstitution;
 import org.arend.util.Decision;
 
+import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.List;
 
 public abstract class DefCallExpression extends Expression {
   private final Definition myDefinition;
+  private Sort mySortArgument;
 
-  public DefCallExpression(Definition definition) {
+  public DefCallExpression(Definition definition, Sort sortArgument) {
     myDefinition = definition;
+    mySortArgument = sortArgument;
   }
 
   public List<? extends Expression> getDefCallArguments() {
@@ -34,7 +38,14 @@ public abstract class DefCallExpression extends Expression {
     return substitution;
   }
 
-  public abstract Sort getSortArgument();
+  @Nonnull
+  public Sort getSortArgument() {
+    return mySortArgument;
+  }
+
+  public void substSort(LevelSubstitution substitution) {
+    mySortArgument = mySortArgument.subst(substitution);
+  }
 
   public Definition getDefinition() {
     return myDefinition;

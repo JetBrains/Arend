@@ -6,6 +6,7 @@ import org.arend.core.expr.Expression;
 import org.arend.core.expr.FieldCallExpression;
 import org.arend.core.expr.NewExpression;
 import org.arend.core.sort.Sort;
+import org.arend.core.subst.LevelSubstitution;
 import org.arend.ext.core.elimtree.CoreClassBranchKey;
 
 import javax.annotation.Nonnull;
@@ -15,7 +16,7 @@ import java.util.Set;
 
 public final class ClassConstructor extends SingleConstructor implements CoreClassBranchKey {
   private final ClassDefinition myClassDef;
-  private final Sort mySort;
+  private Sort mySort;
   private final Set<? extends ClassField> myImplementedFields;
 
   public ClassConstructor(ClassDefinition classDef, Sort sort, Set<? extends ClassField> implementedFields) {
@@ -32,6 +33,10 @@ public final class ClassConstructor extends SingleConstructor implements CoreCla
 
   public Sort getSort() {
     return mySort;
+  }
+
+  public void substSort(LevelSubstitution substitution) {
+    mySort = mySort.subst(substitution);
   }
 
   public Set<? extends ClassField> getImplementedFields() {

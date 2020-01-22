@@ -11,6 +11,8 @@ import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
+import org.arend.core.subst.InPlaceLevelSubstVisitor;
+import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.expr.CoreAbsExpression;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
@@ -24,7 +26,7 @@ import org.arend.util.Decision;
 import javax.annotation.Nonnull;
 
 public class PiExpression extends Expression implements Type, CorePiExpression, CoreAbsExpression {
-  private final Sort myResultSort;
+  private Sort myResultSort;
   private final SingleDependentLink myLink;
   private final Expression myCodomain;
 
@@ -33,6 +35,10 @@ public class PiExpression extends Expression implements Type, CorePiExpression, 
     myResultSort = resultSort;
     myLink = link;
     myCodomain = codomain;
+  }
+
+  public void substSort(LevelSubstitution substitution) {
+    myResultSort = myResultSort.subst(substitution);
   }
 
   public static Sort generateUpperBound(Sort domSort, Sort codSort, Equations equations, Concrete.SourceNode sourceNode) {
@@ -109,6 +115,11 @@ public class PiExpression extends Expression implements Type, CorePiExpression, 
   @Override
   public PiExpression subst(SubstVisitor substVisitor) {
     return substVisitor.isEmpty() ? this : (PiExpression) substVisitor.visitPi(this, null);
+  }
+
+  @Override
+  public void subst(InPlaceLevelSubstVisitor substVisitor) {
+    substVisitor.visitPi(this, null);
   }
 
   @Override

@@ -5,6 +5,8 @@ import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
 import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.sort.Sort;
+import org.arend.core.subst.InPlaceLevelSubstVisitor;
+import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CoreUniverseExpression;
@@ -14,11 +16,15 @@ import org.arend.util.Decision;
 import javax.annotation.Nonnull;
 
 public class UniverseExpression extends Expression implements Type, CoreUniverseExpression {
-  private final Sort mySort;
+  private Sort mySort;
 
   public UniverseExpression(Sort sort) {
     assert !sort.isOmega();
     mySort = sort;
+  }
+
+  public void substSort(LevelSubstitution substitution) {
+    mySort = mySort.subst(substitution);
   }
 
   @Nonnull
@@ -55,6 +61,11 @@ public class UniverseExpression extends Expression implements Type, CoreUniverse
   @Override
   public UniverseExpression subst(SubstVisitor substVisitor) {
     return substVisitor.getLevelSubstitution().isEmpty() ? this : new UniverseExpression(mySort.subst(substVisitor.getLevelSubstitution()));
+  }
+
+  @Override
+  public void subst(InPlaceLevelSubstVisitor substVisitor) {
+    substVisitor.visitUniverse(this, null);
   }
 
   @Override

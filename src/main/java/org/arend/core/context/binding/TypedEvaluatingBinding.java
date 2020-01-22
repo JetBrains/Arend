@@ -2,6 +2,7 @@ package org.arend.core.context.binding;
 
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.visitor.StripVisitor;
+import org.arend.core.subst.InPlaceLevelSubstVisitor;
 import org.arend.core.subst.SubstVisitor;
 
 import javax.annotation.Nonnull;
@@ -29,5 +30,10 @@ public class TypedEvaluatingBinding extends TypedBinding implements EvaluatingBi
   @Override
   public void subst(SubstVisitor visitor) {
     myExpression = myExpression.accept(visitor, null);
+  }
+
+  @Override
+  public void subst(InPlaceLevelSubstVisitor visitor) {
+    myExpression.accept(visitor, null);
   }
 }

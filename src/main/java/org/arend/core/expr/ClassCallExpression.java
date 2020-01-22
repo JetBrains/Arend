@@ -14,6 +14,7 @@ import org.arend.core.expr.visitor.ExpressionVisitor2;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.sort.Sort;
+import org.arend.core.subst.InPlaceLevelSubstVisitor;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.definition.CoreClassField;
 import org.arend.ext.core.expr.CoreClassCallExpression;
@@ -26,7 +27,6 @@ import javax.annotation.Nonnull;
 import java.util.*;
 
 public class ClassCallExpression extends DefCallExpression implements Type, CoreClassCallExpression {
-  private final Sort mySortArgument;
   private final ClassCallBinding myThisBinding = new ClassCallBinding();
   private final Map<ClassField, Expression> myImplementations;
   private Sort mySort;
@@ -56,16 +56,14 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
   }
 
   public ClassCallExpression(ClassDefinition definition, Sort sortArgument) {
-    super(definition);
-    mySortArgument = sortArgument;
+    super(definition, sortArgument);
     myImplementations = Collections.emptyMap();
     mySort = definition.getSort().subst(sortArgument.toLevelSubstitution());
     myHasUniverses = definition.hasUniverses();
   }
 
   public ClassCallExpression(ClassDefinition definition, Sort sortArgument, Map<ClassField, Expression> implementations, Sort sort, boolean hasUniverses) {
-    super(definition);
-    mySortArgument = sortArgument;
+    super(definition, sortArgument);
     myImplementations = implementations;
     mySort = sort;
     myHasUniverses = hasUniverses;
@@ -166,7 +164,7 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
 
   public DependentLink getClassFieldParameters() {
     Map<ClassField, Expression> implementations = new HashMap<>();
-    NewExpression newExpr = new NewExpression(null, new ClassCallExpression(getDefinition(), mySortArgument, implementations, Sort.PROP, false));
+    NewExpression newExpr = new NewExpression(null, new ClassCallExpression(getDefinition(), getSortArgument(), implementations, Sort.PROP, false));
     newExpr.getClassCall().copyImplementationsFrom(this);
 
     Collection<? extends ClassField> fields = getDefinition().getFields();
@@ -180,7 +178,7 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
         continue;
       }
 
-      PiExpression piExpr = field.getType(mySortArgument);
+      PiExpression piExpr = field.getType(getSortArgument());
       Expression type = piExpr.applyExpression(newExpr);
       DependentLink link = new TypedDependentLink(true, Renamer.getNameFromType(type, field.getName()), type instanceof Type ? (Type) type : new TypeExpression(type, piExpr.getResultSort()), EmptyDependentLink.getInstance());
       implementations.put(field, new ReferenceExpression(link));
@@ -201,12 +199,6 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
     return (ClassDefinition) super.getDefinition();
   }
 
-  @Nonnull
-  @Override
-  public Sort getSortArgument() {
-    return mySortArgument;
-  }
-
   @Override
   public Expression getExpr() {
     return this;
@@ -220,6 +212,11 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
   @Override
   public ClassCallExpression subst(SubstVisitor substVisitor) {
     return substVisitor.isEmpty() ? this : (ClassCallExpression) substVisitor.visitClassCall(this, null);
+  }
+
+  @Override
+  public void subst(InPlaceLevelSubstVisitor substVisitor) {
+    substVisitor.visitClassCall(this, null);
   }
 
   @Override

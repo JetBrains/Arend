@@ -186,6 +186,10 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> {
     }
     visitParameters(expr.getParameters(), params);
     visitElimTree(expr.getElimTree(), params);
+    expr.getResultType().accept(this, params);
+    if (expr.getResultTypeLevel() != null) {
+      expr.getResultTypeLevel().accept(this, params);
+    }
     return null;
   }
 

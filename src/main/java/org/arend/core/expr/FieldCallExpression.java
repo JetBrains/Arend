@@ -13,12 +13,10 @@ import java.util.Collections;
 import java.util.List;
 
 public class FieldCallExpression extends DefCallExpression implements CoreFieldCallExpression {
-  private final Sort mySortArgument;
   private final Expression myArgument;
 
   private FieldCallExpression(ClassField definition, Sort sortArgument, Expression argument) {
-    super(definition);
-    mySortArgument = sortArgument;
+    super(definition, sortArgument);
     myArgument = argument;
   }
 
@@ -53,12 +51,6 @@ public class FieldCallExpression extends DefCallExpression implements CoreFieldC
   @Override
   public List<? extends Expression> getDefCallArguments() {
     return Collections.singletonList(myArgument);
-  }
-
-  @Nonnull
-  @Override
-  public Sort getSortArgument() {
-    return mySortArgument;
   }
 
   @Nonnull

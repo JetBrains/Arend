@@ -4,6 +4,7 @@ import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
 import org.arend.core.sort.Sort;
+import org.arend.core.subst.LevelSubstitution;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CoreLamExpression;
 import org.arend.util.Decision;
@@ -11,7 +12,7 @@ import org.arend.util.Decision;
 import javax.annotation.Nonnull;
 
 public class LamExpression extends Expression implements CoreLamExpression {
-  private final Sort myResultSort;
+  private Sort myResultSort;
   private final SingleDependentLink myLink;
   private final Expression myBody;
 
@@ -23,6 +24,10 @@ public class LamExpression extends Expression implements CoreLamExpression {
 
   public Sort getResultSort() {
     return myResultSort;
+  }
+
+  public void substSort(LevelSubstitution substitution) {
+    myResultSort = myResultSort.subst(substitution);
   }
 
   @Nonnull

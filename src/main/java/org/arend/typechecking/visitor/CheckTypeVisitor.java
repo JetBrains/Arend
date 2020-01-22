@@ -22,8 +22,8 @@ import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
+import org.arend.core.subst.InPlaceLevelSubstVisitor;
 import org.arend.core.subst.LevelSubstitution;
-import org.arend.core.subst.SubstVisitor;
 import org.arend.error.*;
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.concrete.expr.ConcreteReferenceExpression;
@@ -337,10 +337,15 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     return finalize(checkExpr(expr, expectedType), returnExpectedType && expectedType instanceof Expression ? (Expression) expectedType : null, expr);
   }
 
-  private void invokeDeferredMetas(LevelSubstitution substitution, StripVisitor stripVisitor) {
+  private void invokeDeferredMetas(InPlaceLevelSubstVisitor substVisitor, StripVisitor stripVisitor) {
     for (DeferredMeta deferredMeta : myDeferredMetas) {
-      SubstVisitor substVisitor = new SubstVisitor(new ExprSubstitution(), substitution);
-      deferredMeta.contextData.setExpectedType(deferredMeta.contextData.getExpectedType().subst(substVisitor).accept(stripVisitor, null));
+      Expression type = deferredMeta.contextData.getExpectedType();
+      if (!substVisitor.isEmpty()) {
+        type.accept(substVisitor, null);
+      }
+      type = type.accept(stripVisitor, null);
+      deferredMeta.contextData.setExpectedType(type);
+
       TypedDependentLink lastTyped = null;
       for (Binding binding : deferredMeta.context.values()) {
         if (binding instanceof UntypedDependentLink) {
@@ -362,7 +367,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       CheckedExpression result = deferredMeta.meta.invoke(checkTypeVisitor, deferredMeta.contextData);
       Concrete.ReferenceExpression refExpr = deferredMeta.contextData.getReferenceExpression();
       if (result instanceof TypecheckingResult) {
-        result = checkTypeVisitor.checkResult(deferredMeta.contextData.getExpectedType(), (TypecheckingResult) result, refExpr);
+        result = checkTypeVisitor.checkResult(type, (TypecheckingResult) result, refExpr);
         result = checkTypeVisitor.finalize((TypecheckingResult) result, null, refExpr);
         deferredMeta.inferenceExpr.setSubstExpression(result == null ? new ErrorExpression(null, null) : ((TypecheckingResult) result).expression);
         continue;
@@ -390,16 +395,17 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
 
     LevelSubstitution substitution = myEquations.solve(sourceNode);
-    if (!substitution.isEmpty()) {
+    InPlaceLevelSubstVisitor substVisitor = new InPlaceLevelSubstVisitor(substitution);
+    if (!substVisitor.isEmpty()) {
       if (result.expression != null) {
-        result.expression = result.expression.subst(substitution);
+        result.expression.accept(substVisitor, null);
       }
-      result.type = result.type.subst(new ExprSubstitution(), substitution);
+      result.type.accept(substVisitor, null);
     }
 
     ErrorReporterCounter counter = new ErrorReporterCounter(GeneralError.Level.ERROR, errorReporter);
     StripVisitor stripVisitor = new StripVisitor(counter);
-    invokeDeferredMetas(substitution, stripVisitor);
+    invokeDeferredMetas(substVisitor, stripVisitor);
     if (result.expression != null) {
       result.expression = result.expression.accept(stripVisitor, null);
     }
@@ -465,10 +471,12 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   private Type finalCheckType(Concrete.Expression expr, ExpectedType expectedType) {
     Type result = checkType(expr, expectedType);
     if (result == null) return null;
-    LevelSubstitution substitution = myEquations.solve(expr);
-    result = result.subst(new SubstVisitor(new ExprSubstitution(), substitution));
+    InPlaceLevelSubstVisitor substVisitor = new InPlaceLevelSubstVisitor(myEquations.solve(expr));
+    if (!substVisitor.isEmpty()) {
+      result.subst(substVisitor);
+    }
     StripVisitor stripVisitor = new StripVisitor(errorReporter);
-    invokeDeferredMetas(substitution, stripVisitor);
+    invokeDeferredMetas(substVisitor, stripVisitor);
     return result.strip(stripVisitor);
   }
 

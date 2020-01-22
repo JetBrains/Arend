@@ -7,6 +7,8 @@ import org.arend.core.expr.visitor.ExpressionVisitor2;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.sort.Sort;
+import org.arend.core.subst.InPlaceLevelSubstVisitor;
+import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CoreSigmaExpression;
@@ -17,12 +19,16 @@ import javax.annotation.Nonnull;
 
 public class SigmaExpression extends Expression implements Type, CoreSigmaExpression {
   private final DependentLink myLink;
-  private final Sort mySort;
+  private Sort mySort;
 
   public SigmaExpression(Sort sort, DependentLink link) {
     assert link != null;
     myLink = link;
     mySort = sort;
+  }
+
+  public void substSort(LevelSubstitution substitution) {
+    mySort = mySort.subst(substitution);
   }
 
   @Nonnull
@@ -63,6 +69,11 @@ public class SigmaExpression extends Expression implements Type, CoreSigmaExpres
   @Override
   public SigmaExpression subst(SubstVisitor substVisitor) {
     return substVisitor.isEmpty() ? this : (SigmaExpression) substVisitor.visitSigma(this, null);
+  }
+
+  @Override
+  public void subst(InPlaceLevelSubstVisitor substVisitor) {
+    substVisitor.visitSigma(this, null);
   }
 
   @Override

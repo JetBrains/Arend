@@ -14,19 +14,11 @@ import javax.annotation.Nonnull;
 import java.util.List;
 
 public class FunCallExpression extends DefCallExpression implements CoreFunCallExpression {
-  private final Sort mySortArgument;
   private final List<Expression> myArguments;
 
   public FunCallExpression(FunctionDefinition definition, Sort sortArgument, List<Expression> arguments) {
-    super(definition);
-    mySortArgument = sortArgument;
+    super(definition, sortArgument);
     myArguments = arguments;
-  }
-
-  @Nonnull
-  @Override
-  public Sort getSortArgument() {
-    return mySortArgument;
   }
 
   @Nonnull

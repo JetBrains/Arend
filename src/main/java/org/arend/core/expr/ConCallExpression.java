@@ -13,14 +13,12 @@ import javax.annotation.Nonnull;
 import java.util.List;
 
 public class ConCallExpression extends DefCallExpression implements CoreConCallExpression {
-  private final Sort mySortArgument;
   private final List<Expression> myDataTypeArguments;
   private final List<Expression> myArguments;
 
   public ConCallExpression(Constructor definition, Sort sortArgument, List<Expression> dataTypeArguments, List<Expression> arguments) {
-    super(definition);
+    super(definition, sortArgument);
     assert dataTypeArguments != null;
-    mySortArgument = sortArgument;
     myDataTypeArguments = dataTypeArguments;
     myArguments = arguments;
   }
@@ -42,12 +40,6 @@ public class ConCallExpression extends DefCallExpression implements CoreConCallE
   @Override
   public List<Expression> getDataTypeArguments() {
     return myDataTypeArguments;
-  }
-
-  @Nonnull
-  @Override
-  public Sort getSortArgument() {
-    return mySortArgument;
   }
 
   @Nonnull
@@ -78,7 +70,7 @@ public class ConCallExpression extends DefCallExpression implements CoreConCallE
   }
 
   public DataCallExpression getDataTypeExpression() {
-    return getDefinition().getDataTypeExpression(mySortArgument, myDataTypeArguments);
+    return getDefinition().getDataTypeExpression(getSortArgument(), myDataTypeArguments);
   }
 
   @Override
