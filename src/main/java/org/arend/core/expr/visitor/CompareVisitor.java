@@ -800,7 +800,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, ExpectedTy
       return true;
     }
     ErrorExpression errorExpr2 = expr2.cast(ErrorExpression.class);
-    return errorExpr2 != null && (errorExpr2.getError() instanceof GoalError || expr1.getError().equals(errorExpr2.getError()));
+    return errorExpr2 != null && (errorExpr2.getError() instanceof GoalError || expr1.getError() != null && expr1.getError().equals(errorExpr2.getError()));
   }
 
   @Override

@@ -794,6 +794,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
     }
 
+    if (typedDef.getResultType() == null) {
+      typedDef.setResultType(new ErrorExpression(null, null));
+    }
     Expression expectedType = typedDef.getResultType();
 
     Level actualResultTypeLevel;
