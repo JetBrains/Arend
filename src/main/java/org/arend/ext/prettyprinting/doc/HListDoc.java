@@ -3,14 +3,14 @@ package org.arend.ext.prettyprinting.doc;
 import java.util.Collection;
 
 public class HListDoc extends LineDoc {
-  private final Collection<? extends LineDoc> myDocs;
+  private final Collection<? extends LineDoc> docs;
 
   HListDoc(Collection<? extends LineDoc> docs) {
-    myDocs = docs;
+    this.docs = docs;
   }
 
   public Collection<? extends LineDoc> getDocs() {
-    return myDocs;
+    return docs;
   }
 
   @Override
@@ -21,7 +21,7 @@ public class HListDoc extends LineDoc {
   @Override
   public int getWidth() {
     int width = 0;
-    for (LineDoc doc : myDocs) {
+    for (LineDoc doc : docs) {
       width += doc.getWidth();
     }
     return width;
@@ -29,7 +29,7 @@ public class HListDoc extends LineDoc {
 
   @Override
   public boolean isEmpty() {
-    for (LineDoc doc : myDocs) {
+    for (LineDoc doc : docs) {
       if (!doc.isEmpty()) {
         return false;
       }

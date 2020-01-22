@@ -9,13 +9,13 @@ import javax.annotation.Nonnull;
 import java.util.EnumSet;
 
 public class TermLineDoc extends LineDoc {
-  private final PrettyPrinterConfig myPPConfig;
-  private final CoreExpression myTerm;
-  private String myText;
+  private final PrettyPrinterConfig ppConfig;
+  private final CoreExpression term;
+  private String text;
 
   TermLineDoc(CoreExpression term, PrettyPrinterConfig ppConfig) {
-    myTerm = term;
-    myPPConfig = new PrettyPrinterConfig() {
+    this.term = term;
+    this.ppConfig = new PrettyPrinterConfig() {
         @Override
         public boolean isSingleLine() {
           return true;
@@ -35,16 +35,16 @@ public class TermLineDoc extends LineDoc {
   }
 
   public CoreExpression getTerm() {
-    return myTerm;
+    return term;
   }
 
   public String getText() {
-    if (myText == null) {
+    if (text == null) {
       StringBuilder builder = new StringBuilder();
-      myTerm.prettyPrint(builder, myPPConfig);
-      myText = builder.toString();
+      term.prettyPrint(builder, ppConfig);
+      text = builder.toString();
     }
-    return myText;
+    return text;
   }
 
   @Override

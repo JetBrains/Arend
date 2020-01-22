@@ -5,10 +5,10 @@ import java.util.Arrays;
 import java.util.List;
 
 public class LongName implements Comparable<LongName> {
-  private final List<String> myPath;
+  private final List<String> path;
 
   public LongName(@Nonnull List<String> path) {
-    myPath = path;
+    this.path = path;
   }
 
   public LongName(String... name) {
@@ -20,45 +20,45 @@ public class LongName implements Comparable<LongName> {
   }
 
   public List<String> toList() {
-    return myPath;
+    return path;
   }
 
   public String[] toArray() {
-    return myPath.toArray(new String[0]);
+    return path.toArray(new String[0]);
   }
 
   public int size() {
-    return myPath.size();
+    return path.size();
   }
 
   public String getLastName() {
-    return myPath.isEmpty() ? null : myPath.get(myPath.size() - 1);
+    return path.isEmpty() ? null : path.get(path.size() - 1);
   }
 
   @Override
   public boolean equals(Object o) {
-    return this == o || o instanceof LongName && myPath.equals(((LongName) o).myPath);
+    return this == o || o instanceof LongName && path.equals(((LongName) o).path);
   }
 
   @Override
   public int hashCode() {
-    return myPath.hashCode();
+    return path.hashCode();
   }
 
   @Override
   public String toString() {
-    return String.join(".", myPath);
+    return String.join(".", path);
   }
 
   @Override
   public int compareTo(@Nonnull LongName longName) {
-    List<String> theirPath = longName.myPath;
-    Integer mySize = myPath.size();
+    List<String> theirPath = longName.path;
+    Integer mySize = path.size();
     Integer theirSize = theirPath.size();
     if (!mySize.equals(theirSize)) return mySize.compareTo(theirSize);
 
     for (int i = 0; i < mySize; i++) {
-      String myName = myPath.get(i);
+      String myName = path.get(i);
       String theirName = theirPath.get(i);
       int cmp = myName.compareTo(theirName);
       if (cmp != 0) {

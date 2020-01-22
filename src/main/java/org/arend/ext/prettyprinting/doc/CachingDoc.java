@@ -7,15 +7,15 @@ import java.util.Arrays;
 import java.util.List;
 
 public abstract class CachingDoc extends Doc {
-  private List<String> myText;
+  private List<String> text;
 
   public abstract String getString();
 
   public List<? extends String> getText() {
-    if (myText == null) {
-      myText = Arrays.asList(getString().split("\\n"));
+    if (text == null) {
+      text = Arrays.asList(getString().split("\\n"));
     }
-    return myText;
+    return text;
   }
 
   @Override

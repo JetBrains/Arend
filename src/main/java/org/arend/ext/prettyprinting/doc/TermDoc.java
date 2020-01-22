@@ -9,22 +9,22 @@ import static org.arend.ext.prettyprinting.doc.DocFactory.hList;
 import static org.arend.ext.prettyprinting.doc.DocFactory.text;
 
 public class TermDoc extends CachingDoc {
-  private final CoreExpression myTerm;
-  private final PrettyPrinterConfig myPPConfig;
+  private final CoreExpression term;
+  private final PrettyPrinterConfig ppConfig;
 
   TermDoc(CoreExpression term, PrettyPrinterConfig ppConfig) {
-    myTerm = term;
-    myPPConfig = ppConfig;
+    this.term = term;
+    this.ppConfig = ppConfig;
   }
 
   public CoreExpression getTerm() {
-    return myTerm;
+    return term;
   }
 
   @Override
   public String getString() {
     StringBuilder builder = new StringBuilder();
-    myTerm.prettyPrint(builder, myPPConfig);
+    term.prettyPrint(builder, ppConfig);
     return builder.toString();
   }
 

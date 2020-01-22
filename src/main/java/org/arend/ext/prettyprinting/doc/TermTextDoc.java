@@ -1,14 +1,14 @@
 package org.arend.ext.prettyprinting.doc;
 
 public class TermTextDoc extends TextDoc {
-  private final boolean myFirst;
+  private final boolean isFirst;
 
   TermTextDoc(String text, boolean isFirst) {
     super(text);
-    myFirst = isFirst;
+    this.isFirst = isFirst;
   }
 
   public boolean isFirst() {
-    return myFirst;
+    return isFirst;
   }
 }

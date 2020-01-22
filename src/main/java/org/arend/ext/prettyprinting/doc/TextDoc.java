@@ -1,14 +1,14 @@
 package org.arend.ext.prettyprinting.doc;
 
 public class TextDoc extends LineDoc {
-  private final String myText;
+  private final String text;
 
   TextDoc(String text) {
-    myText = text;
+    this.text = text;
   }
 
   public String getText() {
-    return myText;
+    return text;
   }
 
   @Override
@@ -18,11 +18,11 @@ public class TextDoc extends LineDoc {
 
   @Override
   public int getWidth() {
-    return myText.length();
+    return text.length();
   }
 
   @Override
   public boolean isEmpty() {
-    return myText.isEmpty();
+    return text.isEmpty();
   }
 }

@@ -7,14 +7,14 @@ import java.util.Collections;
 import java.util.List;
 
 public class VListDoc extends Doc {
-  private final Collection<? extends Doc> myDocs;
+  private final Collection<? extends Doc> docs;
 
   VListDoc(Collection<? extends Doc> docs) {
-    myDocs = docs;
+    this.docs = docs;
   }
 
   public Collection<? extends Doc> getDocs() {
-    return myDocs;
+    return docs;
   }
 
   @Override
@@ -25,7 +25,7 @@ public class VListDoc extends Doc {
   @Override
   public int getWidth() {
     int width = 0;
-    for (Doc doc : myDocs) {
+    for (Doc doc : docs) {
       width = Math.max(width, doc.getWidth());
     }
     return width;
@@ -34,7 +34,7 @@ public class VListDoc extends Doc {
   @Override
   public int getHeight() {
     int height = 0;
-    for (Doc doc : myDocs) {
+    for (Doc doc : docs) {
       height += doc.getHeight();
     }
     return height;
@@ -42,7 +42,7 @@ public class VListDoc extends Doc {
 
   @Override
   public boolean isNull() {
-    for (Doc doc : myDocs) {
+    for (Doc doc : docs) {
       if (!doc.isNull()) {
         return false;
       }
@@ -53,7 +53,7 @@ public class VListDoc extends Doc {
   @Override
   public boolean isSingleLine() {
     int height = 0;
-    for (Doc doc : myDocs) {
+    for (Doc doc : docs) {
       height += doc.getHeight();
       if (height > 1) {
         return false;
@@ -64,7 +64,7 @@ public class VListDoc extends Doc {
 
   @Override
   public boolean isEmpty() {
-    for (Doc doc : myDocs) {
+    for (Doc doc : docs) {
       if (!doc.isEmpty()) {
         return false;
       }
@@ -75,12 +75,12 @@ public class VListDoc extends Doc {
   @Nonnull
   @Override
   public List<LineDoc> linearize(int indent, boolean indentFirst) {
-    if (myDocs.isEmpty()) {
+    if (docs.isEmpty()) {
       return Collections.emptyList();
     }
 
     List<LineDoc> result = new ArrayList<>();
-    for (Doc doc : myDocs) {
+    for (Doc doc : docs) {
       List<LineDoc> docs = doc.linearize(indent, indentFirst);
       if (!docs.isEmpty()) {
         indentFirst = true;

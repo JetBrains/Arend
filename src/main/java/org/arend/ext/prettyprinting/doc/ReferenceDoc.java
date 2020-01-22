@@ -3,15 +3,15 @@ package org.arend.ext.prettyprinting.doc;
 import org.arend.ext.reference.ArendRef;
 
 public class ReferenceDoc extends LineDoc {
-  private final ArendRef myReference;
+  private final ArendRef reference;
 
   ReferenceDoc(ArendRef reference) {
     assert reference != null;
-    myReference = reference;
+    this.reference = reference;
   }
 
   public ArendRef getReference() {
-    return myReference;
+    return reference;
   }
 
   @Override
@@ -21,11 +21,11 @@ public class ReferenceDoc extends LineDoc {
 
   @Override
   public int getWidth() {
-    return myReference.getRefName().length();
+    return reference.getRefName().length();
   }
 
   @Override
   public boolean isEmpty() {
-    return myReference.getRefName().isEmpty();
+    return reference.getRefName().isEmpty();
   }
 }
