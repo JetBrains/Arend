@@ -1,5 +1,7 @@
 package org.arend.ext.concrete;
 
+import org.arend.ext.concrete.expr.ConcreteCaseArgument;
+import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.reference.ArendRef;
 
 import javax.annotation.Nonnull;
@@ -8,7 +10,8 @@ import java.math.BigInteger;
 import java.util.Collection;
 
 public interface ConcreteFactory {
-  @Nonnull ConcreteExpression ref(@Nonnull ArendRef ref);
+  @Nonnull
+  ConcreteExpression ref(@Nonnull ArendRef ref);
   @Nonnull ConcreteExpression ref(@Nonnull ArendRef ref, @Nullable ConcreteLevel pLevel, @Nullable ConcreteLevel hLevel);
   @Nonnull ConcreteExpression thisExpr();
   @Nonnull ConcreteExpression lam(@Nonnull Collection<? extends ConcreteParameter> parameters, @Nonnull ConcreteExpression body);

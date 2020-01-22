@@ -1,6 +1,7 @@
 package org.arend.core.context.param;
 
 import org.arend.core.expr.type.Type;
+import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.subst.SubstVisitor;
 
 import javax.annotation.Nonnull;
@@ -68,6 +69,11 @@ public class EmptyDependentLink implements SingleDependentLink {
 
   @Override
   public Type getType() {
+    throw new IllegalStateException();
+  }
+
+  @Override
+  public void strip(StripVisitor stripVisitor) {
     throw new IllegalStateException();
   }
 }

@@ -1,4 +1,4 @@
-package org.arend.ext.concrete;
+package org.arend.ext.concrete.expr;
 
 public interface ConcreteCaseArgument {
 }

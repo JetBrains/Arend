@@ -10,27 +10,18 @@ import org.arend.core.elimtree.ElimTree;
 import org.arend.core.elimtree.LeafElimTree;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
-import org.arend.error.CompositeErrorReporter;
-import org.arend.error.CountingErrorReporter;
 import org.arend.ext.core.elimtree.CoreBranchKey;
 import org.arend.ext.error.ErrorReporter;
-import org.arend.ext.error.GeneralError;
-import org.arend.ext.typechecking.CheckedExpression;
 import org.arend.ext.error.LocalError;
-import org.arend.ext.error.TypecheckingError;
-import org.arend.typechecking.result.TypecheckingResult;
-import org.arend.typechecking.visitor.CheckTypeVisitor;
 
 import java.util.*;
 
 public class StripVisitor implements ExpressionVisitor<Void, Expression> {
   private final Set<EvaluatingBinding> myBoundEvaluatingBindings = new HashSet<>();
   private ErrorReporter myErrorReporter;
-  private final CheckTypeVisitor myCheckTypeVisitor;
 
-  public StripVisitor(ErrorReporter errorReporter, CheckTypeVisitor checkTypeVisitor) {
+  public StripVisitor(ErrorReporter errorReporter) {
     myErrorReporter = errorReporter;
-    myCheckTypeVisitor = checkTypeVisitor;
   }
 
   public void setErrorReporter(ErrorReporter errorReporter) {
@@ -111,24 +102,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
         expr.setSubstExpression(result);
         return result;
       } else if (expr.getVariable() instanceof MetaInferenceVariable) {
-        MetaInferenceVariable variable = (MetaInferenceVariable) expr.getVariable();
-        Expression type = variable.getType().accept(new StripVisitor(myErrorReporter, myCheckTypeVisitor), null);
-        variable.setType(type);
-        CountingErrorReporter countingErrorReporter = new CountingErrorReporter(GeneralError.Level.ERROR);
-        CheckTypeVisitor checkTypeVisitor = new CheckTypeVisitor(myCheckTypeVisitor.getTypecheckingState(), null, new CompositeErrorReporter(myCheckTypeVisitor.getErrorReporter(), countingErrorReporter), myCheckTypeVisitor.getInstancePool());
-        CheckedExpression result = variable.getDefinition().invokeLater(checkTypeVisitor);
-        if (result instanceof TypecheckingResult) {
-          result = checkTypeVisitor.checkResult(type, (TypecheckingResult) result, variable.getExpression());
-          result = checkTypeVisitor.finalize((TypecheckingResult) result, null, variable.getExpression());
-          return result == null ? new ErrorExpression(null, null) : ((TypecheckingResult) result).expression;
-        }
-        if (result != null) {
-          throw new IllegalStateException("CheckedExpression must be TypecheckingResult");
-        }
-        if (countingErrorReporter.getErrorsNumber() == 0) {
-          myErrorReporter.report(new TypecheckingError("Meta function '" + variable.getName() + "' failed", variable.getExpression()));
-        }
-        return new ErrorExpression(null, null);
+        return expr.getSubstExpression();
       } else {
         throw new IllegalStateException("Unknown BaseInferenceVariable: " + expr.getVariable().getClass());
       }

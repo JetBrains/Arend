@@ -1,4 +1,6 @@
-package org.arend.ext.concrete;
+package org.arend.ext.concrete.expr;
+
+import org.arend.ext.concrete.ConcreteSourceNode;
 
 import javax.annotation.Nonnull;
 

@@ -18,7 +18,7 @@ public abstract class BaseMetaDefinition implements MetaDefinition {
   }
 
   protected boolean checkContext(@Nonnull ContextData contextData) {
-    if (withoutLevels() && (contextData.getPLevel() != null || contextData.getHLevel() != null)) {
+    if (withoutLevels() && (contextData.getReferenceExpression().getPLevel() != null || contextData.getReferenceExpression().getHLevel() != null)) {
       // TODO[lang_ext]: report warning
     }
 

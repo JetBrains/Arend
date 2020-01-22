@@ -2,6 +2,7 @@ package org.arend.core.context.param;
 
 import org.arend.core.expr.ReferenceExpression;
 import org.arend.core.expr.type.Type;
+import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.subst.SubstVisitor;
 
 import javax.annotation.Nonnull;
@@ -110,5 +111,10 @@ public class UntypedDependentLink implements DependentLink {
   @Override
   public String toString() {
     return DependentLink.toString(this);
+  }
+
+  @Override
+  public void strip(StripVisitor stripVisitor) {
+
   }
 }

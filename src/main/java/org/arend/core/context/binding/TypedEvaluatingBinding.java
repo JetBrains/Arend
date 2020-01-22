@@ -1,6 +1,7 @@
 package org.arend.core.context.binding;
 
 import org.arend.core.expr.Expression;
+import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.subst.SubstVisitor;
 
 import javax.annotation.Nonnull;
@@ -17,6 +18,12 @@ public class TypedEvaluatingBinding extends TypedBinding implements EvaluatingBi
   @Override
   public Expression getExpression() {
     return myExpression;
+  }
+
+  @Override
+  public void strip(StripVisitor stripVisitor) {
+    super.strip(stripVisitor);
+    myExpression = myExpression.accept(stripVisitor, null);
   }
 
   @Override

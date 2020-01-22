@@ -3,6 +3,10 @@ package org.arend.term.concrete;
 import org.arend.core.context.binding.inference.BaseInferenceVariable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.ext.concrete.*;
+import org.arend.ext.concrete.expr.ConcreteArgument;
+import org.arend.ext.concrete.expr.ConcreteCaseArgument;
+import org.arend.ext.concrete.expr.ConcreteExpression;
+import org.arend.ext.concrete.expr.ConcreteReferenceExpression;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.Doc;
@@ -390,7 +394,7 @@ public final class Concrete {
     }
   }
 
-  public static class ReferenceExpression extends Expression implements Reference {
+  public static class ReferenceExpression extends Expression implements Reference, ConcreteReferenceExpression {
     public static final byte PREC = 12;
     private Referable myReferent;
     private final Concrete.LevelExpression myPLevel;
@@ -411,6 +415,7 @@ public final class Concrete {
     }
 
     @Nonnull
+    @Override
     public Referable getReferent() {
       return myReferent;
     }
@@ -419,10 +424,12 @@ public final class Concrete {
       myReferent = referent;
     }
 
+    @Override
     public LevelExpression getPLevel() {
       return myPLevel;
     }
 
+    @Override
     public LevelExpression getHLevel() {
       return myHLevel;
     }

@@ -1,9 +1,10 @@
 package org.arend.core.context.binding;
 
 import org.arend.core.expr.Expression;
+import org.arend.core.expr.visitor.StripVisitor;
 
 public class TypedBinding extends NamedBinding {
-  private final Expression myType;
+  private Expression myType;
 
   public TypedBinding(String name, Expression type) {
     super(name);
@@ -13,6 +14,11 @@ public class TypedBinding extends NamedBinding {
   @Override
   public Expression getTypeExpr() {
     return myType;
+  }
+
+  @Override
+  public void strip(StripVisitor stripVisitor) {
+    myType = myType.accept(stripVisitor, null);
   }
 
   public String toString() {

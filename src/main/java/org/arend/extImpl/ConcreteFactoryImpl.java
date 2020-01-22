@@ -1,6 +1,8 @@
 package org.arend.extImpl;
 
 import org.arend.ext.concrete.*;
+import org.arend.ext.concrete.expr.ConcreteCaseArgument;
+import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.reference.ArendRef;
 import org.arend.naming.reference.LocalReferable;
 import org.arend.naming.reference.Referable;

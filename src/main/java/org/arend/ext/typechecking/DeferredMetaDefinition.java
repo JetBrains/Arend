@@ -1,30 +1,31 @@
 package org.arend.ext.typechecking;
 
-import org.arend.ext.core.expr.CoreExpression;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public class DeferredMetaDefinition extends BaseMetaDefinition {
-  protected ContextData contextData;
+  private final MetaDefinition deferredMeta;
+
+  public DeferredMetaDefinition(MetaDefinition deferredMeta) {
+    this.deferredMeta = deferredMeta;
+  }
+
+  @Override
+  protected boolean withoutLevels() {
+    return false;
+  }
 
   @Override
   protected boolean requiredExpectedType() {
-    return super.requiredExpectedType();
+    return true;
   }
 
   @Nullable
   @Override
-  public CheckedExpression invoke(@Nonnull ExpressionTypechecker session, @Nonnull ContextData contextData) {
-    if (checkContext(contextData)) {
-      this.contextData = contextData;
+  public CheckedExpression invoke(@Nonnull ExpressionTypechecker typechecker, @Nonnull ContextData contextData) {
+    if (deferredMeta instanceof BaseMetaDefinition && !((BaseMetaDefinition) deferredMeta).checkContext(contextData) || !checkContext(contextData)) {
+      return null;
     }
-    return null;
-  }
-
-  @Nullable
-  @Override
-  public CoreExpression getExpectedType() {
-    return contextData == null ? null : contextData.getExpectedType();
+    return typechecker.defer(deferredMeta, contextData, contextData.getExpectedType());
   }
 }
