@@ -21,7 +21,10 @@ import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.LocalError;
 import org.arend.term.concrete.Concrete;
-import org.arend.typechecking.error.local.*;
+import org.arend.typechecking.error.local.ConstantSolveLevelEquationError;
+import org.arend.typechecking.error.local.SolveEquationError;
+import org.arend.typechecking.error.local.SolveEquationsError;
+import org.arend.typechecking.error.local.SolveLevelEquationsError;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.arend.typechecking.visitor.ProcessDefCallsVisitor;
 import org.arend.util.Pair;
@@ -61,7 +64,7 @@ public class TwoStageEquations implements Equations {
         return null;
       }
       if (classDef.getClassifyingField() == fieldCall.getDefinition() && expr.getStuckInferenceVariable() == null) {
-        return ((TypeClassInferenceVariable) variable).getInstance(myVisitor.getInstancePool(), expr, this, variable.getSourceNode());
+        return ((TypeClassInferenceVariable) variable).getInstance(myVisitor.getInstancePool(), expr, variable.getSourceNode());
       }
     }
     return null;

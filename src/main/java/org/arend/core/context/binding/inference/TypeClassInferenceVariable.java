@@ -2,11 +2,10 @@ package org.arend.core.context.binding.inference;
 
 import org.arend.core.context.binding.Binding;
 import org.arend.core.expr.Expression;
+import org.arend.ext.error.LocalError;
 import org.arend.naming.reference.TCClassReferable;
 import org.arend.term.concrete.Concrete;
-import org.arend.ext.error.LocalError;
 import org.arend.typechecking.error.local.inference.InstanceInferenceError;
-import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.typechecking.instance.pool.InstancePool;
 import org.arend.typechecking.instance.pool.RecursiveInstanceHoleExpression;
 
@@ -39,8 +38,8 @@ public class TypeClassInferenceVariable extends InferenceVariable {
     return new InstanceInferenceError(myClassRef, expectedType, actualType, getSourceNode(), candidate, myRecursiveInstanceHoleExpression);
   }
 
-  public Expression getInstance(InstancePool pool, Expression classifyingExpression, Equations equations, Concrete.SourceNode sourceNode) {
-    Expression result = (myOnlyLocal ? pool.getLocalInstancePool() : pool).getInstance(classifyingExpression, myClassRef, equations, sourceNode, myRecursiveInstanceHoleExpression);
+  public Expression getInstance(InstancePool pool, Expression classifyingExpression, Concrete.SourceNode sourceNode) {
+    Expression result = (myOnlyLocal ? pool.getLocalInstancePool() : pool).getInstance(classifyingExpression, myClassRef, sourceNode, myRecursiveInstanceHoleExpression);
     if (result == null && myClassifyingExpression == null) {
       myClassifyingExpression = classifyingExpression;
     }

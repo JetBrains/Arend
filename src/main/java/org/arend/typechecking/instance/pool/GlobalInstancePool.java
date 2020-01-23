@@ -11,8 +11,6 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.naming.reference.TCClassReferable;
 import org.arend.term.concrete.Concrete;
-import org.arend.typechecking.TypecheckerState;
-import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.typechecking.instance.provider.InstanceProvider;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
@@ -22,13 +20,11 @@ import java.util.List;
 import java.util.function.Predicate;
 
 public class GlobalInstancePool implements InstancePool {
-  private final TypecheckerState myTypecheckerState;
   private final InstanceProvider myInstanceProvider;
   private final CheckTypeVisitor myCheckTypeVisitor;
   private InstancePool myInstancePool;
 
-  public GlobalInstancePool(TypecheckerState typecheckerState, InstanceProvider instanceProvider, CheckTypeVisitor checkTypeVisitor) {
-    myTypecheckerState = typecheckerState;
+  public GlobalInstancePool(InstanceProvider instanceProvider, CheckTypeVisitor checkTypeVisitor) {
     myInstanceProvider = instanceProvider;
     myCheckTypeVisitor = checkTypeVisitor;
   }
@@ -41,15 +37,19 @@ public class GlobalInstancePool implements InstancePool {
     myInstancePool = instancePool;
   }
 
+  public InstanceProvider getInstanceProvider() {
+    return myInstanceProvider;
+  }
+
   @Override
   public InstancePool getLocalInstancePool() {
     return myInstancePool.getLocalInstancePool();
   }
 
   @Override
-  public Expression getInstance(Expression classifyingExpression, TCClassReferable classRef, Equations equations, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveHoleExpression) {
+  public Expression getInstance(Expression classifyingExpression, TCClassReferable classRef, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveHoleExpression) {
     if (myInstancePool != null) {
-      Expression result = myInstancePool.getInstance(classifyingExpression, classRef, equations, sourceNode, recursiveHoleExpression);
+      Expression result = myInstancePool.getInstance(classifyingExpression, classRef, sourceNode, recursiveHoleExpression);
       if (result != null) {
         return result;
       }
@@ -70,7 +70,7 @@ public class GlobalInstancePool implements InstancePool {
         return null;
       }
 
-      Definition typechecked = myTypecheckerState.getTypechecked(classRef);
+      Definition typechecked = myCheckTypeVisitor.getTypecheckingState().getTypechecked(classRef);
       if (!(typechecked instanceof ClassDefinition)) {
         return null;
       }
@@ -88,7 +88,7 @@ public class GlobalInstancePool implements InstancePool {
 
       @Override
       public boolean test(Concrete.FunctionDefinition instance) {
-        instanceDef = (FunctionDefinition) myTypecheckerState.getTypechecked(instance.getData());
+        instanceDef = (FunctionDefinition) myCheckTypeVisitor.getTypecheckingState().getTypechecked(instance.getData());
         if (instanceDef == null || !instanceDef.status().headerIsOK() || !(instanceDef.getResultType() instanceof ClassCallExpression)) {
           return false;
         }
@@ -141,7 +141,7 @@ public class GlobalInstancePool implements InstancePool {
   @Override
   public GlobalInstancePool subst(ExprSubstitution substitution) {
     if (myInstancePool != null) {
-      GlobalInstancePool result = new GlobalInstancePool(myTypecheckerState, myInstanceProvider, myCheckTypeVisitor);
+      GlobalInstancePool result = new GlobalInstancePool(myInstanceProvider, myCheckTypeVisitor);
       result.setInstancePool(myInstancePool.subst(substitution));
       return result;
     } else {

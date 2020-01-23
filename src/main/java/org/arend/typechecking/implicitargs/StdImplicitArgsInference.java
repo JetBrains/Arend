@@ -19,12 +19,12 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.ext.error.TypeMismatchError;
 import org.arend.naming.reference.TCClassReferable;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.CertainTypecheckingError;
 import org.arend.typechecking.error.local.NotPiType;
-import org.arend.ext.error.TypeMismatchError;
 import org.arend.typechecking.error.local.inference.ArgInferenceError;
 import org.arend.typechecking.error.local.inference.InstanceInferenceError;
 import org.arend.typechecking.instance.pool.InstancePool;
@@ -98,7 +98,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
             // If the class does not have a classifying field, infer instance immediately
             if (classDef.getClassifyingField() == null) {
               InstancePool instancePool = kind == Definition.TypeClassParameterKind.ONLY_LOCAL ? myVisitor.getInstancePool().getLocalInstancePool() : myVisitor.getInstancePool();
-              Expression instance = instancePool.getInstance(null, classRef, myVisitor.getEquations(), expr, holeExpr);
+              Expression instance = instancePool.getInstance(null, classRef, expr, holeExpr);
               if (instance == null) {
                 ArgInferenceError error = new InstanceInferenceError(classRef, expr, holeExpr, new Expression[0]);
                 myVisitor.getErrorReporter().report(error);

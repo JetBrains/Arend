@@ -12,6 +12,7 @@ import org.arend.core.sort.Sort;
 import org.arend.error.CompositeErrorReporter;
 import org.arend.error.CountingErrorReporter;
 import org.arend.ext.error.ErrorReporter;
+import org.arend.ext.error.TypecheckingError;
 import org.arend.library.Library;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.TCClassReferable;
@@ -24,7 +25,6 @@ import org.arend.typechecking.*;
 import org.arend.typechecking.error.CycleError;
 import org.arend.typechecking.error.TerminationCheckError;
 import org.arend.typechecking.error.local.LocalErrorReporter;
-import org.arend.ext.error.TypecheckingError;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
 import org.arend.typechecking.order.Ordering;
@@ -235,7 +235,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
     Definition typechecked;
     CheckTypeVisitor checkTypeVisitor = new CheckTypeVisitor(myState, new LinkedHashMap<>(), new LocalErrorReporter(definition.getData(), myErrorReporter), null);
     checkTypeVisitor.setListener(myTypecheckingListener);
-    checkTypeVisitor.setInstancePool(new GlobalInstancePool(myState, myInstanceProviderSet.get(definition.getData()), checkTypeVisitor));
+    checkTypeVisitor.setInstancePool(new GlobalInstancePool(myInstanceProviderSet.get(definition.getData()), checkTypeVisitor));
     DesugarVisitor.desugar(definition, myConcreteProvider, checkTypeVisitor.getErrorReporter());
     myCurrentDefinitions = Collections.singletonList(definition.getData());
     typecheckingUnitStarted(definition.getData());
@@ -283,7 +283,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
     DesugarVisitor.desugar(definition, myConcreteProvider, visitor.getErrorReporter());
     Definition oldTypechecked = visitor.getTypecheckingState().getTypechecked(definition.getData());
     definition.setRecursive(true);
-    Definition typechecked = new DefinitionTypechecker(visitor).typecheckHeader(oldTypechecked, new GlobalInstancePool(myState, myInstanceProviderSet.get(definition.getData()), visitor), definition);
+    Definition typechecked = new DefinitionTypechecker(visitor).typecheckHeader(oldTypechecked, new GlobalInstancePool(myInstanceProviderSet.get(definition.getData()), visitor), definition);
     if (typechecked.status() == Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING) {
       mySuspensions.put(definition.getData(), new Pair<>(visitor, oldTypechecked == null));
     }

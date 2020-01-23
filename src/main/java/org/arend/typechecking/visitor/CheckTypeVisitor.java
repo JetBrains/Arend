@@ -35,8 +35,8 @@ import org.arend.ext.error.*;
 import org.arend.ext.prettyprinting.doc.DocFactory;
 import org.arend.ext.typechecking.CheckedExpression;
 import org.arend.ext.typechecking.ContextData;
-import org.arend.ext.typechecking.MetaDefinition;
 import org.arend.ext.typechecking.ExpressionTypechecker;
+import org.arend.ext.typechecking.MetaDefinition;
 import org.arend.extImpl.ContextDataImpl;
 import org.arend.naming.reference.*;
 import org.arend.naming.renamer.Renamer;
@@ -363,22 +363,22 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       }
 
       CountingErrorReporter countingErrorReporter = new CountingErrorReporter(GeneralError.Level.ERROR);
-      CheckTypeVisitor checkTypeVisitor = new CheckTypeVisitor(state, deferredMeta.context, new CompositeErrorReporter(errorReporter, countingErrorReporter), myInstancePool);
+      CheckTypeVisitor checkTypeVisitor = new CheckTypeVisitor(state, deferredMeta.context, new CompositeErrorReporter(errorReporter, countingErrorReporter), null);
+      checkTypeVisitor.setInstancePool(new GlobalInstancePool(myInstancePool.getInstanceProvider(), checkTypeVisitor));
       CheckedExpression result = deferredMeta.meta.invoke(checkTypeVisitor, deferredMeta.contextData);
-      Concrete.ReferenceExpression refExpr = deferredMeta.contextData.getReferenceExpression();
-      if (result instanceof TypecheckingResult) {
-        result = checkTypeVisitor.checkResult(type, (TypecheckingResult) result, refExpr);
-        result = checkTypeVisitor.finalize((TypecheckingResult) result, null, refExpr);
-        deferredMeta.inferenceExpr.setSubstExpression(result == null ? new ErrorExpression(null, null) : ((TypecheckingResult) result).expression);
-        continue;
-      }
-      if (result != null) {
+      if (result != null && !(result instanceof TypecheckingResult)) {
         throw new IllegalStateException("CheckedExpression must be TypecheckingResult");
       }
-      if (countingErrorReporter.getErrorsNumber() == 0) {
+
+      Concrete.ReferenceExpression refExpr = deferredMeta.contextData.getReferenceExpression();
+      if (result != null) {
+        result = checkTypeVisitor.checkResult(type, (TypecheckingResult) result, refExpr);
+        result = checkTypeVisitor.finalize((TypecheckingResult) result, null, refExpr);
+      }
+      if (result == null && countingErrorReporter.getErrorsNumber() == 0) {
         errorReporter.report(new TypecheckingError("Meta function '" + refExpr.getReferent().getRefName() + "' failed", refExpr));
       }
-      deferredMeta.inferenceExpr.setSubstExpression(new ErrorExpression(null, null));
+      deferredMeta.inferenceExpr.setSubstExpression(result == null ? new ErrorExpression(null, null) : ((TypecheckingResult) result).expression);
     }
   }
 
@@ -685,7 +685,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       ClassDefinition classDef = ((ClassCallExpression) type).getDefinition();
       RecursiveInstanceHoleExpression holeExpr = implBody instanceof RecursiveInstanceHoleExpression ? (RecursiveInstanceHoleExpression) implBody : null;
       if (classDef.getClassifyingField() == null) {
-        Expression instance = myInstancePool.getInstance(null, classDef.getReferable(), myEquations, implBody, holeExpr);
+        Expression instance = myInstancePool.getInstance(null, classDef.getReferable(), implBody, holeExpr);
         if (instance == null) {
           ArgInferenceError error = new InstanceInferenceError(classDef.getReferable(), implBody, holeExpr, new Expression[0]);
           errorReporter.report(error);
