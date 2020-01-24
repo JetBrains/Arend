@@ -369,9 +369,11 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       CountingErrorReporter countingErrorReporter = new CountingErrorReporter(GeneralError.Level.ERROR);
       CheckTypeVisitor checkTypeVisitor;
       ErrorReporter originalErrorReporter = errorReporter;
+      Map<Referable, Binding> originalContext = context;
       if (stage == Stage.BEFORE_SOLVER) {
         checkTypeVisitor = this;
         errorReporter = new CompositeErrorReporter(errorReporter, countingErrorReporter);
+        context = deferredMeta.context;
       } else {
         checkTypeVisitor = new CheckTypeVisitor(state, deferredMeta.context, new CompositeErrorReporter(errorReporter, countingErrorReporter), null);
         checkTypeVisitor.setInstancePool(new GlobalInstancePool(myInstancePool.getInstanceProvider(), checkTypeVisitor));
@@ -390,6 +392,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         }
       }
       errorReporter = originalErrorReporter;
+      context = originalContext;
       if (result == null && countingErrorReporter.getErrorsNumber() == 0) {
         errorReporter.report(new TypecheckingError("Meta function '" + refExpr.getReferent().getRefName() + "' failed", refExpr));
       }
