@@ -39,7 +39,7 @@ public class Range<T extends Comparable<T>> extends Pair<T,T> {
   public static Range<Version> parseVersionRange(String text) {
     Range<String> stringRange = parseRange(text);
     if (stringRange == null) return null;
-    return new Range<>(new Version(stringRange.proj1), new Version(stringRange.proj2));
+    return new Range<>(Version.from(stringRange.proj1), Version.from(stringRange.proj2));
   }
 
   public static Range<String> parseRange(String text) {

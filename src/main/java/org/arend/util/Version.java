@@ -8,6 +8,10 @@ public class Version implements Comparable<Version> {
   public final BigInteger minor;
   public final BigInteger patch;
 
+  public static Version from(String version) {
+    return version == null ? null : new Version(version);
+  }
+
   public Version(String version) {
     String[] split = version.trim().split("\\.");
     switch (split.length) {
