@@ -1,11 +1,19 @@
 package org.arend.ext.typechecking;
 
+import org.arend.ext.concrete.expr.ConcreteArgument;
+import org.arend.ext.concrete.expr.ConcreteReferenceExpression;
+import org.arend.ext.error.ArgumentExplicitnessError;
+import org.arend.ext.error.ErrorReporter;
+import org.arend.ext.error.IgnoredLevelsError;
+import org.arend.ext.error.TypecheckingError;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.List;
 
 public abstract class BaseMetaDefinition implements MetaDefinition {
   protected boolean withoutLevels() {
-    return true;
+    return false;
   }
 
   @Nullable
@@ -13,22 +21,64 @@ public abstract class BaseMetaDefinition implements MetaDefinition {
     return null;
   }
 
-  protected boolean requiredExpectedType() {
+  protected boolean requireExpectedType() {
     return false;
   }
 
-  protected boolean checkContext(@Nonnull ContextData contextData) {
-    if (withoutLevels() && (contextData.getReferenceExpression().getPLevel() != null || contextData.getReferenceExpression().getHLevel() != null)) {
-      // TODO[lang_ext]: report warning
+  protected int numberOfOptionalExplicitArguments() {
+    return 0;
+  }
+
+  protected boolean allowExcessiveArguments() {
+    return !requireExpectedType();
+  }
+
+  protected boolean checkContextData(@Nonnull ContextData contextData, @Nonnull ErrorReporter errorReporter) {
+    ConcreteReferenceExpression refExpr = contextData.getReferenceExpression();
+    if (withoutLevels() && (refExpr.getPLevel() != null || refExpr.getHLevel() != null)) {
+      errorReporter.report(new IgnoredLevelsError(refExpr.getPLevel(), refExpr.getHLevel()));
     }
 
     boolean ok = true;
     boolean[] explicitness = argumentExplicitness();
     if (explicitness != null) {
-      // TODO[lang_ext]: check
+      List<? extends ConcreteArgument> args = contextData.getArguments();
+      int i = 0, j = 0;
+      while (i < explicitness.length && j < args.size()) {
+        if (explicitness[i] == args.get(j).isExplicit()) {
+          i++;
+          j++;
+        } else if (explicitness[i]) {
+          errorReporter.report(new ArgumentExplicitnessError(true, args.get(j).getExpression()));
+          j++;
+        } else {
+          i++;
+        }
+      }
+
+      if (j < args.size() && !allowExcessiveArguments()) {
+        errorReporter.report(new TypecheckingError("Excessive arguments are not allowed for '" + refExpr.getReferent().getRefName() + "'", args.get(j).getExpression()));
+        ok = false;
+      }
+
+      if (i < explicitness.length) {
+        int sum = 0;
+        for (; i < explicitness.length; i++) {
+          if (explicitness[i]) {
+            sum++;
+          }
+        }
+
+        int diff = sum - numberOfOptionalExplicitArguments();
+        if (diff > 0) {
+          errorReporter.report(new TypecheckingError("Required " + diff + " more explicit argument" + (diff == 1 ? "" : "s"), refExpr));
+          ok = false;
+        }
+      }
     }
-    if (contextData.getExpectedType() == null && requiredExpectedType()) {
-      // TODO[lang_ext]: report error
+
+    if (contextData.getExpectedType() == null && requireExpectedType()) {
+      errorReporter.report(new TypecheckingError("Cannot infer the expected type", refExpr));
       ok = false;
     }
     return ok;

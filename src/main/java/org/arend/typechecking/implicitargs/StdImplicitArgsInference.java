@@ -19,11 +19,11 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.ext.error.ArgumentExplicitnessError;
 import org.arend.ext.error.TypeMismatchError;
 import org.arend.naming.reference.TCClassReferable;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
-import org.arend.typechecking.error.local.CertainTypecheckingError;
 import org.arend.typechecking.error.local.NotPiType;
 import org.arend.typechecking.error.local.inference.ArgInferenceError;
 import org.arend.typechecking.error.local.inference.InstanceInferenceError;
@@ -187,7 +187,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
     }
 
     if (param.isExplicit() != isExplicit) {
-      reportExplicitnessError(param.isExplicit(), arg);
+      myVisitor.getErrorReporter().report(new ArgumentExplicitnessError(param.isExplicit(), arg));
       return null;
     }
 
@@ -206,10 +206,6 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
     }
 
     return result.applyExpression(argResult.expression, myVisitor.getErrorReporter(), fun);
-  }
-
-  private void reportExplicitnessError(boolean isExplicit, Concrete.SourceNode sourceNode) {
-    myVisitor.getErrorReporter().report(new CertainTypecheckingError(isExplicit ? CertainTypecheckingError.Kind.EXPECTED_EXPLICIT : CertainTypecheckingError.Kind.EXPECTED_IMPLICIT, sourceNode));
   }
 
   private void typecheckDeferredArgument(Pair<InferenceVariable, Concrete.Expression> pair, TResult result) {
@@ -303,7 +299,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
 
           Concrete.Argument argument = expr.getArguments().get(current);
           if (parameter.isExplicit() != argument.isExplicit()) {
-            reportExplicitnessError(parameter.isExplicit(), argument.getExpression());
+            myVisitor.getErrorReporter().report(new ArgumentExplicitnessError(parameter.isExplicit(), argument.getExpression()));
             return null;
           }
           InferenceVariable var = new ExpressionInferenceVariable(parameter.getTypeExpr(), argument.getExpression(), myVisitor.getAllBindings());

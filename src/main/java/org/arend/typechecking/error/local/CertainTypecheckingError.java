@@ -19,8 +19,6 @@ public class CertainTypecheckingError extends TypecheckingError {
     DATA_WONT_BE_TRUNCATED(Level.WARNING_UNUSED, "The data type will not be truncated since it already fits in the specified universe"),
     USELESS_LEVEL(Level.WARNING_UNUSED, "Actual level is smaller than the specified one"),
     TRUNCATED_WITHOUT_UNIVERSE(Level.WARNING, "The data type cannot be truncated since its universe is not specified"),
-    EXPECTED_EXPLICIT("Expected an explicit argument"),
-    EXPECTED_IMPLICIT("Expected an implicit argument"),
     CASE_RESULT_TYPE("Cannot infer the result type"),
     LEMMA_LEVEL("The level of a lemma must be \\Prop"),
     PROPERTY_LEVEL("The level of a property must be \\Prop"),

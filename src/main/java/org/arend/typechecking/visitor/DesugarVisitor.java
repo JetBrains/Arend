@@ -1,13 +1,14 @@
 package org.arend.typechecking.visitor;
 
+import org.arend.ext.error.ArgumentExplicitnessError;
 import org.arend.ext.error.ErrorReporter;
+import org.arend.ext.error.LocalError;
+import org.arend.ext.error.TypecheckingError;
 import org.arend.naming.reference.*;
 import org.arend.naming.scope.ClassFieldImplScope;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
-import org.arend.ext.error.LocalError;
-import org.arend.ext.error.TypecheckingError;
 import org.arend.typechecking.error.local.CertainTypecheckingError;
 import org.arend.typechecking.error.local.WrongReferable;
 import org.arend.typechecking.error.local.inference.ArgInferenceError;
@@ -178,7 +179,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
       FieldReferable fieldRef = it.next();
       boolean fieldExplicit = fieldRef.isExplicitField();
       if (fieldExplicit && !arguments.get(i).isExplicit()) {
-        myErrorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.EXPECTED_EXPLICIT, arguments.get(i).expression));
+        myErrorReporter.report(new ArgumentExplicitnessError(true, arguments.get(i).expression));
         while (i < arguments.size() && !arguments.get(i).isExplicit()) {
           i++;
         }

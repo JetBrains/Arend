@@ -999,7 +999,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   public TResult visitReference(Concrete.ReferenceExpression expr) {
     Referable ref = expr.getReferent();
     if (!(ref instanceof GlobalReferable) && (expr.getPLevel() != null || expr.getHLevel() != null)) {
-      errorReporter.report(new TypecheckingError("Level specifications are allowed only after definitions", expr.getPLevel() != null ? expr.getPLevel() : Objects.requireNonNull(expr.getHLevel())));
+      errorReporter.report(new IgnoredLevelsError(expr.getPLevel(), expr.getHLevel()));
     }
     return ref instanceof TCReferable ? typeCheckDefCall((TCReferable) ref, expr) : getLocalVar(expr.getReferent(), expr);
   }

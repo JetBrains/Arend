@@ -13,19 +13,14 @@ public class DeferredMetaDefinition extends BaseMetaDefinition {
   }
 
   @Override
-  protected boolean withoutLevels() {
-    return false;
-  }
-
-  @Override
-  protected boolean requiredExpectedType() {
+  protected boolean requireExpectedType() {
     return true;
   }
 
   @Nullable
   @Override
   public CheckedExpression invoke(@Nonnull ExpressionTypechecker typechecker, @Nonnull ContextData contextData) {
-    if (deferredMeta instanceof BaseMetaDefinition && !((BaseMetaDefinition) deferredMeta).checkContext(contextData) || !checkContext(contextData)) {
+    if (deferredMeta instanceof BaseMetaDefinition && !((BaseMetaDefinition) deferredMeta).checkContextData(contextData, typechecker.getErrorReporter()) || !checkContextData(contextData, typechecker.getErrorReporter())) {
       return null;
     }
     return typechecker.defer(deferredMeta, contextData, contextData.getExpectedType(), stage);
