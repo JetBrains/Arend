@@ -866,9 +866,7 @@ public class BuildVisitor extends ArendBaseVisitor {
     return exprs.size() > 1 ? new Concrete.TypedExpression(expr.getData(), expr, visitExpr(exprs.get(1))) : expr;
   }
 
-  @Override
-  public Concrete.Expression visitTuple(TupleContext ctx) {
-    List<TupleExprContext> exprs = ctx.tupleExpr();
+  private Concrete.Expression visitTupleExprs(List<TupleExprContext> exprs, Token token) {
     if (exprs.size() == 1) {
       return visitTupleExpr(exprs.get(0));
     } else {
@@ -876,8 +874,13 @@ public class BuildVisitor extends ArendBaseVisitor {
       for (TupleExprContext exprCtx : exprs) {
         fields.add(visitTupleExpr(exprCtx));
       }
-      return new Concrete.TupleExpression(tokenPosition(ctx.start), fields);
+      return new Concrete.TupleExpression(tokenPosition(token), fields);
     }
+  }
+
+  @Override
+  public Concrete.Expression visitTuple(TupleContext ctx) {
+    return visitTupleExprs(ctx.tupleExpr(), ctx.start);
   }
 
   private List<Concrete.Parameter> visitLamTele(TeleContext tele) {
@@ -1017,7 +1020,7 @@ public class BuildVisitor extends ArendBaseVisitor {
 
   @Override
   public Concrete.BinOpSequenceElem visitArgumentImplicit(ArgumentImplicitContext ctx) {
-    return new Concrete.BinOpSequenceElem(visitExpr(ctx.expr()), Fixity.NONFIX, false);
+    return new Concrete.BinOpSequenceElem(visitTupleExprs(ctx.tupleExpr(), ctx.start), Fixity.NONFIX, false);
   }
 
   private Concrete.CoClauseElement visitCoClause(CoClauseContext ctx, List<Group> subgroups, ChildGroup parentGroup, TCClassReferable enclosingClass, TCReferable enclosingDefinition) {

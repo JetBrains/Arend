@@ -481,4 +481,14 @@ public class ParserTest extends NameResolverTestCase {
   public void idBackslashTest() {
     parseModule("\\func x\\y => 0", 1);
   }
+
+  @Test
+  public void parseImplicitTuple() {
+    parseExpr("f {1,2,3}");
+  }
+
+  @Test
+  public void parseImplicitTyped() {
+    parseExpr("f {1 : Nat}");
+  }
 }

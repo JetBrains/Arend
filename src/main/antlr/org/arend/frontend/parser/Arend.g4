@@ -145,10 +145,10 @@ appExpr : argumentAppExpr                             # appArgument
 
 argumentAppExpr : atomFieldsAcc onlyLevelAtom* argument*;
 
-argument : atomFieldsAcc                # argumentExplicit
+argument : atomFieldsAcc                          # argumentExplicit
          | appPrefix appExpr implementStatements? # argumentNew
-         | universeAtom                 # argumentUniverse
-         | '{' expr '}'                 # argumentImplicit
+         | universeAtom                           # argumentUniverse
+         | '{' tupleExpr (',' tupleExpr)* '}'     # argumentImplicit
          ;
 
 clauses : '{' clause? ('|' clause)* '}' # clausesWithBraces
