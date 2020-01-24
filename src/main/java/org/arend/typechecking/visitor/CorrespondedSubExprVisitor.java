@@ -156,6 +156,10 @@ public class CorrespondedSubExprVisitor implements ConcreteExpressionVisitor<Exp
 
   @Override
   public Expression visitApp(Concrete.AppExpression expr, Expression coreExpr) {
+    if (subExpr instanceof Concrete.AppExpression && Objects.equals(
+        ((Concrete.AppExpression) subExpr).getFunction().getData(),
+        expr.getFunction().getData()
+    )) return coreExpr;
     if (matchesSubExpr(expr)) return coreExpr;
     Concrete.Expression cloned = Concrete.AppExpression.make(expr.getData(), expr.getFunction(), new ArrayList<>(expr.getArguments()));
     return visitClonedApp(((Concrete.AppExpression) cloned), coreExpr);
