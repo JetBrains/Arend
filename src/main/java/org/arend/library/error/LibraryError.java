@@ -7,6 +7,7 @@ import org.arend.module.ModulePath;
 import org.arend.prelude.Prelude;
 import org.arend.term.prettyprint.PrettyPrinterConfig;
 import org.arend.util.Range;
+import org.arend.util.Version;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -51,7 +52,7 @@ public class LibraryError extends GeneralError {
     return new LibraryError(Level.INFO, "Library cannot be typechecked", Stream.of(libraryName));
   }
 
-  public static LibraryError incorrectVersion(Range<String> range) {
+  public static LibraryError incorrectVersion(Range<Version> range) {
     return new LibraryError("Library supports language version " + range.checkRange(Prelude.VERSION) + ", but current language version is " + Prelude.VERSION, Stream.empty());
   }
 
