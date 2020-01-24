@@ -36,15 +36,16 @@ configure<JavaPluginConvention> {
     targetCompatibility = JavaVersion.VERSION_1_8
 }
 
-val genSrcDir = file("src/gen")
+val genSrcDir = projectDir.resolve("src/gen")
 val genSrcJavaDir = genSrcDir.resolve("main/java")
 
 val generateVersion = task("generateVersion") {
     val className = "GeneratedVersion"
     val code = """
         package $arendPackage.prelude;
+        import org.arend.util.Version;
         public class $className {
-          public static final String VERSION = "$version";
+          public static final Version VERSION = new Version("$version");
         }
     """.trimIndent()
     val target = genSrcJavaDir.resolve("org/arend/prelude")
