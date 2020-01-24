@@ -37,6 +37,12 @@ public class Range<T extends Comparable<T>> extends Pair<T,T> {
   private enum TokenType { LEQ, GEQ, COMMA, TEXT }
 
   public static Range<Version> parseVersionRange(String text) {
+    Range<String> stringRange = parseRange(text);
+    if (stringRange == null) return null;
+    return new Range<>(new Version(stringRange.proj1), new Version(stringRange.proj2));
+  }
+
+  public static Range<String> parseRange(String text) {
     // Lexer
 
     List<Pair<TokenType,String>> tokens = new ArrayList<>();
@@ -80,8 +86,7 @@ public class Range<T extends Comparable<T>> extends Pair<T,T> {
     }
 
     if (tokens.size() == 1) {
-      return tokens.get(0).proj1 != TokenType.TEXT ? null
-          : new Range<>(new Version(tokens.get(0).proj2), new Version(tokens.get(0).proj2));
+      return tokens.get(0).proj1 == TokenType.TEXT ? new Range<>(tokens.get(0).proj2, tokens.get(0).proj2) : null;
     }
 
     String lowerBound = null;
@@ -94,7 +99,7 @@ public class Range<T extends Comparable<T>> extends Pair<T,T> {
       lowerBound = tokens.get(1).proj2;
     }
     if (tokens.size() == 2) {
-      return new Range<>(new Version(lowerBound), new Version(upperBound));
+      return new Range<>(lowerBound, upperBound);
     }
 
     if (tokens.size() != 5 || tokens.get(2).proj1 != TokenType.COMMA) {
@@ -107,8 +112,7 @@ public class Range<T extends Comparable<T>> extends Pair<T,T> {
       lowerBound = tokens.get(4).proj2;
     }
 
-    return lowerBound == null || upperBound == null ? null
-        : new Range<>(new Version(lowerBound), new Version(upperBound));
+    return lowerBound == null || upperBound == null ? null : new Range<>(lowerBound, upperBound);
   }
 
   @Override
