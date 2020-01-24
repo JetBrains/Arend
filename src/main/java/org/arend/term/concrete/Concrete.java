@@ -3,11 +3,9 @@ package org.arend.term.concrete;
 import org.arend.core.context.binding.inference.BaseInferenceVariable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.ext.concrete.*;
-import org.arend.ext.concrete.expr.ConcreteArgument;
-import org.arend.ext.concrete.expr.ConcreteCaseArgument;
-import org.arend.ext.concrete.expr.ConcreteExpression;
-import org.arend.ext.concrete.expr.ConcreteReferenceExpression;
+import org.arend.ext.concrete.expr.*;
 import org.arend.ext.error.GeneralError;
+import org.arend.ext.error.LocalError;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.ext.prettyprinting.doc.DocFactory;
@@ -18,7 +16,6 @@ import org.arend.term.ClassFieldKind;
 import org.arend.term.Fixity;
 import org.arend.term.FunctionKind;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
-import org.arend.ext.error.LocalError;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -278,7 +275,7 @@ public final class Concrete {
     }
   }
 
-  public static class AppExpression extends Expression {
+  public static class AppExpression extends Expression implements ConcreteAppExpression {
     public static final byte PREC = 11;
     private Expression myFunction;
     private List<Argument> myArguments;
@@ -311,6 +308,7 @@ public final class Concrete {
       return new AppExpression(data, function, arguments);
     }
 
+    @Override
     @Nonnull
     public Expression getFunction() {
       return myFunction;
@@ -326,6 +324,7 @@ public final class Concrete {
       }
     }
 
+    @Override
     @Nonnull
     public List<Argument> getArguments() {
       return myArguments;
@@ -899,7 +898,7 @@ public final class Concrete {
     }
   }
 
-  public static class TupleExpression extends Expression {
+  public static class TupleExpression extends Expression implements ConcreteTupleExpression {
     public static final byte PREC = 12;
     private final List<Expression> myFields;
 
@@ -908,6 +907,7 @@ public final class Concrete {
       myFields = fields;
     }
 
+    @Override
     @Nonnull
     public List<Expression> getFields() {
       return myFields;
@@ -1092,7 +1092,7 @@ public final class Concrete {
     }
   }
 
-  public static class NumericLiteral extends Expression {
+  public static class NumericLiteral extends Expression implements ConcreteNumberExpression {
     private final BigInteger myNumber;
 
     public NumericLiteral(Object data, BigInteger number) {
@@ -1100,6 +1100,8 @@ public final class Concrete {
       myNumber = number;
     }
 
+    @Override
+    @Nonnull
     public BigInteger getNumber() {
       return myNumber;
     }
