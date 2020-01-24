@@ -85,7 +85,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   protected ErrorReporter errorReporter;
   private TypecheckingListener myListener = TypecheckingListener.DEFAULT;
   private final List<ClassCallExpression.ClassCallBinding> myClassCallBindings = new ArrayList<>();
-  private final List<DeferredMeta> myDeferredMetas = new ArrayList<>();
+  private final List<DeferredMeta> myDeferredMetasBefore = new ArrayList<>();
+  private final List<DeferredMeta> myDeferredMetasAfter = new ArrayList<>();
 
   private static class DeferredMeta {
     final MetaDefinition meta;
@@ -337,34 +338,45 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     return finalize(checkExpr(expr, expectedType), returnExpectedType && expectedType instanceof Expression ? (Expression) expectedType : null, expr);
   }
 
-  private void invokeDeferredMetas(InPlaceLevelSubstVisitor substVisitor, StripVisitor stripVisitor) {
-    for (DeferredMeta deferredMeta : myDeferredMetas) {
+  private void invokeDeferredMetas(InPlaceLevelSubstVisitor substVisitor, StripVisitor stripVisitor, Stage stage) {
+    List<DeferredMeta> deferredMetas = stage == Stage.BEFORE_SOLVER ? myDeferredMetasBefore : myDeferredMetasAfter;
+    for (DeferredMeta deferredMeta : deferredMetas) {
       Expression type = deferredMeta.contextData.getExpectedType();
-      if (!substVisitor.isEmpty()) {
+      if (substVisitor != null && !substVisitor.isEmpty()) {
         type.accept(substVisitor, null);
       }
-      type = type.accept(stripVisitor, null);
-      deferredMeta.contextData.setExpectedType(type);
+      if (stripVisitor != null) {
+        type = type.accept(stripVisitor, null);
+        deferredMeta.contextData.setExpectedType(type);
 
-      TypedDependentLink lastTyped = null;
-      for (Binding binding : deferredMeta.context.values()) {
-        if (binding instanceof UntypedDependentLink) {
-          TypedDependentLink typed = ((UntypedDependentLink) binding).getNextTyped(null);
-          if (typed != lastTyped) {
-            lastTyped = typed;
-            typed.strip(stripVisitor);
+        TypedDependentLink lastTyped = null;
+        for (Binding binding : deferredMeta.context.values()) {
+          if (binding instanceof UntypedDependentLink) {
+            TypedDependentLink typed = ((UntypedDependentLink) binding).getNextTyped(null);
+            if (typed != lastTyped) {
+              lastTyped = typed;
+              typed.strip(stripVisitor);
+            }
+          } else {
+            if (binding != lastTyped) {
+              binding.strip(stripVisitor);
+            }
+            lastTyped = null;
           }
-        } else {
-          if (binding != lastTyped) {
-            binding.strip(stripVisitor);
-          }
-          lastTyped = null;
         }
       }
 
       CountingErrorReporter countingErrorReporter = new CountingErrorReporter(GeneralError.Level.ERROR);
-      CheckTypeVisitor checkTypeVisitor = new CheckTypeVisitor(state, deferredMeta.context, new CompositeErrorReporter(errorReporter, countingErrorReporter), null);
-      checkTypeVisitor.setInstancePool(new GlobalInstancePool(myInstancePool.getInstanceProvider(), checkTypeVisitor));
+      CheckTypeVisitor checkTypeVisitor;
+      ErrorReporter originalErrorReporter = errorReporter;
+      if (stage == Stage.BEFORE_SOLVER) {
+        checkTypeVisitor = this;
+        errorReporter = new CompositeErrorReporter(errorReporter, countingErrorReporter);
+      } else {
+        checkTypeVisitor = new CheckTypeVisitor(state, deferredMeta.context, new CompositeErrorReporter(errorReporter, countingErrorReporter), null);
+        checkTypeVisitor.setInstancePool(new GlobalInstancePool(myInstancePool.getInstanceProvider(), checkTypeVisitor));
+      }
+
       CheckedExpression result = deferredMeta.meta.invoke(checkTypeVisitor, deferredMeta.contextData);
       if (result != null && !(result instanceof TypecheckingResult)) {
         throw new IllegalStateException("CheckedExpression must be TypecheckingResult");
@@ -373,8 +385,11 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       Concrete.ReferenceExpression refExpr = deferredMeta.contextData.getReferenceExpression();
       if (result != null) {
         result = checkTypeVisitor.checkResult(type, (TypecheckingResult) result, refExpr);
-        result = checkTypeVisitor.finalize((TypecheckingResult) result, null, refExpr);
+        if (stage == Stage.AFTER_SOLVER) {
+          result = checkTypeVisitor.finalize((TypecheckingResult) result, null, refExpr);
+        }
       }
+      errorReporter = originalErrorReporter;
       if (result == null && countingErrorReporter.getErrorsNumber() == 0) {
         errorReporter.report(new TypecheckingError("Meta function '" + refExpr.getReferent().getRefName() + "' failed", refExpr));
       }
@@ -394,6 +409,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       }
     }
 
+    invokeDeferredMetas(null, null, Stage.BEFORE_SOLVER);
     LevelSubstitution substitution = myEquations.solve(sourceNode);
     InPlaceLevelSubstVisitor substVisitor = new InPlaceLevelSubstVisitor(substitution);
     if (!substVisitor.isEmpty()) {
@@ -405,7 +421,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
     ErrorReporterCounter counter = new ErrorReporterCounter(GeneralError.Level.ERROR, errorReporter);
     StripVisitor stripVisitor = new StripVisitor(counter);
-    invokeDeferredMetas(substVisitor, stripVisitor);
+    invokeDeferredMetas(substVisitor, stripVisitor, Stage.AFTER_SOLVER);
     if (result.expression != null) {
       result.expression = result.expression.accept(stripVisitor, null);
     }
@@ -471,12 +487,13 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   private Type finalCheckType(Concrete.Expression expr, ExpectedType expectedType) {
     Type result = checkType(expr, expectedType);
     if (result == null) return null;
+    invokeDeferredMetas(null, null, Stage.BEFORE_SOLVER);
     InPlaceLevelSubstVisitor substVisitor = new InPlaceLevelSubstVisitor(myEquations.solve(expr));
     if (!substVisitor.isEmpty()) {
       result.subst(substVisitor);
     }
     StripVisitor stripVisitor = new StripVisitor(errorReporter);
-    invokeDeferredMetas(substVisitor, stripVisitor);
+    invokeDeferredMetas(substVisitor, stripVisitor, Stage.AFTER_SOLVER);
     return result.strip(stripVisitor);
   }
 
@@ -1745,14 +1762,14 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
   @Nonnull
   @Override
-  public CheckedExpression defer(@Nonnull MetaDefinition meta, @Nonnull ContextData contextData, @Nonnull CoreExpression type) {
+  public CheckedExpression defer(@Nonnull MetaDefinition meta, @Nonnull ContextData contextData, @Nonnull CoreExpression type, @Nonnull Stage stage) {
     ConcreteReferenceExpression refExpr = contextData.getReferenceExpression();
     if (!(contextData instanceof ContextDataImpl && refExpr instanceof Concrete.ReferenceExpression && type instanceof Expression)) {
       throw new IllegalArgumentException();
     }
     ((ContextDataImpl) contextData).setExpectedType((Expression) type);
     InferenceReferenceExpression inferenceExpr = new InferenceReferenceExpression(new MetaInferenceVariable((Expression) type, meta, (Concrete.ReferenceExpression) refExpr, getAllBindings()));
-    myDeferredMetas.add(new DeferredMeta(meta, new LinkedHashMap<>(context), (ContextDataImpl) contextData, inferenceExpr));
+    (stage == Stage.BEFORE_SOLVER ? myDeferredMetasBefore : myDeferredMetasAfter).add(new DeferredMeta(meta, new LinkedHashMap<>(context), (ContextDataImpl) contextData, inferenceExpr));
     return new TypecheckingResult(inferenceExpr, (Expression) type);
   }
 

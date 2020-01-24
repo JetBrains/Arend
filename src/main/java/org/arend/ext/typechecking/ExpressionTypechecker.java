@@ -12,10 +12,12 @@ import javax.annotation.Nullable;
 import java.util.Map;
 
 public interface ExpressionTypechecker {
+  enum Stage { BEFORE_SOLVER, AFTER_SOLVER }
+
   @Nonnull Map<? extends ArendRef, ? extends CoreBinding> getContext();
   @Nonnull ErrorReporter getErrorReporter();
   @Nullable CheckedExpression typecheck(@Nonnull ConcreteExpression expression);
   @Nullable CheckedExpression check(@Nonnull CoreExpression expression);
-  @Nonnull CheckedExpression defer(@Nonnull MetaDefinition meta, @Nonnull ContextData contextData, @Nonnull CoreExpression type);
+  @Nonnull CheckedExpression defer(@Nonnull MetaDefinition meta, @Nonnull ContextData contextData, @Nonnull CoreExpression type, @Nonnull Stage stage);
   boolean compare(@Nonnull CoreExpression expr1, @Nonnull CoreExpression expr2, @Nonnull CMP cmp, @Nullable ConcreteExpression marker);
 }
