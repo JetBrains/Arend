@@ -8,6 +8,7 @@ import org.arend.term.concrete.ConcreteExpressionVisitor;
 import org.arend.util.Pair;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -145,16 +146,28 @@ public class CorrespondedSubExprVisitor implements
       // ignoring the extra argument `b`.
       return visitClonedApp(expr, coreEtaExpr.getBody());
     } else if (coreDefExpr != null) {
-      // FIXME: filter out inserted implicit arguments
-      List<? extends Expression> defCallArguments = coreDefExpr.getDefCallArguments();
-      return visitExprs(defCallArguments, arguments
-          .stream()
-          .map(Concrete.Argument::getExpression)
-          // Theoretically, concrete arguments should always be less than
-          // or equal to core arguments.
-          .limit(defCallArguments.size())
-          .collect(Collectors.toList()));
+      return visitArguments(coreDefExpr, arguments.iterator());
     } else return null;
+  }
+
+  private Pair<Expression, Concrete.Expression> visitArguments(
+      DefCallExpression expression,
+      Iterator<Concrete.Argument> arguments
+  ) {
+    Iterator<? extends Expression> defCallArgs = expression.getDefCallArguments().iterator();
+    Concrete.Argument argument = arguments.next();
+    for (DependentLink parameter = expression.getDefinition().getParameters();
+         parameter.hasNext() && defCallArgs.hasNext() && arguments.hasNext();
+         parameter = parameter.getNext()) {
+      Expression coreArg = defCallArgs.next();
+      // Take care of implicit application
+      if (parameter.isExplicit() == argument.isExplicit()) {
+        Pair<Expression, Concrete.Expression> accepted = argument.getExpression().accept(this, coreArg);
+        if (accepted != null) return accepted;
+        argument = arguments.next();
+      }
+    }
+    return null;
   }
 
   @Override
