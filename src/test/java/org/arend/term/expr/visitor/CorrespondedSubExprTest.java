@@ -47,10 +47,34 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
   public void complexSigma() {
     Concrete.SigmaExpression xyx = (Concrete.SigmaExpression) resolveNamesExpr("\\Sigma (A B : \\Type) (x y : A) A");
     Expression sig = typeCheckExpr(xyx, null).expression;
-    Pair<Expression, Concrete.Expression> accept = xyx.accept(new CorrespondedSubExprVisitor(xyx.getParameters().get(1).getType()), sig);
-    assertEquals(accept.proj1.cast(ReferenceExpression.class).getBinding().getName(), "A");
+    {
+      Pair<Expression, Concrete.Expression> accept = xyx.accept(new CorrespondedSubExprVisitor(xyx.getParameters().get(1).getType()), sig);
+      assertEquals(accept.proj1.cast(ReferenceExpression.class).getBinding().getName(), "A");
+    }
+    {
+      Pair<Expression, Concrete.Expression> accept = xyx.accept(new CorrespondedSubExprVisitor(xyx.getParameters().get(2).getType()), sig);
+      assertEquals(accept.proj1.cast(ReferenceExpression.class).getBinding().getName(), "A");
+    }
+  }
 
-    accept = xyx.accept(new CorrespondedSubExprVisitor(xyx.getParameters().get(2).getType()), sig);
-    assertEquals(accept.proj1.cast(ReferenceExpression.class).getBinding().getName(), "A");
+  @Test
+  public void simpleDefCall() {
+    Concrete.LamExpression expr = (Concrete.LamExpression) resolveNamesExpr("\\lam {A : \\Type} (f : A -> A -> A) (a b : A) => f b a");
+    Expression core = typeCheckExpr(expr, null).expression;
+    Concrete.AppExpression body = (Concrete.AppExpression) expr.getBody();
+    {
+      Pair<Expression, Concrete.Expression> accept = expr.accept(new CorrespondedSubExprVisitor(body.getArguments().get(0).getExpression()), core);
+      assertEquals(accept.proj1.cast(ReferenceExpression.class).getBinding().getName(), "b");
+    }
+    {
+      Pair<Expression, Concrete.Expression> accept = expr.accept(new CorrespondedSubExprVisitor(body.getArguments().get(1).getExpression()), core);
+      assertEquals(accept.proj1.cast(ReferenceExpression.class).getBinding().getName(), "a");
+    }
+    {
+      Concrete.Expression make = Concrete.AppExpression.make(body.getData(), body.getFunction(), body.getArguments().get(0).getExpression(), true);
+      Pair<Expression, Concrete.Expression> accept = expr.accept(new CorrespondedSubExprVisitor(make), core);
+      // Selects the whole expression
+      assertEquals(accept.proj1.toString(), "f b a");
+    }
   }
 }

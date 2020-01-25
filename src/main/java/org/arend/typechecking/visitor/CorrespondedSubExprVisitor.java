@@ -139,7 +139,7 @@ public class CorrespondedSubExprVisitor implements
       Concrete.Argument lastArgument = arguments.get(lastArgIndex);
       Expression function = coreAppExpr.getFunction();
       PiExpression type = function.getType().cast(PiExpression.class);
-      while (type.getParameters().isExplicit() == lastArgument.isExplicit()) {
+      while (type.getParameters().isExplicit() != lastArgument.isExplicit()) {
         coreAppExpr = (AppExpression) function;
         function = coreAppExpr.getFunction();
         type = function.getType().cast(PiExpression.class);
