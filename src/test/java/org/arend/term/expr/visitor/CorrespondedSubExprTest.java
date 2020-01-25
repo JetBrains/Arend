@@ -67,17 +67,20 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
     Concrete.AppExpression body = (Concrete.AppExpression) expr.getBody();
     {
       Pair<Expression, Concrete.Expression> accept = expr.accept(new CorrespondedSubExprVisitor(body.getArguments().get(0).getExpression()), core);
-      assertEquals(accept.proj1.cast(ReferenceExpression.class).getBinding().getName(), "b");
+      assertEquals("b", accept.proj1.cast(ReferenceExpression.class).getBinding().getName());
+      assertEquals("b", accept.proj2.toString());
     }
     {
       Pair<Expression, Concrete.Expression> accept = expr.accept(new CorrespondedSubExprVisitor(body.getArguments().get(1).getExpression()), core);
-      assertEquals(accept.proj1.cast(ReferenceExpression.class).getBinding().getName(), "a");
+      assertEquals("a", accept.proj1.cast(ReferenceExpression.class).getBinding().getName());
+      assertEquals("a", accept.proj2.toString());
     }
     {
       Concrete.Expression make = Concrete.AppExpression.make(body.getData(), body.getFunction(), body.getArguments().get(0).getExpression(), true);
       Pair<Expression, Concrete.Expression> accept = expr.accept(new CorrespondedSubExprVisitor(make), core);
       // Selects the whole expression
       assertEquals("f b a", accept.proj1.toString());
+      assertEquals("f b a", accept.proj2.toString());
     }
   }
 
