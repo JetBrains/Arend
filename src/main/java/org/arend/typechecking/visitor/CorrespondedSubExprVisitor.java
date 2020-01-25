@@ -136,10 +136,18 @@ public class CorrespondedSubExprVisitor implements
     DefCallExpression coreDefExpr = coreExpr.cast(DefCallExpression.class);
     int lastArgIndex = arguments.size() - 1;
     if (coreAppExpr != null) {
-      Pair<Expression, Concrete.Expression> accepted = arguments.get(lastArgIndex).getExpression().accept(this, coreAppExpr.getArgument());
+      Concrete.Argument lastArgument = arguments.get(lastArgIndex);
+      Expression function = coreAppExpr.getFunction();
+      PiExpression type = function.getType().cast(PiExpression.class);
+      while (type.getParameters().isExplicit() == lastArgument.isExplicit()) {
+        coreAppExpr = (AppExpression) function;
+        function = coreAppExpr.getFunction();
+        type = function.getType().cast(PiExpression.class);
+      }
+      Pair<Expression, Concrete.Expression> accepted = lastArgument.getExpression().accept(this, coreAppExpr.getArgument());
       if (accepted != null) return accepted;
       arguments.remove(lastArgIndex);
-      return visitClonedApp(expr, coreAppExpr.getFunction());
+      return visitClonedApp(expr, function);
     } else if (coreEtaExpr != null) {
       // `f a` (concrete) gets elaborated to `\b -> f a b` (core) if `f` takes 2
       // arguments, so we try to match `f a` (concrete) and `f a b` (core),
