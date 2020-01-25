@@ -165,7 +165,7 @@ public class CorrespondedSubExprVisitor implements
     Iterator<? extends Expression> defCallArgs = expression.getDefCallArguments().iterator();
     Concrete.Argument argument = arguments.next();
     for (DependentLink parameter = expression.getDefinition().getParameters();
-         parameter.hasNext() && defCallArgs.hasNext() && arguments.hasNext();
+         parameter.hasNext() && defCallArgs.hasNext();
          parameter = parameter.getNext()) {
       Expression coreArg = defCallArgs.next();
       // Take care of implicit application
