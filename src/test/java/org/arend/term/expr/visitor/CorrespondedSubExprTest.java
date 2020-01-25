@@ -107,28 +107,33 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
       Concrete.Expression make = Concrete.AppExpression.make(expr3.getData(), mul, three.getExpression(), true);
       Pair<Expression, Concrete.Expression> accept = expr.accept(new CorrespondedSubExprVisitor(make), core);
       assertEquals("3 * 2", accept.proj1.toString());
+      assertEquals("3 * 2", accept.proj2.toString());
     }
     {
       // *2 -> 3*2
       Concrete.Expression make = Concrete.AppExpression.make(expr3.getData(), mul, two.getExpression(), true);
       Pair<Expression, Concrete.Expression> accept = expr.accept(new CorrespondedSubExprVisitor(make), core);
       assertEquals("3 * 2", accept.proj1.toString());
+      assertEquals("3 * 2", accept.proj2.toString());
     }
     {
       // 2 -> 2
       Pair<Expression, Concrete.Expression> accept = expr.accept(new CorrespondedSubExprVisitor(two.getExpression()), core);
       assertEquals("2", accept.proj1.toString());
+      assertEquals("2", accept.proj2.toString());
     }
     {
       // 3*2 -> 3*2
       Pair<Expression, Concrete.Expression> accept = expr.accept(new CorrespondedSubExprVisitor(expr3), core);
       assertEquals("3 * 2", accept.proj1.toString());
+      assertEquals("3 * 2", accept.proj2.toString());
     }
     {
       // 1+ -> 1+3*2
       Concrete.Expression make = Concrete.AppExpression.make(expr3.getData(), add, one.getExpression(), true);
       Pair<Expression, Concrete.Expression> accept = expr.accept(new CorrespondedSubExprVisitor(make), core);
       assertEquals("1 + 3 * 2", accept.proj1.toString());
+      assertEquals("1 + 3 * 2", accept.proj2.toString());
     }
   }
 }
