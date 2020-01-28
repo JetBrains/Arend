@@ -29,6 +29,12 @@ public class GlobalInstancePool implements InstancePool {
     myCheckTypeVisitor = checkTypeVisitor;
   }
 
+  public GlobalInstancePool(InstanceProvider instanceProvider, CheckTypeVisitor checkTypeVisitor, InstancePool instancePool) {
+    myInstanceProvider = instanceProvider;
+    myCheckTypeVisitor = checkTypeVisitor;
+    myInstancePool = instancePool;
+  }
+
   public InstancePool getInstancePool() {
     return myInstancePool;
   }
@@ -140,12 +146,6 @@ public class GlobalInstancePool implements InstancePool {
 
   @Override
   public GlobalInstancePool subst(ExprSubstitution substitution) {
-    if (myInstancePool != null) {
-      GlobalInstancePool result = new GlobalInstancePool(myInstanceProvider, myCheckTypeVisitor);
-      result.setInstancePool(myInstancePool.subst(substitution));
-      return result;
-    } else {
-      return this;
-    }
+    return myInstancePool != null ? new GlobalInstancePool(myInstanceProvider, myCheckTypeVisitor, myInstancePool.subst(substitution)) : this;
   }
 }

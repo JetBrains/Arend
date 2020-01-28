@@ -79,7 +79,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   }
 
   public Definition typecheckHeader(Definition typechecked, GlobalInstancePool instancePool, Concrete.Definition definition) {
-    LocalInstancePool localInstancePool = new LocalInstancePool(typechecker);
+    LocalInstancePool localInstancePool = new LocalInstancePool();
     instancePool.setInstancePool(localInstancePool);
     typechecker.setInstancePool(instancePool);
 
@@ -137,7 +137,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   @Override
   public List<ExtClause> visitFunction(Concrete.BaseFunctionDefinition def, Void params) {
     Definition typechecked = typechecker.getTypechecked(def.getData());
-    LocalInstancePool localInstancePool = new LocalInstancePool(typechecker);
+    LocalInstancePool localInstancePool = new LocalInstancePool();
     myInstancePool.setInstancePool(localInstancePool);
     typechecker.setInstancePool(myInstancePool);
 
@@ -154,7 +154,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   @Override
   public List<ExtClause> visitData(Concrete.DataDefinition def, Void params) {
     Definition typechecked = typechecker.getTypechecked(def.getData());
-    LocalInstancePool localInstancePool = new LocalInstancePool(typechecker);
+    LocalInstancePool localInstancePool = new LocalInstancePool();
     myInstancePool.setInstancePool(localInstancePool);
     typechecker.setInstancePool(myInstancePool);
 
@@ -2166,7 +2166,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       return;
     }
 
-    LocalInstancePool localInstancePool = new LocalInstancePool(typechecker);
+    LocalInstancePool localInstancePool = new LocalInstancePool();
     myInstancePool.setInstancePool(localInstancePool);
     if (classDef != null) {
       localInstancePool.addInstance(null, null, classDef.getReferable(), new ReferenceExpression(thisParam), thisSourceNode);

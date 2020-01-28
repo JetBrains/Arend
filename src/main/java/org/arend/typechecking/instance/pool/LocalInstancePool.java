@@ -7,7 +7,6 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.ext.core.ops.CMP;
 import org.arend.naming.reference.TCClassReferable;
 import org.arend.term.concrete.Concrete;
-import org.arend.typechecking.visitor.CheckTypeVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,11 +29,6 @@ public class LocalInstancePool implements InstancePool {
   }
 
   private final List<InstanceData> myPool = new ArrayList<>();
-  private final CheckTypeVisitor myVisitor;
-
-  public LocalInstancePool(CheckTypeVisitor visitor) {
-    myVisitor = visitor;
-  }
 
   @Override
   public Expression getInstance(Expression classifyingExpression, TCClassReferable classRef, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveData) {
@@ -43,7 +37,7 @@ public class LocalInstancePool implements InstancePool {
 
   @Override
   public LocalInstancePool subst(ExprSubstitution substitution) {
-    LocalInstancePool result = new LocalInstancePool(myVisitor);
+    LocalInstancePool result = new LocalInstancePool();
     for (InstanceData data : myPool) {
       Expression newValue = data.value instanceof ReferenceExpression ? substitution.get(((ReferenceExpression) data.value).getBinding()) : null;
       newValue = newValue == null ? null : newValue.cast(ReferenceExpression.class);

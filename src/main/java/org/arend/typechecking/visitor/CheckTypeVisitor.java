@@ -378,7 +378,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         context = deferredMeta.context;
       } else {
         checkTypeVisitor = new CheckTypeVisitor(state, deferredMeta.context, new CompositeErrorReporter(errorReporter, countingErrorReporter), null);
-        checkTypeVisitor.setInstancePool(new GlobalInstancePool(myInstancePool.getInstanceProvider(), checkTypeVisitor));
+        checkTypeVisitor.setInstancePool(new GlobalInstancePool(myInstancePool.getInstanceProvider(), checkTypeVisitor, myInstancePool.getInstancePool()));
       }
 
       CheckedExpression result = deferredMeta.meta.invoke(checkTypeVisitor, deferredMeta.contextData);
