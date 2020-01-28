@@ -340,7 +340,10 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
   private void invokeDeferredMetas(InPlaceLevelSubstVisitor substVisitor, StripVisitor stripVisitor, Stage stage) {
     List<DeferredMeta> deferredMetas = stage == Stage.BEFORE_SOLVER ? myDeferredMetasBefore : myDeferredMetasAfter;
-    for (DeferredMeta deferredMeta : deferredMetas) {
+    // Indexed loop is required since deferredMetas can be modified during the loop
+    //noinspection ForLoopReplaceableByForEach
+    for (int i = 0; i < deferredMetas.size(); i++) {
+      DeferredMeta deferredMeta = deferredMetas.get(i);
       Expression type = deferredMeta.contextData.getExpectedType();
       if (substVisitor != null && !substVisitor.isEmpty()) {
         type.accept(substVisitor, null);
