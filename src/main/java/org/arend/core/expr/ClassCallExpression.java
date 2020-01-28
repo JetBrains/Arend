@@ -50,6 +50,11 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
     }
 
     @Override
+    public void subst(InPlaceLevelSubstVisitor substVisitor) {
+      ClassCallExpression.this.accept(substVisitor, null);
+    }
+
+    @Override
     public boolean isHidden() {
       return true;
     }

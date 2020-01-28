@@ -10,5 +10,4 @@ import javax.annotation.Nonnull;
 public interface EvaluatingBinding extends Binding, CoreEvaluatingBinding {
   @Nonnull @Override Expression getExpression();
   void subst(SubstVisitor visitor);
-  void subst(InPlaceLevelSubstVisitor visitor);
 }

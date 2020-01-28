@@ -355,10 +355,12 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
             TypedDependentLink typed = ((UntypedDependentLink) binding).getNextTyped(null);
             if (typed != lastTyped) {
               lastTyped = typed;
+              typed.subst(substVisitor);
               typed.strip(stripVisitor);
             }
           } else {
             if (binding != lastTyped) {
+              binding.subst(substVisitor);
               binding.strip(stripVisitor);
             }
             lastTyped = null;

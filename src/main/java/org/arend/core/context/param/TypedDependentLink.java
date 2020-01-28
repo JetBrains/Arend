@@ -3,6 +3,7 @@ package org.arend.core.context.param;
 import org.arend.core.expr.ReferenceExpression;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.visitor.StripVisitor;
+import org.arend.core.subst.InPlaceLevelSubstVisitor;
 import org.arend.core.subst.SubstVisitor;
 
 import javax.annotation.Nonnull;
@@ -106,6 +107,11 @@ public class TypedDependentLink implements DependentLink {
   @Override
   public void strip(StripVisitor stripVisitor) {
     myType = myType.strip(stripVisitor);
+  }
+
+  @Override
+  public void subst(InPlaceLevelSubstVisitor substVisitor) {
+    myType.subst(substVisitor);
   }
 
   @Override
