@@ -1206,7 +1206,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
       InstancePool instancePool = typechecker.getInstancePool().getInstancePool();
       for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
-        typechecker.setContext(new HashMap<>(context));
+        typechecker.setContext(new LinkedHashMap<>(context));
         typechecker.setFreeBindings(new HashSet<>(freeBindings));
 
         // Typecheck patterns and compute free bindings
@@ -1228,7 +1228,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
               result = null;
             }
             if (result == null) {
-              typechecker.setContext(new HashMap<>(context));
+              typechecker.setContext(new LinkedHashMap<>(context));
               typechecker.setFreeBindings(new HashSet<>(freeBindings));
               patternsOK = false;
             }

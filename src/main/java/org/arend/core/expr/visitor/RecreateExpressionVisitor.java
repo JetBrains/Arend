@@ -1,11 +1,15 @@
 package org.arend.core.expr.visitor;
 
+import org.arend.core.definition.ClassField;
 import org.arend.core.expr.*;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.core.ops.ExpressionMapper;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class RecreateExpressionVisitor extends SubstVisitor {
   private final ExpressionMapper myMapper;
@@ -48,7 +52,22 @@ public class RecreateExpressionVisitor extends SubstVisitor {
     if (result instanceof Expression) {
       return (Expression) result;
     }
-    return super.visitClassCall(expr, params);
+
+    Map<ClassField, Expression> fieldSet = new HashMap<>();
+    ClassCallExpression classCall = new ClassCallExpression(expr.getDefinition(), expr.getSortArgument().subst(getLevelSubstitution()), fieldSet, expr.getSort().subst(getLevelSubstitution()), expr.hasUniverses());
+    if (expr.getImplementedHere().isEmpty()) {
+      return classCall;
+    }
+
+    getExprSubstitution().add(expr.getThisBinding(), new ReferenceExpression(classCall.getThisBinding()));
+    for (ClassField field : classCall.getDefinition().getFields()) {
+      Expression impl = expr.getAbsImplementationHere(field);
+      if (impl != null) {
+        fieldSet.put(field, impl.accept(this, null));
+      }
+    }
+    getExprSubstitution().remove(expr.getThisBinding());
+    return classCall;
   }
 
   @Override
