@@ -19,8 +19,12 @@ public class UniverseExpression extends Expression implements Type, CoreUniverse
   private Sort mySort;
 
   public UniverseExpression(Sort sort) {
-    assert !sort.isOmega();
     mySort = sort;
+  }
+
+  @Override
+  public boolean isOmega() {
+    return mySort.isOmega();
   }
 
   public void substSort(LevelSubstitution substitution) {
@@ -60,7 +64,7 @@ public class UniverseExpression extends Expression implements Type, CoreUniverse
 
   @Override
   public UniverseExpression subst(SubstVisitor substVisitor) {
-    return substVisitor.getLevelSubstitution().isEmpty() ? this : new UniverseExpression(mySort.subst(substVisitor.getLevelSubstitution()));
+    return substVisitor.getLevelSubstitution().isEmpty() || mySort.isOmega() ? this : new UniverseExpression(mySort.subst(substVisitor.getLevelSubstitution()));
   }
 
   @Override

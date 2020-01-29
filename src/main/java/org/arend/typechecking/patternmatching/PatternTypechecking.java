@@ -15,7 +15,6 @@ import org.arend.core.definition.Definition;
 import org.arend.core.elimtree.ElimTree;
 import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.*;
-import org.arend.core.expr.type.ExpectedType;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.visitor.CompareVisitor;
 import org.arend.core.expr.visitor.ElimBindingVisitor;
@@ -281,7 +280,7 @@ public class PatternTypechecking {
       return null;
     }
 
-    Type type = myVisitor.checkType(cType, ExpectedType.OMEGA);
+    Type type = myVisitor.checkType(cType, Type.OMEGA);
     if (type != null && !expectedType.isLessOrEquals(type.getExpr(), myVisitor.getEquations(), cType)) {
       myErrorReporter.report(new TypeMismatchError(type.getExpr(), expectedType, cType));
       return null;
@@ -594,7 +593,7 @@ public class PatternTypechecking {
             }
 
             Expression actualType = constructor.getResultType().subst(substitution, levelSubst).normalize(NormalizationMode.WHNF);
-            if (!CompareVisitor.compare(myVisitor.getEquations(), CMP.EQ, actualType, expr, ExpectedType.OMEGA, conPattern)) {
+            if (!CompareVisitor.compare(myVisitor.getEquations(), CMP.EQ, actualType, expr, Type.OMEGA, conPattern)) {
               myErrorReporter.report(new TypeMismatchError(expr, actualType, conPattern));
               return null;
             }

@@ -12,7 +12,7 @@ import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
 import org.arend.core.definition.Definition;
 import org.arend.core.expr.*;
-import org.arend.core.expr.type.ExpectedType;
+import org.arend.core.expr.type.Type;
 import org.arend.core.expr.visitor.CompareVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
@@ -215,7 +215,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
   }
 
   @Override
-  public TResult infer(Concrete.AppExpression expr, ExpectedType expectedType) {
+  public TResult infer(Concrete.AppExpression expr, Expression expectedType) {
     TResult result;
     Concrete.Expression fun = expr.getFunction();
     if (fun instanceof Concrete.ReferenceExpression) {
@@ -234,7 +234,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
     if (result instanceof DefCallResult && expr.getArguments().get(0).isExplicit() && expectedType != null) {
       DefCallResult defCallResult = (DefCallResult) result;
       if (defCallResult.getDefinition() instanceof Constructor && defCallResult.getArguments().size() < DependentLink.Helper.size(((Constructor) defCallResult.getDefinition()).getDataTypeParameters())) {
-        DataCallExpression dataCall = expectedType instanceof Expression ? ((Expression) expectedType).normalize(NormalizationMode.WHNF).cast(DataCallExpression.class) : null;
+        DataCallExpression dataCall = expectedType.normalize(NormalizationMode.WHNF).cast(DataCallExpression.class);
         if (dataCall != null) {
           if (((Constructor) defCallResult.getDefinition()).getDataType() != dataCall.getDefinition()) {
             myVisitor.getErrorReporter().report(new TypeMismatchError(dataCall, refDoc(((Constructor) defCallResult.getDefinition()).getDataType().getReferable()), fun));
@@ -347,7 +347,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
   }
 
   @Override
-  public TResult inferTail(TResult result, ExpectedType expectedType, Concrete.Expression expr) {
+  public TResult inferTail(TResult result, Expression expectedType, Concrete.Expression expr) {
     List<? extends DependentLink> actualParams = result.getImplicitParameters();
     int expectedParamsNumber = 0;
     if (expectedType != null) {
@@ -364,7 +364,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
     }
 
     if (expectedParamsNumber != actualParams.size()) {
-      result = fixImplicitArgs(result, actualParams.subList(0, actualParams.size() - expectedParamsNumber), expr, !(expectedType instanceof Expression), null);
+      result = fixImplicitArgs(result, actualParams.subList(0, actualParams.size() - expectedParamsNumber), expr, expectedType == null || expectedType instanceof Type && ((Type) expectedType).isOmega(), null);
     }
 
     return result;

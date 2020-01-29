@@ -2,7 +2,6 @@ package org.arend.typechecking.instance.pool;
 
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.ReferenceExpression;
-import org.arend.core.expr.type.ExpectedType;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.ext.core.ops.CMP;
 import org.arend.naming.reference.TCClassReferable;
@@ -14,12 +13,12 @@ import java.util.List;
 public class LocalInstancePool implements InstancePool {
   static private class InstanceData {
     final Expression key;
-    final ExpectedType keyType;
+    final Expression keyType;
     final TCClassReferable classRef;
     final Expression value;
     final Concrete.SourceNode sourceNode;
 
-    InstanceData(Expression key, ExpectedType keyType, TCClassReferable classRef, Expression value, Concrete.SourceNode sourceNode) {
+    InstanceData(Expression key, Expression keyType, TCClassReferable classRef, Expression value, Concrete.SourceNode sourceNode) {
       this.key = key;
       this.keyType = keyType;
       this.classRef = classRef;
@@ -61,7 +60,7 @@ public class LocalInstancePool implements InstancePool {
     return null;
   }
 
-  public Expression addInstance(Expression classifyingExpression, ExpectedType classifyingExpressionType, TCClassReferable classRef, Expression instance, Concrete.SourceNode sourceNode) {
+  public Expression addInstance(Expression classifyingExpression, Expression classifyingExpressionType, TCClassReferable classRef, Expression instance, Concrete.SourceNode sourceNode) {
     Expression oldInstance = getInstance(classifyingExpression, classRef);
     if (oldInstance != null) {
       return oldInstance;

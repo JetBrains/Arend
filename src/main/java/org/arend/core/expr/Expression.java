@@ -6,7 +6,7 @@ import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.elimtree.Body;
-import org.arend.core.expr.type.ExpectedType;
+import org.arend.core.expr.type.Type;
 import org.arend.core.expr.visitor.*;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
@@ -36,7 +36,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-public abstract class Expression implements ExpectedType, Body, CoreExpression {
+public abstract class Expression implements Body, CoreExpression {
   public abstract <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params);
 
   public abstract <P1, P2, R> R accept(ExpressionVisitor2<? super P1, ? super P2, ? extends R> visitor, P1 param1, P2 param2);
@@ -76,7 +76,7 @@ public abstract class Expression implements ExpectedType, Body, CoreExpression {
   }
 
   public boolean isLessOrEquals(Expression type, Equations equations, Concrete.SourceNode sourceNode) {
-    return CompareVisitor.compare(equations, CMP.LE, this, type, ExpectedType.OMEGA, sourceNode);
+    return CompareVisitor.compare(equations, CMP.LE, this, type, Type.OMEGA, sourceNode);
   }
 
   public Sort toSort() {
@@ -157,7 +157,7 @@ public abstract class Expression implements ExpectedType, Body, CoreExpression {
     }
   }
 
-  public static boolean compare(Expression expr1, Expression expr2, ExpectedType type, CMP cmp) {
+  public static boolean compare(Expression expr1, Expression expr2, Expression type, CMP cmp) {
     return CompareVisitor.compare(DummyEquations.getInstance(), cmp, expr1, expr2, type, null);
   }
 
@@ -212,7 +212,6 @@ public abstract class Expression implements ExpectedType, Body, CoreExpression {
     return null;
   }
 
-  @Override
   public Expression getPiParameters(List<? super SingleDependentLink> params, boolean implicitOnly) {
     Expression cod = normalize(NormalizationMode.WHNF);
     for (PiExpression piCod = cod.cast(PiExpression.class); piCod != null; piCod = cod.cast(PiExpression.class)) {

@@ -2,7 +2,6 @@ package org.arend.typechecking.error.local;
 
 import org.arend.core.context.binding.Binding;
 import org.arend.core.expr.Expression;
-import org.arend.core.expr.type.ExpectedType;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
@@ -20,11 +19,11 @@ import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 public class GoalError extends TypecheckingError {
   public final String name;
   public final Map<Referable, Binding> context;
-  public final ExpectedType expectedType;
+  public final Expression expectedType;
   public final Expression actualType;
   public final List<GeneralError> errors;
 
-  public GoalError(String name, Map<Referable, Binding> context, ExpectedType expectedType, Expression actualType, List<GeneralError> errors, Concrete.Expression expression) {
+  public GoalError(String name, Map<Referable, Binding> context, Expression expectedType, Expression actualType, List<GeneralError> errors, Concrete.Expression expression) {
     super(Level.GOAL, "Goal" + (name == null ? "" : " " + name), expression);
     this.name = name;
     this.context = new LinkedHashMap<>(context);

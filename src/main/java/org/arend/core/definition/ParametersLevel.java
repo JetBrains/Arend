@@ -2,7 +2,7 @@ package org.arend.core.definition;
 
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.expr.Expression;
-import org.arend.core.expr.type.ExpectedType;
+import org.arend.core.expr.type.Type;
 import org.arend.core.expr.visitor.CompareVisitor;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.ext.core.ops.CMP;
@@ -28,7 +28,7 @@ public class ParametersLevel {
     ExprSubstitution substitution = new ExprSubstitution();
     for (Expression expr : exprList) {
       Expression type = expr.getType();
-      if (type == null || !CompareVisitor.compare(DummyEquations.getInstance(), CMP.LE, type, link.getTypeExpr().subst(substitution), ExpectedType.OMEGA, null)) {
+      if (type == null || !CompareVisitor.compare(DummyEquations.getInstance(), CMP.LE, type, link.getTypeExpr().subst(substitution), Type.OMEGA, null)) {
         return false;
       }
       substitution.add(link, expr);

@@ -3,7 +3,6 @@ package org.arend.core.definition;
 import org.arend.core.context.binding.inference.FunctionInferenceVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.expr.*;
-import org.arend.core.expr.type.ExpectedType;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
@@ -44,9 +43,9 @@ public class CoerceData {
     myMapTo.put(classifyingDefinition, coercingDefinitions);
   }
 
-  public static TypecheckingResult coerce(TypecheckingResult result, ExpectedType expectedType, Concrete.Expression sourceNode, CheckTypeVisitor visitor) {
+  public static TypecheckingResult coerce(TypecheckingResult result, Expression expectedType, Concrete.Expression sourceNode, CheckTypeVisitor visitor) {
     DefCallExpression actualDefCall = result.type.cast(DefCallExpression.class);
-    DefCallExpression expectedDefCall = expectedType instanceof Expression ? ((Expression) expectedType).cast(DefCallExpression.class) : null;
+    DefCallExpression expectedDefCall = expectedType.cast(DefCallExpression.class);
     if (actualDefCall != null && expectedDefCall != null && (actualDefCall.getDefinition() == expectedDefCall.getDefinition() || actualDefCall.getDefinition() instanceof ClassDefinition && expectedDefCall.getDefinition() instanceof ClassDefinition && ((ClassDefinition) actualDefCall.getDefinition()).isSubClassOf((ClassDefinition) expectedDefCall.getDefinition()))) {
       return null;
     }
@@ -108,7 +107,7 @@ public class CoerceData {
     return definition instanceof DataDefinition || definition instanceof ClassDefinition || definition instanceof Constructor;
   }
 
-  private static TypecheckingResult coerceResult(TypecheckingResult result, Collection<? extends Definition> defs, ExpectedType expectedType, Concrete.Expression sourceNode, CheckTypeVisitor visitor, boolean argStrict, boolean resultStrict) {
+  private static TypecheckingResult coerceResult(TypecheckingResult result, Collection<? extends Definition> defs, Expression expectedType, Concrete.Expression sourceNode, CheckTypeVisitor visitor, boolean argStrict, boolean resultStrict) {
     for (Definition def : defs) {
       if (def instanceof ClassField) {
         ClassField field = (ClassField) def;
