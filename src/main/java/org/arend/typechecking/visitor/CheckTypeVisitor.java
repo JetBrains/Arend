@@ -24,6 +24,7 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.InPlaceLevelSubstVisitor;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.error.*;
+import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.concrete.expr.ConcreteReferenceExpression;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
@@ -43,6 +44,7 @@ import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteExpressionVisitor;
 import org.arend.term.concrete.ConcreteLevelExpressionVisitor;
+import org.arend.typechecking.CoreExpressionChecker;
 import org.arend.typechecking.FieldDFS;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.TypecheckingListener;
@@ -307,17 +309,13 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
 
   @Nullable
   @Override
-  public TypecheckingResult check(@Nonnull CoreExpression expression) {
-    if (!(expression instanceof Expression)) {
+  public TypecheckingResult check(@Nonnull CoreExpression expression, @Nonnull ConcreteSourceNode sourceNode) {
+    if (!(expression instanceof Expression && sourceNode instanceof Concrete.SourceNode)) {
       throw new IllegalArgumentException();
     }
-    // TODO[lang_ext]: Check correctness of the expression
     Expression expr = (Expression) expression;
-    Expression type = expr.getType();
-    if (type == null) {
-      return null;
-    }
-    return new TypecheckingResult(expr, type);
+    Expression type = expr.accept(new CoreExpressionChecker(errorReporter, new HashSet<>(context.values()), myEquations, (Concrete.SourceNode) sourceNode), null);
+    return type == null ? null : new TypecheckingResult(expr, type);
   }
 
   public TypecheckingResult checkExpr(Concrete.Expression expr, Expression expectedType) {

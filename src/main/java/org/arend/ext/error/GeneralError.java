@@ -78,7 +78,7 @@ public class GeneralError {
     return nullDoc();
   }
 
-  public Doc getDoc(PrettyPrinterConfig ppConfig) {
+  public final Doc getDoc(PrettyPrinterConfig ppConfig) {
     Doc causeDoc = getCauseDoc(ppConfig);
     return vHang(getHeaderDoc(ppConfig), vList(getBodyDoc(ppConfig), causeDoc == null ? nullDoc() : hang(text("In:"), causeDoc)));
   }

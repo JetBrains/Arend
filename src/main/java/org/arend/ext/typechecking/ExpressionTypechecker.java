@@ -1,5 +1,6 @@
 package org.arend.ext.typechecking;
 
+import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.expr.CoreExpression;
@@ -17,7 +18,7 @@ public interface ExpressionTypechecker {
   @Nonnull Map<? extends ArendRef, ? extends CoreBinding> getContext();
   @Nonnull ErrorReporter getErrorReporter();
   @Nullable CheckedExpression typecheck(@Nonnull ConcreteExpression expression);
-  @Nullable CheckedExpression check(@Nonnull CoreExpression expression);
+  @Nullable CheckedExpression check(@Nonnull CoreExpression expression, @Nonnull ConcreteSourceNode sourceNode);
   @Nonnull CheckedExpression defer(@Nonnull MetaDefinition meta, @Nonnull ContextData contextData, @Nonnull CoreExpression type, @Nonnull Stage stage);
   boolean compare(@Nonnull CoreExpression expr1, @Nonnull CoreExpression expr2, @Nonnull CMP cmp, @Nullable ConcreteExpression marker);
 }

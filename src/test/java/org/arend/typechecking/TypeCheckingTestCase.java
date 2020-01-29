@@ -3,6 +3,7 @@ package org.arend.typechecking;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.definition.Definition;
 import org.arend.core.expr.Expression;
+import org.arend.core.expr.type.Type;
 import org.arend.frontend.ConcreteReferableProvider;
 import org.arend.frontend.PositionComparator;
 import org.arend.frontend.reference.ConcreteLocatedReferable;
@@ -15,14 +16,12 @@ import org.arend.term.concrete.ConcreteExpressionFactory;
 import org.arend.term.group.ChildGroup;
 import org.arend.term.group.Group;
 import org.arend.typechecking.error.local.LocalErrorReporter;
+import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -40,6 +39,17 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
     if (errors == 0) {
       assertThat(result, is(notNullValue()));
     }
+
+    if (result != null) {
+      CoreExpressionChecker checker = new CoreExpressionChecker(localErrorReporter, new HashSet<>(context.values()), DummyEquations.getInstance(), expression);
+      if (result.type.accept(checker, Type.OMEGA) != null) {
+        Expression type = result.expression.accept(checker, result.type);
+        if (type != null) {
+          checker.check(expectedType, type, result.expression);
+        }
+      }
+    }
+
     return result;
   }
 

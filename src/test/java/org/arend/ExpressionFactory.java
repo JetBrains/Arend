@@ -19,6 +19,7 @@ import org.arend.core.subst.LevelSubstitution;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 public class ExpressionFactory {
   public static FunCallExpression FunCall(FunctionDefinition definition, Sort sortArgument, Expression... arguments) {
@@ -46,7 +47,7 @@ public class ExpressionFactory {
   }
 
   public static LamExpression Lam(SingleDependentLink link, Expression body) {
-    return new LamExpression(Sort.SET0, link, body);
+    return new LamExpression(getMaxSort(link.getTypeExpr(), body.getType()), link, body);
   }
 
   public static List<LetClause> lets(LetClause... letClauses) {
@@ -97,20 +98,18 @@ public class ExpressionFactory {
   }
 
   private static Sort getMaxSort(Expression type1, Expression type2) {
-    Expression uni1 = type1.getType();
-    Expression uni2 = type2.getType();
-    Sort sort1 = uni1 == null ? null : uni1.toSort();
-    Sort sort2 = uni2 == null ? null : uni2.toSort();
-    return sort1 == null || sort2 == null ? Sort.SET0 : sort1.max(sort2);
+    Sort sort1 = type1 == null ? null : type1.getSortOfType();
+    Sort sort2 = type2 == null ? null : type2.getSortOfType();
+    return sort1 == null || sort2 == null ? Sort.SET0 : new Sort(sort1.getPLevel().max(sort2.getPLevel()), sort2.getHLevel());
   }
 
   public static PiExpression Pi(SingleDependentLink domain, Expression codomain) {
     assert domain.hasNext();
-    return new PiExpression(getMaxSort(domain.getTypeExpr(), codomain.getType()), domain, codomain);
+    return new PiExpression(getMaxSort(domain.getTypeExpr(), codomain), domain, codomain);
   }
 
   public static PiExpression Pi(Expression domain, Expression codomain) {
-    return new PiExpression(getMaxSort(domain.getType(), codomain.getType()), singleParam(null, domain), codomain);
+    return new PiExpression(getMaxSort(domain.getType(), codomain), singleParam(null, domain), codomain);
   }
 
   public static UniverseExpression Universe(int pLevel) {
