@@ -404,6 +404,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       }
       deferredMeta.inferenceExpr.setSubstExpression(result == null ? new ErrorExpression(null, null) : ((TypecheckingResult) result).expression);
     }
+    deferredMetas.clear();
   }
 
   public TypecheckingResult finalize(TypecheckingResult result, Expression expectedType, Concrete.SourceNode sourceNode) {
