@@ -614,7 +614,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
 
   @Override
   public Expression visitError(ErrorExpression expr, NormalizationMode mode) {
-    return mode == NormalizationMode.WHNF || expr.getExpression() == null ? expr : new ErrorExpression(expr.getExpression().accept(this, mode), expr.getError());
+    return mode == NormalizationMode.WHNF || expr.getExpression() == null ? expr : new ErrorExpression(expr.getExpression().accept(this, mode), expr.isGoal());
   }
 
   @Override

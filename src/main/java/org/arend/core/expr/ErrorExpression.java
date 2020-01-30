@@ -4,6 +4,7 @@ import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
 import org.arend.ext.core.expr.CoreErrorExpression;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
+import org.arend.ext.error.GeneralError;
 import org.arend.ext.error.LocalError;
 import org.arend.util.Decision;
 
@@ -11,19 +12,43 @@ import javax.annotation.Nonnull;
 
 public class ErrorExpression extends Expression implements CoreErrorExpression {
   private final Expression myExpression;
-  private final LocalError myError;
+  private final boolean myGoal;
 
   public ErrorExpression(Expression expression, LocalError error) {
     myExpression = expression;
-    myError = error;
+    myGoal = error != null && error.level == GeneralError.Level.GOAL;
+  }
+
+  public ErrorExpression(LocalError error) {
+    myExpression = null;
+    myGoal = error != null && error.level == GeneralError.Level.GOAL;
+  }
+
+  public ErrorExpression(Expression expression, boolean isGoal) {
+    myExpression = expression;
+    myGoal = isGoal;
+  }
+
+  public ErrorExpression(Expression expression) {
+    myExpression = expression;
+    myGoal = false;
+  }
+
+  public ErrorExpression() {
+    myExpression = null;
+    myGoal = false;
   }
 
   public Expression getExpression() {
     return myExpression;
   }
 
-  public LocalError getError() {
-    return myError;
+  public boolean isGoal() {
+    return myGoal;
+  }
+
+  public boolean isError() {
+    return !myGoal;
   }
 
   @Override

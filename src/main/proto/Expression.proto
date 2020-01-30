@@ -62,6 +62,7 @@ message Expression {
     }
     message Error {
         Expression expression = 1;
+        bool is_goal = 2;
     }
     message FieldCall {
         int32 field_ref = 1;

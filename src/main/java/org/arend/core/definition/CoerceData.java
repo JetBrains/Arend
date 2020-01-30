@@ -139,7 +139,7 @@ public class CoerceData {
           if (argStrict) {
             return null;
           }
-          result.expression = new ErrorExpression(result.expression, null);
+          result.expression = new ErrorExpression(result.expression);
         }
 
         substitution.add(link, result.expression);
@@ -151,7 +151,7 @@ public class CoerceData {
       if (resultStrict) {
         return null;
       }
-      result.expression = new ErrorExpression(result.expression, null);
+      result.expression = new ErrorExpression(result.expression);
     }
     return result;
   }

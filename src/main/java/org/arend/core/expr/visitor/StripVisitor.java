@@ -98,7 +98,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
       if (expr.getVariable() instanceof InferenceVariable) {
         LocalError error = ((InferenceVariable) expr.getVariable()).getErrorInfer();
         myErrorReporter.report(error);
-        Expression result = new ErrorExpression(null, error);
+        Expression result = new ErrorExpression(error);
         expr.setSubstExpression(result);
         return result;
       } else if (expr.getVariable() instanceof MetaInferenceVariable) {
@@ -148,7 +148,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public ErrorExpression visitError(ErrorExpression expr, Void params) {
-    return new ErrorExpression(expr.getExpression() == null ? null : expr.getExpression().accept(this, null), expr.getError());
+    return new ErrorExpression(expr.getExpression() == null ? null : expr.getExpression().accept(this, null), expr.isGoal());
   }
 
   @Override

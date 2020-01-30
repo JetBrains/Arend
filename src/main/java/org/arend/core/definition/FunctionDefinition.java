@@ -181,7 +181,7 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
       myParameters = EmptyDependentLink.getInstance();
     }
     if (myResultType == null) {
-      myResultType = new ErrorExpression(null, null);
+      myResultType = new ErrorExpression();
     }
   }
 }

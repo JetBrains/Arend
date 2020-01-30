@@ -151,7 +151,7 @@ public class ClassField extends Definition implements CoreClassField {
   public void fill() {
     if (myType == null) {
       ClassCallExpression classCall = new ClassCallExpression(myParentClass, Sort.STD);
-      myType = new PiExpression(classCall.getSort(), new TypedSingleDependentLink(false, "this", classCall), new ErrorExpression(null, null));
+      myType = new PiExpression(classCall.getSort(), new TypedSingleDependentLink(false, "this", classCall), new ErrorExpression());
     }
   }
 }

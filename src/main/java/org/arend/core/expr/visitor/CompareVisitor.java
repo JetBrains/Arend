@@ -23,7 +23,6 @@ import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
-import org.arend.typechecking.error.local.GoalError;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.implicitargs.equations.Equations;
 
@@ -207,12 +206,18 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     }
 
     Expression uExpr1 = expr1.getUnderlyingExpression();
+    if (uExpr1 instanceof ErrorExpression) {
+      return true;
+    }
     if (!(uExpr1 instanceof UniverseExpression || uExpr1 instanceof PiExpression || uExpr1 instanceof ClassCallExpression || uExpr1 instanceof DataCallExpression || uExpr1 instanceof AppExpression || uExpr1 instanceof SigmaExpression || uExpr1 instanceof LamExpression)) {
       myCMP = CMP.EQ;
     }
 
     boolean ok;
     Expression uExpr2 = expr2.getUnderlyingExpression();
+    if (uExpr2 instanceof ErrorExpression) {
+      return true;
+    }
     if (uExpr2 instanceof ConCallExpression && ((ConCallExpression) uExpr2).getDefinition() == Prelude.PATH_CON) {
       ok = visitDefCall((ConCallExpression) uExpr2, expr1, type, false);
     } else if (uExpr2 instanceof LamExpression) {
@@ -791,11 +796,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
 
   @Override
   public Boolean visitError(ErrorExpression expr1, Expression expr2, Expression type) {
-    if (expr1.getError() instanceof GoalError) {
-      return true;
-    }
-    ErrorExpression errorExpr2 = expr2.cast(ErrorExpression.class);
-    return errorExpr2 != null && (errorExpr2.getError() instanceof GoalError || expr1.getError() != null && expr1.getError().equals(errorExpr2.getError()));
+    return true;
   }
 
   @Override

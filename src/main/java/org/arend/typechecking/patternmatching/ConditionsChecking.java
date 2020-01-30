@@ -238,7 +238,7 @@ public class ConditionsChecking {
         for (Pattern pattern : clause.patterns) {
           args.add(pattern.toExpression());
         }
-        Expression expr1 = definition == null ? new CaseExpression(false, EmptyDependentLink.getInstance(), new ErrorExpression(null, null), null, new BranchElimTree(EmptyDependentLink.getInstance(), Collections.emptyMap()), args) : definition.getDefCall(Sort.STD, args);
+        Expression expr1 = definition == null ? new CaseExpression(false, EmptyDependentLink.getInstance(), new ErrorExpression(), null, new BranchElimTree(EmptyDependentLink.getInstance(), Collections.emptyMap()), args) : definition.getDefCall(Sort.STD, args);
         myErrorReporter.report(new ConditionsError(expr1, clause.expression, pair.proj2, pair.proj2, evaluatedExpr1, evaluatedExpr2, clause.clause));
         ok = false;
       }

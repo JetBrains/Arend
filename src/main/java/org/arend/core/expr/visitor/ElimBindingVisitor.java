@@ -224,9 +224,9 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
     Expression errorExpr = acceptSelf(expr.getExpression(), true);
     if (errorExpr == null) {
       myFoundVariable = null;
-      return new ErrorExpression(null, expr.getError());
+      return new ErrorExpression(null, expr.isGoal());
     } else {
-      return new ErrorExpression(errorExpr, expr.getError());
+      return new ErrorExpression(errorExpr, expr.isGoal());
     }
   }
 

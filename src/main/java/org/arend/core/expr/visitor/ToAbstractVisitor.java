@@ -467,7 +467,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   @Override
   public Concrete.Expression visitError(ErrorExpression expr, Void params) {
-    return cGoal(expr.getError() instanceof GoalError ? ((GoalError) expr.getError()).name : "error", expr.getExpression() == null ? null : expr.getExpression().accept(this, null));
+    return cGoal(expr.isGoal() ? "goal" : "error", expr.getExpression() == null ? null : expr.getExpression().accept(this, null));
   }
 
   @Override

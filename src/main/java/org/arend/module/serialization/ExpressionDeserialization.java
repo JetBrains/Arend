@@ -304,7 +304,7 @@ class ExpressionDeserialization {
     } else {
       expr = null;
     }
-    return new ErrorExpression(expr, null);
+    return new ErrorExpression(expr, proto.getIsGoal());
   }
 
   private TupleExpression readTuple(ExpressionProtos.Expression.Tuple proto) throws DeserializationException {

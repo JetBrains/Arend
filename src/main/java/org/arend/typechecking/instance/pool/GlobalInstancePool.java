@@ -141,7 +141,7 @@ public class GlobalInstancePool implements InstancePool {
       myCheckTypeVisitor.fixClassExtSort(expectedType, sourceNode);
     }
     TypecheckingResult result = myCheckTypeVisitor.checkExpr(instanceExpr, expectedType);
-    return result == null ? new ErrorExpression(null, null) : result.expression;
+    return result == null ? new ErrorExpression() : result.expression;
   }
 
   @Override

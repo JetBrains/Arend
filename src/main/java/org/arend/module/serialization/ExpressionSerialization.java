@@ -331,9 +331,10 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
   @Override
   public ExpressionProtos.Expression visitError(ErrorExpression expr, Void params) {
     ExpressionProtos.Expression.Error.Builder builder = ExpressionProtos.Expression.Error.newBuilder();
-    if (expr.getExpression() != null && expr.getError() != null && expr.getError().level == GeneralError.Level.GOAL) {
+    if (expr.getExpression() != null && expr.isGoal()) {
       builder.setExpression(expr.getExpression().accept(this, null));
     }
+    builder.setIsGoal(expr.isGoal());
     return ExpressionProtos.Expression.newBuilder().setError(builder).build();
   }
 

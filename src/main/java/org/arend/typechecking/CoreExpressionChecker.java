@@ -229,7 +229,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   @Override
   public Expression visitError(ErrorExpression expr, Expression expectedType) {
-    return expectedType != null ? expectedType : expr.getExpression() == null ? expr : new ErrorExpression(null, expr.getError());
+    return expectedType != null ? expectedType : expr.getExpression() == null ? expr : new ErrorExpression(null, expr.isGoal());
   }
 
   @Override

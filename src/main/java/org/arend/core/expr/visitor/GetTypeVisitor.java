@@ -138,7 +138,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitError(ErrorExpression expr, Void params) {
-    return expr.getExpression() == null ? expr : new ErrorExpression(expr.getExpression().accept(this, null), expr.getError());
+    return expr.getExpression() == null ? expr : new ErrorExpression(expr.getExpression().accept(this, null), expr.isGoal());
   }
 
   @Override

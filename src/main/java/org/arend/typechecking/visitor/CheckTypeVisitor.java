@@ -400,7 +400,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       if (result == null && countingErrorReporter.getErrorsNumber() == 0) {
         errorReporter.report(new TypecheckingError("Meta function '" + refExpr.getReferent().getRefName() + "' failed", refExpr));
       }
-      deferredMeta.inferenceExpr.setSubstExpression(result == null ? new ErrorExpression(null, null) : ((TypecheckingResult) result).expression);
+      deferredMeta.inferenceExpr.setSubstExpression(result == null ? new ErrorExpression() : ((TypecheckingResult) result).expression);
     }
     deferredMetas.clear();
   }
@@ -579,7 +579,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     if (cycle != null) {
       errorReporter.report(CycleError.fromTypechecked(cycle, sourceNode));
     }
-    classCall.getImplementedHere().put(field, cycle == null ? implementation : new ErrorExpression(null, null));
+    classCall.getImplementedHere().put(field, cycle == null ? implementation : new ErrorExpression());
   }
 
   private TypecheckingResult typecheckClassExt(List<? extends Concrete.ClassFieldImpl> classFieldImpls, Expression expectedType, Expression renewExpr, ClassCallExpression classCallExpr, Set<ClassField> pseudoImplemented, Concrete.Expression expr) {
@@ -655,7 +655,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
           } else if (pseudoImplemented != null) {
             pseudoImplemented.add(field);
           } else if (!resultClassCall.isImplemented(field)) {
-            fieldSet.put(field, new ErrorExpression(null, null));
+            fieldSet.put(field, new ErrorExpression());
           }
         } else if (pair.proj1 instanceof ClassDefinition) {
           TypecheckingResult result = checkExpr(pair.proj2.implementation, null);
@@ -715,7 +715,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
         if (instance == null) {
           ArgInferenceError error = new InstanceInferenceError(classDef.getReferable(), implBody, holeExpr, new Expression[0]);
           errorReporter.report(error);
-          result = new ErrorExpression(null, error);
+          result = new ErrorExpression(error);
         } else {
           result = instance;
         }
@@ -835,7 +835,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     if (classCallExpr == null) {
       TypecheckingError error = new TypecheckingError("Expected a class", expr.getExpression());
       errorReporter.report(error);
-      return new TypecheckingResult(new ErrorExpression(null, error), normExpr);
+      return new TypecheckingResult(new ErrorExpression(error), normExpr);
     }
 
     if (checkAllImplemented(classCallExpr, pseudoImplemented, expr)) {
@@ -1050,7 +1050,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
   public TypecheckingResult visitHole(Concrete.HoleExpression expr, Expression expectedType) {
     boolean isOmega = expectedType instanceof Type && ((Type) expectedType).isOmega();
     if (expr.isErrorHole()) {
-      return expectedType != null && !isOmega ? new TypecheckingResult(new ErrorExpression(null, expr.getError()), expectedType) : null;
+      return expectedType != null && !isOmega ? new TypecheckingResult(new ErrorExpression(expr.getError()), expectedType) : null;
     }
 
     if (expectedType != null && !isOmega) {
@@ -1569,11 +1569,11 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
 
         TypecheckingResult result = checkExpr(letClause.getTerm(), type.getExpr());
         if (result == null) {
-          return new TypecheckingResult(new ErrorExpression(type.getExpr(), null), type.getExpr());
+          return new TypecheckingResult(new ErrorExpression(type.getExpr()), type.getExpr());
         }
         ErrorExpression errorExpr = result.expression.cast(ErrorExpression.class);
         if (errorExpr != null) {
-          result.expression = new ErrorExpression(type.getExpr(), errorExpr.getError());
+          result.expression = new ErrorExpression(type.getExpr(), errorExpr.isGoal());
         }
         return new TypecheckingResult(result.expression, type.getExpr());
       } else {

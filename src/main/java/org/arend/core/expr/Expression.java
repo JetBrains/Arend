@@ -62,7 +62,7 @@ public abstract class Expression implements Body, CoreExpression {
 
   public boolean isError() {
     ErrorExpression errorExpr = cast(ErrorExpression.class);
-    return errorExpr != null && (errorExpr.getError() == null || errorExpr.getError().level == GeneralError.Level.ERROR);
+    return errorExpr != null && errorExpr.isError();
   }
 
   @Override

@@ -102,7 +102,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
               if (instance == null) {
                 ArgInferenceError error = new InstanceInferenceError(classRef, expr, holeExpr, new Expression[0]);
                 myVisitor.getErrorReporter().report(error);
-                instance = new ErrorExpression(null, error);
+                instance = new ErrorExpression(error);
               }
               result = result.applyExpression(instance, myVisitor.getErrorReporter(), expr);
               substitution.add(parameter, instance);
@@ -210,7 +210,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
 
   private void typecheckDeferredArgument(Pair<InferenceVariable, Concrete.Expression> pair, TResult result) {
     TypecheckingResult argResult = myVisitor.checkArgument(pair.proj2, pair.proj1.getType(), result);
-    Expression argResultExpr = argResult == null ? new ErrorExpression(null, null) : argResult.expression;
+    Expression argResultExpr = argResult == null ? new ErrorExpression() : argResult.expression;
     pair.proj1.solve(myVisitor.getEquations(), argResultExpr);
   }
 

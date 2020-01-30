@@ -887,7 +887,7 @@ public class TwoStageEquations implements Equations {
   private SolveResult inferenceError(InferenceVariable var, Expression expr) {
     LocalError error = var.getErrorInfer(expr);
     myVisitor.getErrorReporter().report(error);
-    var.solve(this, new ErrorExpression(null, error));
+    var.solve(this, new ErrorExpression(error));
     return SolveResult.ERROR;
   }
 }
