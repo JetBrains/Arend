@@ -8,6 +8,7 @@ import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.term.concrete.Concrete;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import static org.arend.ext.prettyprinting.doc.DocFactory.*;
@@ -40,6 +41,7 @@ public class ExpectedConstructorError extends TypecheckingError {
     return hList(text("'"), refDoc(referable), text("' is not a constructor"), dataCall == null ? empty() : hList(text(" of data type "), myConstructorOfData ? termLine(dataCall, ppConfig) : refDoc(dataCall.getDefinition().getReferable())));
   }
 
+  @Nonnull
   @Override
   public Stage getStage() {
     return dataCall == null ? Stage.RESOLVER : Stage.TYPECHECKER;

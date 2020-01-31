@@ -8,6 +8,7 @@ import org.arend.naming.reference.GlobalReferable;
 import org.arend.typechecking.termination.CompositeCallMatrix;
 import org.arend.typechecking.termination.RecursiveBehavior;
 
+import javax.annotation.Nonnull;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -37,6 +38,7 @@ public class TerminationCheckError extends GeneralError {
     return hang(text(rb.initialCallMatrix instanceof CompositeCallMatrix ? "Problematic sequence of recursive calls:" : "Problematic recursive call:"), rb.initialCallMatrix.getMatrixLabel(ppConfig));
   }
 
+  @Nonnull
   @Override
   public Stage getStage() {
     return Stage.TYPECHECKER;

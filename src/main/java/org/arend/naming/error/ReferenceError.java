@@ -7,6 +7,8 @@ import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.UnresolvedReference;
 import org.arend.ext.error.LocalError;
 
+import javax.annotation.Nonnull;
+
 public class ReferenceError extends LocalError {
   public final Referable referable;
   private final Stage myStage;
@@ -38,6 +40,7 @@ public class ReferenceError extends LocalError {
     return DocFactory.refDoc(referable);
   }
 
+  @Nonnull
   @Override
   public Stage getStage() {
     return myStage;

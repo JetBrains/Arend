@@ -9,6 +9,7 @@ import org.arend.ext.reference.ArendRef;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.term.concrete.Concrete;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -95,6 +96,7 @@ public class CycleError extends GeneralError {
     }
   }
 
+  @Nonnull
   @Override
   public Stage getStage() {
     return Stage.TYPECHECKER;

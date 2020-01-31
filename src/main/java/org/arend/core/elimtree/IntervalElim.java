@@ -54,6 +54,10 @@ public class IntervalElim implements Body, CoreIntervalElim {
     return myOtherwise;
   }
 
+  public int getOffset() {
+    return myNumberOfParameters - myCases.size();
+  }
+
   public int getNumberOfTotalElim() {
     int result = 0;
     for (Pair<Expression, Expression> pair : myCases) {
@@ -66,7 +70,7 @@ public class IntervalElim implements Body, CoreIntervalElim {
 
   @Override
   public Decision isWHNF(List<? extends Expression> arguments) {
-    int offset = myNumberOfParameters - myCases.size();
+    int offset = getOffset();
     Decision result = Decision.YES;
     for (int i = 0; i < myCases.size(); i++) {
       Expression arg = arguments.get(offset + i);
@@ -88,7 +92,7 @@ public class IntervalElim implements Body, CoreIntervalElim {
 
   @Override
   public Expression getStuckExpression(List<? extends Expression> arguments, Expression expression) {
-    int offset = myNumberOfParameters - myCases.size();
+    int offset = getOffset();
     for (int i = 0; i < myCases.size(); i++) {
       ConCallExpression conCall = arguments.get(offset + i).cast(ConCallExpression.class);
       if (conCall != null && (conCall.getDefinition() == Prelude.LEFT && myCases.get(i).proj1 != null || conCall.getDefinition() == Prelude.RIGHT && myCases.get(i).proj2 != null)) {

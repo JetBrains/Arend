@@ -25,9 +25,11 @@ import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.TypeMismatchError;
 import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.prettyprinting.doc.DocFactory;
+import org.arend.naming.reference.FieldReferable;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.CoreErrorWrapper;
+import org.arend.typechecking.error.local.FieldsImplementationError;
 import org.arend.typechecking.implicitargs.equations.Equations;
 
 import java.util.*;
@@ -43,6 +45,14 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     myContext = context;
     myEquations = equations;
     mySourceNode = sourceNode;
+  }
+
+  ErrorReporter getErrorReporter() {
+    return myErrorReporter;
+  }
+
+  void clear() {
+    myContext.clear();
   }
 
   public Expression check(Expression expectedType, Expression actualType, Expression expression) {
@@ -118,6 +128,15 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       }
     }
 
+    if (!expr.hasUniverses() && expr.getDefinition().hasUniverses()) {
+      for (ClassField field : expr.getDefinition().getFields()) {
+        if (field.hasUniverses() && !expr.isImplemented(field)) {
+          myErrorReporter.report(new CoreErrorWrapper(new TypecheckingError("Field '" + field.getName() + "' has universes, but the class call does not have them", mySourceNode), expr));
+          return null;
+        }
+      }
+    }
+
     return check(expectedType, new UniverseExpression(expr.getSort()), expr);
   }
 
@@ -169,13 +188,14 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   private boolean addBinding(Binding binding, Expression expr) {
     if (!myContext.add(binding)) {
-      myErrorReporter.report(new CoreErrorWrapper(new TypecheckingError("Binding '" + binding.getName() + "' is already bound", mySourceNode), expr));
+      TypecheckingError error = new TypecheckingError("Binding '" + binding.getName() + "' is already bound", mySourceNode);
+      myErrorReporter.report(expr == null ? error : new CoreErrorWrapper(error, expr));
       return false;
     }
     return true;
   }
 
-  private boolean checkDependentLink(DependentLink link, Expression type, Expression expr) {
+  boolean checkDependentLink(DependentLink link, Expression type, Expression expr) {
     for (; link.hasNext(); link = link.getNext()) {
       if (!addBinding(link, expr)) {
         return false;
@@ -187,7 +207,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     return true;
   }
 
-  private void freeDependentLink(DependentLink link) {
+  void freeDependentLink(DependentLink link) {
     for (; link.hasNext(); link = link.getNext()) {
       myContext.remove(link);
     }
@@ -229,6 +249,10 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   @Override
   public Expression visitError(ErrorExpression expr, Expression expectedType) {
+    if (expr.isError()) {
+      myErrorReporter.report(new CoreErrorWrapper(new TypecheckingError("Unknown error", mySourceNode), expr));
+      return null;
+    }
     return expectedType != null ? expectedType : expr.getExpression() == null ? expr : new ErrorExpression(null, expr.isGoal());
   }
 
@@ -268,10 +292,27 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     return check(expectedType, param.getTypeExpr().subst(substitution), expr);
   }
 
+  boolean checkCocoverage(ClassCallExpression classCall) {
+    if (classCall.getDefinition().getNumberOfNotImplementedFields() == classCall.getImplementedHere().size()) {
+      return true;
+    }
+
+    List<FieldReferable> fields = new ArrayList<>();
+    for (ClassField field : classCall.getDefinition().getFields()) {
+      if (!classCall.isImplemented(field)) {
+        fields.add(field.getReferable());
+      }
+    }
+    if (!fields.isEmpty()) {
+      myErrorReporter.report(new CoreErrorWrapper(new FieldsImplementationError(false, classCall.getDefinition().getReferable(), fields, mySourceNode), classCall));
+    }
+    return false;
+  }
+
   @Override
   public Expression visitNew(NewExpression expr, Expression expectedType) {
     ClassCallExpression classCall = expr.getType();
-    return visitClassCall(classCall, null) != null ? check(expectedType, classCall, expr) : null;
+    return visitClassCall(classCall, null) != null && checkCocoverage(classCall) ? check(expectedType, classCall, expr) : null;
   }
 
   @Override
@@ -309,17 +350,22 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     return type;
   }
 
-  private Level checkLevelProof(Expression proofType, Expression type, Expression expr) {
+  Level checkLevelProof(Expression proof, Expression type) {
+    Expression proofType = proof.accept(this, null);
+    if (proofType == null) {
+      return null;
+    }
+
     List<SingleDependentLink> params = new ArrayList<>();
     FunCallExpression codomain = proofType.getPiParameters(params, false).toEquality();
     if (codomain == null || params.isEmpty() || params.size() % 2 == 1) {
-      myErrorReporter.report(new CoreErrorWrapper(new TypecheckingError("\\level has wrong format", mySourceNode), expr));
+      myErrorReporter.report(new CoreErrorWrapper(new TypecheckingError("\\level has wrong format", mySourceNode), proof));
       return null;
     }
 
     for (int i = 0; i < params.size(); i += 2) {
       if (!CompareVisitor.compare(myEquations, CMP.EQ, type, params.get(i).getTypeExpr(), Type.OMEGA, mySourceNode) || !CompareVisitor.compare(myEquations, CMP.EQ, type, params.get(i + 1).getTypeExpr(), Type.OMEGA, mySourceNode)) {
-        myErrorReporter.report(new CoreErrorWrapper(new TypecheckingError("\\level has wrong format", mySourceNode), expr));
+        myErrorReporter.report(new CoreErrorWrapper(new TypecheckingError("\\level has wrong format", mySourceNode), proof));
         return null;
       }
 
@@ -348,6 +394,13 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     return ok;
   }
 
+  boolean checkElimTree(ElimTree elimTree, Expression expr, boolean isSFunc) {
+    // TODO[lang_ext]: Check coverage
+    // TODO[lang_ext]: Check conditions
+    // TODO[lang_ext]: Check isSCase
+    return checkElimTree(elimTree, expr);
+  }
+
   @Override
   public Expression visitCase(CaseExpression expr, Expression expectedType) {
     ExprSubstitution substitution = new ExprSubstitution();
@@ -356,9 +409,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     ok = ok && expr.getResultType().accept(this, Type.OMEGA) != null;
 
     if (ok && expr.getResultTypeLevel() != null) {
-      Expression proofType = expr.getResultTypeLevel().accept(this, null);
-      ok = proofType != null;
-      ok = ok && checkLevelProof(proofType, expr.getResultType(), expr.getResultTypeLevel()) != null;
+      ok = checkLevelProof(expr.getResultTypeLevel(), expr.getResultType()) != null;
     }
 
     freeDependentLink(expr.getParameters());
@@ -366,7 +417,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       return null;
     }
 
-    return checkElimTree(expr.getElimTree(), expr) ? check(expectedType, expr.getResultType().subst(substitution), expr) : null;
+    return checkElimTree(expr.getElimTree(), expr, expr.isSCase()) ? check(expectedType, expr.getResultType().subst(substitution), expr) : null;
   }
 
   @Override

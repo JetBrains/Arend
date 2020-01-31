@@ -8,6 +8,7 @@ import org.arend.frontend.ConcreteReferableProvider;
 import org.arend.frontend.PositionComparator;
 import org.arend.frontend.reference.ConcreteLocatedReferable;
 import org.arend.naming.NameResolverTestCase;
+import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.naming.reference.converter.IdReferableConverter;
@@ -23,10 +24,8 @@ import org.arend.typechecking.visitor.CheckTypeVisitor;
 
 import java.util.*;
 
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.*;
 
 public class TypeCheckingTestCase extends NameResolverTestCase {
   protected final LocalErrorReporter localErrorReporter = new TestLocalErrorReporter(errorReporter);
@@ -35,21 +34,25 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
   TypecheckingResult typeCheckExpr(Map<Referable, Binding> context, Concrete.Expression expression, Expression expectedType, int errors) {
     CheckTypeVisitor visitor = new CheckTypeVisitor(typecheckerState, context, localErrorReporter, null);
     TypecheckingResult result = visitor.finalCheckExpr(expression, expectedType, false);
-    assertThat(errorList, containsErrors(errors));
     if (errors == 0) {
       assertThat(result, is(notNullValue()));
     }
 
-    if (result != null) {
+    boolean ok = true;
+    if (result != null && errors == 0) {
       CoreExpressionChecker checker = new CoreExpressionChecker(localErrorReporter, new HashSet<>(context.values()), DummyEquations.getInstance(), expression);
-      if (result.type.accept(checker, Type.OMEGA) != null) {
+      ok = result.type.accept(checker, Type.OMEGA) != null;
+      if (ok) {
         Expression type = result.expression.accept(checker, result.type);
-        if (type != null) {
+        ok = type != null;
+        if (ok) {
           checker.check(expectedType, type, result.expression);
         }
       }
     }
 
+    assertThat(errorList, containsErrors(errors));
+    assertTrue(ok);
     return result;
   }
 
@@ -89,8 +92,11 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
   private Definition typeCheckDef(ConcreteLocatedReferable reference, int errors) {
     new TypecheckingOrderingListener(libraryManager.getInstanceProviderSet(), typecheckerState, ConcreteReferableProvider.INSTANCE, IdReferableConverter.INSTANCE, errorReporter, PositionComparator.INSTANCE).typecheckDefinitions(Collections.singletonList((Concrete.Definition) reference.getDefinition()), null);
+    Definition definition = typecheckerState.getTypechecked(reference);
+    boolean ok = errors != 0 || new CoreDefinitionChecker(errorReporter).check(definition);
     assertThat(errorList, containsErrors(errors));
-    return typecheckerState.getTypechecked(reference);
+    assertTrue(ok);
+    return definition;
   }
 
   protected Definition typeCheckDef(String text, int errors) {
@@ -102,9 +108,34 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
   }
 
 
+  private boolean checkGroup(Group group) {
+    LocatedReferable ref = group.getReferable();
+    Definition def = ref instanceof TCReferable ? typecheckerState.getTypechecked((TCReferable) ref) : null;
+    if (def != null) {
+      if (!new CoreDefinitionChecker(errorReporter).check(def)) {
+        return false;
+      }
+    }
+
+    for (Group subgroup : group.getSubgroups()) {
+      if (!checkGroup(subgroup)) {
+        return false;
+      }
+    }
+    for (Group subgroup : group.getDynamicSubgroups()) {
+      if (!checkGroup(subgroup)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   private void typeCheckModule(Group group, int errors) {
     assertTrue(new TypecheckingOrderingListener(libraryManager.getInstanceProviderSet(), typecheckerState, ConcreteReferableProvider.INSTANCE, IdReferableConverter.INSTANCE, localErrorReporter, PositionComparator.INSTANCE).typecheckModules(Collections.singletonList(group), null));
+    boolean ok = errors != 0 || checkGroup(group);
     assertThat(errorList, containsErrors(errors));
+    assertTrue(ok);
   }
 
 

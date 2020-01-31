@@ -306,6 +306,14 @@ public class ElimTypechecking {
   }
 
   private void reportNoClauses(Concrete.SourceNode sourceNode, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams) {
+    if (parameters.hasNext() && !parameters.getNext().hasNext()) {
+      DataCallExpression dataCall = parameters.getTypeExpr().cast(DataCallExpression.class);
+      if (dataCall != null && dataCall.getDefinition() == Prelude.INTERVAL) {
+        myVisitor.getErrorReporter().report(new TypecheckingError("Pattern matching on the interval is not allowed here", sourceNode));
+        return;
+      }
+    }
+
     List<List<Pattern>> missingClauses = generateMissingClauses(elimParams.isEmpty() ? DependentLink.Helper.toList(parameters) : elimParams, 0, new ExprSubstitution());
 
     if (missingClauses.isEmpty()) {

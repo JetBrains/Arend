@@ -16,7 +16,7 @@ import java.util.function.BiConsumer;
 import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public class GeneralError {
-  public final String message;
+  public final @Nonnull String message;
   public final @Nonnull Level level;
 
   public enum Level { INFO, WARNING_UNUSED {
@@ -28,7 +28,7 @@ public class GeneralError {
 
   public enum Stage { TYPECHECKER, RESOLVER, PARSER, OTHER }
 
-  public GeneralError(@Nonnull Level level, String message) {
+  public GeneralError(@Nonnull Level level, @Nonnull String message) {
     this.level = level;
     this.message = message;
   }
@@ -92,6 +92,7 @@ public class GeneralError {
     return DocStringBuilder.build(getShortHeaderDoc(PrettyPrinterConfig.DEFAULT));
   }
 
+  @Nonnull
   public Stage getStage() {
     return Stage.OTHER;
   }

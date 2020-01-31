@@ -3,6 +3,8 @@ package org.arend.error;
 import org.arend.ext.error.GeneralError;
 import org.arend.term.concrete.Concrete;
 
+import javax.annotation.Nonnull;
+
 public class ParsingError extends GeneralError {
   public enum Kind {
     MISPLACED_USE("\\use is allowed only in \\where block of \\data, \\class, or \\func"),
@@ -54,6 +56,7 @@ public class ParsingError extends GeneralError {
     return cause instanceof Concrete.SourceNode ? ((Concrete.SourceNode) cause).getData() : cause;
   }
 
+  @Nonnull
   @Override
   public Stage getStage() {
     return Stage.PARSER;

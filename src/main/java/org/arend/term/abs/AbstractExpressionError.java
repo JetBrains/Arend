@@ -17,6 +17,7 @@ public class AbstractExpressionError extends LocalError {
     return myCause;
   }
 
+  @Nonnull
   @Override
   public Stage getStage() {
     return Stage.PARSER;
