@@ -51,6 +51,7 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
       return expression;
     }
 
+    expression = expression.normalize(NormalizationMode.WHNF);
     if (removeImplementations) {
       ClassCallExpression classCall = expression.cast(ClassCallExpression.class);
       if (classCall != null) {
@@ -58,7 +59,7 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
       }
     }
 
-    return expression.normalize(NormalizationMode.WHNF).accept(visitor, null);
+    return expression.accept(visitor, null);
   }
 
   private Expression acceptSelf(Expression expression, boolean normalize) {
@@ -146,6 +147,9 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
     if (myKeepVisitor != null) {
       myKeepVisitor.getBindings().remove(expr.getThisBinding());
     }
+
+    result.setSort(result.getDefinition().computeSort(result.getImplementedHere(), result.getThisBinding()));
+    result.updateHasUniverses();
     return result;
   }
 

@@ -861,21 +861,22 @@ public class TwoStageEquations implements Equations {
     }
 
     Expression expectedType = var.getType();
-    Expression actualType = expr.getType();
-    if (actualType == null || actualType.isLessOrEquals(expectedType, myFirstRun ? this : DummyEquations.getInstance(), var.getSourceNode())) {
-      Expression result = actualType == null ? null : ElimBindingVisitor.keepBindings(expr, var.getBounds(), isLowerBound);
-      if (result != null) {
-        if (isLowerBound) {
-          ClassCallExpression classCall = result.cast(ClassCallExpression.class);
-          if (classCall != null) {
-            result = removeDependencies(classCall, classCall.getImplementedHere().size());
-          }
-        }
-        var.solve(this, OfTypeExpression.make(result, actualType, expectedType));
-        return SolveResult.SOLVED;
-      } else {
-        return inferenceError(var, expr);
+    Expression result = ElimBindingVisitor.keepBindings(expr, var.getBounds(), isLowerBound);
+    if (isLowerBound && result != null) {
+      ClassCallExpression classCall = result.cast(ClassCallExpression.class);
+      if (classCall != null) {
+        result = removeDependencies(classCall, classCall.getImplementedHere().size());
       }
+    }
+
+    Expression actualType = result == null ? null : result.getType();
+    if (actualType == null) {
+      return inferenceError(var, expr);
+    }
+
+    if (actualType.isLessOrEquals(expectedType, myFirstRun ? this : DummyEquations.getInstance(), var.getSourceNode())) {
+      var.solve(this, OfTypeExpression.make(result, actualType, expectedType));
+      return SolveResult.SOLVED;
     } else {
       LocalError error = var.getErrorMismatch(expectedType, actualType, expr);
       myVisitor.getErrorReporter().report(error);

@@ -112,7 +112,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
     LocatedReferable ref = group.getReferable();
     Definition def = ref instanceof TCReferable ? typecheckerState.getTypechecked((TCReferable) ref) : null;
     if (def != null) {
-      if (!new CoreDefinitionChecker(errorReporter).check(def)) {
+      if (!new CoreDefinitionChecker(new LocalErrorReporter(ref, errorReporter)).check(def)) {
         return false;
       }
     }
