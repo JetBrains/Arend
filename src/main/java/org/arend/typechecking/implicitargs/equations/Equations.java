@@ -16,5 +16,6 @@ public interface Equations {
   void bindVariables(InferenceLevelVariable pVar, InferenceLevelVariable hVar);
   boolean remove(Equation equation);
   LevelSubstitution solve(Concrete.SourceNode sourceNode);
-  boolean isDummy();
+  boolean supportsLevels();
+  boolean supportsExpressions();
 }

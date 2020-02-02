@@ -8,13 +8,11 @@ import org.arend.core.subst.LevelSubstitution;
 import org.arend.ext.core.ops.CMP;
 import org.arend.term.concrete.Concrete;
 
-public class DummyEquations implements Equations {
-  private static final DummyEquations INSTANCE = new DummyEquations();
+public class LevelEquationsWrapper implements Equations {
+  private final Equations myEquations;
 
-  private DummyEquations() {}
-
-  public static DummyEquations getInstance() {
-    return INSTANCE;
+  public LevelEquationsWrapper(Equations equations) {
+    myEquations = equations;
   }
 
   @Override
@@ -28,18 +26,18 @@ public class DummyEquations implements Equations {
   }
 
   @Override
-  public boolean addEquation(Level expr1, Level expr2, CMP cmp, Concrete.SourceNode sourceNode) {
-    return false;
+  public boolean addEquation(Level level1, Level level2, CMP cmp, Concrete.SourceNode sourceNode) {
+    return myEquations.addEquation(level1, level2, cmp, sourceNode);
   }
 
   @Override
   public boolean addVariable(InferenceLevelVariable var) {
-    return false;
+    return myEquations.addVariable(var);
   }
 
   @Override
   public void bindVariables(InferenceLevelVariable pVar, InferenceLevelVariable hVar) {
-
+    myEquations.bindVariables(pVar, hVar);
   }
 
   @Override
@@ -49,12 +47,12 @@ public class DummyEquations implements Equations {
 
   @Override
   public LevelSubstitution solve(Concrete.SourceNode sourceNode) {
-    return LevelSubstitution.EMPTY;
+    return myEquations.solve(sourceNode);
   }
 
   @Override
   public boolean supportsLevels() {
-    return false;
+    return true;
   }
 
   @Override

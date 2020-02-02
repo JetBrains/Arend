@@ -57,6 +57,7 @@ import org.arend.typechecking.implicitargs.ImplicitArgsInference;
 import org.arend.typechecking.implicitargs.StdImplicitArgsInference;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.implicitargs.equations.Equations;
+import org.arend.typechecking.implicitargs.equations.LevelEquationsWrapper;
 import org.arend.typechecking.implicitargs.equations.TwoStageEquations;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.instance.pool.RecursiveInstanceHoleExpression;
@@ -277,7 +278,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
   @SuppressWarnings("BooleanMethodIsAlwaysInverted")
   public boolean checkNormalizedResult(Expression expectedType, TypecheckingResult result, Concrete.Expression expr, boolean strict) {
     boolean isOmega = expectedType instanceof Type && ((Type) expectedType).isOmega();
-    if (isOmega && result.type.isInstance(UniverseExpression.class) || expectedType != null && !isOmega && new CompareVisitor(strict ? DummyEquations.getInstance() : myEquations, CMP.LE, expr).normalizedCompare(result.type, expectedType, Type.OMEGA)) {
+    if (isOmega && result.type.isInstance(UniverseExpression.class) || expectedType != null && !isOmega && new CompareVisitor(strict ? new LevelEquationsWrapper(myEquations) : myEquations, CMP.LE, expr).normalizedCompare(result.type, expectedType, Type.OMEGA)) {
       if (!strict && !isOmega) {
         result.expression = OfTypeExpression.make(result.expression, result.type, expectedType);
       }

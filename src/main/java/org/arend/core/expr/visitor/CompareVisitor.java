@@ -531,7 +531,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       }
 
       for (int i = params.size() - 1; i >= 0; i--) {
-        if (!myNormalCompare || myOnlySolveVars || myEquations.isDummy()) {
+        if (!myNormalCompare || myOnlySolveVars || !myEquations.supportsLevels()) {
           return false;
         }
         codSort = PiExpression.generateUpperBound(params.get(i).getType().getSortOfType(), codSort, myEquations, mySourceNode);

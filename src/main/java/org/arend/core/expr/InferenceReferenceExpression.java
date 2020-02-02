@@ -20,7 +20,7 @@ public class InferenceReferenceExpression extends Expression implements CoreInfe
 
   public InferenceReferenceExpression(InferenceVariable binding, Equations equations) {
     myVar = binding;
-    if (equations.isDummy()) {
+    if (!equations.supportsExpressions()) {
       return;
     }
 
