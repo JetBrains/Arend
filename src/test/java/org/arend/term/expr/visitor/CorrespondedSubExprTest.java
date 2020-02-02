@@ -3,7 +3,6 @@ package org.arend.term.expr.visitor;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.*;
 import org.arend.frontend.reference.ConcreteLocatedReferable;
-import org.arend.prelude.PreludeLibrary;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.arend.typechecking.visitor.CorrespondedSubExprVisitor;
@@ -87,9 +86,7 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
   @Test
   public void infixDefCall() {
     // (1+3*2)-4
-    Concrete.AppExpression expr = (Concrete.AppExpression) resolveNamesExpr(
-        PreludeLibrary.getPreludeScope(),
-        "1 Nat.+ 3 Nat.* 2 Nat.- 4");
+    Concrete.AppExpression expr = (Concrete.AppExpression) resolveNamesExpr("1 Nat.+ 3 Nat.* 2 Nat.- 4");
     Expression core = typeCheckExpr(expr, null).expression;
     Concrete.Expression sub = expr.getFunction();
     Concrete.Argument four = expr.getArguments().get(1);
@@ -157,13 +154,13 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
       Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(
           concrete.getArguments().get(2).getExpression()
       ), body);
-      assertEquals(accept.proj1.toString(), "14");
+      assertEquals("14", accept.proj1.toString());
     }
     {
       Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(
           concrete.getArguments().get(1).getExpression()
       ), body);
-      assertEquals(accept.proj1.toString(), "45");
+      assertEquals("45", accept.proj1.toString());
     }
   }
 
@@ -183,7 +180,7 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
     Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(
         concrete.getArguments().get(0).getExpression()
     ), body);
-    assertEquals(accept.proj1.toString(), "114514");
+    assertEquals("114514", accept.proj1.toString());
   }
 
   // Implicit arguments in core DefCall
@@ -202,13 +199,13 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
       Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(
           concrete.getArguments().get(0).getExpression()
       ), body);
-      assertEquals(accept.proj1.toString(), "114");
+      assertEquals("114", accept.proj1.toString());
     }
     {
       Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(
           concrete.getArguments().get(1).getExpression()
       ), body);
-      assertEquals(accept.proj1.toString(), "514");
+      assertEquals("514", accept.proj1.toString());
     }
   }
 
@@ -228,13 +225,43 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
       Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(
           concrete.getArguments().get(0).getExpression()
       ), body);
-      assertEquals(accept.proj1.toString(), "114");
+      assertEquals("114", accept.proj1.toString());
     }
     {
       Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(
           concrete.getArguments().get(1).getExpression()
       ), body);
-      assertEquals(accept.proj1.toString(), "514");
+      assertEquals("514", accept.proj1.toString());
+    }
+  }
+
+  // \let expressions
+  @Test
+  public void letExpr() {
+    Concrete.LetExpression concrete = (Concrete.LetExpression) resolveNamesExpr("\\let | x => 1 \\in x");
+    LetExpression let = (LetExpression) typeCheckExpr(concrete, null).expression;
+    Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(concrete.getClauses().get(0).getTerm()), let);
+    assertEquals("1", accept.proj1.toString());
+  }
+
+  // (Data type) implicit arguments in core ConCall
+  @Test
+  public void conCallImplicits() {
+    ConcreteLocatedReferable resolved = resolveNamesDef(
+        "\\func test : Fin 114 => con 514 \\where {\n" +
+            "  \\data Fin (limit : Nat)\n" +
+            "    | con Nat\n" +
+            "}");
+    Concrete.FunctionDefinition concreteDef = (Concrete.FunctionDefinition) resolved.getDefinition();
+    FunctionDefinition coreDef = (FunctionDefinition) typeCheckDef(resolved);
+    Concrete.AppExpression concrete = (Concrete.AppExpression) concreteDef.getBody().getTerm();
+    ConCallExpression body = (ConCallExpression) coreDef.getBody();
+    assertNotNull(concrete);
+    {
+      Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(
+          concrete.getArguments().get(0).getExpression()
+      ), body);
+      assertEquals("514", accept.proj1.toString());
     }
   }
 }

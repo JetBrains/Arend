@@ -154,6 +154,8 @@ public class CorrespondedSubExprVisitor implements
       // arguments, so we try to match `f a` (concrete) and `f a b` (core),
       // ignoring the extra argument `b`.
       return visitClonedApp(expr, coreEtaExpr.getBody());
+    } else if (coreConExpr != null) {
+      return visitArguments(coreDefExpr, arguments.iterator());
     } else if (coreDefExpr != null) {
       return visitArguments(coreDefExpr, arguments.iterator());
     } else return null;
