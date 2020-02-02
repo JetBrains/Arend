@@ -42,7 +42,6 @@ public class TwoStageEquations implements Equations {
   private final List<Pair<InferenceLevelVariable, InferenceLevelVariable>> myBoundVariables;
   private final Map<InferenceLevelVariable, Set<LevelVariable>> myLowerBounds;
   private final Map<InferenceLevelVariable, Level> myConstantUpperBounds;
-  private boolean myFirstRun = true;
 
   public TwoStageEquations(CheckTypeVisitor visitor) {
     myEquations = new ArrayList<>();
@@ -381,7 +380,7 @@ public class TwoStageEquations implements Equations {
 
   @Override
   public boolean remove(Equation equation) {
-    return myFirstRun && myEquations.remove(equation);
+    return myEquations.remove(equation);
   }
 
   private void reportCycle(List<LevelEquation<InferenceLevelVariable>> cycle, Set<InferenceLevelVariable> unBased) {
@@ -575,13 +574,14 @@ public class TwoStageEquations implements Equations {
       }
     }
 
+    normalizeEquations();
+    while (!myEquations.isEmpty()) {
+      if (!solveClassCalls()) {
+        break;
+      }
+    }
     SimpleLevelSubstitution result = new SimpleLevelSubstitution();
     solveLevelEquations(result);
-    normalizeEquations();
-    myFirstRun = false;
-    solveClassCalls();
-    myFirstRun = true;
-    solveLevelEquations(result); // We need the second pass since @solveClassCalls can generate new level variables
 
     for (Map.Entry<InferenceLevelVariable, Level> entry : myConstantUpperBounds.entrySet()) {
       int constant = entry.getValue().getConstant();
@@ -627,11 +627,28 @@ public class TwoStageEquations implements Equations {
     return false;
   }
 
-  private void solveClassCalls() {
-    boolean updated = false;
+  private boolean solveClassCalls() {
+    boolean solved = false;
+    boolean allOK = true;
+
+    boolean hasLower = false;
+    boolean hasUpper = false;
     Map<InferenceVariable,Set<Wrapper>> lowerBounds = new HashMap<>();
+    Map<InferenceVariable,Set<Wrapper>> upperBounds = new HashMap<>();
+    List<Equation> classCallEquations = new ArrayList<>();
     for (Iterator<Equation> iterator = myEquations.iterator(); iterator.hasNext(); ) {
       Equation equation = iterator.next();
+      Expression lower = equation.getLowerBound();
+      Expression upper = equation.getUpperBound();
+      ClassCallExpression lowerClassCall = lower.cast(ClassCallExpression.class);
+      ClassCallExpression upperClassCall = upper.cast(ClassCallExpression.class);
+      if (lowerClassCall != null && upperClassCall != null) {
+        classCallEquations.add(new Equation(lowerClassCall, upperClassCall, Type.OMEGA, equation.cmp == CMP.EQ ? CMP.EQ : CMP.LE, equation.sourceNode));
+        iterator.remove();
+        solved = true;
+        continue;
+      }
+
       if (equation.cmp == CMP.EQ) {
         InferenceVariable var1 = equation.expr1.getInferenceVariable();
         InferenceVariable var2 = equation.expr2.getInferenceVariable();
@@ -642,70 +659,171 @@ public class TwoStageEquations implements Equations {
         continue;
       }
 
-      Expression lower = equation.getLowerBound();
-      Expression upper = equation.getUpperBound();
       InferenceVariable var1 = upper.getInferenceVariable();
       InferenceVariable var2 = lower.getInferenceVariable();
       if (var1 != null) {
-        boolean isClassCall = lower.isInstance(ClassCallExpression.class);
-        if (isClassCall || var2 != null) {
+        if (lowerClassCall != null || var2 != null) {
           lowerBounds.computeIfAbsent(var1, k -> new LinkedHashSet<>()).add(new Wrapper(lower));
-          if (isClassCall) {
-            updated = true;
+          if (lowerClassCall != null) {
+            hasLower = true;
+            iterator.remove();
+          }
+        }
+      }
+      if (var2 != null) {
+        if (upperClassCall != null || var1 != null) {
+          upperBounds.computeIfAbsent(var2, k -> new LinkedHashSet<>()).add(new Wrapper(upper));
+          if (upperClassCall != null) {
+            hasUpper = true;
             iterator.remove();
           }
         }
       }
     }
 
-    if (updated) {
-      // @lowerBounds consists of entries (@v,@list) such that every expression @e in @list is either a classCall or an inference variable and @e <= @v.
-      // The result of @calculateClosureOfLowerBounds is the transitive closure of @lowerBounds.
-      for (Pair<InferenceVariable,List<ClassCallExpression>> pair : calculateClosureOfLowerBounds(lowerBounds)) {
-        solveClassCallLowerBounds(pair.proj2, pair.proj1);
+    for (Equation equation : classCallEquations) {
+      if (!CompareVisitor.compare(this, equation.cmp, equation.expr1, equation.expr2, equation.type, equation.sourceNode)) {
+        allOK = false;
+        myVisitor.getErrorReporter().report(new SolveEquationsError(Collections.singletonList(equation), equation.sourceNode));
       }
     }
 
-    Map<InferenceVariable, ClassCallExpression> result = new LinkedHashMap<>();
-    for (Iterator<Equation> iterator = myEquations.iterator(); iterator.hasNext(); ) {
-      Equation equation = iterator.next();
-      Expression lower = equation.getLowerBound();
-      Expression upper = equation.getUpperBound();
-      if (lower.isInstance(ClassCallExpression.class) && upper.isInstance(ClassCallExpression.class)) {
-        if (!CompareVisitor.compare(DummyEquations.getInstance(), equation.cmp == CMP.EQ ? CMP.EQ : CMP.LE, lower, upper, Type.OMEGA, equation.sourceNode)) {
-          InferenceReferenceExpression infRefExpr = lower.cast(InferenceReferenceExpression.class);
-          if (infRefExpr != null && infRefExpr.getOriginalVariable() instanceof InferenceVariable) {
-            myVisitor.getErrorReporter().report(((InferenceVariable) infRefExpr.getOriginalVariable()).getErrorInfer(infRefExpr.getSubstExpression(), upper));
-          } else {
-            myVisitor.getErrorReporter().report(new SolveEquationError(lower, upper, equation.sourceNode));
+    // @lowerBounds consists of entries (@v,@list) such that every expression @e in @list is either a classCall or an inference variable and @e <= @v.
+    // The result of @calculateClosure is the transitive closure of @lowerBounds.
+    List<Pair<InferenceVariable, List<ClassCallExpression>>> lowerClosure = hasLower ? calculateClosure(lowerBounds) : Collections.emptyList();
+    List<Pair<InferenceVariable, List<ClassCallExpression>>> upperClosure = hasUpper ? calculateClosure(upperBounds) : Collections.emptyList() ;
+    while (true) {
+      if (solveUniqueClassCalls(lowerClosure, CMP.LE) || solveUniqueClassCalls(upperClosure, CMP.GE)) {
+        solved = true;
+      } else {
+        break;
+      }
+    }
+
+    // Solve variables into the union of their upper bounds
+    for (Pair<InferenceVariable, List<ClassCallExpression>> pair : upperClosure) {
+      ClassDefinition classDef = checkClasses(pair.proj1, pair.proj2, CMP.LE);
+      if (classDef == null) {
+        allOK = false;
+        continue;
+      }
+
+      boolean hasUniverses = classDef.hasUniverses();
+      if (hasUniverses) {
+        hasUniverses = false;
+        for (ClassField field : classDef.getFields()) {
+          if (!field.hasUniverses() || classDef.isImplemented(field)) {
+            continue;
+          }
+          boolean implemented = false;
+          for (ClassCallExpression classCall : pair.proj2) {
+            if (classCall.isImplementedHere(field)) {
+              implemented = true;
+              break;
+            }
+          }
+          if (!implemented) {
+            hasUniverses = true;
+            break;
           }
         }
-        iterator.remove();
-        continue;
-      }
-      if (equation.cmp == CMP.EQ) {
-        continue;
       }
 
-      InferenceVariable var = lower.getInferenceVariable();
-      ClassCallExpression newResult = var == null ? null : upper.cast(ClassCallExpression.class);
-      if (newResult != null) {
-        ClassCallExpression oldResult = result.get(var);
-        if (oldResult == null || newResult.isLessOrEquals(oldResult, DummyEquations.getInstance(), var.getSourceNode())) {
-          result.put(var, newResult);
-        } else if (!oldResult.isLessOrEquals(newResult, DummyEquations.getInstance(), var.getSourceNode())) {
-          List<Equation> eqs = new ArrayList<>(2);
-          eqs.add(new Equation(lower, oldResult, Type.OMEGA, CMP.LE, var.getSourceNode()));
-          eqs.add(new Equation(lower, newResult, Type.OMEGA, CMP.LE, var.getSourceNode()));
-          myVisitor.getErrorReporter().report(new SolveEquationsError(eqs, var.getSourceNode()));
+      Sort sortArg = Sort.generateInferVars(this, hasUniverses, pair.proj1.getSourceNode());
+      Map<ClassField, Expression> implementations = new HashMap<>();
+      ClassCallExpression solution = new ClassCallExpression(classDef, sortArg, implementations, classDef.getSort(), hasUniverses);
+      boolean ok = true;
+      for (ClassCallExpression upperBound : pair.proj2) {
+        for (Map.Entry<ClassField, Expression> entry : upperBound.getImplementedHere().entrySet()) {
+          Expression newImpl = entry.getValue().subst(upperBound.getThisBinding(), new ReferenceExpression(solution.getThisBinding()));
+          Expression oldImpl = implementations.putIfAbsent(entry.getKey(), newImpl);
+          if (oldImpl != null) {
+            if (!CompareVisitor.compare(this, CMP.EQ, oldImpl, newImpl, Type.OMEGA, pair.proj1.getSourceNode())) {
+              ok = false;
+              break;
+            }
+          }
         }
-        iterator.remove();
+        if (!ok) {
+          break;
+        }
+      }
+
+      if (ok) {
+        solution.setSort(classDef.computeSort(implementations, solution.getThisBinding()));
+        CompareVisitor compareVisitor = new CompareVisitor(this, CMP.LE, pair.proj1.getSourceNode());
+        for (ClassCallExpression upperBound : pair.proj2) {
+          if (!compareVisitor.compareClassCallSortArguments(solution, upperBound)) {
+            ok = false;
+            break;
+          }
+        }
+      }
+      if (!ok) {
+        reportBoundsError(pair.proj1, pair.proj2, CMP.LE);
+        allOK = false;
+        continue;
+      }
+
+      solve(pair.proj1, solution, false);
+      solved = true;
+    }
+
+    while (true) {
+      if (solveUniqueClassCalls(lowerClosure, CMP.LE)) {
+        solved = true;
+      } else {
+        break;
       }
     }
 
-    for (Map.Entry<InferenceVariable, ClassCallExpression> entry : result.entrySet()) {
-      solve(entry.getKey(), entry.getValue(), false);
+    for (Pair<InferenceVariable, List<ClassCallExpression>> pair : lowerClosure) {
+      ClassDefinition classDef = checkClasses(pair.proj1, pair.proj2, CMP.GE);
+      if (classDef == null) {
+        allOK = false;
+        continue;
+      }
+
+      ClassCallExpression solution = classDef.getDefCall(Sort.generateInferVars(this, classDef.hasUniverses(), pair.proj1.getSourceNode()), Collections.emptyList());
+      boolean ok = true;
+      for (ClassCallExpression lowerBound : pair.proj2) {
+        if (!new CompareVisitor(this, CMP.LE, pair.proj1.getSourceNode()).compareClassCallSortArguments(lowerBound, solution)) {
+          ok = false;
+          break;
+        }
+      }
+
+      if (!ok) {
+        allOK = false;
+        continue;
+      }
+
+      solve(pair.proj1, solution, true);
+      solved = true;
     }
+
+    return allOK && solved;
+  }
+
+  private ClassDefinition checkClasses(InferenceVariable var, List<ClassCallExpression> bounds, CMP cmp) {
+    ClassDefinition classDef = bounds.get(0).getDefinition();
+    for (ClassCallExpression classCall : bounds) {
+      if (classCall.getDefinition() != classDef) {
+        reportBoundsError(var, bounds, cmp);
+        return null;
+      }
+    }
+
+    return classDef;
+  }
+
+  private void reportBoundsError(InferenceVariable var, List<ClassCallExpression> bounds, CMP cmp) {
+    List<Equation> equations = new ArrayList<>();
+    Expression infRefExpr = new InferenceReferenceExpression(var, (Expression) null);
+    for (ClassCallExpression bound : bounds) {
+      equations.add(cmp == CMP.GE ? new Equation(bound, infRefExpr, Type.OMEGA, CMP.LE, var.getSourceNode()) : new Equation(infRefExpr, bound, Type.OMEGA, CMP.LE, var.getSourceNode()));
+    }
+    myVisitor.getErrorReporter().report(new SolveEquationsError(equations, var.getSourceNode()));
   }
 
   private static class Wrapper {
@@ -716,11 +834,11 @@ public class TwoStageEquations implements Equations {
     }
   }
 
-  private List<Pair<InferenceVariable,List<ClassCallExpression>>> calculateClosureOfLowerBounds(Map<InferenceVariable,Set<Wrapper>> lowerBounds) {
-    List<Pair<InferenceVariable,List<ClassCallExpression>>> result = new ArrayList<>(lowerBounds.size());
-    for (Map.Entry<InferenceVariable, Set<Wrapper>> entry : lowerBounds.entrySet()) {
+  private List<Pair<InferenceVariable,List<ClassCallExpression>>> calculateClosure(Map<InferenceVariable,Set<Wrapper>> bounds) {
+    List<Pair<InferenceVariable,List<ClassCallExpression>>> result = new ArrayList<>(bounds.size());
+    for (Map.Entry<InferenceVariable, Set<Wrapper>> entry : bounds.entrySet()) {
       Set<Wrapper> varResult = new HashSet<>();
-      calculateLowerBoundsOfVariable(entry.getKey(), varResult, lowerBounds, new HashSet<>());
+      calculateBoundsOfVariable(entry.getKey(), varResult, bounds, new HashSet<>());
       List<ClassCallExpression> list = new ArrayList<>(varResult.size());
       for (Wrapper wrapper : varResult) {
         list.add((ClassCallExpression) wrapper.expression);
@@ -730,17 +848,17 @@ public class TwoStageEquations implements Equations {
     return result;
   }
 
-  private void calculateLowerBoundsOfVariable(InferenceVariable variable, Set<Wrapper> result, Map<InferenceVariable,Set<Wrapper>> lowerBounds, Set<InferenceVariable> visited) {
+  private void calculateBoundsOfVariable(InferenceVariable variable, Set<Wrapper> result, Map<InferenceVariable,Set<Wrapper>> bounds, Set<InferenceVariable> visited) {
     if (!visited.add(variable)) {
       return;
     }
 
-    Set<Wrapper> varLowerBounds = lowerBounds.get(variable);
-    if (varLowerBounds == null) {
+    Set<Wrapper> varBounds = bounds.get(variable);
+    if (varBounds == null) {
       return;
     }
 
-    for (Wrapper wrapper : varLowerBounds) {
+    for (Wrapper wrapper : varBounds) {
       ClassCallExpression classCall = wrapper.expression.cast(ClassCallExpression.class);
       if (classCall != null) {
         wrapper.expression = classCall;
@@ -748,65 +866,27 @@ public class TwoStageEquations implements Equations {
       } else {
         InferenceVariable var = wrapper.expression.getInferenceVariable();
         if (var != null) {
-          calculateLowerBoundsOfVariable(var, result, lowerBounds, visited);
+          calculateBoundsOfVariable(var, result, bounds, visited);
         }
       }
     }
   }
 
-  private void solveClassCallLowerBounds(List<ClassCallExpression> lowerBounds, InferenceVariable variable) {
-    if (lowerBounds.isEmpty()) {
-      return;
-    }
-
-    if (variable.isSolved()) {
-      for (ClassCallExpression lowerBound : lowerBounds) {
-        CompareVisitor.compare(DummyEquations.getInstance(), CMP.LE, lowerBound, variable.getSolution(), Type.OMEGA, variable.getSourceNode());
-      }
-      return;
-    }
-
-    if (lowerBounds.size() == 1) {
-      solve(variable, lowerBounds.get(0), true);
-      return;
-    }
-
-    ClassDefinition classDef = lowerBounds.get(0).getDefinition();
-    for (ClassCallExpression lowerBound : lowerBounds) {
-      if (lowerBound.getDefinition() != classDef) {
-        List<Equation> equations = new ArrayList<>(lowerBounds.size());
-        Expression upper = new InferenceReferenceExpression(variable, (Expression) null);
-        for (ClassCallExpression lowerBound1 : lowerBounds) {
-          equations.add(new Equation(lowerBound1, upper, Type.OMEGA, CMP.LE, variable.getSourceNode()));
+  private boolean solveUniqueClassCalls(List<Pair<InferenceVariable, List<ClassCallExpression>>> closure, CMP cmp) {
+    int size = closure.size();
+    for (Iterator<Pair<InferenceVariable, List<ClassCallExpression>>> iterator = closure.iterator(); iterator.hasNext(); ) {
+      Pair<InferenceVariable, List<ClassCallExpression>> pair = iterator.next();
+      if (pair.proj1.isSolved()) {
+        for (ClassCallExpression bound : pair.proj2) {
+          CompareVisitor.compare(this, cmp, bound, pair.proj1.getSolution(), Type.OMEGA, pair.proj1.getSourceNode());
         }
-        myVisitor.getErrorReporter().report(new SolveEquationsError(equations, variable.getSourceNode()));
-        return;
+        iterator.remove();
+      } else if (pair.proj2.size() == 1) {
+        solve(pair.proj1, pair.proj2.get(0), true);
+        iterator.remove();
       }
     }
-
-    Sort sortArgument = Sort.PROP;
-    for (ClassCallExpression lowerBound : lowerBounds) {
-      sortArgument = sortArgument.max(lowerBound.getSortArgument());
-    }
-
-    Map<ClassField, Expression> implementations = new HashMap<>(lowerBounds.get(0).getImplementedHere());
-    ClassCallExpression solution = new ClassCallExpression(classDef, sortArgument, implementations, classDef.computeSort(implementations, lowerBounds.get(0).getThisBinding()), classDef.hasUniverses());
-    Expression thisExpr = new ReferenceExpression(solution.getThisBinding());
-    for (ClassCallExpression lowerBound : lowerBounds) {
-      for (ClassField field : classDef.getFields()) {
-        Expression impl1 = implementations.get(field);
-        if (impl1 != null) {
-          Expression impl2 = lowerBound.getImplementationHere(field, thisExpr);
-          if (impl2 == null) {
-            implementations.remove(field);
-          } else if (!Expression.compare(impl1.subst(lowerBounds.get(0).getThisBinding(), thisExpr), impl2, field.getType(Sort.STD).applyExpression(thisExpr), CMP.EQ)) {
-            implementations.remove(field);
-          }
-        }
-      }
-    }
-
-    solve(variable, removeDependencies(solution, lowerBounds.get(0).getImplementedHere().size()), true);
+    return closure.size() < size;
   }
 
   private ClassCallExpression removeDependencies(ClassCallExpression solution, int originalSize) {
@@ -874,7 +954,7 @@ public class TwoStageEquations implements Equations {
       return inferenceError(var, expr);
     }
 
-    if (actualType.isLessOrEquals(expectedType, myFirstRun ? this : DummyEquations.getInstance(), var.getSourceNode())) {
+    if (actualType.isLessOrEquals(expectedType, this, var.getSourceNode())) {
       var.solve(this, OfTypeExpression.make(result, actualType, expectedType));
       return SolveResult.SOLVED;
     } else {

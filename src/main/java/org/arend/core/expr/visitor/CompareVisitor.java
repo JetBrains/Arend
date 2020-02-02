@@ -635,6 +635,19 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     return ok || myNormalCompare && Sort.compare(classCall1.getSortArgument(), classCall2.getSortArgument(), CMP.LE, myEquations, mySourceNode);
   }
 
+  public boolean compareClassCallSortArguments(ClassCallExpression classCall1, ClassCallExpression classCall2) {
+    if (classCall1.hasUniverses() || classCall2.hasUniverses()) {
+      if (myCMP == CMP.EQ || classCall1.hasUniverses() && classCall2.hasUniverses()) {
+        return Sort.compare(classCall1.getSortArgument(), classCall2.getSortArgument(), myCMP, myNormalCompare ? myEquations : DummyEquations.getInstance(), mySourceNode);
+      } else {
+        if (!Sort.compare(classCall1.getSortArgument(), classCall2.getSortArgument(), myCMP, DummyEquations.getInstance(), mySourceNode)) {
+          return myCMP == CMP.LE ? checkClassCallSortArguments(classCall1, classCall2) : checkClassCallSortArguments(classCall2, classCall1);
+        }
+      }
+    }
+    return true;
+  }
+
   @Override
   public Boolean visitClassCall(ClassCallExpression expr1, Expression expr2, Expression type) {
     ClassCallExpression classCall2 = expr2.cast(ClassCallExpression.class);
@@ -642,18 +655,8 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       return false;
     }
 
-    if (expr1.hasUniverses() || classCall2.hasUniverses()) {
-      if (myCMP == CMP.EQ || expr1.hasUniverses() && classCall2.hasUniverses()) {
-        if (!Sort.compare(expr1.getSortArgument(), classCall2.getSortArgument(), myCMP, myNormalCompare ? myEquations : DummyEquations.getInstance(), mySourceNode)) {
-          return false;
-        }
-      } else {
-        if (!Sort.compare(expr1.getSortArgument(), classCall2.getSortArgument(), myCMP, DummyEquations.getInstance(), mySourceNode)) {
-          if (myCMP == CMP.LE ? !checkClassCallSortArguments(expr1, classCall2) : !checkClassCallSortArguments(classCall2, expr1)) {
-            return false;
-          }
-        }
-      }
+    if (!compareClassCallSortArguments(expr1, classCall2)) {
+      return false;
     }
 
     if (myCMP == CMP.LE) {
@@ -787,11 +790,10 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     return true;
   }
 
-
   @Override
   public Boolean visitUniverse(UniverseExpression expr1, Expression expr2, Expression type) {
     UniverseExpression universe2 = expr2.cast(UniverseExpression.class);
-    return universe2 != null && Sort.compare(expr1.getSort(), universe2.getSort(), myCMP, myNormalCompare ? (myEquations == DummyEquations.getInstance() ? null : myEquations) : DummyEquations.getInstance(), mySourceNode);
+    return universe2 != null && Sort.compare(expr1.getSort(), universe2.getSort(), myCMP, myNormalCompare ? myEquations : DummyEquations.getInstance(), mySourceNode);
   }
 
   @Override
