@@ -1,7 +1,8 @@
 package org.arend.term.expr.visitor;
 
-import org.arend.core.expr.Expression;
-import org.arend.core.expr.ReferenceExpression;
+import org.arend.core.definition.FunctionDefinition;
+import org.arend.core.expr.*;
+import org.arend.frontend.reference.ConcreteLocatedReferable;
 import org.arend.prelude.PreludeLibrary;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.TypeCheckingTestCase;
@@ -9,9 +10,8 @@ import org.arend.typechecking.visitor.CorrespondedSubExprVisitor;
 import org.arend.util.Pair;
 import org.junit.Test;
 
-import java.util.Arrays;
-
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public class CorrespondedSubExprTest extends TypeCheckingTestCase {
   @Test
@@ -137,6 +137,104 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
       Pair<Expression, Concrete.Expression> accept = expr.accept(new CorrespondedSubExprVisitor(make), core);
       assertEquals("1 + 3 * 2", accept.proj1.toString());
       assertEquals("1 + 3 * 2", accept.proj2.toString());
+    }
+  }
+
+  // When an AppExpr applied to more arguments, then corresponding DefCall has.
+  @Test
+  public void defCallExtraArgs() {
+    ConcreteLocatedReferable resolved = resolveNamesDef(
+        "\\func test => f 11 45 14 \\where {\n" +
+            "  \\open Nat\n" +
+            "  \\func f (a b : Nat) => \\lam c => a + b + c\n" +
+            "}");
+    Concrete.FunctionDefinition concreteDef = (Concrete.FunctionDefinition) resolved.getDefinition();
+    FunctionDefinition coreDef = (FunctionDefinition) typeCheckDef(resolved);
+    Concrete.AppExpression concrete = (Concrete.AppExpression) concreteDef.getBody().getTerm();
+    AppExpression body = (AppExpression) coreDef.getBody();
+    assertNotNull(concrete);
+    {
+      Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(
+          concrete.getArguments().get(2).getExpression()
+      ), body);
+      assertEquals(accept.proj1.toString(), "14");
+    }
+    {
+      Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(
+          concrete.getArguments().get(1).getExpression()
+      ), body);
+      assertEquals(accept.proj1.toString(), "45");
+    }
+  }
+
+  // When it is applied to less arguments.
+  @Test
+  public void defCallLessArgs() {
+    ConcreteLocatedReferable resolved = resolveNamesDef(
+        "\\func test => f 114514 \\where {\n" +
+            "  \\open Nat\n" +
+            "  \\func f (a b : Nat) => a + b\n" +
+            "}");
+    Concrete.FunctionDefinition concreteDef = (Concrete.FunctionDefinition) resolved.getDefinition();
+    FunctionDefinition coreDef = (FunctionDefinition) typeCheckDef(resolved);
+    Concrete.AppExpression concrete = (Concrete.AppExpression) concreteDef.getBody().getTerm();
+    LamExpression body = (LamExpression) coreDef.getBody();
+    assertNotNull(concrete);
+    Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(
+        concrete.getArguments().get(0).getExpression()
+    ), body);
+    assertEquals(accept.proj1.toString(), "114514");
+  }
+
+  // Implicit arguments in core DefCall
+  @Test
+  public void defCallImplicitArgs() {
+    ConcreteLocatedReferable resolved = resolveNamesDef(
+        "\\func test => const 114 514 \\where {\n" +
+            "  \\func const {A : \\Type} (a b : A) => a\n" +
+            "}");
+    Concrete.FunctionDefinition concreteDef = (Concrete.FunctionDefinition) resolved.getDefinition();
+    FunctionDefinition coreDef = (FunctionDefinition) typeCheckDef(resolved);
+    Concrete.AppExpression concrete = (Concrete.AppExpression) concreteDef.getBody().getTerm();
+    DefCallExpression body = (DefCallExpression) coreDef.getBody();
+    assertNotNull(concrete);
+    {
+      Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(
+          concrete.getArguments().get(0).getExpression()
+      ), body);
+      assertEquals(accept.proj1.toString(), "114");
+    }
+    {
+      Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(
+          concrete.getArguments().get(1).getExpression()
+      ), body);
+      assertEquals(accept.proj1.toString(), "514");
+    }
+  }
+
+  // Implicit arguments in core AppExpr
+  @Test
+  public void appExprImplicitArgs() {
+    ConcreteLocatedReferable resolved = resolveNamesDef(
+        "\\func test => const 114 514 \\where {\n" +
+            "  \\func const => \\lam {A : \\Type} (a b : A) => a\n" +
+            "}");
+    Concrete.FunctionDefinition concreteDef = (Concrete.FunctionDefinition) resolved.getDefinition();
+    FunctionDefinition coreDef = (FunctionDefinition) typeCheckDef(resolved);
+    Concrete.AppExpression concrete = (Concrete.AppExpression) concreteDef.getBody().getTerm();
+    AppExpression body = (AppExpression) coreDef.getBody();
+    assertNotNull(concrete);
+    {
+      Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(
+          concrete.getArguments().get(0).getExpression()
+      ), body);
+      assertEquals(accept.proj1.toString(), "114");
+    }
+    {
+      Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(
+          concrete.getArguments().get(1).getExpression()
+      ), body);
+      assertEquals(accept.proj1.toString(), "514");
     }
   }
 }
