@@ -28,6 +28,7 @@ import org.arend.typechecking.instance.provider.InstanceProviderSet;
 import org.arend.typechecking.order.PartialComparator;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.arend.typechecking.provider.ConcreteProvider;
+import org.arend.util.Version;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -36,7 +37,7 @@ import static org.arend.core.expr.ExpressionFactory.Nat;
 import static org.arend.core.expr.ExpressionFactory.parameter;
 
 public class Prelude implements ArendPrelude {
-  public static final String VERSION = "1.1";
+  public static final Version VERSION = GeneratedVersion.VERSION;
 
   public static final ModulePath MODULE_PATH = new ModulePath("Prelude");
   public static final String LIBRARY_NAME = "prelude";

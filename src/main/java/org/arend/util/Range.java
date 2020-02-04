@@ -36,6 +36,12 @@ public class Range<T extends Comparable<T>> extends Pair<T,T> {
 
   private enum TokenType { LEQ, GEQ, COMMA, TEXT }
 
+  public static Range<Version> parseVersionRange(String text) {
+    Range<String> stringRange = parseRange(text);
+    if (stringRange == null) return null;
+    return new Range<>(Version.from(stringRange.proj1), Version.from(stringRange.proj2));
+  }
+
   public static Range<String> parseRange(String text) {
     // Lexer
 

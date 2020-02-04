@@ -89,6 +89,9 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
     return typeCheckExpr(resolveNamesExpr(text), expectedType, 0);
   }
 
+  protected Definition typeCheckDef(ConcreteLocatedReferable reference) {
+    return typeCheckDef(reference, 0);
+  }
 
   private Definition typeCheckDef(ConcreteLocatedReferable reference, int errors) {
     new TypecheckingOrderingListener(libraryManager.getInstanceProviderSet(), typecheckerState, ConcreteReferableProvider.INSTANCE, IdReferableConverter.INSTANCE, errorReporter, PositionComparator.INSTANCE).typecheckDefinitions(Collections.singletonList((Concrete.Definition) reference.getDefinition()), null);

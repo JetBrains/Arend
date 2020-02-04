@@ -1,5 +1,9 @@
 import com.google.protobuf.gradle.ExecutableLocator
 
+val arendPackage = "org.arend"
+group = arendPackage
+version = "1.2.0"
+
 plugins {
     java
     idea
@@ -32,11 +36,31 @@ configure<JavaPluginConvention> {
     targetCompatibility = JavaVersion.VERSION_1_8
 }
 
-tasks.withType<JavaCompile> {
-    options.encoding = "UTF-8"
+val genSrcDir = projectDir.resolve("src/gen")
+val genSrcJavaDir = genSrcDir.resolve("main/java")
+
+val generateVersion = task("generateVersion") {
+    doFirst {
+        val className = "GeneratedVersion"
+        val code = """
+            package $arendPackage.prelude;
+            import org.arend.util.Version;
+            public class $className {
+              public static final Version VERSION = new Version("$version");
+            }
+        """.trimIndent()
+        genSrcJavaDir.resolve("org/arend/prelude")
+            .apply { mkdirs() }
+            .resolve("$className.java")
+            .apply { if (!exists()) createNewFile() }
+            .writeText(code)
+    }
 }
 
-val arendPackage = "org.arend"
+tasks.withType<JavaCompile> {
+    options.encoding = "UTF-8"
+    dependsOn(generateVersion)
+}
 
 task<Jar>("jarDep") {
     manifest.attributes["Main-Class"] = "$arendPackage.frontend.ConsoleMain"
@@ -68,8 +92,6 @@ tasks.getByName<Jar>("jar") {
     exclude("**/frontend/**")
 }
 
-val genSrcDir = file("src/gen")
-
 sourceSets {
     main {
         java {
@@ -90,7 +112,7 @@ idea {
 }
 
 tasks.withType<AntlrTask> {
-    outputDirectory = genSrcDir
+    outputDirectory = genSrcJavaDir
     arguments.addAll(listOf(
             "-package", "$arendPackage.frontend.parser",
             "-no-listener",
@@ -114,7 +136,7 @@ tasks.withType<Wrapper> {
 
 val preludeOutputDir = "$buildDir/classes/java/main"
 
-task<Copy>("copyPrelude") {
+val copyPrelude = task<Copy>("copyPrelude") {
     from("lib/Prelude.ard")
     into("$preludeOutputDir/lib")
 }
@@ -125,7 +147,7 @@ task<JavaExec>("prelude") {
     main = "$arendPackage.frontend.PreludeBinaryGenerator"
     classpath = sourceSets["main"].runtimeClasspath
     args = listOf(preludeOutputDir)
-    dependsOn("copyPrelude")
+    dependsOn(copyPrelude)
 }
 
 

@@ -12,6 +12,7 @@ import org.arend.source.GZIPStreamBinarySource;
 import org.arend.source.Source;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.util.Range;
+import org.arend.util.Version;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -26,13 +27,12 @@ public class FileSourceLibrary extends UnmodifiableSourceLibrary {
   protected String myExtMainClass;
   protected Set<ModulePath> myModules;
   protected List<LibraryDependency> myDependencies;
-  protected Range<String> myLanguageVersion;
+  protected Range<Version> myLanguageVersion;
   protected boolean myComplete;
 
   /**
    * Creates a new {@code UnmodifiableFileSourceLibrary}
-   *
-   * @param name              the name of this library.
+   *  @param name              the name of this library.
    * @param sourceBasePath    a path to the directory with raw source files.
    * @param binaryBasePath    a path to the directory with binary source files.
    * @param extBasePath       a path to the directory with language extensions.
@@ -43,7 +43,7 @@ public class FileSourceLibrary extends UnmodifiableSourceLibrary {
    * @param languageVersion   language versions appropriate for this library.
    * @param typecheckerState  a typechecker state in which the result of loading of cached modules will be stored.
    */
-  public FileSourceLibrary(String name, Path sourceBasePath, Path binaryBasePath, Path extBasePath, String extMainClass, Set<ModulePath> modules, boolean isComplete, List<LibraryDependency> dependencies, Range<String> languageVersion, TypecheckerState typecheckerState) {
+  public FileSourceLibrary(String name, Path sourceBasePath, Path binaryBasePath, Path extBasePath, String extMainClass, Set<ModulePath> modules, boolean isComplete, List<LibraryDependency> dependencies, Range<Version> languageVersion, TypecheckerState typecheckerState) {
     super(name, typecheckerState);
     mySourceBasePath = sourceBasePath;
     myBinaryBasePath = binaryBasePath;

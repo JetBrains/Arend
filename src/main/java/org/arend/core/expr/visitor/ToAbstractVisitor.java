@@ -128,7 +128,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     return result;
   }
 
-  private void getArgumentsExplicitness(Expression expr, boolean[] isExplicit) {
+  private static void getArgumentsExplicitness(Expression expr, boolean[] isExplicit) {
     List<SingleDependentLink> params = new ArrayList<>(isExplicit.length);
     Expression type = expr.getType();
     if (type != null) {

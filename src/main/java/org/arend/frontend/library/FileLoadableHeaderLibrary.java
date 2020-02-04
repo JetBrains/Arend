@@ -9,6 +9,7 @@ import org.arend.library.error.LibraryIOError;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.util.FileUtils;
 import org.arend.util.Range;
+import org.arend.util.Version;
 
 import javax.annotation.Nullable;
 import java.nio.file.Path;
@@ -74,7 +75,7 @@ public class FileLoadableHeaderLibrary extends FileSourceLibrary {
     }
 
     if (myConfig.getLangVersion() != null) {
-      Range<String> range = Range.parseRange(myConfig.getLangVersion());
+      Range<Version> range = Range.parseVersionRange(myConfig.getLangVersion());
       if (range != null) {
         myLanguageVersion = range;
       } else {
