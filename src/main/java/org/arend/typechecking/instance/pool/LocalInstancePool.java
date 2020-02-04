@@ -1,11 +1,17 @@
 package org.arend.typechecking.instance.pool;
 
+import org.arend.core.expr.ErrorExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.ReferenceExpression;
+import org.arend.core.expr.type.Type;
+import org.arend.core.expr.visitor.CompareVisitor;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.ext.core.ops.CMP;
+import org.arend.ext.error.TypeMismatchError;
+import org.arend.ext.error.TypecheckingError;
 import org.arend.naming.reference.TCClassReferable;
 import org.arend.term.concrete.Concrete;
+import org.arend.typechecking.visitor.CheckTypeVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,16 +33,39 @@ public class LocalInstancePool implements InstancePool {
     }
   }
 
+  private final CheckTypeVisitor myTypechecker;
   private final List<InstanceData> myPool = new ArrayList<>();
 
+  public LocalInstancePool(CheckTypeVisitor typechecker) {
+    myTypechecker = typechecker;
+  }
+
   @Override
-  public Expression getInstance(Expression classifyingExpression, TCClassReferable classRef, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveData) {
-    return getInstance(classifyingExpression, classRef);
+  public Expression getInstance(Expression classifyingExpression, Expression expectedType, TCClassReferable classRef, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveData) {
+    Expression result = getInstance(classifyingExpression, classRef);
+    if (result == null || expectedType == null) {
+      return result;
+    }
+
+    Expression actualType = result.getType();
+    if (actualType == null) {
+      TypecheckingError error = new TypecheckingError("Cannot infer the type of the instance", sourceNode);
+      myTypechecker.getErrorReporter().report(error);
+      return new ErrorExpression(error);
+    }
+
+    if (!CompareVisitor.compare(myTypechecker.getEquations(), CMP.LE, actualType, expectedType, Type.OMEGA, sourceNode)) {
+      TypecheckingError error = new TypeMismatchError(expectedType, actualType, sourceNode);
+      myTypechecker.getErrorReporter().report(error);
+      return new ErrorExpression(error);
+    }
+
+    return result;
   }
 
   @Override
   public LocalInstancePool subst(ExprSubstitution substitution) {
-    LocalInstancePool result = new LocalInstancePool();
+    LocalInstancePool result = new LocalInstancePool(myTypechecker);
     for (InstanceData data : myPool) {
       Expression newValue = data.value instanceof ReferenceExpression ? substitution.get(((ReferenceExpression) data.value).getBinding()) : null;
       newValue = newValue == null ? null : newValue.cast(ReferenceExpression.class);

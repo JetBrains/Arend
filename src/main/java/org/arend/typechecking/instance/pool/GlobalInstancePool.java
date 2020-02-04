@@ -53,9 +53,9 @@ public class GlobalInstancePool implements InstancePool {
   }
 
   @Override
-  public Expression getInstance(Expression classifyingExpression, TCClassReferable classRef, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveHoleExpression) {
+  public Expression getInstance(Expression classifyingExpression, Expression expectedType, TCClassReferable classRef, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveHoleExpression) {
     if (myInstancePool != null) {
-      Expression result = myInstancePool.getInstance(classifyingExpression, classRef, sourceNode, recursiveHoleExpression);
+      Expression result = myInstancePool.getInstance(classifyingExpression, expectedType, classRef, sourceNode, recursiveHoleExpression);
       if (result != null) {
         return result;
       }
@@ -136,9 +136,12 @@ public class GlobalInstancePool implements InstancePool {
       instanceExpr = Concrete.AppExpression.make(sourceNode.getData(), instanceExpr, new RecursiveInstanceHoleExpression(recursiveHoleExpression == null ? sourceNode : recursiveHoleExpression.getData(), newRecursiveData), link.isExplicit());
     }
 
-    ClassCallExpression expectedType = classifyingField == null ? null : new ClassCallExpression(classDef, Sort.generateInferVars(myCheckTypeVisitor.getEquations(), classDef.hasUniverses(), sourceNode));
-    if (expectedType != null) {
-      myCheckTypeVisitor.fixClassExtSort(expectedType, sourceNode);
+    if (expectedType == null) {
+      ClassCallExpression classCall = classifyingField == null ? null : new ClassCallExpression(classDef, Sort.generateInferVars(myCheckTypeVisitor.getEquations(), classDef.hasUniverses(), sourceNode));
+      if (classCall != null) {
+        myCheckTypeVisitor.fixClassExtSort(classCall, sourceNode);
+        expectedType = classCall;
+      }
     }
     TypecheckingResult result = myCheckTypeVisitor.checkExpr(instanceExpr, expectedType);
     return result == null ? new ErrorExpression() : result.expression;

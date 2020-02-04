@@ -430,6 +430,6 @@ public class ExtensionsTest extends TypeCheckingTestCase {
       "  | x : X\n" +
       "\\class D \\noclassifying \\extends C\n" +
       "  | y : X\n" +
-      "\\func test (d : D) => x = y");
+      "\\func test (d : D) => d.x = {d.X} y");
   }
 }

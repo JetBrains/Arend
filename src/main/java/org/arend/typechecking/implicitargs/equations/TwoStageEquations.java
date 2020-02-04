@@ -63,7 +63,7 @@ public class TwoStageEquations implements Equations {
         return null;
       }
       if (classDef.getClassifyingField() == fieldCall.getDefinition() && expr.getStuckInferenceVariable() == null) {
-        return ((TypeClassInferenceVariable) variable).getInstance(myVisitor.getInstancePool(), expr, variable.getSourceNode());
+        return ((TypeClassInferenceVariable) variable).getInstance(myVisitor.getInstancePool(), expr, null, variable.getSourceNode());
       }
     }
     return null;
@@ -832,11 +832,13 @@ public class TwoStageEquations implements Equations {
     for (Map.Entry<InferenceVariable, Set<Wrapper>> entry : bounds.entrySet()) {
       Set<Wrapper> varResult = new HashSet<>();
       calculateBoundsOfVariable(entry.getKey(), varResult, bounds, new HashSet<>());
-      List<ClassCallExpression> list = new ArrayList<>(varResult.size());
-      for (Wrapper wrapper : varResult) {
-        list.add((ClassCallExpression) wrapper.expression);
+      if (!varResult.isEmpty()) {
+        List<ClassCallExpression> list = new ArrayList<>(varResult.size());
+        for (Wrapper wrapper : varResult) {
+          list.add((ClassCallExpression) wrapper.expression);
+        }
+        result.add(new Pair<>(entry.getKey(), list));
       }
-      result.add(new Pair<>(entry.getKey(), list));
     }
     return result;
   }

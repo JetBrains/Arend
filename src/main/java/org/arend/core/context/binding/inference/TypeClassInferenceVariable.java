@@ -38,8 +38,8 @@ public class TypeClassInferenceVariable extends InferenceVariable {
     return new InstanceInferenceError(myClassRef, expectedType, actualType, getSourceNode(), candidate, myRecursiveInstanceHoleExpression);
   }
 
-  public Expression getInstance(InstancePool pool, Expression classifyingExpression, Concrete.SourceNode sourceNode) {
-    Expression result = (myOnlyLocal ? pool.getLocalInstancePool() : pool).getInstance(classifyingExpression, myClassRef, sourceNode, myRecursiveInstanceHoleExpression);
+  public Expression getInstance(InstancePool pool, Expression classifyingExpression, Expression expectedType, Concrete.SourceNode sourceNode) {
+    Expression result = (myOnlyLocal ? pool.getLocalInstancePool() : pool).getInstance(classifyingExpression, expectedType, myClassRef, sourceNode, myRecursiveInstanceHoleExpression);
     if (result == null && myClassifyingExpression == null) {
       myClassifyingExpression = classifyingExpression;
     }

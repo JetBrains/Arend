@@ -712,7 +712,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       ClassDefinition classDef = ((ClassCallExpression) type).getDefinition();
       RecursiveInstanceHoleExpression holeExpr = implBody instanceof RecursiveInstanceHoleExpression ? (RecursiveInstanceHoleExpression) implBody : null;
       if (classDef.getClassifyingField() == null) {
-        Expression instance = myInstancePool.getInstance(null, classDef.getReferable(), implBody, holeExpr);
+        Expression instance = myInstancePool.getInstance(null, type, classDef.getReferable(), implBody, holeExpr);
         if (instance == null) {
           ArgInferenceError error = new InstanceInferenceError(classDef.getReferable(), implBody, holeExpr, new Expression[0]);
           errorReporter.report(error);

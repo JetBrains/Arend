@@ -11,7 +11,7 @@ public class EmptyInstancePool implements InstancePool {
   private EmptyInstancePool() {}
 
   @Override
-  public Expression getInstance(Expression classifyingExpression, TCClassReferable classRef, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveData) {
+  public Expression getInstance(Expression classifyingExpression, Expression expectedType, TCClassReferable classRef, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveData) {
     return null;
   }
 
