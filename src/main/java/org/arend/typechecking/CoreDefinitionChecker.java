@@ -8,10 +8,7 @@ import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.elimtree.Body;
 import org.arend.core.elimtree.ElimTree;
 import org.arend.core.elimtree.IntervalElim;
-import org.arend.core.expr.ClassCallExpression;
-import org.arend.core.expr.DataCallExpression;
-import org.arend.core.expr.Expression;
-import org.arend.core.expr.UniverseExpression;
+import org.arend.core.expr.*;
 import org.arend.core.expr.type.Type;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
@@ -27,6 +24,7 @@ import org.arend.typechecking.implicitargs.equations.DummyEquations;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Objects;
 
 public class CoreDefinitionChecker {
   private final CoreExpressionChecker myChecker;
@@ -69,14 +67,17 @@ public class CoreDefinitionChecker {
     }
 
     if (definition.getKind() == CoreFunctionDefinition.Kind.LEMMA && (level == null || !level.isProp())) {
-      Sort sort = typeType.toSort();
-      if (sort == null) {
-        myChecker.getErrorReporter().report(new CoreErrorWrapper(new TypecheckingError("Cannot infer the sort of the type", null), definition.getResultType()));
-        return false;
-      }
-      if (!sort.isProp()) {
-        myChecker.getErrorReporter().report(new CoreErrorWrapper(new TypeMismatchError(new UniverseExpression(Sort.PROP), new UniverseExpression(sort), null), definition.getResultType()));
-        return false;
+      DefCallExpression resultDefCall = definition.getResultType().cast(DefCallExpression.class);
+      if (resultDefCall == null || !Objects.equals(resultDefCall.getUseLevel(), -1)) {
+        Sort sort = typeType.toSort();
+        if (sort == null) {
+          myChecker.getErrorReporter().report(new CoreErrorWrapper(new TypecheckingError("Cannot infer the sort of the type", null), definition.getResultType()));
+          return false;
+        }
+        if (!sort.isProp()) {
+          myChecker.getErrorReporter().report(new CoreErrorWrapper(new TypeMismatchError(new UniverseExpression(Sort.PROP), new UniverseExpression(sort), null), definition.getResultType()));
+          return false;
+        }
       }
     }
 
