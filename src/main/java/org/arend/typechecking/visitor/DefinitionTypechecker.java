@@ -649,7 +649,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       typedDef.setParameters(list.getFirst());
       typedDef.setResultType(expectedType);
       typedDef.setStatus(Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING);
-      typedDef.setKind(isSFunc ? (kind == FunctionKind.SFUNC ? CoreFunctionDefinition.Kind.SFUNC : CoreFunctionDefinition.Kind.LEMMA) : CoreFunctionDefinition.Kind.FUNC);
+      typedDef.setKind(isSFunc ? (kind == FunctionKind.LEMMA ? CoreFunctionDefinition.Kind.LEMMA : CoreFunctionDefinition.Kind.SFUNC) : CoreFunctionDefinition.Kind.FUNC);
     }
 
     if (newDef) {
