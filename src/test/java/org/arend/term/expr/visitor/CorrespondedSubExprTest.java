@@ -240,7 +240,9 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
   public void letExpr() {
     Concrete.LetExpression concrete = (Concrete.LetExpression) resolveNamesExpr("\\let | x => 1 \\in x");
     LetExpression let = (LetExpression) typeCheckExpr(concrete, null).expression;
-    Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(concrete.getClauses().get(0).getTerm()), let);
+    Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(
+        concrete.getClauses().get(0).getTerm()
+    ), let);
     assertEquals("1", accept.proj1.toString());
   }
 
@@ -263,5 +265,25 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
       ), body);
       assertEquals("514", accept.proj1.toString());
     }
+  }
+
+  @Test
+  public void simpleClassCall() {
+    ConcreteLocatedReferable resolved = resolveNamesDef(
+        "\\func test (x : X { | A => Nat }) => B 0 \\where {\n" +
+            "  \\class X (A : \\Type0) {\n" +
+            "    | B : A -> Nat\n" +
+            "  }\n" +
+            "}");
+    Concrete.FunctionDefinition concreteDef = (Concrete.FunctionDefinition) resolved.getDefinition();
+    FunctionDefinition coreDef = (FunctionDefinition) typeCheckDef(resolved);
+    Concrete.ClassExtExpression concrete = (Concrete.ClassExtExpression) concreteDef.getParameters().get(0).getType();
+    ClassCallExpression core = coreDef.getParameters().getTypeExpr().cast(ClassCallExpression.class);
+    assertNotNull(concrete);
+    assertNotNull(core);
+    Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(
+        concrete.getStatements().get(0).implementation
+    ), core);
+    assertEquals("Nat", accept.proj1.toString());
   }
 }

@@ -1,16 +1,15 @@
 package org.arend.typechecking.visitor;
 
 import org.arend.core.context.param.DependentLink;
+import org.arend.core.definition.ClassField;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
+import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteExpressionVisitor;
 import org.arend.util.Pair;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class CorrespondedSubExprVisitor implements
@@ -285,8 +284,34 @@ public class CorrespondedSubExprVisitor implements
     if (matchesSubExpr(expr)) return new Pair<>(coreExpr, expr);
     ClassCallExpression coreClassExpr = coreExpr.cast(ClassCallExpression.class);
     if (coreClassExpr == null) return null;
-    // How about the other subexpressions?
-    return expr.getBaseClassExpression().accept(this, coreClassExpr.getExpr());
+    Map<ClassField, Expression> implementedHere = coreClassExpr.getImplementedHere();
+    for (Concrete.ClassFieldImpl statement : expr.getStatements()) {
+      Pair<Expression, Concrete.Expression> field = visitStatement(implementedHere, statement);
+      if (field != null) return field;
+    }
+    return null;
+  }
+
+  private Pair<Expression, Concrete.Expression> visitStatement(Map<ClassField, Expression> implementedHere, Concrete.ClassFieldImpl statement) {
+    Referable implementedField = statement.getImplementedField();
+    if (implementedField == null) return null;
+    Concrete.Expression implementation = statement.implementation;
+    return implementedHere.entrySet()
+        .stream()
+        .filter(entry -> entry.getKey().getReferable() == implementedField)
+        .findFirst()
+        .map(Map.Entry::getValue)
+        .map(e -> {
+          Map<ClassField, Expression> map = e instanceof NewExpression
+              ? ((NewExpression) e).getClassCall().getImplementedHere() : null;
+          if (map != null)
+            for (Concrete.ClassFieldImpl subFieldImpl : statement.subClassFieldImpls) {
+              Pair<Expression, Concrete.Expression> recursion = visitStatement(map, subFieldImpl);
+              if (recursion != null) return recursion;
+            }
+          return implementation == null ? null : new Pair<>(e, implementation);
+        })
+        .orElse(null);
   }
 
   @Override
