@@ -295,22 +295,12 @@ public class CorrespondedSubExprVisitor implements
   private Pair<Expression, Concrete.Expression> visitStatement(Map<ClassField, Expression> implementedHere, Concrete.ClassFieldImpl statement) {
     Referable implementedField = statement.getImplementedField();
     if (implementedField == null) return null;
-    Concrete.Expression implementation = statement.implementation;
     return implementedHere.entrySet()
         .stream()
         .filter(entry -> entry.getKey().getReferable() == implementedField)
         .findFirst()
         .map(Map.Entry::getValue)
-        .map(e -> {
-          Map<ClassField, Expression> map = e instanceof NewExpression
-              ? ((NewExpression) e).getClassCall().getImplementedHere() : null;
-          if (map != null)
-            for (Concrete.ClassFieldImpl subFieldImpl : statement.subClassFieldImpls) {
-              Pair<Expression, Concrete.Expression> recursion = visitStatement(map, subFieldImpl);
-              if (recursion != null) return recursion;
-            }
-          return implementation == null ? null : new Pair<>(e, implementation);
-        })
+        .map(e -> statement.implementation.accept(this, e))
         .orElse(null);
   }
 
