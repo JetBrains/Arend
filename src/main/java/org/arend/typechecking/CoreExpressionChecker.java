@@ -98,7 +98,14 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
   @Override
   public Expression visitFieldCall(FieldCallExpression expr, Expression expectedType) {
     PiExpression type = expr.getDefinition().getType(expr.getSortArgument());
-    return expr.getArgument().accept(this, type.getParameters().getTypeExpr()) != null ? check(expectedType, type.applyExpression(expr.getArgument()), expr) : null;
+    Expression argType = expr.getArgument().accept(this, type.getParameters().getTypeExpr());
+    if (argType == null) {
+      return null;
+    }
+
+    ClassCallExpression argClassCall = argType.cast(ClassCallExpression.class);
+    PiExpression overriddenType = argClassCall == null ? null : argClassCall.getDefinition().getOverriddenType(expr.getDefinition(), expr.getSortArgument());
+    return check(expectedType, (overriddenType == null ? type : overriddenType).applyExpression(expr.getArgument()), expr);
   }
 
   @Override
