@@ -25,6 +25,7 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
   private Body myBody;
   private List<Integer> myParametersTypecheckingOrder;
   private Kind myKind = Kind.FUNC;
+  private boolean myBodyIsHidden = false;
   private List<Boolean> myGoodThisParameters = Collections.emptyList();
   private List<TypeClassParameterKind> myTypeClassParameters = Collections.emptyList();
   private int myVisibleParameter = -1;
@@ -37,12 +38,20 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
 
   @Override
   public Body getBody() {
-    return myKind == Kind.FUNC ? myBody : null;
+    return myKind != Kind.FUNC || myBodyIsHidden ? null : myBody;
   }
 
   @Override
   public Body getActualBody() {
     return myBody;
+  }
+
+  public boolean isBodyHidden() {
+    return myBodyIsHidden;
+  }
+
+  public void hideBody() {
+    myBodyIsHidden = true;
   }
 
   public void setBody(Body body) {

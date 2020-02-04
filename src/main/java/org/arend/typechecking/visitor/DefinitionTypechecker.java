@@ -882,7 +882,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         if (termResult.expression instanceof FunCallExpression && ((FunCallExpression) termResult.expression).getDefinition().getActualBody() == null && ((FunCallExpression) termResult.expression).getDefinition().status() != Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING) {
           bodyIsOK = true;
           if (newDef) {
-            typedDef.setBody(null);
+            typedDef.hideBody();
           }
         }
         if (termResult.expression instanceof NewExpression) {

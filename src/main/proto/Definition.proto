@@ -117,6 +117,7 @@ message Definition {
         FunctionKind kind = 8;
         int32 visible_parameter = 9;
         repeated ParametersLevel parameters_levels = 10;
+        bool body_is_hidden = 11;
     }
     message DConstructorData {
         FunctionData function = 1;

@@ -339,6 +339,9 @@ public class DefinitionDeserialization {
     if (functionProto.hasTypeLevel()) {
       functionDef.setResultTypeLevel(defDeserializer.readExpr(functionProto.getTypeLevel()));
     }
+    if (functionProto.getBodyIsHidden()) {
+      functionDef.hideBody();
+    }
     FunctionDefinition.Kind kind;
     switch (functionProto.getKind()) {
       case LEMMA:

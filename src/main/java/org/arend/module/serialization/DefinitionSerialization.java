@@ -276,6 +276,7 @@ public class DefinitionSerialization {
     if (definition.getResultTypeLevel() != null) {
       builder.setTypeLevel(defSerializer.writeExpr(definition.getResultTypeLevel()));
     }
+    builder.setBodyIsHidden(definition.isBodyHidden());
     DefinitionProtos.Definition.FunctionKind kind;
     switch (definition.getKind()) {
       case LEMMA:
