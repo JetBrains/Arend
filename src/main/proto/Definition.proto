@@ -87,9 +87,9 @@ message Definition {
         repeated TypeClassParameterKind type_class_parameters = 4;
         Sort sort = 5;
         repeated Constructor constructor = 6;
-        bool matches_on_interval = 7;
         bool is_truncated = 8;
         bool is_squashed = 9;
+        int32 squasher = 13;
         repeated bool covariant_parameter = 10;
         CoerceData coerce_data = 11;
         repeated ParametersLevel parameters_levels = 12;
@@ -103,7 +103,6 @@ message Definition {
             repeated TypeClassParameterKind type_class_parameters = 10;
             repeated Clause clause = 4;
             Body conditions = 5;
-            int32 number_of_interval_parameters = 6;
         }
     }
     message FunctionData {

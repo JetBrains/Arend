@@ -3,8 +3,6 @@ package org.arend.typechecking.error.local;
 import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.error.TypecheckingError;
 
-import javax.annotation.Nonnull;
-
 public class CertainTypecheckingError extends TypecheckingError {
   public enum Kind {
     LEVEL_IGNORED(Level.WARNING_UNUSED, "\\level is ignored"),
@@ -41,7 +39,7 @@ public class CertainTypecheckingError extends TypecheckingError {
 
   public final Kind kind;
 
-  public CertainTypecheckingError(Kind kind, @Nonnull ConcreteSourceNode cause) {
+  public CertainTypecheckingError(Kind kind, ConcreteSourceNode cause) {
     super(kind.level, kind.message, cause);
     this.kind = kind;
   }

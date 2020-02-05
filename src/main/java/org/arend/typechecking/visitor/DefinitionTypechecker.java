@@ -4,7 +4,6 @@ import org.arend.core.context.LinkList;
 import org.arend.core.context.Utils;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.TypedBinding;
-import org.arend.core.context.binding.Variable;
 import org.arend.core.context.param.*;
 import org.arend.core.definition.*;
 import org.arend.core.elimtree.Body;
@@ -1311,13 +1310,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
     // Check if constructors pattern match on the interval
     for (Constructor constructor : dataDefinition.getConstructors()) {
-      if (constructor.getBody() != null) {
-        if (!dataDefinition.matchesOnInterval() && constructor.getBody() instanceof IntervalElim) {
-          if (newDef) {
-            dataDefinition.setMatchesOnInterval();
-          }
-          inferredSort = inferredSort.max(new Sort(inferredSort.getPLevel(), Level.INFINITY));
-        }
+      if (constructor.getBody() instanceof IntervalElim && !inferredSort.getHLevel().isInfinity()) {
+        inferredSort = new Sort(inferredSort.getPLevel(), Level.INFINITY);
       }
     }
 
@@ -1330,24 +1324,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           continue;
         }
 
-        boolean isCovariant = true;
         dataDefinition.setCovariant(index, true);
-        for (Constructor constructor : dataDefinition.getConstructors()) {
-          if (!constructor.status().headerIsOK()) {
-            continue;
-          }
-          for (DependentLink link1 = constructor.getParameters(); link1.hasNext(); link1 = link1.getNext()) {
-            link1 = link1.getNextTyped(null);
-            if (!checkPositiveness(link1.getTypeExpr(), index, null, null, null, Collections.singleton(link))) {
-              isCovariant = false;
-              break;
-            }
-          }
-          if (!isCovariant) {
-            break;
-          }
-        }
-        if (!isCovariant) {
+        if (!isCovariantParameter(dataDefinition, link)) {
           dataDefinition.setCovariant(index, false);
         }
       }
@@ -1478,7 +1456,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         int index = 0;
         for (DependentLink link = list.getFirst(); link.hasNext(); link = link.getNext(), index++) {
           link = link.getNextTyped(null);
-          if (!checkPositiveness(link.getTypeExpr(), index, def.getParameters(), def, errorReporter, dataDefinitions)) {
+          if (!checkPositiveness(link.getTypeExpr(), index, def.getParameters(), def, dataDefinitions, true)) {
             if (constructor != null) {
               constructor.setParameters(EmptyDependentLink.getInstance());
             }
@@ -1540,7 +1518,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
         list.append(newParam);
         constructor.setParameters(list.getFirst());
-        constructor.setNumberOfIntervalParameters(numberOfNewParameters);
 
         List<IntervalElim.CasePair> pairs;
         ElimTree elimTree;
@@ -1575,89 +1552,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       calculateParametersTypecheckingOrder(constructor);
     }
     return sort;
-  }
-
-  @SuppressWarnings({"BooleanMethodIsAlwaysInverted", "RedundantIfStatement"})
-  private boolean checkPositiveness(Expression type, int index, List<? extends Concrete.Parameter> parameters, Concrete.Constructor constructor, ErrorReporter errorReporter, Set<? extends Variable> variables) {
-    type = type.getUnderlyingExpression();
-    while (type instanceof PiExpression) {
-      if (!checkNonPositiveError(((PiExpression) type).getParameters().getTypeExpr(), index, parameters, constructor, errorReporter, variables)) {
-        return false;
-      }
-      type = ((PiExpression) type).getCodomain().getUnderlyingExpression();
-    }
-
-    if (type instanceof FunCallExpression && ((FunCallExpression) type).getDefinition() == Prelude.PATH_INFIX) {
-      List<? extends Expression> exprs = ((FunCallExpression) type).getDefCallArguments();
-      if (!checkPositiveness(exprs.get(0), index, parameters, constructor, errorReporter, variables) || !checkNonPositiveError(exprs.get(1), index, parameters, constructor, errorReporter, variables) || !checkNonPositiveError(exprs.get(2), index, parameters, constructor, errorReporter, variables)) {
-        return false;
-      }
-    } else if (type instanceof SigmaExpression) {
-      for (DependentLink link = ((SigmaExpression) type).getParameters(); link.hasNext(); link = link.getNext()) {
-        link = link.getNextTyped(null);
-        if (!checkPositiveness(link.getTypeExpr(), index, parameters, constructor, errorReporter, variables)) {
-          return false;
-        }
-      }
-    } else if (type instanceof DataCallExpression) {
-      List<? extends Expression> exprs = ((DataCallExpression) type).getDefCallArguments();
-      DataDefinition typeDef = ((DataCallExpression) type).getDefinition();
-
-      for (int i = 0; i < exprs.size(); i++) {
-        if (typeDef.isCovariant(i)) {
-          Expression expr = exprs.get(i).normalize(NormalizationMode.WHNF);
-          for (LamExpression lam = expr.cast(LamExpression.class); lam != null; lam = expr.cast(LamExpression.class)) {
-            expr = lam.getBody().normalize(NormalizationMode.WHNF);
-          }
-          if (!checkPositiveness(expr, index, parameters, constructor, errorReporter, variables)) {
-            return false;
-          }
-        } else {
-          if (!checkNonPositiveError(exprs.get(i), index, parameters, constructor, errorReporter, variables)) {
-            return false;
-          }
-        }
-      }
-    } else {
-      while (type instanceof AppExpression) {
-        if (!checkNonPositiveError(((AppExpression) type).getArgument(), index, parameters, constructor, errorReporter, variables)) {
-          return false;
-        }
-        type = type.getFunction().getUnderlyingExpression();
-      }
-      if (!(type instanceof ReferenceExpression)) {
-        if (!checkNonPositiveError(type, index, parameters, constructor, errorReporter, variables)) {
-          return false;
-        }
-      }
-    }
-
-    return true;
-  }
-
-  @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-  private static boolean checkNonPositiveError(Expression expr, int index, List<? extends Concrete.Parameter> parameters, Concrete.Constructor constructor, ErrorReporter errorReporter, Set<? extends Variable> variables) {
-    Variable def = expr.findBinding(variables);
-    if (def == null) {
-      return true;
-    }
-
-    if (errorReporter == null) {
-      return false;
-    }
-
-    int i = 0;
-    Concrete.Parameter parameter = null;
-    for (Concrete.Parameter parameter1 : parameters) {
-      i += parameter1.getNumberOfParameters();
-      if (i > index) {
-        parameter = parameter1;
-        break;
-      }
-    }
-
-    errorReporter.report(new NonPositiveDataError((DataDefinition) def, constructor, parameter == null ? constructor : parameter));
-    return false;
   }
 
   private static class LocalInstance {

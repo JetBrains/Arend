@@ -58,7 +58,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   public Expression check(Expression expectedType, Expression actualType, Expression expression) {
     if (expectedType != null && !CompareVisitor.compare(myEquations, CMP.LE, actualType, expectedType, Type.OMEGA, mySourceNode)) {
-      myErrorReporter.report(new CoreErrorWrapper(new TypeMismatchError(expectedType, actualType, mySourceNode), expression));
+      myErrorReporter.report(CoreErrorWrapper.make(new TypeMismatchError(expectedType, actualType, mySourceNode), expression));
       return null;
     }
     return actualType;
@@ -148,11 +148,11 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       if (!expr.isImplemented(field)) {
         Sort sort = field.getType(expr.getSortArgument()).applyExpression(thisExpr).getSortOfType();
         if (sort == null) {
-          myErrorReporter.report(new CoreErrorWrapper(new TypecheckingError("Cannot infer the type of field '" + field.getName() + "'", mySourceNode), expr));
+          myErrorReporter.report(CoreErrorWrapper.make(new TypecheckingError("Cannot infer the type of field '" + field.getName() + "'", mySourceNode), expr));
           return null;
         }
         if (!Sort.compare(sort, expr.getSort(), CMP.LE, myEquations, mySourceNode)) {
-          myErrorReporter.report(new CoreErrorWrapper(new TypecheckingError("The sort " + sort + " of field '" + field.getName() + "' does not fit in the expected sort " + expr.getSort() , mySourceNode), expr));
+          myErrorReporter.report(CoreErrorWrapper.make(new TypecheckingError("The sort " + sort + " of field '" + field.getName() + "' does not fit in the expected sort " + expr.getSort() , mySourceNode), expr));
           return null;
         }
       }
@@ -161,7 +161,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     if (!expr.hasUniverses() && expr.getDefinition().hasUniverses()) {
       for (ClassField field : expr.getDefinition().getFields()) {
         if (field.hasUniverses() && !expr.isImplemented(field)) {
-          myErrorReporter.report(new CoreErrorWrapper(new TypecheckingError("Field '" + field.getName() + "' has universes, but the class call does not have them", mySourceNode), expr));
+          myErrorReporter.report(CoreErrorWrapper.make(new TypecheckingError("Field '" + field.getName() + "' has universes, but the class call does not have them", mySourceNode), expr));
           return null;
         }
       }
@@ -180,7 +180,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     funType = funType.normalize(NormalizationMode.WHNF);
     PiExpression piType = funType.cast(PiExpression.class);
     if (piType == null) {
-      myErrorReporter.report(new CoreErrorWrapper(new TypeMismatchError(DocFactory.text("a pi type"), funType, mySourceNode), expr.getFunction()));
+      myErrorReporter.report(CoreErrorWrapper.make(new TypeMismatchError(DocFactory.text("a pi type"), funType, mySourceNode), expr.getFunction()));
       return null;
     }
 
@@ -190,7 +190,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
   @Override
   public Expression visitReference(ReferenceExpression expr, Expression expectedType) {
     if (!myContext.contains(expr.getBinding())) {
-      myErrorReporter.report(new CoreErrorWrapper(new TypecheckingError("Variable '" + expr.getBinding().getName() + "' is not bound", mySourceNode), expr));
+      myErrorReporter.report(CoreErrorWrapper.make(new TypecheckingError("Variable '" + expr.getBinding().getName() + "' is not bound", mySourceNode), expr));
       return null;
     }
     return check(expectedType, expr.getBinding().getTypeExpr(), expr);
@@ -204,7 +204,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     BaseInferenceVariable infVar = expr.getVariable();
     for (Binding bound : infVar.getBounds()) {
       if (!myContext.contains(bound)) {
-        myErrorReporter.report(new CoreErrorWrapper(new TypecheckingError("Variable '" + bound.getName() + "' is not bound", mySourceNode), expr));
+        myErrorReporter.report(CoreErrorWrapper.make(new TypecheckingError("Variable '" + bound.getName() + "' is not bound", mySourceNode), expr));
         return null;
       }
     }
@@ -219,7 +219,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
   private boolean addBinding(Binding binding, Expression expr) {
     if (!myContext.add(binding)) {
       TypecheckingError error = new TypecheckingError("Binding '" + binding.getName() + "' is already bound", mySourceNode);
-      myErrorReporter.report(expr == null ? error : new CoreErrorWrapper(error, expr));
+      myErrorReporter.report(CoreErrorWrapper.make(error, expr));
       return false;
     }
     return true;
@@ -231,6 +231,38 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
         return false;
       }
       if (link instanceof TypedDependentLink && link.getTypeExpr().accept(this, type) == null) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  Sort checkDependentLink(DependentLink link, Expression expr) {
+    Sort result = Sort.PROP;
+    for (; link.hasNext(); link = link.getNext()) {
+      if (!addBinding(link, expr)) {
+        return null;
+      }
+      if (link instanceof TypedDependentLink) {
+        Expression type = link.getTypeExpr().accept(this, Type.OMEGA);
+        if (type == null) {
+          return null;
+        }
+        Sort sort = type.toSort();
+        result = sort == null ? null : result.max(sort);
+        if (result == null) {
+          myErrorReporter.report(CoreErrorWrapper.make(new TypecheckingError("Cannot infer the sort of type", null), link.getTypeExpr()));
+          return null;
+        }
+      }
+    }
+
+    return result;
+  }
+
+  boolean addDependentLink(DependentLink link) {
+    for (; link.hasNext(); link = link.getNext()) {
+      if (!addBinding(link, null)) {
         return false;
       }
     }
@@ -271,7 +303,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
   @Override
   public Expression visitUniverse(UniverseExpression expr, Expression expectedType) {
     if (expr.isOmega()) {
-      myErrorReporter.report(new CoreErrorWrapper(new TypecheckingError("Universes of the infinity level are not allowed", mySourceNode), expr));
+      myErrorReporter.report(CoreErrorWrapper.make(new TypecheckingError("Universes of the infinity level are not allowed", mySourceNode), expr));
       return null;
     }
     return check(expectedType, new UniverseExpression(expr.getSort().succ()), expr);
@@ -280,7 +312,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
   @Override
   public Expression visitError(ErrorExpression expr, Expression expectedType) {
     if (expr.isError()) {
-      myErrorReporter.report(new CoreErrorWrapper(new TypecheckingError("Unknown error", mySourceNode), expr));
+      myErrorReporter.report(CoreErrorWrapper.make(new TypecheckingError("Unknown error", mySourceNode), expr));
       return null;
     }
     return expectedType != null ? expectedType : expr.getExpression() == null ? expr : new ErrorExpression(null, expr.isGoal());
@@ -301,7 +333,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     type = type.normalize(NormalizationMode.WHNF);
     SigmaExpression sigmaExpr = type.cast(SigmaExpression.class);
     if (sigmaExpr == null) {
-      myErrorReporter.report(new CoreErrorWrapper(new TypeMismatchError(DocFactory.text("a sigma type"), type, mySourceNode), expr.getExpression()));
+      myErrorReporter.report(CoreErrorWrapper.make(new TypeMismatchError(DocFactory.text("a sigma type"), type, mySourceNode), expr.getExpression()));
       return null;
     }
 
@@ -309,7 +341,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     DependentLink param = sigmaExpr.getParameters();
     for (int i = 0; true; i++) {
       if (!param.hasNext()) {
-        myErrorReporter.report(new CoreErrorWrapper(new TypeMismatchError(DocFactory.text("a sigma type with " + (expr.getField() + 1) + " parameter" + (expr.getField() == 0 ? "" : "s")), sigmaExpr, mySourceNode), expr.getExpression()));
+        myErrorReporter.report(CoreErrorWrapper.make(new TypeMismatchError(DocFactory.text("a sigma type with " + (expr.getField() + 1) + " parameter" + (expr.getField() == 0 ? "" : "s")), sigmaExpr, mySourceNode), expr.getExpression()));
         return null;
       }
       if (i == expr.getField()) {
@@ -334,7 +366,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       }
     }
     if (!fields.isEmpty()) {
-      myErrorReporter.report(new CoreErrorWrapper(new FieldsImplementationError(false, classCall.getDefinition().getReferable(), fields, mySourceNode), classCall));
+      myErrorReporter.report(CoreErrorWrapper.make(new FieldsImplementationError(false, classCall.getDefinition().getReferable(), fields, mySourceNode), classCall));
     }
     return false;
   }
@@ -354,7 +386,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
     Sort sortArg = type.getSortOfType();
     if (sortArg == null) {
-      myErrorReporter.report(new CoreErrorWrapper(new TypecheckingError("Cannot infer the sort of the type of the expression", mySourceNode), expr.getExpression()));
+      myErrorReporter.report(CoreErrorWrapper.make(new TypecheckingError("Cannot infer the sort of the type of the expression", mySourceNode), expr.getExpression()));
       return null;
     }
 
@@ -389,13 +421,13 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     List<SingleDependentLink> params = new ArrayList<>();
     FunCallExpression codomain = proofType.getPiParameters(params, false).toEquality();
     if (codomain == null || params.isEmpty() || params.size() % 2 == 1) {
-      myErrorReporter.report(new CoreErrorWrapper(new TypecheckingError("\\level has wrong format", mySourceNode), proof));
+      myErrorReporter.report(CoreErrorWrapper.make(new TypecheckingError("\\level has wrong format", mySourceNode), proof));
       return null;
     }
 
     for (int i = 0; i < params.size(); i += 2) {
       if (!CompareVisitor.compare(myEquations, CMP.EQ, type, params.get(i).getTypeExpr(), Type.OMEGA, mySourceNode) || !CompareVisitor.compare(myEquations, CMP.EQ, type, params.get(i + 1).getTypeExpr(), Type.OMEGA, mySourceNode)) {
-        myErrorReporter.report(new CoreErrorWrapper(new TypecheckingError("\\level has wrong format", mySourceNode), proof));
+        myErrorReporter.report(CoreErrorWrapper.make(new TypecheckingError("\\level has wrong format", mySourceNode), proof));
         return null;
       }
 

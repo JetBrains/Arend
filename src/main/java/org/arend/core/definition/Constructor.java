@@ -29,7 +29,6 @@ public class Constructor extends Definition implements Function, CoreBranchKey, 
   private Patterns myPatterns;
   private Body myConditions;
   private List<ClauseBase> myClauses;
-  private int myNumberOfIntervalParameters;
   private List<Integer> myParametersTypecheckingOrder;
   private List<Boolean> myGoodThisParameters = Collections.emptyList();
   private List<TypeClassParameterKind> myTypeClassParameters = Collections.emptyList();
@@ -80,14 +79,6 @@ public class Constructor extends Definition implements Function, CoreBranchKey, 
   public void setParameters(DependentLink parameters) {
     assert parameters != null;
     myParameters = parameters;
-  }
-
-  public int getNumberOfIntervalParameters() {
-    return myNumberOfIntervalParameters;
-  }
-
-  public void setNumberOfIntervalParameters(int numberOfIntervalParameters) {
-    myNumberOfIntervalParameters = numberOfIntervalParameters;
   }
 
   @Nonnull

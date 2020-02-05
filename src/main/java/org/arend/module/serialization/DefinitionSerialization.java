@@ -170,14 +170,15 @@ public class DefinitionSerialization {
       if (constructor.getBody() != null) {
         cBuilder.setConditions(writeBody(defSerializer, constructor.getBody()));
       }
-      cBuilder.setNumberOfIntervalParameters(constructor.getNumberOfIntervalParameters());
 
       builder.addConstructor(cBuilder.build());
     }
 
-    builder.setMatchesOnInterval(definition.matchesOnInterval());
     builder.setIsTruncated(definition.isTruncated());
     builder.setIsSquashed(definition.isSquashed());
+    if (definition.getSquasher() != null) {
+      builder.setSquasher(myCallTargetIndexProvider.getDefIndex(definition.getSquasher()));
+    }
     int i = 0;
     for (DependentLink link = definition.getParameters(); link.hasNext(); link = link.getNext()) {
       builder.addCovariantParameter(definition.isCovariant(i++));

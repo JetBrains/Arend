@@ -13,10 +13,14 @@ public class CoreErrorWrapper extends LocalError {
   public final GeneralError error;
   public final Expression causeExpr;
 
-  public CoreErrorWrapper(GeneralError error, Expression causeExpr) {
+  private CoreErrorWrapper(GeneralError error, Expression causeExpr) {
     super(error.level, error.message);
     this.error = error;
     this.causeExpr = causeExpr;
+  }
+
+  public static GeneralError make(GeneralError error, Expression causeExpr) {
+    return causeExpr == null ? error : new CoreErrorWrapper(error, causeExpr);
   }
 
   @Override

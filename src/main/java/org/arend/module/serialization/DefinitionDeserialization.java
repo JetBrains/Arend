@@ -206,14 +206,14 @@ public class DefinitionDeserialization {
       if (constructorProto.hasConditions()) {
         constructor.setBody(readBody(defDeserializer, constructorProto.getConditions(), DependentLink.Helper.size(constructor.getParameters())));
       }
-      constructor.setNumberOfIntervalParameters(constructorProto.getNumberOfIntervalParameters());
     }
 
-    if (dataProto.getMatchesOnInterval()) {
-      dataDef.setMatchesOnInterval();
-    }
     dataDef.setTruncated(dataProto.getIsTruncated());
     dataDef.setSquashed(dataProto.getIsSquashed());
+    int squasher = dataProto.getSquasher();
+    if (squasher != 0) {
+      dataDef.setSquasher(myCallTargetProvider.getCallTarget(squasher, FunctionDefinition.class));
+    }
 
     int index = 0;
     for (Boolean isCovariant : dataProto.getCovariantParameterList()) {

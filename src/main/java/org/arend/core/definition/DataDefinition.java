@@ -21,9 +21,9 @@ public class DataDefinition extends Definition implements CoreDataDefinition {
   private final List<Constructor> myConstructors;
   private DependentLink myParameters;
   private Sort mySort;
-  private boolean myMatchesOnInterval;
   private boolean myTruncated;
   private boolean mySquashed;
+  private FunctionDefinition mySquasher;
   private final Set<Integer> myCovariantParameters = new HashSet<>();
   private final CoerceData myCoerce = new CoerceData(this);
   private List<Integer> myParametersTypecheckingOrder;
@@ -80,6 +80,14 @@ public class DataDefinition extends Definition implements CoreDataDefinition {
     mySquashed = value;
   }
 
+  public FunctionDefinition getSquasher() {
+    return mySquasher;
+  }
+
+  public void setSquasher(FunctionDefinition squasher) {
+    mySquasher = squasher;
+  }
+
   @Nonnull
   @Override
   public DependentLink getParameters() {
@@ -117,10 +125,6 @@ public class DataDefinition extends Definition implements CoreDataDefinition {
   public void addConstructor(Constructor constructor) {
     myConstructors.add(constructor);
   }
-
-  public boolean matchesOnInterval() { return myMatchesOnInterval; }
-
-  public void setMatchesOnInterval() { myMatchesOnInterval = true; }
 
   public boolean hasIndexedConstructors() {
     for (Constructor constructor : myConstructors) {
