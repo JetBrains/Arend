@@ -1687,6 +1687,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             newField.setStatus(previousField.status());
             newField.setHasUniverses(previousField.hasUniverses());
             newField.setCovariant(previousField.isCovariant());
+            newField.setNumberOfParameters(previousField.getNumberOfParameters());
           }
         } else {
           previousType = field.getResultType();
@@ -1696,6 +1697,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             if (!previousField.getType(Sort.STD).getCodomain().accept(new CheckForUniversesVisitor(false), null)) {
               previousField.setCovariant(true);
             }
+            previousField.setNumberOfParameters(field.getNumberOfParameters());
           }
 
           if (field.getData().isParameterField() && !field.getData().isExplicitField()) {
@@ -1972,6 +1974,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           SingleDependentLink link = EmptyDependentLink.getInstance();
           if (def.getResultType() instanceof Concrete.PiExpression) {
             List<Concrete.TypeParameter> parameters = ((Concrete.PiExpression) def.getResultType()).getParameters();
+            int i = 0;
+            int sum = def.getNumberOfParameters() + 1;
             loop:
             for (Concrete.TypeParameter parameter : parameters) {
               for (Referable referable : parameter.getReferableList()) {
@@ -1985,6 +1989,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
                 }
                 typechecker.addBinding(referable, link);
                 link = link.getNext();
+
+                if (++i == sum) {
+                  break loop;
+                }
               }
             }
           }

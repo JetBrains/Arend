@@ -65,6 +65,7 @@ public class DefinitionSerialization {
       if (field.getTypeLevel() != null) {
         fBuilder.setTypeLevel(defSerializer.writeExpr(field.getTypeLevel()));
       }
+      fBuilder.setNumberOfParameters(field.getNumberOfParameters());
       fBuilder.setIsExplicit(field.getReferable().isExplicitField());
       fBuilder.setIsParameter(field.getReferable().isParameterField());
       fBuilder.setIsProperty(field.isProperty());

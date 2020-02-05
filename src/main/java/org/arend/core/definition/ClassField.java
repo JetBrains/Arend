@@ -19,6 +19,7 @@ public class ClassField extends Definition implements CoreClassField {
   private boolean myProperty;
   private PiExpression myType;
   private Expression myTypeLevel;
+  private int myNumberOfParameters;
   private boolean myHideable;
   private boolean myCovariant;
 
@@ -51,6 +52,14 @@ public class ClassField extends Definition implements CoreClassField {
 
   public PiExpression getType(Sort sortArgument) {
     return sortArgument == Sort.STD ? myType : (PiExpression) new SubstVisitor(new ExprSubstitution(), sortArgument.toLevelSubstitution()).visitPi(myType, null);
+  }
+
+  public void setNumberOfParameters(int numberOfParameters) {
+    myNumberOfParameters = numberOfParameters;
+  }
+
+  public int getNumberOfParameters() {
+    return myNumberOfParameters;
   }
 
   @Nonnull

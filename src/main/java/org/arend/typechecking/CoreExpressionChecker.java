@@ -216,13 +216,17 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     return expr.getSubstExpression().accept(this, expectedType);
   }
 
-  private boolean addBinding(Binding binding, Expression expr) {
+  boolean addBinding(Binding binding, Expression expr) {
     if (!myContext.add(binding)) {
       TypecheckingError error = new TypecheckingError("Binding '" + binding.getName() + "' is already bound", mySourceNode);
       myErrorReporter.report(CoreErrorWrapper.make(error, expr));
       return false;
     }
     return true;
+  }
+
+  void removeBinding(Binding binding) {
+    myContext.remove(binding);
   }
 
   boolean checkDependentLink(DependentLink link, Expression type, Expression expr) {
@@ -412,7 +416,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     return type;
   }
 
-  Level checkLevelProof(Expression proof, Expression type) {
+  Integer checkLevelProof(Expression proof, Expression type) {
     Expression proofType = proof.accept(this, null);
     if (proofType == null) {
       return null;
@@ -438,7 +442,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       type = new FunCallExpression(Prelude.PATH_INFIX, Sort.PROP, args);
     }
 
-    return new Level(params.size() / 2 - 2);
+    return params.size() / 2 - 2;
   }
 
   private boolean checkElimTree(ElimTree elimTree, Expression expr) {

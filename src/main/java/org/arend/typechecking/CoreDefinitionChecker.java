@@ -2,6 +2,7 @@ package org.arend.typechecking;
 
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.param.DependentLink;
+import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.definition.*;
 import org.arend.core.elimtree.Body;
 import org.arend.core.elimtree.ElimTree;
@@ -18,14 +19,13 @@ import org.arend.ext.error.TypeMismatchError;
 import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.prettyprinting.doc.DocFactory;
 import org.arend.prelude.Prelude;
+import org.arend.typechecking.error.local.CertainTypecheckingError;
 import org.arend.typechecking.error.local.CoreErrorWrapper;
 import org.arend.typechecking.error.local.inference.ArgInferenceError;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.visitor.BaseDefinitionTypechecker;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Objects;
+import java.util.*;
 
 public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
   private final CoreExpressionChecker myChecker;
@@ -40,6 +40,10 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
     if (!myChecker.checkDependentLink(definition.getParameters(), Type.OMEGA, null)) {
       return false;
     }
+
+    // TODO[double_check]: Check (mutual) recursion
+    // TODO[double_check]: Check definition.hasUniverses()
+    // TODO[double_check]: Check definition.getParametersLevels()
 
     if (definition instanceof FunctionDefinition) {
       return check((FunctionDefinition) definition);
@@ -58,7 +62,7 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
       return false;
     }
 
-    Level level;
+    Integer level;
     if (definition.getResultTypeLevel() != null) {
       level = myChecker.checkLevelProof(definition.getResultTypeLevel(), definition.getResultType());
       if (level == null) {
@@ -68,7 +72,7 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
       level = null;
     }
 
-    if (definition.getKind() == CoreFunctionDefinition.Kind.LEMMA && (level == null || !level.isProp())) {
+    if (definition.getKind() == CoreFunctionDefinition.Kind.LEMMA && (level == null || level != -1)) {
       DefCallExpression resultDefCall = definition.getResultType().cast(DefCallExpression.class);
       if (resultDefCall == null || !Objects.equals(resultDefCall.getUseLevel(), -1)) {
         Sort sort = typeType.toSort();
@@ -82,12 +86,6 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
         }
       }
     }
-
-    // TODO[double_check]: Check definition.hasUniverses()
-
-    // TODO[double_check]: Check definition.getParametersLevels()
-
-    // TODO[double_check]: Check termination
 
     Body body = definition.getActualBody();
     if (body instanceof Expression) {
@@ -162,7 +160,7 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
 
     for (Constructor constructor : definition.getConstructors()) {
       if (constructor.getDataType() != definition) {
-        errorReporter.report(new TypecheckingError("Constructor '" + constructor + "' belongs to '" + definition + "', but its data type is '" + constructor.getDataType() + "'", null));
+        errorReporter.report(new TypecheckingError("Constructor '" + constructor.getName() + "' belongs to '" + definition.getName() + "', but its data type is '" + constructor.getDataType().getName() + "'", null));
         return false;
       }
 
@@ -183,7 +181,7 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
         ok = sort.isLessOrEquals(definition.getSort());
       }
       if (!ok) {
-        errorReporter.report(new TypecheckingError("The sort " + sort + " of constructor '" + constructor + "' does not fit into the sort " + definition.getSort() + " of its data type", null));
+        errorReporter.report(new TypecheckingError("The sort " + sort + " of constructor '" + constructor.getName() + "' does not fit into the sort " + definition.getSort() + " of its data type", null));
         return false;
       }
 
@@ -202,23 +200,122 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
 
       Level hLevel = new Level(parametersLevel.level);
       if (!Level.compare(hLevel, definition.getSort().getHLevel(), CMP.LE, DummyEquations.getInstance(), null)) {
-        errorReporter.report(new TypecheckingError("The h-level " + definition.getSort().getHLevel() + " of data type '" + definition + "' does not fit into the h-level " + hLevel + " of the squashing function", null));
+        errorReporter.report(new TypecheckingError("The h-level " + definition.getSort().getHLevel() + " of data type '" + definition.getName() + "' does not fit into the h-level " + hLevel + " of the squashing function", null));
         return false;
       }
     }
 
-    // TODO[double_check]: Check definition.hasUniverses()
+    return true;
+  }
 
-    // TODO[double_check]: Check definition.getParametersLevels()
+  private boolean visitClass(ClassDefinition classDef, Set<ClassDefinition> stack, Set<ClassDefinition> visited, List<ClassField> fields) {
+    if (!stack.add(classDef)) {
+      errorReporter.report(new TypecheckingError("Class '" + classDef.getName() + "' depends recursively on its super classes", null));
+      return false;
+    }
+    if (!visited.add(classDef)) {
+      return true;
+    }
 
-    // TODO[double_check]: Check strict positivity
+    for (ClassDefinition superClass : classDef.getSuperClasses()) {
+      visitClass(superClass, stack, visited, fields);
+    }
 
+    fields.addAll(classDef.getPersonalFields());
+
+    stack.remove(classDef);
     return true;
   }
 
   private boolean check(ClassDefinition definition) {
+    List<ClassField> fields = new ArrayList<>();
+    if (!visitClass(definition, new HashSet<>(), new HashSet<>(), fields)) {
+      return false;
+    }
+    if (!fields.equals(new ArrayList<>(definition.getFields()))) {
+      errorReporter.report(new TypecheckingError("Class '" + definition.getName() + "' should have fields " + fields + ", but has fields " + definition.getFields(), null));
+      return false;
+    }
 
-    // TODO[double_check]: Check definition.hasUniverses()
+    for (ClassField field : definition.getPersonalFields()) {
+      if (field.getParentClass() != definition) {
+        errorReporter.report(new TypecheckingError("Field '" + field.getName() + "' belongs to '" + definition.getName() + "', but its class is '" + field.getParentClass().getName() + "'", null));
+        return false;
+      }
+
+      PiExpression fieldType = field.getType(Sort.STD);
+      myChecker.addBinding(fieldType.getParameters(), fieldType.getCodomain());
+      Expression typeType = fieldType.getCodomain().accept(myChecker, Type.OMEGA);
+      Integer level;
+      if (field.getTypeLevel() != null) {
+        List<DependentLink> parameters = new ArrayList<>();
+        Expression type = fieldType.getCodomain();
+        int sum = field.getNumberOfParameters();
+        for (int i = 0; i < sum; ) {
+          if (!(type instanceof PiExpression)) {
+            errorReporter.report(new TypecheckingError("The type of field '" + field.getName() + "' should have at least " + sum + " parameters, but has only " + i, null));
+            return false;
+          }
+          PiExpression piType = (PiExpression) type;
+          SingleDependentLink link = piType.getParameters();
+          for (; link.hasNext() && i < sum; link = link.getNext(), i++) {
+            parameters.add(link);
+          }
+          type = piType.getCodomain();
+          if (link.hasNext()) {
+            type = new PiExpression(piType.getResultSort(), link, type);
+          }
+        }
+
+        for (DependentLink parameter : parameters) {
+          myChecker.addBinding(parameter, null);
+        }
+        level = myChecker.checkLevelProof(field.getTypeLevel(), type);
+        for (DependentLink parameter : parameters) {
+          myChecker.removeBinding(parameter);
+        }
+        if (level == null) {
+          return false;
+        }
+      } else {
+        level = null;
+      }
+      myChecker.removeBinding(fieldType.getParameters());
+      if (typeType == null) {
+        return false;
+      }
+
+      Sort sort = typeType.toSort();
+      if (sort == null) {
+        errorReporter.report(CoreErrorWrapper.make(new TypecheckingError("Cannot infer the sort of the type of field '" + field.getName() + "'", null), fieldType));
+        return false;
+      }
+
+      if (!sort.isLessOrEquals(definition.getSort())) {
+        errorReporter.report(CoreErrorWrapper.make(new TypecheckingError("The sort " + sort + " of field '" + field.getName() + "' does not fit into the sort " + definition.getSort() + " of its class", null), fieldType));
+        return false;
+      }
+
+      boolean propertyOK = !field.isProperty();
+      if (level != null) {
+        if (field.isProperty() && level == -1) {
+          propertyOK = true;
+        } else {
+          errorReporter.report(CoreErrorWrapper.make(new CertainTypecheckingError(CertainTypecheckingError.Kind.USELESS_LEVEL, null), field.getTypeLevel()));
+        }
+      }
+
+      if (!propertyOK && !sort.isProp()) {
+        errorReporter.report(new TypecheckingError("The level of property '" + field.getName() + "' must be \\Prop", null));
+        return false;
+      }
+
+      // TODO[double_check]: Check covariance
+    }
+
+    // TODO[double_check]: Check occurrences of fields in other fields
+    // TODO[double_check]: Check implemented
+    // TODO[double_check]: Check overridden
 
     return true;
   }

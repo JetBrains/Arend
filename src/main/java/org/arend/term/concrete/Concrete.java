@@ -1524,6 +1524,7 @@ public final class Concrete {
     void setResultType(Expression resultType);
     @Nullable Expression getResultTypeLevel();
     void setResultTypeLevel(Expression resultTypeLevel);
+    int getNumberOfParameters();
   }
 
   public static class ClassField extends ReferableDefinition implements BaseClassField {
@@ -1531,6 +1532,7 @@ public final class Concrete {
     private final boolean myExplicit;
     private final ClassFieldKind myKind;
     private final List<TypeParameter> myParameters;
+    private final int myNumberOfParameters;
     private Expression myResultType;
     private Expression myResultTypeLevel;
 
@@ -1542,6 +1544,12 @@ public final class Concrete {
       myParameters = parameters;
       myResultType = resultType;
       myResultTypeLevel = resultTypeLevel;
+
+      int sum = 0;
+      for (Concrete.TypeParameter parameter : parameters) {
+        sum += parameter.getNumberOfParameters();
+      }
+      myNumberOfParameters = sum;
     }
 
     @Nonnull
@@ -1562,6 +1570,11 @@ public final class Concrete {
     @Override
     public List<TypeParameter> getParameters() {
       return myParameters;
+    }
+
+    @Override
+    public int getNumberOfParameters() {
+      return myNumberOfParameters;
     }
 
     @Nonnull
@@ -1603,6 +1616,7 @@ public final class Concrete {
     private final List<TypeParameter> myParameters;
     private Expression myResultType;
     private Expression myResultTypeLevel;
+    private final int myNumberOfParameters;
 
     public OverriddenField(Object data, Referable overriddenField, List<TypeParameter> parameters, Expression resultType, Expression resultTypeLevel) {
       super(data);
@@ -1610,6 +1624,12 @@ public final class Concrete {
       myParameters = parameters;
       myResultType = resultType;
       myResultTypeLevel = resultTypeLevel;
+
+      int sum = 0;
+      for (Concrete.TypeParameter parameter : parameters) {
+        sum += parameter.getNumberOfParameters();
+      }
+      myNumberOfParameters = sum;
     }
 
     @Nonnull
@@ -1625,6 +1645,11 @@ public final class Concrete {
     @Override
     public List<TypeParameter> getParameters() {
       return myParameters;
+    }
+
+    @Override
+    public int getNumberOfParameters() {
+      return myNumberOfParameters;
     }
 
     @Nonnull

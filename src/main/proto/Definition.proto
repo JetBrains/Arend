@@ -62,6 +62,7 @@ message Definition {
             Referable referable = 1;
             Expression.Pi type = 3;
             Expression type_level = 8;
+            int32 number_of_parameters = 12;
             bool hasTypeClassReference = 4;
             bool isExplicit = 5;
             bool isParameter = 6;

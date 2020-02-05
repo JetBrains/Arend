@@ -78,6 +78,7 @@ public class DefinitionDeserialization {
       if (fieldProto.hasTypeLevel()) {
         field.setTypeLevel(defDeserializer.readExpr(fieldProto.getTypeLevel()));
       }
+      field.setNumberOfParameters(fieldProto.getNumberOfParameters());
       // setTypeClassReference(field.getReferable(), EmptyDependentLink.getInstance(), fieldType.getCodomain());
       field.setHideable(fieldProto.getIsHideable());
       field.setCovariant(fieldProto.getIsCovariant());
