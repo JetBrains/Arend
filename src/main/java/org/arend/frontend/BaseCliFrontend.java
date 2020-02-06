@@ -15,6 +15,8 @@ import org.arend.naming.reference.TCReferable;
 import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.prelude.Prelude;
 import org.arend.prelude.PreludeResourceLibrary;
+import org.arend.term.group.Group;
+import org.arend.typechecking.CoreModuleChecker;
 import org.arend.typechecking.SimpleTypecheckerState;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.error.local.GoalError;
@@ -111,6 +113,7 @@ public abstract class BaseCliFrontend {
       cmdOptions.addOption(Option.builder("e").longOpt("extensions").hasArg().argName("dir").desc("language extensions directory").build());
       cmdOptions.addOption(Option.builder("m").longOpt("extension-main").hasArg().argName("class").desc("main extension class").build());
       cmdOptions.addOption(Option.builder().longOpt("recompile").desc("recompile files").build());
+      cmdOptions.addOption(Option.builder().longOpt("double-check").desc("double check correctness of the result").build());
       cmdOptions.addOption("v", "version", false, "print language version");
       addCommandOptions(cmdOptions);
       CommandLine cmdLine = new DefaultParser().parse(cmdOptions, args);
@@ -235,6 +238,7 @@ public abstract class BaseCliFrontend {
 
     MyTypechecking typechecking = new MyTypechecking();
     boolean recompile = cmdLine.hasOption("recompile");
+    boolean doubleCheck = cmdLine.hasOption("double-check");
     for (UnmodifiableSourceLibrary library : requestedLibraries) {
       myModuleResults.clear();
       if (recompile) {
@@ -280,6 +284,22 @@ public abstract class BaseCliFrontend {
       if (library.supportsPersisting()) {
         library.persistUpdateModules(System.err::println);
         library.clearUpdateModules();
+      }
+
+      if (doubleCheck && numWithErrors == 0) {
+        System.out.println("--- Checking " + library.getName() + " ---");
+        time = System.currentTimeMillis();
+
+        CoreModuleChecker checker = new CoreModuleChecker(myErrorReporter, myTypecheckerState);
+        for (ModulePath module : library.getLoadedModules()) {
+          Group group = library.getModuleGroup(module);
+          if (group != null) {
+            checker.checkGroup(group);
+          }
+        }
+
+        time = System.currentTimeMillis() - time;
+        System.out.println("--- Done (" + timeToString(time) + ") ---");
       }
     }
 

@@ -36,7 +36,7 @@ import org.arend.typechecking.implicitargs.equations.Equations;
 import java.util.*;
 
 public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expression> {
-  private final ErrorReporter myErrorReporter;
+  private ErrorReporter myErrorReporter;
   private final Set<Binding> myContext;
   private final Equations myEquations;
   private final Concrete.SourceNode mySourceNode;
@@ -50,6 +50,10 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   ErrorReporter getErrorReporter() {
     return myErrorReporter;
+  }
+
+  void setErrorReporter(ErrorReporter errorReporter) {
+    myErrorReporter = errorReporter;
   }
 
   void clear() {

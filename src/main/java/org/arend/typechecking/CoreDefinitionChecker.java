@@ -35,6 +35,11 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
     myChecker = new CoreExpressionChecker(errorReporter, new HashSet<>(), DummyEquations.getInstance(), null);
   }
 
+  void setErrorReporter(ErrorReporter errorReporter) {
+    this.errorReporter = errorReporter;
+    myChecker.setErrorReporter(errorReporter);
+  }
+
   public boolean check(Definition definition) {
     myChecker.clear();
     if (!myChecker.checkDependentLink(definition.getParameters(), Type.OMEGA, null)) {

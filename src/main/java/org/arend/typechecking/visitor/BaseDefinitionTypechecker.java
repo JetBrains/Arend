@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Set;
 
 public class BaseDefinitionTypechecker {
-  public ErrorReporter errorReporter;
+  protected ErrorReporter errorReporter;
 
   protected BaseDefinitionTypechecker(ErrorReporter errorReporter) {
     this.errorReporter = errorReporter;

@@ -8,7 +8,6 @@ import org.arend.frontend.ConcreteReferableProvider;
 import org.arend.frontend.PositionComparator;
 import org.arend.frontend.reference.ConcreteLocatedReferable;
 import org.arend.naming.NameResolverTestCase;
-import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.naming.reference.converter.IdReferableConverter;
@@ -111,32 +110,9 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
   }
 
 
-  private boolean checkGroup(Group group) {
-    LocatedReferable ref = group.getReferable();
-    Definition def = ref instanceof TCReferable ? typecheckerState.getTypechecked((TCReferable) ref) : null;
-    if (def != null) {
-      if (!new CoreDefinitionChecker(new LocalErrorReporter(ref, errorReporter)).check(def)) {
-        return false;
-      }
-    }
-
-    for (Group subgroup : group.getSubgroups()) {
-      if (!checkGroup(subgroup)) {
-        return false;
-      }
-    }
-    for (Group subgroup : group.getDynamicSubgroups()) {
-      if (!checkGroup(subgroup)) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
   private void typeCheckModule(Group group, int errors) {
     assertTrue(new TypecheckingOrderingListener(libraryManager.getInstanceProviderSet(), typecheckerState, ConcreteReferableProvider.INSTANCE, IdReferableConverter.INSTANCE, localErrorReporter, PositionComparator.INSTANCE).typecheckModules(Collections.singletonList(group), null));
-    boolean ok = errors != 0 || checkGroup(group);
+    boolean ok = errors != 0 || new CoreModuleChecker(errorReporter, typecheckerState).checkGroup(group);
     assertThat(errorList, containsErrors(errors));
     assertTrue(ok);
   }
