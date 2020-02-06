@@ -1348,9 +1348,22 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     if (newDef) {
+      Sort originalSort = dataDefinition.getSort();
       dataDefinition.setSort(countingErrorReporter.getErrorsNumber() == 0 && userSort != null ? userSort : inferredSort);
       typechecker.setStatus(def.getStatus().getTypecheckingStatus());
       dataDefinition.addStatus(typechecker.getStatus());
+
+      if (!originalSort.equals(dataDefinition.getSort()) && (def.isRecursive() || dataDefinitions.size() > 1)) {
+        for (Constructor constructor : dataDefinition.getConstructors()) {
+          for (DependentLink link = constructor.getParameters(); link.hasNext(); link = link.getNext()) {
+            link = link.getNextTyped(null);
+            Type updated = fixTypeSorts(link.getType(), dataDefinition.getSort(), dataDefinitions);
+            if (updated != null) {
+              link.setType(updated);
+            }
+          }
+        }
+      }
 
       boolean hasUniverses = checkForUniverses(dataDefinition.getParameters());
       if (!hasUniverses) {
@@ -1385,6 +1398,73 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     return countingErrorReporter.getErrorsNumber() == 0;
+  }
+
+  private Type fixTypeSorts(Type type, Sort sort, Set<DataDefinition> dataDefinitions) {
+    Expression result = fixExpressionSorts(type.getExpr(), sort, dataDefinitions);
+    return result == null ? null : result instanceof Type ? (Type) result : new TypeExpression(result, sort);
+  }
+
+  // fixes sorts of expressions containing recursive calls of a data type
+  private Expression fixExpressionSorts(Expression type, Sort sort, Set<DataDefinition> dataDefinitions) {
+    if (type instanceof PiExpression) {
+      PiExpression piType = (PiExpression) type;
+      Expression codomain = fixExpressionSorts(piType.getCodomain(), sort, dataDefinitions);
+      return codomain == null ? null : new PiExpression(sort.max(piType.getResultSort()), piType.getParameters(), codomain);
+    }
+
+    if (type instanceof SigmaExpression) {
+      boolean updated = false;
+      SigmaExpression sigmaExpr = (SigmaExpression) type;
+      for (DependentLink link = sigmaExpr.getParameters(); link.hasNext(); link = link.getNext()) {
+        link = link.getNextTyped(null);
+        Type newType = fixTypeSorts(link.getType(), sort, dataDefinitions);
+        if (newType != null) {
+          link.setType(newType);
+          updated = true;
+        }
+      }
+      return updated ? new SigmaExpression(sort.max(sigmaExpr.getSort()), sigmaExpr.getParameters()) : null;
+    }
+
+    if (type instanceof FunCallExpression) {
+      FunCallExpression funCall = (FunCallExpression) type;
+      if (funCall.getDefinition() != Prelude.PATH_INFIX) {
+        return null;
+      }
+
+      Expression newArg = fixExpressionSorts(funCall.getDefCallArguments().get(0), sort, dataDefinitions);
+      if (newArg == null) {
+        return null;
+      }
+
+      List<Expression> args = new ArrayList<>();
+      args.add(newArg);
+      args.add(funCall.getDefCallArguments().get(1));
+      args.add(funCall.getDefCallArguments().get(2));
+      return new FunCallExpression(Prelude.PATH_INFIX, sort.max(funCall.getSortArgument()), args);
+    }
+
+    if (type instanceof DataCallExpression) {
+      DataCallExpression dataCall = (DataCallExpression) type;
+      List<Expression> args = dataCall.getDefCallArguments();
+      boolean updated = false;
+      for (int i = 0; i < args.size(); i++) {
+        if (!dataCall.getDefinition().isCovariant(i)) {
+          continue;
+        }
+
+        Expression newArg = fixExpressionSorts(args.get(i), sort, dataDefinitions);
+        if (newArg != null) {
+          args.set(i, newArg);
+          updated = true;
+        }
+      }
+
+      return updated ? new DataCallExpression(dataCall.getDefinition(), sort.max(dataCall.getSortArgument()), args) : dataDefinitions.contains(dataCall.getDefinition()) ? dataCall : null;
+    }
+
+    return null;
   }
 
   private Expression normalizePathExpression(Expression type, Constructor constructor, Concrete.SourceNode sourceNode) {
