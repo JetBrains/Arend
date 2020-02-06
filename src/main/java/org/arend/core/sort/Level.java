@@ -169,9 +169,9 @@ public class Level implements CoreLevel {
 
     if (level1.getVar() == level2.getVar()) {
       if (cmp == CMP.LE) {
-        return level1.myConstant <= level2.myConstant && level1.myMaxConstant <= Math.max(level2.myConstant - 1, level2.myMaxConstant);
+        return level1.myConstant <= level2.myConstant && level1.getMaxAddedConstant() <= level2.getMaxAddedConstant();
       } else {
-        return level1.myConstant == level2.myConstant && (level1.myMaxConstant == level2.myMaxConstant || level1.myMaxConstant <= level1.myConstant - 1 && level2.myMaxConstant <= level2.myConstant - 1);
+        return level1.myConstant == level2.myConstant && level1.getMaxConstant() == level2.getMaxConstant();
       }
     } else {
       if (equations == null) {
