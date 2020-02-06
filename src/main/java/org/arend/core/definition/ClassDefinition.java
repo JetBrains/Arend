@@ -111,13 +111,13 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
     return null;
   }
 
-  public Sort computeSort(Map<ClassField,Expression> implemented, Binding thisBinding) {
+  public Sort computeSort(Sort sortArgument, Map<ClassField,Expression> implemented, Binding thisBinding) {
     Integer hLevel = getUseLevel(implemented, thisBinding);
     if (hLevel != null && hLevel == -1) {
       return Sort.PROP;
     }
 
-    ClassCallExpression thisClass = new ClassCallExpression(this, Sort.STD, Collections.emptyMap(), mySort, hasUniverses());
+    ClassCallExpression thisClass = new ClassCallExpression(this, sortArgument, Collections.emptyMap(), mySort.subst(sortArgument.toLevelSubstitution()), hasUniverses());
     Sort sort = Sort.PROP;
 
     for (ClassField field : myFields) {
@@ -125,7 +125,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
         continue;
       }
 
-      PiExpression fieldType = field.getType(Sort.STD);
+      PiExpression fieldType = field.getType(sortArgument);
       if (fieldType.getCodomain().isInstance(ErrorExpression.class)) {
         continue;
       }
@@ -144,7 +144,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
   }
 
   public void updateSort() {
-    mySort = computeSort(Collections.emptyMap(), null);
+    mySort = computeSort(Sort.STD, Collections.emptyMap(), null);
   }
 
   @Nonnull

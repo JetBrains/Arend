@@ -148,7 +148,7 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
       myKeepVisitor.getBindings().remove(expr.getThisBinding());
     }
 
-    result.setSort(result.getDefinition().computeSort(result.getImplementedHere(), result.getThisBinding()));
+    result.setSort(result.getDefinition().computeSort(result.getSortArgument(), result.getImplementedHere(), result.getThisBinding()));
     result.updateHasUniverses();
     return result;
   }

@@ -759,7 +759,7 @@ public class TwoStageEquations implements Equations {
           }
         }
 
-        solution.setSort(classDef.computeSort(implementations, solution.getThisBinding()));
+        solution.setSort(classDef.computeSort(solution.getSortArgument(), implementations, solution.getThisBinding()));
         solution.updateHasUniverses();
 
         if (!Sort.compare(pair.proj2.get(0).getSortArgument(), sortArg, CMP.LE, this, pair.proj1.getSourceNode())) {
@@ -896,7 +896,7 @@ public class TwoStageEquations implements Equations {
 
     ClassCallExpression sol = solution;
     if (originalSize != implementations.size()) {
-      Sort newSort = classDef.computeSort(implementations, solution.getThisBinding());
+      Sort newSort = classDef.computeSort(sortArgument, implementations, solution.getThisBinding());
       if (!newSort.equals(sol.getSort())) {
         sol = new ClassCallExpression(classDef, sortArgument, implementations, newSort, classDef.hasUniverses());
         for (Map.Entry<ClassField, Expression> entry : implementations.entrySet()) {

@@ -1362,7 +1362,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
               paramType = new TypeExpression(new FunCallExpression((FunctionDefinition) definition, sortArg, new ArrayList<>(defCallParamType.getDefCallArguments())), paramType.getSortOfType());
             } else {
               ClassCallExpression classCall = (ClassCallExpression) defCallParamType;
-              paramType = new ClassCallExpression((ClassDefinition) definition, sortArg, classCall.getImplementedHere(), classCall.getDefinition().computeSort(classCall.getImplementedHere(), classCall.getThisBinding()), classCall.hasUniverses());
+              paramType = new ClassCallExpression((ClassDefinition) definition, sortArg, classCall.getImplementedHere(), classCall.getDefinition().computeSort(sortArg, classCall.getImplementedHere(), classCall.getThisBinding()), classCall.hasUniverses());
             }
           }
         }
