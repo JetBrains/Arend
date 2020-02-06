@@ -258,6 +258,7 @@ public class UseLevelTest extends TypeCheckingTestCase {
       "\\data D (a : A) : \\Set | ddd\n" +
       "  \\where \\use \\level isProp {b : B} (x y : D b) : x = y | ddd, ddd => idp\n" +
       "\\record R { \\property prop : D (\\new B) }");
+    assertEquals(Sort.SET0, ((ClassDefinition) getDefinition("R")).getSort());
   }
 
   @Test

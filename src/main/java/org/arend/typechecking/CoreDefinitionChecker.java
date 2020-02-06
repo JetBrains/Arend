@@ -317,6 +317,14 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
         }
       }
 
+      if (!propertyOK) {
+        DefCallExpression defCall = fieldType.getCodomain().cast(DefCallExpression.class);
+        if (defCall != null) {
+          Integer defCallLevel = defCall.getUseLevel();
+          propertyOK = defCallLevel != null && defCallLevel == -1;
+        }
+      }
+
       if (!propertyOK && !sort.isProp()) {
         errorReporter.report(new TypecheckingError("The level of property '" + field.getName() + "' must be \\Prop", null));
         return false;
