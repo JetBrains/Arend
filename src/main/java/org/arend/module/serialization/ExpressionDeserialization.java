@@ -79,7 +79,7 @@ class ExpressionDeserialization {
     }
 
     int constant = proto.getConstant();
-    if (var == null && constant == -10) {
+    if (var == null && constant == Level.INFINITY.getConstant()) {
       return Level.INFINITY;
     } else {
       return new Level(var, constant, proto.getMaxConstant());

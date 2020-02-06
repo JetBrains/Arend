@@ -144,16 +144,22 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     }
     myContext.remove(expr.getThisBinding());
 
-    for (ClassField field : expr.getDefinition().getFields()) {
-      if (!expr.isImplemented(field)) {
-        Sort sort = field.getType(expr.getSortArgument()).applyExpression(thisExpr).getSortOfType();
-        if (sort == null) {
-          myErrorReporter.report(CoreErrorWrapper.make(new TypecheckingError("Cannot infer the type of field '" + field.getName() + "'", mySourceNode), expr));
-          return null;
-        }
-        if (!Sort.compare(sort, expr.getSort(), CMP.LE, myEquations, mySourceNode)) {
-          myErrorReporter.report(CoreErrorWrapper.make(new TypecheckingError("The sort " + sort + " of field '" + field.getName() + "' does not fit in the expected sort " + expr.getSort() , mySourceNode), expr));
-          return null;
+    Integer level = expr.getDefinition().getUseLevel(expr.getImplementedHere(), expr.getThisBinding());
+    if (level == null || level != -1) {
+      for (ClassField field : expr.getDefinition().getFields()) {
+        if (!expr.isImplemented(field)) {
+          Sort sort = field.getType(expr.getSortArgument()).applyExpression(thisExpr).getSortOfType();
+          if (sort == null) {
+            myErrorReporter.report(CoreErrorWrapper.make(new TypecheckingError("Cannot infer the type of field '" + field.getName() + "'", mySourceNode), expr));
+            return null;
+          }
+          if (sort.isProp()) {
+            continue;
+          }
+          if (!(Level.compare(sort.getPLevel(), expr.getSort().getPLevel(), CMP.LE, myEquations, mySourceNode) && (level != null && sort.getHLevel().isClosed() && sort.getHLevel().getConstant() <= level || Level.compare(sort.getHLevel(), expr.getSort().getHLevel(), CMP.LE, myEquations, mySourceNode)))) {
+            myErrorReporter.report(CoreErrorWrapper.make(new TypecheckingError("The sort " + sort + " of field '" + field.getName() + "' does not fit into the expected sort " + expr.getSort(), mySourceNode), expr));
+            return null;
+          }
         }
       }
     }

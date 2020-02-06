@@ -20,7 +20,7 @@ public class Level implements CoreLevel {
 
   private Level() {
     myVar = null;
-    myConstant = -10;
+    myConstant = Integer.MAX_VALUE;
     myMaxConstant = 0;
   }
 
