@@ -1,10 +1,15 @@
 package org.arend.typechecking.definition;
 
+import org.arend.core.context.binding.LevelVariable;
+import org.arend.core.definition.ClassDefinition;
 import org.arend.core.definition.ClassField;
+import org.arend.core.sort.Level;
+import org.arend.core.sort.Sort;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
 import static org.arend.typechecking.Matchers.typeMismatchError;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class ClassFieldPropertyTest extends TypeCheckingTestCase {
@@ -75,6 +80,7 @@ public class ClassFieldPropertyTest extends TypeCheckingTestCase {
       "\\class A {\n" +
       "  \\property f (A : \\Type) (p : \\Pi (x y : A) -> x = y) : \\level A p\n" +
       "}");
+    assertEquals(new Sort(new Level(LevelVariable.PVAR, 1), new Level(LevelVariable.HVAR)), ((ClassDefinition) getDefinition("A")).getSort());
   }
 
   @Test

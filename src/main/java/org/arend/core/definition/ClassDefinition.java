@@ -112,7 +112,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
     Sort sort = Sort.PROP;
 
     for (ClassField field : myFields) {
-      if (field.isProperty() || myImplemented.containsKey(field) || implemented.containsKey(field)) {
+      if (field.isProperty() && field.getTypeLevel() == null || myImplemented.containsKey(field) || implemented.containsKey(field)) {
         continue;
       }
 
