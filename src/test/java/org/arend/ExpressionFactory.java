@@ -109,7 +109,7 @@ public class ExpressionFactory {
   }
 
   public static PiExpression Pi(Expression domain, Expression codomain) {
-    return new PiExpression(getMaxSort(domain.getType(), codomain), singleParam(null, domain), codomain);
+    return new PiExpression(getMaxSort(domain, codomain), singleParam(null, domain), codomain);
   }
 
   public static UniverseExpression Universe(int pLevel) {

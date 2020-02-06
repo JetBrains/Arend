@@ -62,11 +62,11 @@ public class ExpressionFactory {
   }
 
   public static DataCallExpression Nat() {
-    return new DataCallExpression(Prelude.NAT, Sort.SET0, Collections.emptyList());
+    return new DataCallExpression(Prelude.NAT, Sort.PROP, Collections.emptyList());
   }
 
   public static DataCallExpression Int() {
-    return new DataCallExpression(Prelude.INT, Sort.SET0, Collections.emptyList());
+    return new DataCallExpression(Prelude.INT, Sort.PROP, Collections.emptyList());
   }
 
   public static IntegerExpression Zero() {
@@ -74,14 +74,14 @@ public class ExpressionFactory {
   }
 
   public static Expression Suc(Expression expr) {
-    return ConCallExpression.make(Prelude.SUC, Sort.SET0, Collections.emptyList(), Collections.singletonList(expr));
+    return ConCallExpression.make(Prelude.SUC, Sort.PROP, Collections.emptyList(), Collections.singletonList(expr));
   }
 
   public static ConCallExpression Pos(Expression expr) {
-    return new ConCallExpression(Prelude.POS, Sort.SET0, Collections.emptyList(), Collections.singletonList(expr));
+    return new ConCallExpression(Prelude.POS, Sort.PROP, Collections.emptyList(), Collections.singletonList(expr));
   }
 
   public static ConCallExpression Neg(Expression expr) {
-    return new ConCallExpression(Prelude.NEG, Sort.SET0, Collections.emptyList(), Collections.singletonList(expr));
+    return new ConCallExpression(Prelude.NEG, Sort.PROP, Collections.emptyList(), Collections.singletonList(expr));
   }
 }
