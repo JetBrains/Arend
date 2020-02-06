@@ -88,7 +88,7 @@ public class UseLevelTest extends TypeCheckingTestCase {
       "    | right, j => q @ j\n" +
       "    | _, left => x\n" +
       "    | _, right => y\n" +
-      "  }" +
+      "  }\n" +
       "  \\where\n" +
       "    \\use \\level isProp {A : \\Type} (d1 : Trunc A) : \\Pi (d2 : Trunc A) (p : d1 = d2) -> \\Pi (q : d1 = d2) -> p = q => \\lam d2 p q => path (\\lam i => path (trunc d1 d2 p q i))");
     assertEquals(Sort.SetOfLevel(new Level(LevelVariable.PVAR)), ((DataDefinition) getDefinition("Trunc")).getSort());

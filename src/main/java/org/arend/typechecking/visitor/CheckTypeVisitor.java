@@ -1329,10 +1329,41 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
         Type paramType = piParams.getType();
         DefCallExpression defCallParamType = paramType.getExpr().cast(DefCallExpression.class);
         if (defCallParamType != null && !defCallParamType.hasUniverses()) { // fixes test pLevelTest
-          if (defCallParamType.getDefinition() instanceof DataDefinition) {
-            paramType = new DataCallExpression((DataDefinition) defCallParamType.getDefinition(), Sort.generateInferVars(myEquations, false, param), new ArrayList<>(defCallParamType.getDefCallArguments()));
-          } else if (defCallParamType.getDefinition() instanceof FunctionDefinition) {
-            paramType = new TypeExpression(new FunCallExpression((FunctionDefinition) defCallParamType.getDefinition(), Sort.generateInferVars(myEquations, false, param), new ArrayList<>(defCallParamType.getDefCallArguments())), paramType.getSortOfType());
+          Definition definition = defCallParamType.getDefinition();
+          Sort sortArg = definition instanceof DataDefinition || definition instanceof FunctionDefinition || definition instanceof ClassDefinition ? Sort.generateInferVars(myEquations, false, param) : null;
+          if (definition instanceof ClassDefinition) {
+            ClassCallExpression classCall = (ClassCallExpression) defCallParamType;
+            for (Map.Entry<ClassField, Expression> entry : classCall.getImplementedHere().entrySet()) {
+              Expression type = entry.getValue().getType();
+              if (type == null || !CompareVisitor.compare(myEquations, CMP.LE, type, entry.getKey().getType(sortArg).applyExpression(new ReferenceExpression(classCall.getThisBinding())), Type.OMEGA, param)) {
+                sortArg = null;
+                break;
+              }
+            }
+          } else if (sortArg != null) {
+            ExprSubstitution substitution = new ExprSubstitution();
+            LevelSubstitution levelSubst = sortArg.toLevelSubstitution();
+            DependentLink link = definition.getParameters();
+            for (Expression arg : defCallParamType.getDefCallArguments()) {
+              Expression type = arg.getType();
+              if (type == null || !CompareVisitor.compare(myEquations, CMP.LE, type, link.getTypeExpr().subst(substitution, levelSubst), Type.OMEGA, param)) {
+                sortArg = null;
+                break;
+              }
+              substitution.add(link, arg);
+              link = link.getNext();
+            }
+          }
+
+          if (sortArg != null) {
+            if (definition instanceof DataDefinition) {
+              paramType = new DataCallExpression((DataDefinition) definition, sortArg, new ArrayList<>(defCallParamType.getDefCallArguments()));
+            } else if (definition instanceof FunctionDefinition) {
+              paramType = new TypeExpression(new FunCallExpression((FunctionDefinition) definition, sortArg, new ArrayList<>(defCallParamType.getDefCallArguments())), paramType.getSortOfType());
+            } else {
+              ClassCallExpression classCall = (ClassCallExpression) defCallParamType;
+              paramType = new ClassCallExpression((ClassDefinition) definition, sortArg, classCall.getImplementedHere(), classCall.getDefinition().computeSort(classCall.getImplementedHere(), classCall.getThisBinding()), classCall.hasUniverses());
+            }
           }
         }
 
