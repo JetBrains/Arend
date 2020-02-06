@@ -118,6 +118,11 @@ public class DefinitionDeserialization {
       classDef.setRecord();
     }
 
+    int squasher = classProto.getSquasher();
+    if (squasher != 0) {
+      classDef.setSquasher(myCallTargetProvider.getCallTarget(squasher, FunctionDefinition.class));
+    }
+
     readCoerceData(classProto.getCoerceData(), classDef.getCoerceData());
 
     for (DefinitionProtos.Definition.ClassParametersLevel classParametersLevelProto : classProto.getParametersLevelList()) {

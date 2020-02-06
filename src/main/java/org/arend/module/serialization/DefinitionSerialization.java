@@ -100,6 +100,9 @@ public class DefinitionSerialization {
     if (!definition.getCoerceData().isEmpty()) {
       builder.setCoerceData(writeCoerceData(definition.getCoerceData()));
     }
+    if (definition.getSquasher() != null) {
+      builder.setSquasher(myCallTargetIndexProvider.getDefIndex(definition.getSquasher()));
+    }
 
     for (ClassDefinition.ParametersLevel parametersLevel : definition.getParametersLevels()) {
       DefinitionProtos.Definition.ClassParametersLevel.Builder parametersLevelBuilder = DefinitionProtos.Definition.ClassParametersLevel.newBuilder();

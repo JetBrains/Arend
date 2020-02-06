@@ -10,13 +10,13 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.ErrorReporter;
+import org.arend.ext.error.TypecheckingError;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.term.FunctionKind;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.CertainTypecheckingError;
 import org.arend.typechecking.error.local.CoerceCycleError;
-import org.arend.ext.error.TypecheckingError;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.order.DFS;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
@@ -239,8 +239,7 @@ public class UseTypechecking {
       DataDefinition dataDef = (DataDefinition) useParent;
       if (parametersLevel.parameters == null) {
         Sort newSort = parametersLevel.level == -1 ? Sort.PROP : new Sort(dataDef.getSort().getPLevel(), new Level(parametersLevel.level));
-        if (dataDef.getSort().isLessOrEquals(newSort)) {
-        } else {
+        if (!dataDef.getSort().isLessOrEquals(newSort)) {
           if (!(parametersLevel.level == -1 && dataDef.getSort().isSet())) {
             dataDef.setSquashed(true);
           }
@@ -253,11 +252,13 @@ public class UseTypechecking {
     } else if (useParent instanceof FunctionDefinition) {
       ((FunctionDefinition) useParent).addParametersLevel(parametersLevel);
     } else {
+      ClassDefinition classDef = (ClassDefinition) useParent;
       ClassDefinition.ParametersLevel classParametersLevel = (ClassDefinition.ParametersLevel) parametersLevel;
       if (classParametersLevel.fields == null) {
-        ((ClassDefinition) useParent).setSort(parametersLevel.level == -1 ? Sort.PROP : new Sort(((ClassDefinition) useParent).getSort().getPLevel(), new Level(parametersLevel.level)));
+        classDef.setSquasher(useDefinition);
+        classDef.setSort(parametersLevel.level == -1 ? Sort.PROP : new Sort(classDef.getSort().getPLevel(), new Level(parametersLevel.level)));
       } else {
-        ((ClassDefinition) useParent).addParametersLevel(classParametersLevel);
+        classDef.addParametersLevel(classParametersLevel);
       }
     }
   }

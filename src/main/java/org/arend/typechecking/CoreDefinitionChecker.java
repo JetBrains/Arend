@@ -174,37 +174,50 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
         return false;
       }
 
-      boolean ok;
-      if (definition.isTruncated() || definition.getSquasher() != null) {
-        ok = definition.getSort().isProp() || Level.compare(sort.getPLevel(), definition.getSort().getPLevel(), CMP.LE, DummyEquations.getInstance(), null);
-      } else {
-        ok = sort.isLessOrEquals(definition.getSort());
-      }
-      if (!ok) {
-        errorReporter.report(new TypecheckingError("The sort " + sort + " of constructor '" + constructor.getName() + "' does not fit into the sort " + definition.getSort() + " of its data type", null));
+      if (!checkDefinitionSort(definition.isTruncated() || definition.getSquasher() != null, constructor, sort, definition.getSort())) {
         return false;
       }
 
       // TODO[double_check]: Check clauses/body
     }
 
-    if (definition.getSquasher() != null) {
-      ParametersLevel parametersLevel = UseTypechecking.typecheckLevel(null, definition.getSquasher(), definition, errorReporter);
-      if (parametersLevel == null) {
-        return false;
-      }
-      if (parametersLevel.parameters != null) {
-        errorReporter.report(new TypecheckingError("\\use \\level " + definition.getSquasher().getName() + " applies only to specific parameters", null));
-        return false;
-      }
+    return checkSquasher(definition.getSquasher(), definition, definition.getSort());
+  }
 
-      Level hLevel = new Level(parametersLevel.level);
-      if (!Level.compare(hLevel, definition.getSort().getHLevel(), CMP.LE, DummyEquations.getInstance(), null)) {
-        errorReporter.report(new TypecheckingError("The h-level " + definition.getSort().getHLevel() + " of data type '" + definition.getName() + "' does not fit into the h-level " + hLevel + " of the squashing function", null));
-        return false;
-      }
+  private boolean checkSquasher(FunctionDefinition squasher, Definition definition, Sort sort) {
+    if (squasher == null) {
+      return true;
     }
 
+    ParametersLevel parametersLevel = UseTypechecking.typecheckLevel(null, squasher, definition, errorReporter);
+    if (parametersLevel == null) {
+      return false;
+    }
+    if (parametersLevel.parameters != null) {
+      errorReporter.report(new TypecheckingError("\\use \\level " + squasher.getName() + " applies only to specific parameters", null));
+      return false;
+    }
+
+    Level hLevel = new Level(parametersLevel.level);
+    if (!Level.compare(hLevel, sort.getHLevel(), CMP.LE, DummyEquations.getInstance(), null)) {
+      errorReporter.report(new TypecheckingError("The h-level " + sort.getHLevel() + " of '" + definition.getName() + "' does not fit into the h-level " + hLevel + " of \\use \\level " + squasher.getName(), null));
+      return false;
+    }
+
+    return true;
+  }
+
+  private boolean checkDefinitionSort(boolean isSquashed, Definition definition, Sort defSort, Sort expectedSort) {
+    boolean ok;
+    if (isSquashed) {
+      ok = expectedSort.isProp() || Level.compare(defSort.getPLevel(), expectedSort.getPLevel(), CMP.LE, DummyEquations.getInstance(), null);
+    } else {
+      ok = defSort.isLessOrEquals(expectedSort);
+    }
+    if (!ok) {
+      errorReporter.report(new TypecheckingError("The sort " + defSort + " of '" + definition.getName() + "' does not fit into the expected sort " + expectedSort, null));
+      return false;
+    }
     return true;
   }
 
@@ -291,8 +304,7 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
         return false;
       }
 
-      if (!sort.isLessOrEquals(definition.getSort())) {
-        errorReporter.report(CoreErrorWrapper.make(new TypecheckingError("The sort " + sort + " of field '" + field.getName() + "' does not fit into the sort " + definition.getSort() + " of its class", null), fieldType));
+      if (!checkDefinitionSort(definition.getSquasher() != null, field, sort, definition.getSort())) {
         return false;
       }
 
@@ -311,6 +323,10 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
       }
 
       // TODO[double_check]: Check covariance
+    }
+
+    if (!checkSquasher(definition.getSquasher(), definition, definition.getSort())) {
+      return false;
     }
 
     // TODO[double_check]: Check occurrences of fields in other fields

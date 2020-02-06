@@ -29,6 +29,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
   private Set<ClassField> myGoodThisFields = Collections.emptySet();
   private Set<ClassField> myTypeClassParameters = Collections.emptySet();
   private ParametersLevels<ParametersLevel> myParametersLevels = new ParametersLevels<>();
+  private FunctionDefinition mySquasher;
 
   public ClassDefinition(TCClassReferable referable) {
     super(referable, TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
@@ -78,6 +79,14 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
 
   public void addParametersLevel(ParametersLevel parametersLevel) {
     myParametersLevels.add(parametersLevel);
+  }
+
+  public FunctionDefinition getSquasher() {
+    return mySquasher;
+  }
+
+  public void setSquasher(FunctionDefinition squasher) {
+    mySquasher = squasher;
   }
 
   public Integer getUseLevel(Map<ClassField,Expression> implemented, Binding thisBinding) {

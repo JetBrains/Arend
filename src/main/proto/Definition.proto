@@ -57,6 +57,7 @@ message Definition {
         repeated int32 type_class_field = 10;
         repeated ClassParametersLevel parameters_level = 12;
         map<int32, Expression.Pi> overridden_field = 13;
+        int32 squasher = 14;
 
         message Field {
             Referable referable = 1;
