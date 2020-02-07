@@ -273,12 +273,21 @@ class ExpressionDeserialization {
     myDependencyListener.dependsOn(myDefinition, classDefinition.getReferable());
 
     Map<ClassField, Expression> fieldSet = new HashMap<>();
-    ClassCallExpression classCall = new ClassCallExpression(classDefinition, new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), fieldSet, readSort(proto.getSort()), proto.getHasUniverses());
+    ClassCallExpression classCall = new ClassCallExpression(classDefinition, new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), fieldSet, readSort(proto.getSort()), readUniverseKind(proto.getUniverseKind()));
     registerBinding(classCall.getThisBinding());
     for (Map.Entry<Integer, ExpressionProtos.Expression> entry : proto.getFieldSetMap().entrySet()) {
       fieldSet.put(myCallTargetProvider.getCallTarget(entry.getKey(), ClassField.class), readExpr(entry.getValue()));
     }
     return classCall;
+  }
+
+  UniverseKind readUniverseKind(ExpressionProtos.UniverseKind kind) throws DeserializationException {
+    switch (kind) {
+      case NO_UNIVERSES: return UniverseKind.NO_UNIVERSES;
+      case ONLY_COVARIANT: return UniverseKind.ONLY_COVARIANT;
+      case WITH_UNIVERSES: return UniverseKind.WITH_UNIVERSES;
+      default: throw new DeserializationException("Unrecognized universe kind: " + kind);
+    }
   }
 
   private ReferenceExpression readReference(ExpressionProtos.Expression.Reference proto) throws DeserializationException {

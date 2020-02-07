@@ -9,6 +9,7 @@ import org.arend.core.context.binding.inference.TypeClassInferenceVariable;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.definition.ClassDefinition;
 import org.arend.core.definition.ClassField;
+import org.arend.core.definition.UniverseKind;
 import org.arend.core.expr.*;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.visitor.CompareVisitor;
@@ -712,11 +713,11 @@ public class TwoStageEquations implements Equations {
         continue;
       }
 
-      boolean hasUniverses = classDef.hasUniverses();
-      if (hasUniverses) {
-        hasUniverses = false;
+      UniverseKind universeKind = classDef.getUniverseKind();
+      if (universeKind != UniverseKind.NO_UNIVERSES) {
+        universeKind = UniverseKind.NO_UNIVERSES;
         for (ClassField field : classDef.getFields()) {
-          if (!field.hasUniverses() || classDef.isImplemented(field)) {
+          if (field.getUniverseKind() == UniverseKind.NO_UNIVERSES || classDef.isImplemented(field)) {
             continue;
           }
           boolean implemented = false;
@@ -727,8 +728,10 @@ public class TwoStageEquations implements Equations {
             }
           }
           if (!implemented) {
-            hasUniverses = true;
-            break;
+            universeKind = universeKind.max(field.getUniverseKind());
+            if (universeKind == UniverseKind.WITH_UNIVERSES) {
+              break;
+            }
           }
         }
       }
@@ -736,9 +739,9 @@ public class TwoStageEquations implements Equations {
       ClassCallExpression solution;
       if (cmp == CMP.LE) {
         Equations wrapper = new LevelEquationsWrapper(this);
-        Sort sortArg = Sort.generateInferVars(this, hasUniverses, pair.proj1.getSourceNode());
+        Sort sortArg = Sort.generateInferVars(this, universeKind, pair.proj1.getSourceNode());
         Map<ClassField, Expression> implementations = new HashMap<>();
-        solution = new ClassCallExpression(classDef, sortArg, implementations, classDef.getSort(), hasUniverses);
+        solution = new ClassCallExpression(classDef, sortArg, implementations, classDef.getSort(), universeKind);
         ReferenceExpression thisExpr = new ReferenceExpression(solution.getThisBinding());
         boolean first = true;
         for (ClassCallExpression bound : pair.proj2) {
@@ -898,7 +901,7 @@ public class TwoStageEquations implements Equations {
     if (originalSize != implementations.size()) {
       Sort newSort = classDef.computeSort(sortArgument, implementations, solution.getThisBinding());
       if (!newSort.equals(sol.getSort())) {
-        sol = new ClassCallExpression(classDef, sortArgument, implementations, newSort, classDef.hasUniverses());
+        sol = new ClassCallExpression(classDef, sortArgument, implementations, newSort, classDef.getUniverseKind());
         for (Map.Entry<ClassField, Expression> entry : implementations.entrySet()) {
           entry.setValue(entry.getValue().subst(solution.getThisBinding(), new ReferenceExpression(sol.getThisBinding())));
         }

@@ -177,7 +177,7 @@ public class UseTypechecking {
       for (; classCallLink.hasNext(); classCallLink = classCallLink.getNext()) {
         classCallLink = classCallLink.getNextTyped(null);
         classCall = classCallLink.getTypeExpr().cast(ClassCallExpression.class);
-        if (classCall != null && classCall.getDefinition() == useParent && (!classCall.hasUniverses() || classCall.getSortArgument().equals(Sort.STD))) {
+        if (classCall != null && classCall.getDefinition() == useParent && (classCall.getUniverseKind() != UniverseKind.NO_UNIVERSES || classCall.getSortArgument().equals(Sort.STD))) {
           break;
         }
       }
@@ -185,7 +185,7 @@ public class UseTypechecking {
         PiExpression piType = resultType.normalize(NormalizationMode.WHNF).cast(PiExpression.class);
         if (piType != null) {
           classCall = piType.getParameters().getTypeExpr().normalize(NormalizationMode.WHNF).cast(ClassCallExpression.class);
-          if (classCall != null && classCall.getDefinition() == useParent && (!classCall.hasUniverses() || classCall.getSortArgument().equals(Sort.STD))) {
+          if (classCall != null && classCall.getDefinition() == useParent && (classCall.getUniverseKind() != UniverseKind.NO_UNIVERSES || classCall.getSortArgument().equals(Sort.STD))) {
             classCallLink = piType.getParameters();
           }
         }

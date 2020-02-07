@@ -7,10 +7,7 @@ import org.arend.core.context.binding.inference.TypeClassInferenceVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.context.param.TypedSingleDependentLink;
-import org.arend.core.definition.ClassDefinition;
-import org.arend.core.definition.ClassField;
-import org.arend.core.definition.Constructor;
-import org.arend.core.definition.Definition;
+import org.arend.core.definition.*;
 import org.arend.core.expr.*;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.visitor.CompareVisitor;
@@ -248,7 +245,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
           args1 = ((Constructor) defCallResult.getDefinition()).matchDataTypeArguments(args1);
           if (args1 != null) {
             boolean ok = true;
-            if (dataCall.hasUniverses() && !Sort.compare(defCallResult.getSortArgument(), dataCall.getSortArgument(), CMP.LE, myVisitor.getEquations(), fun)) {
+            if (dataCall.getUniverseKind() != UniverseKind.NO_UNIVERSES && !Sort.compare(defCallResult.getSortArgument(), dataCall.getSortArgument(), dataCall.getUniverseKind() == UniverseKind.ONLY_COVARIANT ? CMP.LE : CMP.EQ, myVisitor.getEquations(), fun)) {
               ok = false;
             }
 

@@ -2,6 +2,7 @@ package org.arend.core.sort;
 
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
+import org.arend.core.definition.UniverseKind;
 import org.arend.core.expr.UniverseExpression;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.StdLevelSubstitution;
@@ -142,6 +143,10 @@ public class Sort implements CoreSort {
     equations.addVariable(pl);
     equations.addVariable(hl);
     return new Sort(new Level(pl), new Level(hl));
+  }
+
+  public static Sort generateInferVars(Equations equations, UniverseKind universeKind, Concrete.SourceNode sourceNode) {
+    return generateInferVars(equations, universeKind != UniverseKind.NO_UNIVERSES, sourceNode);
   }
 
   @Override

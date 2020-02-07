@@ -45,7 +45,7 @@ message Expression {
         Level hLevel = 4;
         map<int32, Expression> field_set = 5;
         Sort sort = 6;
-        bool hasUniverses = 7;
+        UniverseKind universe_kind = 8;
     }
     message ConCall {
         int32 constructor_ref = 1;
@@ -150,6 +150,12 @@ message Expression {
     message BigInteger {
         bytes value = 1;
     }
+}
+
+enum UniverseKind {
+    NO_UNIVERSES = 0;
+    ONLY_COVARIANT = 1;
+    WITH_UNIVERSES = 2;
 }
 
 message Type {

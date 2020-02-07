@@ -31,12 +31,11 @@ public class DefinitionSerialization {
   }
 
   DefinitionProtos.Definition writeDefinition(Definition definition) {
-    final DefinitionProtos.Definition.Builder out = DefinitionProtos.Definition.newBuilder();
-
-    out.setHasTypeClassReference(definition.getReferable().getTypeClassReference() != null);
-    out.setHasUniverses(definition.hasUniverses());
-
     final ExpressionSerialization defSerializer = new ExpressionSerialization(myCallTargetIndexProvider);
+
+    final DefinitionProtos.Definition.Builder out = DefinitionProtos.Definition.newBuilder();
+    out.setHasTypeClassReference(definition.getReferable().getTypeClassReference() != null);
+    out.setUniverseKind(defSerializer.writeUniverseKind(definition.getUniverseKind()));
 
     if (definition instanceof ClassDefinition) {
       // type cannot possibly have errors
@@ -71,7 +70,7 @@ public class DefinitionSerialization {
       fBuilder.setIsProperty(field.isProperty());
       fBuilder.setIsHideable(field.isHideable());
       fBuilder.setIsCovariant(field.isCovariant());
-      fBuilder.setHasUniverses(field.hasUniverses());
+      fBuilder.setUniverseKind(defSerializer.writeUniverseKind(field.getUniverseKind()));
       builder.addPersonalField(fBuilder.build());
     }
 

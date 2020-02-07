@@ -168,9 +168,9 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       }
     }
 
-    if (!expr.hasUniverses() && expr.getDefinition().hasUniverses()) {
+    if (expr.getUniverseKind().ordinal() < expr.getDefinition().getUniverseKind().ordinal()) {
       for (ClassField field : expr.getDefinition().getFields()) {
-        if (field.hasUniverses() && !expr.isImplemented(field)) {
+        if (expr.getUniverseKind().ordinal() < field.getUniverseKind().ordinal() && !expr.isImplemented(field)) {
           myErrorReporter.report(CoreErrorWrapper.make(new TypecheckingError("Field '" + field.getName() + "' has universes, but the class call does not have them", mySourceNode), expr));
           return null;
         }

@@ -3,9 +3,7 @@ package org.arend.core.expr.visitor;
 import org.arend.core.context.binding.Variable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
-import org.arend.core.elimtree.BranchElimTree;
-import org.arend.core.elimtree.ElimTree;
-import org.arend.core.elimtree.LeafElimTree;
+import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
 import org.arend.ext.core.elimtree.CoreBranchKey;
@@ -184,6 +182,42 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> {
     }
 
     return findBindingInElimTree(expr.getElimTree());
+  }
+
+  public Variable findBindingInBody(Body body) {
+    if (body == null) {
+      return null;
+    }
+
+    if (body instanceof Expression) {
+      return ((Expression) body).accept(this, null);
+    }
+
+    if (body instanceof ElimTree) {
+      return findBindingInElimTree((ElimTree) body);
+    }
+
+    if (body instanceof IntervalElim) {
+      IntervalElim intervalElim = (IntervalElim) body;
+      for (IntervalElim.CasePair casePair : intervalElim.getCases()) {
+        Variable var = null;
+        if (casePair.proj1 != null) {
+          var = casePair.proj1.accept(this, null);
+        }
+        if (var == null && casePair.proj2 != null) {
+          var = casePair.proj2.accept(this, null);
+        }
+        if (var != null) {
+          return var;
+        }
+      }
+      if (intervalElim.getOtherwise() != null) {
+        return findBindingInElimTree(intervalElim.getOtherwise());
+      }
+      return null;
+    }
+
+    throw new IllegalStateException();
   }
 
   private Variable findBindingInElimTree(ElimTree elimTree) {

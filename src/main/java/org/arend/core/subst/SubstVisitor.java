@@ -72,7 +72,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
   @Override
   public Expression visitClassCall(ClassCallExpression expr, Void params) {
     Map<ClassField, Expression> fieldSet = new HashMap<>();
-    ClassCallExpression result = new ClassCallExpression(expr.getDefinition(), expr.getSortArgument().subst(myLevelSubstitution), fieldSet, expr.getSort().subst(myLevelSubstitution), expr.hasUniverses());
+    ClassCallExpression result = new ClassCallExpression(expr.getDefinition(), expr.getSortArgument().subst(myLevelSubstitution), fieldSet, expr.getSort().subst(myLevelSubstitution), expr.getUniverseKind());
     if (expr.getImplementedHere().isEmpty()) {
       return result;
     }

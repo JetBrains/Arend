@@ -16,7 +16,7 @@ message Definition {
         DConstructorData constructor = 10;
     }
     bool hasTypeClassReference = 8;
-    bool hasUniverses = 9;
+    UniverseKind universe_kind = 11;
 
     message Clause {
         repeated Pattern pattern = 1;
@@ -70,7 +70,7 @@ message Definition {
             bool isProperty = 7;
             bool isHideable = 9;
             bool isCovariant = 10;
-            bool hasUniverses = 11;
+            UniverseKind universe_kind = 13;
         }
     }
     message ParametersLevel {

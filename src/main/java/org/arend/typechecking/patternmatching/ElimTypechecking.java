@@ -10,10 +10,7 @@ import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
-import org.arend.core.definition.ClassField;
-import org.arend.core.definition.Constructor;
-import org.arend.core.definition.DataDefinition;
-import org.arend.core.definition.Definition;
+import org.arend.core.definition.*;
 import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
 import org.arend.core.expr.visitor.GetTypeVisitor;
@@ -698,7 +695,7 @@ public class ElimTypechecking {
                       link = link.getNext();
                     }
                   }
-                  substExpr = new NewExpression(null, new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), implementations, Sort.PROP, false));
+                  substExpr = new NewExpression(null, new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), implementations, Sort.PROP, UniverseKind.NO_UNIVERSES));
                 } else if (someExpr instanceof SigmaExpression) {
                   substExpr = new TupleExpression(arguments, (SigmaExpression) someExpr);
                   conParameters = DependentLink.Helper.copy(conParameters);

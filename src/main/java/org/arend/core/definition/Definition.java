@@ -15,7 +15,7 @@ import java.util.List;
 public abstract class Definition implements Variable, CoreDefinition {
   private TCReferable myReferable;
   private TypeCheckingStatus myStatus;
-  private boolean myHasUniverses;
+  private UniverseKind myUniverseKind = UniverseKind.NO_UNIVERSES;
 
   public Definition(TCReferable referable, TypeCheckingStatus status) {
     myReferable = referable;
@@ -94,12 +94,12 @@ public abstract class Definition implements Variable, CoreDefinition {
 
   }
 
-  public boolean hasUniverses() {
-    return myHasUniverses;
+  public UniverseKind getUniverseKind() {
+    return myUniverseKind;
   }
 
-  public void setHasUniverses(boolean hasUniverses) {
-    myHasUniverses = hasUniverses;
+  public void setUniverseKind(UniverseKind kind) {
+    myUniverseKind = kind;
   }
 
   public List<? extends ParametersLevel> getParametersLevels() {

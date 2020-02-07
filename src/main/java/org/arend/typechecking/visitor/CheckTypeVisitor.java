@@ -246,7 +246,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
 
         if (replace) {
           if (!actualClassCall.getImplementedHere().isEmpty()) {
-            actualClassCall = new ClassCallExpression(actualClassCall.getDefinition(), actualClassCall.getSortArgument(), Collections.emptyMap(), actualClassCall.getSort(), actualClassCall.hasUniverses());
+            actualClassCall = new ClassCallExpression(actualClassCall.getDefinition(), actualClassCall.getSortArgument(), Collections.emptyMap(), actualClassCall.getSort(), actualClassCall.getUniverseKind());
           }
           result.expression = new NewExpression(result.expression, actualClassCall);
           result.type = result.expression.getType();
@@ -586,7 +586,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
   private TypecheckingResult typecheckClassExt(List<? extends Concrete.ClassFieldImpl> classFieldImpls, Expression expectedType, Expression renewExpr, ClassCallExpression classCallExpr, Set<ClassField> pseudoImplemented, Concrete.Expression expr) {
     ClassDefinition baseClass = classCallExpr.getDefinition();
     Map<ClassField, Expression> fieldSet = new HashMap<>();
-    ClassCallExpression resultClassCall = new ClassCallExpression(baseClass, classCallExpr.getSortArgument(), fieldSet, Sort.PROP, baseClass.hasUniverses());
+    ClassCallExpression resultClassCall = new ClassCallExpression(baseClass, classCallExpr.getSortArgument(), fieldSet, Sort.PROP, baseClass.getUniverseKind());
     resultClassCall.copyImplementationsFrom(classCallExpr);
 
     Set<ClassField> defined = renewExpr == null ? null : new HashSet<>();
@@ -770,7 +770,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
                 Level pLevel = baseRefExpr.getPLevel() == null ? null : baseRefExpr.getPLevel().accept(this, LevelVariable.PVAR);
                 Level hLevel = baseRefExpr.getHLevel() == null ? null : baseRefExpr.getHLevel().accept(this, LevelVariable.HVAR);
                 Sort expectedSort = expectedClassCall.getSortArgument();
-                actualClassCall = new ClassCallExpression((ClassDefinition) actualDef, pLevel == null && hLevel == null ? expectedSort : new Sort(pLevel == null ? expectedSort.getPLevel() : pLevel, hLevel == null ? expectedSort.getHLevel() : hLevel), new HashMap<>(), expectedClassCall.getSort(), actualDef.hasUniverses());
+                actualClassCall = new ClassCallExpression((ClassDefinition) actualDef, pLevel == null && hLevel == null ? expectedSort : new Sort(pLevel == null ? expectedSort.getPLevel() : pLevel, hLevel == null ? expectedSort.getHLevel() : hLevel), new HashMap<>(), expectedClassCall.getSort(), actualDef.getUniverseKind());
                 if (fieldsOK) {
                   actualClassCall.copyImplementationsFrom(expectedClassCall);
                 }
@@ -930,7 +930,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     Sort sortArgument;
     boolean isMin = definition instanceof DataDefinition && !definition.getParameters().hasNext();
     if (expr.getPLevel() == null && expr.getHLevel() == null) {
-      sortArgument = isMin ? Sort.PROP : Sort.generateInferVars(getEquations(), definition.hasUniverses(), expr);
+      sortArgument = isMin ? Sort.PROP : Sort.generateInferVars(getEquations(), definition.getUniverseKind(), expr);
       Level hLevel = null;
       if (definition instanceof DataDefinition && !sortArgument.isProp()) {
         hLevel = ((DataDefinition) definition).getSort().getHLevel();
@@ -952,7 +952,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
         if (isMin) {
           pLevel = new Level(0);
         } else {
-          InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, definition.hasUniverses(), expr);
+          InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, definition.getUniverseKind() != UniverseKind.NO_UNIVERSES, expr);
           getEquations().addVariable(pl);
           pLevel = new Level(pl);
         }
@@ -966,14 +966,14 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
         if (isMin) {
           hLevel = new Level(-1);
         } else {
-          InferenceLevelVariable hl = new InferenceLevelVariable(LevelVariable.LvlType.HLVL, definition.hasUniverses(), expr);
+          InferenceLevelVariable hl = new InferenceLevelVariable(LevelVariable.LvlType.HLVL, definition.getUniverseKind() != UniverseKind.NO_UNIVERSES, expr);
           getEquations().addVariable(hl);
           hLevel = new Level(hl);
         }
       }
 
       if ((definition == Prelude.PATH_INFIX || definition == Prelude.PATH) && hLevel.isProp()) {
-        InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, definition.hasUniverses(), expr);
+        InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, definition.getUniverseKind() != UniverseKind.NO_UNIVERSES, expr);
         getEquations().addVariable(pl);
         pLevel = new Level(pl);
       }
@@ -1328,7 +1328,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
 
         Type paramType = piParams.getType();
         DefCallExpression defCallParamType = paramType.getExpr().cast(DefCallExpression.class);
-        if (defCallParamType != null && !defCallParamType.hasUniverses()) { // fixes test pLevelTest
+        if (defCallParamType != null && defCallParamType.getUniverseKind() == UniverseKind.NO_UNIVERSES) { // fixes test pLevelTest
           Definition definition = defCallParamType.getDefinition();
           Sort sortArg = definition instanceof DataDefinition || definition instanceof FunctionDefinition || definition instanceof ClassDefinition ? Sort.generateInferVars(myEquations, false, param) : null;
           if (definition instanceof ClassDefinition) {
@@ -1362,7 +1362,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
               paramType = new TypeExpression(new FunCallExpression((FunctionDefinition) definition, sortArg, new ArrayList<>(defCallParamType.getDefCallArguments())), paramType.getSortOfType());
             } else {
               ClassCallExpression classCall = (ClassCallExpression) defCallParamType;
-              paramType = new ClassCallExpression((ClassDefinition) definition, sortArg, classCall.getImplementedHere(), classCall.getDefinition().computeSort(sortArg, classCall.getImplementedHere(), classCall.getThisBinding()), classCall.hasUniverses());
+              paramType = new ClassCallExpression((ClassDefinition) definition, sortArg, classCall.getImplementedHere(), classCall.getDefinition().computeSort(sortArg, classCall.getImplementedHere(), classCall.getThisBinding()), classCall.getUniverseKind());
             }
           }
         }

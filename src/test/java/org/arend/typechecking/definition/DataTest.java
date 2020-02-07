@@ -12,6 +12,7 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.naming.reference.LocalReferable;
 import org.arend.naming.reference.Referable;
+import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.arend.typechecking.result.TypecheckingResult;
@@ -299,6 +300,13 @@ public class DataTest extends TypeCheckingTestCase {
     DataDefinition d = (DataDefinition) getDefinition("D");
     assertFalse(d.isCovariant(0));
     assertFalse(d.isCovariant(1));
+  }
+
+  @Test
+  public void pathCovariance() {
+    assertTrue(Prelude.PATH.isCovariant(0));
+    assertFalse(Prelude.PATH.isCovariant(1));
+    assertFalse(Prelude.PATH.isCovariant(2));
   }
 
   @Test

@@ -1,6 +1,7 @@
 package org.arend.core.expr;
 
 import org.arend.core.definition.ClassField;
+import org.arend.core.definition.UniverseKind;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.let.LetClausePattern;
 import org.arend.core.expr.visitor.ExpressionVisitor;
@@ -62,7 +63,7 @@ public class LetExpression extends Expression implements CoreLetExpression {
     if (newExpr != null && pattern.getFields() != null && pattern.getFields().size() == pattern.getPatterns().size()) {
       ClassCallExpression classCall = newExpr.getClassCall();
       Map<ClassField, Expression> implementations = new HashMap<>();
-      ClassCallExpression resultClassCall = new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), implementations, Sort.PROP, false);
+      ClassCallExpression resultClassCall = new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), implementations, Sort.PROP, UniverseKind.NO_UNIVERSES);
 
       boolean someNotImplemented = false;
       for (int i = 0; i < pattern.getPatterns().size(); i++) {

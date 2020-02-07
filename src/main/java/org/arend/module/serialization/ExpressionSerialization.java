@@ -11,6 +11,7 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.TypedDependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
+import org.arend.core.definition.UniverseKind;
 import org.arend.core.elimtree.BranchElimTree;
 import org.arend.core.elimtree.ElimTree;
 import org.arend.core.elimtree.LeafElimTree;
@@ -23,7 +24,6 @@ import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.ext.core.elimtree.CoreBranchKey;
-import org.arend.ext.error.GeneralError;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -273,8 +273,20 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
       builder.putFieldSet(myCallTargetIndexProvider.getDefIndex(entry.getKey()), writeExpr(entry.getValue()));
     }
     builder.setSort(writeSort(expr.getSort()));
-    builder.setHasUniverses(expr.hasUniverses());
+    builder.setUniverseKind(writeUniverseKind(expr.getUniverseKind()));
     return builder.build();
+  }
+
+  ExpressionProtos.UniverseKind writeUniverseKind(UniverseKind kind) {
+    switch (kind) {
+      case NO_UNIVERSES:
+        return ExpressionProtos.UniverseKind.NO_UNIVERSES;
+      case ONLY_COVARIANT:
+        return ExpressionProtos.UniverseKind.ONLY_COVARIANT;
+      case WITH_UNIVERSES:
+        return ExpressionProtos.UniverseKind.WITH_UNIVERSES;
+    }
+    throw new IllegalStateException();
   }
 
   @Override

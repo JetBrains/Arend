@@ -4,10 +4,7 @@ import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.context.binding.inference.TypeClassInferenceVariable;
 import org.arend.core.context.param.*;
-import org.arend.core.definition.ClassField;
-import org.arend.core.definition.Constructor;
-import org.arend.core.definition.DataDefinition;
-import org.arend.core.definition.Definition;
+import org.arend.core.definition.*;
 import org.arend.core.elimtree.Body;
 import org.arend.core.elimtree.BranchElimTree;
 import org.arend.core.elimtree.ElimTree;
@@ -344,12 +341,14 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     if (expr2 == null || expr1.getDefinition() != expr2.getDefinition()) {
       return false;
     }
-    if (!expr1.hasUniverses()) {
+    UniverseKind universeKind = expr1.getUniverseKind();
+    if (universeKind == UniverseKind.NO_UNIVERSES) {
       return true;
     }
+    CMP cmp = universeKind == UniverseKind.ONLY_COVARIANT ? myCMP : CMP.EQ;
     return correctOrder
-      ? Sort.compare(expr1.getSortArgument(), expr2.getSortArgument(), myCMP, myNormalCompare ? myEquations : DummyEquations.getInstance(), mySourceNode)
-      : Sort.compare(expr2.getSortArgument(), expr1.getSortArgument(), myCMP, myNormalCompare ? myEquations : DummyEquations.getInstance(), mySourceNode);
+      ? Sort.compare(expr1.getSortArgument(), expr2.getSortArgument(), cmp, myNormalCompare ? myEquations : DummyEquations.getInstance(), mySourceNode)
+      : Sort.compare(expr2.getSortArgument(), expr1.getSortArgument(), cmp, myNormalCompare ? myEquations : DummyEquations.getInstance(), mySourceNode);
   }
 
   private Boolean visitDefCall(DefCallExpression expr1, Expression expr2, Expression type, boolean correctOrder) {
@@ -507,7 +506,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       } else {
         Map<ClassField, Expression> implementations = new HashMap<>();
         codSort = classCall1.getSort();
-        ClassCallExpression classCall = new ClassCallExpression(classCall1.getDefinition(), classCall1.getSortArgument(), implementations, codSort, classCall1.hasUniverses());
+        ClassCallExpression classCall = new ClassCallExpression(classCall1.getDefinition(), classCall1.getSortArgument(), implementations, codSort, classCall1.getUniverseKind());
         int i = 0;
         for (ClassField field : classCall1.getDefinition().getFields()) {
           if (!classCall1.getDefinition().isImplemented(field)) {
@@ -594,11 +593,11 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     return true;
   }
 
-  private boolean checkClassCallSortArguments(ClassCallExpression classCall1, ClassCallExpression classCall2) {
+  private boolean checkClassCallSortArguments(ClassCallExpression classCall1, ClassCallExpression classCall2, CMP onSuccess, CMP onFailure) {
     ReferenceExpression thisExpr = new ReferenceExpression(classCall1.getThisBinding());
     boolean ok = true;
     for (Map.Entry<ClassField, AbsExpression> entry : classCall1.getDefinition().getImplemented()) {
-      if (entry.getKey().hasUniverses() && !classCall2.isImplemented(entry.getKey())) {
+      if (entry.getKey().getUniverseKind() != UniverseKind.NO_UNIVERSES && !classCall2.isImplemented(entry.getKey())) {
         Expression type = entry.getValue().apply(thisExpr).getType();
         if (type == null) {
           ok = false;
@@ -615,7 +614,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     }
     if (ok) {
       for (Map.Entry<ClassField, Expression> entry : classCall1.getImplementedHere().entrySet()) {
-        if (entry.getKey().hasUniverses() && !classCall2.isImplemented(entry.getKey())) {
+        if (entry.getKey().getUniverseKind() != UniverseKind.NO_UNIVERSES && !classCall2.isImplemented(entry.getKey())) {
           Expression type = entry.getValue().getType();
           if (type == null) {
             ok = false;
@@ -632,18 +631,26 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       }
     }
 
-    return ok || myNormalCompare && Sort.compare(classCall1.getSortArgument(), classCall2.getSortArgument(), CMP.LE, myEquations, mySourceNode);
+    if (ok) {
+      return onSuccess == null || myNormalCompare && Sort.compare(classCall1.getSortArgument(), classCall2.getSortArgument(), onSuccess, myEquations, mySourceNode);
+    } else {
+      return myNormalCompare && Sort.compare(classCall1.getSortArgument(), classCall2.getSortArgument(), onFailure, myEquations, mySourceNode);
+    }
   }
 
   public boolean compareClassCallSortArguments(ClassCallExpression classCall1, ClassCallExpression classCall2) {
-    if (classCall1.hasUniverses() || classCall2.hasUniverses()) {
-      if (myCMP == CMP.EQ || classCall1.hasUniverses() && classCall2.hasUniverses()) {
-        return Sort.compare(classCall1.getSortArgument(), classCall2.getSortArgument(), myCMP, myNormalCompare ? myEquations : DummyEquations.getInstance(), mySourceNode);
-      } else {
-        if (!Sort.compare(classCall1.getSortArgument(), classCall2.getSortArgument(), myCMP, DummyEquations.getInstance(), mySourceNode)) {
-          return myCMP == CMP.LE ? checkClassCallSortArguments(classCall1, classCall2) : checkClassCallSortArguments(classCall2, classCall1);
-        }
-      }
+    UniverseKind kind1 = classCall1.getUniverseKind();
+    UniverseKind kind2 = classCall2.getUniverseKind();
+    if (kind1 == UniverseKind.NO_UNIVERSES && kind2 == UniverseKind.NO_UNIVERSES) {
+      return true;
+    }
+    if (myCMP == CMP.EQ || kind1 == kind2) {
+      return Sort.compare(classCall1.getSortArgument(), classCall2.getSortArgument(), kind1 == UniverseKind.ONLY_COVARIANT ? myCMP : CMP.EQ, myNormalCompare ? myEquations : DummyEquations.getInstance(), mySourceNode);
+    }
+    if (!Sort.compare(classCall1.getSortArgument(), classCall2.getSortArgument(), myCMP, DummyEquations.getInstance(), mySourceNode)) {
+      CMP onSuccess = kind1 == UniverseKind.NO_UNIVERSES || kind2 == UniverseKind.NO_UNIVERSES ? null : CMP.LE;
+      CMP onFailure = kind1 == UniverseKind.WITH_UNIVERSES || kind2 == UniverseKind.WITH_UNIVERSES ? CMP.EQ : CMP.LE;
+      return myCMP == CMP.LE ? checkClassCallSortArguments(classCall1, classCall2, onSuccess, onFailure) : checkClassCallSortArguments(classCall2, classCall1, onSuccess, onFailure);
     }
     return true;
   }

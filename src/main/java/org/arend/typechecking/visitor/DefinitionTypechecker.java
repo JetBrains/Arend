@@ -42,6 +42,9 @@ import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteDefinitionVisitor;
 import org.arend.term.concrete.FreeReferablesVisitor;
 import org.arend.typechecking.FieldDFS;
+import org.arend.typechecking.covariance.RecursiveDataChecker;
+import org.arend.typechecking.covariance.UniverseInParametersChecker;
+import org.arend.typechecking.covariance.UniverseKindChecker;
 import org.arend.typechecking.error.CycleError;
 import org.arend.typechecking.error.ErrorReporterCounter;
 import org.arend.typechecking.error.local.*;
@@ -306,23 +309,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
   }
 
-  private boolean checkForContravariantUniverses(Expression expr) {
-    while (expr instanceof PiExpression) {
-      for (DependentLink link = ((PiExpression) expr).getParameters(); link.hasNext(); link = link.getNext()) {
-        link = link.getNextTyped(null);
-        if (CheckForUniversesVisitor.findUniverse(link.getTypeExpr())) {
-          return true;
-        }
-      }
-      expr = ((PiExpression) expr).getCodomain();
-    }
-    return expr != null && expr.accept(new CheckForUniversesVisitor(false), null);
-  }
-
   private boolean checkForUniverses(DependentLink link) {
     for (; link.hasNext(); link = link.getNext()) {
       link = link.getNextTyped(null);
-      if (checkForContravariantUniverses(link.getTypeExpr())) {
+      if (new UniverseInParametersChecker().check(link.getTypeExpr())) {
         return true;
       }
     }
@@ -940,8 +930,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
       typedDef.setGoodThisParameters(goodThisParametersVisitor.getGoodParameters());
 
-      if (checkForUniverses(typedDef.getParameters()) || checkForContravariantUniverses(typedDef.getResultType()) || CheckForUniversesVisitor.findUniverse(typedDef.getBody())) {
-        typedDef.setHasUniverses(true);
+      if (checkForUniverses(typedDef.getParameters()) || new UniverseInParametersChecker().check(typedDef.getResultType())) {
+        typedDef.setUniverseKind(UniverseKind.WITH_UNIVERSES);
+      } else {
+        typedDef.setUniverseKind(new UniverseKindChecker().getUniverseKind(typedDef.getBody()));
       }
     }
 
@@ -1365,27 +1357,21 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
       }
 
-      boolean hasUniverses = checkForUniverses(dataDefinition.getParameters());
-      if (!hasUniverses) {
+      if (checkForUniverses(dataDefinition.getParameters())) {
+        dataDefinition.setUniverseKind(UniverseKind.WITH_UNIVERSES);
+      } else {
+        UniverseKind kind = UniverseKind.NO_UNIVERSES;
+        loop:
         for (Constructor constructor : dataDefinition.getConstructors()) {
           for (DependentLink link = constructor.getParameters(); link.hasNext(); link = link.getNext()) {
             link = link.getNextTyped(null);
-            if (CheckForUniversesVisitor.findUniverse(link.getTypeExpr())) {
-              hasUniverses = true;
-              break;
+            kind = kind.max(new UniverseKindChecker().getUniverseKind(link.getTypeExpr()));
+            if (kind == UniverseKind.WITH_UNIVERSES) {
+              break loop;
             }
           }
-          if (hasUniverses) {
-            break;
-          }
-          if (CheckForUniversesVisitor.findUniverse(constructor.getBody())) {
-            hasUniverses = true;
-            break;
-          }
         }
-      }
-      if (hasUniverses) {
-        dataDefinition.setHasUniverses(true);
+        dataDefinition.setUniverseKind(kind);
       }
     }
 
@@ -1406,6 +1392,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   }
 
   // fixes sorts of expressions containing recursive calls of a data type
+  // See BaseDefinitionTypechecker.checkPositiveness, CheckForUniversesVisitor, and checkForContravariantUniverses
   private Expression fixExpressionSorts(Expression type, Sort sort, Set<DataDefinition> dataDefinitions) {
     if (type instanceof PiExpression) {
       PiExpression piType = (PiExpression) type;
@@ -1533,10 +1520,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         Pair<Sort, Expression> pair = typecheckParameters(def, list, null, userSort, newDef ? null : oldConstructor.getParameters(), null);
         sort = pair == null ? null : pair.proj1;
 
-        int index = 0;
-        for (DependentLink link = list.getFirst(); link.hasNext(); link = link.getNext(), index++) {
+        int i = 0;
+        for (DependentLink link = list.getFirst(); link.hasNext(); link = link.getNext(), i++) {
           link = link.getNextTyped(null);
-          if (!checkPositiveness(link.getTypeExpr(), index, def.getParameters(), def, dataDefinitions, true)) {
+          if (new RecursiveDataChecker(dataDefinitions, errorReporter, def, def.getParameters().get(i)).check(link.getTypeExpr())) {
             if (constructor != null) {
               constructor.setParameters(EmptyDependentLink.getInstance());
             }
@@ -1651,7 +1638,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   private void typecheckClass(Concrete.ClassDefinition def, ClassDefinition typedDef, boolean newDef) {
     if (newDef) {
       typedDef.clear();
-      typedDef.setHasUniverses(true);
+      typedDef.setUniverseKind(UniverseKind.WITH_UNIVERSES);
     }
 
     boolean classOk = true;
@@ -1765,18 +1752,16 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           if (newDef && previousField != null) {
             ClassField newField = addField(field.getData(), typedDef, previousField.getType(Sort.STD), previousField.getTypeLevel());
             newField.setStatus(previousField.status());
-            newField.setHasUniverses(previousField.hasUniverses());
+            newField.setUniverseKind(previousField.getUniverseKind());
             newField.setCovariant(previousField.isCovariant());
             newField.setNumberOfParameters(previousField.getNumberOfParameters());
           }
         } else {
           previousType = field.getResultType();
           previousField = typecheckClassField(field, typedDef, localInstances, newDef, hasClassifyingField);
-          if (previousField != null && CheckForUniversesVisitor.findUniverse(previousField.getType(Sort.STD).getCodomain())) {
-            previousField.setHasUniverses(true);
-            if (!previousField.getType(Sort.STD).getCodomain().accept(new CheckForUniversesVisitor(false), null)) {
-              previousField.setCovariant(true);
-            }
+          if (previousField != null) {
+            UniverseKind universeKind = new UniverseKindChecker().getUniverseKind(previousField.getType(Sort.STD).getCodomain());
+            previousField.setUniverseKind(universeKind);
             previousField.setNumberOfParameters(field.getNumberOfParameters());
           }
 
@@ -1920,11 +1905,13 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       typedDef.setStatus(!classOk ? Definition.TypeCheckingStatus.HAS_ERRORS : typechecker.getStatus());
       typedDef.updateSort();
 
-      typedDef.setHasUniverses(false);
+      typedDef.setUniverseKind(UniverseKind.NO_UNIVERSES);
       for (ClassField field : typedDef.getFields()) {
-        if (field.hasUniverses() && !typedDef.isImplemented(field)) {
-          typedDef.setHasUniverses(true);
-          break;
+        if (field.getUniverseKind().ordinal() > typedDef.getUniverseKind().ordinal() && !typedDef.isImplemented(field)) {
+          typedDef.setUniverseKind(field.getUniverseKind());
+          if (typedDef.getUniverseKind() == UniverseKind.WITH_UNIVERSES) {
+            break;
+          }
         }
       }
 

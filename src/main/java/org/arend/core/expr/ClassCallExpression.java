@@ -7,6 +7,7 @@ import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.context.param.TypedDependentLink;
 import org.arend.core.definition.ClassDefinition;
 import org.arend.core.definition.ClassField;
+import org.arend.core.definition.UniverseKind;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.type.TypeExpression;
 import org.arend.core.expr.visitor.ExpressionVisitor;
@@ -30,7 +31,7 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
   private final ClassCallBinding myThisBinding = new ClassCallBinding();
   private final Map<ClassField, Expression> myImplementations;
   private Sort mySort;
-  private boolean myHasUniverses;
+  private UniverseKind myUniverseKind;
 
   public class ClassCallBinding implements Binding {
     @Override
@@ -64,14 +65,14 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
     super(definition, sortArgument);
     myImplementations = Collections.emptyMap();
     mySort = definition.getSort().subst(sortArgument.toLevelSubstitution());
-    myHasUniverses = definition.hasUniverses();
+    myUniverseKind = definition.getUniverseKind();
   }
 
-  public ClassCallExpression(ClassDefinition definition, Sort sortArgument, Map<ClassField, Expression> implementations, Sort sort, boolean hasUniverses) {
+  public ClassCallExpression(ClassDefinition definition, Sort sortArgument, Map<ClassField, Expression> implementations, Sort sort, UniverseKind universeKind) {
     super(definition, sortArgument);
     myImplementations = implementations;
     mySort = sort;
-    myHasUniverses = hasUniverses;
+    myUniverseKind = universeKind;
   }
 
   @Nonnull
@@ -81,20 +82,22 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
   }
 
   public void updateHasUniverses() {
-    if (!getDefinition().hasUniverses()) {
-      myHasUniverses = false;
+    if (getDefinition().getUniverseKind() == UniverseKind.NO_UNIVERSES) {
+      myUniverseKind = UniverseKind.NO_UNIVERSES;
       return;
     }
     if (myImplementations.isEmpty()) {
-      myHasUniverses = true;
+      myUniverseKind = getDefinition().getUniverseKind();
       return;
     }
 
-    myHasUniverses = false;
+    myUniverseKind = UniverseKind.NO_UNIVERSES;
     for (ClassField field : getDefinition().getFields()) {
-      if (field.hasUniverses() && !isImplemented(field)) {
-        myHasUniverses = true;
-        return;
+      if (field.getUniverseKind().ordinal() > myUniverseKind.ordinal() && !isImplemented(field)) {
+        myUniverseKind = field.getUniverseKind();
+        if (myUniverseKind == UniverseKind.WITH_UNIVERSES) {
+          return;
+        }
       }
     }
   }
@@ -169,7 +172,7 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
 
   public DependentLink getClassFieldParameters() {
     Map<ClassField, Expression> implementations = new HashMap<>();
-    NewExpression newExpr = new NewExpression(null, new ClassCallExpression(getDefinition(), getSortArgument(), implementations, Sort.PROP, false));
+    NewExpression newExpr = new NewExpression(null, new ClassCallExpression(getDefinition(), getSortArgument(), implementations, Sort.PROP, UniverseKind.NO_UNIVERSES));
     newExpr.getClassCall().copyImplementationsFrom(this);
 
     Collection<? extends ClassField> fields = getDefinition().getFields();
@@ -244,8 +247,8 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
   }
 
   @Override
-  public boolean hasUniverses() {
-    return myHasUniverses;
+  public UniverseKind getUniverseKind() {
+    return myUniverseKind;
   }
 
   @Override
