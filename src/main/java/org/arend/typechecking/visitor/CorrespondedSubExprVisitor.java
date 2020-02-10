@@ -167,14 +167,15 @@ public class CorrespondedSubExprVisitor implements
     Iterator<? extends Expression> defCallArgs = expression.getDefCallArguments().iterator();
     Concrete.Argument argument = arguments.next();
     for (DependentLink parameter = expression.getDefinition().getParameters();
-         parameter.hasNext() && defCallArgs.hasNext();
+         parameter.hasNext();
          parameter = parameter.getNext()) {
+      assert defCallArgs.hasNext();
       Expression coreArg = defCallArgs.next();
       // Take care of implicit application
       if (parameter.isExplicit() == argument.isExplicit()) {
         Pair<Expression, Concrete.Expression> accepted = argument.getExpression().accept(this, coreArg);
         if (accepted != null) return accepted;
-        argument = arguments.next();
+        if (arguments.hasNext()) argument = arguments.next();
       }
     }
     return null;
@@ -182,6 +183,7 @@ public class CorrespondedSubExprVisitor implements
 
   @Override
   public Pair<Expression, Concrete.Expression> visitApp(Concrete.AppExpression expr, Expression coreExpr) {
+    if (matchesSubExpr(expr)) return new Pair<>(coreExpr, expr);
     if (subExpr instanceof Concrete.AppExpression && Objects.equals(
         ((Concrete.AppExpression) subExpr).getFunction().getData(),
         expr.getFunction().getData()
