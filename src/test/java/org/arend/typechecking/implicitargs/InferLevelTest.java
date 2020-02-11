@@ -294,4 +294,9 @@ public class InferLevelTest extends TypeCheckingTestCase {
     Sort sort = ((ConCallExpression) ((FunctionDefinition) typeCheckDef("\\func pmap {A B : \\Type} (f : A -> B) {a a' : A} (p : a = a') : f a = f a' => path (\\lam i => f (p @ i))")).getBody()).getSortArgument();
     assertEquals(Sort.STD, sort);
   }
+
+  @Test
+  public void classTest() {
+    typeCheckModule("\\class B (F : \\Type -> \\Type) | foo : F Nat", 1);
+  }
 }

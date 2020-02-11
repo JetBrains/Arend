@@ -18,6 +18,11 @@ public class ParametersCovarianceChecker extends CovarianceChecker {
 
   @Override
   protected boolean checkNonCovariant(Expression expr) {
+    return expr.accept(myVisitor, null) != null;
+  }
+
+  @Override
+  protected boolean checkOtherwise(Expression expr) {
     while (true) {
       if (expr instanceof AppExpression) {
         if (((AppExpression) expr).getArgument().accept(myVisitor, null) != null) {

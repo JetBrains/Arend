@@ -42,6 +42,7 @@ import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteDefinitionVisitor;
 import org.arend.term.concrete.FreeReferablesVisitor;
 import org.arend.typechecking.FieldDFS;
+import org.arend.typechecking.covariance.ParametersCovarianceChecker;
 import org.arend.typechecking.covariance.RecursiveDataChecker;
 import org.arend.typechecking.covariance.UniverseInParametersChecker;
 import org.arend.typechecking.covariance.UniverseKindChecker;
@@ -1311,11 +1312,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     if (newDef) {
       int index = 0;
       for (DependentLink link = dataDefinition.getParameters(); link.hasNext(); link = link.getNext(), index++) {
-        Expression type = link.getTypeExpr().getPiParameters(null, false);
-        if (!(type instanceof UniverseExpression)) {
-          continue;
-        }
-
         dataDefinition.setCovariant(index, true);
         if (!isCovariantParameter(dataDefinition, link)) {
           dataDefinition.setCovariant(index, false);
@@ -1753,7 +1749,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             ClassField newField = addField(field.getData(), typedDef, previousField.getType(Sort.STD), previousField.getTypeLevel());
             newField.setStatus(previousField.status());
             newField.setUniverseKind(previousField.getUniverseKind());
-            newField.setCovariant(previousField.isCovariant());
             newField.setNumberOfParameters(previousField.getNumberOfParameters());
           }
         } else {
@@ -1852,6 +1847,19 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       } else {
         throw new IllegalStateException();
       }
+    }
+
+    // Set fields covariance
+    for (ClassField field : typedDef.getPersonalFields()) {
+      ParametersCovarianceChecker checker = new ParametersCovarianceChecker(field);
+      boolean covariant = true;
+      for (ClassField field1 : typedDef.getPersonalFields()) {
+        if (checker.check(field1.getType(Sort.STD).getCodomain())) {
+          covariant = false;
+          break;
+        }
+      }
+      field.setCovariant(covariant);
     }
 
     // Process coercing field

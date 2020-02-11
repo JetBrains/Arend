@@ -122,6 +122,8 @@ public class Prelude implements ArendPrelude {
       case "Path":
         PATH = (DataDefinition) definition;
         PATH.getParameters().setType(new PiExpression(new Sort(new Level(LevelVariable.PVAR, 1), new Level(LevelVariable.HVAR, 2)), new TypedSingleDependentLink(true, null, new DataCallExpression(INTERVAL, new Sort(new Level(0), new Level(-1)), Collections.emptyList())), new UniverseExpression(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR, 1)))));
+        PATH.setCovariant(1, false);
+        PATH.setCovariant(2, false);
         PATH_CON = PATH.getConstructor("path");
         break;
       case "=":

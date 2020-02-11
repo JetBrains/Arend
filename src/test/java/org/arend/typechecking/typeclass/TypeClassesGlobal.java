@@ -261,7 +261,7 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
   @Test
   public void classifyingFieldLambda() {
     typeCheckModule(
-      "\\class B (F : \\Type -> \\Type) | foo : F Nat | bar : F Nat -> Nat\n" +
+      "\\class B (F : \\Set -> \\Set) | foo : F Nat | bar : F Nat -> Nat\n" +
       "\\data Maybe (A : \\Type) | nothing | just A\n" +
       "\\func fromMaybe {A : \\Type} (a : A) (m : Maybe A) : A \\elim m\n" +
       "  | nothing => a\n" +
@@ -275,7 +275,7 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
   @Test
   public void classifyingFieldLambdaError() {
     typeCheckModule(
-      "\\class B (F : \\Type -> \\Type) | foo : F Nat | bar : F Nat -> Nat\n" +
+      "\\class B (F : \\Set -> \\Set) | foo : F Nat | bar : F Nat -> Nat\n" +
       "\\data Maybe (A : \\Type) | nothing | just A\n" +
       "\\func fromMaybe {A : \\Type} (a : A) (m : Maybe A) : A \\elim m\n" +
       "  | nothing => a\n" +
@@ -288,7 +288,7 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
   @Test
   public void classifyingFieldLambdaClass() {
     typeCheckModule(
-      "\\class B (F : \\Type -> \\Type) | foo : F Nat | bar : F Nat -> Nat\n" +
+      "\\class B (F : \\Set -> \\Set) | foo : F Nat | bar : F Nat -> Nat\n" +
       "\\record R {A : \\Type} | rrr : A\n" +
       "\\func proj {A : \\Type} (r : R {A}) => r.rrr\n" +
       "\\instance B-inst : B (\\lam A => R {A}) | foo => \\new R 3 | bar => proj\n" +

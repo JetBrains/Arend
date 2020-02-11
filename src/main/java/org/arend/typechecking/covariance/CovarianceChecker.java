@@ -16,6 +16,10 @@ public abstract class CovarianceChecker {
 
   protected abstract boolean checkNonCovariant(Expression expr);
 
+  protected boolean checkOtherwise(Expression expr) {
+    return checkNonCovariant(expr);
+  }
+
   protected boolean checkSort(Sort sort, Definition definition) {
     return false;
   }
@@ -144,6 +148,6 @@ public abstract class CovarianceChecker {
       return checkNonCovariant(funCall.getDefCallArguments().get(1)) || checkNonCovariant(funCall.getDefCallArguments().get(2));
     }
 
-    return checkNonCovariant(expr);
+    return checkOtherwise(expr);
   }
 }
