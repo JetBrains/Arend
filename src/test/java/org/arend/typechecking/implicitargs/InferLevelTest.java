@@ -299,4 +299,14 @@ public class InferLevelTest extends TypeCheckingTestCase {
   public void classTest() {
     typeCheckModule("\\class B (F : \\Type -> \\Type) | foo : F Nat", 1);
   }
+
+  @Test
+  public void fieldTest() {
+    typeCheckModule(
+      "\\record R\n" +
+      "  | f : \\Type -> \\Type\n" +
+      "\\record S\n" +
+      "  | inst : R\n" +
+      "  | func (X : \\oo-Type) : f {inst} X", 1);
+  }
 }

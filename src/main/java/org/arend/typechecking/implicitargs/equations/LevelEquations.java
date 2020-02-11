@@ -8,7 +8,7 @@ import java.util.Map;
 public class LevelEquations<Var> {
   private final List<Var> myVariables = new ArrayList<>();
   private final List<LevelEquation<Var>> myEquations = new ArrayList<>();
-  static final int INFINITY = -100;
+  static final int INFINITY = Integer.MAX_VALUE;
 
   public List<LevelEquation<Var>> getEquations() {
     return myEquations;
@@ -54,7 +54,10 @@ public class LevelEquations<Var> {
       boolean updated = false;
       for (LevelEquation<Var> equation : myEquations) {
         if (equation.isInfinity()) {
-          solution.put(equation.getVariable(), INFINITY);
+          Integer prev = solution.put(equation.getVariable(), INFINITY);
+          if (prev == null || prev != INFINITY) {
+            updated = true;
+          }
         } else {
           int a = solution.get(equation.getVariable1());
           int b = solution.get(equation.getVariable2());
