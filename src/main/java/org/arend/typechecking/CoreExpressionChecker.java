@@ -131,7 +131,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     }
 
     Expression actualType = null;
-    ClassCallExpression argClassCall = argType.cast(ClassCallExpression.class);
+    ClassCallExpression argClassCall = argType.normalize(NormalizationMode.WHNF).cast(ClassCallExpression.class);
     if (argClassCall != null && !(expr.getArgument() instanceof FieldCallExpression)) {
       Expression impl = argClassCall.getImplementation(expr.getDefinition(), expr.getArgument());
       if (impl != null) {
