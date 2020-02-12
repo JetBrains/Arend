@@ -299,6 +299,7 @@ public abstract class BaseCliFrontend {
         }
 
         time = System.currentTimeMillis() - time;
+        flushErrors();
         System.out.println("--- Done (" + timeToString(time) + ") ---");
       }
     }

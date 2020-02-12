@@ -227,12 +227,12 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
   }
 
   private boolean visitClass(ClassDefinition classDef, Set<ClassDefinition> stack, Set<ClassDefinition> visited, List<ClassField> fields) {
+    if (!visited.add(classDef)) {
+      return true;
+    }
     if (!stack.add(classDef)) {
       errorReporter.report(new TypecheckingError("Class '" + classDef.getName() + "' depends recursively on its super classes", null));
       return false;
-    }
-    if (!visited.add(classDef)) {
-      return true;
     }
 
     for (ClassDefinition superClass : classDef.getSuperClasses()) {

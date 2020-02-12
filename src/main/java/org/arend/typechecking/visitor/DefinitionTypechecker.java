@@ -847,7 +847,14 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           Pair<ClassCallExpression, ClassCallExpression> result = typecheckCoClauses(typedDef, def, kind, body.getCoClauseElements());
           if (result != null) {
             if (newDef && !def.isRecursive()) {
-              typedDef.setResultType(kind == FunctionKind.CONS ? result.proj1 : result.proj2);
+              if (kind == FunctionKind.CONS) {
+                typedDef.setResultType(result.proj1);
+              } else {
+                typedDef.setResultType(result.proj2);
+                if (typedDef.getKind() != CoreFunctionDefinition.Kind.FUNC && result.proj1.getImplementedHere().size() != result.proj2.getImplementedHere().size()) {
+                  typedDef.setBody(new NewExpression(null, result.proj1));
+                }
+              }
             }
             consType = result.proj2;
           }
