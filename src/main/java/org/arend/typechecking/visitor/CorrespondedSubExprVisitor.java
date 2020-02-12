@@ -185,6 +185,10 @@ public class CorrespondedSubExprVisitor implements
         ((Concrete.AppExpression) subExpr).getFunction().getData(),
         expr.getFunction().getData()
     )) return new Pair<>(coreExpr, expr);
+    if (subExpr instanceof Concrete.ReferenceExpression && Objects.equals(
+        subExpr.getData(),
+        expr.getFunction().getData()
+    )) return new Pair<>(coreExpr, expr);
     Concrete.Expression cloned = Concrete.AppExpression.make(expr.getData(), expr.getFunction(), new ArrayList<>(expr.getArguments()));
     return visitClonedApp(((Concrete.AppExpression) cloned), coreExpr);
   }
