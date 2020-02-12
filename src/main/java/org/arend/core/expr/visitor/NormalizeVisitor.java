@@ -371,7 +371,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
             throw new IllegalStateException();
           }
           if (result != null) {
-            return result.subst(substitution).accept(this, mode);
+            return result.subst(substitution, expr.getSortArgument().toLevelSubstitution()).accept(this, mode);
           }
         }
       }
