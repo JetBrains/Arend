@@ -597,7 +597,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     ReferenceExpression thisExpr = new ReferenceExpression(classCall1.getThisBinding());
     boolean ok = true;
     for (Map.Entry<ClassField, AbsExpression> entry : classCall1.getDefinition().getImplemented()) {
-      if (entry.getKey().getUniverseKind() != UniverseKind.NO_UNIVERSES && !classCall2.isImplemented(entry.getKey())) {
+      if (entry.getKey().getUniverseKind() != UniverseKind.NO_UNIVERSES && classCall2.getDefinition().getFields().contains(entry.getKey()) && !classCall2.isImplemented(entry.getKey())) {
         Expression type = entry.getValue().apply(thisExpr).getType();
         if (type == null) {
           ok = false;
@@ -614,7 +614,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     }
     if (ok) {
       for (Map.Entry<ClassField, Expression> entry : classCall1.getImplementedHere().entrySet()) {
-        if (entry.getKey().getUniverseKind() != UniverseKind.NO_UNIVERSES && !classCall2.isImplemented(entry.getKey())) {
+        if (entry.getKey().getUniverseKind() != UniverseKind.NO_UNIVERSES && classCall2.getDefinition().getFields().contains(entry.getKey()) && !classCall2.isImplemented(entry.getKey())) {
           Expression type = entry.getValue().getType();
           if (type == null) {
             ok = false;
