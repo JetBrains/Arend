@@ -87,8 +87,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
   protected ErrorReporter errorReporter;
   private TypecheckingListener myListener = TypecheckingListener.DEFAULT;
   private final List<ClassCallExpression.ClassCallBinding> myClassCallBindings = new ArrayList<>();
-  private final List<DeferredMeta> myDeferredMetasBefore = new ArrayList<>();
-  private final List<DeferredMeta> myDeferredMetasAfter = new ArrayList<>();
+  private final List<DeferredMeta> myDeferredMetasBeforeSolver = new ArrayList<>();
+  private final List<DeferredMeta> myDeferredMetasBeforeLevels = new ArrayList<>();
+  private final List<DeferredMeta> myDeferredMetasAfterLevels = new ArrayList<>();
 
   private static class DeferredMeta {
     final MetaDefinition meta;
@@ -339,7 +340,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
   }
 
   private void invokeDeferredMetas(InPlaceLevelSubstVisitor substVisitor, StripVisitor stripVisitor, Stage stage) {
-    List<DeferredMeta> deferredMetas = stage == Stage.BEFORE_SOLVER ? myDeferredMetasBefore : myDeferredMetasAfter;
+    List<DeferredMeta> deferredMetas = stage == Stage.BEFORE_SOLVER ? myDeferredMetasBeforeSolver : stage == Stage.BEFORE_LEVELS ? myDeferredMetasBeforeLevels : myDeferredMetasAfterLevels;
     // Indexed loop is required since deferredMetas can be modified during the loop
     //noinspection ForLoopReplaceableByForEach
     for (int i = 0; i < deferredMetas.size(); i++) {
@@ -375,7 +376,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       CheckTypeVisitor checkTypeVisitor;
       ErrorReporter originalErrorReporter = errorReporter;
       Map<Referable, Binding> originalContext = context;
-      if (stage == Stage.BEFORE_SOLVER) {
+      if (stage != Stage.AFTER_LEVELS) {
         checkTypeVisitor = this;
         errorReporter = new CompositeErrorReporter(errorReporter, countingErrorReporter);
         context = deferredMeta.context;
@@ -392,7 +393,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       Concrete.ReferenceExpression refExpr = deferredMeta.contextData.getReferenceExpression();
       if (result != null) {
         result = checkTypeVisitor.checkResult(type, (TypecheckingResult) result, refExpr);
-        if (stage == Stage.AFTER_SOLVER) {
+        if (stage == Stage.AFTER_LEVELS) {
           result = checkTypeVisitor.finalize((TypecheckingResult) result, null, refExpr);
         }
       }
@@ -419,8 +420,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     }
 
     invokeDeferredMetas(null, null, Stage.BEFORE_SOLVER);
-    LevelSubstitution substitution = myEquations.solve(sourceNode);
-    InPlaceLevelSubstVisitor substVisitor = new InPlaceLevelSubstVisitor(substitution);
+    myEquations.solveEquations();
+    invokeDeferredMetas(null, null, Stage.BEFORE_LEVELS);
+    InPlaceLevelSubstVisitor substVisitor = new InPlaceLevelSubstVisitor(myEquations.solveLevels(sourceNode));
     if (!substVisitor.isEmpty()) {
       if (result.expression != null) {
         result.expression.accept(substVisitor, null);
@@ -430,7 +432,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
 
     ErrorReporterCounter counter = new ErrorReporterCounter(GeneralError.Level.ERROR, errorReporter);
     StripVisitor stripVisitor = new StripVisitor(counter);
-    invokeDeferredMetas(substVisitor, stripVisitor, Stage.AFTER_SOLVER);
+    invokeDeferredMetas(substVisitor, stripVisitor, Stage.AFTER_LEVELS);
     if (result.expression != null) {
       result.expression = result.expression.accept(stripVisitor, null);
     }
@@ -498,12 +500,14 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     Type result = checkType(expr, expectedType);
     if (result == null) return null;
     invokeDeferredMetas(null, null, Stage.BEFORE_SOLVER);
-    InPlaceLevelSubstVisitor substVisitor = new InPlaceLevelSubstVisitor(myEquations.solve(expr));
+    myEquations.solveEquations();
+    invokeDeferredMetas(null, null, Stage.BEFORE_LEVELS);
+    InPlaceLevelSubstVisitor substVisitor = new InPlaceLevelSubstVisitor(myEquations.solveLevels(expr));
     if (!substVisitor.isEmpty()) {
       result.subst(substVisitor);
     }
     StripVisitor stripVisitor = new StripVisitor(errorReporter);
-    invokeDeferredMetas(substVisitor, stripVisitor, Stage.AFTER_SOLVER);
+    invokeDeferredMetas(substVisitor, stripVisitor, Stage.AFTER_LEVELS);
     return result.strip(stripVisitor);
   }
 
@@ -1801,7 +1805,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     }
     ((ContextDataImpl) contextData).setExpectedType((Expression) type);
     InferenceReferenceExpression inferenceExpr = new InferenceReferenceExpression(new MetaInferenceVariable((Expression) type, meta, (Concrete.ReferenceExpression) refExpr, getAllBindings()));
-    (stage == Stage.BEFORE_SOLVER ? myDeferredMetasBefore : myDeferredMetasAfter).add(new DeferredMeta(meta, new LinkedHashMap<>(context), (ContextDataImpl) contextData, inferenceExpr));
+    (stage == Stage.BEFORE_SOLVER ? myDeferredMetasBeforeSolver : stage == Stage.BEFORE_LEVELS ? myDeferredMetasBeforeLevels : myDeferredMetasAfterLevels).add(new DeferredMeta(meta, new LinkedHashMap<>(context), (ContextDataImpl) contextData, inferenceExpr));
     return new TypecheckingResult(inferenceExpr, (Expression) type);
   }
 

@@ -13,7 +13,7 @@ import javax.annotation.Nullable;
 import java.util.Map;
 
 public interface ExpressionTypechecker {
-  enum Stage { BEFORE_SOLVER, AFTER_SOLVER }
+  enum Stage { BEFORE_SOLVER, BEFORE_LEVELS, AFTER_LEVELS }
 
   @Nonnull Map<? extends ArendRef, ? extends CoreBinding> getContext();
   @Nonnull ErrorReporter getErrorReporter();

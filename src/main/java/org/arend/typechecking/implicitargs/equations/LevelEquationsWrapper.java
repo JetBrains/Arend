@@ -46,8 +46,13 @@ public class LevelEquationsWrapper implements Equations {
   }
 
   @Override
-  public LevelSubstitution solve(Concrete.SourceNode sourceNode) {
-    return myEquations.solve(sourceNode);
+  public void solveEquations() {
+    myEquations.solveEquations();
+  }
+
+  @Override
+  public LevelSubstitution solveLevels(Concrete.SourceNode sourceNode) {
+    return myEquations.solveLevels(sourceNode);
   }
 
   @Override

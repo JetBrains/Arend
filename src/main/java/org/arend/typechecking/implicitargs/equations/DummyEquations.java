@@ -48,7 +48,12 @@ public class DummyEquations implements Equations {
   }
 
   @Override
-  public LevelSubstitution solve(Concrete.SourceNode sourceNode) {
+  public void solveEquations() {
+
+  }
+
+  @Override
+  public LevelSubstitution solveLevels(Concrete.SourceNode sourceNode) {
     return LevelSubstitution.EMPTY;
   }
 

@@ -573,7 +573,7 @@ public class TwoStageEquations implements Equations {
   }
 
   @Override
-  public LevelSubstitution solve(Concrete.SourceNode sourceNode) {
+  public void solveEquations() {
     while (!myProps.isEmpty()) {
       InferenceVariable var = myProps.pop();
       if (!var.isSolved()) {
@@ -587,6 +587,10 @@ public class TwoStageEquations implements Equations {
         break;
       }
     }
+  }
+
+  @Override
+  public LevelSubstitution solveLevels(Concrete.SourceNode sourceNode) {
     SimpleLevelSubstitution result = new SimpleLevelSubstitution();
     solveLevelEquations(result);
 

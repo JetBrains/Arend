@@ -598,7 +598,8 @@ public class PatternTypechecking {
               return null;
             }
           }
-          LevelSubstitution levelSolution = myFinal ? myVisitor.getEquations().solve(conPattern) : LevelSubstitution.EMPTY;
+          myVisitor.getEquations().solveEquations();
+          LevelSubstitution levelSolution = myFinal ? myVisitor.getEquations().solveLevels(conPattern) : LevelSubstitution.EMPTY;
           substitution.subst(levelSolution);
 
           Result conResult = doTypechecking(conPattern.getPatterns(), DependentLink.Helper.subst(link, substitution, levelSolution), linkList, paramsSubst, totalSubst, conPattern, false);
