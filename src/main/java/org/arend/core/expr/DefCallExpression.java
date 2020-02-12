@@ -65,6 +65,14 @@ public abstract class DefCallExpression extends Expression {
     return myDefinition.getUniverseKind();
   }
 
+  public UniverseKind getPLevelKind() {
+    return myDefinition.getPLevelKind();
+  }
+
+  public UniverseKind getHLevelKind() {
+    return myDefinition.getHLevelKind();
+  }
+
   @Override
   public Decision isWHNF() {
     return Decision.YES;

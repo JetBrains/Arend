@@ -100,7 +100,7 @@ public class Sort implements CoreSort {
     return new StdLevelSubstitution(myPLevel, myHLevel);
   }
 
-  private static boolean compareProp(Sort sort, Equations equations, Concrete.SourceNode sourceNode) {
+  public static boolean compareProp(Sort sort, Equations equations, Concrete.SourceNode sourceNode) {
     if (sort.isProp()) {
       return true;
     }
@@ -137,16 +137,16 @@ public class Sort implements CoreSort {
     return subst.isEmpty() || myPLevel.isClosed() && myHLevel.isClosed() ? this : new Sort(myPLevel.subst(subst), myHLevel.subst(subst));
   }
 
-  public static Sort generateInferVars(Equations equations, boolean isUniverseLike, Concrete.SourceNode sourceNode) {
-    InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, isUniverseLike, sourceNode);
-    InferenceLevelVariable hl = new InferenceLevelVariable(LevelVariable.LvlType.HLVL, isUniverseLike, sourceNode);
+  public static Sort generateInferVars(Equations equations, boolean isPLevelBased, boolean isHLevelBased, Concrete.SourceNode sourceNode) {
+    InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, isPLevelBased, sourceNode);
+    InferenceLevelVariable hl = new InferenceLevelVariable(LevelVariable.LvlType.HLVL, isHLevelBased, sourceNode);
     equations.addVariable(pl);
     equations.addVariable(hl);
     return new Sort(new Level(pl), new Level(hl));
   }
 
-  public static Sort generateInferVars(Equations equations, UniverseKind universeKind, Concrete.SourceNode sourceNode) {
-    return generateInferVars(equations, universeKind != UniverseKind.NO_UNIVERSES, sourceNode);
+  public static Sort generateInferVars(Equations equations, UniverseKind pLevelKind, UniverseKind hLevelKind, Concrete.SourceNode sourceNode) {
+    return generateInferVars(equations, pLevelKind != UniverseKind.NO_UNIVERSES, hLevelKind != UniverseKind.NO_UNIVERSES, sourceNode);
   }
 
   @Override

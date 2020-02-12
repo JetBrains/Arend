@@ -157,7 +157,7 @@ public class TwoStageEquations implements Equations {
       if (cTypeExpr instanceof PiExpression) {
         PiExpression pi = (PiExpression) cTypeExpr;
         Sort domSort = pi.getParameters().getType().getSortOfType();
-        Sort codSort = Sort.generateInferVars(this, false, sourceNode);
+        Sort codSort = Sort.generateInferVars(this, false, false, sourceNode);
         Sort piSort = PiExpression.generateUpperBound(domSort, codSort, this, sourceNode);
 
         try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(myVisitor.getFreeBindings())) {
@@ -173,7 +173,7 @@ public class TwoStageEquations implements Equations {
 
       // ?x <> Type
       if (cTypeExpr instanceof UniverseExpression) {
-        Sort genSort = Sort.generateInferVars(this, true, cInf.getSourceNode());
+        Sort genSort = Sort.generateInferVars(this, true, true, cInf.getSourceNode());
         solve(cInf, new UniverseExpression(genSort), false);
         Sort sort = ((UniverseExpression) cTypeExpr).getSort();
         if (cmp == CMP.LE) {
@@ -713,9 +713,11 @@ public class TwoStageEquations implements Equations {
         continue;
       }
 
-      UniverseKind universeKind = classDef.getUniverseKind();
-      if (universeKind != UniverseKind.NO_UNIVERSES) {
-        universeKind = UniverseKind.NO_UNIVERSES;
+      UniverseKind pLevelKind = classDef.getPLevelKind();
+      UniverseKind hLevelKind = classDef.getHLevelKind();
+      if (pLevelKind != UniverseKind.NO_UNIVERSES || hLevelKind != UniverseKind.NO_UNIVERSES) {
+        pLevelKind = UniverseKind.NO_UNIVERSES;
+        hLevelKind = UniverseKind.NO_UNIVERSES;
         for (ClassField field : classDef.getFields()) {
           if (field.getUniverseKind() == UniverseKind.NO_UNIVERSES || classDef.isImplemented(field)) {
             continue;
@@ -728,8 +730,9 @@ public class TwoStageEquations implements Equations {
             }
           }
           if (!implemented) {
-            universeKind = universeKind.max(field.getUniverseKind());
-            if (universeKind == UniverseKind.WITH_UNIVERSES) {
+            pLevelKind = pLevelKind.max(field.getPLevelKind());
+            hLevelKind = hLevelKind.max(field.getHLevelKind());
+            if (pLevelKind == UniverseKind.WITH_UNIVERSES && hLevelKind == UniverseKind.WITH_UNIVERSES) {
               break;
             }
           }
@@ -739,9 +742,9 @@ public class TwoStageEquations implements Equations {
       ClassCallExpression solution;
       if (cmp == CMP.LE) {
         Equations wrapper = new LevelEquationsWrapper(this);
-        Sort sortArg = Sort.generateInferVars(this, universeKind, pair.proj1.getSourceNode());
+        Sort sortArg = Sort.generateInferVars(this, pLevelKind, hLevelKind, pair.proj1.getSourceNode());
         Map<ClassField, Expression> implementations = new HashMap<>();
-        solution = new ClassCallExpression(classDef, sortArg, implementations, classDef.getSort(), universeKind);
+        solution = new ClassCallExpression(classDef, sortArg, implementations, classDef.getSort(), pLevelKind, hLevelKind);
         ReferenceExpression thisExpr = new ReferenceExpression(solution.getThisBinding());
         boolean first = true;
         for (ClassCallExpression bound : pair.proj2) {
@@ -901,7 +904,7 @@ public class TwoStageEquations implements Equations {
     if (originalSize != implementations.size()) {
       Sort newSort = classDef.computeSort(sortArgument, implementations, solution.getThisBinding());
       if (!newSort.equals(sol.getSort())) {
-        sol = new ClassCallExpression(classDef, sortArgument, implementations, newSort, classDef.getUniverseKind());
+        sol = new ClassCallExpression(classDef, sortArgument, implementations, newSort, classDef.getPLevelKind(), classDef.getHLevelKind());
         for (Map.Entry<ClassField, Expression> entry : implementations.entrySet()) {
           entry.setValue(entry.getValue().subst(solution.getThisBinding(), new ReferenceExpression(sol.getThisBinding())));
         }

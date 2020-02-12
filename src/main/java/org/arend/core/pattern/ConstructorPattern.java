@@ -116,7 +116,7 @@ public class ConstructorPattern implements Pattern {
 
     ClassCallExpression classCall = (ClassCallExpression) myExpression;
     Map<ClassField, Expression> implementations = new HashMap<>();
-    ClassCallExpression resultClassCall = new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), implementations, Sort.PROP, UniverseKind.NO_UNIVERSES);
+    ClassCallExpression resultClassCall = new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), implementations, Sort.PROP, UniverseKind.NO_UNIVERSES, UniverseKind.NO_UNIVERSES);
     resultClassCall.copyImplementationsFrom(classCall);
     int i = 0;
     for (ClassField field : classCall.getDefinition().getFields()) {

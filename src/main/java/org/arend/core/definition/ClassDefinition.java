@@ -117,7 +117,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
       return Sort.PROP;
     }
 
-    ClassCallExpression thisClass = new ClassCallExpression(this, sortArgument, Collections.emptyMap(), mySort.subst(sortArgument.toLevelSubstitution()), getUniverseKind());
+    ClassCallExpression thisClass = new ClassCallExpression(this, sortArgument, Collections.emptyMap(), mySort.subst(sortArgument.toLevelSubstitution()), getPLevelKind(), getHLevelKind());
     Sort sort = Sort.PROP;
 
     for (ClassField field : myFields) {
@@ -289,7 +289,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
 
   @Override
   public ClassCallExpression getDefCall(Sort sortArgument, List<Expression> args) {
-    return new ClassCallExpression(this, sortArgument, Collections.emptyMap(), mySort.subst(sortArgument.toLevelSubstitution()), getUniverseKind());
+    return new ClassCallExpression(this, sortArgument, Collections.emptyMap(), mySort.subst(sortArgument.toLevelSubstitution()), getPLevelKind(), getHLevelKind());
   }
 
   public void clear() {

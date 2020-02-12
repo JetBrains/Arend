@@ -51,7 +51,8 @@ public class DefinitionDeserialization {
     }
 
     def.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-    def.setUniverseKind(defDeserializer.readUniverseKind(defProto.getUniverseKind()));
+    def.setPLevelKind(defDeserializer.readUniverseKind(defProto.getPLevelKind()));
+    def.setHLevelKind(defDeserializer.readUniverseKind(defProto.getHLevelKind()));
   }
 
   private PiExpression checkFieldType(PiExpression expr, ClassDefinition classDef) throws DeserializationException {
@@ -83,7 +84,8 @@ public class DefinitionDeserialization {
       field.setHideable(fieldProto.getIsHideable());
       field.setCovariant(fieldProto.getIsCovariant());
       field.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-      field.setUniverseKind(defDeserializer.readUniverseKind(fieldProto.getUniverseKind()));
+      field.setPLevelKind(defDeserializer.readUniverseKind(fieldProto.getPLevelKind()));
+      field.setHLevelKind(defDeserializer.readUniverseKind(fieldProto.getHLevelKind()));
     }
 
     for (int classFieldRef : classProto.getFieldRefList()) {

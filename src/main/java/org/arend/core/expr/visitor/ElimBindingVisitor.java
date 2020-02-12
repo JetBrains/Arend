@@ -126,7 +126,7 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
 
   public ClassCallExpression visitClassCall(ClassCallExpression expr, boolean removeImplementations) {
     Map<ClassField, Expression> newFieldSet = new HashMap<>();
-    ClassCallExpression result = new ClassCallExpression(expr.getDefinition(), expr.getSortArgument(), newFieldSet, expr.getSort(), expr.getUniverseKind());
+    ClassCallExpression result = new ClassCallExpression(expr.getDefinition(), expr.getSortArgument(), newFieldSet, expr.getSort(), expr.getPLevelKind(), expr.getHLevelKind());
     if (myKeepVisitor != null) {
       myKeepVisitor.getBindings().add(expr.getThisBinding());
     }

@@ -31,7 +31,8 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
   private final ClassCallBinding myThisBinding = new ClassCallBinding();
   private final Map<ClassField, Expression> myImplementations;
   private Sort mySort;
-  private UniverseKind myUniverseKind;
+  private UniverseKind myPLevelKind;
+  private UniverseKind myHLevelKind;
 
   public class ClassCallBinding implements Binding {
     @Override
@@ -65,14 +66,16 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
     super(definition, sortArgument);
     myImplementations = Collections.emptyMap();
     mySort = definition.getSort().subst(sortArgument.toLevelSubstitution());
-    myUniverseKind = definition.getUniverseKind();
+    myPLevelKind = definition.getPLevelKind();
+    myHLevelKind = definition.getHLevelKind();
   }
 
-  public ClassCallExpression(ClassDefinition definition, Sort sortArgument, Map<ClassField, Expression> implementations, Sort sort, UniverseKind universeKind) {
+  public ClassCallExpression(ClassDefinition definition, Sort sortArgument, Map<ClassField, Expression> implementations, Sort sort, UniverseKind pLevelKind, UniverseKind hLevelKind) {
     super(definition, sortArgument);
     myImplementations = implementations;
     mySort = sort;
-    myUniverseKind = universeKind;
+    myPLevelKind = pLevelKind;
+    myHLevelKind = hLevelKind;
   }
 
   @Nonnull
@@ -83,21 +86,27 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
 
   public void updateHasUniverses() {
     if (getDefinition().getUniverseKind() == UniverseKind.NO_UNIVERSES) {
-      myUniverseKind = UniverseKind.NO_UNIVERSES;
+      myPLevelKind = UniverseKind.NO_UNIVERSES;
+      myHLevelKind = UniverseKind.NO_UNIVERSES;
       return;
     }
     if (myImplementations.isEmpty()) {
-      myUniverseKind = getDefinition().getUniverseKind();
+      myPLevelKind = getDefinition().getPLevelKind();
+      myHLevelKind = getDefinition().getHLevelKind();
       return;
     }
 
-    myUniverseKind = UniverseKind.NO_UNIVERSES;
+    myPLevelKind = UniverseKind.NO_UNIVERSES;
+    myHLevelKind = UniverseKind.NO_UNIVERSES;
     for (ClassField field : getDefinition().getFields()) {
-      if (field.getUniverseKind().ordinal() > myUniverseKind.ordinal() && !isImplemented(field)) {
-        myUniverseKind = field.getUniverseKind();
-        if (myUniverseKind == UniverseKind.WITH_UNIVERSES) {
-          return;
-        }
+      if (field.getPLevelKind().ordinal() > myPLevelKind.ordinal() && !isImplemented(field)) {
+        myPLevelKind = field.getPLevelKind();
+      }
+      if (field.getHLevelKind().ordinal() > myHLevelKind.ordinal() && !isImplemented(field)) {
+        myHLevelKind = field.getHLevelKind();
+      }
+      if (myPLevelKind == UniverseKind.WITH_UNIVERSES && myHLevelKind == UniverseKind.WITH_UNIVERSES) {
+        return;
       }
     }
   }
@@ -172,7 +181,7 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
 
   public DependentLink getClassFieldParameters() {
     Map<ClassField, Expression> implementations = new HashMap<>();
-    NewExpression newExpr = new NewExpression(null, new ClassCallExpression(getDefinition(), getSortArgument(), implementations, Sort.PROP, UniverseKind.NO_UNIVERSES));
+    NewExpression newExpr = new NewExpression(null, new ClassCallExpression(getDefinition(), getSortArgument(), implementations, Sort.PROP, UniverseKind.NO_UNIVERSES, UniverseKind.NO_UNIVERSES));
     newExpr.getClassCall().copyImplementationsFrom(this);
 
     Collection<? extends ClassField> fields = getDefinition().getFields();
@@ -248,7 +257,7 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
 
   @Override
   public UniverseKind getUniverseKind() {
-    return myUniverseKind;
+    return myPLevelKind.max(myHLevelKind);
   }
 
   @Override

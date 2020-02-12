@@ -579,7 +579,7 @@ public class PatternTypechecking {
             }
             listSubst(result, exprs, varSubst);
           } else {
-            sortArg = Sort.generateInferVars(myVisitor.getEquations(), def.getUniverseKind(), conPattern);
+            sortArg = Sort.generateInferVars(myVisitor.getEquations(), def.getPLevelKind(), def.getHLevelKind(), conPattern);
             LevelSubstitution levelSubst = sortArg.toLevelSubstitution();
 
             if (constructor.getNumberOfParameters() > 0) {

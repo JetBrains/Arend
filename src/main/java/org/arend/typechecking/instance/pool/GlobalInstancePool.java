@@ -137,7 +137,7 @@ public class GlobalInstancePool implements InstancePool {
     }
 
     if (expectedType == null) {
-      ClassCallExpression classCall = classifyingField == null ? null : new ClassCallExpression(classDef, Sort.generateInferVars(myCheckTypeVisitor.getEquations(), classDef.getUniverseKind(), sourceNode));
+      ClassCallExpression classCall = classifyingField == null ? null : new ClassCallExpression(classDef, Sort.generateInferVars(myCheckTypeVisitor.getEquations(), classDef.getPLevelKind(), classDef.getHLevelKind(), sourceNode));
       if (classCall != null) {
         myCheckTypeVisitor.fixClassExtSort(classCall, sourceNode);
         expectedType = classCall;

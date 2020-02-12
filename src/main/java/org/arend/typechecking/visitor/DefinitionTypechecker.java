@@ -310,14 +310,15 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
   }
 
-  private boolean checkForUniverses(DependentLink link) {
+  private Pair<Boolean,Boolean> checkForUniverses(DependentLink link) {
     for (; link.hasNext(); link = link.getNext()) {
       link = link.getNextTyped(null);
-      if (new UniverseInParametersChecker().check(link.getTypeExpr())) {
-        return true;
+      UniverseInParametersChecker checker = new UniverseInParametersChecker();
+      if (checker.check(link.getTypeExpr())) {
+        return new Pair<>(checker.hasPLevel(), checker.hasHLevel());
       }
     }
-    return false;
+    return new Pair<>(false, false);
   }
 
   private Integer typecheckResultTypeLevel(Concrete.Expression typeLevel, FunctionKind kind, FunctionDefinition typedDef, boolean newDef) {
@@ -931,10 +932,26 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
       typedDef.setGoodThisParameters(goodThisParametersVisitor.getGoodParameters());
 
-      if (checkForUniverses(typedDef.getParameters()) || new UniverseInParametersChecker().check(typedDef.getResultType())) {
-        typedDef.setUniverseKind(UniverseKind.WITH_UNIVERSES);
-      } else {
-        typedDef.setUniverseKind(new UniverseKindChecker().getUniverseKind(typedDef.getBody()));
+      Pair<Boolean, Boolean> pair = checkForUniverses(typedDef.getParameters());
+      UniverseInParametersChecker checker = new UniverseInParametersChecker();
+      checker.check(typedDef.getResultType());
+      boolean hasPLevel = pair.proj1 || checker.hasPLevel();
+      boolean hasHLevel = pair.proj2 || checker.hasHLevel();
+      if (hasPLevel) {
+        typedDef.setPLevelKind(UniverseKind.WITH_UNIVERSES);
+      }
+      if (hasHLevel) {
+        typedDef.setHLevelKind(UniverseKind.WITH_UNIVERSES);
+      }
+      if (!hasPLevel || !hasHLevel) {
+        UniverseKindChecker checker1 = new UniverseKindChecker();
+        checker1.checkBody(typedDef.getBody());
+        if (!hasPLevel) {
+          typedDef.setPLevelKind(checker1.getPLevelKind());
+        }
+        if (!hasHLevel) {
+          typedDef.setHLevelKind(checker1.getHLevelKind());
+        }
       }
     }
 
@@ -1353,21 +1370,28 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
       }
 
-      if (checkForUniverses(dataDefinition.getParameters())) {
-        dataDefinition.setUniverseKind(UniverseKind.WITH_UNIVERSES);
+      Pair<Boolean, Boolean> pair = checkForUniverses(dataDefinition.getParameters());
+      if (pair.proj1 && pair.proj2) {
+        dataDefinition.setPLevelKind(UniverseKind.WITH_UNIVERSES);
+        dataDefinition.setHLevelKind(UniverseKind.WITH_UNIVERSES);
       } else {
-        UniverseKind kind = UniverseKind.NO_UNIVERSES;
+        UniverseKind pLevelKind = pair.proj1 ? UniverseKind.WITH_UNIVERSES : UniverseKind.NO_UNIVERSES;
+        UniverseKind hLevelKind = pair.proj2 ? UniverseKind.WITH_UNIVERSES : UniverseKind.NO_UNIVERSES;
         loop:
         for (Constructor constructor : dataDefinition.getConstructors()) {
           for (DependentLink link = constructor.getParameters(); link.hasNext(); link = link.getNext()) {
             link = link.getNextTyped(null);
-            kind = kind.max(new UniverseKindChecker().getUniverseKind(link.getTypeExpr()));
-            if (kind == UniverseKind.WITH_UNIVERSES) {
+            UniverseKindChecker checker = new UniverseKindChecker();
+            checker.check(link.getTypeExpr());
+            pLevelKind = pLevelKind.max(checker.getPLevelKind());
+            hLevelKind = hLevelKind.max(checker.getHLevelKind());
+            if (pLevelKind == UniverseKind.WITH_UNIVERSES && hLevelKind == UniverseKind.WITH_UNIVERSES) {
               break loop;
             }
           }
         }
-        dataDefinition.setUniverseKind(kind);
+        dataDefinition.setPLevelKind(pLevelKind);
+        dataDefinition.setHLevelKind(hLevelKind);
       }
     }
 
@@ -1634,7 +1658,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   private void typecheckClass(Concrete.ClassDefinition def, ClassDefinition typedDef, boolean newDef) {
     if (newDef) {
       typedDef.clear();
-      typedDef.setUniverseKind(UniverseKind.WITH_UNIVERSES);
+      typedDef.setPLevelKind(UniverseKind.WITH_UNIVERSES);
+      typedDef.setHLevelKind(UniverseKind.WITH_UNIVERSES);
     }
 
     boolean classOk = true;
@@ -1748,15 +1773,18 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           if (newDef && previousField != null) {
             ClassField newField = addField(field.getData(), typedDef, previousField.getType(Sort.STD), previousField.getTypeLevel());
             newField.setStatus(previousField.status());
-            newField.setUniverseKind(previousField.getUniverseKind());
+            newField.setPLevelKind(previousField.getPLevelKind());
+            newField.setHLevelKind(previousField.getHLevelKind());
             newField.setNumberOfParameters(previousField.getNumberOfParameters());
           }
         } else {
           previousType = field.getResultType();
           previousField = typecheckClassField(field, typedDef, localInstances, newDef, hasClassifyingField);
           if (previousField != null) {
-            UniverseKind universeKind = new UniverseKindChecker().getUniverseKind(previousField.getType(Sort.STD).getCodomain());
-            previousField.setUniverseKind(universeKind);
+            UniverseKindChecker checker = new UniverseKindChecker();
+            checker.check(previousField.getType(Sort.STD).getCodomain());
+            previousField.setPLevelKind(checker.getPLevelKind());
+            previousField.setHLevelKind(checker.getHLevelKind());
             previousField.setNumberOfParameters(field.getNumberOfParameters());
           }
 
@@ -1913,11 +1941,17 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       typedDef.setStatus(!classOk ? Definition.TypeCheckingStatus.HAS_ERRORS : typechecker.getStatus());
       typedDef.updateSort();
 
-      typedDef.setUniverseKind(UniverseKind.NO_UNIVERSES);
+      typedDef.setPLevelKind(UniverseKind.NO_UNIVERSES);
+      typedDef.setHLevelKind(UniverseKind.NO_UNIVERSES);
       for (ClassField field : typedDef.getFields()) {
-        if (field.getUniverseKind().ordinal() > typedDef.getUniverseKind().ordinal() && !typedDef.isImplemented(field)) {
-          typedDef.setUniverseKind(field.getUniverseKind());
-          if (typedDef.getUniverseKind() == UniverseKind.WITH_UNIVERSES) {
+        if ((field.getPLevelKind().ordinal() > typedDef.getPLevelKind().ordinal() || field.getHLevelKind().ordinal() > typedDef.getHLevelKind().ordinal()) && !typedDef.isImplemented(field)) {
+          if (field.getPLevelKind().ordinal() > typedDef.getPLevelKind().ordinal()) {
+            typedDef.setPLevelKind(field.getPLevelKind());
+          }
+          if (field.getHLevelKind().ordinal() > typedDef.getHLevelKind().ordinal()) {
+            typedDef.setHLevelKind(field.getHLevelKind());
+          }
+          if (typedDef.getPLevelKind() == UniverseKind.WITH_UNIVERSES && typedDef.getHLevelKind() == UniverseKind.WITH_UNIVERSES) {
             break;
           }
         }

@@ -35,7 +35,8 @@ public class DefinitionSerialization {
 
     final DefinitionProtos.Definition.Builder out = DefinitionProtos.Definition.newBuilder();
     out.setHasTypeClassReference(definition.getReferable().getTypeClassReference() != null);
-    out.setUniverseKind(defSerializer.writeUniverseKind(definition.getUniverseKind()));
+    out.setPLevelKind(defSerializer.writeUniverseKind(definition.getPLevelKind()));
+    out.setHLevelKind(defSerializer.writeUniverseKind(definition.getHLevelKind()));
 
     if (definition instanceof ClassDefinition) {
       // type cannot possibly have errors
@@ -70,7 +71,8 @@ public class DefinitionSerialization {
       fBuilder.setIsProperty(field.isProperty());
       fBuilder.setIsHideable(field.isHideable());
       fBuilder.setIsCovariant(field.isCovariant());
-      fBuilder.setUniverseKind(defSerializer.writeUniverseKind(field.getUniverseKind()));
+      fBuilder.setPLevelKind(defSerializer.writeUniverseKind(field.getPLevelKind()));
+      fBuilder.setHLevelKind(defSerializer.writeUniverseKind(field.getHLevelKind()));
       builder.addPersonalField(fBuilder.build());
     }
 

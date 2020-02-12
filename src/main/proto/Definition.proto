@@ -16,7 +16,8 @@ message Definition {
         DConstructorData constructor = 10;
     }
     bool hasTypeClassReference = 8;
-    UniverseKind universe_kind = 11;
+    UniverseKind pLevel_kind = 11;
+    UniverseKind hLevel_kind = 12;
 
     message Clause {
         repeated Pattern pattern = 1;
@@ -70,7 +71,8 @@ message Definition {
             bool isProperty = 7;
             bool isHideable = 9;
             bool isCovariant = 10;
-            UniverseKind universe_kind = 13;
+            UniverseKind pLevel_kind = 13;
+            UniverseKind hLevel_kind = 14;
         }
     }
     message ParametersLevel {

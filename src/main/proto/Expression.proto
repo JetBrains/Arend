@@ -45,7 +45,8 @@ message Expression {
         Level hLevel = 4;
         map<int32, Expression> field_set = 5;
         Sort sort = 6;
-        UniverseKind universe_kind = 8;
+        UniverseKind pLevel_kind = 8;
+        UniverseKind hLevel_kind = 9;
     }
     message ConCall {
         int32 constructor_ref = 1;

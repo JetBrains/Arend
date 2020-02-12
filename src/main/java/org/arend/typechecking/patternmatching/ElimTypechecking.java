@@ -695,7 +695,7 @@ public class ElimTypechecking {
                       link = link.getNext();
                     }
                   }
-                  substExpr = new NewExpression(null, new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), implementations, Sort.PROP, UniverseKind.NO_UNIVERSES));
+                  substExpr = new NewExpression(null, new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), implementations, Sort.PROP, UniverseKind.NO_UNIVERSES, UniverseKind.NO_UNIVERSES));
                 } else if (someExpr instanceof SigmaExpression) {
                   substExpr = new TupleExpression(arguments, (SigmaExpression) someExpr);
                   conParameters = DependentLink.Helper.copy(conParameters);

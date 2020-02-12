@@ -11,6 +11,7 @@ import org.arend.core.definition.*;
 import org.arend.core.expr.*;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.visitor.CompareVisitor;
+import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
@@ -245,7 +246,8 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
           args1 = ((Constructor) defCallResult.getDefinition()).matchDataTypeArguments(args1);
           if (args1 != null) {
             boolean ok = true;
-            if (dataCall.getUniverseKind() != UniverseKind.NO_UNIVERSES && !Sort.compare(defCallResult.getSortArgument(), dataCall.getSortArgument(), dataCall.getUniverseKind() == UniverseKind.ONLY_COVARIANT ? CMP.LE : CMP.EQ, myVisitor.getEquations(), fun)) {
+            if (!(dataCall.getPLevelKind() == UniverseKind.NO_UNIVERSES || Level.compare(defCallResult.getSortArgument().getPLevel(), dataCall.getSortArgument().getPLevel(), dataCall.getPLevelKind() == UniverseKind.ONLY_COVARIANT ? CMP.LE : CMP.EQ, myVisitor.getEquations(), fun)
+               && dataCall.getHLevelKind() == UniverseKind.NO_UNIVERSES || Level.compare(defCallResult.getSortArgument().getHLevel(), dataCall.getSortArgument().getHLevel(), dataCall.getHLevelKind() == UniverseKind.ONLY_COVARIANT ? CMP.LE : CMP.EQ, myVisitor.getEquations(), fun))) {
               ok = false;
             }
 

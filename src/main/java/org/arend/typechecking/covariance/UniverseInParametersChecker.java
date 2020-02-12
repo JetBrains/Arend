@@ -9,6 +9,14 @@ import org.arend.typechecking.visitor.CheckForUniversesVisitor;
 public class UniverseInParametersChecker extends CovarianceChecker {
   private final CheckForUniversesVisitor myVisitor = new CheckForUniversesVisitor();
 
+  public boolean hasPLevel() {
+    return myVisitor.hasPLevels();
+  }
+
+  public boolean hasHLevel() {
+    return myVisitor.hasHLevels();
+  }
+
   @Override
   protected boolean allowData() {
     return false;
@@ -21,6 +29,15 @@ public class UniverseInParametersChecker extends CovarianceChecker {
 
   @Override
   protected boolean checkSort(Sort sort, Definition definition) {
-    return definition != null && definition.getUniverseKind() == UniverseKind.WITH_UNIVERSES;
+    if (definition == null) {
+      return false;
+    }
+    if (definition.getPLevelKind() == UniverseKind.WITH_UNIVERSES) {
+      myVisitor.setHasPLevels();
+    }
+    if (definition.getHLevelKind() == UniverseKind.WITH_UNIVERSES) {
+      myVisitor.setHasHLevels();
+    }
+    return myVisitor.hasPLevels() && myVisitor.hasHLevels();
   }
 }
