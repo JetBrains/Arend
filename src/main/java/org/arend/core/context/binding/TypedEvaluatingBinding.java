@@ -28,8 +28,8 @@ public class TypedEvaluatingBinding extends TypedBinding implements EvaluatingBi
   }
 
   @Override
-  public void subst(SubstVisitor visitor) {
-    myExpression = myExpression.accept(visitor, null);
+  public Expression subst(SubstVisitor visitor) {
+    return myExpression.accept(visitor, null);
   }
 
   @Override

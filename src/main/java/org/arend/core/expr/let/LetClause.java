@@ -34,8 +34,8 @@ public class LetClause extends NamedBinding implements EvaluatingBinding {
   }
 
   @Override
-  public void subst(SubstVisitor visitor) {
-    myExpression = myExpression.accept(visitor, null);
+  public Expression subst(SubstVisitor visitor) {
+    return myExpression.accept(visitor, null);
   }
 
   @Override

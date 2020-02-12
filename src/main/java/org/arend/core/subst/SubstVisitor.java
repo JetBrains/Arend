@@ -102,7 +102,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
       return result;
     }
     if (expr.getBinding() instanceof EvaluatingBinding) {
-      ((EvaluatingBinding) expr.getBinding()).subst(this);
+      return ((EvaluatingBinding) expr.getBinding()).subst(this);
     }
     return expr;
   }
