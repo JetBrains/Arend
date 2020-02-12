@@ -592,6 +592,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     Map<ClassField, Expression> fieldSet = new HashMap<>();
     ClassCallExpression resultClassCall = new ClassCallExpression(baseClass, classCallExpr.getSortArgument(), fieldSet, Sort.PROP, baseClass.getUniverseKind());
     resultClassCall.copyImplementationsFrom(classCallExpr);
+    resultClassCall.updateHasUniverses();
 
     Set<ClassField> defined = renewExpr == null ? null : new HashSet<>();
     List<Pair<Definition,Concrete.ClassFieldImpl>> implementations = new ArrayList<>(classFieldImpls.size());
@@ -676,6 +677,10 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
               if (!classCall.getDefinition().isSubClassOf((ClassDefinition) pair.proj1)) {
                 errorReporter.report(new TypeMismatchError(new ClassCallExpression((ClassDefinition) pair.proj1, Sort.PROP), type, pair.proj2.implementation));
               } else {
+                if (!new CompareVisitor(myEquations, CMP.LE, pair.proj2.implementation).compareClassCallSortArguments(classCall, resultClassCall)) {
+                  errorReporter.report(new TypeMismatchError(new ClassCallExpression(classCall.getDefinition(), resultClassCall.getSortArgument()), classCall, pair.proj2.implementation));
+                  return null;
+                }
                 for (ClassField field : ((ClassDefinition) pair.proj1).getFields()) {
                   Expression impl = FieldCallExpression.make(field, classCall.getSortArgument(), result.expression);
                   Expression oldImpl = field.isProperty() ? null : resultClassCall.getImplementation(field, result.expression);
@@ -687,6 +692,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
                     checkImplementationCycle(dfs, field, impl, resultClassCall, pair.proj2.implementation);
                   }
                 }
+                resultClassCall.updateHasUniverses();
               }
             }
           }
