@@ -388,7 +388,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     if (parens) myBuilder.append('(');
 
     if (expr.getHLevel() instanceof Concrete.InfLevelExpression) {
-      myBuilder.append("\\oo-Type");
+      myBuilder.append("\\hType");
     } else
     if (expr.getHLevel() instanceof Concrete.NumberLevelExpression) {
       int hLevel = ((Concrete.NumberLevelExpression) expr.getHLevel()).getNumber();

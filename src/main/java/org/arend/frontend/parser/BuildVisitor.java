@@ -1104,7 +1104,7 @@ public class BuildVisitor extends ArendBaseVisitor {
 
   private Concrete.LevelExpression parseTruncatedUniverse(TerminalNode terminal) {
     String universe = terminal.getText();
-    if (universe.charAt(1) == 'o') {
+    if (universe.charAt(1) == 'o' || universe.charAt(1) == 'h') {
       return new Concrete.InfLevelExpression(tokenPosition(terminal.getSymbol()));
     }
 
@@ -1147,7 +1147,7 @@ public class BuildVisitor extends ArendBaseVisitor {
   public Concrete.UniverseExpression visitTruncatedUniverse(TruncatedUniverseContext ctx) {
     Position position = tokenPosition(ctx.start);
     String text = ctx.TRUNCATED_UNIVERSE().getText();
-    text = text.substring(text.indexOf('-') + "-Type".length());
+    text = text.substring(text.indexOf('T') + "Type".length());
     return new Concrete.UniverseExpression(position, getLevelExpression(position, text, ctx.maybeLevelAtom()), parseTruncatedUniverse(ctx.TRUNCATED_UNIVERSE()));
   }
 

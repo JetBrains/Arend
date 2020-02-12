@@ -264,7 +264,7 @@ NEW : '\\new';
 NUMBER : [0-9]+;
 NEGATIVE_NUMBER : '-' [0-9]+;
 UNIVERSE : '\\Type' [0-9]*;
-TRUNCATED_UNIVERSE : '\\' (NUMBER | 'oo') '-Type' [0-9]*;
+TRUNCATED_UNIVERSE : '\\' (NUMBER '-' | 'oo-' | 'h') 'Type' [0-9]*;
 SET : '\\Set' [0-9]*;
 COLON : ':';
 ARROW : '->';
