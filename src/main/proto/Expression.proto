@@ -215,7 +215,6 @@ message ElimTree {
             }
         }
         map<int32, ElimTree> clauses = 1;
-        ElimTree null_clause = 2;
         SingleConstructorClause single_clause = 5;
     }
 }

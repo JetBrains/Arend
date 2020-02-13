@@ -157,10 +157,7 @@ class ExpressionDeserialization {
         ExpressionProtos.ElimTree.Branch branchProto = proto.getBranch();
         Map<CoreBranchKey, ElimTree> children = new HashMap<>();
         for (Map.Entry<Integer, ExpressionProtos.ElimTree> entry : branchProto.getClausesMap().entrySet()) {
-          children.put(myCallTargetProvider.getCallTarget(entry.getKey(), Constructor.class), readElimTree(entry.getValue()));
-        }
-        if (branchProto.hasNullClause()) {
-          children.put(null, readElimTree(branchProto.getNullClause()));
+          children.put(entry.getKey() == 0 ? null : myCallTargetProvider.getCallTarget(entry.getKey(), Constructor.class), readElimTree(entry.getValue()));
         }
         if (branchProto.hasSingleClause()) {
           ExpressionProtos.ElimTree.Branch.SingleConstructorClause singleClause = branchProto.getSingleClause();

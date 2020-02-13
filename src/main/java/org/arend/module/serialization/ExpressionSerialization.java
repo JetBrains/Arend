@@ -177,7 +177,7 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
 
       for (Map.Entry<CoreBranchKey, ElimTree> entry : branchElimTree.getChildren()) {
         if (entry.getKey() == null) {
-          branchBuilder.setNullClause(writeElimTree(entry.getValue()));
+          branchBuilder.putClauses(0, writeElimTree(entry.getValue()));
         } else if (entry.getKey() instanceof SingleConstructor) {
           ExpressionProtos.ElimTree.Branch.SingleConstructorClause.Builder singleClauseBuilder = ExpressionProtos.ElimTree.Branch.SingleConstructorClause.newBuilder();
           if (entry.getKey() instanceof TupleConstructor) {
@@ -384,10 +384,10 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
   @Override
   public ExpressionProtos.Expression visitNew(NewExpression expr, Void params) {
     ExpressionProtos.Expression.New.Builder builder = ExpressionProtos.Expression.New.newBuilder();
-    builder.setClassCall(writeClassCall(expr.getClassCall()));
     if (expr.getRenewExpression() != null) {
       builder.setRenew(writeExpr(expr.getRenewExpression()));
     }
+    builder.setClassCall(writeClassCall(expr.getClassCall()));
     return ExpressionProtos.Expression.newBuilder().setNew(builder).build();
   }
 
