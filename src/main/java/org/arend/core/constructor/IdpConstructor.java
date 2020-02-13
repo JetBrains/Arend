@@ -8,6 +8,8 @@ import org.arend.core.expr.visitor.NormalizingFindBindingVisitor;
 import org.arend.ext.core.elimtree.CoreIdpBranchKey;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
+import org.arend.term.concrete.Concrete;
+import org.arend.typechecking.implicitargs.equations.Equations;
 
 import java.util.Collections;
 import java.util.List;
@@ -35,5 +37,10 @@ public class IdpConstructor extends SingleConstructor implements CoreIdpBranchKe
     }
     Expression body = lamExpr.getParameters().getNext().hasNext() ? new LamExpression(lamExpr.getResultSort(), lamExpr.getParameters().getNext(), lamExpr.getBody()) : lamExpr.getBody();
     return NormalizingFindBindingVisitor.findBinding(body, lamExpr.getParameters()) ? null : Collections.emptyList();
+  }
+
+  @Override
+  public boolean compare(SingleConstructor other, Equations equations, Concrete.SourceNode sourceNode) {
+    return other instanceof IdpConstructor;
   }
 }

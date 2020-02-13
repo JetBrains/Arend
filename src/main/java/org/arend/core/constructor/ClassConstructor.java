@@ -8,6 +8,9 @@ import org.arend.core.expr.NewExpression;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.ext.core.elimtree.CoreClassBranchKey;
+import org.arend.ext.core.ops.CMP;
+import org.arend.term.concrete.Concrete;
+import org.arend.typechecking.implicitargs.equations.Equations;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -59,5 +62,18 @@ public final class ClassConstructor extends SingleConstructor implements CoreCla
       }
     }
     return args;
+  }
+
+  @Override
+  public boolean compare(SingleConstructor other, Equations equations, Concrete.SourceNode sourceNode) {
+    if (this == other) {
+      return true;
+    }
+    if (!(other instanceof ClassConstructor)) {
+      return false;
+    }
+
+    ClassConstructor con = (ClassConstructor) other;
+    return myClassDef == con.myClassDef && myImplementedFields.equals(con.myImplementedFields) && Sort.compare(mySort, con.mySort, CMP.EQ, equations, sourceNode);
   }
 }

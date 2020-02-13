@@ -1,5 +1,6 @@
 package org.arend.core.expr.visitor;
 
+import org.arend.core.constructor.SingleConstructor;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.context.binding.inference.TypeClassInferenceVariable;
@@ -64,7 +65,13 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     } else if (elimTree1 instanceof BranchElimTree && elimTree2 instanceof BranchElimTree) {
       BranchElimTree branchElimTree1 = (BranchElimTree) elimTree1;
       BranchElimTree branchElimTree2 = (BranchElimTree) elimTree2;
-      if (branchElimTree1.getChildren().size() == branchElimTree2.getChildren().size()) {
+      SingleConstructor singleConstructor1 = branchElimTree1.getSingleConstructorKey();
+      SingleConstructor singleConstructor2 = branchElimTree2.getSingleConstructorKey();
+      if (singleConstructor1 != null || singleConstructor2 != null) {
+        ok = singleConstructor1 != null && singleConstructor2 != null
+          && singleConstructor1.compare(singleConstructor2, myEquations, mySourceNode)
+          && compare(branchElimTree1.getSingleConstructorChild(), branchElimTree2.getSingleConstructorChild(), type);
+      } else if (branchElimTree1.getChildren().size() == branchElimTree2.getChildren().size()) {
         ok = true;
         for (Map.Entry<CoreBranchKey, ElimTree> entry : branchElimTree1.getChildren()) {
           ElimTree elimTree = branchElimTree2.getChild(entry.getKey());
