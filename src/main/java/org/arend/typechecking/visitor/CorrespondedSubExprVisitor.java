@@ -4,6 +4,8 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
+import org.arend.frontend.reference.ConcreteClassFieldReferable;
+import org.arend.frontend.reference.ConcreteClassReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteExpressionVisitor;
@@ -292,12 +294,26 @@ public class CorrespondedSubExprVisitor implements
       Pair<Expression, Concrete.Expression> field = visitStatement(implementedHere, statement);
       if (field != null) return field;
     }
-    return null;
+    return expr.getBaseClassExpression().accept(this, coreClassExpr.getThisBinding().getTypeExpr());
   }
 
   private Pair<Expression, Concrete.Expression> visitStatement(Map<ClassField, Expression> implementedHere, Concrete.ClassFieldImpl statement) {
     Referable implementedField = statement.getImplementedField();
     if (implementedField == null) return null;
+    if (implementedField instanceof ConcreteClassReferable) {
+      Collection<? extends ConcreteClassFieldReferable> fields = ((ConcreteClassReferable) implementedField).getFieldReferables();
+      //noinspection SuspiciousMethodCalls
+      return implementedHere.entrySet()
+          .stream()
+          // The suppressed warning presents here, but it's considered safe.
+          .filter(entry -> fields.contains(entry.getKey().getReferable()))
+          .filter(entry -> entry.getValue() instanceof FieldCallExpression)
+          .findFirst()
+          .map(Map.Entry::getValue)
+          .map(e -> e.cast(FieldCallExpression.class))
+          .map(e -> statement.implementation.accept(this, e.getArgument()))
+          .orElse(null);
+    }
     return implementedHere.entrySet()
         .stream()
         .filter(entry -> entry.getKey().getReferable() == implementedField)
