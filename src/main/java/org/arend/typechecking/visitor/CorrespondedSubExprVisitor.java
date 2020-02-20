@@ -132,7 +132,6 @@ public class CorrespondedSubExprVisitor implements
 
     AppExpression coreAppExpr = coreExpr.cast(AppExpression.class);
     LamExpression coreEtaExpr = coreExpr.cast(LamExpression.class);
-    ConCallExpression coreConExpr = coreExpr.cast(ConCallExpression.class);
     DefCallExpression coreDefExpr = coreExpr.cast(DefCallExpression.class);
     int lastArgIndex = arguments.size() - 1;
     if (coreAppExpr != null) {
@@ -153,8 +152,6 @@ public class CorrespondedSubExprVisitor implements
       // arguments, so we try to match `f a` (concrete) and `f a b` (core),
       // ignoring the extra argument `b`.
       return visitClonedApp(expr, coreEtaExpr.getBody());
-    } else if (coreConExpr != null) {
-      return visitArguments(coreDefExpr, arguments.iterator());
     } else if (coreDefExpr != null) {
       return visitArguments(coreDefExpr, arguments.iterator());
     } else return null;
@@ -167,14 +164,15 @@ public class CorrespondedSubExprVisitor implements
     Iterator<? extends Expression> defCallArgs = expression.getDefCallArguments().iterator();
     Concrete.Argument argument = arguments.next();
     for (DependentLink parameter = expression.getDefinition().getParameters();
-         parameter.hasNext() && defCallArgs.hasNext();
+         parameter.hasNext();
          parameter = parameter.getNext()) {
+      assert defCallArgs.hasNext();
       Expression coreArg = defCallArgs.next();
       // Take care of implicit application
       if (parameter.isExplicit() == argument.isExplicit()) {
         Pair<Expression, Concrete.Expression> accepted = argument.getExpression().accept(this, coreArg);
         if (accepted != null) return accepted;
-        argument = arguments.next();
+        if (arguments.hasNext()) argument = arguments.next();
       }
     }
     return null;
@@ -182,8 +180,13 @@ public class CorrespondedSubExprVisitor implements
 
   @Override
   public Pair<Expression, Concrete.Expression> visitApp(Concrete.AppExpression expr, Expression coreExpr) {
+    if (matchesSubExpr(expr)) return new Pair<>(coreExpr, expr);
     if (subExpr instanceof Concrete.AppExpression && Objects.equals(
         ((Concrete.AppExpression) subExpr).getFunction().getData(),
+        expr.getFunction().getData()
+    )) return new Pair<>(coreExpr, expr);
+    if (subExpr instanceof Concrete.ReferenceExpression && Objects.equals(
+        subExpr.getData(),
         expr.getFunction().getData()
     )) return new Pair<>(coreExpr, expr);
     Concrete.Expression cloned = Concrete.AppExpression.make(expr.getData(), expr.getFunction(), new ArrayList<>(expr.getArguments()));
