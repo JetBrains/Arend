@@ -308,4 +308,54 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
     Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(subExpr), core);
     assertEquals("114514", accept.proj1.toString());
   }
+
+  @Test
+  public void baseClassCall0() {
+    testBaseClassCall("\\func test => Y Nat {\n" +
+        "  | X { | B => 114514 }\n" +
+        "  | C => 1919810\n" +
+        "} \\where {\n" +
+        "  \\class X (A : \\Type0) {\n" +
+        "    | B : A\n" +
+        "  }\n" +
+        "  \\class Y \\extends X {\n" +
+        "    | C : A\n" +
+        "  }\n" +
+        "}");
+  }
+
+  @Test
+  public void baseClassCall1() {
+    testBaseClassCall("\\func test => Y Nat {\n" +
+        "  | B => 114514\n" +
+        "  | C => 1919810\n" +
+        "} \\where {\n" +
+        "  \\class X (A : \\Type0) {\n" +
+        "    | B : A\n" +
+        "  }\n" +
+        "  \\class Y \\extends X {\n" +
+        "    | C : A\n" +
+        "  }\n" +
+        "}");
+  }
+
+  private void testBaseClassCall(String code) {
+    ConcreteLocatedReferable resolved = resolveNamesDef(code);
+    Concrete.FunctionDefinition concreteDef = (Concrete.FunctionDefinition) resolved.getDefinition();
+    FunctionDefinition coreDef = (FunctionDefinition) typeCheckDef(resolved);
+    Concrete.ClassExtExpression concrete = (Concrete.ClassExtExpression) concreteDef.getBody().getTerm();
+    ClassCallExpression core = (ClassCallExpression) coreDef.getBody();
+    assertNotNull(concrete);
+    assertNotNull(core);
+    {
+      Concrete.Expression c = concrete.getStatements().get(1).implementation;
+      Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(c), core);
+      assertEquals("114514", accept.proj1.toString());
+    }
+    {
+      Concrete.Expression c = concrete.getStatements().get(0).implementation;
+      Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(c), core);
+      assertEquals("Nat", accept.proj1.toString());
+    }
+  }
 }
