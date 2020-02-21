@@ -4,8 +4,8 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
-import org.arend.frontend.reference.ConcreteClassFieldReferable;
-import org.arend.frontend.reference.ConcreteClassReferable;
+import org.arend.naming.reference.ClassReferable;
+import org.arend.naming.reference.FieldReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteExpressionVisitor;
@@ -300,9 +300,8 @@ public class CorrespondedSubExprVisitor implements
   private Pair<Expression, Concrete.Expression> visitStatement(Map<ClassField, Expression> implementedHere, Concrete.ClassFieldImpl statement) {
     Referable implementedField = statement.getImplementedField();
     if (implementedField == null) return null;
-    if (implementedField instanceof ConcreteClassReferable) {
-      Collection<? extends ConcreteClassFieldReferable> fields = ((ConcreteClassReferable) implementedField).getFieldReferables();
-      //noinspection SuspiciousMethodCalls
+    if (implementedField instanceof ClassReferable) {
+      Collection<? extends FieldReferable> fields = ((ClassReferable) implementedField).getFieldReferables();
       return implementedHere.entrySet()
           .stream()
           // The suppressed warning presents here, but it's considered safe.
