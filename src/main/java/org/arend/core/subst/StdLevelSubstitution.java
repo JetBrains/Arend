@@ -3,7 +3,6 @@ package org.arend.core.subst;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.Variable;
 import org.arend.core.sort.Level;
-import org.arend.core.sort.Sort;
 
 public class StdLevelSubstitution implements LevelSubstitution {
   private final Level myPLevel;
@@ -12,11 +11,6 @@ public class StdLevelSubstitution implements LevelSubstitution {
   public StdLevelSubstitution(Level pLevel, Level hLevel) {
     myPLevel = pLevel;
     myHLevel = hLevel;
-  }
-
-  public StdLevelSubstitution(Sort sort) {
-    myPLevel = sort.getPLevel();
-    myHLevel = sort.getHLevel();
   }
 
   @Override

@@ -2,6 +2,7 @@ package org.arend.core.pattern;
 
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
+import org.arend.core.definition.Definition;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.SigmaExpression;
 import org.arend.core.expr.TupleExpression;
@@ -10,12 +11,13 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.term.concrete.Concrete;
+import org.arend.util.Decision;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-public class EmptyPattern implements Pattern {
+public class EmptyPattern implements ExpressionPattern {
   public final static EmptyPattern INSTANCE = new EmptyPattern();
 
   private EmptyPattern() {}
@@ -41,17 +43,43 @@ public class EmptyPattern implements Pattern {
   }
 
   @Override
-  public MatchResult match(Expression expression, List<Expression> result) {
-    return MatchResult.FAIL;
+  public Definition getDefinition() {
+    return null;
   }
 
   @Override
-  public boolean unify(ExprSubstitution idpSubst, Pattern other, ExprSubstitution substitution1, ExprSubstitution substitution2, ErrorReporter errorReporter, Concrete.SourceNode sourceNode) {
+  public List<Pattern> getSubPatterns() {
+    return Collections.emptyList();
+  }
+
+  @Override
+  public DependentLink replaceBindings(DependentLink link, List<Pattern> result) {
+    result.add(INSTANCE);
+    return link;
+  }
+
+  @Override
+  public ExpressionPattern toExpressionPattern(Expression type) {
+    return this;
+  }
+
+  @Override
+  public Decision match(Expression expression, List<Expression> result) {
+    return Decision.NO;
+  }
+
+  @Override
+  public boolean unify(ExprSubstitution idpSubst, ExpressionPattern other, ExprSubstitution substitution1, ExprSubstitution substitution2, ErrorReporter errorReporter, Concrete.SourceNode sourceNode) {
     return other instanceof EmptyPattern || other instanceof BindingPattern;
   }
 
   @Override
-  public Pattern subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, Map<DependentLink, Pattern> patternSubst) {
+  public ExpressionPattern subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, Map<DependentLink, ExpressionPattern> patternSubst) {
+    return this;
+  }
+
+  @Override
+  public Pattern removeExpressions() {
     return this;
   }
 }

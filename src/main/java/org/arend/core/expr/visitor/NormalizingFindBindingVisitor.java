@@ -3,11 +3,9 @@ package org.arend.core.expr.visitor;
 import org.arend.core.context.binding.Variable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
-import org.arend.core.elimtree.BranchElimTree;
-import org.arend.core.elimtree.ElimTree;
-import org.arend.core.elimtree.LeafElimTree;
+import org.arend.core.elimtree.ElimBody;
+import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.*;
-import org.arend.ext.core.elimtree.CoreBranchKey;
 import org.arend.ext.core.ops.NormalizationMode;
 
 import java.util.Collections;
@@ -162,24 +160,20 @@ public class NormalizingFindBindingVisitor extends BaseExpressionVisitor<Void, B
       }
     }
 
-    return findBinding(expr.getResultType(), true) || expr.getResultTypeLevel() != null && findBinding(expr.getResultTypeLevel(), true) || visitDependentLink(expr.getParameters()) || findBindingInElimTree(expr.getElimTree());
+    return findBinding(expr.getResultType(), true) || expr.getResultTypeLevel() != null && findBinding(expr.getResultTypeLevel(), true) || visitDependentLink(expr.getParameters()) || findBindingInElimBody(expr.getElimBody());
   }
 
-  private boolean findBindingInElimTree(ElimTree elimTree) {
-    if (visitDependentLink(elimTree.getParameters())) {
-      return true;
+  private boolean findBindingInElimBody(ElimBody elimBody) {
+    for (ElimClause clause : elimBody.getClauses()) {
+      if (visitDependentLink(clause.getParameters())) {
+        return true;
+      }
+      if (clause.getExpression() != null && findBinding(clause.getExpression(), true)) {
+        return true;
+      }
     }
 
-    if (elimTree instanceof LeafElimTree) {
-      return findBinding(((LeafElimTree) elimTree).getExpression(), true);
-    } else {
-      for (Map.Entry<CoreBranchKey, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
-        if (findBindingInElimTree(entry.getValue())) {
-          return true;
-        }
-      }
-      return false;
-    }
+    return false;
   }
 
   @Override

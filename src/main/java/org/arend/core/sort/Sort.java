@@ -96,8 +96,12 @@ public class Sort implements CoreSort {
     return myHLevel.isClosed() && myHLevel.getConstant() == 0;
   }
 
+  public boolean isStd() {
+    return myPLevel.isVarOnly() && myPLevel.getVar() == LevelVariable.PVAR && myHLevel.isVarOnly() && myHLevel.getVar() == LevelVariable.HVAR;
+  }
+
   public LevelSubstitution toLevelSubstitution() {
-    return new StdLevelSubstitution(myPLevel, myHLevel);
+    return isStd() ? LevelSubstitution.EMPTY : new StdLevelSubstitution(myPLevel, myHLevel);
   }
 
   private static boolean compareProp(Sort sort, Equations equations, Concrete.SourceNode sourceNode) {

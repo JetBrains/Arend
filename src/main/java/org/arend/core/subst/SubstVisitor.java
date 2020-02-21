@@ -7,13 +7,12 @@ import org.arend.core.context.binding.inference.MetaInferenceVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.definition.ClassField;
-import org.arend.core.elimtree.BranchElimTree;
-import org.arend.core.elimtree.ElimTree;
-import org.arend.core.elimtree.LeafElimTree;
+import org.arend.core.definition.Constructor;
+import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.visitor.BaseExpressionVisitor;
-import org.arend.ext.core.elimtree.CoreBranchKey;
+import org.arend.core.pattern.Pattern;
 
 import java.util.*;
 
@@ -234,29 +233,34 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
     Expression type = expr.getResultType().accept(this, null);
     Expression typeLevel = expr.getResultTypeLevel() == null ? null : expr.getResultTypeLevel().accept(this, null);
     DependentLink.Helper.freeSubsts(expr.getParameters(), myExprSubstitution);
-    return new CaseExpression(expr.isSCase(), parameters, type, typeLevel, substElimTree(expr.getElimTree()), arguments);
+
+    List<ElimClause<Pattern>> clauses = new ArrayList<>();
+    for (ElimClause<Pattern> clause : expr.getElimBody().getClauses()) {
+      DependentLink clauseParameters = DependentLink.Helper.subst(clause.getParameters(), this);
+      Expression clauseExpr = clause.getExpression() == null ? null : clause.getExpression().accept(this, null);
+      DependentLink.Helper.freeSubsts(clause.getParameters(), myExprSubstitution);
+      clauses.add(new ElimClause<>(Pattern.replaceBindings(clause.getPatterns(), clauseParameters), clauseExpr));
+    }
+    return new CaseExpression(expr.isSCase(), parameters, type, typeLevel, new ElimBody(clauses, myLevelSubstitution.isEmpty() ? expr.getElimBody().getElimTree() : substElimTree(expr.getElimBody().getElimTree())), arguments);
   }
 
   public ElimTree substElimTree(ElimTree elimTree) {
-    DependentLink vars = DependentLink.Helper.subst(elimTree.getParameters(), this);
-    if (elimTree instanceof LeafElimTree) {
-      elimTree = new LeafElimTree(vars, ((LeafElimTree) elimTree).getExpression().accept(this, null));
-    } else {
-      Map<CoreBranchKey, ElimTree> children = new HashMap<>();
-      for (Map.Entry<CoreBranchKey, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
-        CoreBranchKey key;
-        if (!myLevelSubstitution.isEmpty() && entry.getKey() instanceof ClassConstructor) {
-          ClassConstructor classCon = (ClassConstructor) entry.getKey();
-          key = new ClassConstructor(classCon.getClassDefinition(), classCon.getSort().subst(myLevelSubstitution), classCon.getImplementedFields());
-        } else {
-          key = entry.getKey();
-        }
-        children.put(key, substElimTree(entry.getValue()));
-      }
-      elimTree = new BranchElimTree(vars, children);
+    if (!(elimTree instanceof BranchElimTree)) {
+      return elimTree;
     }
-    DependentLink.Helper.freeSubsts(elimTree.getParameters(), myExprSubstitution);
-    return elimTree;
+
+    BranchElimTree result = new BranchElimTree(elimTree.getSkip(), ((BranchElimTree) elimTree).keepConCall());
+    for (Map.Entry<Constructor, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
+      Constructor key;
+      if (entry.getKey() instanceof ClassConstructor) {
+        ClassConstructor classCon = (ClassConstructor) entry.getKey();
+        key = new ClassConstructor(classCon.getClassDefinition(), classCon.getSort().subst(myLevelSubstitution), classCon.getImplementedFields());
+      } else {
+        key = entry.getKey();
+      }
+      result.addChild(key, substElimTree(entry.getValue()));
+    }
+    return result;
   }
 
   @Override

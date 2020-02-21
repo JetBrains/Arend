@@ -10,10 +10,9 @@ import org.arend.core.definition.*;
 import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
+import org.arend.core.pattern.Pattern;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
-import org.arend.core.subst.SubstVisitor;
-import org.arend.ext.core.elimtree.CoreBranchKey;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
@@ -381,8 +380,8 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
     Expression result;
     if (body instanceof Expression) {
       result = mode == NormalizationMode.RNF || mode == NormalizationMode.RNF_EXP ? null : ((Expression) body).subst(getDataTypeArgumentsSubstitution(expr).add(definition.getParameters(), defCallArgs), expr.getSortArgument().toLevelSubstitution());
-    } else if (body instanceof ElimTree) {
-      result = eval((ElimTree) body, defCallArgs, getDataTypeArgumentsSubstitution(expr), expr.getSortArgument().toLevelSubstitution());
+    } else if (body instanceof ElimBody) {
+      result = eval((ElimBody) body, defCallArgs, getDataTypeArgumentsSubstitution(expr), expr.getSortArgument().toLevelSubstitution());
     } else {
       assert body == null;
       result = null;
@@ -407,27 +406,36 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
       Body body = funCall.getDefinition().getActualBody();
       if (body instanceof Expression) {
         return ((Expression) body).subst(new ExprSubstitution().add(funCall.getDefinition().getParameters(), funCall.getDefCallArguments()), funCall.getSortArgument().toLevelSubstitution());
-      } else if (body instanceof ElimTree) {
-        return eval((ElimTree) body, funCall.getDefCallArguments(), getDataTypeArgumentsSubstitution(funCall), funCall.getSortArgument().toLevelSubstitution());
+      } else if (body instanceof ElimBody) {
+        return eval((ElimBody) body, funCall.getDefCallArguments(), getDataTypeArgumentsSubstitution(funCall), funCall.getSortArgument().toLevelSubstitution());
       } else {
         return null;
       }
     } else if (expr instanceof CaseExpression) {
-      return eval(((CaseExpression) expr).getElimTree(), ((CaseExpression) expr).getArguments(), new ExprSubstitution(), LevelSubstitution.EMPTY);
+      return eval(((CaseExpression) expr).getElimBody(), ((CaseExpression) expr).getArguments(), new ExprSubstitution(), LevelSubstitution.EMPTY);
     } else {
       return null;
     }
   }
 
-  public Expression eval(ElimTree elimTree, List<? extends Expression> arguments, ExprSubstitution substitution, LevelSubstitution levelSubstitution) {
+  public Expression eval(ElimBody elimBody, List<? extends Expression> arguments, ExprSubstitution substitution, LevelSubstitution levelSubstitution) {
     Stack<Expression> stack = makeStack(arguments);
+    List<Expression> result = new ArrayList<>();
 
+    ElimTree elimTree = elimBody.getElimTree();
     while (true) {
-      for (DependentLink link = elimTree.getParameters(); link.hasNext(); link = link.getNext()) {
-        substitution.add(link, stack.pop());
+      for (int i = 0; i < elimTree.getSkip(); i++) {
+        result.add(stack.pop());
       }
+
       if (elimTree instanceof LeafElimTree) {
-        return ((LeafElimTree) elimTree).getExpression().subst(substitution, levelSubstitution);
+        LeafElimTree leafElimTree = (LeafElimTree) elimTree;
+        ElimClause clause = elimBody.getClauses().get(leafElimTree.getClauseIndex());
+        int i = 0;
+        for (DependentLink link = clause.getParameters(); link.hasNext(); link = link.getNext(), i++) {
+          substitution.add(link, result.get(leafElimTree.getArgumentIndex(i)));
+        }
+        return clause.getExpression().subst(substitution, levelSubstitution);
       }
 
       elimTree = updateStack(stack, (BranchElimTree) elimTree);
@@ -441,7 +449,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
     Stack<Expression> stack = makeStack(arguments);
 
     while (true) {
-      for (DependentLink link = elimTree.getParameters(); link.hasNext(); link = link.getNext()) {
+      for (int i = 0; i < elimTree.getSkip(); i++) {
         if (stack.isEmpty()) {
           return true;
         }
@@ -477,7 +485,9 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
       constructor = null;
     }
     if (elimTree != null) {
-      stack.pop();
+      if (!branchElimTree.keepConCall()) {
+        stack.pop();
+      }
 
       List<? extends Expression> args;
       if (constructor != null) {
@@ -685,7 +695,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
   @Override
   public Expression visitCase(CaseExpression expr, NormalizationMode mode) {
     if (!expr.isSCase()) {
-      Expression result = eval(expr.getElimTree(), expr.getArguments(), new ExprSubstitution(), LevelSubstitution.EMPTY);
+      Expression result = eval(expr.getElimBody(), expr.getArguments(), new ExprSubstitution(), LevelSubstitution.EMPTY);
       if (result != null) {
         return result.accept(this, mode);
       }
@@ -700,22 +710,17 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
     }
     ExprSubstitution substitution = new ExprSubstitution();
     DependentLink parameters = normalizeParameters(expr.getParameters(), mode, substitution);
-    return new CaseExpression(expr.isSCase(), parameters, expr.getResultType().subst(substitution).accept(this, mode), expr.getResultTypeLevel() == null ? null : expr.getResultTypeLevel().subst(substitution).accept(this, mode), normalizeElimTree(expr.getElimTree(), mode), args);
+    return new CaseExpression(expr.isSCase(), parameters, expr.getResultType().subst(substitution).accept(this, mode), expr.getResultTypeLevel() == null ? null : expr.getResultTypeLevel().subst(substitution).accept(this, mode), normalizeElimBody(expr.getElimBody(), mode), args);
   }
 
-  private ElimTree normalizeElimTree(ElimTree elimTree, NormalizationMode mode) {
-    ExprSubstitution substitution = new ExprSubstitution();
-    DependentLink vars = DependentLink.Helper.subst(elimTree.getParameters(), substitution);
-    if (elimTree instanceof LeafElimTree) {
-      return new LeafElimTree(vars, ((LeafElimTree) elimTree).getExpression().subst(substitution).accept(this, mode));
-    } else {
-      Map<CoreBranchKey, ElimTree> children = new HashMap<>();
-      SubstVisitor visitor = new SubstVisitor(substitution, LevelSubstitution.EMPTY);
-      for (Map.Entry<CoreBranchKey, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
-        children.put(entry.getKey(), visitor.substElimTree(normalizeElimTree(entry.getValue(), mode)));
-      }
-      return new BranchElimTree(vars, children);
+  private ElimBody normalizeElimBody(ElimBody elimBody, NormalizationMode mode) {
+    List<ElimClause<Pattern>> clauses = new ArrayList<>();
+    for (ElimClause<Pattern> clause : elimBody.getClauses()) {
+      ExprSubstitution substitution = new ExprSubstitution();
+      DependentLink parameters = normalizeParameters(clause.getParameters(), mode, substitution);
+      clauses.add(new ElimClause<>(Pattern.replaceBindings(clause.getPatterns(), parameters), clause.getExpression() == null ? null : clause.getExpression().subst(substitution).accept(this, mode)));
     }
+    return new ElimBody(clauses, elimBody.getElimTree());
   }
 
   @Override

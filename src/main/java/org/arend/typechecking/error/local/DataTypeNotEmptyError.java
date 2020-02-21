@@ -1,13 +1,16 @@
 package org.arend.typechecking.error.local;
 
 import org.arend.core.definition.Constructor;
+import org.arend.core.expr.ConCallExpression;
 import org.arend.core.expr.DataCallExpression;
 import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.arend.term.concrete.Concrete;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.arend.ext.prettyprinting.doc.DocFactory.*;
@@ -20,6 +23,14 @@ public class DataTypeNotEmptyError extends TypecheckingError {
     super("", cause);
     this.dataCall = dataCall;
     this.constructors = constructors;
+  }
+
+  public static List<Constructor> getConstructors(Collection<? extends ConCallExpression> conCalls) {
+    List<Constructor> result = new ArrayList<>();
+    for (ConCallExpression conCall : conCalls) {
+      result.add(conCall.getDefinition());
+    }
+    return result;
   }
 
   @Override

@@ -3,24 +3,21 @@ package org.arend.typechecking.patternmatching;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.context.param.DependentLink;
-import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.definition.Constructor;
-import org.arend.core.definition.DataDefinition;
 import org.arend.core.definition.FunctionDefinition;
-import org.arend.core.elimtree.BranchElimTree;
-import org.arend.core.elimtree.ElimTree;
-import org.arend.core.elimtree.LeafElimTree;
+import org.arend.core.elimtree.*;
 import org.arend.core.expr.Expression;
+import org.arend.core.expr.ReferenceExpression;
+import org.arend.core.pattern.BindingPattern;
+import org.arend.core.pattern.ConstructorPattern;
+import org.arend.core.pattern.Pattern;
 import org.arend.core.sort.Sort;
-import org.arend.ext.core.elimtree.CoreBranchKey;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import static org.arend.ExpressionFactory.*;
 import static org.arend.core.expr.ExpressionFactory.*;
@@ -293,7 +290,7 @@ public class ElimTest extends TypeCheckingTestCase {
       "\\func test (n m : Nat) : Nat \\elim m\n" +
         " | _ => n"
     );
-    assertEquals(new LeafElimTree(def.getParameters(), Ref(def.getParameters())), def.getBody());
+    assertEquals(new ElimBody(Collections.singletonList(new ElimClause<>(Collections.singletonList(new BindingPattern(def.getParameters().getNext())), new ReferenceExpression(def.getParameters()))), null), def.getBody());
   }
 
   @Test
@@ -304,10 +301,10 @@ public class ElimTest extends TypeCheckingTestCase {
       " | _ => n"
     );
     DependentLink nParam = DependentLink.Helper.take(def.getParameters(), 1);
-    Map<CoreBranchKey, ElimTree> children = new HashMap<>();
-    children.put(Prelude.ZERO, new LeafElimTree(EmptyDependentLink.getInstance(), Ref(nParam)));
-    children.put(Prelude.SUC, new LeafElimTree(param("m", Nat()), Ref(nParam)));
-    assertEquals(new BranchElimTree(nParam, children), def.getBody());
+    List<ElimClause<Pattern>> clauses = new ArrayList<>(2);
+    clauses.add(new ElimClause<>(Collections.singletonList(ConstructorPattern.make(Prelude.ZERO, Collections.emptyList())), new ReferenceExpression(nParam)));
+    clauses.add(new ElimClause<>(Collections.singletonList(new BindingPattern(def.getParameters().getNext())), new ReferenceExpression(nParam)));
+    assertEquals(new ElimBody(clauses, null), def.getBody());
   }
 
   @Test
@@ -319,13 +316,11 @@ public class ElimTest extends TypeCheckingTestCase {
       " | _ => n"
     );
     FunctionDefinition def = (FunctionDefinition) getDefinition("f");
-    DataDefinition dataDef = (DataDefinition) getDefinition("D");
     DependentLink nParam = DependentLink.Helper.take(def.getParameters(), 1);
-    Map<CoreBranchKey, ElimTree> children = new HashMap<>();
-    children.put(dataDef.getConstructor("A"), new LeafElimTree(EmptyDependentLink.getInstance(), Ref(nParam)));
-    children.put(dataDef.getConstructor("B"), new LeafElimTree(EmptyDependentLink.getInstance(), Ref(nParam)));
-    children.put(dataDef.getConstructor("C"), new LeafElimTree(EmptyDependentLink.getInstance(), Ref(nParam)));
-    assertEquals(new BranchElimTree(nParam, children), def.getBody());
+    List<ElimClause<Pattern>> clauses = new ArrayList<>(3);
+    clauses.add(new ElimClause<>(Collections.singletonList(ConstructorPattern.make(getDefinition("D.A"), Collections.emptyList())), new ReferenceExpression(nParam)));
+    clauses.add(new ElimClause<>(Collections.singletonList(new BindingPattern(def.getParameters().getNext())), new ReferenceExpression(nParam)));
+    assertEquals(new ElimBody(clauses, null), def.getBody());
   }
 
   @Test

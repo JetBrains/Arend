@@ -4,12 +4,10 @@ import org.arend.core.definition.Definition;
 import org.arend.core.elimtree.*;
 import org.arend.core.expr.DefCallExpression;
 import org.arend.core.expr.Expression;
-import org.arend.ext.core.elimtree.CoreBranchKey;
 import org.arend.util.Pair;
 
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
 
 public class FindDefCallVisitor<T extends Definition> extends ProcessDefCallsVisitor<Void> {
@@ -52,20 +50,19 @@ public class FindDefCallVisitor<T extends Definition> extends ProcessDefCallsVis
       ((Expression) body).accept(this, null);
     } else if (body instanceof IntervalElim) {
       for (Pair<Expression, Expression> pair : ((IntervalElim) body).getCases()) {
-        if (pair.proj1.accept(this, null) || pair.proj2.accept(this, null)) {
+        if (pair.proj2.accept(this, null) && !myFindAll) {
+          return;
+        }
+        if (pair.proj1.accept(this, null) && !myFindAll) {
           return;
         }
       }
-      findDefinition(((IntervalElim) body).getOtherwise());
-    } else if (body instanceof LeafElimTree) {
-      ((LeafElimTree) body).getExpression().accept(this, null);
-    } else if (body instanceof BranchElimTree) {
-      for (Map.Entry<CoreBranchKey, ElimTree> entry : ((BranchElimTree) body).getChildren()) {
-        findDefinition(entry.getValue());
-        if (!myFindAll && !myFoundDefinitions.isEmpty()) {
-          return;
-        }
+      ElimBody elimBody = ((IntervalElim) body).getOtherwise();
+      if (elimBody != null) {
+        visitElimBody(elimBody, null);
       }
+    } else if (body instanceof ElimBody) {
+      visitElimBody((ElimBody) body, null);
     } else if (body != null) {
       throw new IllegalStateException();
     }

@@ -1,11 +1,11 @@
-package org.arend.typechecking;
+package org.arend.typechecking.doubleChecker;
 
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.definition.*;
 import org.arend.core.elimtree.Body;
-import org.arend.core.elimtree.ElimTree;
+import org.arend.core.elimtree.ElimBody;
 import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.*;
 import org.arend.core.expr.type.Type;
@@ -19,6 +19,7 @@ import org.arend.ext.error.TypeMismatchError;
 import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.prettyprinting.doc.DocFactory;
 import org.arend.prelude.Prelude;
+import org.arend.typechecking.UseTypechecking;
 import org.arend.typechecking.error.local.CertainTypecheckingError;
 import org.arend.typechecking.error.local.CoreErrorWrapper;
 import org.arend.typechecking.error.local.inference.ArgInferenceError;
@@ -32,50 +33,40 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
 
   public CoreDefinitionChecker(ErrorReporter errorReporter) {
     super(errorReporter);
-    myChecker = new CoreExpressionChecker(errorReporter, new HashSet<>(), DummyEquations.getInstance(), null);
+    myChecker = new CoreExpressionChecker(new HashSet<>(), DummyEquations.getInstance(), null);
   }
 
   void setErrorReporter(ErrorReporter errorReporter) {
     this.errorReporter = errorReporter;
-    myChecker.setErrorReporter(errorReporter);
   }
 
   public boolean check(Definition definition) {
     myChecker.clear();
-    if (!myChecker.checkDependentLink(definition.getParameters(), Type.OMEGA, null)) {
+    try {
+      myChecker.checkDependentLink(definition.getParameters(), Type.OMEGA, null);
+
+      // TODO[double_check]: Check (mutual) recursion
+      // TODO[double_check]: Check definition.hasUniverses()
+      // TODO[double_check]: Check definition.getParametersLevels()
+
+      if (definition instanceof FunctionDefinition) {
+        return check((FunctionDefinition) definition);
+      } else if (definition instanceof DataDefinition) {
+        return check((DataDefinition) definition);
+      } else if (definition instanceof ClassDefinition) {
+        return check((ClassDefinition) definition);
+      } else {
+        throw new IllegalStateException();
+      }
+    } catch (CoreException e) {
+      errorReporter.report(e.error);
       return false;
-    }
-
-    // TODO[double_check]: Check (mutual) recursion
-    // TODO[double_check]: Check definition.hasUniverses()
-    // TODO[double_check]: Check definition.getParametersLevels()
-
-    if (definition instanceof FunctionDefinition) {
-      return check((FunctionDefinition) definition);
-    } else if (definition instanceof DataDefinition) {
-      return check((DataDefinition) definition);
-    } else if (definition instanceof ClassDefinition) {
-      return check((ClassDefinition) definition);
-    } else {
-      throw new IllegalStateException();
     }
   }
 
   private boolean check(FunctionDefinition definition) {
     Expression typeType = definition.getResultType().accept(myChecker, Type.OMEGA);
-    if (typeType == null) {
-      return false;
-    }
-
-    Integer level;
-    if (definition.getResultTypeLevel() != null) {
-      level = myChecker.checkLevelProof(definition.getResultTypeLevel(), definition.getResultType());
-      if (level == null) {
-        return false;
-      }
-    } else {
-      level = null;
-    }
+    Integer level = definition.getResultTypeLevel() == null ? null : myChecker.checkLevelProof(definition.getResultTypeLevel(), definition.getResultType());
 
     if (definition.getKind() == CoreFunctionDefinition.Kind.LEMMA && (level == null || level != -1)) {
       DefCallExpression resultDefCall = definition.getResultType().cast(DefCallExpression.class);
@@ -94,7 +85,8 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
 
     Body body = definition.getActualBody();
     if (body instanceof Expression) {
-      return ((Expression) body).accept(myChecker, definition.getResultType()) != null;
+      ((Expression) body).accept(myChecker, definition.getResultType());
+      return true;
     }
 
     if (body instanceof IntervalElim) {
@@ -127,16 +119,24 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
 
       // TODO[double_check]: Check interval conditions
 
-      return myChecker.checkElimTree(((IntervalElim) body).getOtherwise(), null, definition.isSFunc());
-    } else if (body instanceof ElimTree) {
-      return myChecker.checkElimTree((ElimTree) body, null, definition.isSFunc());
+      if (intervalElim.getOtherwise() == null) {
+        errorReporter.report(new TypecheckingError("Missing non-interval clauses", null));
+        return false;
+      }
+
+      myChecker.checkElimBody(intervalElim.getOtherwise(), definition.getParameters(), definition.getResultType(), null, definition.isSFunc());
+      return true;
+    } else if (body instanceof ElimBody) {
+      myChecker.checkElimBody((ElimBody) body, definition.getParameters(), definition.getResultType(), null, definition.isSFunc());
+      return true;
     } else if (body == null) {
       ClassCallExpression classCall = definition.getResultType().cast(ClassCallExpression.class);
       if (classCall == null) {
         errorReporter.report(new TypeMismatchError(DocFactory.text("a classCall"), definition.getResultType(), null));
         return false;
       }
-      return myChecker.checkCocoverage(classCall);
+      myChecker.checkCocoverage(classCall);
+      return true;
     } else {
       throw new IllegalStateException();
     }
@@ -175,9 +175,6 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
       Sort sort = myChecker.checkDependentLink(constructor.getParameters(), null);
       myChecker.freeDependentLink(constructor.getParameters());
       myChecker.freeDependentLink(constructor.getDataTypeParameters());
-      if (sort == null) {
-        return false;
-      }
 
       if (!checkDefinitionSort(definition.isTruncated() || definition.getSquasher() != null, constructor, sort, definition.getSort())) {
         return false;
@@ -291,9 +288,6 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
         level = myChecker.checkLevelProof(field.getTypeLevel(), type);
         for (DependentLink parameter : parameters) {
           myChecker.removeBinding(parameter);
-        }
-        if (level == null) {
-          return false;
         }
       } else {
         level = null;

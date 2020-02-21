@@ -5,12 +5,9 @@ import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.context.binding.inference.MetaInferenceVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
-import org.arend.core.elimtree.BranchElimTree;
-import org.arend.core.elimtree.ElimTree;
-import org.arend.core.elimtree.LeafElimTree;
+import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
-import org.arend.ext.core.elimtree.CoreBranchKey;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.LocalError;
 
@@ -184,25 +181,17 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitCase(CaseExpression expr, Void params) {
-    ElimTree elimTree = stripElimTree(expr.getElimTree());
     for (int i = 0; i < expr.getArguments().size(); i++) {
       expr.getArguments().set(i, expr.getArguments().get(i).accept(this, null));
     }
     visitParameters(expr.getParameters());
-    return new CaseExpression(expr.isSCase(), expr.getParameters(), expr.getResultType().accept(this, null), expr.getResultTypeLevel() == null ? null : expr.getResultTypeLevel().accept(this, null), elimTree, expr.getArguments());
-  }
-
-  private ElimTree stripElimTree(ElimTree elimTree) {
-    visitParameters(elimTree.getParameters());
-    if (elimTree instanceof LeafElimTree) {
-      return new LeafElimTree(elimTree.getParameters(), ((LeafElimTree) elimTree).getExpression().accept(this, null));
-    } else {
-      Map<CoreBranchKey, ElimTree> children = new HashMap<>();
-      for (Map.Entry<CoreBranchKey, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
-        children.put(entry.getKey(), stripElimTree(entry.getValue()));
+    for (ElimClause clause : expr.getElimBody().getClauses()) {
+      visitParameters(clause.getParameters());
+      if (clause.getExpression() != null) {
+        clause.setExpression(clause.getExpression().accept(this, null));
       }
-      return new BranchElimTree(elimTree.getParameters(), children);
     }
+    return new CaseExpression(expr.isSCase(), expr.getParameters(), expr.getResultType().accept(this, null), expr.getResultTypeLevel() == null ? null : expr.getResultTypeLevel().accept(this, null), expr.getElimBody(), expr.getArguments());
   }
 
   @Override

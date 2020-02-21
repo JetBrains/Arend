@@ -10,14 +10,10 @@ import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
 import org.arend.core.expr.visitor.CompareVisitor;
 import org.arend.core.expr.visitor.NormalizeVisitor;
-import org.arend.core.pattern.BindingPattern;
-import org.arend.core.pattern.ConstructorPattern;
-import org.arend.core.pattern.Pattern;
-import org.arend.core.pattern.Patterns;
+import org.arend.core.pattern.*;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
-import org.arend.ext.core.elimtree.CoreBranchKey;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.prelude.Prelude;
@@ -37,12 +33,14 @@ public class ConditionsChecking {
     myErrorReporter = errorReporter;
   }
 
-  public boolean check(Body body, List<ExtClause> clauses, Definition definition, Concrete.SourceNode def) {
+  public boolean check(Body body, List<ExtElimClause> clauses, List<? extends Concrete.FunctionClause> cClauses, Definition definition, Concrete.SourceNode def) {
+    assert clauses.size() <= cClauses.size();
+
     boolean ok;
     if (body instanceof IntervalElim) {
       ok = checkIntervals((IntervalElim) body, definition, def);
-      for (Clause clause : clauses) {
-        if (clause.expression != null && !checkIntervalClause((IntervalElim) body, clause, definition)) {
+      for (int i = 0; i < clauses.size(); i++) {
+        if (clauses.get(i).getExpression() != null && !checkIntervalClause((IntervalElim) body, clauses.get(i), cClauses.get(i), definition)) {
           ok = false;
         }
       }
@@ -50,8 +48,8 @@ public class ConditionsChecking {
       ok = true;
     }
 
-    for (ExtClause clause : clauses) {
-      if (!checkClause(clause, null, definition)) {
+    for (int i = 0; i < clauses.size(); i++) {
+      if (!checkClause(clauses.get(i), cClauses.get(i), null, definition)) {
         ok = false;
       }
     }
@@ -104,46 +102,46 @@ public class ConditionsChecking {
     }
   }
 
-  private boolean checkIntervalClause(IntervalElim elim, Clause clause, Definition definition) {
+  private boolean checkIntervalClause(IntervalElim elim, ElimClause<ExpressionPattern> clause, Concrete.FunctionClause cClause, Definition definition) {
     boolean ok = true;
     List<IntervalElim.CasePair> cases = elim.getCases();
     int prefixLength = DependentLink.Helper.size(definition.getParameters()) - elim.getCases().size();
     for (int i = 0; i < cases.size(); i++) {
-      ok = checkIntervalClauseCondition(cases.get(i), true, prefixLength + i, clause, definition) && ok;
-      ok = checkIntervalClauseCondition(cases.get(i), false, prefixLength + i, clause, definition) && ok;
+      ok = checkIntervalClauseCondition(cases.get(i), true, prefixLength + i, clause, cClause, definition) && ok;
+      ok = checkIntervalClauseCondition(cases.get(i), false, prefixLength + i, clause, cClause, definition) && ok;
     }
     return ok;
   }
 
-  private boolean checkIntervalClauseCondition(Pair<Expression, Expression> pair, boolean isLeft, int index, Clause clause, Definition definition) {
+  private boolean checkIntervalClauseCondition(Pair<Expression, Expression> pair, boolean isLeft, int index, ElimClause<ExpressionPattern> clause, Concrete.FunctionClause cClause, Definition definition) {
     Expression expr = isLeft ? pair.proj1 : pair.proj2;
     if (expr == null) {
       return true;
     }
 
     ExprSubstitution pathSubstitution = new ExprSubstitution();
-    collectPaths(clause.patterns, pathSubstitution);
+    collectPaths(clause.getPatterns(), pathSubstitution);
 
     ExprSubstitution substitution1 = new ExprSubstitution();
     DependentLink link = definition.getParameters();
-    for (int i = 0; i < clause.patterns.size(); i++) {
+    for (int i = 0; i < clause.getPatterns().size(); i++) {
       if (i != index) {
-        substitution1.add(link, clause.patterns.get(i).toExpression().subst(pathSubstitution));
+        substitution1.add(link, clause.getPatterns().get(i).toExpression().subst(pathSubstitution));
       }
       link = link.getNext();
     }
 
-    ExprSubstitution substitution2 = new ExprSubstitution(((BindingPattern) clause.patterns.get(index)).getBinding(), isLeft ? ExpressionFactory.Left() : ExpressionFactory.Right());
+    ExprSubstitution substitution2 = new ExprSubstitution(((BindingPattern) clause.getPatterns().get(index)).getBinding(), isLeft ? ExpressionFactory.Left() : ExpressionFactory.Right());
     pathSubstitution.addAll(substitution2);
 
     Expression evaluatedExpr1 = expr.subst(substitution1);
-    Expression evaluatedExpr2 = clause.expression.subst(pathSubstitution);
-    if (!CompareVisitor.compare(myEquations, CMP.EQ, evaluatedExpr1, evaluatedExpr2, null, clause.clause)) {
+    Expression evaluatedExpr2 = clause.getExpression().subst(pathSubstitution);
+    if (!CompareVisitor.compare(myEquations, CMP.EQ, evaluatedExpr1, evaluatedExpr2, null, cClause)) {
       if (!pathSubstitution.isEmpty()) {
         link = definition.getParameters();
-        for (int i = 0; i < clause.patterns.size(); i++) {
+        for (int i = 0; i < clause.getPatterns().size(); i++) {
           if (i != index) {
-            substitution1.add(link, clause.patterns.get(i).toExpression());
+            substitution1.add(link, clause.getPatterns().get(i).toExpression());
           }
           link = link.getNext();
         }
@@ -155,50 +153,56 @@ public class ConditionsChecking {
         defCallArgs1.add(i == index ? (isLeft ? ExpressionFactory.Left() : ExpressionFactory.Right()) : new ReferenceExpression(link));
       }
 
-      List<Expression> defCallArgs2 = new ArrayList<>(clause.patterns.size());
-      for (Pattern pattern : clause.patterns) {
+      List<Expression> defCallArgs2 = new ArrayList<>(clause.getPatterns().size());
+      for (ExpressionPattern pattern : clause.getPatterns()) {
         defCallArgs2.add(pattern.toExpression());
       }
 
       if (!pathSubstitution.isEmpty()) {
         substitution1 = new ExprSubstitution();
         link = definition.getParameters();
-        for (i = 0; i < clause.patterns.size(); i++) {
+        for (i = 0; i < clause.getPatterns().size(); i++) {
           if (i != index) {
-            substitution1.add(link, clause.patterns.get(i).toExpression());
+            substitution1.add(link, clause.getPatterns().get(i).toExpression());
           }
           link = link.getNext();
         }
       }
 
-      myErrorReporter.report(new ConditionsError(definition.getDefCall(Sort.STD, defCallArgs1), definition.getDefCall(Sort.STD, defCallArgs2), substitution1, substitution2, evaluatedExpr1, evaluatedExpr2, clause.clause));
+      myErrorReporter.report(new ConditionsError(definition.getDefCall(Sort.STD, defCallArgs1), definition.getDefCall(Sort.STD, defCallArgs2), substitution1, substitution2, evaluatedExpr1, evaluatedExpr2, cClause));
       return false;
     } else {
       return true;
     }
   }
 
-  private static void collectPaths(List<Pattern> patterns, ExprSubstitution substitution) {
-    for (Pattern pattern : patterns) {
-      if (pattern instanceof ConstructorPattern) {
-        ConstructorPattern conPattern = (ConstructorPattern) pattern;
+  private static void collectPaths(List<ExpressionPattern> patterns, ExprSubstitution substitution) {
+    for (ExpressionPattern pattern : patterns) {
+      if (pattern instanceof ConstructorExpressionPattern) {
+        ConstructorExpressionPattern conPattern = (ConstructorExpressionPattern) pattern;
         if (conPattern.getDefinition() == Prelude.PATH_CON) {
           SingleDependentLink lamParam = new TypedSingleDependentLink(true, "i", ExpressionFactory.Interval());
           Expression lamRef = new ReferenceExpression(lamParam);
-          Map<CoreBranchKey, ElimTree> children = new HashMap<>();
-          children.put(Prelude.LEFT, new LeafElimTree(EmptyDependentLink.getInstance(), conPattern.getDataTypeArguments().get(1)));
-          children.put(Prelude.RIGHT, new LeafElimTree(EmptyDependentLink.getInstance(), conPattern.getDataTypeArguments().get(2)));
-          children.put(null, new LeafElimTree(lamParam, AppExpression.make(conPattern.getArguments().get(0).toExpression(), lamRef)));
-          substitution.add(((BindingPattern) conPattern.getArguments().get(0)).getBinding(), new LamExpression(conPattern.getSortArgument(), lamParam, new CaseExpression(false, lamParam, AppExpression.make(conPattern.getDataTypeArguments().get(0), lamRef), null, new BranchElimTree(EmptyDependentLink.getInstance(), children), Collections.singletonList(lamRef))));
+          List<ElimClause<Pattern>> clauses = new ArrayList<>(3);
+          clauses.add(new ElimClause<>(Collections.singletonList(ConstructorPattern.make(Prelude.LEFT, Collections.emptyList())), conPattern.getDataTypeArguments().get(1)));
+          clauses.add(new ElimClause<>(Collections.singletonList(ConstructorPattern.make(Prelude.RIGHT, Collections.emptyList())), conPattern.getDataTypeArguments().get(2)));
+          clauses.add(new ElimClause<>(Collections.singletonList(new BindingPattern(lamParam)), AppExpression.make(conPattern.getSubPatterns().get(0).toExpression(), lamRef)));
+          BranchElimTree elimTree = new BranchElimTree(0, true);
+          elimTree.addChild(Prelude.LEFT, new LeafElimTree(0, Collections.emptyList(), 0));
+          elimTree.addChild(Prelude.RIGHT, new LeafElimTree(0, Collections.emptyList(), 1));
+          elimTree.addChild(null, new LeafElimTree(0, null, 1));
+          substitution.add(((BindingPattern) conPattern.getSubPatterns().get(0)).getBinding(), new LamExpression(conPattern.getSortArgument(), lamParam, new CaseExpression(false, lamParam, AppExpression.make(conPattern.getDataTypeArguments().get(0), lamRef), null, new ElimBody(clauses, elimTree), Collections.singletonList(lamRef))));
         }
       }
     }
   }
 
-  public boolean check(List<ExtClause> clauses, ElimTree elimTree) {
+  public boolean check(List<ExtElimClause> clauses, List<? extends Concrete.FunctionClause> cClauses, ElimBody elimBody) {
+    assert clauses.size() <= cClauses.size();
+
     boolean ok = true;
-    for (ExtClause clause : clauses) {
-      if (!checkClause(clause, elimTree, null)) {
+    for (int i = 0; i < clauses.size(); i++) {
+      if (!checkClause(clauses.get(i), cClauses.get(i), elimBody, null)) {
         ok = false;
       }
     }
@@ -206,11 +210,11 @@ public class ConditionsChecking {
   }
 
   @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-  private boolean checkClause(ExtClause clause, ElimTree elimTree, Definition definition) {
-    if (clause.expression == null) {
+  private boolean checkClause(ExtElimClause clause, Concrete.FunctionClause cClause, ElimBody elimBody, Definition definition) {
+    if (clause.getExpression() == null) {
       return true;
     }
-    Expression expr = clause.expression.getUnderlyingExpression();
+    Expression expr = clause.getExpression().getUnderlyingExpression();
     while (expr instanceof LetExpression || expr instanceof LamExpression) {
       expr = (expr instanceof LetExpression ? ((LetExpression) expr).getExpression() : ((LamExpression) expr).getBody()).getUnderlyingExpression();
     }
@@ -219,34 +223,34 @@ public class ConditionsChecking {
     }
 
     boolean ok = true;
-    for (Pair<List<Expression>, ExprSubstitution> pair : collectPatterns(clause.patterns, clause.substitution, clause.clause)) {
-      if (!clause.substitution.isEmpty()) {
+    for (Pair<List<Expression>, ExprSubstitution> pair : collectPatterns(clause.getPatterns(), clause.getSubstitution(), cClause)) {
+      if (!clause.getSubstitution().isEmpty()) {
         for (int i = 0; i < pair.proj1.size(); i++) {
-          pair.proj1.set(i, pair.proj1.get(i).subst(clause.substitution));
+          pair.proj1.set(i, pair.proj1.get(i).subst(clause.getSubstitution()));
         }
       }
 
       Expression evaluatedExpr1;
       if (definition == null) {
-        evaluatedExpr1 = NormalizeVisitor.INSTANCE.eval(elimTree, pair.proj1, new ExprSubstitution(), LevelSubstitution.EMPTY);
+        evaluatedExpr1 = NormalizeVisitor.INSTANCE.eval(elimBody, pair.proj1, new ExprSubstitution(), LevelSubstitution.EMPTY);
       } else {
         evaluatedExpr1 = definition.getDefCall(Sort.STD, pair.proj1);
       }
-      Expression evaluatedExpr2 = clause.expression.subst(pair.proj2);
-      if (evaluatedExpr1 == null || !CompareVisitor.compare(myEquations, CMP.EQ, evaluatedExpr1, evaluatedExpr2, null, clause.clause)) {
-        List<Expression> args = new ArrayList<>(clause.patterns.size());
-        for (Pattern pattern : clause.patterns) {
+      Expression evaluatedExpr2 = clause.getExpression().subst(pair.proj2);
+      if (evaluatedExpr1 == null || !CompareVisitor.compare(myEquations, CMP.EQ, evaluatedExpr1, evaluatedExpr2, null, cClause)) {
+        List<Expression> args = new ArrayList<>();
+        for (ExpressionPattern pattern : clause.getPatterns()) {
           args.add(pattern.toExpression());
         }
-        Expression expr1 = definition == null ? new CaseExpression(false, EmptyDependentLink.getInstance(), new ErrorExpression(), null, new BranchElimTree(EmptyDependentLink.getInstance(), Collections.emptyMap()), args) : definition.getDefCall(Sort.STD, args);
-        myErrorReporter.report(new ConditionsError(expr1, clause.expression, pair.proj2, pair.proj2, evaluatedExpr1, evaluatedExpr2, clause.clause));
+        Expression expr1 = definition == null ? new CaseExpression(false, EmptyDependentLink.getInstance(), new ErrorExpression(), null, new ElimBody(Collections.emptyList(), new BranchElimTree(0, false)), args) : definition.getDefCall(Sort.STD, args);
+        myErrorReporter.report(new ConditionsError(expr1, clause.getExpression(), pair.proj2, pair.proj2, evaluatedExpr1, evaluatedExpr2, cClause));
         ok = false;
       }
     }
     return ok;
   }
 
-  private List<Pair<List<Expression>, ExprSubstitution>> collectPatterns(List<Pattern> patterns, ExprSubstitution idpSubst, Concrete.SourceNode sourceNode) {
+  private List<Pair<List<Expression>, ExprSubstitution>> collectPatterns(List<? extends ExpressionPattern> patterns, ExprSubstitution idpSubst, Concrete.SourceNode sourceNode) {
     List<Pair<List<Expression>, ExprSubstitution>> result = new ArrayList<>();
     for (int i = 0; i < patterns.size(); i++) {
       for (Pair<Expression, ExprSubstitution> pair : collectPatterns(patterns.get(i), idpSubst, sourceNode)) {
@@ -264,12 +268,12 @@ public class ConditionsChecking {
     return result;
   }
 
-  private List<Pair<Expression, ExprSubstitution>> collectPatterns(Pattern pattern, ExprSubstitution idpSubst, Concrete.SourceNode sourceNode) {
+  private List<Pair<Expression, ExprSubstitution>> collectPatterns(ExpressionPattern pattern, ExprSubstitution idpSubst, Concrete.SourceNode sourceNode) {
     if (pattern instanceof BindingPattern) {
       return Collections.emptyList();
     }
-    ConstructorPattern conPattern = (ConstructorPattern) pattern;
-    List<Pair<List<Expression>, ExprSubstitution>> collectedPatterns = collectPatterns(conPattern.getArguments(), idpSubst, sourceNode);
+    ConstructorExpressionPattern conPattern = (ConstructorExpressionPattern) pattern;
+    List<Pair<List<Expression>, ExprSubstitution>> collectedPatterns = collectPatterns(conPattern.getSubPatterns(), idpSubst, sourceNode);
     List<Pair<Expression, ExprSubstitution>> result = new ArrayList<>(collectedPatterns.size());
     for (Pair<List<Expression>, ExprSubstitution> pair : collectedPatterns) {
       result.add(new Pair<>(conPattern.toExpression(pair.proj1), pair.proj2));
@@ -280,9 +284,11 @@ public class ConditionsChecking {
     }
     Constructor constructor = (Constructor) conPattern.getDefinition();
 
+    ElimBody elimBody;
     if (constructor.getBody() instanceof IntervalElim) {
       IntervalElim elim = (IntervalElim) constructor.getBody();
-      int prefixLength = conPattern.getArguments().size() - elim.getCases().size();
+      elimBody = elim.getOtherwise();
+      int prefixLength = conPattern.getSubPatterns().size() - elim.getCases().size();
       for (int i = 0; i < elim.getCases().size(); i++) {
         if (elim.getCases().get(i).proj1 == null && elim.getCases().get(i).proj2 == null) {
           continue;
@@ -291,14 +297,14 @@ public class ConditionsChecking {
         ExprSubstitution substitution = new ExprSubstitution();
         int j = 0;
         for (DependentLink link = constructor.getParameters(); link.hasNext(); link = link.getNext(), j++) {
-          substitution.add(link, conPattern.getArguments().get(j).toExpression());
+          substitution.add(link, conPattern.getSubPatterns().get(j).toExpression());
         }
         j = 0;
         for (DependentLink link = constructor.getDataTypeParameters(); link.hasNext(); link = link.getNext(), j++) {
           substitution.add(link, conPattern.getDataTypeArguments().get(j));
         }
 
-        Pattern pattern1 = conPattern.getArguments().get(prefixLength + i);
+        ExpressionPattern pattern1 = conPattern.getSubPatterns().get(prefixLength + i);
         if (pattern1 instanceof BindingPattern) {
           if (elim.getCases().get(i).proj1 != null) {
             result.add(new Pair<>(elim.getCases().get(i).proj1.subst(substitution), new ExprSubstitution(((BindingPattern) pattern1).getBinding(), ExpressionFactory.Left())));
@@ -307,12 +313,12 @@ public class ConditionsChecking {
             result.add(new Pair<>(elim.getCases().get(i).proj2.subst(substitution), new ExprSubstitution(((BindingPattern) pattern1).getBinding(), ExpressionFactory.Right())));
           }
         } else
-        if (pattern1 instanceof ConstructorPattern && (((ConstructorPattern) pattern1).getDefinition() == Prelude.LEFT || ((ConstructorPattern) pattern1).getDefinition() == Prelude.RIGHT)) {
+        if (pattern1 instanceof ConstructorExpressionPattern && (pattern1.getDefinition() == Prelude.LEFT || pattern1.getDefinition() == Prelude.RIGHT)) {
           Expression expr;
-          if (((ConstructorPattern) pattern1).getDefinition() == Prelude.LEFT && elim.getCases().get(i).proj1 != null) {
+          if (pattern1.getDefinition() == Prelude.LEFT && elim.getCases().get(i).proj1 != null) {
             expr = elim.getCases().get(i).proj1;
           } else
-          if (((ConstructorPattern) pattern1).getDefinition() == Prelude.RIGHT && elim.getCases().get(i).proj2 != null) {
+          if (pattern1.getDefinition() == Prelude.RIGHT && elim.getCases().get(i).proj2 != null) {
             expr = elim.getCases().get(i).proj2;
           } else {
             continue;
@@ -321,13 +327,17 @@ public class ConditionsChecking {
           result.add(new Pair<>(expr.subst(substitution), new ExprSubstitution()));
         }
       }
+    } else {
+      elimBody = constructor.getBody() instanceof ElimBody ? (ElimBody) constructor.getBody() : null;
     }
 
-    for (ClauseBase clause : constructor.getClauses()) {
-      ExprSubstitution substitution1 = new ExprSubstitution();
-      ExprSubstitution substitution2 = new ExprSubstitution();
-      if (conPattern.getPatterns().unify(idpSubst, new Patterns(clause.patterns), substitution1, substitution2, myErrorReporter, sourceNode)) {
-        result.add(new Pair<>(clause.expression.subst(substitution2), substitution1));
+    if (elimBody != null) {
+      for (ElimClause<Pattern> clause : elimBody.getClauses()) {
+        ExprSubstitution substitution1 = new ExprSubstitution();
+        ExprSubstitution substitution2 = new ExprSubstitution();
+        if (ExpressionPattern.unify(conPattern.getSubPatterns(), Pattern.toExpressionPatterns(clause.getPatterns(), constructor.getParameters()), idpSubst, substitution1, substitution2, myErrorReporter, sourceNode)) {
+          result.add(new Pair<>(clause.getExpression().subst(substitution2), substitution1));
+        }
       }
     }
 

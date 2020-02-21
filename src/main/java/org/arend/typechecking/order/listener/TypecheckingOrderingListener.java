@@ -4,7 +4,6 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.context.param.TypedSingleDependentLink;
 import org.arend.core.definition.*;
-import org.arend.core.elimtree.ExtClause;
 import org.arend.core.expr.ClassCallExpression;
 import org.arend.core.expr.ErrorExpression;
 import org.arend.core.expr.PiExpression;
@@ -31,6 +30,7 @@ import org.arend.typechecking.order.Ordering;
 import org.arend.typechecking.order.PartialComparator;
 import org.arend.typechecking.order.dependency.DependencyListener;
 import org.arend.typechecking.order.dependency.DummyDependencyListener;
+import org.arend.typechecking.patternmatching.ExtElimClause;
 import org.arend.typechecking.provider.ConcreteProvider;
 import org.arend.typechecking.termination.DefinitionCallGraph;
 import org.arend.typechecking.termination.RecursiveBehavior;
@@ -231,7 +231,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
 
     definition.setRecursive(recursive);
 
-    List<ExtClause> clauses;
+    List<ExtElimClause> clauses;
     Definition typechecked;
     CheckTypeVisitor checkTypeVisitor = new CheckTypeVisitor(myState, new LinkedHashMap<>(), new LocalErrorReporter(definition.getData(), myErrorReporter), null);
     checkTypeVisitor.setListener(myTypecheckingListener);
@@ -298,7 +298,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
   @Override
   public void bodiesFound(List<Concrete.Definition> definitions) {
     Map<FunctionDefinition,Concrete.Definition> functionDefinitions = new HashMap<>();
-    Map<FunctionDefinition, List<ExtClause>> clausesMap = new HashMap<>();
+    Map<FunctionDefinition, List<ExtElimClause>> clausesMap = new HashMap<>();
     Set<DataDefinition> dataDefinitions = new HashSet<>();
     List<Concrete.Definition> orderedDefinitions = new ArrayList<>(definitions.size());
     List<Concrete.Definition> otherDefs = new ArrayList<>();
@@ -325,7 +325,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
       Pair<CheckTypeVisitor, Boolean> pair = mySuspensions.remove(definition.getData());
       if (myHeadersAreOK && pair != null) {
         typechecking.setTypechecker(pair.proj1);
-        List<ExtClause> clauses = typechecking.typecheckBody(def, definition, dataDefinitions, pair.proj2);
+        List<ExtElimClause> clauses = typechecking.typecheckBody(def, definition, dataDefinitions, pair.proj2);
         if (clauses != null) {
           functionDefinitions.put((FunctionDefinition) def, definition);
           clausesMap.put((FunctionDefinition) def, clauses);
@@ -373,10 +373,10 @@ public class TypecheckingOrderingListener implements OrderingListener {
     myCurrentDefinitions = Collections.emptyList();
   }
 
-  private void checkRecursiveFunctions(Map<FunctionDefinition,Concrete.Definition> definitions, Map<FunctionDefinition,List<ExtClause>> clauses) {
+  private void checkRecursiveFunctions(Map<FunctionDefinition,Concrete.Definition> definitions, Map<FunctionDefinition, List<ExtElimClause>> clauses) {
     DefinitionCallGraph definitionCallGraph = new DefinitionCallGraph();
     for (Map.Entry<FunctionDefinition, Concrete.Definition> entry : definitions.entrySet()) {
-      List<ExtClause> functionClauses = clauses.get(entry.getKey());
+      List<ExtElimClause> functionClauses = clauses.get(entry.getKey());
       if (functionClauses != null) {
         definitionCallGraph.add(entry.getKey(), functionClauses, definitions.keySet());
       }

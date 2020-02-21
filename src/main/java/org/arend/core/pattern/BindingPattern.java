@@ -1,6 +1,7 @@
 package org.arend.core.pattern;
 
 import org.arend.core.context.param.DependentLink;
+import org.arend.core.definition.Definition;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.ReferenceExpression;
 import org.arend.core.subst.ExprSubstitution;
@@ -8,11 +9,13 @@ import org.arend.core.subst.LevelSubstitution;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.PatternUnificationError;
+import org.arend.util.Decision;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-public class BindingPattern implements Pattern {
+public class BindingPattern implements ExpressionPattern {
   private final DependentLink myBinding;
 
   public BindingPattern(DependentLink binding) {
@@ -39,15 +42,36 @@ public class BindingPattern implements Pattern {
   }
 
   @Override
-  public MatchResult match(Expression expression, List<Expression> result) {
-    if (result != null) {
-      result.add(expression);
-    }
-    return MatchResult.OK;
+  public Definition getDefinition() {
+    return null;
   }
 
   @Override
-  public boolean unify(ExprSubstitution idpSubst, Pattern other, ExprSubstitution substitution1, ExprSubstitution substitution2, ErrorReporter errorReporter, Concrete.SourceNode sourceNode) {
+  public List<? extends Pattern> getSubPatterns() {
+    return Collections.emptyList();
+  }
+
+  @Override
+  public DependentLink replaceBindings(DependentLink link, List<Pattern> result) {
+    result.add(new BindingPattern(link));
+    return link.getNext();
+  }
+
+  @Override
+  public ExpressionPattern toExpressionPattern(Expression type) {
+    return this;
+  }
+
+  @Override
+  public Decision match(Expression expression, List<Expression> result) {
+    if (result != null) {
+      result.add(expression);
+    }
+    return Decision.YES;
+  }
+
+  @Override
+  public boolean unify(ExprSubstitution idpSubst, ExpressionPattern other, ExprSubstitution substitution1, ExprSubstitution substitution2, ErrorReporter errorReporter, Concrete.SourceNode sourceNode) {
     Expression substExpr = idpSubst == null ? null : idpSubst.get(myBinding);
     if (substExpr != null) {
       if (other instanceof BindingPattern || other instanceof EmptyPattern) {
@@ -66,12 +90,17 @@ public class BindingPattern implements Pattern {
   }
 
   @Override
-  public Pattern subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, Map<DependentLink, Pattern> patternSubst) {
+  public ExpressionPattern subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, Map<DependentLink, ExpressionPattern> patternSubst) {
     if (patternSubst == null) {
       return this;
     }
-    Pattern result = patternSubst.get(myBinding);
+    ExpressionPattern result = patternSubst.get(myBinding);
     assert result != null;
     return result;
+  }
+
+  @Override
+  public Pattern removeExpressions() {
+    return this;
   }
 }

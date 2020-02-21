@@ -7,13 +7,14 @@ import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.expr.visitor.StripVisitor;
-import org.arend.core.pattern.Pattern;
+import org.arend.core.pattern.ExpressionPattern;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.InPlaceLevelSubstVisitor;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.expr.CoreDataCallExpression;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.util.Decision;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -103,11 +104,11 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
     List<Expression> matchedParameters;
     if (constructor.getPatterns() != null) {
       matchedParameters = new ArrayList<>();
-      Pattern.MatchResult matchResult = constructor.getPatterns().match(myArguments, matchedParameters);
-      if (matchResult == Pattern.MatchResult.MAYBE) {
+      Decision matchResult = ExpressionPattern.match(constructor.getPatterns(), myArguments, matchedParameters);
+      if (matchResult == Decision.MAYBE) {
         return false;
       }
-      if (matchResult == Pattern.MatchResult.FAIL) {
+      if (matchResult == Decision.NO) {
         return true;
       }
     } else {

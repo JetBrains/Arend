@@ -3,11 +3,10 @@ package org.arend.core.subst;
 import org.arend.core.constructor.ClassConstructor;
 import org.arend.core.context.binding.EvaluatingBinding;
 import org.arend.core.context.param.DependentLink;
-import org.arend.core.elimtree.BranchElimTree;
-import org.arend.core.elimtree.ElimTree;
+import org.arend.core.definition.Constructor;
+import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
 import org.arend.core.expr.visitor.VoidExpressionVisitor;
-import org.arend.ext.core.elimtree.CoreBranchKey;
 
 import java.util.Map;
 
@@ -37,7 +36,7 @@ public class InPlaceLevelSubstVisitor extends VoidExpressionVisitor<Void> {
   @Override
   public Void visitReference(ReferenceExpression expr, Void params) {
     if (expr.getBinding() instanceof EvaluatingBinding) {
-      ((EvaluatingBinding) expr.getBinding()).subst(this);
+      expr.getBinding().subst(this);
     }
     return null;
   }
@@ -95,12 +94,11 @@ public class InPlaceLevelSubstVisitor extends VoidExpressionVisitor<Void> {
   @Override
   protected void visitElimTree(ElimTree elimTree, Void params) {
     if (elimTree instanceof BranchElimTree) {
-      for (Map.Entry<CoreBranchKey, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
+      for (Map.Entry<Constructor, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
         if (entry.getKey() instanceof ClassConstructor) {
           ((ClassConstructor) entry.getKey()).substSort(mySubstitution);
         }
       }
     }
-    super.visitElimTree(elimTree, null);
   }
 }

@@ -1,10 +1,11 @@
-package org.arend.typechecking;
+package org.arend.typechecking.doubleChecker;
 
 import org.arend.core.definition.Definition;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.term.group.Group;
+import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.error.local.LocalErrorReporter;
 
 public class CoreModuleChecker {
@@ -21,24 +22,25 @@ public class CoreModuleChecker {
   public boolean checkGroup(Group group) {
     LocatedReferable ref = group.getReferable();
     Definition def = ref instanceof TCReferable ? myState.getTypechecked((TCReferable) ref) : null;
+    boolean ok = true;
     if (def != null) {
       myChecker.setErrorReporter(new LocalErrorReporter(ref, myErrorReporter));
       if (!myChecker.check(def)) {
-        return false;
+        ok = false;
       }
     }
 
     for (Group subgroup : group.getSubgroups()) {
       if (!checkGroup(subgroup)) {
-        return false;
+        ok = false;
       }
     }
     for (Group subgroup : group.getDynamicSubgroups()) {
       if (!checkGroup(subgroup)) {
-        return false;
+        ok = false;
       }
     }
 
-    return true;
+    return ok;
   }
 }

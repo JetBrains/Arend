@@ -6,7 +6,6 @@ import org.arend.core.definition.ClassField;
 import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
-import org.arend.ext.core.elimtree.CoreBranchKey;
 import org.arend.util.Pair;
 
 import java.util.Map;
@@ -147,14 +146,16 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> {
   }
 
   protected void visitElimTree(ElimTree elimTree, P params) {
-    visitParameters(elimTree.getParameters(), params);
-    if (elimTree instanceof LeafElimTree) {
-      ((LeafElimTree) elimTree).getExpression().accept(this, params);
-    } else {
-      for (Map.Entry<CoreBranchKey, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
-        visitElimTree(entry.getValue(), params);
+  }
+
+  private void visitElimBody(ElimBody elimBody, P params) {
+    for (ElimClause clause : elimBody.getClauses()) {
+      visitParameters(clause.getParameters(), params);
+      if (clause.getExpression() != null) {
+        clause.getExpression().accept(this, params);
       }
     }
+    visitElimTree(elimBody.getElimTree(), params);
   }
 
   public void visitBody(Body body, P params) {
@@ -172,8 +173,8 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> {
 
     if (body instanceof Expression) {
       ((Expression) body).accept(this, params);
-    } else if (body instanceof ElimTree) {
-      visitElimTree((ElimTree) body, params);
+    } else if (body instanceof ElimBody) {
+      visitElimBody((ElimBody) body, params);
     } else {
       assert body == null;
     }
@@ -185,7 +186,7 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> {
       arg.accept(this, params);
     }
     visitParameters(expr.getParameters(), params);
-    visitElimTree(expr.getElimTree(), params);
+    visitElimBody(expr.getElimBody(), params);
     expr.getResultType().accept(this, params);
     if (expr.getResultTypeLevel() != null) {
       expr.getResultTypeLevel().accept(this, params);

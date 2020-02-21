@@ -13,5 +13,5 @@ public interface CoreIntervalElim extends CoreBody {
   }
 
   @Nonnull Collection<? extends CasePair> getCases();
-  @Nullable CoreElimTree getOtherwise();
+  @Nullable CoreElimBody getOtherwise();
 }

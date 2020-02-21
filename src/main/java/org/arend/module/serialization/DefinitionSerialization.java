@@ -2,17 +2,14 @@ package org.arend.module.serialization;
 
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.*;
-import org.arend.core.elimtree.Body;
-import org.arend.core.elimtree.ClauseBase;
-import org.arend.core.elimtree.ElimTree;
-import org.arend.core.elimtree.IntervalElim;
+import org.arend.core.elimtree.*;
 import org.arend.core.expr.AbsExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.PiExpression;
 import org.arend.core.pattern.BindingPattern;
-import org.arend.core.pattern.ConstructorPattern;
+import org.arend.core.pattern.ConstructorExpressionPattern;
 import org.arend.core.pattern.EmptyPattern;
-import org.arend.core.pattern.Pattern;
+import org.arend.core.pattern.ExpressionPattern;
 import org.arend.core.sort.Sort;
 import org.arend.ext.reference.Precedence;
 import org.arend.naming.reference.GlobalReferable;
@@ -155,12 +152,9 @@ public class DefinitionSerialization {
       DefinitionProtos.Definition.DataData.Constructor.Builder cBuilder = DefinitionProtos.Definition.DataData.Constructor.newBuilder();
       cBuilder.setReferable(writeReferable(constructor));
       if (constructor.getPatterns() != null) {
-        for (Pattern pattern : constructor.getPatterns().getPatternList()) {
-          cBuilder.addPattern(writePattern(defSerializer, pattern));
+        for (ExpressionPattern pattern : constructor.getPatterns()) {
+          cBuilder.addPattern(defSerializer.writePattern(pattern));
         }
-      }
-      for (ClauseBase clause : constructor.getClauses()) {
-        cBuilder.addClause(writeClause(defSerializer, clause));
       }
       cBuilder.addAllParam(defSerializer.writeParameters(constructor.getParameters()));
       if (constructor.getParametersTypecheckingOrder() != null) {
@@ -211,35 +205,6 @@ public class DefinitionSerialization {
         elementBuilder.addCoercingDef(myCallTargetIndexProvider.getDefIndex(def));
       }
       builder.addCoerceTo(elementBuilder.build());
-    }
-    return builder.build();
-  }
-
-  private DefinitionProtos.Definition.Clause writeClause(ExpressionSerialization defSerializer, ClauseBase clause) {
-    DefinitionProtos.Definition.Clause.Builder builder = DefinitionProtos.Definition.Clause.newBuilder();
-    for (Pattern pattern : clause.patterns) {
-      builder.addPattern(writePattern(defSerializer, pattern));
-    }
-    builder.setExpression(defSerializer.writeExpr(clause.expression));
-    return builder.build();
-  }
-
-  private DefinitionProtos.Definition.Pattern writePattern(ExpressionSerialization defSerializer, Pattern pattern) {
-    DefinitionProtos.Definition.Pattern.Builder builder = DefinitionProtos.Definition.Pattern.newBuilder();
-    if (pattern instanceof BindingPattern) {
-      builder.setBinding(DefinitionProtos.Definition.Pattern.Binding.newBuilder()
-        .setVar(defSerializer.writeParameter(((BindingPattern) pattern).getBinding())));
-    } else if (pattern instanceof EmptyPattern) {
-      builder.setEmpty(DefinitionProtos.Definition.Pattern.Empty.newBuilder());
-    } else if (pattern instanceof ConstructorPattern) {
-      DefinitionProtos.Definition.Pattern.Constructor.Builder pBuilder = DefinitionProtos.Definition.Pattern.Constructor.newBuilder();
-      pBuilder.setExpression(defSerializer.writeExpr(((ConstructorPattern) pattern).getDataExpression()));
-      for (Pattern patternArgument : ((ConstructorPattern) pattern).getArguments()) {
-        pBuilder.addPattern(writePattern(defSerializer, patternArgument));
-      }
-      builder.setConstructor(pBuilder.build());
-    } else {
-      throw new IllegalArgumentException();
     }
     return builder.build();
   }
@@ -311,16 +276,16 @@ public class DefinitionSerialization {
     return builder.build();
   }
 
-  private DefinitionProtos.Definition.DPattern writeDPattern(ExpressionSerialization defSerializer, Pattern pattern) {
+  private DefinitionProtos.Definition.DPattern writeDPattern(ExpressionSerialization defSerializer, ExpressionPattern pattern) {
     DefinitionProtos.Definition.DPattern.Builder builder = DefinitionProtos.Definition.DPattern.newBuilder();
     if (pattern instanceof BindingPattern) {
       builder.setBinding(defSerializer.writeBindingRef(((BindingPattern) pattern).getBinding()));
     } else if (pattern instanceof EmptyPattern) {
       throw new IllegalStateException("Empty pattern in defined constructor");
-    } else if (pattern instanceof ConstructorPattern) {
+    } else if (pattern instanceof ConstructorExpressionPattern) {
       DefinitionProtos.Definition.DPattern.Constructor.Builder pBuilder = DefinitionProtos.Definition.DPattern.Constructor.newBuilder();
-      pBuilder.setExpression(defSerializer.writeExpr(((ConstructorPattern) pattern).getDataExpression()));
-      for (Pattern patternArgument : ((ConstructorPattern) pattern).getArguments()) {
+      pBuilder.setExpression(defSerializer.writeExpr(((ConstructorExpressionPattern) pattern).getDataExpression()));
+      for (ExpressionPattern patternArgument : ((ConstructorExpressionPattern) pattern).getSubPatterns()) {
         pBuilder.addPattern(writeDPattern(defSerializer, patternArgument));
       }
       builder.setConstructor(pBuilder.build());
@@ -346,11 +311,11 @@ public class DefinitionSerialization {
         intervalBuilder.addCase(pairBuilder);
       }
       if (intervalElim.getOtherwise() != null) {
-        intervalBuilder.setOtherwise(defSerializer.writeElimTree(intervalElim.getOtherwise()));
+        intervalBuilder.setOtherwise(defSerializer.writeElimBody(intervalElim.getOtherwise()));
       }
       bodyBuilder.setIntervalElim(intervalBuilder);
-    } else if (body instanceof ElimTree) {
-      bodyBuilder.setElimTree(defSerializer.writeElimTree((ElimTree) body));
+    } else if (body instanceof ElimBody) {
+      bodyBuilder.setElimBody(defSerializer.writeElimBody((ElimBody) body));
     } else if (body instanceof Expression) {
       bodyBuilder.setExpression(defSerializer.writeExpr((Expression) body));
     } else {
