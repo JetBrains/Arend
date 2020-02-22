@@ -1,11 +1,10 @@
-package org.arend.term.expr.visitor;
+package org.arend.typechecking.subexpr;
 
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.*;
 import org.arend.frontend.reference.ConcreteLocatedReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.TypeCheckingTestCase;
-import org.arend.typechecking.visitor.CorrespondedSubExprVisitor;
 import org.arend.util.Pair;
 import org.junit.Test;
 

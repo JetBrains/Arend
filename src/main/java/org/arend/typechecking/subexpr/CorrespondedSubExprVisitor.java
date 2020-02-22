@@ -1,4 +1,4 @@
-package org.arend.typechecking.visitor;
+package org.arend.typechecking.subexpr;
 
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
@@ -109,16 +109,20 @@ public class CorrespondedSubExprVisitor implements
       LetClause coreLetClause = coreClauses.get(i);
       Concrete.LetClause exprLetClause = exprClauses.get(i);
 
-      Pair<Expression, Concrete.Expression> accepted = exprLetClause.getTerm().accept(this, coreLetClause.getExpression());
+      Pair<Expression, Concrete.Expression> accepted = visitLetClause(coreLetClause, exprLetClause);
       if (accepted != null) return accepted;
-
-      Concrete.Expression resultType = exprLetClause.getResultType();
-      if (resultType != null) {
-        accepted = resultType.accept(this, coreLetClause.getTypeExpr());
-        if (accepted != null) return accepted;
-      }
     }
     return expr.getExpression().accept(this, coreLetExpr.getExpression());
+  }
+
+  private Pair<Expression, Concrete.Expression> visitLetClause(LetClause coreLetClause, Concrete.LetClause exprLetClause) {
+    Pair<Expression, Concrete.Expression> accepted = exprLetClause.getTerm().accept(this, coreLetClause.getExpression());
+    if (accepted != null) return accepted;
+
+    Concrete.Expression resultType = exprLetClause.getResultType();
+    if (resultType != null)
+      return resultType.accept(this, coreLetClause.getTypeExpr());
+    return null;
   }
 
   @Override
@@ -281,7 +285,7 @@ public class CorrespondedSubExprVisitor implements
   @Override
   public Pair<Expression, Concrete.Expression> visitEval(Concrete.EvalExpression expr, Expression coreExpr) {
     if (matchesSubExpr(expr)) return new Pair<>(coreExpr, expr);
-    throw new IllegalStateException("Eval shouldn't appear");
+    return expr.getExpression().accept(this, coreExpr);
   }
 
   @Override
