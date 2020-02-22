@@ -8,6 +8,7 @@ import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 
 public class FindBinding {
@@ -58,7 +59,7 @@ public class FindBinding {
   }
 
   public static Expression visitLet(
-      Concrete.LetClausePattern pattern,
+      Object patternData,
       Concrete.LetExpression expr,
       LetExpression let
   ) {
@@ -68,7 +69,7 @@ public class FindBinding {
       LetClause coreLetClause = coreClauses.get(i);
       Concrete.LetClause exprLetClause = exprClauses.get(i);
 
-      if (exprLetClause.getPattern() == pattern)
+      if (Objects.equals(exprLetClause.getPattern().getData(), patternData))
         return coreLetClause.getTypeExpr();
     }
     return null;
