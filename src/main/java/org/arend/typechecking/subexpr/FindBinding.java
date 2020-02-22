@@ -25,6 +25,7 @@ public class FindBinding {
         DependentLink next = link.getNext();
         if (next instanceof EmptyDependentLink) {
           lambda = lambda.getBody().cast(LamExpression.class);
+          if (lambda == null) return null;
           return lambda.getParameters();
         } else return next;
       }
@@ -44,6 +45,7 @@ public class FindBinding {
         DependentLink next = link.getNext();
         if (next instanceof EmptyDependentLink) {
           piExpr = piExpr.getCodomain().cast(PiExpression.class);
+          if (piExpr == null) return null;
           return piExpr.getBinding();
         } else return next;
       }
@@ -81,12 +83,14 @@ public class FindBinding {
       Function<DependentLink, DependentLink> next,
       List<? extends Concrete.Parameter> parameters
   ) {
+    DependentLink last = null;
     for (Concrete.Parameter concrete : parameters)
       for (Referable ref : concrete.getReferableList()) {
-        if (ref == referable) return core;
+        if (Objects.equals(ref.getRefName(), referable.getRefName())) last = core;
         if (concrete.isExplicit() != core.isExplicit()) continue;
         core = next.apply(core);
+        if (core == null) return last;
       }
-    return null;
+    return last;
   }
 }
