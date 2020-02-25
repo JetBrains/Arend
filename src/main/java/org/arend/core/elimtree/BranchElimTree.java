@@ -148,6 +148,43 @@ public class BranchElimTree extends ElimTree {
 
   @Override
   public Expression getStuckExpression(List<? extends Expression> arguments, Expression expression) {
-    return null;
+    int index = getSkip();
+    Expression argument = arguments.get(index);
+
+    List<Expression> newArguments = getNewArguments(arguments, argument, index);
+    if (newArguments == null) {
+      return argument.getStuckExpression();
+    }
+
+    if (isSingleConstructorTree()) {
+      ElimTree elimTree = getSingleConstructorChild();
+      if (elimTree != null) {
+        return elimTree.getStuckExpression(newArguments, expression);
+      }
+    } else {
+      ConCallExpression conCall = argument.cast(ConCallExpression.class);
+      if (conCall != null) {
+        ElimTree elimTree = myChildren.get(conCall.getDefinition());
+        if (elimTree != null) {
+          return elimTree.getStuckExpression(newArguments, expression);
+        } else {
+          elimTree = myChildren.get(null);
+          return elimTree != null ? elimTree.getStuckExpression(newArguments, expression) : expression;
+        }
+      } else {
+        IntegerExpression intExpr = argument.cast(IntegerExpression.class);
+        if (intExpr != null) {
+          ElimTree elimTree = myChildren.get(intExpr.isZero() ? Prelude.ZERO : Prelude.SUC);
+          if (elimTree != null) {
+            return elimTree.getStuckExpression(newArguments, expression);
+          } else {
+            elimTree = myChildren.get(null);
+            return elimTree != null ? elimTree.getStuckExpression(newArguments, expression) : expression;
+          }
+        }
+      }
+    }
+
+    return argument.getStuckExpression();
   }
 }

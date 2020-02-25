@@ -4,7 +4,8 @@ import org.arend.core.constructor.ClassConstructor;
 import org.arend.core.context.binding.EvaluatingBinding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.Constructor;
-import org.arend.core.elimtree.*;
+import org.arend.core.elimtree.BranchElimTree;
+import org.arend.core.elimtree.ElimTree;
 import org.arend.core.expr.*;
 import org.arend.core.expr.visitor.VoidExpressionVisitor;
 
@@ -98,6 +99,7 @@ public class InPlaceLevelSubstVisitor extends VoidExpressionVisitor<Void> {
         if (entry.getKey() instanceof ClassConstructor) {
           ((ClassConstructor) entry.getKey()).substSort(mySubstitution);
         }
+        visitElimTree(entry.getValue(), null);
       }
     }
   }

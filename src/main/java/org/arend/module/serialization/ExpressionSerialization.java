@@ -201,7 +201,7 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
 
   private ExpressionProtos.ElimTree writeElimTree(ElimTree elimTree) {
     ExpressionProtos.ElimTree.Builder builder = ExpressionProtos.ElimTree.newBuilder();
-    builder.setSkip(builder.getSkip());
+    builder.setSkip(elimTree.getSkip());
     if (elimTree instanceof LeafElimTree) {
       ExpressionProtos.ElimTree.Leaf.Builder leafBuilder = ExpressionProtos.ElimTree.Leaf.newBuilder();
       List<? extends Integer> indices = ((LeafElimTree) elimTree).getArgumentIndices();
