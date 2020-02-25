@@ -438,7 +438,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
         return clause.getExpression().subst(substitution, levelSubstitution);
       }
 
-      elimTree = updateStack(stack, (BranchElimTree) elimTree);
+      elimTree = updateStack(stack, result, (BranchElimTree) elimTree);
       if (elimTree == null) {
         return null;
       }
@@ -459,7 +459,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
         return true;
       }
 
-      elimTree = updateStack(stack, (BranchElimTree) elimTree);
+      elimTree = updateStack(stack, null, (BranchElimTree) elimTree);
       if (elimTree == null) {
         if (!might) {
           return false;
@@ -470,7 +470,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
     }
   }
 
-  public ElimTree updateStack(Stack<Expression> stack, BranchElimTree branchElimTree) {
+  private ElimTree updateStack(Stack<Expression> stack, List<Expression> argList, BranchElimTree branchElimTree) {
     Expression argument = stack.peek().accept(this, NormalizationMode.WHNF); // TODO[idp]: Normalize only until idp
     ConCallExpression conCall = argument.cast(ConCallExpression.class);
     Constructor constructor = conCall == null ? null : conCall.getDefinition();
@@ -485,8 +485,9 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
       constructor = null;
     }
     if (elimTree != null) {
-      if (!branchElimTree.keepConCall()) {
-        stack.pop();
+      stack.pop();
+      if (argList != null && branchElimTree.keepConCall()) {
+        argList.add(argument);
       }
 
       List<? extends Expression> args;
