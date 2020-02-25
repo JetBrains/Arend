@@ -17,6 +17,7 @@ import org.arend.naming.reference.TCReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.Group;
 import org.arend.typechecking.TypeCheckingTestCase;
+import org.arend.typechecking.error.local.CertainTypecheckingError;
 import org.arend.typechecking.error.local.LocalErrorReporter;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.arend.util.Pair;
@@ -26,6 +27,7 @@ import java.util.*;
 
 import static org.arend.ExpressionFactory.*;
 import static org.arend.Matchers.typeMismatchError;
+import static org.arend.Matchers.typecheckingError;
 import static org.arend.core.expr.ExpressionFactory.Interval;
 import static org.arend.core.expr.ExpressionFactory.Nat;
 import static org.junit.Assert.*;
@@ -382,6 +384,7 @@ public class PatternTest extends TypeCheckingTestCase {
       "\\func f (n : Nat) : Nat\n" +
       "  | _ => 0\n" +
       "  | zero => 1", 1);
+    assertThatErrorsAre(typecheckingError(CertainTypecheckingError.Kind.REDUNDANT_CLAUSE));
   }
 
   @Test

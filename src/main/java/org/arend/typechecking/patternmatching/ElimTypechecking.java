@@ -150,6 +150,7 @@ public class ElimTypechecking {
   }
 
   public Body typecheckElim(List<? extends ElimClause<ExpressionPattern>> clauses, List<? extends Concrete.FunctionClause> funClauses, Concrete.SourceNode sourceNode, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams) {
+    myOK = true;
     myUnusedClauses = new LinkedHashSet<>(funClauses);
 
     List<ElimClause<ExpressionPattern>> intervalClauses;
@@ -200,7 +201,7 @@ public class ElimTypechecking {
       }
     }
 
-    List<IntervalElim.CasePair> cases = intervalClauses.isEmpty() ? null : clausesToIntervalElim(intervalClauses, funClauses, parameters);
+    List<IntervalElim.CasePair> cases = intervalClauses.isEmpty() ? null : clausesToIntervalElim(intervalClauses, funClauses.subList(nonIntervalClauses.size(), funClauses.size()), parameters);
     if (cases != null) {
       int i = 0;
       for (; i < cases.size(); i++) {

@@ -19,6 +19,7 @@ import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -293,7 +294,7 @@ public class ElimTest extends TypeCheckingTestCase {
       "\\func test (n m : Nat) : Nat \\elim m\n" +
         " | _ => n"
     );
-    assertEquals(new ElimBody(Collections.singletonList(new ElimClause<>(Collections.singletonList(new BindingPattern(def.getParameters().getNext())), new ReferenceExpression(def.getParameters()))), null), def.getBody());
+    assertEquals(new ElimBody(Collections.singletonList(new ElimClause<>(Arrays.asList(new BindingPattern(def.getParameters()), new BindingPattern(def.getParameters().getNext())), new ReferenceExpression(def.getParameters()))), null), def.getBody());
   }
 
   @Test
@@ -305,8 +306,8 @@ public class ElimTest extends TypeCheckingTestCase {
     );
     DependentLink nParam = DependentLink.Helper.take(def.getParameters(), 1);
     List<ElimClause<Pattern>> clauses = new ArrayList<>(2);
-    clauses.add(new ElimClause<>(Collections.singletonList(ConstructorPattern.make(Prelude.ZERO, Collections.emptyList())), new ReferenceExpression(nParam)));
-    clauses.add(new ElimClause<>(Collections.singletonList(new BindingPattern(def.getParameters().getNext())), new ReferenceExpression(nParam)));
+    clauses.add(new ElimClause<>(Arrays.asList(new BindingPattern(nParam), ConstructorPattern.make(Prelude.ZERO, Collections.emptyList())), new ReferenceExpression(nParam)));
+    clauses.add(new ElimClause<>(Arrays.asList(new BindingPattern(def.getParameters()), new BindingPattern(def.getParameters().getNext())), new ReferenceExpression(def.getParameters())));
     assertEquals(new ElimBody(clauses, null), def.getBody());
   }
 
@@ -321,8 +322,8 @@ public class ElimTest extends TypeCheckingTestCase {
     FunctionDefinition def = (FunctionDefinition) getDefinition("f");
     DependentLink nParam = DependentLink.Helper.take(def.getParameters(), 1);
     List<ElimClause<Pattern>> clauses = new ArrayList<>(3);
-    clauses.add(new ElimClause<>(Collections.singletonList(ConstructorPattern.make(getDefinition("D.A"), Collections.emptyList())), new ReferenceExpression(nParam)));
-    clauses.add(new ElimClause<>(Collections.singletonList(new BindingPattern(def.getParameters().getNext())), new ReferenceExpression(nParam)));
+    clauses.add(new ElimClause<>(Arrays.asList(new BindingPattern(nParam), ConstructorPattern.make(getDefinition("D.A"), Collections.emptyList())), new ReferenceExpression(nParam)));
+    clauses.add(new ElimClause<>(Arrays.asList(new BindingPattern(def.getParameters()), new BindingPattern(def.getParameters().getNext())), new ReferenceExpression(def.getParameters())));
     assertEquals(new ElimBody(clauses, null), def.getBody());
   }
 
