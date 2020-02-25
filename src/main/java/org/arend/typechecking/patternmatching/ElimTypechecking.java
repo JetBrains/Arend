@@ -120,17 +120,19 @@ public class ElimTypechecking {
     final Concrete.FunctionClause clause;
     final List<Integer> argIndices;
     final int numberOfFakeVars;
+    final ExprSubstitution substitution; // substitutes pattern variables which are replaced with a constructor
 
-    public ExtElimClause(List<ExpressionPattern> patterns, Expression expression, int index, Concrete.FunctionClause clause, List<Integer> argIndices, int numberOfFakeVars) {
+    public ExtElimClause(List<ExpressionPattern> patterns, Expression expression, int index, Concrete.FunctionClause clause, List<Integer> argIndices, int numberOfFakeVars, ExprSubstitution substitution) {
       super(patterns, expression);
       this.index = index;
       this.clause = clause;
       this.argIndices = argIndices;
       this.numberOfFakeVars = numberOfFakeVars;
+      this.substitution = substitution;
     }
 
     public ExtElimClause(List<ExpressionPattern> patterns, Expression expression, int index, Concrete.FunctionClause clause) {
-      this(patterns, expression, index, clause, new ArrayList<>(), 0);
+      this(patterns, expression, index, clause, new ArrayList<>(), 0, new ExprSubstitution());
     }
   }
 
@@ -567,7 +569,7 @@ public class ElimTypechecking {
       if (someConPattern.getDefinition() instanceof Constructor) {
         dataType = ((Constructor) someConPattern.getDefinition()).getDataType();
         if (dataType.hasIndexedConstructors()) {
-          DataCallExpression dataCall = (DataCallExpression) someConPattern.getDataExpression().accept(GetTypeVisitor.INSTANCE, null);
+          DataCallExpression dataCall = GetTypeVisitor.INSTANCE.visitConCall(((ConCallExpression) someConPattern.getDataExpression().subst(conClause.substitution)), null);
           conCalls = dataCall.getMatchedConstructors();
           if (conCalls == null) {
             myVisitor.getErrorReporter().report(new ImpossibleEliminationError(dataCall, conClause.clause));
@@ -682,10 +684,14 @@ public class ElimTypechecking {
 
           List<ExpressionPattern> patterns = new ArrayList<>();
           List<ExpressionPattern> oldPatterns = clause.getPatterns();
+          ExprSubstitution newSubstitution;
           if (oldPatterns.get(index) instanceof ConstructorExpressionPattern) {
             patterns.addAll(((ConstructorExpressionPattern) oldPatterns.get(index)).getSubPatterns());
+            newSubstitution = conClauseList.get(i).substitution;
           } else {
+            Expression substExpr;
             DependentLink conParameters;
+            List<Expression> arguments = new ArrayList<>(patterns.size());
             if (conCalls != null) {
               ConCallExpression conCall = null;
               for (ConCallExpression conCall1 : conCalls) {
@@ -695,11 +701,38 @@ public class ElimTypechecking {
                 }
               }
               assert conCall != null;
-              conParameters = DependentLink.Helper.subst(constructor.getParameters(), DependentLink.Helper.toSubstitution(constructor.getDataTypeParameters(), conCall.getDataTypeArguments()));
+              List<Expression> dataTypesArgs = conCall.getDataTypeArguments();
+              substExpr = ConCallExpression.make(conCall.getDefinition(), conCall.getSortArgument(), dataTypesArgs, arguments);
+              conParameters = DependentLink.Helper.subst(constructor.getParameters(), DependentLink.Helper.toSubstitution(constructor.getDataTypeParameters(), dataTypesArgs));
             } else {
               if (constructor instanceof SingleConstructor) {
                 conParameters = someConPattern.getParameters();
+                Expression someExpr = someConPattern.getDataExpression();
+                if (someExpr instanceof ClassCallExpression) {
+                  ClassCallExpression classCall = (ClassCallExpression) someExpr;
+                  Map<ClassField, Expression> implementations = new HashMap<>();
+                  DependentLink link = conParameters;
+                  for (ClassField field : classCall.getDefinition().getFields()) {
+                    if (!classCall.isImplemented(field)) {
+                      implementations.put(field, new ReferenceExpression(link));
+                      link = link.getNext();
+                    }
+                  }
+                  substExpr = new NewExpression(null, new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), implementations, Sort.PROP, UniverseKind.NO_UNIVERSES));
+                } else if (someExpr instanceof SigmaExpression) {
+                  substExpr = new TupleExpression(arguments, (SigmaExpression) someExpr);
+                  conParameters = DependentLink.Helper.copy(conParameters);
+                } else if (someExpr instanceof FunCallExpression) {
+                  substExpr = someExpr;
+                } else {
+                  throw new IllegalStateException();
+                }
               } else {
+                List<Expression> dataTypesArgs = new ArrayList<>();
+                for (Expression dataTypeArg : someConPattern.getDataTypeArguments()) {
+                  dataTypesArgs.add(dataTypeArg.subst(conClause.substitution));
+                }
+                substExpr = ConCallExpression.make(constructor, someConPattern.getSortArgument(), dataTypesArgs, arguments);
                 conParameters = DependentLink.Helper.subst(constructor.getParameters(), DependentLink.Helper.toSubstitution(constructor.getDataTypeParameters(), someConPattern.getDataTypeArguments()));
               }
             }
@@ -711,12 +744,16 @@ public class ElimTypechecking {
             }
             for (DependentLink link = conParameters; link.hasNext(); link = link.getNext()) {
               patterns.add(new BindingPattern(link));
+              arguments.add(new ReferenceExpression(link));
               numberOfFakeVars++;
             }
+
+            newSubstitution = new ExprSubstitution(conClauseList.get(i).substitution);
+            newSubstitution.addSubst(((BindingPattern) oldPatterns.get(index)).getBinding(), substExpr);
           }
 
           patterns.addAll(oldPatterns.subList(index + 1, oldPatterns.size()));
-          conClauseList.set(i, new ExtElimClause(patterns, clause.getExpression(), clause.index, clause.clause, indices, numberOfFakeVars));
+          conClauseList.set(i, new ExtElimClause(patterns, clause.getExpression(), clause.index, clause.clause, indices, numberOfFakeVars, newSubstitution));
         }
 
         ElimTree elimTree = clausesToElimTree(conClauseList, argsStackSize + index + (hasVars ? 1 : 0), myLevel == null ? 0 : numberOfIntervals + (constructor.getBody() instanceof IntervalElim ? ((IntervalElim) constructor.getBody()).getNumberOfTotalElim() : 0));
