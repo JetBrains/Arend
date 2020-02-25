@@ -16,6 +16,7 @@ import org.arend.core.sort.Sort;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.TypeCheckingTestCase;
+import org.arend.typechecking.error.local.ImpossibleEliminationError;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -23,6 +24,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.arend.ExpressionFactory.*;
+import static org.arend.Matchers.typecheckingError;
 import static org.arend.core.expr.ExpressionFactory.*;
 import static org.junit.Assert.assertEquals;
 
@@ -250,6 +252,16 @@ public class ElimTest extends TypeCheckingTestCase {
                      "  | suc x', suc y' => test (suc x') y'\n" +
                      "\n" +
                      "\\func zero-is-one : 1 = 0 => test 0 1", 2);
+  }
+
+  @Test
+  public void elimMatchError() {
+    typeCheckModule(
+      "\\data Fin Nat \\with | zero => fzero | suc n => fsuc (Fin n)\n" +
+      "\\func unsuc {n : Nat} (x : Fin n) : Fin n \\elim n, x\n" +
+      "  | _, fzero => fzero\n" +
+      "  | suc n, fsuc x => fsuc (unsuc x)", 1);
+    assertThatErrorsAre(typecheckingError(ImpossibleEliminationError.class));
   }
 
   @Test

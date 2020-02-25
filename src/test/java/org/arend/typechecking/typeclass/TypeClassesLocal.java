@@ -1,8 +1,8 @@
 package org.arend.typechecking.typeclass;
 
+import org.arend.Matchers;
 import org.arend.core.definition.DataDefinition;
 import org.arend.core.sort.Sort;
-import org.arend.typechecking.Matchers;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 

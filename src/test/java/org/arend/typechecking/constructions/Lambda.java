@@ -10,12 +10,12 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Collections;
 
-import static org.arend.ExpressionFactory.*;
 import static org.arend.ExpressionFactory.Pi;
 import static org.arend.ExpressionFactory.Universe;
+import static org.arend.ExpressionFactory.*;
+import static org.arend.Matchers.typeMismatchError;
 import static org.arend.core.expr.ExpressionFactory.Nat;
 import static org.arend.core.expr.ExpressionFactory.singleParams;
-import static org.arend.typechecking.Matchers.typeMismatchError;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 

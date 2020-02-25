@@ -110,7 +110,7 @@ public class CollectFreeVariablesVisitor extends VoidExpressionVisitor<Set<Varia
     for (ElimClause clause : expr.getElimBody().getClauses()) {
       visitParameters(clause.getParameters(), vars -> {
         if (clause.getExpression() != null) {
-          clause.getExpression().accept(this, variables);
+          clause.getExpression().accept(this, vars);
         }
       }, variables);
     }

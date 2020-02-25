@@ -3,7 +3,7 @@ package org.arend.typechecking.patternmatching;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
-import static org.arend.typechecking.Matchers.typeMismatchError;
+import static org.arend.Matchers.typeMismatchError;
 
 public class AsPatternsTest extends TypeCheckingTestCase {
   @Test

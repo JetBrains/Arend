@@ -5,8 +5,8 @@ import org.junit.Test;
 
 import java.util.Collections;
 
-import static org.arend.typechecking.Matchers.fieldsImplementation;
-import static org.arend.typechecking.Matchers.notInScope;
+import static org.arend.Matchers.fieldsImplementation;
+import static org.arend.Matchers.notInScope;
 
 public class SuperClassImplementTest extends TypeCheckingTestCase  {
   @Test

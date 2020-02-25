@@ -25,9 +25,9 @@ import org.junit.Test;
 import java.util.*;
 
 import static org.arend.ExpressionFactory.*;
+import static org.arend.Matchers.typeMismatchError;
 import static org.arend.core.expr.ExpressionFactory.Interval;
 import static org.arend.core.expr.ExpressionFactory.Nat;
-import static org.arend.typechecking.Matchers.typeMismatchError;
 import static org.junit.Assert.*;
 
 public class PatternTest extends TypeCheckingTestCase {

@@ -1,10 +1,7 @@
 package org.arend.typechecking.patternmatching;
 
 import org.arend.typechecking.TypeCheckingTestCase;
-import org.arend.typechecking.error.local.IdpPatternError;
 import org.junit.Test;
-
-import static org.arend.typechecking.Matchers.typecheckingError;
 
 public class IdpTest extends TypeCheckingTestCase {
   @Test

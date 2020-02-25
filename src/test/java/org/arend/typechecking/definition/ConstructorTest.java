@@ -3,8 +3,8 @@ package org.arend.typechecking.definition;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
-import static org.arend.typechecking.Matchers.missingClauses;
-import static org.arend.typechecking.Matchers.typeMismatchError;
+import static org.arend.Matchers.missingClauses;
+import static org.arend.Matchers.typeMismatchError;
 
 public class ConstructorTest extends TypeCheckingTestCase {
   @Test

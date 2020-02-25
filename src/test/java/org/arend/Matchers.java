@@ -1,4 +1,4 @@
-package org.arend.typechecking;
+package org.arend;
 
 import org.arend.core.expr.Expression;
 import org.arend.ext.error.GeneralError;

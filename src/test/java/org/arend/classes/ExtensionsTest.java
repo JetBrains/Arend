@@ -11,9 +11,9 @@ import org.junit.Test;
 
 import java.util.Collections;
 
+import static org.arend.Matchers.*;
 import static org.arend.core.expr.ExpressionFactory.Suc;
 import static org.arend.core.expr.ExpressionFactory.Zero;
-import static org.arend.typechecking.Matchers.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 

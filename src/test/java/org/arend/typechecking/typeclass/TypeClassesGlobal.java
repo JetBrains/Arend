@@ -6,8 +6,8 @@ import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
 import static org.arend.ExpressionFactory.DataCall;
+import static org.arend.Matchers.*;
 import static org.arend.core.expr.ExpressionFactory.Nat;
-import static org.arend.typechecking.Matchers.*;
 import static org.hamcrest.Matchers.not;
 
 public class TypeClassesGlobal extends TypeCheckingTestCase {
