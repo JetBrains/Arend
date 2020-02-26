@@ -20,7 +20,10 @@ import org.arend.core.expr.visitor.CompareVisitor;
 import org.arend.core.expr.visitor.ElimBindingVisitor;
 import org.arend.core.expr.visitor.FreeVariablesCollector;
 import org.arend.core.expr.visitor.NormalizeVisitor;
-import org.arend.core.pattern.*;
+import org.arend.core.pattern.BindingPattern;
+import org.arend.core.pattern.ConstructorExpressionPattern;
+import org.arend.core.pattern.EmptyPattern;
+import org.arend.core.pattern.ExpressionPattern;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
@@ -507,11 +510,8 @@ public class PatternTypechecking {
               return null;
             }
             Binding substVar = num == 1 ? refExpr1.getBinding() : refExpr2.getBinding();
-            Expression otherExpr = num == 1 ? expr2 : expr1;
-
-            otherExpr = ElimBindingVisitor.elimBinding(otherExpr, substVar);
-            type = ElimBindingVisitor.elimBinding(type, substVar);
-            if (otherExpr == null || type == null) {
+            Expression otherExpr = ElimBindingVisitor.elimBinding(num == 1 ? expr2 : expr1, substVar);
+            if (otherExpr == null) {
               myErrorReporter.report(new IdpPatternError(IdpPatternError.variable(substVar.getName()), dataCall, conPattern));
               return null;
             }
@@ -540,7 +540,7 @@ public class PatternTypechecking {
               if (paramLink == substVar) {
                 break;
               }
-              if (freeVars.contains(paramLink)) {
+              if (freeVars.contains(paramLink)) { // TODO[lang_ext]: check that freeVars does not contain all later vars, not only the current one
                 banVar = paramLink;
               }
               if (paramLink instanceof UntypedDependentLink) {
