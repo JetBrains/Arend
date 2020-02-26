@@ -1,7 +1,7 @@
 # Arend proof assistant
 
 [![JetBrains incubator project](https://jb.gg/badges/official.svg)](https://confluence.jetbrains.com/display/ALL/JetBrains+on+GitHub)
-[![Actions Status](https://github.com/JetBrains/Arend/gradle/badge.svg)](https://github.com/JetBrains/Arend/actions)
+[![Actions Status](https://github.com/JetBrains/Arend/workflows/gradle/badge.svg)](https://github.com/JetBrains/Arend/actions)
 [![Gitter](https://badges.gitter.im/arend-lang/community.svg)](https://gitter.im/arend-lang/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 Arend is a theorem prover based on [Homotopy Type Theory](https://ncatlab.org/nlab/show/homotopy+type+theory).
