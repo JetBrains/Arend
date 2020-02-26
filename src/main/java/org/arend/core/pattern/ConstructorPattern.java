@@ -4,6 +4,7 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.Constructor;
 import org.arend.core.definition.Definition;
 import org.arend.core.expr.*;
+import org.arend.core.subst.ExprSubstitution;
 import org.arend.prelude.Prelude;
 
 import java.util.ArrayList;
@@ -43,7 +44,7 @@ public abstract class ConstructorPattern<T> implements Pattern {
     if (type instanceof DataCallExpression && getDefinition() instanceof Constructor) {
       Constructor constructor = (Constructor) getDefinition();
       DataCallExpression dataCall = (DataCallExpression) type;
-      return new ConstructorExpressionPattern(new ConCallExpression(constructor, dataCall.getSortArgument(), dataCall.getDefCallArguments(), Collections.emptyList()), Pattern.toExpressionPatterns(mySubPatterns, constructor.getParameters()));
+      return new ConstructorExpressionPattern(new ConCallExpression(constructor, dataCall.getSortArgument(), dataCall.getDefCallArguments(), Collections.emptyList()), Pattern.toExpressionPatterns(mySubPatterns, DependentLink.Helper.subst(constructor.getParameters(), new ExprSubstitution().add(constructor.getDataTypeParameters(), dataCall.getDefCallArguments()))));
     } else if (type instanceof DataCallExpression && getDefinition() == Prelude.IDP) {
       return new ConstructorExpressionPattern(new FunCallExpression(Prelude.IDP, ((DataCallExpression) type).getSortArgument(), Collections.emptyList()), Collections.emptyList());
     } else if (type instanceof ClassCallExpression) {

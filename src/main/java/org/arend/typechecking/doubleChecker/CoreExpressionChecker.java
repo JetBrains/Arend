@@ -7,8 +7,8 @@ import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.context.param.TypedDependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
-import org.arend.core.definition.UniverseKind;
-import org.arend.core.elimtree.*;
+import org.arend.core.elimtree.ElimBody;
+import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.type.Type;
@@ -402,14 +402,13 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     return params.size() / 2 - 2;
   }
 
-  private boolean checkElimPattern(Expression type, Pattern pattern, List<Expression> result, Expression expr) {
+  private boolean checkElimPattern(Expression type, Pattern pattern, Expression errorExpr) {
     if (pattern instanceof BindingPattern) {
       Expression actualType = pattern.getFirstBinding().getTypeExpr();
       if (!new CompareVisitor(myEquations, CMP.EQ, mySourceNode).normalizedCompare(type, actualType.normalize(NormalizationMode.WHNF), Type.OMEGA)) {
-        throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(type, actualType, mySourceNode), expr));
+        throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(type, actualType, mySourceNode), errorExpr));
       }
-      addBinding(pattern.getFirstBinding(), expr);
-      result.add(new ReferenceExpression(pattern.getFirstBinding()));
+      addBinding(pattern.getFirstBinding(), errorExpr);
       return true;
     }
 
@@ -419,41 +418,27 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     }
 
     if (pattern instanceof ConstructorPattern && pattern.getDefinition() == null) {
-      List<Expression> args = new ArrayList<>();
       if (type instanceof SigmaExpression) {
-        boolean noEmpty = checkElimPatterns(((SigmaExpression) type).getParameters(), pattern.getSubPatterns(), args, expr);
-        result.add(new TupleExpression(args, (SigmaExpression) type));
-        return noEmpty;
+        return checkElimPatterns(((SigmaExpression) type).getParameters(), pattern.getSubPatterns(), new ExprSubstitution(), errorExpr);
       } else if (type instanceof ClassCallExpression) {
-        ClassCallExpression classCall = (ClassCallExpression) type;
-        boolean noEmpty = checkElimPatterns(classCall.getClassFieldParameters(), pattern.getSubPatterns(), args, expr);
-        Map<ClassField, Expression> impls = new HashMap<>();
-        ClassCallExpression newClassCall = new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), impls, Sort.PROP, UniverseKind.NO_UNIVERSES);
-        ReferenceExpression thisExpr = new ReferenceExpression(newClassCall.getThisBinding());
-        int i = 0;
-        for (ClassField field : classCall.getDefinition().getFields()) {
-          Expression impl = classCall.getImplementation(field, thisExpr);
-          impls.put(field, impl == null ? args.get(i++) : impl);
-        }
-        result.add(new NewExpression(null, newClassCall));
-        return noEmpty;
+        return checkElimPatterns(((ClassCallExpression) type).getClassFieldParameters(), pattern.getSubPatterns(), new ExprSubstitution(), errorExpr);
       } else {
-        throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(DocFactory.text("a sigma type or a class call"), type, mySourceNode), expr));
+        throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(DocFactory.text("a sigma type or a class call"), type, mySourceNode), errorExpr));
       }
     }
 
     if (!(type instanceof DataCallExpression)) {
-      throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(DocFactory.text("a data type"), type, mySourceNode), expr));
+      throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(DocFactory.text("a data type"), type, mySourceNode), errorExpr));
     }
     DataCallExpression dataCall = (DataCallExpression) type;
 
     if (pattern == EmptyPattern.INSTANCE) {
       List<ConCallExpression> conCalls = dataCall.getMatchedConstructors();
       if (conCalls == null) {
-        throw new CoreException(CoreErrorWrapper.make(new ImpossibleEliminationError(dataCall, mySourceNode), expr));
+        throw new CoreException(CoreErrorWrapper.make(new ImpossibleEliminationError(dataCall, mySourceNode), errorExpr));
       }
       if (!conCalls.isEmpty()) {
-        throw new CoreException(CoreErrorWrapper.make(new DataTypeNotEmptyError(dataCall, DataTypeNotEmptyError.getConstructors(conCalls), mySourceNode), expr));
+        throw new CoreException(CoreErrorWrapper.make(new DataTypeNotEmptyError(dataCall, DataTypeNotEmptyError.getConstructors(conCalls), mySourceNode), errorExpr));
       }
       return false;
     }
@@ -461,31 +446,29 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     assert pattern instanceof ConstructorPattern;
     ConstructorPattern conPattern = (ConstructorPattern) pattern;
     if (!(conPattern.getDefinition() instanceof Constructor)) {
-      throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Expected a constructor", mySourceNode), expr));
+      throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Expected a constructor", mySourceNode), errorExpr));
     }
 
     List<ConCallExpression> conCalls = new ArrayList<>(1);
     if (!dataCall.getMatchedConCall((Constructor) conPattern.getDefinition(), conCalls)) {
-      throw new CoreException(CoreErrorWrapper.make(new ImpossibleEliminationError(dataCall, mySourceNode), expr));
+      throw new CoreException(CoreErrorWrapper.make(new ImpossibleEliminationError(dataCall, mySourceNode), errorExpr));
     }
     if (conCalls.isEmpty()) {
-      throw new CoreException(CoreErrorWrapper.make(new DataTypeNotEmptyError(dataCall, DataTypeNotEmptyError.getConstructors(conCalls), mySourceNode), expr));
+      throw new CoreException(CoreErrorWrapper.make(new DataTypeNotEmptyError(dataCall, DataTypeNotEmptyError.getConstructors(conCalls), mySourceNode), errorExpr));
     }
 
-    boolean noEmpty = checkElimPatterns(conCalls.get(0).getDefinition().getParameters(), pattern.getSubPatterns(), conCalls.get(0).getDefCallArguments(), expr);
-    result.add(conCalls.get(0));
-    return noEmpty;
+    ConCallExpression conCall = conCalls.get(0);
+    return checkElimPatterns(DependentLink.Helper.subst(conCall.getDefinition().getParameters(), new ExprSubstitution().add(conCall.getDefinition().getDataTypeParameters(), conCall.getDataTypeArguments())), pattern.getSubPatterns(), new ExprSubstitution(), errorExpr);
   }
 
-  private boolean checkElimPatterns(DependentLink parameters, List<? extends Pattern> patterns, List<Expression> result, Expression expr) {
+  private boolean checkElimPatterns(DependentLink parameters, List<? extends Pattern> patterns, ExprSubstitution substitution, Expression errorExpr) {
     boolean noEmpty = true;
-    ExprSubstitution substitution = new ExprSubstitution();
     for (Pattern pattern : patterns) {
       if (!parameters.hasNext()) {
-        throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Too many patterns", mySourceNode), expr));
+        throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Too many patterns", mySourceNode), errorExpr));
       }
       Expression type = parameters.getTypeExpr().subst(substitution).normalize(NormalizationMode.WHNF).getUnderlyingExpression();
-      if (!checkElimPattern(type, pattern, result, expr)) {
+      if (!checkElimPattern(type, pattern, errorExpr)) {
         noEmpty = false;
       }
       substitution.add(parameters, pattern.toExpressionPattern(type).toExpression());
@@ -493,22 +476,41 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     }
 
     if (parameters.hasNext()) {
-      throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Not enough patterns", mySourceNode), expr));
+      throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Not enough patterns", mySourceNode), errorExpr));
     }
 
     return noEmpty;
   }
 
-  void checkElimBody(ElimBody elimBody, DependentLink parameters, Expression type, Expression expr, boolean isSFunc) {
-    for (ElimClause<Pattern> clause : elimBody.getClauses()) {
-      List<Expression> args = new ArrayList<>();
-      boolean noEmpty = checkElimPatterns(parameters, clause.getPatterns(), args, expr);
-      if (clause.getExpression() != null) {
-        clause.getExpression().accept(this, type.subst(new ExprSubstitution().add(parameters, args)));
-      } else if (!noEmpty) {
-        throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("The right hand side cannot be omitted without absurd pattern", mySourceNode), expr));
+  private DependentLink checkStitchedPatterns(Collection<? extends Pattern> patterns, DependentLink link, Expression errorExpr) {
+    for (Pattern pattern : patterns) {
+      if (pattern instanceof BindingPattern) {
+        if (((BindingPattern) pattern).getBinding() != link) {
+          throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("", mySourceNode), errorExpr));
+        }
+        link = link.getNext();
+      } else if (pattern instanceof ConstructorPattern) {
+        link = checkStitchedPatterns(pattern.getSubPatterns(), link, errorExpr);
+      } else if (pattern != EmptyPattern.INSTANCE) {
+        throw new IllegalStateException();
       }
-      freeDependentLink(Pattern.getFirstBinding(clause.getPatterns()));
+    }
+    return link;
+  }
+
+  void checkElimBody(ElimBody elimBody, DependentLink parameters, Expression type, Expression errorExpr, boolean isSFunc) {
+    for (ElimClause<Pattern> clause : elimBody.getClauses()) {
+      ExprSubstitution substitution = new ExprSubstitution();
+      boolean noEmpty = checkElimPatterns(parameters, clause.getPatterns(), substitution, errorExpr);
+      if (clause.getExpression() != null) {
+        clause.getExpression().accept(this, type.subst(substitution));
+      } else if (noEmpty) {
+        throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("The right hand side cannot be omitted without absurd pattern", mySourceNode), errorExpr));
+      }
+
+      DependentLink firstLink = Pattern.getFirstBinding(clause.getPatterns());
+      checkStitchedPatterns(clause.getPatterns(), firstLink, errorExpr);
+      freeDependentLink(firstLink);
     }
 
     // TODO[lang_ext]: Check coverage
