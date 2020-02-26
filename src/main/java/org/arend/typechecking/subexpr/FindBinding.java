@@ -86,6 +86,8 @@ public class FindBinding {
     DependentLink last = null;
     for (Concrete.Parameter concrete : parameters)
       for (Referable ref : concrete.getReferableList()) {
+        // In case `ref == null`, it's the last argument of a sigma
+        if (ref == null) return last;
         if (Objects.equals(ref.getRefName(), referable.getRefName())) last = core;
         if (concrete.isExplicit() != core.isExplicit()) continue;
         core = next.apply(core);

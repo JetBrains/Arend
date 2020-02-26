@@ -50,7 +50,7 @@ public class FindBindingTest extends TypeCheckingTestCase {
   public void let() {
     Concrete.LetExpression xyx = (Concrete.LetExpression) resolveNamesExpr("\\let | a => 1 \\in a");
     Expression let = FindBinding.visitLet(
-        xyx.getClauses().get(0).getPattern(),
+        xyx.getClauses().get(0).getPattern().getData(),
         xyx, c(typeCheckExpr(xyx, null).expression));
     assertNotNull(let);
     assertEquals("Nat", let.toString());
