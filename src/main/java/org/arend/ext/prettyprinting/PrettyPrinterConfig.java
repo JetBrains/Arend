@@ -15,7 +15,6 @@ public interface PrettyPrinterConfig {
   default EnumSet<PrettyPrinterFlag> getExpressionFlags() {
     return EnumSet.of(
       PrettyPrinterFlag.SHOW_COERCE_DEFINITIONS,
-      PrettyPrinterFlag.SHOW_INFERENCE_LEVEL_VARS,
       PrettyPrinterFlag.SHOW_IMPLICIT_ARGS,
       PrettyPrinterFlag.SHOW_FIELD_INSTANCE,
       PrettyPrinterFlag.SHOW_TYPES_IN_LAM,

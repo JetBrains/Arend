@@ -63,7 +63,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
         @Nonnull
         @Override
         public EnumSet<PrettyPrinterFlag> getExpressionFlags() {
-          return EnumSet.of(PrettyPrinterFlag.SHOW_INFERENCE_LEVEL_VARS);
+          return EnumSet.of(PrettyPrinterFlag.SHOW_LEVELS);
         }
       }, null, new ReferableRenamer()).visitLevel(level);
   }
@@ -168,6 +168,11 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     return cVar(referable == null ? new NamedUnresolvedReference(null, "\\this") : referable);
   }
 
+  private Concrete.ReferenceExpression makeReference(DefCallExpression defCall) {
+    Referable ref = defCall.getDefinition().getReferable();
+    return hasFlag(PrettyPrinterFlag.SHOW_LEVELS) ? cDefCall(ref, visitLevelNull(defCall.getSortArgument().getPLevel()), visitLevelNull(defCall.getSortArgument().getHLevel())) : cVar(ref);
+  }
+
   @Override
   public Concrete.Expression visitDefCall(DefCallExpression expr, Void params) {
     if (expr.getDefinition().isHideable() && !hasFlag(PrettyPrinterFlag.SHOW_COERCE_DEFINITIONS)) {
@@ -181,7 +186,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     }
 
     int skip = hasFlag(PrettyPrinterFlag.SHOW_CON_PARAMS) || !(expr.getDefinition() instanceof DConstructor) ? 0 : ((DConstructor) expr.getDefinition()).getNumberOfParameters();
-    return visitParameters(makeReference(expr.getDefinition().getReferable()), DependentLink.Helper.get(expr.getDefinition().getParameters(), skip), skip == 0 ? expr.getDefCallArguments() : expr.getDefCallArguments().subList(skip, expr.getDefCallArguments().size()));
+    return visitParameters(makeReference(expr), DependentLink.Helper.get(expr.getDefinition().getParameters(), skip), skip == 0 ? expr.getDefCallArguments() : expr.getDefCallArguments().subList(skip, expr.getDefCallArguments().size()));
   }
 
   @Override
@@ -190,7 +195,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       return expr.getArgument().accept(this, null);
     }
 
-    Concrete.ReferenceExpression result = makeReference(expr.getDefinition().getReferable());
+    Concrete.ReferenceExpression result = makeReference(expr);
     if (hasFlag(PrettyPrinterFlag.SHOW_FIELD_INSTANCE)) {
       ReferenceExpression refExpr = expr.getArgument().cast(ReferenceExpression.class);
       if (refExpr != null && refExpr.getBinding().isHidden()) {
@@ -209,7 +214,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   @Override
   public Concrete.Expression visitConCall(ConCallExpression expr, Void params) {
-    Concrete.Expression result = makeReference(expr.getDefinition().getReferable());
+    Concrete.Expression result = makeReference(expr);
     if (expr.getDefinition().status().headerIsOK() && hasFlag(PrettyPrinterFlag.SHOW_CON_PARAMS)) {
       List<Concrete.Argument> arguments = new ArrayList<>(expr.getDataTypeArguments().size());
       for (Expression arg : expr.getDataTypeArguments()) {
@@ -249,7 +254,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   public Concrete.Expression visitClassCall(ClassCallExpression expr, Void params) {
     List<Concrete.Argument> arguments = new ArrayList<>();
     List<Concrete.ClassFieldImpl> statements = visitClassFieldImpls(expr, arguments);
-    Concrete.Expression defCallExpr = Concrete.AppExpression.make(null, makeReference(expr.getDefinition().getReferable()), arguments);
+    Concrete.Expression defCallExpr = Concrete.AppExpression.make(null, makeReference(expr), arguments);
     if (statements.isEmpty()) {
       return defCallExpr;
     } else {
@@ -423,7 +428,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   }
 
   private Concrete.LevelExpression visitLevelNull(Level level) {
-    return level.isVarOnly() ? null : visitLevel(level);
+    return level.isClosed() || !level.isVarOnly() && hasFlag(PrettyPrinterFlag.SHOW_LEVELS) ? visitLevel(level) : null;
   }
 
   private Concrete.Expression visitSort(Sort sort) {
@@ -444,7 +449,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     } else if (level.getVar() == LevelVariable.HVAR) {
       result = new Concrete.HLevelExpression(null);
     } else if (level.getVar() instanceof InferenceLevelVariable) {
-      if (!hasFlag(PrettyPrinterFlag.SHOW_INFERENCE_LEVEL_VARS)) {
+      if (!hasFlag(PrettyPrinterFlag.SHOW_LEVELS)) {
         return null;
       }
       result = new Concrete.InferVarLevelExpression(null, (InferenceLevelVariable) level.getVar());

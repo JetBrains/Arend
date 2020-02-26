@@ -1,9 +1,11 @@
-package org.arend.typechecking.visitor;
+package org.arend.typechecking.subexpr;
 
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
+import org.arend.naming.reference.ClassReferable;
+import org.arend.naming.reference.FieldReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteExpressionVisitor;
@@ -107,16 +109,20 @@ public class CorrespondedSubExprVisitor implements
       LetClause coreLetClause = coreClauses.get(i);
       Concrete.LetClause exprLetClause = exprClauses.get(i);
 
-      Pair<Expression, Concrete.Expression> accepted = exprLetClause.getTerm().accept(this, coreLetClause.getExpression());
+      Pair<Expression, Concrete.Expression> accepted = visitLetClause(coreLetClause, exprLetClause);
       if (accepted != null) return accepted;
-
-      Concrete.Expression resultType = exprLetClause.getResultType();
-      if (resultType != null) {
-        accepted = resultType.accept(this, coreLetClause.getTypeExpr());
-        if (accepted != null) return accepted;
-      }
     }
     return expr.getExpression().accept(this, coreLetExpr.getExpression());
+  }
+
+  private Pair<Expression, Concrete.Expression> visitLetClause(LetClause coreLetClause, Concrete.LetClause exprLetClause) {
+    Pair<Expression, Concrete.Expression> accepted = exprLetClause.getTerm().accept(this, coreLetClause.getExpression());
+    if (accepted != null) return accepted;
+
+    Concrete.Expression resultType = exprLetClause.getResultType();
+    if (resultType != null)
+      return resultType.accept(this, coreLetClause.getTypeExpr());
+    return null;
   }
 
   @Override
@@ -279,7 +285,7 @@ public class CorrespondedSubExprVisitor implements
   @Override
   public Pair<Expression, Concrete.Expression> visitEval(Concrete.EvalExpression expr, Expression coreExpr) {
     if (matchesSubExpr(expr)) return new Pair<>(coreExpr, expr);
-    throw new IllegalStateException("Eval shouldn't appear");
+    return expr.getExpression().accept(this, coreExpr);
   }
 
   @Override
@@ -292,12 +298,25 @@ public class CorrespondedSubExprVisitor implements
       Pair<Expression, Concrete.Expression> field = visitStatement(implementedHere, statement);
       if (field != null) return field;
     }
-    return null;
+    return expr.getBaseClassExpression().accept(this, coreClassExpr.getThisBinding().getTypeExpr());
   }
 
   private Pair<Expression, Concrete.Expression> visitStatement(Map<ClassField, Expression> implementedHere, Concrete.ClassFieldImpl statement) {
     Referable implementedField = statement.getImplementedField();
     if (implementedField == null) return null;
+    if (implementedField instanceof ClassReferable) {
+      Collection<? extends FieldReferable> fields = ((ClassReferable) implementedField).getFieldReferables();
+      return implementedHere.entrySet()
+          .stream()
+          // The suppressed warning presents here, but it's considered safe.
+          .filter(entry -> fields.contains(entry.getKey().getReferable()))
+          .filter(entry -> entry.getValue() instanceof FieldCallExpression)
+          .findFirst()
+          .map(Map.Entry::getValue)
+          .map(e -> e.cast(FieldCallExpression.class))
+          .map(e -> statement.implementation.accept(this, e.getArgument()))
+          .orElse(null);
+    }
     return implementedHere.entrySet()
         .stream()
         .filter(entry -> entry.getKey().getReferable() == implementedField)

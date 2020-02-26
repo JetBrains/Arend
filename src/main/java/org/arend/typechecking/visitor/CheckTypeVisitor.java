@@ -1588,6 +1588,10 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     }
 
     DependentLink sigmaParams = sigmaExpr.getParameters();
+    if (expr.getField() < 0) {
+      errorReporter.report(new TypecheckingError("Index " + (expr.getField() +1) + " is too small; the lower bound of projection index is 1", expr));
+      return null;
+    }
     DependentLink fieldLink = DependentLink.Helper.get(sigmaParams, expr.getField());
     if (!fieldLink.hasNext()) {
       errorReporter.report(new TypecheckingError("Index " + (expr.getField() + 1) + " is out of range; the number of parameters is " + DependentLink.Helper.size(sigmaParams), expr));
