@@ -83,14 +83,13 @@ public class FindBinding {
       Function<DependentLink, DependentLink> next,
       List<? extends Concrete.Parameter> parameters
   ) {
-    DependentLink last = null;
     for (Concrete.Parameter concrete : parameters)
       for (Referable ref : concrete.getReferableList()) {
-        if (Objects.equals(ref.getRefName(), referable.getRefName())) last = core;
+        if (ref == referable) return core;
         if (concrete.isExplicit() != core.isExplicit()) continue;
         core = next.apply(core);
-        if (core == null) return last;
+        if (core == null) return null;
       }
-    return last;
+    return null;
   }
 }
