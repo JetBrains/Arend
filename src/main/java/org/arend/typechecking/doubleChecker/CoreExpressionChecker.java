@@ -16,10 +16,7 @@ import org.arend.core.expr.visitor.CompareVisitor;
 import org.arend.core.expr.visitor.ElimBindingVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.FreeVariablesCollector;
-import org.arend.core.pattern.BindingPattern;
-import org.arend.core.pattern.ConstructorPattern;
-import org.arend.core.pattern.EmptyPattern;
-import org.arend.core.pattern.Pattern;
+import org.arend.core.pattern.*;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
@@ -509,7 +506,6 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
   }
 
   private boolean checkElimPatterns(DependentLink parameters, List<? extends Pattern> patterns, ExprSubstitution substitution, DependentLink firstBinding, ExprSubstitution idpSubst, List<Pair<Expression,Expression>> types, Expression errorExpr) {
-    boolean noEmpty = true;
     for (Pattern pattern : patterns) {
       if (!parameters.hasNext()) {
         throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Too many patterns", mySourceNode), errorExpr));
@@ -517,11 +513,18 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       Expression type = parameters.getTypeExpr().subst(substitution).normalize(NormalizationMode.WHNF).getUnderlyingExpression();
       ExprSubstitution varSubst = new ExprSubstitution();
       if (!checkElimPattern(type, pattern, firstBinding, varSubst, types, errorExpr)) {
-        noEmpty = false;
+        return false;
       }
       substitution.addSubst(varSubst);
       idpSubst.addSubst(varSubst);
-      substitution.add(parameters, pattern.toExpressionPattern(type).toExpression());
+      ExpressionPattern exprPattern = pattern.toExpressionPattern(type);
+      if (exprPattern == null) {
+        throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Cannot convert pattern", mySourceNode), errorExpr));
+      }
+      Expression expression = exprPattern.toExpression();
+      if (expression != null) {
+        substitution.add(parameters, expression);
+      }
       parameters = parameters.getNext();
     }
 
@@ -529,7 +532,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Not enough patterns", mySourceNode), errorExpr));
     }
 
-    return noEmpty;
+    return true;
   }
 
   private DependentLink checkStitchedPatterns(Collection<? extends Pattern> patterns, DependentLink link, Expression errorExpr) {
@@ -563,11 +566,13 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
           throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(expectedType, pair.proj1, mySourceNode), errorExpr));
         }
       }
-      if (clause.getExpression() != null) {
-        substitution.addSubst(idpSubst);
-        clause.getExpression().accept(this, type.subst(substitution));
-      } else if (noEmpty) {
-        throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("The right hand side cannot be omitted without absurd pattern", mySourceNode), errorExpr));
+      if (noEmpty) {
+        if (clause.getExpression() != null) {
+          substitution.addSubst(idpSubst);
+          clause.getExpression().accept(this, type.subst(substitution));
+        } else {
+          throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("The right hand side cannot be omitted without absurd pattern", mySourceNode), errorExpr));
+        }
       }
 
       freeDependentLink(firstBinding);
