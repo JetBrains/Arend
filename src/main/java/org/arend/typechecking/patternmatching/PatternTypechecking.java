@@ -540,7 +540,7 @@ public class PatternTypechecking {
               if (paramLink == substVar) {
                 break;
               }
-              if (freeVars.contains(paramLink)) { // TODO[lang_ext]: check that freeVars does not contain all later vars, not only the current one
+              if (freeVars.contains(paramLink)) {
                 banVar = paramLink;
               }
               if (paramLink instanceof UntypedDependentLink) {

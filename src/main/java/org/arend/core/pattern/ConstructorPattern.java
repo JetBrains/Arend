@@ -8,6 +8,7 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.prelude.Prelude;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -44,17 +45,33 @@ public abstract class ConstructorPattern<T> implements Pattern {
     if (type instanceof DataCallExpression && getDefinition() instanceof Constructor) {
       Constructor constructor = (Constructor) getDefinition();
       DataCallExpression dataCall = (DataCallExpression) type;
-      return new ConstructorExpressionPattern(new ConCallExpression(constructor, dataCall.getSortArgument(), dataCall.getDefCallArguments(), Collections.emptyList()), Pattern.toExpressionPatterns(mySubPatterns, DependentLink.Helper.subst(constructor.getParameters(), new ExprSubstitution().add(constructor.getDataTypeParameters(), dataCall.getDefCallArguments()))));
+      List<ExpressionPattern> subPatterns = Pattern.toExpressionPatterns(mySubPatterns, DependentLink.Helper.subst(constructor.getParameters(), new ExprSubstitution().add(constructor.getDataTypeParameters(), dataCall.getDefCallArguments())));
+      if (subPatterns == null) {
+        return null;
+      }
+      return new ConstructorExpressionPattern(new ConCallExpression(constructor, dataCall.getSortArgument(), dataCall.getDefCallArguments(), Collections.emptyList()), subPatterns);
     } else if (type instanceof DataCallExpression && getDefinition() == Prelude.IDP) {
-      return new ConstructorExpressionPattern(new FunCallExpression(Prelude.IDP, ((DataCallExpression) type).getSortArgument(), Collections.emptyList()), Collections.emptyList());
+      FunCallExpression equality = type.toEquality();
+      if (equality == null) {
+        return null;
+      }
+      return new ConstructorExpressionPattern(new FunCallExpression(Prelude.IDP, equality.getSortArgument(), Arrays.asList(equality.getDefCallArguments().get(0), equality.getDefCallArguments().get(1))), Collections.emptyList());
     } else if (type instanceof ClassCallExpression) {
       ClassCallExpression classCall = (ClassCallExpression) type;
-      return new ConstructorExpressionPattern(classCall, Pattern.toExpressionPatterns(mySubPatterns, classCall.getClassFieldParameters()));
+      List<ExpressionPattern> subPatterns = Pattern.toExpressionPatterns(mySubPatterns, classCall.getClassFieldParameters());
+      if (subPatterns == null) {
+        return null;
+      }
+      return new ConstructorExpressionPattern(classCall, subPatterns);
     } else if (type instanceof SigmaExpression) {
       SigmaExpression sigma = (SigmaExpression) type;
-      return new ConstructorExpressionPattern(sigma, Pattern.toExpressionPatterns(mySubPatterns, sigma.getParameters()));
+      List<ExpressionPattern> subPatterns = Pattern.toExpressionPatterns(mySubPatterns, sigma.getParameters());
+      if (subPatterns == null) {
+        return null;
+      }
+      return new ConstructorExpressionPattern(sigma, subPatterns);
     } else {
-      throw new IllegalStateException();
+      return null;
     }
   }
 

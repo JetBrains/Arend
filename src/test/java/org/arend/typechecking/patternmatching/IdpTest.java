@@ -112,6 +112,13 @@ public class IdpTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void substError2() {
+    typeCheckDef(
+      "\\func f {A : \\Type} (B : A -> \\Type) {a : A} (b : B a) {a' : Nat -> A} (q : b = b) (p : a' 0 = a) : Nat \\elim p\n" +
+      "  | idp => 0", 1);
+  }
+
+  @Test
   public void chooseVarTest() {
     typeCheckModule(
       "\\func f {A : \\Type} (B : A -> \\Type) {a : A} (b : B a) {a' : A} (p : a = a') : B a' \\elim p\n" +

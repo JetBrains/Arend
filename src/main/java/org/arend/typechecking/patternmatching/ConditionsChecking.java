@@ -22,7 +22,10 @@ import org.arend.typechecking.error.local.ConditionsError;
 import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.util.Pair;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 
 public class ConditionsChecking {
   private final Equations myEquations;
@@ -335,7 +338,7 @@ public class ConditionsChecking {
       for (ElimClause<Pattern> clause : elimBody.getClauses()) {
         ExprSubstitution substitution1 = new ExprSubstitution();
         ExprSubstitution substitution2 = new ExprSubstitution();
-        if (ExpressionPattern.unify(conPattern.getSubPatterns(), Pattern.toExpressionPatterns(clause.getPatterns(), constructor.getParameters()), idpSubst, substitution1, substitution2, myErrorReporter, sourceNode)) {
+        if (ExpressionPattern.unify(conPattern.getSubPatterns(), Objects.requireNonNull(Pattern.toExpressionPatterns(clause.getPatterns(), constructor.getParameters())), idpSubst, substitution1, substitution2, myErrorReporter, sourceNode)) {
           result.add(new Pair<>(clause.getExpression().subst(substitution2), substitution1));
         }
       }

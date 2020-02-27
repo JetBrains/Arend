@@ -35,6 +35,7 @@ import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.*;
 import org.arend.typechecking.implicitargs.equations.Equations;
+import org.arend.util.Pair;
 
 import java.util.*;
 
@@ -401,15 +402,13 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     return params.size() / 2 - 2;
   }
 
-  private boolean checkElimPattern(Expression type, Pattern pattern, DependentLink firstBinding, ExprSubstitution idpSubst, Expression errorExpr) {
+  private boolean checkElimPattern(Expression type, Pattern pattern, DependentLink firstBinding, ExprSubstitution idpSubst, List<Pair<Expression,Expression>> types, Expression errorExpr) {
     if (pattern instanceof BindingPattern) {
       Expression actualType = pattern.getFirstBinding().getTypeExpr();
       if (pattern.getFirstBinding() instanceof TypedDependentLink) {
         actualType.accept(this, Type.OMEGA);
       }
-      if (!new CompareVisitor(myEquations, CMP.EQ, mySourceNode).normalizedCompare(type, actualType.normalize(NormalizationMode.WHNF), Type.OMEGA)) {
-        throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(type, actualType, mySourceNode), errorExpr));
-      }
+      types.add(new Pair<>(actualType, type));
       addBinding(pattern.getFirstBinding(), errorExpr);
       return true;
     }
@@ -444,17 +443,32 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       if (otherExpr == null) {
         throw new CoreException(CoreErrorWrapper.make(new IdpPatternError(IdpPatternError.variable(var.getName()), (DataCallExpression) type, mySourceNode), errorExpr));
       }
-      Set<Binding> freeVars = FreeVariablesCollector.getFreeVariables(otherExpr);
-      // TODO[lang_ext]: Check freeVars
 
+      Set<Binding> freeVars = FreeVariablesCollector.getFreeVariables(otherExpr);
+      Binding banVar = null;
+      List<DependentLink> params = DependentLink.Helper.toList(firstBinding);
+      for (int i = params.size() - 1; i >= 0; i--) {
+        DependentLink paramLink = params.get(i);
+        if (paramLink == var) {
+          break;
+        }
+        if (freeVars.contains(paramLink)) {
+          banVar = paramLink;
+        }
+        if (paramLink instanceof TypedDependentLink && banVar != null && paramLink.getTypeExpr().findBinding(var)) {
+          throw new CoreException(CoreErrorWrapper.make(new IdpPatternError(IdpPatternError.subst(var.getName(), paramLink.getName(), banVar.getName()), null, mySourceNode), errorExpr));
+        }
+      }
+
+      idpSubst.add(var, otherExpr);
       return true;
     }
 
     if (pattern instanceof ConstructorPattern && pattern.getDefinition() == null) {
       if (type instanceof SigmaExpression) {
-        return checkElimPatterns(((SigmaExpression) type).getParameters(), pattern.getSubPatterns(), new ExprSubstitution(), firstBinding, idpSubst, errorExpr);
+        return checkElimPatterns(((SigmaExpression) type).getParameters(), pattern.getSubPatterns(), new ExprSubstitution(), firstBinding, idpSubst, types, errorExpr);
       } else if (type instanceof ClassCallExpression) {
-        return checkElimPatterns(((ClassCallExpression) type).getClassFieldParameters(), pattern.getSubPatterns(), new ExprSubstitution(), firstBinding, idpSubst, errorExpr);
+        return checkElimPatterns(((ClassCallExpression) type).getClassFieldParameters(), pattern.getSubPatterns(), new ExprSubstitution(), firstBinding, idpSubst, types, errorExpr);
       } else {
         throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(DocFactory.text("a sigma type or a class call"), type, mySourceNode), errorExpr));
       }
@@ -491,20 +505,22 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     }
 
     ConCallExpression conCall = conCalls.get(0);
-    return checkElimPatterns(DependentLink.Helper.subst(conCall.getDefinition().getParameters(), new ExprSubstitution().add(conCall.getDefinition().getDataTypeParameters(), conCall.getDataTypeArguments())), pattern.getSubPatterns(), new ExprSubstitution(), firstBinding, idpSubst, errorExpr);
+    return checkElimPatterns(DependentLink.Helper.subst(conCall.getDefinition().getParameters(), new ExprSubstitution().add(conCall.getDefinition().getDataTypeParameters(), conCall.getDataTypeArguments())), pattern.getSubPatterns(), new ExprSubstitution(), firstBinding, idpSubst, types, errorExpr);
   }
 
-  private boolean checkElimPatterns(DependentLink parameters, List<? extends Pattern> patterns, ExprSubstitution substitution, DependentLink firstBinding, ExprSubstitution idpSubst, Expression errorExpr) {
+  private boolean checkElimPatterns(DependentLink parameters, List<? extends Pattern> patterns, ExprSubstitution substitution, DependentLink firstBinding, ExprSubstitution idpSubst, List<Pair<Expression,Expression>> types, Expression errorExpr) {
     boolean noEmpty = true;
     for (Pattern pattern : patterns) {
       if (!parameters.hasNext()) {
         throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Too many patterns", mySourceNode), errorExpr));
       }
       Expression type = parameters.getTypeExpr().subst(substitution).normalize(NormalizationMode.WHNF).getUnderlyingExpression();
-      if (!checkElimPattern(type, pattern, firstBinding, idpSubst, errorExpr)) {
+      ExprSubstitution varSubst = new ExprSubstitution();
+      if (!checkElimPattern(type, pattern, firstBinding, varSubst, types, errorExpr)) {
         noEmpty = false;
       }
-      substitution.addSubst(idpSubst);
+      substitution.addSubst(varSubst);
+      idpSubst.addSubst(varSubst);
       substitution.add(parameters, pattern.toExpressionPattern(type).toExpression());
       parameters = parameters.getNext();
     }
@@ -539,7 +555,14 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
       ExprSubstitution substitution = new ExprSubstitution();
       ExprSubstitution idpSubst = new ExprSubstitution();
-      boolean noEmpty = checkElimPatterns(parameters, clause.getPatterns(), substitution, firstBinding, idpSubst, errorExpr);
+      List<Pair<Expression,Expression>> types = new ArrayList<>();
+      boolean noEmpty = checkElimPatterns(parameters, clause.getPatterns(), substitution, firstBinding, idpSubst, types, errorExpr);
+      for (Pair<Expression,Expression> pair : types) {
+        Expression expectedType = pair.proj2.subst(idpSubst);
+        if (!new CompareVisitor(myEquations, CMP.EQ, mySourceNode).normalizedCompare(expectedType, pair.proj1.normalize(NormalizationMode.WHNF), Type.OMEGA)) {
+          throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(expectedType, pair.proj1, mySourceNode), errorExpr));
+        }
+      }
       if (clause.getExpression() != null) {
         substitution.addSubst(idpSubst);
         clause.getExpression().accept(this, type.subst(substitution));

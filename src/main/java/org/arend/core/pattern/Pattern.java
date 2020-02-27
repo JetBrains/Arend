@@ -4,6 +4,7 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.definition.Definition;
 import org.arend.core.expr.Expression;
+import org.arend.core.subst.ExprSubstitution;
 import org.arend.ext.core.ops.NormalizationMode;
 
 import java.util.ArrayList;
@@ -47,15 +48,23 @@ public interface Pattern {
   }
 
   static List<ExpressionPattern> toExpressionPatterns(List<? extends Pattern> patterns, DependentLink link) {
+    ExprSubstitution substitution = new ExprSubstitution();
     List<ExpressionPattern> result = new ArrayList<>();
     for (Pattern pattern : patterns) {
+      ExpressionPattern exprPattern;
       if (pattern instanceof ExpressionPattern) {
-        result.add((ExpressionPattern) pattern);
+        exprPattern = (ExpressionPattern) pattern;
       } else if (pattern instanceof ConstructorPattern) {
-        result.add(pattern.toExpressionPattern(link.getTypeExpr().normalize(NormalizationMode.WHNF).getUnderlyingExpression()));
+        exprPattern = pattern.toExpressionPattern(link.getTypeExpr().subst(substitution).normalize(NormalizationMode.WHNF).getUnderlyingExpression());
+        if (exprPattern == null) {
+          return null;
+        }
       } else {
         throw new IllegalStateException();
       }
+
+      substitution.add(link, exprPattern.toExpression());
+      result.add(exprPattern);
       link = link.getNext();
     }
     return result;
