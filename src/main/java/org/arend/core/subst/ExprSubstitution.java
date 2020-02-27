@@ -34,6 +34,10 @@ public class ExprSubstitution {
     return mySubstExprs.isEmpty();
   }
 
+  public int size() {
+    return mySubstExprs.size();
+  }
+
   public Expression get(Variable binding)  {
     return mySubstExprs.get(binding);
   }

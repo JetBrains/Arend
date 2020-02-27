@@ -337,7 +337,7 @@ public class PatternTypechecking {
   private Result doTypechecking(List<? extends Concrete.Pattern> patterns, DependentLink parameters, LinkList linkList, ExprSubstitution paramsSubst, ExprSubstitution totalSubst, Concrete.SourceNode sourceNode, boolean withElim) {
     List<ExpressionPattern> result = new ArrayList<>();
     List<Expression> exprs = new ArrayList<>();
-    ExprSubstitution varSubst = null;
+    ExprSubstitution varSubst = new ExprSubstitution();
 
     for (Concrete.Pattern pattern : patterns) {
       if (!parameters.hasNext()) {
@@ -413,11 +413,12 @@ public class PatternTypechecking {
           if (conResult == null) {
             return null;
           }
+          varSubst.addSubst(conResult.varSubst);
           listSubst(result, exprs, conResult.varSubst);
 
           ConstructorExpressionPattern newPattern = sigmaExpr != null
-            ? new ConstructorExpressionPattern(conResult.varSubst != null ? (SigmaExpression) new SubstVisitor(conResult.varSubst, LevelSubstitution.EMPTY).visitSigma(sigmaExpr, null) : sigmaExpr, conResult.patterns)
-            : new ConstructorExpressionPattern(conResult.varSubst != null ? (ClassCallExpression) new SubstVisitor(conResult.varSubst, LevelSubstitution.EMPTY).visitClassCall(classCall, null) : classCall, conResult.patterns);
+            ? new ConstructorExpressionPattern(!conResult.varSubst.isEmpty() ? (SigmaExpression) new SubstVisitor(conResult.varSubst, LevelSubstitution.EMPTY).visitSigma(sigmaExpr, null) : sigmaExpr, conResult.patterns)
+            : new ConstructorExpressionPattern(!conResult.varSubst.isEmpty() ? (ClassCallExpression) new SubstVisitor(conResult.varSubst, LevelSubstitution.EMPTY).visitClassCall(classCall, null) : classCall, conResult.patterns);
           result.add(newPattern);
           if (conResult.exprs == null) {
             exprs = null;
@@ -523,11 +524,7 @@ public class PatternTypechecking {
             substitution.add(link, otherExpr);
             link = link.getNext();
 
-            if (varSubst == null) {
-              varSubst = new ExprSubstitution(substVar, otherExpr);
-            } else {
-              varSubst.addSubst(substVar, otherExpr);
-            }
+            varSubst.addSubst(substVar, otherExpr);
             if (totalSubst != null) {
               totalSubst.addSubst(substVar, otherExpr);
             }
@@ -581,7 +578,13 @@ public class PatternTypechecking {
           if (conResult == null) {
             return null;
           }
+          varSubst.addSubst(conResult.varSubst);
           listSubst(result, exprs, conResult.varSubst);
+          if (!conResult.varSubst.isEmpty()) {
+            for (int i = 0; i < args.size(); i++) {
+              args.set(i, args.get(i).subst(conResult.varSubst));
+            }
+          }
 
           Map<DependentLink, ExpressionPattern> patternSubst = new HashMap<>();
           for (ExpressionPattern patternArg : conResult.patterns) {
@@ -589,9 +592,7 @@ public class PatternTypechecking {
             link = link.getNext();
           }
 
-          if (conResult.varSubst != null) {
-            substitution.subst(conResult.varSubst);
-          }
+          substitution.subst(conResult.varSubst);
           result.add(constructor.getPattern().subst(substitution, levelSolution, patternSubst));
           if (conResult.exprs == null) {
             exprs = null;
@@ -670,6 +671,7 @@ public class PatternTypechecking {
       if (conResult == null) {
         return null;
       }
+      varSubst.addSubst(conResult.varSubst);
       listSubst(result, exprs, conResult.varSubst);
 
       if (!myMode.allowConditions()) {
@@ -683,7 +685,7 @@ public class PatternTypechecking {
         }
       }
 
-      if (conResult.varSubst != null) {
+      if (!conResult.varSubst.isEmpty()) {
         conCall = (ConCallExpression) new SubstVisitor(conResult.varSubst, LevelSubstitution.EMPTY).visitConCall(conCall, null);
       }
       result.add(new ConstructorExpressionPattern(conCall, conResult.patterns));

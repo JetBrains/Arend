@@ -457,6 +457,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
         }
       }
 
+      myContext.remove(var);
       idpSubst.add(var, otherExpr);
       return true;
     }
