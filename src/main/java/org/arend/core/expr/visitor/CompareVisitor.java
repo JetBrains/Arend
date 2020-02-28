@@ -1,5 +1,6 @@
 package org.arend.core.expr.visitor;
 
+import org.arend.core.constructor.SingleConstructor;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.context.binding.inference.TypeClassInferenceVariable;
@@ -38,6 +39,37 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
 
   public static boolean compare(Equations equations, CMP cmp, Expression expr1, Expression expr2, Expression type, Concrete.SourceNode sourceNode) {
     return new CompareVisitor(equations, cmp, sourceNode).compare(expr1, expr2, type);
+  }
+
+  public boolean compare(ElimTree elimTree1, ElimTree elimTree2) {
+    if (elimTree1.getSkip() != elimTree2.getSkip()) {
+      return false;
+    }
+
+    if (elimTree1 instanceof LeafElimTree && elimTree2 instanceof LeafElimTree) {
+      return ((LeafElimTree) elimTree1).getClauseIndex() == ((LeafElimTree) elimTree2).getClauseIndex() && Objects.equals(((LeafElimTree) elimTree1).getArgumentIndices(), ((LeafElimTree) elimTree2).getArgumentIndices());
+    } else if (elimTree1 instanceof BranchElimTree && elimTree2 instanceof BranchElimTree) {
+      BranchElimTree branchElimTree1 = (BranchElimTree) elimTree1;
+      BranchElimTree branchElimTree2 = (BranchElimTree) elimTree2;
+      if (branchElimTree1.keepConCall() != branchElimTree2.keepConCall() || branchElimTree1.getChildren().size() != branchElimTree2.getChildren().size()) {
+        return false;
+      }
+      SingleConstructor single1 = branchElimTree1.getSingleConstructorKey();
+      if (single1 != null) {
+        SingleConstructor single2 = branchElimTree2.getSingleConstructorKey();
+        return single2 != null && single1.compare(single2, myEquations, mySourceNode) && compare(branchElimTree1.getSingleConstructorChild(), branchElimTree2.getSingleConstructorChild());
+      } else {
+        for (Map.Entry<Constructor, ElimTree> entry : branchElimTree1.getChildren()) {
+          ElimTree subTree = branchElimTree2.getChild(entry.getKey());
+          if (subTree == null || !compare(entry.getValue(), subTree)) {
+            return false;
+          }
+        }
+      }
+      return true;
+    } else {
+      return false;
+    }
   }
 
   // Only for tests

@@ -2,6 +2,7 @@ package org.arend.core.constructor;
 
 import org.arend.core.definition.ClassDefinition;
 import org.arend.core.definition.ClassField;
+import org.arend.core.definition.UniverseKind;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.FieldCallExpression;
 import org.arend.core.expr.NewExpression;
@@ -74,6 +75,18 @@ public final class ClassConstructor extends SingleConstructor implements CoreCla
     }
 
     ClassConstructor con = (ClassConstructor) other;
-    return myClassDef == con.myClassDef && myImplementedFields.equals(con.myImplementedFields) && Sort.compare(mySort, con.mySort, CMP.EQ, equations, sourceNode);
+    if (myClassDef != con.myClassDef || !myImplementedFields.equals(con.myImplementedFields)) {
+      return false;
+    }
+
+    if (myClassDef.getUniverseKind() == UniverseKind.NO_UNIVERSES) {
+      return true;
+    }
+    for (ClassField field : myClassDef.getFields()) {
+      if (field.getUniverseKind() != UniverseKind.NO_UNIVERSES && !myClassDef.isImplemented(field) && !myImplementedFields.contains(field)) {
+        return Sort.compare(mySort, con.mySort, CMP.EQ, equations, sourceNode);
+      }
+    }
+    return true;
   }
 }

@@ -24,6 +24,7 @@ import org.arend.typechecking.error.local.CertainTypecheckingError;
 import org.arend.typechecking.error.local.CoreErrorWrapper;
 import org.arend.typechecking.error.local.inference.ArgInferenceError;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
+import org.arend.typechecking.patternmatching.PatternTypechecking;
 import org.arend.typechecking.visitor.BaseDefinitionTypechecker;
 
 import java.util.*;
@@ -89,6 +90,7 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
       return true;
     }
 
+    ElimBody elimBody;
     if (body instanceof IntervalElim) {
       IntervalElim intervalElim = (IntervalElim) body;
       if (intervalElim.getCases().isEmpty()) {
@@ -124,11 +126,9 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
         return false;
       }
 
-      myChecker.checkElimBody(intervalElim.getOtherwise(), definition.getParameters(), definition.getResultType(), null, definition.isSFunc());
-      return true;
+      elimBody = intervalElim.getOtherwise();
     } else if (body instanceof ElimBody) {
-      myChecker.checkElimBody((ElimBody) body, definition.getParameters(), definition.getResultType(), null, definition.isSFunc());
-      return true;
+      elimBody = (ElimBody) body;
     } else if (body == null) {
       ClassCallExpression classCall = definition.getResultType().cast(ClassCallExpression.class);
       if (classCall == null) {
@@ -140,6 +140,9 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
     } else {
       throw new IllegalStateException();
     }
+
+    myChecker.checkElimBody(elimBody, definition.getParameters(), definition.getResultType(), level, null, definition.isSFunc(), PatternTypechecking.Mode.FUNCTION);
+    return true;
   }
 
   private boolean check(DataDefinition definition) {

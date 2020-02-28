@@ -2134,7 +2134,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     if (clauses == null) {
       return null;
     }
-    ElimBody elimBody = new ElimTypechecking(this, resultExpr, PatternTypechecking.Mode.CASE, level, actualLevel, actualLevelSub, expr.isSCase()).typecheckElim(clauses, expr.getClauses(), expr, list.getFirst());
+    ElimBody elimBody = new ElimTypechecking(errorReporter, myEquations, resultExpr, PatternTypechecking.Mode.CASE, level, actualLevel, actualLevelSub, expr.isSCase(), expr.getClauses(), expr).typecheckElim(clauses, list.getFirst());
     for (Map.Entry<Referable, Binding> entry : origElimBindings.entrySet()) {
       addBinding(entry.getKey(), entry.getValue());
     }

@@ -7,8 +7,10 @@ import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.context.param.TypedDependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
+import org.arend.core.elimtree.Body;
 import org.arend.core.elimtree.ElimBody;
 import org.arend.core.elimtree.ElimClause;
+import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.type.Type;
@@ -24,6 +26,8 @@ import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.StdLevelSubstitution;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.ext.error.ErrorReporter;
+import org.arend.ext.error.GeneralError;
 import org.arend.ext.error.TypeMismatchError;
 import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.prettyprinting.doc.DocFactory;
@@ -32,6 +36,8 @@ import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.*;
 import org.arend.typechecking.implicitargs.equations.Equations;
+import org.arend.typechecking.patternmatching.ElimTypechecking;
+import org.arend.typechecking.patternmatching.PatternTypechecking;
 import org.arend.util.Pair;
 
 import java.util.*;
@@ -464,9 +470,9 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
     if (pattern instanceof ConstructorPattern && pattern.getDefinition() == null) {
       if (type instanceof SigmaExpression) {
-        return checkElimPatterns(((SigmaExpression) type).getParameters(), pattern.getSubPatterns(), new ExprSubstitution(), firstBinding, idpSubst, types, errorExpr);
+        return checkElimPatterns(((SigmaExpression) type).getParameters(), pattern.getSubPatterns(), new ExprSubstitution(), firstBinding, idpSubst, types, errorExpr, null);
       } else if (type instanceof ClassCallExpression) {
-        return checkElimPatterns(((ClassCallExpression) type).getClassFieldParameters(), pattern.getSubPatterns(), new ExprSubstitution(), firstBinding, idpSubst, types, errorExpr);
+        return checkElimPatterns(((ClassCallExpression) type).getClassFieldParameters(), pattern.getSubPatterns(), new ExprSubstitution(), firstBinding, idpSubst, types, errorExpr, null);
       } else {
         throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(DocFactory.text("a sigma type or a class call"), type, mySourceNode), errorExpr));
       }
@@ -503,24 +509,33 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     }
 
     ConCallExpression conCall = conCalls.get(0);
-    return checkElimPatterns(DependentLink.Helper.subst(conCall.getDefinition().getParameters(), new ExprSubstitution().add(conCall.getDefinition().getDataTypeParameters(), conCall.getDataTypeArguments())), pattern.getSubPatterns(), new ExprSubstitution(), firstBinding, idpSubst, types, errorExpr);
+    return checkElimPatterns(DependentLink.Helper.subst(conCall.getDefinition().getParameters(), new ExprSubstitution().add(conCall.getDefinition().getDataTypeParameters(), conCall.getDataTypeArguments())), pattern.getSubPatterns(), new ExprSubstitution(), firstBinding, idpSubst, types, errorExpr, null);
   }
 
-  private boolean checkElimPatterns(DependentLink parameters, List<? extends Pattern> patterns, ExprSubstitution substitution, DependentLink firstBinding, ExprSubstitution idpSubst, List<Pair<Expression,Expression>> types, Expression errorExpr) {
+  private boolean checkElimPatterns(DependentLink parameters, List<? extends Pattern> patterns, ExprSubstitution substitution, DependentLink firstBinding, ExprSubstitution idpSubst, List<Pair<Expression,Expression>> types, Expression errorExpr, List<ExpressionPattern> exprPatterns) {
+    boolean noEmpty = true;
     for (Pattern pattern : patterns) {
       if (!parameters.hasNext()) {
         throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Too many patterns", mySourceNode), errorExpr));
       }
       Expression type = parameters.getTypeExpr().subst(substitution).normalize(NormalizationMode.WHNF).getUnderlyingExpression();
-      ExprSubstitution varSubst = new ExprSubstitution();
-      if (!checkElimPattern(type, pattern, firstBinding, varSubst, types, errorExpr)) {
-        return false;
+      if (noEmpty) {
+        ExprSubstitution varSubst = new ExprSubstitution();
+        if (!checkElimPattern(type, pattern, firstBinding, varSubst, types, errorExpr)) {
+          if (exprPatterns == null) {
+            return false;
+          }
+          noEmpty = false;
+        }
+        substitution.addSubst(varSubst);
+        idpSubst.addSubst(varSubst);
       }
-      substitution.addSubst(varSubst);
-      idpSubst.addSubst(varSubst);
       ExpressionPattern exprPattern = pattern.toExpressionPattern(type);
       if (exprPattern == null) {
         throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Cannot convert pattern", mySourceNode), errorExpr));
+      }
+      if (exprPatterns != null) {
+        exprPatterns.add(exprPattern);
       }
       Expression expression = exprPattern.toExpression();
       if (expression != null) {
@@ -533,7 +548,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Not enough patterns", mySourceNode), errorExpr));
     }
 
-    return true;
+    return noEmpty;
   }
 
   private DependentLink checkStitchedPatterns(Collection<? extends Pattern> patterns, DependentLink link, Expression errorExpr) {
@@ -552,7 +567,8 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     return link;
   }
 
-  void checkElimBody(ElimBody elimBody, DependentLink parameters, Expression type, Expression errorExpr, boolean isSFunc) {
+  void checkElimBody(ElimBody elimBody, DependentLink parameters, Expression type, Integer level, Expression errorExpr, boolean isSFunc, PatternTypechecking.Mode mode) {
+    List<ElimClause<ExpressionPattern>> exprClauses = new ArrayList<>();
     for (ElimClause<Pattern> clause : elimBody.getClauses()) {
       DependentLink firstBinding = Pattern.getFirstBinding(clause.getPatterns());
       checkStitchedPatterns(clause.getPatterns(), firstBinding, errorExpr);
@@ -560,7 +576,9 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       ExprSubstitution substitution = new ExprSubstitution();
       ExprSubstitution idpSubst = new ExprSubstitution();
       List<Pair<Expression,Expression>> types = new ArrayList<>();
-      boolean noEmpty = checkElimPatterns(parameters, clause.getPatterns(), substitution, firstBinding, idpSubst, types, errorExpr);
+      List<ExpressionPattern> exprPatterns = new ArrayList<>();
+      exprClauses.add(new ElimClause<>(exprPatterns, clause.getExpression()));
+      boolean noEmpty = checkElimPatterns(parameters, clause.getPatterns(), substitution, firstBinding, idpSubst, types, errorExpr, exprPatterns);
       for (Pair<Expression,Expression> pair : types) {
         Expression expectedType = pair.proj2.subst(idpSubst);
         if (!new CompareVisitor(myEquations, CMP.EQ, mySourceNode).normalizedCompare(expectedType, pair.proj1.normalize(NormalizationMode.WHNF), Type.OMEGA)) {
@@ -579,9 +597,42 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       freeDependentLink(firstBinding);
     }
 
-    // TODO[lang_ext]: Check coverage
+    if (level == null) {
+      DefCallExpression defCall = type.cast(DefCallExpression.class);
+      if (defCall != null) {
+        level = defCall.getUseLevel();
+      } else {
+        defCall = type.getPiParameters(null, false).cast(DefCallExpression.class);
+        if (defCall != null) {
+          level = defCall.getUseLevel();
+        }
+      }
+    }
+
+    Sort sort = type.getSortOfType();
+    ErrorReporter errorReporter = new MyErrorReporter(errorExpr);
+    ElimBody newBody = new ElimTypechecking(errorReporter, myEquations, type, mode, level, sort != null ? sort.getHLevel() : Level.INFINITY, 0, isSFunc, null, mySourceNode).typecheckElim(exprClauses, parameters);
+    if (newBody == null) {
+      throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Cannot check the body", mySourceNode), errorExpr));
+    }
+    if (!new CompareVisitor(myEquations, CMP.EQ, mySourceNode).compare(elimBody.getElimTree(), newBody.getElimTree())) {
+      throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("The elim tree of the body is incorrect", mySourceNode), errorExpr));
+    }
+
     // TODO[lang_ext]: Check conditions
-    // TODO[lang_ext]: Check isSCase
+  }
+
+  private static class MyErrorReporter implements ErrorReporter {
+    final Expression errorExpr;
+
+    private MyErrorReporter(Expression errorExpr) {
+      this.errorExpr = errorExpr;
+    }
+
+    @Override
+    public void report(GeneralError error) {
+      throw new CoreException(CoreErrorWrapper.make(error, errorExpr));
+    }
   }
 
   @Override
@@ -591,12 +642,10 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     checkList(expr.getArguments(), expr.getParameters(), substitution, LevelSubstitution.EMPTY);
     expr.getResultType().accept(this, Type.OMEGA);
 
-    if (expr.getResultTypeLevel() != null) {
-      checkLevelProof(expr.getResultTypeLevel(), expr.getResultType());
-    }
+    Integer level = expr.getResultTypeLevel() == null ? null : checkLevelProof(expr.getResultTypeLevel(), expr.getResultType());
 
     freeDependentLink(expr.getParameters());
-    checkElimBody(expr.getElimBody(), expr.getParameters(), expr.getResultType(), expr, expr.isSCase());
+    checkElimBody(expr.getElimBody(), expr.getParameters(), expr.getResultType(), level, expr, expr.isSCase(), PatternTypechecking.Mode.CASE);
     return check(expectedType, expr.getResultType().subst(substitution), expr);
   }
 

@@ -826,7 +826,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       List<DependentLink> elimParams = ElimTypechecking.getEliminatedParameters(elimBody.getEliminatedReferences(), elimBody.getClauses(), typedDef.getParameters(), typechecker);
       PatternTypechecking patternTypechecking = new PatternTypechecking(errorReporter, PatternTypechecking.Mode.FUNCTION, typechecker, true);
       clauses = elimParams == null ? null : patternTypechecking.typecheckClauses(elimBody.getClauses(), def.getParameters(), typedDef.getParameters(), elimParams, expectedType);
-      Body typedBody = clauses == null ? null : new ElimTypechecking(typechecker, expectedType, PatternTypechecking.Mode.FUNCTION, resultTypeLevel, actualResultTypeLevel, 0, kind.isSFunc()).typecheckElim(clauses, elimBody.getClauses(), def, def.getParameters(), typedDef.getParameters(), elimParams);
+      Body typedBody = clauses == null ? null : new ElimTypechecking(errorReporter, typechecker.getEquations(), expectedType, PatternTypechecking.Mode.FUNCTION, resultTypeLevel, actualResultTypeLevel, 0, kind.isSFunc(), elimBody.getClauses(), def).typecheckElim(clauses, def.getParameters(), typedDef.getParameters(), elimParams);
       if (typedBody != null) {
         if (newDef) {
           typedDef.setBody(typedBody);
@@ -1557,7 +1557,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           Expression expectedType = oldConstructor.getDataTypeExpression(Sort.STD);
           PatternTypechecking patternTypechecking = new PatternTypechecking(errorReporter, PatternTypechecking.Mode.CONSTRUCTOR, typechecker, true);
           List<ExtElimClause> clauses = patternTypechecking.typecheckClauses(def.getClauses(), def.getParameters(), oldConstructor.getParameters(), elimParams, expectedType);
-          Body body = clauses == null ? null : new ElimTypechecking(typechecker, expectedType, PatternTypechecking.Mode.CONSTRUCTOR).typecheckElim(clauses, def.getClauses(), def, def.getParameters(), oldConstructor.getParameters(), elimParams);
+          Body body = clauses == null ? null : new ElimTypechecking(errorReporter, typechecker.getEquations(), expectedType, PatternTypechecking.Mode.CONSTRUCTOR, def.getClauses(), def).typecheckElim(clauses, def.getParameters(), oldConstructor.getParameters(), elimParams);
           if (constructor != null) {
             constructor.setBody(body);
             constructor.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);

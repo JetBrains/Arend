@@ -49,7 +49,13 @@ public abstract class ConstructorPattern<T> implements Pattern {
       if (subPatterns == null) {
         return null;
       }
-      return new ConstructorExpressionPattern(new ConCallExpression(constructor, dataCall.getSortArgument(), dataCall.getDefCallArguments(), Collections.emptyList()), subPatterns);
+
+      List<Expression> args = constructor.matchDataTypeArguments(dataCall.getDefCallArguments());
+      if (args == null) {
+        return null;
+      }
+
+      return new ConstructorExpressionPattern(new ConCallExpression(constructor, dataCall.getSortArgument(), args, Collections.emptyList()), subPatterns);
     } else if (type instanceof DataCallExpression && getDefinition() == Prelude.IDP) {
       FunCallExpression equality = type.toEquality();
       if (equality == null) {
