@@ -199,8 +199,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
       typechecked = new ClassDefinition((TCClassReferable) definition.getData());
       for (Concrete.ClassElement element : ((Concrete.ClassDefinition) definition).getElements()) {
         if (element instanceof Concrete.ClassField) {
-          ClassField classField = new ClassField(((Concrete.ClassField) element).getData(), (ClassDefinition) typechecked);
-          classField.setType(new PiExpression(Sort.PROP, new TypedSingleDependentLink(false, "this", new ClassCallExpression((ClassDefinition) typechecked, Sort.STD), true), new ErrorExpression()));
+          ClassField classField = new ClassField(((Concrete.ClassField) element).getData(), (ClassDefinition) typechecked, new PiExpression(Sort.PROP, new TypedSingleDependentLink(false, "this", new ClassCallExpression((ClassDefinition) typechecked, Sort.STD), true), new ErrorExpression()), null);
           classField.setStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
           ((ClassDefinition) typechecked).addPersonalField(classField);
           myState.record(classField.getReferable(), classField);
