@@ -7,6 +7,7 @@ import org.arend.core.constructor.TupleConstructor;
 import org.arend.core.context.Utils;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.LevelVariable;
+import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.*;
@@ -61,16 +62,46 @@ public class ElimTypechecking {
     return result == null ? null : result + 1;
   }
 
-  public ElimTypechecking(ErrorReporter errorReporter, Equations equations, Expression expectedType, PatternTypechecking.Mode mode, @Nullable Integer level, @Nonnull Level actualLevel, int actualLevelSub, boolean isSFunc, List<? extends Concrete.FunctionClause> clauses, Concrete.SourceNode sourceNode) {
+  public ElimTypechecking(ErrorReporter errorReporter, Equations equations, Expression expectedType, PatternTypechecking.Mode mode, @Nullable Integer level, @Nonnull Level actualLevel, boolean isSFunc, List<? extends Concrete.FunctionClause> clauses, Concrete.SourceNode sourceNode) {
     myErrorReporter = errorReporter;
     myEquations = equations;
     myExpectedType = expectedType;
     myMode = mode;
+    myClauses = clauses;
+    mySourceNode = sourceNode;
+
+    int actualLevelSub = 0;
+    if (!actualLevel.isProp()) {
+      Expression pathType = expectedType.getPiParameters(null, false);
+      for (DataCallExpression dataCall = pathType.cast(DataCallExpression.class); dataCall != null; dataCall = pathType.cast(DataCallExpression.class)) {
+        if (dataCall.getDefinition() == Prelude.PATH) {
+          actualLevelSub++;
+          pathType = dataCall.getDefCallArguments().get(0).normalize(NormalizationMode.WHNF);
+          LamExpression lam = pathType.cast(LamExpression.class);
+          if (lam == null) {
+            pathType = AppExpression.make(pathType, new ReferenceExpression(new TypedBinding("i", ExpressionFactory.Interval())));
+            break;
+          }
+          pathType = lam.getBody().normalize(NormalizationMode.WHNF);
+        } else {
+          break;
+        }
+      }
+
+      Sort pathSort = pathType.getSortOfType();
+      if (pathSort != null && !pathSort.getHLevel().isInfinity()) {
+        actualLevel = pathSort.getHLevel();
+        if (!actualLevel.isInfinity() && actualLevel.isClosed() && actualLevel.getConstant() - actualLevelSub < -1) {
+          actualLevelSub = actualLevel.getConstant() + 1;
+        }
+      } else {
+        actualLevelSub = 0;
+      }
+    }
+
     myLevel = getMinPlus1(level, actualLevel, actualLevelSub);
     myActualLevel = isSFunc ? null : actualLevel;
     myActualLevelSub = isSFunc ? 0 : actualLevelSub;
-    myClauses = clauses;
-    mySourceNode = sourceNode;
   }
 
   public ElimTypechecking(ErrorReporter errorReporter, Equations equations, Expression expectedType, PatternTypechecking.Mode mode, List<? extends Concrete.FunctionClause> clauses, Concrete.SourceNode sourceNode) {

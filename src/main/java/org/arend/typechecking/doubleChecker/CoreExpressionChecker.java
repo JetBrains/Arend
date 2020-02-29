@@ -7,10 +7,8 @@ import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.context.param.TypedDependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
-import org.arend.core.elimtree.Body;
 import org.arend.core.elimtree.ElimBody;
 import org.arend.core.elimtree.ElimClause;
-import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.type.Type;
@@ -611,7 +609,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
     Sort sort = type.getSortOfType();
     ErrorReporter errorReporter = new MyErrorReporter(errorExpr);
-    ElimBody newBody = new ElimTypechecking(errorReporter, myEquations, type, mode, level, sort != null ? sort.getHLevel() : Level.INFINITY, 0, isSFunc, null, mySourceNode).typecheckElim(exprClauses, parameters);
+    ElimBody newBody = new ElimTypechecking(errorReporter, myEquations, type, mode, level, sort != null ? sort.getHLevel() : Level.INFINITY, isSFunc, null, mySourceNode).typecheckElim(exprClauses, parameters);
     if (newBody == null) {
       throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Cannot check the body", mySourceNode), errorExpr));
     }
@@ -631,7 +629,9 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
     @Override
     public void report(GeneralError error) {
-      throw new CoreException(CoreErrorWrapper.make(error, errorExpr));
+      if (error.level == GeneralError.Level.ERROR || error.level == GeneralError.Level.GOAL) {
+        throw new CoreException(CoreErrorWrapper.make(error, errorExpr));
+      }
     }
   }
 
