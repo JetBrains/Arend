@@ -1,5 +1,6 @@
 package org.arend.typechecking.subexpr;
 
+import org.arend.core.definition.Constructor;
 import org.arend.core.definition.DataDefinition;
 import org.arend.core.definition.Definition;
 import org.arend.core.definition.FunctionDefinition;
@@ -8,6 +9,8 @@ import org.arend.core.expr.Expression;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteDefinitionVisitor;
 import org.arend.util.Pair;
+
+import java.util.Objects;
 
 public class CorrespondedSubDefVisitor implements
     ConcreteDefinitionVisitor<Definition, Pair<Expression, Concrete.Expression>> {
@@ -54,7 +57,18 @@ public class CorrespondedSubDefVisitor implements
     if (params instanceof DataDefinition) {
       coreDef = (DataDefinition) params;
     } else return null;
-    // TODO: constructors :)
+    Pair<Expression, Concrete.Expression> consResult = def.getConstructorClauses().stream()
+        .flatMap(clause -> clause.getConstructors().stream())
+        .map(cons -> {
+          Constructor coreC = coreDef.getConstructor(cons.getData());
+          if (coreC == null) return null;
+          // TODO: drop data params
+          return visitor.visitSigmaParameters(cons.getParameters(), coreC.getParameters());
+        })
+        .filter(Objects::nonNull)
+        .findFirst()
+        .orElse(null);
+    if (consResult != null) return consResult;
     return visitor.visitSigmaParameters(def.getParameters(), coreDef.getParameters());
   }
 
