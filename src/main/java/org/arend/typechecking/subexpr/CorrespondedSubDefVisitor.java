@@ -36,9 +36,9 @@ public class CorrespondedSubDefVisitor implements
   @Override
   public Pair<Expression, Concrete.Expression> visitFunction(Concrete.BaseFunctionDefinition def, Definition params) {
     FunctionDefinition coreDef;
-    if (params instanceof FunctionDefinition) {
+    if (params instanceof FunctionDefinition)
       coreDef = (FunctionDefinition) params;
-    } else return null;
+    else return null;
     Concrete.Expression resultType = def.getResultType();
     Expression coreResultType = coreDef.getResultType();
     if (resultType != null && coreResultType != null) {
@@ -54,15 +54,13 @@ public class CorrespondedSubDefVisitor implements
   @Override
   public Pair<Expression, Concrete.Expression> visitData(Concrete.DataDefinition def, Definition params) {
     DataDefinition coreDef;
-    if (params instanceof DataDefinition) {
-      coreDef = (DataDefinition) params;
-    } else return null;
+    if (params instanceof DataDefinition) coreDef = (DataDefinition) params;
+    else return null;
     Pair<Expression, Concrete.Expression> consResult = def.getConstructorClauses().stream()
         .flatMap(clause -> clause.getConstructors().stream())
         .map(cons -> {
           Constructor coreC = coreDef.getConstructor(cons.getData());
           if (coreC == null) return null;
-          // TODO: drop data params
           return visitor.visitSigmaParameters(cons.getParameters(), coreC.getParameters());
         })
         .filter(Objects::nonNull)
