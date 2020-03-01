@@ -1,11 +1,14 @@
 package org.arend.typechecking.subexpr;
 
+import org.arend.core.definition.Definition;
 import org.arend.core.expr.Expression;
 import org.arend.frontend.reference.ConcreteLocatedReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.arend.util.Pair;
 import org.junit.Test;
+
+import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -38,6 +41,25 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
     Pair<Expression, Concrete.Expression> accept = def.accept(
         new CorrespondedSubDefVisitor(def.getParameters().get(0).getType()), typeCheckDef(referable));
     assertEquals("Nat", accept.proj1.toString());
+  }
+
+  @Test
+  public void elimFun() {
+    ConcreteLocatedReferable referable = resolveNamesDef(
+        "\\func f (a b c : Nat): Nat \\elim b\n" +
+            "  | zero => a\n" +
+            "  | suc b => c");
+    Concrete.FunctionDefinition def = (Concrete.FunctionDefinition) referable.getDefinition();
+    List<Concrete.FunctionClause> clauses = def.getBody().getClauses();
+    assertFalse(clauses.isEmpty());
+    assertEquals("a", def.accept(
+        new CorrespondedSubDefVisitor(clauses.get(0).getExpression()),
+        typeCheckDef(referable)
+    ).proj1.toString());
+    assertEquals("c", def.accept(
+        new CorrespondedSubDefVisitor(clauses.get(1).getExpression()),
+        typeCheckDef(referable)
+    ).proj1.toString());
   }
 
   @Test

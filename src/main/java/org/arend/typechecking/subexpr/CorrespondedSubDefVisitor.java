@@ -5,12 +5,21 @@ import org.arend.core.definition.DataDefinition;
 import org.arend.core.definition.Definition;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.elimtree.Body;
+import org.arend.core.elimtree.BranchElimTree;
+import org.arend.core.elimtree.ElimTree;
+import org.arend.core.elimtree.LeafElimTree;
 import org.arend.core.expr.Expression;
+import org.arend.ext.core.elimtree.CoreBranchKey;
+import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteDefinitionVisitor;
 import org.arend.util.Pair;
 
+import java.util.Collection;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Predicate;
 
 public class CorrespondedSubDefVisitor implements
     ConcreteDefinitionVisitor<Definition, Pair<Expression, Concrete.Expression>> {
@@ -28,6 +37,34 @@ public class CorrespondedSubDefVisitor implements
     if (body instanceof Concrete.TermFunctionBody && coreBody instanceof Expression) {
       Concrete.Expression term = body.getTerm();
       if (term != null) return term.accept(visitor, (Expression) coreBody);
+    } else if (body instanceof Concrete.ElimFunctionBody && coreBody instanceof BranchElimTree) {
+      // We don't deal with complicated pattern matching until patterns are stored in core.
+      if (body.getEliminatedReferences().size() > 1) return null;
+      Collection<Map.Entry<CoreBranchKey, ElimTree>> caseTree = ((BranchElimTree) coreBody).getChildren();
+      for (Concrete.FunctionClause clause : body.getClauses()) {
+        // We know there's only one constructor.
+        Concrete.Pattern pattern = clause.getPatterns().get(0);
+        Concrete.Expression expression = clause.getExpression();
+        if (expression == null) return null;
+        if (pattern instanceof Concrete.ConstructorPattern) {
+          Referable constructor = ((Concrete.ConstructorPattern) pattern).getConstructor();
+          Predicate<Map.Entry<CoreBranchKey, ElimTree>> findElim = entry -> {
+            CoreBranchKey key = entry.getKey();
+            if (key instanceof Constructor) {
+              return ((Constructor) key).getReferable() == constructor;
+            } else return false;
+          };
+          Optional<Pair<Expression, Concrete.Expression>> result = caseTree.stream()
+              .filter(entry -> entry.getValue() instanceof LeafElimTree)
+              .filter(findElim)
+              .map(Map.Entry::getValue)
+              .map(elim -> (LeafElimTree) elim)
+              .map(LeafElimTree::getExpression)
+              .findFirst()
+              .map(elim -> expression.accept(visitor, elim));
+          if (result.isPresent()) return result.get();
+        }
+      }
     }
     // TODO: other function bodies :)
     return null;
@@ -56,7 +93,8 @@ public class CorrespondedSubDefVisitor implements
     DataDefinition coreDef;
     if (params instanceof DataDefinition) coreDef = (DataDefinition) params;
     else return null;
-    Pair<Expression, Concrete.Expression> consResult = def.getConstructorClauses().stream()
+    return def.getConstructorClauses()
+        .stream()
         .flatMap(clause -> clause.getConstructors().stream())
         .map(cons -> {
           Constructor coreC = coreDef.getConstructor(cons.getData());
@@ -65,9 +103,8 @@ public class CorrespondedSubDefVisitor implements
         })
         .filter(Objects::nonNull)
         .findFirst()
-        .orElse(null);
-    if (consResult != null) return consResult;
-    return visitor.visitSigmaParameters(def.getParameters(), coreDef.getParameters());
+        .orElseGet(() -> visitor
+            .visitSigmaParameters(def.getParameters(), coreDef.getParameters()));
   }
 
   @Override
