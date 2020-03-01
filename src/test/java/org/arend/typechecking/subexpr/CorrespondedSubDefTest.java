@@ -52,7 +52,7 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
 
   @Test
   public void cons() {
-    ConcreteLocatedReferable referable = resolveNamesDef("\\data D | c Nat");
+    ConcreteLocatedReferable referable = resolveNamesDef("\\data D Int | c Nat");
     Concrete.DataDefinition def = (Concrete.DataDefinition) referable.getDefinition();
     assertFalse(def.getConstructorClauses().isEmpty());
     Pair<Expression, Concrete.Expression> accept = def.accept(
