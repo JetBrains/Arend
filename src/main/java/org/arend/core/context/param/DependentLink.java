@@ -6,6 +6,7 @@ import org.arend.core.expr.type.Type;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
+import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.context.CoreParameter;
 
 import javax.annotation.Nonnull;
@@ -22,6 +23,12 @@ public interface DependentLink extends Binding, CoreParameter {
   TypedDependentLink getNextTyped(List<String> names);
   boolean hasNext();
   Type getType();
+
+  @Nonnull
+  @Override
+  default CoreBinding getBinding() {
+    return this;
+  }
 
   @Nonnull
   @Override

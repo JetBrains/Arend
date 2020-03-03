@@ -4,8 +4,9 @@ import org.arend.ext.core.expr.CoreExpression;
 
 import javax.annotation.Nonnull;
 
-public interface CoreParameter extends CoreBinding {
+public interface CoreParameter {
   boolean isExplicit();
-  @Nonnull @Override CoreExpression getTypeExpr();
+  @Nonnull CoreBinding getBinding();
+  @Nonnull CoreExpression getTypeExpr();
   @Nonnull CoreParameter getNext();
 }
