@@ -67,18 +67,20 @@ task<Jar>("jarDep") {
     manifest.attributes["Main-Class"] = "$arendPackage.frontend.ConsoleMain"
     from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it as Any else zipTree(it) })
     from(sourceSets["main"].output)
+    archiveClassifier.set("full")
     dependsOn("prelude")
 }
 
 task<Jar>("api-classes") {
-    archiveBaseName.set("arend-api")
+    archiveBaseName.set("${project.name}-api")
     from(sourceSets["main"].output) {
         include("org/arend/ext/**")
     }
 }
 
 task<Jar>("api-sources") {
-    archiveBaseName.set("arend-api-sources")
+    archiveBaseName.set("${project.name}-api")
+    archiveClassifier.set("sources")
     from(sourceSets["main"].allSource) {
         include("org/arend/ext/**")
     }
@@ -87,6 +89,13 @@ task<Jar>("api-sources") {
 task("api") {
     dependsOn("api-classes")
     dependsOn("api-sources")
+}
+
+task<Jar>("jarSrc") {
+    archiveClassifier.set("sources")
+    from(sourceSets["main"].allSource) {
+        exclude("**/frontend/**")
+    }
 }
 
 tasks.getByName<Jar>("jar") {
