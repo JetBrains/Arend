@@ -1,6 +1,6 @@
 package org.arend.ext.core.expr;
 
-import org.arend.ext.core.elimtree.CoreBody;
+import org.arend.ext.core.body.CoreBody;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.ExpressionMapper;
 import org.arend.ext.core.ops.NormalizationMode;

@@ -1,4 +1,4 @@
-package org.arend.ext.core.elimtree;
+package org.arend.ext.core.body;
 
 import org.arend.ext.core.expr.CoreExpression;
 import org.jetbrains.annotations.NotNull;

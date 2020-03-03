@@ -13,6 +13,7 @@ import org.arend.ext.error.ErrorReporter;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.util.Decision;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -50,6 +51,7 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Expression>
     return this;
   }
 
+  @NotNull
   @Override
   public List<? extends ExpressionPattern> getSubPatterns() {
     //noinspection unchecked
