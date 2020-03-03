@@ -10,17 +10,17 @@ import org.arend.term.NamespaceCommand;
 import org.arend.term.abs.Abstract;
 import org.arend.term.group.ChildGroup;
 import org.arend.term.group.Group;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.*;
 
 public class ScopeFactory {
-  public static @Nonnull Scope forGroup(@Nullable Group group, @Nonnull ModuleScopeProvider moduleScopeProvider) {
+  public static @NotNull Scope forGroup(@Nullable Group group, @NotNull ModuleScopeProvider moduleScopeProvider) {
     return forGroup(group, moduleScopeProvider, true);
   }
 
-  public static @Nonnull Scope parentScopeForGroup(@Nullable Group group, @Nonnull ModuleScopeProvider moduleScopeProvider, boolean prelude) {
+  public static @NotNull Scope parentScopeForGroup(@Nullable Group group, @NotNull ModuleScopeProvider moduleScopeProvider, boolean prelude) {
     ChildGroup parentGroup = group instanceof ChildGroup ? ((ChildGroup) group).getParentGroup() : null;
     Scope parentScope;
     if (parentGroup == null) {
@@ -44,7 +44,7 @@ public class ScopeFactory {
     return parentScope;
   }
 
-  public static @Nonnull Scope forGroup(@Nullable Group group, @Nonnull ModuleScopeProvider moduleScopeProvider, boolean prelude) {
+  public static @NotNull Scope forGroup(@Nullable Group group, @NotNull ModuleScopeProvider moduleScopeProvider, boolean prelude) {
     return LexicalScope.insideOf(group, parentScopeForGroup(group, moduleScopeProvider, prelude));
   }
 

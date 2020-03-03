@@ -5,8 +5,7 @@ import org.arend.core.expr.visitor.ExpressionVisitor2;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CoreProjExpression;
 import org.arend.util.Decision;
-
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 public class ProjExpression extends Expression implements CoreProjExpression {
   private final Expression myExpression;
@@ -22,7 +21,7 @@ public class ProjExpression extends Expression implements CoreProjExpression {
     return tuple != null ? tuple.getFields().get(field) : new ProjExpression(expression, field);
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Expression getExpression() {
     return myExpression;
@@ -49,7 +48,7 @@ public class ProjExpression extends Expression implements CoreProjExpression {
   }
 
   @Override
-  public <P, R> R accept(@Nonnull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
+  public <P, R> R accept(@NotNull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitProj(this, params);
   }
 

@@ -1,9 +1,9 @@
 package org.arend.ext.prettyprinting;
 
 import org.arend.ext.core.ops.NormalizationMode;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.EnumSet;
 
 public interface PrettyPrinterConfig {
@@ -11,7 +11,7 @@ public interface PrettyPrinterConfig {
     return false;
   }
 
-  @Nonnull
+  @NotNull
   default EnumSet<PrettyPrinterFlag> getExpressionFlags() {
     return EnumSet.of(
       PrettyPrinterFlag.SHOW_COERCE_DEFINITIONS,

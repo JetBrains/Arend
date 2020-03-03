@@ -11,9 +11,9 @@ import org.arend.ext.core.definition.CoreClassDefinition;
 import org.arend.ext.core.definition.CoreClassField;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.naming.reference.TCClassReferable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.*;
 
 public class ClassDefinition extends Definition implements CoreClassDefinition {
@@ -147,7 +147,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
     mySort = computeSort(Sort.STD, Collections.emptyMap(), null);
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Sort getSort() {
     return mySort;
@@ -163,7 +163,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
   }
 
   @Override
-  public boolean isSubClassOf(@Nonnull CoreClassDefinition classDefinition) {
+  public boolean isSubClassOf(@NotNull CoreClassDefinition classDefinition) {
     if (this.equals(classDefinition)) return true;
     for (ClassDefinition superClass : mySuperClasses) {
       if (superClass.isSubClassOf(classDefinition)) return true;
@@ -171,7 +171,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
     return false;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Set<? extends ClassDefinition> getSuperClasses() {
     return mySuperClasses;
@@ -181,12 +181,12 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
     mySuperClasses.add(superClass);
   }
 
-  @Nonnull
+  @NotNull
   public Set<? extends ClassField> getFields() {
     return myFields;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public List<? extends ClassField> getPersonalFields() {
     return myPersonalFields;
@@ -209,11 +209,11 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
   }
 
   @Override
-  public boolean isImplemented(@Nonnull CoreClassField field) {
+  public boolean isImplemented(@NotNull CoreClassField field) {
     return field instanceof ClassField && myImplemented.containsKey(field);
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Set<Map.Entry<ClassField, AbsExpression>> getImplemented() {
     return myImplemented.entrySet();
@@ -224,7 +224,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
   }
 
   @Override
-  public AbsExpression getImplementation(@Nonnull CoreClassField field) {
+  public AbsExpression getImplementation(@NotNull CoreClassField field) {
     return field instanceof ClassField ? myImplemented.get(field) : null;
   }
 
@@ -232,7 +232,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
     return myImplemented.putIfAbsent(field, impl);
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Set<Map.Entry<ClassField, PiExpression>> getOverriddenFields() {
     return myOverridden.entrySet();
@@ -245,12 +245,12 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
 
   @Nullable
   @Override
-  public PiExpression getOverriddenType(@Nonnull CoreClassField field) {
+  public PiExpression getOverriddenType(@NotNull CoreClassField field) {
     return field instanceof ClassField ? myOverridden.get(field) : null;
   }
 
   @Override
-  public boolean isOverridden(@Nonnull CoreClassField field) {
+  public boolean isOverridden(@NotNull CoreClassField field) {
     return field instanceof ClassField && myOverridden.containsKey(field);
   }
 

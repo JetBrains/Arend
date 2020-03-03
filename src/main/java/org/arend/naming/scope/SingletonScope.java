@@ -1,9 +1,9 @@
 package org.arend.naming.scope;
 
 import org.arend.naming.reference.Referable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
@@ -15,7 +15,7 @@ public class SingletonScope implements Scope {
     myReferable = referable;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public List<Referable> getElements() {
     return Collections.singletonList(myReferable);

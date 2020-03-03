@@ -3,9 +3,8 @@ package org.arend.core.expr;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.ext.core.expr.CoreAbsExpression;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class AbsExpression implements CoreAbsExpression {
   private final Binding myBinding;
@@ -22,7 +21,7 @@ public class AbsExpression implements CoreAbsExpression {
     return myBinding;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Expression getExpression() {
     return myExpression;

@@ -1,13 +1,14 @@
 package org.arend.typechecking.order;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.List;
 
 public interface PartialComparator<T> {
   enum Result { LESS, EQUALS, GREATER, UNCOMPARABLE }
 
-  @Nonnull Result compare(@Nullable T t1, @Nullable T t2);
+  @NotNull Result compare(@Nullable T t1, @Nullable T t2);
 
   default void sort(List<T> list) {
     for (int i = 0; i < list.size(); i++) {

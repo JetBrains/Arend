@@ -6,8 +6,8 @@ import org.arend.ext.reference.RawRef;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.Collections;
 
 public class DefinitionProviderImpl extends Disableable implements DefinitionProvider {
@@ -17,9 +17,9 @@ public class DefinitionProviderImpl extends Disableable implements DefinitionPro
     myTypechecking = typechecking;
   }
 
-  @Nonnull
+  @NotNull
   @Override
-  public <T extends CoreDefinition> T getDefinition(@Nonnull RawRef ref, Class<T> clazz) {
+  public <T extends CoreDefinition> T getDefinition(@NotNull RawRef ref, Class<T> clazz) {
     checkEnabled();
     Concrete.ReferableDefinition def = ref instanceof GlobalReferable ? myTypechecking.getConcreteProvider().getConcrete((GlobalReferable) ref) : null;
     if (!(def instanceof Concrete.Definition)) {

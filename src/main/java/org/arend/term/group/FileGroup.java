@@ -7,8 +7,8 @@ import org.arend.naming.scope.EmptyScope;
 import org.arend.naming.scope.Scope;
 import org.arend.naming.scope.ScopeFactory;
 import org.arend.term.ChildNamespaceCommand;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 
 public class FileGroup extends StaticGroup {
@@ -25,7 +25,7 @@ public class FileGroup extends StaticGroup {
     myScope = CachingScope.make(ScopeFactory.forGroup(this, moduleScopeProvider));
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Scope getGroupScope() {
     return myScope;

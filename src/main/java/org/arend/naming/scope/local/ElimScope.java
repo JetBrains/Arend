@@ -3,9 +3,9 @@ package org.arend.naming.scope.local;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.scope.ImportedScope;
 import org.arend.naming.scope.Scope;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Set;
 import java.util.function.Predicate;
 
@@ -36,13 +36,13 @@ public class ElimScope implements Scope {
     return myParent.resolveNamespace(name, onlyInternal);
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Scope getGlobalSubscope() {
     return myParent.getGlobalSubscope();
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Scope getGlobalSubscopeWithoutOpens() {
     return myParent.getGlobalSubscopeWithoutOpens();

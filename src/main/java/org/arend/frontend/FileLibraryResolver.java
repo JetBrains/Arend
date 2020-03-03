@@ -11,8 +11,8 @@ import org.arend.library.error.MultipleLibraries;
 import org.arend.library.resolver.LibraryResolver;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.util.FileUtils;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;

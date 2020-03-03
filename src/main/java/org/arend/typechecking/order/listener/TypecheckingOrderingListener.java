@@ -37,8 +37,8 @@ import org.arend.typechecking.termination.RecursiveBehavior;
 import org.arend.typechecking.visitor.*;
 import org.arend.util.ComputationInterruptedException;
 import org.arend.util.Pair;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.BooleanSupplier;
 

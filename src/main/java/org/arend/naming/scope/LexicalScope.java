@@ -6,9 +6,9 @@ import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.term.NamespaceCommand;
 import org.arend.term.group.Group;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -69,7 +69,7 @@ public class LexicalScope implements Scope {
     }
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public List<Referable> getElements() {
     List<Referable> elements = new ArrayList<>();
@@ -229,7 +229,7 @@ public class LexicalScope implements Scope {
     return result instanceof Scope ? (Scope) result : null;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Scope getGlobalSubscopeWithoutOpens() {
     return ignoreOpens() ? this : new LexicalScope(myParent, myGroup, null, Kind.OPENED, myOnlyExternal);

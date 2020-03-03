@@ -27,8 +27,8 @@ import org.arend.naming.renamer.ReferableRenamer;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.visitor.VoidConcreteVisitor;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.*;
 
 import static org.arend.term.concrete.ConcreteExpressionFactory.*;
@@ -60,7 +60,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   public static Concrete.LevelExpression convert(Level level) {
     return new ToAbstractVisitor(new PrettyPrinterConfig() {
-        @Nonnull
+        @NotNull
         @Override
         public EnumSet<PrettyPrinterFlag> getExpressionFlags() {
           return EnumSet.of(PrettyPrinterFlag.SHOW_LEVELS);

@@ -1,9 +1,8 @@
 package org.arend.ext.module;
 
 import org.arend.ext.reference.RawScope;
-
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 public interface ModuleScopeProvider {
-  RawScope forModule(@Nonnull ModulePath module);
+  RawScope forModule(@NotNull ModulePath module);
 }

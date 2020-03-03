@@ -9,8 +9,8 @@ import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.arend.ext.reference.Precedence;
 import org.arend.naming.reference.ModuleReferable;
 import org.arend.naming.reference.Referable;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -20,11 +20,11 @@ import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public interface NamespaceCommand extends PrettyPrintable {
   enum Kind { OPEN, IMPORT }
-  @Nonnull Kind getKind();
-  @Nonnull List<String> getPath();
+  @NotNull Kind getKind();
+  @NotNull List<String> getPath();
   boolean isUsing();
-  @Nonnull Collection<? extends NameRenaming> getOpenedReferences();
-  @Nonnull Collection<? extends Referable> getHiddenReferences();
+  @NotNull Collection<? extends NameRenaming> getOpenedReferences();
+  @NotNull Collection<? extends Referable> getHiddenReferences();
 
   @Override
   default void prettyPrint(StringBuilder builder, PrettyPrinterConfig infoProvider) {

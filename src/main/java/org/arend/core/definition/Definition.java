@@ -7,8 +7,8 @@ import org.arend.core.expr.Expression;
 import org.arend.core.sort.Sort;
 import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.naming.reference.TCReferable;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.List;
 
@@ -22,13 +22,13 @@ public abstract class Definition implements Variable, CoreDefinition {
     myStatus = status;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public String getName() {
     return myReferable.textRepresentation();
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public TCReferable getRef() {
     return myReferable;

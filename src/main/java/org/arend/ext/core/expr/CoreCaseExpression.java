@@ -2,16 +2,16 @@ package org.arend.ext.core.expr;
 
 import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.core.elimtree.CoreElimBody;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Collection;
 
 public interface CoreCaseExpression {
   boolean isSCase();
-  @Nonnull CoreParameter getParameters();
-  @Nonnull CoreExpression getResultType();
+  @NotNull CoreParameter getParameters();
+  @NotNull CoreExpression getResultType();
   @Nullable CoreExpression getResultTypeLevel();
-  @Nonnull CoreElimBody getElimBody();
-  @Nonnull Collection<? extends CoreExpression> getArguments();
+  @NotNull CoreElimBody getElimBody();
+  @NotNull Collection<? extends CoreExpression> getArguments();
 }

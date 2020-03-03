@@ -10,8 +10,8 @@ import org.arend.naming.reference.Referable;
 import org.arend.naming.renamer.Renamer;
 import org.arend.term.Fixity;
 import org.arend.term.concrete.Concrete;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -92,7 +92,7 @@ public class BinOpParser {
     }
   }
 
-  public void push(Concrete.ReferenceExpression reference, @Nonnull Precedence precedence, boolean isPostfix) {
+  public void push(Concrete.ReferenceExpression reference, @NotNull Precedence precedence, boolean isPostfix) {
     if (myStack.isEmpty()) {
       myStack.add(new StackElem(reference, precedence));
       return;

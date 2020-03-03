@@ -2,9 +2,9 @@ package org.arend.term.abs;
 
 import org.arend.naming.reference.Referable;
 import org.arend.term.Fixity;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.util.Collection;
 
@@ -16,12 +16,12 @@ public class BaseAbstractExpressionVisitor<P, R> implements AbstractExpressionVi
   }
 
   @Override
-  public R visitReference(@Nullable Object data, @Nonnull Referable referent, @Nullable Fixity fixity, @Nullable Abstract.LevelExpression level1, @Nullable Abstract.LevelExpression level2, P params) {
+  public R visitReference(@Nullable Object data, @NotNull Referable referent, @Nullable Fixity fixity, @Nullable Abstract.LevelExpression level1, @Nullable Abstract.LevelExpression level2, P params) {
     return defaultValue;
   }
 
   @Override
-  public R visitReference(@Nullable Object data, @Nonnull Referable referent, int lp, int lh, P params) {
+  public R visitReference(@Nullable Object data, @NotNull Referable referent, int lp, int lh, P params) {
     return defaultValue;
   }
 
@@ -31,12 +31,12 @@ public class BaseAbstractExpressionVisitor<P, R> implements AbstractExpressionVi
   }
 
   @Override
-  public R visitLam(@Nullable Object data, @Nonnull Collection<? extends Abstract.Parameter> parameters, @Nullable Abstract.Expression body, P params) {
+  public R visitLam(@Nullable Object data, @NotNull Collection<? extends Abstract.Parameter> parameters, @Nullable Abstract.Expression body, P params) {
     return defaultValue;
   }
 
   @Override
-  public R visitPi(@Nullable Object data, @Nonnull Collection<? extends Abstract.Parameter> parameters, @Nullable Abstract.Expression codomain, P params) {
+  public R visitPi(@Nullable Object data, @NotNull Collection<? extends Abstract.Parameter> parameters, @Nullable Abstract.Expression codomain, P params) {
     return defaultValue;
   }
 
@@ -56,47 +56,47 @@ public class BaseAbstractExpressionVisitor<P, R> implements AbstractExpressionVi
   }
 
   @Override
-  public R visitTuple(@Nullable Object data, @Nonnull Collection<? extends Abstract.Expression> fields, P params) {
+  public R visitTuple(@Nullable Object data, @NotNull Collection<? extends Abstract.Expression> fields, P params) {
     return defaultValue;
   }
 
   @Override
-  public R visitSigma(@Nullable Object data, @Nonnull Collection<? extends Abstract.Parameter> parameters, P params) {
+  public R visitSigma(@Nullable Object data, @NotNull Collection<? extends Abstract.Parameter> parameters, P params) {
     return defaultValue;
   }
 
   @Override
-  public R visitBinOpSequence(@Nullable Object data, @Nonnull Abstract.Expression left, @Nonnull Collection<? extends Abstract.BinOpSequenceElem> sequence, P params) {
+  public R visitBinOpSequence(@Nullable Object data, @NotNull Abstract.Expression left, @NotNull Collection<? extends Abstract.BinOpSequenceElem> sequence, P params) {
     return defaultValue;
   }
 
   @Override
-  public R visitCase(@Nullable Object data, boolean isSFunc, @Nullable Abstract.EvalKind evalKind, @Nonnull Collection<? extends Abstract.CaseArgument> caseArgs, @Nullable Abstract.Expression resultType, @Nullable Abstract.Expression resultTypeLevel, @Nonnull Collection<? extends Abstract.FunctionClause> clauses, P params) {
+  public R visitCase(@Nullable Object data, boolean isSFunc, @Nullable Abstract.EvalKind evalKind, @NotNull Collection<? extends Abstract.CaseArgument> caseArgs, @Nullable Abstract.Expression resultType, @Nullable Abstract.Expression resultTypeLevel, @NotNull Collection<? extends Abstract.FunctionClause> clauses, P params) {
     return defaultValue;
   }
 
   @Override
-  public R visitFieldAccs(@Nullable Object data, @Nonnull Abstract.Expression expression, @Nonnull Collection<Integer> fieldAccs, P params) {
+  public R visitFieldAccs(@Nullable Object data, @NotNull Abstract.Expression expression, @NotNull Collection<Integer> fieldAccs, P params) {
     return defaultValue;
   }
 
   @Override
-  public R visitClassExt(@Nullable Object data, boolean isNew, @Nullable Abstract.EvalKind evalKind, @Nullable Abstract.Expression baseClass, @Nullable Collection<? extends Abstract.ClassFieldImpl> implementations, @Nonnull Collection<? extends Abstract.BinOpSequenceElem> sequence, P params) {
+  public R visitClassExt(@Nullable Object data, boolean isNew, @Nullable Abstract.EvalKind evalKind, @Nullable Abstract.Expression baseClass, @Nullable Collection<? extends Abstract.ClassFieldImpl> implementations, @NotNull Collection<? extends Abstract.BinOpSequenceElem> sequence, P params) {
     return defaultValue;
   }
 
   @Override
-  public R visitLet(@Nullable Object data, boolean isStrict, @Nonnull Collection<? extends Abstract.LetClause> clauses, @Nullable Abstract.Expression expression, P params) {
+  public R visitLet(@Nullable Object data, boolean isStrict, @NotNull Collection<? extends Abstract.LetClause> clauses, @Nullable Abstract.Expression expression, P params) {
     return defaultValue;
   }
 
   @Override
-  public R visitNumericLiteral(@Nullable Object data, @Nonnull BigInteger number, P params) {
+  public R visitNumericLiteral(@Nullable Object data, @NotNull BigInteger number, P params) {
     return defaultValue;
   }
 
   @Override
-  public R visitTyped(@Nullable Object data, @Nonnull Abstract.Expression expr, @Nonnull Abstract.Expression type, P params) {
+  public R visitTyped(@Nullable Object data, @NotNull Abstract.Expression expr, @NotNull Abstract.Expression type, P params) {
     return defaultValue;
   }
 }

@@ -5,19 +5,18 @@ import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.ExpressionMapper;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.prettyprinting.PrettyPrintable;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public interface CoreExpression extends CoreBody, PrettyPrintable {
-  <P, R> R accept(@Nonnull CoreExpressionVisitor<? super P, ? extends R> visitor, P params);
+  <P, R> R accept(@NotNull CoreExpressionVisitor<? super P, ? extends R> visitor, P params);
 
-  @Nonnull CoreExpression getUnderlyingExpression();
+  @NotNull CoreExpression getUnderlyingExpression();
   @Nullable CoreExpression getType();
-  @Nonnull CoreExpression normalize(@Nonnull NormalizationMode mode);
+  @NotNull CoreExpression normalize(@NotNull NormalizationMode mode);
 
-  @Nullable CoreExpression recreate(@Nonnull ExpressionMapper mapper);
-  boolean compare(@Nonnull CoreExpression expr2, @Nonnull CMP cmp);
+  @Nullable CoreExpression recreate(@NotNull ExpressionMapper mapper);
+  boolean compare(@NotNull CoreExpression expr2, @NotNull CMP cmp);
 
   @Nullable CoreExpression removeConstLam();
   @Nullable CoreFunCallExpression toEquality();

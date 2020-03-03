@@ -8,8 +8,7 @@ import org.arend.source.GZIPStreamBinarySource;
 import org.arend.source.Source;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
-
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * A library which is used to load prelude from a resource.

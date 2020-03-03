@@ -6,9 +6,9 @@ import org.arend.source.BinarySource;
 import org.arend.source.Source;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.util.Range;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.*;
 
 public class MemoryLibrary extends UnmodifiableSourceLibrary {
@@ -54,7 +54,7 @@ public class MemoryLibrary extends UnmodifiableSourceLibrary {
     myBinarySources.put(module, new MemoryBinarySource(module));
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public List<? extends LibraryDependency> getDependencies() {
     return Collections.emptyList();

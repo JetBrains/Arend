@@ -2,8 +2,8 @@ package org.arend.frontend.source;
 
 import org.arend.ext.module.ModulePath;
 import org.arend.util.FileUtils;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -23,7 +23,7 @@ public class FileRawSource extends StreamRawSource {
     myFile = FileUtils.sourceFile(basePath, modulePath);
   }
 
-  @Nonnull
+  @NotNull
   @Override
   protected InputStream getInputStream() throws IOException {
     return Files.newInputStream(myFile);

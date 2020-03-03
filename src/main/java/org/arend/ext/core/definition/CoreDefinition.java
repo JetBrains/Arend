@@ -1,9 +1,8 @@
 package org.arend.ext.core.definition;
 
 import org.arend.ext.reference.ArendRef;
-
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 public interface CoreDefinition {
-  @Nonnull ArendRef getRef();
+  @NotNull ArendRef getRef();
 }

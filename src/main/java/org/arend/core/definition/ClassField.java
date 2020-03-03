@@ -9,8 +9,8 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.definition.CoreClassField;
 import org.arend.naming.reference.TCFieldReferable;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.List;
 
@@ -40,7 +40,7 @@ public class ClassField extends Definition implements CoreClassField {
     return (TCFieldReferable) super.getReferable();
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public ClassDefinition getParentClass() {
     return myParentClass;
@@ -62,13 +62,13 @@ public class ClassField extends Definition implements CoreClassField {
     return myNumberOfParameters;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public SingleDependentLink getThisParameter() {
     return myType.getParameters();
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Expression getResultType() {
     return myType.getCodomain();
@@ -138,7 +138,7 @@ public class ClassField extends Definition implements CoreClassField {
     return index == 0 && !myParentClass.isRecord() ? TypeClassParameterKind.YES : TypeClassParameterKind.NO;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public DependentLink getParameters() {
     return myType.getParameters();

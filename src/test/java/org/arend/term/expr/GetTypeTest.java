@@ -89,7 +89,7 @@ public class GetTypeTest extends TypeCheckingTestCase {
     SingleDependentLink F = singleParam("F", Pi(Nat(), Universe(new Level(0), new Level(LevelVariable.HVAR))));
     SingleDependentLink x = singleParam("x", Nat());
     SingleDependentLink f = singleParam("f", Pi(x, Apps(Ref(F), Ref(x))));
-    assertEquals(Pi(F, Pi(f, Apps(Ref(F), Zero()))), Objects.requireNonNull(((Expression) ((FunctionDefinition) def).getBody()).getType()).normalize(NormalizationMode.NF));
+    assertEquals(Pi(F, Pi(f, Apps(Ref(F), Zero()))), Objects.requireNotNull(((Expression) ((FunctionDefinition) def).getBody()).getType()).normalize(NormalizationMode.NF));
   }
 
   @Test

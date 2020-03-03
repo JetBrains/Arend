@@ -1,8 +1,8 @@
 package org.arend.core.expr.let;
 
 import org.arend.core.definition.ClassField;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.util.List;
 
 public class NameLetClausePattern implements LetClausePattern {

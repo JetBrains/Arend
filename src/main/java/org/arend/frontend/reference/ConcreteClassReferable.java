@@ -12,8 +12,8 @@ import org.arend.naming.scope.CachingScope;
 import org.arend.naming.scope.Scope;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.ChildGroup;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -26,7 +26,7 @@ public class ConcreteClassReferable extends ConcreteLocatedReferable implements 
   private final List<TCClassReferable> mySuperClasses;
   private boolean myResolved = false;
 
-  public ConcreteClassReferable(Position position, @Nonnull String name, Precedence precedence, Collection<? extends ConcreteClassFieldReferable> fields, List<? extends Reference> superClasses, ChildGroup group, TCReferable parent) {
+  public ConcreteClassReferable(Position position, @NotNull String name, Precedence precedence, Collection<? extends ConcreteClassFieldReferable> fields, List<? extends Reference> superClasses, ChildGroup group, TCReferable parent) {
     super(position, name, precedence, parent, Kind.TYPECHECKABLE);
     myFields = fields;
     myUnresolvedSuperClasses = superClasses;
@@ -34,7 +34,7 @@ public class ConcreteClassReferable extends ConcreteLocatedReferable implements 
     myGroup = group;
   }
 
-  public ConcreteClassReferable(Position position, @Nonnull String name, Precedence precedence, Collection<? extends ConcreteClassFieldReferable> fields, List<? extends Reference> superClasses, ChildGroup group, ModulePath parent) {
+  public ConcreteClassReferable(Position position, @NotNull String name, Precedence precedence, Collection<? extends ConcreteClassFieldReferable> fields, List<? extends Reference> superClasses, ChildGroup group, ModulePath parent) {
     super(position, name, precedence, parent, Kind.TYPECHECKABLE);
     myFields = fields;
     myUnresolvedSuperClasses = superClasses;
@@ -47,7 +47,7 @@ public class ConcreteClassReferable extends ConcreteLocatedReferable implements 
     return (Concrete.ClassDefinition) super.getDefinition();
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public List<? extends TCClassReferable> getSuperClassReferences() {
     if (myUnresolvedSuperClasses.isEmpty()) {
@@ -75,19 +75,19 @@ public class ConcreteClassReferable extends ConcreteLocatedReferable implements 
     }
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Collection<? extends Reference> getUnresolvedSuperClassReferences() {
     return myUnresolvedSuperClasses;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Collection<? extends ConcreteClassFieldReferable> getFieldReferables() {
     return myFields;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Collection<? extends Referable> getImplementedFields() {
     List<Referable> result = new ArrayList<>();

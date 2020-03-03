@@ -5,8 +5,8 @@ import org.arend.core.expr.visitor.ExpressionVisitor2;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CoreTupleExpression;
 import org.arend.util.Decision;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 
 public class TupleExpression extends Expression implements CoreTupleExpression {
@@ -18,13 +18,13 @@ public class TupleExpression extends Expression implements CoreTupleExpression {
     myType = type;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public List<Expression> getFields() {
     return myFields;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public SigmaExpression getSigmaType() {
     return myType;
@@ -41,7 +41,7 @@ public class TupleExpression extends Expression implements CoreTupleExpression {
   }
 
   @Override
-  public <P, R> R accept(@Nonnull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
+  public <P, R> R accept(@NotNull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitTuple(this, params);
   }
 

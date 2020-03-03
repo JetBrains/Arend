@@ -13,8 +13,8 @@ import org.arend.core.subst.LevelSubstitution;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.naming.reference.TCReferable;
 import org.arend.prelude.Prelude;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.List;
 
@@ -62,7 +62,7 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
     return myKind != Kind.FUNC;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Kind getKind() {
     return myKind;
@@ -72,7 +72,7 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
     myKind = kind;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public DependentLink getParameters() {
     return myParameters;

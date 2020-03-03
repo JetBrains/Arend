@@ -2,9 +2,9 @@ package org.arend.term.group;
 
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.term.ChildNamespaceCommand;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -22,25 +22,25 @@ public class StaticGroup implements ChildGroup {
     myParent = parent;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public LocatedReferable getReferable() {
     return myReferable;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public List<Group> getSubgroups() {
     return myStaticGroups;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public List<ChildNamespaceCommand> getNamespaceCommands() {
     return myNamespaceCommands;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Collection<? extends InternalReferable> getInternalReferables() {
     return Collections.emptyList();

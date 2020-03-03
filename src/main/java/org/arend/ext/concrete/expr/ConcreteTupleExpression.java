@@ -1,8 +1,9 @@
 package org.arend.ext.concrete.expr;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.List;
 
 public interface ConcreteTupleExpression extends ConcreteExpression {
-  @Nonnull List<? extends ConcreteExpression> getFields();
+  @NotNull List<? extends ConcreteExpression> getFields();
 }

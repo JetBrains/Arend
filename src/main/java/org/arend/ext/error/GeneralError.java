@@ -7,8 +7,8 @@ import org.arend.ext.prettyprinting.doc.DocStringBuilder;
 import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.arend.ext.reference.ArendRef;
 import org.arend.ext.reference.DataContainer;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.function.BiConsumer;
@@ -16,8 +16,8 @@ import java.util.function.BiConsumer;
 import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public class GeneralError {
-  public final @Nonnull String message;
-  public final @Nonnull Level level;
+  public final @NotNull String message;
+  public final @NotNull Level level;
 
   public enum Level { INFO, WARNING_UNUSED {
     @Override
@@ -28,7 +28,7 @@ public class GeneralError {
 
   public enum Stage { TYPECHECKER, RESOLVER, PARSER, OTHER }
 
-  public GeneralError(@Nonnull Level level, @Nonnull String message) {
+  public GeneralError(@NotNull Level level, @NotNull String message) {
     this.level = level;
     this.message = message;
   }
@@ -92,7 +92,7 @@ public class GeneralError {
     return DocStringBuilder.build(getShortHeaderDoc(PrettyPrinterConfig.DEFAULT));
   }
 
-  @Nonnull
+  @NotNull
   public Stage getStage() {
     return Stage.OTHER;
   }

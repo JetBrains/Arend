@@ -23,9 +23,9 @@ import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.order.dependency.DependencyListener;
 import org.arend.typechecking.order.dependency.DummyDependencyListener;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -144,7 +144,7 @@ public abstract class SourceLibrary extends BaseLibrary {
    *
    * @return a dependency listener.
    */
-  @Nonnull
+  @NotNull
   public DependencyListener getDependencyListener() {
     return DummyDependencyListener.INSTANCE;
   }

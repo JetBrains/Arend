@@ -18,11 +18,12 @@ repositories {
 
 dependencies {
     implementation("com.google.protobuf:protobuf-java:3.11.1")
-    implementation("com.google.code.findbugs:jsr305:3.0.2")
 
     implementation("commons-cli:commons-cli:1.4")
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.10.1")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.10.1")
+
+    implementation("org.jetbrains:annotations:19.0.0")
 
     testImplementation("junit:junit:4.12")
     testImplementation("org.hamcrest:hamcrest-library:1.3")
@@ -153,4 +154,4 @@ task<JavaExec>("prelude") {
 
 // Utils
 
-fun isTrue(name: String) = (extra.properties[name] as? String)?.toBoolean() == true
+fun isTrue(name: String) = extra.properties[name] == "true"

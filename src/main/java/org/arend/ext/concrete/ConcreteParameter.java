@@ -1,7 +1,7 @@
 package org.arend.ext.concrete;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 public interface ConcreteParameter extends ConcreteSourceNode {
-  @Nonnull ConcreteParameter implicit();
+  @NotNull ConcreteParameter implicit();
 }

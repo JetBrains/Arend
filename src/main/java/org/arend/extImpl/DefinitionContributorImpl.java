@@ -12,8 +12,8 @@ import org.arend.module.scopeprovider.SimpleModuleScopeProvider;
 import org.arend.naming.reference.MetaReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.scope.SimpleScope;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 
 public class DefinitionContributorImpl extends Disableable implements DefinitionContributor {
@@ -28,7 +28,7 @@ public class DefinitionContributorImpl extends Disableable implements Definition
   }
 
   @Override
-  public void declare(@Nonnull ModulePath module, @Nonnull LongName longName, @Nonnull Precedence precedence, @Nonnull MetaDefinition meta) {
+  public void declare(@NotNull ModulePath module, @NotNull LongName longName, @NotNull Precedence precedence, @NotNull MetaDefinition meta) {
     checkEnabled();
 
     SimpleScope scope = (SimpleScope) myModuleScopeProvider.forModule(module);

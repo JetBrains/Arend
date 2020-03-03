@@ -1,14 +1,14 @@
 package org.arend.ext.error;
 
 import org.arend.ext.reference.ArendRef;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.function.BiConsumer;
 
 public class LocalError extends GeneralError {
   public ArendRef definition;
 
-  public LocalError(@Nonnull Level level, String message) {
+  public LocalError(@NotNull Level level, String message) {
     super(level, message);
   }
 

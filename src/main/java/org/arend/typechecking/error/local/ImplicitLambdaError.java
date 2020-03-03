@@ -5,15 +5,14 @@ import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
-
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public class ImplicitLambdaError extends TypecheckingError {
   public final Referable parameter;
 
-  public ImplicitLambdaError(Referable parameter, @Nonnull Concrete.LamExpression cause) {
+  public ImplicitLambdaError(Referable parameter, @NotNull Concrete.LamExpression cause) {
     super("", cause);
     this.parameter = parameter;
   }

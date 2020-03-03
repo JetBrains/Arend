@@ -3,8 +3,7 @@ package org.arend.typechecking.provider;
 import org.arend.naming.reference.ClassReferable;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.term.concrete.Concrete;
-
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 public class EmptyConcreteProvider implements ConcreteProvider {
   public final static EmptyConcreteProvider INSTANCE = new EmptyConcreteProvider();

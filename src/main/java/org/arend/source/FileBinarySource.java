@@ -3,9 +3,9 @@ package org.arend.source;
 import org.arend.ext.module.ModulePath;
 import org.arend.library.SourceLibrary;
 import org.arend.util.FileUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -28,7 +28,7 @@ public class FileBinarySource extends StreamBinarySource {
     myModulePath = modulePath;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public ModulePath getModulePath() {
     return myModulePath;

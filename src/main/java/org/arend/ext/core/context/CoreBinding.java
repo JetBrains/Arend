@@ -1,8 +1,7 @@
 package org.arend.ext.core.context;
 
 import org.arend.ext.core.expr.CoreExpression;
-
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 public interface CoreBinding {
   @Nullable String getName();

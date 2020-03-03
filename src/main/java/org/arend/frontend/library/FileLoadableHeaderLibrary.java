@@ -10,8 +10,8 @@ import org.arend.typechecking.TypecheckerState;
 import org.arend.util.FileUtils;
 import org.arend.util.Range;
 import org.arend.util.Version;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;

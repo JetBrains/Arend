@@ -6,9 +6,9 @@ import org.arend.naming.reference.Referable;
 import org.arend.term.ClassFieldKind;
 import org.arend.term.FunctionKind;
 import org.arend.term.NamespaceCommand;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
 
@@ -16,7 +16,7 @@ public final class Abstract {
   private Abstract() {}
 
   public interface SourceNode {
-    @Nonnull SourceNode getTopmostEquivalentSourceNode();
+    @NotNull SourceNode getTopmostEquivalentSourceNode();
     @Nullable SourceNode getParentSourceNode();
 
     default boolean isLocal() {
@@ -25,7 +25,7 @@ public final class Abstract {
   }
 
   public static abstract class SourceNodeImpl implements SourceNode {
-    @Nonnull
+    @NotNull
     @Override
     public SourceNode getTopmostEquivalentSourceNode() {
       return this;
@@ -54,7 +54,7 @@ public final class Abstract {
 
   public interface Clause extends SourceNode {
     @Nullable Object getData();
-    @Nonnull List<? extends Pattern> getPatterns();
+    @NotNull List<? extends Pattern> getPatterns();
   }
 
   public interface FunctionClause extends Clause {
@@ -62,7 +62,7 @@ public final class Abstract {
   }
 
   public interface ConstructorClause extends Clause {
-    @Nonnull Collection<? extends Constructor> getConstructors();
+    @NotNull Collection<? extends Constructor> getConstructors();
   }
 
   public interface TypedReferable extends SourceNode {
@@ -77,9 +77,9 @@ public final class Abstract {
     boolean isExplicit();
     @Nullable Integer getNumber();
     @Nullable Referable getHeadReference();
-    @Nonnull List<? extends Pattern> getArguments();
+    @NotNull List<? extends Pattern> getArguments();
     @Nullable Expression getType();
-    @Nonnull List<? extends TypedReferable> getAsPatterns();
+    @NotNull List<? extends TypedReferable> getAsPatterns();
   }
 
   public interface Reference extends org.arend.naming.reference.Reference, SourceNode {
@@ -87,17 +87,17 @@ public final class Abstract {
 
   public interface LongReference extends Reference {
     @Nullable Reference getHeadReference();
-    @Nonnull Collection<? extends Reference> getTailReferences();
+    @NotNull Collection<? extends Reference> getTailReferences();
   }
 
   // Holder
 
   public interface ParametersHolder extends SourceNode {
-    @Nonnull List<? extends Parameter> getParameters();
+    @NotNull List<? extends Parameter> getParameters();
   }
 
   public interface LetClausesHolder extends SourceNode {
-    @Nonnull Collection<? extends LetClause> getLetClauses();
+    @NotNull Collection<? extends LetClause> getLetClauses();
   }
 
   public interface EliminatedExpressionsHolder extends ParametersHolder {
@@ -106,7 +106,7 @@ public final class Abstract {
 
   public interface ClassReferenceHolder extends SourceNode {
     @Nullable ClassReferable getClassReference();
-    @Nonnull Collection<? extends CoClauseElement> getCoClauseElements();
+    @NotNull Collection<? extends CoClauseElement> getCoClauseElements();
   }
 
   public interface NamespaceCommandHolder extends SourceNode, NamespaceCommand {
@@ -126,7 +126,7 @@ public final class Abstract {
 
   public interface Expression extends SourceNode {
     @Nullable Object getData();
-    <P, R> R accept(@Nonnull AbstractExpressionVisitor<? super P, ? extends R> visitor, @Nullable P params);
+    <P, R> R accept(@NotNull AbstractExpressionVisitor<? super P, ? extends R> visitor, @Nullable P params);
   }
 
   public interface CaseArgument extends SourceNode {
@@ -137,32 +137,32 @@ public final class Abstract {
   }
 
   public interface CaseArgumentsHolder extends SourceNode {
-    @Nonnull List<? extends CaseArgument> getCaseArguments();
+    @NotNull List<? extends CaseArgument> getCaseArguments();
   }
 
   public interface BinOpSequenceElem extends SourceNode {
-    /* @Nonnull */ @Nullable Expression getExpression();
+    /* @NotNull */ @Nullable Expression getExpression();
     boolean isVariable();
     boolean isExplicit();
   }
 
   public interface Argument extends SourceNode {
     boolean isExplicit();
-    /* @Nonnull */ @Nullable Expression getExpression();
+    /* @NotNull */ @Nullable Expression getExpression();
   }
 
   public interface ClassElement extends SourceNode {
   }
 
   public interface CoClauseElement extends ClassElement {
-    /* @Nonnull */ @Nullable Reference getImplementedField();
+    /* @NotNull */ @Nullable Reference getImplementedField();
   }
 
   public interface ClassFieldImpl extends CoClauseElement, ParametersHolder, ClassReferenceHolder {
-    @Override @Nonnull Collection<? extends ClassFieldImpl> getCoClauseElements();
+    @Override @NotNull Collection<? extends ClassFieldImpl> getCoClauseElements();
     @Nullable Object getData();
     @Nullable Object getPrec();
-    /* @Nonnull */ @Nullable Expression getImplementation();
+    /* @NotNull */ @Nullable Expression getImplementation();
     boolean hasImplementation();
   }
 
@@ -174,14 +174,14 @@ public final class Abstract {
     boolean isIgnored();
     @Nullable Referable getReferable();
     @Nullable Abstract.Expression getType();
-    @Nonnull List<? extends LetClausePattern> getPatterns();
+    @NotNull List<? extends LetClausePattern> getPatterns();
   }
 
   public interface LetClause extends ParametersHolder {
     @Nullable LetClausePattern getPattern();
     @Nullable Referable getReferable();
     @Nullable Expression getResultType();
-    /* @Nonnull */ @Nullable Expression getTerm();
+    /* @NotNull */ @Nullable Expression getTerm();
   }
 
   public interface LevelExpression extends SourceNode {
@@ -192,7 +192,7 @@ public final class Abstract {
   // Definition
 
   public interface ReferableDefinition extends SourceNode {
-    /* @Nonnull */ @Nullable LocatedReferable getReferable();
+    /* @NotNull */ @Nullable LocatedReferable getReferable();
 
     @Override
     default boolean isLocal() {
@@ -202,7 +202,7 @@ public final class Abstract {
 
   public interface Definition extends ReferableDefinition {
     @Nullable ClassReferable getEnclosingClass();
-    @Override @Nonnull LocatedReferable getReferable();
+    @Override @NotNull LocatedReferable getReferable();
     <R> R accept(AbstractDefinitionVisitor<? extends R> visitor);
   }
 
@@ -210,9 +210,9 @@ public final class Abstract {
     @Nullable Expression getResultType();
     @Nullable Expression getResultTypeLevel();
     @Nullable Expression getTerm();
-    @Override @Nonnull Collection<? extends Reference> getEliminatedExpressions();
-    @Nonnull Collection<? extends FunctionClause> getClauses();
-    @Nonnull Collection<? extends LocatedReferable> getUsedDefinitions();
+    @Override @NotNull Collection<? extends Reference> getEliminatedExpressions();
+    @NotNull Collection<? extends FunctionClause> getClauses();
+    @NotNull Collection<? extends LocatedReferable> getUsedDefinitions();
     boolean withTerm();
     boolean isCowith();
     FunctionKind getFunctionKind();
@@ -222,38 +222,38 @@ public final class Abstract {
   public interface DataDefinition extends Definition, EliminatedExpressionsHolder {
     boolean isTruncated();
     @Nullable Expression getUniverse();
-    @Nonnull Collection<? extends ConstructorClause> getClauses();
-    @Nonnull Collection<? extends LocatedReferable> getUsedDefinitions();
+    @NotNull Collection<? extends ConstructorClause> getClauses();
+    @NotNull Collection<? extends LocatedReferable> getUsedDefinitions();
   }
 
   public interface ClassDefinition extends Definition, ParametersHolder, ClassReferenceHolder  {
-    @Override @Nonnull ClassReferable getReferable();
-    @Override @Nonnull List<? extends FieldParameter> getParameters();
-    @Override @Nonnull Collection<? extends ClassFieldImpl> getCoClauseElements();
+    @Override @NotNull ClassReferable getReferable();
+    @Override @NotNull List<? extends FieldParameter> getParameters();
+    @Override @NotNull Collection<? extends ClassFieldImpl> getCoClauseElements();
     boolean isRecord();
     boolean withoutClassifying();
-    @Nonnull Collection<? extends Reference> getSuperClasses();
-    @Nonnull Collection<? extends ClassElement> getClassElements();
-    @Nonnull Collection<? extends LocatedReferable> getUsedDefinitions();
+    @NotNull Collection<? extends Reference> getSuperClasses();
+    @NotNull Collection<? extends ClassElement> getClassElements();
+    @NotNull Collection<? extends LocatedReferable> getUsedDefinitions();
   }
 
   public interface Constructor extends ReferableDefinition, EliminatedExpressionsHolder {
-    @Override @Nonnull LocatedReferable getReferable();
-    @Override @Nonnull Collection<? extends Reference> getEliminatedExpressions();
-    @Nonnull Collection<? extends FunctionClause> getClauses();
+    @Override @NotNull LocatedReferable getReferable();
+    @Override @NotNull Collection<? extends Reference> getEliminatedExpressions();
+    @NotNull Collection<? extends FunctionClause> getClauses();
     @Nullable Expression getResultType();
   }
 
   public interface ClassField extends ClassElement, ReferableDefinition, ParametersHolder {
     ClassFieldKind getClassFieldKind();
-    /* @Nonnull */ @Nullable Expression getResultType();
+    /* @NotNull */ @Nullable Expression getResultType();
     @Nullable Expression getResultTypeLevel();
   }
 
   public interface OverriddenField extends ClassElement, ParametersHolder {
     @Nullable Object getData();
-    /* @Nonnull */ @Nullable Reference getOverriddenField();
-    /* @Nonnull */ @Nullable Expression getResultType();
+    /* @NotNull */ @Nullable Reference getOverriddenField();
+    /* @NotNull */ @Nullable Expression getResultType();
     @Nullable Expression getResultTypeLevel();
   }
 }

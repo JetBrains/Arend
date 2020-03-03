@@ -7,8 +7,8 @@ import org.arend.core.sort.Sort;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CoreFieldCallExpression;
 import org.arend.util.Decision;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.List;
 
@@ -42,7 +42,7 @@ public class FieldCallExpression extends DefCallExpression implements CoreFieldC
     return new FieldCallExpression(definition, sortArgument, thisExpr);
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Expression getArgument() {
     return myArgument;
@@ -53,7 +53,7 @@ public class FieldCallExpression extends DefCallExpression implements CoreFieldC
     return Collections.singletonList(myArgument);
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public ClassField getDefinition() {
     return (ClassField) super.getDefinition();
@@ -75,7 +75,7 @@ public class FieldCallExpression extends DefCallExpression implements CoreFieldC
   }
 
   @Override
-  public <P, R> R accept(@Nonnull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
+  public <P, R> R accept(@NotNull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitFieldCall(this, params);
   }
 

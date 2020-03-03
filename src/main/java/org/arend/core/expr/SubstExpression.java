@@ -5,8 +5,7 @@ import org.arend.core.expr.visitor.ExpressionVisitor2;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.util.Decision;
-
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 public class SubstExpression extends Expression {
   private final Expression myExpression;
@@ -53,11 +52,11 @@ public class SubstExpression extends Expression {
   }
 
   @Override
-  public <P, R> R accept(@Nonnull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
+  public <P, R> R accept(@NotNull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return getSubstExpression().accept(visitor, params);
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Expression getUnderlyingExpression() {
     return getSubstExpression().getUnderlyingExpression();

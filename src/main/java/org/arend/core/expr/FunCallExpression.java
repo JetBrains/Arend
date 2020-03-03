@@ -9,8 +9,8 @@ import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CoreFunCallExpression;
 import org.arend.prelude.Prelude;
 import org.arend.util.Decision;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 
 public class FunCallExpression extends DefCallExpression implements CoreFunCallExpression {
@@ -21,7 +21,7 @@ public class FunCallExpression extends DefCallExpression implements CoreFunCallE
     myArguments = arguments;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public List<? extends Expression> getDefCallArguments() {
     return myArguments;
@@ -32,7 +32,7 @@ public class FunCallExpression extends DefCallExpression implements CoreFunCallE
     return getDefinition() instanceof DConstructor ? myArguments.subList(((DConstructor) getDefinition()).getNumberOfParameters(), myArguments.size()) : myArguments;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public FunctionDefinition getDefinition() {
     return (FunctionDefinition) super.getDefinition();
@@ -54,7 +54,7 @@ public class FunCallExpression extends DefCallExpression implements CoreFunCallE
   }
 
   @Override
-  public <P, R> R accept(@Nonnull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
+  public <P, R> R accept(@NotNull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitFunCall(this, params);
   }
 

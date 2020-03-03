@@ -1,9 +1,9 @@
 package org.arend.ext.core.elimtree;
 
 import org.arend.ext.core.expr.CoreExpression;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Collection;
 
 public interface CoreIntervalElim extends CoreBody {
@@ -12,6 +12,6 @@ public interface CoreIntervalElim extends CoreBody {
     @Nullable CoreExpression getRightCase();
   }
 
-  @Nonnull Collection<? extends CasePair> getCases();
+  @NotNull Collection<? extends CasePair> getCases();
   @Nullable CoreElimBody getOtherwise();
 }

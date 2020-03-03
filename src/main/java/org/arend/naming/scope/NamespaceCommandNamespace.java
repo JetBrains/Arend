@@ -6,9 +6,9 @@ import org.arend.naming.reference.Referable;
 import org.arend.naming.resolving.visitor.ExpressionResolveNameVisitor;
 import org.arend.term.NameRenaming;
 import org.arend.term.NamespaceCommand;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.*;
 
 public class NamespaceCommandNamespace implements Scope {
@@ -20,11 +20,11 @@ public class NamespaceCommandNamespace implements Scope {
     myModuleNamespace = moduleNamespace;
   }
 
-  public static @Nonnull Scope makeNamespace(Scope moduleNamespace, NamespaceCommand namespaceCommand) {
+  public static @NotNull Scope makeNamespace(Scope moduleNamespace, NamespaceCommand namespaceCommand) {
     return moduleNamespace == null || namespaceCommand.getOpenedReferences().isEmpty() && !namespaceCommand.isUsing() ? EmptyScope.INSTANCE : new NamespaceCommandNamespace(moduleNamespace, namespaceCommand);
   }
 
-  public static @Nonnull Scope resolveNamespace(Scope parentScope, NamespaceCommand cmd) {
+  public static @NotNull Scope resolveNamespace(Scope parentScope, NamespaceCommand cmd) {
     if (cmd.getOpenedReferences().isEmpty() && !cmd.isUsing()) {
       return EmptyScope.INSTANCE;
     }
@@ -36,7 +36,7 @@ public class NamespaceCommandNamespace implements Scope {
     return parentScope == null ? EmptyScope.INSTANCE : new NamespaceCommandNamespace(parentScope, cmd);
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Collection<? extends Referable> getElements() {
     Set<String> hidden = new HashSet<>();

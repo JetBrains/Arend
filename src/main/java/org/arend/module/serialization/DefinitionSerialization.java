@@ -2,7 +2,9 @@ package org.arend.module.serialization;
 
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.*;
-import org.arend.core.elimtree.*;
+import org.arend.core.elimtree.Body;
+import org.arend.core.elimtree.ElimBody;
+import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.AbsExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.PiExpression;
@@ -14,8 +16,8 @@ import org.arend.core.sort.Sort;
 import org.arend.ext.reference.Precedence;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.util.Pair;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -295,7 +297,7 @@ public class DefinitionSerialization {
     return builder.build();
   }
 
-  private DefinitionProtos.Body writeBody(ExpressionSerialization defSerializer, @Nonnull Body body) {
+  private DefinitionProtos.Body writeBody(ExpressionSerialization defSerializer, @NotNull Body body) {
     DefinitionProtos.Body.Builder bodyBuilder = DefinitionProtos.Body.newBuilder();
     if (body instanceof IntervalElim) {
       IntervalElim intervalElim = (IntervalElim) body;

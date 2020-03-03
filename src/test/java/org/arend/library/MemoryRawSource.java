@@ -2,8 +2,8 @@ package org.arend.library;
 
 import org.arend.ext.module.ModulePath;
 import org.arend.frontend.source.StreamRawSource;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -26,7 +26,7 @@ public class MemoryRawSource extends StreamRawSource {
     this(source.getModulePath(), source.myText, source.myTimeStamp);
   }
 
-  @Nonnull
+  @NotNull
   @Override
   protected InputStream getInputStream() {
     return new ByteArrayInputStream(myText.getBytes(StandardCharsets.UTF_8));

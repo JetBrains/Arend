@@ -4,8 +4,7 @@ import org.arend.core.expr.Expression;
 import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.subst.InPlaceLevelSubstVisitor;
 import org.arend.core.subst.SubstVisitor;
-
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 public class TypedEvaluatingBinding extends TypedBinding implements EvaluatingBinding {
   private Expression myExpression;
@@ -15,7 +14,7 @@ public class TypedEvaluatingBinding extends TypedBinding implements EvaluatingBi
     myExpression = expression;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Expression getExpression() {
     return myExpression;

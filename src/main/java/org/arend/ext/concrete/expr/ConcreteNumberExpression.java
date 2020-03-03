@@ -1,8 +1,9 @@
 package org.arend.ext.concrete.expr;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
+
 import java.math.BigInteger;
 
 public interface ConcreteNumberExpression extends ConcreteExpression {
-  @Nonnull BigInteger getNumber();
+  @NotNull BigInteger getNumber();
 }

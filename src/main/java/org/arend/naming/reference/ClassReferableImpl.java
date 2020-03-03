@@ -2,8 +2,8 @@ package org.arend.naming.reference;
 
 import org.arend.ext.module.ModulePath;
 import org.arend.ext.reference.Precedence;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -20,25 +20,25 @@ public class ClassReferableImpl extends LocatedReferableImpl implements TCClassR
     myFieldReferables = fieldReferables;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public List<TCClassReferable> getSuperClassReferences() {
     return mySuperClassReferences;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Collection<? extends Reference> getUnresolvedSuperClassReferences() {
     return Collections.emptyList();
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Collection<? extends TCFieldReferable> getFieldReferables() {
     return myFieldReferables;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Collection<? extends Referable> getImplementedFields() {
     return Collections.emptyList();

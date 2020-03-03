@@ -15,8 +15,8 @@ import org.arend.ext.core.expr.CoreDataCallExpression;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.util.Decision;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,13 +28,13 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
     myArguments = arguments;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public List<Expression> getDefCallArguments() {
     return myArguments;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public DataDefinition getDefinition() {
     return (DataDefinition) super.getDefinition();
@@ -51,7 +51,7 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
   }
 
   @Override
-  public <P, R> R accept(@Nonnull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
+  public <P, R> R accept(@NotNull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitDataCall(this, params);
   }
 
@@ -80,9 +80,9 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
     return visitor.visitDataCall(this, null);
   }
 
-  @Nonnull
+  @NotNull
   @Override
-  public DataCallExpression normalize(@Nonnull NormalizationMode mode) {
+  public DataCallExpression normalize(@NotNull NormalizationMode mode) {
     return NormalizeVisitor.INSTANCE.visitDataCall(this, mode);
   }
 

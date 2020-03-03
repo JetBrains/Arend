@@ -2,12 +2,11 @@ package org.arend.term;
 
 import org.arend.ext.reference.Precedence;
 import org.arend.naming.reference.Referable;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public interface NameRenaming {
-  @Nonnull Referable getOldReference();
+  @NotNull Referable getOldReference();
   @Nullable
   Precedence getPrecedence();
   @Nullable String getName();

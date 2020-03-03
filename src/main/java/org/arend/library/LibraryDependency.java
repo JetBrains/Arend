@@ -1,12 +1,13 @@
 package org.arend.library;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Objects;
 
 public class LibraryDependency implements Comparable<LibraryDependency> {
-  public final @Nonnull String name;
+  public final @NotNull String name;
 
-  public LibraryDependency(@Nonnull String name) {
+  public LibraryDependency(@NotNull String name) {
     this.name = name;
   }
 

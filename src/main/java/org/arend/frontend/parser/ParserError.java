@@ -3,8 +3,8 @@ package org.arend.frontend.parser;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.reference.ArendRef;
 import org.arend.naming.reference.ModuleReferable;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.function.BiConsumer;
 
 public class ParserError extends GeneralError {
@@ -25,7 +25,7 @@ public class ParserError extends GeneralError {
     consumer.accept(new ModuleReferable(position.module), this);
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Stage getStage() {
     return Stage.PARSER;

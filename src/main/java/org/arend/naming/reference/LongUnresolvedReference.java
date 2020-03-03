@@ -5,9 +5,9 @@ import org.arend.naming.scope.EmptyScope;
 import org.arend.naming.scope.MergeScope;
 import org.arend.naming.scope.Scope;
 import org.arend.term.concrete.Concrete;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -17,13 +17,13 @@ public class LongUnresolvedReference implements UnresolvedReference {
   private final List<String> myPath;
   private Referable resolved;
 
-  public LongUnresolvedReference(Object data, @Nonnull List<String> path) {
+  public LongUnresolvedReference(Object data, @NotNull List<String> path) {
     assert !path.isEmpty();
     myData = data;
     myPath = path;
   }
 
-  public LongUnresolvedReference(Object data, @Nonnull List<String> path, @Nonnull String name) {
+  public LongUnresolvedReference(Object data, @NotNull List<String> path, @NotNull String name) {
     myData = data;
     if (path.isEmpty()) {
       myPath = Collections.singletonList(name);
@@ -34,7 +34,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
     }
   }
 
-  public LongUnresolvedReference(Object data, @Nonnull String name, @Nonnull List<String> path) {
+  public LongUnresolvedReference(Object data, @NotNull String name, @NotNull List<String> path) {
     myData = data;
     if (path.isEmpty()) {
       myPath = Collections.singletonList(name);
@@ -45,7 +45,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
     }
   }
 
-  public static UnresolvedReference make(Object data, @Nonnull List<String> path) {
+  public static UnresolvedReference make(Object data, @NotNull List<String> path) {
     return path.size() == 1 ? new NamedUnresolvedReference(data, path.get(0)) : new LongUnresolvedReference(data, path);
   }
 
@@ -59,7 +59,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
     return myData;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public String textRepresentation() {
     StringBuilder builder = new StringBuilder();
@@ -93,7 +93,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
     return result;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Referable resolve(Scope scope, List<Referable> resolvedRefs) {
     if (resolved != null) {

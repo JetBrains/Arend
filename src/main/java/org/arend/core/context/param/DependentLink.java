@@ -7,15 +7,15 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.context.CoreParameter;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 
 public interface DependentLink extends Binding, CoreParameter {
   void setExplicit(boolean isExplicit);
   void setType(Type type);
-  @Nonnull @Override DependentLink getNext();
+  @NotNull @Override DependentLink getNext();
   void setNext(DependentLink next);
   void setName(String name);
   DependentLink subst(SubstVisitor substVisitor, int size, boolean updateSubst);
@@ -23,7 +23,7 @@ public interface DependentLink extends Binding, CoreParameter {
   boolean hasNext();
   Type getType();
 
-  @Nonnull
+  @NotNull
   @Override
   default Expression getTypeExpr() {
     return getType().getExpr();

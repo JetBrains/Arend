@@ -2,8 +2,8 @@ package org.arend.term.group;
 
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.term.ChildNamespaceCommand;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.List;
 
@@ -15,13 +15,13 @@ public class DataGroup extends StaticGroup {
     myConstructors = constructors;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Collection<? extends InternalReferable> getInternalReferables() {
     return myConstructors;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Collection<? extends InternalReferable> getConstructors() {
     return myConstructors;

@@ -8,8 +8,8 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.util.Decision;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.List;
 
@@ -39,7 +39,7 @@ public abstract class DefCallExpression extends Expression {
     return substitution;
   }
 
-  @Nonnull
+  @NotNull
   public Sort getSortArgument() {
     return mySortArgument;
   }

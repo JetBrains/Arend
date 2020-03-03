@@ -1,6 +1,7 @@
 package org.arend.ext.prettyprinting.doc;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -72,7 +73,7 @@ public class VListDoc extends Doc {
     return true;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public List<LineDoc> linearize(int indent, boolean indentFirst) {
     if (docs.isEmpty()) {

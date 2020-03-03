@@ -10,9 +10,9 @@ import org.arend.term.group.Group;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.order.Ordering;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -34,7 +34,7 @@ public abstract class BaseLibrary implements Library {
     myTypecheckerState = typecheckerState;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public TypecheckerState getTypecheckerState() {
     return myTypecheckerState;
@@ -94,7 +94,7 @@ public abstract class BaseLibrary implements Library {
     return null;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public ModuleScopeProvider getModuleScopeProvider() {
     return module -> {

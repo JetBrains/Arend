@@ -1,8 +1,8 @@
 package org.arend.ext;
 
 import org.arend.ext.module.ModuleScopeProvider;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.Map;
 
@@ -11,16 +11,16 @@ public class DefaultArendExtension implements ArendExtension {
   private ModuleScopeProvider moduleScopeProvider;
 
   @Override
-  public void setDependencies(@Nonnull Map<String, ArendExtension> dependencies) {
+  public void setDependencies(@NotNull Map<String, ArendExtension> dependencies) {
     this.dependencies = dependencies;
   }
 
   @Override
-  public void setModuleScopeProvider(@Nonnull ModuleScopeProvider moduleScopeProvider) {
+  public void setModuleScopeProvider(@NotNull ModuleScopeProvider moduleScopeProvider) {
     this.moduleScopeProvider = moduleScopeProvider;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public ModuleScopeProvider getModuleScopeProvider() {
     return moduleScopeProvider;

@@ -1,8 +1,7 @@
 package org.arend.naming.reference;
 
 import org.arend.ext.reference.Precedence;
-
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 public interface GlobalReferable extends TypedReferable {
   enum Kind {
@@ -23,13 +22,13 @@ public interface GlobalReferable extends TypedReferable {
     }
   }
 
-  @Nonnull Precedence getPrecedence();
+  @NotNull Precedence getPrecedence();
 
   default GlobalReferable getTypecheckable() {
     return this;
   }
 
-  default @Nonnull Kind getKind() {
+  default @NotNull Kind getKind() {
     return Kind.TYPECHECKABLE;
   }
 }

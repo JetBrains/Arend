@@ -14,9 +14,9 @@ import org.arend.term.group.ChildGroup;
 import org.arend.term.group.Group;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.util.Range;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -75,25 +75,25 @@ public abstract class PreludeLibrary extends SourceLibrary {
   @Override
   public void resetDefinition(LocatedReferable referable) {}
 
-  @Nonnull
+  @NotNull
   @Override
   public String getName() {
     return Prelude.LIBRARY_NAME;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public ModuleScopeProvider getModuleScopeProvider() {
     return module -> module.equals(Prelude.MODULE_PATH) ? myScope : null;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Collection<? extends ModulePath> getLoadedModules() {
     return isLoaded() ? Collections.singletonList(Prelude.MODULE_PATH) : Collections.emptyList();
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Collection<? extends LibraryDependency> getDependencies() {
     return Collections.emptyList();

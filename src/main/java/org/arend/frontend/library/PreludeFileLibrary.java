@@ -10,8 +10,8 @@ import org.arend.source.FileBinarySource;
 import org.arend.source.GZIPStreamBinarySource;
 import org.arend.source.Source;
 import org.arend.typechecking.TypecheckerState;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 

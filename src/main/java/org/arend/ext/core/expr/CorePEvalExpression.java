@@ -1,7 +1,7 @@
 package org.arend.ext.core.expr;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 public interface CorePEvalExpression extends CoreExpression {
-  @Nonnull CoreExpression getExpression();
+  @NotNull CoreExpression getExpression();
 }

@@ -6,8 +6,7 @@ import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.arend.naming.reference.TCFieldReferable;
 import org.arend.term.concrete.Concrete;
-
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
@@ -15,7 +14,7 @@ public class AnotherClassifyingFieldError extends TypecheckingError {
   public final TCFieldReferable candidate;
   public final ClassField actual;
 
-  public AnotherClassifyingFieldError(TCFieldReferable candidate, ClassField actual, @Nonnull Concrete.SourceNode cause) {
+  public AnotherClassifyingFieldError(TCFieldReferable candidate, ClassField actual, @NotNull Concrete.SourceNode cause) {
     super("", cause);
     this.candidate = candidate;
     this.actual = actual;

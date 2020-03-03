@@ -2,8 +2,8 @@ package org.arend.term.group;
 
 import org.arend.naming.reference.ClassReferable;
 import org.arend.term.ChildNamespaceCommand;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.List;
 
@@ -17,25 +17,25 @@ public class ClassGroup extends StaticGroup {
     myDynamicGroups = dynamicGroups;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public ClassReferable getReferable() {
     return (ClassReferable) super.getReferable();
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public List<Group> getDynamicSubgroups() {
     return myDynamicGroups;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Collection<? extends InternalReferable> getInternalReferables() {
     return myInternalGlobalReferables;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Collection<? extends InternalReferable> getFields() {
     return myInternalGlobalReferables;

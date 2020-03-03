@@ -7,8 +7,7 @@ import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CoreIntegerExpression;
 import org.arend.prelude.Prelude;
 import org.arend.util.Decision;
-
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 public abstract class IntegerExpression extends Expression implements CoreIntegerExpression {
   public abstract int getSmallInteger();
@@ -54,7 +53,7 @@ public abstract class IntegerExpression extends Expression implements CoreIntege
   }
 
   @Override
-  public <P, R> R accept(@Nonnull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
+  public <P, R> R accept(@NotNull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitInteger(this, params);
   }
 

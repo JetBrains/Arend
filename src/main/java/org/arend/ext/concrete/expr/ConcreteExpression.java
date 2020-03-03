@@ -1,10 +1,9 @@
 package org.arend.ext.concrete.expr;
 
 import org.arend.ext.concrete.ConcreteSourceNode;
-
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 public interface ConcreteExpression extends ConcreteSourceNode {
-  @Nonnull ConcreteExpression app(@Nonnull ConcreteExpression argument);
-  @Nonnull ConcreteExpression appImp(@Nonnull ConcreteExpression argument);
+  @NotNull ConcreteExpression app(@NotNull ConcreteExpression argument);
+  @NotNull ConcreteExpression appImp(@NotNull ConcreteExpression argument);
 }

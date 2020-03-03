@@ -1,8 +1,7 @@
 package org.arend.library.resolver;
 
 import org.arend.library.Library;
-
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Resolves dependencies names of a library.

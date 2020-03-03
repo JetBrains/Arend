@@ -2,9 +2,9 @@ package org.arend.naming.reference;
 
 import org.arend.ext.module.ModulePath;
 import org.arend.ext.reference.Precedence;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Objects;
 
 public class ModuleReferable implements LocatedReferable {
@@ -14,13 +14,13 @@ public class ModuleReferable implements LocatedReferable {
     this.path = path;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public String textRepresentation() {
     return path.toString();
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Precedence getPrecedence() {
     return Precedence.DEFAULT;
@@ -32,7 +32,7 @@ public class ModuleReferable implements LocatedReferable {
     return path;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Kind getKind() {
     return Kind.OTHER;

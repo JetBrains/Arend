@@ -7,9 +7,9 @@ import org.arend.module.scopeprovider.SimpleModuleScopeProvider;
 import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.term.group.ChildGroup;
 import org.arend.typechecking.TypecheckerState;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.*;
 
 /**
@@ -33,13 +33,13 @@ public abstract class UnmodifiableSourceLibrary extends SourceLibrary {
     myName = name;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public String getName() {
     return myName;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public ModuleScopeProvider getModuleScopeProvider() {
     return myModuleScopeProvider;
@@ -67,7 +67,7 @@ public abstract class UnmodifiableSourceLibrary extends SourceLibrary {
     }
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Collection<? extends ModulePath> getLoadedModules() {
     return myGroups.keySet();

@@ -5,15 +5,14 @@ import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.term.concrete.Concrete;
-
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public class IdpPatternError extends TypecheckingError {
   public final DataCallExpression expectedType;
 
-  public IdpPatternError(String message, DataCallExpression expectedType, @Nonnull Concrete.SourceNode cause) {
+  public IdpPatternError(String message, DataCallExpression expectedType, @NotNull Concrete.SourceNode cause) {
     super(message, cause);
     this.expectedType = expectedType;
   }

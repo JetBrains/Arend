@@ -1,10 +1,11 @@
 package org.arend.naming.reference;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.List;
 
 public interface Parameter {
   boolean isExplicit();
-  @Nonnull List<? extends Referable> getReferableList();
+  @NotNull List<? extends Referable> getReferableList();
 }
 

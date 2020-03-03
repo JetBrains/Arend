@@ -8,9 +8,9 @@ import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.arend.term.concrete.Concrete;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -18,13 +18,13 @@ import java.util.stream.Collectors;
 import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public class MissingClausesError extends TypecheckingError {
-  public final @Nonnull List<List<ExpressionPattern>> missingClauses;
+  public final @NotNull List<List<ExpressionPattern>> missingClauses;
   public final @Nullable List<? extends Concrete.Parameter> concreteParameters;
-  public final @Nonnull DependentLink parameters;
-  public final @Nonnull List<DependentLink> eliminatedParameters;
+  public final @NotNull DependentLink parameters;
+  public final @NotNull List<DependentLink> eliminatedParameters;
   public int maxListSize = 10;
 
-  public MissingClausesError(@Nonnull List<List<ExpressionPattern>> missingClauses, @Nullable List<? extends Concrete.Parameter> concreteParameters, @Nonnull DependentLink parameters, @Nonnull List<DependentLink> eliminatedParameters, Concrete.SourceNode cause) {
+  public MissingClausesError(@NotNull List<List<ExpressionPattern>> missingClauses, @Nullable List<? extends Concrete.Parameter> concreteParameters, @NotNull DependentLink parameters, @NotNull List<DependentLink> eliminatedParameters, Concrete.SourceNode cause) {
     super("Some clauses are missing", cause);
     this.missingClauses = missingClauses;
     this.concreteParameters = concreteParameters;

@@ -6,9 +6,9 @@ import org.arend.ext.error.ArgumentExplicitnessError;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.IgnoredLevelsError;
 import org.arend.ext.error.TypecheckingError;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.List;
 
 public abstract class BaseMetaDefinition implements MetaDefinition {
@@ -33,7 +33,7 @@ public abstract class BaseMetaDefinition implements MetaDefinition {
     return !requireExpectedType();
   }
 
-  protected boolean checkContextData(@Nonnull ContextData contextData, @Nonnull ErrorReporter errorReporter) {
+  protected boolean checkContextData(@NotNull ContextData contextData, @NotNull ErrorReporter errorReporter) {
     ConcreteReferenceExpression refExpr = contextData.getReferenceExpression();
     if (withoutLevels() && (refExpr.getPLevel() != null || refExpr.getHLevel() != null)) {
       errorReporter.report(new IgnoredLevelsError(refExpr.getPLevel(), refExpr.getHLevel()));

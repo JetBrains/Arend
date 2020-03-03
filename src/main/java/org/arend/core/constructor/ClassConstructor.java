@@ -12,8 +12,8 @@ import org.arend.ext.core.elimtree.CoreClassBranchKey;
 import org.arend.ext.core.ops.CMP;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.implicitargs.equations.Equations;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -29,7 +29,7 @@ public final class ClassConstructor extends SingleConstructor implements CoreCla
     myImplementedFields = implementedFields;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public ClassDefinition getClassDefinition() {
     return myClassDef;

@@ -6,8 +6,7 @@ import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.arend.term.concrete.Concrete;
-
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
@@ -15,7 +14,7 @@ public class PatternUnificationError extends TypecheckingError {
   public final DependentLink parameter;
   public final ExpressionPattern pattern;
 
-  public PatternUnificationError(DependentLink parameter, ExpressionPattern pattern, @Nonnull Concrete.SourceNode cause) {
+  public PatternUnificationError(DependentLink parameter, ExpressionPattern pattern, @NotNull Concrete.SourceNode cause) {
     super("", cause);
     this.parameter = parameter;
     this.pattern = pattern;

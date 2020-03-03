@@ -1,11 +1,10 @@
 package org.arend.ext.core.expr;
 
 import org.arend.ext.core.context.CoreBinding;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public interface CoreAbsExpression {
   @Nullable CoreBinding getBinding();
-  @Nonnull CoreExpression getExpression();
+  @NotNull CoreExpression getExpression();
 }

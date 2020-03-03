@@ -1,6 +1,6 @@
 package org.arend.naming.reference;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 public class LocalReferable implements Referable {
   private final String myName;
@@ -9,7 +9,7 @@ public class LocalReferable implements Referable {
     myName = name;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public String textRepresentation() {
     return myName;

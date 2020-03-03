@@ -1,6 +1,6 @@
 package org.arend.ext.reference;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 public class Precedence {
   public enum Associativity { LEFT_ASSOC, RIGHT_ASSOC, NON_ASSOC }
@@ -8,11 +8,11 @@ public class Precedence {
   public static final byte MAX_PRIORITY = 10;
   public static final Precedence DEFAULT = new Precedence(Associativity.RIGHT_ASSOC, MAX_PRIORITY, false);
 
-  public final @Nonnull Associativity associativity;
+  public final @NotNull Associativity associativity;
   public final byte priority;
   public final boolean isInfix;
 
-  public Precedence(@Nonnull Associativity associativity, byte priority, boolean isInfix) {
+  public Precedence(@NotNull Associativity associativity, byte priority, boolean isInfix) {
     this.associativity = associativity;
     this.priority = priority;
     this.isInfix = isInfix;
