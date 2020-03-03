@@ -831,7 +831,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           typedDef.setBody(typedBody);
           typedDef.addStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         }
-        boolean conditionsResult = typedDef.isSFunc() || new ConditionsChecking(DummyEquations.getInstance(), errorReporter).check(typedBody, clauses, elimBody.getClauses(), typedDef, def);
+        boolean conditionsResult = typedDef.isSFunc() || new ConditionsChecking(DummyEquations.getInstance(), errorReporter, def).check(typedBody, clauses, elimBody.getClauses(), typedDef);
         if (newDef && !conditionsResult) {
           typedDef.addStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
         }
@@ -1567,7 +1567,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             dataDefinition.setSort(Sort.SET0);
           }
           if (body != null) {
-            new ConditionsChecking(DummyEquations.getInstance(), errorReporter).check(body, clauses, def.getClauses(), oldConstructor, def);
+            new ConditionsChecking(DummyEquations.getInstance(), errorReporter, def).check(body, clauses, def.getClauses(), oldConstructor);
           }
           if (dataSortIsProp) {
             dataDefinition.setSort(Sort.PROP);
