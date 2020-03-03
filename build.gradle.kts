@@ -91,6 +91,13 @@ task("api") {
     dependsOn("api-sources")
 }
 
+task<Jar>("jarSrc") {
+    archiveClassifier.set("sources")
+    from(sourceSets["main"].allSource) {
+        exclude("**/frontend/**")
+    }
+}
+
 tasks.getByName<Jar>("jar") {
     exclude("**/frontend/**")
 }
