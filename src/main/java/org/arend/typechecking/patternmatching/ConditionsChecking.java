@@ -338,7 +338,7 @@ public class ConditionsChecking {
       for (ElimClause<Pattern> clause : elimBody.getClauses()) {
         ExprSubstitution substitution1 = new ExprSubstitution();
         ExprSubstitution substitution2 = new ExprSubstitution();
-        if (ExpressionPattern.unify(conPattern.getSubPatterns(), Objects.requireNotNull(Pattern.toExpressionPatterns(clause.getPatterns(), constructor.getParameters())), idpSubst, substitution1, substitution2, myErrorReporter, sourceNode)) {
+        if (ExpressionPattern.unify(conPattern.getSubPatterns(), Objects.requireNonNull(Pattern.toExpressionPatterns(clause.getPatterns(), constructor.getParameters())), idpSubst, substitution1, substitution2, myErrorReporter, sourceNode)) {
           result.add(new Pair<>(clause.getExpression().subst(substitution2), substitution1));
         }
       }

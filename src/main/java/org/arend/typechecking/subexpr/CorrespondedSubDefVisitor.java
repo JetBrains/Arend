@@ -66,7 +66,7 @@ public class CorrespondedSubDefVisitor implements
           if (coreC == null) return null;
           return visitor.visitSigmaParameters(cons.getParameters(), coreC.getParameters());
         })
-        .filter(Objects::NotNull)
+        .filter(Objects::nonNull)
         .findFirst()
         .orElseGet(() -> visitor
             .visitSigmaParameters(def.getParameters(), coreDef.getParameters()));

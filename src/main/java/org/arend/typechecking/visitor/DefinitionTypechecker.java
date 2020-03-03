@@ -397,7 +397,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
     }
 
-    for (Concrete.Parameter parameter : Objects.requireNotNull(Concrete.getParameters(refDef, true))) {
+    for (Concrete.Parameter parameter : Objects.requireNonNull(Concrete.getParameters(refDef, true))) {
       boolean isTypeClass = parameter.getType() != null && parameter.getType().getUnderlyingTypeClass() != null;
       for (int i = 0; i < parameter.getNumberOfParameters(); i++) {
         typeClassParameters.add(isTypeClass ? Definition.TypeClassParameterKind.YES : Definition.TypeClassParameterKind.NO);
@@ -424,7 +424,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     Expression resultType = fieldType == null ? null : fieldType.getCodomain();
     ExprSubstitution substitution = fieldType == null ? null : new ExprSubstitution();
 
-    for (Concrete.Parameter parameter : Objects.requireNotNull(Concrete.getParameters(def, true))) {
+    for (Concrete.Parameter parameter : Objects.requireNonNull(Concrete.getParameters(def, true))) {
       if (resultType != null && !(resultType instanceof ErrorExpression)) {
         resultType = resultType.normalize(NormalizationMode.WHNF).getUnderlyingExpression();
       }
