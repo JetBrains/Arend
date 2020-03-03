@@ -44,6 +44,23 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void coelimFun() {
+    ConcreteLocatedReferable referable = resolveNamesDef(
+        "\\instance t : T\n" +
+            "  | A => 114\n" +
+            "  | B => 514\n" +
+            "  \\where {\n" +
+            "    \\class T {\n" +
+            "      | A : Nat\n" +
+            "      | B : Nat\n" +
+            "    }\n" +
+            "  }");
+    Concrete.ReferableDefinition definition1 = referable.getDefinition();
+    Definition definition = typeCheckDef(referable);
+    assertFalse(false);
+  }
+
+  @Test
   public void elimFun() {
     ConcreteLocatedReferable referable = resolveNamesDef(
         "\\func f (a b c : Nat): Nat \\elim b\n" +

@@ -65,8 +65,8 @@ public class CorrespondedSubDefVisitor implements
           if (result.isPresent()) return result.get();
         }
       }
+    } else if (body instanceof Concrete.CoelimFunctionBody && coreBody instanceof BranchElimTree) {
     }
-    // TODO: other function bodies :)
     return null;
   }
 
