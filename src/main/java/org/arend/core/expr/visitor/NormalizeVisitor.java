@@ -15,7 +15,7 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
-import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
+import org.arend.typechecking.computation.ComputationRunner;
 import org.arend.util.Pair;
 
 import java.util.*;
@@ -387,7 +387,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
       result = null;
     }
 
-    TypecheckingOrderingListener.checkCanceled();
+    ComputationRunner.checkCanceled();
 
     return result == null ? applyDefCall(expr, mode) : result.accept(this, mode);
   }
@@ -430,7 +430,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
 
       if (elimTree instanceof LeafElimTree) {
         LeafElimTree leafElimTree = (LeafElimTree) elimTree;
-        ElimClause clause = elimBody.getClauses().get(leafElimTree.getClauseIndex());
+        ElimClause<Pattern> clause = elimBody.getClauses().get(leafElimTree.getClauseIndex());
         int i = 0;
         for (DependentLink link = clause.getParameters(); link.hasNext(); link = link.getNext(), i++) {
           substitution.add(link, result.get(leafElimTree.getArgumentIndex(i)));

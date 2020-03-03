@@ -21,6 +21,8 @@ import org.arend.term.FunctionKind;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.Group;
 import org.arend.typechecking.*;
+import org.arend.typechecking.computation.CancellationIndicator;
+import org.arend.typechecking.computation.ComputationRunner;
 import org.arend.typechecking.error.CycleError;
 import org.arend.typechecking.error.TerminationCheckError;
 import org.arend.typechecking.error.local.LocalErrorReporter;
@@ -35,14 +37,12 @@ import org.arend.typechecking.provider.ConcreteProvider;
 import org.arend.typechecking.termination.DefinitionCallGraph;
 import org.arend.typechecking.termination.RecursiveBehavior;
 import org.arend.typechecking.visitor.*;
-import org.arend.util.ComputationInterruptedException;
 import org.arend.util.Pair;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.function.BooleanSupplier;
 
-public class TypecheckingOrderingListener implements OrderingListener {
+public class TypecheckingOrderingListener extends ComputationRunner<Boolean> implements OrderingListener {
   private final TypecheckerState myState;
   private final DependencyListener myDependencyListener;
   private final Map<GlobalReferable, Pair<CheckTypeVisitor,Boolean>> mySuspensions = new HashMap<>();
@@ -54,8 +54,6 @@ public class TypecheckingOrderingListener implements OrderingListener {
   private final TypecheckingListener myTypecheckingListener;
   private List<TCReferable> myCurrentDefinitions = Collections.emptyList();
   private boolean myHeadersAreOK = true;
-
-  private static CancellationIndicator CANCELLATION_INDICATOR = ThreadCancellationIndicator.INSTANCE;
 
   public TypecheckingOrderingListener(InstanceProviderSet instanceProviderSet, TypecheckerState state, ConcreteProvider concreteProvider, ReferableConverter referableConverter, ErrorReporter errorReporter, DependencyListener dependencyListener, PartialComparator<TCReferable> comparator, TypecheckingListener typecheckingListener) {
     myState = state;
@@ -72,18 +70,6 @@ public class TypecheckingOrderingListener implements OrderingListener {
     this(instanceProviderSet, state, concreteProvider, referableConverter, errorReporter, DummyDependencyListener.INSTANCE, comparator, TypecheckingListener.DEFAULT);
   }
 
-  public static void checkCanceled() throws ComputationInterruptedException {
-    CANCELLATION_INDICATOR.checkCanceled();
-  }
-
-  public static CancellationIndicator getCancellationIndicator() {
-    return CANCELLATION_INDICATOR;
-  }
-
-  public static void resetCancellationIndicator() {
-    CANCELLATION_INDICATOR = ThreadCancellationIndicator.INSTANCE;
-  }
-
   public ConcreteProvider getConcreteProvider() {
     return myConcreteProvider;
   }
@@ -96,30 +82,17 @@ public class TypecheckingOrderingListener implements OrderingListener {
     return myState;
   }
 
-  public boolean runTypechecking(CancellationIndicator cancellationIndicator, BooleanSupplier runnable) {
-    synchronized (TypecheckingOrderingListener.class) {
-      if (cancellationIndicator != null) {
-        CANCELLATION_INDICATOR = cancellationIndicator;
-      }
-
-      try {
-        return runnable.getAsBoolean();
-      } catch (ComputationInterruptedException ignored) {
-        for (TCReferable currentDefinition : myCurrentDefinitions) {
-          typecheckingInterrupted(currentDefinition, myState.reset(currentDefinition));
-        }
-        myCurrentDefinitions = Collections.emptyList();
-        return false;
-      } finally {
-        if (cancellationIndicator != null) {
-          CANCELLATION_INDICATOR = ThreadCancellationIndicator.INSTANCE;
-        }
-      }
+  @Override
+  protected Boolean computationInterrupted() {
+    for (TCReferable currentDefinition : myCurrentDefinitions) {
+      typecheckingInterrupted(currentDefinition, myState.reset(currentDefinition));
     }
+    myCurrentDefinitions = Collections.emptyList();
+    return false;
   }
 
   public boolean typecheckDefinitions(final Collection<? extends Concrete.Definition> definitions, CancellationIndicator cancellationIndicator) {
-    return runTypechecking(cancellationIndicator, () -> {
+    return run(cancellationIndicator, () -> {
       Ordering ordering = new Ordering(myInstanceProviderSet, myConcreteProvider, this, myDependencyListener, myReferableConverter, myState, myComparator);
       for (Concrete.Definition definition : definitions) {
         ordering.order(definition);
@@ -129,14 +102,14 @@ public class TypecheckingOrderingListener implements OrderingListener {
   }
 
   public boolean typecheckModules(final Collection<? extends Group> modules, CancellationIndicator cancellationIndicator) {
-    return runTypechecking(cancellationIndicator, () -> {
+    return run(cancellationIndicator, () -> {
       new Ordering(myInstanceProviderSet, myConcreteProvider, this, myDependencyListener, myReferableConverter, myState, myComparator).orderModules(modules);
       return true;
     });
   }
 
   public boolean typecheckLibrary(Library library, CancellationIndicator cancellationIndicator) {
-    return runTypechecking(cancellationIndicator, () -> library.orderModules(new Ordering(myInstanceProviderSet, myConcreteProvider, this, myDependencyListener, myReferableConverter, myState, myComparator)));
+    return run(cancellationIndicator, () -> library.orderModules(new Ordering(myInstanceProviderSet, myConcreteProvider, this, myDependencyListener, myReferableConverter, myState, myComparator)));
   }
 
   public boolean typecheckLibrary(Library library) {
@@ -144,7 +117,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
   }
 
   public boolean typecheckCollected(CollectingOrderingListener collector, CancellationIndicator cancellationIndicator) {
-    return runTypechecking(cancellationIndicator, () -> {
+    return run(cancellationIndicator, () -> {
       collector.feed(this);
       return true;
     });
