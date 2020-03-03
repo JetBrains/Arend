@@ -25,9 +25,9 @@ import java.util.List;
 import java.util.Map;
 
 import static org.arend.ExpressionFactory.*;
+import static org.arend.Matchers.typeMismatchError;
 import static org.arend.core.expr.ExpressionFactory.*;
 import static org.arend.term.concrete.ConcreteExpressionFactory.*;
-import static org.arend.typechecking.Matchers.typeMismatchError;
 import static org.junit.Assert.*;
 
 public class DataTest extends TypeCheckingTestCase {

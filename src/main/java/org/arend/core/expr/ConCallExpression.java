@@ -44,7 +44,7 @@ public class ConCallExpression extends DefCallExpression implements CoreConCallE
 
   @Nonnull
   @Override
-  public List<? extends Expression> getDefCallArguments() {
+  public List<Expression> getDefCallArguments() {
     return myArguments;
   }
 

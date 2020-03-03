@@ -21,8 +21,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static org.arend.Matchers.*;
 import static org.arend.term.concrete.ConcreteExpressionFactory.*;
-import static org.arend.typechecking.Matchers.*;
 import static org.junit.Assert.*;
 
 public class NameResolverTest extends NameResolverTestCase {

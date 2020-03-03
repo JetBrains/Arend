@@ -4,13 +4,10 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.Definition;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.elimtree.Body;
-import org.arend.core.elimtree.Clause;
+import org.arend.core.elimtree.ElimClause;
 import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.*;
-import org.arend.core.pattern.BindingPattern;
-import org.arend.core.pattern.ConstructorPattern;
-import org.arend.core.pattern.Pattern;
-import org.arend.core.pattern.Patterns;
+import org.arend.core.pattern.*;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.visitor.ProcessDefCallsVisitor;
 import org.arend.util.Pair;
@@ -21,7 +18,7 @@ public class CollectCallVisitor extends ProcessDefCallsVisitor<Void> {
   private final Set<BaseCallMatrix<Definition>> myCollectedCalls;
   private final FunctionDefinition myDefinition;
   private final Set<? extends Definition> myCycle;
-  private List<Pattern> myVector;
+  private List<? extends ExpressionPattern> myVector;
 
   CollectCallVisitor(FunctionDefinition def, Set<? extends Definition> cycle) {
     assert cycle != null;
@@ -36,39 +33,42 @@ public class CollectCallVisitor extends ProcessDefCallsVisitor<Void> {
     Body body = myDefinition.getActualBody();
     if (body instanceof IntervalElim) {
       IntervalElim elim = (IntervalElim) body;
-      myVector = new ArrayList<>();
+      List<ExpressionPattern> vector = new ArrayList<>();
       for (DependentLink link = myDefinition.getParameters(); link.hasNext(); link = link.getNext()) {
-        myVector.add(new BindingPattern(link));
+        vector.add(new BindingPattern(link));
       }
 
-      int i = myVector.size() - elim.getCases().size();
+      int i = vector.size() - elim.getCases().size();
       for (Pair<Expression, Expression> pair : elim.getCases()) {
-        Pattern old = myVector.get(i);
-        myVector.set(i, new ConstructorPattern(ExpressionFactory.Left(), new Patterns(Collections.emptyList())));
+        ExpressionPattern old = vector.get(i);
+        vector.set(i, new ConstructorExpressionPattern(ExpressionFactory.Left(), Collections.emptyList()));
         pair.proj1.accept(this, null);
-        myVector.set(i, new ConstructorPattern(ExpressionFactory.Right(), new Patterns(Collections.emptyList())));
+        vector.set(i, new ConstructorExpressionPattern(ExpressionFactory.Right(), Collections.emptyList()));
         pair.proj2.accept(this, null);
-        myVector.set(i, old);
+        vector.set(i, old);
       }
+
+      myVector = vector;
     }
 
     Expression resultType = myDefinition.getResultType();
     if (resultType != null) {
-      myVector = new ArrayList<>();
+      List<ExpressionPattern> vector = new ArrayList<>();
 
       for (DependentLink p = myDefinition.getParameters(); p.hasNext(); p = p.getNext()) {
         p = p.getNextTyped(null);
-        myVector.add(new BindingPattern(p));
+        vector.add(new BindingPattern(p));
       }
 
+      myVector = vector;
       resultType.accept(this, null);
     }
   }
 
-  public void collect(Clause clause) {
-    if (clause.expression != null) {
-      myVector = clause.patterns;
-      clause.expression.accept(this, null);
+  public void collect(ElimClause<ExpressionPattern> clause) {
+    if (clause.getExpression() != null) {
+      myVector = clause.getPatterns();
+      clause.getExpression().accept(this, null);
     }
   }
 
@@ -76,25 +76,25 @@ public class CollectCallVisitor extends ProcessDefCallsVisitor<Void> {
     return myCollectedCalls;
   }
 
-  private static BaseCallMatrix.R isLess(Expression expr1, Pattern pattern2) {
-    if (!(pattern2 instanceof ConstructorPattern)) {
+  private static BaseCallMatrix.R isLess(Expression expr1, ExpressionPattern pattern2) {
+    if (!(pattern2 instanceof ConstructorExpressionPattern)) {
       return pattern2 instanceof BindingPattern && expr1 instanceof ReferenceExpression && ((ReferenceExpression) expr1).getBinding() == ((BindingPattern) pattern2).getBinding() ? BaseCallMatrix.R.Equal : BaseCallMatrix.R.Unknown;
     }
-    ConstructorPattern conPattern = (ConstructorPattern) pattern2;
+    ConstructorExpressionPattern conPattern = (ConstructorExpressionPattern) pattern2;
 
     List<? extends Expression> exprArguments = conPattern.getMatchingExpressionArguments(expr1, false);
     if (exprArguments != null) {
-      BaseCallMatrix.R ord = isLess(exprArguments, conPattern.getArguments());
+      BaseCallMatrix.R ord = isLess(exprArguments, conPattern.getSubPatterns());
       if (ord != BaseCallMatrix.R.Unknown) return ord;
     }
 
-    for (Pattern arg : conPattern.getPatterns().getPatternList()) {
+    for (ExpressionPattern arg : conPattern.getSubPatterns()) {
       if (isLess(expr1, arg) != BaseCallMatrix.R.Unknown) return BaseCallMatrix.R.LessThan;
     }
     return BaseCallMatrix.R.Unknown;
   }
 
-  private static BaseCallMatrix.R isLess(List<? extends Expression> exprs1, List<Pattern> patterns2) {
+  private static BaseCallMatrix.R isLess(List<? extends Expression> exprs1, List<? extends ExpressionPattern> patterns2) {
     for (int i = 0; i < Math.min(exprs1.size(), patterns2.size()); i++) {
       BaseCallMatrix.R ord = isLess(exprs1.get(i), patterns2.get(i));
       if (ord != BaseCallMatrix.R.Equal) return ord;
@@ -102,7 +102,7 @@ public class CollectCallVisitor extends ProcessDefCallsVisitor<Void> {
     return exprs1.size() >= patterns2.size() ? BaseCallMatrix.R.Equal : BaseCallMatrix.R.Unknown;
   }
 
-  private BaseCallMatrix.R compare(Expression argument, Pattern pattern) {
+  private BaseCallMatrix.R compare(Expression argument, ExpressionPattern pattern) {
     // strip currentExpression of App & Proj calls
     while (true) {
       if (argument instanceof AppExpression) {

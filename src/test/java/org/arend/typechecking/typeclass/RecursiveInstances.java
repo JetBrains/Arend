@@ -1,16 +1,16 @@
 package org.arend.typechecking.typeclass;
 
+import org.arend.Matchers;
 import org.arend.core.definition.ClassField;
 import org.arend.core.sort.Sort;
-import org.arend.typechecking.Matchers;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.arend.ExpressionFactory.Ref;
+import static org.arend.Matchers.instanceInference;
 import static org.arend.core.expr.ExpressionFactory.FieldCall;
 import static org.arend.core.expr.ExpressionFactory.Nat;
-import static org.arend.typechecking.Matchers.instanceInference;
 
 public class RecursiveInstances extends TypeCheckingTestCase {
   @Test

@@ -15,6 +15,10 @@ import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteExpressionFactory;
 import org.arend.term.group.ChildGroup;
 import org.arend.term.group.Group;
+import org.arend.typechecking.doubleChecker.CoreDefinitionChecker;
+import org.arend.typechecking.doubleChecker.CoreException;
+import org.arend.typechecking.doubleChecker.CoreExpressionChecker;
+import org.arend.typechecking.doubleChecker.CoreModuleChecker;
 import org.arend.typechecking.error.local.LocalErrorReporter;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
@@ -39,14 +43,13 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
     boolean ok = true;
     if (result != null && errors == 0) {
-      CoreExpressionChecker checker = new CoreExpressionChecker(localErrorReporter, new HashSet<>(context.values()), DummyEquations.getInstance(), expression);
-      ok = result.type.accept(checker, Type.OMEGA) != null;
-      if (ok) {
-        Expression type = result.expression.accept(checker, result.type);
-        ok = type != null;
-        if (ok) {
-          checker.check(expectedType, type, result.expression);
-        }
+      CoreExpressionChecker checker = new CoreExpressionChecker(new HashSet<>(context.values()), DummyEquations.getInstance(), expression);
+      try {
+        result.type.accept(checker, Type.OMEGA);
+        checker.check(expectedType, result.expression.accept(checker, result.type), result.expression);
+      } catch (CoreException e) {
+        localErrorReporter.report(e.error);
+        ok = false;
       }
     }
 

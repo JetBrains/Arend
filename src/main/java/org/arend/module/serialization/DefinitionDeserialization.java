@@ -4,10 +4,7 @@ import org.arend.core.context.LinkList;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.*;
-import org.arend.core.elimtree.Body;
-import org.arend.core.elimtree.ClauseBase;
-import org.arend.core.elimtree.ElimTree;
-import org.arend.core.elimtree.IntervalElim;
+import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
 import org.arend.core.pattern.*;
 import org.arend.core.sort.Sort;
@@ -190,14 +187,7 @@ public class DefinitionDeserialization {
     for (DefinitionProtos.Definition.DataData.Constructor constructorProto : dataProto.getConstructorList()) {
       Constructor constructor = myCallTargetProvider.getCallTarget(constructorProto.getReferable().getIndex(), Constructor.class);
       if (constructorProto.getPatternCount() > 0) {
-        constructor.setPatterns(readPatterns(defDeserializer, constructorProto.getPatternList(), new LinkList()));
-      }
-      if (constructorProto.getClauseCount() > 0) {
-        List<ClauseBase> clauses = new ArrayList<>(constructorProto.getClauseCount());
-        for (DefinitionProtos.Definition.Clause clause : constructorProto.getClauseList()) {
-          clauses.add(readClause(defDeserializer, clause));
-        }
-        constructor.setClauses(clauses);
+        constructor.setPatterns(defDeserializer.readExpressionPatterns(constructorProto.getPatternList(), new LinkList()));
       }
       constructor.setParameters(defDeserializer.readParameters(constructorProto.getParamList()));
       List<Integer> constructorParametersTypecheckingOrder = constructorProto.getParametersTypecheckingOrderList();
@@ -256,68 +246,24 @@ public class DefinitionDeserialization {
     }
   }
 
-  private ClauseBase readClause(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.Clause clause) throws DeserializationException {
-    return new ClauseBase(readPatterns(defDeserializer, clause.getPatternList(), new LinkList()).getPatternList(), defDeserializer.readExpr(clause.getExpression()));
-  }
-
   private Body readBody(ExpressionDeserialization defDeserializer, DefinitionProtos.Body proto, int numberOfParameters) throws DeserializationException {
     switch (proto.getKindCase()) {
-      case ELIM_TREE:
-        return defDeserializer.readElimTree(proto.getElimTree());
+      case ELIM_BODY:
+        return defDeserializer.readElimBody(proto.getElimBody());
       case INTERVAL_ELIM:
         List<IntervalElim.CasePair> cases = new ArrayList<>(proto.getIntervalElim().getCaseCount());
         for (DefinitionProtos.Body.ExpressionPair pairProto : proto.getIntervalElim().getCaseList()) {
           cases.add(new IntervalElim.CasePair(pairProto.hasLeft() ? defDeserializer.readExpr(pairProto.getLeft()) : null, pairProto.hasRight() ? defDeserializer.readExpr(pairProto.getRight()) : null));
         }
-        ElimTree elimTree = null;
+        ElimBody elimBody = null;
         if (proto.getIntervalElim().hasOtherwise()) {
-          elimTree = defDeserializer.readElimTree(proto.getIntervalElim().getOtherwise());
+          elimBody = defDeserializer.readElimBody(proto.getIntervalElim().getOtherwise());
         }
-        return new IntervalElim(numberOfParameters, cases, elimTree);
+        return new IntervalElim(numberOfParameters, cases, elimBody);
       case EXPRESSION:
         return defDeserializer.readExpr(proto.getExpression());
       default:
         throw new DeserializationException("Unknown body kind: " + proto.getKindCase());
-    }
-  }
-
-  private Patterns readPatterns(ExpressionDeserialization defDeserializer, List<DefinitionProtos.Definition.Pattern> protos, LinkList list) throws DeserializationException {
-    List<Pattern> patterns = new ArrayList<>(protos.size());
-    for (DefinitionProtos.Definition.Pattern proto : protos) {
-      patterns.add(readPattern(defDeserializer, proto, list));
-    }
-    return new Patterns(patterns);
-  }
-
-  private Pattern readPattern(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.Pattern proto, LinkList list) throws DeserializationException {
-    switch (proto.getKindCase()) {
-      case BINDING:
-        DependentLink param = defDeserializer.readParameter(proto.getBinding().getVar());
-        list.append(param);
-        return new BindingPattern(param);
-      case EMPTY:
-        return EmptyPattern.INSTANCE;
-      case CONSTRUCTOR:
-        Expression expression = defDeserializer.readExpr(proto.getConstructor().getExpression());
-        Patterns patterns = readPatterns(defDeserializer, proto.getConstructor().getPatternList(), list);
-        if (expression instanceof SmallIntegerExpression && ((SmallIntegerExpression) expression).getInteger() == 0) {
-          return new ConstructorPattern(new ConCallExpression(Prelude.ZERO, Sort.PROP, Collections.emptyList(), Collections.emptyList()), patterns);
-        }
-        if (expression instanceof ConCallExpression) {
-          return new ConstructorPattern((ConCallExpression) expression, patterns);
-        }
-        if (expression instanceof ClassCallExpression) {
-          return new ConstructorPattern((ClassCallExpression) expression, patterns);
-        }
-        if (expression instanceof SigmaExpression) {
-          return new ConstructorPattern((SigmaExpression) expression, patterns);
-        }
-        if (expression instanceof FunCallExpression && ((FunCallExpression) expression).getDefinition() instanceof DConstructor) {
-          return new ConstructorPattern((FunCallExpression) expression, patterns);
-        }
-        throw new DeserializationException("Wrong pattern expression");
-      default:
-        throw new DeserializationException("Unknown Pattern kind: " + proto.getKindCase());
     }
   }
 
@@ -375,7 +321,7 @@ public class DefinitionDeserialization {
     }
   }
 
-  private Pattern readDPattern(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.DPattern proto) throws DeserializationException {
+  private ExpressionPattern readDPattern(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.DPattern proto) throws DeserializationException {
     switch (proto.getKindCase()) {
       case BINDING:
         Binding param = defDeserializer.readBindingRef(proto.getBinding());
@@ -385,25 +331,24 @@ public class DefinitionDeserialization {
         return new BindingPattern((DependentLink) param);
       case CONSTRUCTOR:
         Expression expression = defDeserializer.readExpr(proto.getConstructor().getExpression());
-        List<Pattern> patternList = new ArrayList<>();
+        List<ExpressionPattern> patterns = new ArrayList<>();
         for (DefinitionProtos.Definition.DPattern pattern : proto.getConstructor().getPatternList()) {
-          patternList.add(readDPattern(defDeserializer, pattern));
+          patterns.add(readDPattern(defDeserializer, pattern));
         }
-        Patterns patterns = new Patterns(patternList);
         if (expression instanceof SmallIntegerExpression && ((SmallIntegerExpression) expression).getInteger() == 0) {
-          return new ConstructorPattern(new ConCallExpression(Prelude.ZERO, Sort.PROP, Collections.emptyList(), Collections.emptyList()), patterns);
+          return new ConstructorExpressionPattern(new ConCallExpression(Prelude.ZERO, Sort.PROP, Collections.emptyList(), Collections.emptyList()), patterns);
         }
         if (expression instanceof ConCallExpression) {
-          return new ConstructorPattern((ConCallExpression) expression, patterns);
+          return new ConstructorExpressionPattern((ConCallExpression) expression, patterns);
         }
         if (expression instanceof ClassCallExpression) {
-          return new ConstructorPattern((ClassCallExpression) expression, patterns);
+          return new ConstructorExpressionPattern((ClassCallExpression) expression, patterns);
         }
         if (expression instanceof SigmaExpression) {
-          return new ConstructorPattern((SigmaExpression) expression, patterns);
+          return new ConstructorExpressionPattern((SigmaExpression) expression, patterns);
         }
         if (expression instanceof FunCallExpression && ((FunCallExpression) expression).getDefinition() instanceof DConstructor) {
-          return new ConstructorPattern((FunCallExpression) expression, patterns);
+          return new ConstructorExpressionPattern((FunCallExpression) expression, patterns);
         }
         throw new DeserializationException("Wrong pattern expression");
       default:

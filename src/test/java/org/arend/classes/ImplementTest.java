@@ -15,7 +15,7 @@ import java.util.List;
 
 import static org.arend.ExpressionFactory.Universe;
 import static org.arend.ExpressionFactory.fromPiParameters;
-import static org.arend.typechecking.Matchers.cycle;
+import static org.arend.Matchers.cycle;
 import static org.junit.Assert.assertEquals;
 
 public class ImplementTest extends TypeCheckingTestCase {

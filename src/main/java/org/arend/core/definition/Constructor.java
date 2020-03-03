@@ -3,13 +3,12 @@ package org.arend.core.definition;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.elimtree.Body;
-import org.arend.core.elimtree.ClauseBase;
 import org.arend.core.expr.ConCallExpression;
 import org.arend.core.expr.DataCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.ReferenceExpression;
+import org.arend.core.pattern.ExpressionPattern;
 import org.arend.core.pattern.Pattern;
-import org.arend.core.pattern.Patterns;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
@@ -17,6 +16,7 @@ import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.definition.CoreConstructor;
 import org.arend.ext.core.elimtree.CoreBranchKey;
 import org.arend.naming.reference.TCReferable;
+import org.arend.util.Decision;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -26,9 +26,8 @@ import java.util.List;
 public class Constructor extends Definition implements Function, CoreBranchKey, CoreConstructor {
   private final DataDefinition myDataType;
   private DependentLink myParameters;
-  private Patterns myPatterns;
+  private List<ExpressionPattern> myPatterns;
   private Body myConditions;
-  private List<ClauseBase> myClauses;
   private List<Integer> myParametersTypecheckingOrder;
   private List<Boolean> myGoodThisParameters = Collections.emptyList();
   private List<TypeClassParameterKind> myTypeClassParameters = Collections.emptyList();
@@ -37,27 +36,18 @@ public class Constructor extends Definition implements Function, CoreBranchKey, 
     super(referable, TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
     myDataType = dataType;
     myParameters = EmptyDependentLink.getInstance();
-    myClauses = Collections.emptyList();
   }
 
   public void setBody(Body conditions) {
     myConditions = conditions;
   }
 
-  public Patterns getPatterns() {
+  public List<ExpressionPattern> getPatterns() {
     return myPatterns;
   }
 
-  public void setPatterns(Patterns patterns) {
+  public void setPatterns(List<ExpressionPattern> patterns) {
     myPatterns = patterns;
-  }
-
-  public List<? extends ClauseBase> getClauses() {
-    return myClauses;
-  }
-
-  public void setClauses(List<? extends ClauseBase> clauses) {
-    myClauses = new ArrayList<>(clauses);
   }
 
   @Override
@@ -88,7 +78,7 @@ public class Constructor extends Definition implements Function, CoreBranchKey, 
   }
 
   public DependentLink getDataTypeParameters() {
-    return myDataType.status().headerIsOK() ? (myPatterns == null ? myDataType.getParameters() : myPatterns.getFirstBinding()) : EmptyDependentLink.getInstance();
+    return myDataType.status().headerIsOK() ? (myPatterns == null ? myDataType.getParameters() : Pattern.getFirstBinding(myPatterns)) : EmptyDependentLink.getInstance();
   }
 
   public List<Expression> matchDataTypeArguments(List<Expression> arguments) {
@@ -97,7 +87,7 @@ public class Constructor extends Definition implements Function, CoreBranchKey, 
       return arguments;
     } else {
       List<Expression> result = new ArrayList<>();
-      return myPatterns.match(arguments, result) == Pattern.MatchResult.OK ? result : null;
+      return ExpressionPattern.match(myPatterns, arguments, result) == Decision.YES ? result : null;
     }
   }
 
@@ -120,20 +110,20 @@ public class Constructor extends Definition implements Function, CoreBranchKey, 
       }
     } else {
       if (dataTypeArguments == null) {
-        arguments = new ArrayList<>(myPatterns.getPatternList().size());
-        for (Pattern pattern : myPatterns.getPatternList()) {
+        arguments = new ArrayList<>(myPatterns.size());
+        for (ExpressionPattern pattern : myPatterns) {
           arguments.add(pattern.toExpression());
         }
       } else {
         ExprSubstitution substitution = new ExprSubstitution();
-        DependentLink link = myPatterns.getFirstBinding();
+        DependentLink link = Pattern.getFirstBinding(myPatterns);
         for (Expression argument : dataTypeArguments) {
           substitution.add(link, argument);
           link = link.getNext();
         }
 
-        arguments = new ArrayList<>(myPatterns.getPatternList().size());
-        for (Pattern pattern : myPatterns.getPatternList()) {
+        arguments = new ArrayList<>(myPatterns.size());
+        for (ExpressionPattern pattern : myPatterns) {
           arguments.add(pattern.toExpression().subst(substitution));
         }
       }

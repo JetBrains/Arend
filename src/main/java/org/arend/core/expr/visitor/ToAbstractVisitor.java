@@ -11,7 +11,7 @@ import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
 import org.arend.core.definition.DConstructor;
 import org.arend.core.definition.Definition;
-import org.arend.core.elimtree.ElimTree;
+import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.pattern.*;
@@ -26,7 +26,6 @@ import org.arend.naming.reference.Referable;
 import org.arend.naming.renamer.ReferableRenamer;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
-import org.arend.typechecking.patternmatching.Util;
 import org.arend.typechecking.visitor.VoidConcreteVisitor;
 
 import javax.annotation.Nonnull;
@@ -73,25 +72,25 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     return myConfig.getExpressionFlags().contains(flag);
   }
 
-  private Concrete.Pattern visitPattern(Pattern pattern, boolean isExplicit) {
+  private Concrete.Pattern visitPattern(ExpressionPattern pattern, boolean isExplicit) {
     if (pattern instanceof BindingPattern) {
       return cNamePattern(isExplicit, makeLocalReference(((BindingPattern) pattern).getBinding(), myFreeVariablesCollector.getFreeVariables(((BindingPattern) pattern).getBinding().getNextTyped(null)), false));
     }
     if (pattern instanceof EmptyPattern) {
       return cEmptyPattern(isExplicit);
     }
-    if (pattern instanceof ConstructorPattern) {
-      Definition def = ((ConstructorPattern) pattern).getDefinition();
+    if (pattern instanceof ConstructorExpressionPattern) {
+      Definition def = pattern.getDefinition();
       return def instanceof Constructor || def instanceof DConstructor
-        ? cConPattern(isExplicit, def.getReferable(), visitPatterns(((ConstructorPattern) pattern).getArguments(), def.getParameters()))
-        : cTuplePattern(isExplicit, visitPatterns(((ConstructorPattern) pattern).getArguments(), EmptyDependentLink.getInstance()));
+        ? cConPattern(isExplicit, def.getReferable(), visitPatterns(((ConstructorExpressionPattern) pattern).getSubPatterns(), def.getParameters()))
+        : cTuplePattern(isExplicit, visitPatterns(((ConstructorExpressionPattern) pattern).getSubPatterns(), EmptyDependentLink.getInstance()));
     }
     throw new IllegalStateException();
   }
 
-  private List<Concrete.Pattern> visitPatterns(List<Pattern> patterns, DependentLink parameters) {
+  private List<Concrete.Pattern> visitPatterns(List<? extends ExpressionPattern> patterns, DependentLink parameters) {
     List<Concrete.Pattern> result = new ArrayList<>(patterns.size());
-    for (Pattern pattern : patterns) {
+    for (ExpressionPattern pattern : patterns) {
       result.add(visitPattern(pattern, !parameters.hasNext() || parameters.isExplicit()));
       if (parameters.hasNext()) {
         parameters = parameters.getNext();
@@ -544,13 +543,42 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       }
     }
 
-    return cCase(expr.isSCase(), arguments, resultType, resultTypeLevel, visitElimTree(expr.getElimTree()));
+    List<Concrete.FunctionClause> clauses = new ArrayList<>();
+    for (ElimClause<Pattern> clause : expr.getElimBody().getClauses()) {
+      List<Concrete.Pattern> patterns = new ArrayList<>();
+      DependentLink link = expr.getParameters();
+      for (Pattern pattern : clause.getPatterns()) {
+        visitElimPattern(pattern, link.isExplicit(), patterns);
+        link = link.getNext();
+      }
+      clauses.add(cClause(patterns, clause.getExpression() == null ? null : clause.getExpression().accept(this, null)));
+    }
+    return cCase(expr.isSCase(), arguments, resultType, resultTypeLevel, clauses);
   }
 
-  private List<Concrete.FunctionClause> visitElimTree(ElimTree elimTree) {
-    List<Concrete.FunctionClause> clauses = new ArrayList<>();
-    new Util.ElimTreeWalker((patterns, expr) -> clauses.add(cClause(visitPatterns(patterns, new Patterns(patterns).getFirstBinding()), expr.accept(this, null)))).walk(elimTree);
-    return clauses;
+  private void visitElimPattern(Pattern pattern, boolean isExplicit, List<Concrete.Pattern> patterns) {
+    if (pattern instanceof BindingPattern) {
+      DependentLink link = pattern.getFirstBinding();
+      patterns.add(cNamePattern(isExplicit, makeLocalReference(link, myFreeVariablesCollector.getFreeVariables(link.getNextTyped(null)), false)));
+    } else if (pattern == EmptyPattern.INSTANCE) {
+      patterns.add(cEmptyPattern(isExplicit));
+    } else {
+      List<Concrete.Pattern> subPatterns = new ArrayList<>();
+      Definition def = pattern.getDefinition();
+      DependentLink param = def == null ? null : def.getParameters();
+      for (Pattern subPattern : pattern.getSubPatterns()) {
+        visitElimPattern(subPattern, param == null || param.isExplicit(), subPatterns);
+        if (param != null) {
+          param = param.getNext();
+        }
+      }
+
+      if (pattern.getDefinition() == null) {
+        patterns.add(cTuplePattern(isExplicit, subPatterns));
+      } else {
+        patterns.add(cConPattern(isExplicit, pattern.getDefinition().getReferable(), subPatterns));
+      }
+    }
   }
 
   @Override

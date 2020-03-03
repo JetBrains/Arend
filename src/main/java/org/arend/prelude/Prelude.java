@@ -1,23 +1,14 @@
 package org.arend.prelude;
 
 import org.arend.core.context.binding.LevelVariable;
-import org.arend.core.context.param.DependentLink;
-import org.arend.core.context.param.EmptyDependentLink;
-import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.context.param.TypedSingleDependentLink;
 import org.arend.core.definition.*;
-import org.arend.core.elimtree.BranchElimTree;
-import org.arend.core.elimtree.ElimTree;
-import org.arend.core.elimtree.IntervalElim;
-import org.arend.core.elimtree.LeafElimTree;
 import org.arend.core.expr.*;
-import org.arend.core.pattern.ConstructorPattern;
-import org.arend.core.pattern.Patterns;
+import org.arend.core.pattern.*;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.error.DummyErrorReporter;
 import org.arend.ext.ArendPrelude;
-import org.arend.ext.core.elimtree.CoreBranchKey;
 import org.arend.ext.module.ModulePath;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
@@ -135,19 +126,13 @@ public class Prelude implements ArendPrelude {
         List<Expression> args = new ArrayList<>(2);
         args.add(new ReferenceExpression(IDP.getParameters()));
         args.add(new ReferenceExpression(IDP.getParameters().getNext()));
-        IDP.setPattern(new ConstructorPattern(new FunCallExpression(IDP, Sort.STD, args), new Patterns(Collections.emptyList())));
+        IDP.setPattern(new ConstructorExpressionPattern(new FunCallExpression(IDP, Sort.STD, args), Collections.emptyList()));
         IDP.setNumberOfParameters(2);
         IDP.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         break;
       }
       case "@": {
         AT = (FunctionDefinition) definition;
-        DependentLink atParams = DependentLink.Helper.take(AT.getParameters(), 3);
-        SingleDependentLink intervalParam = new TypedSingleDependentLink(true, "i", ExpressionFactory.Interval());
-        DependentLink pathParam = parameter("f", new PiExpression(Sort.STD, intervalParam, AppExpression.make(new ReferenceExpression(atParams), new ReferenceExpression(intervalParam))));
-        pathParam.setNext(parameter("i", ExpressionFactory.Interval()));
-        ElimTree otherwise = new BranchElimTree(atParams, Collections.singletonMap(PATH_CON, new LeafElimTree(pathParam, AppExpression.make(new ReferenceExpression(pathParam), new ReferenceExpression(pathParam.getNext())))));
-        AT.setBody(new IntervalElim(5, Collections.singletonList(new IntervalElim.CasePair(new ReferenceExpression(AT.getParameters().getNext()), new ReferenceExpression(AT.getParameters().getNext().getNext()))), otherwise));
         AT.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         break;
       }
@@ -161,12 +146,6 @@ public class Prelude implements ArendPrelude {
         break;
       case "iso": {
         ISO = (FunctionDefinition) definition;
-        DependentLink isoParams = DependentLink.Helper.take(ISO.getParameters(), 6);
-        Map<CoreBranchKey, ElimTree> children = new HashMap<>();
-        children.put(LEFT, new LeafElimTree(EmptyDependentLink.getInstance(), new ReferenceExpression(isoParams)));
-        children.put(RIGHT, new LeafElimTree(EmptyDependentLink.getInstance(), new ReferenceExpression(isoParams.getNext())));
-        ISO.setBody(new BranchElimTree(isoParams, children));
-        ISO.setResultType(new UniverseExpression(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR))));
         ISO.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         break;
       }

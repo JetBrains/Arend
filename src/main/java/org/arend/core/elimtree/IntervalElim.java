@@ -17,9 +17,9 @@ import java.util.List;
 public class IntervalElim implements Body, CoreIntervalElim {
   private final int myNumberOfParameters;
   private final List<CasePair> myCases;
-  private final ElimTree myOtherwise;
+  private final ElimBody myOtherwise;
 
-  public IntervalElim(int numberOfParameters, List<CasePair> cases, ElimTree otherwise) {
+  public IntervalElim(int numberOfParameters, List<CasePair> cases, ElimBody otherwise) {
     myNumberOfParameters = numberOfParameters;
     myCases = cases;
     myOtherwise = otherwise;
@@ -50,7 +50,7 @@ public class IntervalElim implements Body, CoreIntervalElim {
   }
 
   @Override
-  public ElimTree getOtherwise() {
+  public ElimBody getOtherwise() {
     return myOtherwise;
   }
 

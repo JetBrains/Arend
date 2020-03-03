@@ -12,18 +12,16 @@ import org.arend.core.context.param.TypedDependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
 import org.arend.core.definition.UniverseKind;
-import org.arend.core.elimtree.BranchElimTree;
-import org.arend.core.elimtree.ElimTree;
-import org.arend.core.elimtree.LeafElimTree;
+import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.let.LetClausePattern;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.type.TypeExpression;
 import org.arend.core.expr.visitor.ExpressionVisitor;
+import org.arend.core.pattern.*;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
-import org.arend.ext.core.elimtree.CoreBranchKey;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -163,19 +161,64 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
     return expr.accept(this, null);
   }
 
-  ExpressionProtos.ElimTree writeElimTree(ElimTree elimTree) {
-    ExpressionProtos.ElimTree.Builder builder = ExpressionProtos.ElimTree.newBuilder();
-    builder.addAllParam(writeParameters(elimTree.getParameters()));
+  ExpressionProtos.Pattern writePattern(Pattern pattern) {
+    ExpressionProtos.Pattern.Builder builder = ExpressionProtos.Pattern.newBuilder();
+    if (pattern instanceof BindingPattern) {
+      builder.setBinding(ExpressionProtos.Pattern.Binding.newBuilder()
+        .setVar(writeParameter(((BindingPattern) pattern).getBinding())));
+    } else if (pattern == EmptyPattern.INSTANCE) {
+      builder.setEmpty(ExpressionProtos.Pattern.Empty.newBuilder());
+    } else if (pattern instanceof ConstructorExpressionPattern) {
+      ExpressionProtos.Pattern.ExpressionConstructor.Builder pBuilder = ExpressionProtos.Pattern.ExpressionConstructor.newBuilder();
+      pBuilder.setExpression(writeExpr(((ConstructorExpressionPattern) pattern).getDataExpression()));
+      for (ExpressionPattern subPattern : ((ConstructorExpressionPattern) pattern).getSubPatterns()) {
+        pBuilder.addPattern(writePattern(subPattern));
+      }
+      builder.setExpressionConstructor(pBuilder.build());
+    } else if (pattern instanceof ConstructorPattern) {
+      ExpressionProtos.Pattern.Constructor.Builder pBuilder = ExpressionProtos.Pattern.Constructor.newBuilder();
+      pBuilder.setDefinition(pattern.getDefinition() == null ? 0 : myCallTargetIndexProvider.getDefIndex(pattern.getDefinition()));
+      for (Pattern subPattern : pattern.getSubPatterns()) {
+        pBuilder.addPattern(writePattern(subPattern));
+      }
+      builder.setConstructor(pBuilder.build());
+    } else {
+      throw new IllegalArgumentException();
+    }
+    return builder.build();
+  }
 
+  private ExpressionProtos.ElimClause writeElimClause(ElimClause<Pattern> elimClause) {
+    ExpressionProtos.ElimClause.Builder builder = ExpressionProtos.ElimClause.newBuilder();
+    for (Pattern pattern : elimClause.getPatterns()) {
+      builder.addPattern(writePattern(pattern));
+    }
+    if (elimClause.getExpression() != null) {
+      builder.setExpression(writeExpr(elimClause.getExpression()));
+    }
+    return builder.build();
+  }
+
+  private ExpressionProtos.ElimTree writeElimTree(ElimTree elimTree) {
+    ExpressionProtos.ElimTree.Builder builder = ExpressionProtos.ElimTree.newBuilder();
+    builder.setSkip(elimTree.getSkip());
     if (elimTree instanceof LeafElimTree) {
       ExpressionProtos.ElimTree.Leaf.Builder leafBuilder = ExpressionProtos.ElimTree.Leaf.newBuilder();
-      leafBuilder.setExpr(((LeafElimTree) elimTree).getExpression().accept(this, null));
-      builder.setLeaf(leafBuilder);
+      List<? extends Integer> indices = ((LeafElimTree) elimTree).getArgumentIndices();
+      leafBuilder.setHasIndices(indices != null);
+      if (indices != null) {
+        for (Integer index : indices) {
+          leafBuilder.addIndex(index);
+        }
+      }
+      leafBuilder.setClauseIndex(((LeafElimTree) elimTree).getClauseIndex());
+      builder.setLeaf(leafBuilder.build());
     } else {
       BranchElimTree branchElimTree = (BranchElimTree) elimTree;
       ExpressionProtos.ElimTree.Branch.Builder branchBuilder = ExpressionProtos.ElimTree.Branch.newBuilder();
+      branchBuilder.setKeepConCall(branchElimTree.keepConCall());
 
-      for (Map.Entry<CoreBranchKey, ElimTree> entry : branchElimTree.getChildren()) {
+      for (Map.Entry<Constructor, ElimTree> entry : branchElimTree.getChildren()) {
         if (entry.getKey() == null) {
           branchBuilder.putClauses(0, writeElimTree(entry.getValue()));
         } else if (entry.getKey() instanceof SingleConstructor) {
@@ -198,19 +241,24 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
           }
           singleClauseBuilder.setElimTree(writeElimTree(entry.getValue()));
           branchBuilder.setSingleClause(singleClauseBuilder.build());
-        } else if (entry.getKey() instanceof Constructor) {
-          branchBuilder.putClauses(myCallTargetIndexProvider.getDefIndex((Constructor) entry.getKey()), writeElimTree(entry.getValue()));
         } else {
-          throw new IllegalStateException("Unknown CoreBranchKey type: " + entry.getKey().getClass());
+          branchBuilder.putClauses(myCallTargetIndexProvider.getDefIndex(entry.getKey()), writeElimTree(entry.getValue()));
         }
       }
 
       builder.setBranch(branchBuilder);
     }
-
     return builder.build();
   }
 
+  ExpressionProtos.ElimBody writeElimBody(ElimBody elimBody) {
+    ExpressionProtos.ElimBody.Builder builder = ExpressionProtos.ElimBody.newBuilder();
+    for (ElimClause<Pattern> clause : elimBody.getClauses()) {
+      builder.addClause(writeElimClause(clause));
+    }
+    builder.setElimTree(writeElimTree(elimBody.getElimTree()));
+    return builder.build();
+  }
 
   @Override
   public ExpressionProtos.Expression visitApp(AppExpression expr, Void params) {
@@ -444,7 +492,7 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
   public ExpressionProtos.Expression visitCase(CaseExpression expr, Void params) {
     ExpressionProtos.Expression.Case.Builder builder = ExpressionProtos.Expression.Case.newBuilder();
     builder.setIsSFunc(expr.isSCase());
-    builder.setElimTree(writeElimTree(expr.getElimTree()));
+    builder.setElimBody(writeElimBody(expr.getElimBody()));
     builder.addAllParam(writeParameters(expr.getParameters()));
     builder.setResultType(writeExpr(expr.getResultType()));
     if (expr.getResultTypeLevel() != null) {

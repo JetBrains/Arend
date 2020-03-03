@@ -1,9 +1,8 @@
 package org.arend.typechecking.visitor;
 
 import org.arend.core.context.param.DependentLink;
-import org.arend.core.elimtree.BranchElimTree;
-import org.arend.core.elimtree.ElimTree;
-import org.arend.core.elimtree.LeafElimTree;
+import org.arend.core.elimtree.ElimBody;
+import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.visitor.BaseExpressionVisitor;
@@ -42,20 +41,18 @@ public abstract class ProcessDefCallsVisitor<P> extends BaseExpressionVisitor<P,
     return false;
   }
 
-  @Override
-  public Boolean visitCase(CaseExpression expr, P param) {
-    return visitElimTree(expr.getElimTree(), param) || visitDependentLink(expr.getParameters(), param) || expr.getResultType().accept(this, param) || expr.getResultTypeLevel() != null && expr.getResultTypeLevel().accept(this, param) || expr.getArguments().stream().anyMatch(arg -> arg.accept(this, param));
+  protected boolean visitElimBody(ElimBody elimBody, P param) {
+    for (ElimClause clause : elimBody.getClauses()) {
+      if (clause.getExpression() != null && clause.getExpression().accept(this, param)) {
+        return true;
+      }
+    }
+    return false;
   }
 
-  private boolean visitElimTree(ElimTree elimTree, P param) {
-    if (visitDependentLink(elimTree.getParameters(), param)) {
-      return true;
-    }
-    if (elimTree instanceof LeafElimTree) {
-      return ((LeafElimTree) elimTree).getExpression().accept(this, param);
-    } else {
-      return ((BranchElimTree) elimTree).getChildren().stream().anyMatch(entry -> visitElimTree(entry.getValue(), param));
-    }
+  @Override
+  public Boolean visitCase(CaseExpression expr, P param) {
+    return visitElimBody(expr.getElimBody(), param) || visitDependentLink(expr.getParameters(), param) || expr.getResultType().accept(this, param) || expr.getResultTypeLevel() != null && expr.getResultTypeLevel().accept(this, param) || expr.getArguments().stream().anyMatch(arg -> arg.accept(this, param));
   }
 
   @Override

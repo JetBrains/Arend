@@ -1,62 +1,60 @@
 package org.arend.core.elimtree;
 
 import org.arend.core.constructor.SingleConstructor;
-import org.arend.core.context.param.DependentLink;
+import org.arend.core.definition.Constructor;
 import org.arend.core.expr.ConCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.IntegerExpression;
-import org.arend.ext.core.elimtree.CoreBranchElimTree;
-import org.arend.ext.core.elimtree.CoreBranchKey;
 import org.arend.prelude.Prelude;
 import org.arend.util.Decision;
 
-import javax.annotation.Nonnull;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-public class BranchElimTree extends ElimTree implements CoreBranchElimTree {
-  private final Map<CoreBranchKey, ElimTree> myChildren;
+public class BranchElimTree extends ElimTree {
+  private final Map<Constructor, ElimTree> myChildren = new HashMap<>();
+  private final boolean myKeepConCall;
 
-  public BranchElimTree(DependentLink parameters, Map<CoreBranchKey, ElimTree> children) {
-    super(parameters);
-    myChildren = children;
+  public BranchElimTree(int skip, boolean keepConCall) {
+    super(skip);
+    myKeepConCall = keepConCall;
   }
 
-  @Override
-  public ElimTree getChild(CoreBranchKey key) {
-    return myChildren.get(key);
+  public boolean keepConCall() {
+    return myKeepConCall;
   }
 
-  @Override
   public ElimTree getSingleConstructorChild() {
     if (myChildren.size() == 1) {
-      Map.Entry<CoreBranchKey, ElimTree> entry = myChildren.entrySet().iterator().next();
+      Map.Entry<Constructor, ElimTree> entry = myChildren.entrySet().iterator().next();
       return entry.getKey() instanceof SingleConstructor ? entry.getValue() : null;
     } else {
       return null;
     }
   }
 
-  @Override
   public SingleConstructor getSingleConstructorKey() {
     if (myChildren.size() == 1) {
-      Map.Entry<CoreBranchKey, ElimTree> entry = myChildren.entrySet().iterator().next();
+      Map.Entry<Constructor, ElimTree> entry = myChildren.entrySet().iterator().next();
       return entry.getKey() instanceof SingleConstructor ? (SingleConstructor) entry.getKey() : null;
     } else {
       return null;
     }
   }
 
-  private boolean isSingleConstructorTree() {
-    return myChildren.size() == 1 && myChildren.keySet().iterator().next() instanceof SingleConstructor;
+  public Collection<Map.Entry<Constructor, ElimTree>> getChildren() {
+    return myChildren.entrySet();
   }
 
-  @Nonnull
-  @Override
-  public Collection<Map.Entry<CoreBranchKey, ElimTree>> getChildren() {
-    return myChildren.entrySet();
+  public ElimTree getChild(Constructor constructor) {
+    return myChildren.get(constructor);
+  }
+
+  public void addChild(Constructor constructor, ElimTree elimTree) {
+    myChildren.put(constructor, elimTree);
+  }
+
+  private boolean isSingleConstructorTree() {
+    return myChildren.size() == 1 && myChildren.keySet().iterator().next() instanceof SingleConstructor;
   }
 
   private List<Expression> getNewArguments(List<? extends Expression> arguments, Expression argument, int index) {
@@ -104,7 +102,7 @@ public class BranchElimTree extends ElimTree implements CoreBranchElimTree {
 
   @Override
   public Decision isWHNF(List<? extends Expression> arguments) {
-    int index = DependentLink.Helper.size(getParameters());
+    int index = getSkip();
     Expression argument = arguments.get(index);
     Decision decision = argument.isWHNF();
     if (decision == Decision.NO) {
@@ -150,7 +148,7 @@ public class BranchElimTree extends ElimTree implements CoreBranchElimTree {
 
   @Override
   public Expression getStuckExpression(List<? extends Expression> arguments, Expression expression) {
-    int index = DependentLink.Helper.size(getParameters());
+    int index = getSkip();
     Expression argument = arguments.get(index);
 
     List<Expression> newArguments = getNewArguments(arguments, argument, index);

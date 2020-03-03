@@ -16,7 +16,7 @@ import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.prelude.Prelude;
 import org.arend.prelude.PreludeResourceLibrary;
 import org.arend.term.group.Group;
-import org.arend.typechecking.CoreModuleChecker;
+import org.arend.typechecking.doubleChecker.CoreModuleChecker;
 import org.arend.typechecking.SimpleTypecheckerState;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.error.local.GoalError;

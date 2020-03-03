@@ -8,6 +8,7 @@ import org.arend.typechecking.implicitargs.equations.Equations;
 
 import java.util.List;
 
+// TODO[lang_ext]: Do not extend Constructor
 public abstract class SingleConstructor extends Constructor {
   public SingleConstructor() {
     super(null, null);

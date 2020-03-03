@@ -4,13 +4,11 @@ import org.arend.core.context.LinkList;
 import org.arend.core.context.Utils;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.LevelVariable;
-import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.context.binding.TypedEvaluatingBinding;
 import org.arend.core.context.binding.inference.*;
 import org.arend.core.context.param.*;
 import org.arend.core.definition.*;
-import org.arend.core.elimtree.ElimTree;
-import org.arend.core.elimtree.ExtClause;
+import org.arend.core.elimtree.ElimBody;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.*;
 import org.arend.core.expr.type.Type;
@@ -44,7 +42,8 @@ import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteExpressionVisitor;
 import org.arend.term.concrete.ConcreteLevelExpressionVisitor;
-import org.arend.typechecking.CoreExpressionChecker;
+import org.arend.typechecking.doubleChecker.CoreException;
+import org.arend.typechecking.doubleChecker.CoreExpressionChecker;
 import org.arend.typechecking.FieldDFS;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.TypecheckingListener;
@@ -63,6 +62,7 @@ import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.instance.pool.RecursiveInstanceHoleExpression;
 import org.arend.typechecking.patternmatching.ConditionsChecking;
 import org.arend.typechecking.patternmatching.ElimTypechecking;
+import org.arend.typechecking.patternmatching.ExtElimClause;
 import org.arend.typechecking.patternmatching.PatternTypechecking;
 import org.arend.typechecking.result.DefCallResult;
 import org.arend.typechecking.result.TResult;
@@ -315,9 +315,14 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     if (!(expression instanceof Expression && sourceNode instanceof Concrete.SourceNode)) {
       throw new IllegalArgumentException();
     }
+
     Expression expr = (Expression) expression;
-    Expression type = expr.accept(new CoreExpressionChecker(errorReporter, new HashSet<>(context.values()), myEquations, (Concrete.SourceNode) sourceNode), null);
-    return type == null ? null : new TypecheckingResult(expr, type);
+    try {
+      return new TypecheckingResult(expr, expr.accept(new CoreExpressionChecker(new HashSet<>(context.values()), myEquations, (Concrete.SourceNode) sourceNode), null));
+    } catch (CoreException e) {
+      errorReporter.report(e.error);
+      return null;
+    }
   }
 
   public TypecheckingResult checkExpr(Concrete.Expression expr, Expression expectedType) {
@@ -2071,48 +2076,12 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       }
     }
 
-    Expression resultExprWithoutPi = resultExpr.getPiParameters(null, false);
-    Level actualLevel = Level.INFINITY;
-    int actualLevelSub = 0;
-    // Try to infer level either directly or from a path type.
-    {
-      Sort sort = resultType == null ? null : resultType.getSortOfType();
-      if (sort != null) {
-        actualLevel = sort.getHLevel();
-      }
-
-      if (!actualLevel.isProp()) {
-        Expression pathType = resultExprWithoutPi;
-        for (DataCallExpression dataCall = pathType.cast(DataCallExpression.class); dataCall != null; dataCall = pathType.cast(DataCallExpression.class)) {
-          if (dataCall.getDefinition() == Prelude.PATH) {
-            actualLevelSub++;
-            pathType = dataCall.getDefCallArguments().get(0).normalize(NormalizationMode.WHNF);
-            LamExpression lam = pathType.cast(LamExpression.class);
-            if (lam == null) {
-              pathType = AppExpression.make(pathType, new ReferenceExpression(new TypedBinding("i", ExpressionFactory.Interval())));
-              break;
-            }
-            pathType = lam.getBody().normalize(NormalizationMode.WHNF);
-          } else {
-            break;
-          }
-        }
-
-        Sort pathSort = pathType.getSortOfType();
-        if (pathSort != null && !pathSort.getHLevel().isInfinity()) {
-          actualLevel = pathSort.getHLevel();
-        } else {
-          actualLevelSub = 0;
-        }
-      }
-    }
-
     // Try to infer level from \\use annotations of the definition in the result type.
     if (expr.getResultTypeLevel() == null) {
       DefCallExpression defCall = resultExpr.cast(DefCallExpression.class);
       Integer level2 = defCall == null ? null : defCall.getUseLevel();
       if (level2 == null) {
-        defCall = resultExprWithoutPi.cast(DefCallExpression.class);
+        defCall = resultExpr.getPiParameters(null, false).cast(DefCallExpression.class);
         if (defCall != null) {
           level2 = defCall.getUseLevel();
         }
@@ -2123,17 +2092,27 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       }
     }
 
-    List<ExtClause> resultClauses = new ArrayList<>();
-    ElimTree elimTree = new ElimTypechecking(this, resultExpr, PatternTypechecking.Mode.CASE, level, actualLevel, actualLevelSub, expr.isSCase(), true).typecheckElim(expr.getClauses(), expr, list.getFirst(), resultClauses);
+    Level actualLevel;
+    {
+      Sort sort = resultType == null ? null : resultType.getSortOfType();
+      actualLevel = sort != null ? sort.getHLevel() : Level.INFINITY;
+    }
+
+    PatternTypechecking patternTypechecking = new PatternTypechecking(errorReporter, PatternTypechecking.Mode.CASE, this, false);
+    List<ExtElimClause> clauses = patternTypechecking.typecheckClauses(expr.getClauses(), list.getFirst(), resultExpr);
+    if (clauses == null) {
+      return null;
+    }
+    ElimBody elimBody = new ElimTypechecking(errorReporter, myEquations, resultExpr, PatternTypechecking.Mode.CASE, level, actualLevel, expr.isSCase(), expr.getClauses(), expr).typecheckElim(clauses, list.getFirst());
     for (Map.Entry<Referable, Binding> entry : origElimBindings.entrySet()) {
       addBinding(entry.getKey(), entry.getValue());
     }
-    if (elimTree == null) {
+    if (elimBody == null) {
       return null;
     }
 
-    new ConditionsChecking(myEquations, errorReporter).check(resultClauses, elimTree);
-    TypecheckingResult result = new TypecheckingResult(new CaseExpression(expr.isSCase(), list.getFirst(), resultExpr, resultTypeLevel, elimTree, expressions), resultType != null ? resultExpr.subst(substitution) : resultExpr);
+    new ConditionsChecking(myEquations, errorReporter).check(clauses, expr.getClauses(), elimBody);
+    TypecheckingResult result = new TypecheckingResult(new CaseExpression(expr.isSCase(), list.getFirst(), resultExpr, resultTypeLevel, elimBody, expressions), resultType != null ? resultExpr.subst(substitution) : resultExpr);
     return resultType == null ? result : checkResult(expectedType, result, expr);
   }
 
@@ -2153,7 +2132,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
           "Expected a function or an \\scase expression", expr.getExpression()));
       return null;
     }
-    if (funCall != null && !(funCall.getDefinition().getActualBody() instanceof ElimTree)) {
+    if (funCall != null && !(funCall.getDefinition().getActualBody() instanceof ElimBody)) {
       errorReporter.report(new FunctionWithoutBodyError(funCall.getDefinition(), expr.getExpression()));
       return null;
     }

@@ -1,6 +1,6 @@
 package org.arend.naming;
 
-import org.arend.typechecking.Matchers;
+import org.arend.Matchers;
 import org.junit.Test;
 
 public class PatternTest extends NameResolverTestCase {

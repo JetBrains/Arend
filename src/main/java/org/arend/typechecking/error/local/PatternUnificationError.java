@@ -1,7 +1,7 @@
 package org.arend.typechecking.error.local;
 
 import org.arend.core.context.param.DependentLink;
-import org.arend.core.pattern.Pattern;
+import org.arend.core.pattern.ExpressionPattern;
 import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.LineDoc;
@@ -13,9 +13,9 @@ import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public class PatternUnificationError extends TypecheckingError {
   public final DependentLink parameter;
-  public final Pattern pattern;
+  public final ExpressionPattern pattern;
 
-  public PatternUnificationError(DependentLink parameter, Pattern pattern, @Nonnull Concrete.SourceNode cause) {
+  public PatternUnificationError(DependentLink parameter, ExpressionPattern pattern, @Nonnull Concrete.SourceNode cause) {
     super("", cause);
     this.parameter = parameter;
     this.pattern = pattern;

@@ -2,11 +2,10 @@ package org.arend.core.expr.visitor;
 
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
-import org.arend.core.elimtree.BranchElimTree;
-import org.arend.core.elimtree.ElimTree;
-import org.arend.core.elimtree.LeafElimTree;
+import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
-import org.arend.ext.core.elimtree.CoreBranchKey;
+import org.arend.core.pattern.BindingPattern;
+import org.arend.core.pattern.Pattern;
 
 import java.util.*;
 
@@ -33,14 +32,28 @@ public class GoodThisParametersVisitor extends VoidExpressionVisitor<Void> {
     visitParameters(parameters, null);
   }
 
-  public GoodThisParametersVisitor(ElimTree elimTree, int numberOfParameters) {
+  public GoodThisParametersVisitor(ElimBody elimBody, int numberOfParameters) {
     myGoodFields = Collections.emptySet();
     myGoodParameters = new ArrayList<>();
     for (int i = 0; i < numberOfParameters; i++) {
       myGoodParameters.add(true);
     }
     myIndexMap = new HashMap<>();
-    checkElimTree(elimTree, 0, 0);
+
+    for (ElimClause<Pattern> clause : elimBody.getClauses()) {
+      for (int i = 0; i < numberOfParameters; i++) {
+        Pattern pattern = clause.getPatterns().get(i);
+        if (pattern instanceof BindingPattern) {
+          myIndexMap.put(pattern.getFirstBinding(), i);
+        } else {
+          myGoodParameters.set(i, false);
+        }
+      }
+      if (clause.getExpression() != null) {
+        clause.getExpression().accept(this, null);
+      }
+      myIndexMap.clear();
+    }
   }
 
   public GoodThisParametersVisitor(Expression expression, DependentLink parameters) {
@@ -62,33 +75,6 @@ public class GoodThisParametersVisitor extends VoidExpressionVisitor<Void> {
     myGoodFields = fields;
     myGoodParameters = new ArrayList<>(0);
     myIndexMap = Collections.emptyMap();
-  }
-
-  private void checkElimTree(ElimTree elimTree, int index, int skip) {
-    for (DependentLink link = elimTree.getParameters(); link.hasNext(); link = link.getNext()) {
-      if (skip == 0) {
-        myIndexMap.put(link, index);
-        index++;
-      } else {
-        skip--;
-      }
-    }
-
-    if (elimTree instanceof LeafElimTree) {
-      ((LeafElimTree) elimTree).getExpression().accept(this, null);
-    } else {
-      if (skip == 0) {
-        myGoodParameters.set(index, false);
-        index++;
-      } else {
-        skip--;
-      }
-
-      for (Map.Entry<CoreBranchKey, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
-        int toSkip = entry.getKey() == null ? 1 : entry.getKey().getNumberOfParameters();
-        checkElimTree(entry.getValue(), index, skip + toSkip);
-      }
-    }
   }
 
   public List<Boolean> getGoodParameters() {

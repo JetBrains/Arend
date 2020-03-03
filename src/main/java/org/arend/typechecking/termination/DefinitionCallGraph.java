@@ -2,7 +2,8 @@ package org.arend.typechecking.termination;
 
 import org.arend.core.definition.Definition;
 import org.arend.core.definition.FunctionDefinition;
-import org.arend.core.elimtree.Clause;
+import org.arend.core.elimtree.ElimClause;
+import org.arend.core.pattern.ExpressionPattern;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -27,9 +28,9 @@ public class DefinitionCallGraph extends BaseCallGraph<Definition> {
     super(cg);
   }
 
-  public void add(FunctionDefinition def, Collection<? extends Clause> clauses, Set<? extends Definition> cycle) {
+  public void add(FunctionDefinition def, Collection<? extends ElimClause<ExpressionPattern>> clauses, Set<? extends Definition> cycle) {
     CollectCallVisitor visitor = new CollectCallVisitor(def, cycle);
-    for (Clause clause : clauses) {
+    for (ElimClause<ExpressionPattern> clause : clauses) {
       visitor.collect(clause);
     }
     add(visitor.getResult());

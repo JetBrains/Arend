@@ -2,18 +2,14 @@ package org.arend.typechecking.visitor;
 
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.param.DependentLink;
-import org.arend.core.elimtree.BranchElimTree;
-import org.arend.core.elimtree.ElimTree;
-import org.arend.core.elimtree.LeafElimTree;
+import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.visitor.ExpressionVisitor;
-import org.arend.ext.core.elimtree.CoreBranchKey;
 import org.arend.prelude.Prelude;
 
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 public class FreeVariablesClassifier implements ExpressionVisitor<Boolean, FreeVariablesClassifier.Result> {
@@ -182,28 +178,6 @@ public class FreeVariablesClassifier implements ExpressionVisitor<Boolean, FreeV
     return result;
   }
 
-  private Result visitElimTree(ElimTree elimTree) {
-    Result result = visitParameters(elimTree.getParameters());
-    if (result != Result.NONE) {
-      return result;
-    }
-    if (elimTree instanceof LeafElimTree) {
-      result = ((LeafElimTree) elimTree).getExpression().accept(this, false);
-      if (result != Result.NONE) {
-        return result;
-      }
-    }
-    if (elimTree instanceof BranchElimTree) {
-      for (Map.Entry<CoreBranchKey, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
-        result = visitElimTree(entry.getValue());
-        if (result != Result.NONE) {
-          return result;
-        }
-      }
-    }
-    return Result.NONE;
-  }
-
   @Override
   public Result visitCase(CaseExpression expr, Boolean good) {
     Result result = visitList(expr.getArguments(), false);
@@ -224,7 +198,19 @@ public class FreeVariablesClassifier implements ExpressionVisitor<Boolean, FreeV
     if (result != Result.NONE) {
       return result;
     }
-    return visitElimTree(expr.getElimTree());
+    for (ElimClause clause : expr.getElimBody().getClauses()) {
+      result = visitParameters(clause.getParameters());
+      if (result != Result.NONE) {
+        return result;
+      }
+      if (clause.getExpression() != null) {
+        result = clause.getExpression().accept(this, false);
+        if (result != Result.NONE) {
+          return result;
+        }
+      }
+    }
+    return Result.NONE;
   }
 
   @Override

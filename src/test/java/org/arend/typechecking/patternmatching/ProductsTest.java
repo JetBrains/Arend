@@ -4,7 +4,7 @@ import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import static org.arend.typechecking.Matchers.missingClauses;
+import static org.arend.Matchers.missingClauses;
 
 public class ProductsTest extends TypeCheckingTestCase {
   @Test

@@ -134,7 +134,7 @@ public class CoerceData {
         }
 
         Sort sortArg = Sort.generateInferVars(visitor.getEquations(), def.getUniverseKind(), sourceNode);
-        LevelSubstitution levelSubst = new StdLevelSubstitution(sortArg);
+        LevelSubstitution levelSubst = sortArg.toLevelSubstitution();
         if (!visitor.checkNormalizedResult(link.getTypeExpr().subst(substitution, levelSubst), result, sourceNode, argStrict)) {
           if (argStrict) {
             return null;

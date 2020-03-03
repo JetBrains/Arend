@@ -1,27 +1,22 @@
 package org.arend.core.elimtree;
 
-import org.arend.core.context.param.DependentLink;
-import org.arend.core.expr.visitor.CompareVisitor;
-import org.arend.ext.core.elimtree.CoreElimTree;
-import org.arend.typechecking.implicitargs.equations.DummyEquations;
+import org.arend.core.expr.Expression;
+import org.arend.util.Decision;
 
-import javax.annotation.Nonnull;
+import java.util.List;
 
-public abstract class ElimTree implements Body, CoreElimTree {
-  private final DependentLink myParameters;
+public abstract class ElimTree {
+  private final int mySkip;
 
-  ElimTree(DependentLink parameters) {
-    myParameters = parameters;
+  public ElimTree(int skip) {
+    mySkip = skip;
   }
 
-  @Nonnull
-  @Override
-  public DependentLink getParameters() {
-    return myParameters;
+  public int getSkip() {
+    return mySkip;
   }
 
-  @Override
-  public boolean equals(Object obj) {
-    return obj instanceof ElimTree && CompareVisitor.compare(DummyEquations.getInstance(), this, (ElimTree) obj, null);
-  }
+  public abstract Decision isWHNF(List<? extends Expression> arguments);
+
+  public abstract Expression getStuckExpression(List<? extends Expression> arguments, Expression expression);
 }

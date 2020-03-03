@@ -3,7 +3,7 @@ package org.arend.typechecking.patternmatching;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
-import static org.arend.typechecking.Matchers.missingClauses;
+import static org.arend.Matchers.missingClauses;
 
 public class CoverageTest extends TypeCheckingTestCase {
   @Test

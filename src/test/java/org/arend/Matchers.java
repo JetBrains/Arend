@@ -1,4 +1,4 @@
-package org.arend.typechecking;
+package org.arend;
 
 import org.arend.core.expr.Expression;
 import org.arend.ext.error.GeneralError;
@@ -44,6 +44,26 @@ public class Matchers {
       @Override
       public void describeTo(Description description) {
         description.appendText("should be a " + type.getName());
+      }
+    };
+  }
+
+  public static Matcher<? super GeneralError> typecheckingError(CertainTypecheckingError.Kind kind) {
+    return new TypeSafeDiagnosingMatcher<GeneralError>() {
+      @Override
+      protected boolean matchesSafely(GeneralError error, Description description) {
+        if (error instanceof CertainTypecheckingError && ((CertainTypecheckingError) error).kind == kind) {
+          description.appendText(kind.toString());
+          return true;
+        } else {
+          description.appendText("not " + kind);
+          return false;
+        }
+      }
+
+      @Override
+      public void describeTo(Description description) {
+        description.appendText("should be " + kind);
       }
     };
   }

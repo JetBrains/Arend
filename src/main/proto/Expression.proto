@@ -11,24 +11,24 @@ message Expression {
     oneof kind {
         App app = 1;
         ClassCall class_call = 2;
-        ConCall con_call = 4;
-        DataCall data_call = 5;
-        Error error = 6;
-        FieldCall field_call = 7;
-        FunCall fun_call = 8;
-        Lam lam = 9;
-        Let let = 10;
-        Case case = 20;
+        ConCall con_call = 3;
+        DataCall data_call = 4;
+        Error error = 5;
+        FieldCall field_call = 6;
+        FunCall fun_call = 7;
+        Lam lam = 8;
+        Let let = 9;
+        Case case = 10;
         New new = 11;
-        Pi pi = 13;
-        Proj proj = 14;
-        Reference reference = 15;
-        Sigma sigma = 16;
-        Tuple tuple = 17;
-        Universe universe = 18;
-        SmallInteger small_integer = 21;
-        BigInteger big_integer = 22;
-        PEval pEval = 23;
+        Pi pi = 12;
+        Proj proj = 13;
+        Reference reference = 14;
+        Sigma sigma = 15;
+        Tuple tuple = 16;
+        Universe universe = 17;
+        SmallInteger small_integer = 18;
+        BigInteger big_integer = 19;
+        PEval pEval = 20;
     }
 
     message Abs {
@@ -37,28 +37,28 @@ message Expression {
     }
     message App {
         Expression function = 1;
-        Expression argument = 3;
+        Expression argument = 2;
     }
     message ClassCall {
         int32 class_ref = 1;
         Level pLevel = 2;
-        Level hLevel = 4;
-        map<int32, Expression> field_set = 5;
-        Sort sort = 6;
-        UniverseKind universe_kind = 8;
+        Level hLevel = 3;
+        map<int32, Expression> field_set = 4;
+        Sort sort = 5;
+        UniverseKind universe_kind = 6;
     }
     message ConCall {
         int32 constructor_ref = 1;
         Level pLevel = 2;
-        Level hLevel = 5;
-        repeated Expression datatype_argument = 3;
-        repeated Expression argument = 4;
+        Level hLevel = 3;
+        repeated Expression datatype_argument = 4;
+        repeated Expression argument = 5;
     }
     message DataCall {
         int32 data_ref = 1;
         Level pLevel = 2;
-        Level hLevel = 4;
-        repeated Expression argument = 3;
+        Level hLevel = 3;
+        repeated Expression argument = 4;
     }
     message Error {
         Expression expression = 1;
@@ -67,30 +67,30 @@ message Expression {
     message FieldCall {
         int32 field_ref = 1;
         Level pLevel = 2;
-        Level hLevel = 4;
-        Expression expression = 3;
+        Level hLevel = 3;
+        Expression expression = 4;
     }
     message FunCall {
         int32 fun_ref = 1;
         Level pLevel = 2;
-        Level hLevel = 4;
-        repeated Expression argument = 3;
+        Level hLevel = 3;
+        repeated Expression argument = 4;
     }
     message Lam {
-        Sort resultSort = 5;
-        Telescope param = 3;
-        Expression body = 2;
+        Sort resultSort = 1;
+        Telescope param = 2;
+        Expression body = 3;
     }
     message Let {
-        bool is_strict = 4;
-        repeated Clause clause = 1;
+        bool is_strict = 1;
+        repeated Clause clause = 2;
         Pattern pattern = 3;
-        Expression expression = 2;
+        Expression expression = 4;
 
         message Clause {
             string name = 1;
-            Pattern pattern = 9;
-            Expression expression = 8;
+            Pattern pattern = 2;
+            Expression expression = 3;
         }
 
         message Pattern {
@@ -107,7 +107,7 @@ message Expression {
     }
     message Case {
         bool isSFunc = 1;
-        ElimTree elim_tree = 2;
+        ElimBody elim_body = 2;
         repeated Telescope param = 3;
         Expression result_type = 4;
         Expression result_type_level = 5;
@@ -121,9 +121,9 @@ message Expression {
         Expression renew = 2;
     }
     message Pi {
-        Sort resultSort = 8;
-        Telescope param = 7;
-        Expression codomain = 2;
+        Sort resultSort = 1;
+        Telescope param = 2;
+        Expression codomain = 3;
     }
     message Proj {
         Expression expression = 1;
@@ -133,9 +133,9 @@ message Expression {
         int32 binding_ref = 1;
     }
     message Sigma {
-        Level pLevel = 2;
-        Level hLevel = 3;
-        repeated Telescope param = 1;
+        Level pLevel = 1;
+        Level hLevel = 2;
+        repeated Telescope param = 3;
     }
     message Tuple {
         repeated Expression field = 1;
@@ -166,15 +166,15 @@ message Type {
 message SingleParameter {
     string name = 1;
     bool is_not_explicit = 2;
-    Type type = 5;
-    bool is_hidden = 6;
+    Type type = 3;
+    bool is_hidden = 4;
 }
 
 message Telescope {
     repeated string name = 1;
     bool is_not_explicit = 2;
-    Type type = 5;
-    bool is_hidden = 6;
+    Type type = 3;
+    bool is_hidden = 4;
 }
 
 message TypedBinding {
@@ -182,24 +182,55 @@ message TypedBinding {
     Expression type = 2;
 }
 
+message Pattern {
+    oneof kind {
+        Binding binding = 1;
+        ExpressionConstructor expression_constructor = 2;
+        Constructor constructor = 3;
+        Empty empty = 4;
+    }
+
+    message Binding {
+        SingleParameter var = 1;
+    }
+    message ExpressionConstructor {
+        Expression expression = 1;
+        repeated Pattern pattern = 2;
+    }
+    message Constructor {
+        int32 definition = 1;
+        repeated Pattern pattern = 2;
+    }
+    message Empty {
+    }
+}
+
+message ElimClause {
+    repeated Pattern pattern = 1;
+    Expression expression = 2;
+}
+
 message ElimTree {
-    repeated Telescope param = 1;
+    int32 skip = 1;
     oneof kind {
         Leaf leaf = 2;
         Branch branch = 3;
     }
 
     message Leaf {
-        Expression expr = 1;
+        repeated int32 index = 1;
+        bool has_indices = 2;
+        int32 clause_index = 3;
     }
+
     message Branch {
         message SingleConstructorClause {
             oneof kind {
                 Tuple tuple = 1;
                 Class class = 2;
-                Idp idp = 4;
+                Idp idp = 3;
             }
-            ElimTree elim_tree = 3;
+            ElimTree elim_tree = 4;
 
             message Tuple {
                 int32 length = 1;
@@ -214,7 +245,14 @@ message ElimTree {
             message Idp {
             }
         }
+
         map<int32, ElimTree> clauses = 1;
-        SingleConstructorClause single_clause = 5;
+        SingleConstructorClause single_clause = 2;
+        bool keep_con_call = 3;
     }
+}
+
+message ElimBody {
+    repeated ElimClause clause = 1;
+    ElimTree elim_tree = 2;
 }
