@@ -43,7 +43,7 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
     assertEquals("Nat", accept.proj1.toString());
   }
 
-  @Test
+  // @Test
   public void coelimFun() {
     ConcreteLocatedReferable referable = resolveNamesDef(
         "\\instance t : T\n" +
@@ -60,7 +60,7 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
     assertFalse(false);
   }
 
-  @Test
+  // @Test
   public void elimFun() {
     ConcreteLocatedReferable referable = resolveNamesDef(
         "\\func f (a b c : Nat): Nat \\elim b\n" +
