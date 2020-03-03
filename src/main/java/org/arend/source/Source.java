@@ -1,8 +1,8 @@
 package org.arend.source;
 
 import org.arend.ext.module.ModulePath;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.io.File;
 
 /**

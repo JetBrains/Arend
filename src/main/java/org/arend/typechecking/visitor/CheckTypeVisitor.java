@@ -42,11 +42,11 @@ import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteExpressionVisitor;
 import org.arend.term.concrete.ConcreteLevelExpressionVisitor;
-import org.arend.typechecking.doubleChecker.CoreException;
-import org.arend.typechecking.doubleChecker.CoreExpressionChecker;
 import org.arend.typechecking.FieldDFS;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.TypecheckingListener;
+import org.arend.typechecking.doubleChecker.CoreException;
+import org.arend.typechecking.doubleChecker.CoreExpressionChecker;
 import org.arend.typechecking.error.CycleError;
 import org.arend.typechecking.error.ErrorReporterCounter;
 import org.arend.typechecking.error.local.*;
@@ -68,9 +68,9 @@ import org.arend.typechecking.result.DefCallResult;
 import org.arend.typechecking.result.TResult;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.util.Pair;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.util.*;
 
@@ -166,7 +166,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     myInstancePool = pool;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Map<Referable, Binding> getContext() {
     return context;
@@ -190,7 +190,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     return allBindings;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public ErrorReporter getErrorReporter() {
     return errorReporter;
@@ -213,7 +213,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
   }
 
   @Override
-  public boolean compare(@Nonnull CoreExpression expr1, @Nonnull CoreExpression expr2, @Nonnull CMP cmp, @Nullable ConcreteExpression marker) {
+  public boolean compare(@NotNull CoreExpression expr1, @NotNull CoreExpression expr2, @NotNull CMP cmp, @Nullable ConcreteExpression marker) {
     if (!(expr1 instanceof Expression && expr2 instanceof Expression)) {
       throw new IllegalArgumentException();
     }
@@ -302,7 +302,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
 
   @Nullable
   @Override
-  public TypecheckingResult typecheck(@Nonnull ConcreteExpression expression) {
+  public TypecheckingResult typecheck(@NotNull ConcreteExpression expression) {
     if (!(expression instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }
@@ -311,7 +311,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
 
   @Nullable
   @Override
-  public TypecheckingResult check(@Nonnull CoreExpression expression, @Nonnull ConcreteSourceNode sourceNode) {
+  public TypecheckingResult check(@NotNull CoreExpression expression, @NotNull ConcreteSourceNode sourceNode) {
     if (!(expression instanceof Expression && sourceNode instanceof Concrete.SourceNode)) {
       throw new IllegalArgumentException();
     }
@@ -1811,9 +1811,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     return true;
   }
 
-  @Nonnull
+  @NotNull
   @Override
-  public CheckedExpression defer(@Nonnull MetaDefinition meta, @Nonnull ContextData contextData, @Nonnull CoreExpression type, @Nonnull Stage stage) {
+  public CheckedExpression defer(@NotNull MetaDefinition meta, @NotNull ContextData contextData, @NotNull CoreExpression type, @NotNull Stage stage) {
     ConcreteReferenceExpression refExpr = contextData.getReferenceExpression();
     if (!(contextData instanceof ContextDataImpl && refExpr instanceof Concrete.ReferenceExpression && type instanceof Expression)) {
       throw new IllegalArgumentException();

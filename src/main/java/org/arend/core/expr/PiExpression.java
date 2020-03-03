@@ -22,8 +22,7 @@ import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.util.Decision;
-
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 public class PiExpression extends Expression implements Type, CorePiExpression, CoreAbsExpression {
   private Sort myResultSort;
@@ -58,13 +57,13 @@ public class PiExpression extends Expression implements Type, CorePiExpression, 
     return myResultSort;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public SingleDependentLink getParameters() {
     return myLink;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Expression getCodomain() {
     return myCodomain;
@@ -98,7 +97,7 @@ public class PiExpression extends Expression implements Type, CorePiExpression, 
   }
 
   @Override
-  public <P, R> R accept(@Nonnull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
+  public <P, R> R accept(@NotNull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitPi(this, params);
   }
 
@@ -127,9 +126,9 @@ public class PiExpression extends Expression implements Type, CorePiExpression, 
     return visitor.visitPi(this, null);
   }
 
-  @Nonnull
+  @NotNull
   @Override
-  public PiExpression normalize(@Nonnull NormalizationMode mode) {
+  public PiExpression normalize(@NotNull NormalizationMode mode) {
     return NormalizeVisitor.INSTANCE.visitPi(this, mode);
   }
 
@@ -143,13 +142,13 @@ public class PiExpression extends Expression implements Type, CorePiExpression, 
     return null;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public SingleDependentLink getBinding() {
     return myLink;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Expression getExpression() {
     return myCodomain;

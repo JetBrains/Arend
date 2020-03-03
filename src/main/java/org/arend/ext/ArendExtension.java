@@ -2,25 +2,25 @@ package org.arend.ext;
 
 import org.arend.ext.concrete.ConcreteFactory;
 import org.arend.ext.module.ModuleScopeProvider;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.Map;
 
 public interface ArendExtension {
-  default void declareDefinitions(@Nonnull DefinitionContributor contributor) {}
+  default void declareDefinitions(@NotNull DefinitionContributor contributor) {}
 
-  default void setDependencies(@Nonnull Map<String, ArendExtension> dependencies) {}
+  default void setDependencies(@NotNull Map<String, ArendExtension> dependencies) {}
 
-  default void setPrelude(@Nonnull ArendPrelude prelude) {}
+  default void setPrelude(@NotNull ArendPrelude prelude) {}
 
-  default void setConcreteFactory(@Nonnull ConcreteFactory factory) {}
+  default void setConcreteFactory(@NotNull ConcreteFactory factory) {}
 
-  default void setModuleScopeProvider(@Nonnull ModuleScopeProvider moduleScopeProvider) {}
+  default void setModuleScopeProvider(@NotNull ModuleScopeProvider moduleScopeProvider) {}
 
-  @Nonnull
+  @NotNull
   default ModuleScopeProvider getModuleScopeProvider() {
     return module -> null;
   }
 
-  default void load(@Nonnull DefinitionProvider definitionProvider) {}
+  default void load(@NotNull DefinitionProvider definitionProvider) {}
 }

@@ -11,8 +11,7 @@ import org.arend.ext.core.ops.CMP;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.implicitargs.equations.Equations;
-
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 public class Sort implements CoreSort {
   private final Level myPLevel;
@@ -51,13 +50,13 @@ public class Sort implements CoreSort {
     myHLevel = hLevel;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Level getPLevel() {
     return myPLevel;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Level getHLevel() {
     return myHLevel;

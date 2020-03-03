@@ -4,8 +4,7 @@ import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.util.Decision;
-
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 public class OfTypeExpression extends Expression {
   private final Expression myExpression;
@@ -52,7 +51,7 @@ public class OfTypeExpression extends Expression {
   }
 
   @Override
-  public <P, R> R accept(@Nonnull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
+  public <P, R> R accept(@NotNull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return myExpression.accept(visitor, params);
   }
 
@@ -60,7 +59,7 @@ public class OfTypeExpression extends Expression {
     return myType;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Expression getUnderlyingExpression() {
     return myExpression.getUnderlyingExpression();

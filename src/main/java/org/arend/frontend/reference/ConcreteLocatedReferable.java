@@ -11,20 +11,19 @@ import org.arend.naming.reference.LocatedReferableImpl;
 import org.arend.naming.reference.TCReferable;
 import org.arend.naming.resolving.visitor.TypeClassReferenceExtractVisitor;
 import org.arend.term.concrete.Concrete;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class ConcreteLocatedReferable extends LocatedReferableImpl implements SourceInfo, DataContainer {
   private final Position myPosition;
   private Concrete.ReferableDefinition myDefinition;
 
-  public ConcreteLocatedReferable(Position position, @Nonnull String name, Precedence precedence, TCReferable parent, Kind kind) {
+  public ConcreteLocatedReferable(Position position, @NotNull String name, Precedence precedence, TCReferable parent, Kind kind) {
     super(precedence, name, parent, kind);
     myPosition = position;
   }
 
-  public ConcreteLocatedReferable(Position position, @Nonnull String name, Precedence precedence, ModulePath modulePath, Kind kind) {
+  public ConcreteLocatedReferable(Position position, @NotNull String name, Precedence precedence, ModulePath modulePath, Kind kind) {
     super(precedence, name, modulePath, kind);
     myPosition = position;
   }

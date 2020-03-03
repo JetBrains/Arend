@@ -2,9 +2,8 @@ package org.arend.naming.reference;
 
 import org.arend.ext.reference.Precedence;
 import org.arend.term.abs.Abstract;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class RedirectingReferableImpl implements RedirectingReferable {
   private final Referable myOriginalReferable;
@@ -17,25 +16,25 @@ public class RedirectingReferableImpl implements RedirectingReferable {
     myName = name;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Referable getUnderlyingReferable() {
     return myOriginalReferable.getUnderlyingReferable();
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Referable getOriginalReferable() {
     return myOriginalReferable;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Precedence getPrecedence() {
     return myPrecedence != null ? myPrecedence : myOriginalReferable instanceof GlobalReferable ? ((GlobalReferable) myOriginalReferable).getPrecedence() : Precedence.DEFAULT;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public String textRepresentation() {
     return myName;
@@ -46,7 +45,7 @@ public class RedirectingReferableImpl implements RedirectingReferable {
     return myOriginalReferable instanceof GlobalReferable ? ((GlobalReferable) myOriginalReferable).getTypecheckable() : null;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Kind getKind() {
     return myOriginalReferable instanceof GlobalReferable ? ((GlobalReferable) myOriginalReferable).getKind() : Kind.OTHER;

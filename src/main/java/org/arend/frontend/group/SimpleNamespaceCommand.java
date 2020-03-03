@@ -7,9 +7,9 @@ import org.arend.naming.reference.Referable;
 import org.arend.term.ChildNamespaceCommand;
 import org.arend.term.NameRenaming;
 import org.arend.term.group.ChildGroup;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
 
@@ -32,13 +32,13 @@ public class SimpleNamespaceCommand implements ChildNamespaceCommand, SourceInfo
     myParent = parent;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Kind getKind() {
     return myKind;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public List<String> getPath() {
     return myPath;
@@ -49,13 +49,13 @@ public class SimpleNamespaceCommand implements ChildNamespaceCommand, SourceInfo
     return myUsing;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Collection<? extends SimpleNameRenaming> getOpenedReferences() {
     return myOpenedReferences;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Collection<? extends Referable> getHiddenReferences() {
     return myHiddenReferences;
@@ -90,7 +90,7 @@ public class SimpleNamespaceCommand implements ChildNamespaceCommand, SourceInfo
       myName = name;
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public Referable getOldReference() {
       return myReference;

@@ -11,8 +11,7 @@ import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.util.Decision;
-
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 public class InferenceReferenceExpression extends Expression implements CoreInferenceReferenceExpression {
   private final BaseInferenceVariable myVar;
@@ -84,11 +83,11 @@ public class InferenceReferenceExpression extends Expression implements CoreInfe
   }
 
   @Override
-  public <P, R> R accept(@Nonnull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
+  public <P, R> R accept(@NotNull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitInferenceReference(this, params);
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Expression getUnderlyingExpression() {
     return mySubstExpression == null ? this : mySubstExpression.getUnderlyingExpression();

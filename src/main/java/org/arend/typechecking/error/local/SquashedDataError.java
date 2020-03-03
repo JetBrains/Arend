@@ -5,8 +5,7 @@ import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.arend.term.concrete.Concrete;
-
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
@@ -15,7 +14,7 @@ public class SquashedDataError extends TypecheckingError {
   private org.arend.core.sort.Level myLevel;
   private int myLevelSub;
 
-  public SquashedDataError(DataDefinition dataDef, org.arend.core.sort.Level level, int levelSub, @Nonnull Concrete.SourceNode cause) {
+  public SquashedDataError(DataDefinition dataDef, org.arend.core.sort.Level level, int levelSub, @NotNull Concrete.SourceNode cause) {
     super("", cause);
     this.dataDef = dataDef;
     myLevel = level;

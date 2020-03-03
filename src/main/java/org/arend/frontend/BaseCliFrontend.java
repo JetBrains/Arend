@@ -16,16 +16,16 @@ import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.prelude.Prelude;
 import org.arend.prelude.PreludeResourceLibrary;
 import org.arend.term.group.Group;
-import org.arend.typechecking.doubleChecker.CoreModuleChecker;
 import org.arend.typechecking.SimpleTypecheckerState;
 import org.arend.typechecking.TypecheckerState;
+import org.arend.typechecking.doubleChecker.CoreModuleChecker;
 import org.arend.typechecking.error.local.GoalError;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.arend.util.FileUtils;
 import org.arend.util.Range;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -319,7 +319,7 @@ public abstract class BaseCliFrontend {
       String errorText;
       if (error instanceof GoalError) {
         errorText = error.getDoc(new PrettyPrinterConfig() {
-          @Nonnull
+          @NotNull
           @Override
           public EnumSet<PrettyPrinterFlag> getExpressionFlags() {
             return EnumSet.of(PrettyPrinterFlag.SHOW_FIELD_INSTANCE);

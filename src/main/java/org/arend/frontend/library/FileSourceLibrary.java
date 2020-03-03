@@ -13,9 +13,9 @@ import org.arend.source.Source;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.util.Range;
 import org.arend.util.Version;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
@@ -86,7 +86,7 @@ public class FileSourceLibrary extends UnmodifiableSourceLibrary {
     return myBinaryBasePath != null;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public List<? extends LibraryDependency> getDependencies() {
     return myDependencies;

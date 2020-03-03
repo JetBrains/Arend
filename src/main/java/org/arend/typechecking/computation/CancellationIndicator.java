@@ -1,4 +1,4 @@
-package org.arend.typechecking;
+package org.arend.typechecking.computation;
 
 import org.arend.util.ComputationInterruptedException;
 

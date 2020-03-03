@@ -3,8 +3,8 @@ package org.arend.core.context.param;
 import org.arend.core.expr.ReferenceExpression;
 import org.arend.core.expr.type.Type;
 import org.arend.core.subst.SubstVisitor;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 
 public class TypedSingleDependentLink extends TypedDependentLink implements SingleDependentLink {
@@ -39,7 +39,7 @@ public class TypedSingleDependentLink extends TypedDependentLink implements Sing
     }
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public EmptyDependentLink getNext() {
     return EmptyDependentLink.getInstance();

@@ -16,9 +16,9 @@ import org.arend.term.ClassFieldKind;
 import org.arend.term.Fixity;
 import org.arend.term.FunctionKind;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -69,7 +69,7 @@ public final class Concrete {
       myExplicit = explicit;
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public ConcreteParameter implicit() {
       myExplicit = false;
@@ -77,7 +77,7 @@ public final class Concrete {
     }
 
     @Override
-    @Nonnull
+    @NotNull
     public abstract List<? extends Referable> getReferableList();
 
     public abstract int getNumberOfParameters();
@@ -111,7 +111,7 @@ public final class Concrete {
     }
 
     @Override
-    @Nonnull
+    @NotNull
     public List<? extends Referable> getReferableList() {
       return Collections.singletonList(myReferable);
     }
@@ -135,7 +135,7 @@ public final class Concrete {
     }
 
     @Override
-    @Nonnull
+    @NotNull
     public List<? extends Referable> getReferableList() {
       return Collections.singletonList(null);
     }
@@ -146,7 +146,7 @@ public final class Concrete {
     }
 
     @Override
-    @Nonnull
+    @NotNull
     public Expression getType() {
       return type;
     }
@@ -161,7 +161,7 @@ public final class Concrete {
     }
 
     @Override
-    @Nonnull
+    @NotNull
     public List<? extends Referable> getReferableList() {
       return myReferableList;
     }
@@ -204,18 +204,18 @@ public final class Concrete {
       return ref instanceof TCClassReferable && !((TCClassReferable) ref).isRecord() ? (TCClassReferable) ref : null;
     }
 
-    @Nonnull
+    @NotNull
     @Override
-    public ConcreteExpression app(@Nonnull ConcreteExpression argument) {
+    public ConcreteExpression app(@NotNull ConcreteExpression argument) {
       if (!(argument instanceof Expression)) {
         throw new IllegalArgumentException();
       }
       return AppExpression.make(null, this, (Expression) argument, true);
     }
 
-    @Nonnull
+    @NotNull
     @Override
-    public ConcreteExpression appImp(@Nonnull ConcreteExpression argument) {
+    public ConcreteExpression appImp(@NotNull ConcreteExpression argument) {
       if (!(argument instanceof Expression)) {
         throw new IllegalArgumentException();
       }
@@ -247,7 +247,7 @@ public final class Concrete {
     }
 
     @Override
-    @Nonnull
+    @NotNull
     public Expression getExpression() {
       return expression;
     }
@@ -309,7 +309,7 @@ public final class Concrete {
     }
 
     @Override
-    @Nonnull
+    @NotNull
     public Expression getFunction() {
       return myFunction;
     }
@@ -325,7 +325,7 @@ public final class Concrete {
     }
 
     @Override
-    @Nonnull
+    @NotNull
     public List<Argument> getArguments() {
       return myArguments;
     }
@@ -341,7 +341,7 @@ public final class Concrete {
     public final Fixity fixity;
     public final boolean isExplicit;
 
-    public BinOpSequenceElem(@Nonnull Expression expression, Fixity fixity, boolean isExplicit) {
+    public BinOpSequenceElem(@NotNull Expression expression, Fixity fixity, boolean isExplicit) {
       this.expression = expression;
       this.fixity = fixity != Fixity.UNKNOWN ? fixity
         : !isExplicit ? Fixity.NONFIX
@@ -355,7 +355,7 @@ public final class Concrete {
     }
 
     // Constructor for the first element in a BinOpSequence
-    public BinOpSequenceElem(@Nonnull Expression expression) {
+    public BinOpSequenceElem(@NotNull Expression expression) {
       this.expression = expression;
       this.fixity = expression instanceof FixityReferenceExpression ? ((FixityReferenceExpression) expression).fixity : Fixity.NONFIX;
       if (expression instanceof FixityReferenceExpression) {
@@ -382,7 +382,7 @@ public final class Concrete {
       mySequence = sequence;
     }
 
-    @Nonnull
+    @NotNull
     public List<BinOpSequenceElem> getSequence() {
       return mySequence;
     }
@@ -413,7 +413,7 @@ public final class Concrete {
       myHLevel = null;
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public Referable getReferent() {
       return myReferent;
@@ -483,7 +483,7 @@ public final class Concrete {
       myVariable = variable;
     }
 
-    @Nonnull
+    @NotNull
     public BaseInferenceVariable getVariable() {
       return myVariable;
     }
@@ -514,7 +514,7 @@ public final class Concrete {
       }
     }
 
-    @Nonnull
+    @NotNull
     public Expression getBaseClassExpression() {
       return myBaseClassExpression;
     }
@@ -528,7 +528,7 @@ public final class Concrete {
       }
     }
 
-    @Nonnull
+    @NotNull
     public List<ClassFieldImpl> getStatements() {
       return myDefinitions;
     }
@@ -608,7 +608,7 @@ public final class Concrete {
       this.expression = expression;
     }
 
-    @Nonnull
+    @NotNull
     public Expression getExpression() {
       return expression;
     }
@@ -695,12 +695,12 @@ public final class Concrete {
       this.body = body;
     }
 
-    @Nonnull
+    @NotNull
     public List<Parameter> getParameters() {
       return myArguments;
     }
 
-    @Nonnull
+    @NotNull
     public Expression getBody() {
       return body;
     }
@@ -757,7 +757,7 @@ public final class Concrete {
       return myReferable;
     }
 
-    @Nonnull
+    @NotNull
     public List<? extends LetClausePattern> getPatterns() {
       return myPatterns;
     }
@@ -798,12 +798,12 @@ public final class Concrete {
       return myPattern;
     }
 
-    @Nonnull
+    @NotNull
     public Expression getTerm() {
       return term;
     }
 
-    @Nonnull
+    @NotNull
     public List<Parameter> getParameters() {
       return myParameters;
     }
@@ -835,12 +835,12 @@ public final class Concrete {
       return myStrict;
     }
 
-    @Nonnull
+    @NotNull
     public List<LetClause> getClauses() {
       return myClauses;
     }
 
-    @Nonnull
+    @NotNull
     public Expression getExpression() {
       return expression;
     }
@@ -862,12 +862,12 @@ public final class Concrete {
       this.codomain = codomain;
     }
 
-    @Nonnull
+    @NotNull
     public List<TypeParameter> getParameters() {
       return myParameters;
     }
 
-    @Nonnull
+    @NotNull
     public Expression getCodomain() {
       return codomain;
     }
@@ -887,7 +887,7 @@ public final class Concrete {
       myParameters = parameters;
     }
 
-    @Nonnull
+    @NotNull
     public List<TypeParameter> getParameters() {
       return myParameters;
     }
@@ -908,7 +908,7 @@ public final class Concrete {
     }
 
     @Override
-    @Nonnull
+    @NotNull
     public List<Expression> getFields() {
       return myFields;
     }
@@ -957,7 +957,7 @@ public final class Concrete {
       myField = field;
     }
 
-    @Nonnull
+    @NotNull
     public Expression getExpression() {
       return expression;
     }
@@ -973,19 +973,19 @@ public final class Concrete {
   }
 
   public static class CaseArgument implements ConcreteCaseArgument {
-    public @Nonnull Expression expression;
+    public @NotNull Expression expression;
     public final @Nullable Referable referable;
     public @Nullable Expression type;
     public boolean isElim;
 
-    public CaseArgument(@Nonnull Expression expression, @Nullable Referable referable, @Nullable Expression type) {
+    public CaseArgument(@NotNull Expression expression, @Nullable Referable referable, @Nullable Expression type) {
       this.expression = expression;
       this.referable = referable;
       this.type = type;
       isElim = false;
     }
 
-    public CaseArgument(@Nonnull ReferenceExpression expression, @Nullable Expression type) {
+    public CaseArgument(@NotNull ReferenceExpression expression, @Nullable Expression type) {
       this.expression = expression;
       this.referable = null;
       this.type = type;
@@ -1014,7 +1014,7 @@ public final class Concrete {
       return mySCase;
     }
 
-    @Nonnull
+    @NotNull
     public List<? extends CaseArgument> getArguments() {
       return myArguments;
     }
@@ -1037,7 +1037,7 @@ public final class Concrete {
       myResultTypeLevel = resultTypeLevel;
     }
 
-    @Nonnull
+    @NotNull
     public List<FunctionClause> getClauses() {
       return myClauses;
     }
@@ -1101,7 +1101,7 @@ public final class Concrete {
     }
 
     @Override
-    @Nonnull
+    @NotNull
     public BigInteger getNumber() {
       return myNumber;
     }
@@ -1130,7 +1130,7 @@ public final class Concrete {
       myVariable = variable;
     }
 
-    @Nonnull
+    @NotNull
     public InferenceLevelVariable getVariable() {
       return myVariable;
     }
@@ -1200,7 +1200,7 @@ public final class Concrete {
       myExpression = expression;
     }
 
-    @Nonnull
+    @NotNull
     public LevelExpression getExpression() {
       return myExpression;
     }
@@ -1221,12 +1221,12 @@ public final class Concrete {
       myRight = right;
     }
 
-    @Nonnull
+    @NotNull
     public LevelExpression getLeft() {
       return myLeft;
     }
 
-    @Nonnull
+    @NotNull
     public LevelExpression getRight() {
       return myRight;
     }
@@ -1283,13 +1283,13 @@ public final class Concrete {
       myReferable = referable;
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public TCReferable getData() {
       return myReferable;
     }
 
-    @Nonnull
+    @NotNull
     public abstract Definition getRelatedDefinition();
 
     public boolean isDesugarized() {
@@ -1394,7 +1394,7 @@ public final class Concrete {
       }
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public Definition getRelatedDefinition() {
       return this;
@@ -1435,7 +1435,7 @@ public final class Concrete {
       myElements = elements;
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public TCClassReferable getData() {
       return (TCClassReferable) super.getData();
@@ -1463,12 +1463,12 @@ public final class Concrete {
       myForcedCoercingField = isForced;
     }
 
-    @Nonnull
+    @NotNull
     public List<ReferenceExpression> getSuperClasses() {
       return mySuperClasses;
     }
 
-    @Nonnull
+    @NotNull
     public List<ClassElement> getElements() {
       return myElements;
     }
@@ -1498,13 +1498,13 @@ public final class Concrete {
       myImplementedField = implementedField;
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public FunctionKind getKind() {
       return FunctionKind.COCLAUSE_FUNC;
     }
 
-    @Nonnull
+    @NotNull
     public TCReferable getEnclosingDefinition() {
       return myEnclosingDefinition;
     }
@@ -1519,8 +1519,8 @@ public final class Concrete {
   }
 
   public interface BaseClassField extends ClassElement {
-    @Nonnull List<TypeParameter> getParameters();
-    @Nonnull Expression getResultType();
+    @NotNull List<TypeParameter> getParameters();
+    @NotNull Expression getResultType();
     void setResultType(Expression resultType);
     @Nullable Expression getResultTypeLevel();
     void setResultTypeLevel(Expression resultTypeLevel);
@@ -1552,7 +1552,7 @@ public final class Concrete {
       myNumberOfParameters = sum;
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public TCFieldReferable getData() {
       return (TCFieldReferable) super.getData();
@@ -1566,7 +1566,7 @@ public final class Concrete {
       return myKind;
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public List<TypeParameter> getParameters() {
       return myParameters;
@@ -1577,7 +1577,7 @@ public final class Concrete {
       return myNumberOfParameters;
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public Expression getResultType() {
       return myResultType;
@@ -1599,7 +1599,7 @@ public final class Concrete {
       myResultTypeLevel = resultTypeLevel;
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public ClassDefinition getRelatedDefinition() {
       return myParentClass;
@@ -1632,7 +1632,7 @@ public final class Concrete {
       myNumberOfParameters = sum;
     }
 
-    @Nonnull
+    @NotNull
     public Referable getOverriddenField() {
       return myOverriddenField;
     }
@@ -1641,7 +1641,7 @@ public final class Concrete {
       myOverriddenField = overriddenField;
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public List<TypeParameter> getParameters() {
       return myParameters;
@@ -1652,7 +1652,7 @@ public final class Concrete {
       return myNumberOfParameters;
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public Expression getResultType() {
       return myResultType;
@@ -1690,17 +1690,17 @@ public final class Concrete {
       return null;
     }
 
-    @Nonnull
+    @NotNull
     public List<CoClauseElement> getCoClauseElements() {
       return Collections.emptyList();
     }
 
-    @Nonnull
+    @NotNull
     public List<? extends ReferenceExpression> getEliminatedReferences() {
       return Collections.emptyList();
     }
 
-    @Nonnull
+    @NotNull
     public List<FunctionClause> getClauses() {
       return Collections.emptyList();
     }
@@ -1715,7 +1715,7 @@ public final class Concrete {
     }
 
     @Override
-    @Nonnull
+    @NotNull
     public Expression getTerm() {
       return myTerm;
     }
@@ -1735,12 +1735,12 @@ public final class Concrete {
       myClauses = clauses;
     }
 
-    @Nonnull
+    @NotNull
     public List<? extends ReferenceExpression> getEliminatedReferences() {
       return myExpressions;
     }
 
-    @Nonnull
+    @NotNull
     public List<FunctionClause> getClauses() {
       return myClauses;
     }
@@ -1754,7 +1754,7 @@ public final class Concrete {
       myCoClauseElements = coClauseElements;
     }
 
-    @Nonnull
+    @NotNull
     public List<CoClauseElement> getCoClauseElements() {
       return myCoClauseElements;
     }
@@ -1775,14 +1775,14 @@ public final class Concrete {
       myBody = body;
     }
 
-    @Nonnull
+    @NotNull
     public abstract FunctionKind getKind();
 
     public TCReferable getUseParent() {
       return null;
     }
 
-    @Nonnull
+    @NotNull
     public List<Parameter> getParameters() {
       return myParameters;
     }
@@ -1805,7 +1805,7 @@ public final class Concrete {
       myResultTypeLevel = resultTypeLevel;
     }
 
-    @Nonnull
+    @NotNull
     public FunctionBody getBody() {
       return myBody;
     }
@@ -1827,7 +1827,7 @@ public final class Concrete {
     }
 
     @Override
-    @Nonnull
+    @NotNull
     public FunctionKind getKind() {
       return myKind;
     }
@@ -1876,7 +1876,7 @@ public final class Concrete {
       myUniverse = universe;
     }
 
-    @Nonnull
+    @NotNull
     public List<TypeParameter> getParameters() {
       return myParameters;
     }
@@ -1886,7 +1886,7 @@ public final class Concrete {
       return myEliminatedReferences;
     }
 
-    @Nonnull
+    @NotNull
     public List<ConstructorClause> getConstructorClauses() {
       return myConstructorClauses;
     }
@@ -1947,7 +1947,7 @@ public final class Concrete {
       myConstructors = constructors;
     }
 
-    @Nonnull
+    @NotNull
     public List<Constructor> getConstructors() {
       return myConstructors;
     }
@@ -1968,22 +1968,22 @@ public final class Concrete {
       myClauses = clauses;
     }
 
-    @Nonnull
+    @NotNull
     public List<TypeParameter> getParameters() {
       return myParameters;
     }
 
-    @Nonnull
+    @NotNull
     public List<ReferenceExpression> getEliminatedReferences() {
       return myEliminatedReferences;
     }
 
-    @Nonnull
+    @NotNull
     public List<FunctionClause> getClauses() {
       return myClauses;
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public DataDefinition getRelatedDefinition() {
       return myDataType;
@@ -2029,16 +2029,16 @@ public final class Concrete {
       myExplicit = isExplicit;
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public ConcretePattern implicit() {
       myExplicit = false;
       return this;
     }
 
-    @Nonnull
+    @NotNull
     @Override
-    public ConcretePattern as(@Nonnull ArendRef ref, @Nullable ConcreteExpression type) {
+    public ConcretePattern as(@NotNull ArendRef ref, @Nullable ConcreteExpression type) {
       if (!(ref instanceof Referable && type instanceof Expression)) {
         throw new IllegalArgumentException();
       }
@@ -2046,7 +2046,7 @@ public final class Concrete {
       return this;
     }
 
-    @Nonnull
+    @NotNull
     public List<TypedReferable> getAsReferables() {
       return myAsReferables;
     }
@@ -2082,9 +2082,9 @@ public final class Concrete {
       return myReferable;
     }
 
-    @Nonnull
+    @NotNull
     @Override
-    public ConcretePattern as(@Nonnull ArendRef ref, @Nullable ConcreteExpression type) {
+    public ConcretePattern as(@NotNull ArendRef ref, @Nullable ConcreteExpression type) {
       throw new IllegalArgumentException("\\as is not allowed for variable patterns");
     }
   }
@@ -2122,7 +2122,7 @@ public final class Concrete {
       myArguments = arguments;
     }
 
-    @Nonnull
+    @NotNull
     public Referable getConstructor() {
       return myConstructor;
     }
@@ -2132,7 +2132,7 @@ public final class Concrete {
     }
 
     @Override
-    @Nonnull
+    @NotNull
     public List<Pattern> getPatterns() {
       return myArguments;
     }

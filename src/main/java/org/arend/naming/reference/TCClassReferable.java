@@ -2,17 +2,17 @@ package org.arend.naming.reference;
 
 import org.arend.ext.module.ModulePath;
 import org.arend.ext.reference.Precedence;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
 public interface TCClassReferable extends TCReferable, ClassReferable {
-  @Override @Nonnull List<? extends TCClassReferable> getSuperClassReferences();
-  @Override @Nonnull Collection<? extends TCFieldReferable> getFieldReferables();
-  @Override @Nonnull Collection<? extends Referable> getImplementedFields();
+  @Override @NotNull List<? extends TCClassReferable> getSuperClassReferences();
+  @Override @NotNull Collection<? extends TCFieldReferable> getFieldReferables();
+  @Override @NotNull Collection<? extends Referable> getImplementedFields();
 
   TCClassReferable NULL_REFERABLE = new TCClassReferable() {
     @Nullable
@@ -21,19 +21,19 @@ public interface TCClassReferable extends TCReferable, ClassReferable {
       return null;
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public List<? extends TCClassReferable> getSuperClassReferences() {
       return Collections.emptyList();
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public Collection<? extends TCFieldReferable> getFieldReferables() {
       return Collections.emptyList();
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public Collection<? extends Referable> getImplementedFields() {
       return Collections.emptyList();
@@ -44,7 +44,7 @@ public interface TCClassReferable extends TCReferable, ClassReferable {
       return true;
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public Collection<? extends Reference> getUnresolvedSuperClassReferences() {
       return Collections.emptyList();
@@ -67,13 +67,13 @@ public interface TCClassReferable extends TCReferable, ClassReferable {
       return null;
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public Precedence getPrecedence() {
       return Precedence.DEFAULT;
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public String textRepresentation() {
       return "_";

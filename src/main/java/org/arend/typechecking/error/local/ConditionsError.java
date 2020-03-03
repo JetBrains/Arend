@@ -10,8 +10,8 @@ import org.arend.ext.prettyprinting.PrettyPrinterFlag;
 import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.arend.term.concrete.Concrete;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -52,7 +52,7 @@ public class ConditionsError extends TypecheckingError {
         return ppConfig.isSingleLine();
       }
 
-      @Nonnull
+      @NotNull
       @Override
       public EnumSet<PrettyPrinterFlag> getExpressionFlags() {
         return ppConfig.getExpressionFlags();

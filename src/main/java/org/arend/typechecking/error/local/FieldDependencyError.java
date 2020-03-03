@@ -5,8 +5,8 @@ import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.arend.term.concrete.Concrete;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -17,7 +17,7 @@ public class FieldDependencyError extends TypecheckingError {
   public final ClassField field;
   public final Set<ClassField> fields;
 
-  public FieldDependencyError(ClassField field, Set<ClassField> fields, @Nonnull Concrete.SourceNode cause) {
+  public FieldDependencyError(ClassField field, Set<ClassField> fields, @NotNull Concrete.SourceNode cause) {
     super("", cause);
     this.field = field;
     this.fields = fields;

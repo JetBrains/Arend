@@ -1,8 +1,7 @@
 package org.arend.naming.reference;
 
 import org.arend.ext.typechecking.CheckedExpression;
-
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 public class CoreReferable implements Referable {
   private final String myName;
@@ -13,7 +12,7 @@ public class CoreReferable implements Referable {
     this.expression = expression;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public String textRepresentation() {
     return myName;

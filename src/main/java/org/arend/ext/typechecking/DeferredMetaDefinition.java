@@ -1,7 +1,7 @@
 package org.arend.ext.typechecking;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class DeferredMetaDefinition extends BaseMetaDefinition {
   private final ExpressionTypechecker.Stage stage;
@@ -19,7 +19,7 @@ public class DeferredMetaDefinition extends BaseMetaDefinition {
 
   @Nullable
   @Override
-  public CheckedExpression invoke(@Nonnull ExpressionTypechecker typechecker, @Nonnull ContextData contextData) {
+  public CheckedExpression invoke(@NotNull ExpressionTypechecker typechecker, @NotNull ContextData contextData) {
     if (deferredMeta instanceof BaseMetaDefinition && !((BaseMetaDefinition) deferredMeta).checkContextData(contextData, typechecker.getErrorReporter()) || !checkContextData(contextData, typechecker.getErrorReporter())) {
       return null;
     }

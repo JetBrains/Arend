@@ -2,9 +2,9 @@ package org.arend.library;
 
 import org.arend.ext.module.ModulePath;
 import org.arend.source.StreamBinarySource;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -33,7 +33,7 @@ public class MemoryBinarySource extends StreamBinarySource {
     return myOutputStream;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public ModulePath getModulePath() {
     return myModulePath;

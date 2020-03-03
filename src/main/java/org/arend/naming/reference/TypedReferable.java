@@ -1,8 +1,7 @@
 package org.arend.naming.reference;
 
 import org.arend.term.abs.Abstract;
-
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 public interface TypedReferable extends Referable {
   default @Nullable ClassReferable getTypeClassReference() {

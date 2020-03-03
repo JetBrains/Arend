@@ -8,9 +8,9 @@ import org.arend.core.sort.Sort;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CoreNewExpression;
 import org.arend.util.Decision;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -51,7 +51,7 @@ public class NewExpression extends Expression implements CoreNewExpression {
     return myRenewExpression;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public ClassCallExpression getClassCall() {
     return myClassCall;
@@ -78,7 +78,7 @@ public class NewExpression extends Expression implements CoreNewExpression {
   }
 
   @Override
-  public <P, R> R accept(@Nonnull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
+  public <P, R> R accept(@NotNull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitNew(this, params);
   }
 
@@ -92,7 +92,7 @@ public class NewExpression extends Expression implements CoreNewExpression {
     return null;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public ClassCallExpression getType() {
     if (myRenewExpression == null) {

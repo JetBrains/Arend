@@ -1,8 +1,8 @@
 package org.arend.naming.scope;
 
 import org.arend.naming.reference.Referable;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.function.Predicate;
@@ -17,7 +17,7 @@ public class EmptyScope implements Scope {
     return null;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Collection<? extends Referable> getElements() {
     return Collections.emptyList();

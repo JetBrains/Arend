@@ -17,9 +17,9 @@ import org.arend.source.error.LocationError;
 import org.arend.source.error.PersistingError;
 import org.arend.term.group.ChildGroup;
 import org.arend.term.group.Group;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -30,7 +30,7 @@ import java.io.OutputStream;
 public abstract class StreamBinarySource implements BinarySource {
   private ModuleDeserialization myModuleDeserialization;
 
-  @Nonnull
+  @NotNull
   @Override
   public abstract ModulePath getModulePath();
 

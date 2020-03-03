@@ -2,8 +2,7 @@ package org.arend.error;
 
 import org.arend.ext.error.GeneralError;
 import org.arend.term.concrete.Concrete;
-
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 public class ParsingError extends GeneralError {
   public enum Kind {
@@ -56,7 +55,7 @@ public class ParsingError extends GeneralError {
     return cause instanceof Concrete.SourceNode ? ((Concrete.SourceNode) cause).getData() : cause;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Stage getStage() {
     return Stage.PARSER;

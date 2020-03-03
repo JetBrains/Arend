@@ -2,9 +2,9 @@ package org.arend.naming.scope;
 
 import org.arend.ext.reference.RawScope;
 import org.arend.naming.reference.Referable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -22,7 +22,7 @@ public interface Scope extends RawScope {
     return null;
   }
 
-  @Nonnull
+  @NotNull
   default Collection<? extends Referable> getElements() {
     List<Referable> result = new ArrayList<>();
     find(ref -> { result.add(ref); return false; });
@@ -39,11 +39,11 @@ public interface Scope extends RawScope {
     return null;
   }
 
-  default @Nonnull Scope getGlobalSubscope() {
+  default @NotNull Scope getGlobalSubscope() {
     return this;
   }
 
-  default @Nonnull Scope getGlobalSubscopeWithoutOpens() {
+  default @NotNull Scope getGlobalSubscopeWithoutOpens() {
     return this;
   }
 

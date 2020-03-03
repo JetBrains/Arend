@@ -1,14 +1,15 @@
 package org.arend.naming.reference;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.*;
 
 public interface ClassReferable extends LocatedReferable {
   boolean isRecord();
-  @Nonnull List<? extends ClassReferable> getSuperClassReferences();
-  @Nonnull Collection<? extends Reference> getUnresolvedSuperClassReferences();
-  @Nonnull Collection<? extends FieldReferable> getFieldReferables();
-  @Nonnull Collection<? extends Referable> getImplementedFields();
+  @NotNull List<? extends ClassReferable> getSuperClassReferences();
+  @NotNull Collection<? extends Reference> getUnresolvedSuperClassReferences();
+  @NotNull Collection<? extends FieldReferable> getFieldReferables();
+  @NotNull Collection<? extends Referable> getImplementedFields();
 
   default boolean isSubClassOf(ClassReferable classRef) {
     if (this == classRef) {

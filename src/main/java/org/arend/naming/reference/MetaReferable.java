@@ -2,8 +2,7 @@ package org.arend.naming.reference;
 
 import org.arend.ext.reference.Precedence;
 import org.arend.ext.typechecking.MetaDefinition;
-
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 public class MetaReferable implements GlobalReferable {
   private Precedence myPrecedence;
@@ -28,19 +27,19 @@ public class MetaReferable implements GlobalReferable {
     myPrecedence = precedence;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public String textRepresentation() {
     return myName;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Precedence getPrecedence() {
     return myPrecedence;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Kind getKind() {
     return Kind.OTHER;

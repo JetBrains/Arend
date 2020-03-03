@@ -1,11 +1,9 @@
 package org.arend.ext.concrete.expr;
 
-import org.arend.ext.concrete.expr.ConcreteExpression;
-
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 public interface ConcreteArgument {
-  @Nonnull
+  @NotNull
   ConcreteExpression getExpression();
   boolean isExplicit();
 }

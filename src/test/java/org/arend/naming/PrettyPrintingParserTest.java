@@ -3,7 +3,8 @@ package org.arend.naming;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.context.param.TypedSingleDependentLink;
 import org.arend.core.definition.FunctionDefinition;
-import org.arend.core.elimtree.*;
+import org.arend.core.elimtree.ElimBody;
+import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.CaseExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.LamExpression;
@@ -24,10 +25,13 @@ import org.arend.term.FunctionKind;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
 import org.arend.typechecking.TypeCheckingTestCase;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 
-import javax.annotation.Nonnull;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
 
 import static org.arend.ExpressionFactory.*;
 import static org.arend.core.expr.ExpressionFactory.*;
@@ -39,7 +43,7 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
   private void testExpr(String expected, Expression expr, EnumSet<PrettyPrinterFlag> flags) {
     StringBuilder builder = new StringBuilder();
     ToAbstractVisitor.convert(expr, new PrettyPrinterConfig() {
-      @Nonnull
+      @NotNull
       @Override
       public EnumSet<PrettyPrinterFlag> getExpressionFlags() {
         return flags;
@@ -60,7 +64,7 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
   private void testExpr(Concrete.Expression expected, Expression expr, EnumSet<PrettyPrinterFlag> flags) {
     StringBuilder builder = new StringBuilder();
     ToAbstractVisitor.convert(expr, new PrettyPrinterConfig() {
-      @Nonnull
+      @NotNull
       @Override
       public EnumSet<PrettyPrinterFlag> getExpressionFlags() {
         return flags;

@@ -5,15 +5,14 @@ import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.term.concrete.Concrete;
-
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public class FieldTypeParameterError extends TypecheckingError {
   public final Expression fieldType;
 
-  public FieldTypeParameterError(Expression type, @Nonnull Concrete.SourceNode cause) {
+  public FieldTypeParameterError(Expression type, @NotNull Concrete.SourceNode cause) {
     super("Field type does not have enough parameters", cause);
     fieldType = type;
   }

@@ -4,14 +4,13 @@ import org.arend.ext.reference.Precedence;
 import org.arend.frontend.parser.Position;
 import org.arend.naming.reference.TCFieldReferable;
 import org.arend.naming.reference.TCReferable;
-
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 public class ConcreteClassFieldReferable extends InternalConcreteLocatedReferable implements TCFieldReferable {
   private final boolean myExplicit;
   private final boolean myParameter;
 
-  public ConcreteClassFieldReferable(Position position, @Nonnull String name, Precedence precedence, boolean isVisible, boolean isExplicit, boolean isParameter, TCReferable parent, Kind kind) {
+  public ConcreteClassFieldReferable(Position position, @NotNull String name, Precedence precedence, boolean isVisible, boolean isExplicit, boolean isParameter, TCReferable parent, Kind kind) {
     super(position, name, precedence, isVisible, parent, kind);
     myExplicit = isExplicit;
     myParameter = isParameter;

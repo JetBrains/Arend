@@ -4,9 +4,9 @@ import org.arend.naming.reference.ClassReferable;
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TypedReferable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Predicate;
 
@@ -79,13 +79,13 @@ public class ClassFieldImplScope implements Scope {
     return null;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Scope getGlobalSubscope() {
     return EmptyScope.INSTANCE;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Scope getGlobalSubscopeWithoutOpens() {
     return EmptyScope.INSTANCE;

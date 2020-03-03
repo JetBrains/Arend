@@ -6,9 +6,9 @@ import org.arend.naming.reference.ModuleReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.term.NamespaceCommand;
 import org.arend.term.group.Group;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Predicate;
 
@@ -17,7 +17,7 @@ public class ImportedScope implements Scope {
   private final ModuleScopeProvider myProvider;
   private final Scope myElementsScope;
 
-  public ImportedScope(@Nonnull Group group, ModuleScopeProvider provider) {
+  public ImportedScope(@NotNull Group group, ModuleScopeProvider provider) {
     myExpectedNamesTree = new Tree();
     myProvider = provider;
     myElementsScope = null;
@@ -29,7 +29,7 @@ public class ImportedScope implements Scope {
     }
   }
 
-  public ImportedScope(ImportedScope importedScope, @Nonnull Scope elementsScope) {
+  public ImportedScope(ImportedScope importedScope, @NotNull Scope elementsScope) {
     myExpectedNamesTree = importedScope.myExpectedNamesTree;
     myProvider = importedScope.myProvider;
     myElementsScope = elementsScope;
@@ -41,7 +41,7 @@ public class ImportedScope implements Scope {
     myElementsScope = elementsScope;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Collection<? extends Referable> getElements() {
     if (myElementsScope != null) {

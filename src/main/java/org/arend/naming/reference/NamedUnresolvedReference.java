@@ -2,9 +2,9 @@ package org.arend.naming.reference;
 
 import org.arend.naming.scope.Scope;
 import org.arend.term.concrete.Concrete;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.List;
 
 public class NamedUnresolvedReference implements UnresolvedReference {
@@ -12,7 +12,7 @@ public class NamedUnresolvedReference implements UnresolvedReference {
   private final String myName;
   private Referable resolved;
 
-  public NamedUnresolvedReference(Object data, @Nonnull String name) {
+  public NamedUnresolvedReference(Object data, @NotNull String name) {
     myData = data;
     myName = name;
   }
@@ -23,7 +23,7 @@ public class NamedUnresolvedReference implements UnresolvedReference {
     return myData;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public String textRepresentation() {
     return myName;
@@ -43,7 +43,7 @@ public class NamedUnresolvedReference implements UnresolvedReference {
     return myName.hashCode();
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Referable resolve(Scope scope, List<Referable> resolvedRefs) {
     if (resolved != null) {

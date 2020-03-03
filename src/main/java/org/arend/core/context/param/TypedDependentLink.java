@@ -5,8 +5,8 @@ import org.arend.core.expr.type.Type;
 import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.subst.InPlaceLevelSubstVisitor;
 import org.arend.core.subst.SubstVisitor;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 
 public class TypedDependentLink implements DependentLink {
@@ -49,7 +49,7 @@ public class TypedDependentLink implements DependentLink {
     myType = type;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public DependentLink getNext() {
     return myNext;

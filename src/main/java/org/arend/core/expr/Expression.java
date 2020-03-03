@@ -17,7 +17,6 @@ import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.ExpressionMapper;
 import org.arend.ext.core.ops.NormalizationMode;
-import org.arend.ext.error.GeneralError;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.ext.prettyprinting.doc.DocFactory;
@@ -28,9 +27,9 @@ import org.arend.term.prettyprint.PrettyPrintVisitor;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.util.Decision;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -141,15 +140,15 @@ public abstract class Expression implements Body, CoreExpression {
     return accept(substVisitor, null);
   }
 
-  @Nonnull
+  @NotNull
   @Override
-  public Expression normalize(@Nonnull NormalizationMode mode) {
+  public Expression normalize(@NotNull NormalizationMode mode) {
     return accept(NormalizeVisitor.INSTANCE, mode);
   }
 
   @Nullable
   @Override
-  public CoreExpression recreate(@Nonnull ExpressionMapper mapper) {
+  public CoreExpression recreate(@NotNull ExpressionMapper mapper) {
     try {
       return accept(new RecreateExpressionVisitor(mapper), null);
     } catch (SubstVisitor.SubstException e) {
@@ -162,7 +161,7 @@ public abstract class Expression implements Body, CoreExpression {
   }
 
   @Override
-  public boolean compare(@Nonnull CoreExpression expr2, @Nonnull CMP cmp) {
+  public boolean compare(@NotNull CoreExpression expr2, @NotNull CMP cmp) {
     return expr2 instanceof Expression && CompareVisitor.compare(DummyEquations.getInstance(), cmp, this, (Expression) expr2, null, null);
   }
 
@@ -266,7 +265,7 @@ public abstract class Expression implements Body, CoreExpression {
     return true;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Expression getUnderlyingExpression() {
     return this;

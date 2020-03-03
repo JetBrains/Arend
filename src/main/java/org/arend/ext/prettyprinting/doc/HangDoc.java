@@ -1,6 +1,7 @@
 package org.arend.ext.prettyprinting.doc;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -77,7 +78,7 @@ public class HangDoc extends Doc {
     return bottom.isNull() && top.isEmpty();
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public List<LineDoc> linearize(int indent, boolean indentFirst) {
     List<LineDoc> result = top.linearize(indent, indentFirst);

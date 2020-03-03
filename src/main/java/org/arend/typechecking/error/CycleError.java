@@ -8,8 +8,8 @@ import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.arend.ext.reference.ArendRef;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.term.concrete.Concrete;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -96,7 +96,7 @@ public class CycleError extends GeneralError {
     }
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Stage getStage() {
     return Stage.TYPECHECKER;

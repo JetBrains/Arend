@@ -4,8 +4,8 @@ import org.arend.core.expr.Expression;
 import org.arend.ext.concrete.expr.ConcreteArgument;
 import org.arend.ext.typechecking.ContextData;
 import org.arend.term.concrete.Concrete;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 
 public class ContextDataImpl implements ContextData {
@@ -19,13 +19,13 @@ public class ContextDataImpl implements ContextData {
     myExpectedType = expectedType;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Concrete.ReferenceExpression getReferenceExpression() {
     return myExpression;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public List<? extends ConcreteArgument> getArguments() {
     return myArguments;

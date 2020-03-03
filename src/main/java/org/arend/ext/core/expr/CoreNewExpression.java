@@ -1,11 +1,11 @@
 package org.arend.ext.core.expr;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public interface CoreNewExpression extends CoreExpression {
   @Nullable CoreExpression getRenewExpression();
-  @Nonnull CoreClassCallExpression getClassCall();
+  @NotNull CoreClassCallExpression getClassCall();
 
-  @Nonnull @Override CoreClassCallExpression getType();
+  @NotNull @Override CoreClassCallExpression getType();
 }

@@ -3,16 +3,15 @@ package org.arend.frontend;
 import org.arend.frontend.parser.Position;
 import org.arend.naming.reference.TCReferable;
 import org.arend.typechecking.order.PartialComparator;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class PositionComparator implements PartialComparator<TCReferable> {
   public final static PositionComparator INSTANCE = new PositionComparator();
 
   private PositionComparator() {}
 
-  @Nonnull
+  @NotNull
   @Override
   public Result compare(@Nullable TCReferable t1, @Nullable TCReferable t2) {
     if (t1 == t2) {

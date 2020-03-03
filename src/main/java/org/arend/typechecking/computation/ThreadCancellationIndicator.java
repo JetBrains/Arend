@@ -1,4 +1,4 @@
-package org.arend.typechecking;
+package org.arend.typechecking.computation;
 
 public class ThreadCancellationIndicator implements CancellationIndicator {
   public static final CancellationIndicator INSTANCE = new ThreadCancellationIndicator();

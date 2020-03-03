@@ -1,8 +1,7 @@
 package org.arend.naming.reference;
 
 import org.arend.ext.reference.Precedence;
-
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 public class DataLocatedReferableImpl extends LocatedReferableImpl {
   private ClassReferable myTypeClassReference;

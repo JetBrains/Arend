@@ -4,8 +4,8 @@ import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.PrettyPrinterFlag;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.EnumSet;
 
 public class TermLineDoc extends LineDoc {
@@ -21,7 +21,7 @@ public class TermLineDoc extends LineDoc {
           return true;
         }
 
-        @Nonnull
+        @NotNull
         @Override
         public EnumSet<PrettyPrinterFlag> getExpressionFlags() {
           return ppConfig.getExpressionFlags();

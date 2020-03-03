@@ -4,8 +4,8 @@ import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.Variable;
 import org.arend.core.expr.Expression;
 import org.arend.ext.core.context.CoreInferenceVariable;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.Set;
 
 public class BaseInferenceVariable implements Variable, CoreInferenceVariable {
@@ -19,7 +19,7 @@ public class BaseInferenceVariable implements Variable, CoreInferenceVariable {
     myBounds = bounds;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public String getName() {
     return myName;

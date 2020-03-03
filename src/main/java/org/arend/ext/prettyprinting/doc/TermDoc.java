@@ -2,8 +2,7 @@ package org.arend.ext.prettyprinting.doc;
 
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
-
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import static org.arend.ext.prettyprinting.doc.DocFactory.hList;
 import static org.arend.ext.prettyprinting.doc.DocFactory.text;

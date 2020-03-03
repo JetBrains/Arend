@@ -1,13 +1,14 @@
 package org.arend.ext.module;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Arrays;
 import java.util.List;
 
 public class LongName implements Comparable<LongName> {
   private final List<String> path;
 
-  public LongName(@Nonnull List<String> path) {
+  public LongName(@NotNull List<String> path) {
     this.path = path;
   }
 
@@ -51,7 +52,7 @@ public class LongName implements Comparable<LongName> {
   }
 
   @Override
-  public int compareTo(@Nonnull LongName longName) {
+  public int compareTo(@NotNull LongName longName) {
     List<String> theirPath = longName.path;
     Integer mySize = path.size();
     Integer theirSize = theirPath.size();

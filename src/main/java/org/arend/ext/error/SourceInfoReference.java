@@ -2,8 +2,7 @@ package org.arend.ext.error;
 
 import org.arend.ext.reference.ArendRef;
 import org.arend.ext.reference.DataContainer;
-
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 public class SourceInfoReference implements SourceInfo, ArendRef, DataContainer {
   private final SourceInfo sourceInfo;
@@ -27,7 +26,7 @@ public class SourceInfoReference implements SourceInfo, ArendRef, DataContainer 
     return sourceInfo.positionTextRepresentation();
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public String getRefName() {
     String module = sourceInfo.moduleTextRepresentation();

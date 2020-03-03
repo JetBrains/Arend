@@ -14,8 +14,7 @@ import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CoreSigmaExpression;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.util.Decision;
-
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 public class SigmaExpression extends Expression implements Type, CoreSigmaExpression {
   private final DependentLink myLink;
@@ -31,7 +30,7 @@ public class SigmaExpression extends Expression implements Type, CoreSigmaExpres
     mySort = mySort.subst(substitution);
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public DependentLink getParameters() {
     return myLink;
@@ -62,7 +61,7 @@ public class SigmaExpression extends Expression implements Type, CoreSigmaExpres
   }
 
   @Override
-  public <P, R> R accept(@Nonnull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
+  public <P, R> R accept(@NotNull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitSigma(this, params);
   }
 
@@ -81,9 +80,9 @@ public class SigmaExpression extends Expression implements Type, CoreSigmaExpres
     return visitor.visitSigma(this, null);
   }
 
-  @Nonnull
+  @NotNull
   @Override
-  public SigmaExpression normalize(@Nonnull NormalizationMode mode) {
+  public SigmaExpression normalize(@NotNull NormalizationMode mode) {
     return NormalizeVisitor.INSTANCE.visitSigma(this, mode);
   }
 

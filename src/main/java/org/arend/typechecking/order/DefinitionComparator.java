@@ -2,9 +2,8 @@ package org.arend.typechecking.order;
 
 import org.arend.naming.reference.TCReferable;
 import org.arend.term.concrete.Concrete;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class DefinitionComparator implements PartialComparator<Concrete.Definition> {
   private final PartialComparator<TCReferable> myComparator;
@@ -13,7 +12,7 @@ public class DefinitionComparator implements PartialComparator<Concrete.Definiti
     myComparator = comparator;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Result compare(@Nullable Concrete.Definition def1, @Nullable Concrete.Definition def2) {
     if (def1 == def2) {

@@ -6,8 +6,7 @@ import org.arend.naming.reference.GlobalReferable;
 import org.arend.term.FunctionKind;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.provider.ConcreteProvider;
-
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 public class ConcreteReferableProvider implements ConcreteProvider {
   public static final ConcreteProvider INSTANCE = new ConcreteReferableProvider();

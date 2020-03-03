@@ -1,8 +1,8 @@
 package org.arend.core.expr;
 
 import org.arend.prelude.Prelude;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,7 +17,7 @@ public class BigIntegerExpression extends IntegerExpression {
     myInteger = integer;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public BigInteger getBigInteger() {
     return myInteger;

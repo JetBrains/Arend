@@ -8,8 +8,8 @@ import org.arend.ext.core.expr.CoreConCallExpression;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.prelude.Prelude;
 import org.arend.util.Decision;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 
 public class ConCallExpression extends DefCallExpression implements CoreConCallExpression {
@@ -36,19 +36,19 @@ public class ConCallExpression extends DefCallExpression implements CoreConCallE
     return new ConCallExpression(constructor, sortArgument, dataTypeArguments, arguments);
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public List<Expression> getDataTypeArguments() {
     return myDataTypeArguments;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public List<Expression> getDefCallArguments() {
     return myArguments;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Constructor getDefinition() {
     return (Constructor) super.getDefinition();
@@ -65,7 +65,7 @@ public class ConCallExpression extends DefCallExpression implements CoreConCallE
   }
 
   @Override
-  public <P, R> R accept(@Nonnull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
+  public <P, R> R accept(@NotNull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitConCall(this, params);
   }
 

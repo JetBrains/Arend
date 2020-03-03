@@ -1,9 +1,9 @@
 package org.arend.naming.scope;
 
 import org.arend.naming.reference.Referable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -21,7 +21,7 @@ public class MergeScope implements Scope {
     myScopes = Arrays.asList(scopes);
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public List<Referable> getElements() {
     List<Referable> result = new ArrayList<>();
@@ -65,7 +65,7 @@ public class MergeScope implements Scope {
     return null;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Scope getGlobalSubscopeWithoutOpens() {
     List<Scope> scopes = new ArrayList<>(myScopes.size());

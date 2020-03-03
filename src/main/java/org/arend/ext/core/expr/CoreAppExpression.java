@@ -1,8 +1,8 @@
 package org.arend.ext.core.expr;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 public interface CoreAppExpression extends CoreExpression {
-  @Nonnull CoreExpression getFunction();
-  @Nonnull CoreExpression getArgument();
+  @NotNull CoreExpression getFunction();
+  @NotNull CoreExpression getArgument();
 }

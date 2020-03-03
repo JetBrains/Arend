@@ -12,9 +12,9 @@ import org.arend.naming.scope.Scope;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Predicate;
 
@@ -56,7 +56,7 @@ public class LibraryManager {
    *
    * @return the extension module scope provider.
    */
-  public @Nonnull SimpleModuleScopeProvider getExtensionModuleScopeProvider(boolean external) {
+  public @NotNull SimpleModuleScopeProvider getExtensionModuleScopeProvider(boolean external) {
     return external ? myExternalExtensionModuleScopeProvider : myInternalExtensionModuleScopeProvider;
   }
 
@@ -68,7 +68,7 @@ public class LibraryManager {
    *
    * @return a scope provider for modules in the specified library and its dependencies.
    */
-  public @Nonnull ModuleScopeProvider getAvailableModuleScopeProvider(Library library) {
+  public @NotNull ModuleScopeProvider getAvailableModuleScopeProvider(Library library) {
     Collection<? extends LibraryDependency> dependencies = library.getDependencies();
     ModuleScopeProvider libraryModuleScopeProvider = library.getModuleScopeProvider();
     return new CachingModuleScopeProvider(modulePath -> {

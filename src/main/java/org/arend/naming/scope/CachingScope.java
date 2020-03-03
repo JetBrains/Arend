@@ -2,9 +2,9 @@ package org.arend.naming.scope;
 
 import org.arend.naming.reference.ModuleReferable;
 import org.arend.naming.reference.Referable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -37,7 +37,7 @@ public class CachingScope implements Scope {
     return scope instanceof CachingScope || scope instanceof ImportedScope ? scope : new CachingScope(scope, true);
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Collection<? extends Referable> getElements() {
     return myElements.values();
@@ -63,7 +63,7 @@ public class CachingScope implements Scope {
     return namespace == EMPTY_SCOPE ? null : namespace;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Scope getGlobalSubscopeWithoutOpens() {
     Scope result = myScope.getGlobalSubscopeWithoutOpens();

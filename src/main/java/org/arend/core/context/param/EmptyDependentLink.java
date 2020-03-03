@@ -4,8 +4,8 @@ import org.arend.core.expr.type.Type;
 import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.subst.InPlaceLevelSubstVisitor;
 import org.arend.core.subst.SubstVisitor;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 
 public class EmptyDependentLink implements SingleDependentLink {
@@ -32,7 +32,7 @@ public class EmptyDependentLink implements SingleDependentLink {
     throw new IllegalStateException();
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public SingleDependentLink getNext() {
     throw new IllegalStateException();

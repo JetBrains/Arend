@@ -9,12 +9,12 @@ import org.arend.core.expr.PiExpression;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.ErrorReporter;
+import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.typechecking.CheckedExpression;
 import org.arend.term.concrete.Concrete;
-import org.arend.ext.error.TypecheckingError;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -58,13 +58,13 @@ public class TypecheckingResult implements TResult, CheckedExpression {
     return params;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public CoreExpression getExpression() {
     return expression;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public CoreExpression getType() {
     return type;

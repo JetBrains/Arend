@@ -1,6 +1,6 @@
 package org.arend.ext.core.level;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 public interface CoreSort {
   @Nullable CoreLevel getPLevel();

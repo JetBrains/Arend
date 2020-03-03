@@ -7,10 +7,10 @@ import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.Group;
 import org.arend.typechecking.TypecheckerState;
+import org.arend.typechecking.computation.ComputationRunner;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
 import org.arend.typechecking.order.dependency.DependencyListener;
 import org.arend.typechecking.order.listener.OrderingListener;
-import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.arend.typechecking.provider.ConcreteProvider;
 import org.arend.typechecking.visitor.CollectDefCallsVisitor;
 
@@ -87,7 +87,7 @@ public class Ordering extends BellmanFord<Concrete.Definition> {
   @Override
   public void order(Concrete.Definition definition) {
     if (getTypechecked(definition.getData()) == null) {
-      TypecheckingOrderingListener.checkCanceled();
+      ComputationRunner.checkCanceled();
       super.order(definition);
     }
   }

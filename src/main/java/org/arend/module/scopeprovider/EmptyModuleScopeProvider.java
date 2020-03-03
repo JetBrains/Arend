@@ -2,9 +2,8 @@ package org.arend.module.scopeprovider;
 
 import org.arend.ext.module.ModulePath;
 import org.arend.naming.scope.Scope;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class EmptyModuleScopeProvider implements ModuleScopeProvider {
   public final static EmptyModuleScopeProvider INSTANCE = new EmptyModuleScopeProvider();
@@ -13,7 +12,7 @@ public class EmptyModuleScopeProvider implements ModuleScopeProvider {
 
   @Nullable
   @Override
-  public Scope forModule(@Nonnull ModulePath module) {
+  public Scope forModule(@NotNull ModulePath module) {
     return null;
   }
 }

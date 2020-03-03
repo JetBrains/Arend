@@ -1,9 +1,10 @@
 package org.arend.ext.concrete.expr;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.List;
 
 public interface ConcreteAppExpression extends ConcreteExpression {
-  @Nonnull ConcreteExpression getFunction();
-  @Nonnull List<? extends ConcreteArgument> getArguments();
+  @NotNull ConcreteExpression getFunction();
+  @NotNull List<? extends ConcreteArgument> getArguments();
 }

@@ -17,8 +17,8 @@ import org.arend.ext.core.definition.CoreConstructor;
 import org.arend.core.elimtree.BranchKey;
 import org.arend.naming.reference.TCReferable;
 import org.arend.util.Decision;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -55,7 +55,7 @@ public class Constructor extends Definition implements Function, BranchKey, Core
     return myConditions;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public DependentLink getParameters() {
     return myParameters;
@@ -71,7 +71,7 @@ public class Constructor extends Definition implements Function, BranchKey, Core
     myParameters = parameters;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public DataDefinition getDataType() {
     return myDataType;

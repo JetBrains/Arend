@@ -7,9 +7,9 @@ import org.arend.term.group.ChildGroup;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.order.Ordering;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Collection;
 
 /**
@@ -22,7 +22,7 @@ public interface Library {
    *
    * @return the name of this library.
    */
-  @Nonnull
+  @NotNull
   String getName();
 
   /**
@@ -71,7 +71,7 @@ public interface Library {
    *
    * @return the typechecker state.
    */
-  @Nonnull
+  @NotNull
   TypecheckerState getTypecheckerState();
 
   /**
@@ -79,7 +79,7 @@ public interface Library {
    *
    * @return the list of loaded modules.
    */
-  @Nonnull
+  @NotNull
   Collection<? extends ModulePath> getLoadedModules();
 
   /**
@@ -87,7 +87,7 @@ public interface Library {
    *
    * @return the list of dependencies.
    */
-  @Nonnull
+  @NotNull
   Collection<? extends LibraryDependency> getDependencies();
 
   /**
@@ -115,7 +115,7 @@ public interface Library {
    *
    * @return a scope provider for modules in this library.
    */
-  @Nonnull
+  @NotNull
   ModuleScopeProvider getModuleScopeProvider();
 
   /**

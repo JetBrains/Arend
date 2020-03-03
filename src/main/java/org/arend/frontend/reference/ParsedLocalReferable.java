@@ -3,8 +3,7 @@ package org.arend.frontend.reference;
 import org.arend.ext.error.SourceInfo;
 import org.arend.frontend.parser.Position;
 import org.arend.naming.reference.Referable;
-
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 public class ParsedLocalReferable implements Referable, SourceInfo {
   private final Position myPosition;
@@ -19,7 +18,7 @@ public class ParsedLocalReferable implements Referable, SourceInfo {
     return myPosition;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public String textRepresentation() {
     return myName == null ? "_" : myName;

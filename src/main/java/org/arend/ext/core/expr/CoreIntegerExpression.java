@@ -1,8 +1,9 @@
 package org.arend.ext.core.expr;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
+
 import java.math.BigInteger;
 
 public interface CoreIntegerExpression {
-  @Nonnull BigInteger getBigInteger();
+  @NotNull BigInteger getBigInteger();
 }

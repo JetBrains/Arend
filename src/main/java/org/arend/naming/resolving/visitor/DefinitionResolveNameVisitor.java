@@ -23,8 +23,8 @@ import org.arend.term.group.Group;
 import org.arend.typechecking.error.local.LocalErrorReporter;
 import org.arend.typechecking.provider.ConcreteProvider;
 import org.arend.util.Pair;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -592,13 +592,13 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
         }
 
         curScope = NamespaceCommandNamespace.makeNamespace(curScope, new NamespaceCommand() {
-          @Nonnull
+          @NotNull
           @Override
           public Kind getKind() {
             return namespaceCommand.getKind();
           }
 
-          @Nonnull
+          @NotNull
           @Override
           public List<String> getPath() {
             return namespaceCommand.getPath();
@@ -609,13 +609,13 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
             return namespaceCommand.isUsing();
           }
 
-          @Nonnull
+          @NotNull
           @Override
           public Collection<? extends NameRenaming> getOpenedReferences() {
             return namespaceCommand.getOpenedReferences();
           }
 
-          @Nonnull
+          @NotNull
           @Override
           public Collection<? extends Referable> getHiddenReferences() {
             return Collections.emptyList();

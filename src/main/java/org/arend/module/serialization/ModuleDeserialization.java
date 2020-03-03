@@ -11,8 +11,8 @@ import org.arend.term.group.*;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.order.dependency.DependencyListener;
 import org.arend.util.Pair;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.*;
 
 public class ModuleDeserialization {
@@ -181,12 +181,12 @@ public class ModuleDeserialization {
     }
   }
 
-  @Nonnull
+  @NotNull
   public ChildGroup readGroup(ModulePath modulePath) throws DeserializationException {
     return readGroup(myModuleProto.getGroup(), null, modulePath);
   }
 
-  @Nonnull
+  @NotNull
   private ChildGroup readGroup(ModuleProtos.Group groupProto, ChildGroup parent, ModulePath modulePath) throws DeserializationException {
     DefinitionProtos.Referable referableProto = groupProto.getReferable();
     List<TCFieldReferable> fieldReferables;

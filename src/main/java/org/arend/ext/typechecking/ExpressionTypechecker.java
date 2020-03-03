@@ -7,18 +7,18 @@ import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.reference.ArendRef;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Map;
 
 public interface ExpressionTypechecker {
   enum Stage { BEFORE_SOLVER, BEFORE_LEVELS, AFTER_LEVELS }
 
-  @Nonnull Map<? extends ArendRef, ? extends CoreBinding> getContext();
-  @Nonnull ErrorReporter getErrorReporter();
-  @Nullable CheckedExpression typecheck(@Nonnull ConcreteExpression expression);
-  @Nullable CheckedExpression check(@Nonnull CoreExpression expression, @Nonnull ConcreteSourceNode sourceNode);
-  @Nonnull CheckedExpression defer(@Nonnull MetaDefinition meta, @Nonnull ContextData contextData, @Nonnull CoreExpression type, @Nonnull Stage stage);
-  boolean compare(@Nonnull CoreExpression expr1, @Nonnull CoreExpression expr2, @Nonnull CMP cmp, @Nullable ConcreteExpression marker);
+  @NotNull Map<? extends ArendRef, ? extends CoreBinding> getContext();
+  @NotNull ErrorReporter getErrorReporter();
+  @Nullable CheckedExpression typecheck(@NotNull ConcreteExpression expression);
+  @Nullable CheckedExpression check(@NotNull CoreExpression expression, @NotNull ConcreteSourceNode sourceNode);
+  @NotNull CheckedExpression defer(@NotNull MetaDefinition meta, @NotNull ContextData contextData, @NotNull CoreExpression type, @NotNull Stage stage);
+  boolean compare(@NotNull CoreExpression expr1, @NotNull CoreExpression expr2, @NotNull CMP cmp, @Nullable ConcreteExpression marker);
 }

@@ -1,9 +1,8 @@
 package org.arend.ext.core.expr;
 
 import org.arend.ext.core.context.CoreParameter;
-
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 public interface CoreSigmaExpression extends CoreExpression {
-  @Nonnull CoreParameter getParameters();
+  @NotNull CoreParameter getParameters();
 }

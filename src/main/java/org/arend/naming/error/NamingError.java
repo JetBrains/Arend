@@ -1,9 +1,8 @@
 package org.arend.naming.error;
 
-import org.arend.term.concrete.Concrete;
 import org.arend.ext.error.LocalError;
-
-import javax.annotation.Nonnull;
+import org.arend.term.concrete.Concrete;
+import org.jetbrains.annotations.NotNull;
 
 public class NamingError extends LocalError {
   public final Object cause;
@@ -28,7 +27,7 @@ public class NamingError extends LocalError {
     return cause instanceof Concrete.SourceNode ? ((Concrete.SourceNode) cause).getData() : cause;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Stage getStage() {
     return Stage.RESOLVER;

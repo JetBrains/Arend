@@ -6,9 +6,9 @@ import org.arend.naming.scope.CachingScope;
 import org.arend.naming.scope.LexicalScope;
 import org.arend.naming.scope.Scope;
 import org.arend.term.group.Group;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -49,7 +49,7 @@ public class SimpleModuleScopeProvider implements ModuleScopeProvider, ModuleReg
 
   @Nullable
   @Override
-  public Scope forModule(@Nonnull ModulePath module) {
+  public Scope forModule(@NotNull ModulePath module) {
     return myMap.get(module);
   }
 }

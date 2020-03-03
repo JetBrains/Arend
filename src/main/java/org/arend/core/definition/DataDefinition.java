@@ -13,8 +13,8 @@ import org.arend.ext.core.definition.CoreDataDefinition;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.prelude.Prelude;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.*;
 
 public class DataDefinition extends Definition implements CoreDataDefinition {
@@ -88,7 +88,7 @@ public class DataDefinition extends Definition implements CoreDataDefinition {
     mySquasher = squasher;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public DependentLink getParameters() {
     return myParameters;
@@ -98,7 +98,7 @@ public class DataDefinition extends Definition implements CoreDataDefinition {
     myParameters = parameters;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public List<Constructor> getConstructors() {
     return myConstructors;

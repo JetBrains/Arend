@@ -12,9 +12,9 @@ import org.arend.naming.reference.LocalReferable;
 import org.arend.naming.reference.MetaReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,37 +28,37 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     myData = data;
   }
 
-  @Nonnull
+  @NotNull
   @Override
-  public ConcreteExpression ref(@Nonnull ArendRef ref) {
+  public ConcreteExpression ref(@NotNull ArendRef ref) {
     if (!(ref instanceof Referable)) {
       throw new IllegalArgumentException();
     }
     return new Concrete.ReferenceExpression(myData, (Referable) ref);
   }
 
-  @Nonnull
+  @NotNull
   @Override
-  public ConcreteExpression ref(@Nonnull ArendRef ref, @Nullable ConcreteLevel pLevel, @Nullable ConcreteLevel hLevel) {
+  public ConcreteExpression ref(@NotNull ArendRef ref, @Nullable ConcreteLevel pLevel, @Nullable ConcreteLevel hLevel) {
     if (!(ref instanceof Referable && (pLevel == null || pLevel instanceof Concrete.LevelExpression) && (hLevel == null || hLevel instanceof Concrete.LevelExpression) )) {
       throw new IllegalArgumentException();
     }
     return new Concrete.ReferenceExpression(myData, (Referable) ref, (Concrete.LevelExpression) pLevel, (Concrete.LevelExpression) hLevel);
   }
 
-  @Nonnull
+  @NotNull
   @Override
-  public ConcreteExpression core(String name, @Nonnull CheckedExpression expr) {
+  public ConcreteExpression core(String name, @NotNull CheckedExpression expr) {
     return new Concrete.ReferenceExpression(myData, new CoreReferable(name, expr), null, null);
   }
 
-  @Nonnull
+  @NotNull
   @Override
-  public ConcreteExpression meta(String name, @Nonnull MetaDefinition meta) {
+  public ConcreteExpression meta(String name, @NotNull MetaDefinition meta) {
     return new Concrete.ReferenceExpression(myData, new MetaReferable(Precedence.DEFAULT, name, meta), null, null);
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public ConcreteExpression thisExpr() {
     return new Concrete.ThisExpression(myData, null);
@@ -75,9 +75,9 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     return result;
   }
 
-  @Nonnull
+  @NotNull
   @Override
-  public ConcreteExpression lam(@Nonnull Collection<? extends ConcreteParameter> parameters, @Nonnull ConcreteExpression body) {
+  public ConcreteExpression lam(@NotNull Collection<? extends ConcreteParameter> parameters, @NotNull ConcreteExpression body) {
     if (!(body instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }
@@ -98,16 +98,16 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     return result;
   }
 
-  @Nonnull
+  @NotNull
   @Override
-  public ConcreteExpression pi(@Nonnull Collection<? extends ConcreteParameter> parameters, @Nonnull ConcreteExpression codomain) {
+  public ConcreteExpression pi(@NotNull Collection<? extends ConcreteParameter> parameters, @NotNull ConcreteExpression codomain) {
     if (!(codomain instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }
     return new Concrete.PiExpression(myData, typeParameters(parameters), (Concrete.Expression) codomain);
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public ConcreteExpression universe(@Nullable ConcreteLevel pLevel, @Nullable ConcreteLevel hLevel) {
     if (!((pLevel == null || pLevel instanceof Concrete.LevelExpression) && (hLevel == null || hLevel instanceof Concrete.LevelExpression))) {
@@ -116,13 +116,13 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     return new Concrete.UniverseExpression(myData, (Concrete.LevelExpression) pLevel, (Concrete.LevelExpression) hLevel);
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public ConcreteExpression hole() {
     return new Concrete.HoleExpression(myData);
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public ConcreteExpression goal(@Nullable String name, @Nullable ConcreteExpression expression) {
     if (!(expression instanceof Concrete.Expression)) {
@@ -131,9 +131,9 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     return new Concrete.GoalExpression(myData, name, (Concrete.Expression) expression);
   }
 
-  @Nonnull
+  @NotNull
   @Override
-  public ConcreteExpression tuple(@Nonnull ConcreteExpression... expressions) {
+  public ConcreteExpression tuple(@NotNull ConcreteExpression... expressions) {
     List<Concrete.Expression> fields = new ArrayList<>(expressions.length);
     for (ConcreteExpression expression : expressions) {
       if (!(expression instanceof Concrete.Expression)) {
@@ -144,15 +144,15 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     return new Concrete.TupleExpression(myData, fields);
   }
 
-  @Nonnull
+  @NotNull
   @Override
-  public ConcreteExpression sigma(@Nonnull ConcreteParameter... parameters) {
+  public ConcreteExpression sigma(@NotNull ConcreteParameter... parameters) {
     return new Concrete.SigmaExpression(myData, typeParameters(Arrays.asList(parameters)));
   }
 
-  @Nonnull
+  @NotNull
   @Override
-  public ConcreteExpression caseExpr(boolean isSCase, Collection<? extends ConcreteCaseArgument> arguments, @Nullable ConcreteExpression resultType, @Nullable ConcreteExpression resultTypeLevel, @Nonnull ConcreteClause... clauses) {
+  public ConcreteExpression caseExpr(boolean isSCase, Collection<? extends ConcreteCaseArgument> arguments, @Nullable ConcreteExpression resultType, @Nullable ConcreteExpression resultTypeLevel, @NotNull ConcreteClause... clauses) {
     if (!((resultType == null || resultType instanceof Concrete.Expression) && (resultTypeLevel == null || resultTypeLevel instanceof Concrete.Expression))) {
       throw new IllegalArgumentException();
     }
@@ -176,27 +176,27 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     return new Concrete.CaseExpression(myData, isSCase, cArgs, (Concrete.Expression) resultType, (Concrete.Expression) resultTypeLevel, cClauses);
   }
 
-  @Nonnull
+  @NotNull
   @Override
-  public ConcreteExpression eval(@Nonnull ConcreteExpression expression) {
+  public ConcreteExpression eval(@NotNull ConcreteExpression expression) {
     if (!(expression instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }
     return new Concrete.EvalExpression(myData, false, (Concrete.Expression) expression);
   }
 
-  @Nonnull
+  @NotNull
   @Override
-  public ConcreteExpression peval(@Nonnull ConcreteExpression expression) {
+  public ConcreteExpression peval(@NotNull ConcreteExpression expression) {
     if (!(expression instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }
     return new Concrete.EvalExpression(myData, true, (Concrete.Expression) expression);
   }
 
-  @Nonnull
+  @NotNull
   @Override
-  public ConcreteExpression proj(@Nonnull ConcreteExpression expression, int field) {
+  public ConcreteExpression proj(@NotNull ConcreteExpression expression, int field) {
     if (!(expression instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }
@@ -217,27 +217,27 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     return result;
   }
 
-  @Nonnull
+  @NotNull
   @Override
-  public ConcreteExpression classExt(@Nonnull ConcreteExpression expression, @Nonnull ConcreteClassElement... elements) {
+  public ConcreteExpression classExt(@NotNull ConcreteExpression expression, @NotNull ConcreteClassElement... elements) {
     if (!(expression instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }
     return Concrete.ClassExtExpression.make(myData, (Concrete.Expression) expression, classFieldImpls(elements));
   }
 
-  @Nonnull
+  @NotNull
   @Override
-  public ConcreteExpression newExpr(@Nonnull ConcreteExpression expression) {
+  public ConcreteExpression newExpr(@NotNull ConcreteExpression expression) {
     if (!(expression instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }
     return new Concrete.NewExpression(myData, (Concrete.Expression) expression);
   }
 
-  @Nonnull
+  @NotNull
   @Override
-  public ConcreteExpression letExpr(boolean isStrict, @Nonnull Collection<? extends ConcreteLetClause> clauses, @Nonnull ConcreteExpression expression) {
+  public ConcreteExpression letExpr(boolean isStrict, @NotNull Collection<? extends ConcreteLetClause> clauses, @NotNull ConcreteExpression expression) {
     if (!(expression instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }
@@ -251,34 +251,34 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     return new Concrete.LetExpression(myData, isStrict, cClauses, (Concrete.Expression) expression);
   }
 
-  @Nonnull
+  @NotNull
   @Override
-  public ConcreteExpression number(@Nonnull BigInteger number) {
+  public ConcreteExpression number(@NotNull BigInteger number) {
     return new Concrete.NumericLiteral(myData, number);
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public ConcreteExpression number(int number) {
     return new Concrete.NumericLiteral(myData, BigInteger.valueOf(number));
   }
 
-  @Nonnull
+  @NotNull
   @Override
-  public ConcreteExpression typed(@Nonnull ConcreteExpression expression, @Nonnull ConcreteExpression type) {
+  public ConcreteExpression typed(@NotNull ConcreteExpression expression, @NotNull ConcreteExpression type) {
     if (!(expression instanceof Concrete.Expression && type instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }
     return new Concrete.TypedExpression(myData, (Concrete.Expression) expression, (Concrete.Expression) type);
   }
 
-  @Nonnull
+  @NotNull
   @Override
-  public ArendRef local(@Nonnull String name) {
+  public ArendRef local(@NotNull String name) {
     return new LocalReferable(name);
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public ConcreteParameter param(@Nullable ArendRef ref) {
     if (!(ref == null || ref instanceof Referable)) {
@@ -287,9 +287,9 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     return new Concrete.NameParameter(myData, true, (Referable) ref);
   }
 
-  @Nonnull
+  @NotNull
   @Override
-  public ConcreteParameter param(@Nonnull Collection<? extends ArendRef> refs, @Nonnull ConcreteExpression type) {
+  public ConcreteParameter param(@NotNull Collection<? extends ArendRef> refs, @NotNull ConcreteExpression type) {
     if (!(type instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }
@@ -306,25 +306,25 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     return new Concrete.TelescopeParameter(myData, true, cRefs, (Concrete.Expression) type);
   }
 
-  @Nonnull
+  @NotNull
   @Override
-  public ConcreteLetClause letClause(@Nonnull ArendRef ref, @Nonnull Collection<? extends ConcreteParameter> parameters, @Nullable ConcreteExpression type, @Nonnull ConcreteExpression term) {
+  public ConcreteLetClause letClause(@NotNull ArendRef ref, @NotNull Collection<? extends ConcreteParameter> parameters, @Nullable ConcreteExpression type, @NotNull ConcreteExpression term) {
     if (!(ref instanceof Referable && (type == null || type instanceof Concrete.Expression) && term instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }
     return new Concrete.LetClause((Referable) ref, parameters(parameters), (Concrete.Expression) type, (Concrete.Expression) term);
   }
 
-  @Nonnull
+  @NotNull
   @Override
-  public ConcreteLetClause letClause(@Nonnull ConcreteSinglePattern pattern, @Nullable ConcreteExpression type, @Nonnull ConcreteExpression term) {
+  public ConcreteLetClause letClause(@NotNull ConcreteSinglePattern pattern, @Nullable ConcreteExpression type, @NotNull ConcreteExpression term) {
     if (!(pattern instanceof Concrete.LetClausePattern && (type == null || type instanceof Concrete.Expression) && term instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }
     return new Concrete.LetClause((Concrete.LetClausePattern) pattern, (Concrete.Expression) type, (Concrete.Expression) term);
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public ConcreteSinglePattern singlePatternRef(@Nullable ArendRef ref, @Nullable ConcreteExpression type) {
     if (!((ref == null || ref instanceof Referable) && (type == null || type instanceof Concrete.Expression))) {
@@ -333,9 +333,9 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     return new Concrete.LetClausePattern((Referable) ref, (Concrete.Expression) type);
   }
 
-  @Nonnull
+  @NotNull
   @Override
-  public ConcreteSinglePattern singlePatternConstructor(@Nonnull ConcreteSinglePattern... subpatterns) {
+  public ConcreteSinglePattern singlePatternConstructor(@NotNull ConcreteSinglePattern... subpatterns) {
     List<Concrete.LetClausePattern> cPatterns = new ArrayList<>(subpatterns.length);
     for (ConcreteSinglePattern subpattern : subpatterns) {
       if (!(subpattern instanceof Concrete.LetClausePattern)) {
@@ -346,18 +346,18 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     return new Concrete.LetClausePattern(myData, cPatterns);
   }
 
-  @Nonnull
+  @NotNull
   @Override
-  public ConcreteClassElement implementation(@Nonnull ArendRef field, @Nullable ConcreteExpression expression, ConcreteClassElement... subclauses) {
+  public ConcreteClassElement implementation(@NotNull ArendRef field, @Nullable ConcreteExpression expression, ConcreteClassElement... subclauses) {
     if (!(field instanceof Referable && (expression == null || expression instanceof Concrete.Expression))) {
       throw new IllegalArgumentException();
     }
     return new Concrete.ClassFieldImpl(myData, (Referable) field, (Concrete.Expression) expression, classFieldImpls(subclauses));
   }
 
-  @Nonnull
+  @NotNull
   @Override
-  public ConcreteCaseArgument caseArg(@Nonnull ConcreteExpression expression, @Nullable ArendRef asRef, @Nullable ConcreteExpression type) {
+  public ConcreteCaseArgument caseArg(@NotNull ConcreteExpression expression, @Nullable ArendRef asRef, @Nullable ConcreteExpression type) {
     if (!(expression instanceof Concrete.Expression && (asRef == null || asRef instanceof Referable) && (type == null || type instanceof Concrete.Expression))) {
       throw new IllegalArgumentException();
     }
@@ -375,16 +375,16 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     return result;
   }
 
-  @Nonnull
+  @NotNull
   @Override
-  public ConcreteClause clause(@Nonnull Collection<? extends ConcretePattern> patterns, @Nullable ConcreteExpression expression) {
+  public ConcreteClause clause(@NotNull Collection<? extends ConcretePattern> patterns, @Nullable ConcreteExpression expression) {
     if (!(expression == null || expression instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }
     return new Concrete.FunctionClause(myData, patterns(patterns), (Concrete.Expression) expression);
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public ConcretePattern refPattern(@Nullable ArendRef ref, @Nullable ConcreteExpression type) {
     if (!((ref == null || ref instanceof Referable) && (type == null || type instanceof Concrete.Expression))) {
@@ -393,13 +393,13 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     return new Concrete.NamePattern(myData, true, (Referable) ref, (Concrete.Expression) type);
   }
 
-  @Nonnull
+  @NotNull
   @Override
-  public ConcretePattern tuplePattern(@Nonnull ConcretePattern... subpatterns) {
+  public ConcretePattern tuplePattern(@NotNull ConcretePattern... subpatterns) {
     return new Concrete.TuplePattern(myData, true, patterns(Arrays.asList(subpatterns)), new ArrayList<>(1));
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public ConcretePattern numberPattern(int number) {
     if (number > Concrete.NumberPattern.MAX_VALUE) number = Concrete.NumberPattern.MAX_VALUE;
@@ -407,64 +407,64 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     return new Concrete.NumberPattern(myData, number, new ArrayList<>(1));
   }
 
-  @Nonnull
+  @NotNull
   @Override
-  public ConcretePattern conPattern(@Nonnull ArendRef constructor, @Nonnull ConcretePattern... subpatterns) {
+  public ConcretePattern conPattern(@NotNull ArendRef constructor, @NotNull ConcretePattern... subpatterns) {
     if (!(constructor instanceof Referable)) {
       throw new IllegalArgumentException();
     }
     return new Concrete.ConstructorPattern(myData, true, (Referable) constructor, patterns(Arrays.asList(subpatterns)), new ArrayList<>(1));
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public ConcreteLevel inf() {
     return new Concrete.InfLevelExpression(myData);
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public ConcreteLevel lp() {
     return new Concrete.PLevelExpression(myData);
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public ConcreteLevel lh() {
     return new Concrete.HLevelExpression(myData);
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public ConcreteLevel numLevel(int level) {
     return new Concrete.NumberLevelExpression(myData, level);
   }
 
-  @Nonnull
+  @NotNull
   @Override
-  public ConcreteLevel sucLevel(@Nonnull ConcreteLevel level) {
+  public ConcreteLevel sucLevel(@NotNull ConcreteLevel level) {
     if (!(level instanceof Concrete.LevelExpression)) {
       throw new IllegalArgumentException();
     }
     return new Concrete.SucLevelExpression(myData, (Concrete.LevelExpression) level);
   }
 
-  @Nonnull
+  @NotNull
   @Override
-  public ConcreteLevel maxLevel(@Nonnull ConcreteLevel level1, @Nonnull ConcreteLevel level2) {
+  public ConcreteLevel maxLevel(@NotNull ConcreteLevel level1, @NotNull ConcreteLevel level2) {
     if (!(level1 instanceof Concrete.LevelExpression && level2 instanceof Concrete.LevelExpression)) {
       throw new IllegalArgumentException();
     }
     return new Concrete.MaxLevelExpression(myData, (Concrete.LevelExpression) level1, (Concrete.LevelExpression) level2);
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public ConcreteFactory copy() {
     return new ConcreteFactoryImpl(myData);
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public ConcreteFactory withData(@Nullable Object data) {
     myData = data;

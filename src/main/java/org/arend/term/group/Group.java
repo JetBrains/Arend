@@ -2,28 +2,28 @@ package org.arend.term.group;
 
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.term.NamespaceCommand;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Collections;
 
 public interface Group {
-  @Nonnull LocatedReferable getReferable();
+  @NotNull LocatedReferable getReferable();
 
-  @Nonnull Collection<? extends Group> getSubgroups();
-  @Nonnull Collection<? extends NamespaceCommand> getNamespaceCommands();
+  @NotNull Collection<? extends Group> getSubgroups();
+  @NotNull Collection<? extends NamespaceCommand> getNamespaceCommands();
 
-  @Nonnull Collection<? extends InternalReferable> getInternalReferables();
+  @NotNull Collection<? extends InternalReferable> getInternalReferables();
 
-  default @Nonnull Collection<? extends InternalReferable> getConstructors() {
+  default @NotNull Collection<? extends InternalReferable> getConstructors() {
     return Collections.emptyList();
   }
 
-  default @Nonnull Collection<? extends InternalReferable> getFields() {
+  default @NotNull Collection<? extends InternalReferable> getFields() {
     return Collections.emptyList();
   }
 
-  default @Nonnull Collection<? extends Group> getDynamicSubgroups() {
+  default @NotNull Collection<? extends Group> getDynamicSubgroups() {
     return Collections.emptyList();
   }
 

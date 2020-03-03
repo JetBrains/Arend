@@ -2,8 +2,7 @@ package org.arend.typechecking.provider;
 
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.Reference;
-
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 public interface PartialConcreteProvider {
   @Nullable Reference getInstanceTypeReference(GlobalReferable instance);

@@ -6,8 +6,8 @@ import org.arend.core.expr.visitor.ExpressionVisitor2;
 import org.arend.ext.core.expr.CoreAppExpression;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.util.Decision;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.List;
 
@@ -31,13 +31,13 @@ public class AppExpression extends Expression implements CoreAppExpression {
     }
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Expression getFunction() {
     return myFunction;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Expression getArgument() {
     return myArgument;
@@ -72,7 +72,7 @@ public class AppExpression extends Expression implements CoreAppExpression {
   }
 
   @Override
-  public <P, R> R accept(@Nonnull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
+  public <P, R> R accept(@NotNull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitApp(this, params);
   }
 

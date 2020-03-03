@@ -17,11 +17,11 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 import static org.arend.ExpressionFactory.*;
 import static org.arend.core.expr.ExpressionFactory.*;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public class GetTypeTest extends TypeCheckingTestCase {
   private void testType(Expression expected) {
@@ -89,7 +89,9 @@ public class GetTypeTest extends TypeCheckingTestCase {
     SingleDependentLink F = singleParam("F", Pi(Nat(), Universe(new Level(0), new Level(LevelVariable.HVAR))));
     SingleDependentLink x = singleParam("x", Nat());
     SingleDependentLink f = singleParam("f", Pi(x, Apps(Ref(F), Ref(x))));
-    assertEquals(Pi(F, Pi(f, Apps(Ref(F), Zero()))), Objects.requireNonNull(((Expression) ((FunctionDefinition) def).getBody()).getType()).normalize(NormalizationMode.NF));
+    Expression type = ((Expression) ((FunctionDefinition) def).getBody()).getType();
+    assertNotNull(type);
+    assertEquals(Pi(F, Pi(f, Apps(Ref(F), Zero()))), type.normalize(NormalizationMode.NF));
   }
 
   @Test

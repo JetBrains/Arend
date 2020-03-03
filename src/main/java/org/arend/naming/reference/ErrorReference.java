@@ -1,9 +1,8 @@
 package org.arend.naming.reference;
 
-import org.arend.naming.error.NotInScopeError;
 import org.arend.ext.error.LocalError;
-
-import javax.annotation.Nonnull;
+import org.arend.naming.error.NotInScopeError;
+import org.jetbrains.annotations.NotNull;
 
 public class ErrorReference implements Referable {
   private final String myText;
@@ -28,7 +27,7 @@ public class ErrorReference implements Referable {
     return myError;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public String textRepresentation() {
     return myText;

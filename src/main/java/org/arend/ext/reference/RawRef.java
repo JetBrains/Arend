@@ -1,7 +1,7 @@
 package org.arend.ext.reference;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 public interface RawRef {
-  @Nonnull String getRefName();
+  @NotNull String getRefName();
 }

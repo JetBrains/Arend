@@ -2,9 +2,9 @@ package org.arend.naming.scope;
 
 import org.arend.naming.reference.*;
 import org.arend.naming.reference.converter.ReferableConverter;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -46,7 +46,7 @@ public class ConvertingScope implements Scope {
     });
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Collection<? extends Referable> getElements() {
     Collection<? extends Referable> elements = myScope.getElements();
@@ -73,14 +73,14 @@ public class ConvertingScope implements Scope {
     return scope == null ? null : new ConvertingScope(myConverter, scope);
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Scope getGlobalSubscope() {
     Scope subscope = myScope.getGlobalSubscope();
     return subscope == myScope ? this : new ConvertingScope(myConverter, subscope);
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Scope getGlobalSubscopeWithoutOpens() {
     Scope subscope = myScope.getGlobalSubscopeWithoutOpens();

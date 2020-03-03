@@ -1,11 +1,10 @@
 package org.arend.naming.error;
 
+import org.arend.ext.error.LocalError;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.arend.naming.reference.Referable;
-import org.arend.ext.error.LocalError;
-
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
@@ -34,7 +33,7 @@ public class NotInScopeError extends LocalError {
     return referable == null ? header : hList(header, text(" in "), refDoc(referable));
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Stage getStage() {
     return Stage.RESOLVER;

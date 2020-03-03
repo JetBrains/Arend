@@ -1,7 +1,7 @@
 package org.arend.naming.reference;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 public interface RedirectingReferable extends GlobalReferable {
-  @Nonnull Referable getOriginalReferable();
+  @NotNull Referable getOriginalReferable();
 }

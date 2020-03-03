@@ -1,7 +1,7 @@
 package org.arend.ext.core.context;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 public interface CoreInferenceVariable {
-  @Nonnull String getName();
+  @NotNull String getName();
 }

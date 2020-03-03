@@ -1,13 +1,12 @@
 package org.arend.naming.error;
 
+import org.arend.ext.error.LocalError;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.ext.prettyprinting.doc.DocFactory;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.UnresolvedReference;
-import org.arend.ext.error.LocalError;
-
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 public class ReferenceError extends LocalError {
   public final Referable referable;
@@ -40,7 +39,7 @@ public class ReferenceError extends LocalError {
     return DocFactory.refDoc(referable);
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Stage getStage() {
     return myStage;

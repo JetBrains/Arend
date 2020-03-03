@@ -2,19 +2,18 @@ package org.arend.naming.reference;
 
 import org.arend.ext.reference.ArendRef;
 import org.arend.ext.reference.RawRef;
-
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 public interface Referable extends ArendRef, RawRef {
-  @Nonnull String textRepresentation();
+  @NotNull String textRepresentation();
 
-  @Nonnull
+  @NotNull
   @Override
   default String getRefName() {
     return textRepresentation();
   }
 
-  @Nonnull
+  @NotNull
   default Referable getUnderlyingReferable() {
     return this;
   }

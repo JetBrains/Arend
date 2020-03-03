@@ -2,9 +2,8 @@ package org.arend.naming.reference;
 
 import org.arend.ext.module.ModulePath;
 import org.arend.ext.reference.Precedence;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class LocatedReferableImpl implements TCReferable {
   private final Precedence myPrecedence;
@@ -20,20 +19,20 @@ public class LocatedReferableImpl implements TCReferable {
     myKind = kind;
   }
 
-  public LocatedReferableImpl(Precedence precedence, String name, @Nonnull ModulePath parent, Kind kind) {
+  public LocatedReferableImpl(Precedence precedence, String name, @NotNull ModulePath parent, Kind kind) {
     myPrecedence = precedence;
     myName = name;
     myParent = new ModuleReferable(parent);
     myKind = kind;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Precedence getPrecedence() {
     return myPrecedence;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public String textRepresentation() {
     return myName;
@@ -44,7 +43,7 @@ public class LocatedReferableImpl implements TCReferable {
     return myKind.isTypecheckable() ? this : (TCReferable) myParent;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Kind getKind() {
     return myKind;

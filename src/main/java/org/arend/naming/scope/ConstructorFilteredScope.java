@@ -2,9 +2,9 @@ package org.arend.naming.scope;
 
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.Referable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.function.Predicate;
 
 public class ConstructorFilteredScope implements Scope {
@@ -32,7 +32,7 @@ public class ConstructorFilteredScope implements Scope {
     return myScope.resolveNamespace(name, onlyInternal);
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Scope getGlobalSubscopeWithoutOpens() {
     return new ConstructorFilteredScope(myScope.getGlobalSubscopeWithoutOpens());

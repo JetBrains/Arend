@@ -9,9 +9,9 @@ import org.arend.ext.core.expr.CoreExpression;
 import org.arend.prelude.Prelude;
 import org.arend.util.Decision;
 import org.arend.util.Pair;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.List;
 
 public class IntervalElim implements Body, CoreIntervalElim {
@@ -43,7 +43,7 @@ public class IntervalElim implements Body, CoreIntervalElim {
     }
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public List<CasePair> getCases() {
     return myCases;

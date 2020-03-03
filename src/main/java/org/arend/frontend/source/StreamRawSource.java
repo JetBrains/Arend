@@ -16,8 +16,8 @@ import org.arend.source.Source;
 import org.arend.source.SourceLoader;
 import org.arend.term.NamespaceCommand;
 import org.arend.term.group.FileGroup;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -33,7 +33,7 @@ public abstract class StreamRawSource implements Source {
     myModulePath = modulePath;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public ModulePath getModulePath() {
     return myModulePath;
@@ -44,7 +44,7 @@ public abstract class StreamRawSource implements Source {
    *
    * @return an input stream from which the source will be loaded or null if some error occurred.
    */
-  @Nonnull
+  @NotNull
   protected abstract InputStream getInputStream() throws IOException;
 
   @Override

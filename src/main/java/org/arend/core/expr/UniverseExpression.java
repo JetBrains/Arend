@@ -12,8 +12,7 @@ import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CoreUniverseExpression;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.util.Decision;
-
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 public class UniverseExpression extends Expression implements Type, CoreUniverseExpression {
   private Sort mySort;
@@ -31,7 +30,7 @@ public class UniverseExpression extends Expression implements Type, CoreUniverse
     mySort = mySort.subst(substitution);
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Sort getSort() {
     return mySort;
@@ -48,7 +47,7 @@ public class UniverseExpression extends Expression implements Type, CoreUniverse
   }
 
   @Override
-  public <P, R> R accept(@Nonnull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
+  public <P, R> R accept(@NotNull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitUniverse(this, params);
   }
 
@@ -77,9 +76,9 @@ public class UniverseExpression extends Expression implements Type, CoreUniverse
     return this;
   }
 
-  @Nonnull
+  @NotNull
   @Override
-  public UniverseExpression normalize(@Nonnull NormalizationMode mode) {
+  public UniverseExpression normalize(@NotNull NormalizationMode mode) {
     return this;
   }
 

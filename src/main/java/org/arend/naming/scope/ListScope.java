@@ -1,8 +1,8 @@
 package org.arend.naming.scope;
 
 import org.arend.naming.reference.Referable;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -20,7 +20,7 @@ public class ListScope implements Scope {
     myContext = Arrays.asList(context);
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public List<Referable> getElements() {
     List<Referable> elements = new ArrayList<>(myContext);
@@ -38,13 +38,13 @@ public class ListScope implements Scope {
     return null;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Scope getGlobalSubscope() {
     return EmptyScope.INSTANCE;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Scope getGlobalSubscopeWithoutOpens() {
     return EmptyScope.INSTANCE;

@@ -12,8 +12,8 @@ import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CoreLetExpression;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.util.Decision;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -34,7 +34,7 @@ public class LetExpression extends Expression implements CoreLetExpression {
     return myStrict;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public List<LetClause> getClauses() {
     return myClauses;
@@ -90,7 +90,7 @@ public class LetExpression extends Expression implements CoreLetExpression {
     return substitution;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Expression getExpression() {
     return myExpression;
@@ -107,7 +107,7 @@ public class LetExpression extends Expression implements CoreLetExpression {
   }
 
   @Override
-  public <P, R> R accept(@Nonnull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
+  public <P, R> R accept(@NotNull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitLet(this, params);
   }
 

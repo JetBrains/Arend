@@ -23,8 +23,8 @@ import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.naming.renamer.Renamer;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.*;
 
 public class ClassCallExpression extends DefCallExpression implements Type, CoreClassCallExpression {
@@ -39,7 +39,7 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
       return "this";
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public ClassCallExpression getTypeExpr() {
       return ClassCallExpression.this;
@@ -75,7 +75,7 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
     myUniverseKind = universeKind;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public ClassCallBinding getThisBinding() {
     return myThisBinding;
@@ -106,14 +106,14 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
     return myImplementations;
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public Collection<? extends Map.Entry<? extends CoreClassField, ? extends CoreExpression>> getImplementations() {
     return myImplementations.entrySet();
   }
 
   @Override
-  public Expression getAbsImplementationHere(@Nonnull CoreClassField field) {
+  public Expression getAbsImplementationHere(@NotNull CoreClassField field) {
     return field instanceof ClassField ? myImplementations.get(field) : null;
   }
 
@@ -132,12 +132,12 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
   }
 
   @Override
-  public boolean isImplementedHere(@Nonnull CoreClassField field) {
+  public boolean isImplementedHere(@NotNull CoreClassField field) {
     return field instanceof ClassField && myImplementations.containsKey(field);
   }
 
   @Override
-  public boolean isImplemented(@Nonnull CoreClassField field) {
+  public boolean isImplemented(@NotNull CoreClassField field) {
     return field instanceof ClassField && (myImplementations.containsKey(field) || getDefinition().isImplemented(field));
   }
 
@@ -201,7 +201,7 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
     return getDefinition().getUseLevel(myImplementations, myThisBinding);
   }
 
-  @Nonnull
+  @NotNull
   @Override
   public ClassDefinition getDefinition() {
     return (ClassDefinition) super.getDefinition();
@@ -232,9 +232,9 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
     return visitor.visitClassCall(this, null);
   }
 
-  @Nonnull
+  @NotNull
   @Override
-  public ClassCallExpression normalize(@Nonnull NormalizationMode mode) {
+  public ClassCallExpression normalize(@NotNull NormalizationMode mode) {
     return NormalizeVisitor.INSTANCE.visitClassCall(this, mode);
   }
 
@@ -262,7 +262,7 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
   }
 
   @Override
-  public <P, R> R accept(@Nonnull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
+  public <P, R> R accept(@NotNull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitClassCall(this, params);
   }
 }

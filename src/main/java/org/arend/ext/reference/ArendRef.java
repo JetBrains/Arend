@@ -1,12 +1,11 @@
 package org.arend.ext.reference;
 
 import org.arend.ext.module.LongName;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public interface ArendRef {
-  @Nonnull String getRefName();
+  @NotNull String getRefName();
 
   @Nullable
   default LongName getRefLongName() {
