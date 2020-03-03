@@ -14,7 +14,7 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.definition.CoreConstructor;
-import org.arend.ext.core.elimtree.CoreBranchKey;
+import org.arend.core.elimtree.BranchKey;
 import org.arend.naming.reference.TCReferable;
 import org.arend.util.Decision;
 
@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class Constructor extends Definition implements Function, CoreBranchKey, CoreConstructor {
+public class Constructor extends Definition implements Function, BranchKey, CoreConstructor {
   private final DataDefinition myDataType;
   private DependentLink myParameters;
   private List<ExpressionPattern> myPatterns;

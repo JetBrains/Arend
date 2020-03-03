@@ -7,7 +7,6 @@ import org.arend.core.context.binding.inference.MetaInferenceVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.definition.ClassField;
-import org.arend.core.definition.Constructor;
 import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
@@ -250,8 +249,8 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
     }
 
     BranchElimTree result = new BranchElimTree(elimTree.getSkip(), ((BranchElimTree) elimTree).keepConCall());
-    for (Map.Entry<Constructor, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
-      Constructor key;
+    for (Map.Entry<BranchKey, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
+      BranchKey key;
       if (entry.getKey() instanceof ClassConstructor) {
         ClassConstructor classCon = (ClassConstructor) entry.getKey();
         key = new ClassConstructor(classCon.getClassDefinition(), classCon.getSort().subst(myLevelSubstitution), classCon.getImplementedFields());

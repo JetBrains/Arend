@@ -5,7 +5,6 @@ import org.arend.core.expr.Expression;
 import org.arend.core.expr.FunCallExpression;
 import org.arend.core.expr.LamExpression;
 import org.arend.core.expr.visitor.NormalizingFindBindingVisitor;
-import org.arend.ext.core.elimtree.CoreIdpBranchKey;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
@@ -14,7 +13,7 @@ import org.arend.typechecking.implicitargs.equations.Equations;
 import java.util.Collections;
 import java.util.List;
 
-public class IdpConstructor extends SingleConstructor implements CoreIdpBranchKey {
+public class IdpConstructor extends SingleConstructor {
   @Override
   public int getNumberOfParameters() {
     return 0;

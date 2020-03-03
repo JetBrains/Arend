@@ -59,7 +59,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
         SingleConstructor single2 = branchElimTree2.getSingleConstructorKey();
         return single2 != null && single1.compare(single2, myEquations, mySourceNode) && compare(branchElimTree1.getSingleConstructorChild(), branchElimTree2.getSingleConstructorChild());
       } else {
-        for (Map.Entry<Constructor, ElimTree> entry : branchElimTree1.getChildren()) {
+        for (Map.Entry<BranchKey, ElimTree> entry : branchElimTree1.getChildren()) {
           ElimTree subTree = branchElimTree2.getChild(entry.getKey());
           if (subTree == null || !compare(entry.getValue(), subTree)) {
             return false;

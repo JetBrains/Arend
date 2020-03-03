@@ -1,7 +1,6 @@
 package org.arend.core.elimtree;
 
 import org.arend.core.constructor.SingleConstructor;
-import org.arend.core.definition.Constructor;
 import org.arend.core.expr.ConCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.IntegerExpression;
@@ -11,7 +10,7 @@ import org.arend.util.Decision;
 import java.util.*;
 
 public class BranchElimTree extends ElimTree {
-  private final Map<Constructor, ElimTree> myChildren = new HashMap<>();
+  private final Map<BranchKey, ElimTree> myChildren = new HashMap<>();
   private final boolean myKeepConCall;
 
   public BranchElimTree(int skip, boolean keepConCall) {
@@ -25,7 +24,7 @@ public class BranchElimTree extends ElimTree {
 
   public ElimTree getSingleConstructorChild() {
     if (myChildren.size() == 1) {
-      Map.Entry<Constructor, ElimTree> entry = myChildren.entrySet().iterator().next();
+      Map.Entry<BranchKey, ElimTree> entry = myChildren.entrySet().iterator().next();
       return entry.getKey() instanceof SingleConstructor ? entry.getValue() : null;
     } else {
       return null;
@@ -34,23 +33,23 @@ public class BranchElimTree extends ElimTree {
 
   public SingleConstructor getSingleConstructorKey() {
     if (myChildren.size() == 1) {
-      Map.Entry<Constructor, ElimTree> entry = myChildren.entrySet().iterator().next();
+      Map.Entry<BranchKey, ElimTree> entry = myChildren.entrySet().iterator().next();
       return entry.getKey() instanceof SingleConstructor ? (SingleConstructor) entry.getKey() : null;
     } else {
       return null;
     }
   }
 
-  public Collection<Map.Entry<Constructor, ElimTree>> getChildren() {
+  public Collection<Map.Entry<BranchKey, ElimTree>> getChildren() {
     return myChildren.entrySet();
   }
 
-  public ElimTree getChild(Constructor constructor) {
-    return myChildren.get(constructor);
+  public ElimTree getChild(BranchKey key) {
+    return myChildren.get(key);
   }
 
-  public void addChild(Constructor constructor, ElimTree elimTree) {
-    myChildren.put(constructor, elimTree);
+  public void addChild(BranchKey key, ElimTree elimTree) {
+    myChildren.put(key, elimTree);
   }
 
   private boolean isSingleConstructorTree() {

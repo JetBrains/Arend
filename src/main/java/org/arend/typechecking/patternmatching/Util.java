@@ -3,6 +3,7 @@ package org.arend.typechecking.patternmatching;
 import org.arend.core.constructor.SingleConstructor;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.Constructor;
+import org.arend.core.elimtree.BranchKey;
 import org.arend.core.expr.ConCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.pattern.BindingPattern;
@@ -29,8 +30,14 @@ public class Util {
     ConstructorExpressionPattern getPattern(List<ExpressionPattern> subPatterns);
   }
 
-  static DataClauseElem makeDataClauseElem(Constructor constructor, ConstructorExpressionPattern pattern) {
-    return constructor instanceof SingleConstructor ? new TupleClauseElem(pattern) : new ConstructorClauseElem(constructor);
+  static DataClauseElem makeDataClauseElem(BranchKey branchKey, ConstructorExpressionPattern pattern) {
+    if (branchKey instanceof SingleConstructor) {
+      return new TupleClauseElem(pattern);
+    } else if (branchKey instanceof Constructor) {
+      return new ConstructorClauseElem((Constructor) branchKey);
+    } else {
+      throw new IllegalStateException();
+    }
   }
 
   public static class TupleClauseElem implements DataClauseElem {
