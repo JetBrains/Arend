@@ -10,7 +10,7 @@ import org.junit.Test;
 
 import java.util.Collections;
 
-import static org.arend.typechecking.Matchers.typeMismatchError;
+import static org.arend.Matchers.typeMismatchError;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 

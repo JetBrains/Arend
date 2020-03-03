@@ -32,7 +32,7 @@ public class PEvalExpression extends Expression implements CorePEvalExpression {
     if (myExpression instanceof FunCallExpression) {
       return ((FunCallExpression) myExpression).getDefinition().getActualBody();
     } else {
-      return myExpression instanceof CaseExpression ? ((CaseExpression) myExpression).getElimTree() : null;
+      return myExpression instanceof CaseExpression ? ((CaseExpression) myExpression).getElimBody() : null;
     }
   }
 

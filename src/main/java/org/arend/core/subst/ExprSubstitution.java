@@ -34,6 +34,10 @@ public class ExprSubstitution {
     return mySubstExprs.isEmpty();
   }
 
+  public int size() {
+    return mySubstExprs.size();
+  }
+
   public Expression get(Variable binding)  {
     return mySubstExprs.get(binding);
   }
@@ -91,7 +95,21 @@ public class ExprSubstitution {
     return this;
   }
 
+  public void addSubst(ExprSubstitution subst) {
+    if (subst.isEmpty()) {
+      return;
+    }
+    if (mySubstExprs.isEmpty()) {
+      mySubstExprs = new HashMap<>();
+    }
+    subst(subst);
+    addAll(subst);
+  }
+
   public void subst(ExprSubstitution subst) {
+    if (subst.isEmpty()) {
+      return;
+    }
     for (Map.Entry<Variable, Expression> entry : mySubstExprs.entrySet()) {
       entry.setValue(entry.getValue().subst(subst));
     }

@@ -12,7 +12,7 @@ import org.arend.core.context.param.UntypedDependentLink;
 import org.arend.core.definition.Constructor;
 import org.arend.core.definition.DConstructor;
 import org.arend.core.definition.Definition;
-import org.arend.core.elimtree.ElimTree;
+import org.arend.core.elimtree.ElimBody;
 import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.*;
 import org.arend.core.expr.type.Type;
@@ -20,11 +20,13 @@ import org.arend.core.expr.visitor.CompareVisitor;
 import org.arend.core.expr.visitor.ElimBindingVisitor;
 import org.arend.core.expr.visitor.FreeVariablesCollector;
 import org.arend.core.expr.visitor.NormalizeVisitor;
-import org.arend.core.pattern.*;
+import org.arend.core.pattern.BindingPattern;
+import org.arend.core.pattern.ConstructorExpressionPattern;
+import org.arend.core.pattern.EmptyPattern;
+import org.arend.core.pattern.ExpressionPattern;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
-import org.arend.core.subst.StdLevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
@@ -104,51 +106,53 @@ public class PatternTypechecking {
     }
   }
 
-  private void collectBindings(List<Pattern> patterns) {
-    for (Pattern pattern : patterns) {
+  private void collectBindings(List<? extends ExpressionPattern> patterns) {
+    for (ExpressionPattern pattern : patterns) {
       if (pattern instanceof BindingPattern) {
         myVisitor.addBinding(null, ((BindingPattern) pattern).getBinding());
-      } else if (pattern instanceof ConstructorPattern) {
-        collectBindings(((ConstructorPattern) pattern).getArguments());
+      } else if (pattern instanceof ConstructorExpressionPattern) {
+        collectBindings(((ConstructorExpressionPattern) pattern).getSubPatterns());
       }
     }
   }
 
-  public static class BaseResult {
-    public final List<Pattern> patterns;
-    public final ExprSubstitution substitution; // Substitutes in @patterns expressions that were matched in idp patterns
-
-    public BaseResult(List<Pattern> patterns, ExprSubstitution substitution) {
-      this.patterns = patterns;
-      this.substitution = substitution;
-    }
+  public List<ExtElimClause> typecheckClauses(List<Concrete.FunctionClause> clauses, DependentLink parameters, Expression expectedType) {
+    return typecheckClauses(clauses, null, parameters, Collections.emptyList(), expectedType);
   }
 
-  static class ClauseResult extends BaseResult {
-    final TypecheckingResult typecheckingResult;
-
-    public ClauseResult(List<Pattern> patterns, ExprSubstitution substitution, TypecheckingResult typecheckingResult) {
-      super(patterns, substitution);
-      this.typecheckingResult = typecheckingResult;
+  public List<ExtElimClause> typecheckClauses(List<Concrete.FunctionClause> clauses, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, Expression expectedType) {
+    List<ExtElimClause> result = new ArrayList<>(clauses.size());
+    boolean ok = true;
+    for (Concrete.FunctionClause clause : clauses) {
+      ExtElimClause elimClause = typecheckClause(clause, abstractParameters, parameters, elimParams, expectedType);
+      if (elimClause == null) {
+        ok = false;
+      } else {
+        result.add(elimClause);
+      }
     }
+    return ok ? result : null;
   }
 
-  ClauseResult typecheckClause(Concrete.FunctionClause clause, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, Expression expectedType) {
+  private ExtElimClause typecheckClause(Concrete.FunctionClause clause, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, Expression expectedType) {
     try (Utils.SetContextSaver<Referable> ignored = new Utils.SetContextSaver<>(myVisitor.getContext())) {
       try (Utils.SetContextSaver ignored1 = new Utils.SetContextSaver<>(myVisitor.getFreeBindings())) {
         // Typecheck patterns
         ExprSubstitution substitution = new ExprSubstitution();
-        PatternResult result = typecheckPatterns(clause.getPatterns(), abstractParameters, parameters, substitution, elimParams, clause);
+        ExprSubstitution totalSubst = new ExprSubstitution();
+        Result result = typecheckPatterns(clause.getPatterns(), abstractParameters, parameters, substitution, totalSubst, elimParams, clause);
         if (result == null) {
           return null;
         }
 
+        ExtElimClause elimClause = new ExtElimClause(result.patterns, null, totalSubst);
+
         // If we have the absurd pattern, then RHS is ignored
-        if (result.expressions == null) {
+        if (result.hasEmptyPattern()) {
           if (clause.getExpression() != null) {
             myErrorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.BODY_IGNORED, clause.getExpression()));
           }
-          return new ClauseResult(result.patterns, result.substitution, null);
+          return elimClause;
         } else {
           if (clause.getExpression() == null) {
             myErrorReporter.report(new TypecheckingError("Required a body", clause));
@@ -187,28 +191,22 @@ public class PatternTypechecking {
         if (instancePool != null) {
           globalInstancePool.setInstancePool(instancePool);
         }
-        return tcResult == null ? null : new ClauseResult(result.patterns, result.substitution, tcResult);
+        if (tcResult == null) {
+          return null;
+        }
+        elimClause.setExpression(tcResult.expression);
+        return elimClause;
       }
     }
   }
 
-  public static class PatternResult extends BaseResult {
-    public final List<Expression> expressions;
-
-    public PatternResult(List<Pattern> patterns, ExprSubstitution substitution, List<Expression> expressions) {
-      super(patterns, substitution);
-      this.expressions = expressions;
-    }
-  }
-
-  public PatternResult typecheckPatterns(List<? extends Concrete.Pattern> patterns, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, ExprSubstitution substitution, List<DependentLink> elimParams, Concrete.SourceNode sourceNode) {
+  public Result typecheckPatterns(List<? extends Concrete.Pattern> patterns, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, ExprSubstitution substitution, ExprSubstitution totalSubst, List<DependentLink> elimParams, Concrete.SourceNode sourceNode) {
     myContext = myVisitor.getContext();
     if (myMode.isContextFree()) {
       myContext.clear();
     }
 
     // Typecheck patterns
-    ExprSubstitution totalSubst = new ExprSubstitution();
     Result result = doTypechecking(patterns, parameters, substitution, totalSubst, elimParams, sourceNode);
 
     // Compute the context and the set of free bindings for CheckTypeVisitor
@@ -233,10 +231,11 @@ public class PatternTypechecking {
       collectBindings(result.patterns);
     }
 
-    return result == null ? null : new PatternResult(result.patterns, totalSubst, result.exprs);
+    return result;
   }
 
-  Pair<List<Pattern>, Map<Referable, Binding>> typecheckPatterns(List<? extends Concrete.Pattern> patterns, DependentLink parameters, Concrete.SourceNode sourceNode, @SuppressWarnings("SameParameterValue") boolean withElim) {
+  // for tests
+  Pair<List<ExpressionPattern>, Map<Referable, Binding>> typecheckPatterns(List<? extends Concrete.Pattern> patterns, DependentLink parameters, Concrete.SourceNode sourceNode, @SuppressWarnings("SameParameterValue") boolean withElim) {
     myContext = myVisitor == null ? new HashMap<>() : myVisitor.getContext();
     Result result = doTypechecking(patterns, parameters, new LinkList(), new ExprSubstitution(), null, sourceNode, withElim);
     if (result == null) {
@@ -244,35 +243,6 @@ public class PatternTypechecking {
     }
     fixPatterns(result.patterns);
     return new Pair<>(result.patterns, result.exprs == null ? null : myContext);
-  }
-
-  public List<Pattern> typecheckPatterns(List<? extends Concrete.Pattern> patterns, DependentLink parameters, List<DependentLink> elimParams) {
-    if (patterns.isEmpty()) {
-      return Collections.emptyList();
-    }
-
-    Result result = doTypechecking(patterns, parameters, new ExprSubstitution(), null, elimParams, patterns.get(0));
-    if (result == null) {
-      return null;
-    }
-    if (elimParams.isEmpty()) {
-      return result.patterns;
-    }
-
-    List<Pattern> list = new ArrayList<>();
-    for (DependentLink elimParam : elimParams) {
-      int i = 0;
-      for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
-        if (link == elimParam) {
-          break;
-        }
-        i++;
-      }
-      if (i < result.patterns.size()) {
-        list.add(result.patterns.get(i));
-      }
-    }
-    return list;
   }
 
   private Type typecheckType(Concrete.Expression cType, Expression expectedType) {
@@ -329,19 +299,27 @@ public class PatternTypechecking {
     return result;
   }
 
-  private static class Result {
-    private final List<Pattern> patterns;
+  public static class Result {
+    private final List<ExpressionPattern> patterns;
     private final List<Expression> exprs;
     private final ExprSubstitution varSubst; // Substitutes e for x if we matched on a path e = x
 
-    private Result(List<Pattern> patterns, List<Expression> exprs, ExprSubstitution varSubst) {
+    private Result(List<ExpressionPattern> patterns, List<Expression> exprs, ExprSubstitution varSubst) {
       this.patterns = patterns;
       this.exprs = exprs;
       this.varSubst = varSubst;
     }
+
+    public List<ExpressionPattern> getPatterns() {
+      return patterns;
+    }
+
+    public boolean hasEmptyPattern() {
+      return exprs == null;
+    }
   }
 
-  private static void listSubst(List<Pattern> patterns, List<Expression> exprs, ExprSubstitution varSubst) {
+  private static void listSubst(List<ExpressionPattern> patterns, List<Expression> exprs, ExprSubstitution varSubst) {
     if (varSubst == null) {
       return;
     }
@@ -357,9 +335,9 @@ public class PatternTypechecking {
   }
 
   private Result doTypechecking(List<? extends Concrete.Pattern> patterns, DependentLink parameters, LinkList linkList, ExprSubstitution paramsSubst, ExprSubstitution totalSubst, Concrete.SourceNode sourceNode, boolean withElim) {
-    List<Pattern> result = new ArrayList<>();
+    List<ExpressionPattern> result = new ArrayList<>();
     List<Expression> exprs = new ArrayList<>();
-    ExprSubstitution varSubst = null;
+    ExprSubstitution varSubst = new ExprSubstitution();
 
     for (Concrete.Pattern pattern : patterns) {
       if (!parameters.hasNext()) {
@@ -435,11 +413,12 @@ public class PatternTypechecking {
           if (conResult == null) {
             return null;
           }
+          varSubst.addSubst(conResult.varSubst);
           listSubst(result, exprs, conResult.varSubst);
 
-          ConstructorPattern newPattern = sigmaExpr != null
-            ? new ConstructorPattern(conResult.varSubst != null ? (SigmaExpression) new SubstVisitor(conResult.varSubst, LevelSubstitution.EMPTY).visitSigma(sigmaExpr, null) : sigmaExpr, new Patterns(conResult.patterns))
-            : new ConstructorPattern(conResult.varSubst != null ? (ClassCallExpression) new SubstVisitor(conResult.varSubst, LevelSubstitution.EMPTY).visitClassCall(classCall, null) : classCall, new Patterns(conResult.patterns));
+          ConstructorExpressionPattern newPattern = sigmaExpr != null
+            ? new ConstructorExpressionPattern(!conResult.varSubst.isEmpty() ? (SigmaExpression) new SubstVisitor(conResult.varSubst, LevelSubstitution.EMPTY).visitSigma(sigmaExpr, null) : sigmaExpr, conResult.patterns)
+            : new ConstructorExpressionPattern(!conResult.varSubst.isEmpty() ? (ClassCallExpression) new SubstVisitor(conResult.varSubst, LevelSubstitution.EMPTY).visitClassCall(classCall, null) : classCall, conResult.patterns);
           result.add(newPattern);
           if (conResult.exprs == null) {
             exprs = null;
@@ -532,11 +511,8 @@ public class PatternTypechecking {
               return null;
             }
             Binding substVar = num == 1 ? refExpr1.getBinding() : refExpr2.getBinding();
-            Expression otherExpr = num == 1 ? expr2 : expr1;
-
-            otherExpr = ElimBindingVisitor.elimBinding(otherExpr, substVar);
-            type = ElimBindingVisitor.elimBinding(type, substVar);
-            if (otherExpr == null || type == null) {
+            Expression otherExpr = ElimBindingVisitor.elimBinding(num == 1 ? expr2 : expr1, substVar);
+            if (otherExpr == null) {
               myErrorReporter.report(new IdpPatternError(IdpPatternError.variable(substVar.getName()), dataCall, conPattern));
               return null;
             }
@@ -548,11 +524,7 @@ public class PatternTypechecking {
             substitution.add(link, otherExpr);
             link = link.getNext();
 
-            if (varSubst == null) {
-              varSubst = new ExprSubstitution(substVar, otherExpr);
-            } else {
-              varSubst.addSubst(substVar, otherExpr);
-            }
+            varSubst.addSubst(substVar, otherExpr);
             if (totalSubst != null) {
               totalSubst.addSubst(substVar, otherExpr);
             }
@@ -606,17 +578,21 @@ public class PatternTypechecking {
           if (conResult == null) {
             return null;
           }
+          varSubst.addSubst(conResult.varSubst);
           listSubst(result, exprs, conResult.varSubst);
+          if (!conResult.varSubst.isEmpty()) {
+            for (int i = 0; i < args.size(); i++) {
+              args.set(i, args.get(i).subst(conResult.varSubst));
+            }
+          }
 
-          Map<DependentLink, Pattern> patternSubst = new HashMap<>();
-          for (Pattern patternArg : conResult.patterns) {
+          Map<DependentLink, ExpressionPattern> patternSubst = new HashMap<>();
+          for (ExpressionPattern patternArg : conResult.patterns) {
             patternSubst.put(link, patternArg);
             link = link.getNext();
           }
 
-          if (conResult.varSubst != null) {
-            substitution.subst(conResult.varSubst);
-          }
+          substitution.subst(conResult.varSubst);
           result.add(constructor.getPattern().subst(substitution, levelSolution, patternSubst));
           if (conResult.exprs == null) {
             exprs = null;
@@ -655,11 +631,7 @@ public class PatternTypechecking {
           return null;
         }
         if (!conCalls.isEmpty()) {
-          List<Constructor> constructors = new ArrayList<>(conCalls.size());
-          for (ConCallExpression conCall : conCalls) {
-            constructors.add(conCall.getDefinition());
-          }
-          myErrorReporter.report(new DataTypeNotEmptyError(dataCall, constructors, pattern));
+          myErrorReporter.report(new DataTypeNotEmptyError(dataCall, DataTypeNotEmptyError.getConstructors(conCalls), pattern));
           return null;
         }
         result.add(EmptyPattern.INSTANCE);
@@ -695,10 +667,11 @@ public class PatternTypechecking {
       for (DependentLink link = constructor.getDataTypeParameters(); link.hasNext(); link = link.getNext(), i++) {
         substitution.add(link, conCall.getDataTypeArguments().get(i));
       }
-      Result conResult = doTypechecking(conPattern.getPatterns(), DependentLink.Helper.subst(constructor.getParameters(), substitution, new StdLevelSubstitution(conCall.getSortArgument())), linkList, paramsSubst, totalSubst, conPattern, false);
+      Result conResult = doTypechecking(conPattern.getPatterns(), DependentLink.Helper.subst(constructor.getParameters(), substitution, conCall.getSortArgument().toLevelSubstitution()), linkList, paramsSubst, totalSubst, conPattern, false);
       if (conResult == null) {
         return null;
       }
+      varSubst.addSubst(conResult.varSubst);
       listSubst(result, exprs, conResult.varSubst);
 
       if (!myMode.allowConditions()) {
@@ -706,16 +679,16 @@ public class PatternTypechecking {
           myErrorReporter.report(new TypecheckingError("Pattern matching on a constructor with interval conditions is not allowed here", conPattern));
           return null;
         }
-        if (conCall.getDefinition().getBody() instanceof ElimTree && NormalizeVisitor.INSTANCE.doesEvaluate((ElimTree) conCall.getDefinition().getBody(), conResult.exprs, true)) {
+        if (conCall.getDefinition().getBody() instanceof ElimBody && NormalizeVisitor.INSTANCE.doesEvaluate(((ElimBody) conCall.getDefinition().getBody()).getElimTree(), conResult.exprs, true)) {
           myErrorReporter.report(new TypecheckingError("Pattern matching on a constructor with conditions is allowed only when patterns cannot evaluate", conPattern));
           return null;
         }
       }
 
-      if (conResult.varSubst != null) {
+      if (!conResult.varSubst.isEmpty()) {
         conCall = (ConCallExpression) new SubstVisitor(conResult.varSubst, LevelSubstitution.EMPTY).visitConCall(conCall, null);
       }
-      result.add(new ConstructorPattern(conCall, new Patterns(conResult.patterns)));
+      result.add(new ConstructorExpressionPattern(conCall, conResult.patterns));
       if (conResult.exprs == null) {
         exprs = null;
         typecheckAsPatterns(pattern.getAsReferables(), null, null);
@@ -749,7 +722,7 @@ public class PatternTypechecking {
   }
 
   // Chains the bindings in the leaves of patterns
-  private static void fixPatterns(List<Pattern> patterns) {
+  private static void fixPatterns(List<ExpressionPattern> patterns) {
     List<DependentLink> leaves = new ArrayList<>();
     getLeaves(patterns, leaves);
 
@@ -762,10 +735,10 @@ public class PatternTypechecking {
     }
   }
 
-  private static void getLeaves(List<Pattern> patterns, List<DependentLink> leaves) {
-    for (Pattern pattern : patterns) {
-      if (pattern instanceof ConstructorPattern) {
-        getLeaves(((ConstructorPattern) pattern).getArguments(), leaves);
+  private static void getLeaves(List<? extends ExpressionPattern> patterns, List<DependentLink> leaves) {
+    for (ExpressionPattern pattern : patterns) {
+      if (pattern instanceof ConstructorExpressionPattern) {
+        getLeaves(((ConstructorExpressionPattern) pattern).getSubPatterns(), leaves);
       } else if (pattern instanceof BindingPattern) {
         leaves.add(((BindingPattern) pattern).getBinding());
       }

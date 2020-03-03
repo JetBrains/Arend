@@ -1,18 +1,17 @@
 package org.arend.naming;
 
-import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.context.param.TypedSingleDependentLink;
 import org.arend.core.definition.FunctionDefinition;
-import org.arend.core.elimtree.BranchElimTree;
-import org.arend.core.elimtree.ElimTree;
-import org.arend.core.elimtree.LeafElimTree;
+import org.arend.core.elimtree.*;
 import org.arend.core.expr.CaseExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.LamExpression;
 import org.arend.core.expr.visitor.ToAbstractVisitor;
+import org.arend.core.pattern.BindingPattern;
+import org.arend.core.pattern.ConstructorPattern;
+import org.arend.core.pattern.Pattern;
 import org.arend.core.sort.Sort;
-import org.arend.ext.core.elimtree.CoreBranchKey;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.PrettyPrinterFlag;
@@ -184,12 +183,11 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
   @Test
   public void prettyPrintCase() {
     TypedSingleDependentLink x = singleParam("x", Nat());
-    HashMap<CoreBranchKey, ElimTree> myMap = new LinkedHashMap<>();
-    myMap.put(Prelude.ZERO, new LeafElimTree(EmptyDependentLink.getInstance(), Zero()));
     TypedSingleDependentLink y = singleParam("y", Nat());
-    myMap.put(Prelude.SUC, new LeafElimTree(y, Ref(y)));
-    ElimTree elimTree = new BranchElimTree(EmptyDependentLink.getInstance(), myMap);
-    Expression cExpr = new LamExpression(Sort.SET0, x, new CaseExpression(false, x, Nat(), null, elimTree, Collections.singletonList(Ref(x))));
+    List<ElimClause<Pattern>> clauses = new ArrayList<>();
+    clauses.add(new ElimClause<>(Collections.singletonList(ConstructorPattern.make(Prelude.ZERO, Collections.emptyList())), Zero()));
+    clauses.add(new ElimClause<>(Collections.singletonList(ConstructorPattern.make(Prelude.SUC, Collections.singletonList(new BindingPattern(y)))), Ref(y)));
+    Expression cExpr = new LamExpression(Sort.SET0, x, new CaseExpression(false, x, Nat(), null, new ElimBody(clauses, null), Collections.singletonList(Ref(x))));
 
     LocalReferable cx = ref("x");
     LocalReferable cy = ref("y");

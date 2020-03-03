@@ -1,10 +1,7 @@
 package org.arend.typechecking.patternmatching;
 
 import org.arend.typechecking.TypeCheckingTestCase;
-import org.arend.typechecking.error.local.IdpPatternError;
 import org.junit.Test;
-
-import static org.arend.typechecking.Matchers.typecheckingError;
 
 public class IdpTest extends TypeCheckingTestCase {
   @Test
@@ -111,6 +108,13 @@ public class IdpTest extends TypeCheckingTestCase {
   public void substError() {
     typeCheckDef(
       "\\func f {A : \\Type} (B : A -> \\Type) {a : A} (b : B a) {a' : b = b -> A} (q : b = b) (p : a' q = a) : Nat \\elim p\n" +
+      "  | idp => 0", 1);
+  }
+
+  @Test
+  public void substError2() {
+    typeCheckDef(
+      "\\func f {A : \\Type} (B : A -> \\Type) {a : A} (b : B a) {a' : Nat -> A} (q : b = b) (p : a' 0 = a) : Nat \\elim p\n" +
       "  | idp => 0", 1);
   }
 

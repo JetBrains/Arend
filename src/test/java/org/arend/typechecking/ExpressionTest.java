@@ -5,10 +5,10 @@ import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.expr.Expression;
 import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.ext.error.TypeMismatchError;
 import org.arend.naming.reference.LocalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
-import org.arend.ext.error.TypeMismatchError;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.junit.Test;
 
@@ -18,9 +18,9 @@ import java.util.List;
 import java.util.Map;
 
 import static org.arend.ExpressionFactory.*;
+import static org.arend.Matchers.typeMismatchError;
 import static org.arend.core.expr.ExpressionFactory.*;
 import static org.arend.term.concrete.ConcreteExpressionFactory.*;
-import static org.arend.typechecking.Matchers.typeMismatchError;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.*;

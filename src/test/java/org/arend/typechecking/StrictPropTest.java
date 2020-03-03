@@ -2,7 +2,7 @@ package org.arend.typechecking;
 
 import org.junit.Test;
 
-import static org.arend.typechecking.Matchers.typeMismatchError;
+import static org.arend.Matchers.typeMismatchError;
 
 public class StrictPropTest extends TypeCheckingTestCase {
   @Test

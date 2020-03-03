@@ -1,7 +1,7 @@
 package org.arend.typechecking.error.local;
 
 import org.arend.core.context.param.DependentLink;
-import org.arend.core.pattern.Pattern;
+import org.arend.core.pattern.ExpressionPattern;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
@@ -18,13 +18,13 @@ import java.util.stream.Collectors;
 import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public class MissingClausesError extends TypecheckingError {
-  public final @Nonnull List<List<Pattern>> missingClauses;
+  public final @Nonnull List<List<ExpressionPattern>> missingClauses;
   public final @Nullable List<? extends Concrete.Parameter> concreteParameters;
   public final @Nonnull DependentLink parameters;
   public final @Nonnull List<DependentLink> eliminatedParameters;
   public int maxListSize = 10;
 
-  public MissingClausesError(@Nonnull List<List<Pattern>> missingClauses, @Nullable List<? extends Concrete.Parameter> concreteParameters, @Nonnull DependentLink parameters, @Nonnull List<DependentLink> eliminatedParameters, Concrete.SourceNode cause) {
+  public MissingClausesError(@Nonnull List<List<ExpressionPattern>> missingClauses, @Nullable List<? extends Concrete.Parameter> concreteParameters, @Nonnull DependentLink parameters, @Nonnull List<DependentLink> eliminatedParameters, Concrete.SourceNode cause) {
     super("Some clauses are missing", cause);
     this.missingClauses = missingClauses;
     this.concreteParameters = concreteParameters;
@@ -40,7 +40,7 @@ public class MissingClausesError extends TypecheckingError {
     return !eliminatedParameters.isEmpty();
   }
 
-  public List<List<Pattern>> getLimitedMissingClauses() {
+  public List<List<ExpressionPattern>> getLimitedMissingClauses() {
     return missingClauses.size() > maxListSize ? missingClauses.subList(0, maxListSize) : missingClauses;
   }
 
@@ -58,7 +58,7 @@ public class MissingClausesError extends TypecheckingError {
     };
 
     List<LineDoc> docs = new ArrayList<>();
-    for (List<Pattern> missingClause : getLimitedMissingClauses()) {
+    for (List<ExpressionPattern> missingClause : getLimitedMissingClauses()) {
       docs.add(hSep(text(", "), missingClause.stream().map(pattern -> termLine(pattern.toPatternExpression(), modPPConfig)).collect(Collectors.toList())));
     }
     if (docs.size() < missingClauses.size()) {

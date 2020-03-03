@@ -1,25 +1,30 @@
 package org.arend.core.elimtree;
 
-import org.arend.core.context.param.DependentLink;
 import org.arend.core.expr.Expression;
-import org.arend.ext.core.elimtree.CoreLeafElimTree;
 import org.arend.util.Decision;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 
-public class LeafElimTree extends ElimTree implements CoreLeafElimTree {
-  private final Expression myExpression;
+public class LeafElimTree extends ElimTree {
+  private final List<Integer> myIndices;
+  private final int myClauseIndex;
 
-  public LeafElimTree(DependentLink parameters, Expression expression) {
-    super(parameters);
-    myExpression = expression;
+  public LeafElimTree(int skip, List<Integer> indices, int clauseIndex) {
+    super(skip);
+    myIndices = indices;
+    myClauseIndex = clauseIndex;
   }
 
-  @Nonnull
-  @Override
-  public Expression getExpression() {
-    return myExpression;
+  public int getArgumentIndex(int index) {
+    return myIndices == null ? index : myIndices.get(index);
+  }
+
+  public List<? extends Integer> getArgumentIndices() {
+    return myIndices;
+  }
+
+  public int getClauseIndex() {
+    return myClauseIndex;
   }
 
   @Override

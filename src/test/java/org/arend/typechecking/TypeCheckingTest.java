@@ -15,9 +15,9 @@ import org.junit.Test;
 
 import static org.arend.ExpressionFactory.FunCall;
 import static org.arend.ExpressionFactory.Ref;
+import static org.arend.Matchers.error;
+import static org.arend.Matchers.typeMismatchError;
 import static org.arend.core.expr.ExpressionFactory.Nat;
-import static org.arend.typechecking.Matchers.error;
-import static org.arend.typechecking.Matchers.typeMismatchError;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 

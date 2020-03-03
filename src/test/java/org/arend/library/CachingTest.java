@@ -11,8 +11,8 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.arend.typechecking.Matchers.goal;
-import static org.arend.typechecking.Matchers.typecheckingError;
+import static org.arend.Matchers.goal;
+import static org.arend.Matchers.typecheckingError;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;

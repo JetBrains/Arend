@@ -2,8 +2,8 @@ package org.arend.naming;
 
 import org.junit.Test;
 
-import static org.arend.typechecking.Matchers.notInScope;
-import static org.arend.typechecking.Matchers.warning;
+import static org.arend.Matchers.notInScope;
+import static org.arend.Matchers.warning;
 
 public class ClassesResolveTest extends NameResolverTestCase {
   @Test

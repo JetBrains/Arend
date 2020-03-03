@@ -4,7 +4,6 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.expr.*;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.StdLevelSubstitution;
 import org.arend.error.IncorrectExpressionException;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
@@ -43,7 +42,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public UniverseExpression visitDataCall(DataCallExpression expr, Void params) {
-    return new UniverseExpression(expr.getDefinition().getSort().subst(new StdLevelSubstitution(expr.getSortArgument())));
+    return new UniverseExpression(expr.getDefinition().getSort().subst(expr.getSortArgument().toLevelSubstitution()));
   }
 
   private Expression normalizeFieldCall(FieldCallExpression expr) {

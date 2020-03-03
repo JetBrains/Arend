@@ -3,7 +3,7 @@ package org.arend.typechecking.patternmatching;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
-import static org.arend.typechecking.Matchers.*;
+import static org.arend.Matchers.*;
 
 public class TruncatedElimTest extends TypeCheckingTestCase {
   @Test

@@ -10,36 +10,13 @@ import "Level.proto";
 
 message Definition {
     oneof definition_data {
-        ClassData class = 5;
-        DataData data = 6;
-        FunctionData function = 7;
-        DConstructorData constructor = 10;
+        ClassData class = 1;
+        DataData data = 2;
+        FunctionData function = 3;
+        DConstructorData constructor = 4;
     }
-    bool hasTypeClassReference = 8;
-    UniverseKind universe_kind = 11;
-
-    message Clause {
-        repeated Pattern pattern = 1;
-        Expression expression = 2;
-    }
-
-    message Pattern {
-        oneof kind {
-            Binding binding = 4;
-            Constructor constructor = 7;
-            Empty empty = 6;
-        }
-
-        message Binding {
-            SingleParameter var = 1;
-        }
-        message Constructor {
-            Expression expression = 6;
-            repeated Pattern pattern = 3;
-        }
-        message Empty {
-        }
-    }
+    bool hasTypeClassReference = 5;
+    UniverseKind universe_kind = 6;
 
     message ClassifyingFields {
         repeated int32 field_ref = 1;
@@ -55,22 +32,22 @@ message Definition {
         CoerceData coerce_data = 8;
         repeated int32 good_field = 9;
         repeated int32 type_class_field = 10;
-        repeated ClassParametersLevel parameters_level = 12;
-        map<int32, Expression.Pi> overridden_field = 13;
-        int32 squasher = 14;
+        repeated ClassParametersLevel parameters_level = 11;
+        map<int32, Expression.Pi> overridden_field = 12;
+        int32 squasher = 13;
 
         message Field {
             Referable referable = 1;
-            Expression.Pi type = 3;
-            Expression type_level = 8;
-            int32 number_of_parameters = 12;
-            bool hasTypeClassReference = 4;
-            bool isExplicit = 5;
-            bool isParameter = 6;
-            bool isProperty = 7;
+            Expression.Pi type = 2;
+            Expression type_level = 3;
+            int32 number_of_parameters = 4;
+            bool hasTypeClassReference = 5;
+            bool isExplicit = 6;
+            bool isParameter = 7;
+            bool isProperty = 8;
             bool isHideable = 9;
             bool isCovariant = 10;
-            UniverseKind universe_kind = 13;
+            UniverseKind universe_kind = 11;
         }
     }
     message ParametersLevel {
@@ -89,22 +66,21 @@ message Definition {
         repeated TypeClassParameterKind type_class_parameters = 4;
         Sort sort = 5;
         repeated Constructor constructor = 6;
-        bool is_truncated = 8;
-        bool is_squashed = 9;
-        int32 squasher = 13;
-        repeated bool covariant_parameter = 10;
-        CoerceData coerce_data = 11;
-        repeated ParametersLevel parameters_levels = 12;
+        bool is_truncated = 7;
+        bool is_squashed = 8;
+        int32 squasher = 10;
+        repeated bool covariant_parameter = 11;
+        CoerceData coerce_data = 12;
+        repeated ParametersLevel parameters_levels = 13;
 
         message Constructor {
             Referable referable = 1;
             repeated Pattern pattern = 2;
             repeated Telescope param = 3;
-            repeated int32 parameters_typechecking_order = 7;
-            repeated bool good_this_parameters = 8;
-            repeated TypeClassParameterKind type_class_parameters = 10;
-            repeated Clause clause = 4;
-            Body conditions = 5;
+            repeated int32 parameters_typechecking_order = 4;
+            repeated bool good_this_parameters = 5;
+            repeated TypeClassParameterKind type_class_parameters = 6;
+            Body conditions = 8;
         }
     }
     message FunctionData {
@@ -163,7 +139,7 @@ message Definition {
 message Referable {
     string name = 1;
     Precedence precedence = 2;
-    int32 index = 4;
+    int32 index = 3;
 }
 
 message Precedence {
@@ -180,7 +156,7 @@ message Precedence {
 
 message Body {
     oneof kind {
-        ElimTree elim_tree = 1;
+        ElimBody elim_body = 1;
         IntervalElim interval_elim = 2;
         Expression expression = 3;
     }
@@ -191,6 +167,6 @@ message Body {
     }
     message IntervalElim {
         repeated ExpressionPair case = 1;
-        ElimTree otherwise = 2;
+        ElimBody otherwise = 2;
     }
 }

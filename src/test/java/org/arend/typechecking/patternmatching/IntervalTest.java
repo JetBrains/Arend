@@ -16,18 +16,6 @@ public class IntervalTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void intervalRedundantClause() {
-    typeCheckModule(
-      "\\func f (n : Nat) (i : I) : Nat\n" +
-      "  | zero, _ => 0\n" +
-      "  | suc _, _ => 0\n" +
-      "  | _, left => 0\n" +
-      "  | _, right => 0\n" +
-      "  | _, _ => 0\n" +
-      "\\func g (n : Nat) : f n left = 0 => idp", 1);
-  }
-
-  @Test
   public void interval1error() {
     typeCheckModule(
       "\\func f (n : Nat) (i : I) : Nat\n" +
@@ -80,9 +68,9 @@ public class IntervalTest extends TypeCheckingTestCase {
   public void at() {
     typeCheckModule(
       "\\func at {A : I -> \\Type} {a : A left} {a' : A right} (p : Path A a a') (i : I) : A i \\elim p, i\n" +
+      "  | path f, i => f i\n" +
       "  | _, left => a\n" +
       "  | _, right => a'\n" +
-      "  | path f, i => f i\n" +
       "\\func g (p : 0 = 1) : at p right = 1 => idp");
   }
 
@@ -125,7 +113,7 @@ public class IntervalTest extends TypeCheckingTestCase {
       "\\func test (i : I) : Nat\n" +
       "  | left => 0\n" +
       "  | right => 0\n"  +
-      "  | _ => 0");
+      "  | _ => 0", 1);
   }
 
   @Test
@@ -134,6 +122,6 @@ public class IntervalTest extends TypeCheckingTestCase {
       "\\func test (i : I) : Nat\n" +
       "  | left => 0\n" +
       "  | right => 0\n"  +
-      "  | _ => 1", 2);
+      "  | _ => 1", 3);
   }
 }

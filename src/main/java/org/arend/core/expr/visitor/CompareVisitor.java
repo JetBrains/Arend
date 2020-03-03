@@ -6,17 +6,12 @@ import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.context.binding.inference.TypeClassInferenceVariable;
 import org.arend.core.context.param.*;
 import org.arend.core.definition.*;
-import org.arend.core.elimtree.Body;
-import org.arend.core.elimtree.BranchElimTree;
-import org.arend.core.elimtree.ElimTree;
-import org.arend.core.elimtree.LeafElimTree;
+import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.type.TypeExpression;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelSubstitution;
-import org.arend.ext.core.elimtree.CoreBranchKey;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
@@ -46,51 +41,65 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     return new CompareVisitor(equations, cmp, sourceNode).compare(expr1, expr2, type);
   }
 
-  // Only for tests
-  public static boolean compare(Equations equations, ElimTree elimTree1, ElimTree elimTree2, Concrete.SourceNode sourceNode) {
-    return new CompareVisitor(equations, CMP.EQ, sourceNode).compare(elimTree1, elimTree2, null);
-  }
-
-  private Boolean compare(ElimTree elimTree1, ElimTree elimTree2, Expression type) {
-    if (elimTree1 == elimTree2) {
-      return true;
-    }
-    if (!compareParameters(elimTree1.getParameters(), elimTree2.getParameters())) {
+  public boolean compare(ElimTree elimTree1, ElimTree elimTree2) {
+    if (elimTree1.getSkip() != elimTree2.getSkip()) {
       return false;
     }
 
-    boolean ok = false;
     if (elimTree1 instanceof LeafElimTree && elimTree2 instanceof LeafElimTree) {
-      ok = compare(((LeafElimTree) elimTree1).getExpression(), ((LeafElimTree) elimTree2).getExpression(), type);
+      return ((LeafElimTree) elimTree1).getClauseIndex() == ((LeafElimTree) elimTree2).getClauseIndex() && Objects.equals(((LeafElimTree) elimTree1).getArgumentIndices(), ((LeafElimTree) elimTree2).getArgumentIndices());
     } else if (elimTree1 instanceof BranchElimTree && elimTree2 instanceof BranchElimTree) {
       BranchElimTree branchElimTree1 = (BranchElimTree) elimTree1;
       BranchElimTree branchElimTree2 = (BranchElimTree) elimTree2;
-      SingleConstructor singleConstructor1 = branchElimTree1.getSingleConstructorKey();
-      SingleConstructor singleConstructor2 = branchElimTree2.getSingleConstructorKey();
-      if (singleConstructor1 != null || singleConstructor2 != null) {
-        ok = singleConstructor1 != null && singleConstructor2 != null
-          && singleConstructor1.compare(singleConstructor2, myEquations, mySourceNode)
-          && compare(branchElimTree1.getSingleConstructorChild(), branchElimTree2.getSingleConstructorChild(), type);
-      } else if (branchElimTree1.getChildren().size() == branchElimTree2.getChildren().size()) {
-        ok = true;
-        for (Map.Entry<CoreBranchKey, ElimTree> entry : branchElimTree1.getChildren()) {
-          ElimTree elimTree = branchElimTree2.getChild(entry.getKey());
-          if (elimTree == null) {
-            ok = false;
-            break;
-          }
-          ok = compare(entry.getValue(), elimTree, type);
-          if (!ok) {
-            break;
+      if (branchElimTree1.keepConCall() != branchElimTree2.keepConCall() || branchElimTree1.getChildren().size() != branchElimTree2.getChildren().size()) {
+        return false;
+      }
+      SingleConstructor single1 = branchElimTree1.getSingleConstructorKey();
+      if (single1 != null) {
+        SingleConstructor single2 = branchElimTree2.getSingleConstructorKey();
+        return single2 != null && single1.compare(single2, myEquations, mySourceNode) && compare(branchElimTree1.getSingleConstructorChild(), branchElimTree2.getSingleConstructorChild());
+      } else {
+        for (Map.Entry<Constructor, ElimTree> entry : branchElimTree1.getChildren()) {
+          ElimTree subTree = branchElimTree2.getChild(entry.getKey());
+          if (subTree == null || !compare(entry.getValue(), subTree)) {
+            return false;
           }
         }
       }
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  // Only for tests
+  public static boolean compare(Equations equations, ElimBody elimBody1, ElimBody elimBody2, Concrete.SourceNode sourceNode) {
+    return new CompareVisitor(equations, CMP.EQ, sourceNode).compare(elimBody1, elimBody2, null);
+  }
+
+  private Boolean compare(ElimBody elimBody1, ElimBody elimBody2, Expression type) {
+    if (elimBody1 == elimBody2) {
+      return true;
+    }
+    if (elimBody1.getClauses().size() != elimBody2.getClauses().size()) {
+      return false;
+    }
+    for (int i = 0; i < elimBody1.getClauses().size(); i++) {
+      ElimClause clause1 = elimBody1.getClauses().get(i);
+      ElimClause clause2 = elimBody2.getClauses().get(i);
+      if (!compareParameters(clause1.getParameters(), clause2.getParameters())) {
+        return false;
+      }
+      boolean ok = clause1.getExpression() == null && clause2.getExpression() == null || clause1.getExpression() != null && clause2.getExpression() != null && compare(clause1.getExpression(), clause2.getExpression(), type);
+      for (DependentLink link = clause2.getParameters(); link.hasNext(); link = link.getNext()) {
+        mySubstitution.remove(link);
+      }
+      if (!ok) {
+        return false;
+      }
     }
 
-    for (DependentLink link = elimTree2.getParameters(); link.hasNext(); link = link.getNext()) {
-      mySubstitution.remove(link);
-    }
-    return ok;
+    return true;
   }
 
   public boolean nonNormalizingCompare(Expression expr1, Expression expr2, Expression type) {
@@ -795,6 +804,10 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     CMP origCMP = myCMP;
     for (int i = 0; i < list1.size() && i < list2.size(); ++i) {
       if (!compare(list1.get(i).getTypeExpr(), list2.get(i).getTypeExpr(), Type.OMEGA)) {
+        for (int j = 0; j < i; j++) {
+          mySubstitution.remove(list2.get(j));
+        }
+        myCMP = origCMP;
         return false;
       }
       mySubstitution.put(list2.get(i), list1.get(i));
@@ -961,7 +974,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       return false;
     }
 
-    return compare(case1.getElimTree(), case2.getElimTree(), type);
+    return compare(case1.getElimBody(), case2.getElimBody(), type);
   }
 
   @Override
@@ -993,69 +1006,6 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
 
   @Override
   public Boolean visitPEval(PEvalExpression expr, Expression other, Expression type) {
-    PEvalExpression peval2 = other.cast(PEvalExpression.class);
-    if (peval2 == null) {
-      return false;
-    }
-
-    Expression expr2 = peval2.getExpression();
-    if (expr.getExpression() instanceof FunCallExpression && expr2 instanceof FunCallExpression) {
-      if (!compareDef((FunCallExpression) expr.getExpression(), (FunCallExpression) expr2, true)) {
-        return false;
-      }
-    } else if (!(expr.getExpression() instanceof CaseExpression && expr2 instanceof CaseExpression)) {
-      return false;
-    }
-
-    Body body = expr.getBody();
-    if (body == null) {
-      return false;
-    }
-    if (body instanceof Expression) {
-      if (expr.getArguments().size() != peval2.getArguments().size()) {
-        return false;
-      }
-      ExprSubstitution substitution = new ExprSubstitution();
-      LevelSubstitution levelSubstitution = expr.getLevelSubstitution();
-      int i = 0;
-      List<? extends Expression> args1 = expr.getArguments();
-      List<? extends Expression> args2 = peval2.getArguments();
-      for (DependentLink link = expr.getParameters(); link.hasNext(); link = link.getNext()) {
-        Expression arg1 = args1.get(i);
-        if (!compare(arg1, args2.get(i), link.getTypeExpr().subst(substitution, levelSubstitution))) {
-          return false;
-        }
-        substitution.add(link, arg1);
-      }
-      return true;
-    }
-    if (!(body instanceof ElimTree)) {
-      return false;
-    }
-    ElimTree elimTree = (ElimTree) body;
-
-    Stack<Expression> stack1 = NormalizeVisitor.INSTANCE.makeStack(expr.getArguments());
-    Stack<Expression> stack2 = NormalizeVisitor.INSTANCE.makeStack(peval2.getArguments());
-
-    ExprSubstitution substitution = new ExprSubstitution();
-    LevelSubstitution levelSubstitution = expr.getLevelSubstitution();
-    while (true) {
-      for (DependentLink link = elimTree.getParameters(); link.hasNext(); link = link.getNext()) {
-        Expression arg1 = stack1.pop();
-        if (!compare(arg1, stack2.pop(), link.getTypeExpr().subst(substitution, levelSubstitution))) {
-          return false;
-        }
-        substitution.add(link, arg1);
-      }
-      if (elimTree instanceof LeafElimTree || stack1.isEmpty() || stack2.isEmpty()) {
-        return stack1.isEmpty() && stack2.isEmpty();
-      }
-
-      ElimTree elimTree2 = NormalizeVisitor.INSTANCE.updateStack(stack2, (BranchElimTree) elimTree);
-      elimTree = NormalizeVisitor.INSTANCE.updateStack(stack1, (BranchElimTree) elimTree);
-      if (elimTree == null || elimTree != elimTree2) {
-        return false;
-      }
-    }
+    return other.isInstance(PEvalExpression.class);
   }
 }

@@ -1,6 +1,6 @@
 package org.arend.typechecking.typeclass;
 
-import org.arend.typechecking.Matchers;
+import org.arend.Matchers;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 

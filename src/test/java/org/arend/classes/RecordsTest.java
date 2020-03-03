@@ -1,5 +1,6 @@
 package org.arend.classes;
 
+import org.arend.Matchers;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.definition.ClassDefinition;
 import org.arend.core.definition.FunctionDefinition;
@@ -7,7 +8,6 @@ import org.arend.core.expr.DataCallExpression;
 import org.arend.core.expr.NewExpression;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
-import org.arend.typechecking.Matchers;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Assert;
 import org.junit.Test;

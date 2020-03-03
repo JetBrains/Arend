@@ -5,11 +5,8 @@ import org.arend.core.definition.UniverseKind;
 import org.arend.core.elimtree.*;
 import org.arend.core.expr.Expression;
 import org.arend.core.sort.Sort;
-import org.arend.ext.core.elimtree.CoreBranchKey;
 import org.arend.typechecking.visitor.CheckForUniversesVisitor;
 import org.arend.util.Pair;
-
-import java.util.Map;
 
 public class UniverseKindChecker extends CovarianceChecker {
   private final CheckForUniversesVisitor myVisitor = new CheckForUniversesVisitor();
@@ -35,12 +32,10 @@ public class UniverseKindChecker extends CovarianceChecker {
           return myResult;
         }
       }
-    } else if (body instanceof LeafElimTree) {
-      check(((LeafElimTree) body).getExpression());
-    } else if (body instanceof BranchElimTree) {
-      for (Map.Entry<CoreBranchKey, ElimTree> entry : ((BranchElimTree) body).getChildren()) {
-        if (getUniverseKind(entry.getValue()) == UniverseKind.WITH_UNIVERSES) {
-          return myResult;
+    } else if (body instanceof ElimBody) {
+      for (ElimClause clause : ((ElimBody) body).getClauses()) {
+        if (clause.getExpression() != null) {
+          check(clause.getExpression());
         }
       }
     } else if (body != null) {

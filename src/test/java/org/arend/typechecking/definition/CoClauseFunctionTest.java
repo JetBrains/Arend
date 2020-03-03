@@ -4,8 +4,8 @@ import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import static org.arend.typechecking.Matchers.notInScope;
-import static org.arend.typechecking.Matchers.typeMismatchError;
+import static org.arend.Matchers.notInScope;
+import static org.arend.Matchers.typeMismatchError;
 
 public class CoClauseFunctionTest extends TypeCheckingTestCase {
   @Test

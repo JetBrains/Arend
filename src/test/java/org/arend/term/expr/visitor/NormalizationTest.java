@@ -4,18 +4,12 @@ import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.context.param.DependentLink;
-import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.context.param.SingleDependentLink;
-import org.arend.core.definition.Definition;
 import org.arend.core.definition.FunctionDefinition;
-import org.arend.core.elimtree.BranchElimTree;
-import org.arend.core.elimtree.ElimTree;
-import org.arend.core.elimtree.LeafElimTree;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
-import org.arend.ext.core.elimtree.CoreBranchKey;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.naming.reference.LocalReferable;
 import org.arend.prelude.Prelude;
@@ -26,9 +20,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.arend.ExpressionFactory.*;
 import static org.arend.core.expr.ExpressionFactory.*;
@@ -36,66 +28,30 @@ import static org.arend.term.concrete.ConcreteExpressionFactory.*;
 import static org.junit.Assert.assertEquals;
 
 public class NormalizationTest extends TypeCheckingTestCase {
-  // \func + (x y : Nat) : Nat => \elim x | zero => y | suc x' => suc (x' + y)
   private FunctionDefinition plus;
-  // \func * (x y : Nat) : Nat => \elim x | zero => zero | suc x' => y + x' * y
   private FunctionDefinition mul;
-  // \func fac (x : Nat) : Nat => \elim x | zero => suc zero | suc x' => suc x' * fac x'
   private FunctionDefinition fac;
-  // \func nelim (z : Nat) (s : Nat -> Nat -> Nat) (x : Nat) : Nat => elim x | zero => z | suc x' => s x' (nelim z s x')
   private FunctionDefinition nelim;
 
   @Before
   public void initialize() {
-    DependentLink xPlus = param("x", Nat());
-    DependentLink yPlus = param("y", Nat());
-    plus = new FunctionDefinition(null);
-    plus.setParameters(params(xPlus, yPlus));
-    plus.setResultType(Nat());
-    plus.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-
-    Map<CoreBranchKey, ElimTree> plusChildren = new HashMap<>();
-    plusChildren.put(Prelude.ZERO, new LeafElimTree(yPlus, Ref(yPlus)));
-    plusChildren.put(Prelude.SUC, new LeafElimTree(xPlus, Suc(FunCall(plus, Sort.SET0, Ref(xPlus), Ref(yPlus)))));
-    plus.setBody(new BranchElimTree(EmptyDependentLink.getInstance(), plusChildren));
-    plus.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-
-    DependentLink xMul = param("x", Nat());
-    DependentLink yMul = param("y", Nat());
-    mul = new FunctionDefinition(null);
-    mul.setParameters(params(xMul, yMul));
-    mul.setResultType(Nat());
-    mul.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-    Map<CoreBranchKey, ElimTree> mulChildren = new HashMap<>();
-    mulChildren.put(Prelude.ZERO, new LeafElimTree(yMul, Zero()));
-    mulChildren.put(Prelude.SUC, new LeafElimTree(xMul, FunCall(plus, Sort.SET0, Ref(yMul), FunCall(mul, Sort.SET0, Ref(xMul), Ref(yMul)))));
-    mul.setBody(new BranchElimTree(EmptyDependentLink.getInstance(), mulChildren));
-    mul.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-
-    DependentLink xFac = param("x", Nat());
-    fac = new FunctionDefinition(null);
-    fac.setParameters(xFac);
-    fac.setResultType(Nat());
-    fac.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-    Map<CoreBranchKey, ElimTree> facChildren = new HashMap<>();
-    facChildren.put(Prelude.ZERO, new LeafElimTree(EmptyDependentLink.getInstance(), Suc(Zero())));
-    facChildren.put(Prelude.SUC, new LeafElimTree(xFac, FunCall(mul, Sort.SET0, Suc(Ref(xFac)), FunCall(fac, Sort.SET0, Ref(xFac)))));
-    fac.setBody(new BranchElimTree(EmptyDependentLink.getInstance(), facChildren));
-    fac.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-
-    DependentLink zNElim = param("z", Nat());
-    DependentLink sNElim = param("s", Pi(Nat(), Pi(Nat(), Nat())));
-    DependentLink xNElim = param("x", Nat());
-    nelim = new FunctionDefinition(null);
-    nelim.setParameters(params(zNElim, sNElim, xNElim));
-    nelim.setResultType(Nat());
-    nelim.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-    DependentLink nelimParams = DependentLink.Helper.take(zNElim, 2);
-    Map<CoreBranchKey, ElimTree> nelimChildren = new HashMap<>();
-    nelimChildren.put(Prelude.ZERO, new LeafElimTree(EmptyDependentLink.getInstance(), Ref(nelimParams)));
-    nelimChildren.put(Prelude.SUC, new LeafElimTree(xNElim, Apps(Ref(nelimParams.getNext()), Ref(xNElim), FunCall(nelim, Sort.SET0, Ref(nelimParams), Ref(nelimParams.getNext()), Ref(xNElim)))));
-    nelim.setBody(new BranchElimTree(nelimParams, nelimChildren));
-    nelim.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+    typeCheckModule(
+      "\\func \\infixl 6 + (x y : Nat) : Nat \\elim x\n" +
+      "  | zero => y\n" +
+      "  | suc x => suc (x + y)\n" +
+      "\\func \\infixl 7 * (x y : Nat) : Nat \\elim x\n" +
+      "  | zero => zero\n" +
+      "  | suc x => y + x * y\n" +
+      "\\func fac (x : Nat) : Nat\n" +
+      "  | zero => 1\n" +
+      "  | suc x => suc x * fac x\n" +
+      "\\func nelim (z : Nat) (s : Nat -> Nat -> Nat) (x : Nat) : Nat \\elim x\n" +
+      "  | zero => z\n" +
+      "  | suc x => s x (nelim z s x)");
+    plus = (FunctionDefinition) getDefinition("+");
+    mul = (FunctionDefinition) getDefinition("*");
+    fac = (FunctionDefinition) getDefinition("fac");
+    nelim = (FunctionDefinition) getDefinition("nelim");
   }
 
   @Test

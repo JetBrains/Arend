@@ -6,7 +6,6 @@ import org.arend.core.definition.ClassField;
 import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
-import org.arend.ext.core.elimtree.CoreBranchKey;
 
 import java.util.Map;
 import java.util.Set;
@@ -181,7 +180,7 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> {
       return result;
     }
 
-    return findBindingInElimTree(expr.getElimTree());
+    return findBindingInElimBody(expr.getElimBody());
   }
 
   public Variable findBindingInBody(Body body) {
@@ -193,8 +192,8 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> {
       return ((Expression) body).accept(this, null);
     }
 
-    if (body instanceof ElimTree) {
-      return findBindingInElimTree((ElimTree) body);
+    if (body instanceof ElimBody) {
+      return findBindingInElimBody((ElimBody) body);
     }
 
     if (body instanceof IntervalElim) {
@@ -212,7 +211,7 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> {
         }
       }
       if (intervalElim.getOtherwise() != null) {
-        return findBindingInElimTree(intervalElim.getOtherwise());
+        return findBindingInElimBody(intervalElim.getOtherwise());
       }
       return null;
     }
@@ -220,24 +219,20 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> {
     throw new IllegalStateException();
   }
 
-  private Variable findBindingInElimTree(ElimTree elimTree) {
-    Variable result = visitDependentLink(elimTree.getParameters());
-    if (result != null) {
-      return result;
-    }
-
-    if (elimTree instanceof LeafElimTree) {
-      result = ((LeafElimTree) elimTree).getExpression().accept(this, null);
-    } else {
-      for (Map.Entry<CoreBranchKey, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
-        result = findBindingInElimTree(entry.getValue());
+  private Variable findBindingInElimBody(ElimBody elimBody) {
+    for (ElimClause clause : elimBody.getClauses()) {
+      Variable result = visitDependentLink(clause.getParameters());
+      if (result != null) {
+        return result;
+      }
+      if (clause.getExpression() != null) {
+        result = clause.getExpression().accept(this, null);
         if (result != null) {
           return result;
         }
       }
     }
-
-    return result;
+    return null;
   }
 
   @Override

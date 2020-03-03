@@ -13,8 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.arend.ExpressionFactory.*;
+import static org.arend.Matchers.notInScope;
 import static org.arend.core.expr.ExpressionFactory.*;
-import static org.arend.typechecking.Matchers.notInScope;
 import static org.junit.Assert.*;
 
 public class DynamicTest extends TypeCheckingTestCase {

@@ -8,7 +8,7 @@ import org.arend.core.sort.Sort;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
-import static org.arend.typechecking.Matchers.typeMismatchError;
+import static org.arend.Matchers.typeMismatchError;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 

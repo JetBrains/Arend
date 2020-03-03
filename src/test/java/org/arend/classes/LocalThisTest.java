@@ -3,7 +3,7 @@ package org.arend.classes;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
-import static org.arend.typechecking.Matchers.cycle;
+import static org.arend.Matchers.cycle;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;

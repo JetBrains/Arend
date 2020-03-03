@@ -3,7 +3,7 @@ package org.arend.typechecking.implicitargs;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
-import static org.arend.typechecking.Matchers.goal;
+import static org.arend.Matchers.goal;
 
 public class InferenceTest extends TypeCheckingTestCase {
   @Test
