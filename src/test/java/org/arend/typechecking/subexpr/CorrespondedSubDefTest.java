@@ -71,12 +71,33 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void cowithFun() {
+    ConcreteLocatedReferable referable = resolveNamesDef(
+        "\\func t : R \\cowith\n" +
+            "  | pre  => 114\n" +
+            "  | post => 514\n" +
+            "  \\where {\n" +
+            "    \\record R {\n" +
+            "      | pre  : Nat\n" +
+            "      | post : Nat\n" +
+            "    }\n" +
+            "  }");
+    Concrete.FunctionDefinition def = (Concrete.FunctionDefinition) referable.getDefinition();
+    Definition coreDef = typeCheckDef(referable);
+    Concrete.ClassFieldImpl clause = (Concrete.ClassFieldImpl) def.getBody().getCoClauseElements().get(1);
+    Pair<Expression, Concrete.Expression> accept = def.accept(new CorrespondedSubDefVisitor(clause.implementation), coreDef);
+    assertNotNull(accept);
+    assertEquals("514", accept.proj1.toString());
+  }
+
+  @Test
   public void elimFun() {
     ConcreteLocatedReferable referable = resolveNamesDef(
         "\\func f (a b c : Nat): Nat \\elim b\n" +
             "  | zero => a\n" +
             "  | suc b => c");
     Concrete.FunctionDefinition def = (Concrete.FunctionDefinition) referable.getDefinition();
+    Definition coreDef = typeCheckDef(referable);
     List<Concrete.FunctionClause> clauses = def.getBody().getClauses();
     assertFalse(clauses.isEmpty());
     {
@@ -84,8 +105,7 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
       assertNotNull(expression);
       Pair<@NotNull Expression, Concrete.Expression> accept = def.accept(
           new CorrespondedSubDefVisitor(expression),
-          typeCheckDef(referable)
-      );
+          coreDef);
       assertNotNull(accept);
       assertEquals("a", accept.proj1.toString());
     }
@@ -94,8 +114,7 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
       assertNotNull(expression);
       Pair<@NotNull Expression, Concrete.Expression> accept = def.accept(
           new CorrespondedSubDefVisitor(expression),
-          typeCheckDef(referable)
-      );
+          coreDef);
       assertNotNull(accept);
       assertEquals("c", accept.proj1.toString());
     }
