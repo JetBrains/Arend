@@ -303,6 +303,17 @@ public class DataTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void recursiveNonCovariantTest3() {
+    typeCheckModule(
+      "\\data D (A B : \\Type)\n" +
+      "  | con1\n" +
+      "  | con2 B (D (B -> Nat) A)");
+    DataDefinition d = (DataDefinition) getDefinition("D");
+    assertFalse(d.isCovariant(0));
+    assertFalse(d.isCovariant(1));
+  }
+
+  @Test
   public void pathCovariance() {
     assertTrue(Prelude.PATH.isCovariant(0));
     assertFalse(Prelude.PATH.isCovariant(1));

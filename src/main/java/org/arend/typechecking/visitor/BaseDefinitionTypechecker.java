@@ -3,7 +3,6 @@ package org.arend.typechecking.visitor;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.Constructor;
 import org.arend.core.definition.DataDefinition;
-import org.arend.core.expr.visitor.FindBindingVisitor;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.TypecheckingError;
 import org.arend.term.FunctionKind;
@@ -11,7 +10,7 @@ import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.covariance.ParametersCovarianceChecker;
 import org.arend.typechecking.error.local.CertainTypecheckingError;
 
-import java.util.Collections;
+import java.util.Set;
 
 public class BaseDefinitionTypechecker {
   protected ErrorReporter errorReporter;
@@ -49,21 +48,26 @@ public class BaseDefinitionTypechecker {
     return n;
   }
 
-  protected boolean isCovariantParameter(DataDefinition dataDefinition, DependentLink parameter) {
+  protected void getCovariantParameters(DataDefinition dataDefinition, Set<DependentLink> parameters) {
+    if (parameters.isEmpty()) {
+      return;
+    }
+
+    ParametersCovarianceChecker checker = new ParametersCovarianceChecker(parameters);
     for (Constructor constructor : dataDefinition.getConstructors()) {
       if (!constructor.status().headerIsOK()) {
         continue;
       }
       for (DependentLink link1 = constructor.getParameters(); link1.hasNext(); link1 = link1.getNext()) {
         link1 = link1.getNextTyped(null);
-        if (new ParametersCovarianceChecker(parameter).check(link1.getTypeExpr())) {
-          return false;
+        checker.check(link1.getTypeExpr());
+        if (parameters.isEmpty()) {
+          return;
         }
       }
-      if (new FindBindingVisitor(Collections.singleton(parameter)).findBindingInBody(constructor.getBody()) != null) {
-        return false;
+      if (checker.checkNonCovariant(constructor.getBody())) {
+        return;
       }
     }
-    return true;
   }
 }
