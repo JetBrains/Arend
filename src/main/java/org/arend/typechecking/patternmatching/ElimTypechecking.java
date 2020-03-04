@@ -338,21 +338,30 @@ public class ElimTypechecking {
     List<ConCallExpression> conCalls = getMatchedConstructors(link.getTypeExpr().subst(substitution));
     if (conCalls != null) {
       List<List<ExpressionPattern>> totalResult = new ArrayList<>();
-      for (ConCallExpression conCall : conCalls) {
-        List<Expression> arguments = new ArrayList<>();
-        List<ExpressionPattern> subPatterns = new ArrayList<>();
-        for (DependentLink link1 = conCall.getDefinition().getParameters(); link1.hasNext(); link1 = link1.getNext()) {
-          arguments.add(new ReferenceExpression(link1));
-          subPatterns.add(new BindingPattern(link1));
+      if (conCalls.isEmpty()) {
+        List<ExpressionPattern> patterns = new ArrayList<>();
+        patterns.add(EmptyPattern.INSTANCE);
+        for (i++; i < eliminatedParameters.size(); i++) {
+          patterns.add(new BindingPattern(eliminatedParameters.get(i)));
         }
-        substitution.add(link, ConCallExpression.make(conCall.getDefinition(), conCall.getSortArgument(), conCall.getDataTypeArguments(), arguments));
-        List<List<ExpressionPattern>> result = generateMissingClauses(eliminatedParameters, i + 1, substitution);
-        for (List<ExpressionPattern> patterns : result) {
-          patterns.add(new ConstructorExpressionPattern(conCall, subPatterns));
+        totalResult.add(patterns);
+      } else {
+        for (ConCallExpression conCall : conCalls) {
+          List<Expression> arguments = new ArrayList<>();
+          List<ExpressionPattern> subPatterns = new ArrayList<>();
+          for (DependentLink link1 = conCall.getDefinition().getParameters(); link1.hasNext(); link1 = link1.getNext()) {
+            arguments.add(new ReferenceExpression(link1));
+            subPatterns.add(new BindingPattern(link1));
+          }
+          substitution.add(link, ConCallExpression.make(conCall.getDefinition(), conCall.getSortArgument(), conCall.getDataTypeArguments(), arguments));
+          List<List<ExpressionPattern>> result = generateMissingClauses(eliminatedParameters, i + 1, substitution);
+          for (List<ExpressionPattern> patterns : result) {
+            patterns.add(new ConstructorExpressionPattern(conCall, subPatterns));
+          }
+          totalResult.addAll(result);
         }
-        totalResult.addAll(result);
+        substitution.remove(link);
       }
-      substitution.remove(link);
       return totalResult;
     } else {
       List<List<ExpressionPattern>> result = generateMissingClauses(eliminatedParameters, i + 1, substitution);
@@ -490,7 +499,7 @@ public class ElimTypechecking {
 
       for (int j = 0; j < clauses.size(); j++) {
         ElimClause<? extends Pattern> clause = clauses.get(j);
-        if (!(clause.getPatterns().get(i) instanceof ConstructorPattern)) {
+        if (!(clause.getPatterns().get(i) instanceof ConstructorPattern) || clause.getExpression() == null) {
           continue;
         }
 
