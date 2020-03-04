@@ -40,22 +40,25 @@ public class ConditionsChecking {
   }
 
   public boolean check(Body body, List<ExtElimClause> clauses, List<? extends Concrete.FunctionClause> cClauses, Definition definition) {
-    assert clauses.size() <= cClauses.size();
+    assert cClauses == null || clauses.size() <= cClauses.size();
 
     boolean ok;
+    ElimBody elimBody;
     if (body instanceof IntervalElim) {
       ok = checkIntervals((IntervalElim) body, definition);
       for (int i = 0; i < clauses.size(); i++) {
-        if (clauses.get(i).getExpression() != null && !checkIntervalClause((IntervalElim) body, clauses.get(i), cClauses.get(i), definition)) {
+        if (clauses.get(i).getExpression() != null && !checkIntervalClause((IntervalElim) body, clauses.get(i), cClauses == null ? mySourceNode : cClauses.get(i), definition)) {
           ok = false;
         }
       }
+      elimBody = ((IntervalElim) body).getOtherwise();
     } else {
       ok = true;
+      elimBody = body instanceof ElimBody ? (ElimBody) body : null;
     }
 
     for (int i = 0; i < clauses.size(); i++) {
-      if (!checkClause(clauses.get(i), cClauses.get(i), null, definition)) {
+      if (!checkClause(clauses.get(i), cClauses == null ? mySourceNode : cClauses.get(i), elimBody, definition)) {
         ok = false;
       }
     }
@@ -108,18 +111,18 @@ public class ConditionsChecking {
     }
   }
 
-  private boolean checkIntervalClause(IntervalElim elim, ElimClause<ExpressionPattern> clause, Concrete.FunctionClause cClause, Definition definition) {
+  private boolean checkIntervalClause(IntervalElim elim, ElimClause<ExpressionPattern> clause, Concrete.SourceNode sourceNode, Definition definition) {
     boolean ok = true;
     List<IntervalElim.CasePair> cases = elim.getCases();
     int prefixLength = DependentLink.Helper.size(definition.getParameters()) - elim.getCases().size();
     for (int i = 0; i < cases.size(); i++) {
-      ok = checkIntervalClauseCondition(cases.get(i), true, prefixLength + i, clause, cClause, definition) && ok;
-      ok = checkIntervalClauseCondition(cases.get(i), false, prefixLength + i, clause, cClause, definition) && ok;
+      ok = checkIntervalClauseCondition(cases.get(i), true, prefixLength + i, clause, sourceNode, definition) && ok;
+      ok = checkIntervalClauseCondition(cases.get(i), false, prefixLength + i, clause, sourceNode, definition) && ok;
     }
     return ok;
   }
 
-  private boolean checkIntervalClauseCondition(Pair<Expression, Expression> pair, boolean isLeft, int index, ElimClause<ExpressionPattern> clause, Concrete.FunctionClause cClause, Definition definition) {
+  private boolean checkIntervalClauseCondition(Pair<Expression, Expression> pair, boolean isLeft, int index, ElimClause<ExpressionPattern> clause, Concrete.SourceNode sourceNode, Definition definition) {
     Expression expr = isLeft ? pair.proj1 : pair.proj2;
     if (expr == null || clause.getExpression() == null) {
       return true;
@@ -142,7 +145,7 @@ public class ConditionsChecking {
 
     Expression evaluatedExpr1 = expr.subst(substitution1);
     Expression evaluatedExpr2 = clause.getExpression().subst(pathSubstitution);
-    if (!CompareVisitor.compare(myEquations, CMP.EQ, evaluatedExpr1, evaluatedExpr2, null, cClause)) {
+    if (!CompareVisitor.compare(myEquations, CMP.EQ, evaluatedExpr1, evaluatedExpr2, null, sourceNode)) {
       if (!pathSubstitution.isEmpty()) {
         link = definition.getParameters();
         for (int i = 0; i < clause.getPatterns().size(); i++) {
@@ -175,7 +178,7 @@ public class ConditionsChecking {
         }
       }
 
-      myErrorReporter.report(new ConditionsError(new Condition(definition.getDefCall(Sort.STD, defCallArgs1), substitution1, evaluatedExpr1), new Condition(definition.getDefCall(Sort.STD, defCallArgs2), substitution2, evaluatedExpr2), cClause));
+      myErrorReporter.report(new ConditionsError(new Condition(definition.getDefCall(Sort.STD, defCallArgs1), substitution1, evaluatedExpr1), new Condition(definition.getDefCall(Sort.STD, defCallArgs2), substitution2, evaluatedExpr2), sourceNode));
       return false;
     } else {
       return true;

@@ -141,7 +141,7 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
       throw new IllegalStateException();
     }
 
-    myChecker.checkElimBody(elimBody, definition.getParameters(), definition.getResultType(), level, null, definition.isSFunc(), PatternTypechecking.Mode.FUNCTION);
+    myChecker.checkElimBody(definition, elimBody, definition.getParameters(), definition.getResultType(), level, null, definition.isSFunc(), PatternTypechecking.Mode.FUNCTION);
     return true;
   }
 
