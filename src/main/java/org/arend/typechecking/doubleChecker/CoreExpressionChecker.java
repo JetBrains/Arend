@@ -619,7 +619,9 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("The elim tree of the body is incorrect", mySourceNode), errorExpr));
     }
 
-    new ConditionsChecking(myEquations, errorReporter, mySourceNode).check(exprClauses, null, elimBody);
+    if (!(isSFunc && sort != null && sort.isProp())) {
+      new ConditionsChecking(myEquations, errorReporter, mySourceNode).check(exprClauses, null, elimBody);
+    }
   }
 
   private static class MyErrorReporter implements ErrorReporter {

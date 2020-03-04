@@ -161,7 +161,7 @@ public class DataTest extends TypeCheckingTestCase {
   public void truncatedDataElimError() {
     typeCheckModule(
       "\\truncated \\data S : \\Prop | base | loop I { | left => base | right => base }\n"+
-      "\\sfunc f (x : S) : Nat | base => 0 | loop _ => 0", 1);
+      "\\lemma f (x : S) : Nat | base => 0 | loop _ => 0", 1);
   }
 
   @Test
