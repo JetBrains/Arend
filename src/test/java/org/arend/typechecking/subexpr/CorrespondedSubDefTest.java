@@ -57,10 +57,10 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
             "  }");
     Concrete.ReferableDefinition definition1 = referable.getDefinition();
     Definition definition = typeCheckDef(referable);
-    assertFalse(false);
+    fail();
   }
 
-  // @Test
+  @Test
   public void elimFun() {
     ConcreteLocatedReferable referable = resolveNamesDef(
         "\\func f (a b c : Nat): Nat \\elim b\n" +

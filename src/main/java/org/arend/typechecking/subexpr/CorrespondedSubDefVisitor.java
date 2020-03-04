@@ -6,11 +6,15 @@ import org.arend.core.definition.Definition;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.elimtree.Body;
 import org.arend.core.elimtree.BranchElimTree;
+import org.arend.core.elimtree.ElimBody;
+import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.Expression;
+import org.arend.core.pattern.Pattern;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteDefinitionVisitor;
 import org.arend.util.Pair;
 
+import java.util.List;
 import java.util.Objects;
 
 public class CorrespondedSubDefVisitor implements
@@ -29,7 +33,21 @@ public class CorrespondedSubDefVisitor implements
     if (body instanceof Concrete.TermFunctionBody && coreBody instanceof Expression) {
       Concrete.Expression term = body.getTerm();
       if (term != null) return term.accept(visitor, (Expression) coreBody);
-    } else if (body instanceof Concrete.ElimFunctionBody && coreBody instanceof BranchElimTree) {
+    } else if (body instanceof Concrete.ElimFunctionBody && coreBody instanceof ElimBody) {
+      // Assume they have the same order.
+      List<Concrete.FunctionClause> clauses = body.getClauses();
+      List<? extends ElimClause<Pattern>> coreClauses = ((ElimBody) coreBody).getClauses();
+      // Interval pattern matching are stored in a special way,
+      // maybe it's a TODO to implement it.
+      if (clauses.size() != coreClauses.size()) return null;
+      for (int i = 0; i < clauses.size(); i++) {
+        Concrete.FunctionClause clause = clauses.get(i);
+        ElimClause<Pattern> coreClause = coreClauses.get(i);
+        Concrete.Expression expression = clause.getExpression();
+        if (expression == null) return null;
+        Pair<Expression, Concrete.Expression> clauseVisited = expression.accept(visitor, coreClause.getExpression());
+        if (clauseVisited != null) return clauseVisited;
+      }
     } else if (body instanceof Concrete.CoelimFunctionBody && coreBody instanceof BranchElimTree) {
     }
     return null;
