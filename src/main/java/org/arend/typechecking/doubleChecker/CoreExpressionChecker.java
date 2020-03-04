@@ -295,7 +295,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     if (expr.isError()) {
       throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Unknown error", mySourceNode), expr));
     }
-    return expectedType != null ? expectedType : expr.getExpression() == null ? expr : new ErrorExpression(null, expr.isGoal());
+    return expectedType != null ? expectedType : expr.getExpression() == null ? expr : expr.replaceExpression(null);
   }
 
   @Override

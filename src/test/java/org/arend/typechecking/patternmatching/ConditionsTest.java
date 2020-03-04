@@ -1,7 +1,23 @@
 package org.arend.typechecking.patternmatching;
 
+import org.arend.core.context.param.DependentLink;
+import org.arend.core.definition.Constructor;
+import org.arend.core.definition.DataDefinition;
+import org.arend.core.definition.FunctionDefinition;
+import org.arend.core.elimtree.ElimBody;
+import org.arend.core.expr.*;
+import org.arend.core.sort.Sort;
+import org.arend.core.subst.ExprSubstitution;
+import org.arend.prelude.Prelude;
 import org.arend.typechecking.TypeCheckingTestCase;
+import org.arend.typechecking.error.local.GoalError;
 import org.junit.Test;
+
+import java.util.Collections;
+
+import static org.arend.Matchers.goalError;
+import static org.arend.core.expr.ExpressionFactory.Left;
+import static org.arend.core.expr.ExpressionFactory.Right;
 
 public class ConditionsTest extends TypeCheckingTestCase {
   @Test
@@ -286,5 +302,89 @@ public class ConditionsTest extends TypeCheckingTestCase {
   @Test
   public void partialIntervalConditionError() {
     typeCheckModule("\\data D | con1 | con2 I { | left => con2 right }", 1);
+  }
+
+  @Test
+  public void goalTest() {
+    typeCheckModule(
+      "\\data II | point1 | point2 | seg (i : I) \\with { | left => point1 | right => point2 }\n" +
+      "\\func f (x : II) : Nat\n" +
+      "  | point2 => 7\n" +
+      "  | point1 => 3\n" +
+      "  | seg i => {?}", 1);
+    DependentLink binding = ((ElimBody) ((FunctionDefinition) getDefinition("f")).getBody()).getClauses().get(2).getPatterns().get(0).getFirstBinding();
+    assertThatErrorsAre(goalError(
+      new Condition(null, new ExprSubstitution(binding, Left()), new SmallIntegerExpression(3)),
+      new Condition(null, new ExprSubstitution(binding, Right()), new SmallIntegerExpression(7))));
+  }
+
+  @Test
+  public void goalCaseTest() {
+    typeCheckModule(
+      "\\data II | point1 | point2 | seg (i : I) \\with { | left => point1 | right => point2 }\n" +
+        "\\func f (x : II) : Nat => \\case x \\with {\n" +
+        "  | point2 => 7\n" +
+        "  | point1 => 3\n" +
+        "  | seg i => {?}\n" +
+        "}", 1);
+    DependentLink binding = ((CaseExpression) ((FunctionDefinition) getDefinition("f")).getBody()).getElimBody().getClauses().get(2).getPatterns().get(0).getFirstBinding();
+    assertThatErrorsAre(goalError(
+      new Condition(null, new ExprSubstitution(binding, Left()), new SmallIntegerExpression(3)),
+      new Condition(null, new ExprSubstitution(binding, Right()), new SmallIntegerExpression(7))));
+  }
+
+  @Test
+  public void goalTest2() {
+    typeCheckModule(
+      "\\data S1 | base | loop (i : I) \\with { | left => base | right => base }\n" +
+      "\\func f (x y : S1) : S1\n" +
+      "  | base, y => y\n" +
+      "  | x, base => x\n" +
+      "  | loop i, loop j => {?}", 1);
+
+    DependentLink i = ((ElimBody) ((FunctionDefinition) getDefinition("f")).getBody()).getClauses().get(2).getPatterns().get(0).getFirstBinding();
+    DependentLink j = i.getNext();
+    Constructor loop = (Constructor) getDefinition("S1.loop");
+    Expression iResult = ConCallExpression.make(loop, Sort.STD, Collections.emptyList(), Collections.singletonList(new ReferenceExpression(j)));
+    Expression jResult = ConCallExpression.make(loop, Sort.STD, Collections.emptyList(), Collections.singletonList(new ReferenceExpression(i)));
+
+    assertThatErrorsAre(goalError(
+      new Condition(null, new ExprSubstitution(i, Left()), iResult), new Condition(null, new ExprSubstitution(i, Right()), iResult),
+      new Condition(null, new ExprSubstitution(j, Left()), jResult), new Condition(null, new ExprSubstitution(j, Right()), jResult)));
+  }
+
+  @Test
+  public void goalCaseTest2() {
+    typeCheckModule(
+      "\\data S1 | base | loop (i : I) \\with { | left => base | right => base }\n" +
+      "\\func f (x y : S1) : S1 => \\case x, y \\with {\n" +
+      "  | base, y => y\n" +
+      "  | x, base => x\n" +
+      "  | loop i, loop j => {?}\n" +
+      "}", 1);
+
+    DependentLink i = ((CaseExpression) ((FunctionDefinition) getDefinition("f")).getBody()).getElimBody().getClauses().get(2).getPatterns().get(0).getFirstBinding();
+    DependentLink j = i.getNext();
+    Constructor loop = (Constructor) getDefinition("S1.loop");
+    Expression iResult = ConCallExpression.make(loop, Sort.STD, Collections.emptyList(), Collections.singletonList(new ReferenceExpression(j)));
+    Expression jResult = ConCallExpression.make(loop, Sort.STD, Collections.emptyList(), Collections.singletonList(new ReferenceExpression(i)));
+
+    assertThatErrorsAre(goalError(
+      new Condition(null, new ExprSubstitution(i, Left()), iResult), new Condition(null, new ExprSubstitution(i, Right()), iResult),
+      new Condition(null, new ExprSubstitution(j, Left()), jResult), new Condition(null, new ExprSubstitution(j, Right()), jResult)));
+  }
+
+  @Test
+  public void goalPathConditionsTest() {
+    typeCheckModule(
+      "\\data S1 | base | loop (i : I) \\with { | left => base | right => base }\n" +
+      "\\func f (x : S1) : base = x => path (\\lam i => {?})", 1);
+
+    FunctionDefinition f = (FunctionDefinition) getDefinition("f");
+    DependentLink binding = ((LamExpression) ((ConCallExpression) f.getBody()).getDefCallArguments().get(0)).getParameters();
+    Constructor base = (Constructor) getDefinition("S1.base");
+    assertThatErrorsAre(goalError(
+      new Condition(null, new ExprSubstitution(binding, Left()), ConCallExpression.make(base, Sort.STD, Collections.emptyList(), Collections.emptyList())),
+      new Condition(null, new ExprSubstitution(binding, Right()), new ReferenceExpression(f.getParameters()))));
   }
 }

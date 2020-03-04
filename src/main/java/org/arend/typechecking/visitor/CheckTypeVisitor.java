@@ -60,10 +60,7 @@ import org.arend.typechecking.implicitargs.equations.LevelEquationsWrapper;
 import org.arend.typechecking.implicitargs.equations.TwoStageEquations;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.instance.pool.RecursiveInstanceHoleExpression;
-import org.arend.typechecking.patternmatching.ConditionsChecking;
-import org.arend.typechecking.patternmatching.ElimTypechecking;
-import org.arend.typechecking.patternmatching.ExtElimClause;
-import org.arend.typechecking.patternmatching.PatternTypechecking;
+import org.arend.typechecking.patternmatching.*;
 import org.arend.typechecking.result.DefCallResult;
 import org.arend.typechecking.result.TResult;
 import org.arend.typechecking.result.TypecheckingResult;
@@ -1624,7 +1621,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
         }
         ErrorExpression errorExpr = result.expression.cast(ErrorExpression.class);
         if (errorExpr != null) {
-          result.expression = new ErrorExpression(type.getExpr(), errorExpr.isGoal());
+          result.expression = errorExpr.replaceExpression(type.getExpr());
         }
         return new TypecheckingResult(result.expression, type.getExpr());
       } else {
@@ -1783,7 +1780,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
 
   // Other
 
-  @SuppressWarnings("BooleanMethodIsAlwaysInverted")
   private boolean compareExpressions(boolean isLeft, Expression expected, Expression actual, Expression type, Concrete.Expression expr) {
     if (!CompareVisitor.compare(getEquations(), CMP.EQ, actual, expected, type, expr)) {
       errorReporter.report(new PathEndpointMismatchError(isLeft, expected, actual, expr));
@@ -1801,10 +1797,15 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     if (result instanceof TypecheckingResult) {
       ConCallExpression conCall = ((TypecheckingResult) result).expression.cast(ConCallExpression.class);
       if (conCall != null && conCall.getDefinition() == Prelude.PATH_CON) {
-        //noinspection RedundantIfStatement
-        if (!compareExpressions(true, conCall.getDataTypeArguments().get(1), AppExpression.make(conCall.getDefCallArguments().get(0), ExpressionFactory.Left()), AppExpression.make(conCall.getDataTypeArguments().get(0), ExpressionFactory.Left()), expr) ||
-          !compareExpressions(false, conCall.getDataTypeArguments().get(2), AppExpression.make(conCall.getDefCallArguments().get(0), ExpressionFactory.Right()), AppExpression.make(conCall.getDataTypeArguments().get(0), ExpressionFactory.Right()), expr)) {
-          return false;
+        Expression arg = conCall.getDefCallArguments().get(0);
+        if (arg instanceof LamExpression && ((LamExpression) arg).getBody() instanceof GoalErrorExpression && !((LamExpression) arg).getParameters().getNext().hasNext()) {
+          DependentLink param = ((LamExpression) arg).getParameters();
+          GoalError goalError = ((GoalErrorExpression) ((LamExpression) arg).getBody()).goalError;
+          goalError.addCondition(new Condition(null, new ExprSubstitution(param, ExpressionFactory.Left()), conCall.getDataTypeArguments().get(1)));
+          goalError.addCondition(new Condition(null, new ExprSubstitution(param, ExpressionFactory.Right()), conCall.getDataTypeArguments().get(2)));
+        } else {
+          return compareExpressions(true,  conCall.getDataTypeArguments().get(1), AppExpression.make(arg, ExpressionFactory.Left()),  AppExpression.make(conCall.getDataTypeArguments().get(0), ExpressionFactory.Left()),  expr)
+              && compareExpressions(false, conCall.getDataTypeArguments().get(2), AppExpression.make(arg, ExpressionFactory.Right()), AppExpression.make(conCall.getDataTypeArguments().get(0), ExpressionFactory.Right()), expr);
         }
       }
     }
@@ -1922,9 +1923,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       myStatus = status;
     }
 
-    TypecheckingError error = new GoalError(expr.getName(), context, expectedType, exprResult == null ? null : exprResult.type, errors, expr);
+    GoalError error = new GoalError(expr.getName(), context, expectedType, exprResult == null ? null : exprResult.type, errors, expr);
     errorReporter.report(error);
-    Expression result = new ErrorExpression(exprResult == null ? null : exprResult.expression, error);
+    Expression result = new GoalErrorExpression(exprResult == null ? null : exprResult.expression, error);
     return new TypecheckingResult(result, expectedType != null && !(expectedType instanceof Type && ((Type) expectedType).isOmega()) ? expectedType : result);
   }
 
