@@ -311,7 +311,7 @@ public class CorrespondedSubExprVisitor implements
     return expr.getBaseClassExpression().accept(this, coreClassExpr.getThisBinding().getTypeExpr());
   }
 
-  private @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>
+  @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>
   visitStatement(Map<ClassField, Expression> implementedHere, @NotNull Concrete.ClassFieldImpl statement) {
     Referable implementedField = statement.getImplementedField();
     if (implementedField == null) return null;

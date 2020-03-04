@@ -55,8 +55,8 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
             "      | B : Nat\n" +
             "    }\n" +
             "  }");
-    Concrete.ReferableDefinition definition1 = referable.getDefinition();
-    Definition definition = typeCheckDef(referable);
+    Concrete.ReferableDefinition def = referable.getDefinition();
+    Definition coreDef = typeCheckDef(referable);
     fail();
   }
 

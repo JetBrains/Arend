@@ -1,12 +1,10 @@
 package org.arend.typechecking.subexpr;
 
-import org.arend.core.definition.Constructor;
-import org.arend.core.definition.DataDefinition;
-import org.arend.core.definition.Definition;
-import org.arend.core.definition.FunctionDefinition;
+import org.arend.core.definition.*;
 import org.arend.core.elimtree.Body;
 import org.arend.core.elimtree.ElimBody;
 import org.arend.core.elimtree.ElimClause;
+import org.arend.core.expr.ClassCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.pattern.Pattern;
 import org.arend.term.concrete.Concrete;
@@ -16,10 +14,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 public class CorrespondedSubDefVisitor implements
-    ConcreteDefinitionVisitor<@NotNull Definition, @Nullable Pair<Expression, Concrete.Expression>> {
+    ConcreteDefinitionVisitor<@NotNull Definition,
+        @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>> {
   private final @NotNull CorrespondedSubExprVisitor visitor;
 
   public CorrespondedSubDefVisitor(@NotNull CorrespondedSubExprVisitor visitor) {
@@ -30,7 +30,7 @@ public class CorrespondedSubDefVisitor implements
     this(new CorrespondedSubExprVisitor(subExpr));
   }
 
-  private Pair<Expression, Concrete.Expression> visitBody(
+  private @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression> visitBody(
       @NotNull Concrete.FunctionBody body,
       @Nullable Body coreBody,
       @Nullable Expression coreResultType
@@ -53,7 +53,14 @@ public class CorrespondedSubDefVisitor implements
         Pair<Expression, Concrete.Expression> clauseVisited = expression.accept(visitor, coreClause.getExpression());
         if (clauseVisited != null) return clauseVisited;
       }
-    } else if (body instanceof Concrete.CoelimFunctionBody && coreBody == null) {
+    } else if (body instanceof Concrete.CoelimFunctionBody && coreBody == null && coreResultType instanceof ClassCallExpression) {
+      Map<ClassField, Expression> implementations = ((ClassCallExpression) coreResultType).getImplementedHere();
+      List<Concrete.CoClauseElement> coclauses = body.getCoClauseElements();
+      for (Concrete.CoClauseElement coclause : coclauses)
+        if (coclause instanceof Concrete.ClassFieldImpl) {
+          Pair<Expression, Concrete.Expression> statementVisited = visitor.visitStatement(implementations, (Concrete.ClassFieldImpl) coclause);
+          if (statementVisited != null) return statementVisited;
+        }
     }
     return null;
   }
