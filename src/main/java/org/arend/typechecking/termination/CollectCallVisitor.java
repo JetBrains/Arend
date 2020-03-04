@@ -78,7 +78,16 @@ public class CollectCallVisitor extends ProcessDefCallsVisitor<Void> {
 
   private static BaseCallMatrix.R isLess(Expression expr1, ExpressionPattern pattern2) {
     if (!(pattern2 instanceof ConstructorExpressionPattern)) {
-      return pattern2 instanceof BindingPattern && expr1 instanceof ReferenceExpression && ((ReferenceExpression) expr1).getBinding() == ((BindingPattern) pattern2).getBinding() ? BaseCallMatrix.R.Equal : BaseCallMatrix.R.Unknown;
+      if (pattern2 instanceof BindingPattern) {
+        DependentLink binding2 = ((BindingPattern) pattern2).getBinding();
+        if (expr1 instanceof ReferenceExpression) {
+          if (((ReferenceExpression) expr1).getBinding() == binding2) return BaseCallMatrix.R.Equal;
+        } else if (expr1 instanceof AppExpression) {
+          Expression function = expr1.getFunction();
+          if (function instanceof ReferenceExpression && ((ReferenceExpression) function).getBinding() == binding2) return BaseCallMatrix.R.LessThan; // ensures that "e x < e"
+        }
+      }
+      return BaseCallMatrix.R.Unknown;
     }
     ConstructorExpressionPattern conPattern = (ConstructorExpressionPattern) pattern2;
 
