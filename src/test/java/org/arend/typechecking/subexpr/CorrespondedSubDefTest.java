@@ -6,6 +6,7 @@ import org.arend.frontend.reference.ConcreteLocatedReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.arend.util.Pair;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 
 import java.util.List;
@@ -17,9 +18,11 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
   public void funTermBody() {
     ConcreteLocatedReferable referable = resolveNamesDef("\\func f => 0");
     Concrete.FunctionDefinition def = (Concrete.FunctionDefinition) referable.getDefinition();
-    assertNotNull(def.getBody());
+    Concrete.Expression term = def.getBody().getTerm();
+    assertNotNull(term);
     Pair<Expression, Concrete.Expression> accept = def.accept(
-        new CorrespondedSubDefVisitor(def.getBody().getTerm()), typeCheckDef(referable));
+        new CorrespondedSubDefVisitor(term), typeCheckDef(referable));
+    assertNotNull(accept);
     assertEquals("0", accept.proj1.toString());
   }
 
@@ -30,6 +33,7 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
     assertNotNull(def.getResultType());
     Pair<Expression, Concrete.Expression> accept = def.accept(
         new CorrespondedSubDefVisitor(def.getResultType()), typeCheckDef(referable));
+    assertNotNull(accept);
     assertEquals("Nat", accept.proj1.toString());
   }
 
@@ -38,8 +42,11 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
     ConcreteLocatedReferable referable = resolveNamesDef("\\func f (a : Nat) => a");
     Concrete.FunctionDefinition def = (Concrete.FunctionDefinition) referable.getDefinition();
     assertFalse(def.getParameters().isEmpty());
+    Concrete.Expression type = def.getParameters().get(0).getType();
+    assertNotNull(type);
     Pair<Expression, Concrete.Expression> accept = def.accept(
-        new CorrespondedSubDefVisitor(def.getParameters().get(0).getType()), typeCheckDef(referable));
+        new CorrespondedSubDefVisitor(type), typeCheckDef(referable));
+    assertNotNull(accept);
     assertEquals("Nat", accept.proj1.toString());
   }
 
@@ -55,9 +62,12 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
             "      | B : Nat\n" +
             "    }\n" +
             "  }");
-    Concrete.ReferableDefinition def = referable.getDefinition();
+    Concrete.FunctionDefinition def = (Concrete.FunctionDefinition) referable.getDefinition();
     Definition coreDef = typeCheckDef(referable);
-    fail();
+    Concrete.ClassFieldImpl clause = (Concrete.ClassFieldImpl) def.getBody().getCoClauseElements().get(1);
+    Pair<Expression, Concrete.Expression> accept = def.accept(new CorrespondedSubDefVisitor(clause.implementation), coreDef);
+    assertNotNull(accept);
+    assertEquals("514", accept.proj1.toString());
   }
 
   @Test
@@ -69,14 +79,26 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
     Concrete.FunctionDefinition def = (Concrete.FunctionDefinition) referable.getDefinition();
     List<Concrete.FunctionClause> clauses = def.getBody().getClauses();
     assertFalse(clauses.isEmpty());
-    assertEquals("a", def.accept(
-        new CorrespondedSubDefVisitor(clauses.get(0).getExpression()),
-        typeCheckDef(referable)
-    ).proj1.toString());
-    assertEquals("c", def.accept(
-        new CorrespondedSubDefVisitor(clauses.get(1).getExpression()),
-        typeCheckDef(referable)
-    ).proj1.toString());
+    {
+      Concrete.Expression expression = clauses.get(0).getExpression();
+      assertNotNull(expression);
+      Pair<@NotNull Expression, Concrete.Expression> accept = def.accept(
+          new CorrespondedSubDefVisitor(expression),
+          typeCheckDef(referable)
+      );
+      assertNotNull(accept);
+      assertEquals("a", accept.proj1.toString());
+    }
+    {
+      Concrete.Expression expression = clauses.get(1).getExpression();
+      assertNotNull(expression);
+      Pair<@NotNull Expression, Concrete.Expression> accept = def.accept(
+          new CorrespondedSubDefVisitor(expression),
+          typeCheckDef(referable)
+      );
+      assertNotNull(accept);
+      assertEquals("c", accept.proj1.toString());
+    }
   }
 
   @Test
@@ -86,6 +108,7 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
     assertFalse(def.getParameters().isEmpty());
     Pair<Expression, Concrete.Expression> accept = def.accept(
         new CorrespondedSubDefVisitor(def.getParameters().get(0).getType()), typeCheckDef(referable));
+    assertNotNull(accept);
     assertEquals("Nat", accept.proj1.toString());
   }
 
@@ -101,6 +124,7 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
             .getParameters().get(0)
             .getType()
         ), typeCheckDef(referable));
+    assertNotNull(accept);
     assertEquals("Nat", accept.proj1.toString());
   }
 }
