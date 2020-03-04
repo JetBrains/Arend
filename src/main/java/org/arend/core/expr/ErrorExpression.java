@@ -42,6 +42,10 @@ public class ErrorExpression extends Expression implements CoreErrorExpression {
     return myExpression;
   }
 
+  public ErrorExpression replaceExpression(Expression expr) {
+    return new ErrorExpression(expr, myGoal);
+  }
+
   public boolean isGoal() {
     return myGoal;
   }

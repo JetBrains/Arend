@@ -14,6 +14,7 @@ import org.arend.typechecking.error.CycleError;
 import org.arend.typechecking.error.local.*;
 import org.arend.typechecking.error.local.inference.ArgInferenceError;
 import org.arend.typechecking.error.local.inference.InstanceInferenceError;
+import org.arend.typechecking.patternmatching.Condition;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
@@ -84,6 +85,26 @@ public class Matchers {
       @Override
       public void describeTo(Description description) {
         description.appendText("should be a type mismatch");
+      }
+    };
+  }
+
+  public static Matcher<? super GeneralError> goalError(Condition... conditions) {
+    return new TypeSafeDiagnosingMatcher<GeneralError>() {
+      @Override
+      protected boolean matchesSafely(GeneralError error, Description description) {
+        if (error instanceof GoalError && ((GoalError) error).getConditions().equals(Arrays.asList(conditions))) {
+          description.appendText("goal error");
+          return true;
+        } else {
+          description.appendText(error instanceof GoalError ? "goal error with conditions " + ((GoalError) error).getConditions() : "not a goal error");
+          return false;
+        }
+      }
+
+      @Override
+      public void describeTo(Description description) {
+        description.appendText("should be a goal error with conditions " + Arrays.asList(conditions));
       }
     };
   }

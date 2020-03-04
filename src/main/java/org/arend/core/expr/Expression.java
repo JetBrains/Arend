@@ -29,6 +29,7 @@ import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -53,7 +54,7 @@ public abstract class Expression implements Body, CoreExpression {
     return builder.toString();
   }
 
-  // Only for tests
+  @TestOnly
   @Override
   public boolean equals(Object obj) {
     return this == obj || obj instanceof Expression && compare(this, (Expression) obj, null, CMP.EQ);

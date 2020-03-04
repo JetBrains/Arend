@@ -6,6 +6,7 @@ import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.context.param.TypedSingleDependentLink;
 import org.arend.core.definition.Constructor;
 import org.arend.core.definition.Definition;
+import org.arend.core.definition.Function;
 import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
 import org.arend.core.expr.visitor.CompareVisitor;
@@ -100,7 +101,7 @@ public class ConditionsChecking {
       for (DependentLink link3 = definition.getParameters(); link3.hasNext(); link3 = link3.getNext()) {
         defCallArgs2.add(link3 == link2 ? (isLeft2 ? ExpressionFactory.Left() : ExpressionFactory.Right()) : new ReferenceExpression(link3));
       }
-      myErrorReporter.report(new ConditionsError(definition.getDefCall(Sort.STD, defCallArgs1), definition.getDefCall(Sort.STD, defCallArgs2), substitution1, substitution2, evaluatedExpr1, evaluatedExpr2, mySourceNode));
+      myErrorReporter.report(new ConditionsError(new Condition(definition.getDefCall(Sort.STD, defCallArgs1), substitution1, evaluatedExpr1), new Condition(definition.getDefCall(Sort.STD, defCallArgs2), substitution2, evaluatedExpr2), mySourceNode));
       return false;
     } else {
       return true;
@@ -174,7 +175,7 @@ public class ConditionsChecking {
         }
       }
 
-      myErrorReporter.report(new ConditionsError(definition.getDefCall(Sort.STD, defCallArgs1), definition.getDefCall(Sort.STD, defCallArgs2), substitution1, substitution2, evaluatedExpr1, evaluatedExpr2, cClause));
+      myErrorReporter.report(new ConditionsError(new Condition(definition.getDefCall(Sort.STD, defCallArgs1), substitution1, evaluatedExpr1), new Condition(definition.getDefCall(Sort.STD, defCallArgs2), substitution2, evaluatedExpr2), cClause));
       return false;
     } else {
       return true;
@@ -223,8 +224,15 @@ public class ConditionsChecking {
     while (expr instanceof LetExpression || expr instanceof LamExpression) {
       expr = (expr instanceof LetExpression ? ((LetExpression) expr).getExpression() : ((LamExpression) expr).getBody()).getUnderlyingExpression();
     }
-    if (expr instanceof ErrorExpression) {
+    if (expr.isError()) {
       return true;
+    }
+
+    if (elimBody == null && definition instanceof Function) {
+      Body body = ((Function) definition).getBody();
+      if (body instanceof ElimBody) {
+        elimBody = (ElimBody) body;
+      }
     }
 
     boolean ok = true;
@@ -236,20 +244,27 @@ public class ConditionsChecking {
       }
 
       Expression evaluatedExpr1;
-      if (definition == null) {
+      if (elimBody != null) {
         evaluatedExpr1 = NormalizeVisitor.INSTANCE.eval(elimBody, pair.proj1, new ExprSubstitution(), LevelSubstitution.EMPTY);
       } else {
         evaluatedExpr1 = definition.getDefCall(Sort.STD, pair.proj1);
       }
-      Expression evaluatedExpr2 = clause.getExpression().subst(pair.proj2);
-      if (evaluatedExpr1 == null || !CompareVisitor.compare(myEquations, CMP.EQ, evaluatedExpr1, evaluatedExpr2, null, sourceNode)) {
-        List<Expression> args = new ArrayList<>();
-        for (ExpressionPattern pattern : clause.getPatterns()) {
-          args.add(pattern.toExpression());
+
+      if (expr instanceof GoalErrorExpression) {
+        if (evaluatedExpr1 != null) {
+          ((GoalErrorExpression) expr).goalError.addCondition(new Condition(null, pair.proj2, evaluatedExpr1));
         }
-        Expression expr1 = definition == null ? new CaseExpression(false, EmptyDependentLink.getInstance(), new ErrorExpression(), null, new ElimBody(Collections.emptyList(), new BranchElimTree(0, false)), args) : definition.getDefCall(Sort.STD, args);
-        myErrorReporter.report(new ConditionsError(expr1, clause.getExpression(), pair.proj2, pair.proj2, evaluatedExpr1, evaluatedExpr2, sourceNode));
-        ok = false;
+      } else {
+        Expression evaluatedExpr2 = expr.subst(pair.proj2);
+        if (evaluatedExpr1 == null || !CompareVisitor.compare(myEquations, CMP.EQ, evaluatedExpr1, evaluatedExpr2, null, sourceNode)) {
+          List<Expression> args = new ArrayList<>();
+          for (ExpressionPattern pattern : clause.getPatterns()) {
+            args.add(pattern.toExpression());
+          }
+          Expression expr1 = definition == null ? new CaseExpression(false, EmptyDependentLink.getInstance(), new ErrorExpression(), null, new ElimBody(Collections.emptyList(), new BranchElimTree(0, false)), args) : definition.getDefCall(Sort.STD, args);
+          myErrorReporter.report(new ConditionsError(new Condition(expr1, pair.proj2, evaluatedExpr1), new Condition(clause.getExpression(), pair.proj2, evaluatedExpr2), sourceNode));
+          ok = false;
+        }
       }
     }
     return ok;

@@ -8,11 +8,9 @@ import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
+import org.arend.typechecking.patternmatching.Condition;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
@@ -22,6 +20,7 @@ public class GoalError extends TypecheckingError {
   public final Expression expectedType;
   public final Expression actualType;
   public final List<GeneralError> errors;
+  private List<Condition> myConditions = Collections.emptyList();
 
   public GoalError(String name, Map<Referable, Binding> context, Expression expectedType, Expression actualType, List<GeneralError> errors, Concrete.Expression expression) {
     super(Level.GOAL, "Goal" + (name == null ? "" : " " + name), expression);
@@ -51,6 +50,17 @@ public class GoalError extends TypecheckingError {
       contextDoc = nullDoc();
     }
 
+    Doc conditionsDoc;
+    if (!myConditions.isEmpty()) {
+      List<Doc> conditionsDocs = new ArrayList<>(myConditions.size());
+      for (Condition condition : myConditions) {
+        conditionsDocs.add(condition.toDoc(ppConfig));
+      }
+      conditionsDoc = hang(text("Conditions:"), vList(conditionsDocs));
+    } else {
+      conditionsDoc = nullDoc();
+    }
+
     Doc errorsDoc;
     if (!errors.isEmpty()) {
       List<Doc> errorsDocs = new ArrayList<>(errors.size());
@@ -62,11 +72,23 @@ public class GoalError extends TypecheckingError {
       errorsDoc = nullDoc();
     }
 
-    return vList(expectedDoc, actualDoc, contextDoc, errorsDoc);
+    return vList(expectedDoc, actualDoc, contextDoc, conditionsDoc, errorsDoc);
   }
 
   @Override
   public boolean hasExpressions() {
     return true;
+  }
+
+
+  public void addCondition(Condition condition) {
+    if (myConditions.isEmpty()) {
+      myConditions = new ArrayList<>();
+    }
+    myConditions.add(condition);
+  }
+
+  public List<? extends Condition> getConditions() {
+    return myConditions;
   }
 }

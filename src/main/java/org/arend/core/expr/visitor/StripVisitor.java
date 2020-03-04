@@ -8,6 +8,7 @@ import org.arend.core.definition.ClassField;
 import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
+import org.arend.core.pattern.Pattern;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.LocalError;
 
@@ -145,7 +146,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public ErrorExpression visitError(ErrorExpression expr, Void params) {
-    return new ErrorExpression(expr.getExpression() == null ? null : expr.getExpression().accept(this, null), expr.isGoal());
+    return expr.getExpression() == null ? expr : expr.replaceExpression(expr.getExpression().accept(this, null));
   }
 
   @Override
@@ -185,7 +186,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
       expr.getArguments().set(i, expr.getArguments().get(i).accept(this, null));
     }
     visitParameters(expr.getParameters());
-    for (ElimClause clause : expr.getElimBody().getClauses()) {
+    for (ElimClause<Pattern> clause : expr.getElimBody().getClauses()) {
       visitParameters(clause.getParameters());
       if (clause.getExpression() != null) {
         clause.setExpression(clause.getExpression().accept(this, null));

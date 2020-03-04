@@ -36,7 +36,7 @@ public class FieldCallExpression extends DefCallExpression implements CoreFieldC
         return impl;
       }
     } else if (thisExpr instanceof ErrorExpression && ((ErrorExpression) thisExpr).getExpression() != null) {
-      return new FieldCallExpression(definition, sortArgument, new ErrorExpression(null, ((ErrorExpression) thisExpr).isGoal()));
+      return new FieldCallExpression(definition, sortArgument, ((ErrorExpression) thisExpr).replaceExpression(null));
     }
 
     return new FieldCallExpression(definition, sortArgument, thisExpr);
