@@ -477,7 +477,14 @@ public class PatternTypechecking {
               myErrorReporter.report(new TypeMismatchError(expr, constructor.getResultType().subst(substitution), conPattern));
               return null;
             }
-            sortArg = dataCall.getSortArgument();
+
+            Sort actualSort = type.getSortOfType();
+            if (actualSort == null) {
+              Sort dataSort = dataCall.getSortOfType();
+              sortArg = new Sort(dataSort.getPLevel(), dataSort.getHLevel().add(1));
+            } else {
+              sortArg = actualSort;
+            }
 
             Expression expr1 = dataCall.getDefCallArguments().get(2).normalize(NormalizationMode.WHNF);
             Expression expr2 = dataCall.getDefCallArguments().get(1).normalize(NormalizationMode.WHNF);
