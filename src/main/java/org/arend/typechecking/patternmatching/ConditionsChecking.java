@@ -121,7 +121,7 @@ public class ConditionsChecking {
 
   private boolean checkIntervalClauseCondition(Pair<Expression, Expression> pair, boolean isLeft, int index, ElimClause<ExpressionPattern> clause, Concrete.FunctionClause cClause, Definition definition) {
     Expression expr = isLeft ? pair.proj1 : pair.proj2;
-    if (expr == null) {
+    if (expr == null || clause.getExpression() == null) {
       return true;
     }
 
@@ -244,8 +244,11 @@ public class ConditionsChecking {
       }
 
       Expression evaluatedExpr1;
-      if (elimBody != null) {
+      if (elimBody != null && (definition == null || expr instanceof GoalErrorExpression)) {
         evaluatedExpr1 = NormalizeVisitor.INSTANCE.eval(elimBody, pair.proj1, new ExprSubstitution(), LevelSubstitution.EMPTY);
+        if (evaluatedExpr1 == null && definition != null) {
+          evaluatedExpr1 = definition.getDefCall(Sort.STD, pair.proj1);
+        }
       } else {
         evaluatedExpr1 = definition.getDefCall(Sort.STD, pair.proj1);
       }
@@ -353,6 +356,9 @@ public class ConditionsChecking {
 
     if (elimBody != null) {
       for (ElimClause<Pattern> clause : elimBody.getClauses()) {
+        if (clause.getExpression() == null) {
+          continue;
+        }
         ExprSubstitution substitution1 = new ExprSubstitution();
         ExprSubstitution substitution2 = new ExprSubstitution();
         if (ExpressionPattern.unify(conPattern.getSubPatterns(), Objects.requireNonNull(Pattern.toExpressionPatterns(clause.getPatterns(), constructor.getParameters())), idpSubst, substitution1, substitution2, myErrorReporter, sourceNode)) {
