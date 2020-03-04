@@ -46,6 +46,7 @@ import org.arend.typechecking.instance.pool.InstancePool;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.arend.util.Pair;
+import org.jetbrains.annotations.TestOnly;
 
 import java.util.*;
 
@@ -234,7 +235,7 @@ public class PatternTypechecking {
     return result;
   }
 
-  // for tests
+  @TestOnly
   Pair<List<ExpressionPattern>, Map<Referable, Binding>> typecheckPatterns(List<? extends Concrete.Pattern> patterns, DependentLink parameters, Concrete.SourceNode sourceNode, @SuppressWarnings("SameParameterValue") boolean withElim) {
     myContext = myVisitor == null ? new HashMap<>() : myVisitor.getContext();
     Result result = doTypechecking(patterns, parameters, new LinkList(), new ExprSubstitution(), null, sourceNode, withElim);

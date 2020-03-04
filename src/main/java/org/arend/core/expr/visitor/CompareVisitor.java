@@ -10,6 +10,7 @@ import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.type.TypeExpression;
+import org.arend.core.pattern.Pattern;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.ext.core.ops.CMP;
@@ -18,6 +19,7 @@ import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.implicitargs.equations.Equations;
+import org.jetbrains.annotations.TestOnly;
 
 import java.util.*;
 
@@ -72,7 +74,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     }
   }
 
-  // Only for tests
+  @TestOnly
   public static boolean compare(Equations equations, ElimBody elimBody1, ElimBody elimBody2, Concrete.SourceNode sourceNode) {
     return new CompareVisitor(equations, CMP.EQ, sourceNode).compare(elimBody1, elimBody2, null);
   }
@@ -85,8 +87,8 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       return false;
     }
     for (int i = 0; i < elimBody1.getClauses().size(); i++) {
-      ElimClause clause1 = elimBody1.getClauses().get(i);
-      ElimClause clause2 = elimBody2.getClauses().get(i);
+      ElimClause<Pattern> clause1 = elimBody1.getClauses().get(i);
+      ElimClause<Pattern> clause2 = elimBody2.getClauses().get(i);
       if (!compareParameters(clause1.getParameters(), clause2.getParameters())) {
         return false;
       }
