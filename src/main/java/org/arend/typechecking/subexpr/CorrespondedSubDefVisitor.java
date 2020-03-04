@@ -5,7 +5,6 @@ import org.arend.core.definition.DataDefinition;
 import org.arend.core.definition.Definition;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.elimtree.Body;
-import org.arend.core.elimtree.BranchElimTree;
 import org.arend.core.elimtree.ElimBody;
 import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.Expression;
@@ -13,23 +12,29 @@ import org.arend.core.pattern.Pattern;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteDefinitionVisitor;
 import org.arend.util.Pair;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;
 
 public class CorrespondedSubDefVisitor implements
-    ConcreteDefinitionVisitor<Definition, Pair<Expression, Concrete.Expression>> {
-  private final CorrespondedSubExprVisitor visitor;
+    ConcreteDefinitionVisitor<@NotNull Definition, @Nullable Pair<Expression, Concrete.Expression>> {
+  private final @NotNull CorrespondedSubExprVisitor visitor;
 
-  public CorrespondedSubDefVisitor(CorrespondedSubExprVisitor visitor) {
+  public CorrespondedSubDefVisitor(@NotNull CorrespondedSubExprVisitor visitor) {
     this.visitor = visitor;
   }
 
-  public CorrespondedSubDefVisitor(Concrete.Expression subExpr) {
+  public CorrespondedSubDefVisitor(@NotNull Concrete.Expression subExpr) {
     this(new CorrespondedSubExprVisitor(subExpr));
   }
 
-  private Pair<Expression, Concrete.Expression> visitBody(Concrete.FunctionBody body, Body coreBody) {
+  private Pair<Expression, Concrete.Expression> visitBody(
+      @NotNull Concrete.FunctionBody body,
+      @Nullable Body coreBody,
+      @Nullable Expression coreResultType
+  ) {
     if (body instanceof Concrete.TermFunctionBody && coreBody instanceof Expression) {
       Concrete.Expression term = body.getTerm();
       if (term != null) return term.accept(visitor, (Expression) coreBody);
@@ -48,7 +53,7 @@ public class CorrespondedSubDefVisitor implements
         Pair<Expression, Concrete.Expression> clauseVisited = expression.accept(visitor, coreClause.getExpression());
         if (clauseVisited != null) return clauseVisited;
       }
-    } else if (body instanceof Concrete.CoelimFunctionBody && coreBody instanceof BranchElimTree) {
+    } else if (body instanceof Concrete.CoelimFunctionBody && coreBody == null) {
     }
     return null;
   }
@@ -68,7 +73,7 @@ public class CorrespondedSubDefVisitor implements
     Pair<Expression, Concrete.Expression> parametersResult = visitor
         .visitSigmaParameters(def.getParameters(), coreDef.getParameters());
     if (parametersResult != null) return parametersResult;
-    return visitBody(def.getBody(), coreDef.getActualBody());
+    return visitBody(def.getBody(), coreDef.getActualBody(), coreResultType);
   }
 
   @Override

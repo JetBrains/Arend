@@ -10,23 +10,26 @@ import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteExpressionVisitor;
 import org.arend.util.Pair;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class CorrespondedSubExprVisitor implements
-    ConcreteExpressionVisitor<Expression, Pair<Expression, Concrete.Expression>> {
-  private final Concrete.Expression subExpr;
+    ConcreteExpressionVisitor<@NotNull Expression,
+        @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>> {
+  private final @NotNull Concrete.Expression subExpr;
 
-  public CorrespondedSubExprVisitor(Concrete.Expression subExpr) {
+  public CorrespondedSubExprVisitor(@NotNull Concrete.Expression subExpr) {
     this.subExpr = subExpr;
   }
 
-  private boolean matchesSubExpr(Concrete.Expression expr) {
+  private boolean matchesSubExpr(@NotNull Concrete.Expression expr) {
     return Objects.equals(expr.getData(), subExpr.getData());
   }
 
-  private Pair<Expression, Concrete.Expression> atomicExpr(Concrete.Expression expr, Expression coreExpr) {
+  private @Nullable Pair<Expression, Concrete.Expression> atomicExpr(@NotNull Concrete.Expression expr, @NotNull Expression coreExpr) {
     return matchesSubExpr(expr) ? new Pair<>(coreExpr, expr) : null;
   }
 
@@ -89,7 +92,8 @@ public class CorrespondedSubExprVisitor implements
     return visitExprs(coreTupleExpr.getFields(), expr.getFields());
   }
 
-  private Pair<Expression, Concrete.Expression> visitExprs(List<? extends Expression> coreExpr, List<? extends Concrete.Expression> expr) {
+  private @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>
+  visitExprs(@NotNull List<? extends Expression> coreExpr, @NotNull List<? extends Concrete.Expression> expr) {
     for (int i = 0; i < expr.size(); i++) {
       Concrete.Expression expression = expr.get(i);
       Pair<Expression, Concrete.Expression> accepted = expression.accept(this, coreExpr.get(i));
@@ -115,7 +119,8 @@ public class CorrespondedSubExprVisitor implements
     return expr.getExpression().accept(this, coreLetExpr.getExpression());
   }
 
-  private Pair<Expression, Concrete.Expression> visitLetClause(LetClause coreLetClause, Concrete.LetClause exprLetClause) {
+  private @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>
+  visitLetClause(@NotNull LetClause coreLetClause, @NotNull Concrete.LetClause exprLetClause) {
     Pair<Expression, Concrete.Expression> accepted = exprLetClause.getTerm().accept(this, coreLetClause.getExpression());
     if (accepted != null) return accepted;
 
@@ -131,7 +136,8 @@ public class CorrespondedSubExprVisitor implements
     return expr.expression.accept(this, coreExpr);
   }
 
-  private Pair<Expression, Concrete.Expression> visitClonedApp(Concrete.AppExpression expr, Expression coreExpr) {
+  private @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>
+  visitClonedApp(@NotNull Concrete.AppExpression expr, @NotNull Expression coreExpr) {
     // This is a mutable reference
     List<Concrete.Argument> arguments = expr.getArguments();
     if (arguments.isEmpty()) return expr.getFunction().accept(this, coreExpr);
@@ -143,11 +149,15 @@ public class CorrespondedSubExprVisitor implements
     if (coreAppExpr != null) {
       Concrete.Argument lastArgument = arguments.get(lastArgIndex);
       Expression function = coreAppExpr.getFunction();
-      PiExpression type = function.getType().cast(PiExpression.class);
+      Expression functionType = function.getType();
+      PiExpression type = functionType instanceof PiExpression ? (PiExpression) functionType : null;
+      if (type == null) return null;
       while (type.getParameters().isExplicit() != lastArgument.isExplicit()) {
         coreAppExpr = (AppExpression) function;
         function = coreAppExpr.getFunction();
-        type = function.getType().cast(PiExpression.class);
+        functionType = function.getType();
+        type = functionType instanceof PiExpression ? (PiExpression) functionType : null;
+        if (type == null) return null;
       }
       Pair<Expression, Concrete.Expression> accepted = lastArgument.getExpression().accept(this, coreAppExpr.getArgument());
       if (accepted != null) return accepted;
@@ -163,10 +173,8 @@ public class CorrespondedSubExprVisitor implements
     } else return null;
   }
 
-  private Pair<Expression, Concrete.Expression> visitArguments(
-      DefCallExpression expression,
-      Iterator<Concrete.Argument> arguments
-  ) {
+  private @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>
+  visitArguments(@NotNull DefCallExpression expression, @NotNull Iterator<Concrete.Argument> arguments) {
     Iterator<? extends Expression> defCallArgs = expression.getDefCallArguments().iterator();
     Concrete.Argument argument = arguments.next();
     for (DependentLink parameter = expression.getDefinition().getParameters();
@@ -223,7 +231,8 @@ public class CorrespondedSubExprVisitor implements
     return type.accept(this, link.getTypeExpr());
   }
 
-  protected Pair<Expression, Concrete.Expression> visitPiParameters(List<? extends Concrete.Parameter> parameters, PiExpression pi) {
+  private @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>
+  visitPiParameters(List<? extends Concrete.Parameter> parameters, @NotNull PiExpression pi) {
     for (Concrete.Parameter parameter : parameters) {
       DependentLink link = pi.getParameters();
       Pair<Expression, Concrete.Expression> expression = visitParameter(parameter, link);
@@ -235,7 +244,8 @@ public class CorrespondedSubExprVisitor implements
     return null;
   }
 
-  protected Pair<Expression, Concrete.Expression> visitSigmaParameters(List<? extends Concrete.Parameter> parameters, DependentLink sig) {
+  @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>
+  visitSigmaParameters(List<? extends Concrete.Parameter> parameters, DependentLink sig) {
     for (Concrete.Parameter parameter : parameters) {
       Pair<Expression, Concrete.Expression> expression = visitParameter(parameter, sig);
       if (expression != null) return expression;
@@ -301,7 +311,8 @@ public class CorrespondedSubExprVisitor implements
     return expr.getBaseClassExpression().accept(this, coreClassExpr.getThisBinding().getTypeExpr());
   }
 
-  private Pair<Expression, Concrete.Expression> visitStatement(Map<ClassField, Expression> implementedHere, Concrete.ClassFieldImpl statement) {
+  private @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>
+  visitStatement(Map<ClassField, Expression> implementedHere, @NotNull Concrete.ClassFieldImpl statement) {
     Referable implementedField = statement.getImplementedField();
     if (implementedField == null) return null;
     if (implementedField instanceof ClassReferable) {
