@@ -205,7 +205,7 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
 
     List<ExtElimClause> clauses;
     Definition typechecked;
-    CheckTypeVisitor checkTypeVisitor = new CheckTypeVisitor(myState, new LinkedHashMap<>(), new LocalErrorReporter(definition.getData(), myErrorReporter), null);
+    CheckTypeVisitor checkTypeVisitor = new CheckTypeVisitor(myState, new LocalErrorReporter(definition.getData(), myErrorReporter), null);
     checkTypeVisitor.setListener(myTypecheckingListener);
     checkTypeVisitor.setInstancePool(new GlobalInstancePool(myInstanceProviderSet.get(definition.getData()), checkTypeVisitor));
     DesugarVisitor.desugar(definition, myConcreteProvider, checkTypeVisitor.getErrorReporter());
@@ -249,7 +249,7 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
     typecheckingHeaderStarted(definition.getData());
 
     CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
-    CheckTypeVisitor visitor = new CheckTypeVisitor(myState, new LinkedHashMap<>(), new LocalErrorReporter(definition.getData(), new CompositeErrorReporter(myErrorReporter, countingErrorReporter)), null);
+    CheckTypeVisitor visitor = new CheckTypeVisitor(myState, new LocalErrorReporter(definition.getData(), new CompositeErrorReporter(myErrorReporter, countingErrorReporter)), null);
     visitor.setListener(myTypecheckingListener);
     visitor.setStatus(definition.getStatus().getTypecheckingStatus());
     DesugarVisitor.desugar(definition, myConcreteProvider, visitor.getErrorReporter());

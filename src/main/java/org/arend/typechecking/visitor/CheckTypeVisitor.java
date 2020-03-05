@@ -25,6 +25,7 @@ import org.arend.error.*;
 import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.concrete.expr.ConcreteReferenceExpression;
+import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.core.ops.CMP;
@@ -90,12 +91,14 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
 
   private static class DeferredMeta {
     final MetaDefinition meta;
+    final Set<Binding> freeBindings;
     final Map<Referable, Binding> context;
     final ContextDataImpl contextData;
     final InferenceReferenceExpression inferenceExpr;
 
-    private DeferredMeta(MetaDefinition meta, Map<Referable, Binding> context, ContextDataImpl contextData, InferenceReferenceExpression inferenceExpr) {
+    private DeferredMeta(MetaDefinition meta, Set<Binding> freeBindings, Map<Referable, Binding> context, ContextDataImpl contextData, InferenceReferenceExpression inferenceExpr) {
       this.meta = meta;
+      this.freeBindings = freeBindings;
       this.context = context;
       this.contextData = contextData;
       this.inferenceExpr = inferenceExpr;
@@ -124,14 +127,18 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     myStatus = myStatus.max(status);
   }
 
-  public CheckTypeVisitor(TypecheckerState state, Map<Referable, Binding> localContext, ErrorReporter errorReporter, GlobalInstancePool pool) {
-    myFreeBindings = new HashSet<>();
+  private CheckTypeVisitor(TypecheckerState state, Set<Binding> freeBindings, Map<Referable, Binding> localContext, ErrorReporter errorReporter, GlobalInstancePool pool) {
+    myFreeBindings = freeBindings;
     this.errorReporter = new MyErrorReporter(errorReporter);
     myEquations = new TwoStageEquations(this);
     myInstancePool = pool;
     myArgsInference = new StdImplicitArgsInference(this);
     this.state = state;
     context = localContext;
+  }
+
+  public CheckTypeVisitor(TypecheckerState state, ErrorReporter errorReporter, GlobalInstancePool pool) {
+    this(state, new LinkedHashSet<>(), new LinkedHashMap<>(), errorReporter, pool);
   }
 
   public Type checkType(Concrete.Expression expr, Expression expectedType, boolean isFinal) {
@@ -145,6 +152,10 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       context.put(referable, binding);
       myListener.referableTypechecked(referable, binding);
     }
+  }
+
+  public void addBindings(Map<Referable, Binding> bindings) {
+    context.putAll(bindings);
   }
 
   public TypecheckerState getTypecheckingState() {
@@ -164,27 +175,34 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
   }
 
   @NotNull
-  @Override
   public Map<Referable, Binding> getContext() {
     return context;
   }
 
-  public void setContext(Map<Referable, Binding> context) {
-    this.context = context;
+  public void copyContextFrom(Map<? extends Referable, ? extends Binding> context) {
+    this.context = new LinkedHashMap<>(context);
   }
 
   public Set<? extends Binding> getFreeBindings() {
     return myFreeBindings;
   }
 
-  public void setFreeBindings(Set<Binding> freeBindings) {
-    myFreeBindings = freeBindings;
+  public void copyFreeBindingsFrom(Set<? extends Binding> freeBindings) {
+    myFreeBindings = new LinkedHashSet<>(freeBindings);
   }
 
   public Set<Binding> getAllBindings() {
     Set<Binding> allBindings = new HashSet<>(context.values());
     allBindings.addAll(myFreeBindings);
     return allBindings;
+  }
+
+  @Override
+  public @NotNull List<CoreBinding> getFreeBindingsList() {
+    List<CoreBinding> result = new ArrayList<>();
+    result.addAll(myFreeBindings);
+    result.addAll(context.values());
+    return result;
   }
 
   @NotNull
@@ -355,6 +373,10 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
         type = type.accept(stripVisitor, null);
         deferredMeta.contextData.setExpectedType(type);
 
+        for (Binding binding : deferredMeta.freeBindings) {
+          binding.subst(substVisitor);
+          binding.strip(stripVisitor);
+        }
         TypedDependentLink lastTyped = null;
         for (Binding binding : deferredMeta.context.values()) {
           if (binding instanceof UntypedDependentLink) {
@@ -377,13 +399,15 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       CountingErrorReporter countingErrorReporter = new CountingErrorReporter(GeneralError.Level.ERROR);
       CheckTypeVisitor checkTypeVisitor;
       ErrorReporter originalErrorReporter = errorReporter;
+      Set<Binding> originalFreeBindings = myFreeBindings;
       Map<Referable, Binding> originalContext = context;
       if (stage != Stage.AFTER_LEVELS) {
         checkTypeVisitor = this;
         errorReporter = new CompositeErrorReporter(errorReporter, countingErrorReporter);
+        myFreeBindings = deferredMeta.freeBindings;
         context = deferredMeta.context;
       } else {
-        checkTypeVisitor = new CheckTypeVisitor(state, deferredMeta.context, new CompositeErrorReporter(errorReporter, countingErrorReporter), null);
+        checkTypeVisitor = new CheckTypeVisitor(state, deferredMeta.freeBindings, deferredMeta.context, new CompositeErrorReporter(errorReporter, countingErrorReporter), null);
         checkTypeVisitor.setInstancePool(new GlobalInstancePool(myInstancePool.getInstanceProvider(), checkTypeVisitor, myInstancePool.getInstancePool()));
       }
 
@@ -400,6 +424,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
         }
       }
       errorReporter = originalErrorReporter;
+      myFreeBindings = originalFreeBindings;
       context = originalContext;
       if (result == null && countingErrorReporter.getErrorsNumber() == 0) {
         errorReporter.report(new TypecheckingError("Meta function '" + refExpr.getReferent().getRefName() + "' failed", refExpr));
@@ -1821,7 +1846,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     }
     ((ContextDataImpl) contextData).setExpectedType((Expression) type);
     InferenceReferenceExpression inferenceExpr = new InferenceReferenceExpression(new MetaInferenceVariable((Expression) type, meta, (Concrete.ReferenceExpression) refExpr, getAllBindings()));
-    (stage == Stage.BEFORE_SOLVER ? myDeferredMetasBeforeSolver : stage == Stage.BEFORE_LEVELS ? myDeferredMetasBeforeLevels : myDeferredMetasAfterLevels).add(new DeferredMeta(meta, new LinkedHashMap<>(context), (ContextDataImpl) contextData, inferenceExpr));
+    (stage == Stage.BEFORE_SOLVER ? myDeferredMetasBeforeSolver : stage == Stage.BEFORE_LEVELS ? myDeferredMetasBeforeLevels : myDeferredMetasAfterLevels).add(new DeferredMeta(meta, new LinkedHashSet<>(myFreeBindings), new LinkedHashMap<>(context), (ContextDataImpl) contextData, inferenceExpr));
     return new TypecheckingResult(inferenceExpr, (Expression) type);
   }
 

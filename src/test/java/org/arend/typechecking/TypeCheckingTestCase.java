@@ -35,7 +35,8 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
   protected ChildGroup lastGroup;
 
   TypecheckingResult typeCheckExpr(Map<Referable, Binding> context, Concrete.Expression expression, Expression expectedType, int errors) {
-    CheckTypeVisitor visitor = new CheckTypeVisitor(typecheckerState, context, localErrorReporter, null);
+    CheckTypeVisitor visitor = new CheckTypeVisitor(typecheckerState, localErrorReporter, null);
+    visitor.addBindings(context);
     TypecheckingResult result = visitor.finalCheckExpr(expression, expectedType, false);
     if (errors == 0) {
       assertThat(result, is(notNullValue()));
@@ -59,7 +60,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
   }
 
   TypecheckingResult typeCheckExpr(Concrete.Expression expression, Expression expectedType, int errors) {
-    return typeCheckExpr(new HashMap<>(), expression, expectedType, errors);
+    return typeCheckExpr(Collections.emptyMap(), expression, expectedType, errors);
   }
 
   protected TypecheckingResult typeCheckExpr(Map<Referable, Binding> context, Concrete.Expression expression, Expression expectedType) {
@@ -67,12 +68,12 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
   }
 
   protected TypecheckingResult typeCheckExpr(Concrete.Expression expression, Expression expectedType) {
-    return typeCheckExpr(new HashMap<>(), expression, expectedType, 0);
+    return typeCheckExpr(Collections.emptyMap(), expression, expectedType, 0);
   }
 
 
   protected TypecheckingResult typeCheckExpr(List<Binding> context, String text, Expression expectedType, int errors) {
-    Map<Referable, Binding> mapContext = new HashMap<>();
+    Map<Referable, Binding> mapContext = new LinkedHashMap<>();
     for (Binding binding : context) {
       mapContext.put(ConcreteExpressionFactory.ref(binding.getName()), binding);
     }

@@ -6,16 +6,15 @@ import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.error.ErrorReporter;
-import org.arend.ext.reference.ArendRef;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Map;
+import java.util.List;
 
 public interface ExpressionTypechecker {
   enum Stage { BEFORE_SOLVER, BEFORE_LEVELS, AFTER_LEVELS }
 
-  @NotNull Map<? extends ArendRef, ? extends CoreBinding> getContext();
+  @NotNull List<CoreBinding> getFreeBindingsList();
   @NotNull ErrorReporter getErrorReporter();
   @Nullable CheckedExpression typecheck(@NotNull ConcreteExpression expression);
   @Nullable CheckedExpression check(@NotNull CoreExpression expression, @NotNull ConcreteSourceNode sourceNode);

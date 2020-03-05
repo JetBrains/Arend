@@ -12,10 +12,7 @@ import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.arend.ExpressionFactory.*;
 import static org.arend.Matchers.typeMismatchError;
@@ -133,9 +130,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
     // f : Nat -> Nat -> Nat |- f S (f 0 S) : Nat
     LocalReferable f = ref("f");
     Concrete.Expression expr = cApps(cVar(f), cSuc(), cApps(cVar(f), cZero(), cSuc()));
-    Map<Referable, Binding> defs = new HashMap<>();
-    defs.put(f, new TypedBinding(f.textRepresentation(), Pi(Nat(), Pi(Nat(), Nat()))));
-    assertThat(typeCheckExpr(defs, expr, null, 2), is(nullValue()));
+    assertThat(typeCheckExpr(Collections.singletonMap(f, new TypedBinding(f.textRepresentation(), Pi(Nat(), Pi(Nat(), Nat())))), expr, null, 2), is(nullValue()));
   }
 
   @Test

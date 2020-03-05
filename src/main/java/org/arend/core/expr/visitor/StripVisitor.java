@@ -100,7 +100,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
         expr.setSubstExpression(result);
         return result;
       } else if (expr.getVariable() instanceof MetaInferenceVariable) {
-        return expr.getSubstExpression();
+        return expr;
       } else {
         throw new IllegalStateException("Unknown BaseInferenceVariable: " + expr.getVariable().getClass());
       }

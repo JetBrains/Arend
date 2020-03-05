@@ -1,6 +1,5 @@
 package org.arend.typechecking.definition;
 
-import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
@@ -11,7 +10,6 @@ import org.arend.core.expr.Expression;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.naming.reference.LocalReferable;
-import org.arend.naming.reference.Referable;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.TypeCheckingTestCase;
@@ -19,10 +17,7 @@ import org.arend.typechecking.result.TypecheckingResult;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.arend.ExpressionFactory.*;
 import static org.arend.Matchers.typeMismatchError;
@@ -121,10 +116,8 @@ public class DataTest extends TypeCheckingTestCase {
     LocalReferable f = ref("f");
     LocalReferable x = ref("x");
     Concrete.Expression expr = cApps(cVar(f), cApps(cVar(con.getReferable()), cNat(), cLam(cName(x), cVar(x)), cZero()));
-    Map<Referable, Binding> localContext = new HashMap<>();
-    localContext.put(f, new TypedBinding(f.textRepresentation(), Pi(DataCall(def, Sort.SET0, Pi(Nat(), Nat())), Nat())));
 
-    TypecheckingResult result = typeCheckExpr(localContext, expr, null);
+    TypecheckingResult result = typeCheckExpr(Collections.singletonMap(f, new TypedBinding(f.textRepresentation(), Pi(DataCall(def, Sort.SET0, Pi(Nat(), Nat())), Nat()))), expr, null);
     assertEquals(result.type, Nat());
   }
 
@@ -135,10 +128,8 @@ public class DataTest extends TypeCheckingTestCase {
     Constructor con = def.getConstructor("con");
     LocalReferable f = ref("f");
     Concrete.Expression expr = cApps(cVar(f), cVar(con.getReferable()));
-    Map<Referable, Binding> localContext = new HashMap<>();
-    localContext.put(f, new TypedBinding(f.textRepresentation(), Pi(Pi(Nat(), DataCall(def, Sort.SET0, Nat())), Pi(Nat(), Nat()))));
 
-    TypecheckingResult result = typeCheckExpr(localContext, expr, null);
+    TypecheckingResult result = typeCheckExpr(Collections.singletonMap(f, new TypedBinding(f.textRepresentation(), Pi(Pi(Nat(), DataCall(def, Sort.SET0, Nat())), Pi(Nat(), Nat())))), expr, null);
     assertEquals(result.type, Pi(Nat(), Nat()));
   }
 
