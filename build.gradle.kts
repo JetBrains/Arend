@@ -7,7 +7,6 @@ version = "1.2.0"
 plugins {
     java
     idea
-    antlr
     id("com.google.protobuf") version "0.8.11"
 }
 
@@ -30,7 +29,6 @@ dependencies {
     testImplementation("junit:junit:4.12")
     testImplementation("org.hamcrest:hamcrest-library:1.3")
 
-    antlr("org.antlr:antlr4:4.8")
     implementation("org.antlr:antlr4-runtime:4.8")
 }
 
@@ -40,7 +38,6 @@ configure<JavaPluginConvention> {
 }
 
 val genSrcDir = projectDir.resolve("src/gen")
-val genSrcJavaDir = genSrcDir.resolve("main/java")
 
 val generateVersion = task("generateVersion") {
     doFirst {
@@ -52,7 +49,7 @@ val generateVersion = task("generateVersion") {
               public static final Version VERSION = new Version("$version");
             }
         """.trimIndent()
-        genSrcJavaDir.resolve("org/arend/prelude")
+        genSrcDir.resolve("main/java/org/arend/prelude")
             .apply { mkdirs() }
             .resolve("$className.java")
             .apply { if (!exists()) createNewFile() }
@@ -121,15 +118,6 @@ idea {
         outputDir = file("$buildDir/classes/java/main")
         testOutputDir = file("$buildDir/classes/java/test")
     }
-}
-
-tasks.withType<AntlrTask> {
-    outputDirectory = genSrcJavaDir
-    arguments.addAll(listOf(
-            "-package", "$arendPackage.frontend.parser",
-            "-no-listener",
-            "-visitor"
-    ))
 }
 
 protobuf.protobuf.run {
