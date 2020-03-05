@@ -20,16 +20,18 @@ dependencies {
     implementation("com.google.protobuf:protobuf-java:3.11.4")
 
     implementation("commons-cli:commons-cli:1.4")
-    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.10.1")
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.10.1")
+
+    val jacksonVersion = "2.10.3"
+    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:$jacksonVersion")
+    implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
 
     implementation("org.jetbrains:annotations:19.0.0")
 
     testImplementation("junit:junit:4.12")
     testImplementation("org.hamcrest:hamcrest-library:1.3")
 
-    antlr("org.antlr:antlr4:4.7.2")
-    implementation("org.antlr:antlr4-runtime:4.7.2")
+    antlr("org.antlr:antlr4:4.8")
+    implementation("org.antlr:antlr4-runtime:4.8")
 }
 
 configure<JavaPluginConvention> {
