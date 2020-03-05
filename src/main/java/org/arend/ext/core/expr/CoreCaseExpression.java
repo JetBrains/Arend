@@ -1,7 +1,7 @@
 package org.arend.ext.core.expr;
 
 import org.arend.ext.core.context.CoreParameter;
-import org.arend.ext.core.elimtree.CoreElimBody;
+import org.arend.ext.core.body.CoreElimBody;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

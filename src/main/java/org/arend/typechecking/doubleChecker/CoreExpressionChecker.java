@@ -7,6 +7,7 @@ import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.context.param.TypedDependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
+import org.arend.core.definition.Definition;
 import org.arend.core.elimtree.ElimBody;
 import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.*;
@@ -34,7 +35,9 @@ import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.*;
 import org.arend.typechecking.implicitargs.equations.Equations;
+import org.arend.typechecking.patternmatching.ConditionsChecking;
 import org.arend.typechecking.patternmatching.ElimTypechecking;
+import org.arend.typechecking.patternmatching.ExtElimClause;
 import org.arend.typechecking.patternmatching.PatternTypechecking;
 import org.arend.util.Pair;
 
@@ -565,8 +568,8 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     return link;
   }
 
-  void checkElimBody(ElimBody elimBody, DependentLink parameters, Expression type, Integer level, Expression errorExpr, boolean isSFunc, PatternTypechecking.Mode mode) {
-    List<ElimClause<ExpressionPattern>> exprClauses = new ArrayList<>();
+  void checkElimBody(Definition definition, ElimBody elimBody, DependentLink parameters, Expression type, Integer level, Expression errorExpr, boolean isSFunc, PatternTypechecking.Mode mode) {
+    List<ExtElimClause> exprClauses = new ArrayList<>();
     for (ElimClause<Pattern> clause : elimBody.getClauses()) {
       DependentLink firstBinding = Pattern.getFirstBinding(clause.getPatterns());
       checkStitchedPatterns(clause.getPatterns(), firstBinding, errorExpr);
@@ -575,7 +578,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       ExprSubstitution idpSubst = new ExprSubstitution();
       List<Pair<Expression,Expression>> types = new ArrayList<>();
       List<ExpressionPattern> exprPatterns = new ArrayList<>();
-      exprClauses.add(new ElimClause<>(exprPatterns, clause.getExpression()));
+      exprClauses.add(new ExtElimClause(exprPatterns, clause.getExpression(), idpSubst));
       boolean noEmpty = checkElimPatterns(parameters, clause.getPatterns(), substitution, firstBinding, idpSubst, types, errorExpr, exprPatterns);
       for (Pair<Expression,Expression> pair : types) {
         Expression expectedType = pair.proj2.subst(idpSubst);
@@ -617,7 +620,9 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("The elim tree of the body is incorrect", mySourceNode), errorExpr));
     }
 
-    // TODO[lang_ext]: Check conditions
+    if (!(isSFunc && sort != null && sort.isProp())) {
+      new ConditionsChecking(myEquations, errorReporter, mySourceNode).check(elimBody, exprClauses, null, definition);
+    }
   }
 
   private static class MyErrorReporter implements ErrorReporter {
@@ -645,7 +650,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     Integer level = expr.getResultTypeLevel() == null ? null : checkLevelProof(expr.getResultTypeLevel(), expr.getResultType());
 
     freeDependentLink(expr.getParameters());
-    checkElimBody(expr.getElimBody(), expr.getParameters(), expr.getResultType(), level, expr, expr.isSCase(), PatternTypechecking.Mode.CASE);
+    checkElimBody(null, expr.getElimBody(), expr.getParameters(), expr.getResultType(), level, expr, expr.isSCase(), PatternTypechecking.Mode.CASE);
     return check(expectedType, expr.getResultType().subst(substitution), expr);
   }
 

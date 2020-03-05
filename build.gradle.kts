@@ -8,7 +8,7 @@ plugins {
     java
     idea
     antlr
-    id("com.google.protobuf") version "0.8.8"
+    id("com.google.protobuf") version "0.8.11"
 }
 
 repositories {
@@ -17,7 +17,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.google.protobuf:protobuf-java:3.11.1")
+    implementation("com.google.protobuf:protobuf-java:3.11.4")
 
     implementation("commons-cli:commons-cli:1.4")
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.10.1")
@@ -133,7 +133,7 @@ tasks.withType<AntlrTask> {
 protobuf.protobuf.run {
     generatedFilesBaseDir = genSrcDir.toString()
     protoc(closureOf<ExecutableLocator> {
-        artifact = "com.google.protobuf:protoc:3.7.1"
+        artifact = "com.google.protobuf:protoc:3.11.4"
     })
 }
 

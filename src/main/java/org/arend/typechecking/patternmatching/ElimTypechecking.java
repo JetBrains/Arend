@@ -338,21 +338,30 @@ public class ElimTypechecking {
     List<ConCallExpression> conCalls = getMatchedConstructors(link.getTypeExpr().subst(substitution));
     if (conCalls != null) {
       List<List<ExpressionPattern>> totalResult = new ArrayList<>();
-      for (ConCallExpression conCall : conCalls) {
-        List<Expression> arguments = new ArrayList<>();
-        List<ExpressionPattern> subPatterns = new ArrayList<>();
-        for (DependentLink link1 = conCall.getDefinition().getParameters(); link1.hasNext(); link1 = link1.getNext()) {
-          arguments.add(new ReferenceExpression(link1));
-          subPatterns.add(new BindingPattern(link1));
+      if (conCalls.isEmpty()) {
+        List<ExpressionPattern> patterns = new ArrayList<>();
+        patterns.add(EmptyPattern.INSTANCE);
+        for (i++; i < eliminatedParameters.size(); i++) {
+          patterns.add(new BindingPattern(eliminatedParameters.get(i)));
         }
-        substitution.add(link, ConCallExpression.make(conCall.getDefinition(), conCall.getSortArgument(), conCall.getDataTypeArguments(), arguments));
-        List<List<ExpressionPattern>> result = generateMissingClauses(eliminatedParameters, i + 1, substitution);
-        for (List<ExpressionPattern> patterns : result) {
-          patterns.add(new ConstructorExpressionPattern(conCall, subPatterns));
+        totalResult.add(patterns);
+      } else {
+        for (ConCallExpression conCall : conCalls) {
+          List<Expression> arguments = new ArrayList<>();
+          List<ExpressionPattern> subPatterns = new ArrayList<>();
+          for (DependentLink link1 = conCall.getDefinition().getParameters(); link1.hasNext(); link1 = link1.getNext()) {
+            arguments.add(new ReferenceExpression(link1));
+            subPatterns.add(new BindingPattern(link1));
+          }
+          substitution.add(link, ConCallExpression.make(conCall.getDefinition(), conCall.getSortArgument(), conCall.getDataTypeArguments(), arguments));
+          List<List<ExpressionPattern>> result = generateMissingClauses(eliminatedParameters, i + 1, substitution);
+          for (List<ExpressionPattern> patterns : result) {
+            patterns.add(new ConstructorExpressionPattern(conCall, subPatterns));
+          }
+          totalResult.addAll(result);
         }
-        totalResult.addAll(result);
+        substitution.remove(link);
       }
-      substitution.remove(link);
       return totalResult;
     } else {
       List<List<ExpressionPattern>> result = generateMissingClauses(eliminatedParameters, i + 1, substitution);
@@ -490,7 +499,7 @@ public class ElimTypechecking {
 
       for (int j = 0; j < clauses.size(); j++) {
         ElimClause<? extends Pattern> clause = clauses.get(j);
-        if (!(clause.getPatterns().get(i) instanceof ConstructorPattern)) {
+        if (!(clause.getPatterns().get(i) instanceof ConstructorPattern) || clause.getExpression() == null) {
           continue;
         }
 
@@ -612,7 +621,7 @@ public class ElimTypechecking {
       assert conClause != null;
       ConstructorExpressionPattern someConPattern = (ConstructorExpressionPattern) conClause.getPatterns().get(index);
       List<ConCallExpression> conCalls = null;
-      List<Constructor> constructors;
+      List<BranchKey> branchKeys;
       DataDefinition dataType;
       if (someConPattern.getDefinition() instanceof Constructor) {
         dataType = ((Constructor) someConPattern.getDefinition()).getDataType();
@@ -624,22 +633,22 @@ public class ElimTypechecking {
             myOK = false;
             return null;
           }
-          constructors = new ArrayList<>(conCalls.size());
+          branchKeys = new ArrayList<>(conCalls.size());
           for (ConCallExpression conCall : conCalls) {
-            constructors.add(conCall.getDefinition());
+            branchKeys.add(conCall.getDefinition());
           }
         } else {
-          constructors = new ArrayList<>(dataType.getConstructors());
+          branchKeys = new ArrayList<>(dataType.getConstructors());
         }
       } else {
         if (someConPattern.getDataExpression() instanceof ClassCallExpression) {
           ClassCallExpression classCall = (ClassCallExpression) someConPattern.getDataExpression();
-          constructors = Collections.singletonList(new ClassConstructor(classCall.getDefinition(), classCall.getSortArgument(), classCall.getImplementedHere().keySet()));
+          branchKeys = Collections.singletonList(new ClassConstructor(classCall.getDefinition(), classCall.getSortArgument(), classCall.getImplementedHere().keySet()));
         } else if (someConPattern.getDataExpression() instanceof SigmaExpression) {
-          constructors = Collections.singletonList(new TupleConstructor(someConPattern.getLength()));
+          branchKeys = Collections.singletonList(new TupleConstructor(someConPattern.getLength()));
         } else {
           assert someConPattern.getDefinition() == Prelude.IDP;
-          constructors = Collections.singletonList(new IdpConstructor());
+          branchKeys = Collections.singletonList(new IdpConstructor());
         }
         dataType = null;
       }
@@ -676,36 +685,37 @@ public class ElimTypechecking {
         }
       }
 
-      if (myLevel != null && !constructors.isEmpty() && !(constructors.get(0) instanceof SingleConstructor)) {
+      if (myLevel != null && !branchKeys.isEmpty() && !(branchKeys.get(0) instanceof SingleConstructor)) {
         //noinspection ConstantConditions
-        constructors.removeIf(constructor -> numberOfIntervals + (constructor.getBody() instanceof IntervalElim ? ((IntervalElim) constructor.getBody()).getNumberOfTotalElim() : 0) > myLevel);
+        branchKeys.removeIf(key -> numberOfIntervals + (key.getBody() instanceof IntervalElim ? ((IntervalElim) key.getBody()).getNumberOfTotalElim() : 0) > myLevel);
       }
 
       boolean hasVars = false;
-      Map<Constructor, List<ExtElimClause>> constructorMap = new LinkedHashMap<>();
+      Map<BranchKey, List<ExtElimClause>> branchKeyMap = new LinkedHashMap<>();
       for (ExtElimClause clause : clauses) {
         if (clause.getPatterns().get(index) instanceof BindingPattern) {
           hasVars = true;
-          for (Constructor constructor : constructors) {
-            constructorMap.computeIfAbsent(constructor, k -> new ArrayList<>()).add(clause);
+          for (BranchKey key : branchKeys) {
+            branchKeyMap.computeIfAbsent(key, k -> new ArrayList<>()).add(clause);
           }
         } else {
           Definition def = clause.getPatterns().get(index).getDefinition();
-          if (!(def instanceof Constructor) && !constructors.isEmpty() && constructors.get(0) instanceof SingleConstructor) {
-            def = constructors.get(0);
+          BranchKey key = def instanceof Constructor ? (Constructor) def : null;
+          if (key == null && !branchKeys.isEmpty() && branchKeys.get(0) instanceof SingleConstructor) {
+            key = branchKeys.get(0);
           }
-          if (def instanceof Constructor) {
-            constructorMap.computeIfAbsent((Constructor) def, k -> new ArrayList<>()).add(clause);
+          if (key != null) {
+            branchKeyMap.computeIfAbsent(key, k -> new ArrayList<>()).add(clause);
           }
         }
       }
 
       if (myMode.checkCoverage() && !hasVars) {
-        for (Constructor constructor : constructors) {
-          if (!constructorMap.containsKey(constructor)) {
+        for (BranchKey key : branchKeys) {
+          if (!branchKeyMap.containsKey(key)) {
             try (Utils.ContextSaver ignore = new Utils.ContextSaver(myContext)) {
-              myContext.push(Util.makeDataClauseElem(constructor, someConPattern));
-              for (DependentLink link = constructor.getParameters(); link.hasNext(); link = link.getNext()) {
+              myContext.push(Util.makeDataClauseElem(key, someConPattern));
+              for (DependentLink link = key.getParameters(); link.hasNext(); link = link.getNext()) {
                 myContext.push(new Util.PatternClauseElem(new BindingPattern(link)));
               }
               addMissingClause(new ArrayList<>(myContext), false);
@@ -715,12 +725,12 @@ public class ElimTypechecking {
       }
 
       BranchElimTree branchElimTree = new BranchElimTree(index, hasVars);
-      for (Constructor constructor : constructors) {
-        List<ExtElimClause> conClauseList = constructorMap.get(constructor);
+      for (BranchKey branchKey : branchKeys) {
+        List<ExtElimClause> conClauseList = branchKeyMap.get(branchKey);
         if (conClauseList == null) {
           continue;
         }
-        myContext.push(Util.makeDataClauseElem(constructor, someConPattern));
+        myContext.push(Util.makeDataClauseElem(branchKey, someConPattern));
 
         for (int i = 0; i < conClauseList.size(); i++) {
           ExtElimClause clause = conClauseList.get(i);
@@ -743,7 +753,7 @@ public class ElimTypechecking {
             if (conCalls != null) {
               ConCallExpression conCall = null;
               for (ConCallExpression conCall1 : conCalls) {
-                if (conCall1.getDefinition() == constructor) {
+                if (conCall1.getDefinition() == branchKey) {
                   conCall = conCall1;
                   break;
                 }
@@ -751,9 +761,9 @@ public class ElimTypechecking {
               assert conCall != null;
               List<Expression> dataTypesArgs = conCall.getDataTypeArguments();
               substExpr = ConCallExpression.make(conCall.getDefinition(), conCall.getSortArgument(), dataTypesArgs, arguments);
-              conParameters = DependentLink.Helper.subst(constructor.getParameters(), DependentLink.Helper.toSubstitution(constructor.getDataTypeParameters(), dataTypesArgs));
+              conParameters = DependentLink.Helper.subst(branchKey.getParameters(), DependentLink.Helper.toSubstitution(conCall.getDefinition().getDataTypeParameters(), dataTypesArgs));
             } else {
-              if (constructor instanceof SingleConstructor) {
+              if (branchKey instanceof SingleConstructor) {
                 conParameters = someConPattern.getParameters();
                 Expression someExpr = someConPattern.getDataExpression();
                 if (someExpr instanceof ClassCallExpression) {
@@ -775,13 +785,16 @@ public class ElimTypechecking {
                 } else {
                   throw new IllegalStateException();
                 }
-              } else {
+              } else if (branchKey instanceof Constructor) {
                 List<Expression> dataTypesArgs = new ArrayList<>();
                 for (Expression dataTypeArg : someConPattern.getDataTypeArguments()) {
                   dataTypesArgs.add(dataTypeArg.subst(conClause.substitution));
                 }
+                Constructor constructor = (Constructor) branchKey;
                 substExpr = ConCallExpression.make(constructor, someConPattern.getSortArgument(), dataTypesArgs, arguments);
                 conParameters = DependentLink.Helper.subst(constructor.getParameters(), DependentLink.Helper.toSubstitution(constructor.getDataTypeParameters(), someConPattern.getDataTypeArguments()));
+              } else {
+                throw new IllegalStateException();
               }
             }
 
@@ -804,11 +817,11 @@ public class ElimTypechecking {
           conClauseList.set(i, new ExtElimClause(patterns, clause.getExpression(), clause.index, indices, numberOfFakeVars, newSubstitution));
         }
 
-        ElimTree elimTree = clausesToElimTree(conClauseList, argsStackSize + index + (hasVars ? 1 : 0), myLevel == null ? 0 : numberOfIntervals + (constructor.getBody() instanceof IntervalElim ? ((IntervalElim) constructor.getBody()).getNumberOfTotalElim() : 0));
+        ElimTree elimTree = clausesToElimTree(conClauseList, argsStackSize + index + (hasVars ? 1 : 0), myLevel == null ? 0 : numberOfIntervals + (branchKey.getBody() instanceof IntervalElim ? ((IntervalElim) branchKey.getBody()).getNumberOfTotalElim() : 0));
         if (elimTree == null) {
           myOK = false;
         } else {
-          branchElimTree.addChild(constructor, elimTree);
+          branchElimTree.addChild(branchKey, elimTree);
         }
 
         myContext.pop();

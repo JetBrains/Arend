@@ -2112,7 +2112,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       return null;
     }
 
-    new ConditionsChecking(myEquations, errorReporter).check(clauses, expr.getClauses(), elimBody);
+    if (!(expr.isSCase() && actualLevel.isProp())) {
+      new ConditionsChecking(myEquations, errorReporter, expr).check(clauses, expr.getClauses(), elimBody);
+    }
     TypecheckingResult result = new TypecheckingResult(new CaseExpression(expr.isSCase(), list.getFirst(), resultExpr, resultTypeLevel, elimBody, expressions), resultType != null ? resultExpr.subst(substitution) : resultExpr);
     return resultType == null ? result : checkResult(expectedType, result, expr);
   }

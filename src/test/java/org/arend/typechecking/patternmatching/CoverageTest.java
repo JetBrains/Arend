@@ -67,4 +67,15 @@ public class CoverageTest extends TypeCheckingTestCase {
       "\\func unsuc {n : Nat} (x : Fin n) : Fin n", 1);
     assertThatErrorsAre(missingClauses(3));
   }
+
+  @Test
+  public void missingAbsurdPattern() {
+    typeCheckModule(
+      "\\data Empty\n" +
+      "\\func \\infix 4 isNeg (x : Nat) : \\Type\n" +
+      "  | 0 => Empty\n" +
+      "  | suc x => Empty\n" +
+      "\\func test {n : Nat} (p : isNeg n) : Empty", 1);
+    assertThatErrorsAre(missingClauses(2));
+  }
 }

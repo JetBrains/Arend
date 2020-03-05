@@ -1,7 +1,7 @@
 package org.arend.core.elimtree;
 
 import org.arend.core.expr.Expression;
-import org.arend.ext.core.elimtree.CoreBody;
+import org.arend.ext.core.body.CoreBody;
 import org.arend.util.Decision;
 
 import java.util.List;

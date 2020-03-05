@@ -12,6 +12,7 @@ import org.arend.core.subst.LevelSubstitution;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.term.concrete.Concrete;
 import org.arend.util.Decision;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
 import java.util.List;
@@ -47,9 +48,15 @@ public class EmptyPattern implements ExpressionPattern {
     return null;
   }
 
+  @NotNull
   @Override
   public List<Pattern> getSubPatterns() {
     return Collections.emptyList();
+  }
+
+  @Override
+  public boolean isAbsurd() {
+    return true;
   }
 
   @Override

@@ -161,7 +161,7 @@ public class DataTest extends TypeCheckingTestCase {
   public void truncatedDataElimError() {
     typeCheckModule(
       "\\truncated \\data S : \\Prop | base | loop I { | left => base | right => base }\n"+
-      "\\sfunc f (x : S) : Nat | base => 0 | loop _ => 0", 1);
+      "\\lemma f (x : S) : Nat | base => 0 | loop _ => 0", 1);
   }
 
   @Test
@@ -297,6 +297,17 @@ public class DataTest extends TypeCheckingTestCase {
       "\\data D (A B : \\Type)\n" +
       "  | con1\n" +
       "  | con2 A (D B (A -> Nat))");
+    DataDefinition d = (DataDefinition) getDefinition("D");
+    assertFalse(d.isCovariant(0));
+    assertFalse(d.isCovariant(1));
+  }
+
+  @Test
+  public void recursiveNonCovariantTest3() {
+    typeCheckModule(
+      "\\data D (A B : \\Type)\n" +
+      "  | con1\n" +
+      "  | con2 B (D (B -> Nat) A)");
     DataDefinition d = (DataDefinition) getDefinition("D");
     assertFalse(d.isCovariant(0));
     assertFalse(d.isCovariant(1));

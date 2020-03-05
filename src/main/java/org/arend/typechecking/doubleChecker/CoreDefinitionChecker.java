@@ -141,20 +141,27 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
       throw new IllegalStateException();
     }
 
-    myChecker.checkElimBody(elimBody, definition.getParameters(), definition.getResultType(), level, null, definition.isSFunc(), PatternTypechecking.Mode.FUNCTION);
+    myChecker.checkElimBody(definition, elimBody, definition.getParameters(), definition.getResultType(), level, null, definition.isSFunc(), PatternTypechecking.Mode.FUNCTION);
     return true;
   }
 
   private boolean check(DataDefinition definition) {
     myChecker.clear();
 
-    int index = 0;
-    for (DependentLink link = definition.getParameters(); link.hasNext(); link = link.getNext()) {
-      if (definition.isCovariant(index) && !isCovariantParameter(definition, link)) {
-        errorReporter.report(new TypecheckingError(ArgInferenceError.ordinal(index) + " parameter is not covariant", null));
-        return false;
+    if (definition.getParameters().hasNext()) {
+      Set<DependentLink> parameters = new HashSet<>();
+      for (DependentLink link = definition.getParameters(); link.hasNext(); link = link.getNext()) {
+        parameters.add(link);
       }
-      index++;
+      getCovariantParameters(definition, parameters);
+      int index = 0;
+      for (DependentLink link = definition.getParameters(); link.hasNext(); link = link.getNext()) {
+        if (definition.isCovariant(index) && !parameters.contains(link)) {
+          errorReporter.report(new TypecheckingError(ArgInferenceError.ordinal(index) + " parameter is not covariant", null));
+          return false;
+        }
+        index++;
+      }
     }
 
     if (!definition.isTruncated() && definition.getSquasher() == null) {

@@ -8,7 +8,6 @@ import org.arend.core.expr.FieldCallExpression;
 import org.arend.core.expr.NewExpression;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.LevelSubstitution;
-import org.arend.ext.core.elimtree.CoreClassBranchKey;
 import org.arend.ext.core.ops.CMP;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.implicitargs.equations.Equations;
@@ -18,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-public final class ClassConstructor extends SingleConstructor implements CoreClassBranchKey {
+public final class ClassConstructor extends SingleConstructor {
   private final ClassDefinition myClassDef;
   private Sort mySort;
   private final Set<? extends ClassField> myImplementedFields;
@@ -30,7 +29,6 @@ public final class ClassConstructor extends SingleConstructor implements CoreCla
   }
 
   @NotNull
-  @Override
   public ClassDefinition getClassDefinition() {
     return myClassDef;
   }

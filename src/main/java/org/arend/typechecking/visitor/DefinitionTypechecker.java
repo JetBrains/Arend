@@ -833,7 +833,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           typedDef.setBody(typedBody);
           typedDef.addStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         }
-        boolean conditionsResult = typedDef.isSFunc() || new ConditionsChecking(DummyEquations.getInstance(), errorReporter).check(typedBody, clauses, elimBody.getClauses(), typedDef, def);
+        boolean conditionsResult = typedDef.getKind() == CoreFunctionDefinition.Kind.LEMMA || new ConditionsChecking(DummyEquations.getInstance(), errorReporter, def).check(typedBody, clauses, elimBody.getClauses(), typedDef);
         if (newDef && !conditionsResult) {
           typedDef.addStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
         }
@@ -1316,14 +1316,24 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     // Find covariant parameters
-    if (newDef) {
+    if (newDef && dataDefinition.getParameters().hasNext()) {
       int index = 0;
+      Set<DependentLink> parameters = new HashSet<>();
       for (DependentLink link = dataDefinition.getParameters(); link.hasNext(); link = link.getNext(), index++) {
         dataDefinition.setCovariant(index, true);
-        if (!isCovariantParameter(dataDefinition, link)) {
-          dataDefinition.setCovariant(index, false);
-        }
+        parameters.add(link);
       }
+
+      int size;
+      do {
+        size = parameters.size();
+        getCovariantParameters(dataDefinition, parameters);
+
+        index = 0;
+        for (DependentLink link = dataDefinition.getParameters(); link.hasNext(); link = link.getNext(), index++) {
+          dataDefinition.setCovariant(index, parameters.contains(link));
+        }
+      } while (!parameters.isEmpty() && parameters.size() != size);
     }
 
     // Check truncatedness
@@ -1569,7 +1579,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             dataDefinition.setSort(Sort.SET0);
           }
           if (body != null) {
-            new ConditionsChecking(DummyEquations.getInstance(), errorReporter).check(body, clauses, def.getClauses(), oldConstructor, def);
+            new ConditionsChecking(DummyEquations.getInstance(), errorReporter, def).check(body, clauses, def.getClauses(), oldConstructor);
           }
           if (dataSortIsProp) {
             dataDefinition.setSort(Sort.PROP);
@@ -1860,16 +1870,16 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     // Set fields covariance
+    Set<ClassField> covariantFields = new HashSet<>(typedDef.getPersonalFields());
+    ParametersCovarianceChecker checker = new ParametersCovarianceChecker(covariantFields);
     for (ClassField field : typedDef.getPersonalFields()) {
-      ParametersCovarianceChecker checker = new ParametersCovarianceChecker(field);
-      boolean covariant = true;
-      for (ClassField field1 : typedDef.getPersonalFields()) {
-        if (checker.check(field1.getType(Sort.STD).getCodomain())) {
-          covariant = false;
-          break;
-        }
+      checker.check(field.getType(Sort.STD).getCodomain());
+      if (covariantFields.isEmpty()) {
+        break;
       }
-      field.setCovariant(covariant);
+    }
+    for (ClassField field : covariantFields) {
+      field.setCovariant(true);
     }
 
     // Process coercing field

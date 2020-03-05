@@ -4,7 +4,7 @@ import org.arend.core.expr.ConCallExpression;
 import org.arend.core.expr.ErrorExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.InferenceReferenceExpression;
-import org.arend.ext.core.elimtree.CoreIntervalElim;
+import org.arend.ext.core.body.CoreIntervalElim;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.prelude.Prelude;
 import org.arend.util.Decision;

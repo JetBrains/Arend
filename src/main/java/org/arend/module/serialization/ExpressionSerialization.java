@@ -218,7 +218,7 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
       ExpressionProtos.ElimTree.Branch.Builder branchBuilder = ExpressionProtos.ElimTree.Branch.newBuilder();
       branchBuilder.setKeepConCall(branchElimTree.keepConCall());
 
-      for (Map.Entry<Constructor, ElimTree> entry : branchElimTree.getChildren()) {
+      for (Map.Entry<BranchKey, ElimTree> entry : branchElimTree.getChildren()) {
         if (entry.getKey() == null) {
           branchBuilder.putClauses(0, writeElimTree(entry.getValue()));
         } else if (entry.getKey() instanceof SingleConstructor) {
@@ -241,8 +241,10 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
           }
           singleClauseBuilder.setElimTree(writeElimTree(entry.getValue()));
           branchBuilder.setSingleClause(singleClauseBuilder.build());
+        } else if (entry.getKey() instanceof Constructor) {
+          branchBuilder.putClauses(myCallTargetIndexProvider.getDefIndex((Constructor) entry.getKey()), writeElimTree(entry.getValue()));
         } else {
-          branchBuilder.putClauses(myCallTargetIndexProvider.getDefIndex(entry.getKey()), writeElimTree(entry.getValue()));
+          throw new IllegalStateException();
         }
       }
 

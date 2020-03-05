@@ -6,6 +6,7 @@ import org.arend.core.definition.Definition;
 import org.arend.core.expr.*;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.prelude.Prelude;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -91,6 +92,7 @@ public abstract class ConstructorPattern<T> implements Pattern {
     return Pattern.getFirstBinding(mySubPatterns);
   }
 
+  @NotNull
   @Override
   public List<? extends Pattern> getSubPatterns() {
     return mySubPatterns;

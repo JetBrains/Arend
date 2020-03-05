@@ -10,6 +10,7 @@ import org.arend.ext.error.ErrorReporter;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.PatternUnificationError;
 import org.arend.util.Decision;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
 import java.util.List;
@@ -22,6 +23,8 @@ public class BindingPattern implements ExpressionPattern {
     myBinding = binding;
   }
 
+  @NotNull
+  @Override
   public DependentLink getBinding() {
     return myBinding;
   }
@@ -46,6 +49,7 @@ public class BindingPattern implements ExpressionPattern {
     return null;
   }
 
+  @NotNull
   @Override
   public List<? extends Pattern> getSubPatterns() {
     return Collections.emptyList();

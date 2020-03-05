@@ -1,31 +1,52 @@
 package org.arend.typechecking.covariance;
 
 import org.arend.core.context.binding.Variable;
+import org.arend.core.elimtree.Body;
 import org.arend.core.expr.*;
-import org.arend.core.expr.visitor.FindBindingVisitor;
+import org.arend.core.expr.visitor.VoidExpressionVisitor;
 import org.arend.prelude.Prelude;
 
-import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
-// TODO[lang_ext]: Calculate the set of covariant fields and parameters at once.
 public class ParametersCovarianceChecker extends CovarianceChecker {
-  private final FindBindingVisitor myVisitor;
+  private final Set<? extends Variable> myVariables;
+  private final VoidExpressionVisitor<Void> myVisitor;
 
-  public ParametersCovarianceChecker(Variable variable) {
-    myVisitor = new FindBindingVisitor(Collections.singleton(variable));
+  public ParametersCovarianceChecker(Set<? extends Variable> variables) {
+    myVariables = variables;
+
+    myVisitor = new VoidExpressionVisitor<Void>() {
+      @Override
+      public Void visitReference(ReferenceExpression expr, Void params) {
+        myVariables.remove(expr.getBinding());
+        return null;
+      }
+
+      @Override
+      public Void visitFieldCall(FieldCallExpression expr, Void params) {
+        myVariables.remove(expr.getDefinition());
+        return null;
+      }
+    };
   }
 
   @Override
   protected boolean checkNonCovariant(Expression expr) {
-    return expr.accept(myVisitor, null) != null;
+    expr.accept(myVisitor, null);
+    return myVariables.isEmpty();
+  }
+
+  public boolean checkNonCovariant(Body body) {
+    myVisitor.visitBody(body, null);
+    return myVariables.isEmpty();
   }
 
   @Override
   protected boolean checkOtherwise(Expression expr) {
     while (true) {
       if (expr instanceof AppExpression) {
-        if (((AppExpression) expr).getArgument().accept(myVisitor, null) != null) {
+        if (checkNonCovariant(((AppExpression) expr).getArgument())) {
           return true;
         }
         expr = expr.getFunction();
@@ -36,7 +57,7 @@ public class ParametersCovarianceChecker extends CovarianceChecker {
       } else if (expr instanceof FunCallExpression && ((FunCallExpression) expr).getDefinition() == Prelude.AT) {
         List<? extends Expression> args = ((FunCallExpression) expr).getDefCallArguments();
         for (int i = 0; i < args.size(); i++) {
-          if (i != 3 && args.get(i).accept(myVisitor, null) != null) {
+          if (i != 3 && checkNonCovariant(args.get(i))) {
             return true;
           }
         }
@@ -44,7 +65,7 @@ public class ParametersCovarianceChecker extends CovarianceChecker {
       } else if (expr instanceof ReferenceExpression) {
         return false;
       } else {
-        return expr.accept(myVisitor, null) != null;
+        return checkNonCovariant(expr);
       }
     }
   }
