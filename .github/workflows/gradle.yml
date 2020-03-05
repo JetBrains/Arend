@@ -15,3 +15,13 @@ jobs:
     - uses: eskatos/gradle-command-action@v1
       with:
         arguments: check --info --no-daemon --stacktrace
+    - uses: eskatos/gradle-command-action@v1
+      # Normally, macOS runs faster than the other two
+      if: matrix.os == 'macOS-latest' && matrix.java == '1.8'
+      with:
+        arguments: jarDep jarSrc api --info --no-daemon --stacktrace
+    - uses: actions/upload-artifact@master
+      if: matrix.os == 'macOS-latest' && matrix.java == '1.8'
+      with:
+        name: Arend
+        path: build/libs
