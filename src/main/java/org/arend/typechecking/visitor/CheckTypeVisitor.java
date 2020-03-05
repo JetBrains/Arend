@@ -315,7 +315,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
 
     Expression expr = (Expression) expression;
     try {
-      return new TypecheckingResult(expr, expr.accept(new CoreExpressionChecker(new HashSet<>(context.values()), myEquations, (Concrete.SourceNode) sourceNode), null));
+      return new TypecheckingResult(expr, expr.accept(new CoreExpressionChecker(getAllBindings(), myEquations, (Concrete.SourceNode) sourceNode), null));
     } catch (CoreException e) {
       errorReporter.report(e.error);
       return null;
@@ -1990,6 +1990,21 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     }
   }
 
+  private Expression checkedSubst(Expression type, ExprSubstitution substitution, Concrete.SourceNode sourceNode) {
+    if (substitution.isEmpty()) {
+      return type;
+    }
+
+    Expression result = type.subst(substitution);
+    try {
+      result.accept(new CoreExpressionChecker(getAllBindings(), myEquations, sourceNode), Type.OMEGA);
+    } catch (CoreException e) {
+      errorReporter.report(new ReplacementError(new SubstitutionData(type, substitution), sourceNode));
+      return type;
+    }
+    return result;
+  }
+
   @Override
   public TypecheckingResult visitCase(Concrete.CaseExpression expr, Expression expectedType) {
     if (expectedType == null && expr.getResultType() == null) {
@@ -2024,7 +2039,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
             return null;
           }
           if (argType == null || caseArg.isElim) {
-            exprResult.type = exprResult.type.subst(elimSubst);
+            exprResult.type = checkedSubst(exprResult.type, elimSubst, caseArg.expression);
           }
           Referable asRef = caseArg.isElim ? ((Concrete.ReferenceExpression) caseArg.expression).getReferent() : caseArg.referable;
           DependentLink link = ExpressionFactory.parameter(asRef == null ? null : asRef.textRepresentation(), argType != null ? argType : exprResult.type instanceof Type ? (Type) exprResult.type : new TypeExpression(exprResult.type, getSortOfType(exprResult.type, expr)));
@@ -2051,7 +2066,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
           context.putAll(origElimBindings);
           return null;
         }
-        resultExpr = resultType != null ? resultType.getExpr() : !(expectedType instanceof Type && ((Type) expectedType).isOmega()) ? expectedType.subst(elimSubst) : new UniverseExpression(Sort.generateInferVars(myEquations, false, expr));
+        resultExpr = resultType != null ? resultType.getExpr() : !(expectedType instanceof Type && ((Type) expectedType).isOmega()) ? checkedSubst(expectedType, elimSubst, expr.getResultType() != null ? expr.getResultType() : expr) : new UniverseExpression(Sort.generateInferVars(myEquations, false, expr));
 
         if (expr.getResultTypeLevel() != null) {
           TypecheckingResult levelResult = checkExpr(expr.getResultTypeLevel(), null);

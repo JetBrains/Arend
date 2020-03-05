@@ -4,8 +4,7 @@ import org.arend.Matchers;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
-import static org.arend.Matchers.notInScope;
-import static org.arend.Matchers.typeMismatchError;
+import static org.arend.Matchers.*;
 
 public class Case extends TypeCheckingTestCase {
   @Test
@@ -93,5 +92,34 @@ public class Case extends TypeCheckingTestCase {
       "  | _ => 0\n" +
       "}", 1);
     assertThatErrorsAre(typeMismatchError());
+  }
+
+  @Test
+  public void checkElimTypeTest() {
+    typeCheckModule(
+      "\\func test (A : \\Type) (x : A) (p : x = x) : p = p =>\n" +
+      "  \\case \\elim x, \\elim p \\with {\n" +
+      "    | _, _ => idp\n" +
+      "  }");
+  }
+
+  @Test
+  public void checkElimTypeError() {
+    typeCheckModule(
+      "\\func test (A : \\Type) (x : A) (p : x = x) : p = p =>\n" +
+      "  \\case \\elim x \\with {\n" +
+      "    | _ => idp\n" +
+      "  }", 1);
+    assertThatErrorsAre(error());
+  }
+
+  @Test
+  public void checkElimTypeError2() {
+    typeCheckModule(
+      "\\func test (A : \\Type) (x : A) (p : x = x) : p = p =>\n" +
+      "  \\case \\elim x, p \\with {\n" +
+      "    | _, _ => idp\n" +
+      "  }", 1);
+    assertThatErrorsAre(error());
   }
 }
