@@ -366,7 +366,7 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
   @Test
   public void classifyingFieldImpl() {
     typeCheckModule(
-      "\\class C (X : \\Type)\n" +
+      "\\class C (X : \\hType)\n" +
       "\\class D \\extends C | X => Nat -> Nat\n" +
       "\\instance ddd : D", 1);
   }

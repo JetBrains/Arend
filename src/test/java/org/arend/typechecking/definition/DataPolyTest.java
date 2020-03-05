@@ -93,7 +93,7 @@ public class DataPolyTest extends TypeCheckingTestCase {
 
   @Test
   public void dataOmegaSetExplicit() {
-    typeCheckDef("\\data D (A : \\Type) (n : Nat) : \\Type | con1 (n = n) | con2 A | con3 Nat", 1);
+    typeCheckDef("\\data D (A : \\Type) (n : Nat) : \\Type | con1 (n = n) | con2 A | con3", 1);
   }
 
   @Test

@@ -113,8 +113,8 @@ public class RecursiveTest extends TypeCheckingTestCase {
   @Test
   public void parametersTypeTest() {
     typeCheckModule(
-      "\\func f (x : \\let t => g 0 \\in Nat) : \\Type | 0 => Nat | suc x => g x\n" +
-      "\\func g (x : Nat) : \\Type | 0 => Nat | suc x => f x", 1);
+      "\\func f (x : \\let t => g 0 \\in Nat) : \\hType | 0 => Nat | suc x => g x\n" +
+      "\\func g (x : Nat) : \\hType | 0 => Nat | suc x => f x", 1);
   }
 
   @Test
@@ -135,8 +135,8 @@ public class RecursiveTest extends TypeCheckingTestCase {
   @Test
   public void bodyBodyElimTest() {
     typeCheckModule(
-      "\\func f (x : Nat) : \\Type | 0 => g 0 | suc _ => Nat\n" +
-      "\\func g (x : Nat) : \\Type | 0 => f 0 | suc _ => Nat", 2);
+      "\\func f (x : Nat) : \\hType | 0 => g 0 | suc _ => Nat\n" +
+      "\\func g (x : Nat) : \\hType | 0 => f 0 | suc _ => Nat", 2);
     assertThatErrorsAre(instanceOf(TerminationCheckError.class), instanceOf(TerminationCheckError.class));
   }
 

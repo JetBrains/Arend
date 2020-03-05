@@ -445,7 +445,7 @@ public class ImplementTest extends TypeCheckingTestCase {
   @Test
   public void recursiveFunction() {
     typeCheckModule(
-      "\\class A (X : \\Type) {\n" +
+      "\\class A (X : \\hType) {\n" +
       "  | x : X\n" +
       "}\n" +
       "\\func f (a : A Nat) => a.x\n" +

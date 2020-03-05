@@ -155,7 +155,7 @@ public class ProductsTest extends TypeCheckingTestCase {
   @Test
   public void implRecordTest() {
     typeCheckModule(
-      "\\record R (A : \\Type) (a : A)\n" +
+      "\\record R (A : \\hType) (a : A)\n" +
       "\\record S \\extends R | A => Nat | b : Nat\n" +
       "\\func f (s : S) : Nat\n" +
       "  | (0, m) => m\n" +
