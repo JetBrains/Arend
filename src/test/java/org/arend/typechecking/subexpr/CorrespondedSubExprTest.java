@@ -17,6 +17,7 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
     Concrete.LamExpression xyx = (Concrete.LamExpression) resolveNamesExpr("\\lam x y => x");
     Expression pi = typeCheckExpr(resolveNamesExpr("\\Pi (x y : \\Type) -> \\Type"), null).expression;
     Pair<Expression, Concrete.Expression> accept = xyx.accept(new CorrespondedSubExprVisitor(xyx.getBody()), typeCheckExpr(xyx, pi).expression);
+    assertNotNull(accept);
     assertEquals("x", accept.proj1.cast(ReferenceExpression.class).getBinding().getName());
   }
 
@@ -25,6 +26,7 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
     Concrete.LamExpression xx = (Concrete.LamExpression) resolveNamesExpr("\\lam x => x");
     Expression pi = typeCheckExpr(resolveNamesExpr("\\Pi (x : \\Type) -> \\Type"), null).expression;
     Pair<Expression, Concrete.Expression> accept = xx.accept(new CorrespondedSubExprVisitor(xx.getBody()), typeCheckExpr(xx, pi).expression);
+    assertNotNull(accept);
     assertEquals("x", accept.proj1.cast(ReferenceExpression.class).getBinding().getName());
   }
 
@@ -33,6 +35,7 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
     Concrete.PiExpression xyx = (Concrete.PiExpression) resolveNamesExpr("\\Pi (A : \\Type) (x y : A) -> A");
     Expression pi = typeCheckExpr(xyx, null).expression;
     Pair<Expression, Concrete.Expression> accept = xyx.accept(new CorrespondedSubExprVisitor(xyx.getParameters().get(1).getType()), pi);
+    assertNotNull(accept);
     assertEquals("A", accept.proj1.cast(ReferenceExpression.class).getBinding().getName());
   }
 
@@ -41,6 +44,7 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
     Concrete.PiExpression xyx = (Concrete.PiExpression) resolveNamesExpr("\\Pi (A B : \\Type) (x y : A) -> B");
     Expression pi = typeCheckExpr(xyx, null).expression;
     Pair<Expression, Concrete.Expression> accept = xyx.accept(new CorrespondedSubExprVisitor(xyx.getParameters().get(1).getType()), pi);
+    assertNotNull(accept);
     assertEquals("A", accept.proj1.cast(ReferenceExpression.class).getBinding().getName());
   }
 
@@ -50,10 +54,12 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
     Expression sig = typeCheckExpr(xyx, null).expression;
     {
       Pair<Expression, Concrete.Expression> accept = xyx.accept(new CorrespondedSubExprVisitor(xyx.getParameters().get(1).getType()), sig);
+      assertNotNull(accept);
       assertEquals("A", accept.proj1.cast(ReferenceExpression.class).getBinding().getName());
     }
     {
       Pair<Expression, Concrete.Expression> accept = xyx.accept(new CorrespondedSubExprVisitor(xyx.getParameters().get(2).getType()), sig);
+      assertNotNull(accept);
       assertEquals("A", accept.proj1.cast(ReferenceExpression.class).getBinding().getName());
     }
   }
@@ -65,17 +71,20 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
     Concrete.AppExpression body = (Concrete.AppExpression) expr.getBody();
     {
       Pair<Expression, Concrete.Expression> accept = expr.accept(new CorrespondedSubExprVisitor(body.getArguments().get(0).getExpression()), core);
+      assertNotNull(accept);
       assertEquals("b", accept.proj1.cast(ReferenceExpression.class).getBinding().getName());
       assertEquals("b", accept.proj2.toString());
     }
     {
       Pair<Expression, Concrete.Expression> accept = expr.accept(new CorrespondedSubExprVisitor(body.getArguments().get(1).getExpression()), core);
+      assertNotNull(accept);
       assertEquals("a", accept.proj1.cast(ReferenceExpression.class).getBinding().getName());
       assertEquals("a", accept.proj2.toString());
     }
     {
       Concrete.Expression make = Concrete.AppExpression.make(body.getData(), body.getFunction(), body.getArguments().get(0).getExpression(), true);
       Pair<Expression, Concrete.Expression> accept = expr.accept(new CorrespondedSubExprVisitor(make), core);
+      assertNotNull(accept);
       // Selects the whole expression
       assertEquals("f b a", accept.proj1.toString());
       assertEquals("f b a", accept.proj2.toString());
@@ -87,8 +96,8 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
     // (1+3*2)-4
     Concrete.AppExpression expr = (Concrete.AppExpression) resolveNamesExpr("1 Nat.+ 3 Nat.* 2 Nat.- 4");
     Expression core = typeCheckExpr(expr, null).expression;
-    Concrete.Expression sub = expr.getFunction();
-    Concrete.Argument four = expr.getArguments().get(1);
+    // Concrete.Expression sub = expr.getFunction();
+    // Concrete.Argument four = expr.getArguments().get(1);
     // 1+3*2
     Concrete.Argument arg1 = expr.getArguments().get(0);
     // 1+3*2
@@ -105,6 +114,7 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
       // 3* -> 3*2
       Concrete.Expression make = Concrete.AppExpression.make(expr3.getData(), mul, three.getExpression(), true);
       Pair<Expression, Concrete.Expression> accept = expr.accept(new CorrespondedSubExprVisitor(make), core);
+      assertNotNull(accept);
       assertEquals("3 * 2", accept.proj1.toString());
       assertEquals("3 * 2", accept.proj2.toString());
     }
@@ -112,18 +122,21 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
       // *2 -> 3*2
       Concrete.Expression make = Concrete.AppExpression.make(expr3.getData(), mul, two.getExpression(), true);
       Pair<Expression, Concrete.Expression> accept = expr.accept(new CorrespondedSubExprVisitor(make), core);
+      assertNotNull(accept);
       assertEquals("3 * 2", accept.proj1.toString());
       assertEquals("3 * 2", accept.proj2.toString());
     }
     {
       // 2 -> 2
       Pair<Expression, Concrete.Expression> accept = expr.accept(new CorrespondedSubExprVisitor(two.getExpression()), core);
+      assertNotNull(accept);
       assertEquals("2", accept.proj1.toString());
       assertEquals("2", accept.proj2.toString());
     }
     {
       // 3*2 -> 3*2
       Pair<Expression, Concrete.Expression> accept = expr.accept(new CorrespondedSubExprVisitor(expr3), core);
+      assertNotNull(accept);
       assertEquals("3 * 2", accept.proj1.toString());
       assertEquals("3 * 2", accept.proj2.toString());
     }
@@ -131,6 +144,7 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
       // 1+ -> 1+3*2
       Concrete.Expression make = Concrete.AppExpression.make(expr3.getData(), add, one.getExpression(), true);
       Pair<Expression, Concrete.Expression> accept = expr.accept(new CorrespondedSubExprVisitor(make), core);
+      assertNotNull(accept);
       assertEquals("1 + 3 * 2", accept.proj1.toString());
       assertEquals("1 + 3 * 2", accept.proj2.toString());
     }
@@ -153,12 +167,14 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
       Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(
           concrete.getArguments().get(2).getExpression()
       ), body);
+      assertNotNull(accept);
       assertEquals("14", accept.proj1.toString());
     }
     {
       Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(
           concrete.getArguments().get(1).getExpression()
       ), body);
+      assertNotNull(accept);
       assertEquals("45", accept.proj1.toString());
     }
   }
@@ -179,6 +195,7 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
     Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(
         concrete.getArguments().get(0).getExpression()
     ), body);
+    assertNotNull(accept);
     assertEquals("114514", accept.proj1.toString());
   }
 
@@ -198,12 +215,14 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
       Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(
           concrete.getArguments().get(0).getExpression()
       ), body);
+      assertNotNull(accept);
       assertEquals("114", accept.proj1.toString());
     }
     {
       Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(
           concrete.getArguments().get(1).getExpression()
       ), body);
+      assertNotNull(accept);
       assertEquals("514", accept.proj1.toString());
     }
   }
@@ -224,12 +243,14 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
       Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(
           concrete.getArguments().get(0).getExpression()
       ), body);
+      assertNotNull(accept);
       assertEquals("114", accept.proj1.toString());
     }
     {
       Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(
           concrete.getArguments().get(1).getExpression()
       ), body);
+      assertNotNull(accept);
       assertEquals("514", accept.proj1.toString());
     }
   }
@@ -242,6 +263,7 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
     Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(
         concrete.getClauses().get(0).getTerm()
     ), let);
+    assertNotNull(accept);
     assertEquals("1", accept.proj1.toString());
   }
 
@@ -262,6 +284,7 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
       Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(
           concrete.getArguments().get(0).getExpression()
       ), body);
+      assertNotNull(accept);
       assertEquals("514", accept.proj1.toString());
     }
   }
@@ -281,6 +304,7 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
     Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(
         concrete.getStatements().get(0).implementation
     ), core);
+    assertNotNull(accept);
     assertEquals("Nat", accept.proj1.toString());
   }
 
@@ -305,6 +329,7 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
     Concrete.ClassExtExpression classExt = (Concrete.ClassExtExpression) c.getExpression();
     Concrete.Expression subExpr = classExt.getStatements().get(0).implementation;
     Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(subExpr), core);
+    assertNotNull(accept);
     assertEquals("114514", accept.proj1.toString());
   }
 
@@ -341,11 +366,13 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
     {
       Concrete.Expression c = concrete.getStatements().get(1).implementation;
       Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(c), core);
+      assertNotNull(accept);
       assertEquals("114514", accept.proj1.toString());
     }
     {
       Concrete.Expression c = concrete.getStatements().get(0).implementation;
       Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(c), core);
+      assertNotNull(accept);
       assertEquals("Nat", accept.proj1.toString());
     }
   }
@@ -368,6 +395,7 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
     assertNotNull(core);
     Concrete.Expression c = concrete.getStatements().get(1).implementation;
     Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(c), core);
+    assertNotNull(accept);
     assertEquals("x", accept.proj1.toString());
   }
 }
