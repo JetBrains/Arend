@@ -42,17 +42,7 @@ public class CorrespondedSubDefVisitor implements
       // Assume they have the same order.
       List<Concrete.FunctionClause> clauses = body.getClauses();
       List<? extends ElimClause<Pattern>> coreClauses = ((ElimBody) coreBody).getClauses();
-      // Interval pattern matching are stored in a special way,
-      // maybe it's a TODO to implement it.
-      if (clauses.size() != coreClauses.size()) return null;
-      for (int i = 0; i < clauses.size(); i++) {
-        Concrete.FunctionClause clause = clauses.get(i);
-        ElimClause<Pattern> coreClause = coreClauses.get(i);
-        Concrete.Expression expression = clause.getExpression();
-        if (expression == null) return null;
-        Pair<Expression, Concrete.Expression> clauseVisited = expression.accept(visitor, coreClause.getExpression());
-        if (clauseVisited != null) return clauseVisited;
-      }
+      return visitor.visitElimTree(clauses, coreClauses);
     } else if (body instanceof Concrete.CoelimFunctionBody && coreBody == null && coreResultType instanceof ClassCallExpression) {
       Map<ClassField, Expression> implementations = ((ClassCallExpression) coreResultType).getImplementedHere();
       List<Concrete.CoClauseElement> coclauses = body.getCoClauseElements();

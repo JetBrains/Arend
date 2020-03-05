@@ -2,8 +2,10 @@ package org.arend.typechecking.subexpr;
 
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
+import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
+import org.arend.core.pattern.Pattern;
 import org.arend.naming.reference.ClassReferable;
 import org.arend.naming.reference.FieldReferable;
 import org.arend.naming.reference.Referable;
@@ -272,6 +274,24 @@ public class CorrespondedSubExprVisitor implements
     return visitSigmaParameters(expr.getParameters(), coreSigmaExpr.getParameters());
   }
 
+  @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression> visitElimTree(
+      List<Concrete.FunctionClause> clauses,
+      List<? extends ElimClause<Pattern>> coreClauses
+  ) {
+    // Interval pattern matching are stored in a special way,
+    // maybe it's a TODO to implement it.
+    if (clauses.size() != coreClauses.size()) return null;
+    for (int i = 0; i < clauses.size(); i++) {
+      Concrete.FunctionClause clause = clauses.get(i);
+      ElimClause<Pattern> coreClause = coreClauses.get(i);
+      Concrete.Expression expression = clause.getExpression();
+      if (expression == null) return null;
+      Pair<Expression, Concrete.Expression> clauseVisited = expression.accept(this, coreClause.getExpression());
+      if (clauseVisited != null) return clauseVisited;
+    }
+    return null;
+  }
+
   @Override
   public Pair<Expression, Concrete.Expression> visitCase(Concrete.CaseExpression expr, Expression coreExpr) {
     if (matchesSubExpr(expr)) return new Pair<>(coreExpr, expr);
@@ -288,8 +308,7 @@ public class CorrespondedSubExprVisitor implements
       Pair<Expression, Concrete.Expression> accepted = resultType.accept(this, coreCaseExpr.getResultType());
       if (accepted != null) return accepted;
     }
-    // Case trees and clauses? They are unlikely to be isomorphic.
-    return null;
+    return visitElimTree(expr.getClauses(), coreCaseExpr.getElimBody().getClauses());
   }
 
   @Override
