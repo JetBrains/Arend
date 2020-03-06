@@ -41,7 +41,7 @@ val genSrcDir = projectDir.resolve("src/gen")
 
 val generateVersion = task<GenerateVersionTask>("generateVersion") {
     basePackage = arendPackage
-    outputDir = genSrcDir.resolve("src/main/java/org/arend/prelude")
+    outputDir = genSrcDir.resolve("main/java/org/arend/prelude")
 }
 
 tasks.withType<JavaCompile> {
