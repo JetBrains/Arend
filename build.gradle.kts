@@ -1,4 +1,5 @@
 import com.google.protobuf.gradle.ExecutableLocator
+import org.arend.gradle.GenerateVersionTask
 
 val arendPackage = "org.arend"
 group = arendPackage
