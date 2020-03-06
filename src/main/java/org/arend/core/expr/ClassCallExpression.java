@@ -198,7 +198,7 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
 
   @Override
   public Integer getUseLevel() {
-    return getDefinition().getUseLevel(myImplementations, myThisBinding);
+    return getDefinition().getUseLevel(myImplementations, myThisBinding, false);
   }
 
   @NotNull

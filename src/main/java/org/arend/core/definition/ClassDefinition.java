@@ -11,6 +11,7 @@ import org.arend.ext.core.definition.CoreClassDefinition;
 import org.arend.ext.core.definition.CoreClassField;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.naming.reference.TCClassReferable;
+import org.arend.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -60,15 +61,42 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
 
   public static class ParametersLevel extends org.arend.core.definition.ParametersLevel {
     public final List<ClassField> fields;
+    public final List<Pair<ClassDefinition,Set<ClassField>>> strictList;
 
-    public ParametersLevel(DependentLink parameters, int level, List<ClassField> fields) {
+    public ParametersLevel(DependentLink parameters, int level, List<ClassField> fields, List<Pair<ClassDefinition,Set<ClassField>>> strictList) {
       super(parameters, level);
       this.fields = fields;
+      this.strictList = strictList;
     }
 
     @Override
     public boolean hasEquivalentDomain(org.arend.core.definition.ParametersLevel another) {
       return another instanceof ParametersLevel && fields.equals(((ParametersLevel) another).fields) && super.hasEquivalentDomain(another);
+    }
+
+    private boolean checkExpressionsTypesStrict(List<Expression> expressions) {
+      if (strictList == null || expressions.size() != strictList.size()) {
+        return false;
+      }
+      for (int i = 0; i < expressions.size(); i++) {
+        if (strictList.get(i) == null) {
+          continue;
+        }
+        Expression type = expressions.get(i).getType();
+        if (type == null) {
+          return false;
+        }
+        ClassCallExpression classCall = type.cast(ClassCallExpression.class);
+        if (classCall == null || !classCall.getDefinition().isSubClassOf(strictList.get(i).proj1)) {
+          return false;
+        }
+        for (ClassField field : strictList.get(i).proj2) {
+          if (!classCall.isImplemented(field)) {
+            return false;
+          }
+        }
+      }
+      return true;
     }
   }
 
@@ -89,10 +117,10 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
     mySquasher = squasher;
   }
 
-  public Integer getUseLevel(Map<ClassField,Expression> implemented, Binding thisBinding) {
+  public Integer getUseLevel(Map<ClassField,Expression> implemented, Binding thisBinding, boolean isStrict) {
     loop:
     for (ParametersLevel parametersLevel : myParametersLevels.getList()) {
-      if (parametersLevel.fields.size() != implemented.size()) {
+      if (isStrict && parametersLevel.strictList == null || parametersLevel.fields.size() != implemented.size()) {
         continue;
       }
       List<Expression> expressions = new ArrayList<>();
@@ -104,7 +132,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
         expressions.add(expr);
       }
 
-      if (parametersLevel.checkExpressionsTypes(expressions)) {
+      if (isStrict ? parametersLevel.checkExpressionsTypesStrict(expressions) : parametersLevel.checkExpressionsTypes(expressions)) {
         return parametersLevel.level;
       }
     }
@@ -112,7 +140,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
   }
 
   public Sort computeSort(Sort sortArgument, Map<ClassField,Expression> implemented, Binding thisBinding) {
-    Integer hLevel = getUseLevel(implemented, thisBinding);
+    Integer hLevel = getUseLevel(implemented, thisBinding, true);
     if (hLevel != null && hLevel == -1) {
       return Sort.PROP;
     }

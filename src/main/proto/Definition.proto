@@ -58,6 +58,13 @@ message Definition {
     message ClassParametersLevel {
         ParametersLevel parameters_level = 1;
         repeated int32 field = 2;
+        bool is_strict = 3;
+        repeated ClassExtSig class_ext_sig = 4;
+
+        message ClassExtSig {
+            int32 class_def = 1;
+            repeated int32 field = 2;
+        }
     }
     message DataData {
         repeated Telescope param = 1;

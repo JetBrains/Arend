@@ -15,6 +15,7 @@ import org.arend.naming.reference.TCClassReferable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.order.dependency.DependencyListener;
+import org.arend.util.Pair;
 
 import java.util.*;
 
@@ -128,7 +129,24 @@ public class DefinitionDeserialization {
         fields.add(myCallTargetProvider.getCallTarget(fieldRef, ClassField.class));
       }
       DefinitionProtos.Definition.ParametersLevel parametersLevelProto = classParametersLevelProto.getParametersLevel();
-      classDef.addParametersLevel(new ClassDefinition.ParametersLevel(parametersLevelProto.getHasParameters() ? defDeserializer.readParameters(parametersLevelProto.getParameterList()) : null, parametersLevelProto.getLevel(), fields));
+      List<Pair<ClassDefinition, Set<ClassField>>> strictList;
+      if (classParametersLevelProto.getIsStrict()) {
+        strictList = new ArrayList<>();
+        for (DefinitionProtos.Definition.ClassParametersLevel.ClassExtSig sig : classParametersLevelProto.getClassExtSigList()) {
+          if (sig.getClassDef() == 0) {
+            strictList.add(null);
+          } else {
+            Set<ClassField> sigFields = new HashSet<>();
+            for (Integer fieldRef : sig.getFieldList()) {
+              sigFields.add(myCallTargetProvider.getCallTarget(fieldRef, ClassField.class));
+            }
+            strictList.add(new Pair<>(myCallTargetProvider.getCallTarget(sig.getClassDef(), ClassDefinition.class), sigFields));
+          }
+        }
+      } else {
+        strictList = null;
+      }
+      classDef.addParametersLevel(new ClassDefinition.ParametersLevel(parametersLevelProto.getHasParameters() ? defDeserializer.readParameters(parametersLevelProto.getParameterList()) : null, parametersLevelProto.getLevel(), fields, strictList));
     }
 
     List<Integer> goodFieldIndices = classProto.getGoodFieldList();

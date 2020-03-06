@@ -22,10 +22,7 @@ import org.arend.typechecking.order.DFS;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.arend.util.Pair;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 
 public class UseTypechecking {
@@ -141,6 +138,7 @@ public class UseTypechecking {
     Expression resultType = def == null || def.getResultType() != null ? typedDef.getResultType() : null;
     boolean ok = true;
     List<ClassField> levelFields = null;
+    List<Pair<ClassDefinition, Set<ClassField>>> strictList = null;
     Expression type = null;
     DependentLink parameters = null;
     DependentLink link = typedDef.getParameters();
@@ -196,6 +194,7 @@ public class UseTypechecking {
       } else {
         if (!classCall.getImplementedHere().isEmpty()) {
           levelFields = new ArrayList<>();
+          strictList = new ArrayList<>();
           Expression thisExpr = new ReferenceExpression(classCallLink);
           for (ClassField classField : classCall.getDefinition().getFields()) {
             Expression impl = classCall.getImplementationHere(classField, thisExpr);
@@ -207,7 +206,9 @@ public class UseTypechecking {
               break;
             }
             levelFields.add(classField);
-            if (!Expression.compare(classField.getType(Sort.STD).applyExpression(thisExpr), link.getTypeExpr(), Type.OMEGA, CMP.EQ)) {
+            Expression fieldType = classField.getType(Sort.STD).applyExpression(thisExpr);
+            Expression paramType = link.getTypeExpr();
+            if (!Expression.compare(fieldType, paramType, Type.OMEGA, CMP.EQ)) {
               if (parameters == null) {
                 int numberOfClassParameters = 0;
                 for (DependentLink link1 = link; link1 != classCallLink && link1.hasNext(); link1 = link1.getNext()) {
@@ -215,6 +216,16 @@ public class UseTypechecking {
                 }
                 parameters = DependentLink.Helper.take(typedDef.getParameters(), numberOfClassParameters);
               }
+
+              ClassCallExpression fieldClassCall = fieldType.cast(ClassCallExpression.class);
+              ClassCallExpression paramClassCall = paramType.cast(ClassCallExpression.class);
+              if (strictList != null && paramClassCall != null && fieldClassCall != null && paramClassCall.getSortArgument().equals(fieldClassCall.getSortArgument()) && paramClassCall.getUniverseKind().ordinal() <= fieldClassCall.getUniverseKind().ordinal()) {
+                strictList.add(new Pair<>(paramClassCall.getDefinition(), paramClassCall.getImplementedHere().keySet()));
+              } else {
+                strictList = null;
+              }
+            } else if (strictList != null) {
+              strictList.add(null);
             }
             link = link.getNext();
           }
@@ -231,7 +242,7 @@ public class UseTypechecking {
       errorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.USELESS_LEVEL, def));
     }
 
-    return useParent instanceof ClassDefinition ? new ClassDefinition.ParametersLevel(parameters, level, levelFields) : new ParametersLevel(parameters, level);
+    return useParent instanceof ClassDefinition ? new ClassDefinition.ParametersLevel(parameters, level, levelFields, strictList) : new ParametersLevel(parameters, level);
   }
 
   private static void registerParametersLevel(FunctionDefinition useDefinition, Definition useParent, ParametersLevel parametersLevel) {

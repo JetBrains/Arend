@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class DefinitionSerialization {
   private final CallTargetIndexProvider myCallTargetIndexProvider;
@@ -107,6 +108,19 @@ public class DefinitionSerialization {
       parametersLevelBuilder.setParametersLevel(writeParametersLevel(defSerializer, parametersLevel));
       for (ClassField field : parametersLevel.fields) {
         parametersLevelBuilder.addField(myCallTargetIndexProvider.getDefIndex(field));
+      }
+      if (parametersLevel.strictList != null) {
+        parametersLevelBuilder.setIsStrict(true);
+        for (Pair<ClassDefinition, Set<ClassField>> pair : parametersLevel.strictList) {
+          DefinitionProtos.Definition.ClassParametersLevel.ClassExtSig.Builder sig = DefinitionProtos.Definition.ClassParametersLevel.ClassExtSig.newBuilder();
+          if (pair != null) {
+            sig.setClassDef(myCallTargetIndexProvider.getDefIndex(pair.proj1));
+            for (ClassField field : pair.proj2) {
+              sig.addField(myCallTargetIndexProvider.getDefIndex(field));
+            }
+          }
+          parametersLevelBuilder.addClassExtSig(sig.build());
+        }
       }
       builder.addParametersLevel(parametersLevelBuilder.build());
     }

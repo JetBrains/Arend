@@ -392,4 +392,26 @@ public class UseLevelTest extends TypeCheckingTestCase {
       "\\record C (x y : Nat)\n" +
       "  \\where \\use \\level levelProp (x : Nat) (c1 c2 : C x) : c1 = c2 => idp", 1);
   }
+
+  @Test
+  public void sortArgError() {
+    typeCheckModule(
+      "\\record R {A B : \\Type} (prop : \\Pi (b b' : B) -> b = b') (a a' : A) (proof : a = a') (bField : B)\n" +
+      "  \\where \\use \\level levelProp (A B : \\Set) (prop : \\Pi (b b' : B) -> b = b') (a a' : A) (r1 r2 : R prop a a') : r1 = r2\n" +
+      "    => path (\\lam i => \\new R { | bField => prop r1.bField r2.bField @ i | proof => Path.inProp {a = a'} r1.proof r2.proof @ i })\n" +
+      "\\func f {B : \\Set} (prop : \\Pi (b b' : B) -> b = b') : \\Prop => R prop 0 1", 1);
+  }
+
+  @Test
+  public void classArgTest() {
+    typeCheckModule(
+      "\\record C\n" +
+      "  | T : \\Type\n" +
+      "\\record D \\extends C\n" +
+      "  | tProp (x y : T) : x = y\n" +
+      "\\record R (cField : C) (tField : cField.T)\n" +
+      "  \\where \\use \\level levelProp (d : D) (r1 r2 : R d) : r1 = r2\n" +
+      "    => path (\\lam i => \\new R { | tField => d.tProp r1.tField r2.tField @ i })\n" +
+      "\\func f (d : D) : \\Prop => R d");
+  }
 }

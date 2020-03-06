@@ -145,7 +145,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     }
     myContext.remove(expr.getThisBinding());
 
-    Integer level = expr.getDefinition().getUseLevel(expr.getImplementedHere(), expr.getThisBinding());
+    Integer level = expr.getDefinition().getUseLevel(expr.getImplementedHere(), expr.getThisBinding(), true);
     if (level == null || level != -1) {
       for (ClassField field : expr.getDefinition().getFields()) {
         if (!expr.isImplemented(field)) {

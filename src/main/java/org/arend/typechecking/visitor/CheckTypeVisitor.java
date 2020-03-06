@@ -1216,7 +1216,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
 
   public void fixClassExtSort(ClassCallExpression classCall, Concrete.SourceNode sourceNode) {
     Expression thisExpr = new ReferenceExpression(ExpressionFactory.parameter("this", classCall));
-    Integer hLevel = classCall.getDefinition().getUseLevel(classCall.getImplementedHere(), classCall.getThisBinding());
+    Integer hLevel = classCall.getDefinition().getUseLevel(classCall.getImplementedHere(), classCall.getThisBinding(), true);
     List<Sort> sorts = hLevel != null && hLevel == -1 ? null : new ArrayList<>();
     for (ClassField field : classCall.getDefinition().getFields()) {
       if (classCall.isImplemented(field)) continue;
