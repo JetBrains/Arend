@@ -24,6 +24,8 @@ import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
+import org.arend.util.Arend;
+import org.arend.util.ArendExpr;
 
 import java.util.*;
 
@@ -83,7 +85,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
     return typeCheckExpr(resolveNamesExpr(text), expectedType, errors);
   }
 
-  protected TypecheckingResult typeCheckExpr(List<Binding> context, String text, Expression expectedType) {
+  protected TypecheckingResult typeCheckExpr(List<Binding> context, @ArendExpr String text, Expression expectedType) {
     return typeCheckExpr(context, text, expectedType, 0);
   }
 
@@ -108,7 +110,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
     return typeCheckDef(resolveNamesDef(text), errors);
   }
 
-  protected Definition typeCheckDef(String text) {
+  protected Definition typeCheckDef(@Arend  String text) {
     return typeCheckDef(text, 0);
   }
 
@@ -146,7 +148,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
     return lastGroup;
   }
 
-  protected ChildGroup typeCheckModule(String text) {
+  protected ChildGroup typeCheckModule(@Arend String text) {
     return typeCheckModule(text, 0);
   }
 
@@ -156,7 +158,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
     return lastGroup;
   }
 
-  protected ChildGroup typeCheckClass(String instance, String global) {
+  protected ChildGroup typeCheckClass(@Arend String instance, String global) {
     return typeCheckClass(instance, global, 0);
   }
 }
