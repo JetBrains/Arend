@@ -29,8 +29,10 @@ import org.arend.util.ArendExpr;
 
 import java.util.*;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 public class TypeCheckingTestCase extends NameResolverTestCase {
   protected final LocalErrorReporter localErrorReporter = new TestLocalErrorReporter(errorReporter);
@@ -85,11 +87,11 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
     return typeCheckExpr(resolveNamesExpr(text), expectedType, errors);
   }
 
-  protected TypecheckingResult typeCheckExpr(List<Binding> context, @ArendExpr String text, Expression expectedType) {
+  protected TypecheckingResult typeCheckExpr(List<Binding> context, String text, Expression expectedType) {
     return typeCheckExpr(context, text, expectedType, 0);
   }
 
-  protected TypecheckingResult typeCheckExpr(String text, Expression expectedType) {
+  protected TypecheckingResult typeCheckExpr(@ArendExpr String text, Expression expectedType) {
     return typeCheckExpr(resolveNamesExpr(text), expectedType, 0);
   }
 
@@ -110,7 +112,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
     return typeCheckDef(resolveNamesDef(text), errors);
   }
 
-  protected Definition typeCheckDef(@Arend  String text) {
+  protected Definition typeCheckDef(@Arend String text) {
     return typeCheckDef(text, 0);
   }
 
@@ -158,7 +160,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
     return lastGroup;
   }
 
-  protected ChildGroup typeCheckClass(@Arend String instance, String global) {
+  protected ChildGroup typeCheckClass(String instance, String global) {
     return typeCheckClass(instance, global, 0);
   }
 }
