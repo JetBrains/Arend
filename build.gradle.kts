@@ -39,22 +39,9 @@ configure<JavaPluginConvention> {
 
 val genSrcDir = projectDir.resolve("src/gen")
 
-val generateVersion = task("generateVersion") {
-    doFirst {
-        val className = "GeneratedVersion"
-        val code = """
-            package $arendPackage.prelude;
-            import org.arend.util.Version;
-            public class $className {
-              public static final Version VERSION = new Version("$version");
-            }
-        """.trimIndent()
-        genSrcDir.resolve("main/java/org/arend/prelude")
-            .apply { mkdirs() }
-            .resolve("$className.java")
-            .apply { if (!exists()) createNewFile() }
-            .writeText(code)
-    }
+val generateVersion = task<GenerateVersionTask>("generateVersion") {
+    basePackage = arendPackage
+    outputDir = genSrcDir.resolve("src/main/java/org/arend/prelude")
 }
 
 tasks.withType<JavaCompile> {
