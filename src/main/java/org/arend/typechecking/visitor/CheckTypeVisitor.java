@@ -505,7 +505,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     Expression type = result.type.normalize(NormalizationMode.WHNF);
     UniverseExpression universe = type.cast(UniverseExpression.class);
     if (universe == null) {
-      Expression stuck = type.getCanonicalStuckExpression();
+      Expression stuck = type.getStuckExpression();
       if (stuck == null || !stuck.isInstance(InferenceReferenceExpression.class) && !stuck.isError()) {
         if (stuck == null || !stuck.isError()) {
           errorReporter.report(new TypeMismatchError(DocFactory.text("a universe"), type, expr));
@@ -1601,7 +1601,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     exprResult.type = exprResult.type.normalize(NormalizationMode.WHNF);
     SigmaExpression sigmaExpr = exprResult.type.cast(SigmaExpression.class);
     if (sigmaExpr == null) {
-      Expression stuck = exprResult.type.getCanonicalStuckExpression();
+      Expression stuck = exprResult.type.getStuckExpression();
       if (stuck == null || !stuck.isError()) {
         errorReporter.report(new TypeMismatchError(DocFactory.text("A sigma type"), exprResult.type, expr1));
       }

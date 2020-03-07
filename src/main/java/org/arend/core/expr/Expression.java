@@ -305,26 +305,10 @@ public abstract class Expression implements Body, CoreExpression {
   // If the expression is a constructor, then the function returns null.
   public abstract Expression getStuckExpression();
 
-  public Expression getCanonicalExpression() {
-    Expression expr = this;
-    while (true) {
-      InferenceReferenceExpression refExpr = expr.cast(InferenceReferenceExpression.class);
-      if (refExpr == null || refExpr.getSubstExpression() == null) {
-        return expr;
-      }
-      expr = refExpr.getSubstExpression();
-    }
-  }
-
-  public Expression getCanonicalStuckExpression() {
-    Expression stuck = getStuckExpression();
-    return stuck == null ? null : stuck.getCanonicalExpression();
-  }
-
+  @Override
   public InferenceVariable getStuckInferenceVariable() {
-    Expression stuck = getCanonicalStuckExpression();
-    InferenceReferenceExpression infRefExpr = stuck == null ? null : stuck.cast(InferenceReferenceExpression.class);
-    return infRefExpr != null && infRefExpr.getVariable() instanceof InferenceVariable ? (InferenceVariable) infRefExpr.getVariable() : null;
+    Expression stuck = getStuckExpression();
+    return stuck instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) stuck).getVariable() instanceof InferenceVariable ? (InferenceVariable) ((InferenceReferenceExpression) stuck).getVariable() : null;
   }
 
   public InferenceVariable getInferenceVariable() {

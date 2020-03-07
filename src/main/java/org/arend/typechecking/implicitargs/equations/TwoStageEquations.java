@@ -613,11 +613,11 @@ public class TwoStageEquations implements Equations {
 
     for (Iterator<Equation> iterator = myEquations.iterator(); iterator.hasNext(); ) {
       Equation equation = iterator.next();
-      Expression stuckExpr = equation.expr2.getCanonicalStuckExpression();
+      Expression stuckExpr = equation.expr2.getStuckExpression();
       if (stuckExpr != null && (stuckExpr.isInstance(InferenceReferenceExpression.class) || stuckExpr.isError())) {
         iterator.remove();
       } else {
-        stuckExpr = equation.expr1.getCanonicalStuckExpression();
+        stuckExpr = equation.expr1.getStuckExpression();
         if (stuckExpr != null && (stuckExpr.isInstance(InferenceReferenceExpression.class) || stuckExpr.isError())) {
           iterator.remove();
         }

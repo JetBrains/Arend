@@ -144,8 +144,8 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
   }
 
   public boolean normalizedCompare(Expression expr1, Expression expr2, Expression type) {
-    Expression stuck1 = expr1.getCanonicalStuckExpression();
-    Expression stuck2 = expr2.getCanonicalStuckExpression();
+    Expression stuck1 = expr1.getStuckExpression();
+    Expression stuck2 = expr2.getStuckExpression();
     if (stuck1 != null && stuck1.isError() && (stuck2 == null || !stuck2.isInstance(InferenceReferenceExpression.class)) ||
       stuck2 != null && stuck2.isError() && (stuck1 == null || !stuck1.isInstance(InferenceReferenceExpression.class))) {
       return true;
@@ -256,8 +256,8 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
   }
 
   public Boolean compare(Expression expr1, Expression expr2, Expression type) {
-    expr1 = expr1.getCanonicalExpression();
-    expr2 = expr2.getCanonicalExpression();
+    expr1 = expr1.getUnderlyingExpression();
+    expr2 = expr2.getUnderlyingExpression();
     if (expr1 == expr2) {
       return true;
     }
