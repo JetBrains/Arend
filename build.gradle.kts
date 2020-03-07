@@ -1,4 +1,5 @@
 import com.google.protobuf.gradle.ExecutableLocator
+import org.arend.gradle.GenerateVersionTask
 
 val arendPackage = "org.arend"
 group = arendPackage
@@ -7,7 +8,6 @@ version = "1.2.0"
 plugins {
     java
     idea
-    antlr
     id("com.google.protobuf") version "0.8.11"
 }
 
@@ -20,16 +20,17 @@ dependencies {
     implementation("com.google.protobuf:protobuf-java:3.11.4")
 
     implementation("commons-cli:commons-cli:1.4")
-    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.10.1")
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.10.1")
+
+    val jacksonVersion = "2.10.3"
+    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:$jacksonVersion")
+    implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
 
     implementation("org.jetbrains:annotations:19.0.0")
 
     testImplementation("junit:junit:4.12")
     testImplementation("org.hamcrest:hamcrest-library:1.3")
 
-    antlr("org.antlr:antlr4:4.7.2")
-    implementation("org.antlr:antlr4-runtime:4.7.2")
+    implementation("org.antlr:antlr4-runtime:4.8")
 }
 
 configure<JavaPluginConvention> {
@@ -38,24 +39,10 @@ configure<JavaPluginConvention> {
 }
 
 val genSrcDir = projectDir.resolve("src/gen")
-val genSrcJavaDir = genSrcDir.resolve("main/java")
 
-val generateVersion = task("generateVersion") {
-    doFirst {
-        val className = "GeneratedVersion"
-        val code = """
-            package $arendPackage.prelude;
-            import org.arend.util.Version;
-            public class $className {
-              public static final Version VERSION = new Version("$version");
-            }
-        """.trimIndent()
-        genSrcJavaDir.resolve("org/arend/prelude")
-            .apply { mkdirs() }
-            .resolve("$className.java")
-            .apply { if (!exists()) createNewFile() }
-            .writeText(code)
-    }
+val generateVersion = task<GenerateVersionTask>("generateVersion") {
+    basePackage = arendPackage
+    outputDir = genSrcDir.resolve("main/java/org/arend/prelude")
 }
 
 tasks.withType<JavaCompile> {
@@ -65,20 +52,21 @@ tasks.withType<JavaCompile> {
 
 task<Jar>("jarDep") {
     manifest.attributes["Main-Class"] = "$arendPackage.frontend.ConsoleMain"
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
     from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it as Any else zipTree(it) })
     from(sourceSets["main"].output)
     archiveClassifier.set("full")
     dependsOn("prelude")
 }
 
-task<Jar>("api-classes") {
+val apiClasses = task<Jar>("apiClasses") {
     archiveBaseName.set("${project.name}-api")
     from(sourceSets["main"].output) {
         include("org/arend/ext/**")
     }
 }
 
-task<Jar>("api-sources") {
+val apiSources = task<Jar>("apiSources") {
     archiveBaseName.set("${project.name}-api")
     archiveClassifier.set("sources")
     from(sourceSets["main"].allSource) {
@@ -87,8 +75,7 @@ task<Jar>("api-sources") {
 }
 
 task("api") {
-    dependsOn("api-classes")
-    dependsOn("api-sources")
+    dependsOn(apiSources, apiClasses)
 }
 
 task<Jar>("jarSrc") {
@@ -119,15 +106,6 @@ idea {
         outputDir = file("$buildDir/classes/java/main")
         testOutputDir = file("$buildDir/classes/java/test")
     }
-}
-
-tasks.withType<AntlrTask> {
-    outputDirectory = genSrcJavaDir
-    arguments.addAll(listOf(
-            "-package", "$arendPackage.frontend.parser",
-            "-no-listener",
-            "-visitor"
-    ))
 }
 
 protobuf.protobuf.run {
