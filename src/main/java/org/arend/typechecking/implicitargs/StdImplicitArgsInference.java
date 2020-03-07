@@ -267,13 +267,30 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
       }
     }
 
-    if (result instanceof DefCallResult && ((DefCallResult) result).getDefinition().getParametersTypecheckingOrder() != null) {
-      List<Integer> order = ((DefCallResult) result).getDefinition().getParametersTypecheckingOrder();
-      List<? extends Expression> resultArgs = ((DefCallResult) result).getArguments();
-      if (!resultArgs.isEmpty()) {
-        order = order.subList(resultArgs.size(), order.size());
-      }
+    List<Integer> order = result instanceof DefCallResult ? ((DefCallResult) result).getDefinition().getParametersTypecheckingOrder() : null;
+    if (order != null) {
+      int skip = ((DefCallResult) result).getArguments().size();
+      if (skip > 0) {
+        List<Integer> newOrder = new ArrayList<>();
+        for (Integer index : order) {
+          if (index >= skip) {
+            newOrder.add(index - skip);
+          }
+        }
 
+        boolean trivial = true;
+        for (int i = 0; i < newOrder.size(); i++) {
+          if (i != newOrder.get(i)) {
+            trivial = false;
+            break;
+          }
+        }
+
+        order = trivial ? null : newOrder;
+      }
+    }
+
+    if (order != null) {
       int current = 0; // Position in expr.getArguments()
       int numberOfImplicitArguments = 0; // Number of arguments not present in expr.getArguments()
       Map<Integer,Pair<InferenceVariable,Concrete.Expression>> deferredArguments = new LinkedHashMap<>();
