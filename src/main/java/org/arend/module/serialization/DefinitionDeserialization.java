@@ -209,7 +209,7 @@ public class DefinitionDeserialization {
       }
       constructor.setParameters(defDeserializer.readParameters(constructorProto.getParamList()));
       List<Integer> constructorParametersTypecheckingOrder = constructorProto.getParametersTypecheckingOrderList();
-      if (!parametersTypecheckingOrder.isEmpty()) {
+      if (!constructorParametersTypecheckingOrder.isEmpty()) {
         constructor.setParametersTypecheckingOrder(constructorParametersTypecheckingOrder);
       }
       List<Boolean> cGoodThisParameters = constructorProto.getGoodThisParametersList();
