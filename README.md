@@ -15,7 +15,9 @@ automatically as long as you have JDK installed.
 
 Common tasks are
 
-  - `./gradlew jarDep` — build a jar file which includes all the dependecies which can be found at `build/libs`.
-    To see the command line options of the application, run `java -jar arend.jar --help`.
+- `./gradlew jarDep` — build a jar file which includes all the dependencies which can be found at `build/libs`.
+  To see the command line options of the application, run `java -jar Arend-[version]-full.jar --help`.
 
-  - `./gradlew test` — run all tests.
+- `./gradlew api` - build two jars for Arend extension APIs, one for classes and one for Java sources.
+
+- `./gradlew test` — run all tests.
