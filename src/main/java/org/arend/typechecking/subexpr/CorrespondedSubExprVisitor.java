@@ -333,20 +333,30 @@ public class CorrespondedSubExprVisitor implements
   visitStatement(@NotNull Map<ClassField, Expression> implementedHere, @NotNull Concrete.ClassFieldImpl statement) {
     Referable implementedField = statement.getImplementedField();
     if (implementedField == null) return null;
-    List<String> fields = implementedField instanceof ClassReferable ? ((ClassReferable) implementedField)
-          .getFieldReferables()
+    // Class extension -- base class call.
+    if (implementedField instanceof ClassReferable) {
+      List<String> fields = ((ClassReferable) implementedField).getFieldReferables()
           .stream()
           .map(Referable::getRefName)
-          .collect(Collectors.toList())
-            : Collections.singletonList(implementedField.getRefName());
+          .collect(Collectors.toList());
+      return implementedHere.entrySet()
+          .stream()
+          // The suppressed warning presents here, but it's considered safe.
+          .filter(entry -> fields.contains(entry.getKey().getReferable().getRefName()))
+          .filter(entry -> entry.getValue() instanceof FieldCallExpression)
+          .findFirst()
+          .map(Map.Entry::getValue)
+          .map(e -> e.cast(FieldCallExpression.class))
+          .map(e -> statement.implementation.accept(this, e.getArgument()))
+          .orElse(null);
+    }
+    String refName = implementedField.getRefName();
     return implementedHere.entrySet()
         .stream()
-        // The suppressed warning presents here, but it's considered safe.
-        .filter(entry -> fields.contains(entry.getKey().getReferable().getRefName()))
+        .filter(entry -> Objects.equals(entry.getKey().getReferable().getRefName(), refName))
         .findFirst()
         .map(Map.Entry::getValue)
-        .map(e -> statement.implementation.accept(this,
-            (e instanceof FieldCallExpression) ? ((FieldCallExpression) e).getArgument() : e))
+        .map(e -> statement.implementation.accept(this, e))
         .orElse(null);
   }
 
