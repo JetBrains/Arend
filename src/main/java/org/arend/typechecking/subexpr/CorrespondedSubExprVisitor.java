@@ -7,7 +7,6 @@ import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.pattern.Pattern;
 import org.arend.naming.reference.ClassReferable;
-import org.arend.naming.reference.FieldReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteExpressionVisitor;
@@ -331,28 +330,23 @@ public class CorrespondedSubExprVisitor implements
   }
 
   @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>
-  visitStatement(Map<ClassField, Expression> implementedHere, @NotNull Concrete.ClassFieldImpl statement) {
+  visitStatement(@NotNull Map<ClassField, Expression> implementedHere, @NotNull Concrete.ClassFieldImpl statement) {
     Referable implementedField = statement.getImplementedField();
     if (implementedField == null) return null;
-    if (implementedField instanceof ClassReferable) {
-      Collection<? extends FieldReferable> fields = ((ClassReferable) implementedField).getFieldReferables();
-      return implementedHere.entrySet()
+    List<String> fields = implementedField instanceof ClassReferable ? ((ClassReferable) implementedField)
+          .getFieldReferables()
           .stream()
-          // The suppressed warning presents here, but it's considered safe.
-          .filter(entry -> fields.contains(entry.getKey().getReferable()))
-          .filter(entry -> entry.getValue() instanceof FieldCallExpression)
-          .findFirst()
-          .map(Map.Entry::getValue)
-          .map(e -> e.cast(FieldCallExpression.class))
-          .map(e -> statement.implementation.accept(this, e.getArgument()))
-          .orElse(null);
-    }
+          .map(Referable::getRefName)
+          .collect(Collectors.toList())
+            : Collections.singletonList(implementedField.getRefName());
     return implementedHere.entrySet()
         .stream()
-        .filter(entry -> entry.getKey().getReferable() == implementedField)
+        // The suppressed warning presents here, but it's considered safe.
+        .filter(entry -> fields.contains(entry.getKey().getReferable().getRefName()))
         .findFirst()
         .map(Map.Entry::getValue)
-        .map(e -> statement.implementation.accept(this, e))
+        .map(e -> statement.implementation.accept(this,
+            (e instanceof FieldCallExpression) ? ((FieldCallExpression) e).getArgument() : e))
         .orElse(null);
   }
 
