@@ -38,7 +38,9 @@ public class CollectCallVisitor extends ProcessDefCallsVisitor<Void> {
         vector.add(new BindingPattern(link));
       }
 
+      myVector = vector;
       int i = vector.size() - elim.getCases().size();
+
       for (Pair<Expression, Expression> pair : elim.getCases()) {
         ExpressionPattern old = vector.get(i);
         vector.set(i, new ConstructorExpressionPattern(ExpressionFactory.Left(), Collections.emptyList()));
@@ -47,8 +49,6 @@ public class CollectCallVisitor extends ProcessDefCallsVisitor<Void> {
         pair.proj2.accept(this, null);
         vector.set(i, old);
       }
-
-      myVector = vector;
     }
 
     Expression resultType = myDefinition.getResultType();
@@ -93,22 +93,19 @@ public class CollectCallVisitor extends ProcessDefCallsVisitor<Void> {
 
     List<? extends Expression> exprArguments = conPattern.getMatchingExpressionArguments(expr1, false);
     if (exprArguments != null) {
-      BaseCallMatrix.R ord = isLess(exprArguments, conPattern.getSubPatterns());
-      if (ord != BaseCallMatrix.R.Unknown) return ord;
+      List<? extends ExpressionPattern> cpSubpatterns = conPattern.getSubPatterns();
+      for (int i = 0; i < Math.min(exprArguments.size(), cpSubpatterns.size()); i++) {
+        BaseCallMatrix.R ord = isLess(exprArguments.get(i), cpSubpatterns.get(i));
+        if (ord != BaseCallMatrix.R.Equal) return ord;
+      }
+
+      if (exprArguments.size() >= cpSubpatterns.size()) return BaseCallMatrix.R.Equal;
     }
 
     for (ExpressionPattern arg : conPattern.getSubPatterns()) {
       if (isLess(expr1, arg) != BaseCallMatrix.R.Unknown) return BaseCallMatrix.R.LessThan;
     }
     return BaseCallMatrix.R.Unknown;
-  }
-
-  private static BaseCallMatrix.R isLess(List<? extends Expression> exprs1, List<? extends ExpressionPattern> patterns2) {
-    for (int i = 0; i < Math.min(exprs1.size(), patterns2.size()); i++) {
-      BaseCallMatrix.R ord = isLess(exprs1.get(i), patterns2.get(i));
-      if (ord != BaseCallMatrix.R.Equal) return ord;
-    }
-    return exprs1.size() >= patterns2.size() ? BaseCallMatrix.R.Equal : BaseCallMatrix.R.Unknown;
   }
 
   private BaseCallMatrix.R compare(Expression argument, ExpressionPattern pattern) {
