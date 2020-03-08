@@ -112,10 +112,8 @@ public class CorrespondedSubExprVisitor implements
     List<Concrete.LetClause> exprClauses = expr.getClauses();
     List<LetClause> coreClauses = coreLetExpr.getClauses();
     for (int i = 0; i < exprClauses.size(); i++) {
-      LetClause coreLetClause = coreClauses.get(i);
-      Concrete.LetClause exprLetClause = exprClauses.get(i);
-
-      Pair<Expression, Concrete.Expression> accepted = visitLetClause(coreLetClause, exprLetClause);
+      Pair<Expression, Concrete.Expression> accepted =
+              visitLetClause(coreClauses.get(i), exprClauses.get(i));
       if (accepted != null) return accepted;
     }
     return expr.getExpression().accept(this, coreLetExpr.getExpression());
@@ -127,8 +125,9 @@ public class CorrespondedSubExprVisitor implements
     if (accepted != null) return accepted;
 
     Concrete.Expression resultType = exprLetClause.getResultType();
-    if (resultType != null)
+    if (resultType != null) {
       return resultType.accept(this, coreLetClause.getTypeExpr());
+    }
     return null;
   }
 

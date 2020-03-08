@@ -210,7 +210,7 @@ public abstract class SourceLibrary extends BaseLibrary {
       }
 
       if (extMainClass != null) {
-        myExtension = (ArendExtension) extMainClass.newInstance();
+        myExtension = (ArendExtension) extMainClass.getDeclaredConstructor().newInstance();
       }
     } catch (Exception e) {
       classLoader.removeDelegate(this);
