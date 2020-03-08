@@ -125,10 +125,12 @@ public class CorrespondedSubExprVisitor implements
     if (accepted != null) return accepted;
 
     Concrete.Expression resultType = exprLetClause.getResultType();
-    if (resultType != null) {
-      return resultType.accept(this, coreLetClause.getTypeExpr());
-    }
-    return null;
+    if (resultType == null) return null;
+
+    Expression coreResultType = coreLetClause.getTypeExpr();
+    if (coreResultType instanceof PiExpression) {
+      return visitPiImpl(exprLetClause.getParameters(), resultType, (PiExpression) coreResultType);
+    } else return resultType.accept(this, coreResultType);
   }
 
   @Override
@@ -233,16 +235,19 @@ public class CorrespondedSubExprVisitor implements
   }
 
   private @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>
-  visitPiParameters(List<? extends Concrete.Parameter> parameters, @NotNull PiExpression pi) {
+  visitPiImpl(
+          List<? extends Concrete.Parameter> parameters,
+          @NotNull Concrete.Expression codomain,
+          @NotNull PiExpression corePi
+  ) {
     for (Concrete.Parameter parameter : parameters) {
-      DependentLink link = pi.getParameters();
+      DependentLink link = corePi.getParameters();
       Pair<Expression, Concrete.Expression> expression = visitParameter(parameter, link);
       if (expression != null) return expression;
-      Expression codomain = pi.getCodomain();
-      if (codomain instanceof PiExpression) pi = (PiExpression) codomain;
-      else return null;
+      Expression corePiCodomain = corePi.getCodomain();
+      if (corePiCodomain instanceof PiExpression) corePi = (PiExpression) corePiCodomain;
     }
-    return null;
+    return codomain.accept(this, corePi);
   }
 
   @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>
@@ -260,9 +265,7 @@ public class CorrespondedSubExprVisitor implements
     if (matchesSubExpr(expr)) return new Pair<>(coreExpr, expr);
     PiExpression corePiExpr = coreExpr.cast(PiExpression.class);
     if (corePiExpr == null) return null;
-    Pair<Expression, Concrete.Expression> expression = visitPiParameters(expr.getParameters(), corePiExpr);
-    if (expression != null) return expression;
-    return expr.getCodomain().accept(this, corePiExpr.getCodomain());
+    return visitPiImpl(expr.getParameters(), expr.getCodomain(), corePiExpr);
   }
 
   @Override
