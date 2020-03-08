@@ -7,6 +7,7 @@ import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.pattern.Pattern;
 import org.arend.naming.reference.ClassReferable;
+import org.arend.naming.reference.FieldReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteExpressionVisitor;
@@ -335,14 +336,11 @@ public class CorrespondedSubExprVisitor implements
     if (implementedField == null) return null;
     // Class extension -- base class call.
     if (implementedField instanceof ClassReferable) {
-      List<String> fields = ((ClassReferable) implementedField).getFieldReferables()
-          .stream()
-          .map(Referable::getRefName)
-          .collect(Collectors.toList());
+      Collection<? extends FieldReferable> fields = ((ClassReferable) implementedField).getFieldReferables();
       return implementedHere.entrySet()
           .stream()
           // The suppressed warning presents here, but it's considered safe.
-          .filter(entry -> fields.contains(entry.getKey().getReferable().getRefName()))
+          .filter(entry -> fields.contains(entry.getKey().getReferable()))
           .filter(entry -> entry.getValue() instanceof FieldCallExpression)
           .findFirst()
           .map(Map.Entry::getValue)
@@ -350,10 +348,9 @@ public class CorrespondedSubExprVisitor implements
           .map(e -> statement.implementation.accept(this, e.getArgument()))
           .orElse(null);
     }
-    String refName = implementedField.getRefName();
     return implementedHere.entrySet()
         .stream()
-        .filter(entry -> Objects.equals(entry.getKey().getReferable().getRefName(), refName))
+        .filter(entry -> entry.getKey().getReferable() == implementedField)
         .findFirst()
         .map(Map.Entry::getValue)
         .map(e -> statement.implementation.accept(this, e))
