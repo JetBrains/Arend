@@ -246,6 +246,7 @@ public class CorrespondedSubExprVisitor implements
       if (expression != null) return expression;
       Expression corePiCodomain = corePi.getCodomain();
       if (corePiCodomain instanceof PiExpression) corePi = (PiExpression) corePiCodomain;
+      else break;
     }
     return codomain.accept(this, corePi);
   }
