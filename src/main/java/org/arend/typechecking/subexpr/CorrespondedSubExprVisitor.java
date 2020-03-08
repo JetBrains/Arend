@@ -1,6 +1,7 @@
 package org.arend.typechecking.subexpr;
 
 import org.arend.core.context.param.DependentLink;
+import org.arend.core.definition.ClassDefinition;
 import org.arend.core.definition.ClassField;
 import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.*;
@@ -148,6 +149,7 @@ public class CorrespondedSubExprVisitor implements
     AppExpression coreAppExpr = coreExpr.cast(AppExpression.class);
     LamExpression coreEtaExpr = coreExpr.cast(LamExpression.class);
     DefCallExpression coreDefExpr = coreExpr.cast(DefCallExpression.class);
+    ClassCallExpression coreClassCall = coreExpr.cast(ClassCallExpression.class);
     int lastArgIndex = arguments.size() - 1;
     if (coreAppExpr != null) {
       Concrete.Argument lastArgument = arguments.get(lastArgIndex);
@@ -171,13 +173,34 @@ public class CorrespondedSubExprVisitor implements
       // arguments, so we try to match `f a` (concrete) and `f a b` (core),
       // ignoring the extra argument `b`.
       return visitClonedApp(expr, coreEtaExpr.getBody());
+    } else if (coreClassCall != null) {
+      return visitClassCallArguments(coreClassCall, arguments.iterator());
     } else if (coreDefExpr != null) {
-      return visitArguments(coreDefExpr, arguments.iterator());
+      return visitNonClassCallDefCallArguments(coreDefExpr, arguments.iterator());
     } else return null;
   }
 
   private @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>
-  visitArguments(@NotNull DefCallExpression expression, @NotNull Iterator<Concrete.Argument> arguments) {
+  visitClassCallArguments(@NotNull ClassCallExpression coreClassCall,
+                          @NotNull Iterator<Concrete.Argument> arguments) {
+    Map<ClassField, Expression> implementedHere = coreClassCall.getImplementedHere();
+    Concrete.Argument argument = arguments.next();
+    ClassDefinition definition = coreClassCall.getDefinition();
+    for (ClassField field : definition.getFields()) {
+      if (definition.isImplemented(field)) continue;
+      if (argument.isExplicit() == field.getReferable().isExplicitField()) {
+        Expression implementation = implementedHere.get(field);
+        Pair<Expression, Concrete.Expression> accepted = argument.getExpression().accept(this, implementation);
+        if (accepted != null) return accepted;
+        if (arguments.hasNext()) argument = arguments.next();
+      }
+    }
+    return null;
+  }
+
+  private @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>
+  visitNonClassCallDefCallArguments(@NotNull DefCallExpression expression,
+                                    @NotNull Iterator<Concrete.Argument> arguments) {
     Iterator<? extends Expression> defCallArgs = expression.getDefCallArguments().iterator();
     Concrete.Argument argument = arguments.next();
     for (DependentLink parameter = expression.getDefinition().getParameters();
