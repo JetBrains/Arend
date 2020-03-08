@@ -246,9 +246,9 @@ public class CorrespondedSubExprVisitor implements
       if (expression != null) return expression;
       Expression corePiCodomain = corePi.getCodomain();
       if (corePiCodomain instanceof PiExpression) corePi = (PiExpression) corePiCodomain;
-      else break;
+      else return codomain.accept(this, corePiCodomain);
     }
-    return codomain.accept(this, corePi);
+    return null;
   }
 
   @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>
