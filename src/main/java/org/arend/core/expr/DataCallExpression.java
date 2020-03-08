@@ -10,7 +10,6 @@ import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.pattern.ExpressionPattern;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.InPlaceLevelSubstVisitor;
-import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.expr.CoreDataCallExpression;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.ops.NormalizationMode;
@@ -63,11 +62,6 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
   @Override
   public Sort getSortOfType() {
     return getDefinition().getSort().subst(getSortArgument().toLevelSubstitution());
-  }
-
-  @Override
-  public DataCallExpression subst(SubstVisitor substVisitor) {
-    return substVisitor.isEmpty() ? this : (DataCallExpression) substVisitor.visitDataCall(this, null);
   }
 
   @Override

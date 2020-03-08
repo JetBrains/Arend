@@ -9,7 +9,6 @@ import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.InPlaceLevelSubstVisitor;
 import org.arend.core.subst.LevelSubstitution;
-import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CoreSigmaExpression;
 import org.arend.ext.core.ops.NormalizationMode;
@@ -63,11 +62,6 @@ public class SigmaExpression extends Expression implements Type, CoreSigmaExpres
   @Override
   public <P, R> R accept(@NotNull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitSigma(this, params);
-  }
-
-  @Override
-  public SigmaExpression subst(SubstVisitor substVisitor) {
-    return substVisitor.isEmpty() ? this : (SigmaExpression) substVisitor.visitSigma(this, null);
   }
 
   @Override

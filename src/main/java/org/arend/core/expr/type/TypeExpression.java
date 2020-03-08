@@ -31,7 +31,7 @@ public class TypeExpression implements Type {
     if (substVisitor.isEmpty()) {
       return this;
     }
-    Expression expr = myType.subst(substVisitor);
+    Expression expr = myType.accept(substVisitor, null);
     return expr instanceof Type ? (Type) expr : new TypeExpression(expr, mySort.subst(substVisitor.getLevelSubstitution()));
   }
 

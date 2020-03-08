@@ -16,7 +16,6 @@ import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.InPlaceLevelSubstVisitor;
-import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.definition.CoreClassField;
 import org.arend.ext.core.expr.CoreClassCallExpression;
 import org.arend.ext.core.expr.CoreExpression;
@@ -215,11 +214,6 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
   @Override
   public Sort getSortOfType() {
     return getSort();
-  }
-
-  @Override
-  public ClassCallExpression subst(SubstVisitor substVisitor) {
-    return substVisitor.isEmpty() ? this : (ClassCallExpression) substVisitor.visitClassCall(this, null);
   }
 
   @Override

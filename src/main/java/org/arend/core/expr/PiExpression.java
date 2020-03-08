@@ -13,7 +13,6 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.InPlaceLevelSubstVisitor;
 import org.arend.core.subst.LevelSubstitution;
-import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.expr.CoreAbsExpression;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CorePiExpression;
@@ -109,11 +108,6 @@ public class PiExpression extends Expression implements Type, CorePiExpression, 
   @Override
   public Sort getSortOfType() {
     return myResultSort;
-  }
-
-  @Override
-  public PiExpression subst(SubstVisitor substVisitor) {
-    return substVisitor.isEmpty() ? this : (PiExpression) substVisitor.visitPi(this, null);
   }
 
   @Override

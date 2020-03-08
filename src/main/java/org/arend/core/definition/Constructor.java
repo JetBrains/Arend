@@ -192,7 +192,7 @@ public class Constructor extends Definition implements Function, BranchKey, Core
       paramList.get(paramList.size() - 1).setNext(conParams);
     }
     params.addAll(DependentLink.Helper.toList(conParams));
-    resultType = resultType.subst(new SubstVisitor(substitution, polySubst));
+    resultType = (DataCallExpression) resultType.accept(new SubstVisitor(substitution, polySubst), null);
     return resultType;
   }
 
