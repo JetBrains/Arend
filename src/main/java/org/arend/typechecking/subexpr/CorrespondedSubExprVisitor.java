@@ -149,7 +149,6 @@ public class CorrespondedSubExprVisitor implements
     AppExpression coreAppExpr = coreExpr.cast(AppExpression.class);
     LamExpression coreEtaExpr = coreExpr.cast(LamExpression.class);
     DefCallExpression coreDefExpr = coreExpr.cast(DefCallExpression.class);
-    ClassCallExpression coreClassCall = coreExpr.cast(ClassCallExpression.class);
     int lastArgIndex = arguments.size() - 1;
     if (coreAppExpr != null) {
       Concrete.Argument lastArgument = arguments.get(lastArgIndex);
@@ -173,11 +172,17 @@ public class CorrespondedSubExprVisitor implements
       // arguments, so we try to match `f a` (concrete) and `f a b` (core),
       // ignoring the extra argument `b`.
       return visitClonedApp(expr, coreEtaExpr.getBody());
-    } else if (coreClassCall != null) {
-      return visitClassCallArguments(coreClassCall, arguments.iterator());
     } else if (coreDefExpr != null) {
-      return visitNonClassCallDefCallArguments(coreDefExpr, arguments.iterator());
+      return visitDefCallArguments(coreDefExpr, arguments.iterator());
     } else return null;
+  }
+
+  private @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>
+  visitDefCallArguments(@NotNull DefCallExpression expression,
+                        @NotNull Iterator<Concrete.Argument> arguments) {
+    if (expression instanceof ClassCallExpression)
+      return visitClassCallArguments((ClassCallExpression) expression, arguments);
+    else return visitNonClassCallDefCallArguments(expression, arguments);
   }
 
   private @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>
@@ -198,6 +203,10 @@ public class CorrespondedSubExprVisitor implements
     return null;
   }
 
+  /**
+   * Please always call {@link CorrespondedSubExprVisitor#visitDefCallArguments(DefCallExpression, Iterator)}
+   * instead.
+   */
   private @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>
   visitNonClassCallDefCallArguments(@NotNull DefCallExpression expression,
                                     @NotNull Iterator<Concrete.Argument> arguments) {
