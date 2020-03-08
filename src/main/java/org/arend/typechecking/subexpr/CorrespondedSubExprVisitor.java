@@ -195,6 +195,7 @@ public class CorrespondedSubExprVisitor implements
       if (definition.isImplemented(field)) continue;
       if (argument.isExplicit() == field.getReferable().isExplicitField()) {
         Expression implementation = implementedHere.get(field);
+        if (implementation == null) continue;
         Pair<Expression, Concrete.Expression> accepted = argument.getExpression().accept(this, implementation);
         if (accepted != null) return accepted;
         if (arguments.hasNext()) argument = arguments.next();
