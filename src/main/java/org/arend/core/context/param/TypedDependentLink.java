@@ -71,7 +71,7 @@ public class TypedDependentLink implements DependentLink {
   }
 
   @Override
-  public Type getType() {
+  public @NotNull Type getType() {
     return myType;
   }
 

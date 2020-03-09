@@ -25,7 +25,7 @@ public class UntypedDependentLink implements DependentLink {
   }
 
   @Override
-  public Type getType() {
+  public @NotNull Type getType() {
     return myNext.getType();
   }
 

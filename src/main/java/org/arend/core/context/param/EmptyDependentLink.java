@@ -4,6 +4,7 @@ import org.arend.core.expr.type.Type;
 import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.subst.InPlaceLevelSubstVisitor;
 import org.arend.core.subst.SubstVisitor;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -13,7 +14,8 @@ public class EmptyDependentLink implements SingleDependentLink {
 
   private EmptyDependentLink() {}
 
-  public static EmptyDependentLink getInstance() {
+  @Contract(pure = true)
+  public static @NotNull EmptyDependentLink getInstance() {
     return INSTANCE;
   }
 
@@ -69,7 +71,8 @@ public class EmptyDependentLink implements SingleDependentLink {
   }
 
   @Override
-  public Type getType() {
+  @Contract(pure = true, value = "->fail")
+  public @NotNull Type getType() {
     throw new IllegalStateException();
   }
 

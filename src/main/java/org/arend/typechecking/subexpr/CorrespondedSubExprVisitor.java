@@ -7,6 +7,7 @@ import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.pattern.Pattern;
+import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.naming.reference.ClassReferable;
 import org.arend.naming.reference.FieldReferable;
 import org.arend.naming.reference.Referable;
@@ -146,43 +147,42 @@ public class CorrespondedSubExprVisitor implements
     List<Concrete.Argument> arguments = expr.getArguments();
     if (arguments.isEmpty()) return expr.getFunction().accept(this, coreExpr);
 
-    AppExpression coreAppExpr = coreExpr.cast(AppExpression.class);
-    LamExpression coreEtaExpr = coreExpr.cast(LamExpression.class);
-    DefCallExpression coreDefExpr = coreExpr.cast(DefCallExpression.class);
     int lastArgIndex = arguments.size() - 1;
-    if (coreAppExpr != null) {
+    if (coreExpr instanceof AppExpression) {
       Concrete.Argument lastArgument = arguments.get(lastArgIndex);
-      Expression function = coreAppExpr.getFunction();
-      Expression functionType = function.getType();
-      PiExpression type = functionType instanceof PiExpression ? (PiExpression) functionType : null;
-      if (type == null) return null;
-      while (type.getParameters().isExplicit() != lastArgument.isExplicit()) {
+      Expression function = coreExpr;
+      PiExpression type;
+      AppExpression coreAppExpr;
+      do {
         coreAppExpr = (AppExpression) function;
         function = coreAppExpr.getFunction();
-        functionType = function.getType();
+        Expression functionType = function.getType();
+        if (functionType != null)
+          functionType = functionType.normalize(NormalizationMode.WHNF);
         type = functionType instanceof PiExpression ? (PiExpression) functionType : null;
         if (type == null) return null;
-      }
+      } while (type.getParameters().isExplicit() != lastArgument.isExplicit());
       Pair<Expression, Concrete.Expression> accepted = lastArgument.getExpression().accept(this, coreAppExpr.getArgument());
       if (accepted != null) return accepted;
       arguments.remove(lastArgIndex);
       return visitClonedApp(expr, function);
-    } else if (coreEtaExpr != null) {
+    } else if (coreExpr instanceof LamExpression) {
       // `f a` (concrete) gets elaborated to `\b -> f a b` (core) if `f` takes 2
       // arguments, so we try to match `f a` (concrete) and `f a b` (core),
       // ignoring the extra argument `b`.
-      return visitClonedApp(expr, coreEtaExpr.getBody());
-    } else if (coreDefExpr != null) {
-      return visitDefCallArguments(coreDefExpr, arguments.iterator());
+      return visitClonedApp(expr, ((LamExpression) coreExpr).getBody());
+    } else if (coreExpr instanceof DefCallExpression) {
+      return visitDefCallArguments((DefCallExpression) coreExpr, arguments);
     } else return null;
   }
 
   private @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>
   visitDefCallArguments(@NotNull DefCallExpression expression,
-                        @NotNull Iterator<Concrete.Argument> arguments) {
+                        @NotNull List<Concrete.Argument> arguments) {
+    Iterator<Concrete.Argument> iterator = arguments.iterator();
     if (expression instanceof ClassCallExpression)
-      return visitClassCallArguments((ClassCallExpression) expression, arguments);
-    else return visitNonClassCallDefCallArguments(expression, arguments);
+      return visitClassCallArguments((ClassCallExpression) expression, iterator);
+    else return visitNonClassCallDefCallArguments(expression, iterator);
   }
 
   private @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>
@@ -205,7 +205,7 @@ public class CorrespondedSubExprVisitor implements
   }
 
   /**
-   * Please always call {@link CorrespondedSubExprVisitor#visitDefCallArguments(DefCallExpression, Iterator)}
+   * Please always call {@link CorrespondedSubExprVisitor#visitDefCallArguments(DefCallExpression, List)}
    * instead.
    */
   private @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>
@@ -268,17 +268,16 @@ public class CorrespondedSubExprVisitor implements
   }
 
   private @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>
-  visitPiImpl(
-          List<? extends Concrete.Parameter> parameters,
-          @NotNull Concrete.Expression codomain,
-          @NotNull PiExpression corePi
-  ) {
+  visitPiImpl(List<? extends Concrete.Parameter> parameters,
+              @NotNull Concrete.Expression codomain,
+              @NotNull PiExpression corePi) {
     for (Concrete.Parameter parameter : parameters) {
       DependentLink link = corePi.getParameters();
       Pair<Expression, Concrete.Expression> expression = visitParameter(parameter, link);
       if (expression != null) return expression;
       Expression corePiCodomain = corePi.getCodomain();
-      if (corePiCodomain instanceof PiExpression) corePi = (PiExpression) corePiCodomain;
+      if (corePiCodomain instanceof PiExpression)
+        corePi = (PiExpression) corePiCodomain;
       else return codomain.accept(this, corePiCodomain);
     }
     return null;
@@ -373,16 +372,16 @@ public class CorrespondedSubExprVisitor implements
     // Class extension -- base class call.
     if (implementedField instanceof ClassReferable) {
       Collection<? extends FieldReferable> fields = ((ClassReferable) implementedField).getFieldReferables();
-      return implementedHere.entrySet()
-          .stream()
-          // The suppressed warning presents here, but it's considered safe.
-          .filter(entry -> fields.contains(entry.getKey().getReferable()))
-          .filter(entry -> entry.getValue() instanceof FieldCallExpression)
-          .findFirst()
-          .map(Map.Entry::getValue)
-          .map(e -> e.cast(FieldCallExpression.class))
-          .map(e -> statement.implementation.accept(this, e.getArgument()))
-          .orElse(null);
+      Optional<Pair<Expression, Concrete.Expression>> baseClassCall = implementedHere.entrySet()
+              .stream()
+              // The suppressed warning presents here, but it's considered safe.
+              .filter(entry -> fields.contains(entry.getKey().getReferable()))
+              .map(Map.Entry::getValue)
+              .filter(expr -> expr instanceof FieldCallExpression)
+              .findFirst()
+              .map(expr -> ((FieldCallExpression) expr))
+              .map(e -> statement.implementation.accept(this, e.getArgument()));
+      if (baseClassCall.isPresent()) return baseClassCall.get();
     }
     return implementedHere.entrySet()
         .stream()
