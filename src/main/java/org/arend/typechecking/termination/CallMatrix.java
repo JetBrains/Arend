@@ -13,7 +13,7 @@ class CallMatrix extends LabeledCallMatrix {
   private final Definition myEnclosingDefinition;
 
   CallMatrix(Definition enclosingDefinition, DefCallExpression call) {
-    super(DependentLink.Helper.size(call.getDefinition().getParameters()), DependentLink.Helper.size(enclosingDefinition.getParameters()));
+    super(calculateDimension(call.getDefinition().getParameters()), calculateDimension(enclosingDefinition.getParameters()));
     myCallExpression = call;
     myEnclosingDefinition = enclosingDefinition;
   }
@@ -36,5 +36,13 @@ class CallMatrix extends LabeledCallMatrix {
   @Override
   public Doc getMatrixLabel(PrettyPrinterConfig ppConfig) {
     return hang(hList(refDoc(myEnclosingDefinition.getReferable()), text(" ->")), termDoc(myCallExpression, ppConfig));
+  }
+
+  private static int calculateDimension(DependentLink link) {
+    int result = 0;
+    for (; link.hasNext(); link = link.getNext()) {
+      result++;
+    }
+    return result;
   }
 }
