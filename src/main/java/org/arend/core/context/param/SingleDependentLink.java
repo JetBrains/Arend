@@ -8,5 +8,5 @@ import java.util.List;
 public interface SingleDependentLink extends DependentLink {
   @NotNull @Override SingleDependentLink getNext();
   @Override TypedSingleDependentLink getNextTyped(List<String> names);
-  @Override SingleDependentLink subst(SubstVisitor substVisitor, int size, boolean updateSubst);
+  @Override SingleDependentLink subst(@NotNull SubstVisitor substVisitor, int size, boolean updateSubst);
 }

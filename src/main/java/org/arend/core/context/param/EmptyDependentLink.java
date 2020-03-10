@@ -51,7 +51,7 @@ public class EmptyDependentLink implements SingleDependentLink {
   }
 
   @Override
-  public EmptyDependentLink subst(SubstVisitor substVisitor, int size, boolean updateSubst) {
+  public EmptyDependentLink subst(@NotNull SubstVisitor substVisitor, int size, boolean updateSubst) {
     return this;
   }
 
