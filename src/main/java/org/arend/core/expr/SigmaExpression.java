@@ -66,17 +66,17 @@ public class SigmaExpression extends Expression implements Type, CoreSigmaExpres
   }
 
   @Override
-  public SigmaExpression subst(@NotNull SubstVisitor substVisitor) {
+  public SigmaExpression subst(SubstVisitor substVisitor) {
     return substVisitor.isEmpty() ? this : (SigmaExpression) substVisitor.visitSigma(this, null);
   }
 
   @Override
-  public void subst(@NotNull InPlaceLevelSubstVisitor substVisitor) {
+  public void subst(InPlaceLevelSubstVisitor substVisitor) {
     substVisitor.visitSigma(this, null);
   }
 
   @Override
-  public SigmaExpression strip(@NotNull StripVisitor visitor) {
+  public SigmaExpression strip(StripVisitor visitor) {
     return visitor.visitSigma(this, null);
   }
 

@@ -25,7 +25,7 @@ public class TypedSingleDependentLink extends TypedDependentLink implements Sing
   }
 
   @Override
-  public SingleDependentLink subst(@NotNull SubstVisitor substVisitor, int size, boolean updateSubst) {
+  public SingleDependentLink subst(SubstVisitor substVisitor, int size, boolean updateSubst) {
     if (size > 0) {
       TypedSingleDependentLink result = new TypedSingleDependentLink(isExplicit(), getName(), getType().subst(substVisitor), isHidden());
       if (updateSubst) {

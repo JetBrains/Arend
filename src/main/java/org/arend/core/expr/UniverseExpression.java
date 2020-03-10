@@ -62,17 +62,17 @@ public class UniverseExpression extends Expression implements Type, CoreUniverse
   }
 
   @Override
-  public UniverseExpression subst(@NotNull SubstVisitor substVisitor) {
+  public UniverseExpression subst(SubstVisitor substVisitor) {
     return substVisitor.getLevelSubstitution().isEmpty() || mySort.isOmega() ? this : new UniverseExpression(mySort.subst(substVisitor.getLevelSubstitution()));
   }
 
   @Override
-  public void subst(@NotNull InPlaceLevelSubstVisitor substVisitor) {
+  public void subst(InPlaceLevelSubstVisitor substVisitor) {
     substVisitor.visitUniverse(this, null);
   }
 
   @Override
-  public UniverseExpression strip(@NotNull StripVisitor visitor) {
+  public UniverseExpression strip(StripVisitor visitor) {
     return this;
   }
 

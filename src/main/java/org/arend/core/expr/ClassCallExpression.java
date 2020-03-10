@@ -218,17 +218,17 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
   }
 
   @Override
-  public ClassCallExpression subst(@NotNull SubstVisitor substVisitor) {
+  public ClassCallExpression subst(SubstVisitor substVisitor) {
     return substVisitor.isEmpty() ? this : (ClassCallExpression) substVisitor.visitClassCall(this, null);
   }
 
   @Override
-  public void subst(@NotNull InPlaceLevelSubstVisitor substVisitor) {
+  public void subst(InPlaceLevelSubstVisitor substVisitor) {
     substVisitor.visitClassCall(this, null);
   }
 
   @Override
-  public ClassCallExpression strip(@NotNull StripVisitor visitor) {
+  public ClassCallExpression strip(StripVisitor visitor) {
     return visitor.visitClassCall(this, null);
   }
 

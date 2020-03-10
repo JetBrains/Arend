@@ -71,12 +71,12 @@ public class TypedDependentLink implements DependentLink {
   }
 
   @Override
-  public @NotNull Type getType() {
+  public Type getType() {
     return myType;
   }
 
   @Override
-  public DependentLink subst(@NotNull SubstVisitor substVisitor, int size, boolean updateSubst) {
+  public DependentLink subst(SubstVisitor substVisitor, int size, boolean updateSubst) {
     if (size > 0) {
       TypedDependentLink result = new TypedDependentLink(myExplicit, myName, myType.subst(substVisitor), myHidden, EmptyDependentLink.getInstance());
       if (updateSubst) {

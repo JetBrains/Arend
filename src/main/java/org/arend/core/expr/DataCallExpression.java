@@ -66,17 +66,17 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
   }
 
   @Override
-  public DataCallExpression subst(@NotNull SubstVisitor substVisitor) {
+  public DataCallExpression subst(SubstVisitor substVisitor) {
     return substVisitor.isEmpty() ? this : (DataCallExpression) substVisitor.visitDataCall(this, null);
   }
 
   @Override
-  public void subst(@NotNull InPlaceLevelSubstVisitor substVisitor) {
+  public void subst(InPlaceLevelSubstVisitor substVisitor) {
     substVisitor.visitDataCall(this, null);
   }
 
   @Override
-  public DataCallExpression strip(@NotNull StripVisitor visitor) {
+  public DataCallExpression strip(StripVisitor visitor) {
     return visitor.visitDataCall(this, null);
   }
 

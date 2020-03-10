@@ -112,17 +112,17 @@ public class PiExpression extends Expression implements Type, CorePiExpression, 
   }
 
   @Override
-  public PiExpression subst(@NotNull SubstVisitor substVisitor) {
+  public PiExpression subst(SubstVisitor substVisitor) {
     return substVisitor.isEmpty() ? this : (PiExpression) substVisitor.visitPi(this, null);
   }
 
   @Override
-  public void subst(@NotNull InPlaceLevelSubstVisitor substVisitor) {
+  public void subst(InPlaceLevelSubstVisitor substVisitor) {
     substVisitor.visitPi(this, null);
   }
 
   @Override
-  public PiExpression strip(@NotNull StripVisitor visitor) {
+  public PiExpression strip(StripVisitor visitor) {
     return visitor.visitPi(this, null);
   }
 

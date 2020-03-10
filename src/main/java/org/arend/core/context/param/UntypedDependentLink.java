@@ -25,7 +25,7 @@ public class UntypedDependentLink implements DependentLink {
   }
 
   @Override
-  public @NotNull Type getType() {
+  public Type getType() {
     return myNext.getType();
   }
 
@@ -85,7 +85,7 @@ public class UntypedDependentLink implements DependentLink {
   }
 
   @Override
-  public DependentLink subst(@NotNull SubstVisitor substVisitor, int size, boolean updateSubst) {
+  public DependentLink subst(SubstVisitor substVisitor, int size, boolean updateSubst) {
     if (size == 1) {
       TypedDependentLink result = new TypedDependentLink(isExplicit(), myName, getType().subst(substVisitor), EmptyDependentLink.getInstance());
       if (updateSubst) {

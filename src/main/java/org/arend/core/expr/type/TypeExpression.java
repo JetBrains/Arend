@@ -6,7 +6,6 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.InPlaceLevelSubstVisitor;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.ops.NormalizationMode;
-import org.jetbrains.annotations.NotNull;
 
 public class TypeExpression implements Type {
   private final Expression myType;
@@ -28,7 +27,7 @@ public class TypeExpression implements Type {
   }
 
   @Override
-  public Type subst(@NotNull SubstVisitor substVisitor) {
+  public Type subst(SubstVisitor substVisitor) {
     if (substVisitor.isEmpty()) {
       return this;
     }
@@ -37,13 +36,13 @@ public class TypeExpression implements Type {
   }
 
   @Override
-  public void subst(@NotNull InPlaceLevelSubstVisitor substVisitor) {
+  public void subst(InPlaceLevelSubstVisitor substVisitor) {
     myType.accept(substVisitor, null);
     mySort = mySort.subst(substVisitor.getLevelSubstitution());
   }
 
   @Override
-  public Type strip(@NotNull StripVisitor visitor) {
+  public Type strip(StripVisitor visitor) {
     Expression expr = myType.accept(visitor, null);
     return expr instanceof Type ? (Type) expr : new TypeExpression(expr, mySort);
   }

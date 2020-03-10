@@ -8,7 +8,6 @@ import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.context.CoreParameter;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -20,10 +19,10 @@ public interface DependentLink extends Binding, CoreParameter {
   @NotNull @Override DependentLink getNext();
   void setNext(DependentLink next);
   void setName(String name);
-  DependentLink subst(@NotNull SubstVisitor substVisitor, int size, boolean updateSubst);
+  DependentLink subst(SubstVisitor substVisitor, int size, boolean updateSubst);
   TypedDependentLink getNextTyped(List<String> names);
-  @Contract(pure = true) boolean hasNext();
-  @Contract(pure = true) @NotNull Type getType();
+  boolean hasNext();
+  Type getType();
 
   @NotNull
   @Override
@@ -133,16 +132,16 @@ public interface DependentLink extends Binding, CoreParameter {
       return newLinks;
     }
 
-    public static SingleDependentLink subst(@NotNull SingleDependentLink link, SubstVisitor substVisitor) {
+    public static SingleDependentLink subst(SingleDependentLink link, SubstVisitor substVisitor) {
       return link.subst(substVisitor, Integer.MAX_VALUE, false);
     }
 
-    public static DependentLink take(@NotNull DependentLink link, int size) {
+    public static DependentLink take(DependentLink link, int size) {
       return link.subst(new SubstVisitor(new ExprSubstitution(), LevelSubstitution.EMPTY), size, false);
     }
   }
 
-  static @NotNull String toString(@NotNull DependentLink binding) {
+  static String toString(DependentLink binding) {
     return (binding.getName() == null ? "_" : binding.getName()) + " : " + binding.getTypeExpr();
   }
 }
