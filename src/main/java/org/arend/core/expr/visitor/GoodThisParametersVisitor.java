@@ -1,9 +1,9 @@
 package org.arend.core.expr.visitor;
 
-import org.arend.core.context.binding.Binding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
-import org.arend.core.elimtree.*;
+import org.arend.core.elimtree.ElimBody;
+import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.*;
 import org.arend.core.pattern.BindingPattern;
 import org.arend.core.pattern.Pattern;
