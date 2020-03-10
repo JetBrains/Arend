@@ -62,8 +62,8 @@ public abstract class BaseCallMatrix<T> {
   private HashMap<Integer, BaseCallMatrix.CallMatrixEntry> myMatrixMap = new HashMap<>();
   private BaseCallMatrix.R[][] fallbackMatrix = null;
 
-  private int myWidth;
-  private int myHeight;
+  private final int myWidth;
+  private final int myHeight;
 
   BaseCallMatrix(int width, int height) {
     myWidth = width;
@@ -74,14 +74,14 @@ public abstract class BaseCallMatrix<T> {
     // copy constructor 
     myWidth = m.myWidth;
     myHeight = m.myHeight;
-    if (myMatrixMap != null) {
+    if (m.myMatrixMap != null) {
       for (Integer j : m.myMatrixMap.keySet()) {
         BaseCallMatrix.CallMatrixEntry cme = m.myMatrixMap.get(j);
         myMatrixMap.put(j, new BaseCallMatrix.CallMatrixEntry(cme.myIndex, cme.myRel));
       }
     } else {
       fallbackMatrix = new BaseCallMatrix.R[myHeight][myWidth];
-      for (int i = 0; i < myHeight; i++) System.arraycopy(fallbackMatrix[i], 0, fallbackMatrix[i], 0, myWidth);
+      for (int i = 0; i < myHeight; i++) System.arraycopy(m.fallbackMatrix[i], 0, fallbackMatrix[i], 0, myWidth);
     }
   }
 
