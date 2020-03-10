@@ -34,6 +34,22 @@ public class SubExprError {
   }
 
   public enum Kind {
+    /**
+     * Expect the lambda body to be another lambda expression, but it's not.
+     */
+    ExpectLam,
+    /**
+     * When matching the parameter types of a pi (or a sigma) expression,
+     * the list doesn't match.
+     */
+    Telescope,
+    /**
+     * When matching the arguments of an application, the list doesn't match.
+     */
+    Arguments,
+    /**
+     * Expect the expression's type to be a pi expression, but it's not.
+     */
     ExpectPi,
     /**
      * In an expression with binding, there isn't a type in the binding.

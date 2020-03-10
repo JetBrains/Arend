@@ -230,6 +230,7 @@ public class CorrespondedSubExprVisitor implements
         if (arguments.hasNext()) argument = arguments.next();
       }
     }
+    error = new SubExprError(SubExprError.Kind.Arguments, coreClassCall);
     return null;
   }
 
@@ -254,6 +255,7 @@ public class CorrespondedSubExprVisitor implements
         if (arguments.hasNext()) argument = arguments.next();
       }
     }
+    error = new SubExprError(SubExprError.Kind.Arguments, expression);
     return null;
   }
 
@@ -285,15 +287,25 @@ public class CorrespondedSubExprVisitor implements
           if (ty != null) return ty;
         }
         body = coreLamExpr.getBody();
-      } else return null;
+      } else {
+        error = new SubExprError(SubExprError.Kind.ExpectLam, body);
+        return null;
+      }
     }
     return expr.getBody().accept(this, body);
   }
 
-  protected Pair<Expression, Concrete.Expression> visitParameter(Concrete.Parameter parameter, DependentLink link) {
+  protected @Nullable Pair<Expression, Concrete.Expression> visitParameter(
+      @NotNull Concrete.Parameter parameter,
+      @NotNull DependentLink link
+  ) {
     Concrete.Expression type = parameter.getType();
-    if (type == null) return null;
-    return type.accept(this, link.getTypeExpr());
+    Expression typeExpr = link.getTypeExpr();
+    if (type == null) {
+      error = new SubExprError(SubExprError.Kind.ConcreteHasNoTypeBinding, typeExpr);
+      return null;
+    }
+    return type.accept(this, typeExpr);
   }
 
   private @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>
@@ -309,6 +321,7 @@ public class CorrespondedSubExprVisitor implements
         corePi = (PiExpression) corePiCodomain;
       else return codomain.accept(this, corePiCodomain);
     }
+    error = new SubExprError(SubExprError.Kind.Telescope, corePi);
     return null;
   }
 
@@ -319,6 +332,7 @@ public class CorrespondedSubExprVisitor implements
       if (expression != null) return expression;
       sig = sig.getNextTyped(null).getNext();
     }
+    error = new SubExprError(SubExprError.Kind.Telescope);
     return null;
   }
 
@@ -326,7 +340,10 @@ public class CorrespondedSubExprVisitor implements
   public Pair<Expression, Concrete.Expression> visitPi(Concrete.PiExpression expr, Expression coreExpr) {
     if (matchesSubExpr(expr)) return new Pair<>(coreExpr, expr);
     PiExpression corePiExpr = coreExpr.cast(PiExpression.class);
-    if (corePiExpr == null) return null;
+    if (corePiExpr == null) {
+      error = SubExprError.mismatch(coreExpr);
+      return null;
+    }
     return visitPiImpl(expr.getParameters(), expr.getCodomain(), corePiExpr);
   }
 
@@ -334,7 +351,10 @@ public class CorrespondedSubExprVisitor implements
   public Pair<Expression, Concrete.Expression> visitSigma(Concrete.SigmaExpression expr, Expression coreExpr) {
     if (matchesSubExpr(expr)) return new Pair<>(coreExpr, expr);
     SigmaExpression coreSigmaExpr = coreExpr.cast(SigmaExpression.class);
-    if (coreSigmaExpr == null) return null;
+    if (coreSigmaExpr == null) {
+      error = SubExprError.mismatch(coreExpr);
+      return null;
+    }
     return visitSigmaParameters(expr.getParameters(), coreSigmaExpr.getParameters());
   }
 
