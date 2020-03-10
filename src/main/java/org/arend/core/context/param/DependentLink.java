@@ -143,7 +143,6 @@ public interface DependentLink extends Binding, CoreParameter {
   }
 
   static @NotNull String toString(@NotNull DependentLink binding) {
-    Type type = binding.getType();
-    return (binding.getName() == null ? "_" : binding.getName()) + (type == null ? "" : " : " + type.getExpr());
+    return (binding.getName() == null ? "_" : binding.getName()) + " : " + binding.getTypeExpr();
   }
 }
