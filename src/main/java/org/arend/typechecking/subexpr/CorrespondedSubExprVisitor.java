@@ -24,6 +24,11 @@ public class CorrespondedSubExprVisitor implements
     ConcreteExpressionVisitor<@NotNull Expression,
         @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>> {
   private final @NotNull Concrete.Expression subExpr;
+  private @NotNull SubExprError error = SubExprError.Other;
+
+  public @NotNull SubExprError getError() {
+    return error;
+  }
 
   public CorrespondedSubExprVisitor(@NotNull Concrete.Expression subExpr) {
     this.subExpr = subExpr;
@@ -76,7 +81,10 @@ public class CorrespondedSubExprVisitor implements
   public Pair<Expression, Concrete.Expression> visitProj(Concrete.ProjExpression expr, Expression coreExpr) {
     if (matchesSubExpr(expr)) return new Pair<>(coreExpr, expr);
     ProjExpression coreProjExpr = coreExpr.cast(ProjExpression.class);
-    if (coreProjExpr == null) return null;
+    if (coreProjExpr == null) {
+      error = SubExprError.ConcreteCoreMismatch;
+      return null;
+    }
     return expr.getExpression().accept(this, coreProjExpr.getExpression());
   }
 
@@ -84,7 +92,10 @@ public class CorrespondedSubExprVisitor implements
   public Pair<Expression, Concrete.Expression> visitNew(Concrete.NewExpression expr, Expression coreExpr) {
     if (matchesSubExpr(expr)) return new Pair<>(coreExpr, expr);
     NewExpression coreNewExpr = coreExpr.cast(NewExpression.class);
-    if (coreNewExpr == null) return null;
+    if (coreNewExpr == null) {
+      error = SubExprError.ConcreteCoreMismatch;
+      return null;
+    }
     return expr.getExpression().accept(this, coreNewExpr.getClassCall());
   }
 
@@ -92,17 +103,22 @@ public class CorrespondedSubExprVisitor implements
   public Pair<Expression, Concrete.Expression> visitTuple(Concrete.TupleExpression expr, Expression coreExpr) {
     if (matchesSubExpr(expr)) return new Pair<>(coreExpr, expr);
     TupleExpression coreTupleExpr = coreExpr.cast(TupleExpression.class);
-    if (coreTupleExpr == null) return null;
+    if (coreTupleExpr == null) {
+      error = SubExprError.ConcreteCoreMismatch;
+      return null;
+    }
     return visitExprs(coreTupleExpr.getFields(), expr.getFields());
   }
 
   private @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>
-  visitExprs(@NotNull List<? extends Expression> coreExpr, @NotNull List<? extends Concrete.Expression> expr) {
+  visitExprs(@NotNull List<? extends Expression> coreExpr,
+             @NotNull List<? extends Concrete.Expression> expr) {
     for (int i = 0; i < expr.size(); i++) {
-      Concrete.Expression expression = expr.get(i);
-      Pair<Expression, Concrete.Expression> accepted = expression.accept(this, coreExpr.get(i));
+      Pair<Expression, Concrete.Expression> accepted = expr.get(i)
+          .accept(this, coreExpr.get(i));
       if (accepted != null) return accepted;
     }
+    error = SubExprError.ExprListNoMatch;
     return null;
   }
 
@@ -110,7 +126,10 @@ public class CorrespondedSubExprVisitor implements
   public Pair<Expression, Concrete.Expression> visitLet(Concrete.LetExpression expr, Expression coreExpr) {
     if (matchesSubExpr(expr)) return new Pair<>(coreExpr, expr);
     LetExpression coreLetExpr = coreExpr.cast(LetExpression.class);
-    if (coreLetExpr == null) return null;
+    if (coreLetExpr == null) {
+      error = SubExprError.ConcreteCoreMismatch;
+      return null;
+    }
     List<Concrete.LetClause> exprClauses = expr.getClauses();
     List<LetClause> coreClauses = coreLetExpr.getClauses();
     for (int i = 0; i < exprClauses.size(); i++) {
@@ -127,7 +146,10 @@ public class CorrespondedSubExprVisitor implements
     if (accepted != null) return accepted;
 
     Concrete.Expression resultType = exprLetClause.getResultType();
-    if (resultType == null) return null;
+    if (resultType == null) {
+      error = SubExprError.ConcreteHasNoTypeBinding;
+      return null;
+    }
 
     Expression coreResultType = coreLetClause.getTypeExpr();
     if (coreResultType instanceof PiExpression) {

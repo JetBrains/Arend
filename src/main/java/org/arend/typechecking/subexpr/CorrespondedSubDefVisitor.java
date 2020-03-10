@@ -22,6 +22,10 @@ public class CorrespondedSubDefVisitor implements
         @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>> {
   private final @NotNull CorrespondedSubExprVisitor visitor;
 
+  public @NotNull SubExprError getExprError() {
+    return visitor.getError();
+  }
+
   public CorrespondedSubDefVisitor(@NotNull CorrespondedSubExprVisitor visitor) {
     this.visitor = visitor;
   }
