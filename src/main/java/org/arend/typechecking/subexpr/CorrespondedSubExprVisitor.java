@@ -24,9 +24,9 @@ public class CorrespondedSubExprVisitor implements
     ConcreteExpressionVisitor<@NotNull Expression,
         @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>> {
   private final @NotNull Concrete.Expression subExpr;
-  private @NotNull SubExprError error = SubExprError.Other;
+  private @Nullable SubExprError error;
 
-  public @NotNull SubExprError getError() {
+  public @Nullable SubExprError getError() {
     return error;
   }
 
@@ -82,7 +82,7 @@ public class CorrespondedSubExprVisitor implements
     if (matchesSubExpr(expr)) return new Pair<>(coreExpr, expr);
     ProjExpression coreProjExpr = coreExpr.cast(ProjExpression.class);
     if (coreProjExpr == null) {
-      error = SubExprError.ConcreteCoreMismatch;
+      error = SubExprError.mismatch(coreExpr);
       return null;
     }
     return expr.getExpression().accept(this, coreProjExpr.getExpression());
@@ -93,7 +93,7 @@ public class CorrespondedSubExprVisitor implements
     if (matchesSubExpr(expr)) return new Pair<>(coreExpr, expr);
     NewExpression coreNewExpr = coreExpr.cast(NewExpression.class);
     if (coreNewExpr == null) {
-      error = SubExprError.ConcreteCoreMismatch;
+      error = SubExprError.mismatch(coreExpr);
       return null;
     }
     return expr.getExpression().accept(this, coreNewExpr.getClassCall());
@@ -104,10 +104,13 @@ public class CorrespondedSubExprVisitor implements
     if (matchesSubExpr(expr)) return new Pair<>(coreExpr, expr);
     TupleExpression coreTupleExpr = coreExpr.cast(TupleExpression.class);
     if (coreTupleExpr == null) {
-      error = SubExprError.ConcreteCoreMismatch;
+      error = SubExprError.mismatch(coreExpr);
       return null;
     }
-    return visitExprs(coreTupleExpr.getFields(), expr.getFields());
+    Pair<Expression, Concrete.Expression> result =
+        visitExprs(coreTupleExpr.getFields(), expr.getFields());
+    if (error != null) error.setErrorExpr(coreExpr);
+    return result;
   }
 
   private @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>
@@ -118,7 +121,7 @@ public class CorrespondedSubExprVisitor implements
           .accept(this, coreExpr.get(i));
       if (accepted != null) return accepted;
     }
-    error = SubExprError.ExprListNoMatch;
+    error = new SubExprError(SubExprError.Kind.ExprListNoMatch);
     return null;
   }
 
@@ -127,7 +130,7 @@ public class CorrespondedSubExprVisitor implements
     if (matchesSubExpr(expr)) return new Pair<>(coreExpr, expr);
     LetExpression coreLetExpr = coreExpr.cast(LetExpression.class);
     if (coreLetExpr == null) {
-      error = SubExprError.ConcreteCoreMismatch;
+      error = SubExprError.mismatch(coreExpr);
       return null;
     }
     List<Concrete.LetClause> exprClauses = expr.getClauses();
@@ -147,7 +150,7 @@ public class CorrespondedSubExprVisitor implements
 
     Concrete.Expression resultType = exprLetClause.getResultType();
     if (resultType == null) {
-      error = SubExprError.ConcreteHasNoTypeBinding;
+      error = new SubExprError(SubExprError.Kind.ConcreteHasNoTypeBinding, coreLetClause.getTypeExpr());
       return null;
     }
 
@@ -176,13 +179,17 @@ public class CorrespondedSubExprVisitor implements
       PiExpression type;
       AppExpression coreAppExpr;
       do {
+        assert function instanceof AppExpression;
         coreAppExpr = (AppExpression) function;
         function = coreAppExpr.getFunction();
         Expression functionType = function.getType();
         if (functionType != null)
           functionType = functionType.normalize(NormalizationMode.WHNF);
         type = functionType instanceof PiExpression ? (PiExpression) functionType : null;
-        if (type == null) return null;
+        if (type == null) {
+          error = new SubExprError(SubExprError.Kind.ExpectPi, functionType);
+          return null;
+        }
       } while (type.getParameters().isExplicit() != lastArgument.isExplicit());
       Pair<Expression, Concrete.Expression> accepted = lastArgument.getExpression().accept(this, coreAppExpr.getArgument());
       if (accepted != null) return accepted;

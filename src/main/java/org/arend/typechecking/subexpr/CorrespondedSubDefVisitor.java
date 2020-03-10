@@ -22,7 +22,7 @@ public class CorrespondedSubDefVisitor implements
         @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>> {
   private final @NotNull CorrespondedSubExprVisitor visitor;
 
-  public @NotNull SubExprError getExprError() {
+  public @Nullable SubExprError getExprError() {
     return visitor.getError();
   }
 
