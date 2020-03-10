@@ -235,8 +235,8 @@ public class BuildVisitor extends ArendBaseVisitor {
   }
 
   private static class PrecedenceWithoutPriority {
-    private Precedence.Associativity associativity;
-    private boolean isInfix;
+    private final Precedence.Associativity associativity;
+    private final boolean isInfix;
 
     private PrecedenceWithoutPriority(Precedence.Associativity associativity, boolean isInfix) {
       this.associativity = associativity;

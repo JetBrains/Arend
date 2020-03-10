@@ -38,7 +38,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
     }
     Collections.reverse(args);
 
-    LamExpression lam = function.cast(LamExpression.class);
+    LamExpression lam = function instanceof LamExpression ? (LamExpression) function : null;
     if (lam != null) {
       return normalizeLam(lam, args).accept(this, mode);
     }

@@ -1,5 +1,7 @@
 package org.arend.typechecking.implicitargs.equations;
 
+import java.util.Objects;
+
 public class LevelEquation<Var> {
   private final Var myVar1;
   private final Var myVar2;
@@ -80,10 +82,10 @@ public class LevelEquation<Var> {
 
     LevelEquation<?> that = (LevelEquation<?>) o;
 
-    if (myVar1 != null ? !myVar1.equals(that.myVar1) : that.myVar1 != null) return false;
-    if (myVar2 != null ? !myVar2.equals(that.myVar2) : that.myVar2 != null) return false;
-    if (myConstant != null ? !myConstant.equals(that.myConstant) : that.myConstant != null) return false;
-    return myMaxConstant != null ? myMaxConstant.equals(that.myMaxConstant) : that.myMaxConstant == null;
+    if (!Objects.equals(myVar1, that.myVar1)) return false;
+    if (!Objects.equals(myVar2, that.myVar2)) return false;
+    if (!Objects.equals(myConstant, that.myConstant)) return false;
+    return Objects.equals(myMaxConstant, that.myMaxConstant);
   }
 
   @Override

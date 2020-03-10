@@ -373,14 +373,14 @@ public class CorrespondedSubExprVisitor implements
     if (implementedField instanceof ClassReferable) {
       Collection<? extends FieldReferable> fields = ((ClassReferable) implementedField).getFieldReferables();
       Optional<Pair<Expression, Concrete.Expression>> baseClassCall = implementedHere.entrySet()
-              .stream()
-              // The suppressed warning presents here, but it's considered safe.
-              .filter(entry -> fields.contains(entry.getKey().getReferable()))
-              .map(Map.Entry::getValue)
-              .filter(expr -> expr instanceof FieldCallExpression)
-              .findFirst()
-              .map(expr -> ((FieldCallExpression) expr))
-              .map(e -> statement.implementation.accept(this, e.getArgument()));
+          .stream()
+          // The suppressed warning presents here, but it's considered safe.
+          .filter(entry -> fields.contains(entry.getKey().getReferable()))
+          .map(Map.Entry::getValue)
+          .filter(expr -> expr instanceof FieldCallExpression)
+          .findFirst()
+          .map(expr -> ((FieldCallExpression) expr))
+          .map(e -> statement.implementation.accept(this, e.getArgument()));
       if (baseClassCall.isPresent()) return baseClassCall.get();
     }
     return implementedHere.entrySet()
