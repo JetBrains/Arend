@@ -24,8 +24,8 @@ public class CorrespondedSubDefVisitor implements
   private final @NotNull CorrespondedSubExprVisitor visitor;
 
   @Contract(pure = true)
-  public @Nullable SubExprError getExprError() {
-    return visitor.getError();
+  public @NotNull List<@NotNull SubExprError> getExprError() {
+    return visitor.getErrors();
   }
 
   public CorrespondedSubDefVisitor(@NotNull CorrespondedSubExprVisitor visitor) {

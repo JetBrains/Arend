@@ -25,11 +25,11 @@ public class CorrespondedSubExprVisitor implements
     ConcreteExpressionVisitor<@NotNull Expression,
         @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>> {
   private final @NotNull Concrete.Expression subExpr;
-  private @Nullable SubExprError error;
+  private final @NotNull List<@NotNull SubExprError> errors = new ArrayList<>();
 
   @Contract(pure = true)
-  public @Nullable SubExprError getError() {
-    return error;
+  public @NotNull List<@NotNull SubExprError> getErrors() {
+    return errors;
   }
 
   public CorrespondedSubExprVisitor(@NotNull Concrete.Expression subExpr) {
@@ -40,9 +40,9 @@ public class CorrespondedSubExprVisitor implements
     return Objects.equals(expr.getData(), subExpr.getData());
   }
 
-  @Contract(mutates = "this", value = "_->null")
+  @Contract(value = "_->null")
   private @Nullable Pair<Expression, Concrete.Expression> nullWithError(@NotNull SubExprError error) {
-    this.error = error;
+    errors.add(error);
     return null;
   }
 
@@ -107,21 +107,19 @@ public class CorrespondedSubExprVisitor implements
     if (matchesSubExpr(expr)) return new Pair<>(coreExpr, expr);
     TupleExpression coreTupleExpr = coreExpr.cast(TupleExpression.class);
     if (coreTupleExpr == null) return nullWithError(SubExprError.mismatch(coreExpr));
-    Pair<Expression, Concrete.Expression> result =
-        visitExprs(coreTupleExpr.getFields(), expr.getFields());
-    if (error != null) error.setErrorExpr(coreExpr);
-    return result;
+    return visitExprs(coreTupleExpr.getFields(), expr.getFields(), coreTupleExpr);
   }
 
   private @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>
   visitExprs(@NotNull List<? extends Expression> coreExpr,
-             @NotNull List<? extends Concrete.Expression> expr) {
+             @NotNull List<? extends Concrete.Expression> expr,
+             @NotNull Expression coreTupleExpr) {
     for (int i = 0; i < expr.size(); i++) {
       Pair<Expression, Concrete.Expression> accepted = expr.get(i)
           .accept(this, coreExpr.get(i));
       if (accepted != null) return accepted;
     }
-    return nullWithError(new SubExprError(SubExprError.Kind.ExprListNoMatch));
+    return nullWithError(new SubExprError(SubExprError.Kind.ExprListNoMatch, coreTupleExpr));
   }
 
   @Override
@@ -364,7 +362,7 @@ public class CorrespondedSubExprVisitor implements
         .getArguments()
         .stream()
         .map(i -> i.expression)
-        .collect(Collectors.toList()));
+        .collect(Collectors.toList()), coreCaseExpr);
     if (expression != null) return expression;
     Concrete.Expression resultType = expr.getResultType();
     if (resultType != null) {
