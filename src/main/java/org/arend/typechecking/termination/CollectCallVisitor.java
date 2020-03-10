@@ -76,8 +76,7 @@ public class CollectCallVisitor extends ProcessDefCallsVisitor<Void> {
         return myCollectedCalls;
     }
 
-    private static BaseCallMatrix.R initMatrixBlock(Expression expr1, DependentLink param1, ExpressionPattern pattern2, DependentLink param2) {
-        //param1 and param2 should be used to designate subblocks of the call matrix
+    private static BaseCallMatrix.R isLess(Expression expr1, ExpressionPattern pattern2) {
         if (pattern2 instanceof ConstructorExpressionPattern) {
             ConstructorExpressionPattern conPattern = (ConstructorExpressionPattern) pattern2;
 
@@ -85,7 +84,7 @@ public class CollectCallVisitor extends ProcessDefCallsVisitor<Void> {
             if (exprArguments != null) {
                 List<? extends ExpressionPattern> cpSubpatterns = conPattern.getSubPatterns();
                 for (int i = 0; i < Math.min(exprArguments.size(), cpSubpatterns.size()); i++) {
-                    BaseCallMatrix.R ord = initMatrixBlock(exprArguments.get(i), param1, cpSubpatterns.get(i), param2);
+                    BaseCallMatrix.R ord = isLess(exprArguments.get(i), cpSubpatterns.get(i));
                     if (ord != BaseCallMatrix.R.Equal) return ord;
                 }
 
@@ -94,7 +93,7 @@ public class CollectCallVisitor extends ProcessDefCallsVisitor<Void> {
             }
 
             for (ExpressionPattern arg : conPattern.getSubPatterns()) {
-                if (initMatrixBlock(expr1, param1, arg, param2) != BaseCallMatrix.R.Unknown) return BaseCallMatrix.R.LessThan;
+                if (isLess(expr1, arg) != BaseCallMatrix.R.Unknown) return BaseCallMatrix.R.LessThan;
             }
             return BaseCallMatrix.R.Unknown;
         } else if (pattern2 instanceof BindingPattern) {
@@ -110,20 +109,24 @@ public class CollectCallVisitor extends ProcessDefCallsVisitor<Void> {
         return BaseCallMatrix.R.Unknown;
     }
 
+    private static void initMatrixBlock(CallMatrix callMatrix,
+                                                    Expression expr1, DependentLink param1,
+                                                    ExpressionPattern pattern2, DependentLink param2) {
+        //param1 and param2 should be used to designate subblocks of the call matrix
+        callMatrix.setBlock(param2, param1, isLess(expr1, pattern2));
+    }
+
     @Override
     protected boolean processDefCall(DefCallExpression expression, Void param) {
         if (!myCycle.contains(expression.getDefinition())) {
             return false;
         }
 
-        BaseCallMatrix<Definition> cm = new CallMatrix(myDefinition, expression);
+        CallMatrix cm = new CallMatrix(myDefinition, expression);
         DependentLink rangePattern = myDefinition.getParameters();
-        for (int i = 0; i < myVector.size(); i++) {
+        for (ExpressionPattern pattern : myVector) {
             DependentLink rangeArgument = expression.getDefinition().getParameters();
-            for (int j = 0; j < expression.getDefCallArguments().size(); j++) {
-                ExpressionPattern pattern = myVector.get(i);
-                Expression argument = expression.getDefCallArguments().get(j);
-
+            for (Expression argument : expression.getDefCallArguments()) {
                 // strip currentExpression of App & Proj calls
                 while (true) {
                     if (argument instanceof AppExpression) {
@@ -136,7 +139,7 @@ public class CollectCallVisitor extends ProcessDefCallsVisitor<Void> {
                         break;
                     }
                 }
-                cm.set(i, j, initMatrixBlock(argument, rangeArgument, pattern, rangePattern));
+                initMatrixBlock(cm, argument, rangeArgument, pattern, rangePattern);
                 rangeArgument = rangeArgument.getNext();
             }
             rangePattern = rangePattern.getNext();
