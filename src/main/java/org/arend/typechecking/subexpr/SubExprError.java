@@ -35,9 +35,25 @@ public class SubExprError {
 
   public enum Kind {
     /**
+     * A corresponded field is missing.
+     */
+    FieldNotFound,
+    /**
+     * An expression is missing, like in a clause.
+     */
+    MissingImplementationField,
+    /**
+     * An expression is missing, like in a clause.
+     */
+    MissingExpr,
+    /**
      * Expect the lambda body to be another lambda expression, but it's not.
      */
     ExpectLam,
+    /**
+     * When matching the clauses of a let expression, the list doesn't match.
+     */
+    Clauses,
     /**
      * When matching the parameter types of a pi (or a sigma) expression,
      * the list doesn't match.

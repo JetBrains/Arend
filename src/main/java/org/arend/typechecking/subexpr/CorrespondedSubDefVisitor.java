@@ -10,6 +10,7 @@ import org.arend.core.pattern.Pattern;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteDefinitionVisitor;
 import org.arend.util.Pair;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -22,6 +23,7 @@ public class CorrespondedSubDefVisitor implements
         @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>> {
   private final @NotNull CorrespondedSubExprVisitor visitor;
 
+  @Contract(pure = true)
   public @Nullable SubExprError getExprError() {
     return visitor.getError();
   }
