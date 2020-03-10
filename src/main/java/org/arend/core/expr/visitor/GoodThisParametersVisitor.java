@@ -1,5 +1,6 @@
 package org.arend.core.expr.visitor;
 
+import org.arend.core.context.binding.Binding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.elimtree.*;
@@ -92,8 +93,9 @@ public class GoodThisParametersVisitor extends VoidExpressionVisitor<Void> {
 
   @Override
   public Void visitReference(ReferenceExpression expr, Void params) {
-    if (expr.getBinding() instanceof DependentLink) {
-      Integer index = myIndexMap.get(expr.getBinding());
+    Binding binding = expr.getBinding();
+    if (binding instanceof DependentLink) {
+      Integer index = myIndexMap.get(binding);
       if (index != null) {
         myGoodParameters.set(index, false);
       }
