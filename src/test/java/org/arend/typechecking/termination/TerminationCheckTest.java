@@ -186,10 +186,18 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void test_loop() {
+  public void test_loop1() {
     typeCheckModule("\\func lol (a : \\Sigma Nat Nat) (b : \\Sigma Nat Nat) : Nat \\elim a, b {\n" +
             "  | (n,n1), (n2,n3) => lol (n, n1) (n2, n3)\n" +
             "}", 1);
+  }
+
+  @Test
+  public void test_loop2() {
+    typeCheckModule(
+            "\\func fooA (p : \\Sigma Nat (\\Sigma Nat Nat)) : Nat \\elim p\n" +
+            "  | (a, (b, c)) => fooB a b c\n\n" +
+            "\\func fooB (a b c : Nat) : Nat \\with | a, b, c => fooA (a, (b, c))", 2);
   }
 
   @Test

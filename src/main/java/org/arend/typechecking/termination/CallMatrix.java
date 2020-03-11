@@ -6,27 +6,33 @@ import org.arend.core.definition.Definition;
 import org.arend.core.expr.DefCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.SigmaExpression;
+import org.arend.core.expr.TupleExpression;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.util.Pair;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
+import java.util.List;
 
 import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 class CallMatrix extends LabeledCallMatrix {
   private final DefCallExpression myCallExpression;
   private final Definition myEnclosingDefinition;
-  private final HashMap<DependentLink, Pair<Integer, Integer>> myCallExpressionIndexRanges = new HashMap<>();
-  private final HashMap<DependentLink, Pair<Integer, Integer>> myDefinitionIndexRanges = new HashMap<>();
+  private final IndexData myCodomainIndexData;
+  private final IndexData myDomainIndexData;
 
-  CallMatrix(Definition enclosingDefinition, DefCallExpression call) {
-    super(calculateDimension(call.getDefinition().getParameters()), calculateDimension(enclosingDefinition.getParameters()));
+  CallMatrix(Definition enclosingDefinition, DefCallExpression call, IndexData callIndexData, IndexData enclosingDefinitionIndexData) {
+    super(callIndexData.getDimension(), enclosingDefinitionIndexData.getDimension());
     myCallExpression = call;
     myEnclosingDefinition = enclosingDefinition;
-    initIndexRanges(call.getDefinition().getParameters(), myCallExpressionIndexRanges, 0);
-    initIndexRanges(enclosingDefinition.getParameters(), myDefinitionIndexRanges, 0);
+    myCodomainIndexData = callIndexData;
+    myDomainIndexData = enclosingDefinitionIndexData;
+  }
+
+  CallMatrix(Definition myEnclosingDefinition, DefCallExpression call) {
+    this(myEnclosingDefinition, call, new IndexData(call.getDefinition().getParameters()), new IndexData(myEnclosingDefinition.getParameters()));
   }
 
   @Override
@@ -50,8 +56,8 @@ class CallMatrix extends LabeledCallMatrix {
   }
 
   public void setBlock(DependentLink i, DependentLink j, R value) {
-    Pair<Integer, Integer> rangeI = myDefinitionIndexRanges.get(i);
-    Pair<Integer, Integer> rangeJ = myCallExpressionIndexRanges.get(j);
+    Pair<Integer, Integer> rangeI = myDomainIndexData.myIndexMap.get(i);
+    Pair<Integer, Integer> rangeJ = myCodomainIndexData.myIndexMap.get(j);
     int lenI = rangeI.proj2 - rangeI.proj1 + 1;
     int lenJ = rangeJ.proj2 - rangeJ.proj1 + 1;
     if (lenI == 1 && lenJ == 1) {
@@ -77,7 +83,7 @@ class CallMatrix extends LabeledCallMatrix {
     String[] result = new String[getWidth()];
     DependentLink arg = getCodomain().getParameters();
     for (int j = 0; j < getWidth(); j++)
-      result[j] = calculateLabel(arg, j, 1, "");
+      result[j] = calculateLabel(arg, j, 1, "", myCodomainIndexData);
     return result;
   }
 
@@ -87,13 +93,13 @@ class CallMatrix extends LabeledCallMatrix {
     String[] result = new String[getHeight()];
     DependentLink arg = getDomain().getParameters();
     for (int j = 0; j < getHeight(); j++)
-      result[j] = calculateLabel(arg, j, 1, "");
+      result[j] = calculateLabel(arg, j, 1, "", myDomainIndexData);
     return result;
   }
 
-  private static String calculateLabel(DependentLink parameter, int queriedIndex, int parameterIndex, String namePrefix) {
+  private static String calculateLabel(DependentLink parameter, int queriedIndex, int parameterIndex, String namePrefix, IndexData data) {
     if (!(parameter instanceof EmptyDependentLink)) {
-      DependentLink unfoldedParameters = unfoldSigmaType(parameter);
+      DependentLink unfoldedParameters = tryUnfoldDependentLink(parameter);
       String parameterName = parameter.getName();
       if (parameterName == null) parameterName = String.valueOf(parameterIndex);
       String dotPrefix = namePrefix;
@@ -101,40 +107,60 @@ class CallMatrix extends LabeledCallMatrix {
 
       int length = 1;
       if (unfoldedParameters != null) {
-        String result = calculateLabel(unfoldedParameters, queriedIndex, 1,dotPrefix + parameterName);
+        String result = calculateLabel(unfoldedParameters, queriedIndex, 1,dotPrefix + parameterName, data);
         if (result != null) return result;
-        length = calculateDimension(unfoldedParameters);
+        length = data.getLength(parameter);
       } else {
         if (queriedIndex == 0) return dotPrefix + parameterName;
       }
 
-      return calculateLabel(parameter.getNext(), queriedIndex - length, parameterIndex + 1, namePrefix);
+      return calculateLabel(parameter.getNext(), queriedIndex - length, parameterIndex + 1, namePrefix, data);
     }
     return null;
   }
 
-  private static int initIndexRanges(DependentLink parameter, @Nullable HashMap<DependentLink, Pair<Integer, Integer>> indexRanges, int currIndex) {
-    int length = 1;
-    if (!(parameter instanceof EmptyDependentLink)) {
-      DependentLink unfoldedParameters = unfoldSigmaType(parameter);
-      if (unfoldedParameters != null) {
-        length = initIndexRanges(unfoldedParameters, indexRanges, currIndex);
-      }
-      if (indexRanges != null) indexRanges.put(parameter, new Pair<>(currIndex, currIndex + length - 1));
-      return length + initIndexRanges(parameter.getNext(), indexRanges, currIndex + length);
+  static class IndexData{
+    private HashMap<DependentLink, Pair<Integer, Integer>> myIndexMap = new HashMap<>();
+    private int totalLength;
+
+    IndexData(DependentLink startingParameter) {
+      totalLength = initIndexRanges(startingParameter, myIndexMap, 0);
     }
-    return 0;
+
+    public int getDimension() { return totalLength; }
+
+    public Pair<Integer, Integer> getIndex(DependentLink link) { return myIndexMap.get(link); }
+
+    public Integer getLength(DependentLink link) {
+      Pair<Integer, Integer> info = myIndexMap.get(link);
+      return info.proj2 - info.proj1 + 1;
+    }
+
+    private static int initIndexRanges(DependentLink parameter, @Nullable HashMap<DependentLink, Pair<Integer, Integer>> indexRanges, int currIndex) {
+      int length = 1;
+      if (!(parameter instanceof EmptyDependentLink)) {
+        DependentLink unfoldedParameters = tryUnfoldDependentLink(parameter);
+        if (unfoldedParameters != null) {
+          length = initIndexRanges(unfoldedParameters, indexRanges, currIndex);
+        }
+        if (indexRanges != null) indexRanges.put(parameter, new Pair<>(currIndex, currIndex + length - 1));
+        return length + initIndexRanges(parameter.getNext(), indexRanges, currIndex + length);
+      }
+      return 0;
+    }
   }
 
-  private static int calculateDimension(DependentLink link) {
-    return initIndexRanges(link, null, 0);
-  }
-
-  @Nullable
-  public static DependentLink unfoldSigmaType(DependentLink parameter) {
+  @Nullable public static DependentLink tryUnfoldDependentLink(DependentLink parameter) {
     Expression type = parameter.getType().getExpr();
     if (type instanceof SigmaExpression) {
       return ((SigmaExpression) type).getParameters();
+    }
+    return null;
+  }
+
+  @Nullable public static List<? extends Expression> tryUnfoldExpression(Expression expr) {
+    if (expr instanceof TupleExpression) {
+      return ((TupleExpression) expr).getFields();
     }
     return null;
   }

@@ -18,7 +18,7 @@ public class CollectCallVisitor extends ProcessDefCallsVisitor<Void> {
     private final Set<BaseCallMatrix<Definition>> myCollectedCalls;
     private final FunctionDefinition myDefinition;
     private final Set<? extends Definition> myCycle;
-    private List<? extends ExpressionPattern> myVector;
+    private List<? extends ExpressionPattern> myPatterns;
 
     CollectCallVisitor(FunctionDefinition def, Set<? extends Definition> cycle) {
         assert cycle != null;
@@ -33,41 +33,41 @@ public class CollectCallVisitor extends ProcessDefCallsVisitor<Void> {
         Body body = myDefinition.getActualBody();
         if (body instanceof IntervalElim) {
             IntervalElim elim = (IntervalElim) body;
-            List<ExpressionPattern> vector = new ArrayList<>();
+            List<ExpressionPattern> patternList = new ArrayList<>();
             for (DependentLink link = myDefinition.getParameters(); link.hasNext(); link = link.getNext()) {
-                vector.add(new BindingPattern(link));
+                patternList.add(new BindingPattern(link));
             }
 
-            myVector = vector;
-            int i = vector.size() - elim.getCases().size();
+            myPatterns = patternList;
+            int i = patternList.size() - elim.getCases().size();
 
             for (Pair<Expression, Expression> pair : elim.getCases()) {
-                ExpressionPattern old = vector.get(i);
-                vector.set(i, new ConstructorExpressionPattern(ExpressionFactory.Left(), Collections.emptyList()));
+                ExpressionPattern old = patternList.get(i);
+                patternList.set(i, new ConstructorExpressionPattern(ExpressionFactory.Left(), Collections.emptyList()));
                 pair.proj1.accept(this, null);
-                vector.set(i, new ConstructorExpressionPattern(ExpressionFactory.Right(), Collections.emptyList()));
+                patternList.set(i, new ConstructorExpressionPattern(ExpressionFactory.Right(), Collections.emptyList()));
                 pair.proj2.accept(this, null);
-                vector.set(i, old);
+                patternList.set(i, old);
             }
         }
 
         Expression resultType = myDefinition.getResultType();
         if (resultType != null) {
-            List<ExpressionPattern> vector = new ArrayList<>();
+            List<ExpressionPattern> patternList = new ArrayList<>();
 
             for (DependentLink p = myDefinition.getParameters(); p.hasNext(); p = p.getNext()) {
                 p = p.getNextTyped(null);
-                vector.add(new BindingPattern(p));
+                patternList.add(new BindingPattern(p));
             }
 
-            myVector = vector;
+            myPatterns = patternList;
             resultType.accept(this, null);
         }
     }
 
     public void collect(ElimClause<ExpressionPattern> clause) {
         if (clause.getExpression() != null) {
-            myVector = clause.getPatterns();
+            myPatterns = clause.getPatterns();
             clause.getExpression().accept(this, null);
         }
     }
@@ -112,29 +112,35 @@ public class CollectCallVisitor extends ProcessDefCallsVisitor<Void> {
     private static void initMatrixBlock(CallMatrix callMatrix,
                                         Expression expr1, DependentLink param1,
                                         ExpressionPattern pattern2, DependentLink param2) {
-        //param1 and param2 should be used to designate subblocks of the call matrix
-        if (pattern2 instanceof ConstructorExpressionPattern) {
-            ConstructorExpressionPattern conPattern = (ConstructorExpressionPattern) pattern2;
-
-            List<? extends Expression> exprArguments = conPattern.getMatchingExpressionArguments(expr1, false);
-            if (exprArguments != null) {
-                List<? extends ExpressionPattern> cpSubpatterns = conPattern.getSubPatterns();
-                DependentLink param1u = CallMatrix.unfoldSigmaType(param1);
-                DependentLink param2u = CallMatrix.unfoldSigmaType(param2);
-                if (param1u != null && param2u != null) {
-                    doProcessLists(callMatrix, param2u, cpSubpatterns, param1u, exprArguments);
-                    return;
-                }
-
-            }
+        DependentLink param1u = CallMatrix.tryUnfoldDependentLink(param1);
+        DependentLink param2u = CallMatrix.tryUnfoldDependentLink(param2);
+        List<? extends ExpressionPattern> patternList;
+        List<? extends Expression> expressionList;
+        if (param2u != null && pattern2 instanceof ConstructorExpressionPattern) {
+            patternList = ((ConstructorExpressionPattern) pattern2).getSubPatterns();
+        } else {
+            patternList = Collections.singletonList(pattern2);
         }
+        expressionList = CallMatrix.tryUnfoldExpression(expr1);
+        if (param1u == null || expressionList == null) {
+            expressionList = Collections.singletonList(expr1);
+            param1u = null;
+        }
+
+        if (param1u != null || param2u != null) {
+            if (param1u == null) param1u = param1;
+            if (param2u == null) param2u = param2;
+            doProcessLists(callMatrix, param2u, patternList, param1u, expressionList);
+            return;
+        }
+
         callMatrix.setBlock(param2, param1, isLess(expr1, pattern2));
     }
 
-    private static void doProcessLists(CallMatrix cm, DependentLink rangePattern, List<? extends ExpressionPattern> myVector, DependentLink rangeArgument, List<? extends Expression> defCallArguments) {
-        for (ExpressionPattern pattern : myVector) {
-            DependentLink rangeArg = rangeArgument;
-            for (Expression argument : defCallArguments) {
+    private static void doProcessLists(CallMatrix cm, DependentLink patternIndex, List<? extends ExpressionPattern> patternList, DependentLink argumentIndex, List<? extends Expression> argumentList) {
+        for (ExpressionPattern pattern : patternList) {
+            DependentLink argIndex = argumentIndex;
+            for (Expression argument : argumentList) {
                 // strip currentExpression of App & Proj calls
                 while (true) {
                     if (argument instanceof AppExpression) {
@@ -147,10 +153,10 @@ public class CollectCallVisitor extends ProcessDefCallsVisitor<Void> {
                         break;
                     }
                 }
-                initMatrixBlock(cm, argument, rangeArg, pattern, rangePattern);
-                rangeArg = rangeArg.getNext();
+                initMatrixBlock(cm, argument, argIndex, pattern, patternIndex);
+                argIndex = argIndex.getNext();
             }
-            rangePattern = rangePattern.getNext();
+            patternIndex = patternIndex.getNext();
         }
     }
 
@@ -161,7 +167,7 @@ public class CollectCallVisitor extends ProcessDefCallsVisitor<Void> {
         }
 
         CallMatrix cm = new CallMatrix(myDefinition, expression);
-        doProcessLists(cm, myDefinition.getParameters(), myVector,
+        doProcessLists(cm, myDefinition.getParameters(), myPatterns,
                 expression.getDefinition().getParameters(), expression.getDefCallArguments());
 
         myCollectedCalls.add(cm);
