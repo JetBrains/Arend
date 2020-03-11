@@ -396,6 +396,6 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
     Concrete.Expression c = concrete.getStatements().get(1).implementation;
     Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(c), core);
     assertNotNull(accept);
-    assertEquals("x", accept.proj1.toString());
+    assertEquals(c.toString(), accept.proj1.toString());
   }
 }
