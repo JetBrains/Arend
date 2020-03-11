@@ -45,7 +45,7 @@ class CallMatrix extends LabeledCallMatrix {
   }
 
   @Override
-  public Doc getMatrixLabel(PrettyPrinterConfig ppConfig) {
+  public Doc getMatrixLabel(PrettyPrinterConfig ppConfig) { //Caution: printing matrix label of a call of a nonterminating function may lead to stack overflow
     return hang(hList(refDoc(myEnclosingDefinition.getReferable()), text(" ->")), termDoc(myCallExpression, ppConfig));
   }
 
@@ -64,7 +64,7 @@ class CallMatrix extends LabeledCallMatrix {
         for (int ii = rangeI.proj1; ii <= rangeI.proj2; ii++)
           for (int jj = rangeJ.proj1; jj <= rangeJ.proj2; jj++)
             if (ii - rangeI.proj1 != jj - rangeJ.proj1)
-              this.set(ii, rangeJ.proj1 + ii - rangeI.proj1, R.Unknown);
+              this.set(ii, jj, R.Unknown);
         break;
       case LessThan:
         throw new IllegalStateException();
@@ -72,12 +72,53 @@ class CallMatrix extends LabeledCallMatrix {
     else throw new IllegalStateException();
   }
 
+  @Override
+  protected String[] getColumnLabels() {
+    String[] result = new String[getWidth()];
+    DependentLink arg = getCodomain().getParameters();
+    for (int j = 0; j < getWidth(); j++)
+      result[j] = calculateLabel(arg, j, 1, "");
+    return result;
+  }
+
+
+  @Override
+  protected String[] getRowLabels() {
+    String[] result = new String[getHeight()];
+    DependentLink arg = getDomain().getParameters();
+    for (int j = 0; j < getHeight(); j++)
+      result[j] = calculateLabel(arg, j, 1, "");
+    return result;
+  }
+
+  private static String calculateLabel(DependentLink parameter, int queriedIndex, int parameterIndex, String namePrefix) {
+    if (!(parameter instanceof EmptyDependentLink)) {
+      DependentLink unfoldedParameters = unfoldSigmaType(parameter);
+      String parameterName = parameter.getName();
+      if (parameterName == null) parameterName = String.valueOf(parameterIndex);
+      String dotPrefix = namePrefix;
+      if (!dotPrefix.isEmpty()) dotPrefix = dotPrefix + ".";
+
+      int length = 1;
+      if (unfoldedParameters != null) {
+        String result = calculateLabel(unfoldedParameters, queriedIndex, 1,dotPrefix + parameterName);
+        if (result != null) return result;
+        length = calculateDimension(unfoldedParameters);
+      } else {
+        if (queriedIndex == 0) return dotPrefix + parameterName;
+      }
+
+      return calculateLabel(parameter.getNext(), queriedIndex - length, parameterIndex + 1, namePrefix);
+    }
+    return null;
+  }
+
   private static int initIndexRanges(DependentLink parameter, @Nullable HashMap<DependentLink, Pair<Integer, Integer>> indexRanges, int currIndex) {
     int length = 1;
     if (!(parameter instanceof EmptyDependentLink)) {
-      Expression type = parameter.getType().getExpr();
-      if (type instanceof SigmaExpression) {
-        length = initIndexRanges(((SigmaExpression) type).getParameters(), indexRanges, currIndex);
+      DependentLink unfoldedParameters = unfoldSigmaType(parameter);
+      if (unfoldedParameters != null) {
+        length = initIndexRanges(unfoldedParameters, indexRanges, currIndex);
       }
       if (indexRanges != null) indexRanges.put(parameter, new Pair<>(currIndex, currIndex + length - 1));
       return length + initIndexRanges(parameter.getNext(), indexRanges, currIndex + length);
@@ -87,5 +128,14 @@ class CallMatrix extends LabeledCallMatrix {
 
   private static int calculateDimension(DependentLink link) {
     return initIndexRanges(link, null, 0);
+  }
+
+  @Nullable
+  public static DependentLink unfoldSigmaType(DependentLink parameter) {
+    Expression type = parameter.getType().getExpr();
+    if (type instanceof SigmaExpression) {
+      return ((SigmaExpression) type).getParameters();
+    }
+    return null;
   }
 }

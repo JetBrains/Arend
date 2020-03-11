@@ -110,23 +110,31 @@ public class CollectCallVisitor extends ProcessDefCallsVisitor<Void> {
     }
 
     private static void initMatrixBlock(CallMatrix callMatrix,
-                                                    Expression expr1, DependentLink param1,
-                                                    ExpressionPattern pattern2, DependentLink param2) {
+                                        Expression expr1, DependentLink param1,
+                                        ExpressionPattern pattern2, DependentLink param2) {
         //param1 and param2 should be used to designate subblocks of the call matrix
+        if (pattern2 instanceof ConstructorExpressionPattern) {
+            ConstructorExpressionPattern conPattern = (ConstructorExpressionPattern) pattern2;
+
+            List<? extends Expression> exprArguments = conPattern.getMatchingExpressionArguments(expr1, false);
+            if (exprArguments != null) {
+                List<? extends ExpressionPattern> cpSubpatterns = conPattern.getSubPatterns();
+                DependentLink param1u = CallMatrix.unfoldSigmaType(param1);
+                DependentLink param2u = CallMatrix.unfoldSigmaType(param2);
+                if (param1u != null && param2u != null) {
+                    doProcessLists(callMatrix, param2u, cpSubpatterns, param1u, exprArguments);
+                    return;
+                }
+
+            }
+        }
         callMatrix.setBlock(param2, param1, isLess(expr1, pattern2));
     }
 
-    @Override
-    protected boolean processDefCall(DefCallExpression expression, Void param) {
-        if (!myCycle.contains(expression.getDefinition())) {
-            return false;
-        }
-
-        CallMatrix cm = new CallMatrix(myDefinition, expression);
-        DependentLink rangePattern = myDefinition.getParameters();
+    private static void doProcessLists(CallMatrix cm, DependentLink rangePattern, List<? extends ExpressionPattern> myVector, DependentLink rangeArgument, List<? extends Expression> defCallArguments) {
         for (ExpressionPattern pattern : myVector) {
-            DependentLink rangeArgument = expression.getDefinition().getParameters();
-            for (Expression argument : expression.getDefCallArguments()) {
+            DependentLink rangeArg = rangeArgument;
+            for (Expression argument : defCallArguments) {
                 // strip currentExpression of App & Proj calls
                 while (true) {
                     if (argument instanceof AppExpression) {
@@ -139,11 +147,22 @@ public class CollectCallVisitor extends ProcessDefCallsVisitor<Void> {
                         break;
                     }
                 }
-                initMatrixBlock(cm, argument, rangeArgument, pattern, rangePattern);
-                rangeArgument = rangeArgument.getNext();
+                initMatrixBlock(cm, argument, rangeArg, pattern, rangePattern);
+                rangeArg = rangeArg.getNext();
             }
             rangePattern = rangePattern.getNext();
         }
+    }
+
+    @Override
+    protected boolean processDefCall(DefCallExpression expression, Void param) {
+        if (!myCycle.contains(expression.getDefinition())) {
+            return false;
+        }
+
+        CallMatrix cm = new CallMatrix(myDefinition, expression);
+        doProcessLists(cm, myDefinition.getParameters(), myVector,
+                expression.getDefinition().getParameters(), expression.getDefCallArguments());
 
         myCollectedCalls.add(cm);
         return false;

@@ -186,6 +186,13 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void test_loop() {
+    typeCheckModule("\\func lol (a : \\Sigma Nat Nat) (b : \\Sigma Nat Nat) : Nat \\elim a, b {\n" +
+            "  | (n,n1), (n2,n3) => lol (n, n1) (n2, n3)\n" +
+            "}", 1);
+  }
+
+  @Test
   public void test34() {
     TestVertex ack = new TestVertex("ack", "x", "y");
     Set<BaseCallMatrix<TestVertex>> cms = new HashSet<>();

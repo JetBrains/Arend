@@ -18,27 +18,4 @@ abstract class LabeledCallMatrix extends BaseCallMatrix<Definition> {
   public abstract Definition getCodomain();
 
   public abstract Definition getDomain();
-
-  @Override
-  protected String[] getColumnLabels() {
-    String[] result = new String[getWidth()];
-    DependentLink arg = getCodomain().getParameters();
-    for (int j = 0; j < getWidth(); j++) {
-      result[j] = arg.getName();
-      arg = arg.getNext();
-    }
-    return result;
-  }
-
-
-  @Override
-  protected String[] getRowLabels() {
-    String[] result = new String[getHeight()];
-    DependentLink arg = getDomain().getParameters();
-    for (int j = 0; j < getHeight(); j++) {
-      result[j] = arg.getName();
-      arg = arg.getNext();
-    }
-    return result;
-  }
 }
