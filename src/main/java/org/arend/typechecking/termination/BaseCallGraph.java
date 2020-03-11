@@ -69,7 +69,7 @@ public abstract class BaseCallGraph<T> {
     for (T vDom : myGraph.keySet()) {
       for (T vCodom : myGraph.get(vDom).keySet()) {
         result.append(getLabel(vDom)).append(" -> ").append(getLabel(vCodom)).append("\n ");
-        for (BaseCallMatrix cm : myGraph.get(vDom).get(vCodom)) {
+        for (BaseCallMatrix<T> cm : myGraph.get(vDom).get(vCodom)) {
           result.append(cm.toString()).append("\n");
         }
       }
@@ -98,9 +98,10 @@ public abstract class BaseCallGraph<T> {
         set = map.get(cm.getCodomain());
         boolean alreadyContainsEqual = false;
 
-        for (BaseCallMatrix c : set) {
+        for (BaseCallMatrix<T> c : set) {
           if (cm.equals(c)) {
             alreadyContainsEqual = true;
+            break;
           }
         }
 
@@ -132,7 +133,7 @@ public abstract class BaseCallGraph<T> {
 
   private static class RecursiveBehaviors<T> {
     private T myBasepoint = null;
-    private Set<RecursiveBehavior<T>> myBehaviors = new HashSet<>();
+    private final Set<RecursiveBehavior<T>> myBehaviors = new HashSet<>();
     private int myLength = -1;
     private RecursiveBehaviors<T> myBestRbAttained = null;
 
@@ -220,7 +221,7 @@ public abstract class BaseCallGraph<T> {
       Set<RecursiveBehavior<T>> result = new HashSet<>();
       for (RecursiveBehavior<T> rb : myBehaviors) {
         boolean containsSmaller = false;
-        Set<RecursiveBehavior> greater = new HashSet<>();
+        Set<RecursiveBehavior<T>> greater = new HashSet<>();
         for (RecursiveBehavior<T> rb2 : result)
           if (rb2.leq(rb)) {
             containsSmaller = true;

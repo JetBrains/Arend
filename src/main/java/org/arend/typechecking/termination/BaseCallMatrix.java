@@ -189,7 +189,7 @@ public abstract class BaseCallMatrix<T> {
   @Override
   public final boolean equals(Object object) {
     if (object instanceof BaseCallMatrix) {
-      BaseCallMatrix cm = (BaseCallMatrix) object;
+      BaseCallMatrix<?> cm = (BaseCallMatrix<?>) object;
       if (getCodomain() != cm.getCodomain() || getDomain() != cm.getDomain()) return false;
       if (myMatrixMap != null && cm.myMatrixMap != null) return myMatrixMap.equals(cm.myMatrixMap);
       for (int i = 0; i < myHeight; i++)
@@ -268,7 +268,7 @@ public abstract class BaseCallMatrix<T> {
   }
 
   private static class CallMatrixEntry {
-    int myIndex;
+    final int myIndex;
     BaseCallMatrix.R myRel;
 
     CallMatrixEntry(int index, BaseCallMatrix.R rel) {

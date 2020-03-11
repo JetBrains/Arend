@@ -17,7 +17,7 @@ import java.util.List;
 
 import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
-class CallMatrix extends LabeledCallMatrix {
+class CallMatrix extends BaseCallMatrix<Definition> {
   private final DefCallExpression myCallExpression;
   private final Definition myEnclosingDefinition;
   private final IndexData myCodomainIndexData;
@@ -120,16 +120,14 @@ class CallMatrix extends LabeledCallMatrix {
   }
 
   static class IndexData{
-    private HashMap<DependentLink, Pair<Integer, Integer>> myIndexMap = new HashMap<>();
-    private int totalLength;
+    private final HashMap<DependentLink, Pair<Integer, Integer>> myIndexMap = new HashMap<>();
+    private final int totalLength;
 
     IndexData(DependentLink startingParameter) {
       totalLength = initIndexRanges(startingParameter, myIndexMap, 0);
     }
 
     public int getDimension() { return totalLength; }
-
-    public Pair<Integer, Integer> getIndex(DependentLink link) { return myIndexMap.get(link); }
 
     public Integer getLength(DependentLink link) {
       Pair<Integer, Integer> info = myIndexMap.get(link);
