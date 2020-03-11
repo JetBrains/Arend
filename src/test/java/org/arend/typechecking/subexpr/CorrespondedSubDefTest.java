@@ -27,6 +27,19 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void errorReport() {
+    ConcreteLocatedReferable referable = resolveNamesDef("\\func f => 0");
+    Concrete.FunctionDefinition def = (Concrete.FunctionDefinition) referable.getDefinition();
+    Concrete.Expression term = def.getBody().getTerm();
+    assertNotNull(term);
+    CorrespondedSubDefVisitor visitor = new CorrespondedSubDefVisitor(term);
+    def.accept(visitor, typeCheckDef(referable));
+    // When matching the telescope of `f`, there's an error
+    assertEquals(1, visitor.getExprError().size());
+    assertEquals(SubExprError.Kind.Telescope, visitor.getExprError().get(0).getKind());
+  }
+
+  @Test
   public void funResultType() {
     ConcreteLocatedReferable referable = resolveNamesDef("\\func f : Nat => 0");
     Concrete.FunctionDefinition def = (Concrete.FunctionDefinition) referable.getDefinition();
