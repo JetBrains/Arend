@@ -16,8 +16,7 @@ public interface CorePattern {
    *
    * @return the variable bound in the pattern or null.
    */
-  @Nullable
-  CoreBinding getBinding();
+  @Nullable CoreBinding getBinding();
 
   /**
    * If the pattern is a constructor pattern, returns either a {@link CoreConstructor}
@@ -26,8 +25,7 @@ public interface CorePattern {
    *
    * @return the head constructor of the pattern or null.
    */
-  @Nullable
-  CoreDefinition getDefinition();
+  @Nullable CoreDefinition getDefinition();
 
   /**
    * If the pattern is a constructor pattern or a tuple pattern, returns the list of subpatterns.

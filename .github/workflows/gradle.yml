@@ -25,9 +25,11 @@ jobs:
       # Normally, macOS runs faster than the other two
       if: matrix.os == 'macOS-latest' && matrix.java == '1.8'
       with:
-        arguments: jarDep jarSrc api --info --no-daemon --stacktrace
+        arguments: "assemble :cli:jarDep --info --no-daemon --stacktrace"
     - uses: actions/upload-artifact@master
       if: matrix.os == 'macOS-latest' && matrix.java == '1.8'
       with:
         name: Arend
-        path: build/libs
+        path:
+          - api/build/libs
+          - cli/build/libs

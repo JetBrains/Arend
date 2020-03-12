@@ -12,8 +12,7 @@ import java.math.BigInteger;
 import java.util.Collection;
 
 public interface ConcreteFactory {
-  @NotNull
-  ConcreteExpression ref(@NotNull ArendRef ref);
+  @NotNull ConcreteExpression ref(@NotNull ArendRef ref);
   @NotNull ConcreteExpression ref(@NotNull ArendRef ref, @Nullable ConcreteLevel pLevel, @Nullable ConcreteLevel hLevel);
   @NotNull ConcreteExpression core(String name, @NotNull CheckedExpression expr);
   @NotNull ConcreteExpression meta(String name, @NotNull MetaDefinition meta);

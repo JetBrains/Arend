@@ -6,6 +6,8 @@ import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.ext.prettyprinting.doc.DocFactory;
 
+import static org.arend.ext.prettyprinting.doc.DocFactory.*;
+
 public class TypeMismatchError extends TypecheckingError {
   public final PrettyPrintable expected;
   public final PrettyPrintable actual;
@@ -24,10 +26,10 @@ public class TypeMismatchError extends TypecheckingError {
 
   @Override
   public Doc getBodyDoc(PrettyPrinterConfig ppConfig) {
-    Doc expectedDoc = DocFactory.hang(DocFactory.text("Expected type:"), expected.prettyPrint(ppConfig));
-    return DocFactory.vList(
+    Doc expectedDoc = hang(text("Expected type:"), expected.prettyPrint(ppConfig));
+    return vList(
       expectedDoc,
-      DocFactory.hang(DocFactory.text(expectedDoc.getHeight() == 1 ? "  Actual type:" : "Actual type:"), actual.prettyPrint(ppConfig)));
+      hang(text(expectedDoc.getHeight() == 1 ? "  Actual type:" : "Actual type:"), actual.prettyPrint(ppConfig)));
   }
 
   @Override

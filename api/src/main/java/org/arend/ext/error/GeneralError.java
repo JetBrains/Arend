@@ -3,7 +3,6 @@ package org.arend.ext.error;
 import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.Doc;
-import org.arend.ext.prettyprinting.doc.DocFactory;
 import org.arend.ext.prettyprinting.doc.DocStringBuilder;
 import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.arend.ext.reference.ArendRef;
@@ -13,6 +12,8 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.function.BiConsumer;
+
+import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public class GeneralError {
   public final @NotNull String message;
@@ -48,25 +49,25 @@ public class GeneralError {
       if (it.hasNext()) {
         cause = it.next();
       } else {
-        return DocFactory.empty();
+        return empty();
       }
     }
     Object data = cause instanceof SourceInfo ? cause : cause instanceof DataContainer ? ((DataContainer) cause).getData() : null;
-    return data instanceof SourceInfo ? DocFactory.refDoc(new SourceInfoReference((SourceInfo) data)) : DocFactory.empty();
+    return data instanceof SourceInfo ? refDoc(new SourceInfoReference((SourceInfo) data)) : empty();
   }
 
   public LineDoc getShortHeaderDoc(PrettyPrinterConfig ppConfig) {
-    return DocFactory.text(message);
+    return text(message);
   }
 
   public final LineDoc getHeaderDoc(PrettyPrinterConfig ppConfig) {
-    return DocFactory.hSep(DocFactory.text(" "), DocFactory.text("[" + level + "]"), DocFactory.hEnd(DocFactory.text(":"), getPositionDoc(ppConfig)), getShortHeaderDoc(ppConfig));
+    return hSep(text(" "), text("[" + level + "]"), hEnd(text(":"), getPositionDoc(ppConfig)), getShortHeaderDoc(ppConfig));
   }
 
   public Doc getCauseDoc(PrettyPrinterConfig ppConfig) {
     Object cause = getCause();
     if (cause instanceof ArendRef) {
-      return DocFactory.refDoc((ArendRef) cause);
+      return refDoc((ArendRef) cause);
     }
 
     ConcreteSourceNode sourceNode = getCauseSourceNode();
@@ -74,12 +75,12 @@ public class GeneralError {
   }
 
   public Doc getBodyDoc(PrettyPrinterConfig ppConfig) {
-    return DocFactory.nullDoc();
+    return nullDoc();
   }
 
   public final Doc getDoc(PrettyPrinterConfig ppConfig) {
     Doc causeDoc = getCauseDoc(ppConfig);
-    return DocFactory.vHang(getHeaderDoc(ppConfig), DocFactory.vList(getBodyDoc(ppConfig), causeDoc == null ? DocFactory.nullDoc() : DocFactory.hang(DocFactory.text("In:"), causeDoc)));
+    return vHang(getHeaderDoc(ppConfig), vList(getBodyDoc(ppConfig), causeDoc == null ? nullDoc() : hang(text("In:"), causeDoc)));
   }
 
   @Override
