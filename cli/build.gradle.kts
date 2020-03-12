@@ -48,8 +48,8 @@ val buildPrelude = task<JavaExec>("buildPrelude") {
 
 val copyPrelude = task<Copy>("copyPrelude") {
     dependsOn(buildPrelude)
-    from("lib")
-    from(project(":base").buildDir.resolve("classes/main/resources"))
+    from(rootProject.file("lib"))
+    into(buildDir.resolve("classes/java/main/lib"))
 }
 
 task<Jar>("jarDep") {
