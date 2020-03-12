@@ -25,7 +25,7 @@ jobs:
       # Normally, macOS runs faster than the other two
       if: matrix.os == 'macOS-latest' && matrix.java == '1.8'
       with:
-        arguments: "assemble jarDep --info --no-daemon --stacktrace"
+        arguments: "assemble sourcesJar jarDep --info --no-daemon --stacktrace"
     - uses: actions/upload-artifact@master
       if: matrix.os == 'macOS-latest' && matrix.java == '1.8'
       with:

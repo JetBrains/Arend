@@ -1,7 +1,6 @@
 plugins {
     java
     idea
-    id("com.google.protobuf") version "0.8.11"
 }
 
 dependencies {
@@ -22,19 +21,17 @@ val generateVersion = task<org.arend.gradle.GenerateVersionTask>("generateVersio
 idea {
     module {
         generatedSourceDirs.add(genDir)
-        outputDir = file("$buildDir/classes/java/main")
-        testOutputDir = file("$buildDir/classes/java/test")
     }
 }
 
-sourceSets { main { java { srcDirs(genDir) } } }
-
-configure<JavaPluginConvention> {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+sourceSets {
+    main {
+        java {
+            srcDirs(genDir)
+        }
+    }
 }
 
 tasks.withType<JavaCompile> {
-    options.encoding = "UTF-8"
     dependsOn(generateVersion)
 }

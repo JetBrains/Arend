@@ -1,6 +1,5 @@
 plugins {
     java
-    idea
 }
 
 dependencies {
@@ -17,22 +16,6 @@ dependencies {
     implementation(project(":api"))
     implementation(project(":base"))
     implementation(project(":parser"))
-}
-
-tasks.withType<JavaCompile> {
-    options.encoding = "UTF-8"
-}
-
-idea {
-    module {
-        outputDir = file("$buildDir/classes/java/main")
-        testOutputDir = file("$buildDir/classes/java/test")
-    }
-}
-
-configure<JavaPluginConvention> {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
 }
 
 // Prelude stuff
