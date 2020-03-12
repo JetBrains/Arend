@@ -1,6 +1,6 @@
-/build/
-/target/
+build/
 /.idea/
 /.gradle/
 *.iml
 src/gen
+lib/Prelude.arc

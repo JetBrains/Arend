@@ -6,7 +6,7 @@ plugins {
 repositories { jcenter() }
 
 tasks.withType<AntlrTask> {
-    outputDirectory = projectDir.parentFile.resolve("src/gen/main/java")
+    outputDirectory = projectDir.parentFile.resolve("parser/src/main/java")
     arguments.addAll(listOf(
         "-package", "org.arend.frontend.parser",
         "-no-listener",

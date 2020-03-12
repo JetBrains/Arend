@@ -157,6 +157,50 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void test121_1() {
+    typeCheckModule("\\func foo (p : \\Sigma Nat Nat) : Nat\n" +
+      "  | (n, 0) => 0\n" +
+      "  | (n, suc m) => foo (7, m)", 0);
+  }
+
+  @Test
+  public void test121_2() {
+    typeCheckModule("\\data List (A : \\Type) | nil | cons A (List A)\n\n" +
+            "\\data All {A : \\Type} (P : A -> \\Type) (xs : List A) \\elim xs\n" +
+            "  | nil => nilAll\n" +
+            "  | cons x xs => consAll (P x) (All P xs)\n\n" +
+            "\\data End1 (n : Nat)\n" +
+            "  | end1 (\\Pi (m : Nat) -> End1 m)\n\n" +
+            "\\func foo1 (xs : List Nat) (ys : All End1 xs) : Nat\n" +
+            "  | nil, _ => 0\n" +
+            "  | cons x xs, consAll (end1 e) ys => foo1 (cons x xs) (consAll (e x) ys)\n\n" +
+            "\\data End2 (n : Nat)\n" +
+            "  | end2 (m : Nat) (\\Sigma -> End2 m)\n\n" +
+            "\\func foo2 (xs : List Nat) (ys : All End2 xs) : Nat\n" +
+            "  | nil, _ => 0\n" +
+            "  | cons x xs, consAll (end2 y e) ys => foo2 (cons y xs) (consAll (e ()) ys)\n\n" +
+            "\\func bar1 (x : Nat) (e : End1 x) : Nat \\elim e\n" +
+            "  | end1 e => bar1 x (e x)\n\n" +
+            "\\func bar2 (x : Nat) (e : End2 x) : Nat \\elim e\n" +
+            "  | end2 y e => bar2 y (e ())", 0);
+  }
+
+  @Test
+  public void test_loop1() {
+    typeCheckModule("\\func lol (a : \\Sigma Nat Nat) (b : \\Sigma Nat Nat) : Nat \\elim a, b {\n" +
+            "  | (n,n1), (n2,n3) => lol (n, n1) (n2, n3)\n" +
+            "}", 1);
+  }
+
+  @Test
+  public void test_loop2() {
+    typeCheckModule(
+            "\\func fooA (p : \\Sigma Nat (\\Sigma Nat Nat)) : Nat \\elim p\n" +
+            "  | (a, (b, c)) => fooB a b c\n\n" +
+            "\\func fooB (a b c : Nat) : Nat \\with | a, b, c => fooA (a, (b, c))", 2);
+  }
+
+  @Test
   public void test34() {
     TestVertex ack = new TestVertex("ack", "x", "y");
     Set<BaseCallMatrix<TestVertex>> cms = new HashSet<>();
