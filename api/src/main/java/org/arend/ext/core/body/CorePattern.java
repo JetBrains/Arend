@@ -1,9 +1,7 @@
 package org.arend.ext.core.body;
 
 import org.arend.ext.core.context.CoreBinding;
-import org.arend.ext.core.definition.CoreConstructor;
 import org.arend.ext.core.definition.CoreDefinition;
-import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -19,8 +17,8 @@ public interface CorePattern {
   @Nullable CoreBinding getBinding();
 
   /**
-   * If the pattern is a constructor pattern, returns either a {@link CoreConstructor}
-   * or a {@link CoreFunctionDefinition} (for defined constructors).
+   * If the pattern is a constructor pattern, returns either a {@link org.arend.ext.core.definition.CoreConstructor}
+   * or a {@link org.arend.ext.core.definition.CoreFunctionDefinition} (for defined constructors).
    * Otherwise, returns null.
    *
    * @return the head constructor of the pattern or null.
