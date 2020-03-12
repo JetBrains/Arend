@@ -30,6 +30,9 @@ jobs:
       if: matrix.os == 'macOS-latest' && matrix.java == '1.8'
       with:
         name: Arend
-        path:
-          - api/build/libs
-          - cli/build/libs
+        path: api/build/libs
+    - uses: actions/upload-artifact@master
+      if: matrix.os == 'macOS-latest' && matrix.java == '1.8'
+      with:
+        name: Arend
+        path: cli/build/libs
