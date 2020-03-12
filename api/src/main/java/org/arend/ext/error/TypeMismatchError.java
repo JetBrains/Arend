@@ -4,7 +4,6 @@ import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.prettyprinting.PrettyPrintable;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.Doc;
-import org.arend.ext.prettyprinting.doc.DocFactory;
 
 import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 

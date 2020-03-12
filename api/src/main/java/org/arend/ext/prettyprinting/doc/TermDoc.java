@@ -5,6 +5,7 @@ import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.jetbrains.annotations.Nullable;
 
 import static org.arend.ext.prettyprinting.doc.DocFactory.hList;
+import static org.arend.ext.prettyprinting.doc.DocFactory.text;
 
 public class TermDoc extends CachingDoc {
   private final CoreExpression term;
@@ -42,6 +43,6 @@ public class TermDoc extends CachingDoc {
       return null;
     }
     TermTextDoc termDoc = new TermTextDoc(text, isFirst);
-    return indent == null ? termDoc : DocFactory.hList(DocFactory.text(indent), termDoc);
+    return indent == null ? termDoc : hList(text(indent), termDoc);
   }
 }
