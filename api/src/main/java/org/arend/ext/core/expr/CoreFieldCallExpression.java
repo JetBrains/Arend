@@ -6,7 +6,6 @@ import org.jetbrains.annotations.NotNull;
 
 public interface CoreFieldCallExpression extends CoreExpression {
   @NotNull CoreClassField getDefinition();
-  @NotNull
-  CoreSort getSortArgument();
+  @NotNull CoreSort getSortArgument();
   @NotNull CoreExpression getArgument();
 }

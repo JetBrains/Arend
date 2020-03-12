@@ -8,7 +8,6 @@ import java.util.List;
 
 public interface CoreDataCallExpression extends CoreExpression {
   @NotNull CoreDataDefinition getDefinition();
-  @NotNull
-  CoreSort getSortArgument();
+  @NotNull CoreSort getSortArgument();
   @NotNull List<? extends CoreExpression> getDefCallArguments();
 }

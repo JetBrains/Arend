@@ -12,10 +12,8 @@ import java.util.Map;
 
 public interface CoreClassCallExpression extends CoreExpression {
   @NotNull CoreClassDefinition getDefinition();
-  @NotNull
-  CoreSort getSortArgument();
-  @NotNull
-  CoreBinding getThisBinding();
+  @NotNull CoreSort getSortArgument();
+  @NotNull CoreBinding getThisBinding();
   @NotNull Collection<? extends Map.Entry<? extends CoreClassField, ? extends CoreExpression>> getImplementations();
 
   @Nullable CoreExpression getAbsImplementationHere(@NotNull CoreClassField field);
