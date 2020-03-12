@@ -7,8 +7,6 @@ import org.jetbrains.annotations.Nullable;
 
 public interface CoreConstructor extends CoreDefinition {
   @NotNull CoreDataDefinition getDataType();
-  @NotNull
-  CoreParameter getParameters();
-  @Nullable
-  CoreBody getBody();
+  @NotNull CoreParameter getParameters();
+  @Nullable CoreBody getBody();
 }

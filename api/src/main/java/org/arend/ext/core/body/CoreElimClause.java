@@ -8,6 +8,5 @@ import java.util.List;
 
 public interface CoreElimClause {
   @NotNull List<? extends CorePattern> getPatterns();
-  @Nullable
-  CoreExpression getExpression();
+  @Nullable CoreExpression getExpression();
 }

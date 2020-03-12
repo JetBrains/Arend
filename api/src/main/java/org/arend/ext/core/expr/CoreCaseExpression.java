@@ -9,8 +9,7 @@ import java.util.Collection;
 
 public interface CoreCaseExpression {
   boolean isSCase();
-  @NotNull
-  CoreParameter getParameters();
+  @NotNull CoreParameter getParameters();
   @NotNull CoreExpression getResultType();
   @Nullable CoreExpression getResultTypeLevel();
   @NotNull CoreElimBody getElimBody();

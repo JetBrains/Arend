@@ -7,10 +7,8 @@ import org.jetbrains.annotations.Nullable;
 
 public interface CoreClassField extends CoreDefinition {
   @NotNull CoreClassDefinition getParentClass();
-  @NotNull
-  CoreParameter getThisParameter();
-  @NotNull
-  CoreExpression getResultType();
+  @NotNull CoreParameter getThisParameter();
+  @NotNull CoreExpression getResultType();
   @Nullable CoreExpression getTypeLevel();
   boolean isProperty();
 }

@@ -14,8 +14,7 @@ public interface CoreClassDefinition extends CoreDefinition {
   @NotNull Collection<? extends CoreClassField> getPersonalFields();
   @NotNull Collection<? extends Map.Entry<? extends CoreClassField, ? extends CoreAbsExpression>> getImplemented();
   @NotNull Collection<? extends Map.Entry<? extends CoreClassField, ? extends CoreAbsExpression>> getOverriddenFields();
-  @NotNull
-  CoreSort getSort();
+  @NotNull CoreSort getSort();
   boolean isRecord();
   @Nullable CoreClassField getClassifyingField();
 

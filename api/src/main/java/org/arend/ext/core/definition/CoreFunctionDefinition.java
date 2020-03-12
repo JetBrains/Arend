@@ -10,10 +10,8 @@ public interface CoreFunctionDefinition extends CoreDefinition {
   enum Kind { FUNC, SFUNC, LEMMA }
 
   @NotNull Kind getKind();
-  @NotNull
-  CoreParameter getParameters();
+  @NotNull CoreParameter getParameters();
   CoreExpression getResultType();
   @Nullable CoreExpression getResultTypeLevel();
-  @Nullable
-  CoreBody getActualBody();
+  @Nullable CoreBody getActualBody();
 }

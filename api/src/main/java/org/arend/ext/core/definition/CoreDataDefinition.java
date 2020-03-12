@@ -8,8 +8,7 @@ import java.util.Collection;
 
 public interface CoreDataDefinition extends CoreDefinition {
   boolean isTruncated();
-  @NotNull
-  CoreParameter getParameters();
+  @NotNull CoreParameter getParameters();
   CoreSort getSort();
   @NotNull Collection<? extends CoreConstructor> getConstructors();
 }
