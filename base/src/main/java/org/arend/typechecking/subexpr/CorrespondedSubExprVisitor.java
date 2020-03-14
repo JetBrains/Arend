@@ -306,7 +306,7 @@ public class CorrespondedSubExprVisitor implements
         corePi = (PiExpression) corePiCodomain;
       else return codomain.accept(this, corePiCodomain);
     }
-    return nullWithError(new SubExprError(SubExprError.Kind.Telescope, corePi));
+    return codomain.accept(this, corePi);
   }
 
   @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>
