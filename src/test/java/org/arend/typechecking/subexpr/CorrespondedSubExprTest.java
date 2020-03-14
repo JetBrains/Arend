@@ -5,6 +5,7 @@ import org.arend.core.expr.*;
 import org.arend.frontend.reference.ConcreteLocatedReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.TypeCheckingTestCase;
+import org.arend.util.Arend;
 import org.arend.util.Pair;
 import org.junit.Test;
 
@@ -169,6 +170,7 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
       ), body);
       assertNotNull(accept);
       assertEquals("14", accept.proj1.toString());
+      assertEquals("14", accept.proj2.toString());
     }
     {
       Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(
@@ -176,6 +178,7 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
       ), body);
       assertNotNull(accept);
       assertEquals("45", accept.proj1.toString());
+      assertEquals("45", accept.proj2.toString());
     }
   }
 
@@ -197,6 +200,7 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
     ), body);
     assertNotNull(accept);
     assertEquals("114514", accept.proj1.toString());
+    assertEquals("114514", accept.proj2.toString());
   }
 
   // Implicit arguments in core DefCall
@@ -217,6 +221,7 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
       ), body);
       assertNotNull(accept);
       assertEquals("114", accept.proj1.toString());
+      assertEquals("114", accept.proj2.toString());
     }
     {
       Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(
@@ -224,6 +229,7 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
       ), body);
       assertNotNull(accept);
       assertEquals("514", accept.proj1.toString());
+      assertEquals("514", accept.proj2.toString());
     }
   }
 
@@ -245,6 +251,7 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
       ), body);
       assertNotNull(accept);
       assertEquals("114", accept.proj1.toString());
+      assertEquals("114", accept.proj2.toString());
     }
     {
       Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(
@@ -252,6 +259,7 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
       ), body);
       assertNotNull(accept);
       assertEquals("514", accept.proj1.toString());
+      assertEquals("514", accept.proj2.toString());
     }
   }
 
@@ -265,6 +273,7 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
     ), let);
     assertNotNull(accept);
     assertEquals("1", accept.proj1.toString());
+    assertEquals("1", accept.proj2.toString());
   }
 
   // (Data type) implicit arguments in core ConCall
@@ -286,6 +295,7 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
       ), body);
       assertNotNull(accept);
       assertEquals("514", accept.proj1.toString());
+      assertEquals("514", accept.proj2.toString());
     }
   }
 
@@ -306,6 +316,7 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
     ), core);
     assertNotNull(accept);
     assertEquals("Nat", accept.proj1.toString());
+    assertEquals("Nat", accept.proj2.toString());
   }
 
   @Test
@@ -331,6 +342,7 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
     Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(subExpr), core);
     assertNotNull(accept);
     assertEquals("114514", accept.proj1.toString());
+    assertEquals("114514", accept.proj2.toString());
   }
 
   @Test
@@ -355,7 +367,7 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
         "}");
   }
 
-  private void testBaseClassCall(String code) {
+  private void testBaseClassCall(@Arend String code) {
     ConcreteLocatedReferable resolved = resolveNamesDef(code);
     Concrete.FunctionDefinition concreteDef = (Concrete.FunctionDefinition) resolved.getDefinition();
     FunctionDefinition coreDef = (FunctionDefinition) typeCheckDef(resolved);
@@ -368,12 +380,14 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
       Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(c), core);
       assertNotNull(accept);
       assertEquals("114514", accept.proj1.toString());
+      assertEquals("114514", accept.proj2.toString());
     }
     {
       Concrete.Expression c = concrete.getStatements().get(0).implementation;
       Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(c), core);
       assertNotNull(accept);
       assertEquals("Nat", accept.proj1.toString());
+      assertEquals("Nat", accept.proj2.toString());
     }
   }
 
@@ -397,5 +411,6 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
     Pair<Expression, Concrete.Expression> accept = concrete.accept(new CorrespondedSubExprVisitor(c), core);
     assertNotNull(accept);
     assertEquals(c.toString(), accept.proj1.toString());
+    assertEquals(c.toString(), accept.proj2.toString());
   }
 }
