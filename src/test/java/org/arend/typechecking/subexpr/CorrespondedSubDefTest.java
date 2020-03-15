@@ -149,6 +149,7 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
       assertNotNull(accept);
       assertEquals("\\Sigma", accept.proj1.toString());
       assertEquals("\\Sigma", accept.proj2.toString());
+      assertEquals(clauseTy.getCodomain().getData(), clauseTy.getData());
     }
   }
 
