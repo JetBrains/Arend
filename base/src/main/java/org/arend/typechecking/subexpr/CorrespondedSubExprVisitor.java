@@ -293,7 +293,7 @@ public class CorrespondedSubExprVisitor implements
     return type.accept(this, typeExpr);
   }
 
-  private @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>
+  @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>
   visitPiImpl(List<? extends Concrete.Parameter> parameters,
               @NotNull Concrete.Expression codomain,
               @NotNull PiExpression corePi) {
