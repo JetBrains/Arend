@@ -142,14 +142,12 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
       assertEquals("Int", accept.proj2.toString());
     }
     {
-      Concrete.PiExpression clauseTy = (Concrete.PiExpression)
-          ((Concrete.ClassField) def.getElements().get(1)).getResultType();
+      Concrete.TypeParameter typeParam = ((Concrete.ClassField) def.getElements().get(1)).getParameters().get(1);
       Pair<Expression, Concrete.Expression> accept = def.accept(
-          new CorrespondedSubDefVisitor(clauseTy.getParameters().get(1).getType()), typeCheckDef(referable));
+          new CorrespondedSubDefVisitor(typeParam.getType()), typeCheckDef(referable));
       assertNotNull(accept);
       assertEquals("\\Sigma", accept.proj1.toString());
       assertEquals("\\Sigma", accept.proj2.toString());
-      assertEquals(clauseTy.getCodomain().getData(), clauseTy.getData());
     }
   }
 

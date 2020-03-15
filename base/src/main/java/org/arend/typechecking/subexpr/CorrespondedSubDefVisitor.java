@@ -16,10 +16,7 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 public class CorrespondedSubDefVisitor implements
     ConcreteDefinitionVisitor<@NotNull Definition,
@@ -117,8 +114,11 @@ public class CorrespondedSubDefVisitor implements
             .findFirst();
         if (!field.isPresent()) continue;
         Expression fieldPi = field.get();
-        Pair<Expression, Concrete.Expression> accept = fieldPi instanceof PiExpression
-            ? visitor.visitPiImpl(concrete.getParameters(), concrete.getResultType(), (PiExpression) fieldPi)
+        // Clone the list and remove the first "this" parameter
+        List<Concrete.TypeParameter> parameters = new ArrayList<>(concrete.getParameters());
+        parameters.remove(0);
+        Pair<Expression, Concrete.Expression> accept = !parameters.isEmpty() && fieldPi instanceof PiExpression
+            ? visitor.visitPiImpl(parameters, concrete.getResultType(), (PiExpression) fieldPi)
             : concrete.getResultType().accept(visitor, fieldPi);
         if (accept != null) return accept;
       }
