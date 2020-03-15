@@ -14,6 +14,7 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -100,7 +101,22 @@ public class CorrespondedSubDefVisitor implements
 
   @Override
   public Pair<Expression, Concrete.Expression> visitClass(Concrete.ClassDefinition def, Definition params) {
-    // TODO :)
+    ClassDefinition coreDef;
+    if (params instanceof ClassDefinition) coreDef = (ClassDefinition) params;
+    else return null;
+    Iterator<Concrete.ClassElement> iterator = def.getElements().iterator();
+    for (ClassField field : coreDef.getFields()) {
+      assert iterator.hasNext();
+      Concrete.ClassElement concrete = iterator.next();
+      if (concrete instanceof Concrete.BaseClassField) {
+        Concrete.Expression resultType = ((Concrete.BaseClassField) concrete).getResultType();
+        // `this`
+        if (resultType instanceof Concrete.PiExpression)
+          resultType = ((Concrete.PiExpression) resultType).getCodomain();
+        Pair<Expression, Concrete.Expression> accept = resultType.accept(visitor, field.getResultType());
+        if (accept != null) return accept;
+      }
+    }
     return null;
   }
 }

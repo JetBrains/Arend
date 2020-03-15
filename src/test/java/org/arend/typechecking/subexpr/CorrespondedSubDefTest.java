@@ -24,6 +24,7 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
         new CorrespondedSubDefVisitor(term), typeCheckDef(referable));
     assertNotNull(accept);
     assertEquals("0", accept.proj1.toString());
+    assertEquals("0", accept.proj2.toString());
   }
 
   @Test
@@ -61,6 +62,7 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
         new CorrespondedSubDefVisitor(type), typeCheckDef(referable));
     assertNotNull(accept);
     assertEquals("Nat", accept.proj1.toString());
+    assertEquals("Nat", accept.proj2.toString());
   }
 
   @Test
@@ -81,6 +83,45 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
     Pair<Expression, Concrete.Expression> accept = def.accept(new CorrespondedSubDefVisitor(clause.implementation), coreDef);
     assertNotNull(accept);
     assertEquals("514", accept.proj1.toString());
+    assertEquals("514", accept.proj2.toString());
+  }
+
+  @Test
+  public void classes() {
+    ConcreteLocatedReferable referable = resolveNamesDef(
+        "\\class T {\n" +
+            "  | A : Nat\n" +
+            "  | B : Int\n" +
+            "}");
+    Concrete.ClassDefinition def = (Concrete.ClassDefinition) referable.getDefinition();
+    {
+      Concrete.ClassField clause = (Concrete.ClassField) def.getElements().get(0);
+      Pair<Expression, Concrete.Expression> accept = def.accept(
+          new CorrespondedSubDefVisitor(clause.getResultType()), typeCheckDef(referable));
+      assertNotNull(accept);
+      assertEquals("Nat", accept.proj1.toString());
+      assertEquals("Nat", accept.proj2.toString());
+    }
+    {
+      Concrete.ClassField clause = (Concrete.ClassField) def.getElements().get(1);
+      Pair<Expression, Concrete.Expression> accept = def.accept(
+          new CorrespondedSubDefVisitor(clause.getResultType()), typeCheckDef(referable));
+      assertNotNull(accept);
+      assertEquals("Int", accept.proj1.toString());
+      assertEquals("Int", accept.proj2.toString());
+    }
+  }
+
+  @Test
+  public void classParam() {
+    ConcreteLocatedReferable referable = resolveNamesDef("\\record T (A B : Nat) {}");
+    Concrete.ClassDefinition def = (Concrete.ClassDefinition) referable.getDefinition();
+    Concrete.ClassField clause = (Concrete.ClassField) def.getElements().get(1);
+    Pair<Expression, Concrete.Expression> accept = def.accept(
+        new CorrespondedSubDefVisitor(clause.getResultType()), typeCheckDef(referable));
+    assertNotNull(accept);
+    assertEquals("Nat", accept.proj1.toString());
+    assertEquals("Nat", accept.proj2.toString());
   }
 
   @Test
@@ -101,6 +142,7 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
     Pair<Expression, Concrete.Expression> accept = def.accept(new CorrespondedSubDefVisitor(clause.implementation), coreDef);
     assertNotNull(accept);
     assertEquals("514", accept.proj1.toString());
+    assertEquals("514", accept.proj2.toString());
   }
 
   @Test
@@ -121,6 +163,7 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
           coreDef);
       assertNotNull(accept);
       assertEquals("a", accept.proj1.toString());
+      assertEquals("a", accept.proj2.toString());
     }
     {
       Concrete.Expression expression = clauses.get(1).getExpression();
@@ -130,6 +173,7 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
           coreDef);
       assertNotNull(accept);
       assertEquals("c", accept.proj1.toString());
+      assertEquals("c", accept.proj2.toString());
     }
   }
 
@@ -142,6 +186,7 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
         new CorrespondedSubDefVisitor(def.getParameters().get(0).getType()), typeCheckDef(referable));
     assertNotNull(accept);
     assertEquals("Nat", accept.proj1.toString());
+    assertEquals("Nat", accept.proj2.toString());
   }
 
   @Test
@@ -158,5 +203,6 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
         ), typeCheckDef(referable));
     assertNotNull(accept);
     assertEquals("Nat", accept.proj1.toString());
+    assertEquals("Nat", accept.proj2.toString());
   }
 }
