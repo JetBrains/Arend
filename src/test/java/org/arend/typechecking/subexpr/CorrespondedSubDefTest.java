@@ -125,6 +125,34 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void fieldParam() {
+    ConcreteLocatedReferable referable = resolveNamesDef(
+        "\\record T {\n" +
+            "  | A : Nat -> Int\n" +
+            "  | B (a : \\Sigma) : Nat\n" +
+            "}");
+    Concrete.ClassDefinition def = (Concrete.ClassDefinition) referable.getDefinition();
+    {
+      Concrete.PiExpression clauseTy = (Concrete.PiExpression)
+          ((Concrete.ClassField) def.getElements().get(0)).getResultType();
+      Pair<Expression, Concrete.Expression> accept = def.accept(
+          new CorrespondedSubDefVisitor(clauseTy.getCodomain()), typeCheckDef(referable));
+      assertNotNull(accept);
+      assertEquals("Int", accept.proj1.toString());
+      assertEquals("Int", accept.proj2.toString());
+    }
+    {
+      Concrete.PiExpression clauseTy = (Concrete.PiExpression)
+          ((Concrete.ClassField) def.getElements().get(1)).getResultType();
+      Pair<Expression, Concrete.Expression> accept = def.accept(
+          new CorrespondedSubDefVisitor(clauseTy.getParameters().get(1).getType()), typeCheckDef(referable));
+      assertNotNull(accept);
+      assertEquals("\\Sigma", accept.proj1.toString());
+      assertEquals("\\Sigma", accept.proj2.toString());
+    }
+  }
+
+  @Test
   public void cowithFun() {
     ConcreteLocatedReferable referable = resolveNamesDef(
         "\\func t : R \\cowith\n" +

@@ -6,7 +6,9 @@ import org.arend.core.elimtree.ElimBody;
 import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.ClassCallExpression;
 import org.arend.core.expr.Expression;
+import org.arend.core.expr.PiExpression;
 import org.arend.core.pattern.Pattern;
+import org.arend.core.sort.Sort;
 import org.arend.naming.reference.TCFieldReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteDefinitionVisitor;
@@ -106,17 +108,14 @@ public class CorrespondedSubDefVisitor implements
       if (concrete instanceof Concrete.ClassField) {
         Concrete.ClassField concreteField = (Concrete.ClassField) concrete;
         TCFieldReferable referable = concreteField.getData();
-        Optional<Expression> field = coreDef.getFields()
+        Optional<PiExpression> field = coreDef.getFields()
             .stream()
             .filter(classField -> classField.getReferable() == referable)
-            .map(ClassField::getResultType)
+            .map(classField -> classField.getType(Sort.STD))
             .findFirst();
         if (!field.isPresent()) continue;
-        Concrete.Expression resultType = concreteField.getResultType();
-        // `this`
-        if (resultType instanceof Concrete.PiExpression)
-          resultType = ((Concrete.PiExpression) resultType).getCodomain();
-        Pair<Expression, Concrete.Expression> accept = resultType.accept(visitor, field.get());
+        Pair<Expression, Concrete.Expression> accept = concreteField.getResultType()
+            .accept(visitor, field.get());
         if (accept != null) return accept;
       }
     return null;
