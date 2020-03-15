@@ -7,6 +7,7 @@ import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.ClassCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.pattern.Pattern;
+import org.arend.naming.reference.TCFieldReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteDefinitionVisitor;
 import org.arend.util.Pair;
@@ -14,10 +15,7 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 public class CorrespondedSubDefVisitor implements
     ConcreteDefinitionVisitor<@NotNull Definition,
@@ -104,19 +102,23 @@ public class CorrespondedSubDefVisitor implements
     ClassDefinition coreDef;
     if (params instanceof ClassDefinition) coreDef = (ClassDefinition) params;
     else return null;
-    Iterator<Concrete.ClassElement> iterator = def.getElements().iterator();
-    for (ClassField field : coreDef.getFields()) {
-      assert iterator.hasNext();
-      Concrete.ClassElement concrete = iterator.next();
-      if (concrete instanceof Concrete.BaseClassField) {
-        Concrete.Expression resultType = ((Concrete.BaseClassField) concrete).getResultType();
+    for (Concrete.ClassElement concrete : def.getElements())
+      if (concrete instanceof Concrete.ClassField) {
+        Concrete.ClassField concreteField = (Concrete.ClassField) concrete;
+        TCFieldReferable referable = concreteField.getData();
+        Optional<Expression> field = coreDef.getFields()
+            .stream()
+            .filter(classField -> classField.getReferable() == referable)
+            .map(ClassField::getResultType)
+            .findFirst();
+        if (!field.isPresent()) continue;
+        Concrete.Expression resultType = concreteField.getResultType();
         // `this`
         if (resultType instanceof Concrete.PiExpression)
           resultType = ((Concrete.PiExpression) resultType).getCodomain();
-        Pair<Expression, Concrete.Expression> accept = resultType.accept(visitor, field.getResultType());
+        Pair<Expression, Concrete.Expression> accept = resultType.accept(visitor, field.get());
         if (accept != null) return accept;
       }
-    }
     return null;
   }
 }
