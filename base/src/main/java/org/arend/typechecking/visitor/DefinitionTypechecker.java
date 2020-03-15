@@ -1777,7 +1777,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           if (previousField != null) {
             UniverseKind universeKind = new UniverseKindChecker().getUniverseKind(previousField.getType(Sort.STD).getCodomain());
             previousField.setUniverseKind(universeKind);
-            previousField.setNumberOfParameters(field.getNumberOfParameters());
+            previousField.setNumberOfParameters(Concrete.getNumberOfParameters(field.getParameters()));
           }
 
           if (field.getData().isParameterField() && !field.getData().isExplicitField()) {
@@ -2008,11 +2008,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
     }
 
-    if (!def.getParameters().isEmpty()) {
-      def.setResultType(new Concrete.PiExpression(def.getParameters().get(0).getData(), new ArrayList<>(def.getParameters()), def.getResultType()));
-      def.getParameters().clear();
-    }
-
     boolean isProperty;
     boolean ok;
     PiExpression piType;
@@ -2020,14 +2015,13 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(typechecker.getContext())) {
         Concrete.Expression codomain;
         TypedSingleDependentLink thisParam = new TypedSingleDependentLink(false, "this", new ClassCallExpression(parentClass, Sort.STD), true);
-        if (def.getResultType() instanceof Concrete.PiExpression) {
-          Concrete.PiExpression piExpr = (Concrete.PiExpression) def.getResultType();
-          if (piExpr.getParameters().size() == 1) {
-            codomain = piExpr.codomain;
+        if (!def.getParameters().isEmpty()) {
+          if (def.getParameters().size() == 1) {
+            codomain = def.getResultType();
           } else {
-            codomain = new Concrete.PiExpression(piExpr.getParameters().get(1).getData(), piExpr.getParameters().subList(1, piExpr.getParameters().size()), piExpr.codomain);
+            codomain = new Concrete.PiExpression(def.getParameters().get(1).getData(), def.getParameters().subList(1, def.getParameters().size()), def.getResultType());
           }
-          typechecker.addBinding(piExpr.getParameters().get(0).getReferableList().get(0), thisParam);
+          typechecker.addBinding(def.getParameters().get(0).getReferableList().get(0), thisParam);
         } else {
           typechecker.addBinding(null, thisParam);
           errorReporter.report(new TypecheckingError("Internal error: class field must have a function type", def));
@@ -2067,28 +2061,19 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         if (def.getResultTypeLevel() != null) {
           Expression resultType = piType;
           SingleDependentLink link = EmptyDependentLink.getInstance();
-          if (def.getResultType() instanceof Concrete.PiExpression) {
-            List<Concrete.TypeParameter> parameters = ((Concrete.PiExpression) def.getResultType()).getParameters();
-            int i = 0;
-            int sum = def.getNumberOfParameters() + 1;
-            loop:
-            for (Concrete.TypeParameter parameter : parameters) {
-              for (Referable referable : parameter.getReferableList()) {
-                if (!link.hasNext()) {
-                  if (!(resultType instanceof PiExpression)) {
-                    resultType = null;
-                    break loop;
-                  }
-                  link = ((PiExpression) resultType).getParameters();
-                  resultType = ((PiExpression) resultType).getCodomain();
-                }
-                typechecker.addBinding(referable, link);
-                link = link.getNext();
-
-                if (++i == sum) {
+          loop:
+          for (Concrete.TypeParameter parameter : def.getParameters()) {
+            for (Referable referable : parameter.getReferableList()) {
+              if (!link.hasNext()) {
+                if (!(resultType instanceof PiExpression)) {
+                  resultType = null;
                   break loop;
                 }
+                link = ((PiExpression) resultType).getParameters();
+                resultType = ((PiExpression) resultType).getCodomain();
               }
+              typechecker.addBinding(referable, link);
+              link = link.getNext();
             }
           }
           if (!link.hasNext() && resultType != null) {
@@ -2110,7 +2095,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     piType.getCodomain().accept(goodThisParametersVisitor, null);
     List<Boolean> goodThisParams = goodThisParametersVisitor.getGoodParameters();
     if (goodThisParams.isEmpty() || !goodThisParams.get(0)) {
-      errorReporter.report(new TypecheckingError("The type of the field contains illegal \\this occurrence", def.getResultType()));
+      errorReporter.report(new TypecheckingError("The type of the field contains illegal \\this occurrence", def.getParameters().isEmpty() ? def.getResultType() : def.getParameters().get(0)));
       ok = false;
       if (newDef && def instanceof Concrete.ClassField) {
         typedDef.setType(new PiExpression(piType.getResultSort(), piType.getParameters(), new ErrorExpression()));

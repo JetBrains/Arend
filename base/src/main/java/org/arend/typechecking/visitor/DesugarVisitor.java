@@ -125,7 +125,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
       } else {
         previousType = classField.getParameters().isEmpty() ? fieldType : null;
         classFieldChecker.visitParameters(classField.getParameters(), null);
-        classField.getParameters().add(0, new Concrete.TelescopeParameter(fieldType.getData(), false, Collections.singletonList(thisParameter), new Concrete.ReferenceExpression(fieldType.getData(), def.getData())));
+        classField.getParameters().add(0, new Concrete.TelescopeParameter(classField.getParameters().isEmpty() ? fieldType.getData() : classField.getParameters().get(0).getData(), false, Collections.singletonList(thisParameter), new Concrete.ReferenceExpression(fieldType.getData(), def.getData())));
         classField.setResultType(fieldType.accept(classFieldChecker, null));
         if (classField.getResultTypeLevel() != null) {
           classField.setResultTypeLevel(classField.getResultTypeLevel().accept(classFieldChecker, null));
@@ -338,7 +338,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
     for (T element : originalElements) {
       if (element instanceof Concrete.ClassFieldImpl) {
         //noinspection unchecked
-        visitClassFieldImpl((Concrete.ClassFieldImpl) element, (List) elements);
+        visitClassFieldImpl((Concrete.ClassFieldImpl) element, (List<Concrete.ClassFieldImpl>) elements);
       } else {
         visitClassElement(element, null);
         elements.add(element);

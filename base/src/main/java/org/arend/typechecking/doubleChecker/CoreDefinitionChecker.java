@@ -271,10 +271,12 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
       PiExpression fieldType = field.getType(Sort.STD);
       myChecker.addBinding(fieldType.getParameters(), fieldType.getCodomain());
       Expression typeType = fieldType.getCodomain().accept(myChecker, Type.OMEGA);
+      myChecker.removeBinding(fieldType.getParameters());
+
       Integer level;
       if (field.getTypeLevel() != null) {
         List<DependentLink> parameters = new ArrayList<>();
-        Expression type = fieldType.getCodomain();
+        Expression type = fieldType;
         int sum = field.getNumberOfParameters();
         for (int i = 0; i < sum; ) {
           if (!(type instanceof PiExpression)) {
@@ -302,7 +304,6 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
       } else {
         level = null;
       }
-      myChecker.removeBinding(fieldType.getParameters());
       if (typeType == null) {
         return false;
       }
