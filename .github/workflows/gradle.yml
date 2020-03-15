@@ -11,7 +11,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        java: [1.8, 11]
+        java: [11]
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v1
@@ -23,16 +23,16 @@ jobs:
         arguments: check --info --no-daemon --stacktrace
     - uses: eskatos/gradle-command-action@v1
       # Normally, macOS runs faster than the other two
-      if: matrix.os == 'macOS-latest' && matrix.java == '1.8'
+      if: matrix.os == 'macOS-latest'
       with:
         arguments: "assemble sourcesJar jarDep --info --no-daemon --stacktrace"
     - uses: actions/upload-artifact@master
-      if: matrix.os == 'macOS-latest' && matrix.java == '1.8'
+      if: matrix.os == 'macOS-latest'
       with:
         name: API
         path: api/build/libs
     - uses: actions/upload-artifact@master
-      if: matrix.os == 'macOS-latest' && matrix.java == '1.8'
+      if: matrix.os == 'macOS-latest'
       with:
         name: Arend
         path: cli/build/libs
