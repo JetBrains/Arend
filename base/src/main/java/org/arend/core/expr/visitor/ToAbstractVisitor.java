@@ -339,19 +339,21 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       return lamExpr;
     }
 
+    int varsCounter = numberOfVars;
+
     for (int j = parameters.size() - 1; j >= 0; j--) {
       List<? extends Referable> refList = parameters.get(j).getReferableList();
-      if (numberOfVars == refList.size()) {
+      if (varsCounter == refList.size()) {
         parameters = parameters.subList(0, j);
         break;
       }
-      if (numberOfVars < refList.size()) {
+      if (varsCounter < refList.size()) {
         parameters = new ArrayList<>(parameters.subList(0, j));
         Concrete.Parameter param = parameters.get(j);
-        parameters.add(new Concrete.TelescopeParameter(param.getData(), param.isExplicit(), param.getReferableList().subList(0, refList.size() - numberOfVars), param.getType()));
+        parameters.add(new Concrete.TelescopeParameter(param.getData(), param.isExplicit(), param.getReferableList().subList(0, refList.size() - varsCounter), param.getType()));
         break;
       }
-      numberOfVars -= refList.size();
+      varsCounter -= refList.size();
     }
 
     Concrete.Expression body = args.size() == numberOfVars ? fun : Concrete.AppExpression.make(lamExpr.body.getData(), fun, args.subList(0, args.size() - numberOfVars));

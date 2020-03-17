@@ -5,9 +5,7 @@ import org.arend.core.context.param.TypedSingleDependentLink;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.elimtree.ElimBody;
 import org.arend.core.elimtree.ElimClause;
-import org.arend.core.expr.CaseExpression;
-import org.arend.core.expr.Expression;
-import org.arend.core.expr.LamExpression;
+import org.arend.core.expr.*;
 import org.arend.core.expr.visitor.ToAbstractVisitor;
 import org.arend.core.pattern.BindingPattern;
 import org.arend.core.pattern.ConstructorPattern;
@@ -231,5 +229,14 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
       "\\func \\infixr 6 & (x y : Nat) => x\n" +
       "\\func f (x y z : Nat) => ((x + suc y) * (suc y & (z & x))) * (suc (z + y))");
     testExpr("(x + suc y) * (suc y & z & x) * suc (z + y)", (Expression) ((FunctionDefinition) getDefinition("f")).getBody());
+  }
+
+  @Test
+  public void highOrderTest() {
+    typeCheckModule(
+            "\\func R {A : \\Type} (a a' : A) => a = a'\n" +
+                    "\\func F {A : \\Type} (T : A -> A -> \\Type) => \\Pi (a : A) -> T a a\n" +
+                    "\\func fooxy => F {Nat} R");
+    testExpr("F R", ((Expression)((FunctionDefinition) getDefinition("fooxy")).getBody()), EnumSet.noneOf(PrettyPrinterFlag.class));
   }
 }
