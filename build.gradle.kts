@@ -11,13 +11,6 @@ annotationsVersion = "19.0.0"
 protobufVersion = "3.11.4"
 antlrVersion = "4.8"
 
-idea {
-    module {
-        outputDir = file("$buildDir/classes/java/main")
-        testOutputDir = file("$buildDir/classes/java/test")
-    }
-}
-
 allprojects {
     group = "org.arend"
     version = "1.2.0"
