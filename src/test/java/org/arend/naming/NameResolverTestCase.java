@@ -11,8 +11,6 @@ import org.arend.prelude.PreludeLibrary;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.ChildGroup;
 import org.arend.typechecking.TestLocalErrorReporter;
-import org.arend.util.Arend;
-import org.arend.util.ArendExpr;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -50,7 +48,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     return resolveNamesExpr(PreludeLibrary.getPreludeScope(), names, text, 0);
   }
 
-  protected Concrete.Expression resolveNamesExpr(@ArendExpr String text) {
+  protected Concrete.Expression resolveNamesExpr(String text) {
     return resolveNamesExpr(new HashMap<>(), text);
   }
 
@@ -63,7 +61,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     return group;
   }
 
-  protected ChildGroup resolveNamesDefGroup(@Arend String text) {
+  protected ChildGroup resolveNamesDefGroup(String text) {
     return resolveNamesDefGroup(text, 0);
   }
 
@@ -71,7 +69,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     return (ConcreteLocatedReferable) resolveNamesDefGroup(text, errors).getReferable();
   }
 
-  protected ConcreteLocatedReferable resolveNamesDef(@Arend String text) {
+  protected ConcreteLocatedReferable resolveNamesDef(String text) {
     return resolveNamesDef(text, 0);
   }
 
