@@ -7,7 +7,6 @@ import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.pattern.Pattern;
-import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.naming.reference.ClassReferable;
 import org.arend.naming.reference.FieldReferable;
 import org.arend.naming.reference.Referable;
@@ -168,19 +167,12 @@ public class CorrespondedSubExprVisitor implements
     if (coreExpr instanceof AppExpression) {
       Concrete.Argument lastArgument = arguments.get(lastArgIndex);
       Expression function = coreExpr;
-      PiExpression type;
       AppExpression coreAppExpr;
       do {
         assert function instanceof AppExpression;
         coreAppExpr = (AppExpression) function;
         function = coreAppExpr.getFunction();
-        Expression functionType = function.getType();
-        if (functionType != null)
-          functionType = functionType.normalize(NormalizationMode.WHNF);
-        type = functionType instanceof PiExpression ? (PiExpression) functionType : null;
-        if (type == null)
-          return nullWithError(new SubExprError(SubExprError.Kind.ExpectPi, functionType));
-      } while (type.getParameters().isExplicit() != lastArgument.isExplicit());
+      } while (coreAppExpr.isExplicit() != lastArgument.isExplicit());
       Pair<Expression, Concrete.Expression> accepted = lastArgument.getExpression().accept(this, coreAppExpr.getArgument());
       if (accepted != null) return accepted;
       arguments.remove(lastArgIndex);
