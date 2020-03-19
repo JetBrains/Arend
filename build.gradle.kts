@@ -3,6 +3,7 @@ plugins {
     idea
     `java-library`
     `maven-publish`
+    signing
 }
 
 var annotationsVersion: String by rootProject.ext
@@ -45,6 +46,7 @@ allprojects {
 
 subprojects {
     apply {
+        plugin("signing")
         plugin("maven-publish")
         plugin("java-library")
     }
@@ -61,8 +63,21 @@ subprojects {
                 version = this@subprojects.version.toString()
                 artifactId = this@subprojects.name
                 from(components["java"])
+                pom {
+                    url.set("https://arend-lang.github.io")
+                    licenses {
+                        license {
+                            name.set("Apache-2.0")
+                            url.set("https://github.com/JetBrains/Arend/blob/master/LICENSE")
+                        }
+                    }
+                }
             }
         }
+    }
+
+    signing {
+        sign(publishing.publications["mavenJava"])
     }
 }
 
