@@ -8,6 +8,9 @@
 Arend is a theorem prover based on [Homotopy Type Theory](https://ncatlab.org/nlab/show/homotopy+type+theory).
 Visit [arend-lang.github.io](https://arend-lang.github.io/) for more information about the Arend language.
 
+For instructions on building Arend locally, general description of the codebase
+and guidelines on contributing to Arend, there's [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Usage
 
 Arend is under active development, so you may expect to depend your project on
@@ -32,19 +35,3 @@ allprojects {
     }
 }
 ```
-
-## Building
-
-We use gradle to build the compiler. It comes with a wrapper script (`gradlew` or `gradlew.bat` in
-the root of the repository) which downloads appropriate version of gradle
-automatically as long as you have JDK installed.
-
-Common tasks are
-
-- `./gradlew jarDep` — build a jar file which includes all the dependencies which can be found at `cli/build/libs`.
-  To see the command line options of the application, run `java -jar cli-[version]-full.jar --help`.
-  It's essentially equivalent to `./gradlew :cli:jarDep`.
-
-- `./gradlew :api:assemble` - build Arend extension API jar which can be found at `api/build/libs`.
-
-- `./gradlew test` — run all tests.
