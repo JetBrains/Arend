@@ -1,6 +1,7 @@
 plugins {
     java
     idea
+    `java-library`
     `maven-publish`
 }
 
@@ -23,7 +24,6 @@ allprojects {
     apply {
         plugin("java")
         plugin("idea")
-        plugin("maven-publish")
     }
 
     idea {
@@ -41,15 +41,28 @@ allprojects {
     tasks.withType<JavaCompile> {
         options.encoding = "UTF-8"
     }
+}
 
-    val sourcesJar = task<Jar>("sourcesJar") {
-        group = tasks["jar"].group
-        from(sourceSets["main"].allJava)
-        archiveClassifier.set("sources")
+subprojects {
+    apply {
+        plugin("maven-publish")
+        plugin("java-library")
     }
 
-    artifacts {
-        add("archives", sourcesJar)
+    java {
+        withSourcesJar()
+        // withJavadocJar()
+    }
+
+    publishing {
+        publications {
+            create<MavenPublication>("maven") {
+                groupId = this@subprojects.group.toString()
+                version = this@subprojects.version.toString()
+                artifactId = this@subprojects.name
+                from(components["java"])
+            }
+        }
     }
 }
 
