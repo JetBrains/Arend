@@ -3,8 +3,7 @@ package org.arend.typechecking.definition;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
-import static org.arend.Matchers.missingClauses;
-import static org.arend.Matchers.typeMismatchError;
+import static org.arend.Matchers.*;
 
 public class ConstructorTest extends TypeCheckingTestCase {
   @Test
@@ -238,5 +237,11 @@ public class ConstructorTest extends TypeCheckingTestCase {
   @Test
   public void numberError() {
     typeCheckDef("\\cons one => 200", 1);
+  }
+
+  @Test
+  public void goalTest() {
+    typeCheckDef("\\cons test => suc {?}", 1);
+    assertThatErrorsAre(goalError());
   }
 }

@@ -718,7 +718,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     if (!(expr instanceof ConCallExpression || expr instanceof FunCallExpression && ((FunCallExpression) expr).getDefinition() instanceof DConstructor || expr instanceof TupleExpression)) {
-      errorReporter.report(new TypecheckingError("\\cons must contain only constructors and variables", sourceNode));
+      if (!(expr instanceof ErrorExpression)) {
+        errorReporter.report(new TypecheckingError("\\cons must contain only constructors and variables", sourceNode));
+      }
       return null;
     }
 
