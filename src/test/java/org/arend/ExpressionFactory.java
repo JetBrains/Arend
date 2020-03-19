@@ -19,9 +19,23 @@ import org.arend.core.subst.LevelSubstitution;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
 public class ExpressionFactory {
+  public static Expression Apps(Expression function, Expression... arguments) {
+    if (arguments.length == 0) {
+      return function;
+    }
+
+    List<SingleDependentLink> parameters = new ArrayList<>();
+    function.getPiParameters(parameters, false);
+
+    Expression result = function;
+    for (int i = 0; i < arguments.length; i++) {
+      result = AppExpression.make(result, arguments[i], i >= parameters.size() || parameters.get(i).isExplicit());
+    }
+    return result;
+  }
+
   public static FunCallExpression FunCall(FunctionDefinition definition, Sort sortArgument, Expression... arguments) {
     return new FunCallExpression(definition, sortArgument, Arrays.asList(arguments));
   }

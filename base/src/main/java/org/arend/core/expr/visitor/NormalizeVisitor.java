@@ -30,46 +30,13 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
 
   @Override
   public Expression visitApp(AppExpression expr, NormalizationMode mode) {
-    List<Expression> args = new ArrayList<>();
-    Expression function = expr;
-    for (; expr != null; expr = function.cast(AppExpression.class)) {
-      args.add(expr.getArgument());
-      function = expr.getFunction().accept(this, NormalizationMode.WHNF);
+    Expression function = expr.getFunction().accept(this, mode);
+    LamExpression lamExpr = function.cast(LamExpression.class);
+    if (lamExpr != null) {
+      return AppExpression.make(lamExpr, expr.getArgument(), expr.isExplicit()).accept(this, mode);
+    } else {
+      return AppExpression.make(function, mode == NormalizationMode.WHNF ? expr.getArgument() : expr.getArgument().accept(this, mode), expr.isExplicit());
     }
-    Collections.reverse(args);
-
-    LamExpression lam = function.cast(LamExpression.class);
-    if (lam != null) {
-      return normalizeLam(lam, args).accept(this, mode);
-    }
-
-    if (mode == NormalizationMode.NF) {
-      function = function.accept(this, mode);
-    }
-    for (Expression arg : args) {
-      function = AppExpression.make(function, mode == NormalizationMode.WHNF ? arg : arg.accept(this, mode));
-    }
-    return function;
-  }
-
-  private Expression normalizeLam(LamExpression fun, List<? extends Expression> arguments) {
-    int i = 0;
-    SingleDependentLink link = fun.getParameters();
-    ExprSubstitution subst = new ExprSubstitution();
-    while (link.hasNext() && i < arguments.size()) {
-      subst.add(link, arguments.get(i++));
-      link = link.getNext();
-    }
-
-    Expression result = fun.getBody();
-    if (link.hasNext()) {
-      result = new LamExpression(fun.getResultSort(), link, result);
-    }
-    result = result.subst(subst);
-    for (; i < arguments.size(); i++) {
-      result = AppExpression.make(result, arguments.get(i));
-    }
-    return result;
   }
 
   private Expression applyDefCall(DefCallExpression expr, NormalizationMode mode) {
@@ -242,7 +209,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
                 }
               }
               if (noFreeVar) {
-                return AppExpression.make(isoArgs.get(2), expr.getDefCallArguments().get(1)).accept(this, mode);
+                return AppExpression.make(isoArgs.get(2), expr.getDefCallArguments().get(1), true).accept(this, mode);
               }
             }
           }
@@ -435,7 +402,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
         for (DependentLink link = clause.getParameters(); link.hasNext(); link = link.getNext(), i++) {
           substitution.add(link, result.get(leafElimTree.getArgumentIndex(i)));
         }
-        return clause.getExpression().subst(substitution, levelSubstitution);
+        return Objects.requireNonNull(clause.getExpression()).subst(substitution, levelSubstitution);
       }
 
       elimTree = updateStack(stack, result, (BranchElimTree) elimTree);

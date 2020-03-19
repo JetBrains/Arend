@@ -115,31 +115,9 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   @Override
   public Concrete.Expression visitApp(AppExpression expr, Void params) {
-    List<Expression> args = new ArrayList<>();
-    Expression fun = expr.getArguments(args);
-    Concrete.Expression result = fun.accept(this, null);
-    boolean[] isExplicit = new boolean[args.size()];
-    getArgumentsExplicitness(fun, isExplicit);
-    for (int index = 0; index < args.size(); index++) {
-      result = visitApp(result, args.get(index), isExplicit[index]);
-    }
-    return result;
-  }
-
-  private static void getArgumentsExplicitness(Expression expr, boolean[] isExplicit) {
-    List<SingleDependentLink> params = new ArrayList<>(isExplicit.length);
-    Expression type = expr.getType();
-    if (type != null) {
-      type.getPiParameters(params, false);
-      for (int i = 0; i < isExplicit.length; i++) {
-        isExplicit[i] = i >= params.size() || params.get(i).isExplicit();
-      }
-    }
-  }
-
-  private Concrete.Expression visitApp(Concrete.Expression function, Expression argument, boolean isExplicit) {
-    Concrete.Expression arg = isExplicit || hasFlag(PrettyPrinterFlag.SHOW_IMPLICIT_ARGS) ? argument.accept(this, null) : null;
-    return arg != null ? Concrete.AppExpression.make(null, function, arg, isExplicit) : function;
+    Concrete.Expression function = expr.getFunction().accept(this, null);
+    Concrete.Expression arg = expr.isExplicit() || hasFlag(PrettyPrinterFlag.SHOW_IMPLICIT_ARGS) ? expr.getArgument().accept(this, null) : null;
+    return arg != null ? Concrete.AppExpression.make(null, function, arg, expr.isExplicit()) : function;
   }
 
   private void visitArgument(Expression arg, boolean isExplicit, List<Concrete.Argument> arguments) {

@@ -1,5 +1,6 @@
 package org.arend.core.expr.visitor;
 
+import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.EvaluatingBinding;
 import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.context.binding.inference.MetaInferenceVariable;
@@ -28,7 +29,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitApp(AppExpression expr, Void params) {
-    return AppExpression.make(expr.getFunction().accept(this, null), expr.getArgument().accept(this, null));
+    return AppExpression.make(expr.getFunction().accept(this, null), expr.getArgument().accept(this, null), expr.isExplicit());
   }
 
   @Override
@@ -84,8 +85,9 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitReference(ReferenceExpression expr, Void params) {
-    if (expr.getBinding() instanceof EvaluatingBinding && !myBoundEvaluatingBindings.contains(expr.getBinding())) {
-      return ((EvaluatingBinding) expr.getBinding()).getExpression().accept(this, null);
+    Binding binding = expr.getBinding();
+    if (binding instanceof EvaluatingBinding && !myBoundEvaluatingBindings.contains(binding)) {
+      return ((EvaluatingBinding) binding).getExpression().accept(this, null);
     }
     return expr;
   }

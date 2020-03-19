@@ -351,7 +351,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     args.add(expr2);
     args.add(paramRef);
     expr2 = new LamExpression(conCall1.getSortArgument(), param, new FunCallExpression(Prelude.AT, conCall1.getSortArgument(), args));
-    Expression type = new PiExpression(conCall1.getSortArgument(), param, AppExpression.make(conCall1.getDataTypeArguments().get(0), paramRef));
+    Expression type = new PiExpression(conCall1.getSortArgument(), param, AppExpression.make(conCall1.getDataTypeArguments().get(0), paramRef, true));
     return correctOrder ? compare(conCall1.getDefCallArguments().get(0), expr2, type) : compare(expr2, conCall1.getDefCallArguments().get(0), type);
   }
 
@@ -743,12 +743,12 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
 
     if (params1.size() < params2.size()) {
       for (int i = params1.size(); i < params2.size(); i++) {
-        body1 = AppExpression.make(body1, new ReferenceExpression(params2.get(i)));
+        body1 = AppExpression.make(body1, new ReferenceExpression(params2.get(i)), params2.get(i).isExplicit());
       }
     }
     if (params2.size() < params1.size()) {
       for (int i = params2.size(); i < params1.size(); i++) {
-        body2 = AppExpression.make(body2, new ReferenceExpression(params1.get(i)));
+        body2 = AppExpression.make(body2, new ReferenceExpression(params1.get(i)), params1.get(i).isExplicit());
       }
     }
 

@@ -181,6 +181,9 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     if (piType == null) {
       throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(DocFactory.text("a pi type"), funType, mySourceNode), expr.getFunction()));
     }
+    if (piType.getParameters().isExplicit() != expr.isExplicit()) {
+      throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(DocFactory.text("a pi type with " + (expr.isExplicit() ? "explicit" : "implicit") + " parameter"), piType, mySourceNode), expr.getFunction()));
+    }
 
     expr.getArgument().accept(this, piType.getParameters().getTypeExpr());
     return piType.applyExpression(expr.getArgument());

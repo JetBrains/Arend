@@ -184,8 +184,8 @@ public class DataDefinition extends Definition implements CoreDataDefinition {
     if (this == Prelude.PATH && sortArgument.isProp()) {
       Sort sort = Sort.SetOfLevel(sortArgument.getPLevel());
       TypedDependentLink param = new TypedDependentLink(true, myParameters.getName(), new PiExpression(sort.succ(), new TypedSingleDependentLink(true, null, ExpressionFactory.Interval()), new UniverseExpression(sort)), EmptyDependentLink.getInstance());
-      TypedDependentLink param3 = new TypedDependentLink(true, myParameters.getNext().getNext().getName(), new TypeExpression(AppExpression.make(new ReferenceExpression(param), ExpressionFactory.Right()), sort), EmptyDependentLink.getInstance());
-      TypedDependentLink param2 = new TypedDependentLink(true, myParameters.getNext().getName(), new TypeExpression(AppExpression.make(new ReferenceExpression(param), ExpressionFactory.Left()), sort), param3);
+      TypedDependentLink param3 = new TypedDependentLink(true, myParameters.getNext().getNext().getName(), new TypeExpression(AppExpression.make(new ReferenceExpression(param), ExpressionFactory.Right(), true), sort), EmptyDependentLink.getInstance());
+      TypedDependentLink param2 = new TypedDependentLink(true, myParameters.getNext().getName(), new TypeExpression(AppExpression.make(new ReferenceExpression(param), ExpressionFactory.Left(), true), sort), param3);
       param.setNext(param2);
 
       params.add(param);

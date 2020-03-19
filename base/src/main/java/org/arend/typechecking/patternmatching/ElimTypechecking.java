@@ -79,7 +79,7 @@ public class ElimTypechecking {
           pathType = dataCall.getDefCallArguments().get(0).normalize(NormalizationMode.WHNF);
           LamExpression lam = pathType.cast(LamExpression.class);
           if (lam == null) {
-            pathType = AppExpression.make(pathType, new ReferenceExpression(new TypedBinding("i", ExpressionFactory.Interval())));
+            pathType = AppExpression.make(pathType, new ReferenceExpression(new TypedBinding("i", ExpressionFactory.Interval())), true);
             break;
           }
           pathType = lam.getBody().normalize(NormalizationMode.WHNF);

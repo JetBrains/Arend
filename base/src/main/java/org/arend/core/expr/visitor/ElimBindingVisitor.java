@@ -77,7 +77,7 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
     if (arg == null) {
       return null;
     }
-    return AppExpression.make(result, arg);
+    return AppExpression.make(result, arg, expr.isExplicit());
   }
 
   private List<Expression> visitDefCallArguments(List<? extends Expression> args) {

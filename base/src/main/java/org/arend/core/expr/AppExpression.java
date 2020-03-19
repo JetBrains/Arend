@@ -14,20 +14,22 @@ import java.util.List;
 public class AppExpression extends Expression implements CoreAppExpression {
   private final Expression myFunction;
   private final Expression myArgument;
+  private final boolean myExplicit;
 
-  private AppExpression(Expression function, Expression argument) {
+  private AppExpression(Expression function, Expression argument, boolean isExplicit) {
     myFunction = function;
     myArgument = argument;
+    myExplicit = isExplicit;
   }
 
-  public static Expression make(Expression function, Expression argument) {
+  public static Expression make(Expression function, Expression argument, boolean isExplicit) {
     LamExpression lamExpr = function.cast(LamExpression.class);
     if (lamExpr != null) {
       SingleDependentLink var = lamExpr.getParameters();
       SingleDependentLink next = var.getNext();
       return (next.hasNext() ? new LamExpression(lamExpr.getResultSort(), next, lamExpr.getBody()) : lamExpr.getBody()).subst(var, argument);
     } else {
-      return new AppExpression(function, argument);
+      return new AppExpression(function, argument, isExplicit);
     }
   }
 
@@ -41,6 +43,10 @@ public class AppExpression extends Expression implements CoreAppExpression {
   @Override
   public Expression getArgument() {
     return myArgument;
+  }
+
+  public boolean isExplicit() {
+    return myExplicit;
   }
 
   @Override

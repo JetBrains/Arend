@@ -38,6 +38,7 @@ message Expression {
     message App {
         Expression function = 1;
         Expression argument = 2;
+        bool is_explicit = 3;
     }
     message ClassCall {
         int32 class_ref = 1;

@@ -10,17 +10,6 @@ import java.util.Collections;
 import java.util.List;
 
 public class ExpressionFactory {
-  public static Expression Apps(Expression function, Expression... arguments) {
-    if (arguments.length == 0) {
-      return function;
-    }
-    Expression result = function;
-    for (Expression argument : arguments) {
-      result = AppExpression.make(result, argument);
-    }
-    return result;
-  }
-
   public static Expression FieldCall(ClassField definition, Sort sortArgument, Expression thisExpr) {
     return FieldCallExpression.make(definition, sortArgument, thisExpr);
   }

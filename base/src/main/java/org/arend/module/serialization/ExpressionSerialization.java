@@ -267,6 +267,7 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
     ExpressionProtos.Expression.App.Builder builder = ExpressionProtos.Expression.App.newBuilder();
     builder.setFunction(expr.getFunction().accept(this, null));
     builder.setArgument(expr.getArgument().accept(this, null));
+    builder.setIsExplicit(expr.isExplicit());
     return ExpressionProtos.Expression.newBuilder().setApp(builder).build();
   }
 

@@ -40,7 +40,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitApp(AppExpression expr, Void params) {
-    return AppExpression.make(expr.getFunction().accept(this, null), expr.getArgument().accept(this, null));
+    return AppExpression.make(expr.getFunction().accept(this, null), expr.getArgument().accept(this, null), expr.isExplicit());
   }
 
   @Override
@@ -85,12 +85,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitFieldCall(FieldCallExpression expr, Void params) {
-    Expression result = myExprSubstitution.get(expr.getDefinition());
-    if (result != null) {
-      return AppExpression.make(result, expr.getArgument().accept(this, null));
-    } else {
-      return FieldCallExpression.make(expr.getDefinition(), expr.getSortArgument().subst(myLevelSubstitution), expr.getArgument().accept(this, null));
-    }
+    return FieldCallExpression.make(expr.getDefinition(), expr.getSortArgument().subst(myLevelSubstitution), expr.getArgument().accept(this, null));
   }
 
   @Override

@@ -316,7 +316,7 @@ class ExpressionDeserialization {
 
 
   private Expression readApp(ExpressionProtos.Expression.App proto) throws DeserializationException {
-    return AppExpression.make(readExpr(proto.getFunction()), readExpr(proto.getArgument()));
+    return AppExpression.make(readExpr(proto.getFunction()), readExpr(proto.getArgument()), proto.getIsExplicit());
   }
 
   private FunCallExpression readFunCall(ExpressionProtos.Expression.FunCall proto) throws DeserializationException {

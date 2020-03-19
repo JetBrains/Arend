@@ -40,8 +40,8 @@ public class TypecheckingResult implements TResult, CheckedExpression {
   }
 
   @Override
-  public TypecheckingResult applyExpression(Expression expr, ErrorReporter errorReporter, Concrete.SourceNode sourceNode) {
-    expression = AppExpression.make(expression, expr);
+  public TypecheckingResult applyExpression(Expression expr, boolean isExplicit, ErrorReporter errorReporter, Concrete.SourceNode sourceNode) {
+    expression = AppExpression.make(expression, expr, isExplicit);
     Expression newType = type.applyExpression(expr);
     if (newType == null) {
       errorReporter.report(new TypecheckingError("Expected an expression of a pi type", sourceNode));

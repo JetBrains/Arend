@@ -1829,8 +1829,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
           goalError.addCondition(new Condition(null, new ExprSubstitution(param, ExpressionFactory.Left()), conCall.getDataTypeArguments().get(1)));
           goalError.addCondition(new Condition(null, new ExprSubstitution(param, ExpressionFactory.Right()), conCall.getDataTypeArguments().get(2)));
         } else {
-          return compareExpressions(true,  conCall.getDataTypeArguments().get(1), AppExpression.make(arg, ExpressionFactory.Left()),  AppExpression.make(conCall.getDataTypeArguments().get(0), ExpressionFactory.Left()),  expr)
-              && compareExpressions(false, conCall.getDataTypeArguments().get(2), AppExpression.make(arg, ExpressionFactory.Right()), AppExpression.make(conCall.getDataTypeArguments().get(0), ExpressionFactory.Right()), expr);
+          return compareExpressions(true,  conCall.getDataTypeArguments().get(1), AppExpression.make(arg, ExpressionFactory.Left(), true),  AppExpression.make(conCall.getDataTypeArguments().get(0), ExpressionFactory.Left(), true),  expr)
+              && compareExpressions(false, conCall.getDataTypeArguments().get(2), AppExpression.make(arg, ExpressionFactory.Right(), true), AppExpression.make(conCall.getDataTypeArguments().get(0), ExpressionFactory.Right(), true), expr);
         }
       }
     }

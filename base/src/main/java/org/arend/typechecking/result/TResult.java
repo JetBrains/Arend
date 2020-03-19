@@ -11,6 +11,6 @@ import java.util.List;
 public interface TResult {
   TypecheckingResult toResult(CheckTypeVisitor typechecker);
   DependentLink getParameter();
-  TResult applyExpression(Expression expression, ErrorReporter errorReporter, Concrete.SourceNode sourceNode);
+  TResult applyExpression(Expression expression, boolean isExplicit, ErrorReporter errorReporter, Concrete.SourceNode sourceNode);
   List<? extends DependentLink> getImplicitParameters();
 }

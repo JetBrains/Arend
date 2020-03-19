@@ -92,7 +92,7 @@ public class DefCallResult implements TResult {
   }
 
   @Override
-  public TResult applyExpression(Expression expression, ErrorReporter errorReporter, Concrete.SourceNode sourceNode) {
+  public TResult applyExpression(Expression expression, boolean isExplicit, ErrorReporter errorReporter, Concrete.SourceNode sourceNode) {
     int size = myParameters.size();
     myArguments.add(expression);
     ExprSubstitution subst = new ExprSubstitution();
