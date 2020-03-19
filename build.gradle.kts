@@ -3,7 +3,6 @@ plugins {
     idea
     `java-library`
     `maven-publish`
-    signing
 }
 
 var annotationsVersion: String by rootProject.ext
@@ -74,10 +73,6 @@ subprojects {
                 }
             }
         }
-    }
-
-    signing {
-        sign(publishing.publications["mavenJava"])
     }
 }
 
