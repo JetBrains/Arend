@@ -1,6 +1,7 @@
 plugins {
     java
     idea
+    `maven-publish`
 }
 
 var annotationsVersion: String by rootProject.ext
@@ -22,6 +23,7 @@ allprojects {
     apply {
         plugin("java")
         plugin("idea")
+        plugin("maven-publish")
     }
 
     idea {
