@@ -401,6 +401,20 @@ public class ElimTypechecking {
     }
   }
 
+  private static int numberOfIntervals(List<? extends ExpressionPattern> patterns) {
+    int result = 0;
+    for (ExpressionPattern pattern : patterns) {
+      if (pattern.getDefinition() instanceof Constructor) {
+        Body body = ((Constructor) pattern.getDefinition()).getBody();
+        if (body instanceof IntervalElim) {
+          result += ((IntervalElim) body).getNumberOfTotalElim();
+        }
+      }
+      result += numberOfIntervals(pattern.getSubPatterns());
+    }
+    return result;
+  }
+
   private void reportNoClauses(List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams) {
     if (parameters.hasNext() && !parameters.getNext().hasNext()) {
       DataCallExpression dataCall = parameters.getTypeExpr().cast(DataCallExpression.class);
@@ -411,6 +425,10 @@ public class ElimTypechecking {
     }
 
     List<List<ExpressionPattern>> missingClauses = generateMissingClauses(elimParams.isEmpty() ? DependentLink.Helper.toList(parameters) : elimParams, 0, new ExprSubstitution());
+
+    if (myLevel != null) {
+      missingClauses.removeIf(clause -> numberOfIntervals(clause) > myLevel);
+    }
 
     if (missingClauses.isEmpty()) {
       return;

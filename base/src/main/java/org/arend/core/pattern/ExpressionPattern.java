@@ -7,6 +7,7 @@ import org.arend.core.subst.LevelSubstitution;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.term.concrete.Concrete;
 import org.arend.util.Decision;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,6 +19,7 @@ public interface ExpressionPattern extends Pattern {
   boolean unify(ExprSubstitution idpSubst, ExpressionPattern other, ExprSubstitution substitution1, ExprSubstitution substitution2, ErrorReporter errorReporter, Concrete.SourceNode sourceNode);
   ExpressionPattern subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, Map<DependentLink, ExpressionPattern> patternSubst);
   Pattern removeExpressions();
+  @Override @NotNull List<? extends ExpressionPattern> getSubPatterns();
 
   default Expression toPatternExpression() {
     return toExpression();

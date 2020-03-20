@@ -50,7 +50,7 @@ public class EmptyPattern implements ExpressionPattern {
 
   @NotNull
   @Override
-  public List<Pattern> getSubPatterns() {
+  public List<ExpressionPattern> getSubPatterns() {
     return Collections.emptyList();
   }
 
