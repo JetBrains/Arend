@@ -40,7 +40,6 @@ allprojects {
 
 subprojects {
     apply {
-        plugin("signing")
         plugin("maven-publish")
         plugin("java-library")
     }
