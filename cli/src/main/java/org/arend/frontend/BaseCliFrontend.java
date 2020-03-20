@@ -354,11 +354,11 @@ public abstract class BaseCliFrontend {
     }
     switch (result) {
       case GOAL:
-        return '◯';
+        return '\u25ef';
       case ERROR:
-        return '✗';
+        return '\u2717';
       default:
-        return '·';
+        return '\u00b7';
     }
   }
 }
