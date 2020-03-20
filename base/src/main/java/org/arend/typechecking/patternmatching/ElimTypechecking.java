@@ -346,6 +346,7 @@ public class ElimTypechecking {
         }
         totalResult.add(patterns);
       } else {
+        boolean firstHasEmpty = false;
         for (ConCallExpression conCall : conCalls) {
           List<Expression> arguments = new ArrayList<>();
           List<ExpressionPattern> subPatterns = new ArrayList<>();
@@ -355,12 +356,40 @@ public class ElimTypechecking {
           }
           substitution.add(link, ConCallExpression.make(conCall.getDefinition(), conCall.getSortArgument(), conCall.getDataTypeArguments(), arguments));
           List<List<ExpressionPattern>> result = generateMissingClauses(eliminatedParameters, i + 1, substitution);
+
+          boolean hasEmpty = false;
+          if (result.size() == 1) {
+            boolean onlyVars = true;
+            for (ExpressionPattern pattern : result.get(0)) {
+              if (!(pattern instanceof BindingPattern || pattern instanceof EmptyPattern)) {
+                onlyVars = false;
+                break;
+              }
+              if (pattern instanceof EmptyPattern) {
+                hasEmpty = true;
+              }
+            }
+            if (hasEmpty && !onlyVars) {
+              hasEmpty = false;
+            }
+          }
+          if (hasEmpty) {
+            if (!totalResult.isEmpty()) {
+              continue;
+            }
+            firstHasEmpty = true;
+          }
+
           for (List<ExpressionPattern> patterns : result) {
             patterns.add(new ConstructorExpressionPattern(conCall, subPatterns));
           }
           totalResult.addAll(result);
         }
         substitution.remove(link);
+
+        if (firstHasEmpty && totalResult.size() > 1) {
+          totalResult.remove(0);
+        }
       }
       return totalResult;
     } else {
