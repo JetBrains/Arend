@@ -2,7 +2,9 @@
   * [Common Gradle Tasks](#common-gradle-tasks)
   * [Developing in IntelliJ IDEA](#developing-in-intellij-idea)
 * [Project Structure](#project-structure)
+<!--
 * [Contributing Guidelines](#contributing-guidelines)
+-->
 
 <!--
 Created by [gh-md-toc](https://github.com/ekalinin/github-markdown-toc)
@@ -66,6 +68,7 @@ and it depends on project `cli`.
 The tests are based on JUnit 4.
 If you want to move tests to a separate subproject, we wish you good luck.
 
+<!--
 # Contributing Guidelines
 
 Things to keep in mind:
@@ -83,3 +86,4 @@ Things to keep in mind:
 If you don't know where to start but looking for a chance of contribution,
 go ahead to [list of issues](https://github.com/JetBrains/Arend/issues) and pick
 one you like. You can ask a developer on [gitter](https://gitter.im/arend-lang/community).
+-->

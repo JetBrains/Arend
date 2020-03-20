@@ -8,8 +8,8 @@
 Arend is a theorem prover based on [Homotopy Type Theory](https://ncatlab.org/nlab/show/homotopy+type+theory).
 Visit [arend-lang.github.io](https://arend-lang.github.io/) for more information about the Arend language.
 
-For instructions on building Arend locally, general description of the codebase
-and guidelines on contributing to Arend, there's [CONTRIBUTING.md](CONTRIBUTING.md).
+For instructions on building Arend locally, general description of the codebase,
+there's [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Usage
 
