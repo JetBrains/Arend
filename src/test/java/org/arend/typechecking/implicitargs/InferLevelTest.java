@@ -6,6 +6,7 @@ import org.arend.core.sort.Sort;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
+import static org.arend.Matchers.typeMismatchError;
 import static org.junit.Assert.assertEquals;
 
 public class InferLevelTest extends TypeCheckingTestCase {
@@ -316,5 +317,25 @@ public class InferLevelTest extends TypeCheckingTestCase {
       "\\func func (f : \\Type -> \\Type) => 0\n" +
       "\\data Maybe (A : \\Type) | nothing | just A\n" +
       "\\func test => func \\lp \\lh (\\lam X => Maybe X)", 1);
+  }
+
+  @Test
+  public void funcTest() {
+    typeCheckModule(
+      "\\data Bool | true | false\n" +
+      "\\func T (b : Bool) : \\Type\n" +
+      "  | true => Nat\n" +
+      "  | false => \\Sigma", 1);
+  }
+
+  @Test
+  public void funcTest2() {
+    typeCheckModule(
+      "\\data Bool | true | false\n" +
+      "\\func T (b : Bool) : \\Set\n" +
+      "  | true => Nat\n" +
+      "  | false => \\Sigma\n" +
+      "\\func test (b : Bool) : \\Prop => T b", 1);
+    assertThatErrorsAre(typeMismatchError());
   }
 }

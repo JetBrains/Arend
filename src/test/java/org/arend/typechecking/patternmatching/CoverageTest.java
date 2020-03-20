@@ -76,6 +76,23 @@ public class CoverageTest extends TypeCheckingTestCase {
       "  | 0 => Empty\n" +
       "  | suc x => Empty\n" +
       "\\func test {n : Nat} (p : isNeg n) : Empty", 1);
+    assertThatErrorsAre(missingClauses(1));
+  }
+
+  @Test
+  public void missingClausesTest() {
+    typeCheckModule(
+      "\\data Fin (n : Nat) \\with\n" +
+      "  | suc n => { | fzero | fsuc (Fin n) }\n" +
+      "\\func test (n : Nat) (x : Fin n) : Nat \\elim n, x", 1);
     assertThatErrorsAre(missingClauses(2));
+  }
+
+  @Test
+  public void missingHigherConstructorsTest() {
+    typeCheckModule(
+      "\\data S1 | base | loop I \\with { | left => base | right => base }\n" +
+      "\\func test (x : S1) : \\Sigma", 1);
+    assertThatErrorsAre(missingClauses(1));
   }
 }

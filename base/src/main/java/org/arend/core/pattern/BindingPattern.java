@@ -51,7 +51,7 @@ public class BindingPattern implements ExpressionPattern {
 
   @NotNull
   @Override
-  public List<? extends Pattern> getSubPatterns() {
+  public List<? extends ExpressionPattern> getSubPatterns() {
     return Collections.emptyList();
   }
 
