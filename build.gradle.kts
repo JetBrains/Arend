@@ -1,6 +1,8 @@
 plugins {
     java
     idea
+    `java-library`
+    `maven-publish`
 }
 
 var annotationsVersion: String by rootProject.ext
@@ -31,23 +33,42 @@ allprojects {
         }
     }
 
-    configure<JavaPluginConvention> {
+    tasks.withType<JavaCompile> {
+        options.encoding = "UTF-8"
+    }
+}
+
+subprojects {
+    apply {
+        plugin("maven-publish")
+        plugin("java-library")
+    }
+
+    java {
+        withSourcesJar()
+        withJavadocJar()
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
 
-    tasks.withType<JavaCompile> {
-        options.encoding = "UTF-8"
-    }
-
-    val sourcesJar = task<Jar>("sourcesJar") {
-        group = tasks["jar"].group
-        from(sourceSets["main"].allJava)
-        archiveClassifier.set("sources")
-    }
-
-    artifacts {
-        add("archives", sourcesJar)
+    publishing {
+        publications {
+            create<MavenPublication>("maven") {
+                groupId = this@subprojects.group.toString()
+                version = this@subprojects.version.toString()
+                artifactId = this@subprojects.name
+                from(components["java"])
+                pom {
+                    url.set("https://arend-lang.github.io")
+                    licenses {
+                        license {
+                            name.set("Apache-2.0")
+                            url.set("https://github.com/JetBrains/Arend/blob/master/LICENSE")
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
