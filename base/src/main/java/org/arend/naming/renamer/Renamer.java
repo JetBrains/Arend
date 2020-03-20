@@ -3,11 +3,13 @@ package org.arend.naming.renamer;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.Variable;
 import org.arend.core.definition.ClassField;
+import org.arend.core.definition.Definition;
 import org.arend.core.expr.AppExpression;
 import org.arend.core.expr.DefCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.ReferenceExpression;
 import org.arend.core.sort.Sort;
+import org.arend.prelude.Prelude;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -19,6 +21,9 @@ public class Renamer {
   private String myUnnamed = UNNAMED;
   private int myBase = 1;
   private boolean myForceTypeSCName = false;
+
+  private Definition recursiveData = null;
+  private String recursiveParameterName = "";
 
   public static String getValidName(String name, String unnamed) {
     return name == null || name.isEmpty() || name.equals("_") ? unnamed : name;
@@ -32,15 +37,18 @@ public class Renamer {
     else if (var instanceof ClassField)
       typeExpr = ((ClassField) var).getType(Sort.STD).getCodomain();
 
-    if (name != null && !name.isEmpty() && !name.equals("_") && (typeExpr == null || !myForceTypeSCName)) {
+    Character c = typeExpr != null ? getTypeStartingCharacter(typeExpr): null;
+
+    if (name != null && !name.isEmpty() && !name.equals("_") && (c == null || !myForceTypeSCName)) {
       return name;
     }
 
-    if (typeExpr != null) {
-      Character c = getTypeStartingCharacter(typeExpr);
-      if (c != null) {
-        return c.toString();
-      }
+    if (recursiveParameterName != null && typeExpr instanceof DefCallExpression && ((DefCallExpression) typeExpr).getDefinition() == recursiveData) {
+      return recursiveParameterName;
+    }
+
+    if (c != null) {
+      return c.toString();
     }
 
     return myUnnamed;
@@ -67,13 +75,15 @@ public class Renamer {
     }
     if (type instanceof DefCallExpression) {
       name = ((DefCallExpression) type).getDefinition().getName();
+
+      if (((DefCallExpression) type).getDefinition() == Prelude.PATH_INFIX) name = "p";
     } else if (type instanceof ReferenceExpression) {
       name = ((ReferenceExpression) type).getBinding().getName();
     } else {
       return null;
     }
 
-    return name.isEmpty() ? null : Character.toLowerCase(name.charAt(0));
+    return name.isEmpty() ? null : (Character.isLetter(name.charAt(0)) ? Character.toLowerCase(name.charAt(0)) : null);
   }
 
   public void setBase(int base) {
@@ -133,7 +143,10 @@ public class Renamer {
 
   public void setForceTypeSCName(boolean value) { myForceTypeSCName = value; }
 
-  public boolean getForceTypeSCName() { return myForceTypeSCName; }
+  public void setParameterName(Definition definition, String parameterName) {
+    this.recursiveData = definition;
+    this.recursiveParameterName = parameterName;
+  }
 
   private static String getPrefix(String name) {
     int i = name.length() - 1;
