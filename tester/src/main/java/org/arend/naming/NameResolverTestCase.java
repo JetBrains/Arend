@@ -1,5 +1,6 @@
 package org.arend.naming;
 
+import org.arend.ArendTestCase;
 import org.arend.core.context.binding.Binding;
 import org.arend.frontend.ConcreteReferableProvider;
 import org.arend.frontend.reference.ConcreteLocatedReferable;
