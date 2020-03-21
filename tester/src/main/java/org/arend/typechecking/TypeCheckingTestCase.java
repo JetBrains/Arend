@@ -1,5 +1,6 @@
 package org.arend.typechecking;
 
+import org.arend.ArendTestCase;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.definition.Definition;
 import org.arend.core.expr.Expression;
@@ -58,7 +59,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
       }
     }
 
-    assertThat(errorList, containsErrors(errors));
+    assertThat(errorList, ArendTestCase.containsErrors(errors));
     assertTrue(ok);
     return result;
   }
@@ -104,7 +105,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
     new TypecheckingOrderingListener(libraryManager.getInstanceProviderSet(), typecheckerState, ConcreteReferableProvider.INSTANCE, IdReferableConverter.INSTANCE, errorReporter, PositionComparator.INSTANCE).typecheckDefinitions(Collections.singletonList((Concrete.Definition) reference.getDefinition()), null);
     Definition definition = typecheckerState.getTypechecked(reference);
     boolean ok = errors != 0 || new CoreDefinitionChecker(errorReporter).check(definition);
-    assertThat(errorList, containsErrors(errors));
+    assertThat(errorList, ArendTestCase.containsErrors(errors));
     assertTrue(ok);
     return definition;
   }
@@ -121,7 +122,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
   private void typeCheckModule(Group group, int errors) {
     assertTrue(new TypecheckingOrderingListener(libraryManager.getInstanceProviderSet(), typecheckerState, ConcreteReferableProvider.INSTANCE, IdReferableConverter.INSTANCE, localErrorReporter, PositionComparator.INSTANCE).typecheckModules(Collections.singletonList(group), null));
     boolean ok = errors != 0 || new CoreModuleChecker(errorReporter, typecheckerState).checkGroup(group);
-    assertThat(errorList, containsErrors(errors));
+    assertThat(errorList, ArendTestCase.containsErrors(errors));
     assertTrue(ok);
   }
 
