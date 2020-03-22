@@ -576,7 +576,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     long braceId = myBuilder.allocBraceId();
     if (prec.priority > Concrete.BinOpSequenceExpression.PREC) myBuilder.openingBrace('(', braceId);
     createBinOpLayout(expr.getSequence()).doPrettyPrint(this, noIndent);
-    if (prec.priority > Concrete.BinOpSequenceExpression.PREC) myBuilder.closingBrace('(', braceId);
+    if (prec.priority > Concrete.BinOpSequenceExpression.PREC) myBuilder.closingBrace(')', braceId);
     return null;
   }
 
@@ -595,7 +595,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     }
     myBuilder.whitespace();
     right.accept(this, infixPrec.associativity != Precedence.Associativity.RIGHT_ASSOC ? new Precedence(Precedence.Associativity.NON_ASSOC, infixPrec.priority, infixPrec.isInfix) : infixPrec);
-    if (needParens) myBuilder.closingBrace('(', braceId);
+    if (needParens) myBuilder.closingBrace(')', braceId);
   }
 
   public void prettyPrintFunctionClause(final Concrete.FunctionClause clause) {
@@ -704,7 +704,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     myBuilder.whitespace().keyword(" \\with");
     prettyPrintClauses(Collections.emptyList(), expr.getClauses(), true);
     myIndent -= INDENT;
-    if (prec.priority > Concrete.CaseExpression.PREC) myBuilder.closingBrace('(', braceId);
+    if (prec.priority > Concrete.CaseExpression.PREC) myBuilder.closingBrace(')', braceId);
     return null;
   }
 
@@ -714,7 +714,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     if (prec.priority > Concrete.EvalExpression.PREC) myBuilder.openingBrace('(', braceId);
     myBuilder.keyword(expr.isPEval() ? "\\peval" : "\\eval").whitespace();
     expr.getExpression().accept(this, new Precedence(Concrete.Expression.PREC));
-    if (prec.priority > Concrete.EvalExpression.PREC) myBuilder.closingBrace('(', braceId);
+    if (prec.priority > Concrete.EvalExpression.PREC) myBuilder.closingBrace(')', braceId);
     return null;
   }
 
@@ -724,7 +724,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     if (prec.priority > Concrete.ProjExpression.PREC) myBuilder.openingBrace('(', braceId);
     expr.getExpression().accept(this, new Precedence(Concrete.ProjExpression.PREC));
     myBuilder.dot().integer(expr.getField() + 1);
-    if (prec.priority > Concrete.ProjExpression.PREC) myBuilder.closingBrace('(', braceId);
+    if (prec.priority > Concrete.ProjExpression.PREC) myBuilder.closingBrace(')', braceId);
     return null;
   }
 
@@ -739,7 +739,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     myBuilder.eol();
     printIndent();
     myBuilder.closingBrace('}', braceId);
-    if (prec.priority > Concrete.ClassExtExpression.PREC) myBuilder.closingBrace('(', parenId);
+    if (prec.priority > Concrete.ClassExtExpression.PREC) myBuilder.closingBrace(')', parenId);
     return null;
   }
 
@@ -776,7 +776,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     if (prec.priority > Concrete.NewExpression.PREC) myBuilder.openingBrace('(', braceId);
     myBuilder.keyword("\\new").whitespace();
     expr.getExpression().accept(this, new Precedence(Concrete.NewExpression.PREC));
-    if (prec.priority > Concrete.NewExpression.PREC) myBuilder.closingBrace('(', braceId);
+    if (prec.priority > Concrete.NewExpression.PREC) myBuilder.closingBrace(')', braceId);
     return null;
   }
 
@@ -800,7 +800,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
         }
         prettyPrintLetClausePattern(subPattern);
       }
-      myBuilder.closingBrace('(', braceId);
+      myBuilder.closingBrace(')', braceId);
     }
   }
 
@@ -872,7 +872,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     myIndent -= INDENT1;
     myIndent -= INDENT;
 
-    if (prec.priority > Concrete.LetExpression.PREC) myBuilder.closingBrace('(', braceId);
+    if (prec.priority > Concrete.LetExpression.PREC) myBuilder.closingBrace(')', braceId);
     return null;
   }
 
@@ -889,7 +889,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     expr.expression.accept(this, new Precedence(Concrete.TypedExpression.PREC));
     myBuilder.wsColonWs();
     expr.type.accept(this, new Precedence(Concrete.TypedExpression.PREC));
-    if (prec.priority > Concrete.TypedExpression.PREC) myBuilder.closingBrace('(', braceId);
+    if (prec.priority > Concrete.TypedExpression.PREC) myBuilder.closingBrace(')', braceId);
     return null;
   }
 
@@ -1159,7 +1159,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     }
 
     int numberOfAs = pattern.getAsReferables().size();
-    long[] parenIds = new long[numberOfAs - 1];
+    long[] parenIds = new long[numberOfAs];
     for (int i = 0; i < numberOfAs - 1; i++) {
       parenIds[i] = myBuilder.allocBraceId();
       myBuilder.openingBrace('(', parenIds[i]);
@@ -1206,8 +1206,8 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     int asPatIndex = numberOfAs;
     for (Concrete.TypedReferable typedReferable : pattern.getAsReferables()) {
       if (asPatIndex < numberOfAs)
-        myBuilder.closingBrace(')', parenIds[asPatIndex]);
-      asPatIndex--;
+        myBuilder.closingBrace(')', parenIds[--asPatIndex]);
+      else asPatIndex--;
 
       myBuilder.whitespace().keyword("\\as").whitespace();
       prettyPrintTypedReferable(typedReferable);

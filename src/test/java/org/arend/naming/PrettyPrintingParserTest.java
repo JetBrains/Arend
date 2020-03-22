@@ -51,7 +51,7 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
       public NormalizationMode getNormalizationMode() {
         return null;
       }
-    }).accept(new PrettyPrintVisitor(builder, 0), new Precedence(Concrete.Expression.PREC));
+    }).accept(new PrettyPrintVisitor(new AssertedTextBuilder(builder), 0), new Precedence(Concrete.Expression.PREC));
     assertEquals(expected, builder.toString());
   }
 
@@ -72,7 +72,7 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
       public NormalizationMode getNormalizationMode() {
         return null;
       }
-    }).accept(new PrettyPrintVisitor(builder, 0), new Precedence(Concrete.Expression.PREC));
+    }).accept(new PrettyPrintVisitor(new AssertedTextBuilder(builder), 0), new Precedence(Concrete.Expression.PREC));
     Concrete.Expression result = resolveNamesExpr(builder.toString());
     assertTrue(compareAbstract(expected, result));
   }
