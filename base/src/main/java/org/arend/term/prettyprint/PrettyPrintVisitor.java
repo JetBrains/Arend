@@ -24,19 +24,27 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   public static final int MAX_LEN = 120;
   public static final float SMALL_RATIO = (float) 0.1;
 
-  protected final StringBuilder myBuilder;
+  protected final TextBuilder<?> myBuilder;
   private Map<InferenceLevelVariable, Integer> myPVariables = Collections.emptyMap();
   private Map<InferenceLevelVariable, Integer> myHVariables = Collections.emptyMap();
   protected int myIndent;
-  private boolean noIndent;
+  private final boolean noIndent;
 
   public PrettyPrintVisitor(StringBuilder builder, int indent, boolean doIndent) {
+    this(new PlainTextBuilder(builder), indent, doIndent);
+  }
+
+  public PrettyPrintVisitor(TextBuilder<?> builder, int indent, boolean doIndent) {
     myBuilder = builder;
     myIndent = indent;
     noIndent = !doIndent;
   }
 
   public PrettyPrintVisitor(StringBuilder builder, int indent) {
+    this(new PlainTextBuilder(builder), indent);
+  }
+
+  public PrettyPrintVisitor(TextBuilder<?> builder, int indent) {
     this(builder, indent, true);
   }
 
@@ -108,7 +116,8 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     if (infix) {
       visitBinOp(args.get(args.size() - 2).getExpression(), (ReferenceExpression) fun, ((GlobalReferable) ((ReferenceExpression) fun).getReferent()).getPrecedence(), args.subList(0, args.size() - 2), args.get(args.size() - 1).getExpression(), prec);
     } else {
-      if (prec.priority > Concrete.AppExpression.PREC) myBuilder.append('(');
+      long braceId = myBuilder.allocBraceId();
+      if (prec.priority > Concrete.AppExpression.PREC) myBuilder.openingBrace('(', braceId);
       final Expression finalFun = fun;
       new BinOpLayout() {
         @Override
@@ -131,7 +140,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
           return " ";
         }
       }.doPrettyPrint(this, noIndent);
-      if (prec.priority > Concrete.AppExpression.PREC) myBuilder.append(')');
+      if (prec.priority > Concrete.AppExpression.PREC) myBuilder.closingBrace(')', braceId);
     }
 
     return null;
@@ -140,44 +149,45 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   @Override
   public Void visitReference(Concrete.ReferenceExpression expr, Precedence prec) {
     boolean parens = expr.getReferent() instanceof GlobalReferable && ((GlobalReferable) expr.getReferent()).getPrecedence().isInfix || expr.getPLevel() != null || expr.getHLevel() != null;
+    long braceId = myBuilder.allocBraceId();
     if (parens) {
-      myBuilder.append('(');
+      myBuilder.openingBrace('(', braceId);
     }
-    myBuilder.append(expr.getReferent().textRepresentation());
+    myBuilder.reference(expr.getReferent());
 
     if (expr.getPLevel() != null || expr.getHLevel() != null) {
-      myBuilder.append(" \\level ");
+      myBuilder.whitespace().keyword("\\level").whitespace();
       if (expr.getHLevel() instanceof Concrete.NumberLevelExpression && ((Concrete.NumberLevelExpression) expr.getHLevel()).getNumber() == -1) {
-        myBuilder.append("\\Prop");
+        myBuilder.keyword("\\Prop");
       } else {
         if (expr.getPLevel() != null) {
           expr.getPLevel().accept(this, new Precedence((byte) (Concrete.AppExpression.PREC + 1)));
         } else {
-          myBuilder.append('_');
+          myBuilder.underscore();
         }
-        myBuilder.append(' ');
+        myBuilder.whitespace();
         if (expr.getHLevel() != null) {
           expr.getHLevel().accept(this, new Precedence((byte) (Concrete.AppExpression.PREC + 1)));
         } else {
-          myBuilder.append('_');
+          myBuilder.underscore();
         }
       }
     }
     if (parens) {
-      myBuilder.append(')');
+      myBuilder.closingBrace(')', braceId);
     }
     return null;
   }
 
   @Override
   public Void visitThis(Concrete.ThisExpression expr, Precedence params) {
-    myBuilder.append("\\this");
+    myBuilder.keyword("\\this");
     return null;
   }
 
   @Override
   public Void visitInferenceReference(Concrete.InferenceReferenceExpression expr, Precedence params) {
-    myBuilder.append("?").append(expr.getVariable().getName());
+    myBuilder.goal("?").goal(expr.getVariable().getName());
     return null;
   }
 
@@ -195,45 +205,50 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
         }
       }.doPrettyPrint(this, parameters, noIndent);
     } else {
-      myBuilder.append("{!error}");
+      myBuilder.error("{!error}");
     }
   }
 
   private void prettyPrintParameter(Concrete.Parameter parameter, byte prec) {
     if (parameter instanceof Concrete.NameParameter) {
       Referable referable = ((Concrete.NameParameter) parameter).getReferable();
-      String name = referable == null ? null : referable.textRepresentation();
-      if (name == null) {
-        name = "_";
+      if (parameter.isExplicit()) myBuilder.referenceNull(referable);
+      else {
+        long braceId = myBuilder.allocBraceId();
+        myBuilder.openingBrace('{', braceId)
+            .referenceNull(referable)
+            .closingBrace('}', braceId);
       }
-      myBuilder.append(parameter.isExplicit() ? name : '{' + name + '}');
     } else
     if (parameter instanceof Concrete.TelescopeParameter) {
-      myBuilder.append(parameter.isExplicit() ? '(' : '{');
+      long braceId = myBuilder.allocBraceId();
+      myBuilder.openingBrace(parameter.isExplicit() ? '(' : '{', braceId);
       for (Referable referable : parameter.getReferableList()) {
-        myBuilder.append(referable == null ? "_" : referable.textRepresentation()).append(' ');
+        myBuilder.referenceNull(referable).whitespace();
       }
 
-      myBuilder.append(": ");
+      myBuilder.colon().whitespace();
       ((Concrete.TypeParameter) parameter).getType().accept(this, new Precedence(Concrete.Expression.PREC));
-      myBuilder.append(parameter.isExplicit() ? ')' : '}');
+      myBuilder.closingBrace(parameter.isExplicit() ? ')' : '}', braceId);
     } else
     if (parameter instanceof Concrete.TypeParameter) {
       Concrete.Expression type = ((Concrete.TypeParameter) parameter).getType();
       if (parameter.isExplicit()) {
         type.accept(this, new Precedence((byte) (ReferenceExpression.PREC + 1)));
       } else {
-        myBuilder.append('{');
+        long braceId = myBuilder.allocBraceId();
+        myBuilder.openingBrace('{', braceId);
         type.accept(this, new Precedence(Concrete.Expression.PREC));
-        myBuilder.append('}');
+        myBuilder.closingBrace('}', braceId);
       }
     }
   }
 
   @Override
   public Void visitLam(final Concrete.LamExpression expr, Precedence prec) {
-    if (prec.priority > Concrete.LamExpression.PREC) myBuilder.append("(");
-    myBuilder.append("\\lam ");
+    long braceId = myBuilder.allocBraceId();
+    if (prec.priority > Concrete.LamExpression.PREC) myBuilder.openingBrace('(', braceId);
+    myBuilder.keyword("\\lam").whitespace();
 
     new BinOpLayout(){
       @Override
@@ -252,13 +267,14 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       }
     }.doPrettyPrint(this, noIndent);
 
-    if (prec.priority > Concrete.LamExpression.PREC) myBuilder.append(")");
+    if (prec.priority > Concrete.LamExpression.PREC) myBuilder.closingBrace(')', braceId);
     return null;
   }
 
   @Override
   public Void visitPi(final Concrete.PiExpression expr, Precedence prec) {
-    if (prec.priority > Concrete.PiExpression.PREC) myBuilder.append('(');
+    long braceId = myBuilder.allocBraceId();
+    if (prec.priority > Concrete.PiExpression.PREC) myBuilder.openingBrace('(', braceId);
 
     new BinOpLayout(){
       @Override
@@ -266,12 +282,12 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
         byte domPrec = (byte) (expr.getParameters().size() > 1 ? Concrete.AppExpression.PREC + 1 : Concrete.PiExpression.PREC + 1);
         if (expr.getParameters().size() == 1 && !(expr.getParameters().get(0) instanceof Concrete.TelescopeParameter)) {
           expr.getParameters().get(0).getType().accept(pp, new Precedence((byte) (Concrete.PiExpression.PREC + 1)));
-          pp.myBuilder.append(' ');
+          pp.myBuilder.whitespace();
         } else {
-          pp.myBuilder.append("\\Pi ");
+          pp.myBuilder.keyword("\\Pi").whitespace();
           for (Concrete.Parameter parameter : expr.getParameters()) {
             pp.prettyPrintParameter(parameter, domPrec);
-            pp.myBuilder.append(' ');
+            pp.myBuilder.whitespace();
           }
         }
       }
@@ -292,7 +308,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       }
     }.doPrettyPrint(this, noIndent);
 
-    if (prec.priority > Concrete.PiExpression.PREC) myBuilder.append(')');
+    if (prec.priority > Concrete.PiExpression.PREC) myBuilder.closingBrace(')', braceId);
     return null;
   }
 
@@ -319,50 +335,53 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
   @Override
   public Void visitInf(Concrete.InfLevelExpression expr, Precedence param) {
-    myBuilder.append("\\oo");
+    myBuilder.keyword("\\oo");
     return null;
   }
 
   @Override
   public Void visitLP(Concrete.PLevelExpression expr, Precedence param) {
-    myBuilder.append("\\lp");
+    myBuilder.keyword("\\lp");
     return null;
   }
 
   @Override
   public Void visitLH(Concrete.HLevelExpression expr, Precedence param) {
-    myBuilder.append("\\lh");
+    myBuilder.keyword("\\lh");
     return null;
   }
 
   @Override
   public Void visitNumber(Concrete.NumberLevelExpression expr, Precedence param) {
-    myBuilder.append(expr.getNumber());
+    myBuilder.integer(expr.getNumber());
     return null;
   }
 
   @Override
   public Void visitSuc(Concrete.SucLevelExpression expr, Precedence prec) {
-    if (prec.priority > Concrete.AppExpression.PREC) myBuilder.append('(');
-    myBuilder.append("\\suc ");
+    long braceId = myBuilder.allocBraceId();
+    if (prec.priority > Concrete.AppExpression.PREC) myBuilder.openingBrace('(', braceId);
+    myBuilder.keyword("\\suc").whitespace();
     expr.getExpression().accept(this, new Precedence((byte) (Concrete.AppExpression.PREC + 1)));
-    if (prec.priority > Concrete.AppExpression.PREC) myBuilder.append(')');
+    if (prec.priority > Concrete.AppExpression.PREC) myBuilder.closingBrace(')', braceId);
     return null;
   }
 
   @Override
   public Void visitMax(Concrete.MaxLevelExpression expr, Precedence prec) {
-    if (prec.priority > Concrete.AppExpression.PREC) myBuilder.append('(');
-    myBuilder.append("\\max ");
+    long braceId = myBuilder.allocBraceId();
+    if (prec.priority > Concrete.AppExpression.PREC) myBuilder.openingBrace('(', braceId);
+    myBuilder.keyword("\\max").whitespace();
     expr.getLeft().accept(this, new Precedence((byte) (Concrete.AppExpression.PREC + 1)));
-    myBuilder.append(" ");
+    myBuilder.whitespace();
     expr.getRight().accept(this, new Precedence((byte) (Concrete.AppExpression.PREC + 1)));
-    if (prec.priority > Concrete.AppExpression.PREC) myBuilder.append(')');
+    if (prec.priority > Concrete.AppExpression.PREC) myBuilder.closingBrace(')', braceId);
     return null;
   }
 
   public void prettyPrintInferLevelVar(InferenceLevelVariable variable) {
-    myBuilder.append(variable).append(getVariableNumber(variable));
+    myBuilder.goal(variable.toString())
+        .goal(String.valueOf(getVariableNumber(variable)));
   }
 
   public String getInferLevelVarText(InferenceLevelVariable variable) {
@@ -379,63 +398,66 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   @Override
   public Void visitUniverse(Concrete.UniverseExpression expr, Precedence prec) {
     if (expr.getHLevel() instanceof Concrete.NumberLevelExpression && ((Concrete.NumberLevelExpression) expr.getHLevel()).getNumber() == -1) {
-      myBuilder.append("\\Prop");
+      myBuilder.keyword("\\Prop");
       return null;
     }
 
     boolean hParens = !(expr.getHLevel() instanceof Concrete.InfLevelExpression || expr.getHLevel() instanceof Concrete.NumberLevelExpression || expr.getHLevel() == null);
     boolean parens = prec.priority > Concrete.AppExpression.PREC && (hParens || !(expr.getPLevel() instanceof Concrete.NumberLevelExpression || expr.getPLevel() == null));
-    if (parens) myBuilder.append('(');
+    long braceId = myBuilder.allocBraceId();
+    if (parens) myBuilder.openingBrace('(', braceId);
 
     if (expr.getHLevel() instanceof Concrete.InfLevelExpression) {
-      myBuilder.append("\\hType");
+      myBuilder.keyword("\\hType");
     } else
     if (expr.getHLevel() instanceof Concrete.NumberLevelExpression) {
       int hLevel = ((Concrete.NumberLevelExpression) expr.getHLevel()).getNumber();
       if (hLevel == 0) {
-        myBuilder.append("\\Set");
+        myBuilder.keyword("\\Set");
       } else {
-        myBuilder.append("\\").append(hLevel).append("-Type");
+        myBuilder.keyword("\\").keyword(hLevel).keyword("-Type");
       }
     } else {
-      myBuilder.append("\\Type");
+      myBuilder.keyword("\\Type");
     }
 
     if (expr.getPLevel() instanceof Concrete.NumberLevelExpression) {
-      myBuilder.append(((Concrete.NumberLevelExpression) expr.getPLevel()).getNumber());
+      myBuilder.keyword(((Concrete.NumberLevelExpression) expr.getPLevel()).getNumber());
     } else if (expr.getPLevel() != null) {
-      myBuilder.append(" ");
+      myBuilder.whitespace();
       expr.getPLevel().accept(this, new Precedence((byte) (Concrete.AppExpression.PREC + 1)));
     }
 
     if (hParens) {
-      myBuilder.append(" ");
+      myBuilder.whitespace();
       expr.getHLevel().accept(this, new Precedence((byte) (Concrete.AppExpression.PREC + 1)));
     }
 
-    if (parens) myBuilder.append(')');
+    if (parens) myBuilder.closingBrace(')', braceId);
     return null;
   }
 
   @Override
   public Void visitHole(Concrete.HoleExpression expr, Precedence prec) {
-    myBuilder.append(expr.isErrorHole() ? "{?}" : "_");
+    if (expr.isErrorHole()) myBuilder.error("{?}");
+    else myBuilder.underscore();
     return null;
   }
 
   @Override
   public Void visitGoal(Concrete.GoalExpression expr, Precedence prec) {
-    myBuilder.append("{?");
+    myBuilder.goal("{?");
     if (expr.getName() != null) {
-      myBuilder.append(expr.getName());
+      myBuilder.goal(expr.getName());
     }
-    myBuilder.append('}');
+    myBuilder.goal("}");
     return null;
   }
 
   @Override
   public Void visitTuple(Concrete.TupleExpression expr, Precedence prec) {
-    myBuilder.append('(');
+    long braceId = myBuilder.allocBraceId();
+    myBuilder.openingBrace('(', braceId);
 
     new ListLayout<Concrete.Expression>(){
       @Override
@@ -449,21 +471,22 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       }
     }.doPrettyPrint(this, expr.getFields(), noIndent);
 
-    myBuilder.append(')');
+    myBuilder.closingBrace(')', braceId);
     return null;
   }
 
   @Override
   public Void visitSigma(Concrete.SigmaExpression expr, Precedence prec) {
-    if (prec.priority > Concrete.SigmaExpression.PREC) myBuilder.append('(');
-    myBuilder.append("\\Sigma");
+    long braceId = myBuilder.allocBraceId();
+    if (prec.priority > Concrete.SigmaExpression.PREC) myBuilder.openingBrace('(', braceId);
+    myBuilder.keyword("\\Sigma");
     if (!expr.getParameters().isEmpty()) {
-      myBuilder.append(' ');
+      myBuilder.whitespace();
     }
 
     prettyPrintParameters(expr.getParameters(), (byte) (Concrete.AppExpression.PREC + 1));
 
-    if (prec.priority > Concrete.SigmaExpression.PREC) myBuilder.append(')');
+    if (prec.priority > Concrete.SigmaExpression.PREC) myBuilder.closingBrace(')', braceId);
     return null;
   }
 
@@ -550,33 +573,40 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       expr.getSequence().get(0).expression.accept(this, prec);
       return null;
     }
-    if (prec.priority > Concrete.BinOpSequenceExpression.PREC) myBuilder.append('(');
+    long braceId = myBuilder.allocBraceId();
+    if (prec.priority > Concrete.BinOpSequenceExpression.PREC) myBuilder.openingBrace('(', braceId);
     createBinOpLayout(expr.getSequence()).doPrettyPrint(this, noIndent);
-    if (prec.priority > Concrete.BinOpSequenceExpression.PREC) myBuilder.append(')');
+    if (prec.priority > Concrete.BinOpSequenceExpression.PREC) myBuilder.closingBrace('(', braceId);
     return null;
   }
 
   private void visitBinOp(Concrete.Expression left, Concrete.ReferenceExpression infix, Precedence infixPrec, List<Concrete.Argument> implicitArgs, Concrete.Expression right, Precedence prec) {
     boolean needParens = prec.priority > infixPrec.priority || prec.priority == infixPrec.priority && (prec.associativity != infixPrec.associativity || prec.associativity == Precedence.Associativity.NON_ASSOC);
-    if (needParens) myBuilder.append('(');
+    long braceId = myBuilder.allocBraceId();
+    if (needParens) myBuilder.openingBrace('(', braceId);
     left.accept(this, infixPrec.associativity != Precedence.Associativity.LEFT_ASSOC ? new Precedence(Precedence.Associativity.NON_ASSOC, infixPrec.priority, infixPrec.isInfix) : infixPrec);
-    myBuilder.append(' ');
-    myBuilder.append(infix.getReferent().textRepresentation());
+    myBuilder.whitespace()
+        .reference(infix.getReferent());
     for (Concrete.Argument arg : implicitArgs) {
-      myBuilder.append(" {");
+      long braceIdArg = myBuilder.allocBraceId();
+      myBuilder.whitespace().openingBrace('{', braceIdArg);
       arg.expression.accept(this, new Precedence(Expression.PREC));
-      myBuilder.append('}');
+      myBuilder.closingBrace('}', braceIdArg);
     }
-    myBuilder.append(' ');
+    myBuilder.whitespace();
     right.accept(this, infixPrec.associativity != Precedence.Associativity.RIGHT_ASSOC ? new Precedence(Precedence.Associativity.NON_ASSOC, infixPrec.priority, infixPrec.isInfix) : infixPrec);
-    if (needParens) myBuilder.append(')');
+    if (needParens) myBuilder.closingBrace('(', braceId);
   }
 
   public void prettyPrintFunctionClause(final Concrete.FunctionClause clause) {
+    prettyPrintFunctionClause(clause, myBuilder.allocBraceId());
+  }
+
+  private void prettyPrintFunctionClause(final Concrete.FunctionClause clause, long barId) {
     if (clause == null) return;
 
     printIndent();
-    myBuilder.append("| ");
+    myBuilder.bar(barId).whitespace();
 
     if (clause.getExpression() != null) {
       new BinOpLayout(){
@@ -599,7 +629,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       for (int i = 0; i < clause.getPatterns().size(); i++) {
         prettyPrintPattern(clause.getPatterns().get(i), Concrete.Pattern.PREC);
         if (i != clause.getPatterns().size() - 1) {
-          myBuilder.append(", ");
+          myBuilder.comma().whitespace();
         }
       }
     }
@@ -607,47 +637,57 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
   private void prettyPrintClauses(List<? extends Concrete.Expression> expressions, List<? extends Concrete.FunctionClause> clauses, boolean needBraces) {
     if (!expressions.isEmpty()) {
-      myBuilder.append(" ");
+      myBuilder.whitespace();
       for (int i = 0; i < expressions.size(); i++) {
         expressions.get(i).accept(this, new Precedence(Concrete.Expression.PREC));
         if (i != expressions.size() - 1) {
-          myBuilder.append(", ");
+          myBuilder.comma().whitespace();
         }
       }
     }
 
     if (!clauses.isEmpty()) {
-      if (needBraces) myBuilder.append(" {\n"); else myBuilder.append("\n");
+      long braceId = myBuilder.allocBraceId();
+      if (needBraces) myBuilder.whitespace().openingBrace('{', braceId).eol();
+      else myBuilder.eol();
       myIndent += INDENT;
+      long barId = myBuilder.allocBraceId();
       for (int i=0; i<clauses.size(); i++) {
-        prettyPrintFunctionClause(clauses.get(i));
-        if (i < clauses.size()-1) myBuilder.append('\n');
+        prettyPrintFunctionClause(clauses.get(i), barId);
+        if (i < clauses.size()-1) myBuilder.eol();
       }
       myIndent -= INDENT;
 
       if (needBraces) {
-        myBuilder.append('\n');
+        myBuilder.eol();
         printIndent();
-        myBuilder.append('}');
+        myBuilder.closingBrace('}', braceId);
       }
     } else if (needBraces) {
-      myBuilder.append(" {}");
+      long braceId = myBuilder.allocBraceId();
+      myBuilder.whitespace()
+          .openingBrace('{', braceId)
+          .closingBrace('}', braceId);
     }
   }
 
   @Override
   public Void visitCase(Concrete.CaseExpression expr, Precedence prec) {
-    if (prec.priority > Concrete.CaseExpression.PREC) myBuilder.append('(');
-    myBuilder.append("\\case ");
+    long braceId = myBuilder.allocBraceId();
+    if (prec.priority > Concrete.CaseExpression.PREC) myBuilder.openingBrace('(', braceId);
+    myBuilder.keyword("\\case").whitespace();
     new ListLayout<Concrete.CaseArgument>() {
       @Override
       void printListElement(PrettyPrintVisitor ppv, Concrete.CaseArgument caseArg) {
         caseArg.expression.accept(ppv, new Precedence(Concrete.Expression.PREC));
         if (caseArg.referable != null) {
-          ppv.myBuilder.append(" \\as ").append(caseArg.referable.textRepresentation());
+          ppv.myBuilder.whitespace()
+              .keyword("\\as")
+              .whitespace()
+              .reference(caseArg.referable);
         }
         if (caseArg.type != null) {
-          ppv.myBuilder.append(" : ");
+          ppv.myBuilder.wsColonWs();
           caseArg.type.accept(ppv, new Precedence(Expression.PREC));
         }
       }
@@ -658,111 +698,123 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       }
     }.doPrettyPrint(this, expr.getArguments(), noIndent);
     if (expr.getResultType() != null) {
-      myBuilder.append(" \\return ");
+      myBuilder.whitespace().keyword("\\return").whitespace();
       printTypeLevel(expr.getResultType(), expr.getResultTypeLevel());
     }
-    myBuilder.append(" \\with");
+    myBuilder.whitespace().keyword(" \\with");
     prettyPrintClauses(Collections.emptyList(), expr.getClauses(), true);
     myIndent -= INDENT;
-    if (prec.priority > Concrete.CaseExpression.PREC) myBuilder.append(')');
+    if (prec.priority > Concrete.CaseExpression.PREC) myBuilder.closingBrace('(', braceId);
     return null;
   }
 
   @Override
   public Void visitEval(Concrete.EvalExpression expr, Precedence prec) {
-    if (prec.priority > Concrete.EvalExpression.PREC) myBuilder.append('(');
-    myBuilder.append(expr.isPEval() ? "\\peval " : "\\eval ");
+    long braceId = myBuilder.allocBraceId();
+    if (prec.priority > Concrete.EvalExpression.PREC) myBuilder.openingBrace('(', braceId);
+    myBuilder.keyword(expr.isPEval() ? "\\peval" : "\\eval").whitespace();
     expr.getExpression().accept(this, new Precedence(Concrete.Expression.PREC));
-    if (prec.priority > Concrete.EvalExpression.PREC) myBuilder.append(')');
+    if (prec.priority > Concrete.EvalExpression.PREC) myBuilder.closingBrace('(', braceId);
     return null;
   }
 
   @Override
   public Void visitProj(Concrete.ProjExpression expr, Precedence prec) {
-    if (prec.priority > Concrete.ProjExpression.PREC) myBuilder.append('(');
+    long braceId = myBuilder.allocBraceId();
+    if (prec.priority > Concrete.ProjExpression.PREC) myBuilder.openingBrace('(', braceId);
     expr.getExpression().accept(this, new Precedence(Concrete.ProjExpression.PREC));
-    myBuilder.append('.').append(expr.getField() + 1);
-    if (prec.priority > Concrete.ProjExpression.PREC) myBuilder.append(')');
+    myBuilder.dot().integer(expr.getField() + 1);
+    if (prec.priority > Concrete.ProjExpression.PREC) myBuilder.closingBrace('(', braceId);
     return null;
   }
 
   @Override
   public Void visitClassExt(Concrete.ClassExtExpression expr, Precedence prec) {
-    if (prec.priority > Concrete.ClassExtExpression.PREC) myBuilder.append('(');
+    long parenId = myBuilder.allocBraceId();
+    long braceId = myBuilder.allocBraceId();
+    if (prec.priority > Concrete.ClassExtExpression.PREC) myBuilder.openingBrace('(', parenId);
     expr.getBaseClassExpression().accept(this, new Precedence(Concrete.ClassExtExpression.PREC));
-    myBuilder.append(" {");
+    myBuilder.whitespace().openingBrace('{', braceId);
     visitClassFieldImpls(expr.getStatements());
-    myBuilder.append("\n");
+    myBuilder.eol();
     printIndent();
-    myBuilder.append("}");
-    if (prec.priority > Concrete.ClassExtExpression.PREC) myBuilder.append(')');
+    myBuilder.closingBrace('}', braceId);
+    if (prec.priority > Concrete.ClassExtExpression.PREC) myBuilder.closingBrace('(', parenId);
     return null;
   }
 
   private void visitClassFieldImpls(Collection<? extends Concrete.ClassFieldImpl> classFieldImpls) {
     myIndent += INDENT;
+    long barId = myBuilder.allocBraceId();
     for (Concrete.ClassFieldImpl classFieldImpl : classFieldImpls) {
-      myBuilder.append("\n");
+      myBuilder.eol();
       printIndent();
-      myBuilder.append("| ");
+      myBuilder.bar(barId).whitespace();
       visitClassFieldImpl(classFieldImpl);
     }
     myIndent -= INDENT;
   }
 
   private void visitClassFieldImpl(Concrete.ClassFieldImpl classFieldImpl) {
-    String name = classFieldImpl.getImplementedField() == null ? "_" : classFieldImpl.getImplementedField().textRepresentation();
-    myBuilder.append(name);
+    myBuilder.referenceNull(classFieldImpl.getImplementedField());
     if (classFieldImpl.implementation == null) {
-      myBuilder.append(" {");
+      long braceId = myBuilder.allocBraceId();
+      myBuilder.whitespace().openingBrace('{', braceId);
       visitClassFieldImpls(classFieldImpl.subClassFieldImpls);
-      myBuilder.append("\n");
+      myBuilder.eol();
       printIndent();
-      myBuilder.append("}");
+      myBuilder.closingBrace('}', braceId);
     } else {
-      myBuilder.append(" => ");
+      myBuilder.whitespace().keyword("=>").whitespace();
       classFieldImpl.implementation.accept(this, new Precedence(Expression.PREC));
     }
   }
 
   @Override
   public Void visitNew(Concrete.NewExpression expr, Precedence prec) {
-    if (prec.priority > Concrete.NewExpression.PREC) myBuilder.append('(');
-    myBuilder.append("\\new ");
+    long braceId = myBuilder.allocBraceId();
+    if (prec.priority > Concrete.NewExpression.PREC) myBuilder.openingBrace('(', braceId);
+    myBuilder.keyword("\\new").whitespace();
     expr.getExpression().accept(this, new Precedence(Concrete.NewExpression.PREC));
-    if (prec.priority > Concrete.NewExpression.PREC) myBuilder.append(')');
+    if (prec.priority > Concrete.NewExpression.PREC) myBuilder.closingBrace('(', braceId);
     return null;
   }
 
   public void prettyPrintLetClausePattern(Concrete.LetClausePattern pattern) {
     if (pattern.getReferable() != null || pattern.isIgnored()) {
-      myBuilder.append(pattern.isIgnored() ? "_" : pattern.getReferable().textRepresentation());
+      if (pattern.isIgnored()) myBuilder.underscore();
+      else myBuilder.reference(pattern.getReferable());
       if (pattern.type != null) {
-        myBuilder.append(" : ");
+        myBuilder.wsColonWs();
         pattern.type.accept(this, new Precedence(Concrete.Expression.PREC));
       }
     } else {
-      myBuilder.append('(');
+      long braceId = myBuilder.allocBraceId();
+      myBuilder.openingBrace('(', braceId);
       boolean first = true;
       for (Concrete.LetClausePattern subPattern : pattern.getPatterns()) {
         if (first) {
           first = false;
         } else {
-          myBuilder.append(", ");
+          myBuilder.comma().whitespace();
         }
         prettyPrintLetClausePattern(subPattern);
       }
-      myBuilder.append(')');
+      myBuilder.closingBrace('(', braceId);
     }
   }
 
   public void prettyPrintLetClause(Concrete.LetClause letClause, boolean printPipe) {
+    prettyPrintLetClause(letClause, printPipe, 0);
+  }
+
+  private void prettyPrintLetClause(Concrete.LetClause letClause, boolean printPipe, long barId) {
     if (printPipe) {
-      myBuilder.append("| ");
+      myBuilder.bar(barId).whitespace();
     }
     prettyPrintLetClausePattern(letClause.getPattern());
     for (Concrete.Parameter arg : letClause.getParameters()) {
-      myBuilder.append(" ");
+      myBuilder.whitespace();
       prettyPrintParameter(arg, Concrete.LetExpression.PREC);
     }
 
@@ -770,7 +822,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       new BinOpLayout() {
         @Override
         void printLeft(PrettyPrintVisitor pp) {
-          myBuilder.append(" : ");
+          myBuilder.wsColonWs();
           letClause.getResultType().accept(pp, new Precedence(Concrete.Expression.PREC));
         }
 
@@ -785,99 +837,101 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
         }
       }.doPrettyPrint(this, noIndent);
     } else {
-      myBuilder.append(" => ");
+      myBuilder.whitespace().keyword("=>").whitespace();
       letClause.getTerm().accept(this, new Precedence(Concrete.LetExpression.PREC));
     }
   }
 
   @Override
   public Void visitLet(Concrete.LetExpression expr, Precedence prec) {
-    if (prec.priority > Concrete.LetExpression.PREC) myBuilder.append('(');
-    myBuilder.append("\n");
+    long braceId = myBuilder.allocBraceId();
+    if (prec.priority > Concrete.LetExpression.PREC) myBuilder.openingBrace('(', braceId);
+    myBuilder.eol();
     myIndent += INDENT;
     printIndent();
-    String let = "\\let ";
-    myBuilder.append(let);
+    String let = "\\let";
+    myBuilder.keyword(let).whitespace();
 
-    final int INDENT0 = let.length();
+    final int INDENT0 = let.length() + 1;
     myIndent += INDENT0;
+    long barId = myBuilder.allocBraceId();
     for (int i = 0; i < expr.getClauses().size(); ++i) {
-      prettyPrintLetClause(expr.getClauses().get(i), expr.getClauses().size() > 1);
-      myBuilder.append("\n");
+      prettyPrintLetClause(expr.getClauses().get(i), expr.getClauses().size() > 1, barId);
+      myBuilder.eol();
       if (i == expr.getClauses().size() - 1) {
         myIndent -= INDENT0;
       }
       printIndent();
     }
 
-    String in = "\\in ";
-    myBuilder.append(in);
-    final int INDENT1 = in.length();
+    String in = "\\in";
+    myBuilder.keyword(in).whitespace();
+    final int INDENT1 = in.length() + 1;
     myIndent += INDENT1;
     expr.getExpression().accept(this, new Precedence(Concrete.LetExpression.PREC));
     myIndent -= INDENT1;
     myIndent -= INDENT;
 
-    if (prec.priority > Concrete.LetExpression.PREC) myBuilder.append(')');
+    if (prec.priority > Concrete.LetExpression.PREC) myBuilder.closingBrace('(', braceId);
     return null;
   }
 
   @Override
   public Void visitNumericLiteral(Concrete.NumericLiteral expr, Precedence params) {
-    myBuilder.append(expr.getNumber());
+    myBuilder.integer(expr.getNumber());
     return null;
   }
 
   @Override
   public Void visitTyped(Concrete.TypedExpression expr, Precedence prec) {
-    if (prec.priority > Concrete.TypedExpression.PREC) myBuilder.append('(');
+    long braceId = myBuilder.allocBraceId();
+    if (prec.priority > Concrete.TypedExpression.PREC) myBuilder.openingBrace('(', braceId);
     expr.expression.accept(this, new Precedence(Concrete.TypedExpression.PREC));
-    myBuilder.append(" : ");
+    myBuilder.wsColonWs();
     expr.type.accept(this, new Precedence(Concrete.TypedExpression.PREC));
-    if (prec.priority > Concrete.TypedExpression.PREC) myBuilder.append(')');
+    if (prec.priority > Concrete.TypedExpression.PREC) myBuilder.closingBrace('(', braceId);
     return null;
   }
 
   public void printIndent() {
-    for (int i = 0; i < myIndent; ++i) {
-      myBuilder.append(' ');
-    }
+    myBuilder.whitespaces(myIndent);
   }
 
   private void prettyPrintNameWithPrecedence(GlobalReferable def) {
     Precedence precedence = def.getPrecedence();
     if (!precedence.equals(Precedence.DEFAULT)) {
-      myBuilder.append("\\infix");
-      if (precedence.associativity == Precedence.Associativity.LEFT_ASSOC) myBuilder.append('l');
-      if (precedence.associativity == Precedence.Associativity.RIGHT_ASSOC) myBuilder.append('r');
-      myBuilder.append(' ');
-      myBuilder.append(precedence.priority);
-      myBuilder.append(' ');
+      myBuilder.keyword("\\infix");
+      if (precedence.associativity == Precedence.Associativity.LEFT_ASSOC) myBuilder.keyword('l');
+      if (precedence.associativity == Precedence.Associativity.RIGHT_ASSOC) myBuilder.keyword('r');
+      myBuilder.whitespace();
+      myBuilder.integer(precedence.priority);
+      myBuilder.whitespace();
     }
 
-    myBuilder.append(def.textRepresentation());
+    myBuilder.reference(def);
   }
 
   private void prettyPrintBody(Concrete.FunctionBody body, boolean isFunction) {
     if (body instanceof Concrete.TermFunctionBody) {
-      myBuilder.append("=> ");
+      myBuilder.keyword("=>").whitespace();
       ((Concrete.TermFunctionBody) body).getTerm().accept(this, new Precedence(Concrete.Expression.PREC));
     } else if (body instanceof Concrete.CoelimFunctionBody) {
       if (isFunction) {
-        myBuilder.append("\\cowith");
+        myBuilder.keyword("\\cowith");
       }
 
       myIndent += INDENT;
+      long barId = myBuilder.allocBraceId();
       for (Concrete.CoClauseElement element : body.getCoClauseElements()) {
-        myBuilder.append("\n");
+        myBuilder.eol();
         printIndent();
         if (element instanceof Concrete.ClassFieldImpl) {
-          myBuilder.append("| ");
+          myBuilder.bar(barId).whitespace();
           visitClassFieldImpl((Concrete.ClassFieldImpl) element);
         } else if (element instanceof Concrete.CoClauseFunctionReference) {
           TCReferable ref = ((Concrete.CoClauseFunctionReference) element).getFunctionReference();
           prettyPrintNameWithPrecedence(ref);
-          myBuilder.append(" => ").append(ref.textRepresentation());
+          myBuilder.whitespace().keyword("=>").whitespace().reference(ref);
         }
       }
       myIndent -= INDENT;
@@ -890,9 +944,9 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   private void printTypeLevel(Concrete.Expression type, Concrete.Expression typeLevel) {
     if (typeLevel != null) {
       Precedence prec = new Precedence((byte) (Concrete.AppExpression.PREC + 1));
-      myBuilder.append("\\level ");
+      myBuilder.keyword("\\level").whitespace();
       type.accept(this, prec);
-      myBuilder.append(" ");
+      myBuilder.whitespace();
       typeLevel.accept(this, prec);
     } else {
       type.accept(this, new Precedence(Concrete.Expression.PREC));
@@ -903,16 +957,16 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   public Void visitFunction(final Concrete.BaseFunctionDefinition def, Void ignored) {
     printIndent();
     switch (def.getKind()) {
-      case FUNC: myBuilder.append("\\func "); break;
-      case COCLAUSE_FUNC: myBuilder.append("| "); break;
-      case LEMMA: myBuilder.append("\\lemma "); break;
-      case LEVEL: myBuilder.append("\\use \\level "); break;
-      case COERCE: myBuilder.append("\\use \\coerce "); break;
-      case INSTANCE: myBuilder.append("\\instance "); break;
+      case FUNC: myBuilder.keyword("\\func").whitespace(); break;
+      case COCLAUSE_FUNC: myBuilder.bar(0).whitespace(); break;
+      case LEMMA: myBuilder.keyword("\\lemma").whitespace(); break;
+      case LEVEL: myBuilder.keyword("\\use").whitespace().keyword("\\level").whitespace(); break;
+      case COERCE: myBuilder.keyword("\\use").whitespace().keyword("\\coerce").whitespace(); break;
+      case INSTANCE: myBuilder.keyword("\\instance").whitespace(); break;
     }
 
     prettyPrintNameWithPrecedence(def.getData());
-    myBuilder.append(" ");
+    myBuilder.whitespace();
 
     final BinOpLayout l = new BinOpLayout(){
       @Override
@@ -970,38 +1024,39 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
   @Override
   public Void visitData(Concrete.DataDefinition def, Void ignored) {
-    myBuilder.append("\\data ");
+    myBuilder.keyword("\\data").whitespace();
     prettyPrintNameWithPrecedence(def.getData());
 
     List<? extends Concrete.TypeParameter> parameters = def.getParameters();
     for (Concrete.TypeParameter parameter : parameters) {
-      myBuilder.append(' ');
+      myBuilder.whitespace();
       prettyPrintParameter(parameter, Concrete.ReferenceExpression.PREC);
     }
 
     Concrete.Expression universe = def.getUniverse();
     if (universe != null) {
-      myBuilder.append(" : ");
+      myBuilder.wsColonWs();
       universe.accept(this, new Precedence(Concrete.Expression.PREC));
     }
     myIndent += INDENT;
 
-    myBuilder.append(' ');
+    myBuilder.whitespace();
     prettyPrintEliminatedReferences(def.getEliminatedReferences(), true);
 
+    long barId = myBuilder.allocBraceId();
     for (int i=0; i<def.getConstructorClauses().size(); i++) {
       Concrete.ConstructorClause clause = def.getConstructorClauses().get(i);
       if (clause.getPatterns() == null) {
         for (Concrete.Constructor constructor : clause.getConstructors()) {
-          myBuilder.append('\n');
+          myBuilder.eol();
           printIndent();
-          myBuilder.append("| ");
+          myBuilder.bar(barId).whitespace();
           visitConstructor(constructor);
         }
       } else {
-        myBuilder.append('\n');
+        myBuilder.eol();
         printIndent();
-        myBuilder.append("| ");
+        myBuilder.bar(barId).whitespace();
         new BinOpLayout(){
           @Override
           void printLeft(PrettyPrintVisitor pp) {
@@ -1039,15 +1094,15 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       return;
     }
     if (references.isEmpty()) {
-      if (printWith) myBuilder.append("\\with\n");
+      if (printWith) myBuilder.keyword("\\with").eol();
       return;
     }
 
-    myBuilder.append("\\elim ");
+    myBuilder.keyword("\\elim").whitespace();
     new ListLayout<Concrete.ReferenceExpression>(){
       @Override
       void printListElement(PrettyPrintVisitor ppv, ReferenceExpression referenceExpression) {
-        ppv.myBuilder.append(referenceExpression.getReferent().textRepresentation());
+        ppv.myBuilder.reference(referenceExpression.getReferent());
       }
 
       @Override
@@ -1059,24 +1114,26 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
   private void prettyPrintConstructorClause(Concrete.ConstructorClause clause) {
     printIndent();
-    myBuilder.append("| ");
+    myBuilder.bar(0).whitespace();
     prettyPrintClause(clause);
-    myBuilder.append(" => ");
+    myBuilder.whitespace().keyword("=>").whitespace();
 
+    long braceId = myBuilder.allocBraceId();
     if (clause.getConstructors().size() > 1) {
-      myBuilder.append("{ ");
+      myBuilder.openingBrace('{', braceId).whitespace();
     }
     boolean first = true;
+    long barId = myBuilder.allocBraceId();
     for (Concrete.Constructor constructor : clause.getConstructors()) {
       if (first) {
         first = false;
       } else {
-        myBuilder.append(" | ");
+        myBuilder.whitespace().bar(barId).whitespace();
       }
       visitConstructor(constructor);
     }
     if (clause.getConstructors().size() > 1) {
-      myBuilder.append(" }");
+      myBuilder.whitespace().closingBrace( '}', braceId);
     }
   }
 
@@ -1089,82 +1146,82 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       if (first) {
         first = false;
       } else {
-        myBuilder.append(", ");
+        myBuilder.comma().whitespace();
       }
       prettyPrintPattern(pattern, Concrete.Pattern.PREC);
     }
   }
 
   public void prettyPrintPattern(Concrete.Pattern pattern, byte prec) {
+    long braceId = myBuilder.allocBraceId();
     if (!pattern.isExplicit()) {
-      myBuilder.append("{");
+      myBuilder.openingBrace('{', braceId);
     }
 
     int numberOfAs = pattern.getAsReferables().size();
+    long[] parenIds = new long[numberOfAs - 1];
     for (int i = 0; i < numberOfAs - 1; i++) {
-      myBuilder.append('(');
+      parenIds[i] = myBuilder.allocBraceId();
+      myBuilder.openingBrace('(', parenIds[i]);
     }
 
     if (pattern instanceof Concrete.NamePattern) {
       Concrete.NamePattern namePattern = (Concrete.NamePattern) pattern;
       Referable referable = namePattern.getReferable();
-      String name = referable == null ? null : referable.textRepresentation();
-      if (name == null) {
-        name = "_";
-      }
-      myBuilder.append(name);
+      myBuilder.referenceNull(referable);
+      String name = referable == null ? "_" : referable.textRepresentation();
       if (namePattern.type != null && !name.equals("_")) {
-        myBuilder.append(" : ");
+        myBuilder.wsColonWs();
         namePattern.type.accept(this, new Precedence(Expression.PREC));
       }
     } else if (pattern instanceof Concrete.NumberPattern) {
-      myBuilder.append(((Concrete.NumberPattern) pattern).getNumber());
+      myBuilder.integer(((Concrete.NumberPattern) pattern).getNumber());
     } else if (pattern instanceof Concrete.TuplePattern) {
-      myBuilder.append('(');
+      long tupleBraceId = myBuilder.allocBraceId();
+      myBuilder.openingBrace('(', tupleBraceId);
       boolean first = true;
       for (Concrete.Pattern arg : ((Concrete.TuplePattern) pattern).getPatterns()) {
         if (first) {
           first = false;
         } else {
-          myBuilder.append(',');
+          myBuilder.comma();
         }
         prettyPrintPattern(arg, Concrete.Pattern.PREC);
       }
-      myBuilder.append(')');
+      myBuilder.closingBrace(')', tupleBraceId);
     } else if (pattern instanceof Concrete.ConstructorPattern) {
       Concrete.ConstructorPattern conPattern = (Concrete.ConstructorPattern) pattern;
-      if (!conPattern.getPatterns().isEmpty() && prec > Concrete.Pattern.PREC && pattern.isExplicit()) myBuilder.append('(');
+      long parenId = myBuilder.allocBraceId();
+      if (!conPattern.getPatterns().isEmpty() && prec > Concrete.Pattern.PREC && pattern.isExplicit()) myBuilder.openingBrace('(', parenId);
 
-      myBuilder.append(conPattern.getConstructor().textRepresentation());
+      myBuilder.reference(conPattern.getConstructor());
       for (Concrete.Pattern patternArg : conPattern.getPatterns()) {
-        myBuilder.append(' ');
+        myBuilder.whitespace();
         prettyPrintPattern(patternArg, (byte) (Concrete.Pattern.PREC + 1));
       }
 
-      if (!conPattern.getPatterns().isEmpty() && prec > Concrete.Pattern.PREC && pattern.isExplicit()) myBuilder.append(')');
+      if (!conPattern.getPatterns().isEmpty() && prec > Concrete.Pattern.PREC && pattern.isExplicit()) myBuilder.closingBrace(')', parenId);
     }
 
-    boolean first = true;
+    int asPatIndex = numberOfAs;
     for (Concrete.TypedReferable typedReferable : pattern.getAsReferables()) {
-      if (first) {
-        first = false;
-      } else {
-        myBuilder.append(')');
-      }
+      if (asPatIndex < numberOfAs)
+        myBuilder.closingBrace(')', parenIds[asPatIndex]);
+      asPatIndex--;
 
-      myBuilder.append(" \\as ");
+      myBuilder.whitespace().keyword("\\as").whitespace();
       prettyPrintTypedReferable(typedReferable);
     }
 
     if (!pattern.isExplicit()) {
-      myBuilder.append("}");
+      myBuilder.closingBrace('}', braceId);
     }
   }
 
   public void prettyPrintTypedReferable(Concrete.TypedReferable typedReferable) {
-    myBuilder.append(typedReferable.referable.textRepresentation());
+    myBuilder.reference(typedReferable.referable);
     if (typedReferable.type != null) {
-      myBuilder.append(" : ");
+      myBuilder.wsColonWs();
       typedReferable.type.accept(this, new Precedence(Expression.PREC));
     }
   }
@@ -1172,32 +1229,32 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   private void visitConstructor(Concrete.Constructor def) {
     prettyPrintNameWithPrecedence(def.getData());
     for (Concrete.TypeParameter parameter : def.getParameters()) {
-      myBuilder.append(' ');
+      myBuilder.whitespace();
       prettyPrintParameter(parameter, Concrete.ReferenceExpression.PREC);
     }
 
     if (def.getResultType() != null) {
-      myBuilder.append(" : ");
+      myBuilder.wsColonWs();
       def.getResultType().accept(this, new Precedence(Expression.PREC));
     }
 
     if (!def.getEliminatedReferences().isEmpty() || !def.getClauses().isEmpty()) {
-      myBuilder.append(' ');
+      myBuilder.whitespace();
       prettyPrintEliminatedReferences(def.getEliminatedReferences(), false);
       prettyPrintClauses(Collections.emptyList(), def.getClauses(), true);
     }
   }
 
   private void prettyPrintClassDefinitionHeader(Concrete.Definition def, List<Concrete.ReferenceExpression> superClasses) {
-    myBuilder.append("\\class ").append(def.getData().textRepresentation());
+    myBuilder.keyword("\\class").whitespace().reference(def.getData());
     if (!superClasses.isEmpty()) {
-      myBuilder.append(" \\extends ");
+      myBuilder.whitespace().keyword("\\extends").whitespace();
       boolean first = true;
       for (Concrete.ReferenceExpression superClass : superClasses) {
         if (first) {
           first = false;
         } else {
-          myBuilder.append(", ");
+          myBuilder.comma().whitespace();
         }
         visitReference(superClass, new Precedence(Concrete.Expression.PREC));
       }
@@ -1209,39 +1266,42 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     prettyPrintClassDefinitionHeader(def, def.getSuperClasses());
 
     if (!def.getElements().isEmpty()) {
-      myBuilder.append(" {");
+      long braceId = myBuilder.allocBraceId();
+      myBuilder.whitespace().openingBrace('{', braceId);
       myIndent += INDENT;
 
+      long barId = myBuilder.allocBraceId();
       for (Concrete.ClassElement element : def.getElements()) {
-        myBuilder.append('\n');
+        myBuilder.eol();
         printIndent();
         if (element instanceof Concrete.ClassField) {
           Concrete.ClassField field = (Concrete.ClassField) element;
           switch (field.getKind()) {
-            case FIELD: myBuilder.append("\\field "); break;
-            case PROPERTY: myBuilder.append("\\property "); break;
-            default: myBuilder.append("| ");
+            case FIELD: myBuilder.keyword("\\field"); break;
+            case PROPERTY: myBuilder.keyword("\\property"); break;
+            default: myBuilder.bar(barId);
           }
+          myBuilder.whitespace();
           prettyPrintNameWithPrecedence(field.getData());
           if (!field.getParameters().isEmpty()) {
-            myBuilder.append(" ");
+            myBuilder.whitespace();
             prettyPrintParameters(field.getParameters(), Concrete.ReferenceExpression.PREC);
           }
-          myBuilder.append(" : ");
+          myBuilder.wsColonWs();
           printTypeLevel(field.getResultType(), field.getResultTypeLevel());
         } else if (element instanceof Concrete.ClassFieldImpl) {
-          myBuilder.append("| ");
+          myBuilder.bar(barId).whitespace();
           visitClassFieldImpl((Concrete.ClassFieldImpl) element);
         } else if (element instanceof Concrete.OverriddenField) {
           Concrete.OverriddenField field = (Concrete.OverriddenField) element;
           myBuilder
-            .append("\\override ")
-            .append(field.getOverriddenField().textRepresentation());
+            .keyword("\\override").whitespace()
+            .reference(field.getOverriddenField());
           if (!field.getParameters().isEmpty()) {
-            myBuilder.append(" ");
+            myBuilder.whitespace();
             prettyPrintParameters(field.getParameters(), Concrete.ReferenceExpression.PREC);
           }
-          myBuilder.append(" : ");
+          myBuilder.wsColonWs();
           printTypeLevel(field.getResultType(), field.getResultTypeLevel());
         } else {
           throw new IllegalStateException();
@@ -1249,9 +1309,9 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       }
 
       myIndent -= INDENT;
-      myBuilder.append('\n');
+      myBuilder.eol();
       printIndent();
-      myBuilder.append("}");
+      myBuilder.closingBrace('}', braceId);
     }
 
     return null;
@@ -1264,9 +1324,10 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
         if (arg.isExplicit()) {
           arg.getExpression().accept(ppv, new Precedence((byte) (Concrete.AppExpression.PREC + 1)));
         } else {
-          ppv.myBuilder.append("{");
+          long braceId = ppv.myBuilder.allocBraceId();
+          ppv.myBuilder.openingBrace('{', braceId);
           arg.getExpression().accept(ppv, new Precedence(Concrete.Expression.PREC));
-          ppv.myBuilder.append('}');
+          ppv.myBuilder.closingBrace('}', braceId);
         }
       }
 
@@ -1296,7 +1357,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
         printListElement(pp, l.get(0));
         if (l.size() > 1)
         for (E e : l.subList(1, l.size())) {
-          pp.myBuilder.append(getSeparator());
+          pp.myBuilder.plainText(getSeparator());
           printListElement(pp, e);
         }
         return;
@@ -1328,14 +1389,14 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
         if (rem != -1) {
           String separator = getSeparator();
 
-          pp.myBuilder.append(separator.trim());
+          pp.myBuilder.plainText(separator.trim());
           if (rem + strs[0].length() + separator.length() > MAX_LEN || splitMultiLineArgs) {
             if (indent == 0) pp.myIndent += INDENT;
             indent = INDENT;
-            pp.myBuilder.append('\n');
+            pp.myBuilder.eol();
             rem = 0;
           } else {
-            pp.myBuilder.append(' ');
+            pp.myBuilder.whitespace();
             rem++;
           }
         }
@@ -1343,10 +1404,10 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
         for (int i = 0; i < sz; i++) {
           String s = strs[i];
           if (rem == 0) pp.printIndent();
-          pp.myBuilder.append(s);
+          pp.myBuilder.plainText(s);
           rem += s.trim().length();
           if (i < sz - 1) {
-            pp.myBuilder.append('\n');
+            pp.myBuilder.eol();
             rem = 0;
           }
         }
@@ -1385,9 +1446,9 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     public void doPrettyPrint(PrettyPrintVisitor ppv_default, boolean disabled) {
       if (disabled) {
         printLeft(ppv_default);
-        if (printSpaceBefore()) ppv_default.myBuilder.append(" ");
-        ppv_default.myBuilder.append(getOpText().trim());
-        if (printSpaceAfter()) ppv_default.myBuilder.append(" ");
+        if (printSpaceBefore()) ppv_default.myBuilder.whitespace();
+        ppv_default.myBuilder.plainText(getOpText().trim());
+        if (printSpaceAfter()) ppv_default.myBuilder.whitespace();
         printRight(ppv_default);
         return;
       }
@@ -1415,17 +1476,17 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
       for (int i=0; i<lhs_sz; i++) {
         String s = lhs_strings.get(i);
-        if (i>0) ppv_default.printIndent(); ppv_default.myBuilder.append(s);
-        if (i<lhs_sz-1) ppv_default.myBuilder.append('\n');
+        if (i>0) ppv_default.printIndent(); ppv_default.myBuilder.plainText(s);
+        if (i<lhs_sz-1) ppv_default.myBuilder.eol();
       }
 
-      if (printSpaceBefore()) ppv_default.myBuilder.append(' ');
-      ppv_default.myBuilder.append(getOpText().trim());
+      if (printSpaceBefore()) ppv_default.myBuilder.whitespace();
+      ppv_default.myBuilder.plainText(getOpText().trim());
 
       if (hyph) {
-        ppv_default.myBuilder.append('\n');
+        ppv_default.myBuilder.eol();
       } else {
-        if (printSpaceAfter()) ppv_default.myBuilder.append(' ');
+        if (printSpaceAfter()) ppv_default.myBuilder.whitespace();
       }
 
       boolean ii = increaseIndent(rhs_strings);
@@ -1439,9 +1500,9 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
           ppv_default.printIndent();
         }
 
-        ppv_default.myBuilder.append(s);
+        ppv_default.myBuilder.plainText(s);
 
-        if (i<rhs_strings.size()-1) ppv_default.myBuilder.append('\n');
+        if (i<rhs_strings.size()-1) ppv_default.myBuilder.eol();
       }
       if (ii) ppv_default.myIndent-=INDENT;
     }
