@@ -1,6 +1,5 @@
 package org.arend.term.prettyprint;
 
-import org.arend.naming.reference.Referable;
 import org.jetbrains.annotations.NotNull;
 
 public class PlainTextBuilder implements TextBuilder<@NotNull PlainTextBuilder> {
@@ -14,74 +13,26 @@ public class PlainTextBuilder implements TextBuilder<@NotNull PlainTextBuilder> 
     this.builder = builder;
   }
 
-  private @NotNull PlainTextBuilder append(String s) {
-    builder.append(s);
+  @Override
+  public @NotNull PlainTextBuilder plainText(@NotNull String text) {
+    builder.append(text);
     return this;
   }
 
-  private @NotNull PlainTextBuilder append(char c) {
+  @Override
+  public @NotNull PlainTextBuilder plainText(char c) {
     builder.append(c);
     return this;
   }
 
   @Override
-  public @NotNull PlainTextBuilder appendWhitespaces(int number) {
+  public @NotNull PlainTextBuilder whitespaces(int number) {
     for (int i = 0; i < number; i++) builder.append(' ');
     return this;
   }
 
   @Override
-  public @NotNull PlainTextBuilder appendUnderscore() {
-    return append('_');
-  }
-
-  @Override
-  public @NotNull PlainTextBuilder appendEol() {
-    return append(System.lineSeparator());
-  }
-
-  @Override
-  public @NotNull PlainTextBuilder appendColon() {
-    return append(':');
-  }
-
-  @Override
-  public @NotNull PlainTextBuilder appendComma() {
-    return append(',');
-  }
-
-  @Override
-  public @NotNull PlainTextBuilder appendSemicolon() {
-    return append(';');
-  }
-
-  @Override
-  public @NotNull PlainTextBuilder appendKeyword(@NotNull String keyword) {
-    return append(keyword);
-  }
-
-  @Override
-  public @NotNull PlainTextBuilder appendGoal(@NotNull String goalText) {
-    return append(goalText);
-  }
-
-  @Override
-  public @NotNull PlainTextBuilder appendReference(@NotNull Referable ref) {
-    return append(ref.textRepresentation());
-  }
-
-  @Override
-  public @NotNull PlainTextBuilder appendOpeningBrace(@NotNull String brace, long braceId) {
-    return append(brace);
-  }
-
-  @Override
-  public @NotNull PlainTextBuilder appendClosingBrace(@NotNull String brace, long braceId) {
-    return append(brace);
-  }
-
-  @Override
-  public @NotNull PlainTextBuilder appendBar(long barId) {
-    return append('|');
+  public @NotNull PlainTextBuilder whitespace() {
+    return plainText(' ');
   }
 }
