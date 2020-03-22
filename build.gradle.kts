@@ -46,7 +46,8 @@ subprojects {
 
     java {
         withSourcesJar()
-        withJavadocJar()
+        // Enable on-demand
+        // withJavadocJar()
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
