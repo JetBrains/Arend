@@ -6,6 +6,7 @@ import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.arend.util.Pair;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -45,5 +46,24 @@ public class SubExprBugs extends TypeCheckingTestCase {
     assertNotNull(accept);
     assertEquals("A", accept.proj1.toString());
     assertEquals("A", accept.proj2.toString());
+  }
+
+  @Test
+  @Ignore
+  public void issue195() {
+    ConcreteLocatedReferable resolved = resolveNamesDef(
+        "\\record Kibou \\extends No\n" +
+            "  | hana => 114514 \\where {\n" +
+            "    \\record No | hana : Nat\n" +
+            "  }");
+    Concrete.ClassDefinition concreteDef = (Concrete.ClassDefinition) resolved.getDefinition();
+    Concrete.ClassFieldImpl classField = (Concrete.ClassFieldImpl) concreteDef.getElements().get(0);
+    assertNotNull(classField);
+    Concrete.Expression implementation = classField.implementation;
+    Pair<@NotNull Expression, Concrete.Expression> accept = concreteDef.accept(
+        new CorrespondedSubDefVisitor(implementation), typeCheckDef(resolved));
+    assertNotNull(accept);
+    assertEquals("114514", accept.proj1.toString());
+    assertEquals("114514", accept.proj2.toString());
   }
 }
