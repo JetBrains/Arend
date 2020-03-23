@@ -4,10 +4,12 @@ import org.arend.core.definition.*;
 import org.arend.core.elimtree.Body;
 import org.arend.core.elimtree.ElimBody;
 import org.arend.core.elimtree.ElimClause;
+import org.arend.core.expr.AbsExpression;
 import org.arend.core.expr.ClassCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.PiExpression;
 import org.arend.core.pattern.Pattern;
+import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCFieldReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteDefinitionVisitor;
@@ -121,6 +123,19 @@ public class CorrespondedSubDefVisitor implements
         Pair<Expression, Concrete.Expression> accept = !parameters.isEmpty() && fieldExpr instanceof PiExpression
             ? visitor.visitPiImpl(parameters, concrete.getResultType(), (PiExpression) fieldExpr)
             : concrete.getResultType().accept(visitor, fieldExpr);
+        if (accept != null) return accept;
+      } else if (concreteRaw instanceof Concrete.ClassFieldImpl) {
+        Concrete.ClassFieldImpl concrete = (Concrete.ClassFieldImpl) concreteRaw;
+        Referable implementedField = concrete.getImplementedField();
+        Optional<AbsExpression> field = coreDef.getFields()
+            .stream()
+            .filter(o -> o.getReferable() == implementedField)
+            .findFirst()
+            .map(coreDef::getImplementation);
+        if (!field.isPresent()) continue;
+        // The binding is `this` I believe
+        Pair<Expression, Concrete.Expression> accept = concrete.implementation
+            .accept(visitor, field.get().getExpression());
         if (accept != null) return accept;
       }
     return null;
