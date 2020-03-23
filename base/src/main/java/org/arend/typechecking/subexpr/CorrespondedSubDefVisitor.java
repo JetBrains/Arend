@@ -113,13 +113,14 @@ public class CorrespondedSubDefVisitor implements
             .map(ClassField::getResultType)
             .findFirst();
         if (!field.isPresent()) continue;
-        Expression fieldPi = field.get();
+        Expression fieldExpr = field.get();
+        List<Concrete.TypeParameter> concreteParameters = concrete.getParameters();
         // Clone the list and remove the first "this" parameter
-        List<Concrete.TypeParameter> parameters = new ArrayList<>(concrete.getParameters());
-        parameters.remove(0);
-        Pair<Expression, Concrete.Expression> accept = !parameters.isEmpty() && fieldPi instanceof PiExpression
-            ? visitor.visitPiImpl(parameters, concrete.getResultType(), (PiExpression) fieldPi)
-            : concrete.getResultType().accept(visitor, fieldPi);
+        List<Concrete.TypeParameter> parameters = concreteParameters.isEmpty()
+            ? Collections.emptyList() : concreteParameters.subList(1, concreteParameters.size());
+        Pair<Expression, Concrete.Expression> accept = !parameters.isEmpty() && fieldExpr instanceof PiExpression
+            ? visitor.visitPiImpl(parameters, concrete.getResultType(), (PiExpression) fieldExpr)
+            : concrete.getResultType().accept(visitor, fieldExpr);
         if (accept != null) return accept;
       }
     return null;
