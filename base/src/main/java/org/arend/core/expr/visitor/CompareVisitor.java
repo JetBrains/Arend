@@ -390,7 +390,31 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     } else {
       substitution = new ExprSubstitution();
     }
+
+    if (expr1.getDefinition() == Prelude.ISO) {
+      return correctOrder ? compareIsoArgs(expr1.getDefCallArguments(), defCall2.getDefCallArguments(), substitution) : compareIsoArgs(defCall2.getDefCallArguments(), expr1.getDefCallArguments(), substitution);
+    }
     return correctOrder ? compareLists(expr1.getDefCallArguments(), defCall2.getDefCallArguments(), expr1.getDefinition().getParameters(), expr1.getDefinition(), substitution) : compareLists(defCall2.getDefCallArguments(), expr1.getDefCallArguments(), defCall2.getDefinition().getParameters(), defCall2.getDefinition(), substitution);
+  }
+
+  public boolean compareIsoArgs(List<? extends Expression> list1, List<? extends Expression> list2, ExprSubstitution substitution) {
+    DependentLink link = Prelude.ISO.getParameters();
+    if (!compare(list1.get(0), list2.get(0), link.getTypeExpr())) {
+      return false;
+    }
+    substitution.add(link, (myCMP == CMP.LE ? list2 : list1).get(0));
+    link = link.getNext();
+
+    if (!compare(list1.get(1), list2.get(1), link.getTypeExpr())) {
+      return false;
+    }
+    substitution.add(link, (myCMP == CMP.LE ? list2 : list1).get(1));
+    link = link.getNext();
+
+    if (!compare(list1.get(2), list2.get(2), link.getTypeExpr().subst(substitution))) {
+      return false;
+    }
+    return compare(list1.get(6), list2.get(6), link.getNext().getNext().getNext().getNext().getTypeExpr());
   }
 
   private boolean visitDefCall(DefCallExpression expr1, Expression expr2, Expression type) {

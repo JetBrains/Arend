@@ -2,6 +2,8 @@ package org.arend.typechecking;
 
 import org.junit.Test;
 
+import static org.arend.Matchers.typeMismatchError;
+
 public class PreludeTest extends TypeCheckingTestCase {
   @Test
   public void testCoe2Sigma() {
@@ -21,5 +23,32 @@ public class PreludeTest extends TypeCheckingTestCase {
   @Test
   public void testCoe2RightRight() {
     typeCheckModule("\\func foo (A : I -> \\Type) (a : A right) : coe2 A right a right = a => idp");
+  }
+
+  @Test
+  public void testIsoComparison() {
+    typeCheckModule(
+      "\\func id (x : Nat) => x\n" +
+      "\\func id' (x : Nat) : Nat\n" +
+      "  | 0 => 0\n" +
+      "  | suc n => suc n\n" +
+      "\\func id'-id (x : Nat) : id' x = x\n" +
+      "  | 0 => idp\n" +
+      "  | suc n => idp\n" +
+      "\\func test : path (iso id id (\\lam _ => idp) (\\lam _ => idp)) = path (iso id id' id'-id id'-id) => idp");
+  }
+
+  @Test
+  public void testIsoComparisonError() {
+    typeCheckModule(
+      "\\func id (x : Nat) => x\n" +
+      "\\func id' (x : Nat) : Nat\n" +
+      "  | 0 => 0\n" +
+      "  | suc n => suc n\n" +
+      "\\func id'-id (x : Nat) : id' x = x\n" +
+      "  | 0 => idp\n" +
+      "  | suc n => idp\n" +
+      "\\func test : path (iso id id (\\lam _ => idp) (\\lam _ => idp)) = path (iso id' id id'-id id'-id) => idp", 1);
+    assertThatErrorsAre(typeMismatchError());
   }
 }
