@@ -376,11 +376,19 @@ public class CorrespondedSubExprVisitor implements
     ClassCallExpression coreClassExpr = coreExpr.cast(ClassCallExpression.class);
     if (coreClassExpr == null) return nullWithError(SubExprError.mismatch(coreExpr));
     Map<ClassField, Expression> implementedHere = coreClassExpr.getImplementedHere();
-    for (Concrete.ClassFieldImpl statement : expr.getStatements()) {
+    Pair<Expression, Concrete.Expression> field =
+        visitStatements(implementedHere, expr.getStatements());
+    if (field != null) return field;
+    return expr.getBaseClassExpression().accept(this, coreClassExpr.getThisBinding().getTypeExpr());
+  }
+
+  private  @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>
+  visitStatements(Map<ClassField, Expression> implementedHere, List<Concrete.ClassFieldImpl> statements) {
+    for (Concrete.ClassFieldImpl statement : statements) {
       Pair<Expression, Concrete.Expression> field = visitStatement(implementedHere, statement);
       if (field != null) return field;
     }
-    return expr.getBaseClassExpression().accept(this, coreClassExpr.getThisBinding().getTypeExpr());
+    return null;
   }
 
   @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>
@@ -388,7 +396,8 @@ public class CorrespondedSubExprVisitor implements
     Referable implementedField = statement.getImplementedField();
     if (implementedField == null) return nullWithError(new SubExprError(SubExprError.Kind.MissingImplementationField));
     // Class extension -- base class call.
-    if (implementedField instanceof ClassReferable) {
+    if (implementedField instanceof ClassReferable
+        && statement.implementation != null) {
       Collection<? extends FieldReferable> fields = ((ClassReferable) implementedField).getFieldReferables();
       Optional<Pair<Expression, Concrete.Expression>> baseClassCall = implementedHere.entrySet()
               .stream()
@@ -401,13 +410,23 @@ public class CorrespondedSubExprVisitor implements
               .map(e -> statement.implementation.accept(this, e.getArgument()));
       if (baseClassCall.isPresent()) return baseClassCall.get();
     }
-    return implementedHere.entrySet()
+    Optional<Expression> fieldExpr = implementedHere.entrySet()
         .stream()
         .filter(entry -> entry.getKey().getReferable() == implementedField)
         .findFirst()
-        .map(Map.Entry::getValue)
-        .map(e -> statement.implementation.accept(this, e))
-        .orElse(nullWithError(new SubExprError(SubExprError.Kind.FieldNotFound)));
+        .map(Map.Entry::getValue);
+    if (!fieldExpr.isPresent())
+      return nullWithError(new SubExprError(SubExprError.Kind.FieldNotFound));
+    Expression field = fieldExpr.get();
+    if (statement.implementation != null)
+      return statement.implementation.accept(this, field);
+    else if (field instanceof NewExpression)
+      return visitStatements(
+          ((NewExpression) field).getClassCall().getImplementedHere(),
+          statement.subClassFieldImpls
+      );
+    else
+      return nullWithError(new SubExprError(SubExprError.Kind.FieldNotFound));
   }
 
   @Override
