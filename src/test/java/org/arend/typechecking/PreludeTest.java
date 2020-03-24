@@ -51,4 +51,31 @@ public class PreludeTest extends TypeCheckingTestCase {
       "\\func test : path (iso id id (\\lam _ => idp) (\\lam _ => idp)) = path (iso id' id id'-id id'-id) => idp", 1);
     assertThatErrorsAre(typeMismatchError());
   }
+
+  @Test
+  public void isoFreeVarEval() {
+    typeCheckModule(
+      "\\func id (x : Nat) => x\n" +
+      "\\func id' (i : I) (x : Nat) : Nat \\elim x\n" +
+      "  | 0 => 0\n" +
+      "  | suc n => suc n\n" +
+      "\\func id'-id (i : I) (x : Nat) : id' i x = x \\elim x\n" +
+      "  | 0 => idp\n" +
+      "  | suc n => idp\n" +
+      "\\func test : coe (\\lam i => iso id (id' i) (id'-id i) (id'-id i) i) 0 right = 0 => idp");
+  }
+
+  @Test
+  public void isoFreeVarEvalError() {
+    typeCheckModule(
+      "\\func id (x : Nat) => x\n" +
+      "\\func id' (i : I) (x : Nat) : Nat \\elim x\n" +
+      "  | 0 => 0\n" +
+      "  | suc n => suc n\n" +
+      "\\func id'-id (i : I) (x : Nat) : id' i x = x \\elim x\n" +
+      "  | 0 => idp\n" +
+      "  | suc n => idp\n" +
+      "\\func test : coe (\\lam i => iso (id' i) id (id'-id i) (id'-id i) i) 0 right = 0 => idp", 1);
+    assertThatErrorsAre(typeMismatchError());
+  }
 }

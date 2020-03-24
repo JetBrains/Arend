@@ -189,7 +189,8 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
     if (definition == Prelude.COERCE || definition == Prelude.COERCE2) {
       LamExpression lamExpr = expr.getDefCallArguments().get(0).accept(this, NormalizationMode.WHNF).cast(LamExpression.class);
       if (lamExpr != null) {
-        Expression body = lamExpr.getParameters().getNext().hasNext() ? new LamExpression(lamExpr.getResultSort(), lamExpr.getParameters().getNext(), lamExpr.getBody()) : lamExpr.getBody();
+        SingleDependentLink param = lamExpr.getParameters();
+        Expression body = param.getNext().hasNext() ? new LamExpression(lamExpr.getResultSort(), param.getNext(), lamExpr.getBody()) : lamExpr.getBody();
         body = body.accept(this, NormalizationMode.WHNF);
         FunCallExpression funCall = body.cast(FunCallExpression.class);
         boolean checkSigma = true;
@@ -197,25 +198,18 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
         if (funCall != null && funCall.getDefinition() == Prelude.ISO && definition == Prelude.COERCE) {
           List<? extends Expression> isoArgs = funCall.getDefCallArguments();
           ReferenceExpression refExpr = isoArgs.get(isoArgs.size() - 1).accept(this, NormalizationMode.WHNF).cast(ReferenceExpression.class);
-          if (refExpr != null && refExpr.getBinding() == lamExpr.getParameters()) {
+          if (refExpr != null && refExpr.getBinding() == param) {
             checkSigma = false;
             ConCallExpression normedPtCon = expr.getDefCallArguments().get(2).accept(this, NormalizationMode.WHNF).cast(ConCallExpression.class);
             if (normedPtCon != null && normedPtCon.getDefinition() == Prelude.RIGHT) {
-              boolean noFreeVar = true;
-              for (int i = 0; i < isoArgs.size() - 1; i++) {
-                if (NormalizingFindBindingVisitor.findBinding(isoArgs.get(i), lamExpr.getParameters())) {
-                  noFreeVar = false;
-                  break;
-                }
-              }
-              if (noFreeVar) {
+              if (!NormalizingFindBindingVisitor.findBinding(isoArgs.get(0), param) && !NormalizingFindBindingVisitor.findBinding(isoArgs.get(1), param) && !NormalizingFindBindingVisitor.findBinding(isoArgs.get(2), param)) {
                 return AppExpression.make(isoArgs.get(2), expr.getDefCallArguments().get(1), true).accept(this, mode);
               }
             }
           }
         }
 
-        if (checkSigma && !NormalizingFindBindingVisitor.findBinding(body, lamExpr.getParameters())) {
+        if (checkSigma && !NormalizingFindBindingVisitor.findBinding(body, param)) {
           return expr.getDefCallArguments().get(definition == Prelude.COERCE ? 1 : 2).accept(this, mode);
         }
       }
