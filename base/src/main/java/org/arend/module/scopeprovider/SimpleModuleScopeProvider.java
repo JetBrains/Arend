@@ -29,6 +29,10 @@ public class SimpleModuleScopeProvider implements ModuleScopeProvider, ModuleReg
     return myMap.keySet();
   }
 
+  public Collection<? extends Map.Entry<ModulePath, Scope>> getRegisteredEntries() {
+    return myMap.entrySet();
+  }
+
   @Override
   public void unregisterModule(ModulePath path) {
     myMap.remove(path);

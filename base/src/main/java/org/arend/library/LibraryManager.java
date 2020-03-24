@@ -1,6 +1,7 @@
 package org.arend.library;
 
 import org.arend.ext.ArendExtension;
+import org.arend.ext.DefinitionContributor;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.library.classLoader.MultiClassLoader;
 import org.arend.library.error.LibraryError;
@@ -33,6 +34,7 @@ public class LibraryManager {
   private MultiClassLoader<Library> myInternalClassLoader = new MultiClassLoader<>(myExternalClassLoader);
   private final SimpleModuleScopeProvider myExternalExtensionModuleScopeProvider = new SimpleModuleScopeProvider();
   private final SimpleModuleScopeProvider myInternalExtensionModuleScopeProvider = new SimpleModuleScopeProvider();
+  private final DefinitionContributor myDefinitionContributor;
 
   /**
    * Constructs new {@code LibraryManager}.
@@ -41,12 +43,14 @@ public class LibraryManager {
    * @param instanceProviderSet       an instance provider set.
    * @param typecheckingErrorReporter an error reporter for errors related to typechecking and name resolving.
    * @param libraryErrorReporter      an error reporter for errors related to loading and unloading of libraries.
+   * @param definitionContributor     a listener for metas defined in extensions.
    */
-  public LibraryManager(LibraryResolver libraryResolver, @Nullable InstanceProviderSet instanceProviderSet, ErrorReporter typecheckingErrorReporter, ErrorReporter libraryErrorReporter) {
+  public LibraryManager(LibraryResolver libraryResolver, @Nullable InstanceProviderSet instanceProviderSet, ErrorReporter typecheckingErrorReporter, ErrorReporter libraryErrorReporter, DefinitionContributor definitionContributor) {
     myLibraryResolver = libraryResolver;
     myInstanceProviderSet = instanceProviderSet;
     myTypecheckingErrorReporter = typecheckingErrorReporter;
     myLibraryErrorReporter = libraryErrorReporter;
+    myDefinitionContributor = definitionContributor;
   }
 
   /**
@@ -115,6 +119,10 @@ public class LibraryManager {
 
   public MultiClassLoader<Library> getClassLoader(boolean external) {
     return external ? myExternalClassLoader : myInternalClassLoader;
+  }
+
+  public DefinitionContributor getDefinitionContributor() {
+    return myDefinitionContributor;
   }
 
   /**

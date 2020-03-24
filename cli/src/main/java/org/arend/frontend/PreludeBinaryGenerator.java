@@ -1,5 +1,6 @@
 package org.arend.frontend;
 
+import org.arend.extImpl.definitionContributor.EmptyDefinitionContributor;
 import org.arend.frontend.library.PreludeFileLibrary;
 import org.arend.library.LibraryManager;
 import org.arend.library.SourceLibrary;
@@ -31,7 +32,7 @@ public class PreludeBinaryGenerator {
       }
     }
 
-    LibraryManager manager = new LibraryManager((lib,name) -> { throw new IllegalStateException(); }, new InstanceProviderSet(), System.err::println, System.err::println);
+    LibraryManager manager = new LibraryManager((lib,name) -> { throw new IllegalStateException(); }, new InstanceProviderSet(), System.err::println, System.err::println, EmptyDefinitionContributor.INSTANCE);
     if (manager.loadLibrary(library, null)) {
       if (new Prelude.PreludeTypechecking(manager.getInstanceProviderSet(), typecheckerState, ConcreteReferableProvider.INSTANCE, PositionComparator.INSTANCE).typecheckLibrary(library)) {
         library.persistModule(Prelude.MODULE_PATH, IdReferableConverter.INSTANCE, System.err::println);

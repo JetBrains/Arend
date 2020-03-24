@@ -5,7 +5,7 @@ import org.arend.ext.DefaultArendExtension;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.module.ModulePath;
 import org.arend.extImpl.ConcreteFactoryImpl;
-import org.arend.extImpl.DefinitionContributorImpl;
+import org.arend.extImpl.definitionContributor.DefinitionContributorImpl;
 import org.arend.extImpl.DefinitionProviderImpl;
 import org.arend.library.classLoader.FileClassLoaderDelegate;
 import org.arend.library.classLoader.MultiClassLoader;
@@ -221,7 +221,7 @@ public abstract class SourceLibrary extends BaseLibrary {
     }
 
     if (myExtension != null) {
-      DefinitionContributorImpl contributor = new DefinitionContributorImpl(this, libraryManager.getLibraryErrorReporter(), libraryManager.getExtensionModuleScopeProvider(isExternal()));
+      DefinitionContributorImpl contributor = new DefinitionContributorImpl(this, libraryManager.getLibraryErrorReporter(), libraryManager.getExtensionModuleScopeProvider(isExternal()), libraryManager.getDefinitionContributor());
       myExtension.declareDefinitions(contributor);
       contributor.disable();
     }
