@@ -1828,7 +1828,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
         typedDef.updateSort();
 
-        TypedBinding thisBinding = new TypedBinding("this", new ClassCallExpression(typedDef, Sort.STD));
+        TypedSingleDependentLink thisBinding = new TypedSingleDependentLink(false, "this", new ClassCallExpression(typedDef, Sort.STD), true);
         Concrete.LamExpression lamImpl = (Concrete.LamExpression) classFieldImpl.implementation;
         TypecheckingResult result;
         if (lamImpl != null) {

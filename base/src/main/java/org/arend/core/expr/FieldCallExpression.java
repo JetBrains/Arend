@@ -1,5 +1,6 @@
 package org.arend.core.expr;
 
+import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.definition.ClassField;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;

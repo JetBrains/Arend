@@ -169,6 +169,14 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   @Override
   public Concrete.Expression visitFieldCall(FieldCallExpression expr, Void params) {
+    if (expr.getArgument() instanceof ReferenceExpression) {
+      ReferenceExpression arg = (ReferenceExpression) expr.getArgument();
+      if (arg.getBinding().isHidden()) {
+        return makeReference(expr);
+      }
+    }
+
+
     if (expr.getDefinition().isHideable() && !hasFlag(PrettyPrinterFlag.SHOW_COERCE_DEFINITIONS)) {
       return expr.getArgument().accept(this, null);
     }
