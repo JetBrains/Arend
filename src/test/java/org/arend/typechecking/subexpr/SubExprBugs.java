@@ -66,4 +66,25 @@ public class SubExprBugs extends TypeCheckingTestCase {
     assertEquals("114514", accept.proj1.toString());
     assertEquals("114514", accept.proj2.toString());
   }
+
+  @Test
+  public void issue196() {
+    ConcreteLocatedReferable resolved = resolveNamesDef(
+        "\\func Dorothy : Alice \\cowith\n" +
+            " | rbq {\n" +
+            "   | level => 114514\n" +
+            " } \\where {\n" +
+            "    \\record Rbq | level : Nat\n" +
+            "    \\record Alice (rbq : Rbq)\n" +
+            "  }");
+    Concrete.FunctionDefinition concreteDef = (Concrete.FunctionDefinition) resolved.getDefinition();
+    Concrete.ClassFieldImpl classField = (Concrete.ClassFieldImpl) concreteDef.getBody().getCoClauseElements().get(0);
+    assertNotNull(classField);
+    Concrete.ClassFieldImpl implementation = classField.subClassFieldImpls.get(0);
+    Pair<@NotNull Expression, Concrete.Expression> accept = concreteDef.accept(
+        new CorrespondedSubDefVisitor(implementation.implementation), typeCheckDef(resolved));
+    assertNotNull(accept);
+    assertEquals("114514", accept.proj1.toString());
+    assertEquals("114514", accept.proj2.toString());
+  }
 }
