@@ -228,11 +228,18 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
   }
 
   @Override
-  public boolean compare(@NotNull CoreExpression expr1, @NotNull CoreExpression expr2, @NotNull CMP cmp, @Nullable ConcreteExpression marker) {
+  public boolean compare(@NotNull CoreExpression expr1, @NotNull CoreExpression expr2, @NotNull CMP cmp, @Nullable ConcreteExpression marker, boolean allowEquations, boolean normalize) {
     if (!(expr1 instanceof Expression && expr2 instanceof Expression)) {
       throw new IllegalArgumentException();
     }
-    return new CompareVisitor(myEquations, cmp, marker instanceof Concrete.SourceNode ? (Concrete.SourceNode) marker : null).compare((Expression) expr1, (Expression) expr2, null);
+    CompareVisitor visitor = new CompareVisitor(myEquations, cmp, marker instanceof Concrete.SourceNode ? (Concrete.SourceNode) marker : null);
+    if (!allowEquations) {
+      visitor.doNotAllowEquations();
+    }
+    if (!normalize) {
+      visitor.doNotNormalize();
+    }
+    return visitor.compare((Expression) expr1, (Expression) expr2, null);
   }
 
   public TypecheckingResult checkResult(Expression expectedType, TypecheckingResult result, Concrete.Expression expr) {
@@ -317,23 +324,24 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
 
   @Nullable
   @Override
-  public TypecheckingResult typecheck(@NotNull ConcreteExpression expression) {
-    if (!(expression instanceof Concrete.Expression)) {
+  public TypecheckingResult typecheck(@NotNull ConcreteExpression expression, @Nullable CoreExpression expectedType) {
+    if (!(expression instanceof Concrete.Expression && (expectedType == null || expectedType instanceof Expression))) {
       throw new IllegalArgumentException();
     }
-    return checkExpr((Concrete.Expression) expression, null);
+    return checkExpr((Concrete.Expression) expression, (Expression) expectedType);
   }
 
   @Nullable
   @Override
-  public TypecheckingResult check(@NotNull CoreExpression expression, @NotNull ConcreteSourceNode sourceNode) {
-    if (!(expression instanceof Expression && sourceNode instanceof Concrete.SourceNode)) {
+  public TypecheckingResult check(@NotNull CoreExpression expression, @Nullable CoreExpression expectedType, @NotNull ConcreteSourceNode sourceNode) {
+    if (!(expression instanceof Expression && sourceNode instanceof Concrete.SourceNode && (expectedType == null || expectedType instanceof Expression))) {
       throw new IllegalArgumentException();
     }
 
     Expression expr = (Expression) expression;
     try {
-      return new TypecheckingResult(expr, expr.accept(new CoreExpressionChecker(getAllBindings(), myEquations, (Concrete.SourceNode) sourceNode), null));
+      Expression actualType = expr.accept(new CoreExpressionChecker(getAllBindings(), myEquations, (Concrete.SourceNode) sourceNode), (Expression) expectedType);
+      return new TypecheckingResult(expr, expectedType == null ? actualType : (Expression) expectedType);
     } catch (CoreException e) {
       errorReporter.report(e.error);
       return null;

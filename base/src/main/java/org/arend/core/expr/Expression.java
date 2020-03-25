@@ -61,6 +61,7 @@ public abstract class Expression implements Body, CoreExpression {
     return this == obj || obj instanceof Expression && compare(this, (Expression) obj, null, CMP.EQ);
   }
 
+  @Override
   public boolean isError() {
     ErrorExpression errorExpr = cast(ErrorExpression.class);
     return errorExpr != null && errorExpr.isError();
@@ -159,7 +160,7 @@ public abstract class Expression implements Body, CoreExpression {
 
   @Nullable
   @Override
-  public CoreExpression recreate(@NotNull ExpressionMapper mapper) {
+  public CoreExpression replaceSubexpressions(@NotNull ExpressionMapper mapper) {
     try {
       return accept(new RecreateExpressionVisitor(mapper), null);
     } catch (SubstVisitor.SubstException e) {

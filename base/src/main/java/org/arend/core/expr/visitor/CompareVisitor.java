@@ -31,12 +31,22 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
   private CMP myCMP;
   private boolean myNormalCompare = true;
   private boolean myOnlySolveVars = false;
+  private boolean myAllowEquations = true;
+  private boolean myNormalize = true;
 
   public CompareVisitor(Equations equations, CMP cmp, Concrete.SourceNode sourceNode) {
     mySubstitution = new HashMap<>();
     myEquations = equations;
     mySourceNode = sourceNode;
     myCMP = cmp;
+  }
+
+  public void doNotAllowEquations() {
+    myAllowEquations = false;
+  }
+
+  public void doNotNormalize() {
+    myNormalize = false;
   }
 
   public static boolean compare(Equations equations, CMP cmp, Expression expr1, Expression expr2, Expression type, Concrete.SourceNode sourceNode) {
@@ -173,7 +183,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
           type1 = null;
         }
         if (type1 != null) {
-          type1 = type1.normalize(NormalizationMode.WHNF);
+          type1 = myNormalize ? type1.normalize(NormalizationMode.WHNF) : type1;
           if (allowProp) {
             Sort sort1 = type1.getSortOfType();
             if (sort1 != null && sort1.isProp() && !type1.isInstance(ClassCallExpression.class)) {
@@ -188,7 +198,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
             type2 = null;
           }
           if (type2 != null) {
-            type2 = type2.normalize(NormalizationMode.WHNF);
+            type2 = myNormalize ? type2.normalize(NormalizationMode.WHNF) : type2;
             if (allowProp) {
               Sort sort2 = type2.getSortOfType();
               if (sort2 != null && sort2.isProp() && !type2.isInstance(ClassCallExpression.class)) {
@@ -243,7 +253,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       ok = expr1.accept(this, expr2, type);
     }
 
-    if (!ok && !myOnlySolveVars) {
+    if (!ok && !myOnlySolveVars && myAllowEquations) {
       InferenceVariable variable1 = stuck1 == null ? null : stuck1.getInferenceVariable();
       InferenceVariable variable2 = stuck2 == null ? null : stuck2.getInferenceVariable();
       ok = (variable1 != null || variable2 != null) && myNormalCompare && myEquations.addEquation(expr1, expr2.subst(getSubstitution()), type, origCMP, variable1 != null ? variable1.getSourceNode() : variable2.getSourceNode(), variable1, variable2);
@@ -287,7 +297,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       return true;
     }
 
-    return myNormalCompare && normalizedCompare(expr1.normalize(NormalizationMode.WHNF), expr2.normalize(NormalizationMode.WHNF), type == null ? null : type.normalize(NormalizationMode.WHNF));
+    return myNormalCompare && myNormalize && normalizedCompare(expr1.normalize(NormalizationMode.WHNF), expr2.normalize(NormalizationMode.WHNF), type == null ? null : type.normalize(NormalizationMode.WHNF));
   }
 
   private ExprSubstitution getSubstitution() {
