@@ -9,6 +9,7 @@ import org.arend.core.expr.let.LetClause;
 import org.arend.core.pattern.Pattern;
 import org.arend.naming.reference.ClassReferable;
 import org.arend.naming.reference.FieldReferable;
+import org.arend.naming.reference.MetaReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteExpressionVisitor;
@@ -242,15 +243,16 @@ public class CorrespondedSubExprVisitor implements
   @Override
   public Pair<Expression, Concrete.Expression> visitApp(Concrete.AppExpression expr, Expression coreExpr) {
     if (matchesSubExpr(expr)) return new Pair<>(coreExpr, expr);
+    Concrete.Expression function = expr.getFunction();
+    if (function.getUnderlyingReferable() instanceof MetaReferable)
+      return nullWithError(new SubExprError(SubExprError.Kind.MetaRef, coreExpr));
     if (subExpr instanceof Concrete.AppExpression && Objects.equals(
         ((Concrete.AppExpression) subExpr).getFunction().getData(),
-        expr.getFunction().getData()
+        function.getData()
     )) return new Pair<>(coreExpr, expr);
-    if (subExpr instanceof Concrete.ReferenceExpression && Objects.equals(
-        subExpr.getData(),
-        expr.getFunction().getData()
-    )) return new Pair<>(coreExpr, expr);
-    Concrete.Expression cloned = Concrete.AppExpression.make(expr.getData(), expr.getFunction(), new ArrayList<>(expr.getArguments()));
+    if (subExpr instanceof Concrete.ReferenceExpression && matchesSubExpr(function))
+      return new Pair<>(coreExpr, expr);
+    Concrete.Expression cloned = Concrete.AppExpression.make(expr.getData(), function, new ArrayList<>(expr.getArguments()));
     return visitClonedApp(((Concrete.AppExpression) cloned), coreExpr);
   }
 

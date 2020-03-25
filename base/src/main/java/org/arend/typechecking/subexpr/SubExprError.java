@@ -39,6 +39,8 @@ public class SubExprError {
   @Override
   public @NotNull @Nls String toString() {
     switch (getKind()) {
+      case MetaRef:
+        return "trying to match a tactic: " + errorExpr;
       case FieldNotFound:
         return "a corresponding field is missing";
       case MissingImplementationField:
@@ -73,6 +75,11 @@ public class SubExprError {
    * @see SubExprError#toString()
    */
   public enum Kind {
+    /**
+     * Trying to match a function whose argument is a
+     * {@link org.arend.naming.reference.MetaReferable}
+     */
+    MetaRef,
     FieldNotFound,
     MissingImplementationField,
     MissingExpr,
