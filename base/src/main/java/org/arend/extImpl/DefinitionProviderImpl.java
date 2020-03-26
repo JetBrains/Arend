@@ -1,5 +1,6 @@
 package org.arend.extImpl;
 
+import org.arend.core.definition.Definition;
 import org.arend.ext.DefinitionProvider;
 import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.ext.reference.RawRef;
@@ -12,24 +13,28 @@ import java.util.Collections;
 
 public class DefinitionProviderImpl extends Disableable implements DefinitionProvider {
   private final TypecheckingOrderingListener myTypechecking;
+  private final DefinitionRequester myDefinitionRequester;
 
-  public DefinitionProviderImpl(TypecheckingOrderingListener typechecking) {
+  public DefinitionProviderImpl(TypecheckingOrderingListener typechecking, DefinitionRequester definitionRequester) {
     myTypechecking = typechecking;
+    myDefinitionRequester = definitionRequester;
   }
 
   @NotNull
   @Override
   public <T extends CoreDefinition> T getDefinition(@NotNull RawRef ref, Class<T> clazz) {
     checkEnabled();
+
     Concrete.ReferableDefinition def = ref instanceof GlobalReferable ? myTypechecking.getConcreteProvider().getConcrete((GlobalReferable) ref) : null;
     if (!(def instanceof Concrete.Definition)) {
       throw new IllegalArgumentException("Expected a global definition");
     }
     myTypechecking.typecheckDefinitions(Collections.singletonList((Concrete.Definition) def), null);
-    CoreDefinition result = myTypechecking.getTypecheckerState().getTypechecked(def.getData());
+    Definition result = myTypechecking.getTypecheckerState().getTypechecked(def.getData());
     if (!clazz.isInstance(result)) {
       throw new IllegalArgumentException(result == null ? "Cannot find definition '" + ref.getRefName() + "'" : "Cannot cast '" + result.getClass() + "' to '" + clazz + "'");
     }
+    myDefinitionRequester.request(result);
     return clazz.cast(result);
   }
 }
