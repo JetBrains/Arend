@@ -2,7 +2,9 @@ package org.arend.library;
 
 import org.arend.ext.ArendExtension;
 import org.arend.ext.DefinitionContributor;
+import org.arend.ext.DefinitionProvider;
 import org.arend.ext.error.ErrorReporter;
+import org.arend.extImpl.DefinitionRequester;
 import org.arend.library.classLoader.MultiClassLoader;
 import org.arend.library.error.LibraryError;
 import org.arend.library.resolver.LibraryResolver;
@@ -35,6 +37,7 @@ public class LibraryManager {
   private final SimpleModuleScopeProvider myExternalExtensionModuleScopeProvider = new SimpleModuleScopeProvider();
   private final SimpleModuleScopeProvider myInternalExtensionModuleScopeProvider = new SimpleModuleScopeProvider();
   private final DefinitionContributor myDefinitionContributor;
+  private final DefinitionRequester myDefinitionRequester;
 
   /**
    * Constructs new {@code LibraryManager}.
@@ -44,13 +47,15 @@ public class LibraryManager {
    * @param typecheckingErrorReporter an error reporter for errors related to typechecking and name resolving.
    * @param libraryErrorReporter      an error reporter for errors related to loading and unloading of libraries.
    * @param definitionContributor     a listener for metas defined in extensions.
+   * @param definitionRequester       a listener for definitions requested in extensions.
    */
-  public LibraryManager(LibraryResolver libraryResolver, @Nullable InstanceProviderSet instanceProviderSet, ErrorReporter typecheckingErrorReporter, ErrorReporter libraryErrorReporter, DefinitionContributor definitionContributor) {
+  public LibraryManager(LibraryResolver libraryResolver, @Nullable InstanceProviderSet instanceProviderSet, ErrorReporter typecheckingErrorReporter, ErrorReporter libraryErrorReporter, DefinitionContributor definitionContributor, DefinitionRequester definitionRequester) {
     myLibraryResolver = libraryResolver;
     myInstanceProviderSet = instanceProviderSet;
     myTypecheckingErrorReporter = typecheckingErrorReporter;
     myLibraryErrorReporter = libraryErrorReporter;
     myDefinitionContributor = definitionContributor;
+    myDefinitionRequester = definitionRequester;
   }
 
   /**
@@ -123,6 +128,10 @@ public class LibraryManager {
 
   public DefinitionContributor getDefinitionContributor() {
     return myDefinitionContributor;
+  }
+
+  public DefinitionRequester getDefinitionRequester() {
+    return myDefinitionRequester;
   }
 
   /**
