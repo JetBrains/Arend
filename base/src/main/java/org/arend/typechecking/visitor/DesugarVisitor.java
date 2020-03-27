@@ -279,7 +279,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
 
   @Override
   public Concrete.Expression visitApplyHole(Concrete.ApplyHoleExpression expr, Void params) {
-    myErrorReporter.report(new TypecheckingError(GeneralError.Level.ERROR, "`__` not allowed here", expr));
+    myErrorReporter.report(new TypecheckingError("`__` not allowed here", expr));
     return super.visitApplyHole(expr, params);
   }
 
