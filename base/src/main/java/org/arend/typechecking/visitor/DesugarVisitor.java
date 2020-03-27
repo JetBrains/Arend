@@ -231,7 +231,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
     List<Concrete.Argument> appHoleArgs = expr.getArguments().stream()
         .filter(argument -> argument.expression instanceof Concrete.ApplyHoleExpression)
         .collect(Collectors.toList());
-    if (!appHoleArgs.isEmpty()) {
+    if (!appHoleArgs.isEmpty() || expr.getFunction() instanceof Concrete.ApplyHoleExpression) {
       return convertAppHoles(expr, appHoleArgs).accept(this, null);
     }
 
@@ -245,15 +245,23 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
     return visitApp((Concrete.ReferenceExpression) expr.getFunction(), expr.getArguments(), expr, true);
   }
 
-  private static Concrete.LamExpression convertAppHoles(Concrete.AppExpression expr, List<Concrete.Argument> appHoleCount) {
-    List<Concrete.Parameter> parameters = new ArrayList<>(appHoleCount.size());
-    for (int i = 0; i < appHoleCount.size(); i++) {
-      Concrete.Argument argument = appHoleCount.get(i);
+  private static Concrete.LamExpression convertAppHoles(Concrete.AppExpression expr, List<Concrete.Argument> appHoles) {
+    int appHoleSize = appHoles.size();
+    boolean funcIsHole = expr.getFunction() instanceof Concrete.ApplyHoleExpression;
+    List<Concrete.Parameter> parameters = new ArrayList<>(funcIsHole ? appHoleSize + 1 : appHoleSize);
+    for (int i = 0; i < appHoleSize; i++) {
+      Concrete.Argument argument = appHoles.get(i);
       assert argument.expression instanceof Concrete.ApplyHoleExpression;
       Object data = argument.expression.getData();
       LocalReferable ref = new LocalReferable("p" + i);
       parameters.add(new Concrete.NameParameter(data, true, ref));
       argument.expression = new Concrete.ReferenceExpression(data, ref);
+    }
+    if (funcIsHole) {
+      Object data = expr.getFunction().getData();
+      LocalReferable ref = new LocalReferable("f");
+      parameters.add(0, new Concrete.NameParameter(data, true, ref));
+      expr.setFunction(new Concrete.ReferenceExpression(data, ref));
     }
     return new Concrete.LamExpression(expr.getData(), parameters, expr);
   }
