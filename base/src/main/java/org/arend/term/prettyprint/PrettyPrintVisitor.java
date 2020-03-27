@@ -432,6 +432,12 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   }
 
   @Override
+  public Void visitApplyHole(Concrete.ApplyHoleExpression expr, Precedence params) {
+    myBuilder.append("__");
+    return null;
+  }
+
+  @Override
   public Void visitGoal(Concrete.GoalExpression expr, Precedence prec) {
     myBuilder.append("{?");
     if (expr.getName() != null) {

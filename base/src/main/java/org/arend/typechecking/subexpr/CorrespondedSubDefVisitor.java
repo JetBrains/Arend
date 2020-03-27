@@ -53,8 +53,7 @@ public class CorrespondedSubDefVisitor implements
       return visitor.visitElimTree(clauses, coreClauses);
     } else if (body instanceof Concrete.CoelimFunctionBody && coreBody == null && coreResultType instanceof ClassCallExpression) {
       Map<ClassField, Expression> implementations = ((ClassCallExpression) coreResultType).getImplementedHere();
-      List<Concrete.CoClauseElement> coclauses = body.getCoClauseElements();
-      for (Concrete.CoClauseElement coclause : coclauses)
+      for (Concrete.CoClauseElement coclause : body.getCoClauseElements())
         if (coclause instanceof Concrete.ClassFieldImpl) {
           Pair<Expression, Concrete.Expression> statementVisited = visitor.visitStatement(implementations, (Concrete.ClassFieldImpl) coclause);
           if (statementVisited != null) return statementVisited;

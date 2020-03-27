@@ -465,6 +465,18 @@ public final class Concrete {
     }
   }
 
+  public static class ApplyHoleExpression extends Expression {
+    public static final byte PREC = 12;
+    public ApplyHoleExpression(Object data) {
+      super(data);
+    }
+
+    @Override
+    public <P, R> R accept(ConcreteExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitApplyHole(this, params);
+    }
+  }
+
   public static class InferenceReferenceExpression extends Expression {
     private final BaseInferenceVariable myVariable;
 

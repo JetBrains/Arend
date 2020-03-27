@@ -150,6 +150,11 @@ public class VoidConcreteVisitor<P, R> implements ConcreteExpressionVisitor<P,Vo
   }
 
   @Override
+  public Void visitApplyHole(Concrete.ApplyHoleExpression expr, P params) {
+    return null;
+  }
+
+  @Override
   public Void visitGoal(Concrete.GoalExpression expr, P params) {
     return null;
   }

@@ -56,6 +56,11 @@ public class BaseAbstractExpressionVisitor<P, R> implements AbstractExpressionVi
   }
 
   @Override
+  public R visitApplyHole(@Nullable Object data, P params) {
+    return defaultValue;
+  }
+
+  @Override
   public R visitTuple(@Nullable Object data, @NotNull Collection<? extends Abstract.Expression> fields, P params) {
     return defaultValue;
   }

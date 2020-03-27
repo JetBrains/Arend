@@ -70,6 +70,11 @@ public class CorrespondedSubExprVisitor implements
   }
 
   @Override
+  public Pair<Expression, Concrete.Expression> visitApplyHole(Concrete.ApplyHoleExpression expr, Expression coreExpr) {
+    return atomicExpr(expr, coreExpr);
+  }
+
+  @Override
   public Pair<Expression, Concrete.Expression> visitInferenceReference(Concrete.InferenceReferenceExpression expr, Expression coreExpr) {
     return atomicExpr(expr, coreExpr);
   }

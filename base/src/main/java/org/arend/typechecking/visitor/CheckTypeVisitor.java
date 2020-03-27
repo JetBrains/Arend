@@ -2045,6 +2045,11 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     throw new IllegalStateException();
   }
 
+  @Override
+  public TypecheckingResult visitApplyHole(Concrete.ApplyHoleExpression expr, Expression params) {
+    throw new IllegalStateException("`__` may not be type-checked");
+  }
+
   public Integer getExpressionLevel(DependentLink link, Expression type, Expression expr, Equations equations, Concrete.SourceNode sourceNode) {
     return getExpressionLevel(link, type, expr, equations, sourceNode, errorReporter);
   }
