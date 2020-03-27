@@ -2,8 +2,10 @@ package org.arend.typechecking;
 
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.LamExpression;
+import org.arend.core.expr.TupleExpression;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class AppHoleTest extends TypeCheckingTestCase {
@@ -33,6 +35,24 @@ public class AppHoleTest extends TypeCheckingTestCase {
     Expression ty = typeCheckExpr("Nat -> Nat -> Nat", null).expression;
     Expression result = typeCheckExpr("\\lam x => __ Nat.+ x", ty).expression;
     assertTrue(result instanceof LamExpression);
+  }
+
+  @Test
+  public void inBinOpWithProj() {
+    Expression ty = typeCheckExpr("(\\Sigma Nat Nat) -> Nat", null).expression;
+    Expression result = typeCheckExpr("__.1 Nat.+ 233", ty).expression;
+    assertTrue(result instanceof LamExpression);
+  }
+
+  @Test
+  public void inTuple() {
+    Expression ty = typeCheckExpr("(\\Sigma ((\\Sigma Nat Nat) -> Nat) ((\\Sigma Nat Nat) -> Nat))", null).expression;
+    Expression result = typeCheckExpr("(__.1, __.2)", ty).expression;
+    assertTrue(result instanceof TupleExpression);
+    TupleExpression tuple = (TupleExpression) result;
+    assertEquals(2, tuple.getFields().size());
+    assertTrue(tuple.getFields().get(0) instanceof LamExpression);
+    assertTrue(tuple.getFields().get(1) instanceof LamExpression);
   }
 
   @Test
