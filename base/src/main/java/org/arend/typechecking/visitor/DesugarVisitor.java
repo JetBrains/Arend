@@ -387,6 +387,23 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
   }
 
   @Override
+  public Concrete.Expression visitCase(Concrete.CaseExpression expr, Void params) {
+    List<Concrete.Parameter> parameters = new ArrayList<>();
+    for (Concrete.CaseArgument argument : expr.getArguments()) {
+      if (argument.expression instanceof Concrete.AppExpression) {
+        convertAppHoles((Concrete.AppExpression) argument.expression, parameters);
+      } else if (argument.expression instanceof Concrete.ApplyHoleExpression) {
+        Object data = argument.expression.getData();
+        LocalReferable ref = new LocalReferable("p" + parameters.size());
+        parameters.add(new Concrete.NameParameter(data, true, ref));
+        argument.expression = new Concrete.ReferenceExpression(data, ref);
+      }
+    }
+    return parameters.isEmpty() ? super.visitCase(expr, params)
+        : new Concrete.LamExpression(expr.getData(), parameters, expr).accept(this, null);
+  }
+
+  @Override
   protected <T extends Concrete.ClassElement> void visitClassElements(List<T> elements, Void params) {
     if (elements.isEmpty()) {
       return;

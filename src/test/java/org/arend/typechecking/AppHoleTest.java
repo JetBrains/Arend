@@ -38,6 +38,16 @@ public class AppHoleTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void inCase() {
+    Expression ty = typeCheckExpr("Nat -> Nat -> Nat", null).expression;
+    Expression result = typeCheckExpr(
+        "\\case __, 666 Nat.+ __ \\return Nat \\with {\n" +
+            "  | _, _ => 1\n" +
+            "}", ty).expression;
+    assertTrue(result instanceof LamExpression);
+  }
+
+  @Test
   public void inBinOpWithProj() {
     Expression ty = typeCheckExpr("(\\Sigma Nat Nat) -> Nat", null).expression;
     Expression result = typeCheckExpr("__.1 Nat.+ 233", ty).expression;
