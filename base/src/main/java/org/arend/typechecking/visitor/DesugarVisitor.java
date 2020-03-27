@@ -1,6 +1,7 @@
 package org.arend.typechecking.visitor;
 
 import org.arend.ext.error.*;
+import org.arend.ext.reference.Precedence;
 import org.arend.naming.reference.*;
 import org.arend.naming.scope.ClassFieldImplScope;
 import org.arend.prelude.Prelude;
@@ -13,7 +14,6 @@ import org.arend.typechecking.provider.ConcreteProvider;
 import org.arend.typechecking.provider.EmptyConcreteProvider;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
   private final ConcreteProvider myConcreteProvider;
@@ -225,12 +225,10 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
 
   @Override
   public Concrete.Expression visitApp(Concrete.AppExpression expr, Void params) {
-    List<Concrete.Argument> appHoleArgs = expr.getArguments().stream()
-        .filter(argument -> argument.expression instanceof Concrete.ApplyHoleExpression)
-        .collect(Collectors.toList());
-    if (!appHoleArgs.isEmpty() || expr.getFunction() instanceof Concrete.ApplyHoleExpression) {
-      return convertAppHoles(expr, appHoleArgs).accept(this, null);
-    }
+    List<Concrete.Parameter> parameters = new ArrayList<>();
+    convertAppHoles(expr, parameters);
+    if (!parameters.isEmpty())
+      return new Concrete.LamExpression(expr.getData(), parameters, expr).accept(this, null);
 
     if (!(expr.getFunction() instanceof Concrete.ReferenceExpression)) {
       return super.visitApp(expr, null);
@@ -242,25 +240,31 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
     return visitApp((Concrete.ReferenceExpression) expr.getFunction(), expr.getArguments(), expr, true);
   }
 
-  private static Concrete.LamExpression convertAppHoles(Concrete.AppExpression expr, List<Concrete.Argument> appHoles) {
-    int appHoleSize = appHoles.size();
-    boolean funcIsHole = expr.getFunction() instanceof Concrete.ApplyHoleExpression;
-    List<Concrete.Parameter> parameters = new ArrayList<>(funcIsHole ? appHoleSize + 1 : appHoleSize);
-    for (int i = 0; i < appHoleSize; i++) {
-      Concrete.Argument argument = appHoles.get(i);
-      assert argument.expression instanceof Concrete.ApplyHoleExpression;
-      Object data = argument.expression.getData();
-      LocalReferable ref = new LocalReferable("p" + i);
+  private static void convertAppHoles(Concrete.AppExpression expr, List<Concrete.Parameter> parameters) {
+    Concrete.Expression originalFunc = expr.getFunction();
+    if (originalFunc instanceof Concrete.ApplyHoleExpression) {
+      Object data = originalFunc.getData();
+      LocalReferable ref = new LocalReferable("p" + parameters.size());
       parameters.add(new Concrete.NameParameter(data, true, ref));
-      argument.expression = new Concrete.ReferenceExpression(data, ref);
-    }
-    if (funcIsHole) {
-      Object data = expr.getFunction().getData();
-      LocalReferable ref = new LocalReferable("f");
-      parameters.add(0, new Concrete.NameParameter(data, true, ref));
       expr.setFunction(new Concrete.ReferenceExpression(data, ref));
     }
-    return new Concrete.LamExpression(expr.getData(), parameters, expr);
+    boolean isOp = false;
+    if (originalFunc instanceof Concrete.ReferenceExpression) {
+      Referable referable = originalFunc.getUnderlyingReferable();
+      if (referable instanceof GlobalReferable) {
+        Precedence precedence = ((GlobalReferable) referable).getPrecedence();
+        isOp = precedence.isInfix;
+      }
+    }
+    for (Concrete.Argument argument : expr.getArguments())
+      if (argument.expression instanceof Concrete.ApplyHoleExpression) {
+        Object data = argument.expression.getData();
+        LocalReferable ref = new LocalReferable("p" + parameters.size());
+        parameters.add(new Concrete.NameParameter(data, true, ref));
+        argument.expression = new Concrete.ReferenceExpression(data, ref);
+      } else if (isOp && argument.expression instanceof Concrete.AppExpression) {
+        convertAppHoles((Concrete.AppExpression) argument.expression, parameters);
+      }
   }
 
   @Override

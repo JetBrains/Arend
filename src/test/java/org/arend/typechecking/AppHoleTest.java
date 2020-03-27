@@ -15,6 +15,20 @@ public class AppHoleTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void inNestedBinOpWithParen() {
+    Expression ty = typeCheckExpr("Nat -> Nat", null).expression;
+    Expression result = typeCheckExpr("114 Nat.* (__ Nat.+ 514)", ty).expression;
+    assertTrue(result instanceof LamExpression);
+  }
+
+  @Test
+  public void inNestedBinOp() {
+    Expression ty = typeCheckExpr("Nat -> Nat", null).expression;
+    Expression result = typeCheckExpr("114 Nat.* __ Nat.+ 514", ty).expression;
+    assertTrue(result instanceof LamExpression);
+  }
+
+  @Test
   public void inLam() {
     Expression ty = typeCheckExpr("Nat -> Nat -> Nat", null).expression;
     Expression result = typeCheckExpr("\\lam x => __ Nat.+ x", ty).expression;
