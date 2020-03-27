@@ -24,6 +24,7 @@ import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
+import org.arend.typechecking.visitor.DesugarVisitor;
 
 import java.util.*;
 
@@ -39,7 +40,8 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
   TypecheckingResult typeCheckExpr(Map<Referable, Binding> context, Concrete.Expression expression, Expression expectedType, int errors) {
     CheckTypeVisitor visitor = new CheckTypeVisitor(typecheckerState, localErrorReporter, null);
     visitor.addBindings(context);
-    TypecheckingResult result = visitor.finalCheckExpr(expression, expectedType, false);
+    Concrete.Expression desugar = DesugarVisitor.desugar(expression, localErrorReporter);
+    TypecheckingResult result = visitor.finalCheckExpr(desugar, expectedType, false);
     if (errors == 0) {
       assertThat(result, is(notNullValue()));
     }

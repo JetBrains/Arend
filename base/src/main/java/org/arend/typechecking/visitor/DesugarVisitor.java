@@ -16,6 +16,7 @@ import org.arend.typechecking.provider.ConcreteProvider;
 import org.arend.typechecking.provider.EmptyConcreteProvider;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
   private final ConcreteProvider myConcreteProvider;
@@ -227,6 +228,13 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
 
   @Override
   public Concrete.Expression visitApp(Concrete.AppExpression expr, Void params) {
+    List<Concrete.Argument> appHoleArgs = expr.getArguments().stream()
+        .filter(argument -> argument.expression instanceof Concrete.ApplyHoleExpression)
+        .collect(Collectors.toList());
+    if (!appHoleArgs.isEmpty()) {
+      return convertAppHoles(expr, appHoleArgs).accept(this, null);
+    }
+
     if (!(expr.getFunction() instanceof Concrete.ReferenceExpression)) {
       return super.visitApp(expr, null);
     }
@@ -235,6 +243,19 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
       argument.expression = argument.expression.accept(this, null);
     }
     return visitApp((Concrete.ReferenceExpression) expr.getFunction(), expr.getArguments(), expr, true);
+  }
+
+  private static Concrete.LamExpression convertAppHoles(Concrete.AppExpression expr, List<Concrete.Argument> appHoleCount) {
+    List<Concrete.Parameter> parameters = new ArrayList<>(appHoleCount.size());
+    for (int i = 0; i < appHoleCount.size(); i++) {
+      Concrete.Argument argument = appHoleCount.get(i);
+      assert argument.expression instanceof Concrete.ApplyHoleExpression;
+      Object data = argument.expression.getData();
+      LocalReferable ref = new LocalReferable("p" + i);
+      parameters.add(new Concrete.NameParameter(data, true, ref));
+      argument.expression = new Concrete.ReferenceExpression(data, ref);
+    }
+    return new Concrete.LamExpression(expr.getData(), parameters, expr);
   }
 
   @Override
