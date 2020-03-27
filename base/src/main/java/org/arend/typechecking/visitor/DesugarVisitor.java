@@ -265,13 +265,16 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
       } else if (isOp && argument.expression instanceof Concrete.AppExpression) {
         convertAppHoles((Concrete.AppExpression) argument.expression, parameters);
       } else if (isOp && argument.expression instanceof Concrete.ProjExpression) {
-        Concrete.ProjExpression proj = (Concrete.ProjExpression) argument.expression;
-        if (!(proj.expression instanceof Concrete.ApplyHoleExpression)) return;
-        Object data = proj.expression.getData();
-        LocalReferable ref = new LocalReferable("p" + parameters.size());
-        parameters.add(new Concrete.NameParameter(data, true, ref));
-        proj.expression = new Concrete.ReferenceExpression(data, ref);
+        convertProjAppHoles((Concrete.ProjExpression) argument.expression, parameters);
       }
+  }
+
+  private static void convertProjAppHoles(Concrete.ProjExpression proj, List<Concrete.Parameter> parameters) {
+    if (!(proj.expression instanceof Concrete.ApplyHoleExpression)) return;
+    Object data = proj.expression.getData();
+    LocalReferable ref = new LocalReferable("p" + parameters.size());
+    parameters.add(new Concrete.NameParameter(data, true, ref));
+    proj.expression = new Concrete.ReferenceExpression(data, ref);
   }
 
   @Override
@@ -377,11 +380,9 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
   @Override
   public Concrete.Expression visitProj(Concrete.ProjExpression expr, Void params) {
     if (expr.expression instanceof Concrete.ApplyHoleExpression) {
-      Object data = expr.expression.getData();
-      LocalReferable ref = new LocalReferable("r");
-      Concrete.NameParameter parameter = new Concrete.NameParameter(data, true, ref);
-      expr.expression = new Concrete.ReferenceExpression(data, ref);
-      return new Concrete.LamExpression(data, Collections.singletonList(parameter), expr).accept(this, null);
+      List<Concrete.Parameter> parameters = new ArrayList<>(1);
+      convertProjAppHoles(expr, parameters);
+      return new Concrete.LamExpression(expr.expression.getData(), parameters, expr).accept(this, null);
     } else return super.visitProj(expr, params);
   }
 
