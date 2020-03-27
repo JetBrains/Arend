@@ -465,6 +465,10 @@ public final class Concrete {
     }
   }
 
+  /**
+   * <code>__</code> expressions, see
+   * <a href="https://github.com/JetBrains/Arend/issues/147">#147</a>
+   */
   public static class ApplyHoleExpression extends Expression {
     public static final byte PREC = 12;
     public ApplyHoleExpression(Object data) {

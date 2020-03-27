@@ -1,9 +1,6 @@
 package org.arend.typechecking.visitor;
 
-import org.arend.ext.error.ArgumentExplicitnessError;
-import org.arend.ext.error.ErrorReporter;
-import org.arend.ext.error.LocalError;
-import org.arend.ext.error.TypecheckingError;
+import org.arend.ext.error.*;
 import org.arend.naming.reference.*;
 import org.arend.naming.scope.ClassFieldImplScope;
 import org.arend.prelude.Prelude;
@@ -267,6 +264,13 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
   }
 
   @Override
+  public Concrete.Expression visitApplyHole(Concrete.ApplyHoleExpression expr, Void params) {
+    // TODO: better error type
+    myErrorReporter.report(new GeneralError(GeneralError.Level.ERROR, "`__` not allowed here"));
+    return super.visitApplyHole(expr, params);
+  }
+
+  @Override
   public Concrete.Expression visitClassExt(Concrete.ClassExtExpression expr, Void params) {
     Concrete.Expression classExpr = expr.getBaseClassExpression();
     if (classExpr instanceof Concrete.ReferenceExpression) {
@@ -358,6 +362,17 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
         result.add(classFieldImpl);
       }
     }
+  }
+
+  @Override
+  public Concrete.Expression visitProj(Concrete.ProjExpression expr, Void params) {
+    if (expr.expression instanceof Concrete.ApplyHoleExpression) {
+      Object data = expr.expression.getData();
+      LocalReferable ref = new LocalReferable("r");
+      Concrete.NameParameter parameter = new Concrete.NameParameter(data, true, ref);
+      expr.expression = new Concrete.ReferenceExpression(data, ref);
+      return new Concrete.LamExpression(data, Collections.singletonList(parameter), expr).accept(this, null);
+    } else return super.visitProj(expr, params);
   }
 
   @Override

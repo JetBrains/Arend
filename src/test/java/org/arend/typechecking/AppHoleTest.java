@@ -34,4 +34,11 @@ public class AppHoleTest extends TypeCheckingTestCase {
     Expression result = typeCheckExpr("Path (\\lam _ => \\Set0) __ Nat", ty).expression;
     assertTrue(result instanceof LamExpression);
   }
+
+  @Test
+  public void inProj() {
+    typeCheckDef("\\func test : (\\Sigma Nat Nat) -> Nat => __.1");
+    typeCheckDef("\\func test : (\\Sigma Nat Nat) -> Nat => __.2");
+    typeCheckDef("\\func test : (\\Sigma Nat) -> Nat => __.1");
+  }
 }
