@@ -260,7 +260,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
       if (argument.expression instanceof Concrete.ApplyHoleExpression) {
         Object data = argument.expression.getData();
         LocalReferable ref = new LocalReferable("p" + parameters.size());
-        parameters.add(new Concrete.NameParameter(data, true, ref));
+        parameters.add(new Concrete.NameParameter(data, argument.isExplicit(), ref));
         argument.expression = new Concrete.ReferenceExpression(data, ref);
       } else if (isOp && argument.expression instanceof Concrete.AppExpression) {
         convertAppHoles((Concrete.AppExpression) argument.expression, parameters);

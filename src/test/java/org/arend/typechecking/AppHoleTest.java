@@ -73,6 +73,11 @@ public class AppHoleTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void implicit() {
+    assertTrue(typeCheckExpr("idp {__}", null).expression instanceof LamExpression);
+  }
+
+  @Test
   public void inApp() {
     Expression ty = typeCheckExpr("\\Set0 -> \\Set1", null).expression;
     Expression result = typeCheckExpr("Path (\\lam _ => \\Set0) __ Nat", ty).expression;
