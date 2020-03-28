@@ -1,8 +1,6 @@
 package org.arend.library;
 
 import org.arend.ArendTestCase;
-import org.arend.prelude.Prelude;
-import org.arend.prelude.PreludeLibrary;
 import org.junit.Before;
 
 public class LibraryTestCase extends ArendTestCase {
@@ -10,6 +8,6 @@ public class LibraryTestCase extends ArendTestCase {
 
   @Before
   public void initialize() {
-    moduleScopeProvider = module -> module.equals(Prelude.MODULE_PATH) ? PreludeLibrary.getPreludeScope() : library.getModuleScopeProvider().forModule(module);
+    setModuleScopeProvider(library.getModuleScopeProvider());
   }
 }

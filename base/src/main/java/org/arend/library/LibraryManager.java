@@ -34,8 +34,6 @@ public class LibraryManager {
   private final Set<Library> myFailedLibraries = new HashSet<>();
   private MultiClassLoader<Library> myExternalClassLoader = new MultiClassLoader<>(ArendExtension.class.getClassLoader());
   private MultiClassLoader<Library> myInternalClassLoader = new MultiClassLoader<>(myExternalClassLoader);
-  private final SimpleModuleScopeProvider myExternalExtensionModuleScopeProvider = new SimpleModuleScopeProvider();
-  private final SimpleModuleScopeProvider myInternalExtensionModuleScopeProvider = new SimpleModuleScopeProvider();
   private final DefinitionContributor myDefinitionContributor;
   private final DefinitionRequester myDefinitionRequester;
 
@@ -59,17 +57,6 @@ public class LibraryManager {
   }
 
   /**
-   * Gets the module module scope provider containing modules from language extensions of either external or internal libraries.
-   *
-   * @param external  true if language extensions of external libraries should be returned.
-   *
-   * @return the extension module scope provider.
-   */
-  public @NotNull SimpleModuleScopeProvider getExtensionModuleScopeProvider(boolean external) {
-    return external ? myExternalExtensionModuleScopeProvider : myInternalExtensionModuleScopeProvider;
-  }
-
-  /**
    * Gets a module scope provider that can be used to get scopes of modules in a library and its dependencies.
    * This method may be invoked only after the library is successfully loaded.
    *
@@ -85,15 +72,7 @@ public class LibraryManager {
         Library lib = getRegisteredLibrary(Prelude.LIBRARY_NAME);
         return lib == null ? null : lib.getModuleScopeProvider().forModule(modulePath);
       }
-      Scope scope = myExternalExtensionModuleScopeProvider.forModule(modulePath);
-      if (scope != null) {
-        return scope;
-      }
-      scope = myInternalExtensionModuleScopeProvider.forModule(modulePath);
-      if (scope != null) {
-        return scope;
-      }
-      scope = libraryModuleScopeProvider.forModule(modulePath);
+      Scope scope = libraryModuleScopeProvider.forModule(modulePath);
       if (scope != null) {
         return scope;
       }
@@ -333,10 +312,8 @@ public class LibraryManager {
 
     if (reloadExternal) {
       myExternalClassLoader = new MultiClassLoader<>(ArendExtension.class.getClassLoader());
-      myExternalExtensionModuleScopeProvider.clear();
     }
     myInternalClassLoader = new MultiClassLoader<>(myExternalClassLoader);
-    myInternalExtensionModuleScopeProvider.clear();
     for (Library library : libraries) {
       loadLibrary(library, typechecking);
     }

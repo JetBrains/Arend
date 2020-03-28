@@ -83,7 +83,7 @@ public abstract class PreludeLibrary extends SourceLibrary {
 
   @NotNull
   @Override
-  public ModuleScopeProvider getModuleScopeProvider() {
+  public ModuleScopeProvider getDeclaredModuleScopeProvider() {
     return module -> module.equals(Prelude.MODULE_PATH) ? myScope : null;
   }
 

@@ -1860,6 +1860,11 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
 
   private TypecheckingResult checkMeta(Concrete.ReferenceExpression refExpr, List<Concrete.Argument> arguments, Expression expectedType) {
     MetaDefinition meta = ((MetaReferable) refExpr.getReferent()).getDefinition();
+    if (meta == null) {
+      errorReporter.report(new TypecheckingError("Meta '" + refExpr.getReferent().getRefName() + "' is empty", refExpr));
+      return null;
+    }
+
     CountingErrorReporter countingErrorReporter = new CountingErrorReporter(GeneralError.Level.ERROR);
     errorReporter = new CompositeErrorReporter(errorReporter, countingErrorReporter);
     CheckedExpression result = meta.invoke(this, new ContextDataImpl(refExpr, arguments, expectedType));
@@ -1871,7 +1876,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       throw new IllegalStateException("CheckedExpression must be TypecheckingResult");
     }
     if (countingErrorReporter.getErrorsNumber() == 0) {
-      errorReporter.report(new TypecheckingError("Meta function '" + refExpr.getReferent().getRefName() + "' failed", refExpr));
+      errorReporter.report(new TypecheckingError("Meta '" + refExpr.getReferent().getRefName() + "' failed", refExpr));
     }
     return null;
   }

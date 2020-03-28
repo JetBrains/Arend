@@ -3,6 +3,7 @@ package org.arend.naming;
 import org.arend.ext.module.ModulePath;
 import org.arend.ext.reference.Precedence;
 import org.arend.frontend.reference.ConcreteLocatedReferable;
+import org.arend.module.scopeprovider.EmptyModuleScopeProvider;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.LocatedReferableImpl;
 import org.arend.naming.reference.Referable;
@@ -641,7 +642,7 @@ public class NameResolverTest extends NameResolverTestCase {
 
   @Test
   public void importHidingName() {
-    moduleScopeProvider = module -> module.equals(Prelude.MODULE_PATH) ? preludeLibrary.getModuleScopeProvider().forModule(module) : EmptyScope.INSTANCE;
+    setModuleScopeProvider(module -> EmptyScope.INSTANCE);
     resolveNamesModule(
       "\\import Mod\n" +
       "\\import Mod.Path\n" +
@@ -650,7 +651,7 @@ public class NameResolverTest extends NameResolverTestCase {
 
   @Test
   public void importHidingNamespace() {
-    moduleScopeProvider = module -> module.equals(Prelude.MODULE_PATH) ? preludeLibrary.getModuleScopeProvider().forModule(module) : EmptyScope.INSTANCE;
+    setModuleScopeProvider(modul -> EmptyScope.INSTANCE);
     resolveNamesModule(
       "\\import Mod\n" +
       "\\import Mod.Path\n" +
@@ -659,11 +660,10 @@ public class NameResolverTest extends NameResolverTestCase {
 
   @Test
   public void importOrder() {
-    moduleScopeProvider = module -> module.equals(Prelude.MODULE_PATH)
-      ? preludeLibrary.getModuleScopeProvider().forModule(module)
-      : module.equals(new ModulePath("Mod"))
+    setModuleScopeProvider(module ->
+      module.equals(new ModulePath("Mod"))
         ? new SingletonScope(new LocatedReferableImpl(Precedence.DEFAULT, "foo", module, GlobalReferable.Kind.TYPECHECKABLE))
-        : EmptyScope.INSTANCE;
+        : EmptyScope.INSTANCE);
     /*
     resolveNamesModule(
       "\\import Mod\n" +

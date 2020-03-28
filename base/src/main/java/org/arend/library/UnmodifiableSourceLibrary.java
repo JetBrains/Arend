@@ -41,7 +41,7 @@ public abstract class UnmodifiableSourceLibrary extends SourceLibrary {
 
   @NotNull
   @Override
-  public ModuleScopeProvider getModuleScopeProvider() {
+  public ModuleScopeProvider getDeclaredModuleScopeProvider() {
     return myModuleScopeProvider;
   }
 

@@ -96,11 +96,17 @@ public abstract class BaseLibrary implements Library {
 
   @NotNull
   @Override
-  public ModuleScopeProvider getModuleScopeProvider() {
+  public ModuleScopeProvider getDeclaredModuleScopeProvider() {
     return module -> {
       Group group = getModuleGroup(module);
       return group == null ? null : LexicalScope.opened(group);
     };
+  }
+
+  @NotNull
+  @Override
+  public ModuleScopeProvider getModuleScopeProvider() {
+    return getDeclaredModuleScopeProvider();
   }
 
   public Collection<? extends ModulePath> getUpdatedModules() {

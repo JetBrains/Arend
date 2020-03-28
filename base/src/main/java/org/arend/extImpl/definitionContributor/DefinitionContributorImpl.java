@@ -10,6 +10,7 @@ import org.arend.extImpl.Disableable;
 import org.arend.library.Library;
 import org.arend.library.error.LibraryError;
 import org.arend.module.scopeprovider.SimpleModuleScopeProvider;
+import org.arend.naming.reference.EmptyGlobalReferable;
 import org.arend.naming.reference.MetaReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.scope.SimpleScope;
@@ -46,18 +47,13 @@ public class DefinitionContributorImpl extends Disableable implements Definition
       String name = list.get(i);
       if (i == list.size() - 1) {
         Referable ref = scope.resolveName(name);
-        if (ref instanceof MetaReferable && ((MetaReferable) ref).getDefinition() == null) {
-          ((MetaReferable) ref).setPrecedence(precedence);
-          ((MetaReferable) ref).setDefinition(meta);
-          return;
-        }
-        if (ref != null) {
+        if (!(ref == null || ref instanceof EmptyGlobalReferable)) {
           myErrorReporter.report(LibraryError.duplicateExtensionDefinition(myLibrary.getName(), module, longName));
           return;
         }
         scope.names.put(name, new MetaReferable(precedence, name, meta));
       } else {
-        scope.names.put(name, new MetaReferable(Precedence.DEFAULT, name, null));
+        scope.names.put(name, new EmptyGlobalReferable(name));
         scope = scope.namespaces.computeIfAbsent(name, k -> new SimpleScope());
       }
     }

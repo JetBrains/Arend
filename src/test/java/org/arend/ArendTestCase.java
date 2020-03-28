@@ -17,6 +17,7 @@ import org.arend.naming.reference.TCReferable;
 import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.naming.scope.Scope;
 import org.arend.prelude.Prelude;
+import org.arend.prelude.PreludeLibrary;
 import org.arend.typechecking.SimpleTypecheckerState;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
@@ -54,6 +55,10 @@ public abstract class ArendTestCase {
     libraryManager.loadLibrary(preludeLibrary, null);
     new Prelude.PreludeTypechecking(new InstanceProviderSet(), typecheckerState, ConcreteReferableProvider.INSTANCE, PositionComparator.INSTANCE).typecheckLibrary(preludeLibrary);
     errorList.clear();
+  }
+
+  public void setModuleScopeProvider(ModuleScopeProvider moduleScopeProvider) {
+    this.moduleScopeProvider = module -> module.equals(Prelude.MODULE_PATH) ? PreludeLibrary.getPreludeScope() : moduleScopeProvider.forModule(module);
   }
 
   public TCReferable get(Scope scope, String path) {

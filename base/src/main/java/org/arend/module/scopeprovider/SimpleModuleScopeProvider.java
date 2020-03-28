@@ -10,11 +10,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class SimpleModuleScopeProvider implements ModuleScopeProvider, ModuleRegistry {
-  private final Map<ModulePath, Scope> myMap = new HashMap<>();
+  private final Map<ModulePath, Scope> myMap = new LinkedHashMap<>();
 
   @Override
   public void registerModule(ModulePath module, Group group) {
