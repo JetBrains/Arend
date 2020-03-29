@@ -243,7 +243,7 @@ public abstract class SourceLibrary extends BaseLibrary {
     }
 
     if (myExtension != null) {
-      DefinitionContributorImpl contributor = new DefinitionContributorImpl(this, libraryManager.getLibraryErrorReporter(), myAdditionalModuleScopeProvider, libraryManager.getDefinitionContributor());
+      DefinitionContributorImpl contributor = new DefinitionContributorImpl(this, libraryManager.getLibraryErrorReporter(), myAdditionalModuleScopeProvider);
       myExtension.declareDefinitions(contributor);
       contributor.disable();
     }

@@ -1,17 +1,13 @@
 package org.arend.library;
 
 import org.arend.ext.ArendExtension;
-import org.arend.ext.DefinitionContributor;
-import org.arend.ext.DefinitionProvider;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.extImpl.DefinitionRequester;
-import org.arend.extImpl.definitionContributor.MetaDefinitionContributor;
 import org.arend.library.classLoader.MultiClassLoader;
 import org.arend.library.error.LibraryError;
 import org.arend.library.resolver.LibraryResolver;
 import org.arend.module.scopeprovider.CachingModuleScopeProvider;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
-import org.arend.module.scopeprovider.SimpleModuleScopeProvider;
 import org.arend.naming.scope.Scope;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
@@ -35,7 +31,6 @@ public class LibraryManager {
   private final Set<Library> myFailedLibraries = new HashSet<>();
   private MultiClassLoader<Library> myExternalClassLoader = new MultiClassLoader<>(ArendExtension.class.getClassLoader());
   private MultiClassLoader<Library> myInternalClassLoader = new MultiClassLoader<>(myExternalClassLoader);
-  private final MetaDefinitionContributor myDefinitionContributor;
   private final DefinitionRequester myDefinitionRequester;
 
   /**
@@ -45,15 +40,13 @@ public class LibraryManager {
    * @param instanceProviderSet       an instance provider set.
    * @param typecheckingErrorReporter an error reporter for errors related to typechecking and name resolving.
    * @param libraryErrorReporter      an error reporter for errors related to loading and unloading of libraries.
-   * @param definitionContributor     a listener for metas defined in extensions.
    * @param definitionRequester       a listener for definitions requested in extensions.
    */
-  public LibraryManager(LibraryResolver libraryResolver, @Nullable InstanceProviderSet instanceProviderSet, ErrorReporter typecheckingErrorReporter, ErrorReporter libraryErrorReporter, MetaDefinitionContributor definitionContributor, DefinitionRequester definitionRequester) {
+  public LibraryManager(LibraryResolver libraryResolver, @Nullable InstanceProviderSet instanceProviderSet, ErrorReporter typecheckingErrorReporter, ErrorReporter libraryErrorReporter, DefinitionRequester definitionRequester) {
     myLibraryResolver = libraryResolver;
     myInstanceProviderSet = instanceProviderSet;
     myTypecheckingErrorReporter = typecheckingErrorReporter;
     myLibraryErrorReporter = libraryErrorReporter;
-    myDefinitionContributor = definitionContributor;
     myDefinitionRequester = definitionRequester;
   }
 
@@ -104,10 +97,6 @@ public class LibraryManager {
 
   public MultiClassLoader<Library> getClassLoader(boolean external) {
     return external ? myExternalClassLoader : myInternalClassLoader;
-  }
-
-  public MetaDefinitionContributor getDefinitionContributor() {
-    return myDefinitionContributor;
   }
 
   public DefinitionRequester getDefinitionRequester() {

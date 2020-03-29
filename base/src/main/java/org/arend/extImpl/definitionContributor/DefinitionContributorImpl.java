@@ -11,6 +11,7 @@ import org.arend.library.Library;
 import org.arend.library.error.LibraryError;
 import org.arend.module.scopeprovider.SimpleModuleScopeProvider;
 import org.arend.naming.reference.EmptyGlobalReferable;
+import org.arend.naming.reference.MetaReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.scope.SimpleScope;
 import org.jetbrains.annotations.NotNull;
@@ -21,13 +22,11 @@ public class DefinitionContributorImpl extends Disableable implements Definition
   private final Library myLibrary;
   private final ErrorReporter myErrorReporter;
   private final SimpleModuleScopeProvider myModuleScopeProvider;
-  private final MetaDefinitionContributor myDefinitionContributor;
 
-  public DefinitionContributorImpl(Library library, ErrorReporter errorReporter, SimpleModuleScopeProvider moduleScopeProvider, MetaDefinitionContributor definitionContributor) {
+  public DefinitionContributorImpl(Library library, ErrorReporter errorReporter, SimpleModuleScopeProvider moduleScopeProvider) {
     myLibrary = library;
     myErrorReporter = errorReporter;
     myModuleScopeProvider = moduleScopeProvider;
-    myDefinitionContributor = definitionContributor;
   }
 
   @Override
@@ -49,7 +48,7 @@ public class DefinitionContributorImpl extends Disableable implements Definition
           myErrorReporter.report(LibraryError.duplicateExtensionDefinition(myLibrary.getName(), module, longName));
           return;
         }
-        scope.names.put(name, myDefinitionContributor.declare(myLibrary, module, longName, precedence, meta));
+        scope.names.put(name, new MetaReferable(precedence, name, meta));
       } else {
         scope.names.put(name, new EmptyGlobalReferable(name));
         scope = scope.namespaces.computeIfAbsent(name, k -> new SimpleScope());

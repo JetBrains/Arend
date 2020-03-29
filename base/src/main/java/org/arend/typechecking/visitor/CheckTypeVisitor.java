@@ -435,7 +435,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       myFreeBindings = originalFreeBindings;
       context = originalContext;
       if (result == null && countingErrorReporter.getErrorsNumber() == 0) {
-        errorReporter.report(new TypecheckingError("Meta function '" + refExpr.getReferent().getRefName() + "' failed", refExpr));
+        errorReporter.report(new TypecheckingError("Meta '" + refExpr.getReferent().getRefName() + "' failed", refExpr));
       }
       deferredMeta.inferenceExpr.setSubstExpression(result == null ? new ErrorExpression() : ((TypecheckingResult) result).expression);
     }

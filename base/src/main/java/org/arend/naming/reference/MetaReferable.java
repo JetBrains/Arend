@@ -8,6 +8,7 @@ public class MetaReferable implements GlobalReferable {
   private final Precedence myPrecedence;
   private final String myName;
   private final MetaDefinition myDefinition;
+  public GlobalReferable underlyingReferable;
 
   public MetaReferable(Precedence precedence, String name, MetaDefinition definition) {
     myPrecedence = precedence;
@@ -35,5 +36,10 @@ public class MetaReferable implements GlobalReferable {
   @Override
   public Kind getKind() {
     return Kind.OTHER;
+  }
+
+  @Override
+  public @NotNull GlobalReferable getUnderlyingReferable() {
+    return underlyingReferable == null ? this : underlyingReferable;
   }
 }
