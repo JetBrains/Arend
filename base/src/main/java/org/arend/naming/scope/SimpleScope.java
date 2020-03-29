@@ -6,10 +6,11 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class SimpleScope implements Scope {
-  public final Map<String, Referable> names = new HashMap<>();
+  public final Map<String, Referable> names = new LinkedHashMap<>();
   public final Map<String, SimpleScope> namespaces = new HashMap<>();
 
   @NotNull

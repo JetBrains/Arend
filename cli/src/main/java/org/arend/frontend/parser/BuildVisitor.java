@@ -168,7 +168,11 @@ public class BuildVisitor extends ArendBaseVisitor {
     } else if (ctx instanceof DefInstanceContext) {
       return visitDefInstance((DefInstanceContext) ctx, parent, enclosingClass);
     } else if (ctx instanceof DefModuleContext) {
-      return visitDefModule((DefModuleContext) ctx, parent, enclosingClass);
+      DefModuleContext moduleCtx = (DefModuleContext) ctx;
+      return visitDefModule(tokenPosition(ctx.start), Precedence.DEFAULT, moduleCtx.ID().getText(), moduleCtx.where(), parent, enclosingClass);
+    } else if (ctx instanceof DefMetaContext) {
+      DefMetaContext metaCtx = (DefMetaContext) ctx;
+      return visitDefModule(tokenPosition(ctx.start), visitPrecedence(metaCtx.precedence()), metaCtx.ID().getText(), metaCtx.where(), parent, enclosingClass);
     } else {
       if (ctx != null) {
         myErrorReporter.report(new ParserError(tokenPosition(ctx.start), "Unknown definition"));
@@ -749,16 +753,13 @@ public class BuildVisitor extends ArendBaseVisitor {
     }
   }
 
-  private StaticGroup visitDefModule(DefModuleContext ctx, ChildGroup parent, TCClassReferable enclosingClass) {
-    WhereContext where = ctx.where();
+  private StaticGroup visitDefModule(Position position, Precedence precedence, String name, WhereContext where, ChildGroup parent, TCClassReferable enclosingClass) {
     List<Group> staticSubgroups = where == null ? Collections.emptyList() : new ArrayList<>();
     List<ChildNamespaceCommand> namespaceCommands = where == null ? Collections.emptyList() : new ArrayList<>();
 
-    Position position = tokenPosition(ctx.start);
-    String name = ctx.ID().getText();
     ConcreteLocatedReferable reference = parent instanceof FileGroup
-        ? new ConcreteLocatedReferable(position, name, Precedence.DEFAULT, myModule, GlobalReferable.Kind.OTHER)
-        : new ConcreteLocatedReferable(position, name, Precedence.DEFAULT, (TCReferable) parent.getReferable(), GlobalReferable.Kind.OTHER);
+        ? new ConcreteLocatedReferable(position, name, precedence, myModule, GlobalReferable.Kind.OTHER)
+        : new ConcreteLocatedReferable(position, name, precedence, (TCReferable) parent.getReferable(), GlobalReferable.Kind.OTHER);
 
     StaticGroup resultGroup = new StaticGroup(reference, staticSubgroups, namespaceCommands, parent);
     visitWhere(where, staticSubgroups, namespaceCommands, resultGroup, enclosingClass);

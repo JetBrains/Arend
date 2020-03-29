@@ -29,7 +29,7 @@ public class ConvertingScope implements Scope {
       return origRef;
     }
 
-    origRef = origRef instanceof LocatedReferable ? myConverter.toDataLocatedReferable((LocatedReferable) origRef) : myConverter.toDataReferable(origRef);
+    origRef = myConverter.convert(origRef);
     if (referable instanceof RedirectingReferable) {
       return new RedirectingReferableImpl(origRef, ((RedirectingReferable) referable).getPrecedence(), referable.textRepresentation());
     } else {

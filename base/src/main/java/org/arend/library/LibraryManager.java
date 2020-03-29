@@ -5,6 +5,7 @@ import org.arend.ext.DefinitionContributor;
 import org.arend.ext.DefinitionProvider;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.extImpl.DefinitionRequester;
+import org.arend.extImpl.definitionContributor.MetaDefinitionContributor;
 import org.arend.library.classLoader.MultiClassLoader;
 import org.arend.library.error.LibraryError;
 import org.arend.library.resolver.LibraryResolver;
@@ -34,7 +35,7 @@ public class LibraryManager {
   private final Set<Library> myFailedLibraries = new HashSet<>();
   private MultiClassLoader<Library> myExternalClassLoader = new MultiClassLoader<>(ArendExtension.class.getClassLoader());
   private MultiClassLoader<Library> myInternalClassLoader = new MultiClassLoader<>(myExternalClassLoader);
-  private final DefinitionContributor myDefinitionContributor;
+  private final MetaDefinitionContributor myDefinitionContributor;
   private final DefinitionRequester myDefinitionRequester;
 
   /**
@@ -47,7 +48,7 @@ public class LibraryManager {
    * @param definitionContributor     a listener for metas defined in extensions.
    * @param definitionRequester       a listener for definitions requested in extensions.
    */
-  public LibraryManager(LibraryResolver libraryResolver, @Nullable InstanceProviderSet instanceProviderSet, ErrorReporter typecheckingErrorReporter, ErrorReporter libraryErrorReporter, DefinitionContributor definitionContributor, DefinitionRequester definitionRequester) {
+  public LibraryManager(LibraryResolver libraryResolver, @Nullable InstanceProviderSet instanceProviderSet, ErrorReporter typecheckingErrorReporter, ErrorReporter libraryErrorReporter, MetaDefinitionContributor definitionContributor, DefinitionRequester definitionRequester) {
     myLibraryResolver = libraryResolver;
     myInstanceProviderSet = instanceProviderSet;
     myTypecheckingErrorReporter = typecheckingErrorReporter;
@@ -105,7 +106,7 @@ public class LibraryManager {
     return external ? myExternalClassLoader : myInternalClassLoader;
   }
 
-  public DefinitionContributor getDefinitionContributor() {
+  public MetaDefinitionContributor getDefinitionContributor() {
     return myDefinitionContributor;
   }
 

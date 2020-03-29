@@ -5,7 +5,7 @@ import org.arend.ext.error.GeneralError;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.extImpl.DefinitionRequester;
-import org.arend.extImpl.definitionContributor.EmptyDefinitionContributor;
+import org.arend.extImpl.definitionContributor.MetaDefinitionContributor;
 import org.arend.frontend.ConcreteReferableProvider;
 import org.arend.frontend.PositionComparator;
 import org.arend.frontend.library.PreludeFileLibrary;
@@ -49,7 +49,7 @@ public abstract class ArendTestCase {
 
   @Before
   public void loadPrelude() {
-    libraryManager = new LibraryManager((lib,name) -> { throw new IllegalStateException(); }, new InstanceProviderSet(), errorReporter, errorReporter, EmptyDefinitionContributor.INSTANCE, DefinitionRequester.INSTANCE);
+    libraryManager = new LibraryManager((lib,name) -> { throw new IllegalStateException(); }, new InstanceProviderSet(), errorReporter, errorReporter, MetaDefinitionContributor.INSTANCE, DefinitionRequester.INSTANCE);
     preludeLibrary = new PreludeFileLibrary(null, typecheckerState);
     moduleScopeProvider = preludeLibrary.getModuleScopeProvider();
     libraryManager.loadLibrary(preludeLibrary, null);

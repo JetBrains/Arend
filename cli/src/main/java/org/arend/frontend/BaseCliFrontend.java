@@ -8,7 +8,7 @@ import org.arend.ext.module.ModulePath;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.PrettyPrinterFlag;
 import org.arend.extImpl.DefinitionRequester;
-import org.arend.extImpl.definitionContributor.EmptyDefinitionContributor;
+import org.arend.extImpl.definitionContributor.MetaDefinitionContributor;
 import org.arend.frontend.library.FileSourceLibrary;
 import org.arend.library.*;
 import org.arend.library.error.LibraryError;
@@ -61,7 +61,7 @@ public abstract class BaseCliFrontend {
     private final Stack<Long> times = new Stack<>();
 
     MyLibraryManager() {
-      super(myLibraryResolver, new InstanceProviderSet(), myErrorReporter, System.err::println, EmptyDefinitionContributor.INSTANCE, DefinitionRequester.INSTANCE);
+      super(myLibraryResolver, new InstanceProviderSet(), myErrorReporter, System.err::println, MetaDefinitionContributor.INSTANCE, DefinitionRequester.INSTANCE);
     }
 
     @Override

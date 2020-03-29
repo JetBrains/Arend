@@ -4,6 +4,7 @@ import org.arend.core.definition.Definition;
 import org.arend.ext.DefinitionProvider;
 import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.ext.reference.RawRef;
+import org.arend.library.Library;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
@@ -14,10 +15,12 @@ import java.util.Collections;
 public class DefinitionProviderImpl extends Disableable implements DefinitionProvider {
   private final TypecheckingOrderingListener myTypechecking;
   private final DefinitionRequester myDefinitionRequester;
+  private final Library myLibrary;
 
-  public DefinitionProviderImpl(TypecheckingOrderingListener typechecking, DefinitionRequester definitionRequester) {
+  public DefinitionProviderImpl(TypecheckingOrderingListener typechecking, DefinitionRequester definitionRequester, Library library) {
     myTypechecking = typechecking;
     myDefinitionRequester = definitionRequester;
+    myLibrary = library;
   }
 
   @NotNull
@@ -34,7 +37,7 @@ public class DefinitionProviderImpl extends Disableable implements DefinitionPro
     if (!clazz.isInstance(result)) {
       throw new IllegalArgumentException(result == null ? "Cannot find definition '" + ref.getRefName() + "'" : "Cannot cast '" + result.getClass() + "' to '" + clazz + "'");
     }
-    myDefinitionRequester.request(result);
+    myDefinitionRequester.request(result, myLibrary);
     return clazz.cast(result);
   }
 }

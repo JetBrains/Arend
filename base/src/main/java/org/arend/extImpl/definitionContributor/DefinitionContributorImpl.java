@@ -11,7 +11,6 @@ import org.arend.library.Library;
 import org.arend.library.error.LibraryError;
 import org.arend.module.scopeprovider.SimpleModuleScopeProvider;
 import org.arend.naming.reference.EmptyGlobalReferable;
-import org.arend.naming.reference.MetaReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.scope.SimpleScope;
 import org.jetbrains.annotations.NotNull;
@@ -22,9 +21,9 @@ public class DefinitionContributorImpl extends Disableable implements Definition
   private final Library myLibrary;
   private final ErrorReporter myErrorReporter;
   private final SimpleModuleScopeProvider myModuleScopeProvider;
-  private final DefinitionContributor myDefinitionContributor;
+  private final MetaDefinitionContributor myDefinitionContributor;
 
-  public DefinitionContributorImpl(Library library, ErrorReporter errorReporter, SimpleModuleScopeProvider moduleScopeProvider, DefinitionContributor definitionContributor) {
+  public DefinitionContributorImpl(Library library, ErrorReporter errorReporter, SimpleModuleScopeProvider moduleScopeProvider, MetaDefinitionContributor definitionContributor) {
     myLibrary = library;
     myErrorReporter = errorReporter;
     myModuleScopeProvider = moduleScopeProvider;
@@ -34,7 +33,6 @@ public class DefinitionContributorImpl extends Disableable implements Definition
   @Override
   public void declare(@NotNull ModulePath module, @NotNull LongName longName, @NotNull Precedence precedence, @NotNull MetaDefinition meta) {
     checkEnabled();
-    myDefinitionContributor.declare(module, longName, precedence, meta);
 
     SimpleScope scope = (SimpleScope) myModuleScopeProvider.forModule(module);
     if (scope == null) {
@@ -51,7 +49,7 @@ public class DefinitionContributorImpl extends Disableable implements Definition
           myErrorReporter.report(LibraryError.duplicateExtensionDefinition(myLibrary.getName(), module, longName));
           return;
         }
-        scope.names.put(name, new MetaReferable(precedence, name, meta));
+        scope.names.put(name, myDefinitionContributor.declare(myLibrary, module, longName, precedence, meta));
       } else {
         scope.names.put(name, new EmptyGlobalReferable(name));
         scope = scope.namespaces.computeIfAbsent(name, k -> new SimpleScope());

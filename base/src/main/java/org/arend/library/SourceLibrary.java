@@ -273,7 +273,7 @@ public abstract class SourceLibrary extends BaseLibrary {
       myExtension.setConcreteFactory(new ConcreteFactoryImpl(null));
       myExtension.setModuleScopeProvider(getModuleScopeProvider());
 
-      DefinitionProviderImpl provider = new DefinitionProviderImpl(typechecking, libraryManager.getDefinitionRequester());
+      DefinitionProviderImpl provider = new DefinitionProviderImpl(typechecking, libraryManager.getDefinitionRequester(), this);
       myExtension.load(provider);
       provider.disable();
     }
@@ -281,6 +281,12 @@ public abstract class SourceLibrary extends BaseLibrary {
     libraryManager.afterLibraryLoading(this, true);
 
     return super.load(libraryManager, typechecking);
+  }
+
+  @Override
+  public boolean unload() {
+    myAdditionalModuleScopeProvider.clear();
+    return super.unload();
   }
 
   @Override

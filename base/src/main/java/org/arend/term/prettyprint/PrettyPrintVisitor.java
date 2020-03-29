@@ -944,7 +944,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
       @Override
       void printRight(PrettyPrintVisitor pp) {
-        pp.prettyPrintBody(def.getBody(), def.getKind() != FunctionKind.COCLAUSE_FUNC && def.getKind() != FunctionKind.INSTANCE);
+        pp.prettyPrintBody(def.getBody(), def.getKind() != FunctionKind.COCLAUSE_FUNC && def.getKind() != FunctionKind.INSTANCE && def.getKind() != FunctionKind.CONS);
       }
 
       @Override
