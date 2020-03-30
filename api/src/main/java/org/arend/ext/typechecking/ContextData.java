@@ -10,5 +10,7 @@ import java.util.List;
 public interface ContextData {
   @NotNull ConcreteReferenceExpression getReferenceExpression();
   @NotNull List<? extends ConcreteArgument> getArguments();
+  void setArguments(@NotNull List<? extends ConcreteArgument> arguments);
   CoreExpression getExpectedType();
+  void setExpectedType(CoreExpression expectedType);
 }

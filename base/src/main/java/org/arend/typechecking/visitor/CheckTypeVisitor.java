@@ -32,10 +32,7 @@ import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.*;
 import org.arend.ext.prettyprinting.doc.DocFactory;
-import org.arend.ext.typechecking.CheckedExpression;
-import org.arend.ext.typechecking.ContextData;
-import org.arend.ext.typechecking.ExpressionTypechecker;
-import org.arend.ext.typechecking.MetaDefinition;
+import org.arend.ext.typechecking.*;
 import org.arend.extImpl.ContextDataImpl;
 import org.arend.naming.reference.*;
 import org.arend.naming.renamer.Renamer;
@@ -1845,14 +1842,17 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     return true;
   }
 
-  @NotNull
+  @Nullable
   @Override
   public CheckedExpression defer(@NotNull MetaDefinition meta, @NotNull ContextData contextData, @NotNull CoreExpression type, @NotNull Stage stage) {
+    if (meta instanceof BaseMetaDefinition && !((BaseMetaDefinition) meta).checkContextData(contextData, errorReporter)) {
+      return null;
+    }
     ConcreteReferenceExpression refExpr = contextData.getReferenceExpression();
     if (!(contextData instanceof ContextDataImpl && refExpr instanceof Concrete.ReferenceExpression && type instanceof Expression)) {
       throw new IllegalArgumentException();
     }
-    ((ContextDataImpl) contextData).setExpectedType((Expression) type);
+    contextData.setExpectedType(type);
     InferenceReferenceExpression inferenceExpr = new InferenceReferenceExpression(new MetaInferenceVariable((Expression) type, meta, (Concrete.ReferenceExpression) refExpr, getAllBindings()));
     (stage == Stage.BEFORE_SOLVER ? myDeferredMetasBeforeSolver : stage == Stage.BEFORE_LEVELS ? myDeferredMetasBeforeLevels : myDeferredMetasAfterLevels).add(new DeferredMeta(meta, new LinkedHashSet<>(myFreeBindings), new LinkedHashMap<>(context), (ContextDataImpl) contextData, inferenceExpr));
     return new TypecheckingResult(inferenceExpr, (Expression) type);
@@ -1864,10 +1864,14 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       errorReporter.report(new TypecheckingError("Meta '" + refExpr.getReferent().getRefName() + "' is empty", refExpr));
       return null;
     }
+    ContextData contextData = new ContextDataImpl(refExpr, arguments, expectedType);
+    if (meta instanceof BaseMetaDefinition && !((BaseMetaDefinition) meta).checkContextData(contextData, errorReporter)) {
+      return null;
+    }
 
     CountingErrorReporter countingErrorReporter = new CountingErrorReporter(GeneralError.Level.ERROR);
     errorReporter = new CompositeErrorReporter(errorReporter, countingErrorReporter);
-    CheckedExpression result = meta.invoke(this, new ContextDataImpl(refExpr, arguments, expectedType));
+    CheckedExpression result = meta.invoke(this, contextData);
     errorReporter = ((CompositeErrorReporter) errorReporter).getErrorReporters().get(0);
     if (result instanceof TypecheckingResult) {
       return result.getType() == expectedType ? (TypecheckingResult) result : checkResult(expectedType, (TypecheckingResult) result, refExpr);

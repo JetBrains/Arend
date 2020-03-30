@@ -2,6 +2,7 @@ package org.arend.extImpl;
 
 import org.arend.core.expr.Expression;
 import org.arend.ext.concrete.expr.ConcreteArgument;
+import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.typechecking.ContextData;
 import org.arend.term.concrete.Concrete;
 import org.jetbrains.annotations.NotNull;
@@ -10,7 +11,7 @@ import java.util.List;
 
 public class ContextDataImpl implements ContextData {
   private final Concrete.ReferenceExpression myExpression;
-  private final List<? extends ConcreteArgument> myArguments;
+  private List<? extends ConcreteArgument> myArguments;
   private Expression myExpectedType;
 
   public ContextDataImpl(Concrete.ReferenceExpression expression, List<? extends ConcreteArgument> arguments, Expression expectedType) {
@@ -32,11 +33,20 @@ public class ContextDataImpl implements ContextData {
   }
 
   @Override
+  public void setArguments(@NotNull List<? extends ConcreteArgument> arguments) {
+    myArguments = arguments;
+  }
+
+  @Override
   public Expression getExpectedType() {
     return myExpectedType;
   }
 
-  public void setExpectedType(Expression expectedType) {
-    myExpectedType = expectedType;
+  @Override
+  public void setExpectedType(CoreExpression expectedType) {
+    if (!(expectedType instanceof Expression)) {
+      throw new IllegalArgumentException();
+    }
+    myExpectedType = (Expression) expectedType;
   }
 }

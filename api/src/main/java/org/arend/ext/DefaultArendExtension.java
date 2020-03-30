@@ -20,9 +20,8 @@ public class DefaultArendExtension implements ArendExtension {
     this.moduleScopeProvider = moduleScopeProvider;
   }
 
-  @NotNull
   @Override
-  public ModuleScopeProvider getModuleScopeProvider() {
+  public @NotNull ModuleScopeProvider getModuleScopeProvider() {
     return moduleScopeProvider;
   }
 }

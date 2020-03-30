@@ -14,6 +14,7 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.error.IncorrectExpressionException;
+import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.ExpressionMapper;
@@ -223,6 +224,11 @@ public abstract class Expression implements Body, CoreExpression {
     return null;
   }
 
+  @Override
+  public @NotNull CoreExpression getPiParameters(@Nullable List<? super CoreParameter> parameters) {
+    return getPiParameters(parameters, false);
+  }
+
   public Expression getPiParameters(List<? super SingleDependentLink> params, boolean implicitOnly) {
     Expression cod = normalize(NormalizationMode.WHNF);
     for (PiExpression piCod = cod.cast(PiExpression.class); piCod != null; piCod = cod.cast(PiExpression.class)) {
@@ -316,7 +322,6 @@ public abstract class Expression implements Body, CoreExpression {
   // If the expression is a constructor, then the function returns null.
   public abstract Expression getStuckExpression();
 
-  @Override
   public InferenceVariable getStuckInferenceVariable() {
     Expression stuck = getStuckExpression();
     return stuck instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) stuck).getVariable() instanceof InferenceVariable ? (InferenceVariable) ((InferenceReferenceExpression) stuck).getVariable() : null;

@@ -12,12 +12,13 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 public abstract class BaseMetaDefinition implements MetaDefinition {
+  protected boolean isChecked = false;
+
   protected boolean withoutLevels() {
     return false;
   }
 
-  @Nullable
-  protected boolean[] argumentExplicitness() {
+  protected @Nullable boolean[] argumentExplicitness() {
     return null;
   }
 
@@ -33,7 +34,11 @@ public abstract class BaseMetaDefinition implements MetaDefinition {
     return !requireExpectedType();
   }
 
-  protected boolean checkContextData(@NotNull ContextData contextData, @NotNull ErrorReporter errorReporter) {
+  public boolean checkContextData(@NotNull ContextData contextData, @NotNull ErrorReporter errorReporter) {
+    if (isChecked) {
+      return true;
+    }
+
     ConcreteReferenceExpression refExpr = contextData.getReferenceExpression();
     if (withoutLevels() && (refExpr.getPLevel() != null || refExpr.getHLevel() != null)) {
       errorReporter.report(new IgnoredLevelsError(refExpr.getPLevel(), refExpr.getHLevel()));
@@ -81,6 +86,8 @@ public abstract class BaseMetaDefinition implements MetaDefinition {
       errorReporter.report(new TypecheckingError("Cannot infer the expected type", refExpr));
       ok = false;
     }
+
+    isChecked = true;
     return ok;
   }
 }
