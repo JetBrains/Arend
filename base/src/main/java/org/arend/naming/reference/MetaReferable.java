@@ -10,11 +10,13 @@ public class MetaReferable implements GlobalReferable, MetaRef {
   private final Precedence myPrecedence;
   private final String myName;
   private final MetaDefinition myDefinition;
+  public final String description;
   public GlobalReferable underlyingReferable;
 
-  public MetaReferable(Precedence precedence, String name, MetaDefinition definition) {
+  public MetaReferable(Precedence precedence, String name, String description, MetaDefinition definition) {
     myPrecedence = precedence;
     myName = name;
+    this.description = description;
     myDefinition = definition;
   }
 

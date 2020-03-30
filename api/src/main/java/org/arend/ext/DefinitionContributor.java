@@ -7,5 +7,5 @@ import org.arend.ext.typechecking.MetaDefinition;
 import org.jetbrains.annotations.NotNull;
 
 public interface DefinitionContributor {
-  void declare(@NotNull ModulePath module, @NotNull LongName name, @NotNull Precedence precedence, @NotNull MetaDefinition meta);
+  void declare(@NotNull ModulePath module, @NotNull LongName name, @NotNull String description, @NotNull Precedence precedence, @NotNull MetaDefinition meta);
 }

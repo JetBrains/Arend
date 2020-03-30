@@ -1,4 +1,4 @@
-package org.arend.extImpl.definitionContributor;
+package org.arend.extImpl;
 
 import org.arend.ext.DefinitionContributor;
 import org.arend.ext.error.ErrorReporter;
@@ -30,7 +30,7 @@ public class DefinitionContributorImpl extends Disableable implements Definition
   }
 
   @Override
-  public void declare(@NotNull ModulePath module, @NotNull LongName longName, @NotNull Precedence precedence, @NotNull MetaDefinition meta) {
+  public void declare(@NotNull ModulePath module, @NotNull LongName longName, @NotNull String description, @NotNull Precedence precedence, @NotNull MetaDefinition meta) {
     checkEnabled();
 
     SimpleScope scope = (SimpleScope) myModuleScopeProvider.forModule(module);
@@ -48,7 +48,7 @@ public class DefinitionContributorImpl extends Disableable implements Definition
           myErrorReporter.report(LibraryError.duplicateExtensionDefinition(myLibrary.getName(), module, longName));
           return;
         }
-        scope.names.put(name, new MetaReferable(precedence, name, meta));
+        scope.names.put(name, new MetaReferable(precedence, name, description, meta));
       } else {
         scope.names.put(name, new EmptyGlobalReferable(name));
         scope = scope.namespaces.computeIfAbsent(name, k -> new SimpleScope());
