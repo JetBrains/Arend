@@ -12,8 +12,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 public abstract class BaseMetaDefinition implements MetaDefinition {
-  protected boolean isChecked = false;
-
   protected boolean withoutLevels() {
     return false;
   }
@@ -35,10 +33,6 @@ public abstract class BaseMetaDefinition implements MetaDefinition {
   }
 
   public boolean checkContextData(@NotNull ContextData contextData, @NotNull ErrorReporter errorReporter) {
-    if (isChecked) {
-      return true;
-    }
-
     ConcreteReferenceExpression refExpr = contextData.getReferenceExpression();
     if (withoutLevels() && (refExpr.getPLevel() != null || refExpr.getHLevel() != null)) {
       errorReporter.report(new IgnoredLevelsError(refExpr.getPLevel(), refExpr.getHLevel()));
@@ -87,7 +81,6 @@ public abstract class BaseMetaDefinition implements MetaDefinition {
       ok = false;
     }
 
-    isChecked = true;
     return ok;
   }
 }
