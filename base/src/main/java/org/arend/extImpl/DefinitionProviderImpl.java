@@ -6,6 +6,7 @@ import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.ext.reference.RawRef;
 import org.arend.library.Library;
 import org.arend.naming.reference.GlobalReferable;
+import org.arend.naming.reference.TCReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.jetbrains.annotations.NotNull;
@@ -26,14 +27,21 @@ public class DefinitionProviderImpl extends Disableable implements DefinitionPro
   @NotNull
   @Override
   public <T extends CoreDefinition> T getDefinition(@NotNull RawRef ref, Class<T> clazz) {
-    checkEnabled();
+    TCReferable tcRef;
+    if (ref instanceof TCReferable) {
+      tcRef = (TCReferable) ref;
+    } else {
+      checkEnabled("DefinitionProvider was disabled for raw references");
 
-    Concrete.ReferableDefinition def = ref instanceof GlobalReferable ? myTypechecking.getConcreteProvider().getConcrete((GlobalReferable) ref) : null;
-    if (!(def instanceof Concrete.Definition)) {
-      throw new IllegalArgumentException("Expected a global definition");
+      Concrete.ReferableDefinition def = ref instanceof GlobalReferable ? myTypechecking.getConcreteProvider().getConcrete((GlobalReferable) ref) : null;
+      if (!(def instanceof Concrete.Definition)) {
+        throw new IllegalArgumentException("Expected a global definition");
+      }
+      myTypechecking.typecheckDefinitions(Collections.singletonList((Concrete.Definition) def), null);
+      tcRef = def.getData();
     }
-    myTypechecking.typecheckDefinitions(Collections.singletonList((Concrete.Definition) def), null);
-    Definition result = myTypechecking.getTypecheckerState().getTypechecked(def.getData());
+
+    Definition result = myTypechecking.getTypecheckerState().getTypechecked(tcRef);
     if (!clazz.isInstance(result)) {
       throw new IllegalArgumentException(result == null ? "Cannot find definition '" + ref.getRefName() + "'" : "Cannot cast '" + result.getClass() + "' to '" + clazz + "'");
     }
