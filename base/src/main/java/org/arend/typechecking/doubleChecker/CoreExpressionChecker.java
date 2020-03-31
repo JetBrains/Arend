@@ -186,7 +186,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     }
 
     expr.getArgument().accept(this, piType.getParameters().getTypeExpr());
-    return piType.applyExpression(expr.getArgument());
+    return check(expectedType, piType.applyExpression(expr.getArgument()), expr);
   }
 
   @Override
@@ -301,7 +301,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     if (expr.isError()) {
       throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Unknown error", mySourceNode), expr));
     }
-    return expectedType != null ? expectedType : expr.getExpression() == null ? expr : expr.replaceExpression(null);
+    return expr.getExpression() == null ? expr : expr.replaceExpression(null);
   }
 
   @Override

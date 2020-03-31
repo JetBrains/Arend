@@ -321,24 +321,23 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
 
   @Nullable
   @Override
-  public TypecheckingResult typecheck(@NotNull ConcreteExpression expression, @Nullable CoreExpression expectedType) {
-    if (!(expression instanceof Concrete.Expression && (expectedType == null || expectedType instanceof Expression))) {
+  public TypecheckingResult typecheck(@NotNull ConcreteExpression expression, @Nullable CheckedExpression expectedType) {
+    if (!(expression instanceof Concrete.Expression && (expectedType == null || expectedType instanceof TypecheckingResult))) {
       throw new IllegalArgumentException();
     }
-    return checkExpr((Concrete.Expression) expression, (Expression) expectedType);
+    return checkExpr((Concrete.Expression) expression, expectedType == null ? null : ((TypecheckingResult) expectedType).expression);
   }
 
   @Nullable
   @Override
-  public TypecheckingResult check(@NotNull CoreExpression expression, @Nullable CoreExpression expectedType, @NotNull ConcreteSourceNode sourceNode) {
-    if (!(expression instanceof Expression && sourceNode instanceof Concrete.SourceNode && (expectedType == null || expectedType instanceof Expression))) {
+  public TypecheckingResult check(@NotNull CoreExpression expression, @NotNull ConcreteSourceNode sourceNode) {
+    if (!(expression instanceof Expression && sourceNode instanceof Concrete.SourceNode)) {
       throw new IllegalArgumentException();
     }
 
     Expression expr = (Expression) expression;
     try {
-      Expression actualType = expr.accept(new CoreExpressionChecker(getAllBindings(), myEquations, (Concrete.SourceNode) sourceNode), (Expression) expectedType);
-      return new TypecheckingResult(expr, expectedType == null ? actualType : (Expression) expectedType);
+      return new TypecheckingResult(expr, expr.accept(new CoreExpressionChecker(getAllBindings(), myEquations, (Concrete.SourceNode) sourceNode), null));
     } catch (CoreException e) {
       errorReporter.report(e.error);
       return null;
@@ -416,16 +415,13 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
         checkTypeVisitor.setInstancePool(new GlobalInstancePool(myInstancePool.getInstanceProvider(), checkTypeVisitor, myInstancePool.getInstancePool()));
       }
 
-      CheckedExpression result = deferredMeta.meta.invoke(checkTypeVisitor, deferredMeta.contextData);
-      if (result != null && !(result instanceof TypecheckingResult)) {
-        throw new IllegalStateException("CheckedExpression must be TypecheckingResult");
-      }
-
       Concrete.ReferenceExpression refExpr = deferredMeta.contextData.getReferenceExpression();
+      TypecheckingResult result = TypecheckingResult.fromChecked(deferredMeta.meta.invoke(checkTypeVisitor, deferredMeta.contextData));
+      fixCheckedExpression(result, refExpr.getReferent(), refExpr);
       if (result != null) {
-        result = checkTypeVisitor.checkResult(type, (TypecheckingResult) result, refExpr);
+        result = checkTypeVisitor.checkResult(type, result, refExpr);
         if (stage == Stage.AFTER_LEVELS) {
-          result = checkTypeVisitor.finalize((TypecheckingResult) result, null, refExpr);
+          result = checkTypeVisitor.finalize(result, null, refExpr);
         }
       }
       errorReporter = originalErrorReporter;
@@ -434,7 +430,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       if (result == null && countingErrorReporter.getErrorsNumber() == 0) {
         errorReporter.report(new TypecheckingError("Meta '" + refExpr.getReferent().getRefName() + "' failed", refExpr));
       }
-      deferredMeta.inferenceExpr.setSubstExpression(result == null ? new ErrorExpression() : ((TypecheckingResult) result).expression);
+      deferredMeta.inferenceExpr.setSubstExpression(result == null ? new ErrorExpression() : result.expression);
     }
     deferredMetas.clear();
   }
@@ -1063,11 +1059,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     }
 
     if (expr.getReferent() instanceof CoreReferable) {
-      CheckedExpression checked = ((CoreReferable) expr.getReferent()).expression;
-      if (!(checked instanceof TypecheckingResult)) {
-        throw new IllegalStateException("CheckedExpression must be TypecheckingResult");
-      }
-      return checkResult(expectedType, (TypecheckingResult) checked, expr);
+      TypecheckingResult result = ((CoreReferable) expr.getReferent()).result;
+      fixCheckedExpression(result, expr.getReferent(), expr);
+      return checkResult(expectedType, result, expr);
     }
 
     TResult result = visitReference(expr);
@@ -1852,10 +1846,23 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     if (!(contextData instanceof ContextDataImpl && refExpr instanceof Concrete.ReferenceExpression && type instanceof Expression)) {
       throw new IllegalArgumentException();
     }
-    contextData.setExpectedType(type);
+    ((ContextDataImpl) contextData).setExpectedType((Expression) type);
     InferenceReferenceExpression inferenceExpr = new InferenceReferenceExpression(new MetaInferenceVariable((Expression) type, meta, (Concrete.ReferenceExpression) refExpr, getAllBindings()));
     (stage == Stage.BEFORE_SOLVER ? myDeferredMetasBeforeSolver : stage == Stage.BEFORE_LEVELS ? myDeferredMetasBeforeLevels : myDeferredMetasAfterLevels).add(new DeferredMeta(meta, new LinkedHashSet<>(myFreeBindings), new LinkedHashMap<>(context), (ContextDataImpl) contextData, inferenceExpr));
     return new TypecheckingResult(inferenceExpr, (Expression) type);
+  }
+
+  private void fixCheckedExpression(TypecheckingResult result, Referable referable, Concrete.SourceNode sourceNode) {
+    if (result == null || result.type != null) {
+      return;
+    }
+
+    result.type = result.expression.getType();
+    if (result.type == null) {
+      TypecheckingError error = new TypeComputationError(referable, result.expression, sourceNode);
+      errorReporter.report(error);
+      result.type = new ErrorExpression(error);
+    }
   }
 
   private TypecheckingResult checkMeta(Concrete.ReferenceExpression refExpr, List<Concrete.Argument> arguments, Expression expectedType) {
@@ -1871,13 +1878,11 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
 
     CountingErrorReporter countingErrorReporter = new CountingErrorReporter(GeneralError.Level.ERROR);
     errorReporter = new CompositeErrorReporter(errorReporter, countingErrorReporter);
-    CheckedExpression result = meta.invoke(this, contextData);
+    TypecheckingResult result = TypecheckingResult.fromChecked(meta.invoke(this, contextData));
+    fixCheckedExpression(result, refExpr.getReferent(), refExpr);
     errorReporter = ((CompositeErrorReporter) errorReporter).getErrorReporters().get(0);
-    if (result instanceof TypecheckingResult) {
-      return result.getType() == expectedType ? (TypecheckingResult) result : checkResult(expectedType, (TypecheckingResult) result, refExpr);
-    }
     if (result != null) {
-      throw new IllegalStateException("CheckedExpression must be TypecheckingResult");
+      return result.getType() == expectedType ? result : checkResult(expectedType, result, refExpr);
     }
     if (countingErrorReporter.getErrorsNumber() == 0) {
       errorReporter.report(new TypecheckingError("Meta '" + refExpr.getReferent().getRefName() + "' failed", refExpr));

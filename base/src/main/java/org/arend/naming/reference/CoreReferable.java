@@ -1,15 +1,15 @@
 package org.arend.naming.reference;
 
-import org.arend.ext.typechecking.CheckedExpression;
+import org.arend.typechecking.result.TypecheckingResult;
 import org.jetbrains.annotations.NotNull;
 
 public class CoreReferable implements Referable {
   private final String myName;
-  public final CheckedExpression expression;
+  public final TypecheckingResult result;
 
-  public CoreReferable(String name, CheckedExpression expression) {
+  public CoreReferable(String name, TypecheckingResult result) {
     myName = name;
-    this.expression = expression;
+    this.result = result;
   }
 
   @NotNull

@@ -12,14 +12,12 @@ import org.arend.naming.reference.LocalReferable;
 import org.arend.naming.reference.MetaReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
+import org.arend.typechecking.result.TypecheckingResult;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 public class ConcreteFactoryImpl implements ConcreteFactory {
   private Object myData;
@@ -49,7 +47,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
   @NotNull
   @Override
   public ConcreteExpression core(String name, @NotNull CheckedExpression expr) {
-    return new Concrete.ReferenceExpression(myData, new CoreReferable(name, expr), null, null);
+    return new Concrete.ReferenceExpression(myData, new CoreReferable(name, TypecheckingResult.fromChecked(Objects.requireNonNull(expr))), null, null);
   }
 
   @NotNull

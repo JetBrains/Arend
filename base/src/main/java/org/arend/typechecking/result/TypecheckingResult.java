@@ -27,6 +27,13 @@ public class TypecheckingResult implements TResult, CheckedExpression {
     this.type = type;
   }
 
+  public static TypecheckingResult fromChecked(CheckedExpression expression) {
+    if (!(expression == null || expression instanceof TypecheckingResult)) {
+      throw new IllegalStateException("CheckedExpression must be TypecheckingResult");
+    }
+    return (TypecheckingResult) expression;
+  }
+
   @Override
   public TypecheckingResult toResult(CheckTypeVisitor typechecker) {
     return this;

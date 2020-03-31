@@ -2,9 +2,9 @@ package org.arend.extImpl;
 
 import org.arend.core.expr.Expression;
 import org.arend.ext.concrete.expr.ConcreteArgument;
-import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.typechecking.ContextData;
 import org.arend.term.concrete.Concrete;
+import org.arend.typechecking.result.TypecheckingResult;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -42,11 +42,12 @@ public class ContextDataImpl implements ContextData {
     return myExpectedType;
   }
 
+  public void setExpectedType(Expression expectedType) {
+    myExpectedType = expectedType;
+  }
+
   @Override
-  public void setExpectedType(CoreExpression expectedType) {
-    if (!(expectedType instanceof Expression)) {
-      throw new IllegalArgumentException();
-    }
-    myExpectedType = (Expression) expectedType;
+  public TypecheckingResult getCheckedExpectedType() {
+    return new TypecheckingResult(myExpectedType, null);
   }
 }

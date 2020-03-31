@@ -16,8 +16,8 @@ public interface ExpressionTypechecker {
 
   @NotNull List<CoreBinding> getFreeBindingsList();
   @NotNull ErrorReporter getErrorReporter();
-  @Nullable CheckedExpression typecheck(@NotNull ConcreteExpression expression, @Nullable CoreExpression expectedType);
-  @Nullable CheckedExpression check(@NotNull CoreExpression expression, @Nullable CoreExpression expectedType, @NotNull ConcreteSourceNode sourceNode);
+  @Nullable CheckedExpression typecheck(@NotNull ConcreteExpression expression, @Nullable CheckedExpression expectedType);
+  @Nullable CheckedExpression check(@NotNull CoreExpression expression, @NotNull ConcreteSourceNode sourceNode);
   @Nullable CheckedExpression defer(@NotNull MetaDefinition meta, @NotNull ContextData contextData, @NotNull CoreExpression type, @NotNull Stage stage);
   boolean compare(@NotNull CoreExpression expr1, @NotNull CoreExpression expr2, @NotNull CMP cmp, @Nullable ConcreteExpression marker, boolean allowEquations, boolean normalize);
 }
