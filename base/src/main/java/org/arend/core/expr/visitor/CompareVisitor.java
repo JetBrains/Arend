@@ -156,9 +156,15 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
   public boolean normalizedCompare(Expression expr1, Expression expr2, Expression type) {
     Expression stuck1 = expr1.getStuckExpression();
     Expression stuck2 = expr2.getStuckExpression();
-    if (stuck1 != null && stuck1.isError() && (stuck2 == null || !stuck2.isInstance(InferenceReferenceExpression.class)) ||
-      stuck2 != null && stuck2.isError() && (stuck1 == null || !stuck1.isInstance(InferenceReferenceExpression.class))) {
+    if (stuck1 != null && stuck1.isError() && !(stuck2 instanceof InferenceReferenceExpression) ||
+      stuck2 != null && stuck2.isError() && !(stuck1 instanceof InferenceReferenceExpression)) {
       return true;
+    }
+
+    if (stuck1 instanceof InferenceReferenceExpression && stuck2 instanceof InferenceReferenceExpression && myAllowEquations && ((InferenceReferenceExpression) stuck1).getVariable() instanceof InferenceVariable && ((InferenceReferenceExpression) stuck2).getVariable() instanceof InferenceVariable) {
+      InferenceVariable var1 = (InferenceVariable) ((InferenceReferenceExpression) stuck1).getVariable();
+      InferenceVariable var2 = (InferenceVariable) ((InferenceReferenceExpression) stuck2).getVariable();
+      return myEquations.addEquation(expr1, expr2.subst(getSubstitution()), type, myCMP, var1.getSourceNode(), var1, var2);
     }
 
     InferenceVariable stuckVar1 = expr1.getInferenceVariable();
@@ -297,7 +303,15 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       return true;
     }
 
-    return myNormalCompare && myNormalize && normalizedCompare(expr1.normalize(NormalizationMode.WHNF), expr2.normalize(NormalizationMode.WHNF), type == null ? null : type.normalize(NormalizationMode.WHNF));
+    if (!myNormalCompare || !myNormalize) {
+      return false;
+    }
+
+    if (stuckVar1 != null && stuckVar2 != null && myAllowEquations) {
+      return myEquations.addEquation(expr1, expr2.subst(getSubstitution()), type, myCMP, stuckVar1.getSourceNode(), stuckVar1, stuckVar2);
+    }
+
+    return normalizedCompare(expr1.normalize(NormalizationMode.WHNF), expr2.normalize(NormalizationMode.WHNF), type == null ? null : type.normalize(NormalizationMode.WHNF));
   }
 
   private ExprSubstitution getSubstitution() {
