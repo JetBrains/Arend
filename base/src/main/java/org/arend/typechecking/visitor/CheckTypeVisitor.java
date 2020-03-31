@@ -68,6 +68,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.math.BigInteger;
 import java.util.*;
+import java.util.function.Function;
 
 import static org.arend.typechecking.error.local.inference.ArgInferenceError.expression;
 
@@ -1954,6 +1955,19 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       result = new TypecheckingResult(resultExpr, ExpressionFactory.Nat());
     }
     return checkResult(expectedType, result, expr);
+  }
+
+  @Override
+  public <T> T withErrorReporter(@NotNull ErrorReporter errorReporter, Function<ExpressionTypechecker, T> action) {
+    ErrorReporter originalErrorReport = this.errorReporter;
+    Definition.TypeCheckingStatus originalStatus = myStatus;
+    this.errorReporter = errorReporter;
+    try {
+      return action.apply(this);
+    } finally {
+      this.errorReporter = originalErrorReport;
+      myStatus = originalStatus;
+    }
   }
 
   @Override
