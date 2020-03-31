@@ -33,10 +33,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public abstract class Expression implements Body, CoreExpression {
   public abstract <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params);
@@ -167,6 +164,21 @@ public abstract class Expression implements Body, CoreExpression {
     } catch (SubstVisitor.SubstException e) {
       return null;
     }
+  }
+
+  @Override
+  public @NotNull Expression substitute(@NotNull Map<? extends CoreParameter, ? extends CoreExpression> map) {
+    if (map.isEmpty()) {
+      return this;
+    }
+    ExprSubstitution substitution = new ExprSubstitution();
+    for (Map.Entry<? extends CoreParameter, ? extends CoreExpression> entry : map.entrySet()) {
+      if (!(entry.getKey() instanceof Variable && entry.getValue() instanceof Expression)) {
+        throw new IllegalArgumentException();
+      }
+      substitution.add((Variable) entry.getKey(), (Expression) entry.getValue());
+    }
+    return accept(new SubstVisitor(substitution, LevelSubstitution.EMPTY), null);
   }
 
   public static boolean compare(Expression expr1, Expression expr2, Expression type, CMP cmp) {
