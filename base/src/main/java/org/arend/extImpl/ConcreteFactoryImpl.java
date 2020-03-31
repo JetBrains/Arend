@@ -1,6 +1,7 @@
 package org.arend.extImpl;
 
 import org.arend.ext.concrete.*;
+import org.arend.ext.concrete.expr.ConcreteArgument;
 import org.arend.ext.concrete.expr.ConcreteCaseArgument;
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.reference.ArendRef;
@@ -20,7 +21,7 @@ import java.math.BigInteger;
 import java.util.*;
 
 public class ConcreteFactoryImpl implements ConcreteFactory {
-  private Object myData;
+  private final Object myData;
 
   public ConcreteFactoryImpl(Object data) {
     myData = data;
@@ -270,6 +271,52 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     return new Concrete.TypedExpression(myData, (Concrete.Expression) expression, (Concrete.Expression) type);
   }
 
+  @Override
+  public @NotNull ConcreteExpression app(@NotNull ConcreteExpression function, @NotNull Collection<? extends ConcreteArgument> arguments) {
+    if (!(function instanceof Concrete.Expression)) {
+      throw new IllegalArgumentException();
+    }
+    Concrete.Expression fun = (Concrete.Expression) function;
+    if (arguments.isEmpty()) {
+      return fun;
+    }
+    List<Concrete.Argument> args = fun instanceof Concrete.AppExpression ? new ArrayList<>(((Concrete.AppExpression) fun).getArguments()) : new ArrayList<>(arguments.size());
+    for (ConcreteArgument argument : arguments) {
+      if (!(argument instanceof Concrete.Argument)) {
+        throw new IllegalArgumentException();
+      }
+      args.add((Concrete.Argument) argument);
+    }
+    return Concrete.AppExpression.make(myData, fun instanceof Concrete.AppExpression ? ((Concrete.AppExpression) fun).getFunction() : fun, args);
+  }
+
+  @Override
+  public @NotNull ConcreteExpression app(@NotNull ConcreteExpression function, boolean isExplicit, @NotNull Collection<? extends ConcreteExpression> arguments) {
+    if (!(function instanceof Concrete.Expression)) {
+      throw new IllegalArgumentException();
+    }
+    Concrete.Expression fun = (Concrete.Expression) function;
+    if (arguments.isEmpty()) {
+      return fun;
+    }
+    List<Concrete.Argument> args = fun instanceof Concrete.AppExpression ? new ArrayList<>(((Concrete.AppExpression) fun).getArguments()) : new ArrayList<>(arguments.size());
+    for (ConcreteExpression argument : arguments) {
+      if (!(argument instanceof Concrete.Expression)) {
+        throw new IllegalArgumentException();
+      }
+      args.add(new Concrete.Argument((Concrete.Expression) argument, isExplicit));
+    }
+    return Concrete.AppExpression.make(myData, fun instanceof Concrete.AppExpression ? ((Concrete.AppExpression) fun).getFunction() : fun, args);
+  }
+
+  @Override
+  public @NotNull ConcreteAppBuilder appBuilder(@NotNull ConcreteExpression function) {
+    if (!(function instanceof Concrete.Expression)) {
+      throw new IllegalArgumentException();
+    }
+    return new ConcreteAppBuilderImpl(myData, (Concrete.Expression) function);
+  }
+
   @NotNull
   @Override
   public ArendRef local(@NotNull String name) {
@@ -465,7 +512,6 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
   @NotNull
   @Override
   public ConcreteFactory withData(@Nullable Object data) {
-    myData = data;
-    return this;
+    return new ConcreteFactoryImpl(data);
   }
 }

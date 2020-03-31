@@ -212,48 +212,6 @@ public final class Concrete {
       return ref instanceof TCClassReferable && !((TCClassReferable) ref).isRecord() ? (TCClassReferable) ref : null;
     }
 
-    @NotNull
-    @Override
-    public ConcreteExpression app(@NotNull ConcreteExpression argument) {
-      if (!(argument instanceof Expression)) {
-        throw new IllegalArgumentException();
-      }
-      return AppExpression.make(null, this, (Expression) argument, true);
-    }
-
-    @NotNull
-    @Override
-    public ConcreteExpression app(@NotNull ConcreteExpression argument, boolean isExplicit) {
-      if (!(argument instanceof Expression)) {
-        throw new IllegalArgumentException();
-      }
-      return AppExpression.make(null, this, (Expression) argument, isExplicit);
-    }
-
-    @NotNull
-    @Override
-    public ConcreteExpression app(@NotNull ConcreteArgument argument) {
-      if (!(argument instanceof Concrete.Argument)) {
-        throw new IllegalArgumentException();
-      }
-      return AppExpression.make(null, this, Collections.singletonList((Concrete.Argument) argument));
-    }
-
-    @Override
-    public @NotNull ConcreteExpression app(@NotNull Collection<? extends ConcreteArgument> arguments) {
-      if (arguments.isEmpty()) {
-        return this;
-      }
-      List<Concrete.Argument> args = new ArrayList<>(arguments.size());
-      for (ConcreteArgument argument : arguments) {
-        if (!(argument instanceof Concrete.Argument)) {
-          throw new IllegalArgumentException();
-        }
-        args.add((Concrete.Argument) argument);
-      }
-      return AppExpression.make(null, this, args);
-    }
-
     @Override
     public String toString() {
       StringBuilder builder = new StringBuilder();

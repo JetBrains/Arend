@@ -6,7 +6,7 @@ import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.module.ModulePath;
 import org.arend.extImpl.ConcreteFactoryImpl;
 import org.arend.extImpl.DefinitionContributorImpl;
-import org.arend.extImpl.DefinitionProviderImpl;
+import org.arend.extImpl.RawDefinitionProviderImpl;
 import org.arend.library.classLoader.FileClassLoaderDelegate;
 import org.arend.library.classLoader.MultiClassLoader;
 import org.arend.library.error.LibraryError;
@@ -272,8 +272,9 @@ public abstract class SourceLibrary extends BaseLibrary {
       myExtension.setPrelude(new Prelude());
       myExtension.setConcreteFactory(new ConcreteFactoryImpl(null));
       myExtension.setModuleScopeProvider(getModuleScopeProvider());
+      myExtension.setDefinitionProvider(getTypecheckerState());
 
-      DefinitionProviderImpl provider = new DefinitionProviderImpl(typechecking, libraryManager.getDefinitionRequester(), this);
+      RawDefinitionProviderImpl provider = new RawDefinitionProviderImpl(typechecking, libraryManager.getDefinitionRequester(), this);
       myExtension.load(provider);
       provider.disable();
     }

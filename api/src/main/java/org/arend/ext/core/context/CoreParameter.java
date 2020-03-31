@@ -7,5 +7,6 @@ public interface CoreParameter {
   boolean isExplicit();
   @NotNull CoreBinding getBinding();
   @NotNull CoreExpression getTypeExpr();
+  boolean hasNext();
   @NotNull CoreParameter getNext();
 }

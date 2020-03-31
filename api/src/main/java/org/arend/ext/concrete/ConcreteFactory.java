@@ -1,5 +1,6 @@
 package org.arend.ext.concrete;
 
+import org.arend.ext.concrete.expr.ConcreteArgument;
 import org.arend.ext.concrete.expr.ConcreteCaseArgument;
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.reference.ArendRef;
@@ -34,6 +35,9 @@ public interface ConcreteFactory {
   @NotNull ConcreteExpression number(@NotNull BigInteger number);
   @NotNull ConcreteExpression number(int number);
   @NotNull ConcreteExpression typed(@NotNull ConcreteExpression expression, @NotNull ConcreteExpression type);
+  @NotNull ConcreteExpression app(@NotNull ConcreteExpression function, @NotNull Collection<? extends ConcreteArgument> arguments);
+  @NotNull ConcreteExpression app(@NotNull ConcreteExpression function, boolean isExplicit, @NotNull Collection<? extends ConcreteExpression> arguments);
+  @NotNull ConcreteAppBuilder appBuilder(@NotNull ConcreteExpression function);
 
   @NotNull ArendRef local(@NotNull String name);
   @NotNull ConcreteParameter param(@Nullable ArendRef ref);

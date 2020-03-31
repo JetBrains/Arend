@@ -38,6 +38,8 @@ public abstract class Definition implements Variable, CoreDefinition {
     return myReferable;
   }
 
+  @NotNull
+  @Override
   public DependentLink getParameters() {
     return EmptyDependentLink.getInstance();
   }

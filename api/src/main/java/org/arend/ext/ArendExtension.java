@@ -17,10 +17,12 @@ public interface ArendExtension {
 
   default void setModuleScopeProvider(@NotNull ModuleScopeProvider moduleScopeProvider) {}
 
+  default void setDefinitionProvider(@NotNull DefinitionProvider definitionProvider) {}
+
   @NotNull
   default ModuleScopeProvider getModuleScopeProvider() {
     return module -> null;
   }
 
-  default void load(@NotNull DefinitionProvider definitionProvider) {}
+  default void load(@NotNull RawDefinitionProvider definitionProvider) {}
 }
