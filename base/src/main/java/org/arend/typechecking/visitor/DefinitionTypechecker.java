@@ -207,6 +207,14 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     return null;
   }
 
+  private void getFreeVariablesClosure(Expression expression, Set<Binding> freeVars) {
+    for (Binding var : FreeVariablesCollector.getFreeVariables(expression)) {
+      if (freeVars.add(var)) {
+        getFreeVariablesClosure(var.getTypeExpr(), freeVars);
+      }
+    }
+  }
+
   private void calculateParametersTypecheckingOrder(Definition definition) {
     List<DependentLink> parametersList;
     if (definition instanceof Constructor && ((Constructor) definition).getDataTypeParameters().hasNext()) {
@@ -251,7 +259,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             if (result == FreeVariablesClassifier.Result.GOOD && link1.isExplicit()) {
               found = true;
               processed.add(link);
-              Set<Binding> freeVars = FreeVariablesCollector.getFreeVariables(link1.getTypeExpr());
+              Set<Binding> freeVars = new HashSet<>();
+              getFreeVariablesClosure(link1.getTypeExpr(), freeVars);
               for (DependentLink link2 : parametersList) {
                 for (; link2.hasNext() && link2 != link1; link2 = link2.getNext()) {
                   if (freeVars.contains(link2)) {
