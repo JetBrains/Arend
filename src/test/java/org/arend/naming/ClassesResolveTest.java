@@ -237,4 +237,11 @@ public class ClassesResolveTest extends NameResolverTestCase {
       "\\open B(f)", 1);
     assertThatErrorsAre(notInScope("f"));
   }
+
+  @Test
+  public void resolveSuper() {
+    resolveNamesModule(
+      "\\record A \\extends B\n" +
+      "  \\where \\record B");
+  }
 }

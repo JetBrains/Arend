@@ -784,9 +784,10 @@ public class BuildVisitor extends ArendBaseVisitor {
     ConcreteClassReferable reference;
     List<ConcreteClassFieldReferable> fieldReferables = new ArrayList<>();
     reference = parent instanceof FileGroup
-      ? new ConcreteClassReferable(pos, name, prec, fieldReferables, superClasses, parent, myModule)
-      : new ConcreteClassReferable(pos, name, prec, fieldReferables, superClasses, parent, (TCReferable) parent.getReferable());
+      ? new ConcreteClassReferable(pos, name, prec, fieldReferables, superClasses, myModule)
+      : new ConcreteClassReferable(pos, name, prec, fieldReferables, superClasses, (TCReferable) parent.getReferable());
     ClassGroup resultGroup = new ClassGroup(reference, fieldReferables, dynamicSubgroups, staticSubgroups, namespaceCommands, parent);
+    reference.setGroup(resultGroup);
     boolean isRecord = ctx.classKw() instanceof ClassKwRecordContext;
     ClassBodyContext classBodyCtx = ctx.classBody();
     List<ClassStatContext> classStatCtxs = classBodyCtx instanceof ClassBodyStatsContext ? ((ClassBodyStatsContext) classBodyCtx).classStat() : Collections.emptyList();

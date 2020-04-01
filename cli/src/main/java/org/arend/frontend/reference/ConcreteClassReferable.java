@@ -3,13 +3,16 @@ package org.arend.frontend.reference;
 import org.arend.ext.module.ModulePath;
 import org.arend.ext.reference.Precedence;
 import org.arend.frontend.parser.Position;
+import org.arend.module.scopeprovider.EmptyModuleScopeProvider;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.Reference;
 import org.arend.naming.reference.TCClassReferable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.naming.resolving.visitor.ExpressionResolveNameVisitor;
 import org.arend.naming.scope.CachingScope;
+import org.arend.naming.scope.LexicalScope;
 import org.arend.naming.scope.Scope;
+import org.arend.naming.scope.ScopeFactory;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.ChildGroup;
 import org.jetbrains.annotations.NotNull;
@@ -20,25 +23,27 @@ import java.util.Collections;
 import java.util.List;
 
 public class ConcreteClassReferable extends ConcreteLocatedReferable implements TCClassReferable {
-  private final ChildGroup myGroup;
+  private ChildGroup myGroup;
   private final Collection<? extends ConcreteClassFieldReferable> myFields;
   private final List<? extends Reference> myUnresolvedSuperClasses;
   private final List<TCClassReferable> mySuperClasses;
   private boolean myResolved = false;
 
-  public ConcreteClassReferable(Position position, @NotNull String name, Precedence precedence, Collection<? extends ConcreteClassFieldReferable> fields, List<? extends Reference> superClasses, ChildGroup group, TCReferable parent) {
+  public ConcreteClassReferable(Position position, @NotNull String name, Precedence precedence, Collection<? extends ConcreteClassFieldReferable> fields, List<? extends Reference> superClasses, TCReferable parent) {
     super(position, name, precedence, parent, Kind.TYPECHECKABLE);
     myFields = fields;
     myUnresolvedSuperClasses = superClasses;
     mySuperClasses = new ArrayList<>(superClasses.size());
-    myGroup = group;
   }
 
-  public ConcreteClassReferable(Position position, @NotNull String name, Precedence precedence, Collection<? extends ConcreteClassFieldReferable> fields, List<? extends Reference> superClasses, ChildGroup group, ModulePath parent) {
+  public ConcreteClassReferable(Position position, @NotNull String name, Precedence precedence, Collection<? extends ConcreteClassFieldReferable> fields, List<? extends Reference> superClasses, ModulePath parent) {
     super(position, name, precedence, parent, Kind.TYPECHECKABLE);
     myFields = fields;
     myUnresolvedSuperClasses = superClasses;
     mySuperClasses = new ArrayList<>(superClasses.size());
+  }
+
+  public void setGroup(ChildGroup group) {
     myGroup = group;
   }
 
@@ -60,7 +65,8 @@ public class ConcreteClassReferable extends ConcreteLocatedReferable implements 
 
   protected void resolve() {
     if (!myResolved) {
-      resolve(CachingScope.make(myGroup.getGroupScope()));
+      ChildGroup parent = myGroup.getParentGroup();
+      resolve(CachingScope.make(parent == null ? ScopeFactory.forGroup(myGroup, EmptyModuleScopeProvider.INSTANCE) : LexicalScope.insideOf(myGroup, parent.getGroupScope(), true)));
       myResolved = true;
     }
   }
