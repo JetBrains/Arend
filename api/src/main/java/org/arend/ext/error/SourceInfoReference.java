@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 
 public class SourceInfoReference implements SourceInfo, ArendRef, DataContainer {
   private final SourceInfo sourceInfo;
+  private String module;
+  private String position;
 
   public SourceInfoReference(SourceInfo sourceInfo) {
     this.sourceInfo = sourceInfo;
@@ -18,23 +20,37 @@ public class SourceInfoReference implements SourceInfo, ArendRef, DataContainer 
 
   @Override
   public String moduleTextRepresentation() {
-    return sourceInfo.moduleTextRepresentation();
+    if (module != null) {
+      return module;
+    }
+    module = sourceInfo.moduleTextRepresentation();
+    if (module == null) {
+      module = "";
+    }
+    return module;
   }
 
   @Override
   public String positionTextRepresentation() {
-    return sourceInfo.positionTextRepresentation();
+    if (position != null) {
+      return position;
+    }
+    position = sourceInfo.positionTextRepresentation();
+    if (position == null) {
+      position = "";
+    }
+    return position;
   }
 
   @NotNull
   @Override
   public String getRefName() {
-    String module = sourceInfo.moduleTextRepresentation();
-    String position = sourceInfo.positionTextRepresentation();
-    if (module == null) {
-      return position == null ? "" : position;
+    String module = moduleTextRepresentation();
+    String position = positionTextRepresentation();
+    if (module.isEmpty()) {
+      return position.isEmpty() ? "" : position;
     } else {
-      return position == null ? module : module + ":" + position;
+      return position.isEmpty() ? module : module + ":" + position;
     }
   }
 }
