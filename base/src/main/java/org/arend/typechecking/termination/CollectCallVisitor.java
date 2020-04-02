@@ -81,6 +81,10 @@ public class CollectCallVisitor extends ProcessDefCallsVisitor<Void> {
             ConstructorExpressionPattern conPattern = (ConstructorExpressionPattern) pattern2;
 
             List<? extends Expression> exprArguments = conPattern.getMatchingExpressionArguments(expr1, false);
+            for (ExpressionPattern arg : conPattern.getSubPatterns()) {
+                if (isLess(expr1, arg) != BaseCallMatrix.R.Unknown) return BaseCallMatrix.R.LessThan;
+            }
+
             if (exprArguments != null) {
                 List<? extends ExpressionPattern> cpSubpatterns = conPattern.getSubPatterns();
                 for (int i = 0; i < Math.min(exprArguments.size(), cpSubpatterns.size()); i++) {
@@ -92,9 +96,6 @@ public class CollectCallVisitor extends ProcessDefCallsVisitor<Void> {
                 return BaseCallMatrix.R.Unknown;
             }
 
-            for (ExpressionPattern arg : conPattern.getSubPatterns()) {
-                if (isLess(expr1, arg) != BaseCallMatrix.R.Unknown) return BaseCallMatrix.R.LessThan;
-            }
             return BaseCallMatrix.R.Unknown;
         } else if (pattern2 instanceof BindingPattern) {
             DependentLink binding2 = ((BindingPattern) pattern2).getBinding();

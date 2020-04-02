@@ -201,6 +201,12 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void test_200() {
+    typeCheckModule("\\data List (A : \\Type) \n  | nil \n  | cons A (List A)\n\n" +
+            "\\func f (xs : List Nat) : Nat \n  | nil => 0 \n  | cons _ nil => 1 \n  | cons _ (cons x xs) => f (cons x xs)", 0);
+  }
+
+  @Test
   public void test34() {
     TestVertex ack = new TestVertex("ack", "x", "y");
     Set<BaseCallMatrix<TestVertex>> cms = new HashSet<>();
