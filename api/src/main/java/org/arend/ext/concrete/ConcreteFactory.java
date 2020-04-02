@@ -24,12 +24,16 @@ public interface ConcreteFactory {
   @NotNull ConcreteExpression hole();
   @NotNull ConcreteExpression goal(@Nullable String name, @Nullable ConcreteExpression expression);
   @NotNull ConcreteExpression tuple(@NotNull ConcreteExpression... expressions);
+  @NotNull ConcreteExpression tuple(@NotNull Collection<? extends ConcreteExpression> expressions);
   @NotNull ConcreteExpression sigma(@NotNull ConcreteParameter... parameters);
+  @NotNull ConcreteExpression sigma(@NotNull Collection<? extends ConcreteParameter> parameters);
   @NotNull ConcreteExpression caseExpr(boolean isSCase, Collection<? extends ConcreteCaseArgument> arguments, @Nullable ConcreteExpression resultType, @Nullable ConcreteExpression resultTypeLevel, @NotNull ConcreteClause... clauses);
+  @NotNull ConcreteExpression caseExpr(boolean isSCase, Collection<? extends ConcreteCaseArgument> arguments, @Nullable ConcreteExpression resultType, @Nullable ConcreteExpression resultTypeLevel, @NotNull Collection<? extends ConcreteClause> clauses);
   @NotNull ConcreteExpression eval(@NotNull ConcreteExpression expression);
   @NotNull ConcreteExpression peval(@NotNull ConcreteExpression expression);
   @NotNull ConcreteExpression proj(@NotNull ConcreteExpression expression, int field);
   @NotNull ConcreteExpression classExt(@NotNull ConcreteExpression expression, @NotNull ConcreteClassElement... elements);
+  @NotNull ConcreteExpression classExt(@NotNull ConcreteExpression expression, @NotNull Collection<? extends ConcreteClassElement> elements);
   @NotNull ConcreteExpression newExpr(@NotNull ConcreteExpression expression);
   @NotNull ConcreteExpression letExpr(boolean isStrict, @NotNull Collection<? extends ConcreteLetClause> clauses, @NotNull ConcreteExpression expression);
   @NotNull ConcreteExpression number(@NotNull BigInteger number);
@@ -37,6 +41,7 @@ public interface ConcreteFactory {
   @NotNull ConcreteExpression typed(@NotNull ConcreteExpression expression, @NotNull ConcreteExpression type);
   @NotNull ConcreteExpression app(@NotNull ConcreteExpression function, @NotNull Collection<? extends ConcreteArgument> arguments);
   @NotNull ConcreteExpression app(@NotNull ConcreteExpression function, boolean isExplicit, @NotNull Collection<? extends ConcreteExpression> arguments);
+  @NotNull ConcreteArgument arg(@NotNull ConcreteExpression expression, boolean isExplicit);
   @NotNull ConcreteAppBuilder appBuilder(@NotNull ConcreteExpression function);
 
   @NotNull ArendRef local(@NotNull String name);
@@ -47,15 +52,19 @@ public interface ConcreteFactory {
   @NotNull ConcreteLetClause letClause(@NotNull ConcreteSinglePattern pattern, @Nullable ConcreteExpression type, @NotNull ConcreteExpression term);
   @NotNull ConcreteSinglePattern singlePatternRef(@Nullable ArendRef ref, @Nullable ConcreteExpression type);
   @NotNull ConcreteSinglePattern singlePatternConstructor(@NotNull ConcreteSinglePattern... subpatterns);
+  @NotNull ConcreteSinglePattern singlePatternConstructor(@NotNull Collection<? extends ConcreteSinglePattern> subpatterns);
 
-  @NotNull ConcreteClassElement implementation(@NotNull ArendRef field, @Nullable ConcreteExpression expression, ConcreteClassElement... subclauses);
+  @NotNull ConcreteClassElement implementation(@NotNull ArendRef field, @Nullable ConcreteExpression expression, @NotNull ConcreteClassElement... subclauses);
+  @NotNull ConcreteClassElement implementation(@NotNull ArendRef field, @Nullable ConcreteExpression expression, @NotNull Collection<? extends ConcreteClassElement> subclauses);
 
   @NotNull ConcreteCaseArgument caseArg(@NotNull ConcreteExpression expression, @Nullable ArendRef asRef, @Nullable ConcreteExpression type);
   @NotNull ConcreteClause clause(@NotNull Collection<? extends ConcretePattern> patterns, @Nullable ConcreteExpression expression);
   @NotNull ConcretePattern refPattern(@Nullable ArendRef ref, @Nullable ConcreteExpression type);
   @NotNull ConcretePattern tuplePattern(@NotNull ConcretePattern... subpatterns);
+  @NotNull ConcretePattern tuplePattern(@NotNull Collection<? extends ConcretePattern> subpatterns);
   @NotNull ConcretePattern numberPattern(int number);
   @NotNull ConcretePattern conPattern(@NotNull ArendRef constructor, @NotNull ConcretePattern... subpatterns);
+  @NotNull ConcretePattern conPattern(@NotNull ArendRef constructor, @NotNull Collection<? extends ConcretePattern> subpatterns);
 
   @NotNull ConcreteLevel inf();
   @NotNull ConcreteLevel lp();

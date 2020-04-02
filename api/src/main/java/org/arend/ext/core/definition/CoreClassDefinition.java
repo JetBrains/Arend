@@ -6,12 +6,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 public interface CoreClassDefinition extends CoreDefinition {
   @NotNull Set<? extends CoreClassDefinition> getSuperClasses();
-  @NotNull Collection<? extends CoreClassField> getPersonalFields();
+  @NotNull List<? extends CoreClassField> getPersonalFields();
   @NotNull Collection<? extends Map.Entry<? extends CoreClassField, ? extends CoreAbsExpression>> getImplemented();
   @NotNull Collection<? extends Map.Entry<? extends CoreClassField, ? extends CoreAbsExpression>> getOverriddenFields();
   @NotNull CoreSort getSort();

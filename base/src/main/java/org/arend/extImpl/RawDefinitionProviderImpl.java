@@ -28,10 +28,10 @@ public class RawDefinitionProviderImpl extends Disableable implements RawDefinit
   public <T extends CoreDefinition> T getDefinition(@NotNull RawRef ref, Class<T> clazz) {
     checkEnabled();
     Concrete.ReferableDefinition def = ref instanceof GlobalReferable ? myTypechecking.getConcreteProvider().getConcrete((GlobalReferable) ref) : null;
-    if (!(def instanceof Concrete.Definition)) {
-      throw new IllegalArgumentException("Expected a global definition");
+    if (def == null) {
+      throw new IllegalArgumentException("Cannot find definition '" + ref.getRefName() + "'");
     }
-    myTypechecking.typecheckDefinitions(Collections.singletonList((Concrete.Definition) def), null);
+    myTypechecking.typecheckDefinitions(Collections.singletonList(def.getRelatedDefinition()), null);
     Definition result = myTypechecking.getTypecheckerState().getTypechecked(def.getData());
     if (!clazz.isInstance(result)) {
       throw new IllegalArgumentException(result == null ? "Cannot find definition '" + ref.getRefName() + "'" : "Cannot cast '" + result.getClass() + "' to '" + clazz + "'");

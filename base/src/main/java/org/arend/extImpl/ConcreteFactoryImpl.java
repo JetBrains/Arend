@@ -143,15 +143,30 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     return new Concrete.TupleExpression(myData, fields);
   }
 
+  @Override
+  public @NotNull ConcreteExpression tuple(@NotNull Collection<? extends ConcreteExpression> expressions) {
+    List<Concrete.Expression> fields = new ArrayList<>(expressions.size());
+    for (ConcreteExpression expression : expressions) {
+      if (!(expression instanceof Concrete.Expression)) {
+        throw new IllegalArgumentException();
+      }
+      fields.add((Concrete.Expression) expression);
+    }
+    return new Concrete.TupleExpression(myData, fields);
+  }
+
   @NotNull
   @Override
   public ConcreteExpression sigma(@NotNull ConcreteParameter... parameters) {
     return new Concrete.SigmaExpression(myData, typeParameters(Arrays.asList(parameters)));
   }
 
-  @NotNull
   @Override
-  public ConcreteExpression caseExpr(boolean isSCase, Collection<? extends ConcreteCaseArgument> arguments, @Nullable ConcreteExpression resultType, @Nullable ConcreteExpression resultTypeLevel, @NotNull ConcreteClause... clauses) {
+  public @NotNull ConcreteExpression sigma(@NotNull Collection<? extends ConcreteParameter> parameters) {
+    return new Concrete.SigmaExpression(myData, typeParameters(new ArrayList<>(parameters)));
+  }
+
+  private ConcreteExpression caseExprC(boolean isSCase, Collection<? extends ConcreteCaseArgument> arguments, @Nullable ConcreteExpression resultType, @Nullable ConcreteExpression resultTypeLevel, @NotNull List<Concrete.FunctionClause> clauses) {
     if (!((resultType == null || resultType instanceof Concrete.Expression) && (resultTypeLevel == null || resultTypeLevel instanceof Concrete.Expression))) {
       throw new IllegalArgumentException();
     }
@@ -162,6 +177,12 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
       }
       cArgs.add((Concrete.CaseArgument) argument);
     }
+    return new Concrete.CaseExpression(myData, isSCase, cArgs, (Concrete.Expression) resultType, (Concrete.Expression) resultTypeLevel, clauses);
+  }
+
+  @NotNull
+  @Override
+  public ConcreteExpression caseExpr(boolean isSCase, Collection<? extends ConcreteCaseArgument> arguments, @Nullable ConcreteExpression resultType, @Nullable ConcreteExpression resultTypeLevel, @NotNull ConcreteClause... clauses) {
     List<Concrete.FunctionClause> cClauses = new ArrayList<>(clauses.length);
     for (ConcreteClause clause : clauses) {
       if (!(clause instanceof Concrete.Clause)) {
@@ -172,7 +193,22 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
       }
       cClauses.add((Concrete.FunctionClause) clause);
     }
-    return new Concrete.CaseExpression(myData, isSCase, cArgs, (Concrete.Expression) resultType, (Concrete.Expression) resultTypeLevel, cClauses);
+    return caseExprC(isSCase, arguments, resultType, resultTypeLevel, cClauses);
+  }
+
+  @Override
+  public @NotNull ConcreteExpression caseExpr(boolean isSCase, Collection<? extends ConcreteCaseArgument> arguments, @Nullable ConcreteExpression resultType, @Nullable ConcreteExpression resultTypeLevel, @NotNull Collection<? extends ConcreteClause> clauses) {
+    List<Concrete.FunctionClause> cClauses = new ArrayList<>(clauses.size());
+    for (ConcreteClause clause : clauses) {
+      if (!(clause instanceof Concrete.Clause)) {
+        throw new IllegalArgumentException();
+      }
+      if (!(clause instanceof Concrete.FunctionClause)) {
+        throw new IllegalArgumentException("Expected a function clause");
+      }
+      cClauses.add((Concrete.FunctionClause) clause);
+    }
+    return caseExprC(isSCase, arguments, resultType, resultTypeLevel, cClauses);
   }
 
   @NotNull
@@ -216,9 +252,31 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     return result;
   }
 
+  private List<Concrete.ClassFieldImpl> classFieldImpls(Collection<? extends ConcreteClassElement> elements) {
+    List<Concrete.ClassFieldImpl> result = new ArrayList<>(elements.size());
+    for (ConcreteClassElement element : elements) {
+      if (!(element instanceof Concrete.ClassElement)) {
+        throw new IllegalArgumentException();
+      }
+      if (!(element instanceof Concrete.ClassFieldImpl)) {
+        throw new IllegalArgumentException("Expected a field implementation");
+      }
+      result.add((Concrete.ClassFieldImpl) element);
+    }
+    return result;
+  }
+
   @NotNull
   @Override
   public ConcreteExpression classExt(@NotNull ConcreteExpression expression, @NotNull ConcreteClassElement... elements) {
+    if (!(expression instanceof Concrete.Expression)) {
+      throw new IllegalArgumentException();
+    }
+    return Concrete.ClassExtExpression.make(myData, (Concrete.Expression) expression, classFieldImpls(elements));
+  }
+
+  @Override
+  public @NotNull ConcreteExpression classExt(@NotNull ConcreteExpression expression, @NotNull Collection<? extends ConcreteClassElement> elements) {
     if (!(expression instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }
@@ -310,6 +368,14 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
   }
 
   @Override
+  public @NotNull ConcreteArgument arg(@NotNull ConcreteExpression expression, boolean isExplicit) {
+    if (!(expression instanceof Concrete.Expression)) {
+      throw new IllegalArgumentException();
+    }
+    return new Concrete.Argument((Concrete.Expression) expression, isExplicit);
+  }
+
+  @Override
   public @NotNull ConcreteAppBuilder appBuilder(@NotNull ConcreteExpression function) {
     if (!(function instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
@@ -391,9 +457,29 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     return new Concrete.LetClausePattern(myData, cPatterns);
   }
 
+  @Override
+  public @NotNull ConcreteSinglePattern singlePatternConstructor(@NotNull Collection<? extends ConcreteSinglePattern> subpatterns) {
+    List<Concrete.LetClausePattern> cPatterns = new ArrayList<>(subpatterns.size());
+    for (ConcreteSinglePattern subpattern : subpatterns) {
+      if (!(subpattern instanceof Concrete.LetClausePattern)) {
+        throw new IllegalArgumentException();
+      }
+      cPatterns.add((Concrete.LetClausePattern) subpattern);
+    }
+    return new Concrete.LetClausePattern(myData, cPatterns);
+  }
+
   @NotNull
   @Override
-  public ConcreteClassElement implementation(@NotNull ArendRef field, @Nullable ConcreteExpression expression, ConcreteClassElement... subclauses) {
+  public ConcreteClassElement implementation(@NotNull ArendRef field, @Nullable ConcreteExpression expression, @NotNull ConcreteClassElement... subclauses) {
+    if (!(field instanceof Referable && (expression == null || expression instanceof Concrete.Expression))) {
+      throw new IllegalArgumentException();
+    }
+    return new Concrete.ClassFieldImpl(myData, (Referable) field, (Concrete.Expression) expression, classFieldImpls(subclauses));
+  }
+
+  @Override
+  public @NotNull ConcreteClassElement implementation(@NotNull ArendRef field, @Nullable ConcreteExpression expression, @NotNull Collection<? extends ConcreteClassElement> subclauses) {
     if (!(field instanceof Referable && (expression == null || expression instanceof Concrete.Expression))) {
       throw new IllegalArgumentException();
     }
@@ -444,6 +530,11 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     return new Concrete.TuplePattern(myData, true, patterns(Arrays.asList(subpatterns)), new ArrayList<>(1));
   }
 
+  @Override
+  public @NotNull ConcretePattern tuplePattern(@NotNull Collection<? extends ConcretePattern> subpatterns) {
+    return new Concrete.TuplePattern(myData, true, patterns(subpatterns), new ArrayList<>(1));
+  }
+
   @NotNull
   @Override
   public ConcretePattern numberPattern(int number) {
@@ -459,6 +550,14 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
       throw new IllegalArgumentException();
     }
     return new Concrete.ConstructorPattern(myData, true, (Referable) constructor, patterns(Arrays.asList(subpatterns)), new ArrayList<>(1));
+  }
+
+  @Override
+  public @NotNull ConcretePattern conPattern(@NotNull ArendRef constructor, @NotNull Collection<? extends ConcretePattern> subpatterns) {
+    if (!(constructor instanceof Referable)) {
+      throw new IllegalArgumentException();
+    }
+    return new Concrete.ConstructorPattern(myData, true, (Referable) constructor, patterns(subpatterns), new ArrayList<>(1));
   }
 
   @NotNull
