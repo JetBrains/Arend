@@ -539,7 +539,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
   @Override
   public ConcretePattern numberPattern(int number) {
     if (number > Concrete.NumberPattern.MAX_VALUE) number = Concrete.NumberPattern.MAX_VALUE;
-    if (number < Concrete.NumberPattern.MAX_VALUE) number = -Concrete.NumberPattern.MAX_VALUE;
+    if (number < -Concrete.NumberPattern.MAX_VALUE) number = -Concrete.NumberPattern.MAX_VALUE;
     return new Concrete.NumberPattern(myData, number, new ArrayList<>(1));
   }
 
