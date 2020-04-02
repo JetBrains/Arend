@@ -20,7 +20,7 @@ public interface ExpressionTypechecker {
   @NotNull ErrorReporter getErrorReporter();
   @Nullable CheckedExpression typecheck(@NotNull ConcreteExpression expression, @Nullable CheckedExpression expectedType);
   @Nullable CheckedExpression check(@NotNull CoreExpression expression, @NotNull ConcreteSourceNode sourceNode);
-  @Nullable CheckedExpression defer(@NotNull MetaDefinition meta, @NotNull ContextData contextData, @NotNull CoreExpression type, @NotNull Stage stage);
+  @Nullable CheckedExpression defer(@NotNull MetaDefinition meta, @NotNull ContextData contextData, @NotNull CheckedExpression type, @NotNull Stage stage);
   boolean compare(@NotNull CoreExpression expr1, @NotNull CoreExpression expr2, @NotNull CMP cmp, @Nullable ConcreteExpression marker, boolean allowEquations, boolean normalize);
   <T> T withErrorReporter(@NotNull ErrorReporter errorReporter, Function<ExpressionTypechecker, T> action);
   @Nullable ConcreteExpression findInstance(@NotNull CoreClassDefinition classDefinition, @Nullable CoreExpression classifyingExpression, @NotNull ConcreteSourceNode sourceNode);

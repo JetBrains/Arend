@@ -1843,18 +1843,20 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
 
   @Nullable
   @Override
-  public CheckedExpression defer(@NotNull MetaDefinition meta, @NotNull ContextData contextData, @NotNull CoreExpression type, @NotNull Stage stage) {
+  public CheckedExpression defer(@NotNull MetaDefinition meta, @NotNull ContextData contextData, @NotNull CheckedExpression type, @NotNull Stage stage) {
     if (meta instanceof BaseMetaDefinition && !((BaseMetaDefinition) meta).checkContextData(contextData, errorReporter)) {
       return null;
     }
     ConcreteReferenceExpression refExpr = contextData.getReferenceExpression();
-    if (!(contextData instanceof ContextDataImpl && refExpr instanceof Concrete.ReferenceExpression && type instanceof Expression)) {
+    if (!(refExpr instanceof Concrete.ReferenceExpression && type instanceof TypecheckingResult)) {
       throw new IllegalArgumentException();
     }
-    ((ContextDataImpl) contextData).setExpectedType((Expression) type);
-    InferenceReferenceExpression inferenceExpr = new InferenceReferenceExpression(new MetaInferenceVariable((Expression) type, meta, (Concrete.ReferenceExpression) refExpr, getAllBindings()));
-    (stage == Stage.BEFORE_SOLVER ? myDeferredMetasBeforeSolver : stage == Stage.BEFORE_LEVELS ? myDeferredMetasBeforeLevels : myDeferredMetasAfterLevels).add(new DeferredMeta(meta, new LinkedHashSet<>(myFreeBindings), new LinkedHashMap<>(context), (ContextDataImpl) contextData, inferenceExpr));
-    return new TypecheckingResult(inferenceExpr, (Expression) type);
+
+    Expression expectedType = ((TypecheckingResult) type).expression;
+    ContextDataImpl contextDataImpl = new ContextDataImpl((Concrete.ReferenceExpression) refExpr, contextData.getArguments(), expectedType);
+    InferenceReferenceExpression inferenceExpr = new InferenceReferenceExpression(new MetaInferenceVariable(expectedType, meta, (Concrete.ReferenceExpression) refExpr, getAllBindings()));
+    (stage == Stage.BEFORE_SOLVER ? myDeferredMetasBeforeSolver : stage == Stage.BEFORE_LEVELS ? myDeferredMetasBeforeLevels : myDeferredMetasAfterLevels).add(new DeferredMeta(meta, new LinkedHashSet<>(myFreeBindings), new LinkedHashMap<>(context), contextDataImpl, inferenceExpr));
+    return new TypecheckingResult(inferenceExpr, expectedType);
   }
 
   private void fixCheckedExpression(TypecheckingResult result, Referable referable, Concrete.SourceNode sourceNode) {
