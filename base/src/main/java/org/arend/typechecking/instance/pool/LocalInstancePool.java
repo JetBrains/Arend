@@ -9,8 +9,10 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.error.TypeMismatchError;
 import org.arend.ext.error.TypecheckingError;
+import org.arend.naming.reference.CoreReferable;
 import org.arend.naming.reference.TCClassReferable;
 import org.arend.term.concrete.Concrete;
+import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 
 import java.util.ArrayList;
@@ -41,26 +43,37 @@ public class LocalInstancePool implements InstancePool {
   }
 
   @Override
-  public Expression getInstance(Expression classifyingExpression, Expression expectedType, TCClassReferable classRef, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveData) {
+  public TypecheckingResult getInstance(Expression classifyingExpression, Expression expectedType, TCClassReferable classRef, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveData) {
     Expression result = getInstance(classifyingExpression, classRef);
-    if (result == null || expectedType == null) {
-      return result;
+    if (result == null) {
+      return null;
+    }
+    if (expectedType == null) {
+      return new TypecheckingResult(result, null);
     }
 
     Expression actualType = result.getType();
     if (actualType == null) {
       TypecheckingError error = new TypecheckingError("Cannot infer the type of the instance", sourceNode);
       myTypechecker.getErrorReporter().report(error);
-      return new ErrorExpression(error);
+      ErrorExpression errorExpr = new ErrorExpression(error);
+      return new TypecheckingResult(errorExpr, errorExpr);
     }
 
     if (!CompareVisitor.compare(myTypechecker.getEquations(), CMP.LE, actualType, expectedType, Type.OMEGA, sourceNode)) {
       TypecheckingError error = new TypeMismatchError(expectedType, actualType, sourceNode);
       myTypechecker.getErrorReporter().report(error);
-      return new ErrorExpression(error);
+      ErrorExpression errorExpr = new ErrorExpression(error);
+      return new TypecheckingResult(errorExpr, errorExpr);
     }
 
-    return result;
+    return new TypecheckingResult(result, actualType);
+  }
+
+  @Override
+  public Concrete.Expression getInstance(Expression classifyingExpression, TCClassReferable classRef, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveData) {
+    Expression result = getInstance(classifyingExpression, classRef);
+    return result == null ? null : new Concrete.ReferenceExpression(sourceNode, new CoreReferable("I", new TypecheckingResult(result, null)));
   }
 
   @Override

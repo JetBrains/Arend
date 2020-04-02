@@ -14,6 +14,7 @@ import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.instance.provider.InstanceProvider;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
+import org.arend.util.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,9 +54,9 @@ public class GlobalInstancePool implements InstancePool {
   }
 
   @Override
-  public Expression getInstance(Expression classifyingExpression, Expression expectedType, TCClassReferable classRef, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveHoleExpression) {
+  public TypecheckingResult getInstance(Expression classifyingExpression, Expression expectedType, TCClassReferable classRef, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveHoleExpression) {
     if (myInstancePool != null) {
-      Expression result = myInstancePool.getInstance(classifyingExpression, expectedType, classRef, sourceNode, recursiveHoleExpression);
+      TypecheckingResult result = myInstancePool.getInstance(classifyingExpression, expectedType, classRef, sourceNode, recursiveHoleExpression);
       if (result != null) {
         return result;
       }
@@ -65,9 +66,47 @@ public class GlobalInstancePool implements InstancePool {
       return null;
     }
 
+    Pair<Concrete.Expression, ClassDefinition> pair = getInstanceX(classifyingExpression, classRef, sourceNode, recursiveHoleExpression);
+    if (pair == null) {
+      return null;
+    }
+
+    if (expectedType == null) {
+      ClassCallExpression classCall = classifyingExpression == null ? null : new ClassCallExpression(pair.proj2, Sort.generateInferVars(myCheckTypeVisitor.getEquations(), pair.proj2.getUniverseKind(), sourceNode));
+      if (classCall != null) {
+        myCheckTypeVisitor.fixClassExtSort(classCall, sourceNode);
+        expectedType = classCall;
+      }
+    }
+    TypecheckingResult result = myCheckTypeVisitor.checkExpr(pair.proj1, expectedType);
+    if (result == null) {
+      ErrorExpression errorExpr = new ErrorExpression();
+      return new TypecheckingResult(errorExpr, errorExpr);
+    }
+    return result;
+  }
+
+  @Override
+  public Concrete.Expression getInstance(Expression classifyingExpression, TCClassReferable classRef, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveHoleExpression) {
+    if (myInstancePool != null) {
+      Concrete.Expression result = myInstancePool.getInstance(classifyingExpression, classRef, sourceNode, recursiveHoleExpression);
+      if (result != null) {
+        return result;
+      }
+    }
+
+    if (myInstanceProvider == null) {
+      return null;
+    }
+
+    Pair<Concrete.Expression, ClassDefinition> pair = getInstanceX(classifyingExpression, classRef, sourceNode, recursiveHoleExpression);
+    return pair == null ? null : pair.proj1;
+  }
+
+  private Pair<Concrete.Expression, ClassDefinition> getInstanceX(Expression classifyingExpression, TCClassReferable classRef, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveHoleExpression) {
     ClassField classifyingField;
     Expression normClassifyingExpression = classifyingExpression;
-    if (normClassifyingExpression != null) {
+    if (classifyingExpression != null) {
       normClassifyingExpression = normClassifyingExpression.normalize(NormalizationMode.WHNF).getUnderlyingExpression();
       while (normClassifyingExpression instanceof LamExpression) {
         normClassifyingExpression = ((LamExpression) normClassifyingExpression).getBody().getUnderlyingExpression();
@@ -112,10 +151,10 @@ public class GlobalInstancePool implements InstancePool {
         }
         return
           instanceClassifyingExpr instanceof UniverseExpression && finalClassifyingExpression instanceof UniverseExpression ||
-          instanceClassifyingExpr instanceof SigmaExpression && finalClassifyingExpression instanceof SigmaExpression ||
-          instanceClassifyingExpr instanceof IntegerExpression && (finalClassifyingExpression instanceof IntegerExpression && ((IntegerExpression) instanceClassifyingExpr).isEqual((IntegerExpression) finalClassifyingExpression) ||
-            finalClassifyingExpression instanceof ConCallExpression && ((IntegerExpression) instanceClassifyingExpr).match(((ConCallExpression) finalClassifyingExpression).getDefinition())) ||
-          instanceClassifyingExpr instanceof DefCallExpression && finalClassifyingExpression instanceof DefCallExpression && ((DefCallExpression) instanceClassifyingExpr).getDefinition() == ((DefCallExpression) finalClassifyingExpression).getDefinition();
+            instanceClassifyingExpr instanceof SigmaExpression && finalClassifyingExpression instanceof SigmaExpression ||
+            instanceClassifyingExpr instanceof IntegerExpression && (finalClassifyingExpression instanceof IntegerExpression && ((IntegerExpression) instanceClassifyingExpr).isEqual((IntegerExpression) finalClassifyingExpression) ||
+              finalClassifyingExpression instanceof ConCallExpression && ((IntegerExpression) instanceClassifyingExpr).match(((ConCallExpression) finalClassifyingExpression).getDefinition())) ||
+            instanceClassifyingExpr instanceof DefCallExpression && finalClassifyingExpression instanceof DefCallExpression && ((DefCallExpression) instanceClassifyingExpr).getDefinition() == ((DefCallExpression) finalClassifyingExpression).getDefinition();
       }
     }
 
@@ -136,15 +175,7 @@ public class GlobalInstancePool implements InstancePool {
       instanceExpr = Concrete.AppExpression.make(sourceNode.getData(), instanceExpr, new RecursiveInstanceHoleExpression(recursiveHoleExpression == null ? sourceNode : recursiveHoleExpression.getData(), newRecursiveData), link.isExplicit());
     }
 
-    if (expectedType == null) {
-      ClassCallExpression classCall = classifyingField == null ? null : new ClassCallExpression(classDef, Sort.generateInferVars(myCheckTypeVisitor.getEquations(), classDef.getUniverseKind(), sourceNode));
-      if (classCall != null) {
-        myCheckTypeVisitor.fixClassExtSort(classCall, sourceNode);
-        expectedType = classCall;
-      }
-    }
-    TypecheckingResult result = myCheckTypeVisitor.checkExpr(instanceExpr, expectedType);
-    return result == null ? new ErrorExpression() : result.expression;
+    return new Pair<>(instanceExpr, classDef);
   }
 
   @Override

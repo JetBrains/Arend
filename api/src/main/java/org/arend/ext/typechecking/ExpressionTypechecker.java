@@ -1,6 +1,7 @@
 package org.arend.ext.typechecking;
 
 import org.arend.ext.core.context.CoreBinding;
+import org.arend.ext.core.definition.CoreClassDefinition;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.concrete.ConcreteSourceNode;
@@ -22,4 +23,6 @@ public interface ExpressionTypechecker {
   @Nullable CheckedExpression defer(@NotNull MetaDefinition meta, @NotNull ContextData contextData, @NotNull CoreExpression type, @NotNull Stage stage);
   boolean compare(@NotNull CoreExpression expr1, @NotNull CoreExpression expr2, @NotNull CMP cmp, @Nullable ConcreteExpression marker, boolean allowEquations, boolean normalize);
   <T> T withErrorReporter(@NotNull ErrorReporter errorReporter, Function<ExpressionTypechecker, T> action);
+  @Nullable ConcreteExpression findInstance(@NotNull CoreClassDefinition classDefinition, @Nullable CoreExpression classifyingExpression, @NotNull ConcreteSourceNode sourceNode);
+  @Nullable CheckedExpression findInstance(@NotNull CoreClassDefinition classDefinition, @Nullable CoreExpression classifyingExpression, @Nullable CheckedExpression expectedType, @NotNull ConcreteSourceNode sourceNode);
 }

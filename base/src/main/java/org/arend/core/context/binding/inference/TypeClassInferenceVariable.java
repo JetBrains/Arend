@@ -8,6 +8,7 @@ import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.inference.InstanceInferenceError;
 import org.arend.typechecking.instance.pool.InstancePool;
 import org.arend.typechecking.instance.pool.RecursiveInstanceHoleExpression;
+import org.arend.typechecking.result.TypecheckingResult;
 
 import java.util.Set;
 
@@ -39,10 +40,10 @@ public class TypeClassInferenceVariable extends InferenceVariable {
   }
 
   public Expression getInstance(InstancePool pool, Expression classifyingExpression, Expression expectedType, Concrete.SourceNode sourceNode) {
-    Expression result = (myOnlyLocal ? pool.getLocalInstancePool() : pool).getInstance(classifyingExpression, expectedType, myClassRef, sourceNode, myRecursiveInstanceHoleExpression);
+    TypecheckingResult result = (myOnlyLocal ? pool.getLocalInstancePool() : pool).getInstance(classifyingExpression, expectedType, myClassRef, sourceNode, myRecursiveInstanceHoleExpression);
     if (result == null && myClassifyingExpression == null) {
       myClassifyingExpression = classifyingExpression;
     }
-    return result;
+    return result == null ? null : result.expression;
   }
 }

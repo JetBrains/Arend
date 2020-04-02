@@ -26,6 +26,7 @@ import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.concrete.expr.ConcreteReferenceExpression;
 import org.arend.ext.core.context.CoreBinding;
+import org.arend.ext.core.definition.CoreClassDefinition;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.core.ops.CMP;
@@ -747,22 +748,25 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
 
     // Expression type = FieldCallExpression.make(field, fieldSetClass.getSortArgument(), new ReferenceExpression(fieldSetClass.getThisBinding())).getType();
     if (implBody instanceof Concrete.HoleExpression && field.getReferable().isParameterField() && !field.getReferable().isExplicitField() && field.isTypeClass() && type instanceof ClassCallExpression && !((ClassCallExpression) type).getDefinition().isRecord()) {
-      Expression result;
+      TypecheckingResult result;
       ClassDefinition classDef = ((ClassCallExpression) type).getDefinition();
       RecursiveInstanceHoleExpression holeExpr = implBody instanceof RecursiveInstanceHoleExpression ? (RecursiveInstanceHoleExpression) implBody : null;
       if (classDef.getClassifyingField() == null) {
-        Expression instance = myInstancePool.getInstance(null, type, classDef.getReferable(), implBody, holeExpr);
+        TypecheckingResult instance = myInstancePool.getInstance(null, type, classDef.getReferable(), implBody, holeExpr);
         if (instance == null) {
           ArgInferenceError error = new InstanceInferenceError(classDef.getReferable(), implBody, holeExpr, new Expression[0]);
           errorReporter.report(error);
-          result = new ErrorExpression(error);
+          result = new TypecheckingResult(new ErrorExpression(error), type);
         } else {
           result = instance;
+          if (result.type == null) {
+            result.type = type;
+          }
         }
       } else {
-        result = new InferenceReferenceExpression(new TypeClassInferenceVariable(field.getName(), type, classDef.getReferable(), false, implBody, holeExpr, getAllBindings()), myEquations);
+        result = new TypecheckingResult(new InferenceReferenceExpression(new TypeClassInferenceVariable(field.getName(), type, classDef.getReferable(), false, implBody, holeExpr, getAllBindings()), myEquations), type);
       }
-      return new TypecheckingResult(result, type);
+      return result;
     }
 
     TypecheckingResult result = fieldSetClass.getDefinition().isGoodField(field) ? checkArgument(implBody, type, null) : checkExpr(implBody, type);
@@ -1968,6 +1972,22 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       this.errorReporter = originalErrorReport;
       myStatus = originalStatus;
     }
+  }
+
+  @Override
+  public @Nullable ConcreteExpression findInstance(@NotNull CoreClassDefinition classDefinition, @Nullable CoreExpression classifyingExpression, @NotNull ConcreteSourceNode sourceNode) {
+    if (!(classDefinition instanceof ClassDefinition && classifyingExpression instanceof Expression && sourceNode instanceof Concrete.SourceNode)) {
+      throw new IllegalArgumentException();
+    }
+    return myInstancePool.getInstance((Expression) classifyingExpression, ((ClassDefinition) classDefinition).getReferable(), (Concrete.SourceNode) sourceNode, null);
+  }
+
+  @Override
+  public @Nullable CheckedExpression findInstance(@NotNull CoreClassDefinition classDefinition, @Nullable CoreExpression classifyingExpression, @Nullable CheckedExpression expectedType, @NotNull ConcreteSourceNode sourceNode) {
+    if (!(classDefinition instanceof ClassDefinition && classifyingExpression instanceof Expression && (expectedType == null || expectedType instanceof TypecheckingResult) && sourceNode instanceof Concrete.SourceNode)) {
+      throw new IllegalArgumentException();
+    }
+    return myInstancePool.getInstance((Expression) classifyingExpression, expectedType == null ? null : ((TypecheckingResult) expectedType).expression, ((ClassDefinition) classDefinition).getReferable(), (Concrete.SourceNode) sourceNode, null);
   }
 
   @Override

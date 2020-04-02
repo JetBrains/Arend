@@ -95,11 +95,14 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
             // If the class does not have a classifying field, infer instance immediately
             if (classDef.getClassifyingField() == null) {
               InstancePool instancePool = kind == Definition.TypeClassParameterKind.ONLY_LOCAL ? myVisitor.getInstancePool().getLocalInstancePool() : myVisitor.getInstancePool();
-              Expression instance = instancePool.getInstance(null, defCallResult.getParameter().getTypeExpr(), classRef, expr, holeExpr);
-              if (instance == null) {
+              TypecheckingResult instanceResult = instancePool.getInstance(null, defCallResult.getParameter().getTypeExpr(), classRef, expr, holeExpr);
+              Expression instance;
+              if (instanceResult == null) {
                 ArgInferenceError error = new InstanceInferenceError(classRef, expr, holeExpr, new Expression[0]);
                 myVisitor.getErrorReporter().report(error);
                 instance = new ErrorExpression(error);
+              } else {
+                instance = instanceResult.expression;
               }
               result = result.applyExpression(instance, defCallResult.getParameter().isExplicit(), myVisitor.getErrorReporter(), expr);
               substitution.add(parameter, instance);
