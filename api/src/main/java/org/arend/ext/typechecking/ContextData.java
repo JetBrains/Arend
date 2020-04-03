@@ -12,5 +12,4 @@ public interface ContextData {
   @NotNull List<? extends ConcreteArgument> getArguments();
   void setArguments(@NotNull List<? extends ConcreteArgument> arguments);
   CoreExpression getExpectedType();
-  CheckedExpression getCheckedExpectedType();
 }

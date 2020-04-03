@@ -7,5 +7,5 @@ public interface CoreNewExpression extends CoreExpression {
   @Nullable CoreExpression getRenewExpression();
   @NotNull CoreClassCallExpression getClassCall();
 
-  @NotNull @Override CoreClassCallExpression getType();
+  @Override @NotNull CoreClassCallExpression computeType();
 }

@@ -6,7 +6,7 @@ import org.arend.ext.concrete.expr.ConcreteCaseArgument;
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.reference.ArendRef;
 import org.arend.ext.reference.Precedence;
-import org.arend.ext.typechecking.CheckedExpression;
+import org.arend.ext.typechecking.TypedExpression;
 import org.arend.ext.typechecking.MetaDefinition;
 import org.arend.naming.reference.CoreReferable;
 import org.arend.naming.reference.LocalReferable;
@@ -47,7 +47,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
 
   @NotNull
   @Override
-  public ConcreteExpression core(String name, @NotNull CheckedExpression expr) {
+  public ConcreteExpression core(String name, @NotNull TypedExpression expr) {
     return new Concrete.ReferenceExpression(myData, new CoreReferable(name, TypecheckingResult.fromChecked(Objects.requireNonNull(expr))), null, null);
   }
 

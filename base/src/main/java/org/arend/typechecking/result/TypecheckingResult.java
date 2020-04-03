@@ -10,7 +10,7 @@ import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.TypecheckingError;
-import org.arend.ext.typechecking.CheckedExpression;
+import org.arend.ext.typechecking.TypedExpression;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.jetbrains.annotations.NotNull;
@@ -18,7 +18,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TypecheckingResult implements TResult, CheckedExpression {
+public class TypecheckingResult implements TResult, TypedExpression {
   public Expression expression;
   public Expression type;
 
@@ -27,7 +27,7 @@ public class TypecheckingResult implements TResult, CheckedExpression {
     this.type = type;
   }
 
-  public static TypecheckingResult fromChecked(CheckedExpression expression) {
+  public static TypecheckingResult fromChecked(TypedExpression expression) {
     if (!(expression == null || expression instanceof TypecheckingResult)) {
       throw new IllegalStateException("CheckedExpression must be TypecheckingResult");
     }

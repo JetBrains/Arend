@@ -5,7 +5,7 @@ import org.jetbrains.annotations.Nullable;
 
 public interface MetaDefinition {
   @Nullable
-  default CheckedExpression invoke(@NotNull ExpressionTypechecker typechecker, @NotNull ContextData contextData) {
+  default TypedExpression invoke(@NotNull ExpressionTypechecker typechecker, @NotNull ContextData contextData) {
     return null;
   }
 }

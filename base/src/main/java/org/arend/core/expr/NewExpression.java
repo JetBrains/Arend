@@ -112,4 +112,9 @@ public class NewExpression extends Expression implements CoreNewExpression {
     }
     return new ClassCallExpression(myClassCall.getDefinition(), myClassCall.getSortArgument(), implementations, Sort.PROP, UniverseKind.NO_UNIVERSES);
   }
+
+  @Override
+  public @NotNull ClassCallExpression computeType() {
+    return getType();
+  }
 }

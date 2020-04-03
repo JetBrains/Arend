@@ -4,7 +4,6 @@ import org.arend.core.expr.Expression;
 import org.arend.ext.concrete.expr.ConcreteArgument;
 import org.arend.ext.typechecking.ContextData;
 import org.arend.term.concrete.Concrete;
-import org.arend.typechecking.result.TypecheckingResult;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -44,10 +43,5 @@ public class ContextDataImpl implements ContextData {
 
   public void setExpectedType(Expression expectedType) {
     myExpectedType = expectedType;
-  }
-
-  @Override
-  public TypecheckingResult getCheckedExpectedType() {
-    return new TypecheckingResult(myExpectedType, null);
   }
 }

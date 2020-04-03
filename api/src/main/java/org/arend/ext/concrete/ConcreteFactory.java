@@ -4,7 +4,7 @@ import org.arend.ext.concrete.expr.ConcreteArgument;
 import org.arend.ext.concrete.expr.ConcreteCaseArgument;
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.reference.ArendRef;
-import org.arend.ext.typechecking.CheckedExpression;
+import org.arend.ext.typechecking.TypedExpression;
 import org.arend.ext.typechecking.MetaDefinition;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -15,7 +15,7 @@ import java.util.Collection;
 public interface ConcreteFactory {
   @NotNull ConcreteExpression ref(@NotNull ArendRef ref);
   @NotNull ConcreteExpression ref(@NotNull ArendRef ref, @Nullable ConcreteLevel pLevel, @Nullable ConcreteLevel hLevel);
-  @NotNull ConcreteExpression core(String name, @NotNull CheckedExpression expr);
+  @NotNull ConcreteExpression core(String name, @NotNull TypedExpression expr);
   @NotNull ConcreteExpression meta(String name, @NotNull MetaDefinition meta);
   @NotNull ConcreteExpression thisExpr();
   @NotNull ConcreteExpression lam(@NotNull Collection<? extends ConcreteParameter> parameters, @NotNull ConcreteExpression body);

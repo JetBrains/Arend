@@ -3,6 +3,7 @@ package org.arend.ext.typechecking;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.definition.CoreClassDefinition;
 import org.arend.ext.core.expr.CoreExpression;
+import org.arend.ext.core.expr.UncheckedExpression;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.concrete.expr.ConcreteExpression;
@@ -18,11 +19,11 @@ public interface ExpressionTypechecker {
 
   @NotNull List<CoreBinding> getFreeBindingsList();
   @NotNull ErrorReporter getErrorReporter();
-  @Nullable CheckedExpression typecheck(@NotNull ConcreteExpression expression, @Nullable CheckedExpression expectedType);
-  @Nullable CheckedExpression check(@NotNull CoreExpression expression, @NotNull ConcreteSourceNode sourceNode);
-  @Nullable CheckedExpression defer(@NotNull MetaDefinition meta, @NotNull ContextData contextData, @NotNull CheckedExpression type, @NotNull Stage stage);
-  boolean compare(@NotNull CoreExpression expr1, @NotNull CoreExpression expr2, @NotNull CMP cmp, @Nullable ConcreteExpression marker, boolean allowEquations, boolean normalize);
+  @Nullable TypedExpression typecheck(@NotNull ConcreteExpression expression, @Nullable CoreExpression expectedType);
+  @Nullable TypedExpression check(@NotNull UncheckedExpression expression, @NotNull ConcreteSourceNode sourceNode);
+  @Nullable TypedExpression defer(@NotNull MetaDefinition meta, @NotNull ContextData contextData, @NotNull CoreExpression type, @NotNull Stage stage);
+  boolean compare(@NotNull UncheckedExpression expr1, @NotNull UncheckedExpression expr2, @NotNull CMP cmp, @Nullable ConcreteExpression marker, boolean allowEquations, boolean normalize);
   <T> T withErrorReporter(@NotNull ErrorReporter errorReporter, Function<ExpressionTypechecker, T> action);
-  @Nullable ConcreteExpression findInstance(@NotNull CoreClassDefinition classDefinition, @Nullable CoreExpression classifyingExpression, @NotNull ConcreteSourceNode sourceNode);
-  @Nullable CheckedExpression findInstance(@NotNull CoreClassDefinition classDefinition, @Nullable CoreExpression classifyingExpression, @Nullable CheckedExpression expectedType, @NotNull ConcreteSourceNode sourceNode);
+  @Nullable ConcreteExpression findInstance(@NotNull CoreClassDefinition classDefinition, @Nullable UncheckedExpression classifyingExpression, @NotNull ConcreteSourceNode sourceNode);
+  @Nullable TypedExpression findInstance(@NotNull CoreClassDefinition classDefinition, @Nullable UncheckedExpression classifyingExpression, @Nullable CoreExpression expectedType, @NotNull ConcreteSourceNode sourceNode);
 }

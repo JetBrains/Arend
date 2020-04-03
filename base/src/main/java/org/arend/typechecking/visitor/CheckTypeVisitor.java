@@ -29,12 +29,14 @@ import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.definition.CoreClassDefinition;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.expr.CoreExpression;
+import org.arend.ext.core.expr.UncheckedExpression;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.*;
 import org.arend.ext.prettyprinting.doc.DocFactory;
 import org.arend.ext.typechecking.*;
 import org.arend.extImpl.ContextDataImpl;
+import org.arend.extImpl.UncheckedExpressionImpl;
 import org.arend.naming.reference.*;
 import org.arend.naming.renamer.Renamer;
 import org.arend.prelude.Prelude;
@@ -229,10 +231,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
   }
 
   @Override
-  public boolean compare(@NotNull CoreExpression expr1, @NotNull CoreExpression expr2, @NotNull CMP cmp, @Nullable ConcreteExpression marker, boolean allowEquations, boolean normalize) {
-    if (!(expr1 instanceof Expression && expr2 instanceof Expression)) {
-      throw new IllegalArgumentException();
-    }
+  public boolean compare(@NotNull UncheckedExpression expr1, @NotNull UncheckedExpression expr2, @NotNull CMP cmp, @Nullable ConcreteExpression marker, boolean allowEquations, boolean normalize) {
     CompareVisitor visitor = new CompareVisitor(myEquations, cmp, marker instanceof Concrete.SourceNode ? (Concrete.SourceNode) marker : null);
     if (!allowEquations) {
       visitor.doNotAllowEquations();
@@ -240,7 +239,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     if (!normalize) {
       visitor.doNotNormalize();
     }
-    return visitor.compare((Expression) expr1, (Expression) expr2, null);
+    return visitor.compare(UncheckedExpressionImpl.extract(expr1), UncheckedExpressionImpl.extract(expr2), null);
   }
 
   public TypecheckingResult checkResult(Expression expectedType, TypecheckingResult result, Concrete.Expression expr) {
@@ -325,12 +324,12 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
 
   @Nullable
   @Override
-  public TypecheckingResult typecheck(@NotNull ConcreteExpression expression, @Nullable CheckedExpression expectedType) {
-    if (!(expression instanceof Concrete.Expression && (expectedType == null || expectedType instanceof TypecheckingResult))) {
+  public TypecheckingResult typecheck(@NotNull ConcreteExpression expression, @Nullable CoreExpression expectedType) {
+    if (!(expression instanceof Concrete.Expression && (expectedType == null || expectedType instanceof Expression))) {
       throw new IllegalArgumentException();
     }
     Concrete.Expression expr = DesugarVisitor.desugar((Concrete.Expression) expression, errorReporter);
-    Expression type = expectedType == null ? null : ((TypecheckingResult) expectedType).expression;
+    Expression type = expectedType == null ? null : (Expression) expectedType;
     TypecheckingResult result = checkExpr(expr, type);
     if (result == null || result.expression.isError()) {
       if (result == null) {
@@ -343,12 +342,12 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
 
   @Nullable
   @Override
-  public TypecheckingResult check(@NotNull CoreExpression expression, @NotNull ConcreteSourceNode sourceNode) {
-    if (!(expression instanceof Expression && sourceNode instanceof Concrete.SourceNode)) {
+  public TypecheckingResult check(@NotNull UncheckedExpression expression, @NotNull ConcreteSourceNode sourceNode) {
+    if (!(sourceNode instanceof Concrete.SourceNode)) {
       throw new IllegalArgumentException();
     }
 
-    Expression expr = (Expression) expression;
+    Expression expr = UncheckedExpressionImpl.extract(expression);
     try {
       return new TypecheckingResult(expr, expr.accept(new CoreExpressionChecker(getAllBindings(), myEquations, (Concrete.SourceNode) sourceNode), null));
     } catch (CoreException e) {
@@ -429,7 +428,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       }
 
       Concrete.ReferenceExpression refExpr = deferredMeta.contextData.getReferenceExpression();
-      TypecheckingResult result = TypecheckingResult.fromChecked(deferredMeta.meta.invoke(checkTypeVisitor, deferredMeta.contextData));
+      TypecheckingResult result = checkTypeVisitor.invokeMeta(deferredMeta.meta, deferredMeta.contextData);
       fixCheckedExpression(result, refExpr.getReferent(), refExpr);
       if (result != null) {
         result = checkTypeVisitor.checkResult(type, result, refExpr);
@@ -1854,16 +1853,16 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
 
   @Nullable
   @Override
-  public CheckedExpression defer(@NotNull MetaDefinition meta, @NotNull ContextData contextData, @NotNull CheckedExpression type, @NotNull Stage stage) {
+  public TypedExpression defer(@NotNull MetaDefinition meta, @NotNull ContextData contextData, @NotNull CoreExpression type, @NotNull Stage stage) {
     if (meta instanceof BaseMetaDefinition && !((BaseMetaDefinition) meta).checkContextData(contextData, errorReporter)) {
       return null;
     }
     ConcreteReferenceExpression refExpr = contextData.getReferenceExpression();
-    if (!(refExpr instanceof Concrete.ReferenceExpression && type instanceof TypecheckingResult)) {
+    if (!(refExpr instanceof Concrete.ReferenceExpression && type instanceof Expression)) {
       throw new IllegalArgumentException();
     }
 
-    Expression expectedType = ((TypecheckingResult) type).expression;
+    Expression expectedType = (Expression) type;
     ContextDataImpl contextDataImpl = new ContextDataImpl((Concrete.ReferenceExpression) refExpr, contextData.getArguments(), expectedType);
     InferenceReferenceExpression inferenceExpr = new InferenceReferenceExpression(new MetaInferenceVariable(expectedType, meta, (Concrete.ReferenceExpression) refExpr, getAllBindings()));
     (stage == Stage.BEFORE_SOLVER ? myDeferredMetasBeforeSolver : stage == Stage.BEFORE_LEVELS ? myDeferredMetasBeforeLevels : myDeferredMetasAfterLevels).add(new DeferredMeta(meta, new LinkedHashSet<>(myFreeBindings), new LinkedHashMap<>(context), contextDataImpl, inferenceExpr));
@@ -1883,6 +1882,19 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     }
   }
 
+  private TypecheckingResult invokeMeta(MetaDefinition meta, ContextData contextData) {
+    try {
+      return TypecheckingResult.fromChecked(meta.invoke(this, contextData));
+    } catch (MetaException e) {
+      if (e.error.cause == null) {
+        e.error.cause = contextData.getReferenceExpression();
+      }
+      errorReporter.report(e.error);
+      ErrorExpression expr = new ErrorExpression(e.error);
+      return new TypecheckingResult(expr, expr);
+    }
+  }
+
   private TypecheckingResult checkMeta(Concrete.ReferenceExpression refExpr, List<Concrete.Argument> arguments, Expression expectedType) {
     MetaDefinition meta = ((MetaReferable) refExpr.getReferent()).getDefinition();
     if (meta == null) {
@@ -1896,7 +1908,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
 
     CountingErrorReporter countingErrorReporter = new CountingErrorReporter(GeneralError.Level.ERROR);
     errorReporter = new CompositeErrorReporter(errorReporter, countingErrorReporter);
-    TypecheckingResult result = TypecheckingResult.fromChecked(meta.invoke(this, contextData));
+    TypecheckingResult result = invokeMeta(meta, contextData);
     fixCheckedExpression(result, refExpr.getReferent(), refExpr);
     errorReporter = ((CompositeErrorReporter) errorReporter).getErrorReporters().get(0);
     if (result != null) {
@@ -1986,19 +1998,19 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
   }
 
   @Override
-  public @Nullable ConcreteExpression findInstance(@NotNull CoreClassDefinition classDefinition, @Nullable CoreExpression classifyingExpression, @NotNull ConcreteSourceNode sourceNode) {
-    if (!(classDefinition instanceof ClassDefinition && classifyingExpression instanceof Expression && sourceNode instanceof Concrete.SourceNode)) {
+  public @Nullable ConcreteExpression findInstance(@NotNull CoreClassDefinition classDefinition, @Nullable UncheckedExpression classifyingExpression, @NotNull ConcreteSourceNode sourceNode) {
+    if (!(classDefinition instanceof ClassDefinition && sourceNode instanceof Concrete.SourceNode)) {
       throw new IllegalArgumentException();
     }
-    return myInstancePool.getInstance((Expression) classifyingExpression, ((ClassDefinition) classDefinition).getReferable(), (Concrete.SourceNode) sourceNode, null);
+    return myInstancePool.getInstance(UncheckedExpressionImpl.extract(classifyingExpression), ((ClassDefinition) classDefinition).getReferable(), (Concrete.SourceNode) sourceNode, null);
   }
 
   @Override
-  public @Nullable CheckedExpression findInstance(@NotNull CoreClassDefinition classDefinition, @Nullable CoreExpression classifyingExpression, @Nullable CheckedExpression expectedType, @NotNull ConcreteSourceNode sourceNode) {
-    if (!(classDefinition instanceof ClassDefinition && classifyingExpression instanceof Expression && (expectedType == null || expectedType instanceof TypecheckingResult) && sourceNode instanceof Concrete.SourceNode)) {
+  public @Nullable TypedExpression findInstance(@NotNull CoreClassDefinition classDefinition, @Nullable UncheckedExpression classifyingExpression, @Nullable CoreExpression expectedType, @NotNull ConcreteSourceNode sourceNode) {
+    if (!(classDefinition instanceof ClassDefinition && (expectedType == null || expectedType instanceof Expression) && sourceNode instanceof Concrete.SourceNode)) {
       throw new IllegalArgumentException();
     }
-    return myInstancePool.getInstance((Expression) classifyingExpression, expectedType == null ? null : ((TypecheckingResult) expectedType).expression, ((ClassDefinition) classDefinition).getReferable(), (Concrete.SourceNode) sourceNode, null);
+    return myInstancePool.getInstance(UncheckedExpressionImpl.extract(classifyingExpression), expectedType == null ? null : (Expression) expectedType, ((ClassDefinition) classDefinition).getReferable(), (Concrete.SourceNode) sourceNode, null);
   }
 
   @Override

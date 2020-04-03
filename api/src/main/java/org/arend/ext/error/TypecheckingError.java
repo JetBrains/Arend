@@ -5,7 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class TypecheckingError extends LocalError {
-  public final ConcreteSourceNode cause;
+  public ConcreteSourceNode cause;
 
   public TypecheckingError(@NotNull Level level, @NotNull String message, @Nullable ConcreteSourceNode cause) {
     super(level, message);

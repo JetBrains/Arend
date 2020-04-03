@@ -18,7 +18,7 @@ public class DeferredMetaDefinition extends BaseMetaDefinition {
   }
 
   @Override
-  public @Nullable CheckedExpression invoke(@NotNull ExpressionTypechecker typechecker, @NotNull ContextData contextData) {
-    return typechecker.defer(deferredMeta, contextData, contextData.getCheckedExpectedType(), stage);
+  public @Nullable TypedExpression invoke(@NotNull ExpressionTypechecker typechecker, @NotNull ContextData contextData) {
+    return typechecker.defer(deferredMeta, contextData, contextData.getExpectedType(), stage);
   }
 }

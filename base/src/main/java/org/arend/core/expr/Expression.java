@@ -16,18 +16,25 @@ import org.arend.core.subst.SubstVisitor;
 import org.arend.error.IncorrectExpressionException;
 import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.core.expr.CoreExpression;
+import org.arend.ext.core.expr.UncheckedExpression;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.ExpressionMapper;
 import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.ext.error.MetaException;
+import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.ext.prettyprinting.doc.DocFactory;
 import org.arend.ext.reference.Precedence;
+import org.arend.ext.typechecking.TypedExpression;
+import org.arend.extImpl.UncheckedExpressionImpl;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
+import org.arend.typechecking.error.local.TypeComputationError;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.implicitargs.equations.Equations;
+import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -101,9 +108,22 @@ public abstract class Expression implements Body, CoreExpression {
     }
   }
 
-  @Override
   public Expression getType() {
     return getType(true);
+  }
+
+  @Override
+  public @NotNull Expression computeType() {
+    Expression type = getType(true);
+    if (type == null) {
+      throw new MetaException(new TypeComputationError(null, this, null));
+    }
+    return type;
+  }
+
+  @Override
+  public @NotNull TypedExpression computeTyped() {
+    return new TypecheckingResult(this, computeType());
   }
 
   public boolean findBinding(Variable binding) {
@@ -158,16 +178,16 @@ public abstract class Expression implements Body, CoreExpression {
 
   @Nullable
   @Override
-  public CoreExpression replaceSubexpressions(@NotNull ExpressionMapper mapper) {
+  public UncheckedExpressionImpl replaceSubexpressions(@NotNull ExpressionMapper mapper) {
     try {
-      return accept(new RecreateExpressionVisitor(mapper), null);
+      return new UncheckedExpressionImpl(accept(new RecreateExpressionVisitor(mapper), null));
     } catch (SubstVisitor.SubstException e) {
       return null;
     }
   }
 
   @Override
-  public @NotNull Expression substitute(@NotNull Map<? extends CoreParameter, ? extends CoreExpression> map) {
+  public @NotNull UncheckedExpression substitute(@NotNull Map<? extends CoreParameter, ? extends CoreExpression> map) {
     if (map.isEmpty()) {
       return this;
     }
@@ -178,7 +198,7 @@ public abstract class Expression implements Body, CoreExpression {
       }
       substitution.add((Variable) entry.getKey(), (Expression) entry.getValue());
     }
-    return accept(new SubstVisitor(substitution, LevelSubstitution.EMPTY), null);
+    return new UncheckedExpressionImpl(accept(new SubstVisitor(substitution, LevelSubstitution.EMPTY), null));
   }
 
   public static boolean compare(Expression expr1, Expression expr2, Expression type, CMP cmp) {
@@ -186,8 +206,8 @@ public abstract class Expression implements Body, CoreExpression {
   }
 
   @Override
-  public boolean compare(@NotNull CoreExpression expr2, @NotNull CMP cmp) {
-    return expr2 instanceof Expression && CompareVisitor.compare(DummyEquations.getInstance(), cmp, this, (Expression) expr2, null, null);
+  public boolean compare(@NotNull UncheckedExpression expr2, @NotNull CMP cmp) {
+    return CompareVisitor.compare(DummyEquations.getInstance(), cmp, this, UncheckedExpressionImpl.extract(expr2), null, null);
   }
 
   @Nullable
