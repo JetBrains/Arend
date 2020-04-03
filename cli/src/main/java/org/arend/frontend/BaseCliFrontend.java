@@ -231,12 +231,20 @@ public abstract class BaseCliFrontend {
       requestedLibraries.add(new FileSourceLibrary("\\default", sourceDir, outDir, extDir, extMainClass, requestedModules, argFiles.isEmpty(), libraryDependencies, Range.unbound(), myTypecheckerState));
     }
 
-    // Load and typecheck libraries
     if (requestedLibraries.isEmpty()) {
-      System.out.println("Nothing to load");
-      return cmdLine;
+      Path path = Paths.get(FileUtils.LIBRARY_CONFIG_FILE);
+      if (Files.isRegularFile(path)) {
+        UnmodifiableSourceLibrary library = myLibraryResolver.registerLibrary(path.toAbsolutePath());
+        if (library != null) {
+          requestedLibraries.add(library);
+        }
+      } else {
+        System.out.println("Nothing to load");
+        return cmdLine;
+      }
     }
 
+    // Load and typecheck libraries
     MyTypechecking typechecking = new MyTypechecking();
     boolean recompile = cmdLine.hasOption("recompile");
     boolean doubleCheck = cmdLine.hasOption("double-check");
