@@ -360,12 +360,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
   }
 
   public TypecheckingResult checkExpr(Concrete.Expression expr, Expression expectedType) {
-    if (expr == null) {
-      assert false;
-      errorReporter.report(new LocalError(GeneralError.Level.ERROR, "Incomplete expression"));
-      return null;
-    }
-
     try {
       return expr.accept(this, expectedType);
     } catch (IncorrectExpressionException e) {
