@@ -75,13 +75,13 @@ import static org.arend.typechecking.error.local.inference.ArgInferenceError.exp
 
 public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, TypecheckingResult>, ConcreteLevelExpressionVisitor<LevelVariable, Level>, ExpressionTypechecker {
   private Set<Binding> myFreeBindings;
-  private Definition.TypeCheckingStatus myStatus = Definition.TypeCheckingStatus.NO_ERRORS;
   private final Equations myEquations;
   private GlobalInstancePool myInstancePool;
   private final ImplicitArgsInference myArgsInference;
   protected final TypecheckerState state;
   protected Map<Referable, Binding> context;
   protected ErrorReporter errorReporter;
+  private final MyErrorReporter myErrorReporter;
   private TypecheckingListener myListener = TypecheckingListener.DEFAULT;
   private final List<ClassCallExpression.ClassCallBinding> myClassCallBindings = new ArrayList<>();
   private final List<DeferredMeta> myDeferredMetasBeforeSolver = new ArrayList<>();
@@ -104,8 +104,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     }
   }
 
-  private class MyErrorReporter implements ErrorReporter {
+  private static class MyErrorReporter implements ErrorReporter {
     private final ErrorReporter myErrorReporter;
+    private Definition.TypeCheckingStatus myStatus = Definition.TypeCheckingStatus.NO_ERRORS;
 
     private MyErrorReporter(ErrorReporter errorReporter) {
       myErrorReporter = errorReporter;
@@ -123,12 +124,13 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
   }
 
   public void setStatus(Definition.TypeCheckingStatus status) {
-    myStatus = myStatus.max(status);
+    myErrorReporter.myStatus = myErrorReporter.myStatus.max(status);
   }
 
   private CheckTypeVisitor(TypecheckerState state, Set<Binding> freeBindings, Map<Referable, Binding> localContext, ErrorReporter errorReporter, GlobalInstancePool pool) {
     myFreeBindings = freeBindings;
-    this.errorReporter = new MyErrorReporter(errorReporter);
+    myErrorReporter = new MyErrorReporter(errorReporter);
+    this.errorReporter = myErrorReporter;
     myEquations = new TwoStageEquations(this);
     myInstancePool = pool;
     myArgsInference = new StdImplicitArgsInference(this);
@@ -215,7 +217,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
   }
 
   public Definition.TypeCheckingStatus getStatus() {
-    return myStatus;
+    return myErrorReporter.myStatus;
   }
 
   public TypecheckingListener getListener() {
@@ -1975,13 +1977,11 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
   @Override
   public <T> T withErrorReporter(@NotNull ErrorReporter errorReporter, Function<ExpressionTypechecker, T> action) {
     ErrorReporter originalErrorReport = this.errorReporter;
-    Definition.TypeCheckingStatus originalStatus = myStatus;
     this.errorReporter = errorReporter;
     try {
       return action.apply(this);
     } finally {
       this.errorReporter = originalErrorReport;
-      myStatus = originalStatus;
     }
   }
 
@@ -2007,12 +2007,10 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     TypecheckingResult exprResult = null;
     if (expr.getExpression() != null) {
       ErrorReporter errorReporter = this.errorReporter;
-      Definition.TypeCheckingStatus status = myStatus;
       errors = new ArrayList<>();
       this.errorReporter = new ListErrorReporter(errors);
       exprResult = checkExpr(expr.getExpression(), expectedType);
       this.errorReporter = errorReporter;
-      myStatus = status;
     }
 
     GoalError error = new GoalError(expr.getName(), context, expectedType, exprResult == null ? null : exprResult.type, errors, expr);
