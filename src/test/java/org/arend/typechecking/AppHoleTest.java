@@ -50,6 +50,18 @@ public class AppHoleTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void inPi() {
+    checkAsLam("Nat -> \\Set0", "\\Pi (A : 1 = __) -> Nat");
+    checkAsLam("\\Set0 -> \\Set1", "\\Pi (A : __) -> Nat");
+  }
+
+  @Test
+  public void inSigma() {
+    checkAsLam("Nat -> \\Set0", "\\Sigma (A : 1 = __) Nat");
+    checkAsLam("\\Set0 -> \\Set1", "\\Sigma (A : __) Nat");
+  }
+
+  @Test
   public void inCase() {
     checkAsLam("Nat -> Nat -> Nat",
         "\\case __, 666 Nat.+ __ \\return Nat \\with {\n" +
@@ -64,13 +76,14 @@ public class AppHoleTest extends TypeCheckingTestCase {
 
   @Test
   public void inTuple() {
-    Expression ty = typeCheckExpr("(\\Sigma ((\\Sigma Nat Nat) -> Nat) ((\\Sigma Nat Nat) -> Nat))", null).expression;
+    Expression ty = typeCheckExpr(
+        "(\\Sigma ((\\Sigma Nat Nat) -> Nat) ((\\Sigma Nat Nat) -> Nat))", null).expression;
     Expression result = typeCheckExpr("(__.1, __.2)", ty).expression;
     assertTrue(result instanceof TupleExpression);
     TupleExpression tuple = (TupleExpression) result;
     assertEquals(2, tuple.getFields().size());
-    assertTrue(tuple.getFields().get(0) instanceof LamExpression);
-    assertTrue(tuple.getFields().get(1) instanceof LamExpression);
+    for (Expression field : tuple.getFields())
+      assertTrue(field instanceof LamExpression);
   }
 
   @Test
