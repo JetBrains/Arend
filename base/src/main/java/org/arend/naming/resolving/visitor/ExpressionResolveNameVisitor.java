@@ -520,20 +520,18 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     return super.visitApplyHole(expr, params);
   }
 
-  private static LocalReferable createAppHoleRef(List<Concrete.Parameter> parameters, Object data) {
+  private static Concrete.ReferenceExpression createAppHoleRef(List<Concrete.Parameter> parameters, Object data) {
     LocalReferable ref = new LocalReferable("p" + parameters.size());
     parameters.add(new Concrete.NameParameter(data, true, ref));
-    return ref;
+    return new Concrete.ReferenceExpression(data, ref);
   }
 
   private void convertBinOpAppHoles(Concrete.BinOpSequenceExpression expr, List<Concrete.Parameter> parameters) {
     boolean isLastElemInfix = true;
     for (Concrete.BinOpSequenceElem elem : expr.getSequence()) {
-      if (elem.expression instanceof Concrete.ApplyHoleExpression) {
-        Object data = elem.expression.getData();
-        LocalReferable ref = createAppHoleRef(parameters, data);
-        elem.expression = new Concrete.ReferenceExpression(data, ref);
-      } else if (isLastElemInfix) convertRecursively(elem.expression, parameters);
+      if (elem.expression instanceof Concrete.ApplyHoleExpression)
+        elem.expression = createAppHoleRef(parameters, elem.expression.getData());
+      else if (isLastElemInfix) convertRecursively(elem.expression, parameters);
       else if (elem.expression instanceof Concrete.ProjExpression)
         elem.expression = visitProj((Concrete.ProjExpression) elem.expression, null);
       else if (elem.expression instanceof Concrete.CaseExpression)
@@ -567,43 +565,31 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
 
   private static void convertAppHoles(Concrete.AppExpression expr, List<Concrete.Parameter> parameters) {
     Concrete.Expression originalFunc = expr.getFunction();
-    if (originalFunc instanceof Concrete.ApplyHoleExpression) {
-      Object data = originalFunc.getData();
-      LocalReferable ref = createAppHoleRef(parameters, data);
-      expr.setFunction(new Concrete.ReferenceExpression(data, ref));
-    }
+    if (originalFunc instanceof Concrete.ApplyHoleExpression)
+      expr.setFunction(createAppHoleRef(parameters, originalFunc.getData()));
     for (Concrete.Argument argument : expr.getArguments())
-      if (argument.expression instanceof Concrete.ApplyHoleExpression) {
-        Object data = argument.expression.getData();
-        LocalReferable ref = createAppHoleRef(parameters, data);
-        argument.expression = new Concrete.ReferenceExpression(data, ref);
-      }
+      if (argument.expression instanceof Concrete.ApplyHoleExpression)
+        argument.expression = createAppHoleRef(parameters, argument.expression.getData());
   }
 
   private static void convertProjAppHoles(Concrete.ProjExpression proj, List<Concrete.Parameter> parameters) {
-    if (!(proj.expression instanceof Concrete.ApplyHoleExpression)) return;
-    Object data = proj.expression.getData();
-    LocalReferable ref = createAppHoleRef(parameters, data);
-    proj.expression = new Concrete.ReferenceExpression(data, ref);
+    if (proj.expression instanceof Concrete.ApplyHoleExpression)
+      proj.expression = createAppHoleRef(parameters, proj.expression.getData());
   }
 
   private void convertCaseAppHoles(Concrete.CaseExpression expr, List<Concrete.Parameter> parameters) {
     for (Concrete.CaseArgument argument : expr.getArguments())
-      if (argument.expression instanceof Concrete.ApplyHoleExpression) {
-        Object data = argument.expression.getData();
-        LocalReferable ref = createAppHoleRef(parameters, data);
-        argument.expression = new Concrete.ReferenceExpression(data, ref);
-      } else convertRecursively(argument.expression, parameters);
+      if (argument.expression instanceof Concrete.ApplyHoleExpression)
+        argument.expression = createAppHoleRef(parameters, argument.expression.getData());
+      else convertRecursively(argument.expression, parameters);
   }
 
   private void convertPiAppHoles(Concrete.PiExpression expr, List<Concrete.Parameter> parameters) {
     for (Concrete.TypeParameter parameter : expr.getParameters())
       convertParameterAppHoles(parameter, parameters);
-    if (expr.codomain instanceof Concrete.ApplyHoleExpression) {
-      Object data = expr.codomain.getData();
-      LocalReferable ref = createAppHoleRef(parameters, data);
-      expr.codomain = new Concrete.ReferenceExpression(data, ref);
-    } else convertRecursively(expr.codomain, parameters);
+    if (expr.codomain instanceof Concrete.ApplyHoleExpression)
+      expr.codomain = createAppHoleRef(parameters, expr.codomain.getData());
+    else convertRecursively(expr.codomain, parameters);
   }
 
   private void convertSigmaAppHoles(Concrete.SigmaExpression expr, List<Concrete.Parameter> parameters) {
@@ -612,10 +598,8 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   }
 
   private void convertParameterAppHoles(Concrete.TypeParameter parameter, List<Concrete.Parameter> parameters) {
-    if (parameter.type instanceof Concrete.ApplyHoleExpression) {
-      Object data = parameter.type.getData();
-      LocalReferable ref = createAppHoleRef(parameters, data);
-      parameter.type = new Concrete.ReferenceExpression(data, ref);
-    } else convertRecursively(parameter.type, parameters);
+    if (parameter.type instanceof Concrete.ApplyHoleExpression)
+      parameter.type = createAppHoleRef(parameters, parameter.type.getData());
+    else convertRecursively(parameter.type, parameters);
   }
 }
