@@ -327,13 +327,14 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     if (!(expression instanceof Concrete.Expression && (expectedType == null || expectedType instanceof TypecheckingResult))) {
       throw new IllegalArgumentException();
     }
+    Concrete.Expression expr = DesugarVisitor.desugar((Concrete.Expression) expression, errorReporter);
     Expression type = expectedType == null ? null : ((TypecheckingResult) expectedType).expression;
-    TypecheckingResult result = checkExpr((Concrete.Expression) expression, type);
+    TypecheckingResult result = checkExpr(expr, type);
     if (result == null || result.expression.isError()) {
       if (result == null) {
         result = new TypecheckingResult(null, type == null ? new ErrorExpression() : type);
       }
-      result.expression = new ErrorWithConcreteExpression((Concrete.Expression) expression);
+      result.expression = new ErrorWithConcreteExpression(expr);
     }
     return result;
   }

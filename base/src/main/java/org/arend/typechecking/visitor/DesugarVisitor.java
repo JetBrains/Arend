@@ -31,6 +31,10 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
     definition.setDesugarized();
   }
 
+  public static Concrete.Expression desugar(Concrete.Expression expression, ErrorReporter errorReporter) {
+    return expression.accept(new DesugarVisitor(EmptyConcreteProvider.INSTANCE, errorReporter), null);
+  }
+
   public static void desugarPatterns(List<Concrete.Pattern> patterns, ErrorReporter errorReporter) {
     new DesugarVisitor(EmptyConcreteProvider.INSTANCE, errorReporter).visitPatterns(patterns);
   }
