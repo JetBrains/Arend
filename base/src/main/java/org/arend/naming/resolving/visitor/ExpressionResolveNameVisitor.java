@@ -3,6 +3,8 @@ package org.arend.naming.resolving.visitor;
 import org.arend.core.context.Utils;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
+import org.arend.ext.error.LocalError;
+import org.arend.ext.error.TypecheckingError;
 import org.arend.naming.BinOpParser;
 import org.arend.naming.error.DuplicateNameError;
 import org.arend.naming.error.NamingError;
@@ -13,7 +15,6 @@ import org.arend.term.Fixity;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.ExpectedConstructorError;
-import org.arend.ext.error.LocalError;
 import org.arend.typechecking.provider.ConcreteProvider;
 
 import java.util.*;
@@ -187,6 +188,10 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
 
   @Override
   public Concrete.Expression visitCase(Concrete.CaseExpression expr, Void params) {
+    List<Concrete.Parameter> parameters = new ArrayList<>();
+    convertCaseAppHoles(expr, parameters);
+    if (!parameters.isEmpty())
+      return new Concrete.LamExpression(expr.getData(), parameters, expr).accept(this, null);
     Set<Referable> eliminatedRefs = new HashSet<>();
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       for (Concrete.CaseArgument caseArg : expr.getArguments()) {
@@ -226,6 +231,10 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
 
   @Override
   public Concrete.Expression visitBinOpSequence(Concrete.BinOpSequenceExpression expr, Void params) {
+    List<Concrete.Parameter> parameters = new ArrayList<>();
+    convertBinOpAppHoles(expr, parameters);
+    if (!parameters.isEmpty())
+      return new Concrete.LamExpression(expr.getData(), parameters, expr).accept(this, null);
     Concrete.Expression result = super.visitBinOpSequence(expr, null);
     return result instanceof Concrete.BinOpSequenceExpression ? new BinOpParser(myErrorReporter).parse((Concrete.BinOpSequenceExpression) result) : result;
   }
@@ -486,5 +495,76 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       expr.expression = expr.expression.accept(this, null);
       return expr;
     }
+  }
+
+  @Override
+  public Concrete.Expression visitProj(Concrete.ProjExpression expr, Void params) {
+    if (expr.expression instanceof Concrete.ApplyHoleExpression) {
+      List<Concrete.Parameter> parameters = new ArrayList<>(1);
+      convertProjAppHoles(expr, parameters);
+      return new Concrete.LamExpression(expr.expression.getData(), parameters, expr).accept(this, null);
+    } else return super.visitProj(expr, params);
+  }
+
+  @Override
+  public Concrete.Expression visitApplyHole(Concrete.ApplyHoleExpression expr, Void params) {
+    myErrorReporter.report(new TypecheckingError("`__` not allowed here", expr));
+    return super.visitApplyHole(expr, params);
+  }
+
+  private static void convertBinOpAppHoles(Concrete.BinOpSequenceExpression expr, List<Concrete.Parameter> parameters) {
+    for (Concrete.BinOpSequenceElem elem : expr.getSequence())
+      if (elem.expression instanceof Concrete.ApplyHoleExpression) {
+        Object data = elem.expression.getData();
+        LocalReferable ref = new LocalReferable("p" + parameters.size());
+        parameters.add(new Concrete.NameParameter(data, true, ref));
+        elem.expression = new Concrete.ReferenceExpression(data, ref);
+      } else convertRecursively(elem.expression, parameters);
+  }
+
+  private static void convertRecursively(Concrete.Expression expression, List<Concrete.Parameter> parameters) {
+    if (expression instanceof Concrete.AppExpression)
+      convertAppHoles((Concrete.AppExpression) expression, parameters);
+    else if (expression instanceof Concrete.ProjExpression)
+      convertProjAppHoles((Concrete.ProjExpression) expression, parameters);
+    else if (expression instanceof Concrete.BinOpSequenceExpression)
+      convertBinOpAppHoles((Concrete.BinOpSequenceExpression) expression, parameters);
+    else if (expression instanceof Concrete.CaseExpression)
+      convertCaseAppHoles((Concrete.CaseExpression) expression, parameters);
+  }
+
+  private static void convertAppHoles(Concrete.AppExpression expr, List<Concrete.Parameter> parameters) {
+    Concrete.Expression originalFunc = expr.getFunction();
+    if (originalFunc instanceof Concrete.ApplyHoleExpression) {
+      Object data = originalFunc.getData();
+      LocalReferable ref = new LocalReferable("p" + parameters.size());
+      parameters.add(new Concrete.NameParameter(data, true, ref));
+      expr.setFunction(new Concrete.ReferenceExpression(data, ref));
+    }
+    for (Concrete.Argument argument : expr.getArguments())
+      if (argument.expression instanceof Concrete.ApplyHoleExpression) {
+        Object data = argument.expression.getData();
+        LocalReferable ref = new LocalReferable("p" + parameters.size());
+        parameters.add(new Concrete.NameParameter(data, true, ref));
+        argument.expression = new Concrete.ReferenceExpression(data, ref);
+      }
+  }
+
+  private static void convertProjAppHoles(Concrete.ProjExpression proj, List<Concrete.Parameter> parameters) {
+    if (!(proj.expression instanceof Concrete.ApplyHoleExpression)) return;
+    Object data = proj.expression.getData();
+    LocalReferable ref = new LocalReferable("p" + parameters.size());
+    parameters.add(new Concrete.NameParameter(data, true, ref));
+    proj.expression = new Concrete.ReferenceExpression(data, ref);
+  }
+
+  private static void convertCaseAppHoles(Concrete.CaseExpression expr, List<Concrete.Parameter> parameters) {
+    for (Concrete.CaseArgument argument : expr.getArguments())
+      if (argument.expression instanceof Concrete.ApplyHoleExpression) {
+        Object data = argument.expression.getData();
+        LocalReferable ref = new LocalReferable("p" + parameters.size());
+        parameters.add(new Concrete.NameParameter(data, true, ref));
+        argument.expression = new Concrete.ReferenceExpression(data, ref);
+      } else convertRecursively(argument.expression, parameters);
   }
 }

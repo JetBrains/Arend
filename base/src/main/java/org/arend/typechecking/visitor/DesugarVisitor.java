@@ -4,7 +4,6 @@ import org.arend.ext.error.ArgumentExplicitnessError;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.LocalError;
 import org.arend.ext.error.TypecheckingError;
-import org.arend.ext.reference.Precedence;
 import org.arend.naming.reference.*;
 import org.arend.naming.scope.ClassFieldImplScope;
 import org.arend.prelude.Prelude;
@@ -228,11 +227,6 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
 
   @Override
   public Concrete.Expression visitApp(Concrete.AppExpression expr, Void params) {
-    List<Concrete.Parameter> parameters = new ArrayList<>();
-    convertAppHoles(expr, parameters);
-    if (!parameters.isEmpty())
-      return new Concrete.LamExpression(expr.getData(), parameters, expr).accept(this, null);
-
     if (!(expr.getFunction() instanceof Concrete.ReferenceExpression)) {
       return super.visitApp(expr, null);
     }
@@ -241,64 +235,6 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
       argument.expression = argument.expression.accept(this, null);
     }
     return visitApp((Concrete.ReferenceExpression) expr.getFunction(), expr.getArguments(), expr, true);
-  }
-
-  private static void convertAppHoles(Concrete.AppExpression expr, List<Concrete.Parameter> parameters) {
-    Concrete.Expression originalFunc = expr.getFunction();
-    if (originalFunc instanceof Concrete.ApplyHoleExpression) {
-      Object data = originalFunc.getData();
-      LocalReferable ref = new LocalReferable("p" + parameters.size());
-      parameters.add(new Concrete.NameParameter(data, true, ref));
-      expr.setFunction(new Concrete.ReferenceExpression(data, ref));
-    }
-    boolean isOp = false;
-    if (originalFunc instanceof Concrete.ReferenceExpression) {
-      Referable referable = originalFunc.getUnderlyingReferable();
-      if (referable instanceof GlobalReferable) {
-        Precedence precedence = ((GlobalReferable) referable).getPrecedence();
-        isOp = precedence.isInfix;
-      }
-    }
-    for (Concrete.Argument argument : expr.getArguments())
-      if (argument.expression instanceof Concrete.ApplyHoleExpression) {
-        Object data = argument.expression.getData();
-        LocalReferable ref = new LocalReferable("p" + parameters.size());
-        parameters.add(new Concrete.NameParameter(data, true, ref));
-        argument.expression = new Concrete.ReferenceExpression(data, ref);
-      } else if (isOp && argument.expression instanceof Concrete.AppExpression)
-        convertAppHoles((Concrete.AppExpression) argument.expression, parameters);
-      else if (isOp && argument.expression instanceof Concrete.ProjExpression)
-        convertProjAppHoles((Concrete.ProjExpression) argument.expression, parameters);
-      else if (isOp && argument.expression instanceof Concrete.CaseExpression)
-        convertCaseAppHoles((Concrete.CaseExpression) argument.expression, parameters);
-  }
-
-  private static void convertProjAppHoles(Concrete.ProjExpression proj, List<Concrete.Parameter> parameters) {
-    if (!(proj.expression instanceof Concrete.ApplyHoleExpression)) return;
-    Object data = proj.expression.getData();
-    LocalReferable ref = new LocalReferable("p" + parameters.size());
-    parameters.add(new Concrete.NameParameter(data, true, ref));
-    proj.expression = new Concrete.ReferenceExpression(data, ref);
-  }
-
-  private static void convertCaseAppHoles(Concrete.CaseExpression expr, List<Concrete.Parameter> parameters) {
-    for (Concrete.CaseArgument argument : expr.getArguments())
-      if (argument.expression instanceof Concrete.AppExpression)
-        convertAppHoles((Concrete.AppExpression) argument.expression, parameters);
-      else if (argument.expression instanceof Concrete.ProjExpression)
-        convertProjAppHoles((Concrete.ProjExpression) argument.expression, parameters);
-      else if (argument.expression instanceof Concrete.ApplyHoleExpression) {
-        Object data = argument.expression.getData();
-        LocalReferable ref = new LocalReferable("p" + parameters.size());
-        parameters.add(new Concrete.NameParameter(data, true, ref));
-        argument.expression = new Concrete.ReferenceExpression(data, ref);
-      }
-  }
-
-  @Override
-  public Concrete.Expression visitApplyHole(Concrete.ApplyHoleExpression expr, Void params) {
-    myErrorReporter.report(new TypecheckingError("`__` not allowed here", expr));
-    return super.visitApplyHole(expr, params);
   }
 
   @Override
@@ -393,23 +329,6 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
         result.add(classFieldImpl);
       }
     }
-  }
-
-  @Override
-  public Concrete.Expression visitProj(Concrete.ProjExpression expr, Void params) {
-    if (expr.expression instanceof Concrete.ApplyHoleExpression) {
-      List<Concrete.Parameter> parameters = new ArrayList<>(1);
-      convertProjAppHoles(expr, parameters);
-      return new Concrete.LamExpression(expr.expression.getData(), parameters, expr).accept(this, null);
-    } else return super.visitProj(expr, params);
-  }
-
-  @Override
-  public Concrete.Expression visitCase(Concrete.CaseExpression expr, Void params) {
-    List<Concrete.Parameter> parameters = new ArrayList<>();
-    convertCaseAppHoles(expr, parameters);
-    return parameters.isEmpty() ? super.visitCase(expr, params)
-        : new Concrete.LamExpression(expr.getData(), parameters, expr).accept(this, null);
   }
 
   @Override
