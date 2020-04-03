@@ -358,6 +358,10 @@ public final class Concrete {
       return isExplicit && expression instanceof Concrete.ReferenceExpression;
     }
 
+    public boolean isWrittenInfix() {
+      return fixity == Fixity.INFIX || isInfixReference();
+    }
+
     public boolean isInfixReference() {
       return isReference() && ((ReferenceExpression) expression).getReferent() instanceof GlobalReferable && ((GlobalReferable) ((ReferenceExpression) expression).getReferent()).getPrecedence().isInfix;
     }

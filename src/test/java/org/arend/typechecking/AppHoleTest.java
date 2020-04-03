@@ -3,55 +3,70 @@ package org.arend.typechecking;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.LamExpression;
 import org.arend.core.expr.TupleExpression;
+import org.arend.term.concrete.Concrete;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class AppHoleTest extends TypeCheckingTestCase {
   @Test
   public void inBinOp() {
     Expression ty = typeCheckExpr("Nat -> Nat", null).expression;
-    Expression result = typeCheckExpr("__ Nat.+ 114514", ty).expression;
-    assertTrue(result instanceof LamExpression);
+    assertTrue(typeCheckExpr("__ Nat.+ 114514", ty)
+        .expression instanceof LamExpression);
   }
 
   @Test
   public void inNestedBinOpWithParen() {
     Expression ty = typeCheckExpr("Nat -> Nat", null).expression;
-    Expression result = typeCheckExpr("114 Nat.* (__ Nat.+ 514)", ty).expression;
-    assertTrue(result instanceof LamExpression);
+    assertTrue(typeCheckExpr("114 Nat.* (__ Nat.+ 514)", ty)
+        .expression instanceof LamExpression);
   }
 
   @Test
   public void inNestedBinOp() {
     Expression ty = typeCheckExpr("Nat -> Nat", null).expression;
-    Expression result = typeCheckExpr("114 Nat.* __ Nat.+ 514", ty).expression;
-    assertTrue(result instanceof LamExpression);
+    assertTrue(typeCheckExpr("114 Nat.* __ Nat.+ 514", ty)
+        .expression instanceof LamExpression);
+  }
+
+  @Test
+  public void inAppInOp() {
+    Expression ty = typeCheckExpr("Nat -> Nat", null).expression;
+    assertTrue(typeCheckExpr("suc __ Nat.+ 666", ty)
+        .expression instanceof LamExpression);
+  }
+
+  @Test
+  public void inNestedAppInOp() {
+    Concrete.Expression expression = resolveNamesExpr("suc (suc __) Nat.+ 233");
+    assertNotNull(expression);
+    Concrete.Expression sucSuc__ = ((Concrete.AppExpression) expression).getArguments().get(0).expression;
+    assertTrue(sucSuc__ instanceof Concrete.AppExpression);
+    typeCheckExpr(expression, null, 1);
   }
 
   @Test
   public void inLam() {
     Expression ty = typeCheckExpr("Nat -> Nat -> Nat", null).expression;
-    Expression result = typeCheckExpr("\\lam x => __ Nat.+ x", ty).expression;
-    assertTrue(result instanceof LamExpression);
+    assertTrue(typeCheckExpr("\\lam x => __ Nat.+ x", ty)
+        .expression instanceof LamExpression);
   }
 
   @Test
   public void inCase() {
     Expression ty = typeCheckExpr("Nat -> Nat -> Nat", null).expression;
-    Expression result = typeCheckExpr(
+    assertTrue(typeCheckExpr(
         "\\case __, 666 Nat.+ __ \\return Nat \\with {\n" +
             "  | _, _ => 1\n" +
-            "}", ty).expression;
-    assertTrue(result instanceof LamExpression);
+            "}", ty).expression instanceof LamExpression);
   }
 
   @Test
   public void inBinOpWithProj() {
     Expression ty = typeCheckExpr("(\\Sigma Nat Nat) -> Nat", null).expression;
-    Expression result = typeCheckExpr("__.1 Nat.+ 233", ty).expression;
-    assertTrue(result instanceof LamExpression);
+    assertTrue(typeCheckExpr("__.1 Nat.+ 233", ty)
+        .expression instanceof LamExpression);
   }
 
   @Test
