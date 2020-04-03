@@ -165,10 +165,6 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
 
   @Override
   public Concrete.Expression visitPi(Concrete.PiExpression expr, Void params) {
-    List<Concrete.Parameter> parameters = new ArrayList<>();
-    convertPiAppHoles(expr, parameters);
-    if (!parameters.isEmpty())
-      return new Concrete.LamExpression(expr.getData(), parameters, expr).accept(this, null);
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       visitParameters(expr.getParameters(), null);
       expr.codomain = expr.codomain.accept(this, null);
@@ -178,10 +174,6 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
 
   @Override
   public Concrete.Expression visitSigma(Concrete.SigmaExpression expr, Void params) {
-    List<Concrete.Parameter> parameters = new ArrayList<>();
-    convertSigmaAppHoles(expr, parameters);
-    if (!parameters.isEmpty())
-      return new Concrete.LamExpression(expr.getData(), parameters, expr).accept(this, null);
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       visitParameters(expr.getParameters(), null);
       for (Concrete.TypeParameter parameter : expr.getParameters()) {
@@ -532,18 +524,14 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       if (elem.expression instanceof Concrete.ApplyHoleExpression)
         elem.expression = createAppHoleRef(parameters, elem.expression.getData());
       else if (isLastElemInfix) convertRecursively(elem.expression, parameters);
-      else if (elem.expression instanceof Concrete.ProjExpression)
-        elem.expression = visitProj((Concrete.ProjExpression) elem.expression, null);
-      else if (elem.expression instanceof Concrete.CaseExpression)
-        elem.expression = visitCase((Concrete.CaseExpression) elem.expression, null);
-      else if (elem.expression instanceof Concrete.PiExpression)
-        elem.expression = visitPi((Concrete.PiExpression) elem.expression, null);
-      else if (elem.expression instanceof Concrete.SigmaExpression)
-        elem.expression = visitSigma((Concrete.SigmaExpression) elem.expression, null);
-      else if (elem.expression instanceof Concrete.BinOpSequenceExpression)
-        elem.expression = visitBinOpSequence((Concrete.BinOpSequenceExpression) elem.expression, null);
       else if (elem.expression instanceof Concrete.ReferenceExpression)
         elem.expression = visitReference((Concrete.ReferenceExpression) elem.expression, null);
+      else if (elem.expression instanceof Concrete.ProjExpression
+          || elem.expression instanceof Concrete.CaseExpression
+          || elem.expression instanceof Concrete.PiExpression
+          || elem.expression instanceof Concrete.SigmaExpression
+          || elem.expression instanceof Concrete.BinOpSequenceExpression)
+        elem.expression = elem.expression.accept(this, null);
       isLastElemInfix = elem.isWrittenInfix();
     }
   }
@@ -557,10 +545,12 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       convertBinOpAppHoles((Concrete.BinOpSequenceExpression) expression, parameters);
     else if (expression instanceof Concrete.CaseExpression)
       convertCaseAppHoles((Concrete.CaseExpression) expression, parameters);
+/*
     else if (expression instanceof Concrete.PiExpression)
       convertPiAppHoles((Concrete.PiExpression) expression, parameters);
     else if (expression instanceof Concrete.SigmaExpression)
       convertSigmaAppHoles((Concrete.SigmaExpression) expression, parameters);
+*/
   }
 
   private static void convertAppHoles(Concrete.AppExpression expr, List<Concrete.Parameter> parameters) {
@@ -584,6 +574,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       else convertRecursively(argument.expression, parameters);
   }
 
+/*
   private void convertPiAppHoles(Concrete.PiExpression expr, List<Concrete.Parameter> parameters) {
     for (Concrete.TypeParameter parameter : expr.getParameters())
       convertParameterAppHoles(parameter, parameters);
@@ -602,4 +593,5 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       parameter.type = createAppHoleRef(parameters, parameter.type.getData());
     else convertRecursively(parameter.type, parameters);
   }
+*/
 }
