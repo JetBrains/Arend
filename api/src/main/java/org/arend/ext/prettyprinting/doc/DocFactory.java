@@ -105,7 +105,7 @@ public class DocFactory {
         list.add(doc);
       }
     }
-    return new HListDoc(list);
+    return list.size() == 1 ? list.get(0) : new HListDoc(list);
   }
 
   public static LineDoc hSep(LineDoc sep, Collection<? extends LineDoc> docs) {

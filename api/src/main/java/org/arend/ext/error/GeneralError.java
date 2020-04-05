@@ -80,7 +80,7 @@ public class GeneralError {
 
   public final Doc getDoc(PrettyPrinterConfig ppConfig) {
     Doc causeDoc = getCauseDoc(ppConfig);
-    return vHang(getHeaderDoc(ppConfig), vList(getBodyDoc(ppConfig), causeDoc == null ? nullDoc() : hang(text("In:"), causeDoc)));
+    return vHang(getHeaderDoc(ppConfig), getBodyDoc(ppConfig), causeDoc == null ? nullDoc() : hang(text("In:"), causeDoc));
   }
 
   @Override
