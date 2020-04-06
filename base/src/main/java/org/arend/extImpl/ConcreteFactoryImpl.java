@@ -1,9 +1,12 @@
 package org.arend.extImpl;
 
+import org.arend.core.context.binding.Binding;
+import org.arend.core.expr.ReferenceExpression;
 import org.arend.ext.concrete.*;
 import org.arend.ext.concrete.expr.ConcreteArgument;
 import org.arend.ext.concrete.expr.ConcreteCaseArgument;
 import org.arend.ext.concrete.expr.ConcreteExpression;
+import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.reference.ArendRef;
 import org.arend.ext.reference.Precedence;
 import org.arend.ext.typechecking.TypedExpression;
@@ -43,6 +46,14 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
       throw new IllegalArgumentException();
     }
     return new Concrete.ReferenceExpression(myData, (Referable) ref, (Concrete.LevelExpression) pLevel, (Concrete.LevelExpression) hLevel);
+  }
+
+  @Override
+  public @NotNull ConcreteExpression ref(@NotNull CoreBinding ref) {
+    if (!(ref instanceof Binding)) {
+      throw new IllegalArgumentException();
+    }
+    return new Concrete.ReferenceExpression(myData, new CoreReferable(ref.getName(), new TypecheckingResult(new ReferenceExpression((Binding) ref), ((Binding) ref).getTypeExpr())));
   }
 
   @NotNull

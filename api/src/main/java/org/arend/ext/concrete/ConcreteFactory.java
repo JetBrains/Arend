@@ -3,6 +3,7 @@ package org.arend.ext.concrete;
 import org.arend.ext.concrete.expr.ConcreteArgument;
 import org.arend.ext.concrete.expr.ConcreteCaseArgument;
 import org.arend.ext.concrete.expr.ConcreteExpression;
+import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.reference.ArendRef;
 import org.arend.ext.typechecking.TypedExpression;
 import org.arend.ext.typechecking.MetaDefinition;
@@ -15,6 +16,7 @@ import java.util.Collection;
 public interface ConcreteFactory {
   @NotNull ConcreteExpression ref(@NotNull ArendRef ref);
   @NotNull ConcreteExpression ref(@NotNull ArendRef ref, @Nullable ConcreteLevel pLevel, @Nullable ConcreteLevel hLevel);
+  @NotNull ConcreteExpression ref(@NotNull CoreBinding ref);
   @NotNull ConcreteExpression core(String name, @NotNull TypedExpression expr);
   @NotNull ConcreteExpression meta(String name, @NotNull MetaDefinition meta);
   @NotNull ConcreteExpression thisExpr();
