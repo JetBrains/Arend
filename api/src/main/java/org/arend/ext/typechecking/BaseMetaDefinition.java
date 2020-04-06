@@ -1,6 +1,7 @@
 package org.arend.ext.typechecking;
 
 import org.arend.ext.concrete.expr.ConcreteArgument;
+import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.concrete.expr.ConcreteReferenceExpression;
 import org.arend.ext.error.ArgumentExplicitnessError;
 import org.arend.ext.error.ErrorReporter;
@@ -32,31 +33,29 @@ public abstract class BaseMetaDefinition implements MetaDefinition {
     return !requireExpectedType();
   }
 
-  public boolean checkContextData(@NotNull ContextData contextData, @NotNull ErrorReporter errorReporter) {
-    ConcreteReferenceExpression refExpr = contextData.getReferenceExpression();
-    if (withoutLevels() && (refExpr.getPLevel() != null || refExpr.getHLevel() != null)) {
-      errorReporter.report(new IgnoredLevelsError(refExpr.getPLevel(), refExpr.getHLevel()));
-    }
-
+  private boolean checkArguments(@NotNull List<? extends ConcreteArgument> arguments, ErrorReporter errorReporter, ConcreteReferenceExpression refExpr) {
     boolean ok = true;
     boolean[] explicitness = argumentExplicitness();
     if (explicitness != null) {
-      List<? extends ConcreteArgument> args = contextData.getArguments();
       int i = 0, j = 0;
-      while (i < explicitness.length && j < args.size()) {
-        if (explicitness[i] == args.get(j).isExplicit()) {
+      while (i < explicitness.length && j < arguments.size()) {
+        if (explicitness[i] == arguments.get(j).isExplicit()) {
           i++;
           j++;
         } else if (explicitness[i]) {
-          errorReporter.report(new ArgumentExplicitnessError(true, args.get(j).getExpression()));
+          if (errorReporter != null) {
+            errorReporter.report(new ArgumentExplicitnessError(true, arguments.get(j).getExpression()));
+          }
           j++;
         } else {
           i++;
         }
       }
 
-      if (j < args.size() && !allowExcessiveArguments()) {
-        errorReporter.report(new TypecheckingError("Excessive arguments are not allowed for '" + refExpr.getReferent().getRefName() + "'", args.get(j).getExpression()));
+      if (j < arguments.size() && !allowExcessiveArguments()) {
+        if (errorReporter != null) {
+          errorReporter.report(new TypecheckingError("Excessive arguments are not allowed for '" + refExpr.getReferent().getRefName() + "'", arguments.get(j).getExpression()));
+        }
         ok = false;
       }
 
@@ -70,11 +69,27 @@ public abstract class BaseMetaDefinition implements MetaDefinition {
 
         int diff = sum - numberOfOptionalExplicitArguments();
         if (diff > 0) {
-          errorReporter.report(new TypecheckingError("Required " + diff + " more explicit argument" + (diff == 1 ? "" : "s"), refExpr));
+          if (errorReporter != null) {
+            errorReporter.report(new TypecheckingError("Required " + diff + " more explicit argument" + (diff == 1 ? "" : "s"), refExpr));
+          }
           ok = false;
         }
       }
     }
+    return ok;
+  }
+
+  public boolean checkArguments(@NotNull List<? extends ConcreteArgument> arguments) {
+    return checkArguments(arguments, null, null);
+  }
+
+  public boolean checkContextData(@NotNull ContextData contextData, @NotNull ErrorReporter errorReporter) {
+    ConcreteReferenceExpression refExpr = contextData.getReferenceExpression();
+    if (withoutLevels() && (refExpr.getPLevel() != null || refExpr.getHLevel() != null)) {
+      errorReporter.report(new IgnoredLevelsError(refExpr.getPLevel(), refExpr.getHLevel()));
+    }
+
+    boolean ok = checkArguments(contextData.getArguments(), errorReporter, refExpr);
 
     if (contextData.getExpectedType() == null && requireExpectedType()) {
       errorReporter.report(new TypecheckingError("Cannot infer the expected type", refExpr));
@@ -82,5 +97,15 @@ public abstract class BaseMetaDefinition implements MetaDefinition {
     }
 
     return ok;
+  }
+
+  @Override
+  public @Nullable ConcreteExpression checkAndGetConcretePresentation(@NotNull List<? extends ConcreteArgument> arguments) {
+    return checkArguments(arguments) ? getConcretePresentation(arguments) : null;
+  }
+
+  @Override
+  public @Nullable TypedExpression checkAndInvokeMeta(@NotNull ExpressionTypechecker typechecker, @NotNull ContextData contextData) {
+    return checkContextData(contextData, typechecker.getErrorReporter()) ? invokeMeta(typechecker, contextData) : null;
   }
 }

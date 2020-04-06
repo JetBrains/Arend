@@ -7,6 +7,8 @@ import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.pattern.Pattern;
+import org.arend.ext.concrete.expr.ConcreteExpression;
+import org.arend.ext.typechecking.MetaDefinition;
 import org.arend.naming.reference.ClassReferable;
 import org.arend.naming.reference.FieldReferable;
 import org.arend.naming.reference.MetaReferable;
@@ -244,8 +246,17 @@ public class CorrespondedSubExprVisitor implements
   public Pair<Expression, Concrete.Expression> visitApp(Concrete.AppExpression expr, Expression coreExpr) {
     if (matchesSubExpr(expr)) return new Pair<>(coreExpr, expr);
     Concrete.Expression function = expr.getFunction();
-    if (function.getUnderlyingReferable() instanceof MetaReferable)
+    Referable ref = function.getUnderlyingReferable();
+    if (ref instanceof MetaReferable) {
+      MetaDefinition meta = ((MetaReferable) ref).getDefinition();
+      if (meta != null) {
+        ConcreteExpression concrete = meta.checkAndGetConcretePresentation(expr.getArguments());
+        if (concrete instanceof Concrete.Expression) {
+          return ((Concrete.Expression) concrete).accept(this, coreExpr);
+        }
+      }
       return nullWithError(new SubExprError(SubExprError.Kind.MetaRef, coreExpr));
+    }
     if (subExpr instanceof Concrete.AppExpression && Objects.equals(
         ((Concrete.AppExpression) subExpr).getFunction().getData(),
         function.getData()

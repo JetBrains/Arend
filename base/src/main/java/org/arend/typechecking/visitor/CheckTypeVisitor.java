@@ -1884,7 +1884,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
 
   private TypecheckingResult invokeMeta(MetaDefinition meta, ContextData contextData) {
     try {
-      return TypecheckingResult.fromChecked(meta.invoke(this, contextData));
+      return TypecheckingResult.fromChecked(meta.invokeMeta(this, contextData));
     } catch (MetaException e) {
       if (e.error.cause == null) {
         e.error.cause = contextData.getReferenceExpression();

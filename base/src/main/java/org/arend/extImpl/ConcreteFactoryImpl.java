@@ -356,7 +356,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
       }
       args.add((Concrete.Argument) argument);
     }
-    return Concrete.AppExpression.make(myData, fun instanceof Concrete.AppExpression ? ((Concrete.AppExpression) fun).getFunction() : fun, args);
+    return Concrete.AppExpression.make(fun.getData(), fun instanceof Concrete.AppExpression ? ((Concrete.AppExpression) fun).getFunction() : fun, args);
   }
 
   @Override
@@ -375,7 +375,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
       }
       args.add(new Concrete.Argument((Concrete.Expression) argument, isExplicit));
     }
-    return Concrete.AppExpression.make(myData, fun instanceof Concrete.AppExpression ? ((Concrete.AppExpression) fun).getFunction() : fun, args);
+    return Concrete.AppExpression.make(fun.getData(), fun instanceof Concrete.AppExpression ? ((Concrete.AppExpression) fun).getFunction() : fun, args);
   }
 
   @Override
