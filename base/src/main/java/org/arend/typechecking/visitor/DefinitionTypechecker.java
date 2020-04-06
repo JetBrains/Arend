@@ -3,7 +3,6 @@ package org.arend.typechecking.visitor;
 import org.arend.core.context.LinkList;
 import org.arend.core.context.Utils;
 import org.arend.core.context.binding.Binding;
-import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.context.param.*;
 import org.arend.core.definition.*;
 import org.arend.core.elimtree.Body;
@@ -509,6 +508,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           }
         } else {
           param = parameter(parameter.isExplicit(), (String) null, paramResult);
+          typechecker.addBinding(parameter.getReferableList().get(0), param);
         }
       }
       if (!oldParametersOK) {
@@ -556,9 +556,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
       if (oldParameters == null) {
         list.append(param);
-        for (; param.hasNext(); param = param.getNext()) {
-          typechecker.addBinding(parameter instanceof Concrete.NameParameter ? ((Concrete.NameParameter) parameter).getReferable() : null, param);
-        }
       }
     }
 

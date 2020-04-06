@@ -122,4 +122,15 @@ public class Case extends TypeCheckingTestCase {
       "  }", 1);
     assertThatErrorsAre(error());
   }
+
+  @Test
+  public void elimContextTest() {
+    typeCheckModule(
+      "\\func test (x : Nat) (p : x = x) =>\n" +
+      "  (\\case \\elim x, p : x = x \\with {\n" +
+      "    | _, _ => 0\n" +
+      "  }) Nat.+ (\\case x, p : x = x \\with {\n" +
+      "    | _, _ => 1\n" +
+      "})");
+  }
 }

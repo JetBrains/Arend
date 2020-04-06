@@ -2137,7 +2137,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
           if (exprResult == null) return null;
           if (caseArg.isElim && !(exprResult.expression instanceof ReferenceExpression)) {
             errorReporter.report(new TypecheckingError("Expected a variable", caseArg.expression));
-            context.putAll(origElimBindings);
             return null;
           }
           if (argType == null || caseArg.isElim) {
@@ -2149,7 +2148,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
           if (caseArg.isElim) {
             if (argType != null && !CompareVisitor.compare(myEquations, CMP.EQ, exprResult.type, argType.getExpr(), Type.OMEGA, caseArg.type)) {
               errorReporter.report(new TypeMismatchError(exprResult.type, argType.getExpr(), caseArg.expression));
-              context.putAll(origElimBindings);
               return null;
             }
             Binding origBinding = ((ReferenceExpression) exprResult.expression).getBinding();
@@ -2165,7 +2163,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
           resultType = checkType(expr.getResultType(), Type.OMEGA);
         }
         if (resultType == null && expectedType == null) {
-          context.putAll(origElimBindings);
           return null;
         }
         resultExpr = resultType != null ? resultType.getExpr() : !(expectedType instanceof Type && ((Type) expectedType).isOmega()) ? checkedSubst(expectedType, elimSubst, expr.getResultType() != null ? expr.getResultType() : expr) : new UniverseExpression(Sort.generateInferVars(myEquations, false, expr));
@@ -2181,6 +2178,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     }
     for (Map.Entry<Referable, Binding> entry : origElimBindings.entrySet()) {
       context.remove(entry.getKey());
+      myFreeBindings.add(entry.getValue());
     }
 
     // Check if the level of the result type is specified explicitly
@@ -2216,15 +2214,18 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       actualLevel = sort != null ? sort.getHLevel() : Level.INFINITY;
     }
 
-    PatternTypechecking patternTypechecking = new PatternTypechecking(errorReporter, PatternTypechecking.Mode.CASE, this, false);
-    List<ExtElimClause> clauses = patternTypechecking.typecheckClauses(expr.getClauses(), list.getFirst(), resultExpr);
+    List<ExtElimClause> clauses;
+    try {
+      PatternTypechecking patternTypechecking = new PatternTypechecking(errorReporter, PatternTypechecking.Mode.CASE, this, false);
+      clauses = patternTypechecking.typecheckClauses(expr.getClauses(), list.getFirst(), resultExpr);
+    } finally {
+      context.putAll(origElimBindings);
+      myFreeBindings.removeAll(origElimBindings.values());
+    }
     if (clauses == null) {
       return null;
     }
     ElimBody elimBody = new ElimTypechecking(errorReporter, myEquations, resultExpr, PatternTypechecking.Mode.CASE, level, actualLevel, expr.isSCase(), expr.getClauses(), expr).typecheckElim(clauses, list.getFirst());
-    for (Map.Entry<Referable, Binding> entry : origElimBindings.entrySet()) {
-      addBinding(entry.getKey(), entry.getValue());
-    }
     if (elimBody == null) {
       return null;
     }
