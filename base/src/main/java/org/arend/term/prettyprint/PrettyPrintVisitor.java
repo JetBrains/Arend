@@ -3,19 +3,17 @@ package org.arend.term.prettyprint;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.ext.reference.Precedence;
+import org.arend.naming.reference.FieldReferable;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.term.Fixity;
 import org.arend.term.FunctionKind;
-import org.arend.term.concrete.Concrete;
+import org.arend.term.concrete.*;
 import org.arend.term.concrete.Concrete.BinOpSequenceElem;
 import org.arend.term.concrete.Concrete.Constructor;
 import org.arend.term.concrete.Concrete.Expression;
 import org.arend.term.concrete.Concrete.ReferenceExpression;
-import org.arend.term.concrete.ConcreteDefinitionVisitor;
-import org.arend.term.concrete.ConcreteExpressionVisitor;
-import org.arend.term.concrete.ConcreteLevelExpressionVisitor;
 
 import java.util.*;
 
@@ -108,8 +106,18 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     if (infix) {
       visitBinOp(args.get(args.size() - 2).getExpression(), (ReferenceExpression) fun, ((GlobalReferable) ((ReferenceExpression) fun).getReferent()).getPrecedence(), args.subList(0, args.size() - 2), args.get(args.size() - 1).getExpression(), prec);
     } else {
+      if (fun instanceof Concrete.ReferenceExpression && ((ReferenceExpression) fun).getReferent() instanceof FieldReferable && !args.isEmpty() && !args.get(0).isExplicit() && args.get(0).getExpression() instanceof Concrete.ReferenceExpression) {
+        Concrete.ReferenceExpression funRef = (ReferenceExpression) fun;
+        fun = new Concrete.ReferenceExpression(fun.getData(), ConcreteExpressionFactory.ref(((ReferenceExpression) args.get(0).getExpression()).getReferent().getRefName() + "." + funRef.getReferent().getRefName()), funRef.getPLevel(), funRef.getHLevel());
+        if (args.size() == 1) {
+          return visitReference((ReferenceExpression) fun, prec);
+        }
+        args = args.subList(1, args.size());
+      }
+
       if (prec.priority > Concrete.AppExpression.PREC) myBuilder.append('(');
       final Expression finalFun = fun;
+      List<Concrete.Argument> finalArgs = args;
       new BinOpLayout() {
         @Override
         void printLeft(PrettyPrintVisitor pp) {
@@ -118,7 +126,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
         @Override
         void printRight(PrettyPrintVisitor pp) {
-          printArguments(pp, args, noIndent);
+          printArguments(pp, finalArgs, noIndent);
         }
 
         @Override
