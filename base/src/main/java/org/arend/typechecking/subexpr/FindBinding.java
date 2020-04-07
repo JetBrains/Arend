@@ -11,6 +11,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 public class FindBinding {
@@ -73,16 +74,9 @@ public class FindBinding {
       Concrete.LetExpression expr,
       LetExpression let
   ) {
-    List<Concrete.LetClause> exprClauses = expr.getClauses();
-    List<LetClause> coreClauses = let.getClauses();
-    for (int i = 0; i < exprClauses.size(); i++) {
-      LetClause coreLetClause = coreClauses.get(i);
-      Concrete.LetClause exprLetClause = exprClauses.get(i);
-
-      if (Objects.equals(exprLetClause.getPattern().getData(), patternData))
-        return coreLetClause.getTypeExpr();
-    }
-    return null;
+    return visitLet(expr, let, (coreLetClause, exprLetClause) ->
+        Objects.equals(exprLetClause.getPattern().getData(), patternData)
+            ? coreLetClause.getTypeExpr() : null);
   }
 
   public static @Nullable DependentLink visitLetParam(
@@ -90,18 +84,27 @@ public class FindBinding {
       Concrete.LetExpression expr,
       LetExpression let
   ) {
+    return visitLet(expr, let, (coreLetClause, exprLetClause) -> {
+      LamExpression coreLamExpr = coreLetClause.getExpression().cast(LamExpression.class);
+      List<Concrete.Parameter> parameters = exprLetClause.getParameters();
+      return coreLamExpr != null && !parameters.isEmpty()
+          ? parameters(coreLamExpr.getParameters(), patternParam, new LambdaParam(coreLamExpr), parameters) : null;
+    });
+  }
+
+  private static @Nullable <T> T visitLet(
+      Concrete.LetExpression expr,
+      LetExpression let,
+      BiFunction<LetClause, Concrete.LetClause, @Nullable T> function
+  ) {
     List<Concrete.LetClause> exprClauses = expr.getClauses();
     List<LetClause> coreClauses = let.getClauses();
     for (int i = 0; i < exprClauses.size(); i++) {
       LetClause coreLetClause = coreClauses.get(i);
       Concrete.LetClause exprLetClause = exprClauses.get(i);
 
-      LamExpression coreLamExpr = coreLetClause.getExpression().cast(LamExpression.class);
-      List<Concrete.Parameter> parameters = exprLetClause.getParameters();
-      if (coreLamExpr != null && !parameters.isEmpty()) {
-        DependentLink link = parameters(coreLamExpr.getParameters(), patternParam, new LambdaParam(coreLamExpr), parameters);
-        if (link != null) return link;
-      }
+      T apply = function.apply(coreLetClause, exprLetClause);
+      if (apply != null) return apply;
     }
     return null;
   }
