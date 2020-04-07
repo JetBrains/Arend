@@ -81,6 +81,9 @@ public class FindBinding {
     return visitClauses(data, caseExpr.getClauses(), coreCaseExpr.getElimBody().getClauses());
   }
 
+  /**
+   * @param patternData Both {@link Referable} and {@link Object} are supported.
+   */
   private static @Nullable DependentLink visitPattern(
       Object data, Iterator<? extends Pattern> corePatterns, Iterator<Concrete.Pattern> patterns) {
     findBinding:
@@ -94,7 +97,8 @@ public class FindBinding {
           corePattern = corePatterns.next();
           continue;
         }
-        if (Objects.equals(pattern.getData(), data)) return binding;
+        if (Objects.equals(((Concrete.NamePattern) pattern).getReferable(), data)
+            || Objects.equals(pattern.getData(), data)) return binding;
           // Go to next binding
         else continue findBinding;
       }
@@ -112,11 +116,29 @@ public class FindBinding {
     return null;
   }
 
-  public static @Nullable Expression visitLet(
+  /**
+   * @param patternData Both {@link Referable} and {@link Object} are supported.
+   */
+  public static @Nullable Expression visitLetBind(
       Object patternData, Concrete.LetExpression expr, LetExpression let) {
     return visitLet(expr, let, (coreLetClause, exprLetClause) ->
         Objects.equals(exprLetClause.getPattern().getData(), patternData)
+            || Objects.equals(exprLetClause.getPattern().getReferable(), patternData)
             ? coreLetClause.getTypeExpr() : null);
+  }
+
+  /**
+   * @param patternData Both {@link Referable} and {@link Object} are supported.
+   */
+  public static @Nullable Expression visitLet(
+      Object patternData, Concrete.LetExpression expr, LetExpression let) {
+    Expression expression = visitLetBind(patternData, expr, let);
+    if (expression != null) return expression;
+    if (patternData instanceof Referable) {
+      DependentLink link = visitLetParam((Referable) patternData, expr, let);
+      if (link != null) return link.getTypeExpr();
+    }
+    return null;
   }
 
   public static @Nullable DependentLink visitLetParam(
