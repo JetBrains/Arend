@@ -6,33 +6,41 @@ import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
 import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 
 public class FindBinding {
-  public static DependentLink visitLam(
+  public static @Nullable DependentLink visitLam(
       Referable referable,
       Concrete.LamExpression expr,
       LamExpression lam
   ) {
-    return parameters(lam.getParameters(), referable, new Function<DependentLink, DependentLink>() {
-      private LamExpression lambda = lam;
-
-      @Override
-      public DependentLink apply(DependentLink link) {
-        DependentLink next = link.getNext();
-        if (next instanceof EmptyDependentLink) {
-          lambda = lambda.getBody().cast(LamExpression.class);
-          if (lambda == null) return null;
-          return lambda.getParameters();
-        } else return next;
-      }
-    }, expr.getParameters());
+    return parameters(lam.getParameters(), referable, new LambdaParam(lam), expr.getParameters());
   }
 
-  public static DependentLink visitPi(
+  private static class LambdaParam implements Function<DependentLink, DependentLink> {
+    public LambdaParam(@NotNull LamExpression lambda) {
+      this.lambda = lambda;
+    }
+
+    private LamExpression lambda;
+
+    @Override
+    public DependentLink apply(DependentLink link) {
+      DependentLink next = link.getNext();
+      if (next instanceof EmptyDependentLink) {
+        lambda = lambda.getBody().cast(LamExpression.class);
+        if (lambda == null) return null;
+        return lambda.getParameters();
+      } else return next;
+    }
+  }
+
+  public static @Nullable DependentLink visitPi(
       Referable referable,
       Concrete.PiExpression expr,
       PiExpression pi
@@ -52,7 +60,7 @@ public class FindBinding {
     }, expr.getParameters());
   }
 
-  public static DependentLink visitSigma(
+  public static @Nullable DependentLink visitSigma(
       Referable referable,
       Concrete.SigmaExpression expr,
       SigmaExpression sigma
@@ -60,7 +68,7 @@ public class FindBinding {
     return parameters(sigma.getParameters(), referable, DependentLink::getNext, expr.getParameters());
   }
 
-  public static Expression visitLet(
+  public static @Nullable Expression visitLet(
       Object patternData,
       Concrete.LetExpression expr,
       LetExpression let
@@ -77,7 +85,28 @@ public class FindBinding {
     return null;
   }
 
-  private static DependentLink parameters(
+  public static @Nullable DependentLink visitLetParam(
+      Referable patternParam,
+      Concrete.LetExpression expr,
+      LetExpression let
+  ) {
+    List<Concrete.LetClause> exprClauses = expr.getClauses();
+    List<LetClause> coreClauses = let.getClauses();
+    for (int i = 0; i < exprClauses.size(); i++) {
+      LetClause coreLetClause = coreClauses.get(i);
+      Concrete.LetClause exprLetClause = exprClauses.get(i);
+
+      LamExpression coreLamExpr = coreLetClause.getExpression().cast(LamExpression.class);
+      List<Concrete.Parameter> parameters = exprLetClause.getParameters();
+      if (coreLamExpr != null && !parameters.isEmpty()) {
+        DependentLink link = parameters(coreLamExpr.getParameters(), patternParam, new LambdaParam(coreLamExpr), parameters);
+        if (link != null) return link;
+      }
+    }
+    return null;
+  }
+
+  private static @Nullable DependentLink parameters(
       DependentLink core,
       Referable referable,
       Function<DependentLink, DependentLink> next,
