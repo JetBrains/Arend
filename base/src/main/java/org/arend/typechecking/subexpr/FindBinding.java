@@ -2,13 +2,17 @@ package org.arend.typechecking.subexpr;
 
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
+import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
+import org.arend.core.pattern.BindingPattern;
+import org.arend.core.pattern.Pattern;
 import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
@@ -69,6 +73,45 @@ public class FindBinding {
     return parameters(sigma.getParameters(), referable, DependentLink::getNext, expr.getParameters());
   }
 
+  private static @Nullable DependentLink visitClauses(
+      Object data,
+      List<Concrete.FunctionClause> clauses,
+      List<? extends ElimClause<Pattern>> coreClauses
+  ) {
+    return CorrespondedSubExprVisitor.visitElimBody(clauses, coreClauses, (coreClause, clause) ->
+        visitPattern(data, coreClause.getPatterns().iterator(), clause.getPatterns().iterator()));
+  }
+
+  private static @Nullable DependentLink visitPattern(
+      Object data, Iterator<? extends Pattern> corePatterns, Iterator<Concrete.Pattern> patterns) {
+    findBinding:
+    while (corePatterns.hasNext() && patterns.hasNext()) {
+      Pattern corePattern = corePatterns.next();
+      Concrete.Pattern pattern = patterns.next();
+      while (corePattern instanceof BindingPattern && pattern instanceof Concrete.NamePattern) {
+        DependentLink binding = ((BindingPattern) corePattern).getBinding();
+        if (binding.isExplicit() != pattern.isExplicit()) {
+          corePattern = corePatterns.next();
+          continue;
+        }
+        if (Objects.equals(pattern.getData(), data)) return binding;
+          // Go to next binding
+        else continue findBinding;
+      }
+      Iterator<? extends Pattern> coreSubPatterns = corePattern.getSubPatterns().iterator();
+      if (pattern instanceof Concrete.ConstructorPattern) {
+        DependentLink link = visitPattern(data, coreSubPatterns,
+            ((Concrete.ConstructorPattern) pattern).getPatterns().iterator());
+        if (link != null) return link;
+      } else if (pattern instanceof Concrete.TuplePattern) {
+        DependentLink link = visitPattern(data, coreSubPatterns,
+            ((Concrete.TuplePattern) pattern).getPatterns().iterator());
+        if (link != null) return link;
+      }
+    }
+    return null;
+  }
+
   public static @Nullable Expression visitLet(
       Object patternData,
       Concrete.LetExpression expr,
@@ -92,7 +135,7 @@ public class FindBinding {
     });
   }
 
-  private static @Nullable <T> T visitLet(
+  private static <T> @Nullable T visitLet(
       Concrete.LetExpression expr,
       LetExpression let,
       BiFunction<LetClause, Concrete.LetClause, @Nullable T> function
@@ -100,10 +143,7 @@ public class FindBinding {
     List<Concrete.LetClause> exprClauses = expr.getClauses();
     List<LetClause> coreClauses = let.getClauses();
     for (int i = 0; i < exprClauses.size(); i++) {
-      LetClause coreLetClause = coreClauses.get(i);
-      Concrete.LetClause exprLetClause = exprClauses.get(i);
-
-      T apply = function.apply(coreLetClause, exprLetClause);
+      T apply = function.apply(coreClauses.get(i), exprClauses.get(i));
       if (apply != null) return apply;
     }
     return null;

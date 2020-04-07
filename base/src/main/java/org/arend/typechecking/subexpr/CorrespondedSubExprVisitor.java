@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 public class CorrespondedSubExprVisitor implements
@@ -336,26 +337,36 @@ public class CorrespondedSubExprVisitor implements
   public Pair<Expression, Concrete.Expression> visitSigma(Concrete.SigmaExpression expr, Expression coreExpr) {
     if (matchesSubExpr(expr)) return new Pair<>(coreExpr, expr);
     SigmaExpression coreSigmaExpr = coreExpr.cast(SigmaExpression.class);
-    if (coreSigmaExpr == null) return nullWithError(SubExprError.mismatch(coreExpr));
+    if (coreSigmaExpr == null)
+      return nullWithError(SubExprError.mismatch(coreExpr));
     return visitSigmaParameters(expr.getParameters(), coreSigmaExpr.getParameters());
+  }
+
+  static <T> @Nullable T visitElimBody(
+      List<Concrete.FunctionClause> clauses,
+      List<? extends ElimClause<Pattern>> coreClauses,
+      BiFunction<ElimClause<Pattern>, Concrete.FunctionClause, @Nullable T> function
+  ) {
+    // Interval pattern matching are stored in a special way,
+    // maybe it's a TODO to implement it.
+    if (clauses.size() != coreClauses.size()) return null;
+    for (int i = 0; i < clauses.size(); i++) {
+      T apply = function.apply(coreClauses.get(i), clauses.get(i));
+      if (apply != null) return apply;
+    }
+    return null;
   }
 
   @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression> visitElimTree(
       List<Concrete.FunctionClause> clauses,
       List<? extends ElimClause<Pattern>> coreClauses
   ) {
-    // Interval pattern matching are stored in a special way,
-    // maybe it's a TODO to implement it.
-    if (clauses.size() != coreClauses.size()) return null;
-    for (int i = 0; i < clauses.size(); i++) {
-      Concrete.FunctionClause clause = clauses.get(i);
-      ElimClause<Pattern> coreClause = coreClauses.get(i);
+    return visitElimBody(clauses, coreClauses, (coreClause, clause) -> {
       Concrete.Expression expression = clause.getExpression();
-      if (expression == null) return nullWithError(new SubExprError(SubExprError.Kind.MissingExpr));
-      Pair<Expression, Concrete.Expression> clauseVisited = expression.accept(this, coreClause.getExpression());
-      if (clauseVisited != null) return clauseVisited;
-    }
-    return nullWithError(new SubExprError(SubExprError.Kind.Clauses));
+      if (expression == null)
+        return nullWithError(new SubExprError(SubExprError.Kind.MissingExpr));
+      return expression.accept(this, coreClause.getExpression());
+    });
   }
 
   @Override
