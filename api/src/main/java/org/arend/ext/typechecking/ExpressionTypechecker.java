@@ -26,4 +26,5 @@ public interface ExpressionTypechecker {
   <T> T withErrorReporter(@NotNull ErrorReporter errorReporter, Function<ExpressionTypechecker, T> action);
   @Nullable ConcreteExpression findInstance(@NotNull CoreClassDefinition classDefinition, @Nullable UncheckedExpression classifyingExpression, @NotNull ConcreteSourceNode sourceNode);
   @Nullable TypedExpression findInstance(@NotNull CoreClassDefinition classDefinition, @Nullable UncheckedExpression classifyingExpression, @Nullable CoreExpression expectedType, @NotNull ConcreteSourceNode sourceNode);
+  void checkCancelled();
 }

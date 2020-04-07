@@ -46,6 +46,7 @@ import org.arend.term.concrete.ConcreteLevelExpressionVisitor;
 import org.arend.typechecking.FieldDFS;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.TypecheckingListener;
+import org.arend.typechecking.computation.ComputationRunner;
 import org.arend.typechecking.doubleChecker.CoreException;
 import org.arend.typechecking.doubleChecker.CoreExpressionChecker;
 import org.arend.typechecking.error.CycleError;
@@ -2011,6 +2012,11 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       throw new IllegalArgumentException();
     }
     return myInstancePool.getInstance(UncheckedExpressionImpl.extract(classifyingExpression), expectedType == null ? null : (Expression) expectedType, ((ClassDefinition) classDefinition).getReferable(), (Concrete.SourceNode) sourceNode, null);
+  }
+
+  @Override
+  public void checkCancelled() {
+    ComputationRunner.checkCanceled();
   }
 
   @Override
