@@ -20,10 +20,7 @@ import java.util.function.Function;
 
 public class FindBinding {
   public static @Nullable DependentLink visitLam(
-      Referable referable,
-      Concrete.LamExpression expr,
-      LamExpression lam
-  ) {
+      Referable referable, Concrete.LamExpression expr, LamExpression lam) {
     return parameters(lam.getParameters(), referable, new LambdaParam(lam), expr.getParameters());
   }
 
@@ -46,10 +43,7 @@ public class FindBinding {
   }
 
   public static @Nullable DependentLink visitPi(
-      Referable referable,
-      Concrete.PiExpression expr,
-      PiExpression pi
-  ) {
+      Referable referable, Concrete.PiExpression expr, PiExpression pi) {
     return parameters(pi.getBinding(), referable, new Function<DependentLink, DependentLink>() {
       private PiExpression piExpr = pi;
 
@@ -82,6 +76,11 @@ public class FindBinding {
         visitPattern(data, coreClause.getPatterns().iterator(), clause.getPatterns().iterator()));
   }
 
+  public static @Nullable DependentLink visitCase(
+      Object data, Concrete.CaseExpression caseExpr, CaseExpression coreCaseExpr) {
+    return visitClauses(data, caseExpr.getClauses(), coreCaseExpr.getElimBody().getClauses());
+  }
+
   private static @Nullable DependentLink visitPattern(
       Object data, Iterator<? extends Pattern> corePatterns, Iterator<Concrete.Pattern> patterns) {
     findBinding:
@@ -91,6 +90,7 @@ public class FindBinding {
       while (corePattern instanceof BindingPattern && pattern instanceof Concrete.NamePattern) {
         DependentLink binding = ((BindingPattern) corePattern).getBinding();
         if (binding.isExplicit() != pattern.isExplicit()) {
+          if (!corePatterns.hasNext()) break findBinding;
           corePattern = corePatterns.next();
           continue;
         }
@@ -113,20 +113,14 @@ public class FindBinding {
   }
 
   public static @Nullable Expression visitLet(
-      Object patternData,
-      Concrete.LetExpression expr,
-      LetExpression let
-  ) {
+      Object patternData, Concrete.LetExpression expr, LetExpression let) {
     return visitLet(expr, let, (coreLetClause, exprLetClause) ->
         Objects.equals(exprLetClause.getPattern().getData(), patternData)
             ? coreLetClause.getTypeExpr() : null);
   }
 
   public static @Nullable DependentLink visitLetParam(
-      Referable patternParam,
-      Concrete.LetExpression expr,
-      LetExpression let
-  ) {
+      Referable patternParam, Concrete.LetExpression expr, LetExpression let) {
     return visitLet(expr, let, (coreLetClause, exprLetClause) -> {
       LamExpression coreLamExpr = coreLetClause.getExpression().cast(LamExpression.class);
       List<Concrete.Parameter> parameters = exprLetClause.getParameters();

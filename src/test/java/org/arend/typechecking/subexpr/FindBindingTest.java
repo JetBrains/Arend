@@ -91,4 +91,33 @@ public class FindBindingTest extends TypeCheckingTestCase {
       assertEquals("A", link.getTypeExpr().toString());
     }
   }
+
+  @Test
+  public void caseExpr() {
+    Concrete.CaseExpression case_ = (Concrete.CaseExpression) resolveNamesExpr(
+        "\\case 114514 \\return Nat \\with {\n" +
+            "  | suc x => 19260817\n" +
+            "  | a => a\n" +
+            "}");
+    Expression core = typeCheckExpr(case_, null).expression;
+    {
+      Concrete.ConstructorPattern sucX = (Concrete.ConstructorPattern) case_.getClauses().get(0).getPatterns().get(0);
+      DependentLink link = FindBinding.visitCase(
+          sucX.getPatterns().get(0).getData(),
+          case_, c(core)
+      );
+      assertNotNull(link);
+      assertEquals("Nat", link.getTypeExpr().toString());
+      assertEquals("x", link.getName());
+    }
+    {
+      DependentLink link = FindBinding.visitCase(
+          case_.getClauses().get(1).getPatterns().get(0).getData(),
+          case_, c(core)
+      );
+      assertNotNull(link);
+      assertEquals("Nat", link.getTypeExpr().toString());
+      assertEquals("a", link.getName());
+    }
+  }
 }
