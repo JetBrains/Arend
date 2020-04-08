@@ -83,7 +83,7 @@ public class FileSourceLibrary extends UnmodifiableSourceLibrary {
 
   @Override
   public boolean supportsPersisting() {
-    return myBinaryBasePath != null;
+    return myBinaryBasePath != null && !isExternal();
   }
 
   @NotNull

@@ -301,7 +301,7 @@ public abstract class SourceLibrary extends BaseLibrary {
   }
 
   public boolean supportsPersisting() {
-    return true;
+    return !isExternal();
   }
 
   public boolean persistModule(ModulePath modulePath, ReferableConverter referableConverter, ErrorReporter errorReporter) {

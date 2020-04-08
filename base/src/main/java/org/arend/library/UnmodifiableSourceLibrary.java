@@ -105,7 +105,7 @@ public abstract class UnmodifiableSourceLibrary extends SourceLibrary {
     myUpdatedModules.clear();
   }
 
-  public boolean persistUpdateModules(ErrorReporter errorReporter) {
+  public boolean persistUpdatedModules(ErrorReporter errorReporter) {
     boolean ok = true;
     for (ModulePath module : myUpdatedModules) {
       if (!persistModule(module, IdReferableConverter.INSTANCE, errorReporter)) {

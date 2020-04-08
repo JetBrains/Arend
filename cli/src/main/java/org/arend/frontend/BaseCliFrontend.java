@@ -291,7 +291,7 @@ public abstract class BaseCliFrontend {
 
       // Persist updated modules
       if (library.supportsPersisting()) {
-        library.persistUpdateModules(System.err::println);
+        library.persistUpdatedModules(System.err::println);
         library.clearUpdateModules();
       }
 

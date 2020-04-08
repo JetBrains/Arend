@@ -70,9 +70,4 @@ public class PreludeResourceLibrary extends PreludeLibrary {
   public ReferableConverter getReferableConverter() {
     return null;
   }
-
-  @Override
-  public boolean supportsPersisting() {
-    return false;
-  }
 }
