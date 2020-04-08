@@ -5,8 +5,7 @@ import org.arend.naming.scope.Scope;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public interface ModuleScopeProvider extends org.arend.ext.module.ModuleScopeProvider {
+public interface ModuleScopeProvider {
   @Nullable
-  @Override
   Scope forModule(@NotNull ModulePath module);
 }

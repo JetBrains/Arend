@@ -251,7 +251,7 @@ public class CorrespondedSubExprVisitor implements
     if (ref instanceof MetaReferable) {
       MetaDefinition meta = ((MetaReferable) ref).getDefinition();
       if (meta != null) {
-        ConcreteExpression concrete = meta.checkAndGetConcretePresentation(expr.getArguments());
+        ConcreteExpression concrete = meta.checkAndGetConcreteRepresentation(expr.getArguments());
         if (concrete instanceof Concrete.Expression) {
           return ((Concrete.Expression) concrete).accept(this, coreExpr);
         }

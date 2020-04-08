@@ -1,6 +1,5 @@
 package org.arend.naming.scope;
 
-import org.arend.ext.reference.RawScope;
 import org.arend.naming.reference.Referable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -12,7 +11,7 @@ import java.util.Objects;
 import java.util.function.Predicate;
 
 // Minimal definition: (find or getElements) and resolveNamespace
-public interface Scope extends RawScope {
+public interface Scope {
   default @Nullable Referable find(Predicate<Referable> pred) {
     for (Referable referable : getElements()) {
       if (pred.test(referable)) {
@@ -30,7 +29,6 @@ public interface Scope extends RawScope {
   }
 
   @Nullable
-  @Override
   default Referable resolveName(String name) {
     return find(ref -> Objects.equals(name, ref.textRepresentation()));
   }
@@ -52,19 +50,6 @@ public interface Scope extends RawScope {
   }
 
   default @Nullable Scope resolveNamespace(List<? extends String> path) {
-    Scope scope = this;
-    for (String name : path) {
-      scope = scope.resolveNamespace(name, true);
-      if (scope == null) {
-        return null;
-      }
-    }
-    return scope;
-  }
-
-  @Nullable
-  @Override
-  default RawScope getSubscope(String... path) {
     Scope scope = this;
     for (String name : path) {
       scope = scope.resolveNamespace(name, true);

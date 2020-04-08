@@ -6,7 +6,7 @@ import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.module.ModulePath;
 import org.arend.extImpl.ConcreteFactoryImpl;
 import org.arend.extImpl.DefinitionContributorImpl;
-import org.arend.extImpl.RawDefinitionProviderImpl;
+import org.arend.extImpl.ArendDefinitionProviderImpl;
 import org.arend.library.classLoader.FileClassLoaderDelegate;
 import org.arend.library.classLoader.MultiClassLoader;
 import org.arend.library.error.LibraryError;
@@ -244,8 +244,11 @@ public abstract class SourceLibrary extends BaseLibrary {
 
     if (myExtension != null) {
       DefinitionContributorImpl contributor = new DefinitionContributorImpl(this, libraryManager.getLibraryErrorReporter(), myAdditionalModuleScopeProvider);
-      myExtension.declareDefinitions(contributor);
-      contributor.disable();
+      try {
+        myExtension.declareDefinitions(contributor);
+      } finally {
+        contributor.disable();
+      }
     }
 
     try {
@@ -271,12 +274,14 @@ public abstract class SourceLibrary extends BaseLibrary {
       myExtension.setDependencies(dependenciesExtensions);
       myExtension.setPrelude(new Prelude());
       myExtension.setConcreteFactory(new ConcreteFactoryImpl(null));
-      myExtension.setModuleScopeProvider(getModuleScopeProvider());
       myExtension.setDefinitionProvider(getTypecheckerState());
 
-      RawDefinitionProviderImpl provider = new RawDefinitionProviderImpl(typechecking, libraryManager.getDefinitionRequester(), this);
-      myExtension.load(provider);
-      provider.disable();
+      ArendDefinitionProviderImpl provider = new ArendDefinitionProviderImpl(typechecking, libraryManager.getAvailableModuleScopeProvider(this), libraryManager.getDefinitionRequester(), this);
+      try {
+        myExtension.load(provider);
+      } finally {
+        provider.disable();
+      }
     }
 
     libraryManager.afterLibraryLoading(this, true);

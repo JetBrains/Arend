@@ -24,4 +24,5 @@ public interface CoreClassDefinition extends CoreDefinition {
   @Nullable CoreAbsExpression getImplementation(@NotNull CoreClassField field);
   boolean isOverridden(@NotNull CoreClassField field);
   @Nullable CoreAbsExpression getOverriddenType(@NotNull CoreClassField field);
+  CoreClassField findField(@NotNull String name);
 }

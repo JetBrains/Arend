@@ -9,4 +9,6 @@ public interface CoreDataDefinition extends CoreDefinition {
   boolean isTruncated();
   CoreSort getSort();
   @NotNull List<? extends CoreConstructor> getConstructors();
+
+  CoreConstructor findConstructor(@NotNull String name);
 }

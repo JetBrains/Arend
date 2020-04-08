@@ -9,6 +9,7 @@ import org.arend.core.expr.type.TypeExpression;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
+import org.arend.ext.core.definition.CoreConstructor;
 import org.arend.ext.core.definition.CoreDataDefinition;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.TCReferable;
@@ -102,6 +103,11 @@ public class DataDefinition extends Definition implements CoreDataDefinition {
   @Override
   public List<Constructor> getConstructors() {
     return myConstructors;
+  }
+
+  @Override
+  public CoreConstructor findConstructor(@NotNull String name) {
+    return getConstructor(name);
   }
 
   public Constructor getConstructor(GlobalReferable referable) {

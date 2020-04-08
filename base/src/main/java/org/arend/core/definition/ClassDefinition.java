@@ -278,6 +278,16 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
   }
 
   @Override
+  public CoreClassField findField(@NotNull String name) {
+    for (ClassField field : getFields()) {
+      if (field.getName().equals(name)) {
+        return field;
+      }
+    }
+    return null;
+  }
+
+  @Override
   public boolean isOverridden(@NotNull CoreClassField field) {
     return field instanceof ClassField && myOverridden.containsKey(field);
   }

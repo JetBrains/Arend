@@ -13,6 +13,9 @@ import org.jetbrains.annotations.Nullable;
 import java.math.BigInteger;
 import java.util.Collection;
 
+/**
+ * ConcreteFactory can be used to create concrete expressions, which can be checked by {@link org.arend.ext.typechecking.ExpressionTypechecker}
+ */
 public interface ConcreteFactory {
   @NotNull ConcreteExpression ref(@NotNull ArendRef ref);
   @NotNull ConcreteExpression ref(@NotNull ArendRef ref, @Nullable ConcreteLevel pLevel, @Nullable ConcreteLevel hLevel);

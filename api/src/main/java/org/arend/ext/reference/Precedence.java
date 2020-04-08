@@ -2,6 +2,9 @@ package org.arend.ext.reference;
 
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * Stores associativity and priority of a definition.
+ */
 public class Precedence {
   public enum Associativity { LEFT_ASSOC, RIGHT_ASSOC, NON_ASSOC }
 

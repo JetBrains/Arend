@@ -100,8 +100,8 @@ public abstract class BaseMetaDefinition implements MetaDefinition {
   }
 
   @Override
-  public @Nullable ConcreteExpression checkAndGetConcretePresentation(@NotNull List<? extends ConcreteArgument> arguments) {
-    return checkArguments(arguments) ? getConcretePresentation(arguments) : null;
+  public @Nullable ConcreteExpression checkAndGetConcreteRepresentation(@NotNull List<? extends ConcreteArgument> arguments) {
+    return checkArguments(arguments) ? getConcreteRepresentation(arguments) : null;
   }
 
   @Override
