@@ -77,6 +77,8 @@ import java.util.function.Function;
 import static org.arend.typechecking.error.local.inference.ArgInferenceError.expression;
 
 public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, TypecheckingResult>, ConcreteLevelExpressionVisitor<LevelVariable, Level>, ExpressionTypechecker {
+  private enum Stage { BEFORE_SOLVER, BEFORE_LEVELS, AFTER_LEVELS }
+
   private Set<Binding> myFreeBindings;
   private final Equations myEquations;
   private GlobalInstancePool myInstancePool;
@@ -1854,7 +1856,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
 
   @Nullable
   @Override
-  public TypedExpression defer(@NotNull MetaDefinition meta, @NotNull ContextData contextData, @NotNull CoreExpression type, @NotNull Stage stage) {
+  public TypedExpression defer(@NotNull MetaDefinition meta, @NotNull ContextData contextData, @NotNull CoreExpression type) {
     if (meta instanceof BaseMetaDefinition && !((BaseMetaDefinition) meta).checkContextData(contextData, errorReporter)) {
       return null;
     }
@@ -1866,7 +1868,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     Expression expectedType = (Expression) type;
     ContextDataImpl contextDataImpl = new ContextDataImpl((Concrete.ReferenceExpression) refExpr, contextData.getArguments(), expectedType);
     InferenceReferenceExpression inferenceExpr = new InferenceReferenceExpression(new MetaInferenceVariable(expectedType, meta, (Concrete.ReferenceExpression) refExpr, getAllBindings()));
-    (stage == Stage.BEFORE_SOLVER ? myDeferredMetasBeforeSolver : stage == Stage.BEFORE_LEVELS ? myDeferredMetasBeforeLevels : myDeferredMetasAfterLevels).add(new DeferredMeta(meta, new LinkedHashSet<>(myFreeBindings), new LinkedHashMap<>(context), contextDataImpl, inferenceExpr));
+    // (stage == Stage.BEFORE_SOLVER ? myDeferredMetasBeforeSolver : stage == Stage.BEFORE_LEVELS ? myDeferredMetasBeforeLevels : myDeferredMetasAfterLevels)
+    myDeferredMetasBeforeSolver.add(new DeferredMeta(meta, new LinkedHashSet<>(myFreeBindings), new LinkedHashMap<>(context), contextDataImpl, inferenceExpr));
     return new TypecheckingResult(inferenceExpr, expectedType);
   }
 

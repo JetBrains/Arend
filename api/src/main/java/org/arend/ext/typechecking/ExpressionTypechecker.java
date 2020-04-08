@@ -15,13 +15,11 @@ import java.util.List;
 import java.util.function.Function;
 
 public interface ExpressionTypechecker {
-  enum Stage { BEFORE_SOLVER, BEFORE_LEVELS, AFTER_LEVELS }
-
   @NotNull List<CoreBinding> getFreeBindingsList();
   @NotNull ErrorReporter getErrorReporter();
   @Nullable TypedExpression typecheck(@NotNull ConcreteExpression expression, @Nullable CoreExpression expectedType);
   @Nullable TypedExpression check(@NotNull UncheckedExpression expression, @NotNull ConcreteSourceNode sourceNode);
-  @Nullable TypedExpression defer(@NotNull MetaDefinition meta, @NotNull ContextData contextData, @NotNull CoreExpression type, @NotNull Stage stage);
+  @Nullable TypedExpression defer(@NotNull MetaDefinition meta, @NotNull ContextData contextData, @NotNull CoreExpression type);
   boolean compare(@NotNull UncheckedExpression expr1, @NotNull UncheckedExpression expr2, @NotNull CMP cmp, @Nullable ConcreteSourceNode marker, boolean allowEquations, boolean normalize);
   <T> T withErrorReporter(@NotNull ErrorReporter errorReporter, Function<ExpressionTypechecker, T> action);
   @Nullable ConcreteExpression findInstance(@NotNull CoreClassDefinition classDefinition, @Nullable UncheckedExpression classifyingExpression, @NotNull ConcreteSourceNode sourceNode);

@@ -4,11 +4,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class DeferredMetaDefinition extends BaseMetaDefinition {
-  private final ExpressionTypechecker.Stage stage;
   private final MetaDefinition deferredMeta;
 
-  public DeferredMetaDefinition(ExpressionTypechecker.Stage stage, MetaDefinition deferredMeta) {
-    this.stage = stage;
+  public DeferredMetaDefinition(MetaDefinition deferredMeta) {
     this.deferredMeta = deferredMeta;
   }
 
@@ -19,6 +17,6 @@ public class DeferredMetaDefinition extends BaseMetaDefinition {
 
   @Override
   public @Nullable TypedExpression invokeMeta(@NotNull ExpressionTypechecker typechecker, @NotNull ContextData contextData) {
-    return typechecker.defer(deferredMeta, contextData, contextData.getExpectedType(), stage);
+    return typechecker.defer(deferredMeta, contextData, contextData.getExpectedType());
   }
 }
