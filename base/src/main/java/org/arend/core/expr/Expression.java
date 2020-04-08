@@ -203,12 +203,12 @@ public abstract class Expression implements Body, CoreExpression {
   }
 
   @Override
-  public @NotNull UncheckedExpression substitute(@NotNull Map<? extends CoreParameter, ? extends CoreExpression> map) {
+  public @NotNull UncheckedExpression substitute(@NotNull Map<? extends CoreBinding, ? extends CoreExpression> map) {
     if (map.isEmpty()) {
       return this;
     }
     ExprSubstitution substitution = new ExprSubstitution();
-    for (Map.Entry<? extends CoreParameter, ? extends CoreExpression> entry : map.entrySet()) {
+    for (Map.Entry<? extends CoreBinding, ? extends CoreExpression> entry : map.entrySet()) {
       if (!(entry.getKey() instanceof Variable && entry.getValue() instanceof Expression)) {
         throw new IllegalArgumentException();
       }

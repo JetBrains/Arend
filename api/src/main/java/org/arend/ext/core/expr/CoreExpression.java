@@ -15,21 +15,98 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * A core expression is an internal representation of Arend expressions.
+ */
 public interface CoreExpression extends CoreBody, UncheckedExpression, PrettyPrintable {
   <P, R> R accept(@NotNull CoreExpressionVisitor<? super P, ? extends R> visitor, P params);
 
+  /**
+   * Checks if this expression represents an error expression.
+   */
   boolean isError();
+
+  /**
+   * Expressions produces during type-checking may not implement the correct interface.
+   * This method returns the underlying expression which always implements it.
+   * Note that expressions stored in type-checked definitions are always correct, so this method just returns the expression itself for them.
+   */
   @NotNull CoreExpression getUnderlyingExpression();
+
+  /**
+   * Computes the type of this expression.
+   */
   @NotNull CoreExpression computeType();
+
+  /**
+   * Computes the type of this expression and returns the expression with the type.
+   */
   @NotNull TypedExpression computeTyped();
+
+  /**
+   * Normalizes expression.
+   */
   @NotNull CoreExpression normalize(@NotNull NormalizationMode mode);
+
+  /**
+   * Removes pi parameters and returns the codomain.
+   *
+   * @param parameters  parameters of the pi-expression will be added to this list; if it is {@code null}, they will be discarded.
+   * @return            the codomain of the pi-expression, or the expression itself if it is not a pi-expression.
+   */
   @NotNull CoreExpression getPiParameters(@Nullable List<? super CoreParameter> parameters);
+
+  /**
+   * Constructs a new expression replacing some subexpressions according to the mapper.
+   * The mapper is invoked on every subexpression.
+   * If it returns {@code null}, the subexpression won't be changed.
+   * If it returns some expression, the subexpression will be replaced with it.
+   */
   @Nullable UncheckedExpression replaceSubexpressions(@NotNull ExpressionMapper mapper);
-  @NotNull UncheckedExpression substitute(@NotNull Map<? extends CoreParameter, ? extends CoreExpression> map);
+
+  /**
+   * Performs a substitution.
+   */
+  @NotNull UncheckedExpression substitute(@NotNull Map<? extends CoreBinding, ? extends CoreExpression> map);
+
+  /**
+   * Compares this expression with another one.
+   *
+   * @param expr2   another expression
+   * @param cmp     indicates whether expressions should be compared on equality or inequality
+   * @return        true if expressions are equal; false otherwise
+   */
   boolean compare(@NotNull UncheckedExpression expr2, @NotNull CMP cmp);
+
+  /**
+   * Returns an expression equivalent to this one in which the given binding does not occur.
+   * Returns {@code null} if the binding cannot be eliminated from this expression.
+   */
   @Nullable CoreExpression removeUnusedBinding(@NotNull CoreBinding binding);
+
+  /**
+   * Checks that this expression is equivalent to a lambda expression such that its parameters does not occur in its body.
+   * Returns the body of the lambda or {@code null} if this expression is not a lambda or if its parameter occurs in the body.
+   */
   @Nullable CoreExpression removeConstLam();
+
+  /**
+   * Checks that this expression is equivalent to expression of the form {@code a = a'}.
+   * @return  an expression of the form {@code a = a'} equivalent to this one or {@code null} if there is no such expression.
+   */
   @Nullable CoreFunCallExpression toEquality();
+
+  /**
+   * Checks if this expression contains the given free binding.
+   *
+   * @return  true if the expression contains the given binding; false otherwise
+   */
   boolean findFreeBinding(@NotNull CoreBinding binding);
+
+  /**
+   * Finds a free binding from the given set.
+   *
+   * @return  a free binding from the given set or {@code null} if there is no such a binding
+   */
   @Nullable CoreBinding findFreeBindings(@NotNull Set<? extends CoreBinding> bindings);
 }

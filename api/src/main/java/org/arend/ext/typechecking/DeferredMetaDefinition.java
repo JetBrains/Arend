@@ -3,6 +3,9 @@ package org.arend.ext.typechecking;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * A deferred meta definition is invoked after inference variables are solved.
+ */
 public class DeferredMetaDefinition extends BaseMetaDefinition {
   private final MetaDefinition deferredMeta;
 
