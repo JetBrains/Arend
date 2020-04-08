@@ -17,6 +17,9 @@ public interface CoreClassCallExpression extends CoreExpression {
   @NotNull Collection<? extends Map.Entry<? extends CoreClassField, ? extends CoreExpression>> getImplementations();
 
   @Nullable CoreExpression getAbsImplementationHere(@NotNull CoreClassField field);
+  @Nullable CoreExpression getImplementationHere(@NotNull CoreClassField field, @NotNull CoreExpression thisExpr);
+  @Nullable CoreExpression getImplementation(@NotNull CoreClassField field, @NotNull CoreExpression thisExpr);
+  @Nullable CoreExpression getClosedImplementation(@NotNull CoreClassField field);
   boolean isImplementedHere(@NotNull CoreClassField field);
   boolean isImplemented(@NotNull CoreClassField field);
 }

@@ -1,5 +1,6 @@
 package org.arend.core.expr;
 
+import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.Variable;
 import org.arend.core.context.binding.inference.BaseInferenceVariable;
 import org.arend.core.context.binding.inference.InferenceVariable;
@@ -14,14 +15,15 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.error.IncorrectExpressionException;
+import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.core.expr.CoreExpression;
+import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.UncheckedExpression;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.ExpressionMapper;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.MetaException;
-import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.ext.prettyprinting.doc.DocFactory;
@@ -130,8 +132,22 @@ public abstract class Expression implements Body, CoreExpression {
     return accept(new FindBindingVisitor(Collections.singleton(binding)), null) != null;
   }
 
+  @Override
+  public boolean findFreeBinding(@NotNull CoreBinding binding) {
+    if (!(binding instanceof Binding)) {
+      return false;
+    }
+    return accept(new FindBindingVisitor(Collections.singleton((Binding) binding)), null) != null;
+  }
+
   public Variable findBinding(Set<? extends Variable> bindings) {
     return accept(new FindBindingVisitor(bindings), null);
+  }
+
+  @Override
+  public @Nullable CoreBinding findFreeBindings(@NotNull Set<? extends CoreBinding> bindings) {
+    //noinspection unchecked
+    return (CoreBinding) accept(new FindBindingVisitor((Set<Variable>) (Set) bindings), null);
   }
 
   public Expression copy() {
@@ -208,6 +224,14 @@ public abstract class Expression implements Body, CoreExpression {
   @Override
   public boolean compare(@NotNull UncheckedExpression expr2, @NotNull CMP cmp) {
     return CompareVisitor.compare(DummyEquations.getInstance(), cmp, this, UncheckedExpressionImpl.extract(expr2), null, null);
+  }
+
+  @Override
+  public @Nullable Expression removeUnusedBinding(@NotNull CoreBinding binding) {
+    if (!(binding instanceof Binding)) {
+      throw new IllegalArgumentException();
+    }
+    return ElimBindingVisitor.elimBinding(this, (Binding) binding);
   }
 
   @Nullable

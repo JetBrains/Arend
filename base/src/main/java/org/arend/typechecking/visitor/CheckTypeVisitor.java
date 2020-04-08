@@ -232,7 +232,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
   }
 
   @Override
-  public boolean compare(@NotNull UncheckedExpression expr1, @NotNull UncheckedExpression expr2, @NotNull CMP cmp, @Nullable ConcreteExpression marker, boolean allowEquations, boolean normalize) {
+  public boolean compare(@NotNull UncheckedExpression expr1, @NotNull UncheckedExpression expr2, @NotNull CMP cmp, @Nullable ConcreteSourceNode marker, boolean allowEquations, boolean normalize) {
     CompareVisitor visitor = new CompareVisitor(myEquations, cmp, marker instanceof Concrete.SourceNode ? (Concrete.SourceNode) marker : null);
     if (!allowEquations) {
       visitor.doNotAllowEquations();

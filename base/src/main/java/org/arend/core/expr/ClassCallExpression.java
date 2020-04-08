@@ -23,6 +23,7 @@ import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.naming.renamer.Renamer;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -116,18 +117,39 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
     return field instanceof ClassField ? myImplementations.get(field) : null;
   }
 
-  public Expression getImplementationHere(CoreClassField field, Expression thisExpr) {
-    Expression expr = field instanceof ClassField ? myImplementations.get(field) : null;
-    return expr != null ? expr.subst(myThisBinding, thisExpr) : null;
+  @Override
+  public @Nullable Expression getImplementationHere(@NotNull CoreClassField field, @NotNull CoreExpression thisExpr) {
+    if (!(field instanceof ClassField && thisExpr instanceof Expression)) {
+      throw new IllegalArgumentException();
+    }
+    Expression expr = myImplementations.get(field);
+    return expr != null ? expr.subst(myThisBinding, (Expression) thisExpr) : null;
   }
 
-  public Expression getImplementation(ClassField field, Expression thisExpr) {
+  @Override
+  public @Nullable Expression getImplementation(@NotNull CoreClassField field, @NotNull CoreExpression thisExpr) {
+    if (!(field instanceof ClassField && thisExpr instanceof Expression)) {
+      throw new IllegalArgumentException();
+    }
     Expression expr = myImplementations.get(field);
     if (expr != null) {
-      return expr.subst(myThisBinding, thisExpr);
+      return expr.subst(myThisBinding, (Expression) thisExpr);
     }
     AbsExpression impl = getDefinition().getImplementation(field);
-    return impl == null ? null : impl.apply(thisExpr);
+    return impl == null ? null : impl.apply((Expression) thisExpr);
+  }
+
+  @Override
+  public @Nullable Expression getClosedImplementation(@NotNull CoreClassField field) {
+    if (!(field instanceof ClassField)) {
+      throw new IllegalArgumentException();
+    }
+    Expression expr = myImplementations.get(field);
+    if (expr != null) {
+      return expr.removeUnusedBinding(myThisBinding);
+    }
+    AbsExpression impl = getDefinition().getImplementation(field);
+    return impl == null ? null : impl.getBinding() == null ? impl.getExpression() : impl.getExpression().removeUnusedBinding(impl.getBinding());
   }
 
   @Override
