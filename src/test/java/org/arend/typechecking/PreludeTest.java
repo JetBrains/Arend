@@ -25,6 +25,7 @@ public class PreludeTest extends TypeCheckingTestCase {
     typeCheckModule("\\func foo (A : I -> \\Type) (a : A right) : coe2 A right a right = a => idp");
   }
 
+  // This works only with a stricter version of iso, see CompareVisitor
   @Test
   public void testIsoComparison() {
     typeCheckModule(
@@ -35,7 +36,8 @@ public class PreludeTest extends TypeCheckingTestCase {
       "\\func id'-id (x : Nat) : id' x = x\n" +
       "  | 0 => idp\n" +
       "  | suc n => idp\n" +
-      "\\func test : path (iso id id (\\lam _ => idp) (\\lam _ => idp)) = path (iso id id' id'-id id'-id) => idp");
+      "\\func test : path (iso id id (\\lam _ => idp) (\\lam _ => idp)) = path (iso id id' id'-id id'-id) => idp", 1);
+    assertThatErrorsAre(typeMismatchError());
   }
 
   @Test
@@ -52,6 +54,7 @@ public class PreludeTest extends TypeCheckingTestCase {
     assertThatErrorsAre(typeMismatchError());
   }
 
+  // This works only with a stricter version of iso, see NormalizeVisitor
   @Test
   public void isoFreeVarEval() {
     typeCheckModule(
@@ -62,7 +65,8 @@ public class PreludeTest extends TypeCheckingTestCase {
       "\\func id'-id (i : I) (x : Nat) : id' i x = x \\elim x\n" +
       "  | 0 => idp\n" +
       "  | suc n => idp\n" +
-      "\\func test : coe (\\lam i => iso id (id' i) (id'-id i) (id'-id i) i) 0 right = 0 => idp");
+      "\\func test : coe (\\lam i => iso id (id' i) (id'-id i) (id'-id i) i) 0 right = 0 => idp", 1);
+    assertThatErrorsAre(typeMismatchError());
   }
 
   @Test

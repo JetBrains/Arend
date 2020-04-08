@@ -202,9 +202,21 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
             checkSigma = false;
             ConCallExpression normedPtCon = expr.getDefCallArguments().get(2).accept(this, NormalizationMode.WHNF).cast(ConCallExpression.class);
             if (normedPtCon != null && normedPtCon.getDefinition() == Prelude.RIGHT) {
+              boolean noFreeVar = true;
+              for (int i = 0; i < isoArgs.size() - 1; i++) {
+                if (NormalizingFindBindingVisitor.findBinding(isoArgs.get(i), param)) {
+                  noFreeVar = false;
+                  break;
+                }
+              }
+              if (noFreeVar) {
+                return AppExpression.make(isoArgs.get(2), expr.getDefCallArguments().get(1), true).accept(this, mode);
+              }
+              /* Stricter version of iso
               if (!NormalizingFindBindingVisitor.findBinding(isoArgs.get(0), param) && !NormalizingFindBindingVisitor.findBinding(isoArgs.get(1), param) && !NormalizingFindBindingVisitor.findBinding(isoArgs.get(2), param)) {
                 return AppExpression.make(isoArgs.get(2), expr.getDefCallArguments().get(1), true).accept(this, mode);
               }
+              */
             }
           }
         }
