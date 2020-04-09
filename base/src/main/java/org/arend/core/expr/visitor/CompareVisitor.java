@@ -225,7 +225,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     }
 
     CMP origCMP = myCMP;
-    if (!myOnlySolveVars) {
+    if (!myOnlySolveVars && myAllowEquations) {
       Boolean dataAndApp = checkDefCallAndApp(expr1, expr2, true);
       if (dataAndApp != null) {
         return dataAndApp;

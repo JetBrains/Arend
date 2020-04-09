@@ -11,7 +11,7 @@ public class UncheckedExpressionImpl implements UncheckedExpression {
   }
 
   public static Expression extract(UncheckedExpression expr) {
-    if (expr instanceof Expression) {
+    if (expr == null || expr instanceof Expression) {
       return (Expression) expr;
     }
     if (expr instanceof UncheckedExpressionImpl) {

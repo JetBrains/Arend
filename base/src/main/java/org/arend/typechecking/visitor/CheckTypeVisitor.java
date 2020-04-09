@@ -1064,6 +1064,12 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
 
   public TResult visitReference(Concrete.ReferenceExpression expr) {
     Referable ref = expr.getReferent();
+    if (ref instanceof CoreReferable) {
+      TypecheckingResult result = ((CoreReferable) ref).result;
+      fixCheckedExpression(result, ref, expr);
+      return result;
+    }
+
     if (!(ref instanceof GlobalReferable) && (expr.getPLevel() != null || expr.getHLevel() != null)) {
       errorReporter.report(new IgnoredLevelsError(expr.getPLevel(), expr.getHLevel()));
     }
@@ -1074,12 +1080,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
   public TypecheckingResult visitReference(Concrete.ReferenceExpression expr, Expression expectedType) {
     if (expr.getReferent() instanceof MetaReferable) {
       return checkMeta(expr, Collections.emptyList(), expectedType);
-    }
-
-    if (expr.getReferent() instanceof CoreReferable) {
-      TypecheckingResult result = ((CoreReferable) expr.getReferent()).result;
-      fixCheckedExpression(result, expr.getReferent(), expr);
-      return checkResult(expectedType, result, expr);
     }
 
     TResult result = visitReference(expr);
