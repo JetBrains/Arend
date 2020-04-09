@@ -74,7 +74,7 @@ subprojects {
 }
 
 tasks.withType<Wrapper> {
-    gradleVersion = "6.2.1"
+    gradleVersion = "6.3"
 }
 
 dependencies {
