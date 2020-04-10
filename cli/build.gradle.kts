@@ -20,10 +20,7 @@ dependencies {
 
 // Prelude stuff
 
-val buildPrelude = task<JavaExec>("buildPrelude") {
-    description = "Builds the prelude cache"
-    group = "Build"
-    main = "${project.group}.frontend.PreludeBinaryGenerator"
+val buildPrelude = task<org.arend.gradle.BuildPreludeTask>("buildPrelude") {
     classpath = sourceSets["main"].runtimeClasspath
     workingDir(rootProject.rootDir)
     args = listOf(".")
