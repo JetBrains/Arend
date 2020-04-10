@@ -23,7 +23,7 @@ public class ModuleSerialization {
   private final Set<Integer> myCurrentDefinitions = new HashSet<>();
   private boolean myComplete;
 
-  static final int VERSION = 2;
+  static final int VERSION = 3;
 
   public ModuleSerialization(TypecheckerState state, ErrorReporter errorReporter) {
     myState = state;

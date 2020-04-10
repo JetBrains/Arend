@@ -15,7 +15,7 @@ antlrVersion = "4.8"
 
 allprojects {
     group = "org.arend"
-    version = "1.2.0"
+    version = "1.3.0"
     repositories {
         jcenter()
         mavenCentral()
