@@ -483,8 +483,8 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
         Concrete.LetClausePattern pattern = clause.getPattern();
         if (pattern.getReferable() != null) {
           ClassReferable classRef = clause.resultType != null
-              ? myTypeClassReferenceExtractVisitor.getTypeClassReference(clause.getParameters(), clause.resultType)
-              : clause.term instanceof Concrete.NewExpression
+            ? myTypeClassReferenceExtractVisitor.getTypeClassReference(clause.getParameters(), clause.resultType)
+            : clause.term instanceof Concrete.NewExpression
               ? myTypeClassReferenceExtractVisitor.getTypeClassReference(clause.getParameters(), ((Concrete.NewExpression) clause.term).expression)
               : null;
           myContext.add(classRef == null ? pattern.getReferable() : new TypedRedirectingReferable(pattern.getReferable(), classRef));
