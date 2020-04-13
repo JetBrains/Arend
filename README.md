@@ -20,7 +20,8 @@ there's [ARCHITECTURE.md](ARCHITECTURE.md).
 ## Usage
 
 Arend is under active development, so you may expect to depend your project on
-a development version of Arend, say, the SNAPSHOT version.
+a development version of Arend,
+either a certain git revision or the SNAPSHOT version.
 This is possible via [JitPack](https://jitpack.io/#JetBrains/Arend/-SNAPSHOT),
 simply add this to your `build.gradle`:
 
@@ -29,14 +30,17 @@ repositories {
     maven { url 'https://jitpack.io' }
 }
 dependencies {
+    // The version of Arend -- can be a short revision, "[branch]-SNAPSHOT",
+    // "-SNAPSHOT", or a tag (or a release, like "v1.3.0").
+    String arendVersion = "master-SNAPSHOT"
     // Open API for writing Arend extensions
-    implementation 'com.github.JetBrains.Arend:api:master-SNAPSHOT'
+    implementation "com.github.JetBrains.Arend:api:$arendVersion"
     // The generated ANTLR parser
-    implementation 'com.github.JetBrains.Arend:parser:master-SNAPSHOT'
+    implementation "com.github.JetBrains.Arend:parser:$arendVersion"
     // The generated protobuf classes
-    implementation 'com.github.JetBrains.Arend:proto:master-SNAPSHOT'
+    implementation "com.github.JetBrains.Arend:proto:$arendVersion"
     // The main compiler
-    implementation 'com.github.JetBrains.Arend:base:master-SNAPSHOT'
+    implementation "com.github.JetBrains.Arend:base:$arendVersion"
 }
 ```
 
@@ -48,9 +52,11 @@ repositories {
     maven("https://jitpack.io")
 }
 dependencies {
-    implementation("com.github.JetBrains.Arend:api:master-SNAPSHOT")
-    implementation("com.github.JetBrains.Arend:parser:master-SNAPSHOT")
-    implementation("com.github.JetBrains.Arend:proto:master-SNAPSHOT")
-    implementation("com.github.JetBrains.Arend:base:master-SNAPSHOT")
+    // The version of Arend
+    val arendVersion = "master-SNAPSHOT"
+    implementation("com.github.JetBrains.Arend:api:$arendVersion")
+    implementation("com.github.JetBrains.Arend:parser:$arendVersion")
+    implementation("com.github.JetBrains.Arend:proto:$arendVersion")
+    implementation("com.github.JetBrains.Arend:base:$arendVersion")
 }
 ```
