@@ -22,8 +22,20 @@ public class AppHoleTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void inBinOp2() {
+    checkAsLam("Nat -> Nat", "113 Nat.`mod` __ Nat.`div` 114514");
+  }
+
+  @Test
   public void inNestedBinOpWithParen() {
     checkAsLam("Nat -> Nat", "114 Nat.* (__ Nat.+ 514)");
+  }
+
+  @Test
+  public void inNestedBinOpWithParen2() {
+    typeCheckModule(
+      "\\func \\infixl 7 % (x : Nat) (f : Nat -> Nat) => f x" +
+      "\\func test => % 114 (__ Nat.+ 514)");
   }
 
   @Test
