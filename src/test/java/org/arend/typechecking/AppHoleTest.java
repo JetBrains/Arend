@@ -126,7 +126,7 @@ public class AppHoleTest extends TypeCheckingTestCase {
 
   @Test
   public void notAllowedHole() {
-    typeCheckDef(resolveNamesDef("\\func test => __", 5));
+    resolveNamesDef("\\func test => __", 1);
   }
 
   @Test
