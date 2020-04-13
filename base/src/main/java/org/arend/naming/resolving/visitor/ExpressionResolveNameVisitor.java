@@ -18,6 +18,7 @@ import org.arend.typechecking.error.local.ExpectedConstructorError;
 import org.arend.typechecking.provider.ConcreteProvider;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<Void> {
   private final TypeClassReferenceExtractVisitor myTypeClassReferenceExtractVisitor;
@@ -482,8 +483,8 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
         Concrete.LetClausePattern pattern = clause.getPattern();
         if (pattern.getReferable() != null) {
           ClassReferable classRef = clause.resultType != null
-            ? myTypeClassReferenceExtractVisitor.getTypeClassReference(clause.getParameters(), clause.resultType)
-            : clause.term instanceof Concrete.NewExpression
+              ? myTypeClassReferenceExtractVisitor.getTypeClassReference(clause.getParameters(), clause.resultType)
+              : clause.term instanceof Concrete.NewExpression
               ? myTypeClassReferenceExtractVisitor.getTypeClassReference(clause.getParameters(), ((Concrete.NewExpression) clause.term).expression)
               : null;
           myContext.add(classRef == null ? pattern.getReferable() : new TypedRedirectingReferable(pattern.getReferable(), classRef));
@@ -504,6 +505,19 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       convertProjAppHoles(expr, parameters);
       return new Concrete.LamExpression(expr.expression.getData(), parameters, expr).accept(this, null);
     } else return super.visitProj(expr, params);
+  }
+
+  @Override
+  public Concrete.Expression visitTuple(Concrete.TupleExpression expr, Void params) {
+    List<Concrete.Parameter> parameters = new ArrayList<>(expr.getFields().size());
+    List<Concrete.Expression> fields = expr.getFields().stream()
+        .map(element -> element instanceof Concrete.ApplyHoleExpression ? createAppHoleRef(parameters, element.getData()) : element)
+        .collect(Collectors.toList());
+    if (!parameters.isEmpty()) {
+      Object data = expr.getData();
+      return new Concrete.LamExpression(data, parameters, new Concrete.TupleExpression(data, fields))
+          .accept(this, null);
+    } else return super.visitTuple(expr, params);
   }
 
   @Override
