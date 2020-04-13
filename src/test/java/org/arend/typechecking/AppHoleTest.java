@@ -3,6 +3,7 @@ package org.arend.typechecking;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.LamExpression;
 import org.arend.core.expr.TupleExpression;
+import org.arend.frontend.reference.ConcreteLocatedReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.util.ArendExpr;
 import org.junit.Ignore;
@@ -122,5 +123,15 @@ public class AppHoleTest extends TypeCheckingTestCase {
     typeCheckDef("\\func test : (\\Sigma Nat Nat) -> Nat => __.1");
     typeCheckDef("\\func test : (\\Sigma Nat Nat) -> Nat => __.2");
     typeCheckDef("\\func test : (\\Sigma Nat) -> Nat => __.1");
+  }
+
+  @Test
+  public void notAllowedHole() {
+    typeCheckDef(resolveNamesDef("\\func test => __", 1));
+  }
+
+  @Test
+  public void tupleTest() {
+    typeCheckDef("\\func test : Nat -> \\Sigma Nat Nat => (0, __)");
   }
 }
