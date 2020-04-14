@@ -522,8 +522,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
 
   @Override
   public Concrete.Expression visitApplyHole(Concrete.ApplyHoleExpression expr, Void params) {
-    myErrorReporter.report(new TypecheckingError("`__` not allowed here", expr));
-    return super.visitApplyHole(expr, params);
+    return expr;
   }
 
   private static Concrete.ReferenceExpression createAppHoleRef(List<Concrete.Parameter> parameters, Object data) {
