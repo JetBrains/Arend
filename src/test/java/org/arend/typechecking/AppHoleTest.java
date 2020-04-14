@@ -136,11 +136,30 @@ public class AppHoleTest extends TypeCheckingTestCase {
 
   @Test
   public void combinedTest() {
-    typeCheckDef("\\func test (f : Nat -> Nat) : \\Sigma Nat Nat -> Nat => 1 Nat.+ f __.1");
+    checkAsLam("\\Sigma Nat Nat -> Nat", "1 Nat.+ __.1");
   }
 
   @Test
   public void combinedTest2() {
     typeCheckDef("\\func test (t1 t2 : \\Sigma (Nat -> Nat) Nat) (p : t1 = t2) => path ((p @ __).1 0)");
+  }
+
+  @Test
+  public void appProjTest() {
+    typeCheckDef("\\func test (f : (\\Sigma Nat Nat -> Nat) -> Nat) => f __.1");
+  }
+
+  @Test
+  public void classExtTest() {
+    typeCheckModule(
+      "\\record R (x y : Nat)\n" +
+      "\\func test : Nat -> Nat -> R => \\new R __ { | y => __ }");
+  }
+
+  @Test
+  public void classExtTest2() {
+    typeCheckModule(
+      "\\record R (x : \\Sigma Nat Nat -> Nat)\n" +
+      "\\func test => \\new R { | x => __.1 }");
   }
 }
