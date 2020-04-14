@@ -150,6 +150,16 @@ public class AppHoleTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void tupleAppProjTest() {
+    typeCheckDef("\\func test (f : (\\Sigma Nat Nat -> Nat) -> Nat -> Nat) => (f __.1 0, 1)");
+  }
+
+  @Test
+  public void appAppProjTest() {
+    typeCheckDef("\\func test (f : (\\Sigma Nat Nat -> Nat) -> Nat) => suc (f __.1)");
+  }
+
+  @Test
   public void classExtTest() {
     typeCheckModule(
       "\\record R (x y : Nat)\n" +
