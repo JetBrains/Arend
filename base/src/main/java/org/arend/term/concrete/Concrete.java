@@ -354,16 +354,21 @@ public final class Concrete {
       this.isExplicit = true;
     }
 
-    public boolean isReference() {
-      return isExplicit && expression instanceof Concrete.ReferenceExpression;
-    }
-
-    public boolean isWrittenInfix() {
-      return fixity == Fixity.INFIX || isInfixReference();
-    }
-
     public boolean isInfixReference() {
-      return isReference() && ((ReferenceExpression) expression).getReferent() instanceof GlobalReferable && ((GlobalReferable) ((ReferenceExpression) expression).getReferent()).getPrecedence().isInfix;
+      return isExplicit && (fixity == Fixity.INFIX || fixity == Fixity.UNKNOWN && getReferencePrecedence().isInfix);
+    }
+
+    public boolean isPostfixReference() {
+      return isExplicit && fixity == Fixity.POSTFIX;
+    }
+
+    public Precedence getReferencePrecedence() {
+      Concrete.Expression expr = expression;
+      // after the reference is resolved, it may become an application
+      if (expression instanceof Concrete.AppExpression && fixity != Fixity.NONFIX) {
+        expr = ((AppExpression) expression).getFunction();
+      }
+      return expr instanceof Concrete.ReferenceExpression && ((ReferenceExpression) expr).getReferent() instanceof GlobalReferable ? ((GlobalReferable) ((ReferenceExpression) expr).getReferent()).getPrecedence() : Precedence.DEFAULT;
     }
   }
 

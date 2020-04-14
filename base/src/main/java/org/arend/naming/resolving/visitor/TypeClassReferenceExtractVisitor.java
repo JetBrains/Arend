@@ -1,16 +1,15 @@
 package org.arend.naming.resolving.visitor;
 
+import org.arend.ext.reference.Precedence;
 import org.arend.naming.reference.ClassReferable;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteReferableDefinitionVisitor;
 import org.arend.typechecking.provider.ConcreteProvider;
+import org.jetbrains.annotations.NotNull;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefinitionVisitor<Void, ClassReferable> {
   private final ConcreteProvider myConcreteProvider;
@@ -45,7 +44,7 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
     return getTypeClassReference(def.getParameters(), def.getResultType());
   }
 
-  private Referable getTypeReference(Collection<? extends Concrete.Parameter> parameters, Concrete.Expression expr, boolean isType) {
+  public Referable getTypeReference(Collection<? extends Concrete.Parameter> parameters, Concrete.Expression expr, boolean isType) {
     for (Concrete.Parameter parameter : parameters) {
       if (parameter.isExplicit()) {
         return null;
@@ -83,16 +82,54 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
       }
     }
 
-    while (expr instanceof Concrete.BinOpSequenceExpression && ((Concrete.BinOpSequenceExpression) expr).getSequence().size() == 1) {
-      expr = ((Concrete.BinOpSequenceExpression) expr).getSequence().get(0).expression;
-    }
-    if (expr instanceof Concrete.AppExpression) {
-      for (Concrete.Argument argument : ((Concrete.AppExpression) expr).getArguments()) {
-        if (argument.isExplicit()) {
-          myArguments++;
+    while (true) {
+      if (expr instanceof Concrete.BinOpSequenceExpression) {
+        List<Concrete.BinOpSequenceElem> binOpSeq = ((Concrete.BinOpSequenceExpression) expr).getSequence();
+        Precedence minPrec = null;
+        int index = -1;
+        for (int i = 0; i < binOpSeq.size(); i++) {
+          if (binOpSeq.get(i).isInfixReference() || binOpSeq.get(i).isPostfixReference()) {
+            Precedence prec = binOpSeq.get(i).getReferencePrecedence();
+            if (minPrec == null) {
+              minPrec = prec;
+              index = i;
+            } else {
+              if (prec.priority == minPrec.priority && (prec.associativity != minPrec.associativity || prec.associativity == Precedence.Associativity.NON_ASSOC)) {
+                return null;
+              }
+              if (prec.priority < minPrec.priority || prec.priority == minPrec.priority && prec.associativity == Precedence.Associativity.LEFT_ASSOC) {
+                minPrec = prec;
+                index = i;
+              }
+            }
+          }
         }
+        if (index == -1) {
+          expr = binOpSeq.get(0).expression;
+          myArguments += binOpSeq.size() - 1;
+        } else {
+          if (index == 0 && myArguments == 0 && binOpSeq.get(index).isPostfixReference()) {
+            return null;
+          }
+          myArguments++;
+          for (int i = index + 1; i < binOpSeq.size(); i++) {
+            if (binOpSeq.get(i).isExplicit) {
+              myArguments++;
+              break;
+            }
+          }
+          expr = binOpSeq.get(index).expression;
+        }
+      } else if (expr instanceof Concrete.AppExpression) {
+        for (Concrete.Argument argument : ((Concrete.AppExpression) expr).getArguments()) {
+          if (argument.isExplicit()) {
+            myArguments++;
+          }
+        }
+        expr = ((Concrete.AppExpression) expr).getFunction();
+      } else {
+        break;
       }
-      expr = ((Concrete.AppExpression) expr).getFunction();
     }
 
     return expr instanceof Concrete.ReferenceExpression ? ((Concrete.ReferenceExpression) expr).getReferent() : null;

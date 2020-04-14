@@ -489,10 +489,12 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
     int i = 1;
     for (; i < elems.size(); i++) {
-      if (!elems.get(i).isReference() || !elems.get(i).isExplicit || elems.get(i).fixity == Fixity.NONFIX || elems.get(i).fixity == Fixity.UNKNOWN && !elems.get(i).isInfixReference()) {
-        lhs = Concrete.AppExpression.make(lhs.getData(), lhs, elems.get(i).expression, elems.get(i).isExplicit);
-      } else {
+      if (elems.get(i).isPostfixReference()) {
+        lhs = Concrete.AppExpression.make(elems.get(i).expression.getData(), elems.get(i).expression, lhs, true);
+      } else if (elems.get(i).isInfixReference()) {
         break;
+      } else {
+        lhs = Concrete.AppExpression.make(lhs.getData(), lhs, elems.get(i).expression, elems.get(i).isExplicit);
       }
     }
 

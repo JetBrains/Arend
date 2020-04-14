@@ -22,6 +22,7 @@ import org.arend.term.group.ChildGroup;
 import org.arend.term.group.Group;
 import org.arend.typechecking.error.local.LocalErrorReporter;
 import org.arend.typechecking.provider.ConcreteProvider;
+import org.arend.typechecking.visitor.SyntacticDesugarVisitor;
 import org.arend.util.Pair;
 import org.jetbrains.annotations.NotNull;
 
@@ -231,7 +232,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       ((Concrete.TermFunctionBody) body).setTerm(((Concrete.TermFunctionBody) body).getTerm().accept(exprVisitor, null));
     }
     if (body instanceof Concrete.CoelimFunctionBody) {
-      Referable typeRef = def.getResultType() == null ? null : def.getResultType().getUnderlyingReferable();
+      Referable typeRef = def.getResultType() == null ? null : exprVisitor.typeClassReferenceExtractVisitor.getTypeReference(Collections.emptyList(), def.getResultType(), true);
       if (typeRef instanceof ClassReferable) {
         if (def.getKind() == FunctionKind.INSTANCE && ((ClassReferable) typeRef).isRecord()) {
           myLocalErrorReporter.report(new NamingError("Expected a class, got a record", def));
@@ -291,6 +292,8 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     if (myResolverListener != null) {
       myResolverListener.definitionResolved(def);
     }
+
+    def.accept(new SyntacticDesugarVisitor(myLocalErrorReporter), null);
     return null;
   }
 
@@ -375,6 +378,8 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     if (myResolverListener != null) {
       myResolverListener.definitionResolved(def);
     }
+
+    def.accept(new SyntacticDesugarVisitor(myLocalErrorReporter), null);
     return null;
   }
 
@@ -512,6 +517,8 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     if (myResolverListener != null) {
       myResolverListener.definitionResolved(def);
     }
+
+    def.accept(new SyntacticDesugarVisitor(myLocalErrorReporter), null);
     return null;
   }
 
