@@ -13,7 +13,7 @@ public class MemoryRawSource extends StreamRawSource {
   private final long myTimeStamp;
 
   public MemoryRawSource(ModulePath modulePath, String text, long timeStamp) {
-    super(modulePath);
+    super(modulePath, false);
     myText = text;
     myTimeStamp = timeStamp;
   }

@@ -129,6 +129,14 @@ public interface Library {
   ModuleScopeProvider getDeclaredModuleScopeProvider();
 
   /**
+   * Gets the module scope provider that contains modules in the test directory.
+   *
+   * @return a module scope provider for tests.
+   */
+  @NotNull
+  ModuleScopeProvider getTestsModuleScopeProvider();
+
+  /**
    * Checks if the library is external.
    *
    * @return true if this library is external, false if this library is read-only.
@@ -143,4 +151,30 @@ public interface Library {
    * @return true if the ordering was finished, false if it was interrupted.
    */
   boolean orderModules(Ordering ordering);
+
+  /**
+   * Runs an ordering on test modules.
+   *
+   * @param ordering  an ordering.
+   *
+   * @return true if the ordering was finished, false if it was interrupted.
+   */
+  boolean orderTestModules(Ordering ordering);
+
+  /**
+   * Gets the list of modules in the test directory.
+   *
+   * @return the list of test modules or {@code null} if the library does not have tests.
+   */
+  @NotNull
+  Collection<? extends ModulePath> getTestModules();
+
+  /**
+   * Loads tests.
+   *
+   * @param libraryManager  a library manager.
+   *
+   * @return true if tests were successfully loaded.
+   */
+  boolean loadTests(LibraryManager libraryManager);
 }

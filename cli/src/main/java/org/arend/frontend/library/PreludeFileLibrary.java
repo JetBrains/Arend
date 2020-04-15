@@ -43,7 +43,7 @@ public class PreludeFileLibrary extends PreludeTypecheckingLibrary {
     if (arendPath != null) {
       preludePath = Paths.get(arendPath).resolve(preludePath);
     }
-    return new FileRawSource(preludePath, Prelude.MODULE_PATH);
+    return new FileRawSource(preludePath, Prelude.MODULE_PATH, false);
   }
 
   @Nullable

@@ -26,11 +26,13 @@ import java.io.InputStream;
  */
 public abstract class StreamRawSource implements Source {
   private final ModulePath myModulePath;
+  private final boolean myInTests;
   private FileGroup myGroup;
   private byte myPass = 0;
 
-  protected StreamRawSource(ModulePath modulePath) {
+  protected StreamRawSource(ModulePath modulePath, boolean inTests) {
     myModulePath = modulePath;
+    myInTests = inTests;
   }
 
   @NotNull
@@ -82,7 +84,7 @@ public abstract class StreamRawSource implements Source {
       for (NamespaceCommand command : myGroup.getNamespaceCommands()) {
         if (command.getKind() == NamespaceCommand.Kind.IMPORT) {
           ModulePath module = new ModulePath(command.getPath());
-          if (library.containsModule(module) && !sourceLoader.preloadRaw(module)) {
+          if (library.containsModule(module) && !sourceLoader.preloadRaw(module, myInTests)) {
             library.onGroupLoaded(modulePath, null, true);
             myGroup = null;
             return false;
@@ -105,7 +107,7 @@ public abstract class StreamRawSource implements Source {
     }
 
     if (myPass == 0) {
-      myGroup.setModuleScopeProvider(sourceLoader.getModuleScopeProvider());
+      myGroup.setModuleScopeProvider(sourceLoader.getModuleScopeProvider(myInTests));
       myPass = 1;
       return LoadResult.CONTINUE;
     }
@@ -115,7 +117,7 @@ public abstract class StreamRawSource implements Source {
       myPass = 2;
       return LoadResult.CONTINUE;
     }
-    sourceLoader.getInstanceProviderSet().collectInstances(myGroup, CachingScope.make(ScopeFactory.parentScopeForGroup(myGroup, sourceLoader.getModuleScopeProvider(), true)), ConcreteReferableProvider.INSTANCE, null);
+    sourceLoader.getInstanceProviderSet().collectInstances(myGroup, CachingScope.make(ScopeFactory.parentScopeForGroup(myGroup, sourceLoader.getModuleScopeProvider(myInTests), true)), ConcreteReferableProvider.INSTANCE, null);
     return LoadResult.SUCCESS;
   }
 }

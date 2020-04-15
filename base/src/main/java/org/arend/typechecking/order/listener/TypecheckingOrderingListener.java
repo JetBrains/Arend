@@ -116,6 +116,9 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
     return typecheckLibrary(library, null);
   }
 
+  public boolean typecheckTests(Library library, CancellationIndicator cancellationIndicator) {
+    return run(cancellationIndicator, () -> library.orderTestModules(new Ordering(myInstanceProviderSet, myConcreteProvider, this, myDependencyListener, myReferableConverter, myState, myComparator)));
+  }
   public boolean typecheckCollected(CollectingOrderingListener collector, CancellationIndicator cancellationIndicator) {
     return run(cancellationIndicator, () -> {
       collector.feed(this);

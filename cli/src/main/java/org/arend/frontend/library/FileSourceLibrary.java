@@ -17,22 +17,26 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
 public class FileSourceLibrary extends UnmodifiableSourceLibrary {
   protected Path mySourceBasePath;
   protected Path myBinaryBasePath;
+  protected Path myTestBasePath;
   protected Path myExtBasePath;
   protected String myExtMainClass;
   protected Set<ModulePath> myModules;
+  protected List<ModulePath> myTestModules = Collections.emptyList();
   protected List<LibraryDependency> myDependencies;
   protected Range<Version> myLanguageVersion;
   protected boolean myComplete;
 
   /**
    * Creates a new {@code UnmodifiableFileSourceLibrary}
-   *  @param name              the name of this library.
+   * @param name              the name of this library.
    * @param sourceBasePath    a path to the directory with raw source files.
    * @param binaryBasePath    a path to the directory with binary source files.
    * @param extBasePath       a path to the directory with language extensions.
@@ -63,16 +67,30 @@ public class FileSourceLibrary extends UnmodifiableSourceLibrary {
     return myBinaryBasePath;
   }
 
+  public Path getTestBasePath() {
+    return myTestBasePath;
+  }
+
   @Nullable
   @Override
   public final Source getRawSource(ModulePath modulePath) {
-    return mySourceBasePath == null ? null : new FileRawSource(mySourceBasePath, modulePath);
+    return mySourceBasePath == null ? null : new FileRawSource(mySourceBasePath, modulePath, false);
+  }
+
+  @Override
+  public @Nullable Source getTestSource(ModulePath modulePath) {
+    return myTestBasePath == null ? null : new FileRawSource(myTestBasePath, modulePath, true);
   }
 
   @Nullable
   @Override
   public BinarySource getBinarySource(ModulePath modulePath) {
     return myBinaryBasePath == null ? null : new GZIPStreamBinarySource(new FileBinarySource(myBinaryBasePath, modulePath));
+  }
+
+  @Override
+  public @NotNull Collection<? extends ModulePath> getTestModules() {
+    return myTestModules;
   }
 
   @Nullable

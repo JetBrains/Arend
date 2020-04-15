@@ -27,7 +27,7 @@ public class NameResolutionOnLoadTest extends LibraryTestCase {
   public void trivialResolution() {
     setupSources();
     SourceLoader sourceLoader = new SourceLoader(library, libraryManager);
-    assertTrue(sourceLoader.preloadRaw(new ModulePath("B")));
+    assertTrue(sourceLoader.preloadRaw(new ModulePath("B"), false));
     sourceLoader.loadRawSources();
     Scope moduleB = library.getModuleScopeProvider().forModule(new ModulePath("B"));
 
@@ -41,7 +41,7 @@ public class NameResolutionOnLoadTest extends LibraryTestCase {
   public void trivialResolutionThatLoads() {
     setupSources();
     SourceLoader sourceLoader = new SourceLoader(library, libraryManager);
-    assertTrue(sourceLoader.preloadRaw(new ModulePath("A")));
+    assertTrue(sourceLoader.preloadRaw(new ModulePath("A"), false));
     sourceLoader.loadRawSources();
     Scope moduleA = library.getModuleScopeProvider().forModule(new ModulePath("A"));
 
@@ -58,7 +58,7 @@ public class NameResolutionOnLoadTest extends LibraryTestCase {
   public void resolutionThatLoadsMultipleModules() {
     setupSources();
     SourceLoader sourceLoader = new SourceLoader(library, libraryManager);
-    assertTrue(sourceLoader.preloadRaw(new ModulePath("B", "C")));
+    assertTrue(sourceLoader.preloadRaw(new ModulePath("B", "C"), false));
     sourceLoader.loadRawSources();
     Scope moduleBC = library.getModuleScopeProvider().forModule(new ModulePath("B", "C"));
     Scope moduleBCE = library.getModuleScopeProvider().forModule(new ModulePath("B", "C", "E"));
@@ -77,7 +77,7 @@ public class NameResolutionOnLoadTest extends LibraryTestCase {
   public void mutuallyRecursiveModules() {
     setupSources();
     SourceLoader sourceLoader = new SourceLoader(library, libraryManager);
-    assertTrue(sourceLoader.preloadRaw(new ModulePath("X")));
+    assertTrue(sourceLoader.preloadRaw(new ModulePath("X"), false));
     sourceLoader.loadRawSources();
     Scope moduleX = library.getModuleScopeProvider().forModule(new ModulePath("X"));
     Scope moduleY = library.getModuleScopeProvider().forModule(new ModulePath("Y"));

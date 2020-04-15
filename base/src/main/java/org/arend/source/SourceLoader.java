@@ -5,8 +5,10 @@ import org.arend.ext.module.ModulePath;
 import org.arend.library.LibraryManager;
 import org.arend.library.SourceLibrary;
 import org.arend.module.error.ModuleNotFoundError;
+import org.arend.module.scopeprovider.CachingModuleScopeProvider;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.reference.converter.ReferableConverter;
+import org.arend.naming.scope.Scope;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
 
 import java.util.HashMap;
@@ -24,6 +26,7 @@ public final class SourceLoader {
   private final Map<ModulePath, BinarySource> myLoadingBinaryModules = new HashMap<>();
   private final Map<ModulePath, Source> myLoadingRawModules = new HashMap<>();
   private ModuleScopeProvider myModuleScopeProvider;
+  private ModuleScopeProvider myTestsModuleScopeProvider;
 
   private enum SourceType { RAW, BINARY, BINARY_FAIL }
 
@@ -41,11 +44,22 @@ public final class SourceLoader {
     return myReferableConverter;
   }
 
-  public ModuleScopeProvider getModuleScopeProvider() {
+  public ModuleScopeProvider getModuleScopeProvider(boolean withTests) {
     if (myModuleScopeProvider == null) {
       myModuleScopeProvider = myLibraryManager.getAvailableModuleScopeProvider(myLibrary);
     }
-    return myModuleScopeProvider;
+    if (withTests) {
+      if (myTestsModuleScopeProvider == null) {
+        ModuleScopeProvider testsProvider = new CachingModuleScopeProvider(myLibrary.getTestsModuleScopeProvider());
+        myTestsModuleScopeProvider = module -> {
+          Scope scope = myModuleScopeProvider.forModule(module);
+          return scope != null ? scope : testsProvider.forModule(module);
+        };
+      }
+      return myTestsModuleScopeProvider;
+    } else {
+      return myModuleScopeProvider;
+    }
   }
 
   public InstanceProviderSet getInstanceProviderSet() {
@@ -60,13 +74,18 @@ public final class SourceLoader {
     return myLibraryManager.getLibraryErrorReporter();
   }
 
+  public void setModuleLoaded(ModulePath modulePath) {
+    myLoadedModules.put(modulePath, SourceType.RAW);
+  }
+
   /**
    * Loads the structure of the source and its dependencies.
    *
    * @param modulePath  a module to load.
+   * @param inTests     true if the module located in the test directory, false otherwise.
    * @return true if a binary source is available or if the raw source was successfully loaded, false otherwise.
    */
-  public boolean preloadRaw(ModulePath modulePath) {
+  public boolean preloadRaw(ModulePath modulePath, boolean inTests) {
     if (myLoadedModules.containsKey(modulePath)) {
       return true;
     }
@@ -74,7 +93,7 @@ public final class SourceLoader {
       return true;
     }
 
-    Source rawSource = myLibrary.getRawSource(modulePath);
+    Source rawSource = inTests ? myLibrary.getTestSource(modulePath) : myLibrary.getRawSource(modulePath);
     boolean rawSourceIsAvailable = rawSource != null && rawSource.isAvailable();
 
     if (!rawSourceIsAvailable) {

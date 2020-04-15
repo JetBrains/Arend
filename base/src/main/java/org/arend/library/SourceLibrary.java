@@ -78,6 +78,18 @@ public abstract class SourceLibrary extends BaseLibrary {
   public abstract Source getRawSource(ModulePath modulePath);
 
   /**
+   * Gets the test source for a given module path.
+   *
+   * @param modulePath  a path to the source.
+   *
+   * @return the test source corresponding to the given path or null if the source is not found.
+   */
+  @Nullable
+  public Source getTestSource(ModulePath modulePath) {
+    return null;
+  }
+
+  /**
    * Gets the binary source (that is, the source containing typechecked data) for a given module path.
    *
    * @param modulePath  a path to the source.
@@ -255,7 +267,7 @@ public abstract class SourceLibrary extends BaseLibrary {
       SourceLoader sourceLoader = new SourceLoader(this, libraryManager);
       if (hasRawSources()) {
         for (ModulePath module : header.modules) {
-          sourceLoader.preloadRaw(module);
+          sourceLoader.preloadRaw(module, false);
         }
         sourceLoader.loadRawSources();
       }
@@ -287,6 +299,25 @@ public abstract class SourceLibrary extends BaseLibrary {
     libraryManager.afterLibraryLoading(this, true);
 
     return super.load(libraryManager, typechecking);
+  }
+
+  @Override
+  public boolean loadTests(LibraryManager libraryManager) {
+    Collection<? extends ModulePath> modules = getTestModules();
+    if (modules.isEmpty()) {
+      return true;
+    }
+
+    SourceLoader sourceLoader = new SourceLoader(this, libraryManager);
+    for (ModulePath module : getLoadedModules()) {
+      sourceLoader.setModuleLoaded(module);
+    }
+    for (ModulePath module : modules) {
+      sourceLoader.preloadRaw(module, true);
+    }
+    sourceLoader.loadRawSources();
+
+    return true;
   }
 
   @Override
