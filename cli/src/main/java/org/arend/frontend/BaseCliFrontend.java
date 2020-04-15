@@ -352,7 +352,7 @@ public abstract class BaseCliFrontend {
         System.out.println("[INFO] Loaded tests for " + library.getName() + " (" + timeToString(time) + ")");
 
         System.out.println();
-        System.out.println("--- Checking tests for " + library.getName() + " ---");
+        System.out.println("--- Running tests in " + library.getName() + " ---");
         typechecking.clear();
         time = System.currentTimeMillis();
         typechecking.typecheckTests(library, null);
