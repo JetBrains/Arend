@@ -95,6 +95,24 @@ public class SyntacticDesugarVisitor extends BaseConcreteExpressionVisitor<Void>
     else return super.visitClassExt(expr, params);
   }
 
+  @Override
+  public Concrete.Expression visitPi(Concrete.PiExpression expr, Void params) {
+    List<Concrete.Parameter> parameters = new ArrayList<>();
+    convertPiAppHoles(expr, parameters);
+    if (!parameters.isEmpty())
+      return new Concrete.LamExpression(expr.getData(), parameters, expr).accept(this, null);
+    else return super.visitPi(expr, params);
+  }
+
+  @Override
+  public Concrete.Expression visitSigma(Concrete.SigmaExpression expr, Void params) {
+    List<Concrete.Parameter> parameters = new ArrayList<>();
+    convertSigmaAppHoles(expr, parameters);
+    if (!parameters.isEmpty())
+      return new Concrete.LamExpression(expr.getData(), parameters, expr).accept(this, null);
+    else return super.visitSigma(expr, params);
+  }
+
   private static Concrete.ReferenceExpression createAppHoleRef(List<Concrete.Parameter> parameters, Object data) {
     LocalReferable ref = new LocalReferable("p" + parameters.size());
     parameters.add(new Concrete.NameParameter(data, true, ref));
@@ -131,12 +149,10 @@ public class SyntacticDesugarVisitor extends BaseConcreteExpressionVisitor<Void>
       convertClassExtAppHoles((Concrete.ClassExtExpression) expression, parameters);
     else if (expression instanceof Concrete.NewExpression)
       convertNewAppHoles((Concrete.NewExpression) expression, parameters);
-    /*
     else if (expression instanceof Concrete.PiExpression)
       convertPiAppHoles((Concrete.PiExpression) expression, parameters);
     else if (expression instanceof Concrete.SigmaExpression)
       convertSigmaAppHoles((Concrete.SigmaExpression) expression, parameters);
-    */
   }
 
   private void convertAppHoles(Concrete.AppExpression expr, List<Concrete.Parameter> parameters) {
@@ -183,7 +199,6 @@ public class SyntacticDesugarVisitor extends BaseConcreteExpressionVisitor<Void>
       else convertRecursively(argument.expression, parameters);
   }
 
-/*
   private void convertPiAppHoles(Concrete.PiExpression expr, List<Concrete.Parameter> parameters) {
     for (Concrete.TypeParameter parameter : expr.getParameters())
       convertParameterAppHoles(parameter, parameters);
@@ -202,5 +217,4 @@ public class SyntacticDesugarVisitor extends BaseConcreteExpressionVisitor<Void>
       parameter.type = createAppHoleRef(parameters, parameter.type.getData());
     else convertRecursively(parameter.type, parameters);
   }
-*/
 }

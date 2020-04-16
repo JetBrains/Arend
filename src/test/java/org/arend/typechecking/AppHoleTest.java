@@ -63,14 +63,12 @@ public class AppHoleTest extends TypeCheckingTestCase {
   }
 
   @Test
-  @Ignore
   public void inPi() {
     checkAsLam("Nat -> \\Set0", "\\Pi (A : 1 = __) -> Nat");
     checkAsLam("\\Set0 -> \\Set1", "\\Pi (A : __) -> Nat");
   }
 
   @Test
-  @Ignore
   public void inSigma() {
     checkAsLam("Nat -> \\Set0", "\\Sigma (A : 1 = __) Nat");
     checkAsLam("\\Set0 -> \\Set1", "\\Sigma (A : __) Nat");
