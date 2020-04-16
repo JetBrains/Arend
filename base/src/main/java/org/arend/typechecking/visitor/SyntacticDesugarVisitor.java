@@ -36,18 +36,18 @@ public class SyntacticDesugarVisitor extends BaseConcreteExpressionVisitor<Void>
   public Concrete.Expression visitBinOpSequence(Concrete.BinOpSequenceExpression expr, Void params) {
     List<Concrete.Parameter> parameters = new ArrayList<>();
     convertBinOpAppHoles(expr, parameters);
-    if (!parameters.isEmpty())
-      return new Concrete.LamExpression(expr.getData(), parameters, expr).accept(this, null);
-    return new BinOpParser(myErrorReporter).parse(expr).accept(this, null);
+    return !parameters.isEmpty()
+        ? new Concrete.LamExpression(expr.getData(), parameters, expr).accept(this, null)
+        : new BinOpParser(myErrorReporter).parse(expr).accept(this, null);
   }
 
   @Override
   public Concrete.Expression visitCase(Concrete.CaseExpression expr, Void params) {
     List<Concrete.Parameter> parameters = new ArrayList<>();
     convertCaseAppHoles(expr, parameters);
-    if (!parameters.isEmpty())
-      return new Concrete.LamExpression(expr.getData(), parameters, expr).accept(this, null);
-    return super.visitCase(expr, params);
+    return !parameters.isEmpty()
+        ? new Concrete.LamExpression(expr.getData(), parameters, expr).accept(this, null)
+        : super.visitCase(expr, params);
   }
 
   @Override
@@ -67,7 +67,8 @@ public class SyntacticDesugarVisitor extends BaseConcreteExpressionVisitor<Void>
         .collect(Collectors.toList());
     if (!parameters.isEmpty()) {
       Object data = expr.getData();
-      return new Concrete.LamExpression(data, parameters, new Concrete.TupleExpression(data, fields))
+      Concrete.TupleExpression tuple = new Concrete.TupleExpression(data, fields);
+      return new Concrete.LamExpression(data, parameters, tuple)
           .accept(this, null);
     } else return super.visitTuple(expr, params);
   }
@@ -81,36 +82,36 @@ public class SyntacticDesugarVisitor extends BaseConcreteExpressionVisitor<Void>
   public Concrete.Expression visitNew(Concrete.NewExpression expr, Void params) {
     List<Concrete.Parameter> parameters = new ArrayList<>();
     convertNewAppHoles(expr, parameters);
-    if (!parameters.isEmpty())
-      return new Concrete.LamExpression(expr.getData(), parameters, expr).accept(this, null);
-    else return super.visitNew(expr, params);
+    return !parameters.isEmpty()
+        ? new Concrete.LamExpression(expr.getData(), parameters, expr).accept(this, null)
+        : super.visitNew(expr, params);
   }
 
   @Override
   public Concrete.Expression visitClassExt(Concrete.ClassExtExpression expr, Void params) {
     List<Concrete.Parameter> parameters = new ArrayList<>();
     convertClassExtAppHoles(expr, parameters);
-    if (!parameters.isEmpty())
-      return new Concrete.LamExpression(expr.getData(), parameters, expr).accept(this, null);
-    else return super.visitClassExt(expr, params);
+    return !parameters.isEmpty()
+        ? new Concrete.LamExpression(expr.getData(), parameters, expr).accept(this, null)
+        : super.visitClassExt(expr, params);
   }
 
   @Override
   public Concrete.Expression visitPi(Concrete.PiExpression expr, Void params) {
     List<Concrete.Parameter> parameters = new ArrayList<>();
     convertPiAppHoles(expr, parameters);
-    if (!parameters.isEmpty())
-      return new Concrete.LamExpression(expr.getData(), parameters, expr).accept(this, null);
-    else return super.visitPi(expr, params);
+    return !parameters.isEmpty()
+        ? new Concrete.LamExpression(expr.getData(), parameters, expr).accept(this, null)
+        : super.visitPi(expr, params);
   }
 
   @Override
   public Concrete.Expression visitSigma(Concrete.SigmaExpression expr, Void params) {
     List<Concrete.Parameter> parameters = new ArrayList<>();
     convertSigmaAppHoles(expr, parameters);
-    if (!parameters.isEmpty())
-      return new Concrete.LamExpression(expr.getData(), parameters, expr).accept(this, null);
-    else return super.visitSigma(expr, params);
+    return !parameters.isEmpty()
+        ? new Concrete.LamExpression(expr.getData(), parameters, expr).accept(this, null)
+        : super.visitSigma(expr, params);
   }
 
   private static Concrete.ReferenceExpression createAppHoleRef(List<Concrete.Parameter> parameters, Object data) {
@@ -126,8 +127,8 @@ public class SyntacticDesugarVisitor extends BaseConcreteExpressionVisitor<Void>
         elem.expression = createAppHoleRef(parameters, elem.expression.getData());
       else if (isLastElemInfix) convertRecursively(elem.expression, parameters);
       else if (elem.expression instanceof Concrete.ReferenceExpression
-          || elem.expression instanceof Concrete.BinOpSequenceExpression)
-        elem.expression = elem.expression.accept(this, null);
+          || elem.expression instanceof Concrete.BinOpSequenceExpression
+      ) elem.expression = elem.expression.accept(this, null);
       else if (elem.expression instanceof Concrete.SigmaExpression
           || elem.expression instanceof Concrete.PiExpression
           || elem.expression instanceof Concrete.CaseExpression
@@ -160,14 +161,14 @@ public class SyntacticDesugarVisitor extends BaseConcreteExpressionVisitor<Void>
     if (originalFunc instanceof Concrete.ApplyHoleExpression)
       expr.setFunction(createAppHoleRef(parameters, originalFunc.getData()));
     else if (originalFunc instanceof Concrete.AppExpression
-        || originalFunc instanceof Concrete.ProjExpression)
-      convertRecursively(originalFunc, parameters);
+        || originalFunc instanceof Concrete.ProjExpression
+    ) convertRecursively(originalFunc, parameters);
     for (Concrete.Argument argument : expr.getArguments())
       if (argument.expression instanceof Concrete.ApplyHoleExpression)
         argument.expression = createAppHoleRef(parameters, argument.expression.getData());
       else if (argument.expression instanceof Concrete.AppExpression
-          || argument.expression instanceof Concrete.ProjExpression)
-        convertRecursively(argument.expression, parameters);
+          || argument.expression instanceof Concrete.ProjExpression
+      ) convertRecursively(argument.expression, parameters);
   }
 
   private void convertProjAppHoles(Concrete.ProjExpression proj, List<Concrete.Parameter> parameters) {
