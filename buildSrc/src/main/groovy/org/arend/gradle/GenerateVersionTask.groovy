@@ -13,7 +13,7 @@ class GenerateVersionTask extends DefaultTask {
     @Input
     String className = "GeneratedVersion"
     @OutputDirectory
-    File outputDir = new File("src/main/java/org/arend/prelude")
+    File outputDir = project.file("src/main/java/org/arend/prelude")
 
     @TaskAction
     def run() {

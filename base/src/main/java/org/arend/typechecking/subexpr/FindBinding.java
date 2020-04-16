@@ -82,7 +82,7 @@ public class FindBinding {
   }
 
   /**
-   * @param patternData Both {@link Referable} and {@link Object} are supported.
+   * @param data Both {@link Referable} and {@link Object} are supported.
    */
   private static @Nullable DependentLink visitPattern(
       Object data, Iterator<? extends Pattern> corePatterns, Iterator<Concrete.Pattern> patterns) {
