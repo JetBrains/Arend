@@ -1,12 +1,8 @@
 package org.arend.ext.prettyprinting.doc;
 
 import org.arend.ext.core.expr.CoreExpression;
-import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
-import org.arend.ext.prettyprinting.PrettyPrinterFlag;
-import org.jetbrains.annotations.NotNull;
-
-import java.util.EnumSet;
+import org.arend.ext.prettyprinting.PrettyPrinterConfigImpl;
 
 public class TermLineDoc extends LineDoc {
   private final PrettyPrinterConfig ppConfig;
@@ -15,23 +11,9 @@ public class TermLineDoc extends LineDoc {
 
   TermLineDoc(CoreExpression term, PrettyPrinterConfig ppConfig) {
     this.term = term;
-    this.ppConfig = new PrettyPrinterConfig() {
-        @Override
-        public boolean isSingleLine() {
-          return true;
-        }
-
-        @NotNull
-        @Override
-        public EnumSet<PrettyPrinterFlag> getExpressionFlags() {
-          return ppConfig.getExpressionFlags();
-        }
-
-        @Override
-        public NormalizationMode getNormalizationMode() {
-          return ppConfig.getNormalizationMode();
-        }
-    };
+    PrettyPrinterConfigImpl config = new PrettyPrinterConfigImpl(ppConfig);
+    config.isSingleLine = true;
+    this.ppConfig = config;
   }
 
   public CoreExpression getTerm() {

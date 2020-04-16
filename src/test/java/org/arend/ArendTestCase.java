@@ -2,7 +2,6 @@ package org.arend;
 
 import org.arend.error.ListErrorReporter;
 import org.arend.ext.error.GeneralError;
-import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.extImpl.DefinitionRequester;
 import org.arend.frontend.ConcreteReferableProvider;
@@ -17,6 +16,7 @@ import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.naming.scope.Scope;
 import org.arend.prelude.Prelude;
 import org.arend.prelude.PreludeLibrary;
+import org.arend.term.prettyprint.PrettyPrinterConfigWithRenamer;
 import org.arend.typechecking.SimpleTypecheckerState;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
@@ -81,7 +81,7 @@ public abstract class ArendTestCase {
           List<Doc> docs = new ArrayList<>(errors.size() + 1);
           docs.add(text("there were errors:"));
           for (GeneralError error : errors) {
-            docs.add(error.getDoc(PrettyPrinterConfig.DEFAULT));
+            docs.add(error.getDoc(new PrettyPrinterConfigWithRenamer()));
           }
           description.appendText(vList(docs).toString());
         }

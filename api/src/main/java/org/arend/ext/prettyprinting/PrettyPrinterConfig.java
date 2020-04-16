@@ -26,5 +26,9 @@ public interface PrettyPrinterConfig {
     return getExpressionFlags().contains(PrettyPrinterFlag.SHOW_IMPLICIT_ARGS) ? NormalizationMode.RNF : NormalizationMode.RNF_EXP;
   }
 
+  default @Nullable DefinitionRenamer getDefinitionRenamer() {
+    return null;
+  }
+
   PrettyPrinterConfig DEFAULT = new PrettyPrinterConfig() {};
 }

@@ -3,16 +3,13 @@ package org.arend.typechecking.patternmatching;
 import org.arend.core.context.binding.Variable;
 import org.arend.core.expr.Expression;
 import org.arend.core.subst.ExprSubstitution;
-import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
-import org.arend.ext.prettyprinting.PrettyPrinterFlag;
+import org.arend.ext.prettyprinting.PrettyPrinterConfigImpl;
 import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.ext.prettyprinting.doc.DocStringBuilder;
 import org.arend.ext.prettyprinting.doc.LineDoc;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 
@@ -28,23 +25,9 @@ public class SubstitutionData {
   }
 
   public Doc toDoc(PrettyPrinterConfig ppConfig) {
-    Doc doc = expression == null ? null : termDoc(expression, new PrettyPrinterConfig() {
-      @Override
-      public boolean isSingleLine() {
-        return ppConfig.isSingleLine();
-      }
-
-      @NotNull
-      @Override
-      public EnumSet<PrettyPrinterFlag> getExpressionFlags() {
-        return ppConfig.getExpressionFlags();
-      }
-
-      @Override
-      public NormalizationMode getNormalizationMode() {
-        return null;
-      }
-    });
+    PrettyPrinterConfigImpl newPPConfig = new PrettyPrinterConfigImpl(ppConfig);
+    newPPConfig.normalizationMode = null;
+    Doc doc = expression == null ? null : termDoc(expression, newPPConfig);
 
     if (substitution != null && !substitution.isEmpty()) {
       List<LineDoc> substDocs = new ArrayList<>(substitution.getEntries().size());

@@ -2,9 +2,9 @@ package org.arend.typechecking.error.local;
 
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.pattern.ExpressionPattern;
-import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.PrettyPrinterConfigImpl;
 import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.arend.term.concrete.Concrete;
@@ -50,12 +50,8 @@ public class MissingClausesError extends TypecheckingError {
 
   @Override
   public Doc getBodyDoc(PrettyPrinterConfig ppConfig) {
-    PrettyPrinterConfig modPPConfig = new PrettyPrinterConfig() {
-      @Override
-      public NormalizationMode getNormalizationMode() {
-        return null;
-      }
-    };
+    PrettyPrinterConfigImpl modPPConfig = new PrettyPrinterConfigImpl(ppConfig);
+    modPPConfig.normalizationMode = null;
 
     List<LineDoc> docs = new ArrayList<>();
     for (List<ExpressionPattern> missingClause : getLimitedMissingClauses()) {

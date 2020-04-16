@@ -49,7 +49,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   }
 
   public static Concrete.Expression convert(Expression expression, PrettyPrinterConfig config) {
-    DefCallRenamer defCallRenamer = new DefCallRenamer();
+    DefCallRenamer defCallRenamer = new DefCallRenamer(config.getDefinitionRenamer());
     expression.accept(defCallRenamer, null);
     CollectFreeVariablesVisitor collector = new CollectFreeVariablesVisitor(defCallRenamer);
     Set<Variable> variables = new HashSet<>();

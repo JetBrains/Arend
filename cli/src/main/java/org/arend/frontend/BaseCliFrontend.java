@@ -5,7 +5,6 @@ import org.arend.core.definition.Definition;
 import org.arend.error.ListErrorReporter;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.module.ModulePath;
-import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.PrettyPrinterFlag;
 import org.arend.extImpl.DefinitionRequester;
 import org.arend.frontend.library.FileSourceLibrary;
@@ -17,6 +16,7 @@ import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.prelude.Prelude;
 import org.arend.prelude.PreludeResourceLibrary;
 import org.arend.term.group.Group;
+import org.arend.term.prettyprint.PrettyPrinterConfigWithRenamer;
 import org.arend.typechecking.SimpleTypecheckerState;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.doubleChecker.CoreModuleChecker;
@@ -25,7 +25,6 @@ import org.arend.typechecking.instance.provider.InstanceProviderSet;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.arend.util.FileUtils;
 import org.arend.util.Range;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.nio.file.FileSystems;
@@ -375,16 +374,11 @@ public abstract class BaseCliFrontend {
       });
 
       //Print error
-      String errorText;
+      PrettyPrinterConfigWithRenamer ppConfig = new PrettyPrinterConfigWithRenamer();
       if (error instanceof GoalError) {
-        errorText = error.getDoc(new PrettyPrinterConfig() {
-          @NotNull
-          @Override
-          public EnumSet<PrettyPrinterFlag> getExpressionFlags() {
-            return EnumSet.of(PrettyPrinterFlag.SHOW_FIELD_INSTANCE);
-          }
-        }).toString();
-      } else errorText = error.toString();
+        ppConfig.expressionFlags = EnumSet.of(PrettyPrinterFlag.SHOW_FIELD_INSTANCE);
+      }
+      String errorText = error.getDoc(ppConfig).toString();
 
       if (error.isSevere()) {
         System.err.println(errorText);
