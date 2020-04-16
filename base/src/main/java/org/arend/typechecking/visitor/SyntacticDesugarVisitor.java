@@ -61,7 +61,7 @@ public class SyntacticDesugarVisitor extends BaseConcreteExpressionVisitor<Void>
 
   @Override
   public Concrete.Expression visitTuple(Concrete.TupleExpression expr, Void params) {
-    List<Concrete.Parameter> parameters = new ArrayList<>(expr.getFields().size());
+    List<Concrete.Parameter> parameters = new ArrayList<>();
     List<Concrete.Expression> fields = expr.getFields().stream()
         .map(element -> element instanceof Concrete.ApplyHoleExpression ? createAppHoleRef(parameters, element.getData()) : element)
         .collect(Collectors.toList());
@@ -75,6 +75,24 @@ public class SyntacticDesugarVisitor extends BaseConcreteExpressionVisitor<Void>
   @Override
   public Concrete.Expression visitApplyHole(Concrete.ApplyHoleExpression expr, Void params) {
     return expr;
+  }
+
+  @Override
+  public Concrete.Expression visitNew(Concrete.NewExpression expr, Void params) {
+    List<Concrete.Parameter> parameters = new ArrayList<>();
+    convertNewAppHoles(expr, parameters);
+    if (!parameters.isEmpty())
+      return new Concrete.LamExpression(expr.getData(), parameters, expr).accept(this, null);
+    else return super.visitNew(expr, params);
+  }
+
+  @Override
+  public Concrete.Expression visitClassExt(Concrete.ClassExtExpression expr, Void params) {
+    List<Concrete.Parameter> parameters = new ArrayList<>();
+    convertClassExtAppHoles(expr, parameters);
+    if (!parameters.isEmpty())
+      return new Concrete.LamExpression(expr.getData(), parameters, expr).accept(this, null);
+    else return super.visitClassExt(expr, params);
   }
 
   private static Concrete.ReferenceExpression createAppHoleRef(List<Concrete.Parameter> parameters, Object data) {
@@ -109,6 +127,10 @@ public class SyntacticDesugarVisitor extends BaseConcreteExpressionVisitor<Void>
       convertBinOpAppHoles((Concrete.BinOpSequenceExpression) expression, parameters);
     else if (expression instanceof Concrete.CaseExpression)
       convertCaseAppHoles((Concrete.CaseExpression) expression, parameters);
+    else if (expression instanceof Concrete.ClassExtExpression)
+      convertClassExtAppHoles((Concrete.ClassExtExpression) expression, parameters);
+    else if (expression instanceof Concrete.NewExpression)
+      convertNewAppHoles((Concrete.NewExpression) expression, parameters);
     /*
     else if (expression instanceof Concrete.PiExpression)
       convertPiAppHoles((Concrete.PiExpression) expression, parameters);
@@ -136,6 +158,22 @@ public class SyntacticDesugarVisitor extends BaseConcreteExpressionVisitor<Void>
     if (proj.expression instanceof Concrete.ApplyHoleExpression)
       proj.expression = createAppHoleRef(parameters, proj.expression.getData());
     else convertRecursively(proj.expression, parameters);
+  }
+
+  private void convertNewAppHoles(Concrete.NewExpression expr, List<Concrete.Parameter> parameters) {
+    if (expr.expression instanceof Concrete.ApplyHoleExpression)
+      expr.expression = createAppHoleRef(parameters, expr.expression.getData());
+    else convertRecursively(expr.expression, parameters);
+  }
+
+  private void convertClassExtAppHoles(Concrete.ClassExtExpression expr, List<Concrete.Parameter> parameters) {
+    Concrete.Expression baseClassExpression = expr.getBaseClassExpression();
+    if (baseClassExpression instanceof Concrete.ApplyHoleExpression)
+      expr.setBaseClassExpression(createAppHoleRef(parameters, baseClassExpression.getData()));
+    else convertRecursively(baseClassExpression, parameters);
+    for (Concrete.ClassFieldImpl statement : expr.getStatements())
+      if (statement.implementation instanceof Concrete.ApplyHoleExpression)
+        statement.implementation = createAppHoleRef(parameters, statement.getData());
   }
 
   private void convertCaseAppHoles(Concrete.CaseExpression expr, List<Concrete.Parameter> parameters) {
