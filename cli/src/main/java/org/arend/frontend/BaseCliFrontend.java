@@ -88,18 +88,35 @@ public abstract class BaseCliFrontend {
 
 
   private class MyTypechecking extends TypecheckingOrderingListener {
+    private int total;
+    private int failed;
+
     MyTypechecking() {
       super(myLibraryManager.getInstanceProviderSet(), myTypecheckerState, ConcreteReferableProvider.INSTANCE, IdReferableConverter.INSTANCE, myErrorReporter, PositionComparator.INSTANCE);
     }
 
     @Override
     public void typecheckingBodyFinished(TCReferable referable, Definition definition) {
-      flushErrors();
+      update(definition);
     }
 
     @Override
     public void typecheckingUnitFinished(TCReferable referable, Definition definition) {
+      update(definition);
+    }
+
+    private void update(Definition definition) {
       flushErrors();
+
+      total++;
+      if (definition.status().hasErrors()) {
+        failed++;
+      }
+    }
+
+    private void clear() {
+      total = 0;
+      failed = 0;
     }
   }
 
@@ -113,8 +130,9 @@ public abstract class BaseCliFrontend {
       cmdOptions.addOption(Option.builder("b").longOpt("binaries").hasArg().argName("dir").desc("project output directory").build());
       cmdOptions.addOption(Option.builder("e").longOpt("extensions").hasArg().argName("dir").desc("language extensions directory").build());
       cmdOptions.addOption(Option.builder("m").longOpt("extension-main").hasArg().argName("class").desc("main extension class").build());
-      cmdOptions.addOption(Option.builder().longOpt("recompile").desc("recompile files").build());
-      cmdOptions.addOption(Option.builder().longOpt("double-check").desc("double check correctness of the result").build());
+      cmdOptions.addOption(Option.builder("r").longOpt("recompile").desc("recompile files").build());
+      cmdOptions.addOption(Option.builder("c").longOpt("double-check").desc("double check correctness of the result").build());
+      cmdOptions.addOption("t", "test", false, "run tests");
       cmdOptions.addOption("v", "version", false, "print language version");
       addCommandOptions(cmdOptions);
       CommandLine cmdLine = new DefaultParser().parse(cmdOptions, args);
@@ -246,8 +264,8 @@ public abstract class BaseCliFrontend {
 
     // Load and typecheck libraries
     MyTypechecking typechecking = new MyTypechecking();
-    boolean recompile = cmdLine.hasOption("recompile");
-    boolean doubleCheck = cmdLine.hasOption("double-check");
+    boolean recompile = cmdLine.hasOption("r");
+    boolean doubleCheck = cmdLine.hasOption("c");
     for (UnmodifiableSourceLibrary library : requestedLibraries) {
       myModuleResults.clear();
       if (recompile) {
@@ -262,6 +280,7 @@ public abstract class BaseCliFrontend {
         continue;
       }
 
+      System.out.println();
       System.out.println("--- Typechecking " + library.getName() + " ---");
       long time = System.currentTimeMillis();
       typechecking.typecheckLibrary(library);
@@ -296,6 +315,7 @@ public abstract class BaseCliFrontend {
       }
 
       if (doubleCheck && numWithErrors == 0) {
+        System.out.println();
         System.out.println("--- Checking " + library.getName() + " ---");
         time = System.currentTimeMillis();
 
@@ -309,6 +329,36 @@ public abstract class BaseCliFrontend {
 
         time = System.currentTimeMillis() - time;
         flushErrors();
+        System.out.println("--- Done (" + timeToString(time) + ") ---");
+      }
+    }
+
+    // Run tests
+    if (cmdLine.hasOption("t")) {
+      for (UnmodifiableSourceLibrary library : requestedLibraries) {
+        Collection<? extends ModulePath> modules = library.getTestModules();
+        if (modules.isEmpty()) {
+          continue;
+        }
+
+        System.out.println("[INFO] Loading tests for " + library.getName());
+        long time = System.currentTimeMillis();
+        boolean loaded = library.loadTests(myLibraryManager);
+        time = System.currentTimeMillis() - time;
+        if (!loaded) {
+          System.out.println("[INFO] Failed loading tests for " + library.getName());
+          continue;
+        }
+        System.out.println("[INFO] Loaded tests for " + library.getName() + " (" + timeToString(time) + ")");
+
+        System.out.println();
+        System.out.println("--- Running tests in " + library.getName() + " ---");
+        typechecking.clear();
+        time = System.currentTimeMillis();
+        typechecking.typecheckTests(library, null);
+        time = System.currentTimeMillis() - time;
+        flushErrors();
+        System.out.println("Tests completed: " + typechecking.total + ", Failed: " + typechecking.failed);
         System.out.println("--- Done (" + timeToString(time) + ") ---");
       }
     }

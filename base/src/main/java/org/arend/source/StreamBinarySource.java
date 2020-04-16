@@ -115,7 +115,7 @@ public abstract class StreamBinarySource implements BinarySource {
         }
       }
 
-      myModuleDeserialization.readModule(sourceLoader.getModuleScopeProvider(), library.getDependencyListener());
+      myModuleDeserialization.readModule(sourceLoader.getModuleScopeProvider(false), library.getDependencyListener());
       library.onBinaryLoaded(modulePath, myModuleDeserialization.getModuleProto().getComplete());
       myModuleDeserialization = null;
       return LoadResult.SUCCESS;

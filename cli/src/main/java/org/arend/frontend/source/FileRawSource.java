@@ -17,9 +17,10 @@ public class FileRawSource extends StreamRawSource {
    *
    * @param basePath    a path to the base directory.
    * @param modulePath  a path to the source.
+   * @param inTests     true if the source is located in the test directory.
    */
-  public FileRawSource(Path basePath, ModulePath modulePath) {
-    super(modulePath);
+  public FileRawSource(Path basePath, ModulePath modulePath, boolean inTests) {
+    super(modulePath, inTests);
     myFile = FileUtils.sourceFile(basePath, modulePath);
   }
 

@@ -2,6 +2,7 @@ package org.arend.library;
 
 import org.arend.ext.ArendExtension;
 import org.arend.ext.module.ModulePath;
+import org.arend.module.scopeprovider.EmptyModuleScopeProvider;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.reference.TCReferable;
@@ -109,6 +110,11 @@ public abstract class BaseLibrary implements Library {
     return getDeclaredModuleScopeProvider();
   }
 
+  @Override
+  public @NotNull ModuleScopeProvider getTestsModuleScopeProvider() {
+    return EmptyModuleScopeProvider.INSTANCE;
+  }
+
   public Collection<? extends ModulePath> getUpdatedModules() {
     return Collections.emptyList();
   }
@@ -118,15 +124,13 @@ public abstract class BaseLibrary implements Library {
     return false;
   }
 
-  @Override
-  public boolean orderModules(Ordering ordering) {
-    Collection<? extends ModulePath> updatedModules = getUpdatedModules();
-    if (updatedModules.isEmpty()) {
-      return true;
+  private void orderModules(Collection<? extends ModulePath> modules, Ordering ordering) {
+    if (modules.isEmpty()) {
+      return;
     }
 
-    List<Group> groups = new ArrayList<>(updatedModules.size());
-    for (ModulePath module : updatedModules) {
+    List<Group> groups = new ArrayList<>(modules.size());
+    for (ModulePath module : modules) {
       Group group = getModuleGroup(module);
       if (group != null) {
         groups.add(group);
@@ -134,7 +138,28 @@ public abstract class BaseLibrary implements Library {
     }
 
     ordering.orderModules(groups);
+  }
+
+  @Override
+  public boolean orderModules(Ordering ordering) {
+    orderModules(getUpdatedModules(), ordering);
     return true;
+  }
+
+  @Override
+  public boolean orderTestModules(Ordering ordering) {
+    orderModules(getTestModules(), ordering);
+    return true;
+  }
+
+  @Override
+  public @NotNull Collection<? extends ModulePath> getTestModules() {
+    return Collections.emptyList();
+  }
+
+  @Override
+  public boolean loadTests(LibraryManager libraryManager) {
+    return false;
   }
 
   @Override

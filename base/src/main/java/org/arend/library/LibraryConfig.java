@@ -12,6 +12,7 @@ import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 public class LibraryConfig {
   private String myName;
   private String mySourcesDirectory;
+  private String myTestsDirectory;
   private String myBinariesDirectory;
   private String myExtensionsDirectory;
   private String myExtensionMainClass;
@@ -33,6 +34,14 @@ public class LibraryConfig {
 
   public void setSourcesDir(String sourcesDirectory) {
     mySourcesDirectory = sourcesDirectory;
+  }
+
+  public String getTestsDir() {
+    return myTestsDirectory;
+  }
+
+  public void setTestsDir(String testsDirectory) {
+    myTestsDirectory = testsDirectory;
   }
 
   public String getBinariesDir() {
@@ -94,6 +103,9 @@ public class LibraryConfig {
     }
     if (myBinariesDirectory != null) {
       docs.add(text("binariesDir: " + myBinariesDirectory));
+    }
+    if (myTestsDirectory != null) {
+      docs.add(text("testsDir: " + myTestsDirectory));
     }
     if (myExtensionsDirectory != null) {
       docs.add(text("extensionsDir: " + myExtensionsDirectory));

@@ -38,6 +38,10 @@ public class FileLoadableHeaderLibrary extends FileSourceLibrary {
       mySourceBasePath = myHeaderFile.getParent().resolve(myConfig.getSourcesDir());
     }
 
+    if (myConfig.getTestsDir() != null) {
+      myTestBasePath = myHeaderFile.getParent().resolve(myConfig.getTestsDir());
+    }
+
     if (myConfig.getBinariesDir() != null) {
       myBinaryBasePath = myHeaderFile.getParent().resolve(myConfig.getBinariesDir());
     }
@@ -61,6 +65,11 @@ public class FileLoadableHeaderLibrary extends FileSourceLibrary {
       if (mySourceBasePath != null) {
         FileUtils.getModules(mySourceBasePath, FileUtils.EXTENSION, myModules, errorReporter);
       }
+    }
+
+    if (myTestBasePath != null) {
+      myTestModules = new ArrayList<>();
+      FileUtils.getModules(myTestBasePath, FileUtils.EXTENSION, myTestModules, errorReporter);
     }
 
     if (myConfig.getDependencies() != null) {
