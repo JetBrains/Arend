@@ -26,7 +26,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   private Map<InferenceLevelVariable, Integer> myPVariables = Collections.emptyMap();
   private Map<InferenceLevelVariable, Integer> myHVariables = Collections.emptyMap();
   protected int myIndent;
-  private boolean noIndent;
+  private final boolean noIndent;
 
   public PrettyPrintVisitor(StringBuilder builder, int indent, boolean doIndent) {
     myBuilder = builder;
@@ -106,18 +106,8 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     if (infix) {
       visitBinOp(args.get(args.size() - 2).getExpression(), (ReferenceExpression) fun, ((GlobalReferable) ((ReferenceExpression) fun).getReferent()).getPrecedence(), args.subList(0, args.size() - 2), args.get(args.size() - 1).getExpression(), prec);
     } else {
-      if (fun instanceof Concrete.ReferenceExpression && ((ReferenceExpression) fun).getReferent() instanceof FieldReferable && !args.isEmpty() && !args.get(0).isExplicit() && args.get(0).getExpression() instanceof Concrete.ReferenceExpression) {
-        Concrete.ReferenceExpression funRef = (ReferenceExpression) fun;
-        fun = new Concrete.ReferenceExpression(fun.getData(), ConcreteExpressionFactory.ref(((ReferenceExpression) args.get(0).getExpression()).getReferent().getRefName() + "." + funRef.getReferent().getRefName()), funRef.getPLevel(), funRef.getHLevel());
-        if (args.size() == 1) {
-          return visitReference((ReferenceExpression) fun, prec);
-        }
-        args = args.subList(1, args.size());
-      }
-
       if (prec.priority > Concrete.AppExpression.PREC) myBuilder.append('(');
       final Expression finalFun = fun;
-      List<Concrete.Argument> finalArgs = args;
       new BinOpLayout() {
         @Override
         void printLeft(PrettyPrintVisitor pp) {
@@ -126,7 +116,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
         @Override
         void printRight(PrettyPrintVisitor pp) {
-          printArguments(pp, finalArgs, noIndent);
+          printArguments(pp, args, noIndent);
         }
 
         @Override
@@ -150,6 +140,9 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     boolean parens = expr.getReferent() instanceof GlobalReferable && ((GlobalReferable) expr.getReferent()).getPrecedence().isInfix || expr.getPLevel() != null || expr.getHLevel() != null;
     if (parens) {
       myBuilder.append('(');
+    }
+    if (expr instanceof Concrete.LongReferenceExpression) {
+      myBuilder.append(((Concrete.LongReferenceExpression) expr).getLongName()).append('.');
     }
     myBuilder.append(expr.getReferent().textRepresentation());
 

@@ -6,6 +6,7 @@ import org.arend.ext.concrete.*;
 import org.arend.ext.concrete.expr.*;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.error.LocalError;
+import org.arend.ext.module.LongName;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.ext.prettyprinting.doc.DocFactory;
@@ -426,6 +427,24 @@ public final class Concrete {
     @Override
     public <P, R> R accept(ConcreteExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitReference(this, params);
+    }
+  }
+
+  public static class LongReferenceExpression extends ReferenceExpression {
+    private final LongName myLongName;
+
+    public LongReferenceExpression(Object data, LongName longName, Referable referable, LevelExpression pLevel, LevelExpression hLevel) {
+      super(data, referable, pLevel, hLevel);
+      myLongName = longName;
+    }
+
+    public LongReferenceExpression(Object data, LongName longName, Referable referable) {
+      super(data, referable);
+      myLongName = longName;
+    }
+
+    public LongName getLongName() {
+      return myLongName;
     }
   }
 

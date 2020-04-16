@@ -18,6 +18,7 @@ import org.arend.core.pattern.*;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.ext.module.LongName;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.PrettyPrinterFlag;
 import org.arend.naming.reference.GlobalReferable;
@@ -36,17 +37,21 @@ import static org.arend.term.concrete.ConcreteExpressionFactory.*;
 
 public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expression> {
   private final PrettyPrinterConfig myConfig;
+  private final DefCallRenamer myDefCallRenamer;
   private final CollectFreeVariablesVisitor myFreeVariablesCollector;
   private final ReferableRenamer myRenamer;
 
-  private ToAbstractVisitor(PrettyPrinterConfig config, CollectFreeVariablesVisitor collector, ReferableRenamer renamer) {
+  private ToAbstractVisitor(PrettyPrinterConfig config, DefCallRenamer defCallRenamer, CollectFreeVariablesVisitor collector, ReferableRenamer renamer) {
     myConfig = config;
+    myDefCallRenamer = defCallRenamer;
     myFreeVariablesCollector = collector;
     myRenamer = renamer;
   }
 
   public static Concrete.Expression convert(Expression expression, PrettyPrinterConfig config) {
-    CollectFreeVariablesVisitor collector = new CollectFreeVariablesVisitor(config.getExpressionFlags());
+    DefCallRenamer defCallRenamer = new DefCallRenamer();
+    expression.accept(defCallRenamer, null);
+    CollectFreeVariablesVisitor collector = new CollectFreeVariablesVisitor(defCallRenamer);
     Set<Variable> variables = new HashSet<>();
     NormalizationMode mode = config.getNormalizationMode();
     if (mode != null) {
@@ -54,7 +59,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     }
     expression.accept(collector, variables);
     ReferableRenamer renamer = new ReferableRenamer();
-    ToAbstractVisitor visitor = new ToAbstractVisitor(config, collector, renamer);
+    ToAbstractVisitor visitor = new ToAbstractVisitor(config, defCallRenamer, collector, renamer);
     renamer.generateFreshNames(variables);
     return expression.accept(visitor, null);
   }
@@ -66,7 +71,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
         public EnumSet<PrettyPrinterFlag> getExpressionFlags() {
           return EnumSet.of(PrettyPrinterFlag.SHOW_LEVELS);
         }
-      }, null, new ReferableRenamer()).visitLevel(level);
+      }, null, null, new ReferableRenamer()).visitLevel(level);
   }
 
   private boolean hasFlag(PrettyPrinterFlag flag) {
@@ -175,7 +180,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   private Concrete.ReferenceExpression makeReference(DefCallExpression defCall) {
     Referable ref = defCall.getDefinition().getReferable();
-    return hasFlag(PrettyPrinterFlag.SHOW_LEVELS) ? cDefCall(ref, visitLevelNull(defCall.getSortArgument().getPLevel()), visitLevelNull(defCall.getSortArgument().getHLevel())) : cVar(ref);
+    return hasFlag(PrettyPrinterFlag.SHOW_LEVELS) ? cDefCall(myDefCallRenamer.getDefLongName(defCall), ref, visitLevelNull(defCall.getSortArgument().getPLevel()), visitLevelNull(defCall.getSortArgument().getHLevel())) : cVar(myDefCallRenamer.getDefLongName(defCall), ref);
   }
 
   @Override
@@ -206,6 +211,10 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
     if (expr.getDefinition().isHideable() && !hasFlag(PrettyPrinterFlag.SHOW_COERCE_DEFINITIONS)) {
       return expr.getArgument().accept(this, null);
+    }
+
+    if (expr.getArgument() instanceof ReferenceExpression) {
+      return cVar(new LongName(((ReferenceExpression) expr.getArgument()).getBinding().getName()), expr.getDefinition().getReferable());
     }
 
     Concrete.ReferenceExpression result = makeReference(expr);
@@ -422,6 +431,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       expr = piExpr.getCodomain();
     }
 
+    assert expr != null;
     Concrete.Expression result = expr.accept(this, null);
     for (int i = parameters.size() - 1; i >= 0; i--) {
       result = cPi(parameters.get(i), result);

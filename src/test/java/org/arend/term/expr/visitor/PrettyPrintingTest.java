@@ -1,9 +1,13 @@
 package org.arend.term.expr.visitor;
 
+import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.context.param.SingleDependentLink;
-import org.arend.core.expr.Expression;
-import org.arend.core.expr.LetExpression;
+import org.arend.core.definition.ClassDefinition;
+import org.arend.core.definition.FunctionDefinition;
+import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
+import org.arend.core.expr.visitor.ToAbstractVisitor;
+import org.arend.core.sort.Sort;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.reference.Precedence;
 import org.arend.frontend.reference.ConcreteLocatedReferable;
@@ -17,13 +21,14 @@ import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.arend.ExpressionFactory.*;
 import static org.arend.core.expr.ExpressionFactory.*;
 import static org.arend.term.concrete.ConcreteExpressionFactory.*;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class PrettyPrintingTest extends TypeCheckingTestCase {
   @Test
@@ -157,5 +162,57 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
   @Test
   public void prettyPrintEmptySigma() {
     testDefinition("\\func f => \\Sigma");
+  }
+
+  @Test
+  public void fieldCallTest() {
+    ClassDefinition def = (ClassDefinition) typeCheckDef("\\record R (f : Nat)");
+    Expression expr = FieldCallExpression.make(def.getPersonalFields().get(0), Sort.STD, new ReferenceExpression(new TypedBinding("r", new ClassCallExpression(def, Sort.STD))));
+    assertEquals("r.f", expr.toString());
+  }
+
+  @Test
+  public void boundRenamedTest() {
+    FunctionDefinition def = (FunctionDefinition) typeCheckDef("\\func f (x y : Nat) => x");
+    SingleDependentLink lamParam = singleParam("f", Nat());
+    Expression expr = new LamExpression(Sort.SET0, lamParam, new FunCallExpression(def, Sort.STD, Arrays.asList(new ReferenceExpression(lamParam), new ReferenceExpression(lamParam))));
+    assertEquals("\\lam (f1 : Nat) => f f1 f1", expr.toString());
+  }
+
+  @Test
+  public void twoDefsTest() {
+    typeCheckModule(
+      "\\func foo (x : Nat) => x\n" +
+      "\\module M \\where { \\func foo => 1 }");
+    Expression expr = new FunCallExpression((FunctionDefinition) getDefinition("foo"), Sort.STD, Collections.singletonList(new FunCallExpression((FunctionDefinition) getDefinition("M.foo"), Sort.STD, Collections.emptyList())));
+    assertEquals(MODULE_PATH.toString() + ".foo M.foo", expr.toString());
+  }
+
+  @Test
+  public void twoDefsTest2() {
+    typeCheckModule(
+      "\\module M \\where { \\func foo (x : Nat) => x }\n" +
+      "\\func foo => 1");
+    Expression expr = new FunCallExpression((FunctionDefinition) getDefinition("M.foo"), Sort.STD, Collections.singletonList(new FunCallExpression((FunctionDefinition) getDefinition("foo"), Sort.STD, Collections.emptyList())));
+    assertEquals("M.foo " + MODULE_PATH.toString() + ".foo", expr.toString());
+  }
+
+  @Test
+  public void twoDefsTest3() {
+    typeCheckModule(
+      "\\module M \\where { \\func foo (x : Nat) => x }\n" +
+      "\\module N \\where { \\func foo => 1 }");
+    Expression expr = new FunCallExpression((FunctionDefinition) getDefinition("M.foo"), Sort.STD, Collections.singletonList(new FunCallExpression((FunctionDefinition) getDefinition("N.foo"), Sort.STD, Collections.emptyList())));
+    assertEquals("M.foo N.foo", expr.toString());
+  }
+
+  @Test
+  public void twoDefsBoundNotRenamedTest() {
+    typeCheckModule(
+      "\\module M \\where { \\func foo (x y : Nat) => x }\n" +
+      "\\module N \\where { \\func foo => 1 }");
+    SingleDependentLink lamParam = singleParam("foo", Nat());
+    Expression expr = new LamExpression(Sort.SET0, lamParam, new FunCallExpression((FunctionDefinition) getDefinition("M.foo"), Sort.STD, Arrays.asList(new ReferenceExpression(lamParam), new FunCallExpression((FunctionDefinition) getDefinition("N.foo"), Sort.STD, Collections.emptyList()))));
+    assertEquals("\\lam (foo : Nat) => M.foo foo N.foo", expr.toString());
   }
 }

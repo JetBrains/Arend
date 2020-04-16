@@ -2,21 +2,22 @@ package org.arend.core.expr.visitor;
 
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.Variable;
+import org.arend.core.context.binding.VariableImpl;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
-import org.arend.ext.prettyprinting.PrettyPrinterFlag;
+import org.arend.ext.module.LongName;
 
 import java.util.*;
 import java.util.function.Consumer;
 
 public class CollectFreeVariablesVisitor extends VoidExpressionVisitor<Set<Variable>> {
+  private final DefCallRenamer myDefCallRenamer;
   private final Map<Binding, Set<Variable>> myFreeVariables = new HashMap<>();
-  private final EnumSet<PrettyPrinterFlag> myFlags;
 
-  public CollectFreeVariablesVisitor(EnumSet<PrettyPrinterFlag> flags) {
-    myFlags = flags;
+  CollectFreeVariablesVisitor(DefCallRenamer defCallRenamer) {
+    myDefCallRenamer = defCallRenamer;
   }
 
   Set<Variable> getFreeVariables(Binding binding) {
@@ -118,28 +119,13 @@ public class CollectFreeVariablesVisitor extends VoidExpressionVisitor<Set<Varia
   }
 
   @Override
-  public Void visitFieldCall(FieldCallExpression expr, Set<Variable> variables) {
-    if (expr.getDefinition().isHideable() && !myFlags.contains(PrettyPrinterFlag.SHOW_COERCE_DEFINITIONS)) {
-      return expr.getArgument().accept(this, variables);
-    }
-
-    if (myFlags.contains(PrettyPrinterFlag.SHOW_FIELD_INSTANCE)) {
-      ReferenceExpression refExpr = expr.getArgument().cast(ReferenceExpression.class);
-      if (refExpr != null) {
-        variables.add(refExpr.getBinding().isHidden() ? expr.getDefinition() : refExpr.getBinding());
-        return null;
-      } else {
-        expr.getArgument().accept(this, variables);
-      }
-    }
-
-    variables.add(expr.getDefinition());
-    return null;
-  }
-
-  @Override
   public Void visitDefCall(DefCallExpression expr, Set<Variable> variables) {
-    variables.add(expr.getDefinition());
+    LongName longName = myDefCallRenamer.getDefLongName(expr);
+    if (longName != null) {
+      variables.add(new VariableImpl(longName.getFirstName()));
+    } else {
+      variables.add(expr.getDefinition());
+    }
     return super.visitDefCall(expr, variables);
   }
 }

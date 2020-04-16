@@ -1,5 +1,6 @@
 package org.arend.term.concrete;
 
+import org.arend.ext.module.LongName;
 import org.arend.naming.reference.LocalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.prelude.Prelude;
@@ -24,8 +25,16 @@ public class ConcreteExpressionFactory {
     return new Concrete.ReferenceExpression(null, referable);
   }
 
-  public static Concrete.ReferenceExpression cDefCall(Referable referable, Concrete.LevelExpression level1, Concrete.LevelExpression level2) {
-    return new Concrete.ReferenceExpression(null, referable, level1, level2);
+  public static Concrete.ReferenceExpression cVar(LongName longName, Referable referable) {
+    return longName == null
+      ? new Concrete.ReferenceExpression(null, referable)
+      : new Concrete.LongReferenceExpression(null, longName, referable);
+  }
+
+  public static Concrete.ReferenceExpression cDefCall(LongName longName, Referable referable, Concrete.LevelExpression level1, Concrete.LevelExpression level2) {
+    return longName == null
+      ? new Concrete.ReferenceExpression(null, referable, level1, level2)
+      : new Concrete.LongReferenceExpression(null, longName, referable, level1, level2);
   }
 
   public static Concrete.ClassExtExpression cClassExt(Concrete.Expression expr, List<Concrete.ClassFieldImpl> definitions) {

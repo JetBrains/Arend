@@ -32,6 +32,9 @@ public class LongName implements Comparable<LongName> {
     return path.size();
   }
 
+  public String getFirstName() {
+    return path.isEmpty() ? null : path.get(0);
+  }
   public String getLastName() {
     return path.isEmpty() ? null : path.get(path.size() - 1);
   }
