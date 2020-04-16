@@ -89,17 +89,13 @@ public class SyntacticDesugarVisitor extends BaseConcreteExpressionVisitor<Void>
       if (elem.expression instanceof Concrete.ApplyHoleExpression)
         elem.expression = createAppHoleRef(parameters, elem.expression.getData());
       else if (isLastElemInfix) convertRecursively(elem.expression, parameters);
-      else {
-        if (!(elem.expression instanceof Concrete.ReferenceExpression)
-          && !(elem.expression instanceof Concrete.BinOpSequenceExpression)) {
-          if (elem.expression instanceof Concrete.ProjExpression
-            // || elem.expression instanceof Concrete.PiExpression
-            // || elem.expression instanceof Concrete.SigmaExpression
-            || elem.expression instanceof Concrete.CaseExpression
-          )
-            convertRecursively(elem.expression, parameters);
-        }
-      }
+      else if (elem.expression instanceof Concrete.ReferenceExpression
+          || elem.expression instanceof Concrete.BinOpSequenceExpression)
+        elem.expression = elem.expression.accept(this, null);
+      else if (elem.expression instanceof Concrete.SigmaExpression
+          || elem.expression instanceof Concrete.PiExpression
+          || elem.expression instanceof Concrete.CaseExpression
+      ) convertRecursively(elem.expression, parameters);
       isLastElemInfix = elem.isInfixReference();
     }
   }
