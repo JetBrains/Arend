@@ -201,4 +201,24 @@ public class AppHoleTest extends TypeCheckingTestCase {
   public void appPiTest5() {
     typeCheckDef("\\func test (f : (Nat -> Nat -> \\Set -> \\Set) -> Nat) (g : Nat -> Nat) => f (g __ = g __ -> __)");
   }
+
+  @Test
+  public void appCaseTest() {
+    typeCheckDef("\\func test (g : Nat -> Nat) (f : (Nat -> Nat) -> Nat) => g (f (\\case __ \\with { | 0 => 0 | suc n => n }))");
+  }
+
+  @Test
+  public void appCaseTest2() {
+    typeCheckDef("\\func test (g : Nat -> Nat -> Nat) (f : (Nat -> Nat) -> Nat) => g (g (f (\\case __ \\with { | 0 => 0 | suc n => n })) 0)");
+  }
+
+  @Test
+  public void appCaseTest3() {
+    typeCheckDef("\\func test (f : (Nat -> Nat) -> Nat) => f (\\case __ \\with { | 0 => 0 | suc n => n }) Nat.+ 0");
+  }
+
+  @Test
+  public void appCaseTest4() {
+    typeCheckDef("\\func test (g : Nat -> Nat) (f : (Nat -> Nat) -> Nat) => g (f (\\case __ \\with { | 0 => 0 | suc n => n }) Nat.+ 0)");
+  }
 }
