@@ -8,6 +8,7 @@ import org.arend.ext.prettyprinting.DefinitionRenamer;
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.reference.ModuleReferable;
 import org.arend.naming.reference.Referable;
+import org.arend.naming.scope.CachingScope;
 import org.arend.naming.scope.Scope;
 import org.arend.prelude.Prelude;
 import org.jetbrains.annotations.Nullable;
@@ -19,7 +20,7 @@ public class ScopeDefinitionRenamer implements DefinitionRenamer {
   private final Map<Definition, LongName> myPrefixes = new HashMap<>();
 
   public ScopeDefinitionRenamer(Scope scope) {
-    myScope = scope;
+    myScope = CachingScope.make(scope);
   }
 
   @Override
