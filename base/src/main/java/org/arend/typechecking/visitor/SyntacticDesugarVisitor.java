@@ -144,13 +144,13 @@ public class SyntacticDesugarVisitor extends BaseConcreteExpressionVisitor<Void>
       convertProjAppHoles((Concrete.ProjExpression) expression, parameters);
     else if (expression instanceof Concrete.BinOpSequenceExpression)
       convertBinOpAppHoles((Concrete.BinOpSequenceExpression) expression, parameters);
-    else if (expression instanceof Concrete.CaseExpression)
-      convertCaseAppHoles((Concrete.CaseExpression) expression, parameters);
     else if (expression instanceof Concrete.ClassExtExpression)
       convertClassExtAppHoles((Concrete.ClassExtExpression) expression, parameters);
     else if (expression instanceof Concrete.NewExpression)
       convertNewAppHoles((Concrete.NewExpression) expression, parameters);
 /*
+    else if (expression instanceof Concrete.CaseExpression)
+      convertCaseAppHoles((Concrete.CaseExpression) expression, parameters);
     else if (expression instanceof Concrete.PiExpression)
       convertPiAppHoles((Concrete.PiExpression) expression, parameters);
     else if (expression instanceof Concrete.SigmaExpression)
