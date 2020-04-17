@@ -360,12 +360,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
   }
 
   public TypecheckingResult checkExpr(Concrete.Expression expr, Expression expectedType) {
-    if (expr == null) {
-      assert false;
-      errorReporter.report(new LocalError(GeneralError.Level.ERROR, "Incomplete expression"));
-      return null;
-    }
-
     try {
       return expr.accept(this, expectedType);
     } catch (IncorrectExpressionException e) {
@@ -2043,6 +2037,12 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
   @Override
   public TypecheckingResult visitBinOpSequence(Concrete.BinOpSequenceExpression expr, Expression expectedType) {
     throw new IllegalStateException();
+  }
+
+  @Override
+  public TypecheckingResult visitApplyHole(Concrete.ApplyHoleExpression expr, Expression params) {
+    errorReporter.report(new TypecheckingError("`__` not allowed here", expr));
+    return null;
   }
 
   public Integer getExpressionLevel(DependentLink link, Expression type, Expression expr, Equations equations, Concrete.SourceNode sourceNode) {

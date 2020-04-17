@@ -459,6 +459,11 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   }
 
   @Override
+  public Concrete.Expression visitApplyHole(@Nullable Object data, Void params) {
+    return new Concrete.ApplyHoleExpression(data);
+  }
+
+  @Override
   public Concrete.Expression visitLam(@Nullable Object data, @NotNull Collection<? extends Abstract.Parameter> parameters, @Nullable Abstract.Expression body, Void params) {
     if (body == null) {
       myErrorLevel = GeneralError.Level.ERROR;

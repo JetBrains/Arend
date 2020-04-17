@@ -221,6 +221,11 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
   }
 
   @Override
+  public Concrete.Expression visitApplyHole(Concrete.ApplyHoleExpression expr, Void params) {
+    return expr;
+  }
+
+  @Override
   public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Void params) {
     return visitApp(expr, Collections.emptyList(), expr, true);
   }

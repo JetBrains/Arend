@@ -21,4 +21,5 @@ public interface ConcreteExpressionVisitor<P, R> {
   R visitLet(Concrete.LetExpression expr, P params);
   R visitNumericLiteral(Concrete.NumericLiteral expr, P params);
   R visitTyped(Concrete.TypedExpression expr, P params);
+  R visitApplyHole(Concrete.ApplyHoleExpression expr, P params);
 }

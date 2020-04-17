@@ -11,6 +11,7 @@ import org.arend.prelude.PreludeLibrary;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.ChildGroup;
 import org.arend.typechecking.TestLocalErrorReporter;
+import org.arend.typechecking.visitor.SyntacticDesugarVisitor;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,7 +27,9 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     Concrete.Expression expression = parseExpr(text);
     assertThat(expression, is(notNullValue()));
 
-    expression = expression.accept(new ExpressionResolveNameVisitor(ConcreteReferableProvider.INSTANCE, parentScope, context, new TestLocalErrorReporter(errorReporter), null), null);
+    expression = expression
+      .accept(new ExpressionResolveNameVisitor(ConcreteReferableProvider.INSTANCE, parentScope, context, new TestLocalErrorReporter(errorReporter), null), null)
+      .accept(new SyntacticDesugarVisitor(errorReporter), null);
     assertThat(errorList, containsErrors(errors));
     return expression;
   }

@@ -67,6 +67,11 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
   }
 
   @Override
+  public Concrete.Expression visitApplyHole(Concrete.ApplyHoleExpression expr, P params) {
+    return expr;
+  }
+
+  @Override
   public Concrete.Expression visitGoal(Concrete.GoalExpression expr, P params) {
     if (expr.expression != null) {
       expr.expression = expr.expression.accept(this, params);
@@ -118,7 +123,7 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
 
     for (Concrete.TypedReferable typedReferable : pattern.getAsReferables()) {
       if (typedReferable.type != null) {
-        typedReferable.type.accept(this, params);
+        typedReferable.type = typedReferable.type.accept(this, params);
       }
     }
   }

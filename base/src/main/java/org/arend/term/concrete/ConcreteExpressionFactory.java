@@ -17,6 +17,10 @@ public class ConcreteExpressionFactory {
     return new Concrete.LamExpression(null, arguments, body);
   }
 
+  public static Concrete.ApplyHoleExpression cAppHole() {
+    return new Concrete.ApplyHoleExpression(null);
+  }
+
   public static Concrete.LamExpression cLam(Concrete.NameParameter var, Concrete.Expression body) {
     return cLam(Collections.singletonList(var), body);
   }

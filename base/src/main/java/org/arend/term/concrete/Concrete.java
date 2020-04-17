@@ -355,12 +355,21 @@ public final class Concrete {
       this.isExplicit = true;
     }
 
-    public boolean isReference() {
-      return isExplicit && expression instanceof Concrete.ReferenceExpression;
+    public boolean isInfixReference() {
+      return isExplicit && (fixity == Fixity.INFIX || fixity == Fixity.UNKNOWN && getReferencePrecedence().isInfix);
     }
 
-    public boolean isInfixReference() {
-      return isReference() && ((ReferenceExpression) expression).getReferent() instanceof GlobalReferable && ((GlobalReferable) ((ReferenceExpression) expression).getReferent()).getPrecedence().isInfix;
+    public boolean isPostfixReference() {
+      return isExplicit && fixity == Fixity.POSTFIX;
+    }
+
+    public Precedence getReferencePrecedence() {
+      Concrete.Expression expr = expression;
+      // after the reference is resolved, it may become an application
+      if (expression instanceof Concrete.AppExpression && fixity != Fixity.NONFIX) {
+        expr = ((AppExpression) expression).getFunction();
+      }
+      return expr instanceof Concrete.ReferenceExpression && ((ReferenceExpression) expr).getReferent() instanceof GlobalReferable ? ((GlobalReferable) ((ReferenceExpression) expr).getReferent()).getPrecedence() : Precedence.DEFAULT;
     }
   }
 
@@ -481,6 +490,22 @@ public final class Concrete {
     @Override
     public <P, R> R accept(ConcreteExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitThis(this, params);
+    }
+  }
+
+  /**
+   * <code>__</code> expressions, see
+   * <a href="https://github.com/JetBrains/Arend/issues/147">#147</a>
+   */
+  public static class ApplyHoleExpression extends Expression {
+    public static final byte PREC = 12;
+    public ApplyHoleExpression(Object data) {
+      super(data);
+    }
+
+    @Override
+    public <P, R> R accept(ConcreteExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitApplyHole(this, params);
     }
   }
 
