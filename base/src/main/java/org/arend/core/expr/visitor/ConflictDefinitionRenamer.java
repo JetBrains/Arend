@@ -8,28 +8,24 @@ import org.arend.ext.module.ModulePath;
 import org.arend.ext.prettyprinting.DefinitionRenamer;
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.reference.ModuleReferable;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-public class DefCallRenamer extends VoidExpressionVisitor<Void> implements DefinitionRenamer {
+public class ConflictDefinitionRenamer extends VoidExpressionVisitor<Void> implements DefinitionRenamer {
   // Names that we already met
-  private final Set<String> myNames;
+  private final Set<String> myNames = new HashSet<>();
 
   // If this map contains a pair (s,d), then s is in myNames and d is not in myDefLongNames.
   // If s is in myNames, but not in this map, then we already found a conflict.
-  private final Map<String, CoreDefinition> myNotRenamedDefs;
+  private final Map<String, CoreDefinition> myNotRenamedDefs = new HashMap<>();
 
   // The result map
-  private final Map<CoreDefinition, LongName> myDefLongNames;
+  private final Map<CoreDefinition, LongName> myDefLongNames = new HashMap<>();
 
-  public DefCallRenamer(DefinitionRenamer renamer) {
-    myNames = renamer == null ? new HashSet<>() : renamer.getNames();
-    myNotRenamedDefs = renamer == null ? new HashMap<>() : renamer.getNotRenamedDefs();
-    myDefLongNames = renamer == null ? new HashMap<>() : renamer.getDefLongNames();
-  }
-
-  LongName getDefLongName(DefCallExpression defCall) {
-    return myDefLongNames.get(defCall.getDefinition());
+  @Override
+  public @Nullable LongName getDefinitionPrefix(CoreDefinition definition) {
+    return myDefLongNames.get(definition);
   }
 
   private void rename(Definition definition) {
@@ -70,27 +66,5 @@ public class DefCallRenamer extends VoidExpressionVisitor<Void> implements Defin
       myNotRenamedDefs.put(name, expr.getDefinition());
     }
     return super.visitDefCall(expr, params);
-  }
-
-  @Override
-  public Set<String> getNames() {
-    return myNames;
-  }
-
-  @Override
-  public Map<String, CoreDefinition> getNotRenamedDefs() {
-    return myNotRenamedDefs;
-  }
-
-  @Override
-  public Map<CoreDefinition, LongName> getDefLongNames() {
-    return myDefLongNames;
-  }
-
-  @Override
-  public void clear() {
-    myNames.clear();
-    myNotRenamedDefs.clear();
-    myDefLongNames.clear();
   }
 }

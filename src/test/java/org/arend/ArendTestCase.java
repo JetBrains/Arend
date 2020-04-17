@@ -13,6 +13,7 @@ import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.naming.reference.converter.IdReferableConverter;
+import org.arend.naming.scope.EmptyScope;
 import org.arend.naming.scope.Scope;
 import org.arend.prelude.Prelude;
 import org.arend.prelude.PreludeLibrary;
@@ -81,7 +82,7 @@ public abstract class ArendTestCase {
           List<Doc> docs = new ArrayList<>(errors.size() + 1);
           docs.add(text("there were errors:"));
           for (GeneralError error : errors) {
-            docs.add(error.getDoc(new PrettyPrinterConfigWithRenamer()));
+            docs.add(error.getDoc(new PrettyPrinterConfigWithRenamer(EmptyScope.INSTANCE)));
           }
           description.appendText(vList(docs).toString());
         }

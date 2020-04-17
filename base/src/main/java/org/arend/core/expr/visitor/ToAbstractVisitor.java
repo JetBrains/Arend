@@ -19,6 +19,7 @@ import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.module.LongName;
+import org.arend.ext.prettyprinting.DefinitionRenamer;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.PrettyPrinterFlag;
 import org.arend.naming.reference.GlobalReferable;
@@ -37,21 +38,26 @@ import static org.arend.term.concrete.ConcreteExpressionFactory.*;
 
 public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expression> {
   private final PrettyPrinterConfig myConfig;
-  private final DefCallRenamer myDefCallRenamer;
+  private final DefinitionRenamer myDefinitionRenamer;
   private final CollectFreeVariablesVisitor myFreeVariablesCollector;
   private final ReferableRenamer myRenamer;
 
-  private ToAbstractVisitor(PrettyPrinterConfig config, DefCallRenamer defCallRenamer, CollectFreeVariablesVisitor collector, ReferableRenamer renamer) {
+  private ToAbstractVisitor(PrettyPrinterConfig config, DefinitionRenamer definitionRenamer, CollectFreeVariablesVisitor collector, ReferableRenamer renamer) {
     myConfig = config;
-    myDefCallRenamer = defCallRenamer;
+    myDefinitionRenamer = definitionRenamer;
     myFreeVariablesCollector = collector;
     myRenamer = renamer;
   }
 
   public static Concrete.Expression convert(Expression expression, PrettyPrinterConfig config) {
-    DefCallRenamer defCallRenamer = new DefCallRenamer(config.getDefinitionRenamer());
-    expression.accept(defCallRenamer, null);
-    CollectFreeVariablesVisitor collector = new CollectFreeVariablesVisitor(defCallRenamer);
+    DefinitionRenamer definitionRenamer = config.getDefinitionRenamer();
+    if (definitionRenamer == null) {
+      definitionRenamer = new ConflictDefinitionRenamer();
+    }
+    if (definitionRenamer instanceof ConflictDefinitionRenamer) {
+      expression.accept((ConflictDefinitionRenamer) definitionRenamer, null);
+    }
+    CollectFreeVariablesVisitor collector = new CollectFreeVariablesVisitor(definitionRenamer);
     Set<Variable> variables = new HashSet<>();
     NormalizationMode mode = config.getNormalizationMode();
     if (mode != null) {
@@ -59,7 +65,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     }
     expression.accept(collector, variables);
     ReferableRenamer renamer = new ReferableRenamer();
-    ToAbstractVisitor visitor = new ToAbstractVisitor(config, defCallRenamer, collector, renamer);
+    ToAbstractVisitor visitor = new ToAbstractVisitor(config, definitionRenamer, collector, renamer);
     renamer.generateFreshNames(variables);
     return expression.accept(visitor, null);
   }
@@ -180,7 +186,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   private Concrete.ReferenceExpression makeReference(DefCallExpression defCall) {
     Referable ref = defCall.getDefinition().getReferable();
-    return hasFlag(PrettyPrinterFlag.SHOW_LEVELS) ? cDefCall(myDefCallRenamer.getDefLongName(defCall), ref, visitLevelNull(defCall.getSortArgument().getPLevel()), visitLevelNull(defCall.getSortArgument().getHLevel())) : cVar(myDefCallRenamer.getDefLongName(defCall), ref);
+    return hasFlag(PrettyPrinterFlag.SHOW_LEVELS) ? cDefCall(myDefinitionRenamer.getDefinitionPrefix(defCall.getDefinition()), ref, visitLevelNull(defCall.getSortArgument().getPLevel()), visitLevelNull(defCall.getSortArgument().getHLevel())) : cVar(myDefinitionRenamer.getDefinitionPrefix(defCall.getDefinition()), ref);
   }
 
   @Override

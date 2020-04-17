@@ -8,16 +8,17 @@ import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
 import org.arend.ext.module.LongName;
+import org.arend.ext.prettyprinting.DefinitionRenamer;
 
 import java.util.*;
 import java.util.function.Consumer;
 
 public class CollectFreeVariablesVisitor extends VoidExpressionVisitor<Set<Variable>> {
-  private final DefCallRenamer myDefCallRenamer;
+  private final DefinitionRenamer myDefinitionRenamer;
   private final Map<Binding, Set<Variable>> myFreeVariables = new HashMap<>();
 
-  CollectFreeVariablesVisitor(DefCallRenamer defCallRenamer) {
-    myDefCallRenamer = defCallRenamer;
+  CollectFreeVariablesVisitor(DefinitionRenamer definitionRenamer) {
+    myDefinitionRenamer = definitionRenamer;
   }
 
   Set<Variable> getFreeVariables(Binding binding) {
@@ -120,7 +121,7 @@ public class CollectFreeVariablesVisitor extends VoidExpressionVisitor<Set<Varia
 
   @Override
   public Void visitDefCall(DefCallExpression expr, Set<Variable> variables) {
-    LongName longName = myDefCallRenamer.getDefLongName(expr);
+    LongName longName = myDefinitionRenamer.getDefinitionPrefix(expr.getDefinition());
     if (longName != null) {
       variables.add(new VariableImpl(longName.getFirstName()));
     } else {

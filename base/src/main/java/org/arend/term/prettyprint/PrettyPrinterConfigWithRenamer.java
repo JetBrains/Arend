@@ -1,16 +1,18 @@
 package org.arend.term.prettyprint;
 
-import org.arend.core.expr.visitor.DefCallRenamer;
+import org.arend.core.expr.visitor.ConflictDefinitionRenamer;
+import org.arend.core.expr.visitor.ScopeDefinitionRenamer;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.PrettyPrinterConfigImpl;
+import org.arend.naming.scope.Scope;
 
 public class PrettyPrinterConfigWithRenamer extends PrettyPrinterConfigImpl {
-  public PrettyPrinterConfigWithRenamer(PrettyPrinterConfig config) {
+  public PrettyPrinterConfigWithRenamer(PrettyPrinterConfig config, Scope scope) {
     super(config);
-    definitionRenamer = new DefCallRenamer(null);
+    definitionRenamer = scope == null ? new ConflictDefinitionRenamer() : new ScopeDefinitionRenamer(scope);
   }
 
-  public PrettyPrinterConfigWithRenamer() {
-    definitionRenamer = new DefCallRenamer(null);
+  public PrettyPrinterConfigWithRenamer(Scope scope) {
+    definitionRenamer = scope == null ? new ConflictDefinitionRenamer() : new ScopeDefinitionRenamer(scope);
   }
 }

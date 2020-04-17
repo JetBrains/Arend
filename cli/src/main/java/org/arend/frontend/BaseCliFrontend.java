@@ -13,6 +13,7 @@ import org.arend.library.error.LibraryError;
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.naming.reference.converter.IdReferableConverter;
+import org.arend.naming.scope.EmptyScope;
 import org.arend.prelude.Prelude;
 import org.arend.prelude.PreludeResourceLibrary;
 import org.arend.term.group.Group;
@@ -374,7 +375,7 @@ public abstract class BaseCliFrontend {
       });
 
       //Print error
-      PrettyPrinterConfigWithRenamer ppConfig = new PrettyPrinterConfigWithRenamer();
+      PrettyPrinterConfigWithRenamer ppConfig = new PrettyPrinterConfigWithRenamer(EmptyScope.INSTANCE);
       if (error instanceof GoalError) {
         ppConfig.expressionFlags = EnumSet.of(PrettyPrinterFlag.SHOW_FIELD_INSTANCE);
       }
