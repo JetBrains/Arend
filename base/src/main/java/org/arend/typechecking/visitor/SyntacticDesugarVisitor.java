@@ -52,11 +52,11 @@ public class SyntacticDesugarVisitor extends BaseConcreteExpressionVisitor<Void>
 
   @Override
   public Concrete.Expression visitProj(Concrete.ProjExpression expr, Void params) {
-    if (expr.expression instanceof Concrete.ApplyHoleExpression) {
-      List<Concrete.Parameter> parameters = new ArrayList<>(1);
-      convertProjAppHoles(expr, parameters);
-      return new Concrete.LamExpression(expr.expression.getData(), parameters, expr).accept(this, null);
-    } else return super.visitProj(expr, params);
+    List<Concrete.Parameter> parameters = new ArrayList<>();
+    convertProjAppHoles(expr, parameters);
+    return !parameters.isEmpty()
+        ? new Concrete.LamExpression(expr.expression.getData(), parameters, expr).accept(this, null)
+        : super.visitProj(expr, params);
   }
 
   @Override
@@ -150,10 +150,12 @@ public class SyntacticDesugarVisitor extends BaseConcreteExpressionVisitor<Void>
       convertClassExtAppHoles((Concrete.ClassExtExpression) expression, parameters);
     else if (expression instanceof Concrete.NewExpression)
       convertNewAppHoles((Concrete.NewExpression) expression, parameters);
+/*
     else if (expression instanceof Concrete.PiExpression)
       convertPiAppHoles((Concrete.PiExpression) expression, parameters);
     else if (expression instanceof Concrete.SigmaExpression)
       convertSigmaAppHoles((Concrete.SigmaExpression) expression, parameters);
+*/
   }
 
   private void convertAppHoles(Concrete.AppExpression expr, List<Concrete.Parameter> parameters) {
