@@ -199,6 +199,8 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
         if (caseArg.isElim) {
           eliminatedRefs.add(((Concrete.ReferenceExpression) caseArg.expression).getReferent());
         }
+        if (caseArg.expression instanceof Concrete.ApplyHoleExpression)
+          caseArg.isElim = true;
         if (caseArg.type != null) {
           caseArg.type = caseArg.type.accept(this, null);
         }

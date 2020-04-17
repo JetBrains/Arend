@@ -134,7 +134,7 @@ appPrefix : NEW EVAL? | EVAL | PEVAL;
 
 caseArg : caseArgExprAs (':' expr)?;
 
-caseArgExprAs : '\\elim' ID   # caseArgElim
+caseArgExprAs : '\\elim' (ID | APPLY_HOLE)   # caseArgElim
               | expr (AS ID)? # caseArgExpr
               ;
 
