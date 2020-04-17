@@ -171,4 +171,34 @@ public class AppHoleTest extends TypeCheckingTestCase {
       "\\record R (x : \\Sigma Nat Nat -> Nat)\n" +
       "\\func test => \\new R { | x => __.1 }");
   }
+
+  @Test
+  public void projAppTest() {
+    typeCheckDef("\\func test (f : Nat -> \\Sigma Nat Nat) : Nat -> Nat => (f __).1");
+  }
+
+  @Test
+  public void appPiTest1() {
+    typeCheckDef("\\func test (f : (\\Set -> \\Set) -> \\Set) => f (__ -> Nat) -> Nat");
+  }
+
+  @Test
+  public void appPiTest2() {
+    typeCheckDef("\\func test (f : (\\Set -> \\Set) -> Nat) => f (__ -> Nat) = 0");
+  }
+
+  @Test
+  public void appPiTest3() {
+    typeCheckDef("\\func test (f : (Nat -> \\Set) -> Nat) => f (__ = 0 -> Nat)");
+  }
+
+  @Test
+  public void appPiTest4() {
+    typeCheckDef("\\func test (f : (Nat -> \\Set) -> Nat) (g : Nat -> \\Set) => f (g __ -> Nat)");
+  }
+
+  @Test
+  public void appPiTest5() {
+    typeCheckDef("\\func test (f : (Nat -> Nat -> \\Set -> \\Set) -> Nat) (g : Nat -> Nat) => f (g __ = g __ -> __)");
+  }
 }
