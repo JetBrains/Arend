@@ -3,7 +3,6 @@ package org.arend.term.prettyprint;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.ext.reference.Precedence;
-import org.arend.naming.reference.FieldReferable;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
@@ -848,9 +847,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   }
 
   public void printIndent() {
-    for (int i = 0; i < myIndent; ++i) {
-      myBuilder.append(' ');
-    }
+    myBuilder.append(" ".repeat(Math.max(0, myIndent)));
   }
 
   private void prettyPrintNameWithPrecedence(GlobalReferable def) {
@@ -1110,9 +1107,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     }
 
     int numberOfAs = pattern.getAsReferables().size();
-    for (int i = 0; i < numberOfAs - 1; i++) {
-      myBuilder.append('(');
-    }
+    myBuilder.append("(".repeat(Math.max(0, numberOfAs - 1)));
 
     if (pattern instanceof Concrete.NamePattern) {
       Concrete.NamePattern namePattern = (Concrete.NamePattern) pattern;

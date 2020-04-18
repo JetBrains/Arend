@@ -164,7 +164,7 @@ public class NormalizingFindBindingVisitor extends BaseExpressionVisitor<Void, B
   }
 
   private boolean findBindingInElimBody(ElimBody elimBody) {
-    for (ElimClause clause : elimBody.getClauses()) {
+    for (var clause : elimBody.getClauses()) {
       if (visitDependentLink(clause.getParameters())) {
         return true;
       }

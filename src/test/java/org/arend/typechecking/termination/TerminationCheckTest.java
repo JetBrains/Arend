@@ -212,7 +212,7 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
     Set<BaseCallMatrix<TestVertex>> cms = new HashSet<>();
     cms.add(new TestCallMatrix("1", ack, ack, '<', 0, '?'));
     cms.add(new TestCallMatrix("1", ack, ack, '=', 0, '<', 1));
-    BaseCallGraph callCategory = TestCallGraph.calculateClosure(cms);
+    var callCategory = TestCallGraph.calculateClosure(cms);
     assert callCategory.checkTermination();
   }
 
@@ -224,7 +224,7 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
     cms.add(new TestCallMatrix("2", f, f, '=', 0, '<', 1, '?', '?'));
     cms.add(new TestCallMatrix("3", f, f, '=', 0, '=', 1, '<', 2, '?'));
     cms.add(new TestCallMatrix("4", f, f, '=', 0, '=', 1, '=', 2, '<', 3));
-    BaseCallGraph callCategory = TestCallGraph.calculateClosure(cms);
+    var callCategory = TestCallGraph.calculateClosure(cms);
     assert callCategory.checkTermination();
   }
 
@@ -236,7 +236,7 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
     cms.add(new TestCallMatrix("2", f, f, '=', 0, '<', 1, '?', '?'));
     cms.add(new TestCallMatrix("3", f, f, '=', 0, '=', 1, '<', 2, '?'));
     cms.add(new TestCallMatrix("4", f, f, '=', 0, '=', 1, '=', 2, '=', 3));
-    BaseCallGraph callCategory = TestCallGraph.calculateClosure(cms);
+    var callCategory = TestCallGraph.calculateClosure(cms);
     assert !callCategory.checkTermination();
   }
 
@@ -248,7 +248,7 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
     cms.add(new TestCallMatrix("3", f, f, '?', '=', 1, '<', 2, '=', 3));
     cms.add(new TestCallMatrix("1", f, f, '?', '?', '?', '<', 3));
     cms.add(new TestCallMatrix("4", f, f, '<', 0, '=', 1, '=', 2, '=', 3));
-    BaseCallGraph callCategory = TestCallGraph.calculateClosure(cms);
+    var callCategory = TestCallGraph.calculateClosure(cms);
     assert callCategory.checkTermination();
   }
 
@@ -266,7 +266,7 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
     cms.add(new TestCallMatrix("g-f", g, f, '=', 0, '=', 1));
     cms.add(new TestCallMatrix("g-g", g, g, '<', 0, '?'));
     cms.add(new TestCallMatrix("g-h", g, h, '?', '?'));
-    BaseCallGraph callCategory = TestCallGraph.calculateClosure(cms);
+    var callCategory = TestCallGraph.calculateClosure(cms);
     assert !callCategory.checkTermination();
   }
 

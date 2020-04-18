@@ -87,7 +87,7 @@ public class FileUtils {
 
   public static void getModules(Path path, String ext, Collection<ModulePath> modules, ErrorReporter errorReporter) {
     try {
-      Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
+      Files.walkFileTree(path, new SimpleFileVisitor<>() {
         @Override
         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
           if (file.getFileName().toString().endsWith(ext)) {

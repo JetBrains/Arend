@@ -73,7 +73,7 @@ public abstract class ArendTestCase {
 
 
   protected static Matcher<? super Collection<? extends GeneralError>> containsErrors(final int n) {
-    return new TypeSafeDiagnosingMatcher<Collection<? extends GeneralError>>() {
+    return new TypeSafeDiagnosingMatcher<>() {
       @Override
       protected boolean matchesSafely(Collection<? extends GeneralError> errors, Description description) {
         if (errors.size() == 0) {

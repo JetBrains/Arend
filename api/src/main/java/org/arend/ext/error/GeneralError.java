@@ -44,8 +44,8 @@ public class GeneralError {
 
   public LineDoc getPositionDoc(PrettyPrinterConfig ppConfig) {
     Object cause = getCause();
-    if (cause instanceof Collection) {
-      Iterator it = ((Collection) cause).iterator();
+    if (cause instanceof Collection<?>) {
+      var it = ((Collection<?>) cause).iterator();
       if (it.hasNext()) {
         cause = it.next();
       } else {
@@ -101,8 +101,8 @@ public class GeneralError {
     Object cause = getCause();
     if (cause instanceof ArendRef) {
       consumer.accept((ArendRef) cause, this);
-    } else if (cause instanceof Collection) {
-      for (Object elem : ((Collection) cause)) {
+    } else if (cause instanceof Collection<?>) {
+      for (var elem : ((Collection<?>) cause)) {
         if (elem instanceof ArendRef) {
           consumer.accept((ArendRef) elem, this);
         }

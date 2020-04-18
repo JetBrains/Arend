@@ -7,7 +7,6 @@ import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteReferableDefinitionVisitor;
 import org.arend.typechecking.provider.ConcreteProvider;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
