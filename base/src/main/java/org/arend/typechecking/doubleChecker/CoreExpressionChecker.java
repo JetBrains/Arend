@@ -499,7 +499,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     }
 
     assert pattern instanceof ConstructorPattern;
-    ConstructorPattern conPattern = (ConstructorPattern) pattern;
+    var conPattern = (ConstructorPattern) pattern;
     if (!(conPattern.getDefinition() instanceof Constructor)) {
       throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Expected a constructor", mySourceNode), errorExpr));
     }

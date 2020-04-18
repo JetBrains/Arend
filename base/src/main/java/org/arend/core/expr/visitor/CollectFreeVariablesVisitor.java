@@ -4,7 +4,6 @@ import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.Variable;
 import org.arend.core.context.binding.VariableImpl;
 import org.arend.core.context.param.DependentLink;
-import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
 import org.arend.ext.module.LongName;
@@ -109,7 +108,7 @@ public class CollectFreeVariablesVisitor extends VoidExpressionVisitor<Set<Varia
         expr.getResultTypeLevel().accept(this, vars);
       }
     }, variables);
-    for (ElimClause clause : expr.getElimBody().getClauses()) {
+    for (var clause : expr.getElimBody().getClauses()) {
       visitParameters(clause.getParameters(), vars -> {
         if (clause.getExpression() != null) {
           clause.getExpression().accept(this, vars);

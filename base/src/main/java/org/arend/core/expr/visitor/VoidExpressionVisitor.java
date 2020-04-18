@@ -149,7 +149,7 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> {
   }
 
   private void visitElimBody(ElimBody elimBody, P params) {
-    for (ElimClause clause : elimBody.getClauses()) {
+    for (var clause : elimBody.getClauses()) {
       visitParameters(clause.getParameters(), params);
       if (clause.getExpression() != null) {
         clause.getExpression().accept(this, params);

@@ -6,7 +6,6 @@ import org.arend.core.definition.ClassDefinition;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
-import org.arend.core.expr.visitor.ToAbstractVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.reference.Precedence;

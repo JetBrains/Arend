@@ -44,7 +44,7 @@ public class FindBinding {
 
   public static @Nullable DependentLink visitPi(
       Referable referable, Concrete.PiExpression expr, PiExpression pi) {
-    return parameters(pi.getBinding(), referable, new Function<DependentLink, DependentLink>() {
+    return parameters(pi.getBinding(), referable, new Function<>() {
       private PiExpression piExpr = pi;
 
       @Override

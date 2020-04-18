@@ -2,15 +2,12 @@ package org.arend.typechecking.patternmatching;
 
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.Constructor;
-import org.arend.core.definition.DataDefinition;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.elimtree.ElimBody;
 import org.arend.core.expr.*;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
-import org.arend.prelude.Prelude;
 import org.arend.typechecking.TypeCheckingTestCase;
-import org.arend.typechecking.error.local.GoalError;
 import org.junit.Test;
 
 import java.util.Collections;

@@ -33,7 +33,7 @@ public class UniverseKindChecker extends CovarianceChecker {
         }
       }
     } else if (body instanceof ElimBody) {
-      for (ElimClause clause : ((ElimBody) body).getClauses()) {
+      for (var clause : ((ElimBody) body).getClauses()) {
         if (clause.getExpression() != null) {
           check(clause.getExpression());
         }

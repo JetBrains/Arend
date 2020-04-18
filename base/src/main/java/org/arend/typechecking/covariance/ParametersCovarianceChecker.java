@@ -16,7 +16,7 @@ public class ParametersCovarianceChecker extends CovarianceChecker {
   public ParametersCovarianceChecker(Set<? extends Variable> variables) {
     myVariables = variables;
 
-    myVisitor = new VoidExpressionVisitor<Void>() {
+    myVisitor = new VoidExpressionVisitor<>() {
       @Override
       public Void visitReference(ReferenceExpression expr, Void params) {
         myVariables.remove(expr.getBinding());

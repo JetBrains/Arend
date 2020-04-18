@@ -59,7 +59,7 @@ public class UseTypechecking {
 
     List<Definition> order = new ArrayList<>();
     try {
-      DFS<Definition> dfs = new DFS<Definition>() {
+      DFS<Definition> dfs = new DFS<>() {
         @Override
         protected void forDependencies(Definition unit, Consumer<Definition> consumer) {
           List<Pair<Definition, FunctionDefinition>> deps = depMap.get(unit);

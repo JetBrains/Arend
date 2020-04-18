@@ -42,7 +42,7 @@ public abstract class ProcessDefCallsVisitor<P> extends BaseExpressionVisitor<P,
   }
 
   protected boolean visitElimBody(ElimBody elimBody, P param) {
-    for (ElimClause clause : elimBody.getClauses()) {
+    for (var clause : elimBody.getClauses()) {
       if (clause.getExpression() != null && clause.getExpression().accept(this, param)) {
         return true;
       }

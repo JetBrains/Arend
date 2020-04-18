@@ -1531,8 +1531,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     LinkList list = new LinkList();
     Sort sort;
 
-    try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(typechecker.getFreeBindings())) {
-      try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(typechecker.getContext())) {
+    try (var ignore = new Utils.SetContextSaver<>(typechecker.getFreeBindings())) {
+      try (var ignored = new Utils.SetContextSaver<>(typechecker.getContext())) {
         if (constructor != null) {
           typechecker.getTypecheckingState().rewrite(def.getData(), constructor);
           dataDefinition.addConstructor(constructor);
@@ -1571,8 +1571,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     if (elimParams != null) {
-      try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(typechecker.getFreeBindings())) {
-        try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(typechecker.getContext())) {
+      try (var ignore = new Utils.SetContextSaver<>(typechecker.getFreeBindings())) {
+        try (var ignored = new Utils.SetContextSaver<>(typechecker.getContext())) {
           Expression expectedType = oldConstructor.getDataTypeExpression(Sort.STD);
           PatternTypechecking patternTypechecking = new PatternTypechecking(errorReporter, PatternTypechecking.Mode.CONSTRUCTOR, typechecker, true);
           List<ExtElimClause> clauses = patternTypechecking.typecheckClauses(def.getClauses(), def.getParameters(), oldConstructor.getParameters(), elimParams, expectedType);
@@ -2019,8 +2019,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     boolean isProperty;
     boolean ok;
     PiExpression piType;
-    try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(typechecker.getFreeBindings())) {
-      try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(typechecker.getContext())) {
+    try (var ignore = new Utils.SetContextSaver<>(typechecker.getFreeBindings())) {
+      try (var ignored = new Utils.SetContextSaver<>(typechecker.getContext())) {
         Concrete.Expression codomain;
         TypedSingleDependentLink thisParam = new TypedSingleDependentLink(false, "this", new ClassCallExpression(parentClass, Sort.STD), true);
         if (!def.getParameters().isEmpty()) {

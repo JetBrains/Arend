@@ -1280,8 +1280,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
   protected DependentLink visitParameters(List<? extends Concrete.TypeParameter> parameters, Expression expectedType, List<Sort> resultSorts) {
     LinkList list = new LinkList();
 
-    try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(context)) {
-      try (Utils.SetContextSaver ignored1 = new Utils.SetContextSaver<>(myFreeBindings)) {
+    try (var ignored = new Utils.SetContextSaver<>(context)) {
+      try (var ignored1 = new Utils.SetContextSaver<>(myFreeBindings)) {
         for (Concrete.TypeParameter arg : parameters) {
           Type result = checkType(arg.getType(), expectedType == null ? Type.OMEGA : expectedType, false);
           if (result == null) return null;
@@ -1496,8 +1496,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
 
   @Override
   public TypecheckingResult visitLam(Concrete.LamExpression expr, Expression expectedType) {
-    try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(context)) {
-      try (Utils.SetContextSaver ignored1 = new Utils.SetContextSaver<>(myFreeBindings)) {
+    try (var ignored = new Utils.SetContextSaver<>(context)) {
+      try (var ignored1 = new Utils.SetContextSaver<>(myFreeBindings)) {
         return visitLam(expr.getParameters(), expr, expectedType);
       }
     }
@@ -1508,8 +1508,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     List<SingleDependentLink> list = new ArrayList<>();
     List<Sort> sorts = new ArrayList<>(expr.getParameters().size());
 
-    try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(context)) {
-      try (Utils.SetContextSaver ignored1 = new Utils.SetContextSaver<>(myFreeBindings)) {
+    try (var ignored = new Utils.SetContextSaver<>(context)) {
+      try (var ignored1 = new Utils.SetContextSaver<>(myFreeBindings)) {
         for (Concrete.TypeParameter arg : expr.getParameters()) {
           SingleDependentLink link = visitTypeParameter(arg, sorts, null);
           if (link == null) {
@@ -1682,8 +1682,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
   }
 
   private Pair<LetClause,Expression> typecheckLetClause(Concrete.LetClause clause) {
-    try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(context)) {
-      try (Utils.SetContextSaver ignore1 = new Utils.SetContextSaver<>(myFreeBindings)) {
+    try (var ignore = new Utils.SetContextSaver<>(context)) {
+      try (var ignore1 = new Utils.SetContextSaver<>(myFreeBindings)) {
         TypecheckingResult result = typecheckLetClause(clause.getParameters(), clause);
         if (result == null) {
           return null;
@@ -1763,8 +1763,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
 
   @Override
   public TypecheckingResult visitLet(Concrete.LetExpression expr, Expression expectedType) {
-    try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(context)) {
-      try (Utils.SetContextSaver ignore1 = new Utils.SetContextSaver<>(myFreeBindings)) {
+    try (var ignored = new Utils.SetContextSaver<>(context)) {
+      try (var ignore1 = new Utils.SetContextSaver<>(myFreeBindings)) {
         List<? extends Concrete.LetClause> abstractClauses = expr.getClauses();
         List<LetClause> clauses = new ArrayList<>(abstractClauses.size());
         for (Concrete.LetClause clause : abstractClauses) {
@@ -2123,8 +2123,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     Expression resultTypeLevel = null;
     Map<Referable, Binding> origElimBindings = new HashMap<>();
     ExprSubstitution elimSubst = new ExprSubstitution();
-    try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(context)) {
-      try (Utils.SetContextSaver ignored1 = new Utils.SetContextSaver<>(myFreeBindings)) {
+    try (var ignored = new Utils.SetContextSaver<>(context)) {
+      try (var ignored1 = new Utils.SetContextSaver<>(myFreeBindings)) {
         for (Concrete.CaseArgument caseArg : caseArgs) {
           Type argType = null;
           if (caseArg.type != null) {

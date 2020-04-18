@@ -220,7 +220,7 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> {
   }
 
   private Variable findBindingInElimBody(ElimBody elimBody) {
-    for (ElimClause clause : elimBody.getClauses()) {
+    for (var clause : elimBody.getClauses()) {
       Variable result = visitDependentLink(clause.getParameters());
       if (result != null) {
         return result;

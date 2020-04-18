@@ -136,8 +136,8 @@ public class PatternTypechecking {
   }
 
   private ExtElimClause typecheckClause(Concrete.FunctionClause clause, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, Expression expectedType) {
-    try (Utils.SetContextSaver<Referable> ignored = new Utils.SetContextSaver<>(myVisitor.getContext())) {
-      try (Utils.SetContextSaver ignored1 = new Utils.SetContextSaver<>(myVisitor.getFreeBindings())) {
+    try (var ignored = new Utils.SetContextSaver<>(myVisitor.getContext())) {
+      try (var ignored1 = new Utils.SetContextSaver<>(myVisitor.getFreeBindings())) {
         // Typecheck patterns
         ExprSubstitution substitution = new ExprSubstitution();
         ExprSubstitution totalSubst = new ExprSubstitution();

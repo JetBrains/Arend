@@ -198,7 +198,7 @@ public class FreeVariablesClassifier implements ExpressionVisitor<Boolean, FreeV
     if (result != Result.NONE) {
       return result;
     }
-    for (ElimClause clause : expr.getElimBody().getClauses()) {
+    for (var clause : expr.getElimBody().getClauses()) {
       result = visitParameters(clause.getParameters());
       if (result != Result.NONE) {
         return result;

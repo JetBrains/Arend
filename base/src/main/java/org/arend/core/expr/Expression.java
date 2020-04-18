@@ -18,7 +18,6 @@ import org.arend.error.IncorrectExpressionException;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.core.expr.CoreExpression;
-import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.UncheckedExpression;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.ExpressionMapper;
