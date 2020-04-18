@@ -188,11 +188,7 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Expression>
         arg = arg.normalize(NormalizationMode.WHNF);
       }
       LamExpression lamExpr = arg.cast(LamExpression.class);
-      if (lamExpr == null) {
-        return null;
-      }
-      Expression body = lamExpr.getParameters().getNext().hasNext() ? new LamExpression(lamExpr.getResultSort(), lamExpr.getParameters().getNext(), lamExpr.getBody()) : lamExpr.getBody();
-      return NormalizingFindBindingVisitor.findBinding(body, lamExpr.getParameters()) ? null : Collections.emptyList();
+      return lambdaParams(lamExpr);
     }
 
     if (data instanceof ConCallExpression) {
@@ -225,6 +221,14 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Expression>
       }
     }
     return arguments;
+  }
+
+  public static List<Expression> lambdaParams(LamExpression lamExpr) {
+    if (lamExpr == null) {
+      return null;
+    }
+    Expression body = lamExpr.getParameters().getNext().hasNext() ? new LamExpression(lamExpr.getResultSort(), lamExpr.getParameters().getNext(), lamExpr.getBody()) : lamExpr.getBody();
+    return NormalizingFindBindingVisitor.findBinding(body, lamExpr.getParameters()) ? null : Collections.emptyList();
   }
 
   @Override

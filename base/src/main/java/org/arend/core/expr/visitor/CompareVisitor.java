@@ -19,6 +19,7 @@ import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.implicitargs.equations.Equations;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 import java.util.*;
@@ -184,34 +185,10 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       }
 
       if (!myOnlySolveVars && (normType == null || normType.getStuckInferenceVariable() != null || normType instanceof ClassCallExpression)) {
-        Expression type1 = expr1.getType();
-        if (type1 != null && type1.getStuckInferenceVariable() != null) {
-          type1 = null;
-        }
-        if (type1 != null) {
-          type1 = myNormalize ? type1.normalize(NormalizationMode.WHNF) : type1;
-          if (allowProp) {
-            Sort sort1 = type1.getSortOfType();
-            if (sort1 != null && sort1.isProp() && !type1.isInstance(ClassCallExpression.class)) {
-              myOnlySolveVars = true;
-            }
-          }
-        }
+        Expression type1 = compareType(expr1, allowProp);
 
         if (!myOnlySolveVars) {
-          Expression type2 = expr2.getType();
-          if (type2 != null && type2.getStuckInferenceVariable() != null) {
-            type2 = null;
-          }
-          if (type2 != null) {
-            type2 = myNormalize ? type2.normalize(NormalizationMode.WHNF) : type2;
-            if (allowProp) {
-              Sort sort2 = type2.getSortOfType();
-              if (sort2 != null && sort2.isProp() && !type2.isInstance(ClassCallExpression.class)) {
-                myOnlySolveVars = true;
-              }
-            }
-          }
+          Expression type2 = compareType(expr2, allowProp);
 
           if (!myOnlySolveVars && type1 != null && type2 != null) {
             ClassCallExpression classCall1 = type1.cast(ClassCallExpression.class);
@@ -269,6 +246,24 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     }
     myOnlySolveVars = onlySolveVars;
     return ok;
+  }
+
+  @Nullable
+  private Expression compareType(Expression expr, boolean allowProp) {
+    Expression type = expr.getType();
+    if (type != null && type.getStuckInferenceVariable() != null) {
+      type = null;
+    }
+    if (type != null) {
+      type = myNormalize ? type.normalize(NormalizationMode.WHNF) : type;
+      if (allowProp) {
+        Sort sort = type.getSortOfType();
+        if (sort != null && sort.isProp() && !type.isInstance(ClassCallExpression.class)) {
+          myOnlySolveVars = true;
+        }
+      }
+    }
+    return type;
   }
 
   public Boolean compare(Expression expr1, Expression expr2, Expression type) {

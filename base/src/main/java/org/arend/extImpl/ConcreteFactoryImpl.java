@@ -194,17 +194,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
   @NotNull
   @Override
   public ConcreteExpression caseExpr(boolean isSCase, Collection<? extends ConcreteCaseArgument> arguments, @Nullable ConcreteExpression resultType, @Nullable ConcreteExpression resultTypeLevel, @NotNull ConcreteClause... clauses) {
-    List<Concrete.FunctionClause> cClauses = new ArrayList<>(clauses.length);
-    for (ConcreteClause clause : clauses) {
-      if (!(clause instanceof Concrete.Clause)) {
-        throw new IllegalArgumentException();
-      }
-      if (!(clause instanceof Concrete.FunctionClause)) {
-        throw new IllegalArgumentException("Expected a function clause");
-      }
-      cClauses.add((Concrete.FunctionClause) clause);
-    }
-    return caseExprC(isSCase, arguments, resultType, resultTypeLevel, cClauses);
+    return caseExpr(isSCase, arguments, resultType, resultTypeLevel, Arrays.asList(clauses));
   }
 
   @Override
@@ -250,17 +240,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
   }
 
   private List<Concrete.ClassFieldImpl> classFieldImpls(ConcreteClassElement[] elements) {
-    List<Concrete.ClassFieldImpl> result = new ArrayList<>(elements.length);
-    for (ConcreteClassElement element : elements) {
-      if (!(element instanceof Concrete.ClassElement)) {
-        throw new IllegalArgumentException();
-      }
-      if (!(element instanceof Concrete.ClassFieldImpl)) {
-        throw new IllegalArgumentException("Expected a field implementation");
-      }
-      result.add((Concrete.ClassFieldImpl) element);
-    }
-    return result;
+    return classFieldImpls(Arrays.asList(elements));
   }
 
   private List<Concrete.ClassFieldImpl> classFieldImpls(Collection<? extends ConcreteClassElement> elements) {

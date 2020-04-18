@@ -1,5 +1,7 @@
 package org.arend.term.concrete;
 
+import org.arend.typechecking.visitor.ConcreteVisitorUtils;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -106,26 +108,7 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
   }
 
   protected void visitPattern(Concrete.Pattern pattern, P params) {
-    if (pattern instanceof Concrete.NamePattern) {
-      Concrete.NamePattern namePattern = (Concrete.NamePattern) pattern;
-      if (namePattern.type != null) {
-        namePattern.type = namePattern.type.accept(this, params);
-      }
-    } else if (pattern instanceof Concrete.ConstructorPattern) {
-      for (Concrete.Pattern subPattern : ((Concrete.ConstructorPattern) pattern).getPatterns()) {
-        visitPattern(subPattern, params);
-      }
-    } else if (pattern instanceof Concrete.TuplePattern) {
-      for (Concrete.Pattern subPattern : ((Concrete.TuplePattern) pattern).getPatterns()) {
-        visitPattern(subPattern, params);
-      }
-    }
-
-    for (Concrete.TypedReferable typedReferable : pattern.getAsReferables()) {
-      if (typedReferable.type != null) {
-        typedReferable.type = typedReferable.type.accept(this, params);
-      }
-    }
+    ConcreteVisitorUtils.visitPattern(pattern, params, this);
   }
 
   protected void visitClause(Concrete.Clause clause, P params) {

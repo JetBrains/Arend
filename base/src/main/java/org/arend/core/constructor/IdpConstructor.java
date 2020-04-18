@@ -5,6 +5,7 @@ import org.arend.core.expr.Expression;
 import org.arend.core.expr.FunCallExpression;
 import org.arend.core.expr.LamExpression;
 import org.arend.core.expr.visitor.NormalizingFindBindingVisitor;
+import org.arend.core.pattern.ConstructorExpressionPattern;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
@@ -31,11 +32,7 @@ public class IdpConstructor extends SingleConstructor {
     }
 
     LamExpression lamExpr = ((ConCallExpression) argument).getDefCallArguments().get(0).normalize(NormalizationMode.WHNF).cast(LamExpression.class);
-    if (lamExpr == null) {
-      return null;
-    }
-    Expression body = lamExpr.getParameters().getNext().hasNext() ? new LamExpression(lamExpr.getResultSort(), lamExpr.getParameters().getNext(), lamExpr.getBody()) : lamExpr.getBody();
-    return NormalizingFindBindingVisitor.findBinding(body, lamExpr.getParameters()) ? null : Collections.emptyList();
+    return ConstructorExpressionPattern.lambdaParams(lamExpr);
   }
 
   @Override

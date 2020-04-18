@@ -182,26 +182,7 @@ public class VoidConcreteVisitor<P, R> implements ConcreteExpressionVisitor<P,Vo
   }
 
   protected void visitPattern(Concrete.Pattern pattern, P params) {
-    for (Concrete.TypedReferable typedReferable : pattern.getAsReferables()) {
-      if (typedReferable.type != null) {
-        typedReferable.type.accept(this, params);
-      }
-    }
-
-    if (pattern instanceof Concrete.NamePattern) {
-      Concrete.Expression type = ((Concrete.NamePattern) pattern).type;
-      if (type != null) {
-        type.accept(this, params);
-      }
-    } else if (pattern instanceof Concrete.ConstructorPattern) {
-      for (Concrete.Pattern patternArg : ((Concrete.ConstructorPattern) pattern).getPatterns()) {
-        visitPattern(patternArg, params);
-      }
-    } else if (pattern instanceof Concrete.TuplePattern) {
-      for (Concrete.Pattern patternArg : ((Concrete.TuplePattern) pattern).getPatterns()) {
-        visitPattern(patternArg, params);
-      }
-    }
+    ConcreteVisitorUtils.visitPattern(pattern, params, this);
   }
 
   protected void visitClauses(List<? extends Concrete.Clause> clauses, P params) {

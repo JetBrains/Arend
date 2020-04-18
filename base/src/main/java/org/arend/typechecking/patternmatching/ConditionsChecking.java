@@ -96,19 +96,21 @@ public class ConditionsChecking {
     ExprSubstitution substitution2 = new ExprSubstitution(link1, isLeft1 ? ExpressionFactory.Left() : ExpressionFactory.Right());
     Expression evaluatedExpr2 = case2.subst(substitution2);
     if (!CompareVisitor.compare(myEquations, CMP.EQ, evaluatedExpr1, evaluatedExpr2, null, mySourceNode)) {
-      List<Expression> defCallArgs1 = new ArrayList<>();
-      for (DependentLink link3 = definition.getParameters(); link3.hasNext(); link3 = link3.getNext()) {
-        defCallArgs1.add(link3 == link1 ? (isLeft1 ? ExpressionFactory.Left() : ExpressionFactory.Right()) : new ReferenceExpression(link3));
-      }
-      List<Expression> defCallArgs2 = new ArrayList<>();
-      for (DependentLink link3 = definition.getParameters(); link3.hasNext(); link3 = link3.getNext()) {
-        defCallArgs2.add(link3 == link2 ? (isLeft2 ? ExpressionFactory.Left() : ExpressionFactory.Right()) : new ReferenceExpression(link3));
-      }
+      List<Expression> defCallArgs1 = addDefCallArgs(isLeft1, link1, definition);
+      List<Expression> defCallArgs2 = addDefCallArgs(isLeft2, link2, definition);
       myErrorReporter.report(new ConditionsError(new Condition(definition.getDefCall(Sort.STD, defCallArgs1), substitution1, evaluatedExpr1), new Condition(definition.getDefCall(Sort.STD, defCallArgs2), substitution2, evaluatedExpr2), mySourceNode));
       return false;
     } else {
       return true;
     }
+  }
+
+  private List<Expression> addDefCallArgs(boolean isLeft, DependentLink link, Definition definition) {
+    List<Expression> defCallArgs = new ArrayList<>();
+    for (DependentLink link3 = definition.getParameters(); link3.hasNext(); link3 = link3.getNext()) {
+      defCallArgs.add(link3 == link ? (isLeft ? ExpressionFactory.Left() : ExpressionFactory.Right()) : new ReferenceExpression(link3));
+    }
+    return defCallArgs;
   }
 
   private boolean checkIntervalClause(IntervalElim elim, ElimClause<ExpressionPattern> clause, Concrete.SourceNode sourceNode, Definition definition) {
