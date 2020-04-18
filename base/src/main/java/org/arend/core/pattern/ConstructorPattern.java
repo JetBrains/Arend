@@ -23,7 +23,7 @@ public abstract class ConstructorPattern<T> implements Pattern {
   }
 
   public static ConstructorPattern<Definition> make(Definition definition, List<? extends Pattern> subPatterns) {
-    return new ConstructorPattern<Definition>(definition, subPatterns) {
+    return new ConstructorPattern<>(definition, subPatterns) {
       @Override
       public Definition getDefinition() {
         return data;

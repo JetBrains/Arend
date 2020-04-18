@@ -147,7 +147,7 @@ public abstract class Expression implements Body, CoreExpression {
   @Override
   public @Nullable CoreBinding findFreeBindings(@NotNull Set<? extends CoreBinding> bindings) {
     //noinspection unchecked
-    return (CoreBinding) accept(new FindBindingVisitor((Set<Variable>) (Set) bindings), null);
+    return (CoreBinding) accept(new FindBindingVisitor((Set<Variable>) bindings), null);
   }
 
   public Expression copy() {

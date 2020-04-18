@@ -1,5 +1,7 @@
 package org.arend.util;
 
+import java.util.Objects;
+
 public class Pair<T, S> {
   public final T proj1;
   public final S proj2;
@@ -16,8 +18,8 @@ public class Pair<T, S> {
 
     Pair<?, ?> pair = (Pair<?, ?>) o;
 
-    if (proj1 != null ? !proj1.equals(pair.proj1) : pair.proj1 != null) return false;
-    return proj2 != null ? proj2.equals(pair.proj2) : pair.proj2 == null;
+    if (!Objects.equals(proj1, pair.proj1)) return false;
+    return Objects.equals(proj2, pair.proj2);
   }
 
   @Override

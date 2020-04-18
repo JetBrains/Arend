@@ -30,7 +30,7 @@ public class Matchers {
   }
 
   public static Matcher<? super GeneralError> typecheckingError(final Class<? extends LocalError> type) {
-    return new TypeSafeDiagnosingMatcher<GeneralError>() {
+    return new TypeSafeDiagnosingMatcher<>() {
       @Override
       protected boolean matchesSafely(GeneralError error, Description description) {
         if (type.isInstance(error)) {
@@ -50,7 +50,7 @@ public class Matchers {
   }
 
   public static Matcher<? super GeneralError> typecheckingError(CertainTypecheckingError.Kind kind) {
-    return new TypeSafeDiagnosingMatcher<GeneralError>() {
+    return new TypeSafeDiagnosingMatcher<>() {
       @Override
       protected boolean matchesSafely(GeneralError error, Description description) {
         if (error instanceof CertainTypecheckingError && ((CertainTypecheckingError) error).kind == kind) {
@@ -70,7 +70,7 @@ public class Matchers {
   }
 
   public static Matcher<? super GeneralError> typeMismatchError() {
-    return new TypeSafeDiagnosingMatcher<GeneralError>() {
+    return new TypeSafeDiagnosingMatcher<>() {
       @Override
       protected boolean matchesSafely(GeneralError error, Description description) {
           if (error instanceof TypeMismatchError) {
@@ -90,7 +90,7 @@ public class Matchers {
   }
 
   public static Matcher<? super GeneralError> goalError(Condition... conditions) {
-    return new TypeSafeDiagnosingMatcher<GeneralError>() {
+    return new TypeSafeDiagnosingMatcher<>() {
       @Override
       protected boolean matchesSafely(GeneralError error, Description description) {
         if (error instanceof GoalError && ((GoalError) error).getConditions().equals(Arrays.asList(conditions))) {
@@ -110,7 +110,7 @@ public class Matchers {
   }
 
   public static Matcher<? super GeneralError> notInScope(String name) {
-    return new TypeSafeDiagnosingMatcher<GeneralError>() {
+    return new TypeSafeDiagnosingMatcher<>() {
       @Override
       protected boolean matchesSafely(GeneralError error, Description description) {
         if (error instanceof NotInScopeError && ((NotInScopeError) error).name.equals(name)) {
@@ -130,7 +130,7 @@ public class Matchers {
   }
 
   public static Matcher<? super GeneralError> duplicateName(GeneralError.Level level, String name) {
-    return new TypeSafeDiagnosingMatcher<GeneralError>() {
+    return new TypeSafeDiagnosingMatcher<>() {
       @Override
       protected boolean matchesSafely(GeneralError error, Description description) {
         if (error instanceof DuplicateNameError && error.level.equals(level) && ((DuplicateNameError) error).referable.textRepresentation().equals(name)) {
@@ -150,7 +150,7 @@ public class Matchers {
   }
 
   public static Matcher<? super GeneralError> wrongReferable() {
-    return new TypeSafeDiagnosingMatcher<GeneralError>() {
+    return new TypeSafeDiagnosingMatcher<>() {
       @Override
       protected boolean matchesSafely(GeneralError error, Description description) {
         if (error instanceof WrongReferable) {
@@ -170,7 +170,7 @@ public class Matchers {
   }
 
   public static Matcher<? super GeneralError> fieldsImplementation(boolean alreadyImplemented, Collection<? extends GlobalReferable> fields) {
-    return new TypeSafeDiagnosingMatcher<GeneralError>() {
+    return new TypeSafeDiagnosingMatcher<>() {
       @Override
       protected boolean matchesSafely(GeneralError error, Description description) {
         if (error instanceof FieldsImplementationError && ((FieldsImplementationError) error).alreadyImplemented == alreadyImplemented && ((FieldsImplementationError) error).fields.equals(fields)) {
@@ -190,7 +190,7 @@ public class Matchers {
   }
 
   public static Matcher<? super GeneralError> instanceInference(TCReferable classRef, Expression classifyingExpression) {
-    return new TypeSafeDiagnosingMatcher<GeneralError>() {
+    return new TypeSafeDiagnosingMatcher<>() {
       @Override
       protected boolean matchesSafely(GeneralError error, Description description) {
         if (!(error instanceof InstanceInferenceError)) {
@@ -225,7 +225,7 @@ public class Matchers {
   }
 
   public static Matcher<? super GeneralError> argInferenceError() {
-    return new TypeSafeDiagnosingMatcher<GeneralError>() {
+    return new TypeSafeDiagnosingMatcher<>() {
       @Override
       protected boolean matchesSafely(GeneralError error, Description description) {
         if (error instanceof ArgInferenceError) {
@@ -245,7 +245,7 @@ public class Matchers {
   }
 
   public static Matcher<? super GeneralError> missingClauses(int clauses) {
-    return new TypeSafeDiagnosingMatcher<GeneralError>() {
+    return new TypeSafeDiagnosingMatcher<>() {
       @Override
       protected boolean matchesSafely(GeneralError error, Description description) {
         if (error instanceof MissingClausesError && ((MissingClausesError) error).missingClauses.size() == clauses) {
@@ -266,7 +266,7 @@ public class Matchers {
 
   public static Matcher<? super GeneralError> cycle(GlobalReferable... refs) {
     List<GlobalReferable> referables = Arrays.asList(refs);
-    return new TypeSafeDiagnosingMatcher<GeneralError>() {
+    return new TypeSafeDiagnosingMatcher<>() {
       @Override
       protected boolean matchesSafely(GeneralError error, Description description) {
         if (error instanceof CycleError && (referables.isEmpty() || ((CycleError) error).cycle.equals(referables))) {
@@ -286,7 +286,7 @@ public class Matchers {
   }
 
   public static Matcher<? super GeneralError> error() {
-    return new TypeSafeDiagnosingMatcher<GeneralError>() {
+    return new TypeSafeDiagnosingMatcher<>() {
       @Override
       protected boolean matchesSafely(GeneralError error, Description description) {
         if (error.level == GeneralError.Level.ERROR) {
@@ -306,7 +306,7 @@ public class Matchers {
   }
 
   public static Matcher<? super GeneralError> warning() {
-    return new TypeSafeDiagnosingMatcher<GeneralError>() {
+    return new TypeSafeDiagnosingMatcher<>() {
       @Override
       protected boolean matchesSafely(GeneralError error, Description description) {
         if (error.level == GeneralError.Level.WARNING || error.level == GeneralError.Level.WARNING_UNUSED) {
@@ -326,7 +326,7 @@ public class Matchers {
   }
 
   public static Matcher<GeneralError> goal(final int contextSize) {
-    return new TypeSafeDiagnosingMatcher<GeneralError>() {
+    return new TypeSafeDiagnosingMatcher<>() {
       @Override
       protected boolean matchesSafely(GeneralError error, Description description) {
         if (error instanceof GoalError) {
@@ -357,7 +357,7 @@ public class Matchers {
   }
 
   public static Matcher<GeneralError> hasErrors(GlobalReferable cause) {
-    return new TypeSafeDiagnosingMatcher<GeneralError>() {
+    return new TypeSafeDiagnosingMatcher<>() {
       @Override
       protected boolean matchesSafely(GeneralError error, Description description) {
         if (error instanceof HasErrors) {
