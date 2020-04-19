@@ -231,4 +231,11 @@ public class AppHoleTest extends TypeCheckingTestCase {
   public void caseTest2() {
     typeCheckDef("\\func test (f : Nat -> Nat) (x : Nat) : Nat -> Nat => \\case x \\with { | 0 => f __ | suc n => f }");
   }
+
+  @Test
+  public void caseElimTest() {
+    typeCheckModule(
+      "\\func id (x : Nat) : Nat | 0 => 0 | suc n => suc n\n" +
+      "\\func test : \\Pi (x : Nat) -> id x = x => \\case \\elim __ \\with { | 0 => idp | suc n => idp }");
+  }
 }

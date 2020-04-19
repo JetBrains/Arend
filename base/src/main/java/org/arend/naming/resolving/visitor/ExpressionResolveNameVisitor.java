@@ -192,11 +192,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       for (Concrete.CaseArgument caseArg : expr.getArguments()) {
         caseArg.expression = caseArg.expression.accept(this, null);
-        if (caseArg.isElim && !(caseArg.expression instanceof Concrete.ReferenceExpression)) {
-          myErrorReporter.report(new NamingError("Expected a variable", caseArg.expression));
-          caseArg.isElim = false;
-        }
-        if (caseArg.isElim) {
+        if (caseArg.isElim && caseArg.expression instanceof Concrete.ReferenceExpression) {
           eliminatedRefs.add(((Concrete.ReferenceExpression) caseArg.expression).getReferent());
         }
         if (caseArg.type != null) {

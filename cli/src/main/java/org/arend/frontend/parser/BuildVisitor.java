@@ -1540,9 +1540,18 @@ public class BuildVisitor extends ArendBaseVisitor {
         TerminalNode id = caseArgExpr.ID();
         caseArgs.add(new Concrete.CaseArgument(visitExpr(caseArgExpr.expr()), id == null ? null : new ParsedLocalReferable(tokenPosition(id.getSymbol()), id.getText()), type));
       } else if (caseArgExprAs instanceof CaseArgElimContext) {
-        TerminalNode id = ((CaseArgElimContext) caseArgExprAs).ID();
-        Position position = tokenPosition(id.getSymbol());
-        caseArgs.add(new Concrete.CaseArgument(new Concrete.ReferenceExpression(position, new NamedUnresolvedReference(position, id.getText())), type));
+        CaseArgElimContext caseArgElim = (CaseArgElimContext) caseArgExprAs;
+        TerminalNode id = caseArgElim.ID();
+        TerminalNode applyHole = caseArgElim.APPLY_HOLE();
+        Concrete.CaseArgument argument;
+        if (id != null) {
+          Position position = tokenPosition(id.getSymbol());
+          argument = new Concrete.CaseArgument(new Concrete.ReferenceExpression(position,
+              new NamedUnresolvedReference(position, id.getText())), type);
+        } else
+          argument = new Concrete.CaseArgument(new Concrete.ApplyHoleExpression(
+              tokenPosition(applyHole.getSymbol())), type);
+        caseArgs.add(argument);
       }
     }
     List<Concrete.FunctionClause> clauses = new ArrayList<>();
