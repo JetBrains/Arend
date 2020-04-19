@@ -45,7 +45,6 @@ import org.arend.term.concrete.ConcreteExpressionVisitor;
 import org.arend.term.concrete.ConcreteLevelExpressionVisitor;
 import org.arend.typechecking.FieldDFS;
 import org.arend.typechecking.TypecheckerState;
-import org.arend.typechecking.TypecheckingListener;
 import org.arend.typechecking.computation.ComputationRunner;
 import org.arend.typechecking.doubleChecker.CoreException;
 import org.arend.typechecking.doubleChecker.CoreExpressionChecker;
@@ -87,7 +86,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
   protected Map<Referable, Binding> context;
   protected ErrorReporter errorReporter;
   private final MyErrorReporter myErrorReporter;
-  private TypecheckingListener myListener = TypecheckingListener.DEFAULT;
   private final List<ClassCallExpression.ClassCallBinding> myClassCallBindings = new ArrayList<>();
   private final List<DeferredMeta> myDeferredMetasBeforeSolver = new ArrayList<>();
   private final List<DeferredMeta> myDeferredMetasBeforeLevels = new ArrayList<>();
@@ -156,7 +154,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       myFreeBindings.add(binding);
     } else {
       context.put(referable, binding);
-      myListener.referableTypechecked(referable, binding);
     }
   }
 
@@ -223,14 +220,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
 
   public Definition.TypeCheckingStatus getStatus() {
     return myErrorReporter.myStatus;
-  }
-
-  public TypecheckingListener getListener() {
-    return myListener;
-  }
-
-  public void setListener(TypecheckingListener listener) {
-    myListener = listener;
   }
 
   @Override

@@ -51,11 +51,10 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
   private final ConcreteProvider myConcreteProvider;
   private final ReferableConverter myReferableConverter;
   private final PartialComparator<TCReferable> myComparator;
-  private final TypecheckingListener myTypecheckingListener;
   private List<TCReferable> myCurrentDefinitions = Collections.emptyList();
   private boolean myHeadersAreOK = true;
 
-  public TypecheckingOrderingListener(InstanceProviderSet instanceProviderSet, TypecheckerState state, ConcreteProvider concreteProvider, ReferableConverter referableConverter, ErrorReporter errorReporter, DependencyListener dependencyListener, PartialComparator<TCReferable> comparator, TypecheckingListener typecheckingListener) {
+  public TypecheckingOrderingListener(InstanceProviderSet instanceProviderSet, TypecheckerState state, ConcreteProvider concreteProvider, ReferableConverter referableConverter, ErrorReporter errorReporter, DependencyListener dependencyListener, PartialComparator<TCReferable> comparator) {
     myState = state;
     myErrorReporter = errorReporter;
     myDependencyListener = dependencyListener;
@@ -63,11 +62,10 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
     myConcreteProvider = concreteProvider;
     myReferableConverter = referableConverter;
     myComparator = comparator;
-    myTypecheckingListener = typecheckingListener;
   }
 
   public TypecheckingOrderingListener(InstanceProviderSet instanceProviderSet, TypecheckerState state, ConcreteProvider concreteProvider, ReferableConverter referableConverter, ErrorReporter errorReporter, PartialComparator<TCReferable> comparator) {
-    this(instanceProviderSet, state, concreteProvider, referableConverter, errorReporter, DummyDependencyListener.INSTANCE, comparator, TypecheckingListener.DEFAULT);
+    this(instanceProviderSet, state, concreteProvider, referableConverter, errorReporter, DummyDependencyListener.INSTANCE, comparator);
   }
 
   public ConcreteProvider getConcreteProvider() {
@@ -209,7 +207,6 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
     List<ExtElimClause> clauses;
     Definition typechecked;
     CheckTypeVisitor checkTypeVisitor = new CheckTypeVisitor(myState, new LocalErrorReporter(definition.getData(), myErrorReporter), null);
-    checkTypeVisitor.setListener(myTypecheckingListener);
     checkTypeVisitor.setInstancePool(new GlobalInstancePool(myInstanceProviderSet.get(definition.getData()), checkTypeVisitor));
     DesugarVisitor.desugar(definition, myConcreteProvider, checkTypeVisitor.getErrorReporter());
     myCurrentDefinitions = Collections.singletonList(definition.getData());
@@ -253,7 +250,6 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
 
     CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
     CheckTypeVisitor visitor = new CheckTypeVisitor(myState, new LocalErrorReporter(definition.getData(), new CompositeErrorReporter(myErrorReporter, countingErrorReporter)), null);
-    visitor.setListener(myTypecheckingListener);
     visitor.setStatus(definition.getStatus().getTypecheckingStatus());
     DesugarVisitor.desugar(definition, myConcreteProvider, visitor.getErrorReporter());
     Definition oldTypechecked = visitor.getTypecheckingState().getTypechecked(definition.getData());

@@ -171,7 +171,6 @@ public class PatternTypechecking {
               : null;
           if (newBinding != null) {
             entry.setValue(newBinding);
-            myVisitor.getListener().referableTypechecked(entry.getKey(), newBinding);
           }
         }
         expectedType = expectedType.subst(substitution);
