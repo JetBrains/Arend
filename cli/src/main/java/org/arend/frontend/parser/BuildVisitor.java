@@ -1550,7 +1550,7 @@ public class BuildVisitor extends ArendBaseVisitor {
               new NamedUnresolvedReference(position, id.getText())), type);
         } else
           argument = new Concrete.CaseArgument(new Concrete.ApplyHoleExpression(
-              tokenPosition(applyHole.getSymbol())), null, null);
+              tokenPosition(applyHole.getSymbol())), type);
         caseArgs.add(argument);
       }
     }

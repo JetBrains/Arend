@@ -1010,7 +1010,7 @@ public final class Concrete {
     public @NotNull Expression expression;
     public final @Nullable Referable referable;
     public @Nullable Expression type;
-    public boolean isElim;
+    public final boolean isElim;
 
     public CaseArgument(@NotNull Expression expression, @Nullable Referable referable, @Nullable Expression type) {
       this.expression = expression;
@@ -1020,6 +1020,13 @@ public final class Concrete {
     }
 
     public CaseArgument(@NotNull ReferenceExpression expression, @Nullable Expression type) {
+      this.expression = expression;
+      this.referable = null;
+      this.type = type;
+      isElim = true;
+    }
+
+    public CaseArgument(@NotNull ApplyHoleExpression expression, @Nullable Expression type) {
       this.expression = expression;
       this.referable = null;
       this.type = type;

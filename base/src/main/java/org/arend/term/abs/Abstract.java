@@ -130,6 +130,7 @@ public final class Abstract {
   }
 
   public interface CaseArgument extends SourceNode {
+    @Nullable Object getApplyHoleData();
     @Nullable Expression getExpression();
     @Nullable Referable getReferable();
     @Nullable Expression getType();
