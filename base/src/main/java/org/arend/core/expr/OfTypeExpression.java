@@ -66,7 +66,7 @@ public class OfTypeExpression extends Expression {
   }
 
   @Override
-  public boolean isInstance(Class clazz) {
+  public <T extends Expression> boolean isInstance(Class<T> clazz) {
     return clazz.isInstance(this) || myExpression.isInstance(clazz);
   }
 

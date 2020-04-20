@@ -94,7 +94,7 @@ public class InferenceReferenceExpression extends Expression implements CoreInfe
   }
 
   @Override
-  public boolean isInstance(Class clazz) {
+  public <T extends Expression> boolean isInstance(Class<T> clazz) {
     return mySubstExpression != null && mySubstExpression.isInstance(clazz) || clazz.isInstance(this);
   }
 

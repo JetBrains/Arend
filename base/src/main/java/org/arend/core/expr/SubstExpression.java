@@ -63,7 +63,7 @@ public class SubstExpression extends Expression {
   }
 
   @Override
-  public boolean isInstance(Class clazz) {
+  public <T extends Expression> boolean isInstance(Class<T> clazz) {
     return getSubstExpression().isInstance(clazz);
   }
 

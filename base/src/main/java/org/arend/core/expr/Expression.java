@@ -146,7 +146,7 @@ public abstract class Expression implements Body, CoreExpression {
   @Override
   public @Nullable CoreBinding findFreeBindings(@NotNull Set<? extends CoreBinding> bindings) {
     //noinspection unchecked
-    return (CoreBinding) accept(new FindBindingVisitor((Set<Variable>) (Set) bindings), null);
+    return (CoreBinding) accept(new FindBindingVisitor((Set<Variable>) (Set<?>) bindings), null);
   }
 
   public Expression copy() {
@@ -344,7 +344,7 @@ public abstract class Expression implements Body, CoreExpression {
     return this;
   }
 
-  public boolean isInstance(Class clazz) {
+  public <T extends Expression> boolean isInstance(Class<T> clazz) {
     return clazz.isInstance(this);
   }
 
