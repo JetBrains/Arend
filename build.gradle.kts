@@ -26,6 +26,11 @@ allprojects {
         plugin("idea")
     }
 
+    java {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+
     idea {
         module {
             outputDir = file("$buildDir/classes/java/main")
@@ -48,8 +53,6 @@ subprojects {
         withSourcesJar()
         // Enable on-demand
         // withJavadocJar()
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
     }
 
     publishing {

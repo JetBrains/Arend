@@ -55,7 +55,7 @@ public class CorrespondedSubDefVisitor implements
       Map<ClassField, Expression> implementations = ((ClassCallExpression) coreResultType).getImplementedHere();
       for (Concrete.CoClauseElement coclause : body.getCoClauseElements())
         if (coclause instanceof Concrete.ClassFieldImpl) {
-          Pair<Expression, Concrete.Expression> statementVisited = visitor.visitStatement(implementations, (Concrete.ClassFieldImpl) coclause);
+          var statementVisited = visitor.visitStatement(implementations, (Concrete.ClassFieldImpl) coclause);
           if (statementVisited != null) return statementVisited;
         }
     }
@@ -71,10 +71,10 @@ public class CorrespondedSubDefVisitor implements
     Concrete.Expression resultType = def.getResultType();
     Expression coreResultType = coreDef.getResultType();
     if (resultType != null && coreResultType != null) {
-      Pair<Expression, Concrete.Expression> typeResult = resultType.accept(visitor, coreResultType);
+      var typeResult = resultType.accept(visitor, coreResultType);
       if (typeResult != null) return typeResult;
     }
-    Pair<Expression, Concrete.Expression> parametersResult = visitor
+    var parametersResult = visitor
         .visitSigmaParameters(def.getParameters(), coreDef.getParameters());
     if (parametersResult != null) return parametersResult;
     return visitBody(def.getBody(), coreDef.getActualBody(), coreResultType);
@@ -113,13 +113,13 @@ public class CorrespondedSubDefVisitor implements
             .filter(classField -> classField.getReferable() == referable)
             .map(ClassField::getResultType)
             .findFirst();
-        if (!field.isPresent()) continue;
+        if (field.isEmpty()) continue;
         Expression fieldExpr = field.get();
         List<Concrete.TypeParameter> concreteParameters = concrete.getParameters();
         // Clone the list and remove the first "this" parameter
         List<Concrete.TypeParameter> parameters = concreteParameters.isEmpty()
             ? Collections.emptyList() : concreteParameters.subList(1, concreteParameters.size());
-        Pair<Expression, Concrete.Expression> accept = !parameters.isEmpty() && fieldExpr instanceof PiExpression
+        var accept = !parameters.isEmpty() && fieldExpr instanceof PiExpression
             ? visitor.visitPiImpl(parameters, concrete.getResultType(), (PiExpression) fieldExpr)
             : concrete.getResultType().accept(visitor, fieldExpr);
         if (accept != null) return accept;
@@ -131,9 +131,9 @@ public class CorrespondedSubDefVisitor implements
             .filter(o -> o.getReferable() == implementedField)
             .findFirst()
             .map(coreDef::getImplementation);
-        if (!field.isPresent()) continue;
+        if (field.isEmpty()) continue;
         // The binding is `this` I believe
-        Pair<Expression, Concrete.Expression> accept = concrete.implementation
+        var accept = concrete.implementation
             .accept(visitor, field.get().getExpression());
         if (accept != null) return accept;
       }

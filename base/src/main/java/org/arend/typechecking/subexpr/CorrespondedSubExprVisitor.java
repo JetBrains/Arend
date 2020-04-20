@@ -97,7 +97,7 @@ public class CorrespondedSubExprVisitor implements
   @Override
   public Pair<Expression, Concrete.Expression> visitProj(Concrete.ProjExpression expr, Expression coreExpr) {
     if (matchesSubExpr(expr)) return new Pair<>(coreExpr, expr);
-    ProjExpression coreProjExpr = coreExpr.cast(ProjExpression.class);
+    var coreProjExpr = coreExpr.cast(ProjExpression.class);
     if (coreProjExpr == null) return nullWithError(SubExprError.mismatch(coreExpr));
     return expr.getExpression().accept(this, coreProjExpr.getExpression());
   }
@@ -105,7 +105,7 @@ public class CorrespondedSubExprVisitor implements
   @Override
   public Pair<Expression, Concrete.Expression> visitNew(Concrete.NewExpression expr, Expression coreExpr) {
     if (matchesSubExpr(expr)) return new Pair<>(coreExpr, expr);
-    NewExpression coreNewExpr = coreExpr.cast(NewExpression.class);
+    var coreNewExpr = coreExpr.cast(NewExpression.class);
     if (coreNewExpr == null) return nullWithError(SubExprError.mismatch(coreExpr));
     return expr.getExpression().accept(this, coreNewExpr.getClassCall());
   }
@@ -113,7 +113,7 @@ public class CorrespondedSubExprVisitor implements
   @Override
   public Pair<Expression, Concrete.Expression> visitTuple(Concrete.TupleExpression expr, Expression coreExpr) {
     if (matchesSubExpr(expr)) return new Pair<>(coreExpr, expr);
-    TupleExpression coreTupleExpr = coreExpr.cast(TupleExpression.class);
+    var coreTupleExpr = coreExpr.cast(TupleExpression.class);
     if (coreTupleExpr == null) return nullWithError(SubExprError.mismatch(coreExpr));
     return visitExprs(coreTupleExpr.getFields(), expr.getFields(), coreTupleExpr);
   }
@@ -123,8 +123,7 @@ public class CorrespondedSubExprVisitor implements
              @NotNull List<? extends Concrete.Expression> expr,
              @NotNull Expression coreTupleExpr) {
     for (int i = 0; i < expr.size(); i++) {
-      Pair<Expression, Concrete.Expression> accepted = expr.get(i)
-          .accept(this, coreExpr.get(i));
+      var accepted = expr.get(i).accept(this, coreExpr.get(i));
       if (accepted != null) return accepted;
     }
     return nullWithError(new SubExprError(SubExprError.Kind.ExprListNoMatch, coreTupleExpr));
@@ -133,13 +132,12 @@ public class CorrespondedSubExprVisitor implements
   @Override
   public Pair<Expression, Concrete.Expression> visitLet(Concrete.LetExpression expr, Expression coreExpr) {
     if (matchesSubExpr(expr)) return new Pair<>(coreExpr, expr);
-    LetExpression coreLetExpr = coreExpr.cast(LetExpression.class);
+    var coreLetExpr = coreExpr.cast(LetExpression.class);
     if (coreLetExpr == null) return nullWithError(SubExprError.mismatch(coreExpr));
     List<Concrete.LetClause> exprClauses = expr.getClauses();
     List<LetClause> coreClauses = coreLetExpr.getClauses();
     for (int i = 0; i < exprClauses.size(); i++) {
-      Pair<Expression, Concrete.Expression> accepted =
-              visitLetClause(coreClauses.get(i), exprClauses.get(i));
+      var accepted = visitLetClause(coreClauses.get(i), exprClauses.get(i));
       if (accepted != null) return accepted;
     }
     return expr.getExpression().accept(this, coreLetExpr.getExpression());
@@ -147,7 +145,7 @@ public class CorrespondedSubExprVisitor implements
 
   private @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>
   visitLetClause(@NotNull LetClause coreLetClause, @NotNull Concrete.LetClause exprLetClause) {
-    Pair<Expression, Concrete.Expression> accepted = exprLetClause.getTerm().accept(this, coreLetClause.getExpression());
+    var accepted = exprLetClause.getTerm().accept(this, coreLetClause.getExpression());
     if (accepted != null) return accepted;
 
     Concrete.Expression resultType = exprLetClause.getResultType();
@@ -182,7 +180,7 @@ public class CorrespondedSubExprVisitor implements
         coreAppExpr = (AppExpression) function;
         function = coreAppExpr.getFunction();
       } while (coreAppExpr.isExplicit() != lastArgument.isExplicit());
-      Pair<Expression, Concrete.Expression> accepted = lastArgument.getExpression().accept(this, coreAppExpr.getArgument());
+      var accepted = lastArgument.getExpression().accept(this, coreAppExpr.getArgument());
       if (accepted != null) return accepted;
       arguments.remove(lastArgIndex);
       return visitClonedApp(expr, function);
@@ -216,7 +214,7 @@ public class CorrespondedSubExprVisitor implements
       if (argument.isExplicit() == field.getReferable().isExplicitField()) {
         Expression implementation = implementedHere.get(field);
         if (implementation == null) continue;
-        Pair<Expression, Concrete.Expression> accepted = argument.getExpression().accept(this, implementation);
+        var accepted = argument.getExpression().accept(this, implementation);
         if (accepted != null) return accepted;
         if (arguments.hasNext()) argument = arguments.next();
       }
@@ -240,7 +238,7 @@ public class CorrespondedSubExprVisitor implements
       Expression coreArg = defCallArgs.next();
       // Take care of implicit application
       if (parameter.isExplicit() == argument.isExplicit()) {
-        Pair<Expression, Concrete.Expression> accepted = argument.getExpression().accept(this, coreArg);
+        var accepted = argument.getExpression().accept(this, coreArg);
         if (accepted != null) return accepted;
         if (arguments.hasNext()) argument = arguments.next();
       }
@@ -279,10 +277,10 @@ public class CorrespondedSubExprVisitor implements
     Expression body = coreExpr;
     for (Concrete.Parameter parameter : expr.getParameters()) {
       if (body instanceof LamExpression) {
-        LamExpression coreLamExpr = (LamExpression) body;
+        var coreLamExpr = (LamExpression) body;
         Concrete.Expression type = parameter.getType();
         if (type != null) {
-          Pair<Expression, Concrete.Expression> ty = type.accept(this, coreLamExpr.getParameters().getTypeExpr());
+          var ty = type.accept(this, coreLamExpr.getParameters().getTypeExpr());
           if (ty != null) return ty;
         }
         body = coreLamExpr.getBody();
@@ -310,7 +308,7 @@ public class CorrespondedSubExprVisitor implements
               @NotNull PiExpression corePi) {
     for (Concrete.Parameter parameter : parameters) {
       DependentLink link = corePi.getParameters();
-      Pair<Expression, Concrete.Expression> expression = visitParameter(parameter, link);
+      var expression = visitParameter(parameter, link);
       if (expression != null) return expression;
       Expression corePiCodomain = corePi.getCodomain();
       if (corePiCodomain instanceof PiExpression)
@@ -323,7 +321,7 @@ public class CorrespondedSubExprVisitor implements
   @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>
   visitSigmaParameters(List<? extends Concrete.Parameter> parameters, DependentLink sig) {
     for (Concrete.Parameter parameter : parameters) {
-      Pair<Expression, Concrete.Expression> expression = visitParameter(parameter, sig);
+      var expression = visitParameter(parameter, sig);
       if (expression != null) return expression;
       sig = sig.getNextTyped(null).getNext();
     }
@@ -333,7 +331,7 @@ public class CorrespondedSubExprVisitor implements
   @Override
   public Pair<Expression, Concrete.Expression> visitPi(Concrete.PiExpression expr, Expression coreExpr) {
     if (matchesSubExpr(expr)) return new Pair<>(coreExpr, expr);
-    PiExpression corePiExpr = coreExpr.cast(PiExpression.class);
+    var corePiExpr = coreExpr.cast(PiExpression.class);
     if (corePiExpr == null) return nullWithError(SubExprError.mismatch(coreExpr));
     return visitPiImpl(expr.getParameters(), expr.getCodomain(), corePiExpr);
   }
@@ -377,9 +375,9 @@ public class CorrespondedSubExprVisitor implements
   @Override
   public Pair<Expression, Concrete.Expression> visitCase(Concrete.CaseExpression expr, Expression coreExpr) {
     if (matchesSubExpr(expr)) return new Pair<>(coreExpr, expr);
-    CaseExpression coreCaseExpr = coreExpr.cast(CaseExpression.class);
+    var coreCaseExpr = coreExpr.cast(CaseExpression.class);
     if (coreCaseExpr == null) return null;
-    Pair<Expression, Concrete.Expression> expression = visitExprs(coreCaseExpr.getArguments(), expr
+    var expression = visitExprs(coreCaseExpr.getArguments(), expr
         .getArguments()
         .stream()
         .map(i -> i.expression)
@@ -387,7 +385,7 @@ public class CorrespondedSubExprVisitor implements
     if (expression != null) return expression;
     Concrete.Expression resultType = expr.getResultType();
     if (resultType != null) {
-      Pair<Expression, Concrete.Expression> accepted = resultType.accept(this, coreCaseExpr.getResultType());
+      var accepted = resultType.accept(this, coreCaseExpr.getResultType());
       if (accepted != null) return accepted;
     }
     return visitElimTree(expr.getClauses(), coreCaseExpr.getElimBody().getClauses());
@@ -402,11 +400,10 @@ public class CorrespondedSubExprVisitor implements
   @Override
   public Pair<Expression, Concrete.Expression> visitClassExt(Concrete.ClassExtExpression expr, Expression coreExpr) {
     if (matchesSubExpr(expr)) return new Pair<>(coreExpr, expr);
-    ClassCallExpression coreClassExpr = coreExpr.cast(ClassCallExpression.class);
+    var coreClassExpr = coreExpr.cast(ClassCallExpression.class);
     if (coreClassExpr == null) return nullWithError(SubExprError.mismatch(coreExpr));
     Map<ClassField, Expression> implementedHere = coreClassExpr.getImplementedHere();
-    Pair<Expression, Concrete.Expression> field =
-        visitStatements(implementedHere, expr.getStatements());
+    var field = visitStatements(implementedHere, expr.getStatements());
     if (field != null) return field;
     return expr.getBaseClassExpression().accept(this, coreClassExpr.getThisBinding().getTypeExpr());
   }
@@ -414,7 +411,7 @@ public class CorrespondedSubExprVisitor implements
   private  @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>
   visitStatements(Map<ClassField, Expression> implementedHere, List<Concrete.ClassFieldImpl> statements) {
     for (Concrete.ClassFieldImpl statement : statements) {
-      Pair<Expression, Concrete.Expression> field = visitStatement(implementedHere, statement);
+      var field = visitStatement(implementedHere, statement);
       if (field != null) return field;
     }
     return null;
@@ -428,15 +425,15 @@ public class CorrespondedSubExprVisitor implements
     if (implementedField instanceof ClassReferable
         && statement.implementation != null) {
       Collection<? extends FieldReferable> fields = ((ClassReferable) implementedField).getFieldReferables();
-      Optional<Pair<Expression, Concrete.Expression>> baseClassCall = implementedHere.entrySet()
-              .stream()
-              // The suppressed warning presents here, but it's considered safe.
-              .filter(entry -> fields.contains(entry.getKey().getReferable()))
-              .map(Map.Entry::getValue)
-              .filter(expr -> expr instanceof FieldCallExpression)
-              .findFirst()
-              .map(expr -> ((FieldCallExpression) expr))
-              .map(e -> statement.implementation.accept(this, e.getArgument()));
+      var baseClassCall = implementedHere.entrySet()
+          .stream()
+          // The suppressed warning presents here, but it's considered safe.
+          .filter(entry -> fields.contains(entry.getKey().getReferable()))
+          .map(Map.Entry::getValue)
+          .filter(expr -> expr instanceof FieldCallExpression)
+          .findFirst()
+          .map(expr -> ((FieldCallExpression) expr))
+          .map(e -> statement.implementation.accept(this, e.getArgument()));
       if (baseClassCall.isPresent()) return baseClassCall.get();
     }
     Optional<Expression> fieldExpr = implementedHere.entrySet()
@@ -444,7 +441,7 @@ public class CorrespondedSubExprVisitor implements
         .filter(entry -> entry.getKey().getReferable() == implementedField)
         .findFirst()
         .map(Map.Entry::getValue);
-    if (!fieldExpr.isPresent())
+    if (fieldExpr.isEmpty())
       return nullWithError(new SubExprError(SubExprError.Kind.FieldNotFound));
     Expression field = fieldExpr.get();
     if (statement.implementation != null)
@@ -454,8 +451,7 @@ public class CorrespondedSubExprVisitor implements
           ((NewExpression) field).getClassCall().getImplementedHere(),
           statement.subClassFieldImpls
       );
-    else
-      return nullWithError(new SubExprError(SubExprError.Kind.FieldNotFound));
+    else return nullWithError(new SubExprError(SubExprError.Kind.FieldNotFound));
   }
 
   @Override
