@@ -44,7 +44,7 @@ public class SyntacticDesugarVisitor extends BaseConcreteExpressionVisitor<Void>
   @Override
   public Concrete.Expression visitApp(Concrete.AppExpression expr, Void params) {
     List<Concrete.Parameter> parameters = new ArrayList<>();
-    convertAppHoles(expr, parameters);
+    convertAppHoles(expr, parameters, false);
     return !parameters.isEmpty()
         ? new Concrete.LamExpression(expr.getData(), parameters, expr).accept(this, null)
         : super.visitApp(expr, params);
@@ -148,7 +148,7 @@ public class SyntacticDesugarVisitor extends BaseConcreteExpressionVisitor<Void>
 
   private void convertRecursively(Concrete.Expression expression, List<Concrete.Parameter> parameters) {
     if (expression instanceof Concrete.AppExpression)
-      convertAppHoles((Concrete.AppExpression) expression, parameters);
+      convertAppHoles((Concrete.AppExpression) expression, parameters, true);
     else if (expression instanceof Concrete.ProjExpression)
       convertProjAppHoles((Concrete.ProjExpression) expression, parameters);
     else if (expression instanceof Concrete.BinOpSequenceExpression)
@@ -167,18 +167,21 @@ public class SyntacticDesugarVisitor extends BaseConcreteExpressionVisitor<Void>
 */
   }
 
-  private void convertAppHoles(Concrete.AppExpression expr, List<Concrete.Parameter> parameters) {
+  private void convertAppHoles(
+      Concrete.AppExpression expr,
+      List<Concrete.Parameter> parameters,
+      boolean isRecursive) {
     Concrete.Expression originalFunc = expr.getFunction();
     if (originalFunc instanceof Concrete.ApplyHoleExpression)
       expr.setFunction(createAppHoleRef(parameters, originalFunc.getData()));
     else if (originalFunc instanceof Concrete.AppExpression
-        || originalFunc instanceof Concrete.ProjExpression
+        || isRecursive && originalFunc instanceof Concrete.ProjExpression
     ) convertRecursively(originalFunc, parameters);
     for (Concrete.Argument argument : expr.getArguments())
       if (argument.expression instanceof Concrete.ApplyHoleExpression)
         argument.expression = createAppHoleRef(parameters, argument.expression.getData());
       else if (argument.expression instanceof Concrete.AppExpression
-          || argument.expression instanceof Concrete.ProjExpression
+          || isRecursive && argument.expression instanceof Concrete.ProjExpression
       ) convertRecursively(argument.expression, parameters);
   }
 
