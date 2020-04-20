@@ -42,6 +42,15 @@ public class SyntacticDesugarVisitor extends BaseConcreteExpressionVisitor<Void>
   }
 
   @Override
+  public Concrete.Expression visitApp(Concrete.AppExpression expr, Void params) {
+    List<Concrete.Parameter> parameters = new ArrayList<>();
+    convertAppHoles(expr, parameters);
+    return !parameters.isEmpty()
+        ? new Concrete.LamExpression(expr.getData(), parameters, expr).accept(this, null)
+        : super.visitApp(expr, params);
+  }
+
+  @Override
   public Concrete.Expression visitCase(Concrete.CaseExpression expr, Void params) {
     List<Concrete.Parameter> parameters = new ArrayList<>();
     convertCaseAppHoles(expr, parameters);
