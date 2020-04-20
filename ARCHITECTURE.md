@@ -57,6 +57,7 @@ Arend is split into several subprojects:
 |`api`|open API for writing Arend extensions.|
 |`base`|the Arend typechecker.<br/>It depends on `api`, `proto`.|
 |`cli`|the CLI frontend of Arend with the ANTLR parser.<br/>It depends on `base`, `parser`, `api`, `proto`.|
+|`tester`|Helper for writing unit tests with JUnit4.<br/>It depends on `base`, `parser`, `api`, `cli`.|
 
 The purpose of `parser` is to avoid introducing the dependency of the ANTLR
 generator to other subprojects which only requires

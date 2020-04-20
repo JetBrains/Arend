@@ -1,5 +1,6 @@
 package org.arend.naming;
 
+import org.arend.ArendTestCase;
 import org.arend.core.context.binding.Binding;
 import org.arend.frontend.ConcreteReferableProvider;
 import org.arend.frontend.reference.ConcreteLocatedReferable;
@@ -60,7 +61,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     ChildGroup group = parseDef(text);
     Scope parentScope = new MergeScope(new SingletonScope(group.getReferable()), PreludeLibrary.getPreludeScope());
     new DefinitionResolveNameVisitor(ConcreteReferableProvider.INSTANCE, errorReporter).resolveGroupWithTypes(group, null, CachingScope.make(LexicalScope.insideOf(group, parentScope)));
-    assertThat(errorList, containsErrors(errors));
+    assertThat(errorList, ArendTestCase.containsErrors(errors));
     return group;
   }
 
@@ -81,7 +82,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     Scope scope = CachingScope.make(ScopeFactory.forGroup(group, moduleScopeProvider));
     new DefinitionResolveNameVisitor(ConcreteReferableProvider.INSTANCE, errorReporter).resolveGroupWithTypes(group, null, scope);
     libraryManager.getInstanceProviderSet().collectInstances(group, CachingScope.make(ScopeFactory.parentScopeForGroup(group, moduleScopeProvider, true)), ConcreteReferableProvider.INSTANCE, null);
-    assertThat(errorList, containsErrors(errors));
+    assertThat(errorList, ArendTestCase.containsErrors(errors));
   }
 
   protected ChildGroup resolveNamesModule(String text, int errors) {

@@ -41,6 +41,8 @@ dependencies {
     implementation "com.github.JetBrains.Arend:proto:$arendVersion"
     // The main compiler
     implementation "com.github.JetBrains.Arend:base:$arendVersion"
+    // The unit test helpers
+    testImplementation "com.github.JetBrains.Arend:tester:$arendVersion"
 }
 ```
 
@@ -58,5 +60,6 @@ dependencies {
     implementation("com.github.JetBrains.Arend:parser:$arendVersion")
     implementation("com.github.JetBrains.Arend:proto:$arendVersion")
     implementation("com.github.JetBrains.Arend:base:$arendVersion")
+    testImplementation("com.github.JetBrains.Arend:tester:$arendVersion")
 }
 ```
