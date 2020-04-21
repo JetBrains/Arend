@@ -7,7 +7,6 @@ import org.arend.ext.module.ModulePath;
 import org.arend.ext.prettyprinting.DefinitionRenamer;
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.reference.ModuleReferable;
-import org.arend.naming.reference.Referable;
 import org.arend.naming.scope.CachingScope;
 import org.arend.naming.scope.Scope;
 import org.arend.prelude.Prelude;
@@ -30,8 +29,7 @@ public class ScopeDefinitionRenamer implements DefinitionRenamer {
     }
 
     LongName result = myPrefixes.computeIfAbsent((Definition) definition, def -> {
-      Referable referable = ((Definition) definition).getReferable().getUnderlyingReferable();
-      LocatedReferable ref = referable instanceof LocatedReferable ? (LocatedReferable) referable : ((Definition) definition).getReferable();
+      LocatedReferable ref = ((Definition) definition).getReferable();
       if (myScope.resolveName(ref.getRefName()) == ref) {
         return new LongName(Collections.emptyList());
       }
@@ -43,9 +41,6 @@ public class ScopeDefinitionRenamer implements DefinitionRenamer {
           Collections.reverse(list);
           ModulePath modulePath = parent != null ? ((ModuleReferable) parent).path : ref.getLocation();
           if (modulePath != null) {
-            if (modulePath.equals(Prelude.MODULE_PATH)) {
-              return new LongName(Collections.emptyList());
-            }
             list.addAll(0, modulePath.toList());
           }
           break;

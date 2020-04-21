@@ -134,16 +134,20 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     return null;
   }
 
+  private void printReferenceName(Concrete.ReferenceExpression expr) {
+    if (expr instanceof Concrete.LongReferenceExpression) {
+      myBuilder.append(((Concrete.LongReferenceExpression) expr).getLongName()).append('.');
+    }
+    myBuilder.append(expr.getReferent().textRepresentation());
+  }
+
   @Override
   public Void visitReference(Concrete.ReferenceExpression expr, Precedence prec) {
     boolean parens = expr.getReferent() instanceof GlobalReferable && ((GlobalReferable) expr.getReferent()).getPrecedence().isInfix || expr.getPLevel() != null || expr.getHLevel() != null;
     if (parens) {
       myBuilder.append('(');
     }
-    if (expr instanceof Concrete.LongReferenceExpression) {
-      myBuilder.append(((Concrete.LongReferenceExpression) expr).getLongName()).append('.');
-    }
-    myBuilder.append(expr.getReferent().textRepresentation());
+    printReferenceName(expr);
 
     if (expr.getPLevel() != null || expr.getHLevel() != null) {
       myBuilder.append(" \\level ");
@@ -569,7 +573,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     if (needParens) myBuilder.append('(');
     left.accept(this, infixPrec.associativity != Precedence.Associativity.LEFT_ASSOC ? new Precedence(Precedence.Associativity.NON_ASSOC, infixPrec.priority, infixPrec.isInfix) : infixPrec);
     myBuilder.append(' ');
-    myBuilder.append(infix.getReferent().textRepresentation());
+    printReferenceName(infix);
     for (Concrete.Argument arg : implicitArgs) {
       myBuilder.append(" {");
       arg.expression.accept(this, new Precedence(Expression.PREC));

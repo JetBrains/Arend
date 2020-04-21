@@ -4,7 +4,6 @@ import org.arend.ext.module.LongName;
 import org.arend.naming.reference.LocalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.prelude.Prelude;
-import org.arend.term.Fixity;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -218,14 +217,13 @@ public class ConcreteExpressionFactory {
   }
 
   public static Concrete.Expression cBinOp(Concrete.Expression left, Referable binOp, Concrete.Expression implicit, Concrete.Expression right) {
-    List<Concrete.BinOpSequenceElem> sequence = new ArrayList<>(3);
-    sequence.add(new Concrete.BinOpSequenceElem(left));
-    sequence.add(new Concrete.BinOpSequenceElem(new Concrete.ReferenceExpression(null, binOp), Fixity.UNKNOWN, true));
+    List<Concrete.Argument> args = new ArrayList<>(3);
     if (implicit != null) {
-      sequence.add(new Concrete.BinOpSequenceElem(implicit, Fixity.NONFIX, false));
+      args.add(new Concrete.Argument(implicit, false));
     }
-    sequence.add(new Concrete.BinOpSequenceElem(right, Fixity.NONFIX, true));
-    return new Concrete.BinOpSequenceExpression(null, sequence);
+    args.add(new Concrete.Argument(left, true));
+    args.add(new Concrete.Argument(right, true));
+    return Concrete.AppExpression.make(null, new Concrete.ReferenceExpression(null, binOp), args);
   }
 
   public static Concrete.NumericLiteral cNum(BigInteger num) {
