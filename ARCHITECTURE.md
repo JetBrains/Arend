@@ -14,11 +14,7 @@ Created by [gh-md-toc](https://github.com/ekalinin/github-markdown-toc)
 
 We use gradle to build the compiler. It comes with a wrapper script (`gradlew` or `gradlew.bat` in
 the root of the repository) which downloads appropriate version of gradle
-automatically as long as you have JDK (version >= 1.8) installed.
-
-Note that we're planning to move to JDK 11.
-See [tracking issue](https://github.com/JetBrains/Arend/issues/176)
-for more information.
+automatically as long as you have JDK (version >= 11) installed.
 
 ## Common Gradle Tasks
 
