@@ -15,11 +15,13 @@ import org.arend.core.pattern.*;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
+import org.arend.error.ListErrorReporter;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.ConditionsError;
+import org.arend.typechecking.error.local.GoalError;
 import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.util.Pair;
 
@@ -257,23 +259,34 @@ public class ConditionsChecking {
       }
 
       if (expr instanceof GoalErrorExpression) {
+        GoalErrorExpression goalExpr = (GoalErrorExpression) expr;
         if (evaluatedExpr1 != null) {
-          ((GoalErrorExpression) expr).goalError.addCondition(new Condition(null, pair.proj2, evaluatedExpr1));
+          goalExpr.goalError.addCondition(new Condition(null, pair.proj2, evaluatedExpr1));
+        }
+        if (goalExpr.useExpression() && !checkCondition(goalExpr.getExpression(), pair, evaluatedExpr1, clause, definition, sourceNode, new ListErrorReporter(goalExpr.goalError.errors))) {
+          ok = false;
         }
       } else {
-        Expression evaluatedExpr2 = expr.subst(pair.proj2);
-        if (evaluatedExpr1 == null || !CompareVisitor.compare(myEquations, CMP.EQ, evaluatedExpr1, evaluatedExpr2, null, sourceNode)) {
-          List<Expression> args = new ArrayList<>();
-          for (ExpressionPattern pattern : clause.getPatterns()) {
-            args.add(pattern.toExpression());
-          }
-          Expression expr1 = definition == null ? new CaseExpression(false, EmptyDependentLink.getInstance(), new ErrorExpression(), null, new ElimBody(Collections.emptyList(), new BranchElimTree(0, false)), args) : definition.getDefCall(Sort.STD, args);
-          myErrorReporter.report(new ConditionsError(new Condition(expr1, pair.proj2, evaluatedExpr1), new Condition(clause.getExpression(), pair.proj2, evaluatedExpr2), sourceNode));
+        if (!checkCondition(expr, pair, evaluatedExpr1, clause, definition, sourceNode, myErrorReporter)) {
           ok = false;
         }
       }
     }
     return ok;
+  }
+
+  private boolean checkCondition(Expression expr, Pair<List<Expression>, ExprSubstitution> pair, Expression evaluatedExpr1, ExtElimClause clause, Definition definition, Concrete.SourceNode sourceNode, ErrorReporter errorReporter) {
+    Expression evaluatedExpr2 = expr.subst(pair.proj2);
+    if (evaluatedExpr1 == null || !CompareVisitor.compare(myEquations, CMP.EQ, evaluatedExpr1, evaluatedExpr2, null, sourceNode)) {
+      List<Expression> args = new ArrayList<>();
+      for (ExpressionPattern pattern : clause.getPatterns()) {
+        args.add(pattern.toExpression());
+      }
+      Expression expr1 = definition == null ? new CaseExpression(false, EmptyDependentLink.getInstance(), new ErrorExpression(), null, new ElimBody(Collections.emptyList(), new BranchElimTree(0, false)), args) : definition.getDefCall(Sort.STD, args);
+      errorReporter.report(new ConditionsError(new Condition(expr1, pair.proj2, evaluatedExpr1), new Condition(clause.getExpression(), pair.proj2, evaluatedExpr2), sourceNode));
+      return false;
+    }
+    return true;
   }
 
   private List<Pair<List<Expression>, ExprSubstitution>> collectPatterns(List<? extends ExpressionPattern> patterns, ExprSubstitution idpSubst, Concrete.SourceNode sourceNode) {

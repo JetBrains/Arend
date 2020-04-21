@@ -1825,9 +1825,16 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
         Expression arg = conCall.getDefCallArguments().get(0);
         if (arg instanceof LamExpression && ((LamExpression) arg).getBody() instanceof GoalErrorExpression && !((LamExpression) arg).getParameters().getNext().hasNext()) {
           DependentLink param = ((LamExpression) arg).getParameters();
-          GoalError goalError = ((GoalErrorExpression) ((LamExpression) arg).getBody()).goalError;
-          goalError.addCondition(new Condition(null, new ExprSubstitution(param, ExpressionFactory.Left()), conCall.getDataTypeArguments().get(1)));
-          goalError.addCondition(new Condition(null, new ExprSubstitution(param, ExpressionFactory.Right()), conCall.getDataTypeArguments().get(2)));
+          GoalErrorExpression goalExpr = (GoalErrorExpression) ((LamExpression) arg).getBody();
+          ExprSubstitution leftSubst = new ExprSubstitution(param, ExpressionFactory.Left());
+          ExprSubstitution rightSubst = new ExprSubstitution(param, ExpressionFactory.Right());
+          goalExpr.goalError.addCondition(new Condition(null, leftSubst, conCall.getDataTypeArguments().get(1)));
+          goalExpr.goalError.addCondition(new Condition(null, rightSubst, conCall.getDataTypeArguments().get(2)));
+          if (goalExpr.useExpression()) {
+            return withErrorReporter(new ListErrorReporter(goalExpr.goalError.errors), tc ->
+                   compareExpressions(true,  conCall.getDataTypeArguments().get(1), goalExpr.getExpression().subst(leftSubst), AppExpression.make(conCall.getDataTypeArguments().get(0), ExpressionFactory.Left(), true),  expr)
+                && compareExpressions(false, conCall.getDataTypeArguments().get(2), goalExpr.getExpression().subst(rightSubst), AppExpression.make(conCall.getDataTypeArguments().get(0), ExpressionFactory.Right(), true), expr));
+          }
         } else {
           return compareExpressions(true,  conCall.getDataTypeArguments().get(1), AppExpression.make(arg, ExpressionFactory.Left(), true),  AppExpression.make(conCall.getDataTypeArguments().get(0), ExpressionFactory.Left(), true),  expr)
               && compareExpressions(false, conCall.getDataTypeArguments().get(2), AppExpression.make(arg, ExpressionFactory.Right(), true), AppExpression.make(conCall.getDataTypeArguments().get(0), ExpressionFactory.Right(), true), expr);
@@ -2010,11 +2017,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     List<GeneralError> errors = Collections.emptyList();
     TypecheckingResult exprResult = null;
     if (expr.getExpression() != null) {
-      ErrorReporter errorReporter = this.errorReporter;
       errors = new ArrayList<>();
-      this.errorReporter = new ListErrorReporter(errors);
-      exprResult = checkExpr(expr.getExpression(), expectedType);
-      this.errorReporter = errorReporter;
+      exprResult = withErrorReporter(new ListErrorReporter(errors), tc -> checkExpr(expr.getExpression(), expectedType));
     }
 
     GoalError error = new GoalError(expr.getName(), context, expectedType, exprResult == null ? null : exprResult.type, errors, expr);

@@ -383,7 +383,7 @@ class ExpressionDeserialization {
     } else {
       expr = null;
     }
-    return new ErrorExpression(expr, proto.getIsGoal());
+    return new ErrorExpression(expr, proto.getIsGoal(), proto.getUseExpression());
   }
 
   private TupleExpression readTuple(ExpressionProtos.Expression.Tuple proto) throws DeserializationException {
