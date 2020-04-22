@@ -253,4 +253,19 @@ public class AppHoleTest extends TypeCheckingTestCase {
   public void appTest3() {
     typeCheckDef("\\func test => 0 Nat.+ __ Nat.* 2");
   }
+
+  @Test
+  public void infixAppProjTest1() {
+    typeCheckDef("\\func test (f : (\\Sigma Nat Nat -> Nat) -> Nat) => f __.2 Nat.+ 1");
+  }
+
+  @Test
+  public void infixAppProjTest2() {
+    typeCheckDef("\\func test (f : Nat -> (\\Sigma Nat Nat -> Nat) -> Nat -> Nat) => f 2 __.1 3 Nat.+ 1");
+  }
+
+  @Test
+  public void infixAppProjTest3() {
+    typeCheckDef("\\func test (f : (Nat -> Nat) -> Nat) (g : Nat -> \\Sigma Nat Nat) => f (g __).1 Nat.+ 1");
+  }
 }
