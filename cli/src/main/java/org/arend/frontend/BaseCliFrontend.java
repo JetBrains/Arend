@@ -11,6 +11,7 @@ import org.arend.frontend.library.FileSourceLibrary;
 import org.arend.library.*;
 import org.arend.library.error.LibraryError;
 import org.arend.naming.reference.LocatedReferable;
+import org.arend.naming.reference.ModuleReferable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.naming.scope.EmptyScope;
@@ -108,9 +109,12 @@ public abstract class BaseCliFrontend {
     private void update(Definition definition) {
       flushErrors();
 
-      total++;
-      if (definition.status().hasErrors()) {
-        failed++;
+      LocatedReferable parent = definition.getRef().getLocatedReferableParent();
+      if (parent == null || parent instanceof ModuleReferable) {
+        total++;
+        if (definition.status().hasErrors()) {
+          failed++;
+        }
       }
     }
 
