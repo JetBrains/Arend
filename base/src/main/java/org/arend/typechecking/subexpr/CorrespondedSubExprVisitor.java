@@ -233,6 +233,8 @@ public class CorrespondedSubExprVisitor implements
     var arguments = argumentList.iterator();
     Concrete.Argument argument = arguments.next();
     DependentLink parameter = expression.getDefinition().getParameters();
+    // In error messages, `Path A a a'` might become `a = a'`,
+    // we treat this special case here.
     if (expression.getDefinition() == Prelude.PATH && argumentList.size() == 2) {
       parameter = parameter.getNext();
       defCallArgs.next();
