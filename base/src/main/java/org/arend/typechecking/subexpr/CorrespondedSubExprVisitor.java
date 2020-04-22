@@ -13,6 +13,7 @@ import org.arend.naming.reference.ClassReferable;
 import org.arend.naming.reference.FieldReferable;
 import org.arend.naming.reference.MetaReferable;
 import org.arend.naming.reference.Referable;
+import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteExpressionVisitor;
 import org.arend.util.Pair;
@@ -197,10 +198,9 @@ public class CorrespondedSubExprVisitor implements
   private @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>
   visitDefCallArguments(@NotNull DefCallExpression expression,
                         @NotNull List<Concrete.Argument> arguments) {
-    Iterator<Concrete.Argument> iterator = arguments.iterator();
     if (expression instanceof ClassCallExpression)
-      return visitClassCallArguments((ClassCallExpression) expression, iterator);
-    else return visitNonClassCallDefCallArguments(expression, iterator);
+      return visitClassCallArguments((ClassCallExpression) expression, arguments.iterator());
+    else return visitNonClassCallDefCallArguments(expression, arguments);
   }
 
   private @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>
@@ -228,12 +228,16 @@ public class CorrespondedSubExprVisitor implements
    */
   private @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>
   visitNonClassCallDefCallArguments(@NotNull DefCallExpression expression,
-                                    @NotNull Iterator<Concrete.Argument> arguments) {
+                                    @NotNull List<Concrete.Argument> argumentList) {
     Iterator<? extends Expression> defCallArgs = expression.getDefCallArguments().iterator();
+    var arguments = argumentList.iterator();
     Concrete.Argument argument = arguments.next();
-    for (DependentLink parameter = expression.getDefinition().getParameters();
-         parameter.hasNext();
-         parameter = parameter.getNext()) {
+    DependentLink parameter = expression.getDefinition().getParameters();
+    if (expression.getDefinition() == Prelude.PATH && argumentList.size() == 2) {
+      parameter = parameter.getNext();
+      defCallArgs.next();
+    }
+    for (; parameter.hasNext(); parameter = parameter.getNext()) {
       assert defCallArgs.hasNext();
       Expression coreArg = defCallArgs.next();
       // Take care of implicit application

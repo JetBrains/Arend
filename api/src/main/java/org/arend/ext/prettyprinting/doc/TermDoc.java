@@ -42,7 +42,7 @@ public class TermDoc extends CachingDoc {
     if (isFirst && text.isEmpty()) {
       return null;
     }
-    TermTextDoc termDoc = new TermTextDoc(text, isFirst);
+    TermTextDoc termDoc = new TermTextDoc(text, term, isFirst);
     return indent == null ? termDoc : hList(text(indent), termDoc);
   }
 }
