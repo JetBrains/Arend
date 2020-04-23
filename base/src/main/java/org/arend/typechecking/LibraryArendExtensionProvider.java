@@ -3,6 +3,7 @@ package org.arend.typechecking;
 import org.arend.ext.ArendExtension;
 import org.arend.library.Library;
 import org.arend.library.LibraryManager;
+import org.arend.module.FullModulePath;
 import org.arend.naming.reference.TCReferable;
 import org.jetbrains.annotations.Nullable;
 
@@ -30,7 +31,21 @@ public class LibraryArendExtensionProvider implements ArendExtensionProvider {
 
   @Override
   public @Nullable ArendExtension getArendExtension(TCReferable ref) {
-    // TODO: find ref's library and return its extension
-    return myUniqueArendExtension;
+    if (myUniqueArendExtension != null) {
+      return myUniqueArendExtension;
+    }
+
+    FullModulePath modulePath = ref.getLocation();
+    if (modulePath == null) {
+      return null;
+    }
+
+    String libraryName = modulePath.getLibraryName();
+    if (libraryName == null) {
+      return null;
+    }
+
+    Library library = myLibraryManager.getRegisteredLibrary(libraryName);
+    return library == null || library.isExternal() ? null : library.getArendExtension();
   }
 }

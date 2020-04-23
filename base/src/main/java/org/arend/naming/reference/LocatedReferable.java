@@ -1,7 +1,7 @@
 package org.arend.naming.reference;
 
 import org.arend.ext.module.LongName;
-import org.arend.ext.module.ModulePath;
+import org.arend.module.FullModulePath;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.scope.Scope;
 import org.jetbrains.annotations.NotNull;
@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public interface LocatedReferable extends GlobalReferable {
-  @Nullable ModulePath getLocation();
+  @Nullable FullModulePath getLocation();
   @Nullable LocatedReferable getLocatedReferableParent();
 
   @NotNull
@@ -23,13 +23,13 @@ public interface LocatedReferable extends GlobalReferable {
   }
 
   class Helper {
-    public static ModulePath getLocation(LocatedReferable referable, List<String> fullName) {
+    public static FullModulePath getLocation(LocatedReferable referable, List<String> fullName) {
       LocatedReferable parent = referable.getLocatedReferableParent();
       if (parent == null) {
         return referable.getLocation();
       }
 
-      ModulePath location = getLocation(parent, fullName);
+      FullModulePath location = getLocation(parent, fullName);
       fullName.add(referable.textRepresentation());
       return location;
     }
@@ -37,7 +37,7 @@ public interface LocatedReferable extends GlobalReferable {
     public static Scope resolveNamespace(LocatedReferable locatedReferable, ModuleScopeProvider moduleScopeProvider) {
       LocatedReferable parent = locatedReferable.getLocatedReferableParent();
       if (parent == null) {
-        ModulePath modulePath = locatedReferable.getLocation();
+        FullModulePath modulePath = locatedReferable.getLocation();
         if (modulePath == null) {
           return null;
         }

@@ -1,8 +1,8 @@
 package org.arend.frontend.reference;
 
-import org.arend.ext.module.ModulePath;
 import org.arend.ext.reference.Precedence;
 import org.arend.frontend.parser.Position;
+import org.arend.module.FullModulePath;
 import org.arend.module.scopeprovider.EmptyModuleScopeProvider;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.Reference;
@@ -36,7 +36,7 @@ public class ConcreteClassReferable extends ConcreteLocatedReferable implements 
     mySuperClasses = new ArrayList<>(superClasses.size());
   }
 
-  public ConcreteClassReferable(Position position, @NotNull String name, Precedence precedence, Collection<? extends ConcreteClassFieldReferable> fields, List<? extends Reference> superClasses, ModulePath parent) {
+  public ConcreteClassReferable(Position position, @NotNull String name, Precedence precedence, Collection<? extends ConcreteClassFieldReferable> fields, List<? extends Reference> superClasses, FullModulePath parent) {
     super(position, name, precedence, parent, Kind.TYPECHECKABLE);
     myFields = fields;
     myUnresolvedSuperClasses = superClasses;

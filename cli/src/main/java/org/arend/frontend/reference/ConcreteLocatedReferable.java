@@ -1,11 +1,11 @@
 package org.arend.frontend.reference;
 
 import org.arend.ext.error.SourceInfo;
-import org.arend.ext.module.ModulePath;
 import org.arend.ext.reference.DataContainer;
 import org.arend.ext.reference.Precedence;
 import org.arend.frontend.ConcreteReferableProvider;
 import org.arend.frontend.parser.Position;
+import org.arend.module.FullModulePath;
 import org.arend.naming.reference.ClassReferable;
 import org.arend.naming.reference.LocatedReferableImpl;
 import org.arend.naming.reference.TCReferable;
@@ -23,7 +23,7 @@ public class ConcreteLocatedReferable extends LocatedReferableImpl implements So
     myPosition = position;
   }
 
-  public ConcreteLocatedReferable(Position position, @NotNull String name, Precedence precedence, ModulePath modulePath, Kind kind) {
+  public ConcreteLocatedReferable(Position position, @NotNull String name, Precedence precedence, FullModulePath modulePath, Kind kind) {
     super(precedence, name, modulePath, kind);
     myPosition = position;
   }

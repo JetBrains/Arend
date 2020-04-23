@@ -1,7 +1,7 @@
 package org.arend.naming.reference;
 
-import org.arend.ext.module.ModulePath;
 import org.arend.ext.reference.Precedence;
+import org.arend.module.FullModulePath;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -57,7 +57,7 @@ public interface TCClassReferable extends TCReferable, ClassReferable {
 
     @Nullable
     @Override
-    public ModulePath getLocation() {
+    public FullModulePath getLocation() {
       return null;
     }
 

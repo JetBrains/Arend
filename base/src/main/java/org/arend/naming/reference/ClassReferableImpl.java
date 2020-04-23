@@ -1,7 +1,7 @@
 package org.arend.naming.reference;
 
-import org.arend.ext.module.ModulePath;
 import org.arend.ext.reference.Precedence;
+import org.arend.module.FullModulePath;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
@@ -13,7 +13,7 @@ public class ClassReferableImpl extends LocatedReferableImpl implements TCClassR
   private final List<TCClassReferable> mySuperClassReferences;
   private final List<? extends TCFieldReferable> myFieldReferables;
 
-  public ClassReferableImpl(Precedence precedence, String name, boolean isRecord, List<TCClassReferable> superClassReferences, List<? extends TCFieldReferable> fieldReferables, ModulePath parent) {
+  public ClassReferableImpl(Precedence precedence, String name, boolean isRecord, List<TCClassReferable> superClassReferences, List<? extends TCFieldReferable> fieldReferables, FullModulePath parent) {
     super(precedence, name, parent, Kind.TYPECHECKABLE);
     myRecord = isRecord;
     mySuperClassReferences = superClassReferences;

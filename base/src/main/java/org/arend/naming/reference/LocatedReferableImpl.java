@@ -1,7 +1,7 @@
 package org.arend.naming.reference;
 
-import org.arend.ext.module.ModulePath;
 import org.arend.ext.reference.Precedence;
+import org.arend.module.FullModulePath;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -19,10 +19,10 @@ public class LocatedReferableImpl implements TCReferable {
     myKind = kind;
   }
 
-  public LocatedReferableImpl(Precedence precedence, String name, @NotNull ModulePath parent, Kind kind) {
+  public LocatedReferableImpl(Precedence precedence, String name, @NotNull FullModulePath parent, Kind kind) {
     myPrecedence = precedence;
     myName = name;
-    myParent = new ModuleReferable(parent);
+    myParent = new FullModuleReferable(parent);
     myKind = kind;
   }
 
@@ -51,8 +51,8 @@ public class LocatedReferableImpl implements TCReferable {
 
   @Nullable
   @Override
-  public ModulePath getLocation() {
-    return myParent instanceof ModuleReferable ? ((ModuleReferable) myParent).path : myParent == null ? null : myParent.getLocation();
+  public FullModulePath getLocation() {
+    return myParent == null ? null : myParent.getLocation();
   }
 
   @Nullable

@@ -4,10 +4,10 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.arend.error.ParsingError;
 import org.arend.ext.error.ErrorReporter;
-import org.arend.ext.module.ModulePath;
 import org.arend.ext.reference.Precedence;
 import org.arend.frontend.group.SimpleNamespaceCommand;
 import org.arend.frontend.reference.*;
+import org.arend.module.FullModulePath;
 import org.arend.naming.reference.*;
 import org.arend.term.*;
 import org.arend.term.concrete.Concrete;
@@ -21,11 +21,11 @@ import java.util.List;
 
 import static org.arend.frontend.parser.ArendParser.*;
 
-public class BuildVisitor extends ArendBaseVisitor {
-  private final ModulePath myModule;
+public class BuildVisitor extends ArendBaseVisitor<Object> {
+  private final FullModulePath myModule;
   private final ErrorReporter myErrorReporter;
 
-  public BuildVisitor(ModulePath module, ErrorReporter errorReporter) {
+  public BuildVisitor(FullModulePath module, ErrorReporter errorReporter) {
     myModule = module;
     myErrorReporter = errorReporter;
   }
@@ -153,7 +153,7 @@ public class BuildVisitor extends ArendBaseVisitor {
   public FileGroup visitStatements(StatementsContext ctx) {
     List<Group> subgroups = new ArrayList<>();
     List<ChildNamespaceCommand> namespaceCommands = new ArrayList<>();
-    FileGroup parentGroup = new FileGroup(new ModuleReferable(myModule), subgroups, namespaceCommands);
+    FileGroup parentGroup = new FileGroup(new FullModuleReferable(myModule), subgroups, namespaceCommands);
     visitStatementList(ctx.statement(), subgroups, namespaceCommands, parentGroup, null);
     return parentGroup;
   }
@@ -954,6 +954,7 @@ public class BuildVisitor extends ArendBaseVisitor {
     return visitArgumentAppExpr(ctx.argumentAppExpr());
   }
 
+  @SuppressWarnings("rawtypes")
   @Override
   public Concrete.Expression visitArgumentAppExpr(ArgumentAppExprContext ctx) {
     Concrete.Expression expr = visitAtomFieldsAcc(ctx.atomFieldsAcc());

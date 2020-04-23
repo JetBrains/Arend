@@ -3,6 +3,7 @@ package org.arend.module.serialization;
 import org.arend.core.definition.*;
 import org.arend.ext.module.ModulePath;
 import org.arend.ext.reference.Precedence;
+import org.arend.module.FullModulePath;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.reference.*;
 import org.arend.naming.reference.converter.ReferableConverter;
@@ -182,12 +183,12 @@ public class ModuleDeserialization {
   }
 
   @NotNull
-  public ChildGroup readGroup(ModulePath modulePath) throws DeserializationException {
+  public ChildGroup readGroup(FullModulePath modulePath) throws DeserializationException {
     return readGroup(myModuleProto.getGroup(), null, modulePath);
   }
 
   @NotNull
-  private ChildGroup readGroup(ModuleProtos.Group groupProto, ChildGroup parent, ModulePath modulePath) throws DeserializationException {
+  private ChildGroup readGroup(ModuleProtos.Group groupProto, ChildGroup parent, FullModulePath modulePath) throws DeserializationException {
     DefinitionProtos.Referable referableProto = groupProto.getReferable();
     List<TCFieldReferable> fieldReferables;
     LocatedReferable referable;
@@ -197,7 +198,7 @@ public class ModuleDeserialization {
     } else {
       fieldReferables = new ArrayList<>(0);
       if (parent == null) {
-        referable = new ModuleReferable(modulePath);
+        referable = new FullModuleReferable(modulePath);
       } else {
         referable = new DataLocatedReferableImpl(readPrecedence(referableProto.getPrecedence()), referableProto.getName(), parent.getReferable(), null, groupProto.getDefinition().getDefinitionDataCase() == DefinitionProtos.Definition.DefinitionDataCase.CONSTRUCTOR ? LocatedReferableImpl.Kind.DEFINED_CONSTRUCTOR : LocatedReferableImpl.Kind.TYPECHECKABLE);
       }

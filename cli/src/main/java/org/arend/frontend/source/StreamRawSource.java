@@ -8,6 +8,7 @@ import org.arend.ext.module.ModulePath;
 import org.arend.frontend.ConcreteReferableProvider;
 import org.arend.frontend.parser.*;
 import org.arend.library.SourceLibrary;
+import org.arend.module.FullModulePath;
 import org.arend.module.error.ExceptionError;
 import org.arend.naming.resolving.visitor.DefinitionResolveNameVisitor;
 import org.arend.naming.scope.CachingScope;
@@ -78,7 +79,7 @@ public abstract class StreamRawSource implements Source {
         return false;
       }
 
-      myGroup = new BuildVisitor(modulePath, errorReporter).visitStatements(tree);
+      myGroup = new BuildVisitor(new FullModulePath(library.getName(), myInTests ? FullModulePath.LocationKind.TEST : FullModulePath.LocationKind.SOURCE, modulePath.toList()), errorReporter).visitStatements(tree);
       library.onGroupLoaded(modulePath, myGroup, true);
 
       for (NamespaceCommand command : myGroup.getNamespaceCommands()) {

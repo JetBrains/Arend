@@ -2,9 +2,9 @@ package org.arend.naming;
 
 import org.antlr.v4.runtime.*;
 import org.arend.ArendTestCase;
-import org.arend.ext.module.ModulePath;
 import org.arend.frontend.parser.*;
-import org.arend.naming.reference.ModuleReferable;
+import org.arend.module.FullModulePath;
+import org.arend.naming.reference.FullModuleReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.expr.ConcreteCompareVisitor;
 import org.arend.term.group.ChildGroup;
@@ -18,7 +18,7 @@ import java.util.List;
 import static org.junit.Assert.assertThat;
 
 public abstract class ParserTestCase extends ArendTestCase {
-  protected static final ModulePath MODULE_PATH = new ModulePath("$TestCase$");
+  protected static final FullModulePath MODULE_PATH = new FullModulePath(null, null, Collections.singletonList("$TestCase$"));
 
   private ArendParser _parse(String text) {
     CharStream input = CharStreams.fromString(text);
@@ -60,7 +60,7 @@ public abstract class ParserTestCase extends ArendTestCase {
   ChildGroup parseDef(String text, int errors) {
     ArendParser.DefinitionContext ctx = _parse(text).definition();
     List<Group> subgroups = new ArrayList<>(1);
-    FileGroup fileGroup = new FileGroup(new ModuleReferable(MODULE_PATH), subgroups, Collections.emptyList());
+    FileGroup fileGroup = new FileGroup(new FullModuleReferable(MODULE_PATH), subgroups, Collections.emptyList());
     ChildGroup definition = errorList.isEmpty() ? new BuildVisitor(MODULE_PATH, errorReporter).visitDefinition(ctx, fileGroup, null) : null;
     if (definition != null) {
       subgroups.add(definition);

@@ -3,11 +3,10 @@ package org.arend.naming.reference;
 import org.arend.ext.module.ModulePath;
 import org.arend.ext.reference.Precedence;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
-public class ModuleReferable implements LocatedReferable {
+public class ModuleReferable implements GlobalReferable {
   public final ModulePath path;
 
   public ModuleReferable(ModulePath path) {
@@ -26,22 +25,10 @@ public class ModuleReferable implements LocatedReferable {
     return Precedence.DEFAULT;
   }
 
-  @Nullable
-  @Override
-  public ModulePath getLocation() {
-    return path;
-  }
-
   @NotNull
   @Override
   public Kind getKind() {
     return Kind.OTHER;
-  }
-
-  @Nullable
-  @Override
-  public LocatedReferable getLocatedReferableParent() {
-    return null;
   }
 
   @Override

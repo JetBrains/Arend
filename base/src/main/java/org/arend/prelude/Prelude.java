@@ -10,6 +10,7 @@ import org.arend.core.sort.Sort;
 import org.arend.error.DummyErrorReporter;
 import org.arend.ext.ArendPrelude;
 import org.arend.ext.module.ModulePath;
+import org.arend.module.FullModulePath;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.naming.reference.converter.IdReferableConverter;
@@ -30,8 +31,8 @@ import static org.arend.core.expr.ExpressionFactory.parameter;
 public class Prelude implements ArendPrelude {
   public static final Version VERSION = GeneratedVersion.VERSION;
 
-  public static final ModulePath MODULE_PATH = new ModulePath("Prelude");
   public static final String LIBRARY_NAME = "prelude";
+  public static final FullModulePath MODULE_PATH = new FullModulePath(LIBRARY_NAME, FullModulePath.LocationKind.GENERATED, Collections.singletonList("Prelude"));
 
   public static DataDefinition INTERVAL;
   public static Constructor LEFT, RIGHT;
