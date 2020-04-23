@@ -22,6 +22,7 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.InPlaceLevelSubstVisitor;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.error.*;
+import org.arend.ext.ArendExtension;
 import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.concrete.expr.ConcreteReferenceExpression;
@@ -90,6 +91,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
   private final List<DeferredMeta> myDeferredMetasBeforeSolver = new ArrayList<>();
   private final List<DeferredMeta> myDeferredMetasBeforeLevels = new ArrayList<>();
   private final List<DeferredMeta> myDeferredMetasAfterLevels = new ArrayList<>();
+  private final ArendExtension myArendExtension;
 
   private static class DeferredMeta {
     final MetaDefinition meta;
@@ -130,7 +132,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     myErrorReporter.myStatus = myErrorReporter.myStatus.max(status);
   }
 
-  private CheckTypeVisitor(TypecheckerState state, Set<Binding> freeBindings, Map<Referable, Binding> localContext, ErrorReporter errorReporter, GlobalInstancePool pool) {
+  private CheckTypeVisitor(TypecheckerState state, Set<Binding> freeBindings, Map<Referable, Binding> localContext, ErrorReporter errorReporter, GlobalInstancePool pool, ArendExtension arendExtension) {
     myFreeBindings = freeBindings;
     myErrorReporter = new MyErrorReporter(errorReporter);
     this.errorReporter = myErrorReporter;
@@ -139,10 +141,11 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     myArgsInference = new StdImplicitArgsInference(this);
     this.state = state;
     context = localContext;
+    myArendExtension = arendExtension;
   }
 
-  public CheckTypeVisitor(TypecheckerState state, ErrorReporter errorReporter, GlobalInstancePool pool) {
-    this(state, new LinkedHashSet<>(), new LinkedHashMap<>(), errorReporter, pool);
+  public CheckTypeVisitor(TypecheckerState state, ErrorReporter errorReporter, GlobalInstancePool pool, ArendExtension arendExtension) {
+    this(state, new LinkedHashSet<>(), new LinkedHashMap<>(), errorReporter, pool, arendExtension);
   }
 
   public Type checkType(Concrete.Expression expr, Expression expectedType, boolean isFinal) {
@@ -409,7 +412,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
         myFreeBindings = deferredMeta.freeBindings;
         context = deferredMeta.context;
       } else {
-        checkTypeVisitor = new CheckTypeVisitor(state, deferredMeta.freeBindings, deferredMeta.context, new CompositeErrorReporter(errorReporter, countingErrorReporter), null);
+        checkTypeVisitor = new CheckTypeVisitor(state, deferredMeta.freeBindings, deferredMeta.context, new CompositeErrorReporter(errorReporter, countingErrorReporter), null, myArendExtension);
         checkTypeVisitor.setInstancePool(new GlobalInstancePool(myInstancePool.getInstanceProvider(), checkTypeVisitor, myInstancePool.getInstancePool()));
       }
 
@@ -1847,7 +1850,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
   @Nullable
   @Override
   public TypedExpression defer(@NotNull MetaDefinition meta, @NotNull ContextData contextData, @NotNull CoreExpression type) {
-    if (meta instanceof BaseMetaDefinition && !((BaseMetaDefinition) meta).checkContextData(contextData, errorReporter)) {
+    if (!meta.checkContextData(contextData, errorReporter)) {
       return null;
     }
     ConcreteReferenceExpression refExpr = contextData.getReferenceExpression();
@@ -1881,7 +1884,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       return TypecheckingResult.fromChecked(meta.invokeMeta(this, contextData));
     } catch (MetaException e) {
       if (e.error.cause == null) {
-        e.error.cause = contextData.getReferenceExpression();
+        e.error.cause = contextData.getMarker();
       }
       errorReporter.report(e.error);
       ErrorExpression expr = new ErrorExpression(e.error);
@@ -1896,7 +1899,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       return null;
     }
     ContextData contextData = new ContextDataImpl(refExpr, arguments, expectedType);
-    if (meta instanceof BaseMetaDefinition && !((BaseMetaDefinition) meta).checkContextData(contextData, errorReporter)) {
+    if (!meta.checkContextData(contextData, errorReporter)) {
       return null;
     }
 
@@ -2018,7 +2021,10 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     TypecheckingResult exprResult = null;
     if (expr.getExpression() != null) {
       errors = new ArrayList<>();
-      exprResult = withErrorReporter(new ListErrorReporter(errors), tc -> checkExpr(expr.getExpression(), expectedType));
+      exprResult = withErrorReporter(new ListErrorReporter(errors), tc -> {
+        MetaDefinition meta = myArendExtension == null ? null : myArendExtension.getGoalSolver();
+        return meta == null ? checkExpr(expr.getExpression(), expectedType) : TypecheckingResult.fromChecked(meta.checkAndInvokeMeta(tc, new ContextDataImpl(expr, Collections.emptyList(), expectedType)));
+      });
     }
 
     GoalError error = new GoalError(expr.getName(), context, expectedType, exprResult == null ? null : exprResult.type, errors, expr);

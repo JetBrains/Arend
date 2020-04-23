@@ -246,7 +246,7 @@ public class Prelude implements ArendPrelude {
 
   public static class PreludeTypechecking extends TypecheckingOrderingListener {
     public PreludeTypechecking(InstanceProviderSet instanceProviderSet, TypecheckerState state, ConcreteProvider concreteProvider, PartialComparator<TCReferable> comparator) {
-      super(instanceProviderSet, state, concreteProvider, IdReferableConverter.INSTANCE, DummyErrorReporter.INSTANCE, comparator);
+      super(instanceProviderSet, state, concreteProvider, IdReferableConverter.INSTANCE, DummyErrorReporter.INSTANCE, comparator, ref -> null);
     }
 
     @Override

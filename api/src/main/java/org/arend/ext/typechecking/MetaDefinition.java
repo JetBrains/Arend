@@ -2,6 +2,7 @@ package org.arend.ext.typechecking;
 
 import org.arend.ext.concrete.expr.ConcreteArgument;
 import org.arend.ext.concrete.expr.ConcreteExpression;
+import org.arend.ext.error.ErrorReporter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -34,6 +35,27 @@ public interface MetaDefinition {
   }
 
   /**
+   * @return a short description of this meta.
+   */
+  default @Nullable String getShortDescription() {
+    return null;
+  }
+
+  /**
+   * Checks if this meta is applicable can be invoked on the given arguments.
+   */
+  default boolean checkArguments(@NotNull List<? extends ConcreteArgument> arguments) {
+    return true;
+  }
+
+  /**
+   * Checks if this meta is applicable in the given context.
+   */
+  default boolean checkContextData(@NotNull ContextData contextData, @NotNull ErrorReporter errorReporter) {
+    return true;
+  }
+
+  /**
    * Runs additional checks before invoking the definition.
    * This method can be implemented in a base class to simplify the definition of {@code invokeMeta} in subclasses.
    *
@@ -42,7 +64,7 @@ public interface MetaDefinition {
    * @return              the typed expression that will be used as the result of this meta definition
    */
   default @Nullable TypedExpression checkAndInvokeMeta(@NotNull ExpressionTypechecker typechecker, @NotNull ContextData contextData) {
-    return invokeMeta(typechecker, contextData);
+    return checkContextData(contextData, typechecker.getErrorReporter()) ? invokeMeta(typechecker, contextData) : null;
   }
 
   /**
@@ -53,6 +75,6 @@ public interface MetaDefinition {
    * @return            the concrete representation of the result
    */
   default @Nullable ConcreteExpression checkAndGetConcreteRepresentation(@NotNull List<? extends ConcreteArgument> arguments) {
-    return getConcreteRepresentation(arguments);
+    return checkArguments(arguments) ? getConcreteRepresentation(arguments) : null;
   }
 }

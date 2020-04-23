@@ -45,7 +45,7 @@ public abstract class ArendTestCase {
   protected final TypecheckerState typecheckerState = new SimpleTypecheckerState();
   protected final List<GeneralError> errorList = new ArrayList<>();
   protected final ListErrorReporter errorReporter = new ListErrorReporter(errorList);
-  protected final TypecheckingOrderingListener typechecking = new TypecheckingOrderingListener(new InstanceProviderSet(), typecheckerState, ConcreteReferableProvider.INSTANCE, IdReferableConverter.INSTANCE, errorReporter, PositionComparator.INSTANCE);
+  protected final TypecheckingOrderingListener typechecking = new TypecheckingOrderingListener(new InstanceProviderSet(), typecheckerState, ConcreteReferableProvider.INSTANCE, IdReferableConverter.INSTANCE, errorReporter, PositionComparator.INSTANCE, ref -> null);
 
   @Before
   public void loadPrelude() {

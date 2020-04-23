@@ -1,7 +1,9 @@
 package org.arend.ext;
 
 import org.arend.ext.concrete.ConcreteFactory;
+import org.arend.ext.typechecking.MetaDefinition;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 
@@ -45,4 +47,14 @@ public interface ArendExtension {
    * @param definitionProvider  provides the access to definitions defined in the library; can be used only inside this method.
    */
   default void load(@NotNull ArendDefinitionProvider definitionProvider) {}
+
+  /**
+   * A goal solver is a meta that can be invoked on a goal to solve it.
+   * This method is invoked for each goal.
+   *
+   * @return a meta definition that will be used to solve goals
+   */
+  default @Nullable MetaDefinition getGoalSolver() {
+    return null;
+  }
 }

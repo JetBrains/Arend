@@ -653,7 +653,7 @@ public final class Concrete {
     }
   }
 
-  public static class GoalExpression extends Expression {
+  public static class GoalExpression extends Expression implements ConcreteGoalExpression {
     public static final byte PREC = 12;
     private final String myName;
     public Expression expression;
@@ -668,6 +668,7 @@ public final class Concrete {
       return myName;
     }
 
+    @Override
     public Expression getExpression() {
       return expression;
     }

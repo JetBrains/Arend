@@ -19,6 +19,7 @@ import org.arend.prelude.Prelude;
 import org.arend.prelude.PreludeResourceLibrary;
 import org.arend.term.group.Group;
 import org.arend.term.prettyprint.PrettyPrinterConfigWithRenamer;
+import org.arend.typechecking.LibraryArendExtensionProvider;
 import org.arend.typechecking.SimpleTypecheckerState;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.doubleChecker.CoreModuleChecker;
@@ -93,7 +94,7 @@ public abstract class BaseCliFrontend {
     private int failed;
 
     MyTypechecking() {
-      super(myLibraryManager.getInstanceProviderSet(), myTypecheckerState, ConcreteReferableProvider.INSTANCE, IdReferableConverter.INSTANCE, myErrorReporter, PositionComparator.INSTANCE);
+      super(myLibraryManager.getInstanceProviderSet(), myTypecheckerState, ConcreteReferableProvider.INSTANCE, IdReferableConverter.INSTANCE, myErrorReporter, PositionComparator.INSTANCE, new LibraryArendExtensionProvider(myLibraryManager));
     }
 
     @Override

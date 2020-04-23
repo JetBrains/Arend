@@ -63,7 +63,7 @@ public interface Library {
    *
    * @return the language extension.
    */
-  @Nullable
+  @NotNull
   ArendExtension getArendExtension();
 
   /**

@@ -51,7 +51,7 @@ public abstract class BaseMetaDefinition implements MetaDefinition {
     return !requireExpectedType();
   }
 
-  private boolean checkArguments(@NotNull List<? extends ConcreteArgument> arguments, ErrorReporter errorReporter, ConcreteReferenceExpression refExpr) {
+  private boolean checkArguments(@NotNull List<? extends ConcreteArgument> arguments, ErrorReporter errorReporter, ConcreteExpression marker) {
     boolean ok = true;
     boolean[] explicitness = argumentExplicitness();
     if (explicitness != null) {
@@ -72,7 +72,7 @@ public abstract class BaseMetaDefinition implements MetaDefinition {
 
       if (j < arguments.size() && !allowExcessiveArguments()) {
         if (errorReporter != null) {
-          errorReporter.report(new TypecheckingError("Excessive arguments are not allowed for '" + refExpr.getReferent().getRefName() + "'", arguments.get(j).getExpression()));
+          errorReporter.report(new TypecheckingError("Excessive arguments are not allowed", arguments.get(j).getExpression()));
         }
         ok = false;
       }
@@ -88,7 +88,7 @@ public abstract class BaseMetaDefinition implements MetaDefinition {
         int diff = sum - numberOfOptionalExplicitArguments();
         if (diff > 0) {
           if (errorReporter != null) {
-            errorReporter.report(new TypecheckingError("Required " + diff + " more explicit argument" + (diff == 1 ? "" : "s"), refExpr));
+            errorReporter.report(new TypecheckingError("Required " + diff + " more explicit argument" + (diff == 1 ? "" : "s"), marker));
           }
           ok = false;
         }
@@ -97,20 +97,22 @@ public abstract class BaseMetaDefinition implements MetaDefinition {
     return ok;
   }
 
+  @Override
   public boolean checkArguments(@NotNull List<? extends ConcreteArgument> arguments) {
     return checkArguments(arguments, null, null);
   }
 
+  @Override
   public boolean checkContextData(@NotNull ContextData contextData, @NotNull ErrorReporter errorReporter) {
     ConcreteReferenceExpression refExpr = contextData.getReferenceExpression();
-    if (withoutLevels() && (refExpr.getPLevel() != null || refExpr.getHLevel() != null)) {
+    if (refExpr != null && withoutLevels() && (refExpr.getPLevel() != null || refExpr.getHLevel() != null)) {
       errorReporter.report(new IgnoredLevelsError(refExpr.getPLevel(), refExpr.getHLevel()));
     }
 
-    boolean ok = checkArguments(contextData.getArguments(), errorReporter, refExpr);
+    boolean ok = checkArguments(contextData.getArguments(), errorReporter, contextData.getMarker());
 
     if (contextData.getExpectedType() == null && requireExpectedType()) {
-      errorReporter.report(new TypecheckingError("Cannot infer the expected type", refExpr));
+      errorReporter.report(new TypecheckingError("Cannot infer the expected type", contextData.getMarker()));
       ok = false;
     }
 

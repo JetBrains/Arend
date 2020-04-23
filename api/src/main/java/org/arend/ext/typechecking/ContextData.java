@@ -1,5 +1,7 @@
 package org.arend.ext.typechecking;
 
+import org.arend.ext.concrete.expr.ConcreteExpression;
+import org.arend.ext.concrete.expr.ConcreteGoalExpression;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.concrete.expr.ConcreteArgument;
 import org.arend.ext.concrete.expr.ConcreteReferenceExpression;
@@ -12,10 +14,21 @@ import java.util.List;
  */
 public interface ContextData {
   /**
-   * Returns the reference expression corresponding to the meta definition itself.
-   * Can be used as a marked for errors when a more specific position of the error is not available.
+   * This expression be used as a marker for errors when a more specific position of the error is not available.
    */
-  @NotNull ConcreteReferenceExpression getReferenceExpression();
+  @NotNull ConcreteExpression getMarker();
+
+  /**
+   * If the definition was explicitly invoked from code,
+   * returns the reference expression corresponding to this invocation.
+   */
+  ConcreteReferenceExpression getReferenceExpression();
+
+  /**
+   * If the definition is invoked as a goal solver,
+   * returns the goal expression corresponding to this invocation.
+   */
+  ConcreteGoalExpression getGoalExpression();
 
   /**
    * Returns the arguments passed to the meta definition.

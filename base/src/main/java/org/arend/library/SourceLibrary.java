@@ -116,10 +116,10 @@ public abstract class SourceLibrary extends BaseLibrary {
     };
   }
 
-  @Nullable
+  @NotNull
   @Override
   public ArendExtension getArendExtension() {
-    return myExtension;
+    return myExtension != null ? myExtension : super.getArendExtension();
   }
 
   /**
@@ -224,10 +224,7 @@ public abstract class SourceLibrary extends BaseLibrary {
 
       if (loadedDependency != null) {
         libraryManager.registerDependency(this, loadedDependency);
-        ArendExtension extension = loadedDependency.getArendExtension();
-        if (extension != null) {
-          dependenciesExtensions.put(dependency.name, extension);
-        }
+        dependenciesExtensions.put(dependency.name, loadedDependency.getArendExtension());
       }
     }
 
@@ -250,11 +247,10 @@ public abstract class SourceLibrary extends BaseLibrary {
       classLoader.removeDelegate(this);
       libraryManager.getLibraryErrorReporter().report(new ExceptionError(e, "loading of library " + getName()));
     }
-    if (myExtension == null && !dependenciesExtensions.isEmpty()) {
-      myExtension = new DefaultArendExtension();
-    }
 
-    if (myExtension != null) {
+    if (myExtension == null) {
+      myExtension = new DefaultArendExtension();
+    } else {
       DefinitionContributorImpl contributor = new DefinitionContributorImpl(this, libraryManager.getLibraryErrorReporter(), myAdditionalModuleScopeProvider);
       try {
         myExtension.declareDefinitions(contributor);
