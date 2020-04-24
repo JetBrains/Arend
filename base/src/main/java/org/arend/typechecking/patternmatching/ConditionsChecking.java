@@ -21,7 +21,6 @@ import org.arend.ext.error.ErrorReporter;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.ConditionsError;
-import org.arend.typechecking.error.local.GoalError;
 import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.util.Pair;
 
@@ -225,9 +224,15 @@ public class ConditionsChecking {
     if (clause.getExpression() == null) {
       return true;
     }
-    Expression expr = clause.getExpression().getUnderlyingExpression();
+    Expression expr = clause.getExpression();
+    if (!(expr instanceof GoalErrorExpression)) {
+      expr = expr.getUnderlyingExpression();
+    }
     while (expr instanceof LetExpression || expr instanceof LamExpression) {
-      expr = (expr instanceof LetExpression ? ((LetExpression) expr).getExpression() : ((LamExpression) expr).getBody()).getUnderlyingExpression();
+      expr = (expr instanceof LetExpression ? ((LetExpression) expr).getExpression() : ((LamExpression) expr).getBody());
+      if (!(expr instanceof GoalErrorExpression)) {
+        expr = expr.getUnderlyingExpression();
+      }
     }
     if (expr.isError()) {
       return true;

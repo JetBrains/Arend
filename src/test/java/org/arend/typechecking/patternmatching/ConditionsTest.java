@@ -13,8 +13,7 @@ import org.junit.Test;
 import java.util.Collections;
 
 import static org.arend.Matchers.goalError;
-import static org.arend.core.expr.ExpressionFactory.Left;
-import static org.arend.core.expr.ExpressionFactory.Right;
+import static org.arend.core.expr.ExpressionFactory.*;
 
 public class ConditionsTest extends TypeCheckingTestCase {
   @Test
@@ -319,11 +318,11 @@ public class ConditionsTest extends TypeCheckingTestCase {
   public void goalCaseTest() {
     typeCheckModule(
       "\\data II | point1 | point2 | seg (i : I) \\with { | left => point1 | right => point2 }\n" +
-        "\\func f (x : II) : Nat => \\case x \\with {\n" +
-        "  | point2 => 7\n" +
-        "  | point1 => 3\n" +
-        "  | seg i => {?}\n" +
-        "}", 1);
+      "\\func f (x : II) : Nat => \\case x \\with {\n" +
+      "  | point2 => 7\n" +
+      "  | point1 => 3\n" +
+      "  | seg i => {?}\n" +
+      "}", 1);
     DependentLink binding = ((CaseExpression) ((FunctionDefinition) getDefinition("f")).getBody()).getElimBody().getClauses().get(2).getPatterns().get(0).getFirstBinding();
     assertThatErrorsAre(goalError(
       new Condition(null, new ExprSubstitution(binding, Left()), new SmallIntegerExpression(3)),
@@ -369,6 +368,26 @@ public class ConditionsTest extends TypeCheckingTestCase {
     assertThatErrorsAre(goalError(
       new Condition(null, new ExprSubstitution(i, Left()), iResult), new Condition(null, new ExprSubstitution(i, Right()), iResult),
       new Condition(null, new ExprSubstitution(j, Left()), jResult), new Condition(null, new ExprSubstitution(j, Right()), jResult)));
+  }
+
+  @Test
+  public void goalTest3() {
+    typeCheckModule(
+      "\\func f (x : Int) : Nat\n" +
+      "  | pos n => suc (suc n)\n" +
+      "  | neg n => {?}", 1);
+    DependentLink binding = ((ElimBody) ((FunctionDefinition) getDefinition("f")).getBody()).getClauses().get(1).getPatterns().get(0).getFirstBinding();
+    assertThatErrorsAre(goalError(new Condition(null, new ExprSubstitution(binding, Zero()), new SmallIntegerExpression(2))));
+  }
+
+  @Test
+  public void goalTest4() {
+    typeCheckModule(
+      "\\func f (x : Int) : Nat\n" +
+      "  | pos n => n\n" +
+      "  | neg n => {?(suc n)}", 1);
+    DependentLink binding = ((ElimBody) ((FunctionDefinition) getDefinition("f")).getBody()).getClauses().get(1).getPatterns().get(0).getFirstBinding();
+    assertThatErrorsAre(goalError(new Condition(null, new ExprSubstitution(binding, Zero()), new SmallIntegerExpression(0))));
   }
 
   @Test
