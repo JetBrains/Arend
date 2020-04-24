@@ -135,7 +135,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
   @NotNull
   @Override
   public ConcreteExpression goal(@Nullable String name, @Nullable ConcreteExpression expression) {
-    if (!(expression instanceof Concrete.Expression)) {
+    if (!(expression == null || expression instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }
     return new Concrete.GoalExpression(myData, name, (Concrete.Expression) expression);

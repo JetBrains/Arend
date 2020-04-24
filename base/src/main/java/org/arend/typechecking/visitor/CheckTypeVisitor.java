@@ -2019,15 +2019,21 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
   public TypecheckingResult visitGoal(Concrete.GoalExpression expr, Expression expectedType) {
     List<GeneralError> errors = Collections.emptyList();
     TypecheckingResult exprResult = null;
+    boolean[] isSolved = new boolean[1];
     if (expr.getExpression() != null) {
       errors = new ArrayList<>();
       exprResult = withErrorReporter(new ListErrorReporter(errors), tc -> {
         MetaDefinition meta = myArendExtension == null ? null : myArendExtension.getGoalSolver();
-        return meta == null ? checkExpr(expr.getExpression(), expectedType) : TypecheckingResult.fromChecked(meta.checkAndInvokeMeta(tc, new ContextDataImpl(expr, Collections.emptyList(), expectedType)));
+        if (meta == null) {
+          return checkExpr(expr.getExpression(), expectedType);
+        } else {
+          isSolved[0] = true;
+          return TypecheckingResult.fromChecked(meta.checkAndInvokeMeta(tc, new ContextDataImpl(expr, Collections.emptyList(), expectedType)));
+        }
       });
     }
 
-    GoalError error = new GoalError(expr.getName(), context, expectedType, exprResult == null ? null : exprResult.type, errors, expr);
+    GoalError error = new GoalError(expr.getName(), context, expectedType, exprResult, errors, isSolved[0], expr);
     errorReporter.report(error);
     Expression result = new GoalErrorExpression(exprResult == null ? null : exprResult.expression, error);
     return new TypecheckingResult(result, expectedType != null && !(expectedType instanceof Type && ((Type) expectedType).isOmega()) ? expectedType : result);
