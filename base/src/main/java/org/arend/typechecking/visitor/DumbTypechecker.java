@@ -116,7 +116,7 @@ public class DumbTypechecker extends VoidConcreteVisitor<Void, Void> {
     }
   }
 
-  private void checkClauses(List<? extends Concrete.PatternHolder> clauses, List<? extends Boolean> arguments, int numberOfArguments) {
+  private void checkClauses(List<? extends Concrete.PatternHolder> clauses, List<Boolean> arguments, int numberOfArguments) {
     if (arguments == null) {
       findImplicitPatterns(clauses, myTypechecker.errorReporter, true);
     }
