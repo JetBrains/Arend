@@ -19,35 +19,35 @@ public abstract class BaseMetaDefinition implements MetaDefinition {
   /**
    * @return  true if this meta definition does not support level annotations
    */
-  protected boolean withoutLevels() {
+  public boolean withoutLevels() {
     return false;
   }
 
   /**
    * @return  an array representing the expected number of arguments and their explicitness; returns {@code null} if the definition can accept any number of arguments without restrictions
    */
-  protected @Nullable boolean[] argumentExplicitness() {
+  public @Nullable boolean[] argumentExplicitness() {
     return null;
   }
 
   /**
    * @return  true if the meta requires the expected type
    */
-  protected boolean requireExpectedType() {
+  public boolean requireExpectedType() {
     return false;
   }
 
   /**
    * @return  the number of explicit arguments that can be omitted
    */
-  protected int numberOfOptionalExplicitArguments() {
+  public int numberOfOptionalExplicitArguments() {
     return 0;
   }
 
   /**
    * @return  true if meta definitions can accept additional arguments not specified in {@code argumentExplicitness}
    */
-  protected boolean allowExcessiveArguments() {
+  public boolean allowExcessiveArguments() {
     return !requireExpectedType();
   }
 

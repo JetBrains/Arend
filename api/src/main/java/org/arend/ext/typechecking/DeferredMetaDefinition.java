@@ -14,7 +14,7 @@ public class DeferredMetaDefinition extends BaseMetaDefinition {
   }
 
   @Override
-  protected boolean requireExpectedType() {
+  public boolean requireExpectedType() {
     return true;
   }
 
