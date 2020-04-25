@@ -9,11 +9,11 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 
 public class ContextDataImpl implements ContextData {
-  private final Concrete.Expression myExpression;
+  private final Concrete.ReferenceExpression myExpression;
   private List<? extends ConcreteArgument> myArguments;
   private Expression myExpectedType;
 
-  public ContextDataImpl(Concrete.Expression expression, List<? extends ConcreteArgument> arguments, Expression expectedType) {
+  public ContextDataImpl(Concrete.ReferenceExpression expression, List<? extends ConcreteArgument> arguments, Expression expectedType) {
     myExpression = expression;
     myArguments = arguments;
     myExpectedType = expectedType;
@@ -21,18 +21,8 @@ public class ContextDataImpl implements ContextData {
 
   @NotNull
   @Override
-  public Concrete.Expression getMarker() {
-    return myExpression;
-  }
-
-  @Override
   public Concrete.ReferenceExpression getReferenceExpression() {
-    return myExpression instanceof Concrete.ReferenceExpression ? (Concrete.ReferenceExpression) myExpression : null;
-  }
-
-  @Override
-  public Concrete.GoalExpression getGoalExpression() {
-    return myExpression instanceof Concrete.GoalExpression ? (Concrete.GoalExpression) myExpression : null;
+    return myExpression;
   }
 
   @NotNull

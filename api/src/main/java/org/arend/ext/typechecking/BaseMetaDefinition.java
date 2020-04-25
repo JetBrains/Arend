@@ -105,14 +105,14 @@ public abstract class BaseMetaDefinition implements MetaDefinition {
   @Override
   public boolean checkContextData(@NotNull ContextData contextData, @NotNull ErrorReporter errorReporter) {
     ConcreteReferenceExpression refExpr = contextData.getReferenceExpression();
-    if (refExpr != null && withoutLevels() && (refExpr.getPLevel() != null || refExpr.getHLevel() != null)) {
+    if (withoutLevels() && (refExpr.getPLevel() != null || refExpr.getHLevel() != null)) {
       errorReporter.report(new IgnoredLevelsError(refExpr.getPLevel(), refExpr.getHLevel()));
     }
 
-    boolean ok = checkArguments(contextData.getArguments(), errorReporter, contextData.getMarker());
+    boolean ok = checkArguments(contextData.getArguments(), errorReporter, contextData.getReferenceExpression());
 
     if (contextData.getExpectedType() == null && requireExpectedType()) {
-      errorReporter.report(new TypecheckingError("Cannot infer the expected type", contextData.getMarker()));
+      errorReporter.report(new TypecheckingError("Cannot infer the expected type", contextData.getReferenceExpression()));
       ok = false;
     }
 

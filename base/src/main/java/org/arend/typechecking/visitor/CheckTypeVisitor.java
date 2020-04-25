@@ -46,6 +46,7 @@ import org.arend.term.concrete.ConcreteExpressionVisitor;
 import org.arend.term.concrete.ConcreteLevelExpressionVisitor;
 import org.arend.typechecking.FieldDFS;
 import org.arend.typechecking.TypecheckerState;
+import org.arend.typechecking.TypecheckingContext;
 import org.arend.typechecking.computation.ComputationRunner;
 import org.arend.typechecking.doubleChecker.CoreException;
 import org.arend.typechecking.doubleChecker.CoreExpressionChecker;
@@ -146,6 +147,16 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
 
   public CheckTypeVisitor(TypecheckerState state, ErrorReporter errorReporter, GlobalInstancePool pool, ArendExtension arendExtension) {
     this(state, new LinkedHashSet<>(), new LinkedHashMap<>(), errorReporter, pool, arendExtension);
+  }
+
+  public TypecheckingContext saveTypecheckingContext() {
+    return new TypecheckingContext(new LinkedHashSet<>(myFreeBindings), new LinkedHashMap<>(context), myInstancePool.getInstanceProvider(), myInstancePool.getInstancePool(), myArendExtension);
+  }
+
+  public static CheckTypeVisitor loadTypecheckingContext(TypecheckingContext typecheckingContext, TypecheckerState state, ErrorReporter errorReporter) {
+    CheckTypeVisitor visitor = new CheckTypeVisitor(state, typecheckingContext.freeBindings, typecheckingContext.localContext, errorReporter, null, typecheckingContext.arendExtension);
+    visitor.setInstancePool(new GlobalInstancePool(typecheckingContext.instanceProvider, visitor, typecheckingContext.localInstancePool));
+    return visitor;
   }
 
   public Type checkType(Concrete.Expression expr, Expression expectedType, boolean isFinal) {
@@ -1884,7 +1895,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       return TypecheckingResult.fromChecked(meta.invokeMeta(this, contextData));
     } catch (MetaException e) {
       if (e.error.cause == null) {
-        e.error.cause = contextData.getMarker();
+        e.error.cause = contextData.getReferenceExpression();
       }
       errorReporter.report(e.error);
       ErrorExpression expr = new ErrorExpression(e.error);
@@ -2018,24 +2029,26 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
   @Override
   public TypecheckingResult visitGoal(Concrete.GoalExpression expr, Expression expectedType) {
     List<GeneralError> errors = Collections.emptyList();
-    TypecheckingResult exprResult = null;
-    boolean[] isSolved = new boolean[1];
+    GoalSolver.FillGoalResult goalResult = null;
+    GoalSolver solver = myArendExtension == null ? null : myArendExtension.getGoalSolver();
     if (expr.getExpression() != null) {
       errors = new ArrayList<>();
-      exprResult = withErrorReporter(new ListErrorReporter(errors), tc -> {
-        MetaDefinition meta = myArendExtension == null ? null : myArendExtension.getGoalSolver();
-        if (meta == null) {
-          return checkExpr(expr.getExpression(), expectedType);
+      goalResult = withErrorReporter(new ListErrorReporter(errors), tc -> {
+        if (solver == null) {
+          return new GoalSolver.FillGoalResult(expr.getExpression(), checkExpr(expr.getExpression(), expectedType));
         } else {
-          isSolved[0] = true;
-          return TypecheckingResult.fromChecked(meta.checkAndInvokeMeta(tc, new ContextDataImpl(expr, Collections.emptyList(), expectedType)));
+          return solver.fillGoal(tc, expr, expectedType);
         }
       });
     }
 
-    GoalError error = new GoalError(expr.getName(), context, expectedType, exprResult, errors, isSolved[0], expr);
+    if (goalResult != null && (!(goalResult.concreteExpression == null || goalResult.concreteExpression instanceof Concrete.Expression) || !(goalResult.typedExpression == null || goalResult.typedExpression.getExpression() instanceof Expression))) {
+      throw new IllegalArgumentException();
+    }
+
+    GoalError error = new GoalError(expr.getName(), context, expectedType, goalResult == null ? null : (Concrete.Expression) goalResult.concreteExpression, errors, solver, expr);
     errorReporter.report(error);
-    Expression result = new GoalErrorExpression(exprResult == null ? null : exprResult.expression, error);
+    Expression result = new GoalErrorExpression(goalResult == null || goalResult.typedExpression == null ? null : (Expression) goalResult.typedExpression.getExpression(), error);
     return new TypecheckingResult(result, expectedType != null && !(expectedType instanceof Type && ((Type) expectedType).isOmega()) ? expectedType : result);
   }
 

@@ -1,6 +1,6 @@
 package org.arend.ext;
 
-import org.arend.ext.typechecking.MetaDefinition;
+import org.arend.ext.typechecking.GoalSolver;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -18,9 +18,9 @@ public class DefaultArendExtension implements ArendExtension {
   }
 
   @Override
-  public @Nullable MetaDefinition getGoalSolver() {
+  public @Nullable GoalSolver getGoalSolver() {
     for (ArendExtension extension : dependencies.values()) {
-      MetaDefinition solver = extension.getGoalSolver();
+      GoalSolver solver = extension.getGoalSolver();
       if (solver != null) {
         return solver;
       }

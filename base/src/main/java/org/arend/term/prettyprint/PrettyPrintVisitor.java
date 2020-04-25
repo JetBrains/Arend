@@ -2,7 +2,10 @@ package org.arend.term.prettyprint;
 
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
+import org.arend.core.expr.visitor.ToAbstractVisitor;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.reference.Precedence;
+import org.arend.naming.reference.CoreReferable;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
@@ -134,11 +137,15 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     return null;
   }
 
-  private void printReferenceName(Concrete.ReferenceExpression expr) {
+  private void printReferenceName(Concrete.ReferenceExpression expr, Precedence prec) {
     if (expr instanceof Concrete.LongReferenceExpression) {
       myBuilder.append(((Concrete.LongReferenceExpression) expr).getLongName()).append('.');
     }
-    myBuilder.append(expr.getReferent().textRepresentation());
+    if (expr.getReferent() instanceof CoreReferable && ((CoreReferable) expr.getReferent()).printExpression()) {
+      ToAbstractVisitor.convert(((CoreReferable) expr.getReferent()).result.expression, PrettyPrinterConfig.DEFAULT).accept(this, prec == null ? new Precedence(ReferenceExpression.PREC) : prec);
+    } else {
+      myBuilder.append(expr.getReferent().textRepresentation());
+    }
   }
 
   @Override
@@ -147,7 +154,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     if (parens) {
       myBuilder.append('(');
     }
-    printReferenceName(expr);
+    printReferenceName(expr, prec);
 
     if (expr.getPLevel() != null || expr.getHLevel() != null) {
       myBuilder.append(" \\level ");
@@ -573,7 +580,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     if (needParens) myBuilder.append('(');
     left.accept(this, infixPrec.associativity != Precedence.Associativity.LEFT_ASSOC ? new Precedence(Precedence.Associativity.NON_ASSOC, infixPrec.priority, infixPrec.isInfix) : infixPrec);
     myBuilder.append(' ');
-    printReferenceName(infix);
+    printReferenceName(infix, null);
     for (Concrete.Argument arg : implicitArgs) {
       myBuilder.append(" {");
       arg.expression.accept(this, new Precedence(Expression.PREC));

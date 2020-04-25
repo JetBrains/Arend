@@ -6,10 +6,10 @@ import org.arend.ext.error.GeneralError;
 import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.Doc;
+import org.arend.ext.typechecking.GoalSolver;
 import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.patternmatching.Condition;
-import org.arend.typechecking.result.TypecheckingResult;
 
 import java.util.*;
 
@@ -19,25 +19,29 @@ public class GoalError extends TypecheckingError {
   public final String name;
   public final Map<Referable, Binding> context;
   public final Expression expectedType;
-  public final TypecheckingResult typecheckingResult;
+  public final Concrete.Expression result;
   public final List<GeneralError> errors;
-  public final boolean isSolved;
+  public final GoalSolver goalSolver;
   private List<Condition> myConditions = Collections.emptyList();
 
-  public GoalError(String name, Map<Referable, Binding> context, Expression expectedType, TypecheckingResult typecheckingResult, List<GeneralError> errors, boolean isSolved, Concrete.Expression expression) {
+  public GoalError(String name, Map<Referable, Binding> context, Expression expectedType, Concrete.Expression result, List<GeneralError> errors, GoalSolver goalSolver, Concrete.GoalExpression expression) {
     super(Level.GOAL, "Goal" + (name == null ? "" : " " + name), expression);
     this.name = name;
     this.context = new LinkedHashMap<>(context);
     this.expectedType = expectedType;
-    this.typecheckingResult = typecheckingResult;
+    this.result = result;
     this.errors = errors;
-    this.isSolved = isSolved;
+    this.goalSolver = goalSolver;
+  }
+
+  @Override
+  public Concrete.GoalExpression getCauseSourceNode() {
+    return (Concrete.GoalExpression) super.getCauseSourceNode();
   }
 
   @Override
   public Doc getBodyDoc(PrettyPrinterConfig ppConfig) {
     Doc expectedDoc = expectedType == null ? nullDoc() : hang(text("Expected type:"), expectedType.prettyPrint(ppConfig));
-    Doc actualDoc = typecheckingResult == null ? nullDoc() : hang(text(expectedType != null ? "  Actual type:" : "Type:"), termDoc(typecheckingResult.type, ppConfig));
 
     Doc contextDoc;
     if (!context.isEmpty()) {
@@ -75,7 +79,7 @@ public class GoalError extends TypecheckingError {
       errorsDoc = nullDoc();
     }
 
-    return vList(expectedDoc, actualDoc, contextDoc, conditionsDoc, errorsDoc);
+    return vList(expectedDoc, contextDoc, conditionsDoc, errorsDoc);
   }
 
   @Override

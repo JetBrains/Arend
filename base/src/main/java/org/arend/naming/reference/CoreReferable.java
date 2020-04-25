@@ -1,5 +1,6 @@
 package org.arend.naming.reference;
 
+import org.arend.naming.renamer.Renamer;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.jetbrains.annotations.NotNull;
 
@@ -12,9 +13,13 @@ public class CoreReferable implements Referable {
     this.result = result;
   }
 
+  public boolean printExpression() {
+    return myName == null;
+  }
+
   @NotNull
   @Override
   public String textRepresentation() {
-    return myName;
+    return myName == null ? Renamer.UNNAMED : myName;
   }
 }
