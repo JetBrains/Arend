@@ -9,6 +9,7 @@ import org.arend.extImpl.DefinitionRequester;
 import org.arend.frontend.ConcreteReferableProvider;
 import org.arend.frontend.FileLibraryResolver;
 import org.arend.frontend.PositionComparator;
+import org.arend.frontend.group.SimpleNamespaceCommand;
 import org.arend.frontend.parser.ArendParser;
 import org.arend.frontend.parser.BuildVisitor;
 import org.arend.library.Library;
@@ -17,6 +18,7 @@ import org.arend.library.LibraryManager;
 import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.naming.resolving.visitor.ExpressionResolveNameVisitor;
 import org.arend.naming.scope.Scope;
+import org.arend.prelude.PreludeLibrary;
 import org.arend.prelude.PreludeResourceLibrary;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.LibraryArendExtensionProvider;
@@ -31,7 +33,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Scanner;
 
 public class ReplState {
   private final TypecheckerState myTypecheckerState = new SimpleTypecheckerState();
@@ -42,13 +47,15 @@ public class ReplState {
   private final TypecheckingOrderingListener myTypechecking = new TypecheckingOrderingListener(myLibraryManager.getInstanceProviderSet(), myTypecheckerState, ConcreteReferableProvider.INSTANCE, IdReferableConverter.INSTANCE, myErrorReporter, PositionComparator.INSTANCE, new LibraryArendExtensionProvider(myLibraryManager));
   private final ReplLibrary myReplLibrary = new ReplLibrary(myTypecheckerState);
   private final PrettyPrinterConfig myPpConfig = PrettyPrinterConfig.DEFAULT;
-  private final Library myPreludeLibrary = new PreludeResourceLibrary(myTypecheckerState);
 
   public ReplState() {
-    if (!myLibraryManager.loadLibrary(myPreludeLibrary, myTypechecking)) {
+    var preludeLibrary = new PreludeResourceLibrary(myTypecheckerState);
+    if (!myLibraryManager.loadLibrary(preludeLibrary, myTypechecking)) {
       throw new IllegalStateException("[FATAL] Failed to load Prelude");
     }
-    myReplLibrary.addDependency(new LibraryDependency(myPreludeLibrary.getName()));
+    myReplLibrary.addDependency(new LibraryDependency(preludeLibrary.getName()));
+    // FIXME: shouldn't be this one
+    myReplLibrary.setGroup(PreludeLibrary.getPreludeGroup());
     loadReplLibrary();
   }
 
@@ -65,7 +72,6 @@ public class ReplState {
 
   public void runRepl() {
     var scanner = new Scanner(System.in);
-    repl:
     while (true) {
       System.out.print("\u03bb ");
       System.out.flush();
@@ -82,25 +88,33 @@ public class ReplState {
         break;
       else if (line.startsWith(":nf")) {
         var result = checkExpr(line.substring(":nf".length()));
-        if (result == null || checkErrors()) continue;
+        if (result == null) continue;
         System.out.println(result.expression.normalize(NormalizationMode.NF));
       } else if (line.startsWith(":whnf")) {
         var result = checkExpr(line.substring(":whnf".length()));
-        if (result == null || checkErrors()) continue;
+        if (result == null) continue;
         System.out.println(result.expression.normalize(NormalizationMode.WHNF));
       } else if (line.startsWith(":")) {
         System.err.println("[ERROR] Unrecognized command: " + line.substring(1) + ".");
+      } else if (line.contains("\\import") || line.contains("\\open")) {
+        var nsCmd = parseNsCmd(line);
+        if (nsCmd == null || checkErrors()) continue;
+
       } else if (!line.isBlank()) {
         var result = checkExpr(line);
-        if (result == null || checkErrors()) continue;
+        if (result == null) continue;
         System.out.println(result.expression);
       }
     }
   }
 
+  private @Nullable SimpleNamespaceCommand parseNsCmd(String line) {
+    return buildVisitor().visitStatCmd((ArendParser.StatCmdContext) parse(line).statement());
+  }
+
   private void actionType(String line) {
     var result = checkExpr(line);
-    if (result == null || checkErrors()) return;
+    if (result == null) return;
     Expression type = result.expression.getType();
     System.out.println(type == null ? "Cannot synthesize a type, sorry." : type);
   }
@@ -112,15 +126,15 @@ public class ReplState {
   }
 
   private @Nullable Scope scope() {
-    return Optional.ofNullable(myLibraryManager.getAvailableModuleScopeProvider(myReplLibrary).forModule(ReplLibrary.replModulePath))
-        .orElseGet(PreludeResourceLibrary::getPreludeScope);
+    return myLibraryManager.getAvailableModuleScopeProvider(myReplLibrary).forModule(ReplLibrary.replModulePath);
   }
 
   private @Nullable TypecheckingResult checkExpr(@NotNull String text) {
     var expr = preprocessExpr(text);
     if (expr == null || checkErrors()) return null;
-    CheckTypeVisitor visitor = new CheckTypeVisitor(myTypecheckerState, myErrorReporter, null, null);
-    return visitor.checkExpr(expr, null);
+    var result = new CheckTypeVisitor(myTypecheckerState, myErrorReporter, null, null)
+        .checkExpr(expr, null);
+    return checkErrors() ? null : result;
   }
 
   private @Nullable Concrete.Expression preprocessExpr(@NotNull String text) {
@@ -156,7 +170,7 @@ public class ReplState {
     return ReplUtils.createParser(line, ReplLibrary.replModulePath, myErrorReporter);
   }
 
-  public static void main(String[] args) {
+  public static void main(String... args) {
     new ReplState().runRepl();
   }
 }
