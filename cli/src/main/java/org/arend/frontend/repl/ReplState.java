@@ -14,7 +14,6 @@ import org.arend.frontend.parser.BuildVisitor;
 import org.arend.library.Library;
 import org.arend.library.LibraryDependency;
 import org.arend.library.LibraryManager;
-import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.reference.FullModuleReferable;
 import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.naming.resolving.visitor.DefinitionResolveNameVisitor;
@@ -34,7 +33,6 @@ import org.arend.typechecking.instance.provider.InstanceProviderSet;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
-import org.arend.typechecking.visitor.DefinitionTypechecker;
 import org.arend.typechecking.visitor.SyntacticDesugarVisitor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -109,7 +107,7 @@ public class ReplState {
       } else if (definitionEvidence.stream().anyMatch(line::contains)) {
         var group = parseStatements(line);
         if (group == null) continue;
-        ModuleScopeProvider moduleScopeProvider = myReplLibrary.getModuleScopeProvider();
+        var moduleScopeProvider = myReplLibrary.getModuleScopeProvider();
         Scope scope = CachingScope.make(ScopeFactory.forGroup(group, moduleScopeProvider));
         myMergedScopes.add(scope);
         new DefinitionResolveNameVisitor(ConcreteReferableProvider.INSTANCE, myErrorReporter)
@@ -172,7 +170,7 @@ public class ReplState {
   private @Nullable Concrete.Expression preprocessExpr(@NotNull String text) {
     var parser = parse(text);
     if (checkErrors()) return null;
-    Concrete.Expression expr = buildVisitor().visitExpr(parser.expr());
+    var expr = buildVisitor().visitExpr(parser.expr());
     if (checkErrors()) return null;
     expr = expr
         .accept(new ExpressionResolveNameVisitor(ConcreteReferableProvider.INSTANCE,
@@ -187,8 +185,7 @@ public class ReplState {
    */
   private boolean checkErrors() {
     for (GeneralError error : myErrorList)
-      (error.isSevere() ? System.err : System.out)
-          .println(error.getDoc(myPpConfig));
+      (error.isSevere() ? System.err : System.out).println(error.getDoc(myPpConfig));
     boolean hasErrors = !myErrorList.isEmpty();
     myErrorList.clear();
     return hasErrors;
@@ -200,9 +197,5 @@ public class ReplState {
 
   private @NotNull ArendParser parse(String line) {
     return ReplUtils.createParser(line, ReplLibrary.replModulePath, myErrorReporter);
-  }
-
-  public static void main(String... args) {
-    new ReplState().runRepl();
   }
 }

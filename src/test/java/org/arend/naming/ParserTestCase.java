@@ -1,6 +1,5 @@
 package org.arend.naming;
 
-import org.antlr.v4.runtime.*;
 import org.arend.ArendTestCase;
 import org.arend.frontend.parser.*;
 import org.arend.frontend.repl.ReplUtils;
