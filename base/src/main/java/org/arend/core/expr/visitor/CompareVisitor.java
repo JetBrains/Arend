@@ -944,15 +944,18 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     }
 
     for (ClassField field : fields) {
+      if (!field.isProperty() && !classCall1.isImplemented(field) && !classCall2.isImplemented(field)) {
+        return false;
+      }
+    }
+
+    for (ClassField field : fields) {
       if (field.isProperty()) {
         continue;
       }
 
       Expression impl1 = classCall1.getImplementation(field, expr1);
       Expression impl2 = classCall2.getImplementation(field, expr2);
-      if (impl1 == null && impl2 == null) {
-        return false;
-      }
       if (impl1 == null) {
         impl1 = FieldCallExpression.make(field, classCall1.getSortArgument(), expr1);
       }
