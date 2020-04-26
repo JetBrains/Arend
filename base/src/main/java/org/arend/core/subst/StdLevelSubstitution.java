@@ -1,7 +1,7 @@
 package org.arend.core.subst;
 
 import org.arend.core.context.binding.LevelVariable;
-import org.arend.core.context.binding.Variable;
+import org.arend.ext.variable.Variable;
 import org.arend.core.sort.Level;
 
 public class StdLevelSubstitution implements LevelSubstitution {

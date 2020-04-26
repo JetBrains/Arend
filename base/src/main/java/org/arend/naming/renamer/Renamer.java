@@ -1,7 +1,7 @@
 package org.arend.naming.renamer;
 
 import org.arend.core.context.binding.Binding;
-import org.arend.core.context.binding.Variable;
+import org.arend.ext.variable.Variable;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Definition;
 import org.arend.core.expr.AppExpression;
@@ -9,14 +9,16 @@ import org.arend.core.expr.DefCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.ReferenceExpression;
 import org.arend.core.sort.Sort;
+import org.arend.ext.variable.VariableRenamer;
 import org.arend.prelude.Prelude;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-public class Renamer {
+public class Renamer implements VariableRenamer {
   public final static String UNNAMED = "_x";
   private String myUnnamed = UNNAMED;
   private int myBase = 1;
@@ -29,8 +31,12 @@ public class Renamer {
     return name == null || name.isEmpty() || name.equals("_") ? unnamed : name;
   }
 
-  public String getValidName(Variable var) {
+  public String getValidName(@NotNull Variable var) {
     String name = var.getName();
+    if (!myForceTypeSCName && name != null && !name.isEmpty() && !name.equals("_")) {
+      return name;
+    }
+
     Expression typeExpr = null;
     if (var instanceof Binding)
       typeExpr = ((Binding) var).getTypeExpr();
@@ -38,8 +44,7 @@ public class Renamer {
       typeExpr = ((ClassField) var).getType(Sort.STD).getCodomain();
 
     Character c = typeExpr != null ? getTypeStartingCharacter(typeExpr): null;
-
-    if (name != null && !name.isEmpty() && !name.equals("_") && (c == null || !myForceTypeSCName)) {
+    if (c == null && name != null && !name.isEmpty() && !name.equals("_")) {
       return name;
     }
 
@@ -102,11 +107,8 @@ public class Renamer {
     }
   }
 
-  public String generateFreshName(Variable var, Collection<? extends Variable> variables) {
+  public @NotNull String generateFreshName(@NotNull Variable var, @NotNull Collection<? extends Variable> variables) {
     String name = getValidName(var);
-    if (name == null) {
-      return null;
-    }
 
     String prefix = null;
     Set<Integer> indices = Collections.emptySet();

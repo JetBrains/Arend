@@ -1,6 +1,7 @@
 package org.arend.naming.renamer;
 
-import org.arend.core.context.binding.Variable;
+import org.arend.ext.variable.Variable;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -20,7 +21,7 @@ public class StringRenamer extends Renamer {
   }
 
   @Override
-  public String generateFreshName(Variable var, Collection<? extends Variable> variables) {
+  public @NotNull String generateFreshName(@NotNull Variable var, @NotNull Collection<? extends Variable> variables) {
     String newName = super.generateFreshName(var, variables);
     addNewName(var, newName);
     return newName;

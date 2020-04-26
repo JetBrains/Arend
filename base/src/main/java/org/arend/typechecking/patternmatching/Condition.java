@@ -1,6 +1,6 @@
 package org.arend.typechecking.patternmatching;
 
-import org.arend.core.context.binding.Variable;
+import org.arend.ext.variable.Variable;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.visitor.CompareVisitor;
 import org.arend.core.subst.ExprSubstitution;

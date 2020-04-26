@@ -2,7 +2,7 @@ package org.arend.core.expr.visitor;
 
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.EvaluatingBinding;
-import org.arend.core.context.binding.Variable;
+import org.arend.ext.variable.Variable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.definition.ClassField;

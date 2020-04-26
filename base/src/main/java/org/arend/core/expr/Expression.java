@@ -1,7 +1,7 @@
 package org.arend.core.expr;
 
 import org.arend.core.context.binding.Binding;
-import org.arend.core.context.binding.Variable;
+import org.arend.ext.variable.Variable;
 import org.arend.core.context.binding.inference.BaseInferenceVariable;
 import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.context.param.DependentLink;
@@ -145,8 +145,7 @@ public abstract class Expression implements Body, CoreExpression {
 
   @Override
   public @Nullable CoreBinding findFreeBindings(@NotNull Set<? extends CoreBinding> bindings) {
-    //noinspection unchecked
-    return (CoreBinding) accept(new FindBindingVisitor((Set<Variable>) (Set<?>) bindings), null);
+    return (CoreBinding) accept(new FindBindingVisitor(bindings), null);
   }
 
   public Expression copy() {
@@ -208,10 +207,10 @@ public abstract class Expression implements Body, CoreExpression {
     }
     ExprSubstitution substitution = new ExprSubstitution();
     for (Map.Entry<? extends CoreBinding, ? extends CoreExpression> entry : map.entrySet()) {
-      if (!(entry.getKey() instanceof Variable && entry.getValue() instanceof Expression)) {
+      if (!(entry.getValue() instanceof Expression)) {
         throw new IllegalArgumentException();
       }
-      substitution.add((Variable) entry.getKey(), (Expression) entry.getValue());
+      substitution.add(entry.getKey(), (Expression) entry.getValue());
     }
     return new UncheckedExpressionImpl(accept(new SubstVisitor(substitution, LevelSubstitution.EMPTY), null));
   }

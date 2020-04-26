@@ -1,6 +1,6 @@
 package org.arend.typechecking.covariance;
 
-import org.arend.core.context.binding.Variable;
+import org.arend.ext.variable.Variable;
 import org.arend.core.elimtree.Body;
 import org.arend.core.expr.*;
 import org.arend.core.expr.visitor.VoidExpressionVisitor;

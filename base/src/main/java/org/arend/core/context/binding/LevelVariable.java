@@ -1,5 +1,7 @@
 package org.arend.core.context.binding;
 
+import org.arend.ext.variable.Variable;
+
 public interface LevelVariable extends Variable {
   enum LvlType { PLVL, HLVL }
   LvlType getType();

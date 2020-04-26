@@ -1,6 +1,5 @@
 package org.arend.core.definition;
 
-import org.arend.core.context.binding.Variable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.expr.Expression;
@@ -12,8 +11,8 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Collections;
 import java.util.List;
 
-public abstract class Definition implements Variable, CoreDefinition {
-  private TCReferable myReferable;
+public abstract class Definition implements CoreDefinition {
+  private final TCReferable myReferable;
   private TypeCheckingStatus myStatus;
   private UniverseKind myUniverseKind = UniverseKind.NO_UNIVERSES;
 

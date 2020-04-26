@@ -2,12 +2,13 @@ package org.arend.ext.core.definition;
 
 import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.reference.ArendRef;
+import org.arend.ext.variable.Variable;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a core definition.
  */
-public interface CoreDefinition {
+public interface CoreDefinition extends Variable {
   /**
    * Returns the underlying reference of this definition.
    */

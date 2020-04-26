@@ -5,7 +5,7 @@ import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.subst.InPlaceLevelSubstVisitor;
 import org.arend.ext.core.context.CoreBinding;
 
-public interface Binding extends Variable, CoreBinding {
+public interface Binding extends CoreBinding {
   @Override Expression getTypeExpr();
   void strip(StripVisitor stripVisitor);
   void subst(InPlaceLevelSubstVisitor substVisitor);

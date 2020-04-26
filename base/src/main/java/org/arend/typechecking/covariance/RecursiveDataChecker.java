@@ -1,6 +1,6 @@
 package org.arend.typechecking.covariance;
 
-import org.arend.core.context.binding.Variable;
+import org.arend.ext.variable.Variable;
 import org.arend.core.definition.DataDefinition;
 import org.arend.core.expr.Expression;
 import org.arend.ext.error.ErrorReporter;

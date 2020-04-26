@@ -2,7 +2,7 @@ package org.arend.ext;
 
 import org.arend.ext.concrete.ConcreteFactory;
 import org.arend.ext.typechecking.GoalSolver;
-import org.arend.ext.typechecking.MetaDefinition;
+import org.arend.ext.variable.VariableRenamerFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -40,6 +40,11 @@ public interface ArendExtension {
    * Can be used to get access to definitions.
    */
   default void setDefinitionProvider(@NotNull DefinitionProvider definitionProvider) {}
+
+  /**
+   * Can be used to get access to a {@link org.arend.ext.variable.VariableRenamer}.
+   */
+  default void setVariableRenamerFactory(@NotNull VariableRenamerFactory factory) {}
 
   /**
    * This method is invoked last and can be used to initialize the extension.
