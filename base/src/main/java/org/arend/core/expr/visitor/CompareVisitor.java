@@ -134,7 +134,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     } else if (expr1 instanceof ProjExpression) {
       check = expr2 instanceof ProjExpression && ((ProjExpression) expr1).getField() == ((ProjExpression) expr2).getField();
     } else {
-      check = false;
+      check = !myNormalCompare || !myNormalize;
     }
 
     if (check) {
@@ -977,7 +977,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
 
   @Override
   public Boolean visitLet(LetExpression expr1, Expression expr2, Expression type) {
-    throw new IllegalStateException();
+    return false;
   }
 
   public boolean compareLists(List<? extends Expression> list1, List<? extends Expression> list2, DependentLink link, Definition definition, ExprSubstitution substitution) {
