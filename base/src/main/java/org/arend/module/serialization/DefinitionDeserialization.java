@@ -320,6 +320,9 @@ public class DefinitionDeserialization {
       case SFUNC:
         kind = CoreFunctionDefinition.Kind.SFUNC;
         break;
+      case INSTANCE:
+        kind = CoreFunctionDefinition.Kind.INSTANCE;
+        break;
       default:
         kind = CoreFunctionDefinition.Kind.FUNC;
     }

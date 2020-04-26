@@ -125,6 +125,7 @@ message Definition {
         FUNC = 0;
         SFUNC = 1;
         LEMMA = 2;
+        INSTANCE = 3;
     }
 
     enum TypeClassParameterKind {

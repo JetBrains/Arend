@@ -270,6 +270,9 @@ public class DefinitionSerialization {
       case SFUNC:
         kind = DefinitionProtos.Definition.FunctionKind.SFUNC;
         break;
+      case INSTANCE:
+        kind = DefinitionProtos.Definition.FunctionKind.INSTANCE;
+        break;
       default:
         kind = DefinitionProtos.Definition.FunctionKind.FUNC;
     }

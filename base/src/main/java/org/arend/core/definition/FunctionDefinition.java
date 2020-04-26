@@ -29,7 +29,7 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
   private List<Boolean> myGoodThisParameters = Collections.emptyList();
   private List<TypeClassParameterKind> myTypeClassParameters = Collections.emptyList();
   private int myVisibleParameter = -1;
-  private ParametersLevels<ParametersLevel> myParametersLevels = new ParametersLevels<>();
+  private final ParametersLevels<ParametersLevel> myParametersLevels = new ParametersLevels<>();
 
   public FunctionDefinition(TCReferable referable) {
     super(referable, TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
@@ -38,7 +38,7 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
 
   @Override
   public Body getBody() {
-    return myKind != Kind.FUNC || myBodyIsHidden ? null : myBody;
+    return isSFunc() || myBodyIsHidden ? null : myBody;
   }
 
   @Override
@@ -59,7 +59,7 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
   }
 
   public boolean isSFunc() {
-    return myKind != Kind.FUNC;
+    return myKind == Kind.SFUNC || myKind == Kind.LEMMA;
   }
 
   @NotNull

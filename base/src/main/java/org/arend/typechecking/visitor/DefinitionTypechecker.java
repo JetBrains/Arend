@@ -645,7 +645,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       typedDef.setParameters(list.getFirst());
       typedDef.setResultType(expectedType);
       typedDef.setStatus(Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING);
-      typedDef.setKind(isSFunc ? (kind == FunctionKind.LEMMA ? CoreFunctionDefinition.Kind.LEMMA : CoreFunctionDefinition.Kind.SFUNC) : CoreFunctionDefinition.Kind.FUNC);
+      typedDef.setKind(isSFunc ? (kind == FunctionKind.LEMMA ? CoreFunctionDefinition.Kind.LEMMA : CoreFunctionDefinition.Kind.SFUNC) : kind == FunctionKind.INSTANCE ? CoreFunctionDefinition.Kind.INSTANCE : CoreFunctionDefinition.Kind.FUNC);
     }
 
     if (newDef) {
@@ -859,7 +859,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
                 typedDef.setResultType(result.proj1);
               } else {
                 typedDef.setResultType(result.proj2);
-                if (typedDef.getKind() != CoreFunctionDefinition.Kind.FUNC && result.proj1.getImplementedHere().size() != result.proj2.getImplementedHere().size()) {
+                if (typedDef.isSFunc() && result.proj1.getImplementedHere().size() != result.proj2.getImplementedHere().size()) {
                   typedDef.setBody(new NewExpression(null, result.proj1));
                 }
               }
