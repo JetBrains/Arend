@@ -7,13 +7,23 @@ public class Disableable {
     myEnabled = false;
   }
 
-  protected void checkEnabled(String message) {
+  public void checkEnabled(String message) {
     if (!myEnabled) {
       throw new IllegalStateException(message);
     }
   }
 
-  protected void checkEnabled() {
+  public void checkEnabled() {
     checkEnabled(getClass() + " was disabled");
+  }
+
+  public void checkAndDisable() {
+    checkEnabled();
+    disable();
+  }
+
+  public void checkAndDisable(String message) {
+    checkEnabled(message);
+    disable();
   }
 }

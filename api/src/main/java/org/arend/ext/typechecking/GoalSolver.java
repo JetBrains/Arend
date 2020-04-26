@@ -3,8 +3,11 @@ package org.arend.ext.typechecking;
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.concrete.expr.ConcreteGoalExpression;
 import org.arend.ext.core.expr.CoreExpression;
+import org.arend.ext.ui.ArendUI;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.function.Consumer;
 
 /**
  * A goal solver provides two functions {@link #fillGoal} and {@link #trySolve}.
@@ -41,8 +44,21 @@ public interface GoalSolver {
   /**
    * Invoked on a user's request.
    * This method is invoked only if {@link #fillGoal} fails.
+   *
+   * @param typechecker     a type-checker that can be used to solve the goal
+   * @param goalExpression  the original goal expression
+   * @param expectedType    the original expected type
+   * @param ui              can be used to interact with the user
+   * @param callback        a callback for the result;
+   *                        if the callback is invoked on {@code null}, an error message will be shown
    */
-  default @Nullable ConcreteExpression trySolve(@NotNull ExpressionTypechecker typechecker, @NotNull ConcreteGoalExpression goalExpression, @Nullable CoreExpression expectedType) {
-    return null;
+  default void trySolve(
+    @NotNull ExpressionTypechecker typechecker,
+    @NotNull ConcreteGoalExpression goalExpression,
+    @Nullable CoreExpression expectedType,
+    @NotNull ArendUI ui,
+    @NotNull Consumer<@Nullable ConcreteExpression> callback) {
+
+    callback.accept(null);
   }
 }
