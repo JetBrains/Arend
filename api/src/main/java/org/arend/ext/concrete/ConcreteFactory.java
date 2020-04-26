@@ -28,6 +28,7 @@ public interface ConcreteFactory {
   @NotNull ConcreteExpression universe(@Nullable ConcreteLevel pLevel, @Nullable ConcreteLevel hLevel);
   @NotNull ConcreteExpression hole();
   @NotNull ConcreteExpression goal(@Nullable String name, @Nullable ConcreteExpression expression);
+  @NotNull ConcreteExpression goal();
   @NotNull ConcreteExpression tuple(@NotNull ConcreteExpression... expressions);
   @NotNull ConcreteExpression tuple(@NotNull Collection<? extends ConcreteExpression> expressions);
   @NotNull ConcreteExpression sigma(@NotNull ConcreteParameter... parameters);

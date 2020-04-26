@@ -10,11 +10,13 @@ import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.pattern.ExpressionPattern;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.InPlaceLevelSubstVisitor;
+import org.arend.ext.core.definition.CoreConstructor;
 import org.arend.ext.core.expr.CoreDataCallExpression;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -78,6 +80,34 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
   @Override
   public DataCallExpression normalize(@NotNull NormalizationMode mode) {
     return NormalizeVisitor.INSTANCE.visitDataCall(this, mode);
+  }
+
+  @Override
+  public @Nullable List<CoreConstructor> computeMatchedConstructors() {
+    List<ConCallExpression> conCalls = getMatchedConstructors();
+    if (conCalls == null) {
+      return null;
+    }
+
+    List<CoreConstructor> constructors = new ArrayList<>();
+    for (ConCallExpression conCall : conCalls) {
+      constructors.add(conCall.getDefinition());
+    }
+    return constructors;
+  }
+
+  @Override
+  public @Nullable List<ConstructorWithDataArguments> computeMatchedConstructorsWithDataArguments() {
+    List<ConCallExpression> conCalls = getMatchedConstructors();
+    if (conCalls == null) {
+      return null;
+    }
+
+    List<ConstructorWithDataArguments> constructors = new ArrayList<>();
+    for (ConCallExpression conCall : conCalls) {
+      constructors.add(new ConstructorWithDataArguments(conCall.getDefinition(), conCall.getDataTypeArguments()));
+    }
+    return constructors;
   }
 
   public List<ConCallExpression> getMatchedConstructors() {

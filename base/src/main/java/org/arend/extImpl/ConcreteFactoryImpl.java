@@ -143,6 +143,12 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
 
   @NotNull
   @Override
+  public ConcreteExpression goal() {
+    return new Concrete.GoalExpression(myData, null, null);
+  }
+
+  @NotNull
+  @Override
   public ConcreteExpression tuple(@NotNull ConcreteExpression... expressions) {
     List<Concrete.Expression> fields = new ArrayList<>(expressions.length);
     for (ConcreteExpression expression : expressions) {

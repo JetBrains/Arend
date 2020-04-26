@@ -29,7 +29,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
   private final CoerceData myCoerce = new CoerceData(this);
   private Set<ClassField> myGoodThisFields = Collections.emptySet();
   private Set<ClassField> myTypeClassParameters = Collections.emptySet();
-  private ParametersLevels<ParametersLevel> myParametersLevels = new ParametersLevels<>();
+  private final ParametersLevels<ParametersLevel> myParametersLevels = new ParametersLevels<>();
   private FunctionDefinition mySquasher;
 
   public ClassDefinition(TCClassReferable referable) {
@@ -210,6 +210,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
   }
 
   @NotNull
+  @Override
   public Set<? extends ClassField> getFields() {
     return myFields;
   }

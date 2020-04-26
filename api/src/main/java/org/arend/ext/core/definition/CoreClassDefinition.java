@@ -12,6 +12,7 @@ import java.util.Set;
 
 public interface CoreClassDefinition extends CoreDefinition {
   @NotNull Set<? extends CoreClassDefinition> getSuperClasses();
+  @NotNull Set<? extends CoreClassField> getFields();
   @NotNull List<? extends CoreClassField> getPersonalFields();
   @NotNull Collection<? extends Map.Entry<? extends CoreClassField, ? extends CoreAbsExpression>> getImplemented();
   @NotNull Collection<? extends Map.Entry<? extends CoreClassField, ? extends CoreAbsExpression>> getOverriddenFields();
