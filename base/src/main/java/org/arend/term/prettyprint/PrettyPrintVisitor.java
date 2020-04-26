@@ -20,7 +20,7 @@ import org.arend.term.concrete.Concrete.ReferenceExpression;
 import java.util.*;
 
 public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence, Void>, ConcreteLevelExpressionVisitor<Precedence, Void>, ConcreteDefinitionVisitor<Void, Void> {
-  public static final int INDENT = 4;
+  public static final int INDENT = 2;
   public static final int MAX_LEN = 120;
   public static final float SMALL_RATIO = (float) 0.1;
 
