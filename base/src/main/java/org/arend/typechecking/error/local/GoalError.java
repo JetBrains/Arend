@@ -9,6 +9,7 @@ import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.ext.typechecking.GoalSolver;
 import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
+import org.arend.typechecking.TypecheckingContext;
 import org.arend.typechecking.patternmatching.Condition;
 
 import java.util.*;
@@ -17,17 +18,17 @@ import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public class GoalError extends TypecheckingError {
   public final String name;
-  public final Map<Referable, Binding> context;
+  public final TypecheckingContext typecheckingContext;
   public final Expression expectedType;
   public final Concrete.Expression result;
   public final List<GeneralError> errors;
   public final GoalSolver goalSolver;
   private List<Condition> myConditions = Collections.emptyList();
 
-  public GoalError(String name, Map<Referable, Binding> context, Expression expectedType, Concrete.Expression result, List<GeneralError> errors, GoalSolver goalSolver, Concrete.GoalExpression expression) {
+  public GoalError(String name, TypecheckingContext typecheckingContext, Expression expectedType, Concrete.Expression result, List<GeneralError> errors, GoalSolver goalSolver, Concrete.GoalExpression expression) {
     super(Level.GOAL, "Goal" + (name == null ? "" : " " + name), expression);
     this.name = name;
-    this.context = new LinkedHashMap<>(context);
+    this.typecheckingContext = typecheckingContext;
     this.expectedType = expectedType;
     this.result = result;
     this.errors = errors;
@@ -44,6 +45,7 @@ public class GoalError extends TypecheckingError {
     Doc expectedDoc = expectedType == null ? nullDoc() : hang(text("Expected type:"), expectedType.prettyPrint(ppConfig));
 
     Doc contextDoc;
+    Map<Referable, Binding> context = typecheckingContext == null ? Collections.emptyMap() : typecheckingContext.localContext;
     if (!context.isEmpty()) {
       List<Doc> contextDocs = new ArrayList<>(context.size());
       for (Map.Entry<Referable, Binding> entry : context.entrySet()) {

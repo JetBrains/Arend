@@ -331,7 +331,7 @@ public class Matchers {
       protected boolean matchesSafely(GeneralError error, Description description) {
         if (error instanceof GoalError) {
           description.appendText("goal with ");
-          int size = ((GoalError) error).context.size();
+          int size = ((GoalError) error).typecheckingContext.localContext.size();
           if (size == 0) {
             description.appendText("empty context");
           } else {

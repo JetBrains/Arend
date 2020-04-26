@@ -42,7 +42,7 @@ public interface GoalSolver {
    * Invoked on a user's request.
    * This method is invoked only if {@link #fillGoal} fails.
    */
-  default @Nullable ConcreteExpression trySolve(@NotNull ConcreteGoalExpression goalExpression, @Nullable CoreExpression expectedType) {
+  default @Nullable ConcreteExpression trySolve(@NotNull ExpressionTypechecker typechecker, @NotNull ConcreteGoalExpression goalExpression, @Nullable CoreExpression expectedType) {
     return null;
   }
 }

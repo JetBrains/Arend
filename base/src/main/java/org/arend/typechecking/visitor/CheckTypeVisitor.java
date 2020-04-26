@@ -2046,7 +2046,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       throw new IllegalArgumentException();
     }
 
-    GoalError error = new GoalError(expr.getName(), context, expectedType, goalResult == null ? null : (Concrete.Expression) goalResult.concreteExpression, errors, solver, expr);
+    GoalError error = new GoalError(expr.getName(), saveTypecheckingContext(), expectedType, goalResult == null ? null : (Concrete.Expression) goalResult.concreteExpression, errors, solver, expr);
     errorReporter.report(error);
     Expression result = new GoalErrorExpression(goalResult == null || goalResult.typedExpression == null ? null : (Expression) goalResult.typedExpression.getExpression(), error);
     return new TypecheckingResult(result, expectedType != null && !(expectedType instanceof Type && ((Type) expectedType).isOmega()) ? expectedType : result);
