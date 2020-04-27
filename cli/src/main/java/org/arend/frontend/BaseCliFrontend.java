@@ -315,6 +315,7 @@ public abstract class BaseCliFrontend {
       }
 
       if (numWithErrors > 0) {
+        myExitWithError = true;
         System.out.println("Number of modules with errors: " + numWithErrors);
       }
       if (numWithGoals > 0) {
@@ -392,11 +393,12 @@ public abstract class BaseCliFrontend {
       PrettyPrinterConfigWithRenamer ppConfig = new PrettyPrinterConfigWithRenamer(EmptyScope.INSTANCE);
       if (error instanceof GoalError) {
         ppConfig.expressionFlags = EnumSet.of(PrettyPrinterFlag.SHOW_FIELD_INSTANCE);
+      } else {
+        myExitWithError = true;
       }
       String errorText = error.getDoc(ppConfig).toString();
 
       if (error.isSevere()) {
-        myExitWithError = true;
         System.err.println(errorText);
         System.err.flush();
       } else {
