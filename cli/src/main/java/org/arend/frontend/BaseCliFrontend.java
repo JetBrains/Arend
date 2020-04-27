@@ -3,6 +3,7 @@ package org.arend.frontend;
 import org.apache.commons.cli.*;
 import org.arend.core.definition.Definition;
 import org.arend.error.ListErrorReporter;
+import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.module.ModulePath;
 import org.arend.ext.prettyprinting.PrettyPrinterFlag;
@@ -44,9 +45,13 @@ public abstract class BaseCliFrontend {
 
   // Status information
   private boolean myExitWithError = false;
+  private final ErrorReporter mySystemErrErrorReporter = error -> {
+    System.err.println(error);
+    myExitWithError = true;
+  };
 
   // Libraries
-  private final FileLibraryResolver myLibraryResolver = new FileLibraryResolver(new ArrayList<>(), myTypecheckerState, System.err::println);
+  private final FileLibraryResolver myLibraryResolver = new FileLibraryResolver(new ArrayList<>(), myTypecheckerState, mySystemErrErrorReporter);
   private final LibraryManager myLibraryManager = new MyLibraryManager();
 
   private static String timeToString(long time) {
@@ -65,7 +70,7 @@ public abstract class BaseCliFrontend {
     private final Stack<Long> times = new Stack<>();
 
     MyLibraryManager() {
-      super(myLibraryResolver, new InstanceProviderSet(), myErrorReporter, System.err::println, DefinitionRequester.INSTANCE);
+      super(myLibraryResolver, new InstanceProviderSet(), myErrorReporter, mySystemErrErrorReporter, DefinitionRequester.INSTANCE);
     }
 
     @Override
@@ -161,6 +166,7 @@ public abstract class BaseCliFrontend {
 
       return cmdLine;
     } catch (ParseException e) {
+      myExitWithError = true;
       System.err.println(e.getMessage());
       return null;
     }
@@ -325,7 +331,7 @@ public abstract class BaseCliFrontend {
 
       // Persist updated modules
       if (library.supportsPersisting()) {
-        library.persistUpdatedModules(System.err::println);
+        library.persistUpdatedModules(mySystemErrErrorReporter);
         library.clearUpdateModules();
       }
 
@@ -393,7 +399,8 @@ public abstract class BaseCliFrontend {
       PrettyPrinterConfigWithRenamer ppConfig = new PrettyPrinterConfigWithRenamer(EmptyScope.INSTANCE);
       if (error instanceof GoalError) {
         ppConfig.expressionFlags = EnumSet.of(PrettyPrinterFlag.SHOW_FIELD_INSTANCE);
-      } else {
+      }
+      if (error.level == GeneralError.Level.ERROR) {
         myExitWithError = true;
       }
       String errorText = error.getDoc(ppConfig).toString();
