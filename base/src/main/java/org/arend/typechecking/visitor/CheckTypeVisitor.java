@@ -2029,15 +2029,15 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
   @Override
   public TypecheckingResult visitGoal(Concrete.GoalExpression expr, Expression expectedType) {
     List<GeneralError> errors = Collections.emptyList();
-    GoalSolver.FillGoalResult goalResult = null;
-    GoalSolver solver = myArendExtension == null ? null : myArendExtension.getGoalSolver();
-    if (expr.getExpression() != null) {
+    GoalSolver.CheckGoalResult goalResult = null;
+    GoalSolver solver = expr.goalSolver != null ? expr.goalSolver : myArendExtension != null ? myArendExtension.getGoalSolver() : null;
+    if (expr.getExpression() != null || solver != null) {
       errors = new ArrayList<>();
       goalResult = withErrorReporter(new ListErrorReporter(errors), tc -> {
         if (solver == null) {
-          return new GoalSolver.FillGoalResult(expr.getExpression(), checkExpr(expr.getExpression(), expectedType));
+          return new GoalSolver.CheckGoalResult(expr.getExpression(), checkExpr(expr.getExpression(), expectedType));
         } else {
-          return solver.fillGoal(tc, expr, expectedType);
+          return solver.checkGoal(tc, expr, expectedType);
         }
       });
     }

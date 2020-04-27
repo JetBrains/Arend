@@ -12,6 +12,7 @@ import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.ext.prettyprinting.doc.DocFactory;
 import org.arend.ext.reference.ArendRef;
 import org.arend.ext.reference.Precedence;
+import org.arend.ext.typechecking.GoalSolver;
 import org.arend.naming.reference.*;
 import org.arend.term.ClassFieldKind;
 import org.arend.term.Fixity;
@@ -657,11 +658,20 @@ public final class Concrete {
     public static final byte PREC = 12;
     private final String myName;
     public Expression expression;
+    public final GoalSolver goalSolver;
 
     public GoalExpression(Object data, String name, Expression expression) {
       super(data);
       myName = name;
       this.expression = expression;
+      this.goalSolver = null;
+    }
+
+    public GoalExpression(Object data, String name, Expression expression, GoalSolver goalSolver) {
+      super(data);
+      myName = name;
+      this.expression = expression;
+      this.goalSolver = goalSolver;
     }
 
     public String getName() {

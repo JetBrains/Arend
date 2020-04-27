@@ -10,16 +10,16 @@ import org.jetbrains.annotations.Nullable;
 import java.util.function.Consumer;
 
 /**
- * A goal solver provides two functions {@link #fillGoal} and {@link #trySolve}.
+ * A goal solver provides two functions {@link #checkGoal} and {@link #trySolve}.
  * The former is usually used to typecheck the expression in the goal and apply some simple transformations to it.
  * The latter can be used to do more complicated computations, proof search, and interaction with the user.
  */
 public interface GoalSolver {
-  class FillGoalResult {
+  class CheckGoalResult {
     public final @Nullable ConcreteExpression concreteExpression;
     public final @Nullable TypedExpression typedExpression;
 
-    public FillGoalResult(@Nullable ConcreteExpression concreteExpression, @Nullable TypedExpression typedExpression) {
+    public CheckGoalResult(@Nullable ConcreteExpression concreteExpression, @Nullable TypedExpression typedExpression) {
       this.concreteExpression = concreteExpression;
       this.typedExpression = typedExpression;
     }
@@ -27,11 +27,10 @@ public interface GoalSolver {
 
   /**
    * Invoked immediately on the goal.
-   * The result will be used to fill the goal.
    */
-  default @NotNull FillGoalResult fillGoal(@NotNull ExpressionTypechecker typechecker, @NotNull ConcreteGoalExpression goalExpression, @Nullable CoreExpression expectedType) {
+  default @NotNull CheckGoalResult checkGoal(@NotNull ExpressionTypechecker typechecker, @NotNull ConcreteGoalExpression goalExpression, @Nullable CoreExpression expectedType) {
     ConcreteExpression expr = goalExpression.getExpression();
-    return new FillGoalResult(expr, expr == null ? null : typechecker.typecheck(expr, expectedType));
+    return new CheckGoalResult(expr, expr == null ? null : typechecker.typecheck(expr, expectedType));
   }
 
   /**
@@ -43,7 +42,7 @@ public interface GoalSolver {
 
   /**
    * Invoked on a user's request.
-   * This method is invoked only if {@link #fillGoal} fails.
+   * This method is invoked only if {@link #checkGoal} fails and {@link #willTrySolve} returns true.
    *
    * @param typechecker     a type-checker that can be used to solve the goal
    * @param goalExpression  the original goal expression

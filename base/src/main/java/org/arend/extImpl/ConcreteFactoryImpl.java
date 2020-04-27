@@ -9,6 +9,7 @@ import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.reference.ArendRef;
 import org.arend.ext.reference.Precedence;
+import org.arend.ext.typechecking.GoalSolver;
 import org.arend.ext.typechecking.TypedExpression;
 import org.arend.ext.typechecking.MetaDefinition;
 import org.arend.naming.reference.CoreReferable;
@@ -130,6 +131,14 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
   @Override
   public ConcreteExpression hole() {
     return new Concrete.HoleExpression(myData);
+  }
+
+  @Override
+  public @NotNull ConcreteExpression goal(@Nullable String name, @Nullable ConcreteExpression expression, @NotNull GoalSolver goalSolver) {
+    if (!(expression == null || expression instanceof Concrete.Expression)) {
+      throw new IllegalArgumentException();
+    }
+    return new Concrete.GoalExpression(myData, name, (Concrete.Expression) expression, goalSolver);
   }
 
   @NotNull

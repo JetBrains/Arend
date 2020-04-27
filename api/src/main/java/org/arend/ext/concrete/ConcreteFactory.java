@@ -5,6 +5,7 @@ import org.arend.ext.concrete.expr.ConcreteCaseArgument;
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.reference.ArendRef;
+import org.arend.ext.typechecking.GoalSolver;
 import org.arend.ext.typechecking.TypedExpression;
 import org.arend.ext.typechecking.MetaDefinition;
 import org.jetbrains.annotations.NotNull;
@@ -28,6 +29,7 @@ public interface ConcreteFactory {
   @NotNull ConcreteExpression universe(@Nullable ConcreteLevel pLevel, @Nullable ConcreteLevel hLevel);
   @NotNull ConcreteExpression hole();
   @NotNull ConcreteExpression goal(@Nullable String name, @Nullable ConcreteExpression expression);
+  @NotNull ConcreteExpression goal(@Nullable String name, @Nullable ConcreteExpression expression, @NotNull GoalSolver goalSolver);
   @NotNull ConcreteExpression goal();
   @NotNull ConcreteExpression tuple(@NotNull ConcreteExpression... expressions);
   @NotNull ConcreteExpression tuple(@NotNull Collection<? extends ConcreteExpression> expressions);
