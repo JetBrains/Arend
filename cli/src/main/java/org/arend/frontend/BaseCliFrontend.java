@@ -42,6 +42,9 @@ public abstract class BaseCliFrontend {
   private final ListErrorReporter myErrorReporter = new ListErrorReporter();
   private final Map<ModulePath, GeneralError.Level> myModuleResults = new LinkedHashMap<>();
 
+  // Status information
+  private boolean myExitWithError = false;
+
   // Libraries
   private final FileLibraryResolver myLibraryResolver = new FileLibraryResolver(new ArrayList<>(), myTypecheckerState, System.err::println);
   private final LibraryManager myLibraryManager = new MyLibraryManager();
@@ -125,6 +128,10 @@ public abstract class BaseCliFrontend {
     }
   }
 
+  public boolean isExitWithError() {
+    return myExitWithError;
+  }
+
   private CommandLine parseArgs(String[] args) {
     try {
       Options cmdOptions = new Options();
@@ -179,6 +186,7 @@ public abstract class BaseCliFrontend {
         if (Files.isDirectory(libDir)) {
           myLibraryResolver.addLibraryDirectory(libDir);
         } else {
+          myExitWithError = true;
           System.err.println("[ERROR] " + libDir + " is not a directory");
         }
       }
@@ -192,6 +200,7 @@ public abstract class BaseCliFrontend {
         if (FileUtils.isLibraryName(libString)) {
           libraryDependencies.add(new LibraryDependency(libString));
         } else {
+          myExitWithError = true;
           System.err.println(LibraryError.illegalName(libString));
         }
       }
@@ -387,6 +396,7 @@ public abstract class BaseCliFrontend {
       String errorText = error.getDoc(ppConfig).toString();
 
       if (error.isSevere()) {
+        myExitWithError = true;
         System.err.println(errorText);
         System.err.flush();
       } else {
