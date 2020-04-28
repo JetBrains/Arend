@@ -1,4 +1,4 @@
-package org.arend.frontend.repl;
+package org.arend.repl;
 
 import org.arend.ext.module.ModulePath;
 import org.arend.library.BaseLibrary;

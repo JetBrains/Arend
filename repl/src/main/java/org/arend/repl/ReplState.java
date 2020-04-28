@@ -1,4 +1,4 @@
-package org.arend.frontend.repl;
+package org.arend.repl;
 
 import org.arend.core.expr.Expression;
 import org.arend.error.ListErrorReporter;
