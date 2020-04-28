@@ -37,12 +37,12 @@ public interface ReplApi {
 
   /**
    * @param expr input concrete expression.
-   * @see this#preprocessExpr(String) to obtain concrete expression from text
+   * @see ReplApi#preprocessExpr(String)
    */
   @Nullable TypecheckingResult checkExpr(@NotNull Concrete.Expression expr, @Nullable Expression expectedType);
 
   /**
-   * @see this#checkExpr(Concrete.Expression, Expression)
+   * @see ReplApi#checkExpr(Concrete.Expression, Expression)
    */
   @Nullable Concrete.Expression preprocessExpr(@NotNull String text);
 

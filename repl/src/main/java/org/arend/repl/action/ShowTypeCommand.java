@@ -2,13 +2,20 @@ package org.arend.repl.action;
 
 import org.arend.core.expr.Expression;
 import org.arend.repl.ReplApi;
+import org.jetbrains.annotations.Nls;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Scanner;
 
 public final class ShowTypeCommand extends ReplCommand {
-  public ShowTypeCommand(@NotNull String command) {
+  public ShowTypeCommand(@NotNull @NonNls String command) {
     super(command);
+  }
+
+  @Override
+  protected @Nls(capitalization = Nls.Capitalization.Sentence) @NotNull String help() {
+    return "Show the synthesized type of a given expression";
   }
 
   @Override

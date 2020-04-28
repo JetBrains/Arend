@@ -2,6 +2,8 @@ package org.arend.repl.action;
 
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.repl.ReplApi;
+import org.jetbrains.annotations.Nls;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Scanner;
@@ -9,7 +11,12 @@ import java.util.Scanner;
 public final class NormalizeCommand extends ReplCommand {
   private final @NotNull NormalizationMode myMode;
 
-  public NormalizeCommand(@NotNull String command, @NotNull NormalizationMode mode) {
+  @Override
+  protected @Nls(capitalization = Nls.Capitalization.Sentence) @NotNull String help() {
+    return "Normalize the given expression into " + myMode.name();
+  }
+
+  public NormalizeCommand(@NotNull @NonNls String command, @NotNull NormalizationMode mode) {
     super(command);
     myMode = mode;
   }

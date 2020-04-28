@@ -35,6 +35,7 @@ import org.arend.typechecking.provider.ConcreteProvider;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.arend.typechecking.visitor.SyntacticDesugarVisitor;
+import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -81,16 +82,15 @@ public abstract class ReplState implements ReplApi {
 
   public void loadPreludeLibrary() {
     var preludeLibrary = new PreludeResourceLibrary(myTypecheckerState);
-    if (!myLibraryManager.loadLibrary(preludeLibrary, myTypechecking)) {
-      myStderr.println("[FATAL] Failed to load Prelude");
-    }
+    if (!myLibraryManager.loadLibrary(preludeLibrary, myTypechecking))
+      eprintln("[FATAL] Failed to load Prelude");
     myReplLibrary.addDependency(new LibraryDependency(preludeLibrary.getName()));
     myMergedScopes.add(PreludeLibrary.getPreludeScope());
   }
 
   private void loadReplLibrary() {
     if (!myLibraryManager.loadLibrary(myReplLibrary, myTypechecking))
-      myStderr.println("[FATAL] Failed to load the REPL virtual library");
+      eprintln("[FATAL] Failed to load the REPL virtual library");
   }
 
   private boolean loadLibrary(Library library) {
@@ -159,6 +159,8 @@ public abstract class ReplState implements ReplApi {
     registerAction(new NormalizeCommand("whnf", NormalizationMode.WHNF));
     registerAction(new NormalizeCommand("nf", NormalizationMode.NF));
     registerAction(new NormalizeCommand("rnf", NormalizationMode.RNF));
+    registerAction(new HelpAction("help"));
+    registerAction(new HelpAction("?"));
   }
 
   @Override
@@ -178,14 +180,6 @@ public abstract class ReplState implements ReplApi {
   @Override
   public final void clearActions() {
     myActions.clear();
-  }
-
-  private void actionLoad(String text) {
-/* TODO
-    var libPath = Paths.get(text);
-    if (!loadLibrary(myLibraryResolver.registerLibrary(libPath)))
-      myStderr.println("[ERROR] Failed to load the library specified.");
-*/
   }
 
   @Override
@@ -233,5 +227,21 @@ public abstract class ReplState implements ReplApi {
     boolean hasErrors = !errorList.isEmpty();
     errorList.clear();
     return hasErrors;
+  }
+
+  private final class HelpAction extends ReplCommand {
+    protected HelpAction(@NotNull String command) {
+      super(command);
+    }
+
+    @Override
+    protected @Nls(capitalization = Nls.Capitalization.Sentence) @NotNull String help() {
+      return "Show this message";
+    }
+
+    @Override
+    protected void doInvoke(@NotNull String line, @NotNull ReplApi api, @NotNull Scanner scanner) {
+      for (ReplAction action : myActions) println(action.description());
+    }
   }
 }

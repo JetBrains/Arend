@@ -1,7 +1,9 @@
 package org.arend.repl.action;
 
 import org.arend.repl.ReplApi;
+import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.List;
@@ -16,6 +18,11 @@ public final class DefaultAction implements ReplAction {
   public static final @NotNull List<String> definitionEvidence = Arrays.asList(
       "\\import", "\\open", "\\use", "\\func", "\\sfunc", "\\lemma",
       "\\data", "\\module", "\\meta", "\\instance", "\\class");
+
+  @Override
+  public @Nls(capitalization = Nls.Capitalization.Sentence) @Nullable String description() {
+    return null;
+  }
 
   private DefaultAction() {
   }
