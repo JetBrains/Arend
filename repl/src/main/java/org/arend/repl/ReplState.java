@@ -27,7 +27,7 @@ import org.arend.prelude.PreludeLibrary;
 import org.arend.prelude.PreludeResourceLibrary;
 import org.arend.repl.action.*;
 import org.arend.term.concrete.Concrete;
-import org.arend.term.group.FileGroup;
+import org.arend.term.group.Group;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
 import org.arend.typechecking.LibraryArendExtensionProvider;
 import org.arend.typechecking.TypecheckerState;
@@ -51,6 +51,7 @@ import java.util.*;
 public abstract class ReplState implements ReplApi {
   private final List<Scope> myMergedScopes = new ArrayList<>();
   private final List<ReplAction> myActions = new ArrayList<>();
+  private boolean myActionsAreModified = false;
   private final Set<ModulePath> myModules;
   private final MergeScope myScope = new MergeScope(myMergedScopes);
   private final SourceLibrary myReplLibrary;
@@ -114,6 +115,7 @@ public abstract class ReplState implements ReplApi {
       String line = scanner.nextLine();
       if (line.startsWith(":quit") || line.equals(":q")) break;
       boolean actionExecuted = false;
+      resortActions();
       for (ReplAction action : myActions)
         if (action.isApplicable(line)) {
           action.invoke(line, this, scanner);
@@ -125,6 +127,13 @@ public abstract class ReplState implements ReplApi {
       }
       prompt();
     }
+  }
+
+  private void resortActions() {
+    if (!myActionsAreModified) return;
+    myActions.sort(Comparator.comparing(action -> Integer.MAX_VALUE -
+        (action instanceof ReplCommand ? ((ReplCommand) action).commandWithColon.length() : 0)));
+    myActionsAreModified = false;
   }
 
   @Override
@@ -172,7 +181,7 @@ public abstract class ReplState implements ReplApi {
     print("\u03bb ");
   }
 
-  protected abstract @Nullable FileGroup parseStatements(String line);
+  protected abstract @Nullable Group parseStatements(String line);
 
   protected abstract @Nullable Concrete.Expression parseExpr(@NotNull String text);
 
@@ -226,12 +235,12 @@ public abstract class ReplState implements ReplApi {
   }
 
   protected final void registerAction(@NotNull ReplAction action) {
-    myActions.add(action);
+    myActionsAreModified = myActions.add(action);
   }
 
   @Override
   public final boolean unregisterAction(@NotNull ReplAction action) {
-    return myActions.remove(action);
+    return myActionsAreModified = myActions.remove(action);
   }
 
   @Override

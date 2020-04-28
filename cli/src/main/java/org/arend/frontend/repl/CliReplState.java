@@ -21,7 +21,6 @@ import org.arend.repl.action.ReplCommand;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.FileGroup;
 import org.arend.typechecking.SimpleTypecheckerState;
-import org.arend.typechecking.TypecheckerState;
 import org.arend.util.Range;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
@@ -36,17 +35,23 @@ import java.util.TreeSet;
 
 public class CliReplState extends ReplState {
   private @NotNull String prompt = "\u03bb ";
-  private FileLibraryResolver myLibraryResolver;
+  private final FileLibraryResolver myLibraryResolver;
 
+  //region Tricky constructors (expand to read more...)
+  // These two constructors are used for convincing javac that the
+  // initialization is of well order.
+  // All of the parameters introduced here are used more than once,
+  // and one cannot introduce them as variable before the `this` or
+  // `super` call because that's the rule of javac.
   private CliReplState(
-      @NotNull TypecheckerState typecheckerState,
+      @NotNull SimpleTypecheckerState typecheckerState,
       @NotNull Set<ModulePath> modules,
       @NotNull ListErrorReporter errorReporter) {
     this(typecheckerState, modules, new FileLibraryResolver(new ArrayList<>(), typecheckerState, errorReporter), errorReporter);
   }
 
   private CliReplState(
-      @NotNull TypecheckerState typecheckerState,
+      @NotNull SimpleTypecheckerState typecheckerState,
       @NotNull Set<ModulePath> modules,
       @NotNull FileLibraryResolver libraryResolver,
       @NotNull ListErrorReporter errorReporter) {
@@ -62,6 +67,7 @@ public class CliReplState extends ReplState {
     );
     myLibraryResolver = libraryResolver;
   }
+  //endregion
 
   @Override
   public @Nullable Library createLibrary(@NotNull Path path) {
