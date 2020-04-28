@@ -24,6 +24,7 @@ import org.arend.prelude.PreludeLibrary;
 import org.arend.prelude.PreludeResourceLibrary;
 import org.arend.repl.action.ElaborateExprAction;
 import org.arend.repl.action.ReplAction;
+import org.arend.repl.action.ReplCommand;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.FileGroup;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
@@ -43,11 +44,11 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.*;
 
-public abstract class ReplState {
+public abstract class ReplState implements ReplApi {
   protected final PrettyPrinterConfig myPpConfig = PrettyPrinterConfig.DEFAULT;
   private final List<Scope> myMergedScopes = new ArrayList<>();
+  private final List<ReplAction> myActions = new ArrayList<>();
   private final MergeScope myScope = new MergeScope(myMergedScopes);
-  private final @NotNull ReplAction defaultAction = new ElaborateExprAction();
   protected final @NotNull ListErrorReporter myErrorReporter;
   protected final @NotNull TypecheckerState myTypecheckerState;
   protected final @NotNull ReplLibrary myReplLibrary;
@@ -58,6 +59,8 @@ public abstract class ReplState {
   public static final List<String> definitionEvidence = Arrays.asList(
       "\\import", "\\open", "\\use", "\\func", "\\sfunc", "\\lemma",
       "\\data", "\\module", "\\meta", "\\instance", "\\class");
+  private static final @NotNull ReplAction defaultAction = ElaborateExprAction.INSTANCE;
+
   private final @NotNull PrintStream myStdout;
   private final @NotNull PrintStream myStderr;
 
@@ -162,6 +165,29 @@ public abstract class ReplState {
 
   protected abstract @Nullable Concrete.Expression parseExpr(@NotNull String text);
 
+  protected void initialize() {
+  }
+
+  @Override
+  public final void registerAction(@NotNull ReplCommand action) {
+    myActions.add(action);
+  }
+
+  @Override
+  public final boolean unregisterAction(@NotNull ReplAction action) {
+    return myActions.remove(action);
+  }
+
+  @Override
+  public final void clearActions() {
+    myActions.clear();
+  }
+
+  @Override
+  public final @NotNull List<Scope> getMergedScopes() {
+    return myMergedScopes;
+  }
+
   private void actionType(String line) {
     var result = checkExpr(line, null);
     if (result == null) return;
@@ -177,21 +203,25 @@ public abstract class ReplState {
 */
   }
 
+  @Override
   public void println(Object anything) {
     myStdout.println(anything);
   }
 
+  @Override
   public void eprintln(Object anything) {
     myStderr.println(anything);
     myStderr.flush();
   }
 
+  @Override
   public @NotNull StringBuilder prettyExpr(@NotNull StringBuilder builder, @NotNull Expression expression) {
     var abs = ToAbstractVisitor.convert(expression, myPpConfig);
     abs.accept(new PrettyPrintVisitor(builder, 0), new Precedence(Concrete.Expression.PREC));
     return builder;
   }
 
+  @Override
   public @Nullable TypecheckingResult checkExpr(@NotNull String text, @Nullable Expression expectedType) {
     var expr = preprocessExpr(text);
     if (expr == null || checkErrors()) return null;
@@ -215,10 +245,8 @@ public abstract class ReplState {
     return expr;
   }
 
-  /**
-   * @return true if there is error(s).
-   */
-  protected final boolean checkErrors() {
+  @Override
+  public final boolean checkErrors() {
     var errorList = myErrorReporter.getErrorList();
     for (GeneralError error : errorList)
       (error.isSevere() ? myStderr : myStdout).println(error.getDoc(myPpConfig));

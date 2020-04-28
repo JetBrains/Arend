@@ -1,6 +1,6 @@
 package org.arend.repl.action;
 
-import org.arend.repl.ReplState;
+import org.arend.repl.ReplApi;
 import org.jetbrains.annotations.NotNull;
 
 public abstract class ReplCommand implements ReplAction {
@@ -16,7 +16,7 @@ public abstract class ReplCommand implements ReplAction {
   }
 
   @Override
-  public void invoke(@NotNull String line, @NotNull ReplState state) {
+  public void invoke(@NotNull String line, @NotNull ReplApi state) {
     var content = line.substring(myCommandWithColon.length()).trim();
     doInvoke(content, state);
   }
@@ -25,5 +25,5 @@ public abstract class ReplCommand implements ReplAction {
    * @param line  the command is already removed.
    * @param state repl context
    */
-  protected abstract void doInvoke(@NotNull String line, @NotNull ReplState state);
+  protected abstract void doInvoke(@NotNull String line, @NotNull ReplApi state);
 }
