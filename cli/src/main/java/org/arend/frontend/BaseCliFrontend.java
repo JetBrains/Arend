@@ -167,7 +167,7 @@ public abstract class BaseCliFrontend {
       }
 
       if (cmdLine.hasOption("i")) {
-        new CliReplState().runRepl(System.in);
+        CliReplState.main(args);
         return null;
       }
 

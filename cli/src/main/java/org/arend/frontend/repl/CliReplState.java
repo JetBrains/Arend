@@ -80,4 +80,8 @@ public class CliReplState extends ReplState {
   public CliReplState() {
     this(new SimpleTypecheckerState(), new ListErrorReporter(new ArrayList<>()));
   }
+
+  public static void main(String... args) {
+    new CliReplState().runRepl(System.in);
+  }
 }

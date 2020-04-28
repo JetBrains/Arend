@@ -1,7 +1,3 @@
-plugins {
-    java
-}
-
 dependencies {
     val annotationsVersion: String by rootProject.ext
     val antlrVersion: String by rootProject.ext
@@ -17,6 +13,15 @@ dependencies {
     implementation(project(":base"))
     implementation(project(":parser"))
     implementation(project(":repl"))
+}
+
+val execRepl = task<JavaExec>("execRepl") {
+    workingDir(rootProject.rootDir)
+    classpath = sourceSets["main"].runtimeClasspath
+    defaultCharacterEncoding = "UTF-8"
+    standardInput = System.`in`
+    standardOutput = System.out
+    main = "org.arend.frontend.repl.CliReplState"
 }
 
 // Prelude stuff

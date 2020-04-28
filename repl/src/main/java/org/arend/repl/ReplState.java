@@ -10,7 +10,6 @@ import org.arend.library.Library;
 import org.arend.library.LibraryDependency;
 import org.arend.library.LibraryManager;
 import org.arend.library.resolver.LibraryResolver;
-import org.arend.naming.reference.FullModuleReferable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.naming.resolving.visitor.DefinitionResolveNameVisitor;
@@ -70,21 +69,23 @@ public abstract class ReplState {
     myStdout = stdout;
     myStderr = stderr;
     myReplLibrary = replLibrary;
-    myLibraryManager = new LibraryManager(libraryResolver, new InstanceProviderSet(), this.myErrorReporter, this.myErrorReporter, DefinitionRequester.INSTANCE);
-    myTypechecking = new TypecheckingOrderingListener(myLibraryManager.getInstanceProviderSet(), myTypecheckerState, myConcreteProvider, IdReferableConverter.INSTANCE, this.myErrorReporter, comparator, new LibraryArendExtensionProvider(myLibraryManager));
-    var preludeLibrary = new PreludeResourceLibrary(myTypecheckerState);
-    if (!myLibraryManager.loadLibrary(preludeLibrary, myTypechecking)) {
-      throw new IllegalStateException("[FATAL] Failed to load Prelude");
-    }
-    myReplLibrary.addDependency(new LibraryDependency(preludeLibrary.getName()));
-    myReplLibrary.setGroup(new FileGroup(new FullModuleReferable(ReplLibrary.replModulePath), Collections.emptyList(), Collections.emptyList()));
-    myMergedScopes.add(PreludeLibrary.getPreludeScope());
-    loadReplLibrary();
+    var instanceProviders = new InstanceProviderSet();
+    myLibraryManager = new LibraryManager(libraryResolver, instanceProviders, this.myErrorReporter, this.myErrorReporter, DefinitionRequester.INSTANCE);
+    myTypechecking = new TypecheckingOrderingListener(instanceProviders, myTypecheckerState, myConcreteProvider, IdReferableConverter.INSTANCE, this.myErrorReporter, comparator, new LibraryArendExtensionProvider(myLibraryManager));
   }
 
-  private void loadReplLibrary() throws IllegalStateException {
+  public void loadPreludeLibrary() {
+    var preludeLibrary = new PreludeResourceLibrary(myTypecheckerState);
+    if (!myLibraryManager.loadLibrary(preludeLibrary, myTypechecking)) {
+      myStderr.println("[FATAL] Failed to load Prelude");
+    }
+    myReplLibrary.addDependency(new LibraryDependency(preludeLibrary.getName()));
+    myMergedScopes.add(PreludeLibrary.getPreludeScope());
+  }
+
+  private void loadReplLibrary() {
     if (!myLibraryManager.loadLibrary(myReplLibrary, myTypechecking))
-      throw new IllegalStateException("[FATAL] Failed to load the REPL virtual library");
+      myStderr.println("[FATAL] Failed to load the REPL virtual library");
   }
 
   private boolean loadLibrary(Library library) {
@@ -94,8 +95,11 @@ public abstract class ReplState {
   }
 
   public void runRepl(@NotNull InputStream inputStream) {
+    loadPreludeLibrary();
+    loadReplLibrary();
+
     var scanner = new Scanner(inputStream);
-    while (true) {
+    while (scanner.hasNext()) {
       myStdout.print("\u03bb ");
       myStdout.flush();
       String line = scanner.nextLine();

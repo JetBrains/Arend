@@ -7,7 +7,6 @@ import org.arend.library.LibraryHeader;
 import org.arend.library.UnmodifiableSourceLibrary;
 import org.arend.module.FullModulePath;
 import org.arend.source.BinarySource;
-import org.arend.term.group.ChildGroup;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.util.Range;
 import org.jetbrains.annotations.NotNull;
@@ -51,13 +50,5 @@ public abstract class ReplLibrary extends UnmodifiableSourceLibrary {
   @Override
   public boolean supportsPersisting() {
     return false;
-  }
-
-  public @Nullable ChildGroup getGroup() {
-    return getModuleGroup(replModulePath);
-  }
-
-  public void setGroup(@Nullable ChildGroup group) {
-    onGroupLoaded(replModulePath, group, true);
   }
 }
