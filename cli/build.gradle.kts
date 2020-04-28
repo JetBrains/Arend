@@ -8,6 +8,11 @@ dependencies {
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:$jacksonVersion")
     implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
 
+    val jlineVersion = "3.14.1"
+    implementation("org.jline:jline-terminal:$jlineVersion")
+    implementation("org.jline:jline-terminal-jansi:$jlineVersion")
+    implementation("org.jline:jline-reader:$jlineVersion")
+
     implementation("org.antlr:antlr4-runtime:$antlrVersion")
     implementation(project(":api"))
     implementation(project(":base"))

@@ -14,7 +14,6 @@ import org.arend.frontend.parser.ArendParser;
 import org.arend.frontend.parser.BuildVisitor;
 import org.arend.frontend.parser.ReporterErrorListener;
 import org.arend.library.Library;
-import org.arend.prelude.GeneratedVersion;
 import org.arend.repl.ReplApi;
 import org.arend.repl.ReplState;
 import org.arend.repl.action.LoadLibraryCommand;
@@ -27,15 +26,16 @@ import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.InputStream;
+import java.io.PrintStream;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Scanner;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Supplier;
 
-public class CliReplState extends ReplState {
+public abstract class CommmonCliRepl extends ReplState {
+  public static final @NotNull String APP_NAME = "Arend REPL";
+
   private @NotNull String prompt = "\u03bb ";
   private final FileLibraryResolver myLibraryResolver;
 
@@ -45,24 +45,26 @@ public class CliReplState extends ReplState {
   // All of the parameters introduced here are used more than once,
   // and one cannot introduce them as variable before the `this` or
   // `super` call because that's the rule of javac.
-  private CliReplState(
+  private CommmonCliRepl(
       @NotNull SimpleTypecheckerState typecheckerState,
       @NotNull Set<ModulePath> modules,
+      @NotNull PrintStream stdout,
       @NotNull ListErrorReporter errorReporter) {
-    this(typecheckerState, modules, new FileLibraryResolver(new ArrayList<>(), typecheckerState, errorReporter), errorReporter);
+    this(typecheckerState, modules, new FileLibraryResolver(new ArrayList<>(), typecheckerState, errorReporter), stdout, errorReporter);
   }
 
-  private CliReplState(
+  private CommmonCliRepl(
       @NotNull SimpleTypecheckerState typecheckerState,
       @NotNull Set<ModulePath> modules,
       @NotNull FileLibraryResolver libraryResolver,
+      @NotNull PrintStream stdout,
       @NotNull ListErrorReporter errorReporter) {
     super(
         errorReporter,
         libraryResolver,
         ConcreteReferableProvider.INSTANCE,
         PositionComparator.INSTANCE,
-        System.out, System.err,
+        stdout, System.err,
         modules,
         new FileSourceLibrary("Repl", Paths.get("."), null, null, null, modules, true, new ArrayList<>(), Range.unbound(), typecheckerState),
         typecheckerState
@@ -129,27 +131,8 @@ public class CliReplState extends ReplState {
     return buildVisitor().visitExpr(parse(text).expr());
   }
 
-  public CliReplState() {
-    this(new SimpleTypecheckerState(), new TreeSet<>(), new ListErrorReporter(new ArrayList<>()));
-  }
-
-  public void runRepl(@NotNull InputStream inputStream) {
-    var scanner = new Scanner(inputStream);
-    Supplier<@NotNull String> lineSupplier = scanner::nextLine;
-    print(prompt());
-    while (scanner.hasNext()) {
-      String line = scanner.nextLine();
-      if (line.startsWith(":quit") || line.equals(":q")) break;
-      repl(lineSupplier, line);
-      print(prompt());
-    }
-  }
-
-  public static void main(String... args) {
-    var repl = new CliReplState();
-    repl.println("Arend REPL " + GeneratedVersion.VERSION_STRING + ": https://arend-lang.github.io   :? for help");
-    repl.initialize();
-    repl.runRepl(System.in);
+  public CommmonCliRepl(@NotNull PrintStream stdout) {
+    this(new SimpleTypecheckerState(), new TreeSet<>(), stdout, new ListErrorReporter(new ArrayList<>()));
   }
 
   private final class ChangePromptCommand implements ReplCommand {

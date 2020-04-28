@@ -111,10 +111,20 @@ public abstract class ReplState implements ReplApi {
     loadCommands();
   }
 
-  public final void repl(@NotNull Supplier<@NotNull String> lineSupplier, @NotNull String currentLine) {
+  /**
+   * The function executed per main-loop of the REPL.
+   *
+   * @param lineSupplier in case the command requires more user input,
+   *                     use this to acquire more lines
+   * @param currentLine  the current user input
+   * @return true if the REPL wants to quit
+   */
+  public final boolean repl(@NotNull Supplier<@NotNull String> lineSupplier, @NotNull String currentLine) {
+    if (currentLine.startsWith(":quit") || currentLine.equals(":q")) return true;
     for (var action : myHandlers)
       if (action.isApplicable(currentLine))
         action.invoke(currentLine, this, lineSupplier);
+    return false;
   }
 
   @Override

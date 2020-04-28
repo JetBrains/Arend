@@ -9,7 +9,8 @@ import org.arend.ext.module.ModulePath;
 import org.arend.ext.prettyprinting.PrettyPrinterFlag;
 import org.arend.extImpl.DefinitionRequester;
 import org.arend.frontend.library.FileSourceLibrary;
-import org.arend.frontend.repl.CliReplState;
+import org.arend.frontend.repl.PlainCliRepl;
+import org.arend.frontend.repl.JLineCliRepl;
 import org.arend.library.*;
 import org.arend.library.error.LibraryError;
 import org.arend.naming.reference.LocatedReferable;
@@ -150,7 +151,7 @@ public abstract class BaseCliFrontend {
       cmdOptions.addOption(Option.builder("m").longOpt("extension-main").hasArg().argName("class").desc("main extension class").build());
       cmdOptions.addOption(Option.builder("r").longOpt("recompile").desc("recompile files").build());
       cmdOptions.addOption(Option.builder("c").longOpt("double-check").desc("double check correctness of the result").build());
-      cmdOptions.addOption(Option.builder("i").longOpt("interactive").desc("start an interactive REPL").build());
+      cmdOptions.addOption(Option.builder("i").longOpt("interactive").hasArg().optionalArg(true).argName("type").desc("start an interactive REPL, type can be plain or jline (default)").build());
       cmdOptions.addOption("t", "test", false, "run tests");
       cmdOptions.addOption("v", "version", false, "print language version");
       addCommandOptions(cmdOptions);
@@ -167,7 +168,18 @@ public abstract class BaseCliFrontend {
       }
 
       if (cmdLine.hasOption("i")) {
-        CliReplState.main(args);
+        var opt = cmdLine.getOptionValue("i", "jline");
+        switch (opt) {
+          default:
+            System.err.println("Unrecognized repl type: " + opt);
+            break;
+          case "plain":
+            PlainCliRepl.main(args);
+            break;
+          case "jline":
+            JLineCliRepl.main(args);
+            break;
+        }
         return null;
       }
 
