@@ -2,10 +2,9 @@ package org.arend.frontend.repl;
 
 import org.arend.prelude.GeneratedVersion;
 import org.jetbrains.annotations.NotNull;
-import org.jline.reader.EndOfFileException;
-import org.jline.reader.LineReaderBuilder;
-import org.jline.reader.UserInterruptException;
+import org.jline.reader.*;
 import org.jline.reader.impl.DefaultParser;
+import org.jline.reader.impl.completer.AggregateCompleter;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 
@@ -23,6 +22,10 @@ public class JLineCliRepl extends CommmonCliRepl {
   public void runRepl() {
     var reader = LineReaderBuilder.builder()
         .appName(APP_NAME)
+        .completer(new AggregateCompleter(
+            new JLineExprCompleter(),
+            new JLineCommandsCompleter()
+        ))
         .terminal(myTerminal)
         .parser(new DefaultParser() {
           @Override
@@ -60,4 +63,5 @@ public class JLineCliRepl extends CommmonCliRepl {
     repl.initialize();
     repl.runRepl();
   }
+
 }
