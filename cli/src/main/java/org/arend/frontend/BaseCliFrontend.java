@@ -9,7 +9,7 @@ import org.arend.ext.module.ModulePath;
 import org.arend.ext.prettyprinting.PrettyPrinterFlag;
 import org.arend.extImpl.DefinitionRequester;
 import org.arend.frontend.library.FileSourceLibrary;
-import org.arend.frontend.repl.ReplState;
+import org.arend.frontend.repl.CliReplState;
 import org.arend.library.*;
 import org.arend.library.error.LibraryError;
 import org.arend.naming.reference.LocatedReferable;
@@ -167,7 +167,7 @@ public abstract class BaseCliFrontend {
       }
 
       if (cmdLine.hasOption("i")) {
-        new ReplState().runRepl();
+        new CliReplState().runRepl();
         return null;
       }
 

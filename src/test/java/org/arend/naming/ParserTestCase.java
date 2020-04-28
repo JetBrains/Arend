@@ -2,7 +2,7 @@ package org.arend.naming;
 
 import org.arend.ArendTestCase;
 import org.arend.frontend.parser.*;
-import org.arend.frontend.repl.ReplUtils;
+import org.arend.frontend.repl.CliReplState;
 import org.arend.module.FullModulePath;
 import org.arend.naming.reference.FullModuleReferable;
 import org.arend.term.concrete.Concrete;
@@ -21,7 +21,7 @@ public abstract class ParserTestCase extends ArendTestCase {
   protected static final FullModulePath MODULE_PATH = new FullModulePath(null, null, Collections.singletonList("$TestCase$"));
 
   private ArendParser _parse(String text) {
-    return ReplUtils.createParser(text, MODULE_PATH, errorReporter);
+    return CliReplState.createParser(text, MODULE_PATH, errorReporter);
   }
 
 

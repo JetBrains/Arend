@@ -6,15 +6,12 @@ import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.extImpl.DefinitionRequester;
-import org.arend.frontend.ConcreteReferableProvider;
-import org.arend.frontend.FileLibraryResolver;
-import org.arend.frontend.PositionComparator;
-import org.arend.frontend.parser.ArendParser;
-import org.arend.frontend.parser.BuildVisitor;
 import org.arend.library.Library;
 import org.arend.library.LibraryDependency;
 import org.arend.library.LibraryManager;
+import org.arend.library.resolver.LibraryResolver;
 import org.arend.naming.reference.FullModuleReferable;
+import org.arend.naming.reference.TCReferable;
 import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.naming.resolving.visitor.DefinitionResolveNameVisitor;
 import org.arend.naming.resolving.visitor.ExpressionResolveNameVisitor;
@@ -27,40 +24,49 @@ import org.arend.prelude.PreludeResourceLibrary;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.FileGroup;
 import org.arend.typechecking.LibraryArendExtensionProvider;
-import org.arend.typechecking.SimpleTypecheckerState;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
+import org.arend.typechecking.order.PartialComparator;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
+import org.arend.typechecking.provider.ConcreteProvider;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.arend.typechecking.visitor.SyntacticDesugarVisitor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.nio.file.Paths;
 import java.util.*;
 
-public class ReplState {
-  private final TypecheckerState myTypecheckerState = new SimpleTypecheckerState();
-  private final List<GeneralError> myErrorList = new ArrayList<>();
-  private final ListErrorReporter myErrorReporter = new ListErrorReporter(myErrorList);
-  private final FileLibraryResolver myLibraryResolver = new FileLibraryResolver(new ArrayList<>(), myTypecheckerState, System.err::println);
-  private final LibraryManager myLibraryManager = new LibraryManager(myLibraryResolver, new InstanceProviderSet(), myErrorReporter, myErrorReporter, DefinitionRequester.INSTANCE);
-  private final TypecheckingOrderingListener myTypechecking = new TypecheckingOrderingListener(myLibraryManager.getInstanceProviderSet(), myTypecheckerState, ConcreteReferableProvider.INSTANCE, IdReferableConverter.INSTANCE, myErrorReporter, PositionComparator.INSTANCE, new LibraryArendExtensionProvider(myLibraryManager));
-  private final ReplLibrary myReplLibrary = new ReplLibrary(myTypecheckerState);
-  private final PrettyPrinterConfig myPpConfig = PrettyPrinterConfig.DEFAULT;
+public abstract class ReplState {
+  protected final PrettyPrinterConfig myPpConfig = PrettyPrinterConfig.DEFAULT;
   private final List<Scope> myMergedScopes = new ArrayList<>();
   private final MergeScope myScope = new MergeScope(myMergedScopes);
+  protected final @NotNull ListErrorReporter myErrorReporter;
+  protected final @NotNull TypecheckerState myTypecheckerState;
+  protected final @NotNull ReplLibrary myReplLibrary;
+  protected final @NotNull LibraryManager myLibraryManager;
+  protected final @NotNull ConcreteProvider myConcreteProvider;
+  protected final @NotNull TypecheckingOrderingListener myTypechecking;
 
   public static final List<String> definitionEvidence = Arrays.asList(
       "\\import", "\\open", "\\use", "\\func", "\\sfunc", "\\lemma",
       "\\data", "\\module", "\\meta", "\\instance", "\\class");
 
-  public ReplState() {
+  public ReplState(@NotNull ListErrorReporter listErrorReporter,
+                   @NotNull LibraryResolver libraryResolver,
+                   @NotNull ConcreteProvider concreteProvider,
+                   @NotNull PartialComparator<TCReferable> comparator,
+                   @NotNull TypecheckerState typecheckerState) {
+    myErrorReporter = listErrorReporter;
+    myConcreteProvider = concreteProvider;
+    myTypecheckerState = typecheckerState;
+    myLibraryManager = new LibraryManager(libraryResolver, new InstanceProviderSet(), this.myErrorReporter, this.myErrorReporter, DefinitionRequester.INSTANCE);
+    myTypechecking = new TypecheckingOrderingListener(myLibraryManager.getInstanceProviderSet(), myTypecheckerState, myConcreteProvider, IdReferableConverter.INSTANCE, this.myErrorReporter, comparator, new LibraryArendExtensionProvider(myLibraryManager));
     var preludeLibrary = new PreludeResourceLibrary(myTypecheckerState);
     if (!myLibraryManager.loadLibrary(preludeLibrary, myTypechecking)) {
       throw new IllegalStateException("[FATAL] Failed to load Prelude");
     }
+    myReplLibrary = new ReplLibrary(myTypecheckerState);
     myReplLibrary.addDependency(new LibraryDependency(preludeLibrary.getName()));
     myReplLibrary.setGroup(new FileGroup(new FullModuleReferable(ReplLibrary.replModulePath), Collections.emptyList(), Collections.emptyList()));
     myMergedScopes.add(PreludeLibrary.getPreludeScope());
@@ -110,7 +116,7 @@ public class ReplState {
         var moduleScopeProvider = myReplLibrary.getModuleScopeProvider();
         Scope scope = CachingScope.make(ScopeFactory.forGroup(group, moduleScopeProvider));
         myMergedScopes.add(scope);
-        new DefinitionResolveNameVisitor(ConcreteReferableProvider.INSTANCE, myErrorReporter)
+        new DefinitionResolveNameVisitor(myConcreteProvider, myErrorReporter)
             .resolveGroupWithTypes(group, null, myScope);
         if (checkErrors()) {
           myMergedScopes.remove(scope);
@@ -118,7 +124,7 @@ public class ReplState {
         }
         myLibraryManager.getInstanceProviderSet().collectInstances(group,
             CachingScope.make(ScopeFactory.parentScopeForGroup(group, moduleScopeProvider, true)),
-            ConcreteReferableProvider.INSTANCE, null);
+            myConcreteProvider, null);
         if (checkErrors()) {
           myMergedScopes.remove(scope);
           continue;
@@ -135,12 +141,9 @@ public class ReplState {
     }
   }
 
-  private @Nullable FileGroup parseStatements(String line) {
-    var fileGroup = buildVisitor().visitStatements(parse(line).statements());
-    if (fileGroup != null) fileGroup.setModuleScopeProvider(myReplLibrary.getModuleScopeProvider());
-    if (checkErrors()) return null;
-    return fileGroup;
-  }
+  protected abstract @Nullable FileGroup parseStatements(String line);
+
+  protected abstract @Nullable Concrete.Expression parseExpr(@NotNull String text);
 
   private void actionType(String line) {
     var result = checkExpr(line);
@@ -150,9 +153,11 @@ public class ReplState {
   }
 
   private void actionLoad(String text) {
+/* TODO
     var libPath = Paths.get(text);
     if (!loadLibrary(myLibraryResolver.registerLibrary(libPath)))
       System.err.println("[ERROR] Failed to load the library specified.");
+*/
   }
 
   private @Nullable TypecheckingResult checkExpr(@NotNull String text) {
@@ -168,12 +173,10 @@ public class ReplState {
   }
 
   private @Nullable Concrete.Expression preprocessExpr(@NotNull String text) {
-    var parser = parse(text);
-    if (checkErrors()) return null;
-    var expr = buildVisitor().visitExpr(parser.expr());
-    if (checkErrors()) return null;
+    var expr = parseExpr(text);
+    if (expr == null || checkErrors()) return null;
     expr = expr
-        .accept(new ExpressionResolveNameVisitor(ConcreteReferableProvider.INSTANCE,
+        .accept(new ExpressionResolveNameVisitor(myConcreteProvider,
             myScope, Collections.emptyList(), myErrorReporter, null), null)
         .accept(new SyntacticDesugarVisitor(myErrorReporter), null);
     if (checkErrors()) return null;
@@ -183,19 +186,12 @@ public class ReplState {
   /**
    * @return true if there is error(s).
    */
-  private boolean checkErrors() {
-    for (GeneralError error : myErrorList)
+  protected final boolean checkErrors() {
+    var errorList = myErrorReporter.getErrorList();
+    for (GeneralError error : errorList)
       (error.isSevere() ? System.err : System.out).println(error.getDoc(myPpConfig));
-    boolean hasErrors = !myErrorList.isEmpty();
-    myErrorList.clear();
+    boolean hasErrors = !errorList.isEmpty();
+    errorList.clear();
     return hasErrors;
-  }
-
-  private @NotNull BuildVisitor buildVisitor() {
-    return new BuildVisitor(ReplLibrary.replModulePath, myErrorReporter);
-  }
-
-  private @NotNull ArendParser parse(String line) {
-    return ReplUtils.createParser(line, ReplLibrary.replModulePath, myErrorReporter);
   }
 }
