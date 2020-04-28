@@ -1,10 +1,12 @@
 package org.arend.repl;
 
 import org.arend.core.expr.Expression;
+import org.arend.core.expr.visitor.ToAbstractVisitor;
 import org.arend.error.ListErrorReporter;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.reference.Precedence;
 import org.arend.extImpl.DefinitionRequester;
 import org.arend.library.Library;
 import org.arend.library.LibraryDependency;
@@ -20,8 +22,11 @@ import org.arend.naming.scope.Scope;
 import org.arend.naming.scope.ScopeFactory;
 import org.arend.prelude.PreludeLibrary;
 import org.arend.prelude.PreludeResourceLibrary;
+import org.arend.repl.action.ElaborateExprAction;
+import org.arend.repl.action.ReplAction;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.FileGroup;
+import org.arend.term.prettyprint.PrettyPrintVisitor;
 import org.arend.typechecking.LibraryArendExtensionProvider;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
@@ -42,6 +47,7 @@ public abstract class ReplState {
   protected final PrettyPrinterConfig myPpConfig = PrettyPrinterConfig.DEFAULT;
   private final List<Scope> myMergedScopes = new ArrayList<>();
   private final MergeScope myScope = new MergeScope(myMergedScopes);
+  private final @NotNull ReplAction defaultAction = new ElaborateExprAction();
   protected final @NotNull ListErrorReporter myErrorReporter;
   protected final @NotNull TypecheckerState myTypecheckerState;
   protected final @NotNull ReplLibrary myReplLibrary;
@@ -52,8 +58,8 @@ public abstract class ReplState {
   public static final List<String> definitionEvidence = Arrays.asList(
       "\\import", "\\open", "\\use", "\\func", "\\sfunc", "\\lemma",
       "\\data", "\\module", "\\meta", "\\instance", "\\class");
-  protected final @NotNull PrintStream myStdout;
-  protected final @NotNull PrintStream myStderr;
+  private final @NotNull PrintStream myStdout;
+  private final @NotNull PrintStream myStderr;
 
   public ReplState(@NotNull ListErrorReporter listErrorReporter,
                    @NotNull LibraryResolver libraryResolver,
@@ -114,11 +120,11 @@ public abstract class ReplState {
       else if (line.startsWith(":quit") || line.equals(":q"))
         break;
       else if (line.startsWith(":nf")) {
-        var result = checkExpr(line.substring(":nf".length()));
+        var result = checkExpr(line.substring(":nf".length()), null);
         if (result == null) continue;
         myStdout.println(result.expression.normalize(NormalizationMode.NF));
       } else if (line.startsWith(":whnf")) {
-        var result = checkExpr(line.substring(":whnf".length()));
+        var result = checkExpr(line.substring(":whnf".length()), null);
         if (result == null) continue;
         myStdout.println(result.expression.normalize(NormalizationMode.WHNF));
       } else if (line.startsWith(":")) {
@@ -146,10 +152,8 @@ public abstract class ReplState {
           checkErrors();
           myMergedScopes.remove(scope);
         }
-      } else if (!line.isBlank()) {
-        var result = checkExpr(line);
-        if (result == null) continue;
-        myStdout.println(result.expression);
+      } else if (defaultAction.isApplicable(line)) {
+        defaultAction.invoke(line, this);
       }
     }
   }
@@ -159,7 +163,7 @@ public abstract class ReplState {
   protected abstract @Nullable Concrete.Expression parseExpr(@NotNull String text);
 
   private void actionType(String line) {
-    var result = checkExpr(line);
+    var result = checkExpr(line, null);
     if (result == null) return;
     Expression type = result.expression.getType();
     myStdout.println(type == null ? "Cannot synthesize a type, sorry." : type);
@@ -173,10 +177,25 @@ public abstract class ReplState {
 */
   }
 
-  private @Nullable TypecheckingResult checkExpr(@NotNull String text) {
+  public void println(Object anything) {
+    myStdout.println(anything);
+  }
+
+  public void eprintln(Object anything) {
+    myStderr.println(anything);
+    myStderr.flush();
+  }
+
+  public @NotNull StringBuilder prettyExpr(@NotNull StringBuilder builder, @NotNull Expression expression) {
+    var abs = ToAbstractVisitor.convert(expression, myPpConfig);
+    abs.accept(new PrettyPrintVisitor(builder, 0), new Precedence(Concrete.Expression.PREC));
+    return builder;
+  }
+
+  public @Nullable TypecheckingResult checkExpr(@NotNull String text, @Nullable Expression expectedType) {
     var expr = preprocessExpr(text);
     if (expr == null || checkErrors()) return null;
-    var result = typeChecker().checkExpr(expr, null);
+    var result = typeChecker().checkExpr(expr, expectedType);
     return checkErrors() ? null : result;
   }
 
