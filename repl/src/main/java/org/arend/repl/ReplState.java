@@ -158,7 +158,14 @@ public abstract class ReplState implements ReplApi {
 
   @Override
   public @NotNull ModuleScopeProvider getAvailableModuleScopeProvider() {
-    return myLibraryManager.getAvailableModuleScopeProvider(myReplLibrary);
+    return module -> {
+      var registeredLibraries = myLibraryManager.getRegisteredLibraries();
+      for (Library registeredLibrary : registeredLibraries) {
+        Scope scope = myLibraryManager.getAvailableModuleScopeProvider(registeredLibrary).forModule(module);
+        if (scope != null) return scope;
+      }
+      return null;
+    };
   }
 
   public void prompt() {
