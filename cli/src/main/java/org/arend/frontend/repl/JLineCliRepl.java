@@ -2,7 +2,9 @@ package org.arend.frontend.repl;
 
 import org.arend.prelude.GeneratedVersion;
 import org.jetbrains.annotations.NotNull;
-import org.jline.reader.*;
+import org.jline.reader.EndOfFileException;
+import org.jline.reader.LineReaderBuilder;
+import org.jline.reader.UserInterruptException;
 import org.jline.reader.impl.DefaultParser;
 import org.jline.reader.impl.completer.AggregateCompleter;
 import org.jline.terminal.Terminal;
@@ -23,16 +25,17 @@ public class JLineCliRepl extends CommmonCliRepl {
     var reader = LineReaderBuilder.builder()
         .appName(APP_NAME)
         .completer(new AggregateCompleter(
+            new JLineKeywordCompleter(),
             new JLineExprCompleter(),
             new JLineCommandsCompleter()
         ))
         .terminal(myTerminal)
         .parser(new DefaultParser() {
           @Override
-          public boolean isEscapeChar(char ch) {
+          public boolean isEscapeChar(CharSequence buffer, int pos) {
             return false;
           }
-        })
+        }.escapeChars(new char[]{}))
         .build();
     while (true) {
       try {
