@@ -28,13 +28,15 @@ import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Scanner;
+import java.util.Set;
+import java.util.TreeSet;
 
 public class CliReplState extends ReplState {
   private @NotNull String prompt = "\u03bb ";
 
   public CliReplState(@NotNull TypecheckerState typecheckerState,
+                      @NotNull Set<ModulePath> modules,
                       @NotNull ListErrorReporter errorReporter) {
     super(
         errorReporter,
@@ -42,7 +44,8 @@ public class CliReplState extends ReplState {
         ConcreteReferableProvider.INSTANCE,
         PositionComparator.INSTANCE,
         System.out, System.err,
-        new FileSourceLibrary("Repl", Paths.get("."), null, null, null, Collections.emptySet(), true, new ArrayList<>(), Range.unbound(), typecheckerState),
+        modules,
+        new FileSourceLibrary("Repl", Paths.get("."), null, null, null, modules, true, new ArrayList<>(), Range.unbound(), typecheckerState),
         typecheckerState
     );
   }
@@ -99,7 +102,7 @@ public class CliReplState extends ReplState {
   }
 
   public CliReplState() {
-    this(new SimpleTypecheckerState(), new ListErrorReporter(new ArrayList<>()));
+    this(new SimpleTypecheckerState(), new TreeSet<>(), new ListErrorReporter(new ArrayList<>()));
   }
 
   public static void main(String... args) {

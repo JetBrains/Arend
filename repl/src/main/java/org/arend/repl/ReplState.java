@@ -5,6 +5,7 @@ import org.arend.core.expr.visitor.ToAbstractVisitor;
 import org.arend.error.ListErrorReporter;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.GeneralError;
+import org.arend.ext.module.ModulePath;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.reference.Precedence;
 import org.arend.extImpl.DefinitionRequester;
@@ -46,6 +47,7 @@ public abstract class ReplState implements ReplApi {
   protected final PrettyPrinterConfig myPpConfig = PrettyPrinterConfig.DEFAULT;
   private final List<Scope> myMergedScopes = new ArrayList<>();
   private final List<ReplAction> myActions = new ArrayList<>();
+  private final Set<ModulePath> myModules;
   private final MergeScope myScope = new MergeScope(myMergedScopes);
   protected final @NotNull ListErrorReporter myErrorReporter;
   protected final @NotNull TypecheckerState myTypecheckerState;
@@ -63,10 +65,12 @@ public abstract class ReplState implements ReplApi {
                    @NotNull PartialComparator<TCReferable> comparator,
                    @NotNull PrintStream stdout,
                    @NotNull PrintStream stderr,
+                   @NotNull Set<ModulePath> modules,
                    @NotNull Library replLibrary,
                    @NotNull TypecheckerState typecheckerState) {
     myErrorReporter = listErrorReporter;
     myConcreteProvider = concreteProvider;
+    myModules = modules;
     myTypecheckerState = typecheckerState;
     myStdout = stdout;
     myStderr = stderr;
@@ -76,7 +80,7 @@ public abstract class ReplState implements ReplApi {
     myTypechecking = new TypecheckingOrderingListener(instanceProviders, myTypecheckerState, myConcreteProvider, IdReferableConverter.INSTANCE, myErrorReporter, comparator, new LibraryArendExtensionProvider(myLibraryManager));
   }
 
-  public void loadPreludeLibrary() {
+  private void loadPreludeLibrary() {
     var preludeLibrary = new PreludeResourceLibrary(myTypecheckerState);
     if (!loadLibrary(preludeLibrary))
       eprintln("[FATAL] Failed to load Prelude");
@@ -117,6 +121,15 @@ public abstract class ReplState implements ReplApi {
     }
   }
 
+  @Override
+  public @Nullable Scope loadModule(@NotNull ModulePath path) {
+    if (!myModules.add(path))
+      println("[INFO] " + path + " is already loaded.");
+    myLibraryManager.reload(myTypechecking);
+    if (checkErrors()) return null;
+    return myLibraryManager.getAvailableModuleScopeProvider(myReplLibrary).forModule(path);
+  }
+
   public void prompt() {
     print("\u03bb ");
   }
@@ -155,6 +168,10 @@ public abstract class ReplState implements ReplApi {
     registerAction(DefaultAction.INSTANCE);
     registerAction(new ShowTypeCommand("type"));
     registerAction(new ShowTypeCommand("t"));
+    registerAction(new LoadFileCommand("load"));
+    registerAction(new LoadFileCommand("l"));
+    registerAction(new UnloadFileCommand("unload"));
+    registerAction(new UnloadFileCommand("u"));
     registerAction(new NormalizeCommand("whnf", NormalizationMode.WHNF));
     registerAction(new NormalizeCommand("nf", NormalizationMode.NF));
     registerAction(new NormalizeCommand("rnf", NormalizationMode.RNF));
@@ -179,6 +196,21 @@ public abstract class ReplState implements ReplApi {
   @Override
   public final void clearActions() {
     myActions.clear();
+  }
+
+  @Override
+  public @NotNull Library getReplLibrary() {
+    return myReplLibrary;
+  }
+
+  @Override
+  public final void addScope(@NotNull Scope scope) {
+    myMergedScopes.add(scope);
+  }
+
+  @Override
+  public final boolean removeScope(@NotNull Scope scope) {
+    return myMergedScopes.remove(scope);
   }
 
   @Override
@@ -255,8 +287,8 @@ public abstract class ReplState implements ReplApi {
         var description = action.description();
         if (description == null) continue;
         if (action instanceof ReplCommand) {
-          String commandWithColon = ((ReplCommand) action).commandWithColon;
-          println(String.format("%-" + maxWidth + "s %s", commandWithColon, this.description()));
+          String command = ((ReplCommand) action).commandWithColon;
+          println(command + " ".repeat(maxWidth - command.length()) + description);
         } else println(description);
       }
     }
