@@ -31,6 +31,9 @@ import org.arend.term.group.FileGroup;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
 import org.arend.typechecking.LibraryArendExtensionProvider;
 import org.arend.typechecking.TypecheckerState;
+import org.arend.typechecking.instance.pool.GlobalInstancePool;
+import org.arend.typechecking.instance.pool.LocalInstancePool;
+import org.arend.typechecking.instance.provider.EmptyInstanceProvider;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
 import org.arend.typechecking.order.PartialComparator;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
@@ -47,15 +50,15 @@ import java.io.PrintStream;
 import java.util.*;
 
 public abstract class ReplState implements ReplApi {
-  protected final PrettyPrinterConfig myPpConfig = PrettyPrinterConfig.DEFAULT;
   private final List<Scope> myMergedScopes = new ArrayList<>();
   private final List<ReplAction> myActions = new ArrayList<>();
   private final Set<ModulePath> myModules;
   private final MergeScope myScope = new MergeScope(myMergedScopes);
-  private final @NotNull SourceLibrary myReplLibrary;
-  private final @NotNull TypecheckerState myTypecheckerState;
-  private final @NotNull ConcreteProvider myConcreteProvider;
-  private final @NotNull TypecheckingOrderingListener myTypechecking;
+  private final SourceLibrary myReplLibrary;
+  private final TypecheckerState myTypecheckerState;
+  private final ConcreteProvider myConcreteProvider;
+  private final TypecheckingOrderingListener myTypechecking;
+  protected final @NotNull PrettyPrinterConfig myPpConfig = PrettyPrinterConfig.DEFAULT;
   protected final @NotNull ListErrorReporter myErrorReporter;
   protected final @NotNull LibraryManager myLibraryManager;
 
@@ -271,8 +274,10 @@ public abstract class ReplState implements ReplApi {
 
   @Override
   public @Nullable TypecheckingResult checkExpr(@NotNull Concrete.Expression expr, @Nullable Expression expectedType) {
-    var result = new CheckTypeVisitor(myTypecheckerState, myErrorReporter, null, null)
-        .checkExpr(expr, expectedType);
+    var typechecker = new CheckTypeVisitor(myTypecheckerState, myErrorReporter, null, null);
+    var instancePool = new GlobalInstancePool(EmptyInstanceProvider.getInstance(), typechecker);
+    typechecker.setInstancePool(instancePool);
+    var result = typechecker.checkExpr(expr, expectedType);
     return checkErrors() ? null : result;
   }
 
