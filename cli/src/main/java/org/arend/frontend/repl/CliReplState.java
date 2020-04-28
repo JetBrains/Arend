@@ -1,13 +1,17 @@
 package org.arend.frontend.repl;
 
-import org.antlr.v4.runtime.*;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
 import org.arend.error.ListErrorReporter;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.module.ModulePath;
 import org.arend.frontend.ConcreteReferableProvider;
 import org.arend.frontend.FileLibraryResolver;
 import org.arend.frontend.PositionComparator;
-import org.arend.frontend.parser.*;
+import org.arend.frontend.parser.ArendLexer;
+import org.arend.frontend.parser.ArendParser;
+import org.arend.frontend.parser.BuildVisitor;
+import org.arend.frontend.parser.ReporterErrorListener;
 import org.arend.repl.ReplLibrary;
 import org.arend.repl.ReplState;
 import org.arend.term.concrete.Concrete;
@@ -37,12 +41,7 @@ public class CliReplState extends ReplState {
   }
 
   public static @NotNull ArendParser createParser(@NotNull String text, @NotNull ModulePath modulePath, @NotNull ErrorReporter reporter) {
-    var errorListener = new BaseErrorListener() {
-      @Override
-      public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-        reporter.report(new ParserError(new Position(modulePath, line, pos), msg));
-      }
-    };
+    var errorListener = new ReporterErrorListener(reporter, modulePath);
     var parser = new ArendParser(
         new CommonTokenStream(createLexer(text, errorListener)));
     parser.removeErrorListeners();
@@ -52,7 +51,7 @@ public class CliReplState extends ReplState {
     return parser;
   }
 
-  public static @NotNull ArendLexer createLexer(@NotNull String text, BaseErrorListener errorListener) {
+  public static @NotNull ArendLexer createLexer(@NotNull String text, ReporterErrorListener errorListener) {
     var input = CharStreams.fromString(text);
     var lexer = new ArendLexer(input);
     lexer.removeErrorListeners();
