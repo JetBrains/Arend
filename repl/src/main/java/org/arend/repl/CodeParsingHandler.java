@@ -4,7 +4,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Scanner;
+import java.util.function.Supplier;
 
 /**
  * The default action. No action command.
@@ -25,7 +25,7 @@ public final class CodeParsingHandler implements ReplHandler {
   }
 
   @Override
-  public void invoke(@NotNull String line, @NotNull ReplApi api, @NotNull Scanner scanner) {
+  public void invoke(@NotNull String line, @NotNull ReplApi api, @NotNull Supplier<@NotNull String> lineSupplier) {
     if (definitionEvidence.stream().anyMatch(line::contains)) {
       api.checkStatements(line);
       return;

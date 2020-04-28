@@ -5,7 +5,7 @@ import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Scanner;
+import java.util.function.Supplier;
 
 public interface ReplCommand {
   /**
@@ -18,5 +18,5 @@ public interface ReplCommand {
    * @param api     repl context
    * @param scanner user input reader
    */
-  void invoke(@NotNull String line, @NotNull ReplApi api, @NotNull Scanner scanner);
+  void invoke(@NotNull String line, @NotNull ReplApi api, @NotNull Supplier<@NotNull String> scanner);
 }

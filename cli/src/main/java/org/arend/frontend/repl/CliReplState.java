@@ -27,11 +27,13 @@ import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.InputStream;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Supplier;
 
 public class CliReplState extends ReplState {
   private @NotNull String prompt = "\u03bb ";
@@ -97,13 +99,13 @@ public class CliReplState extends ReplState {
   }
 
   @Override
-  public void prompt() {
-    print(prompt);
+  public @NotNull String prompt() {
+    return prompt;
   }
 
   @Override
-  protected void initialize() {
-    super.initialize();
+  protected void loadCommands() {
+    super.loadCommands();
     registerAction("prompt", new ChangePromptCommand());
     registerAction("lib", new LoadLibraryCommand() {
       @Override
@@ -131,9 +133,22 @@ public class CliReplState extends ReplState {
     this(new SimpleTypecheckerState(), new TreeSet<>(), new ListErrorReporter(new ArrayList<>()));
   }
 
+  public void runRepl(@NotNull InputStream inputStream) {
+    var scanner = new Scanner(inputStream);
+    Supplier<@NotNull String> lineSupplier = scanner::nextLine;
+    print(prompt());
+    while (scanner.hasNext()) {
+      String line = scanner.nextLine();
+      if (line.startsWith(":quit") || line.equals(":q")) break;
+      repl(lineSupplier, line);
+      print(prompt());
+    }
+  }
+
   public static void main(String... args) {
     var repl = new CliReplState();
     repl.println("Arend REPL " + GeneratedVersion.VERSION_STRING + ": https://arend-lang.github.io   :? for help");
+    repl.initialize();
     repl.runRepl(System.in);
   }
 
@@ -144,7 +159,7 @@ public class CliReplState extends ReplState {
     }
 
     @Override
-    public void invoke(@NotNull String line, @NotNull ReplApi api, @NotNull Scanner scanner) {
+    public void invoke(@NotNull String line, @NotNull ReplApi api, @NotNull Supplier<@NotNull String> scanner) {
       boolean start = line.startsWith("\"");
       boolean end = line.endsWith("\"");
       // Maybe we should unescape this string?

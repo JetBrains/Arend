@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.InvalidPathException;
-import java.util.Scanner;
+import java.util.function.Supplier;
 
 public final class LoadModuleCommand implements ReplCommand {
   public static final @NotNull LoadModuleCommand INSTANCE = new LoadModuleCommand();
@@ -22,7 +22,7 @@ public final class LoadModuleCommand implements ReplCommand {
   }
 
   @Override
-  public void invoke(@NotNull String line, @NotNull ReplApi api, @NotNull Scanner scanner) {
+  public void invoke(@NotNull String line, @NotNull ReplApi api, @NotNull Supplier<@NotNull String> scanner) {
     try {
       loadModule(api, ModulePath.fromString(line));
     } catch (InvalidPathException e) {
@@ -49,7 +49,7 @@ public final class LoadModuleCommand implements ReplCommand {
     private volatile static @Nullable ModulePath lastModulePath = null;
 
     @Override
-    public void invoke(@NotNull String line, @NotNull ReplApi api, @NotNull Scanner scanner) {
+    public void invoke(@NotNull String line, @NotNull ReplApi api, @NotNull Supplier<@NotNull String> scanner) {
       if (lastModulePath != null)
         LoadModuleCommand.loadModule(api, lastModulePath);
       else api.eprintln("[ERROR] No previous module to load.");

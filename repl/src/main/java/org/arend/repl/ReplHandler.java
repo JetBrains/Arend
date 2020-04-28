@@ -2,10 +2,10 @@ package org.arend.repl;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Scanner;
+import java.util.function.Supplier;
 
 public interface ReplHandler {
   boolean isApplicable(@NotNull String line);
 
-  void invoke(@NotNull String line, @NotNull ReplApi api, @NotNull Scanner scanner);
+  void invoke(@NotNull String line, @NotNull ReplApi api, @NotNull Supplier<@NotNull String> lineSupplier);
 }

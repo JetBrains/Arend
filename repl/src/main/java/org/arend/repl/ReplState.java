@@ -43,9 +43,12 @@ import org.arend.typechecking.visitor.SyntacticDesugarVisitor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.InputStream;
 import java.io.PrintStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.function.Supplier;
 
 public abstract class ReplState implements ReplApi {
   private final List<Scope> myMergedScopes = new ArrayList<>();
@@ -102,28 +105,15 @@ public abstract class ReplState implements ReplApi {
     return true;
   }
 
-  public void runRepl(@NotNull InputStream inputStream) {
+  public final void initialize() {
     loadPreludeLibrary();
     loadReplLibrary();
-    initialize();
+    loadCommands();
+  }
 
-    var scanner = new Scanner(inputStream);
-    prompt();
-    while (scanner.hasNext()) {
-      String line = scanner.nextLine();
-      if (line.startsWith(":quit") || line.equals(":q")) break;
-      boolean actionExecuted = false;
-      for (ReplHandler action : myHandlers)
-        if (action.isApplicable(line)) {
-          action.invoke(line, this, scanner);
-          actionExecuted = true;
-          break;
-        }
-      if (!actionExecuted && line.startsWith(":")) {
-        eprintln("[ERROR] Unrecognized command: " + line.substring(1) + ".");
-      }
-      prompt();
-    }
+  public final void repl(@NotNull Supplier<@NotNull String> lineSupplier, @NotNull String currentLine) {
+    for (var action : myHandlers)
+      if (action.isApplicable(currentLine)) action.invoke(currentLine, this, lineSupplier);
   }
 
   @Override
@@ -158,8 +148,7 @@ public abstract class ReplState implements ReplApi {
   @Override
   public @NotNull ModuleScopeProvider getAvailableModuleScopeProvider() {
     return module -> {
-      var registeredLibraries = myLibraryManager.getRegisteredLibraries();
-      for (Library registeredLibrary : registeredLibraries) {
+      for (Library registeredLibrary : myLibraryManager.getRegisteredLibraries()) {
         Scope scope = myLibraryManager.getAvailableModuleScopeProvider(registeredLibrary).forModule(module);
         if (scope != null) return scope;
       }
@@ -167,8 +156,8 @@ public abstract class ReplState implements ReplApi {
     };
   }
 
-  public void prompt() {
-    print("\u03bb ");
+  public @NotNull String prompt() {
+    return "\u03bb ";
   }
 
   protected abstract @Nullable Group parseStatements(String line);
@@ -201,7 +190,7 @@ public abstract class ReplState implements ReplApi {
     }
   }
 
-  protected void initialize() {
+  protected void loadCommands() {
     myHandlers.add(CodeParsingHandler.INSTANCE);
     myHandlers.add(CommandHandler.INSTANCE);
     registerAction("unload", UnloadModuleCommand.INSTANCE);

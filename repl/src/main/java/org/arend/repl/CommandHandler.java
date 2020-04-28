@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.IntSummaryStatistics;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Scanner;
+import java.util.function.Supplier;
 
 public final class CommandHandler implements ReplHandler {
   public static final @NotNull CommandHandler INSTANCE = new CommandHandler();
@@ -25,12 +25,12 @@ public final class CommandHandler implements ReplHandler {
   }
 
   @Override
-  public final void invoke(@NotNull String line, @NotNull ReplApi api, @NotNull Scanner scanner) {
+  public final void invoke(@NotNull String line, @NotNull ReplApi api, @NotNull Supplier<@NotNull String> lineSupplier) {
     int indexOfSpace = line.indexOf(' ');
     var command = indexOfSpace > 0 ? line.substring(1, indexOfSpace) : line.substring(1);
     var replCommand = commandMap.get(command);
     if (replCommand != null)
-      replCommand.invoke(line.substring(indexOfSpace + 1), api, scanner);
+      replCommand.invoke(line.substring(indexOfSpace + 1), api, lineSupplier);
     else api.eprintln("[ERROR] Unrecognized command: " + command + ".");
   }
 
@@ -41,7 +41,7 @@ public final class CommandHandler implements ReplHandler {
     }
 
     @Override
-    public void invoke(@NotNull String line, @NotNull ReplApi api, @NotNull Scanner scanner) {
+    public void invoke(@NotNull String line, @NotNull ReplApi api, @NotNull Supplier<@NotNull String> scanner) {
       IntSummaryStatistics statistics = commandMap.keySet().stream()
           .mapToInt(String::length)
           .summaryStatistics();

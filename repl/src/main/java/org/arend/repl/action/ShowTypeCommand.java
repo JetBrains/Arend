@@ -5,7 +5,7 @@ import org.arend.repl.ReplApi;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Scanner;
+import java.util.function.Supplier;
 
 public final class ShowTypeCommand implements ReplCommand {
   public static final @NotNull ShowTypeCommand INSTANCE = new ShowTypeCommand();
@@ -19,7 +19,7 @@ public final class ShowTypeCommand implements ReplCommand {
   }
 
   @Override
-  public void invoke(@NotNull String line, @NotNull ReplApi api, @NotNull Scanner scanner) {
+  public void invoke(@NotNull String line, @NotNull ReplApi api, @NotNull Supplier<@NotNull String> scanner) {
     var expr = api.preprocessExpr(line);
     if (api.checkErrors() || expr == null) return;
     var result = api.checkExpr(expr, null);

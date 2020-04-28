@@ -4,7 +4,7 @@ import org.arend.repl.ReplApi;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Scanner;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public final class ListLoadedModulesAction implements ReplCommand {
@@ -14,7 +14,7 @@ public final class ListLoadedModulesAction implements ReplCommand {
   }
 
   @Override
-  public void invoke(@NotNull String line, @NotNull ReplApi api, @NotNull Scanner scanner) {
+  public void invoke(@NotNull String line, @NotNull ReplApi api, @NotNull Supplier<@NotNull String> scanner) {
     var string = api.getReplLibrary().getLoadedModules().stream().map(String::valueOf).collect(Collectors.joining(" "));
     if (string.isBlank()) api.println("[INFO] No modules loaded.");
     else api.println(string);
