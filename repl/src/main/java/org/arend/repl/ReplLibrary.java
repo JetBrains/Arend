@@ -1,59 +1,63 @@
 package org.arend.repl;
 
+import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.module.ModulePath;
-import org.arend.library.BaseLibrary;
 import org.arend.library.LibraryDependency;
+import org.arend.library.LibraryHeader;
+import org.arend.library.UnmodifiableSourceLibrary;
 import org.arend.module.FullModulePath;
+import org.arend.source.BinarySource;
 import org.arend.term.group.ChildGroup;
 import org.arend.typechecking.TypecheckerState;
+import org.arend.util.Range;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
-public class ReplLibrary extends BaseLibrary {
+public abstract class ReplLibrary extends UnmodifiableSourceLibrary {
   public static final @NotNull FullModulePath replModulePath = new FullModulePath(null, FullModulePath.LocationKind.TEST, Collections.singletonList("Repl"));
-  private final @NotNull List<LibraryDependency> dependencies = new ArrayList<>();
-  private ChildGroup group = null;
+  private final @NotNull List<LibraryDependency> myDependencies = new ArrayList<>();
+  protected final @NotNull Path currentDir = Paths.get(".").toAbsolutePath();
 
-  public ReplLibrary(TypecheckerState typecheckerState) {
-    super(typecheckerState);
+  public ReplLibrary(@NotNull TypecheckerState typecheckerState) {
+    super("Repl", typecheckerState);
   }
 
   @Override
-  public @NotNull String getName() {
-    return replModulePath.getLastName();
+  public @Nullable BinarySource getBinarySource(ModulePath modulePath) {
+    return null;
   }
 
   @Override
-  public @NotNull Collection<? extends ModulePath> getLoadedModules() {
-    return Collections.singletonList(replModulePath);
+  protected @Nullable LibraryHeader loadHeader(ErrorReporter errorReporter) {
+    return new LibraryHeader(List.copyOf(getLoadedModules()), Collections.emptyList(), Range.unbound(), null, null);
   }
 
   @Override
   public @NotNull Collection<? extends LibraryDependency> getDependencies() {
-    return dependencies;
+    return myDependencies;
   }
 
   public boolean addDependency(@NotNull LibraryDependency dependency) {
-    return dependencies.add(dependency);
+    return myDependencies.add(dependency);
   }
 
   @Override
-  public @Nullable ChildGroup getModuleGroup(ModulePath modulePath) {
-    return containsModule(modulePath) ? getGroup() : null;
+  public boolean supportsPersisting() {
+    return false;
   }
 
-  public ChildGroup getGroup() {
-    return group;
+  public @Nullable ChildGroup getGroup() {
+    return getModuleGroup(replModulePath);
   }
 
-  public void setGroup(ChildGroup group) {
-    this.group = group;
-  }
-
-  @Override
-  public boolean containsModule(ModulePath modulePath) {
-    return Objects.equals(modulePath, replModulePath);
+  public void setGroup(@Nullable ChildGroup group) {
+    onGroupLoaded(replModulePath, group, true);
   }
 }

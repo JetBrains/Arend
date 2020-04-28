@@ -62,19 +62,20 @@ public abstract class ReplState {
                    @NotNull PartialComparator<TCReferable> comparator,
                    @NotNull PrintStream stdout,
                    @NotNull PrintStream stderr,
+                   @NotNull ReplLibrary replLibrary,
                    @NotNull TypecheckerState typecheckerState) {
     myErrorReporter = listErrorReporter;
     myConcreteProvider = concreteProvider;
     myTypecheckerState = typecheckerState;
     myStdout = stdout;
     myStderr = stderr;
+    myReplLibrary = replLibrary;
     myLibraryManager = new LibraryManager(libraryResolver, new InstanceProviderSet(), this.myErrorReporter, this.myErrorReporter, DefinitionRequester.INSTANCE);
     myTypechecking = new TypecheckingOrderingListener(myLibraryManager.getInstanceProviderSet(), myTypecheckerState, myConcreteProvider, IdReferableConverter.INSTANCE, this.myErrorReporter, comparator, new LibraryArendExtensionProvider(myLibraryManager));
     var preludeLibrary = new PreludeResourceLibrary(myTypecheckerState);
     if (!myLibraryManager.loadLibrary(preludeLibrary, myTypechecking)) {
       throw new IllegalStateException("[FATAL] Failed to load Prelude");
     }
-    myReplLibrary = new ReplLibrary(myTypecheckerState);
     myReplLibrary.addDependency(new LibraryDependency(preludeLibrary.getName()));
     myReplLibrary.setGroup(new FileGroup(new FullModuleReferable(ReplLibrary.replModulePath), Collections.emptyList(), Collections.emptyList()));
     myMergedScopes.add(PreludeLibrary.getPreludeScope());

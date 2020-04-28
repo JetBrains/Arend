@@ -181,11 +181,6 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     }
   }
 
-  @Override
-  public SimpleNamespaceCommand visitStatCmd(StatCmdContext ctx) {
-    return visitStatCmd(ctx, null);
-  }
-
   private SimpleNamespaceCommand visitStatCmd(StatCmdContext ctx, ChildGroup parent) {
     NamespaceCommand.Kind kind = (NamespaceCommand.Kind) visit(ctx.nsCmd());
     List<String> path = visitLongNamePath(ctx.longName());

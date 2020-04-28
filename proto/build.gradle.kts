@@ -1,5 +1,4 @@
 plugins {
-    java
     idea
     id("com.google.protobuf") version "0.8.11"
 }

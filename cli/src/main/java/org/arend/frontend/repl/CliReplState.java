@@ -32,6 +32,7 @@ public class CliReplState extends ReplState {
         ConcreteReferableProvider.INSTANCE,
         PositionComparator.INSTANCE,
         System.out, System.err,
+        new CliReplLibrary(typecheckerState),
         typecheckerState
     );
   }
