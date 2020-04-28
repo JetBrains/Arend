@@ -4,6 +4,7 @@ import org.arend.core.expr.Expression;
 import org.arend.naming.scope.Scope;
 import org.arend.repl.action.ReplAction;
 import org.arend.repl.action.ReplCommand;
+import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -11,16 +12,15 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 public interface ReplApi {
+  void checkStatements(@NotNull String line);
+
   void registerAction(@NotNull ReplCommand action);
 
   boolean unregisterAction(@NotNull ReplAction action);
 
   void clearActions();
 
-  /**
-   * @return the scope of the REPL. It's mutable.
-   */
-  @NotNull List<Scope> getMergedScopes();
+  @NotNull TypecheckingOrderingListener getTypechecking();
 
   /**
    * A replacement of {@link System#out#println(Object)} where it uses the

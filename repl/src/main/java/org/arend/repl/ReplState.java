@@ -22,7 +22,7 @@ import org.arend.naming.scope.Scope;
 import org.arend.naming.scope.ScopeFactory;
 import org.arend.prelude.PreludeLibrary;
 import org.arend.prelude.PreludeResourceLibrary;
-import org.arend.repl.action.ElaborateExprAction;
+import org.arend.repl.action.DefaultAction;
 import org.arend.repl.action.ReplAction;
 import org.arend.repl.action.ReplCommand;
 import org.arend.term.concrete.Concrete;
@@ -42,7 +42,10 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Scanner;
 
 public abstract class ReplState implements ReplApi {
   protected final PrettyPrinterConfig myPpConfig = PrettyPrinterConfig.DEFAULT;
@@ -55,11 +58,6 @@ public abstract class ReplState implements ReplApi {
   protected final @NotNull LibraryManager myLibraryManager;
   protected final @NotNull ConcreteProvider myConcreteProvider;
   protected final @NotNull TypecheckingOrderingListener myTypechecking;
-
-  public static final List<String> definitionEvidence = Arrays.asList(
-      "\\import", "\\open", "\\use", "\\func", "\\sfunc", "\\lemma",
-      "\\data", "\\module", "\\meta", "\\instance", "\\class");
-  private static final @NotNull ReplAction defaultAction = ElaborateExprAction.INSTANCE;
 
   private final @NotNull PrintStream myStdout;
   private final @NotNull PrintStream myStderr;
@@ -112,6 +110,16 @@ public abstract class ReplState implements ReplApi {
       myStdout.print("\u03bb ");
       myStdout.flush();
       String line = scanner.nextLine();
+      if (line.startsWith(":quit") || line.equals(":q")) break;
+      boolean actionExecuted = false;
+      for (ReplAction action : myActions)
+        if (action.isApplicable(line)) {
+          action.invoke(line, this, scanner);
+          actionExecuted = true;
+        }
+      if (!actionExecuted && line.startsWith(":")) {
+        myStderr.println("[ERROR] Unrecognized command: " + line.substring(1) + ".");
+      }
       if (line.startsWith(":load"))
         actionLoad(line.substring(":load".length()));
       else if (line.startsWith(":l"))
@@ -120,8 +128,6 @@ public abstract class ReplState implements ReplApi {
         actionType(line.substring(":type".length()));
       else if (line.startsWith(":t"))
         actionType(line.substring(":t".length()));
-      else if (line.startsWith(":quit") || line.equals(":q"))
-        break;
       else if (line.startsWith(":nf")) {
         var result = checkExpr(line.substring(":nf".length()), null);
         if (result == null) continue;
@@ -130,33 +136,6 @@ public abstract class ReplState implements ReplApi {
         var result = checkExpr(line.substring(":whnf".length()), null);
         if (result == null) continue;
         myStdout.println(result.expression.normalize(NormalizationMode.WHNF));
-      } else if (line.startsWith(":")) {
-        myStderr.println("[ERROR] Unrecognized command: " + line.substring(1) + ".");
-      } else if (definitionEvidence.stream().anyMatch(line::contains)) {
-        var group = parseStatements(line);
-        if (group == null) continue;
-        var moduleScopeProvider = myReplLibrary.getModuleScopeProvider();
-        Scope scope = CachingScope.make(ScopeFactory.forGroup(group, moduleScopeProvider));
-        myMergedScopes.add(scope);
-        new DefinitionResolveNameVisitor(myConcreteProvider, myErrorReporter)
-            .resolveGroupWithTypes(group, null, myScope);
-        if (checkErrors()) {
-          myMergedScopes.remove(scope);
-          continue;
-        }
-        myLibraryManager.getInstanceProviderSet().collectInstances(group,
-            CachingScope.make(ScopeFactory.parentScopeForGroup(group, moduleScopeProvider, true)),
-            myConcreteProvider, null);
-        if (checkErrors()) {
-          myMergedScopes.remove(scope);
-          continue;
-        }
-        if (!myTypechecking.typecheckModules(Collections.singletonList(group), null)) {
-          checkErrors();
-          myMergedScopes.remove(scope);
-        }
-      } else if (defaultAction.isApplicable(line)) {
-        defaultAction.invoke(line, this);
       }
     }
   }
@@ -165,7 +144,34 @@ public abstract class ReplState implements ReplApi {
 
   protected abstract @Nullable Concrete.Expression parseExpr(@NotNull String text);
 
+  @Override
+  public void checkStatements(@NotNull String line) {
+    var group = parseStatements(line);
+    if (group == null) return;
+    var moduleScopeProvider = myReplLibrary.getModuleScopeProvider();
+    Scope scope = CachingScope.make(ScopeFactory.forGroup(group, moduleScopeProvider));
+    myMergedScopes.add(scope);
+    new DefinitionResolveNameVisitor(myConcreteProvider, myErrorReporter)
+        .resolveGroupWithTypes(group, null, myScope);
+    if (checkErrors()) {
+      myMergedScopes.remove(scope);
+      return;
+    }
+    myLibraryManager.getInstanceProviderSet().collectInstances(group,
+        CachingScope.make(ScopeFactory.parentScopeForGroup(group, moduleScopeProvider, true)),
+        myConcreteProvider, null);
+    if (checkErrors()) {
+      myMergedScopes.remove(scope);
+      return;
+    }
+    if (!myTypechecking.typecheckModules(Collections.singletonList(group), null)) {
+      checkErrors();
+      myMergedScopes.remove(scope);
+    }
+  }
+
   protected void initialize() {
+    myActions.add(DefaultAction.INSTANCE);
   }
 
   @Override
@@ -184,15 +190,15 @@ public abstract class ReplState implements ReplApi {
   }
 
   @Override
-  public final @NotNull List<Scope> getMergedScopes() {
-    return myMergedScopes;
+  public @NotNull TypecheckingOrderingListener getTypechecking() {
+    return myTypechecking;
   }
 
   private void actionType(String line) {
     var result = checkExpr(line, null);
     if (result == null) return;
     Expression type = result.expression.getType();
-    myStdout.println(type == null ? "Cannot synthesize a type, sorry." : type);
+    println(type == null ? "Cannot synthesize a type, sorry." : type);
   }
 
   private void actionLoad(String text) {

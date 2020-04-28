@@ -3,6 +3,8 @@ package org.arend.repl.action;
 import org.arend.repl.ReplApi;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Scanner;
+
 public abstract class ReplCommand implements ReplAction {
   private final @NotNull String myCommandWithColon;
 
@@ -16,7 +18,7 @@ public abstract class ReplCommand implements ReplAction {
   }
 
   @Override
-  public void invoke(@NotNull String line, @NotNull ReplApi state) {
+  public void invoke(@NotNull String line, @NotNull ReplApi state, @NotNull Scanner scanner) {
     var content = line.substring(myCommandWithColon.length()).trim();
     doInvoke(content, state);
   }
