@@ -22,7 +22,14 @@ import java.util.ArrayList;
 public class CliReplState extends ReplState {
   public CliReplState(@NotNull TypecheckerState typecheckerState,
                       @NotNull ListErrorReporter errorReporter) {
-    super(errorReporter, new FileLibraryResolver(new ArrayList<>(), typecheckerState, errorReporter), ConcreteReferableProvider.INSTANCE, PositionComparator.INSTANCE, typecheckerState);
+    super(
+        errorReporter,
+        new FileLibraryResolver(new ArrayList<>(), typecheckerState, errorReporter),
+        ConcreteReferableProvider.INSTANCE,
+        PositionComparator.INSTANCE,
+        System.out, System.err,
+        typecheckerState
+    );
   }
 
   private @NotNull BuildVisitor buildVisitor() {

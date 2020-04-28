@@ -35,6 +35,8 @@ import org.arend.typechecking.visitor.SyntacticDesugarVisitor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.InputStream;
+import java.io.PrintStream;
 import java.util.*;
 
 public abstract class ReplState {
@@ -51,15 +53,21 @@ public abstract class ReplState {
   public static final List<String> definitionEvidence = Arrays.asList(
       "\\import", "\\open", "\\use", "\\func", "\\sfunc", "\\lemma",
       "\\data", "\\module", "\\meta", "\\instance", "\\class");
+  protected final @NotNull PrintStream myStdout;
+  protected final @NotNull PrintStream myStderr;
 
   public ReplState(@NotNull ListErrorReporter listErrorReporter,
                    @NotNull LibraryResolver libraryResolver,
                    @NotNull ConcreteProvider concreteProvider,
                    @NotNull PartialComparator<TCReferable> comparator,
+                   @NotNull PrintStream stdout,
+                   @NotNull PrintStream stderr,
                    @NotNull TypecheckerState typecheckerState) {
     myErrorReporter = listErrorReporter;
     myConcreteProvider = concreteProvider;
     myTypecheckerState = typecheckerState;
+    myStdout = stdout;
+    myStderr = stderr;
     myLibraryManager = new LibraryManager(libraryResolver, new InstanceProviderSet(), this.myErrorReporter, this.myErrorReporter, DefinitionRequester.INSTANCE);
     myTypechecking = new TypecheckingOrderingListener(myLibraryManager.getInstanceProviderSet(), myTypecheckerState, myConcreteProvider, IdReferableConverter.INSTANCE, this.myErrorReporter, comparator, new LibraryArendExtensionProvider(myLibraryManager));
     var preludeLibrary = new PreludeResourceLibrary(myTypecheckerState);
@@ -84,11 +92,11 @@ public abstract class ReplState {
     return true;
   }
 
-  public void runRepl() {
-    var scanner = new Scanner(System.in);
+  public void runRepl(@NotNull InputStream inputStream) {
+    var scanner = new Scanner(inputStream);
     while (true) {
-      System.out.print("\u03bb ");
-      System.out.flush();
+      myStdout.print("\u03bb ");
+      myStdout.flush();
       String line = scanner.nextLine();
       if (line.startsWith(":load"))
         actionLoad(line.substring(":load".length()));
@@ -103,13 +111,13 @@ public abstract class ReplState {
       else if (line.startsWith(":nf")) {
         var result = checkExpr(line.substring(":nf".length()));
         if (result == null) continue;
-        System.out.println(result.expression.normalize(NormalizationMode.NF));
+        myStdout.println(result.expression.normalize(NormalizationMode.NF));
       } else if (line.startsWith(":whnf")) {
         var result = checkExpr(line.substring(":whnf".length()));
         if (result == null) continue;
-        System.out.println(result.expression.normalize(NormalizationMode.WHNF));
+        myStdout.println(result.expression.normalize(NormalizationMode.WHNF));
       } else if (line.startsWith(":")) {
-        System.err.println("[ERROR] Unrecognized command: " + line.substring(1) + ".");
+        myStderr.println("[ERROR] Unrecognized command: " + line.substring(1) + ".");
       } else if (definitionEvidence.stream().anyMatch(line::contains)) {
         var group = parseStatements(line);
         if (group == null) continue;
@@ -136,7 +144,7 @@ public abstract class ReplState {
       } else if (!line.isBlank()) {
         var result = checkExpr(line);
         if (result == null) continue;
-        System.out.println(result.expression);
+        myStdout.println(result.expression);
       }
     }
   }
@@ -149,14 +157,14 @@ public abstract class ReplState {
     var result = checkExpr(line);
     if (result == null) return;
     Expression type = result.expression.getType();
-    System.out.println(type == null ? "Cannot synthesize a type, sorry." : type);
+    myStdout.println(type == null ? "Cannot synthesize a type, sorry." : type);
   }
 
   private void actionLoad(String text) {
 /* TODO
     var libPath = Paths.get(text);
     if (!loadLibrary(myLibraryResolver.registerLibrary(libPath)))
-      System.err.println("[ERROR] Failed to load the library specified.");
+      myStderr.println("[ERROR] Failed to load the library specified.");
 */
   }
 
@@ -189,7 +197,7 @@ public abstract class ReplState {
   protected final boolean checkErrors() {
     var errorList = myErrorReporter.getErrorList();
     for (GeneralError error : errorList)
-      (error.isSevere() ? System.err : System.out).println(error.getDoc(myPpConfig));
+      (error.isSevere() ? myStderr : myStdout).println(error.getDoc(myPpConfig));
     boolean hasErrors = !errorList.isEmpty();
     errorList.clear();
     return hasErrors;
