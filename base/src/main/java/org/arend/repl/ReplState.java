@@ -113,7 +113,8 @@ public abstract class ReplState implements ReplApi {
 
   public final void repl(@NotNull Supplier<@NotNull String> lineSupplier, @NotNull String currentLine) {
     for (var action : myHandlers)
-      if (action.isApplicable(currentLine)) action.invoke(currentLine, this, lineSupplier);
+      if (action.isApplicable(currentLine))
+        action.invoke(currentLine, this, lineSupplier);
   }
 
   @Override

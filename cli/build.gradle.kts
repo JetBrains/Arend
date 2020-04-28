@@ -12,7 +12,6 @@ dependencies {
     implementation(project(":api"))
     implementation(project(":base"))
     implementation(project(":parser"))
-    implementation(project(":repl"))
 }
 
 val execRepl = task<JavaExec>("execRepl") {
