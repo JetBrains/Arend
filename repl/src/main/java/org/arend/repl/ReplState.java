@@ -11,7 +11,10 @@ import org.arend.ext.reference.Precedence;
 import org.arend.extImpl.DefinitionRequester;
 import org.arend.library.Library;
 import org.arend.library.LibraryManager;
+import org.arend.library.SourceLibrary;
 import org.arend.library.resolver.LibraryResolver;
+import org.arend.module.scopeprovider.ModuleScopeProvider;
+import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.naming.resolving.visitor.DefinitionResolveNameVisitor;
@@ -51,7 +54,7 @@ public abstract class ReplState implements ReplApi {
   private final MergeScope myScope = new MergeScope(myMergedScopes);
   protected final @NotNull ListErrorReporter myErrorReporter;
   protected final @NotNull TypecheckerState myTypecheckerState;
-  protected final @NotNull Library myReplLibrary;
+  protected final @NotNull SourceLibrary myReplLibrary;
   protected final @NotNull LibraryManager myLibraryManager;
   protected final @NotNull ConcreteProvider myConcreteProvider;
   protected final @NotNull TypecheckingOrderingListener myTypechecking;
@@ -66,7 +69,7 @@ public abstract class ReplState implements ReplApi {
                    @NotNull PrintStream stdout,
                    @NotNull PrintStream stderr,
                    @NotNull Set<ModulePath> modules,
-                   @NotNull Library replLibrary,
+                   @NotNull SourceLibrary replLibrary,
                    @NotNull TypecheckerState typecheckerState) {
     myErrorReporter = listErrorReporter;
     myConcreteProvider = concreteProvider;
@@ -113,6 +116,7 @@ public abstract class ReplState implements ReplApi {
         if (action.isApplicable(line)) {
           action.invoke(line, this, scanner);
           actionExecuted = true;
+          break;
         }
       if (!actionExecuted && line.startsWith(":")) {
         eprintln("[ERROR] Unrecognized command: " + line.substring(1) + ".");
@@ -122,12 +126,34 @@ public abstract class ReplState implements ReplApi {
   }
 
   @Override
-  public @Nullable Scope loadModule(@NotNull ModulePath path) {
-    if (!myModules.add(path))
-      println("[INFO] " + path + " is already loaded.");
+  public @Nullable Scope loadModule(@NotNull ModulePath modulePath) {
+    boolean isLoadedBefore = myModules.add(modulePath);
     myLibraryManager.reload(myTypechecking);
     if (checkErrors()) return null;
-    return myLibraryManager.getAvailableModuleScopeProvider(myReplLibrary).forModule(path);
+    if (isLoadedBefore) {
+      Scope scope = getAvailableModuleScopeProvider().forModule(modulePath);
+      if (scope != null) removeScope(scope);
+    }
+    myTypechecking.typecheckLibrary(myReplLibrary);
+    return getAvailableModuleScopeProvider().forModule(modulePath);
+  }
+
+  @Override
+  public boolean unloadModule(@NotNull ModulePath modulePath) {
+    boolean isLoadedBefore = myModules.remove(modulePath);
+    if (isLoadedBefore) {
+      myLibraryManager.reload(myTypechecking);
+      Scope scope = getAvailableModuleScopeProvider().forModule(modulePath);
+      if (scope != null) removeScope(scope);
+      myReplLibrary.onGroupLoaded(modulePath, null, true);
+      myTypechecking.typecheckLibrary(myReplLibrary);
+    }
+    return isLoadedBefore;
+  }
+
+  @Override
+  public @NotNull ModuleScopeProvider getAvailableModuleScopeProvider() {
+    return myLibraryManager.getAvailableModuleScopeProvider(myReplLibrary);
   }
 
   public void prompt() {
@@ -171,7 +197,7 @@ public abstract class ReplState implements ReplApi {
     registerAction(new LoadFileCommand("load"));
     registerAction(new LoadFileCommand("l"));
     registerAction(new UnloadFileCommand("unload"));
-    registerAction(new UnloadFileCommand("u"));
+    registerAction(new ListLoadedModulesAction("modules"));
     registerAction(new NormalizeCommand("whnf", NormalizationMode.WHNF));
     registerAction(new NormalizeCommand("nf", NormalizationMode.NF));
     registerAction(new NormalizeCommand("rnf", NormalizationMode.RNF));
@@ -210,6 +236,9 @@ public abstract class ReplState implements ReplApi {
 
   @Override
   public final boolean removeScope(@NotNull Scope scope) {
+    for (Referable element : scope.getElements())
+      if (element instanceof TCReferable)
+        myTypecheckerState.reset((TCReferable) element);
     return myMergedScopes.remove(scope);
   }
 
@@ -267,7 +296,7 @@ public abstract class ReplState implements ReplApi {
   }
 
   private final class HelpAction extends ReplCommand {
-    protected HelpAction(@NotNull String command) {
+    private HelpAction(@NotNull String command) {
       super(command);
     }
 
@@ -283,6 +312,7 @@ public abstract class ReplState implements ReplApi {
           .mapToInt(action -> ((ReplCommand) action).commandWithColon.length())
           .summaryStatistics();
       int maxWidth = Math.min(statistics.getMax(), 8) + 1;
+      println("There are " + statistics.getCount() + " action(s) available.");
       for (ReplAction action : myActions) {
         var description = action.description();
         if (description == null) continue;

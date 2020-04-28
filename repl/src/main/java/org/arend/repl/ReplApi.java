@@ -4,6 +4,7 @@ import org.arend.core.expr.Expression;
 import org.arend.ext.module.ModulePath;
 import org.arend.library.Library;
 import org.arend.module.FullModulePath;
+import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.scope.Scope;
 import org.arend.repl.action.ReplAction;
 import org.arend.repl.action.ReplCommand;
@@ -21,7 +22,11 @@ public interface ReplApi {
    * Load a file under the REPL working directory and get its scope.
    * This will <strong>not</strong> modify the REPL scope.
    */
-  @Nullable Scope loadModule(@NotNull ModulePath path);
+  @Nullable Scope loadModule(@NotNull ModulePath modulePath);
+
+  boolean unloadModule(@NotNull ModulePath modulePath);
+
+  @NotNull ModuleScopeProvider getAvailableModuleScopeProvider();
 
   void checkStatements(@NotNull String line);
 

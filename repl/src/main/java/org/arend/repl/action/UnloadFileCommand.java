@@ -25,7 +25,9 @@ public final class UnloadFileCommand extends ReplCommand {
       api.eprintln("[ERROR] Module " + modulePath + " is not loaded.");
       return;
     }
-    Scope scope = api.loadModule(modulePath);
-    assert scope == null || api.removeScope(scope);
+    Scope scope = api.getAvailableModuleScopeProvider().forModule(modulePath);
+    if (scope != null) api.removeScope(scope);
+    api.unloadModule(modulePath);
+    api.checkErrors();
   }
 }

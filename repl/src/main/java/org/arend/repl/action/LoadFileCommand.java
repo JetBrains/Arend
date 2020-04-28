@@ -23,5 +23,6 @@ public final class LoadFileCommand extends ReplCommand {
     Scope scope = api.loadModule(ModulePath.fromString(line));
     if (scope != null) api.addScope(scope);
     else api.println("[INFO] No module loaded.");
+    api.checkErrors();
   }
 }
