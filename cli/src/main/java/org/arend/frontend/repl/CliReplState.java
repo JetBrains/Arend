@@ -1,5 +1,7 @@
 package org.arend.frontend.repl;
 
+import com.fasterxml.jackson.core.JsonpCharacterEscapes;
+import com.fasterxml.jackson.core.io.CharacterEscapes;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.arend.error.ListErrorReporter;
@@ -16,19 +18,26 @@ import org.arend.frontend.parser.ReporterErrorListener;
 import org.arend.prelude.Prelude;
 import org.arend.repl.ReplApi;
 import org.arend.repl.ReplState;
+import org.arend.repl.action.ReplCommand;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.FileGroup;
 import org.arend.typechecking.SimpleTypecheckerState;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.util.Range;
+import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.yaml.snakeyaml.external.com.google.gdata.util.common.base.Escaper;
+import org.yaml.snakeyaml.external.com.google.gdata.util.common.base.UnicodeEscaper;
 
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Scanner;
 
 public class CliReplState extends ReplState {
+  private @NotNull String prompt = "\u03bb ";
+
   public CliReplState(@NotNull TypecheckerState typecheckerState,
                       @NotNull ListErrorReporter errorReporter) {
     super(
@@ -70,6 +79,17 @@ public class CliReplState extends ReplState {
   }
 
   @Override
+  public void prompt() {
+    print(prompt);
+  }
+
+  @Override
+  protected void initialize() {
+    super.initialize();
+    registerAction(new ChangePromptCommand("prompt"));
+  }
+
+  @Override
   protected final @Nullable FileGroup parseStatements(String line) {
     var fileGroup = buildVisitor().visitStatements(parse(line).statements());
     if (fileGroup != null) fileGroup.setModuleScopeProvider(myReplLibrary.getModuleScopeProvider());
@@ -90,5 +110,26 @@ public class CliReplState extends ReplState {
     var repl = new CliReplState();
     repl.println("The Arend Proof Assistant " + Prelude.VERSION);
     repl.runRepl(System.in);
+  }
+
+  private final class ChangePromptCommand extends ReplCommand {
+    protected ChangePromptCommand(@NotNull String command) {
+      super(command);
+    }
+
+    @Override
+    protected @Nls(capitalization = Nls.Capitalization.Sentence) @NotNull String help() {
+      return "Change the repl prompt (current prompt: '" + prompt + "')";
+    }
+
+    @Override
+    protected void doInvoke(@NotNull String line, @NotNull ReplApi api, @NotNull Scanner scanner) {
+      boolean start = line.startsWith("\"");
+      boolean end = line.endsWith("\"");
+      // Maybe we should unescape this string?
+      if (start && end) prompt = line.substring(1, line.length() - 1);
+      else if (!start && !end) prompt = line;
+      else eprintln("[ERROR] Bad prompt format");
+    }
   }
 }

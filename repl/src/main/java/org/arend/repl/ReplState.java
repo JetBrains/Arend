@@ -122,8 +122,7 @@ public abstract class ReplState implements ReplApi {
   }
 
   public void prompt() {
-    myStdout.print("\u03bb ");
-    myStdout.flush();
+    print("\u03bb ");
   }
 
   protected abstract @Nullable FileGroup parseStatements(String line);
@@ -192,6 +191,12 @@ public abstract class ReplState implements ReplApi {
   }
 
   @Override
+  public void print(Object anything) {
+    myStdout.print(anything);
+    myStdout.flush();
+  }
+
+  @Override
   public void eprintln(Object anything) {
     myStderr.println(anything);
     myStderr.flush();
@@ -245,7 +250,10 @@ public abstract class ReplState implements ReplApi {
 
     @Override
     protected void doInvoke(@NotNull String line, @NotNull ReplApi api, @NotNull Scanner scanner) {
-      for (ReplAction action : myActions) println(action.description());
+      for (ReplAction action : myActions) {
+        var description = action.description();
+        if (description != null) println(description);
+      }
     }
   }
 }

@@ -27,7 +27,7 @@ public abstract class ReplCommand implements ReplAction {
 
   @Override
   public final @Nls @NotNull String description() {
-    return String.format("%4s %s", myCommandWithColon, help());
+    return String.format("%-5s %s", myCommandWithColon, help());
   }
 
   /**

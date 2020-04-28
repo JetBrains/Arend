@@ -30,6 +30,8 @@ public interface ReplApi {
    */
   void println(Object anything);
 
+  void print(Object anything);
+
   /**
    * A replacement of {@link System#err#println(Object)} where it uses the
    * error output stream of the REPL.
