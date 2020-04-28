@@ -6,7 +6,6 @@ import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.nio.file.Paths;
 import java.util.Scanner;
 
 public class LoadLibraryCommand extends ReplCommand {
@@ -16,7 +15,7 @@ public class LoadLibraryCommand extends ReplCommand {
 
   @Override
   protected void doInvoke(@NotNull String line, @NotNull ReplApi api, @NotNull Scanner scanner) {
-    Library library = api.createLibrary(Paths.get(line));
+    Library library = api.createLibrary(line);
     if (library == null || api.checkErrors()) {
       api.eprintln("[ERROR] Cannot find a library at '" + line + "'.");
       return;

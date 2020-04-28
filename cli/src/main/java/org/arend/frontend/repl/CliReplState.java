@@ -26,7 +26,6 @@ import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Scanner;
@@ -70,8 +69,8 @@ public class CliReplState extends ReplState {
   //endregion
 
   @Override
-  public @Nullable Library createLibrary(@NotNull Path path) {
-    return myLibraryResolver.registerLibrary(path.toAbsolutePath());
+  public @Nullable Library createLibrary(@NotNull String path) {
+    return myLibraryResolver.registerLibrary(Paths.get(path).toAbsolutePath());
   }
 
   private @NotNull BuildVisitor buildVisitor() {

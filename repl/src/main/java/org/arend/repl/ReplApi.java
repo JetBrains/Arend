@@ -13,13 +13,12 @@ import org.arend.typechecking.result.TypecheckingResult;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.nio.file.Path;
 import java.util.Collections;
 
 public interface ReplApi {
   @NotNull FullModulePath replModulePath = new FullModulePath(null, FullModulePath.LocationKind.TEST, Collections.singletonList("Repl"));
 
-  @Nullable Library createLibrary(@NotNull Path path);
+  @Nullable Library createLibrary(@NotNull String path);
 
   boolean loadLibrary(@NotNull Library library);
 
