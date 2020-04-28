@@ -4,6 +4,8 @@ import org.arend.ext.module.LongName;
 import org.arend.ext.module.ModulePath;
 import org.arend.ext.prettyprinting.DefinitionRenamer;
 import org.arend.ext.reference.ArendRef;
+import org.arend.naming.reference.FieldReferable;
+import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.reference.ModuleReferable;
 import org.arend.naming.scope.CachingScope;
@@ -34,6 +36,9 @@ public class ScopeDefinitionRenamer implements DefinitionRenamer {
       List<String> list = new ArrayList<>();
       while (true) {
         LocatedReferable parent = ref.getLocatedReferableParent();
+        if ((ref.getKind() == GlobalReferable.Kind.CONSTRUCTOR || ref instanceof FieldReferable && !((FieldReferable) ref).isParameterField()) && parent != null && parent.getKind() == GlobalReferable.Kind.TYPECHECKABLE) {
+          parent = parent.getLocatedReferableParent();
+        }
         if (parent == null || parent instanceof ModuleReferable) {
           Collections.reverse(list);
           ModulePath modulePath = parent != null ? ((ModuleReferable) parent).path : ref.getLocation();
