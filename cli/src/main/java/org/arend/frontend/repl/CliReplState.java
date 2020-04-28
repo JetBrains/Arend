@@ -13,6 +13,7 @@ import org.arend.frontend.parser.ArendLexer;
 import org.arend.frontend.parser.ArendParser;
 import org.arend.frontend.parser.BuildVisitor;
 import org.arend.frontend.parser.ReporterErrorListener;
+import org.arend.prelude.Prelude;
 import org.arend.repl.ReplApi;
 import org.arend.repl.ReplState;
 import org.arend.term.concrete.Concrete;
@@ -86,6 +87,8 @@ public class CliReplState extends ReplState {
   }
 
   public static void main(String... args) {
-    new CliReplState().runRepl(System.in);
+    var repl = new CliReplState();
+    repl.println("The Arend Proof Assistant " + Prelude.VERSION);
+    repl.runRepl(System.in);
   }
 }

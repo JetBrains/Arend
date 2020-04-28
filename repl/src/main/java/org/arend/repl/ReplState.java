@@ -19,6 +19,7 @@ import org.arend.naming.scope.CachingScope;
 import org.arend.naming.scope.MergeScope;
 import org.arend.naming.scope.Scope;
 import org.arend.naming.scope.ScopeFactory;
+import org.arend.prelude.Prelude;
 import org.arend.prelude.PreludeLibrary;
 import org.arend.prelude.PreludeResourceLibrary;
 import org.arend.repl.action.*;
@@ -75,14 +76,15 @@ public abstract class ReplState implements ReplApi {
     myStderr = stderr;
     myReplLibrary = replLibrary;
     var instanceProviders = new InstanceProviderSet();
-    myLibraryManager = new LibraryManager(libraryResolver, instanceProviders, this.myErrorReporter, this.myErrorReporter, DefinitionRequester.INSTANCE);
-    myTypechecking = new TypecheckingOrderingListener(instanceProviders, myTypecheckerState, myConcreteProvider, IdReferableConverter.INSTANCE, this.myErrorReporter, comparator, new LibraryArendExtensionProvider(myLibraryManager));
+    myLibraryManager = new LibraryManager(libraryResolver, instanceProviders, myErrorReporter, myErrorReporter, DefinitionRequester.INSTANCE);
+    myTypechecking = new TypecheckingOrderingListener(instanceProviders, myTypecheckerState, myConcreteProvider, IdReferableConverter.INSTANCE, myErrorReporter, comparator, new LibraryArendExtensionProvider(myLibraryManager));
   }
 
   public void loadPreludeLibrary() {
-    if (!loadLibrary(new PreludeResourceLibrary(myTypecheckerState)))
+    var preludeLibrary = new PreludeResourceLibrary(myTypecheckerState);
+    if (!loadLibrary(preludeLibrary))
       eprintln("[FATAL] Failed to load Prelude");
-    myMergedScopes.add(PreludeLibrary.getPreludeScope());
+    else myMergedScopes.add(PreludeLibrary.getPreludeScope());
   }
 
   private void loadReplLibrary() {
@@ -102,9 +104,8 @@ public abstract class ReplState implements ReplApi {
     initialize();
 
     var scanner = new Scanner(inputStream);
+    prompt();
     while (scanner.hasNext()) {
-      myStdout.print("\u03bb ");
-      myStdout.flush();
       String line = scanner.nextLine();
       if (line.startsWith(":quit") || line.equals(":q")) break;
       boolean actionExecuted = false;
@@ -116,7 +117,13 @@ public abstract class ReplState implements ReplApi {
       if (!actionExecuted && line.startsWith(":")) {
         eprintln("[ERROR] Unrecognized command: " + line.substring(1) + ".");
       }
+      prompt();
     }
+  }
+
+  public void prompt() {
+    myStdout.print("\u03bb ");
+    myStdout.flush();
   }
 
   protected abstract @Nullable FileGroup parseStatements(String line);
