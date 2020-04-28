@@ -3,14 +3,14 @@ package org.arend.repl.action;
 import org.arend.core.expr.Expression;
 import org.arend.repl.ReplApi;
 import org.jetbrains.annotations.Nls;
-import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Scanner;
 
-public final class ShowTypeCommand extends ReplCommand {
-  public ShowTypeCommand(@NotNull @NonNls String command) {
-    super(command);
+public final class ShowTypeCommand implements ReplCommand {
+  public static final @NotNull ShowTypeCommand INSTANCE = new ShowTypeCommand();
+
+  private ShowTypeCommand() {
   }
 
   @Override
@@ -19,7 +19,7 @@ public final class ShowTypeCommand extends ReplCommand {
   }
 
   @Override
-  protected void doInvoke(@NotNull String line, @NotNull ReplApi api, @NotNull Scanner scanner) {
+  public void invoke(@NotNull String line, @NotNull ReplApi api, @NotNull Scanner scanner) {
     var expr = api.preprocessExpr(line);
     if (api.checkErrors() || expr == null) return;
     var result = api.checkExpr(expr, null);

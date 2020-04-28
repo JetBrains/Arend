@@ -8,14 +8,10 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Scanner;
 
-public class LoadLibraryCommand extends ReplCommand {
-  public LoadLibraryCommand(@NotNull String command) {
-    super(command);
-  }
-
+public abstract class LoadLibraryCommand implements ReplCommand {
   @Override
-  protected void doInvoke(@NotNull String line, @NotNull ReplApi api, @NotNull Scanner scanner) {
-    Library library = api.createLibrary(line);
+  public final void invoke(@NotNull String line, @NotNull ReplApi api, @NotNull Scanner scanner) {
+    Library library = createLibrary(line);
     if (library == null || api.checkErrors()) {
       api.eprintln("[ERROR] Cannot find a library at '" + line + "'.");
       return;
@@ -25,6 +21,8 @@ public class LoadLibraryCommand extends ReplCommand {
       api.eprintln("[ERROR] No library loaded.");
     }
   }
+
+  protected abstract @Nullable Library createLibrary(@NotNull String path);
 
   @Override
   public @Nls(capitalization = Nls.Capitalization.Sentence) @Nullable String description() {

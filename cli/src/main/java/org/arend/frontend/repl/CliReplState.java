@@ -17,6 +17,7 @@ import org.arend.library.Library;
 import org.arend.prelude.GeneratedVersion;
 import org.arend.repl.ReplApi;
 import org.arend.repl.ReplState;
+import org.arend.repl.action.LoadLibraryCommand;
 import org.arend.repl.action.ReplCommand;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.FileGroup;
@@ -68,11 +69,6 @@ public class CliReplState extends ReplState {
   }
   //endregion
 
-  @Override
-  public @Nullable Library createLibrary(@NotNull String path) {
-    return myLibraryResolver.registerLibrary(Paths.get(path).toAbsolutePath());
-  }
-
   private @NotNull BuildVisitor buildVisitor() {
     return new BuildVisitor(ReplApi.replModulePath, myErrorReporter);
   }
@@ -108,7 +104,13 @@ public class CliReplState extends ReplState {
   @Override
   protected void initialize() {
     super.initialize();
-    registerAction(new ChangePromptCommand("prompt"));
+    registerAction("prompt", new ChangePromptCommand());
+    registerAction("lib", new LoadLibraryCommand() {
+      @Override
+      protected @Nullable Library createLibrary(@NotNull String path) {
+        return myLibraryResolver.registerLibrary(Paths.get(path).toAbsolutePath());
+      }
+    });
   }
 
   @Override
@@ -135,18 +137,14 @@ public class CliReplState extends ReplState {
     repl.runRepl(System.in);
   }
 
-  private final class ChangePromptCommand extends ReplCommand {
-    protected ChangePromptCommand(@NotNull String command) {
-      super(command);
-    }
-
+  private final class ChangePromptCommand implements ReplCommand {
     @Override
     public @Nls(capitalization = Nls.Capitalization.Sentence) @NotNull String description() {
       return "Change the repl prompt (current prompt: '" + prompt + "')";
     }
 
     @Override
-    protected void doInvoke(@NotNull String line, @NotNull ReplApi api, @NotNull Scanner scanner) {
+    public void invoke(@NotNull String line, @NotNull ReplApi api, @NotNull Scanner scanner) {
       boolean start = line.startsWith("\"");
       boolean end = line.endsWith("\"");
       // Maybe we should unescape this string?

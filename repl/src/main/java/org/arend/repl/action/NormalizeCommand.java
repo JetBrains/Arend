@@ -3,12 +3,11 @@ package org.arend.repl.action;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.repl.ReplApi;
 import org.jetbrains.annotations.Nls;
-import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Scanner;
 
-public final class NormalizeCommand extends ReplCommand {
+public final class NormalizeCommand implements ReplCommand {
   private final @NotNull NormalizationMode myMode;
 
   @Override
@@ -16,13 +15,12 @@ public final class NormalizeCommand extends ReplCommand {
     return "Normalize the given expression into " + myMode.name();
   }
 
-  public NormalizeCommand(@NotNull @NonNls String command, @NotNull NormalizationMode mode) {
-    super(command);
+  public NormalizeCommand(@NotNull NormalizationMode mode) {
     myMode = mode;
   }
 
   @Override
-  protected void doInvoke(@NotNull String line, @NotNull ReplApi api, @NotNull Scanner scanner) {
+  public void invoke(@NotNull String line, @NotNull ReplApi api, @NotNull Scanner scanner) {
     var expr = api.preprocessExpr(line);
     if (api.checkErrors() || expr == null) return;
     var result = api.checkExpr(expr, null);

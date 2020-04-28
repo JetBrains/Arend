@@ -10,9 +10,10 @@ import org.jetbrains.annotations.Nullable;
 import java.nio.file.InvalidPathException;
 import java.util.Scanner;
 
-public final class LoadModuleCommand extends ReplCommand {
-  public LoadModuleCommand(@NotNull String command) {
-    super(command);
+public final class LoadModuleCommand implements ReplCommand {
+  public static final @NotNull LoadModuleCommand INSTANCE = new LoadModuleCommand();
+
+  private LoadModuleCommand() {
   }
 
   @Override
@@ -21,7 +22,7 @@ public final class LoadModuleCommand extends ReplCommand {
   }
 
   @Override
-  protected void doInvoke(@NotNull String line, @NotNull ReplApi api, @NotNull Scanner scanner) {
+  public void invoke(@NotNull String line, @NotNull ReplApi api, @NotNull Scanner scanner) {
     try {
       loadModule(api, ModulePath.fromString(line));
     } catch (InvalidPathException e) {
@@ -30,7 +31,7 @@ public final class LoadModuleCommand extends ReplCommand {
     }
   }
 
-  private static void loadModule(@NotNull ReplApi api, ModulePath modulePath){
+  private static void loadModule(@NotNull ReplApi api, ModulePath modulePath) {
     Scope existingScope = api.getAvailableModuleScopeProvider().forModule(modulePath);
     if (existingScope != null) api.removeScope(existingScope);
     Scope scope = api.loadModule(modulePath);
@@ -39,15 +40,16 @@ public final class LoadModuleCommand extends ReplCommand {
     if (!api.checkErrors()) ReloadModuleCommand.lastModulePath = modulePath;
   }
 
-  public static class ReloadModuleCommand extends ReplCommand {
-    private volatile static @Nullable ModulePath lastModulePath = null;
+  public static class ReloadModuleCommand implements ReplCommand {
+    public static final @NotNull ReloadModuleCommand INSTANCE = new ReloadModuleCommand();
 
-    public ReloadModuleCommand(@NotNull String command) {
-      super(command);
+    private ReloadModuleCommand() {
     }
 
+    private volatile static @Nullable ModulePath lastModulePath = null;
+
     @Override
-    protected void doInvoke(@NotNull String line, @NotNull ReplApi api, @NotNull Scanner scanner) {
+    public void invoke(@NotNull String line, @NotNull ReplApi api, @NotNull Scanner scanner) {
       if (lastModulePath != null)
         LoadModuleCommand.loadModule(api, lastModulePath);
       else api.eprintln("[ERROR] No previous module to load.");

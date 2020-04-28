@@ -8,9 +8,10 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Scanner;
 
-public final class UnloadModuleCommand extends ReplCommand {
-  public UnloadModuleCommand(@NotNull String command) {
-    super(command);
+public final class UnloadModuleCommand implements ReplCommand {
+  public static final @NotNull UnloadModuleCommand INSTANCE = new UnloadModuleCommand();
+
+  private UnloadModuleCommand() {
   }
 
   @Override
@@ -19,7 +20,7 @@ public final class UnloadModuleCommand extends ReplCommand {
   }
 
   @Override
-  protected void doInvoke(@NotNull String line, @NotNull ReplApi api, @NotNull Scanner scanner) {
+  public void invoke(@NotNull String line, @NotNull ReplApi api, @NotNull Scanner scanner) {
     var modulePath = ModulePath.fromString(line);
     if (!api.getReplLibrary().containsModule(modulePath)) {
       api.eprintln("[ERROR] Module " + modulePath + " is not loaded.");

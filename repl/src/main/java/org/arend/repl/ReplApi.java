@@ -6,7 +6,6 @@ import org.arend.library.Library;
 import org.arend.module.FullModulePath;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.scope.Scope;
-import org.arend.repl.action.ReplAction;
 import org.arend.repl.action.ReplCommand;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.result.TypecheckingResult;
@@ -16,9 +15,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collections;
 
 public interface ReplApi {
-  @NotNull FullModulePath replModulePath = new FullModulePath(null, FullModulePath.LocationKind.TEST, Collections.singletonList("Repl"));
-
-  @Nullable Library createLibrary(@NotNull String path);
+  @NotNull FullModulePath replModulePath = new FullModulePath(null, FullModulePath.LocationKind.SOURCE, Collections.singletonList("Repl"));
 
   boolean loadLibrary(@NotNull Library library);
 
@@ -40,11 +37,11 @@ public interface ReplApi {
 
   void checkStatements(@NotNull String line);
 
-  void registerAction(@NotNull ReplCommand action);
-
   @NotNull Library getReplLibrary();
 
-  boolean unregisterAction(@NotNull ReplAction action);
+  @Nullable ReplCommand registerAction(@NotNull String name, @NotNull ReplCommand action);
+
+  @Nullable ReplCommand unregisterAction(@NotNull String name);
 
   void clearActions();
 

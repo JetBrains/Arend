@@ -40,7 +40,6 @@ import org.arend.typechecking.provider.ConcreteProvider;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.arend.typechecking.visitor.SyntacticDesugarVisitor;
-import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -50,8 +49,7 @@ import java.util.*;
 
 public abstract class ReplState implements ReplApi {
   private final List<Scope> myMergedScopes = new ArrayList<>();
-  private final List<ReplAction> myActions = new ArrayList<>();
-  private boolean myActionsAreModified = false;
+  private final List<ReplHandler> myHandlers = new ArrayList<>();
   private final Set<ModulePath> myModules;
   private final MergeScope myScope = new MergeScope(myMergedScopes);
   private final SourceLibrary myReplLibrary;
@@ -115,8 +113,7 @@ public abstract class ReplState implements ReplApi {
       String line = scanner.nextLine();
       if (line.startsWith(":quit") || line.equals(":q")) break;
       boolean actionExecuted = false;
-      resortActions();
-      for (ReplAction action : myActions)
+      for (ReplHandler action : myHandlers)
         if (action.isApplicable(line)) {
           action.invoke(line, this, scanner);
           actionExecuted = true;
@@ -127,13 +124,6 @@ public abstract class ReplState implements ReplApi {
       }
       prompt();
     }
-  }
-
-  private void resortActions() {
-    if (!myActionsAreModified) return;
-    myActions.sort(Comparator.comparing(action -> Integer.MAX_VALUE -
-        (action instanceof ReplCommand ? ((ReplCommand) action).commandWithColon.length() : 0)));
-    myActionsAreModified = false;
   }
 
   @Override
@@ -212,40 +202,35 @@ public abstract class ReplState implements ReplApi {
   }
 
   protected void initialize() {
-    registerAction(DefaultAction.INSTANCE);
-    registerAction(new ShowTypeCommand("type"));
-    registerAction(new ShowTypeCommand("t"));
-    registerAction(new LoadLibraryCommand("lib"));
-    registerAction(new LoadModuleCommand("load"));
-    registerAction(new LoadModuleCommand.ReloadModuleCommand("reload"));
-    registerAction(new LoadModuleCommand("l"));
-    registerAction(new LoadModuleCommand.ReloadModuleCommand("r"));
-    registerAction(new UnloadModuleCommand("unload"));
-    registerAction(new ListLoadedModulesAction("modules"));
-    registerAction(new NormalizeCommand("whnf", NormalizationMode.WHNF));
-    registerAction(new NormalizeCommand("nf", NormalizationMode.NF));
-    registerAction(new NormalizeCommand("rnf", NormalizationMode.RNF));
-    registerAction(new HelpAction("help"));
-    registerAction(new HelpAction("?"));
+    myHandlers.add(CodeParsingHandler.INSTANCE);
+    myHandlers.add(CommandHandler.INSTANCE);
+    registerAction("unload", UnloadModuleCommand.INSTANCE);
+    registerAction("modules", ListLoadedModulesAction.INSTANCE);
+    registerAction("type", ShowTypeCommand.INSTANCE);
+    registerAction("t", ShowTypeCommand.INSTANCE);
+    registerAction("load", LoadModuleCommand.INSTANCE);
+    registerAction("l", LoadModuleCommand.INSTANCE);
+    registerAction("reload", LoadModuleCommand.ReloadModuleCommand.INSTANCE);
+    registerAction("r", LoadModuleCommand.ReloadModuleCommand.INSTANCE);
+    for (NormalizationMode normalizationMode : NormalizationMode.values()) {
+      var name = normalizationMode.name().toLowerCase();
+      registerAction(name, new NormalizeCommand(normalizationMode));
+    }
   }
 
   @Override
-  public final void registerAction(@NotNull ReplCommand action) {
-    registerAction((ReplAction) action);
-  }
-
-  protected final void registerAction(@NotNull ReplAction action) {
-    myActionsAreModified = myActions.add(action);
+  public final @Nullable ReplCommand registerAction(@NotNull String name, @NotNull ReplCommand action) {
+    return CommandHandler.INSTANCE.commandMap.put(name, action);
   }
 
   @Override
-  public final boolean unregisterAction(@NotNull ReplAction action) {
-    return myActionsAreModified = myActions.remove(action);
+  public final @Nullable ReplCommand unregisterAction(@NotNull String name) {
+    return CommandHandler.INSTANCE.commandMap.remove(name);
   }
 
   @Override
   public final void clearActions() {
-    myActions.clear();
+    CommandHandler.INSTANCE.commandMap.clear();
   }
 
   @Override
@@ -319,34 +304,5 @@ public abstract class ReplState implements ReplApi {
     boolean hasErrors = !errorList.isEmpty();
     errorList.clear();
     return hasErrors;
-  }
-
-  private final class HelpAction extends ReplCommand {
-    private HelpAction(@NotNull String command) {
-      super(command);
-    }
-
-    @Override
-    public @Nls(capitalization = Nls.Capitalization.Sentence) @NotNull String description() {
-      return "Show this message";
-    }
-
-    @Override
-    protected void doInvoke(@NotNull String line, @NotNull ReplApi api, @NotNull Scanner scanner) {
-      IntSummaryStatistics statistics = myActions.stream()
-          .filter(action -> action instanceof ReplCommand)
-          .mapToInt(action -> ((ReplCommand) action).commandWithColon.length())
-          .summaryStatistics();
-      int maxWidth = Math.min(statistics.getMax(), 8) + 1;
-      println("There are " + statistics.getCount() + " action(s) available.");
-      for (ReplAction action : myActions) {
-        var description = action.description();
-        if (description == null) continue;
-        if (action instanceof ReplCommand) {
-          String command = ((ReplCommand) action).commandWithColon;
-          println(command + " ".repeat(maxWidth - command.length()) + description);
-        } else println(description);
-      }
-    }
   }
 }
