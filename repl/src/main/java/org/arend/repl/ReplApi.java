@@ -1,15 +1,12 @@
 package org.arend.repl;
 
 import org.arend.core.expr.Expression;
-import org.arend.naming.scope.Scope;
 import org.arend.repl.action.ReplAction;
 import org.arend.repl.action.ReplCommand;
-import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
+import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.List;
 
 public interface ReplApi {
   void checkStatements(@NotNull String line);
@@ -19,8 +16,6 @@ public interface ReplApi {
   boolean unregisterAction(@NotNull ReplAction action);
 
   void clearActions();
-
-  @NotNull TypecheckingOrderingListener getTypechecking();
 
   /**
    * A replacement of {@link System#out#println(Object)} where it uses the
@@ -40,7 +35,16 @@ public interface ReplApi {
 
   @NotNull StringBuilder prettyExpr(@NotNull StringBuilder builder, @NotNull Expression expression);
 
-  @Nullable TypecheckingResult checkExpr(@NotNull String text, @Nullable Expression expectedType);
+  /**
+   * @param expr input concrete expression.
+   * @see this#preprocessExpr(String) to obtain concrete expression from text
+   */
+  @Nullable TypecheckingResult checkExpr(@NotNull Concrete.Expression expr, @Nullable Expression expectedType);
+
+  /**
+   * @see this#checkExpr(Concrete.Expression, Expression)
+   */
+  @Nullable Concrete.Expression preprocessExpr(@NotNull String text);
 
   /**
    * Check and print errors.

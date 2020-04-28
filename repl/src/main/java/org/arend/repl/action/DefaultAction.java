@@ -26,14 +26,16 @@ public final class DefaultAction implements ReplAction {
   }
 
   @Override
-  public void invoke(@NotNull String line, @NotNull ReplApi state, @NotNull Scanner scanner) {
+  public void invoke(@NotNull String line, @NotNull ReplApi api, @NotNull Scanner scanner) {
     if (definitionEvidence.stream().anyMatch(line::contains)) {
-      state.checkStatements(line);
+      api.checkStatements(line);
       return;
     }
 
-    var result = state.checkExpr(line, null);
+    var expr = api.preprocessExpr(line);
+    if (api.checkErrors() || expr == null) return;
+    var result = api.checkExpr(expr, null);
     if (result == null) return;
-    state.println(state.prettyExpr(new StringBuilder(), result.expression));
+    api.println(api.prettyExpr(new StringBuilder(), result.expression));
   }
 }

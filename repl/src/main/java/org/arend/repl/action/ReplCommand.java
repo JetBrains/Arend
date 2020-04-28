@@ -18,14 +18,15 @@ public abstract class ReplCommand implements ReplAction {
   }
 
   @Override
-  public void invoke(@NotNull String line, @NotNull ReplApi state, @NotNull Scanner scanner) {
+  public final void invoke(@NotNull String line, @NotNull ReplApi api, @NotNull Scanner scanner) {
     var content = line.substring(myCommandWithColon.length()).trim();
-    doInvoke(content, state);
+    doInvoke(content, api, scanner);
   }
 
   /**
-   * @param line  the command is already removed.
-   * @param state repl context
+   * @param line    the command prefix is already removed.
+   * @param api     repl context
+   * @param scanner user input reader
    */
-  protected abstract void doInvoke(@NotNull String line, @NotNull ReplApi state);
+  protected abstract void doInvoke(@NotNull String line, @NotNull ReplApi api, @NotNull Scanner scanner);
 }

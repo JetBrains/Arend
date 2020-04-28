@@ -22,9 +22,7 @@ import org.arend.naming.scope.Scope;
 import org.arend.naming.scope.ScopeFactory;
 import org.arend.prelude.PreludeLibrary;
 import org.arend.prelude.PreludeResourceLibrary;
-import org.arend.repl.action.DefaultAction;
-import org.arend.repl.action.ReplAction;
-import org.arend.repl.action.ReplCommand;
+import org.arend.repl.action.*;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.FileGroup;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
@@ -104,6 +102,7 @@ public abstract class ReplState implements ReplApi {
   public void runRepl(@NotNull InputStream inputStream) {
     loadPreludeLibrary();
     loadReplLibrary();
+    initialize();
 
     var scanner = new Scanner(inputStream);
     while (scanner.hasNext()) {
@@ -118,24 +117,7 @@ public abstract class ReplState implements ReplApi {
           actionExecuted = true;
         }
       if (!actionExecuted && line.startsWith(":")) {
-        myStderr.println("[ERROR] Unrecognized command: " + line.substring(1) + ".");
-      }
-      if (line.startsWith(":load"))
-        actionLoad(line.substring(":load".length()));
-      else if (line.startsWith(":l"))
-        actionLoad(line.substring(":l".length()));
-      else if (line.startsWith(":type"))
-        actionType(line.substring(":type".length()));
-      else if (line.startsWith(":t"))
-        actionType(line.substring(":t".length()));
-      else if (line.startsWith(":nf")) {
-        var result = checkExpr(line.substring(":nf".length()), null);
-        if (result == null) continue;
-        myStdout.println(result.expression.normalize(NormalizationMode.NF));
-      } else if (line.startsWith(":whnf")) {
-        var result = checkExpr(line.substring(":whnf".length()), null);
-        if (result == null) continue;
-        myStdout.println(result.expression.normalize(NormalizationMode.WHNF));
+        eprintln("[ERROR] Unrecognized command: " + line.substring(1) + ".");
       }
     }
   }
@@ -171,11 +153,20 @@ public abstract class ReplState implements ReplApi {
   }
 
   protected void initialize() {
-    myActions.add(DefaultAction.INSTANCE);
+    registerAction(DefaultAction.INSTANCE);
+    registerAction(new ShowTypeCommand("type"));
+    registerAction(new ShowTypeCommand("t"));
+    registerAction(new NormalizeCommand("whnf", NormalizationMode.WHNF));
+    registerAction(new NormalizeCommand("nf", NormalizationMode.NF));
+    registerAction(new NormalizeCommand("rnf", NormalizationMode.RNF));
   }
 
   @Override
   public final void registerAction(@NotNull ReplCommand action) {
+    registerAction((ReplAction) action);
+  }
+
+  protected final void registerAction(@NotNull ReplAction action) {
     myActions.add(action);
   }
 
@@ -187,18 +178,6 @@ public abstract class ReplState implements ReplApi {
   @Override
   public final void clearActions() {
     myActions.clear();
-  }
-
-  @Override
-  public @NotNull TypecheckingOrderingListener getTypechecking() {
-    return myTypechecking;
-  }
-
-  private void actionType(String line) {
-    var result = checkExpr(line, null);
-    if (result == null) return;
-    Expression type = result.expression.getType();
-    println(type == null ? "Cannot synthesize a type, sorry." : type);
   }
 
   private void actionLoad(String text) {
@@ -228,19 +207,14 @@ public abstract class ReplState implements ReplApi {
   }
 
   @Override
-  public @Nullable TypecheckingResult checkExpr(@NotNull String text, @Nullable Expression expectedType) {
-    var expr = preprocessExpr(text);
-    if (expr == null || checkErrors()) return null;
-    var result = typeChecker().checkExpr(expr, expectedType);
+  public @Nullable TypecheckingResult checkExpr(@NotNull Concrete.Expression expr, @Nullable Expression expectedType) {
+    var result = new CheckTypeVisitor(myTypecheckerState, myErrorReporter, null, null)
+        .checkExpr(expr, expectedType);
     return checkErrors() ? null : result;
   }
 
-  @NotNull
-  private CheckTypeVisitor typeChecker() {
-    return new CheckTypeVisitor(myTypecheckerState, myErrorReporter, null, null);
-  }
-
-  private @Nullable Concrete.Expression preprocessExpr(@NotNull String text) {
+  @Override
+  public @Nullable Concrete.Expression preprocessExpr(@NotNull String text) {
     var expr = parseExpr(text);
     if (expr == null || checkErrors()) return null;
     expr = expr
