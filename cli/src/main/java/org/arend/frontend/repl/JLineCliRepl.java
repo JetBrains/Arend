@@ -1,10 +1,9 @@
 package org.arend.frontend.repl;
 
+import org.arend.naming.reference.Referable;
 import org.arend.prelude.GeneratedVersion;
 import org.jetbrains.annotations.NotNull;
-import org.jline.reader.EndOfFileException;
-import org.jline.reader.LineReaderBuilder;
-import org.jline.reader.UserInterruptException;
+import org.jline.reader.*;
 import org.jline.reader.impl.DefaultParser;
 import org.jline.reader.impl.completer.AggregateCompleter;
 import org.jline.terminal.Terminal;
@@ -25,6 +24,7 @@ public class JLineCliRepl extends CommmonCliRepl {
     var reader = LineReaderBuilder.builder()
         .appName(APP_NAME)
         .completer(new AggregateCompleter(
+            scopeCompleter(),
             new JLineKeywordCompleter(),
             new JLineExprCompleter(),
             new JLineCommandsCompleter()
@@ -46,6 +46,17 @@ public class JLineCliRepl extends CommmonCliRepl {
         break;
       }
     }
+  }
+
+  private @NotNull Completer scopeCompleter() {
+    return (lineReader, line, candidates) -> {
+      String word = line.word();
+      var firstChar = word.isEmpty() ? '+' : word.charAt(0);
+      if ("~!@#$%^&*-+=<>?/|:".indexOf(firstChar) > 0 || Character.isAlphabetic(firstChar)) {
+        for (Referable referable : getInScopeElements())
+          candidates.add(new Candidate(referable.getRefName()));
+      }
+    };
   }
 
   public static void main(String... args) {

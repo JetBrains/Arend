@@ -98,6 +98,10 @@ public abstract class ReplState implements ReplApi {
       eprintln("[FATAL] Failed to load the REPL virtual library");
   }
 
+  protected final @NotNull List<Referable> getInScopeElements() {
+    return myScope.getElements();
+  }
+
   @Override
   public final boolean loadLibrary(@NotNull Library library) {
     if (!myLibraryManager.loadLibrary(library, myTypechecking)) return false;
