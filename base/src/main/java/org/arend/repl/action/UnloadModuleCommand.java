@@ -2,7 +2,7 @@ package org.arend.repl.action;
 
 import org.arend.ext.module.ModulePath;
 import org.arend.naming.scope.Scope;
-import org.arend.repl.ReplApi;
+import org.arend.repl.Repl;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
@@ -20,7 +20,7 @@ public final class UnloadModuleCommand implements ReplCommand {
   }
 
   @Override
-  public void invoke(@NotNull String line, @NotNull ReplApi api, @NotNull Supplier<@NotNull String> scanner) {
+  public void invoke(@NotNull String line, @NotNull Repl api, @NotNull Supplier<@NotNull String> scanner) {
     var modulePath = ModulePath.fromString(line);
     if (!api.getReplLibrary().containsModule(modulePath)) {
       api.eprintln("[ERROR] Module " + modulePath + " is not loaded.");

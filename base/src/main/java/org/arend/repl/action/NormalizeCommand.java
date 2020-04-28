@@ -1,7 +1,7 @@
 package org.arend.repl.action;
 
 import org.arend.ext.core.ops.NormalizationMode;
-import org.arend.repl.ReplApi;
+import org.arend.repl.Repl;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
@@ -20,7 +20,7 @@ public final class NormalizeCommand implements ReplCommand {
   }
 
   @Override
-  public void invoke(@NotNull String line, @NotNull ReplApi api, @NotNull Supplier<@NotNull String> scanner) {
+  public void invoke(@NotNull String line, @NotNull Repl api, @NotNull Supplier<@NotNull String> scanner) {
     var expr = api.preprocessExpr(line);
     if (api.checkErrors() || expr == null) return;
     var result = api.checkExpr(expr, null);

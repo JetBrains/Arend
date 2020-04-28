@@ -25,7 +25,7 @@ public final class CommandHandler implements ReplHandler {
   }
 
   @Override
-  public final void invoke(@NotNull String line, @NotNull ReplApi api, @NotNull Supplier<@NotNull String> lineSupplier) {
+  public final void invoke(@NotNull String line, @NotNull Repl api, @NotNull Supplier<@NotNull String> lineSupplier) {
     int indexOfSpace = line.indexOf(' ');
     var command = indexOfSpace > 0 ? line.substring(1, indexOfSpace) : line.substring(1);
     var replCommand = commandMap.get(command);
@@ -41,7 +41,7 @@ public final class CommandHandler implements ReplHandler {
     }
 
     @Override
-    public void invoke(@NotNull String line, @NotNull ReplApi api, @NotNull Supplier<@NotNull String> scanner) {
+    public void invoke(@NotNull String line, @NotNull Repl api, @NotNull Supplier<@NotNull String> scanner) {
       IntSummaryStatistics statistics = commandMap.keySet().stream()
           .mapToInt(String::length)
           .summaryStatistics();

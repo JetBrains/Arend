@@ -14,8 +14,7 @@ import org.arend.frontend.parser.ArendParser;
 import org.arend.frontend.parser.BuildVisitor;
 import org.arend.frontend.parser.ReporterErrorListener;
 import org.arend.library.Library;
-import org.arend.repl.ReplApi;
-import org.arend.repl.ReplState;
+import org.arend.repl.Repl;
 import org.arend.repl.action.LoadLibraryCommand;
 import org.arend.repl.action.ReplCommand;
 import org.arend.term.concrete.Concrete;
@@ -33,7 +32,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Supplier;
 
-public abstract class CommmonCliRepl extends ReplState {
+public abstract class CommmonCliRepl extends Repl {
   public static final @NotNull String APP_NAME = "Arend REPL";
 
   private @NotNull String prompt = "\u03bb ";
@@ -74,7 +73,7 @@ public abstract class CommmonCliRepl extends ReplState {
   //endregion
 
   private @NotNull BuildVisitor buildVisitor() {
-    return new BuildVisitor(ReplApi.replModulePath, myErrorReporter);
+    return new BuildVisitor(Repl.replModulePath, myErrorReporter);
   }
 
   public static @NotNull ArendParser createParser(@NotNull String text, @NotNull ModulePath modulePath, @NotNull ErrorReporter reporter) {
@@ -97,7 +96,7 @@ public abstract class CommmonCliRepl extends ReplState {
   }
 
   private @NotNull ArendParser parse(String line) {
-    return createParser(line, ReplApi.replModulePath, myErrorReporter);
+    return createParser(line, Repl.replModulePath, myErrorReporter);
   }
 
   @Override
@@ -142,7 +141,7 @@ public abstract class CommmonCliRepl extends ReplState {
     }
 
     @Override
-    public void invoke(@NotNull String line, @NotNull ReplApi api, @NotNull Supplier<@NotNull String> scanner) {
+    public void invoke(@NotNull String line, @NotNull Repl api, @NotNull Supplier<@NotNull String> scanner) {
       boolean start = line.startsWith("\"");
       boolean end = line.endsWith("\"");
       // Maybe we should unescape this string?

@@ -8,7 +8,7 @@ import java.util.function.Supplier;
 
 /**
  * The default action. No action command.
- * Added to {@link org.arend.repl.ReplState} by default.
+ * Added to {@link Repl} by default.
  */
 public final class CodeParsingHandler implements ReplHandler {
   public static final @NotNull CodeParsingHandler INSTANCE = new CodeParsingHandler();
@@ -25,7 +25,7 @@ public final class CodeParsingHandler implements ReplHandler {
   }
 
   @Override
-  public void invoke(@NotNull String line, @NotNull ReplApi api, @NotNull Supplier<@NotNull String> lineSupplier) {
+  public void invoke(@NotNull String line, @NotNull Repl api, @NotNull Supplier<@NotNull String> lineSupplier) {
     if (definitionEvidence.stream().anyMatch(line::contains)) {
       api.checkStatements(line);
       return;

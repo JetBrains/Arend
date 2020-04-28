@@ -1,7 +1,7 @@
 package org.arend.repl.action;
 
 import org.arend.library.Library;
-import org.arend.repl.ReplApi;
+import org.arend.repl.Repl;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -10,7 +10,7 @@ import java.util.function.Supplier;
 
 public abstract class LoadLibraryCommand implements ReplCommand {
   @Override
-  public final void invoke(@NotNull String line, @NotNull ReplApi api, @NotNull Supplier<@NotNull String> scanner) {
+  public final void invoke(@NotNull String line, @NotNull Repl api, @NotNull Supplier<@NotNull String> scanner) {
     Library library = createLibrary(line);
     if (library == null || api.checkErrors()) {
       api.eprintln("[ERROR] Cannot find a library at '" + line + "'.");

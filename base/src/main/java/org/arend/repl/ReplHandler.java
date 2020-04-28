@@ -7,5 +7,5 @@ import java.util.function.Supplier;
 public interface ReplHandler {
   boolean isApplicable(@NotNull String line);
 
-  void invoke(@NotNull String line, @NotNull ReplApi api, @NotNull Supplier<@NotNull String> lineSupplier);
+  void invoke(@NotNull String line, @NotNull Repl api, @NotNull Supplier<@NotNull String> lineSupplier);
 }

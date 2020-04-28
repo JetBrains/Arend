@@ -13,6 +13,7 @@ import org.arend.library.Library;
 import org.arend.library.LibraryManager;
 import org.arend.library.SourceLibrary;
 import org.arend.library.resolver.LibraryResolver;
+import org.arend.module.FullModulePath;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
@@ -50,7 +51,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 
-public abstract class ReplState implements ReplApi {
+public abstract class Repl {
+  public static final @NotNull FullModulePath replModulePath = new FullModulePath(null, FullModulePath.LocationKind.SOURCE, Collections.singletonList("Repl"));
+
   private final List<Scope> myMergedScopes = new ArrayList<>();
   private final List<ReplHandler> myHandlers = new ArrayList<>();
   private final Set<ModulePath> myModules;
@@ -66,15 +69,15 @@ public abstract class ReplState implements ReplApi {
   private final @NotNull PrintStream myStdout;
   private final @NotNull PrintStream myStderr;
 
-  public ReplState(@NotNull ListErrorReporter listErrorReporter,
-                   @NotNull LibraryResolver libraryResolver,
-                   @NotNull ConcreteProvider concreteProvider,
-                   @NotNull PartialComparator<TCReferable> comparator,
-                   @NotNull PrintStream stdout,
-                   @NotNull PrintStream stderr,
-                   @NotNull Set<ModulePath> modules,
-                   @NotNull SourceLibrary replLibrary,
-                   @NotNull TypecheckerState typecheckerState) {
+  public Repl(@NotNull ListErrorReporter listErrorReporter,
+              @NotNull LibraryResolver libraryResolver,
+              @NotNull ConcreteProvider concreteProvider,
+              @NotNull PartialComparator<TCReferable> comparator,
+              @NotNull PrintStream stdout,
+              @NotNull PrintStream stderr,
+              @NotNull Set<ModulePath> modules,
+              @NotNull SourceLibrary replLibrary,
+              @NotNull TypecheckerState typecheckerState) {
     myErrorReporter = listErrorReporter;
     myConcreteProvider = concreteProvider;
     myModules = modules;
@@ -102,7 +105,6 @@ public abstract class ReplState implements ReplApi {
     return myScope.getElements();
   }
 
-  @Override
   public final boolean loadLibrary(@NotNull Library library) {
     if (!myLibraryManager.loadLibrary(library, myTypechecking)) return false;
     myLibraryManager.registerDependency(myReplLibrary, library);
@@ -124,15 +126,19 @@ public abstract class ReplState implements ReplApi {
    * @return true if the REPL wants to quit
    */
   public final boolean repl(@NotNull Supplier<@NotNull String> lineSupplier, @NotNull String currentLine) {
-    if (currentLine.startsWith(":quit") || currentLine.equals(":q")) return true;
+    if (currentLine.startsWith(":quit") || currentLine.equals(":q"))
+      return true;
     for (var action : myHandlers)
       if (action.isApplicable(currentLine))
         action.invoke(currentLine, this, lineSupplier);
     return false;
   }
 
-  @Override
-  public @Nullable Scope loadModule(@NotNull ModulePath modulePath) {
+  /**
+   * Load a file under the REPL working directory and get its scope.
+   * This will <strong>not</strong> modify the REPL scope.
+   */
+  public final @Nullable Scope loadModule(@NotNull ModulePath modulePath) {
     boolean isLoadedBefore = myModules.add(modulePath);
     myLibraryManager.reload(myTypechecking);
     if (checkErrors()) {
@@ -147,8 +153,13 @@ public abstract class ReplState implements ReplApi {
     return getAvailableModuleScopeProvider().forModule(modulePath);
   }
 
-  @Override
-  public boolean unloadModule(@NotNull ModulePath modulePath) {
+  /**
+   * Like {@link Repl#loadModule(ModulePath)}, this will
+   * <strong>not</strong> modify the REPL scope as well.
+   *
+   * @return true if the module is already loaded before.
+   */
+  public final boolean unloadModule(@NotNull ModulePath modulePath) {
     boolean isLoadedBefore = myModules.remove(modulePath);
     if (isLoadedBefore) {
       myLibraryManager.reload(myTypechecking);
@@ -160,8 +171,7 @@ public abstract class ReplState implements ReplApi {
     return isLoadedBefore;
   }
 
-  @Override
-  public @NotNull ModuleScopeProvider getAvailableModuleScopeProvider() {
+  public final @NotNull ModuleScopeProvider getAvailableModuleScopeProvider() {
     return module -> {
       for (Library registeredLibrary : myLibraryManager.getRegisteredLibraries()) {
         Scope scope = myLibraryManager.getAvailableModuleScopeProvider(registeredLibrary).forModule(module);
@@ -179,8 +189,7 @@ public abstract class ReplState implements ReplApi {
 
   protected abstract @Nullable Concrete.Expression parseExpr(@NotNull String text);
 
-  @Override
-  public void checkStatements(@NotNull String line) {
+  public final void checkStatements(@NotNull String line) {
     var group = parseStatements(line);
     if (group == null) return;
     var moduleScopeProvider = getAvailableModuleScopeProvider();
@@ -222,32 +231,34 @@ public abstract class ReplState implements ReplApi {
     }
   }
 
-  @Override
   public final @Nullable ReplCommand registerAction(@NotNull String name, @NotNull ReplCommand action) {
     return CommandHandler.INSTANCE.commandMap.put(name, action);
   }
 
-  @Override
   public final @Nullable ReplCommand unregisterAction(@NotNull String name) {
     return CommandHandler.INSTANCE.commandMap.remove(name);
   }
 
-  @Override
   public final void clearActions() {
     CommandHandler.INSTANCE.commandMap.clear();
   }
 
-  @Override
-  public @NotNull Library getReplLibrary() {
+  public final @NotNull Library getReplLibrary() {
     return myReplLibrary;
   }
 
-  @Override
+  /**
+   * Multiplex the scope into the current REPL scope.
+   */
   public final void addScope(@NotNull Scope scope) {
     myMergedScopes.add(scope);
   }
 
-  @Override
+  /**
+   * Remove a multiplexed scope from the current REPL scope.
+   *
+   * @return true if there is indeed a scope removed
+   */
   public final boolean removeScope(@NotNull Scope scope) {
     for (Referable element : scope.getElements())
       if (element instanceof TCReferable)
@@ -255,32 +266,43 @@ public abstract class ReplState implements ReplApi {
     return myMergedScopes.remove(scope);
   }
 
-  @Override
-  public void println(Object anything) {
+  /**
+   * A replacement of {@link System#out#println(Object)} where it uses the
+   * output stream of the REPL.
+   *
+   * @param anything whose {@link Object#toString()} is invoked.
+   */
+  public final void println(Object anything) {
     myStdout.println(anything);
   }
 
-  @Override
-  public void print(Object anything) {
+  public final void print(Object anything) {
     myStdout.print(anything);
     myStdout.flush();
   }
 
-  @Override
-  public void eprintln(Object anything) {
+  /**
+   * A replacement of {@link System#err#println(Object)} where it uses the
+   * error output stream of the REPL.
+   *
+   * @param anything whose {@link Object#toString()} is invoked.
+   */
+  public final void eprintln(Object anything) {
     myStderr.println(anything);
     myStderr.flush();
   }
 
-  @Override
-  public @NotNull StringBuilder prettyExpr(@NotNull StringBuilder builder, @NotNull Expression expression) {
+  public final @NotNull StringBuilder prettyExpr(@NotNull StringBuilder builder, @NotNull Expression expression) {
     var abs = ToAbstractVisitor.convert(expression, myPpConfig);
     abs.accept(new PrettyPrintVisitor(builder, 0), new Precedence(Concrete.Expression.PREC));
     return builder;
   }
 
-  @Override
-  public @Nullable TypecheckingResult checkExpr(@NotNull Concrete.Expression expr, @Nullable Expression expectedType) {
+  /**
+   * @param expr input concrete expression.
+   * @see Repl#preprocessExpr(String)
+   */
+  public final @Nullable TypecheckingResult checkExpr(@NotNull Concrete.Expression expr, @Nullable Expression expectedType) {
     var typechecker = new CheckTypeVisitor(myTypecheckerState, myErrorReporter, null, null);
     var instancePool = new GlobalInstancePool(EmptyInstanceProvider.getInstance(), typechecker);
     typechecker.setInstancePool(instancePool);
@@ -288,8 +310,10 @@ public abstract class ReplState implements ReplApi {
     return checkErrors() ? null : result;
   }
 
-  @Override
-  public @Nullable Concrete.Expression preprocessExpr(@NotNull String text) {
+  /**
+   * @see Repl#checkExpr(Concrete.Expression, Expression)
+   */
+  public final @Nullable Concrete.Expression preprocessExpr(@NotNull String text) {
     var expr = parseExpr(text);
     if (expr == null || checkErrors()) return null;
     expr = expr
@@ -300,7 +324,11 @@ public abstract class ReplState implements ReplApi {
     return expr;
   }
 
-  @Override
+  /**
+   * Check and print errors.
+   *
+   * @return true if there is error(s).
+   */
   public final boolean checkErrors() {
     var errorList = myErrorReporter.getErrorList();
     for (GeneralError error : errorList)

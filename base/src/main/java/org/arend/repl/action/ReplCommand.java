@@ -1,6 +1,6 @@
 package org.arend.repl.action;
 
-import org.arend.repl.ReplApi;
+import org.arend.repl.Repl;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -18,5 +18,5 @@ public interface ReplCommand {
    * @param api     repl context
    * @param scanner user input reader
    */
-  void invoke(@NotNull String line, @NotNull ReplApi api, @NotNull Supplier<@NotNull String> scanner);
+  void invoke(@NotNull String line, @NotNull Repl api, @NotNull Supplier<@NotNull String> scanner);
 }
