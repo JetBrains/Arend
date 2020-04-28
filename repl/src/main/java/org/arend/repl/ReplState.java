@@ -86,8 +86,7 @@ public abstract class ReplState implements ReplApi {
   }
 
   private void loadPreludeLibrary() {
-    var preludeLibrary = new PreludeResourceLibrary(myTypecheckerState);
-    if (!loadLibrary(preludeLibrary))
+    if (!loadLibrary(new PreludeResourceLibrary(myTypecheckerState)))
       eprintln("[FATAL] Failed to load Prelude");
     else myMergedScopes.add(PreludeLibrary.getPreludeScope());
   }
@@ -97,7 +96,8 @@ public abstract class ReplState implements ReplApi {
       eprintln("[FATAL] Failed to load the REPL virtual library");
   }
 
-  private boolean loadLibrary(Library library) {
+  @Override
+  public final boolean loadLibrary(@NotNull Library library) {
     if (!myLibraryManager.loadLibrary(library, myTypechecking)) return false;
     myLibraryManager.registerDependency(myReplLibrary, library);
     return true;
@@ -199,6 +199,7 @@ public abstract class ReplState implements ReplApi {
     registerAction(DefaultAction.INSTANCE);
     registerAction(new ShowTypeCommand("type"));
     registerAction(new ShowTypeCommand("t"));
+    registerAction(new LoadLibraryCommand("lib"));
     registerAction(new LoadModuleCommand("load"));
     registerAction(new LoadModuleCommand.ReloadModuleCommand("reload"));
     registerAction(new LoadModuleCommand("l"));

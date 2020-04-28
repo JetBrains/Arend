@@ -13,6 +13,7 @@ import org.arend.frontend.parser.ArendLexer;
 import org.arend.frontend.parser.ArendParser;
 import org.arend.frontend.parser.BuildVisitor;
 import org.arend.frontend.parser.ReporterErrorListener;
+import org.arend.library.Library;
 import org.arend.prelude.GeneratedVersion;
 import org.arend.repl.ReplApi;
 import org.arend.repl.ReplState;
@@ -26,6 +27,7 @@ import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Scanner;
@@ -34,14 +36,23 @@ import java.util.TreeSet;
 
 public class CliReplState extends ReplState {
   private @NotNull String prompt = "\u03bb ";
+  private FileLibraryResolver myLibraryResolver;
 
   private CliReplState(
       @NotNull TypecheckerState typecheckerState,
       @NotNull Set<ModulePath> modules,
       @NotNull ListErrorReporter errorReporter) {
+    this(typecheckerState, modules, new FileLibraryResolver(new ArrayList<>(), typecheckerState, errorReporter), errorReporter);
+  }
+
+  private CliReplState(
+      @NotNull TypecheckerState typecheckerState,
+      @NotNull Set<ModulePath> modules,
+      @NotNull FileLibraryResolver libraryResolver,
+      @NotNull ListErrorReporter errorReporter) {
     super(
         errorReporter,
-        new FileLibraryResolver(new ArrayList<>(), typecheckerState, errorReporter),
+        libraryResolver,
         ConcreteReferableProvider.INSTANCE,
         PositionComparator.INSTANCE,
         System.out, System.err,
@@ -49,6 +60,12 @@ public class CliReplState extends ReplState {
         new FileSourceLibrary("Repl", Paths.get("."), null, null, null, modules, true, new ArrayList<>(), Range.unbound(), typecheckerState),
         typecheckerState
     );
+    myLibraryResolver = libraryResolver;
+  }
+
+  @Override
+  public @Nullable Library createLibrary(@NotNull Path path) {
+    return myLibraryResolver.registerLibrary(path.toAbsolutePath());
   }
 
   private @NotNull BuildVisitor buildVisitor() {

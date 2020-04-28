@@ -7,6 +7,7 @@ import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.nio.file.InvalidPathException;
 import java.util.Scanner;
 
 public final class LoadModuleCommand extends ReplCommand {
@@ -21,7 +22,12 @@ public final class LoadModuleCommand extends ReplCommand {
 
   @Override
   protected void doInvoke(@NotNull String line, @NotNull ReplApi api, @NotNull Scanner scanner) {
-    loadModule(api, ModulePath.fromString(line));
+    try {
+      loadModule(api, ModulePath.fromString(line));
+    } catch (InvalidPathException e) {
+      api.eprintln("The path `" + line + "` is not good because:");
+      api.eprintln(e.getLocalizedMessage());
+    }
   }
 
   private static void loadModule(@NotNull ReplApi api, ModulePath modulePath){

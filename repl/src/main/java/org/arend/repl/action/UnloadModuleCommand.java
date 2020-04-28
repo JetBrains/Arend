@@ -27,7 +27,8 @@ public final class UnloadModuleCommand extends ReplCommand {
     }
     Scope scope = api.getAvailableModuleScopeProvider().forModule(modulePath);
     if (scope != null) api.removeScope(scope);
-    api.unloadModule(modulePath);
+    boolean isUnloaded = api.unloadModule(modulePath);
+    assert isUnloaded;
     api.checkErrors();
   }
 }
