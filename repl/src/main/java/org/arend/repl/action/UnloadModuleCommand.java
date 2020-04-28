@@ -8,8 +8,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Scanner;
 
-public final class UnloadFileCommand extends ReplCommand {
-  public UnloadFileCommand(@NotNull String command) {
+public final class UnloadModuleCommand extends ReplCommand {
+  public UnloadModuleCommand(@NotNull String command) {
     super(command);
   }
 
