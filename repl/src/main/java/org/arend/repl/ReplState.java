@@ -19,7 +19,6 @@ import org.arend.naming.scope.CachingScope;
 import org.arend.naming.scope.MergeScope;
 import org.arend.naming.scope.Scope;
 import org.arend.naming.scope.ScopeFactory;
-import org.arend.prelude.Prelude;
 import org.arend.prelude.PreludeLibrary;
 import org.arend.prelude.PreludeResourceLibrary;
 import org.arend.repl.action.*;
@@ -41,10 +40,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 public abstract class ReplState implements ReplApi {
   protected final PrettyPrinterConfig myPpConfig = PrettyPrinterConfig.DEFAULT;
@@ -244,15 +240,24 @@ public abstract class ReplState implements ReplApi {
     }
 
     @Override
-    protected @Nls(capitalization = Nls.Capitalization.Sentence) @NotNull String help() {
+    public @Nls(capitalization = Nls.Capitalization.Sentence) @NotNull String description() {
       return "Show this message";
     }
 
     @Override
     protected void doInvoke(@NotNull String line, @NotNull ReplApi api, @NotNull Scanner scanner) {
+      IntSummaryStatistics statistics = myActions.stream()
+          .filter(action -> action instanceof ReplCommand)
+          .mapToInt(action -> ((ReplCommand) action).commandWithColon.length())
+          .summaryStatistics();
+      int maxWidth = Math.min(statistics.getMax(), 8) + 1;
       for (ReplAction action : myActions) {
         var description = action.description();
-        if (description != null) println(description);
+        if (description == null) continue;
+        if (action instanceof ReplCommand) {
+          String commandWithColon = ((ReplCommand) action).commandWithColon;
+          println(String.format("%-" + maxWidth + "s %s", commandWithColon, this.description()));
+        } else println(description);
       }
     }
   }

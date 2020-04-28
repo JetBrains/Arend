@@ -12,7 +12,7 @@ public final class NormalizeCommand extends ReplCommand {
   private final @NotNull NormalizationMode myMode;
 
   @Override
-  protected @Nls(capitalization = Nls.Capitalization.Sentence) @NotNull String help() {
+  public @Nls(capitalization = Nls.Capitalization.Sentence) @NotNull String description() {
     return "Normalize the given expression into " + myMode.name();
   }
 

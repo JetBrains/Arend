@@ -14,7 +14,7 @@ public final class ShowTypeCommand extends ReplCommand {
   }
 
   @Override
-  protected @Nls(capitalization = Nls.Capitalization.Sentence) @NotNull String help() {
+  public @Nls(capitalization = Nls.Capitalization.Sentence) @NotNull String description() {
     return "Show the synthesized type of a given expression";
   }
 

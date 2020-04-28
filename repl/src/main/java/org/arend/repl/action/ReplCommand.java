@@ -1,39 +1,28 @@
 package org.arend.repl.action;
 
 import org.arend.repl.ReplApi;
-import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Scanner;
 
 public abstract class ReplCommand implements ReplAction {
-  private final @NotNull String myCommandWithColon;
+  public final @NotNull String commandWithColon;
 
   protected ReplCommand(@NotNull @NonNls String command) {
-    myCommandWithColon = ":" + command;
+    commandWithColon = ":" + command;
   }
 
   @Override
   public boolean isApplicable(@NotNull String line) {
-    return line.startsWith(myCommandWithColon);
+    return line.startsWith(commandWithColon);
   }
 
   @Override
   public final void invoke(@NotNull String line, @NotNull ReplApi api, @NotNull Scanner scanner) {
-    var content = line.substring(myCommandWithColon.length()).trim();
+    var content = line.substring(commandWithColon.length()).trim();
     doInvoke(content, api, scanner);
   }
-
-  @Override
-  public final @Nls @NotNull String description() {
-    return String.format("%-5s %s", myCommandWithColon, help());
-  }
-
-  /**
-   * Displayed in the help message.
-   */
-  protected abstract @Nls(capitalization = Nls.Capitalization.Sentence) @NotNull String help();
 
   /**
    * @param line    the command prefix is already removed.

@@ -1,7 +1,5 @@
 package org.arend.frontend.repl;
 
-import com.fasterxml.jackson.core.JsonpCharacterEscapes;
-import com.fasterxml.jackson.core.io.CharacterEscapes;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.arend.error.ListErrorReporter;
@@ -15,7 +13,7 @@ import org.arend.frontend.parser.ArendLexer;
 import org.arend.frontend.parser.ArendParser;
 import org.arend.frontend.parser.BuildVisitor;
 import org.arend.frontend.parser.ReporterErrorListener;
-import org.arend.prelude.Prelude;
+import org.arend.prelude.GeneratedVersion;
 import org.arend.repl.ReplApi;
 import org.arend.repl.ReplState;
 import org.arend.repl.action.ReplCommand;
@@ -27,8 +25,6 @@ import org.arend.util.Range;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.yaml.snakeyaml.external.com.google.gdata.util.common.base.Escaper;
-import org.yaml.snakeyaml.external.com.google.gdata.util.common.base.UnicodeEscaper;
 
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -108,7 +104,7 @@ public class CliReplState extends ReplState {
 
   public static void main(String... args) {
     var repl = new CliReplState();
-    repl.println("The Arend Proof Assistant " + Prelude.VERSION);
+    repl.println("Arend REPL " + GeneratedVersion.VERSION_STRING + ": https://arend-lang.github.io   :? for help");
     repl.runRepl(System.in);
   }
 
@@ -118,7 +114,7 @@ public class CliReplState extends ReplState {
     }
 
     @Override
-    protected @Nls(capitalization = Nls.Capitalization.Sentence) @NotNull String help() {
+    public @Nls(capitalization = Nls.Capitalization.Sentence) @NotNull String description() {
       return "Change the repl prompt (current prompt: '" + prompt + "')";
     }
 
