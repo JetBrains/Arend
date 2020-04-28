@@ -35,9 +35,10 @@ import java.util.TreeSet;
 public class CliReplState extends ReplState {
   private @NotNull String prompt = "\u03bb ";
 
-  public CliReplState(@NotNull TypecheckerState typecheckerState,
-                      @NotNull Set<ModulePath> modules,
-                      @NotNull ListErrorReporter errorReporter) {
+  private CliReplState(
+      @NotNull TypecheckerState typecheckerState,
+      @NotNull Set<ModulePath> modules,
+      @NotNull ListErrorReporter errorReporter) {
     super(
         errorReporter,
         new FileLibraryResolver(new ArrayList<>(), typecheckerState, errorReporter),
@@ -91,7 +92,8 @@ public class CliReplState extends ReplState {
   @Override
   protected final @Nullable FileGroup parseStatements(String line) {
     var fileGroup = buildVisitor().visitStatements(parse(line).statements());
-    if (fileGroup != null) fileGroup.setModuleScopeProvider(myReplLibrary.getModuleScopeProvider());
+    if (fileGroup != null)
+      fileGroup.setModuleScopeProvider(getAvailableModuleScopeProvider());
     if (checkErrors()) return null;
     return fileGroup;
   }

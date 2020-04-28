@@ -24,6 +24,12 @@ public interface ReplApi {
    */
   @Nullable Scope loadModule(@NotNull ModulePath modulePath);
 
+  /**
+   * Like {@link ReplApi#loadModule(ModulePath)}, this will
+   * <strong>not</strong> modify the REPL scope as well.
+   *
+   * @return true if the module is already loaded before.
+   */
   boolean unloadModule(@NotNull ModulePath modulePath);
 
   @NotNull ModuleScopeProvider getAvailableModuleScopeProvider();

@@ -8,7 +8,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Scanner;
 import java.util.stream.Collectors;
 
-public class ListLoadedModulesAction extends ReplCommand {
+public final class ListLoadedModulesAction extends ReplCommand {
   public ListLoadedModulesAction(@NotNull String command) {
     super(command);
   }

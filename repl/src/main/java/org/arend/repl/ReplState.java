@@ -52,12 +52,12 @@ public abstract class ReplState implements ReplApi {
   private final List<ReplAction> myActions = new ArrayList<>();
   private final Set<ModulePath> myModules;
   private final MergeScope myScope = new MergeScope(myMergedScopes);
+  private final @NotNull SourceLibrary myReplLibrary;
+  private final @NotNull TypecheckerState myTypecheckerState;
+  private final @NotNull ConcreteProvider myConcreteProvider;
+  private final @NotNull TypecheckingOrderingListener myTypechecking;
   protected final @NotNull ListErrorReporter myErrorReporter;
-  protected final @NotNull TypecheckerState myTypecheckerState;
-  protected final @NotNull SourceLibrary myReplLibrary;
   protected final @NotNull LibraryManager myLibraryManager;
-  protected final @NotNull ConcreteProvider myConcreteProvider;
-  protected final @NotNull TypecheckingOrderingListener myTypechecking;
 
   private final @NotNull PrintStream myStdout;
   private final @NotNull PrintStream myStderr;
@@ -129,7 +129,10 @@ public abstract class ReplState implements ReplApi {
   public @Nullable Scope loadModule(@NotNull ModulePath modulePath) {
     boolean isLoadedBefore = myModules.add(modulePath);
     myLibraryManager.reload(myTypechecking);
-    if (checkErrors()) return null;
+    if (checkErrors()) {
+      myModules.remove(modulePath);
+      return null;
+    }
     if (isLoadedBefore) {
       Scope scope = getAvailableModuleScopeProvider().forModule(modulePath);
       if (scope != null) removeScope(scope);
@@ -168,7 +171,7 @@ public abstract class ReplState implements ReplApi {
   public void checkStatements(@NotNull String line) {
     var group = parseStatements(line);
     if (group == null) return;
-    var moduleScopeProvider = myReplLibrary.getModuleScopeProvider();
+    var moduleScopeProvider = getAvailableModuleScopeProvider();
     Scope scope = CachingScope.make(ScopeFactory.forGroup(group, moduleScopeProvider));
     myMergedScopes.add(scope);
     new DefinitionResolveNameVisitor(myConcreteProvider, myErrorReporter)
