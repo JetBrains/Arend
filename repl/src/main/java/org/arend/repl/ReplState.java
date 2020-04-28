@@ -9,7 +9,6 @@ import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.reference.Precedence;
 import org.arend.extImpl.DefinitionRequester;
 import org.arend.library.Library;
-import org.arend.library.LibraryDependency;
 import org.arend.library.LibraryManager;
 import org.arend.library.resolver.LibraryResolver;
 import org.arend.naming.reference.TCReferable;
@@ -53,7 +52,7 @@ public abstract class ReplState implements ReplApi {
   private final MergeScope myScope = new MergeScope(myMergedScopes);
   protected final @NotNull ListErrorReporter myErrorReporter;
   protected final @NotNull TypecheckerState myTypecheckerState;
-  protected final @NotNull ReplLibrary myReplLibrary;
+  protected final @NotNull Library myReplLibrary;
   protected final @NotNull LibraryManager myLibraryManager;
   protected final @NotNull ConcreteProvider myConcreteProvider;
   protected final @NotNull TypecheckingOrderingListener myTypechecking;
@@ -67,7 +66,7 @@ public abstract class ReplState implements ReplApi {
                    @NotNull PartialComparator<TCReferable> comparator,
                    @NotNull PrintStream stdout,
                    @NotNull PrintStream stderr,
-                   @NotNull ReplLibrary replLibrary,
+                   @NotNull Library replLibrary,
                    @NotNull TypecheckerState typecheckerState) {
     myErrorReporter = listErrorReporter;
     myConcreteProvider = concreteProvider;
@@ -81,10 +80,8 @@ public abstract class ReplState implements ReplApi {
   }
 
   public void loadPreludeLibrary() {
-    var preludeLibrary = new PreludeResourceLibrary(myTypecheckerState);
-    if (!myLibraryManager.loadLibrary(preludeLibrary, myTypechecking))
+    if (!loadLibrary(new PreludeResourceLibrary(myTypecheckerState)))
       eprintln("[FATAL] Failed to load Prelude");
-    myReplLibrary.addDependency(new LibraryDependency(preludeLibrary.getName()));
     myMergedScopes.add(PreludeLibrary.getPreludeScope());
   }
 

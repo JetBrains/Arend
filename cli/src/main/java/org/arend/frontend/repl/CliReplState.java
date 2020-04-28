@@ -8,20 +8,24 @@ import org.arend.ext.module.ModulePath;
 import org.arend.frontend.ConcreteReferableProvider;
 import org.arend.frontend.FileLibraryResolver;
 import org.arend.frontend.PositionComparator;
+import org.arend.frontend.library.FileSourceLibrary;
 import org.arend.frontend.parser.ArendLexer;
 import org.arend.frontend.parser.ArendParser;
 import org.arend.frontend.parser.BuildVisitor;
 import org.arend.frontend.parser.ReporterErrorListener;
-import org.arend.repl.ReplLibrary;
+import org.arend.repl.ReplApi;
 import org.arend.repl.ReplState;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.FileGroup;
 import org.arend.typechecking.SimpleTypecheckerState;
 import org.arend.typechecking.TypecheckerState;
+import org.arend.util.Range;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 
 public class CliReplState extends ReplState {
   public CliReplState(@NotNull TypecheckerState typecheckerState,
@@ -32,13 +36,13 @@ public class CliReplState extends ReplState {
         ConcreteReferableProvider.INSTANCE,
         PositionComparator.INSTANCE,
         System.out, System.err,
-        new CliReplLibrary(typecheckerState),
+        new FileSourceLibrary("Repl", Paths.get("."), null, null, null, Collections.emptySet(), true, new ArrayList<>(), Range.unbound(), typecheckerState),
         typecheckerState
     );
   }
 
   private @NotNull BuildVisitor buildVisitor() {
-    return new BuildVisitor(ReplLibrary.replModulePath, myErrorReporter);
+    return new BuildVisitor(ReplApi.replModulePath, myErrorReporter);
   }
 
   public static @NotNull ArendParser createParser(@NotNull String text, @NotNull ModulePath modulePath, @NotNull ErrorReporter reporter) {
@@ -61,7 +65,7 @@ public class CliReplState extends ReplState {
   }
 
   private @NotNull ArendParser parse(String line) {
-    return createParser(line, ReplLibrary.replModulePath, myErrorReporter);
+    return createParser(line, ReplApi.replModulePath, myErrorReporter);
   }
 
   @Override

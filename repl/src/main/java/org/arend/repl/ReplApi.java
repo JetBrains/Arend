@@ -1,6 +1,7 @@
 package org.arend.repl;
 
 import org.arend.core.expr.Expression;
+import org.arend.module.FullModulePath;
 import org.arend.repl.action.ReplAction;
 import org.arend.repl.action.ReplCommand;
 import org.arend.term.concrete.Concrete;
@@ -8,7 +9,11 @@ import org.arend.typechecking.result.TypecheckingResult;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
+
 public interface ReplApi {
+  @NotNull FullModulePath replModulePath = new FullModulePath(null, FullModulePath.LocationKind.TEST, Collections.singletonList("Repl"));
+
   void checkStatements(@NotNull String line);
 
   void registerAction(@NotNull ReplCommand action);
