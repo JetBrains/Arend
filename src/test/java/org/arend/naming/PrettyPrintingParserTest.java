@@ -6,7 +6,7 @@ import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.elimtree.ElimBody;
 import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.*;
-import org.arend.core.expr.visitor.ToAbstractVisitor;
+import org.arend.term.prettyprint.ToAbstractVisitor;
 import org.arend.core.pattern.BindingPattern;
 import org.arend.core.pattern.ConstructorPattern;
 import org.arend.core.pattern.Pattern;

@@ -1,7 +1,7 @@
 package org.arend.ext.prettyprinting;
 
-import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.ext.module.LongName;
+import org.arend.ext.reference.ArendRef;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -11,8 +11,8 @@ public interface DefinitionRenamer {
   /**
    * Returns a prefix for the given definition.
    *
-   * @param definition    a definition.
+   * @param ref   a reference to a definition.
    * @return a prefix for the given definition or {@code null} if the definition should not be renamed.
    */
-  @Nullable LongName getDefinitionPrefix(CoreDefinition definition);
+  @Nullable LongName getDefinitionPrefix(ArendRef ref);
 }

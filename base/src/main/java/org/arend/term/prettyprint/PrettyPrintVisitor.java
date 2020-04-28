@@ -2,7 +2,6 @@ package org.arend.term.prettyprint;
 
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
-import org.arend.core.expr.visitor.ToAbstractVisitor;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.reference.Precedence;
 import org.arend.naming.reference.CoreReferable;

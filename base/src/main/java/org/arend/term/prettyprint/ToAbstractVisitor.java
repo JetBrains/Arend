@@ -1,7 +1,9 @@
-package org.arend.core.expr.visitor;
+package org.arend.term.prettyprint;
 
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.LevelVariable;
+import org.arend.core.expr.visitor.BaseExpressionVisitor;
+import org.arend.core.expr.visitor.ConflictDefinitionRenamer;
 import org.arend.ext.variable.Variable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.core.context.param.DependentLink;
@@ -186,7 +188,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   private Concrete.ReferenceExpression makeReference(DefCallExpression defCall) {
     Referable ref = defCall.getDefinition().getReferable();
-    return hasFlag(PrettyPrinterFlag.SHOW_LEVELS) ? cDefCall(myDefinitionRenamer.getDefinitionPrefix(defCall.getDefinition()), ref, visitLevelNull(defCall.getSortArgument().getPLevel()), visitLevelNull(defCall.getSortArgument().getHLevel())) : cVar(myDefinitionRenamer.getDefinitionPrefix(defCall.getDefinition()), ref);
+    return hasFlag(PrettyPrinterFlag.SHOW_LEVELS) ? cDefCall(myDefinitionRenamer.getDefinitionPrefix(defCall.getDefinition().getRef()), ref, visitLevelNull(defCall.getSortArgument().getPLevel()), visitLevelNull(defCall.getSortArgument().getHLevel())) : cVar(myDefinitionRenamer.getDefinitionPrefix(defCall.getDefinition().getRef()), ref);
   }
 
   @Override
