@@ -7,6 +7,5 @@ include(
     "base",
     "cli",
     "proto",
-    "repl",
     "parser"
 )

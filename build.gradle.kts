@@ -88,7 +88,6 @@ dependencies {
     testImplementation(project(":base"))
     testImplementation(project(":parser"))
     testImplementation(project(":cli"))
-    testImplementation(project(":repl"))
 
     testImplementation("junit:junit:4.12")
     testImplementation("org.hamcrest:hamcrest-library:1.3")
