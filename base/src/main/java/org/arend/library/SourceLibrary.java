@@ -4,6 +4,7 @@ import org.arend.ext.ArendExtension;
 import org.arend.ext.DefaultArendExtension;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.module.ModulePath;
+import org.arend.ext.ui.ArendUI;
 import org.arend.extImpl.ConcreteFactoryImpl;
 import org.arend.extImpl.DefinitionContributorImpl;
 import org.arend.extImpl.ArendDefinitionProviderImpl;
@@ -121,6 +122,11 @@ public abstract class SourceLibrary extends BaseLibrary {
   @Override
   public ArendExtension getArendExtension() {
     return myExtension != null ? myExtension : super.getArendExtension();
+  }
+
+  @Nullable
+  public ArendUI getUI() {
+    return null;
   }
 
   /**
@@ -285,6 +291,10 @@ public abstract class SourceLibrary extends BaseLibrary {
       myExtension.setConcreteFactory(new ConcreteFactoryImpl(null));
       myExtension.setDefinitionProvider(getTypecheckerState());
       myExtension.setVariableRenamerFactory(VariableRenamerFactoryImpl.INSTANCE);
+      ArendUI ui = getUI();
+      if (ui != null) {
+        myExtension.setUI(ui);
+      }
 
       ArendDefinitionProviderImpl provider = new ArendDefinitionProviderImpl(typechecking, libraryManager.getAvailableModuleScopeProvider(this), libraryManager.getDefinitionRequester(), this);
       try {

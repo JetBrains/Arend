@@ -2,7 +2,9 @@ package org.arend.frontend.library;
 
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.module.ModulePath;
+import org.arend.ext.ui.ArendUI;
 import org.arend.frontend.source.FileRawSource;
+import org.arend.frontend.ui.ArendCliUI;
 import org.arend.library.LibraryDependency;
 import org.arend.library.LibraryHeader;
 import org.arend.library.UnmodifiableSourceLibrary;
@@ -91,6 +93,11 @@ public class FileSourceLibrary extends UnmodifiableSourceLibrary {
   @Override
   public @NotNull Collection<? extends ModulePath> getTestModules() {
     return myTestModules;
+  }
+
+  @Override
+  public @Nullable ArendUI getUI() {
+    return new ArendCliUI();
   }
 
   @Nullable

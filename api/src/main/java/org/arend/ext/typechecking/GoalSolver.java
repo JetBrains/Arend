@@ -47,7 +47,8 @@ public interface GoalSolver {
    * @param typechecker     a type-checker that can be used to solve the goal
    * @param goalExpression  the original goal expression
    * @param expectedType    the original expected type
-   * @param ui              can be used to interact with the user
+   * @param ui              can be used for immediate interaction;
+   *                        it shouldn't be used during long computations
    * @param callback        a callback for the result;
    *                        if the callback is invoked on {@code null}, an error message will be shown
    */
@@ -56,7 +57,7 @@ public interface GoalSolver {
     @NotNull ConcreteGoalExpression goalExpression,
     @Nullable CoreExpression expectedType,
     @NotNull ArendUI ui,
-    @NotNull Consumer<@Nullable ConcreteExpression> callback) {
+    @NotNull Consumer<ConcreteExpression> callback) {
 
     callback.accept(null);
   }
