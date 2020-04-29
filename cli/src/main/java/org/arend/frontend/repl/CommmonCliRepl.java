@@ -25,7 +25,6 @@ import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.PrintStream;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Set;
@@ -47,23 +46,20 @@ public abstract class CommmonCliRepl extends Repl {
   private CommmonCliRepl(
       @NotNull SimpleTypecheckerState typecheckerState,
       @NotNull Set<ModulePath> modules,
-      @NotNull PrintStream stdout,
       @NotNull ListErrorReporter errorReporter) {
-    this(typecheckerState, modules, new FileLibraryResolver(new ArrayList<>(), typecheckerState, errorReporter), stdout, errorReporter);
+    this(typecheckerState, modules, new FileLibraryResolver(new ArrayList<>(), typecheckerState, errorReporter), errorReporter);
   }
 
   private CommmonCliRepl(
       @NotNull SimpleTypecheckerState typecheckerState,
       @NotNull Set<ModulePath> modules,
       @NotNull FileLibraryResolver libraryResolver,
-      @NotNull PrintStream stdout,
       @NotNull ListErrorReporter errorReporter) {
     super(
         errorReporter,
         libraryResolver,
         ConcreteReferableProvider.INSTANCE,
         PositionComparator.INSTANCE,
-        stdout, System.err,
         modules,
         new FileSourceLibrary("Repl", Paths.get("."), null, null, null, modules, true, new ArrayList<>(), Range.unbound(), typecheckerState),
         typecheckerState
@@ -95,6 +91,27 @@ public abstract class CommmonCliRepl extends Repl {
     return lexer;
   }
 
+  @Override
+  public void eprintln(Object anything) {
+    System.err.println(anything);
+  }
+
+  @Override
+  public void println(Object anything) {
+    System.out.println(anything);
+  }
+
+  @Override
+  public void print(Object anything) {
+    System.out.print(anything);
+    System.out.flush();
+  }
+
+  @Override
+  public void printlnOpt(Object anything, boolean toError) {
+    (toError ? System.err : System.out).println(anything);
+  }
+
   private @NotNull ArendParser parse(String line) {
     return createParser(line, Repl.replModulePath, myErrorReporter);
   }
@@ -117,7 +134,7 @@ public abstract class CommmonCliRepl extends Repl {
   }
 
   @Override
-  protected final @Nullable FileGroup parseStatements(String line) {
+  protected final @Nullable FileGroup parseStatements(@NotNull String line) {
     var fileGroup = buildVisitor().visitStatements(parse(line).statements());
     if (fileGroup != null)
       fileGroup.setModuleScopeProvider(getAvailableModuleScopeProvider());
@@ -130,8 +147,8 @@ public abstract class CommmonCliRepl extends Repl {
     return buildVisitor().visitExpr(parse(text).expr());
   }
 
-  public CommmonCliRepl(@NotNull PrintStream stdout) {
-    this(new SimpleTypecheckerState(), new TreeSet<>(), stdout, new ListErrorReporter(new ArrayList<>()));
+  public CommmonCliRepl() {
+    this(new SimpleTypecheckerState(), new TreeSet<>(), new ListErrorReporter(new ArrayList<>()));
   }
 
   private final class ChangePromptCommand implements ReplCommand {

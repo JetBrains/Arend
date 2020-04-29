@@ -8,7 +8,7 @@ import java.util.Scanner;
 
 public class PlainCliRepl extends CommmonCliRepl {
   public PlainCliRepl() {
-    super(System.out);
+    super();
   }
 
   public void runRepl(@NotNull InputStream inputStream) {

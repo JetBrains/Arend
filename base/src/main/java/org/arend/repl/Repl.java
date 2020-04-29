@@ -44,7 +44,6 @@ import org.arend.typechecking.visitor.SyntacticDesugarVisitor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -66,27 +65,45 @@ public abstract class Repl {
   protected final @NotNull ListErrorReporter myErrorReporter;
   protected final @NotNull LibraryManager myLibraryManager;
 
-  private final @NotNull PrintStream myStdout;
-  private final @NotNull PrintStream myStderr;
+  public Repl(@NotNull ListErrorReporter listErrorReporter,
+              @NotNull LibraryResolver libraryResolver,
+              @NotNull ConcreteProvider concreteProvider,
+              @NotNull PartialComparator<TCReferable> comparator,
+              @NotNull Set<ModulePath> modules,
+              @NotNull SourceLibrary replLibrary,
+              @NotNull TypecheckerState typecheckerState) {
+    this(listErrorReporter, libraryResolver, concreteProvider, comparator, modules, replLibrary, new InstanceProviderSet(), typecheckerState);
+  }
 
   public Repl(@NotNull ListErrorReporter listErrorReporter,
               @NotNull LibraryResolver libraryResolver,
               @NotNull ConcreteProvider concreteProvider,
               @NotNull PartialComparator<TCReferable> comparator,
-              @NotNull PrintStream stdout,
-              @NotNull PrintStream stderr,
               @NotNull Set<ModulePath> modules,
               @NotNull SourceLibrary replLibrary,
+              @NotNull InstanceProviderSet instanceProviders,
+              @NotNull TypecheckerState typecheckerState) {
+    this(listErrorReporter, libraryManager(listErrorReporter, libraryResolver, instanceProviders), concreteProvider, comparator, modules, replLibrary, instanceProviders, typecheckerState);
+  }
+
+  private static @NotNull LibraryManager libraryManager(@NotNull ListErrorReporter listErrorReporter, @NotNull LibraryResolver libraryResolver, @NotNull InstanceProviderSet instanceProviders) {
+    return new LibraryManager(libraryResolver, instanceProviders, listErrorReporter, listErrorReporter, DefinitionRequester.INSTANCE);
+  }
+
+  public Repl(@NotNull ListErrorReporter listErrorReporter,
+              @NotNull LibraryManager libraryManager,
+              @NotNull ConcreteProvider concreteProvider,
+              @NotNull PartialComparator<TCReferable> comparator,
+              @NotNull Set<ModulePath> modules,
+              @NotNull SourceLibrary replLibrary,
+              @NotNull InstanceProviderSet instanceProviders,
               @NotNull TypecheckerState typecheckerState) {
     myErrorReporter = listErrorReporter;
     myConcreteProvider = concreteProvider;
     myModules = modules;
     myTypecheckerState = typecheckerState;
-    myStdout = stdout;
-    myStderr = stderr;
     myReplLibrary = replLibrary;
-    var instanceProviders = new InstanceProviderSet();
-    myLibraryManager = new LibraryManager(libraryResolver, instanceProviders, myErrorReporter, myErrorReporter, DefinitionRequester.INSTANCE);
+    myLibraryManager = libraryManager;
     myTypechecking = new TypecheckingOrderingListener(instanceProviders, myTypecheckerState, myConcreteProvider, IdReferableConverter.INSTANCE, myErrorReporter, comparator, new LibraryArendExtensionProvider(myLibraryManager));
   }
 
@@ -185,7 +202,7 @@ public abstract class Repl {
     return "\u03bb ";
   }
 
-  protected abstract @Nullable Group parseStatements(String line);
+  protected abstract @Nullable Group parseStatements(@NotNull String line);
 
   protected abstract @Nullable Concrete.Expression parseExpr(@NotNull String text);
 
@@ -272,13 +289,19 @@ public abstract class Repl {
    *
    * @param anything whose {@link Object#toString()} is invoked.
    */
-  public final void println(Object anything) {
-    myStdout.println(anything);
+  public void println(Object anything) {
+    print(anything);
+    print(System.lineSeparator());
   }
 
-  public final void print(Object anything) {
-    myStdout.print(anything);
-    myStdout.flush();
+  public abstract void print(Object anything);
+
+  /**
+   * @param toError if true, print to stderr. Otherwise print to stdout
+   */
+  public void printlnOpt(Object anything, boolean toError) {
+    if (toError) eprintln(anything);
+    else println(anything);
   }
 
   /**
@@ -287,10 +310,7 @@ public abstract class Repl {
    *
    * @param anything whose {@link Object#toString()} is invoked.
    */
-  public final void eprintln(Object anything) {
-    myStderr.println(anything);
-    myStderr.flush();
-  }
+  public abstract void eprintln(Object anything);
 
   public final @NotNull StringBuilder prettyExpr(@NotNull StringBuilder builder, @NotNull Expression expression) {
     var abs = ToAbstractVisitor.convert(expression, myPpConfig);
@@ -332,7 +352,7 @@ public abstract class Repl {
   public final boolean checkErrors() {
     var errorList = myErrorReporter.getErrorList();
     for (GeneralError error : errorList)
-      (error.isSevere() ? myStderr : myStdout).println(error.getDoc(myPpConfig));
+      printlnOpt(error.getDoc(myPpConfig), error.isSevere());
     boolean hasErrors = !errorList.isEmpty();
     errorList.clear();
     return hasErrors;

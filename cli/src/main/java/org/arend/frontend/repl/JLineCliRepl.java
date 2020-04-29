@@ -10,25 +10,35 @@ import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 
 import java.io.IOException;
-import java.io.PrintStream;
 
 public class JLineCliRepl extends CommmonCliRepl {
   private final Terminal myTerminal;
 
   public JLineCliRepl(@NotNull Terminal terminal) {
-    super(new PrintStream(terminal.output()));
     myTerminal = terminal;
+  }
+
+  @Override
+  public void print(Object anything) {
+    var writer = myTerminal.writer();
+    writer.print(anything);
+    writer.flush();
+  }
+
+  @Override
+  public void println(Object anything) {
+    myTerminal.writer().println(anything);
   }
 
   public void runRepl() {
     var reader = LineReaderBuilder.builder()
-        .appName(APP_NAME)
-        .completer(new AggregateCompleter(
-            scopeCompleter(),
-            new JLineKeywordCompleter(),
-            new JLineExprCompleter(),
-            new JLineCommandsCompleter()
-        ))
+      .appName(APP_NAME)
+      .completer(new AggregateCompleter(
+        scopeCompleter(),
+        new JLineKeywordCompleter(),
+        new JLineExprCompleter(),
+        new JLineCommandsCompleter()
+      ))
         .terminal(myTerminal)
         .parser(new DefaultParser() {
           @Override
