@@ -289,11 +289,11 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     }
 
     def.setResolved();
+    def.accept(new SyntacticDesugarVisitor(myLocalErrorReporter), null);
     if (myResolverListener != null) {
       myResolverListener.definitionResolved(def);
     }
 
-    def.accept(new SyntacticDesugarVisitor(myLocalErrorReporter), null);
     return null;
   }
 
@@ -375,11 +375,11 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     }
 
     def.setResolved();
+    def.accept(new SyntacticDesugarVisitor(myLocalErrorReporter), null);
     if (myResolverListener != null) {
       myResolverListener.definitionResolved(def);
     }
 
-    def.accept(new SyntacticDesugarVisitor(myLocalErrorReporter), null);
     return null;
   }
 
@@ -514,11 +514,11 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     }
 
     def.setResolved();
+    def.accept(new SyntacticDesugarVisitor(myLocalErrorReporter), null);
     if (myResolverListener != null) {
       myResolverListener.definitionResolved(def);
     }
 
-    def.accept(new SyntacticDesugarVisitor(myLocalErrorReporter), null);
     return null;
   }
 
