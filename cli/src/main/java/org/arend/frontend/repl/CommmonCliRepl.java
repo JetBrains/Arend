@@ -14,6 +14,8 @@ import org.arend.frontend.parser.ArendParser;
 import org.arend.frontend.parser.BuildVisitor;
 import org.arend.frontend.parser.ReporterErrorListener;
 import org.arend.library.Library;
+import org.arend.prelude.PreludeLibrary;
+import org.arend.prelude.PreludeResourceLibrary;
 import org.arend.repl.Repl;
 import org.arend.repl.action.LoadLibraryCommand;
 import org.arend.repl.action.ReplCommand;
@@ -149,6 +151,13 @@ public abstract class CommmonCliRepl extends Repl {
 
   public CommmonCliRepl() {
     this(new SimpleTypecheckerState(), new TreeSet<>(), new ListErrorReporter(new ArrayList<>()));
+  }
+
+  @Override
+  protected final void loadPreludeLibrary() {
+    if (!loadLibrary(new PreludeResourceLibrary(myTypecheckerState)))
+      eprintln("[FATAL] Failed to load Prelude");
+    else myMergedScopes.add(PreludeLibrary.getPreludeScope());
   }
 
   private final class ChangePromptCommand implements ReplCommand {

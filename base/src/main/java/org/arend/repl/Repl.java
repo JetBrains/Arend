@@ -53,14 +53,14 @@ import java.util.function.Supplier;
 public abstract class Repl {
   public static final @NotNull FullModulePath replModulePath = new FullModulePath(null, FullModulePath.LocationKind.SOURCE, Collections.singletonList("Repl"));
 
-  private final List<Scope> myMergedScopes = new ArrayList<>();
+  protected final List<Scope> myMergedScopes = new ArrayList<>();
   private final List<ReplHandler> myHandlers = new ArrayList<>();
   private final Set<ModulePath> myModules;
   private final MergeScope myScope = new MergeScope(myMergedScopes);
   private final SourceLibrary myReplLibrary;
-  private final TypecheckerState myTypecheckerState;
   private final ConcreteProvider myConcreteProvider;
   private final TypecheckingOrderingListener myTypechecking;
+  protected final TypecheckerState myTypecheckerState;
   protected final @NotNull PrettyPrinterConfig myPpConfig = PrettyPrinterConfig.DEFAULT;
   protected final @NotNull ListErrorReporter myErrorReporter;
   protected final @NotNull LibraryManager myLibraryManager;
@@ -107,11 +107,7 @@ public abstract class Repl {
     myTypechecking = new TypecheckingOrderingListener(instanceProviders, myTypecheckerState, myConcreteProvider, IdReferableConverter.INSTANCE, myErrorReporter, comparator, new LibraryArendExtensionProvider(myLibraryManager));
   }
 
-  private void loadPreludeLibrary() {
-    if (!loadLibrary(new PreludeResourceLibrary(myTypecheckerState)))
-      eprintln("[FATAL] Failed to load Prelude");
-    else myMergedScopes.add(PreludeLibrary.getPreludeScope());
-  }
+  protected abstract void loadPreludeLibrary();
 
   private void loadReplLibrary() {
     if (!myLibraryManager.loadLibrary(myReplLibrary, myTypechecking))
