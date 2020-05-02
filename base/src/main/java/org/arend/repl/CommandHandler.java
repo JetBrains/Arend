@@ -18,11 +18,6 @@ public final class CommandHandler implements ReplHandler {
     return new HelpCommand();
   }
 
-  private CommandHandler() {
-    commandMap.put("?", HELP_COMMAND_INSTANCE);
-    commandMap.put("help", HELP_COMMAND_INSTANCE);
-  }
-
   @Override
   public final boolean isApplicable(@NotNull String line) {
     return line.startsWith(":");
