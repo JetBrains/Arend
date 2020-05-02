@@ -151,22 +151,15 @@ public abstract class Repl {
    * This will <strong>not</strong> modify the REPL scope.
    */
   public final @Nullable Scope loadModule(@NotNull ModulePath modulePath) {
-    boolean isLoadedBefore = myModules.add(modulePath);
-    myLibraryManager.reload(myTypechecking);
-    if (checkErrors()) {
-      myModules.remove(modulePath);
-      return null;
-    }
-    if (isLoadedBefore) {
-      Scope scope = getAvailableModuleScopeProvider().forModule(modulePath);
-      if (scope != null) removeScope(scope);
-    }
+    if (myModules.add(modulePath))
+      myLibraryManager.unloadLibrary(myReplLibrary);
+    myLibraryManager.loadLibrary(myReplLibrary, myTypechecking);
     typecheckLibrary(myReplLibrary);
     return getAvailableModuleScopeProvider().forModule(modulePath);
   }
 
-  protected final boolean typecheckLibrary(@NotNull Library myReplLibrary) {
-    return myTypechecking.typecheckLibrary(myReplLibrary);
+  protected final boolean typecheckLibrary(@NotNull Library library) {
+    return myTypechecking.typecheckLibrary(library);
   }
 
   /**
@@ -178,9 +171,7 @@ public abstract class Repl {
   public final boolean unloadModule(@NotNull ModulePath modulePath) {
     boolean isLoadedBefore = myModules.remove(modulePath);
     if (isLoadedBefore) {
-      myLibraryManager.reload(myTypechecking);
-      Scope scope = getAvailableModuleScopeProvider().forModule(modulePath);
-      if (scope != null) removeScope(scope);
+      myLibraryManager.unloadLibrary(myReplLibrary);
       myReplLibrary.onGroupLoaded(modulePath, null, true);
       typecheckLibrary(myReplLibrary);
     }
@@ -190,7 +181,7 @@ public abstract class Repl {
   public final @NotNull ModuleScopeProvider getAvailableModuleScopeProvider() {
     return module -> {
       for (Library registeredLibrary : myLibraryManager.getRegisteredLibraries()) {
-        Scope scope = myLibraryManager.getAvailableModuleScopeProvider(registeredLibrary).forModule(module);
+        Scope scope = registeredLibrary.getModuleScopeProvider().forModule(module);
         if (scope != null) return scope;
       }
       return null;
@@ -282,6 +273,7 @@ public abstract class Repl {
     for (Referable element : scope.getElements())
       if (element instanceof TCReferable)
         myTypecheckerState.reset((TCReferable) element);
+    removeScope(scope.getGlobalSubscopeWithoutOpens());
     return myMergedScopes.remove(scope);
   }
 
