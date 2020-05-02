@@ -22,7 +22,6 @@ import org.arend.naming.scope.CachingScope;
 import org.arend.naming.scope.MergeScope;
 import org.arend.naming.scope.Scope;
 import org.arend.naming.scope.ScopeFactory;
-import org.arend.repl.action.ListLoadedModulesAction;
 import org.arend.repl.action.NormalizeCommand;
 import org.arend.repl.action.ReplCommand;
 import org.arend.repl.action.ShowTypeCommand;
@@ -124,36 +123,8 @@ public abstract class Repl {
     return false;
   }
 
-  /**
-   * Load a file under the REPL working directory and get its scope.
-   * This will <strong>not</strong> modify the REPL scope.
-   */
-  public final @Nullable Scope loadModule(@NotNull ModulePath modulePath) {
-    if (myModules.add(modulePath))
-      myLibraryManager.unloadLibrary(myReplLibrary);
-    myLibraryManager.loadLibrary(myReplLibrary, myTypechecking);
-    typecheckLibrary(myReplLibrary);
-    return getAvailableModuleScopeProvider().forModule(modulePath);
-  }
-
   protected final boolean typecheckLibrary(@NotNull Library library) {
     return myTypechecking.typecheckLibrary(library);
-  }
-
-  /**
-   * Like {@link Repl#loadModule(ModulePath)}, this will
-   * <strong>not</strong> modify the REPL scope as well.
-   *
-   * @return true if the module is already loaded before.
-   */
-  public final boolean unloadModule(@NotNull ModulePath modulePath) {
-    boolean isLoadedBefore = myModules.remove(modulePath);
-    if (isLoadedBefore) {
-      myLibraryManager.unloadLibrary(myReplLibrary);
-      myReplLibrary.onGroupLoaded(modulePath, null, true);
-      typecheckLibrary(myReplLibrary);
-    }
-    return isLoadedBefore;
   }
 
   public final @NotNull ModuleScopeProvider getAvailableModuleScopeProvider() {
@@ -203,7 +174,6 @@ public abstract class Repl {
   protected void loadCommands() {
     myHandlers.add(CodeParsingHandler.INSTANCE);
     myHandlers.add(CommandHandler.INSTANCE);
-    registerAction("modules", ListLoadedModulesAction.INSTANCE);
     registerAction("type", ShowTypeCommand.INSTANCE);
     registerAction("t", ShowTypeCommand.INSTANCE);
     registerAction("?", CommandHandler.HELP_COMMAND_INSTANCE);

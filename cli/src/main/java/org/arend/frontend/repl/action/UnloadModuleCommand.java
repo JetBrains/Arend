@@ -1,6 +1,7 @@
 package org.arend.frontend.repl.action;
 
 import org.arend.ext.module.ModulePath;
+import org.arend.frontend.repl.CommmonCliRepl;
 import org.arend.naming.scope.Scope;
 import org.arend.repl.Repl;
 import org.arend.repl.action.ReplCommand;
@@ -23,14 +24,16 @@ public final class UnloadModuleCommand implements ReplCommand {
   @Override
   public void invoke(@NotNull String line, @NotNull Repl api, @NotNull Supplier<@NotNull String> scanner) {
     var modulePath = ModulePath.fromString(line);
-    if (!api.getReplLibrary().containsModule(modulePath)) {
-      api.eprintln("[ERROR] Module " + modulePath + " is not loaded.");
+    assert api instanceof CommmonCliRepl;
+    var cliApi = (CommmonCliRepl) api;
+    if (!cliApi.getReplLibrary().containsModule(modulePath)) {
+      cliApi.eprintln("[ERROR] Module " + modulePath + " is not loaded.");
       return;
     }
-    Scope scope = api.getAvailableModuleScopeProvider().forModule(modulePath);
-    if (scope != null) api.removeScope(scope);
-    boolean isUnloaded = api.unloadModule(modulePath);
+    Scope scope = cliApi.getAvailableModuleScopeProvider().forModule(modulePath);
+    if (scope != null) cliApi.removeScope(scope);
+    boolean isUnloaded = cliApi.unloadModule(modulePath);
     assert isUnloaded;
-    api.checkErrors();
+    cliApi.checkErrors();
   }
 }

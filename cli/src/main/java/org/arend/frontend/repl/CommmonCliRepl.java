@@ -13,14 +13,16 @@ import org.arend.frontend.parser.ArendLexer;
 import org.arend.frontend.parser.ArendParser;
 import org.arend.frontend.parser.BuildVisitor;
 import org.arend.frontend.parser.ReporterErrorListener;
+import org.arend.frontend.repl.action.ListLoadedModulesAction;
+import org.arend.frontend.repl.action.LoadLibraryCommand;
+import org.arend.frontend.repl.action.LoadModuleCommand;
+import org.arend.frontend.repl.action.UnloadModuleCommand;
 import org.arend.library.Library;
 import org.arend.library.SourceLibrary;
 import org.arend.naming.scope.Scope;
 import org.arend.prelude.PreludeLibrary;
 import org.arend.prelude.PreludeResourceLibrary;
 import org.arend.repl.Repl;
-import org.arend.frontend.repl.action.LoadLibraryCommand;
-import org.arend.frontend.repl.action.LoadModuleCommand;
 import org.arend.repl.action.ReplCommand;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.FileGroup;
@@ -131,6 +133,8 @@ public abstract class CommmonCliRepl extends Repl {
   @Override
   protected void loadCommands() {
     super.loadCommands();
+    registerAction("modules", ListLoadedModulesAction.INSTANCE);
+    registerAction("unload", UnloadModuleCommand.INSTANCE);
     registerAction("load", LoadModuleCommand.INSTANCE);
     registerAction("l", LoadModuleCommand.INSTANCE);
     registerAction("reload", LoadModuleCommand.ReloadModuleCommand.INSTANCE);
@@ -181,16 +185,9 @@ public abstract class CommmonCliRepl extends Repl {
    * This will <strong>not</strong> modify the REPL scope.
    */
   public final @Nullable Scope loadModule(@NotNull ModulePath modulePath) {
-    boolean isLoadedBefore = myModules.add(modulePath);
-    myLibraryManager.reload(myTypechecking);
-    if (checkErrors()) {
-      myModules.remove(modulePath);
-      return null;
-    }
-    if (isLoadedBefore) {
-      Scope scope = getAvailableModuleScopeProvider().forModule(modulePath);
-      if (scope != null) removeScope(scope);
-    }
+    if (myModules.add(modulePath))
+      myLibraryManager.unloadLibrary(myReplLibrary);
+    myLibraryManager.loadLibrary(myReplLibrary, myTypechecking);
     typecheckLibrary(myReplLibrary);
     return getAvailableModuleScopeProvider().forModule(modulePath);
   }
@@ -204,13 +201,15 @@ public abstract class CommmonCliRepl extends Repl {
   public final boolean unloadModule(@NotNull ModulePath modulePath) {
     boolean isLoadedBefore = myModules.remove(modulePath);
     if (isLoadedBefore) {
-      myLibraryManager.reload(myTypechecking);
-      Scope scope = getAvailableModuleScopeProvider().forModule(modulePath);
-      if (scope != null) removeScope(scope);
+      myLibraryManager.unloadLibrary(myReplLibrary);
       myReplLibrary.onGroupLoaded(modulePath, null, true);
       typecheckLibrary(myReplLibrary);
     }
     return isLoadedBefore;
+  }
+
+  public @NotNull SourceLibrary getReplLibrary() {
+    return myReplLibrary;
   }
 
   private final class ChangePromptCommand implements ReplCommand {

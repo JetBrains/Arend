@@ -1,6 +1,8 @@
-package org.arend.repl.action;
+package org.arend.frontend.repl.action;
 
+import org.arend.frontend.repl.CommmonCliRepl;
 import org.arend.repl.Repl;
+import org.arend.repl.action.ReplCommand;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
@@ -15,9 +17,11 @@ public final class ListLoadedModulesAction implements ReplCommand {
 
   @Override
   public void invoke(@NotNull String line, @NotNull Repl api, @NotNull Supplier<@NotNull String> scanner) {
-    var string = api.getReplLibrary().getLoadedModules().stream().map(String::valueOf).collect(Collectors.joining(" "));
-    if (string.isBlank()) api.println("[INFO] No modules loaded.");
-    else api.println(string);
+    assert api instanceof CommmonCliRepl;
+    var cliApi = (CommmonCliRepl) api;
+    var string = cliApi.getReplLibrary().getLoadedModules().stream().map(String::valueOf).collect(Collectors.joining(" "));
+    if (string.isBlank()) cliApi.println("[INFO] No modules loaded.");
+    else cliApi.println(string);
   }
 
   @Override
