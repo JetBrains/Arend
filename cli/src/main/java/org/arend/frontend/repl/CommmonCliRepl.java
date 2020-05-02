@@ -14,10 +14,13 @@ import org.arend.frontend.parser.ArendParser;
 import org.arend.frontend.parser.BuildVisitor;
 import org.arend.frontend.parser.ReporterErrorListener;
 import org.arend.library.Library;
+import org.arend.library.SourceLibrary;
+import org.arend.naming.scope.Scope;
 import org.arend.prelude.PreludeLibrary;
 import org.arend.prelude.PreludeResourceLibrary;
 import org.arend.repl.Repl;
-import org.arend.repl.action.LoadLibraryCommand;
+import org.arend.frontend.repl.action.LoadLibraryCommand;
+import org.arend.frontend.repl.action.LoadModuleCommand;
 import org.arend.repl.action.ReplCommand;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.FileGroup;
@@ -38,6 +41,8 @@ public abstract class CommmonCliRepl extends Repl {
 
   private @NotNull String prompt = "\u03bb ";
   private final FileLibraryResolver myLibraryResolver;
+  private final SourceLibrary myReplLibrary;
+  private final Set<ModulePath> myModules;
 
   //region Tricky constructors (expand to read more...)
   // These two constructors are used for convincing javac that the
@@ -62,11 +67,11 @@ public abstract class CommmonCliRepl extends Repl {
         libraryResolver,
         ConcreteReferableProvider.INSTANCE,
         PositionComparator.INSTANCE,
-        modules,
-        new FileSourceLibrary("Repl", Paths.get("."), null, null, null, modules, true, new ArrayList<>(), Range.unbound(), typecheckerState),
         typecheckerState
     );
     myLibraryResolver = libraryResolver;
+    myReplLibrary = new FileSourceLibrary("Repl", Paths.get("."), null, null, null, modules, true, new ArrayList<>(), Range.unbound(), typecheckerState);
+    myModules = modules;
   }
   //endregion
 
@@ -126,13 +131,16 @@ public abstract class CommmonCliRepl extends Repl {
   @Override
   protected void loadCommands() {
     super.loadCommands();
+    registerAction("load", LoadModuleCommand.INSTANCE);
+    registerAction("l", LoadModuleCommand.INSTANCE);
+    registerAction("reload", LoadModuleCommand.ReloadModuleCommand.INSTANCE);
+    registerAction("r", LoadModuleCommand.ReloadModuleCommand.INSTANCE);
     registerAction("prompt", new ChangePromptCommand());
-    registerAction("lib", new LoadLibraryCommand() {
-      @Override
-      protected @Nullable Library createLibrary(@NotNull String path) {
-        return myLibraryResolver.registerLibrary(Paths.get(path).toAbsolutePath());
-      }
-    });
+    registerAction("lib", LoadLibraryCommand.INSTANCE);
+  }
+
+  public  @Nullable Library createLibrary(@NotNull String path) {
+    return myLibraryResolver.registerLibrary(Paths.get(path).toAbsolutePath());
   }
 
   @Override
@@ -153,11 +161,56 @@ public abstract class CommmonCliRepl extends Repl {
     this(new SimpleTypecheckerState(), new TreeSet<>(), new ListErrorReporter(new ArrayList<>()));
   }
 
+  public final boolean loadLibrary(@NotNull Library library) {
+    if (!myLibraryManager.loadLibrary(library, myTypechecking)) return false;
+    myLibraryManager.registerDependency(myReplLibrary, library);
+    return true;
+  }
+
   @Override
-  protected final void loadPreludeLibrary() {
+  protected final void loadLibraries() {
     if (!loadLibrary(new PreludeResourceLibrary(myTypecheckerState)))
       eprintln("[FATAL] Failed to load Prelude");
     else myMergedScopes.add(PreludeLibrary.getPreludeScope());
+    if (!myLibraryManager.loadLibrary(myReplLibrary, myTypechecking))
+      eprintln("[FATAL] Failed to load the REPL virtual library");
+  }
+
+  /**
+   * Load a file under the REPL working directory and get its scope.
+   * This will <strong>not</strong> modify the REPL scope.
+   */
+  public final @Nullable Scope loadModule(@NotNull ModulePath modulePath) {
+    boolean isLoadedBefore = myModules.add(modulePath);
+    myLibraryManager.reload(myTypechecking);
+    if (checkErrors()) {
+      myModules.remove(modulePath);
+      return null;
+    }
+    if (isLoadedBefore) {
+      Scope scope = getAvailableModuleScopeProvider().forModule(modulePath);
+      if (scope != null) removeScope(scope);
+    }
+    typecheckLibrary(myReplLibrary);
+    return getAvailableModuleScopeProvider().forModule(modulePath);
+  }
+
+  /**
+   * Like {@link CommmonCliRepl#loadModule(ModulePath)}, this will
+   * <strong>not</strong> modify the REPL scope as well.
+   *
+   * @return true if the module is already loaded before.
+   */
+  public final boolean unloadModule(@NotNull ModulePath modulePath) {
+    boolean isLoadedBefore = myModules.remove(modulePath);
+    if (isLoadedBefore) {
+      myLibraryManager.reload(myTypechecking);
+      Scope scope = getAvailableModuleScopeProvider().forModule(modulePath);
+      if (scope != null) removeScope(scope);
+      myReplLibrary.onGroupLoaded(modulePath, null, true);
+      typecheckLibrary(myReplLibrary);
+    }
+    return isLoadedBefore;
   }
 
   private final class ChangePromptCommand implements ReplCommand {
