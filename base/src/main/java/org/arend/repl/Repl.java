@@ -84,7 +84,7 @@ public abstract class Repl {
     this(listErrorReporter, libraryManager(listErrorReporter, libraryResolver, instanceProviders), concreteProvider, comparator, modules, replLibrary, instanceProviders, typecheckerState);
   }
 
-  private static @NotNull LibraryManager libraryManager(@NotNull ListErrorReporter listErrorReporter, @NotNull LibraryResolver libraryResolver, @NotNull InstanceProviderSet instanceProviders) {
+  protected static @NotNull LibraryManager libraryManager(@NotNull ListErrorReporter listErrorReporter, @NotNull LibraryResolver libraryResolver, @NotNull InstanceProviderSet instanceProviders) {
     return new LibraryManager(libraryResolver, instanceProviders, listErrorReporter, listErrorReporter, DefinitionRequester.INSTANCE);
   }
 
@@ -160,8 +160,12 @@ public abstract class Repl {
       Scope scope = getAvailableModuleScopeProvider().forModule(modulePath);
       if (scope != null) removeScope(scope);
     }
-    myTypechecking.typecheckLibrary(myReplLibrary);
+    typecheckLibrary(myReplLibrary);
     return getAvailableModuleScopeProvider().forModule(modulePath);
+  }
+
+  protected final boolean typecheckLibrary(@NotNull Library myReplLibrary) {
+    return myTypechecking.typecheckLibrary(myReplLibrary);
   }
 
   /**
@@ -177,7 +181,7 @@ public abstract class Repl {
       Scope scope = getAvailableModuleScopeProvider().forModule(modulePath);
       if (scope != null) removeScope(scope);
       myReplLibrary.onGroupLoaded(modulePath, null, true);
-      myTypechecking.typecheckLibrary(myReplLibrary);
+      typecheckLibrary(myReplLibrary);
     }
     return isLoadedBefore;
   }
