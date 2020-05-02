@@ -54,10 +54,11 @@ public abstract class Repl {
   protected final List<Scope> myMergedScopes = new ArrayList<>();
   private final List<ReplHandler> myHandlers = new ArrayList<>();
   private final Set<ModulePath> myModules;
-  private final MergeScope myScope = new MergeScope(myMergedScopes);
+  private final MergeScope myMergeScope = new MergeScope(myMergedScopes);
   private final SourceLibrary myReplLibrary;
   private final ConcreteProvider myConcreteProvider;
   private final TypecheckingOrderingListener myTypechecking;
+  protected @NotNull Scope myScope = myMergeScope;
   protected final TypecheckerState myTypecheckerState;
   protected final @NotNull PrettyPrinterConfig myPpConfig = PrettyPrinterConfig.DEFAULT;
   protected final @NotNull ListErrorReporter myErrorReporter;
@@ -113,7 +114,7 @@ public abstract class Repl {
   }
 
   protected final @NotNull List<Referable> getInScopeElements() {
-    return myScope.getElements();
+    return myMergeScope.getElements();
   }
 
   public final boolean loadLibrary(@NotNull Library library) {

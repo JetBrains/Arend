@@ -11,12 +11,16 @@ import java.util.function.Supplier;
 
 public final class CommandHandler implements ReplHandler {
   public static final @NotNull CommandHandler INSTANCE = new CommandHandler();
+  public static final @NotNull HelpCommand HELP_COMMAND_INSTANCE = INSTANCE.createHelpCommand();
   public final @NotNull Map<String, ReplCommand> commandMap = new LinkedHashMap<>();
 
+  private @NotNull HelpCommand createHelpCommand() {
+    return new HelpCommand();
+  }
+
   private CommandHandler() {
-    var helpCommand = new HelpCommand();
-    commandMap.put("?", helpCommand);
-    commandMap.put("help", helpCommand);
+    commandMap.put("?", HELP_COMMAND_INSTANCE);
+    commandMap.put("help", HELP_COMMAND_INSTANCE);
   }
 
   @Override
@@ -35,6 +39,9 @@ public final class CommandHandler implements ReplHandler {
   }
 
   public final class HelpCommand implements ReplCommand {
+    private HelpCommand() {
+    }
+
     @Override
     public @Nls(capitalization = Nls.Capitalization.Sentence) @NotNull String description() {
       return "Show this message";
@@ -43,7 +50,7 @@ public final class CommandHandler implements ReplHandler {
     @Override
     public void invoke(@NotNull String line, @NotNull Repl api, @NotNull Supplier<@NotNull String> scanner) {
       IntSummaryStatistics statistics = commandMap.keySet().stream()
-          .mapToInt(String::length)
+        .mapToInt(String::length)
           .summaryStatistics();
       int maxWidth = Math.min(statistics.getMax(), 8) + 1;
       api.println("There are " + statistics.getCount() + " action(s) available.");
