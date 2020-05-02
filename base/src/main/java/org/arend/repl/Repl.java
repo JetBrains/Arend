@@ -24,8 +24,6 @@ import org.arend.naming.scope.CachingScope;
 import org.arend.naming.scope.MergeScope;
 import org.arend.naming.scope.Scope;
 import org.arend.naming.scope.ScopeFactory;
-import org.arend.prelude.PreludeLibrary;
-import org.arend.prelude.PreludeResourceLibrary;
 import org.arend.repl.action.*;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.Group;
@@ -133,12 +131,12 @@ public abstract class Repl {
   /**
    * The function executed per main-loop of the REPL.
    *
+   * @param currentLine  the current user input
    * @param lineSupplier in case the command requires more user input,
    *                     use this to acquire more lines
-   * @param currentLine  the current user input
    * @return true if the REPL wants to quit
    */
-  public final boolean repl(@NotNull Supplier<@NotNull String> lineSupplier, @NotNull String currentLine) {
+  public final boolean repl(@NotNull String currentLine, @NotNull Supplier<@NotNull String> lineSupplier) {
     if (currentLine.startsWith(":quit") || currentLine.equals(":q"))
       return true;
     for (var action : myHandlers)

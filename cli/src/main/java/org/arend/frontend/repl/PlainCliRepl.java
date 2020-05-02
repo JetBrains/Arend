@@ -15,7 +15,7 @@ public class PlainCliRepl extends CommmonCliRepl {
     var scanner = new Scanner(inputStream);
     print(prompt());
     while (scanner.hasNext()) {
-      if (repl(scanner::nextLine, scanner.nextLine())) break;
+      if (repl(scanner.nextLine(), scanner::nextLine)) break;
       print(prompt());
     }
   }

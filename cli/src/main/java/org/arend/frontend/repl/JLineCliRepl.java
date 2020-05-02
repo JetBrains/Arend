@@ -49,7 +49,7 @@ public class JLineCliRepl extends CommmonCliRepl {
         .build();
     while (true) {
       try {
-        if (repl(reader::readLine, reader.readLine(prompt()))) break;
+        if (repl(reader.readLine(prompt()), reader::readLine)) break;
       } catch (UserInterruptException e) {
         println("[INFO] Ignored input: `" + e.getPartialLine() + "`.");
       } catch (EndOfFileException e) {
