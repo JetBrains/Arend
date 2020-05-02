@@ -217,7 +217,8 @@ public abstract class Repl {
       myMergedScopes.remove(scope);
       return;
     }
-    myLibraryManager.getInstanceProviderSet().collectInstances(group,
+    var instanceProviders = myLibraryManager.getInstanceProviderSet();
+    if (instanceProviders != null) instanceProviders.collectInstances(group,
         CachingScope.make(ScopeFactory.parentScopeForGroup(group, moduleScopeProvider, true)),
         myConcreteProvider, null);
     if (checkErrors()) {
@@ -241,6 +242,8 @@ public abstract class Repl {
     registerAction("l", LoadModuleCommand.INSTANCE);
     registerAction("reload", LoadModuleCommand.ReloadModuleCommand.INSTANCE);
     registerAction("r", LoadModuleCommand.ReloadModuleCommand.INSTANCE);
+    registerAction("?", CommandHandler.HELP_COMMAND_INSTANCE);
+    registerAction("help", CommandHandler.HELP_COMMAND_INSTANCE);
     for (NormalizationMode normalizationMode : NormalizationMode.values()) {
       var name = normalizationMode.name().toLowerCase();
       registerAction(name, new NormalizeCommand(normalizationMode));
