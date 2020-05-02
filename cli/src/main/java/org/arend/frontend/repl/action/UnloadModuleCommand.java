@@ -1,8 +1,9 @@
-package org.arend.repl.action;
+package org.arend.frontend.repl.action;
 
 import org.arend.ext.module.ModulePath;
 import org.arend.naming.scope.Scope;
 import org.arend.repl.Repl;
+import org.arend.repl.action.ReplCommand;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 

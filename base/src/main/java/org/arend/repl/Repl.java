@@ -5,13 +5,11 @@ import org.arend.core.expr.visitor.ToAbstractVisitor;
 import org.arend.error.ListErrorReporter;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.GeneralError;
-import org.arend.ext.module.ModulePath;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.reference.Precedence;
 import org.arend.extImpl.DefinitionRequester;
 import org.arend.library.Library;
 import org.arend.library.LibraryManager;
-import org.arend.library.SourceLibrary;
 import org.arend.library.resolver.LibraryResolver;
 import org.arend.module.FullModulePath;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
@@ -24,7 +22,10 @@ import org.arend.naming.scope.CachingScope;
 import org.arend.naming.scope.MergeScope;
 import org.arend.naming.scope.Scope;
 import org.arend.naming.scope.ScopeFactory;
-import org.arend.repl.action.*;
+import org.arend.repl.action.ListLoadedModulesAction;
+import org.arend.repl.action.NormalizeCommand;
+import org.arend.repl.action.ReplCommand;
+import org.arend.repl.action.ShowTypeCommand;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.Group;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
@@ -45,7 +46,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.function.Supplier;
 
 public abstract class Repl {
@@ -53,13 +53,11 @@ public abstract class Repl {
 
   protected final List<Scope> myMergedScopes = new ArrayList<>();
   private final List<ReplHandler> myHandlers = new ArrayList<>();
-  private final Set<ModulePath> myModules;
   private final MergeScope myMergeScope = new MergeScope(myMergedScopes);
-  private final SourceLibrary myReplLibrary;
   private final ConcreteProvider myConcreteProvider;
-  private final TypecheckingOrderingListener myTypechecking;
   protected @NotNull Scope myScope = myMergeScope;
-  protected final TypecheckerState myTypecheckerState;
+  protected final @NotNull TypecheckingOrderingListener myTypechecking;
+  protected final @NotNull TypecheckerState myTypecheckerState;
   protected final @NotNull PrettyPrinterConfig myPpConfig = PrettyPrinterConfig.DEFAULT;
   protected final @NotNull ListErrorReporter myErrorReporter;
   protected final @NotNull LibraryManager myLibraryManager;
@@ -68,21 +66,17 @@ public abstract class Repl {
               @NotNull LibraryResolver libraryResolver,
               @NotNull ConcreteProvider concreteProvider,
               @NotNull PartialComparator<TCReferable> comparator,
-              @NotNull Set<ModulePath> modules,
-              @NotNull SourceLibrary replLibrary,
               @NotNull TypecheckerState typecheckerState) {
-    this(listErrorReporter, libraryResolver, concreteProvider, comparator, modules, replLibrary, new InstanceProviderSet(), typecheckerState);
+    this(listErrorReporter, libraryResolver, concreteProvider, comparator, new InstanceProviderSet(), typecheckerState);
   }
 
   public Repl(@NotNull ListErrorReporter listErrorReporter,
               @NotNull LibraryResolver libraryResolver,
               @NotNull ConcreteProvider concreteProvider,
               @NotNull PartialComparator<TCReferable> comparator,
-              @NotNull Set<ModulePath> modules,
-              @NotNull SourceLibrary replLibrary,
               @NotNull InstanceProviderSet instanceProviders,
               @NotNull TypecheckerState typecheckerState) {
-    this(listErrorReporter, libraryManager(listErrorReporter, libraryResolver, instanceProviders), concreteProvider, comparator, modules, replLibrary, instanceProviders, typecheckerState);
+    this(listErrorReporter, libraryManager(listErrorReporter, libraryResolver, instanceProviders), concreteProvider, comparator, instanceProviders, typecheckerState);
   }
 
   protected static @NotNull LibraryManager libraryManager(@NotNull ListErrorReporter listErrorReporter, @NotNull LibraryResolver libraryResolver, @NotNull InstanceProviderSet instanceProviders) {
@@ -93,39 +87,23 @@ public abstract class Repl {
               @NotNull LibraryManager libraryManager,
               @NotNull ConcreteProvider concreteProvider,
               @NotNull PartialComparator<TCReferable> comparator,
-              @NotNull Set<ModulePath> modules,
-              @NotNull SourceLibrary replLibrary,
               @NotNull InstanceProviderSet instanceProviders,
               @NotNull TypecheckerState typecheckerState) {
     myErrorReporter = listErrorReporter;
     myConcreteProvider = concreteProvider;
-    myModules = modules;
     myTypecheckerState = typecheckerState;
-    myReplLibrary = replLibrary;
     myLibraryManager = libraryManager;
     myTypechecking = new TypecheckingOrderingListener(instanceProviders, myTypecheckerState, myConcreteProvider, IdReferableConverter.INSTANCE, myErrorReporter, comparator, new LibraryArendExtensionProvider(myLibraryManager));
   }
 
-  protected abstract void loadPreludeLibrary();
-
-  private void loadReplLibrary() {
-    if (!myLibraryManager.loadLibrary(myReplLibrary, myTypechecking))
-      eprintln("[FATAL] Failed to load the REPL virtual library");
-  }
+  protected abstract void loadLibraries();
 
   protected final @NotNull List<Referable> getInScopeElements() {
     return myMergeScope.getElements();
   }
 
-  public final boolean loadLibrary(@NotNull Library library) {
-    if (!myLibraryManager.loadLibrary(library, myTypechecking)) return false;
-    myLibraryManager.registerDependency(myReplLibrary, library);
-    return true;
-  }
-
   public final void initialize() {
-    loadPreludeLibrary();
-    loadReplLibrary();
+    loadLibraries();
     loadCommands();
   }
 
@@ -146,45 +124,8 @@ public abstract class Repl {
     return false;
   }
 
-  /**
-   * Load a file under the REPL working directory and get its scope.
-   * This will <strong>not</strong> modify the REPL scope.
-   */
-  public final @Nullable Scope loadModule(@NotNull ModulePath modulePath) {
-    boolean isLoadedBefore = myModules.add(modulePath);
-    myLibraryManager.reload(myTypechecking);
-    if (checkErrors()) {
-      myModules.remove(modulePath);
-      return null;
-    }
-    if (isLoadedBefore) {
-      Scope scope = getAvailableModuleScopeProvider().forModule(modulePath);
-      if (scope != null) removeScope(scope);
-    }
-    typecheckLibrary(myReplLibrary);
-    return getAvailableModuleScopeProvider().forModule(modulePath);
-  }
-
   protected final boolean typecheckLibrary(@NotNull Library myReplLibrary) {
     return myTypechecking.typecheckLibrary(myReplLibrary);
-  }
-
-  /**
-   * Like {@link Repl#loadModule(ModulePath)}, this will
-   * <strong>not</strong> modify the REPL scope as well.
-   *
-   * @return true if the module is already loaded before.
-   */
-  public final boolean unloadModule(@NotNull ModulePath modulePath) {
-    boolean isLoadedBefore = myModules.remove(modulePath);
-    if (isLoadedBefore) {
-      myLibraryManager.reload(myTypechecking);
-      Scope scope = getAvailableModuleScopeProvider().forModule(modulePath);
-      if (scope != null) removeScope(scope);
-      myReplLibrary.onGroupLoaded(modulePath, null, true);
-      typecheckLibrary(myReplLibrary);
-    }
-    return isLoadedBefore;
   }
 
   public final @NotNull ModuleScopeProvider getAvailableModuleScopeProvider() {
@@ -234,14 +175,9 @@ public abstract class Repl {
   protected void loadCommands() {
     myHandlers.add(CodeParsingHandler.INSTANCE);
     myHandlers.add(CommandHandler.INSTANCE);
-    registerAction("unload", UnloadModuleCommand.INSTANCE);
     registerAction("modules", ListLoadedModulesAction.INSTANCE);
     registerAction("type", ShowTypeCommand.INSTANCE);
     registerAction("t", ShowTypeCommand.INSTANCE);
-    registerAction("load", LoadModuleCommand.INSTANCE);
-    registerAction("l", LoadModuleCommand.INSTANCE);
-    registerAction("reload", LoadModuleCommand.ReloadModuleCommand.INSTANCE);
-    registerAction("r", LoadModuleCommand.ReloadModuleCommand.INSTANCE);
     registerAction("?", CommandHandler.HELP_COMMAND_INSTANCE);
     registerAction("help", CommandHandler.HELP_COMMAND_INSTANCE);
     for (NormalizationMode normalizationMode : NormalizationMode.values()) {
@@ -260,10 +196,6 @@ public abstract class Repl {
 
   public final void clearActions() {
     CommandHandler.INSTANCE.commandMap.clear();
-  }
-
-  public final @NotNull Library getReplLibrary() {
-    return myReplLibrary;
   }
 
   /**
