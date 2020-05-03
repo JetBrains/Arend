@@ -872,6 +872,54 @@ public class ElimTypechecking {
         }
 
         myContext.pop();
+
+        // If we match on a variable and the constructor has conditions,
+        // we need to check that it isn't mapped to a clause with a variable
+        // unless constructors to which the current one evaluates is also mapped to the same clause.
+        // We need this because condition checker doesn't check clauses with variables.
+        if (hasVars && dataType != null && branchKey instanceof Constructor && branchKey.getBody() != null) {
+          Set<Integer> indices = new HashSet<>();
+          collectClauseIndices(elimTree, indices);
+          for (ExtElimClause clause : clauses) {
+            if (!(clause.getPatterns().get(index) instanceof BindingPattern)) {
+              indices.remove(clause.index);
+            }
+          }
+
+          if (!indices.isEmpty()) {
+            Set<Integer> depIndices = new HashSet<>();
+            Set<Constructor> depConstructors = new HashSet<>();
+            collectConstructors(dataType, branchKey.getBody(), depConstructors);
+            boolean ok = true;
+            for (Constructor depConstructor : depConstructors) {
+              ElimTree depElimTree = branchElimTree.getChild(depConstructor);
+              if (depElimTree == null) {
+                ok = false;
+              } else {
+                collectClauseIndices(depElimTree, depIndices);
+              }
+            }
+
+            if (ok && !depIndices.isEmpty()) {
+              if (indices.size() > 1) {
+                ok = false;
+              } else {
+                ok = depIndices.size() == 1 && depIndices.iterator().next().equals(indices.iterator().next());
+              }
+            }
+
+            if (!ok) {
+              Concrete.SourceNode sourceNode;
+              if (myClauses != null) {
+                Concrete.FunctionClause functionClause = myClauses.get(indices.iterator().next());
+                sourceNode = index < functionClause.getPatterns().size() ? functionClause.getPatterns().get(index) : functionClause;
+              } else {
+                sourceNode = mySourceNode;
+              }
+              myErrorReporter.report(new HigherConstructorMatchingError((Constructor) branchKey, sourceNode));
+            }
+          }
+        }
       }
 
       return branchElimTree;
@@ -883,5 +931,43 @@ public class ElimTypechecking {
       myMissingClauses = new ArrayList<>();
     }
     myMissingClauses.add(new Pair<>(clause, isInterval));
+  }
+
+  private void collectClauseIndices(ElimTree elimTree, Set<Integer> indices) {
+    if (elimTree instanceof LeafElimTree) {
+      indices.add(((LeafElimTree) elimTree).getClauseIndex());
+    } else if (elimTree instanceof BranchElimTree) {
+      for (Map.Entry<BranchKey, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
+        collectClauseIndices(entry.getValue(), indices);
+      }
+    } else {
+      throw new IllegalStateException();
+    }
+  }
+
+  private void collectConstructors(DataDefinition dataDef, Body body, Set<Constructor> result) {
+    if (body == null) {
+      return;
+    }
+
+    if (body instanceof Expression) {
+      if (body instanceof ConCallExpression) {
+        result.add(((ConCallExpression) body).getDefinition());
+      } else {
+        result.addAll(dataDef.getConstructors());
+      }
+    } else if (body instanceof ElimBody) {
+      for (ElimClause<Pattern> clause : ((ElimBody) body).getClauses()) {
+        collectConstructors(dataDef, clause.getExpression(), result);
+      }
+    } else if (body instanceof IntervalElim) {
+      for (IntervalElim.CasePair pair : ((IntervalElim) body).getCases()) {
+        collectConstructors(dataDef, pair.proj1, result);
+        collectConstructors(dataDef, pair.proj2, result);
+      }
+      collectConstructors(dataDef, ((IntervalElim) body).getOtherwise(), result);
+    } else {
+      throw new IllegalStateException();
+    }
   }
 }
