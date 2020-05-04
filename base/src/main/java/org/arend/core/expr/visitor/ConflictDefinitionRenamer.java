@@ -6,8 +6,10 @@ import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.ext.module.LongName;
 import org.arend.ext.module.ModulePath;
 import org.arend.ext.prettyprinting.DefinitionRenamer;
+import org.arend.ext.reference.ArendRef;
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.reference.ModuleReferable;
+import org.arend.naming.reference.TCReferable;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -21,11 +23,11 @@ public class ConflictDefinitionRenamer extends VoidExpressionVisitor<Void> imple
   private final Map<String, CoreDefinition> myNotRenamedDefs = new HashMap<>();
 
   // The result map
-  private final Map<CoreDefinition, LongName> myDefLongNames = new HashMap<>();
+  private final Map<TCReferable, LongName> myDefLongNames = new HashMap<>();
 
   @Override
-  public @Nullable LongName getDefinitionPrefix(CoreDefinition definition) {
-    return myDefLongNames.get(definition);
+  public @Nullable LongName getDefinitionPrefix(ArendRef ref) {
+    return ref instanceof TCReferable ? myDefLongNames.get(ref) : null;
   }
 
   private void rename(Definition definition) {
@@ -33,7 +35,7 @@ public class ConflictDefinitionRenamer extends VoidExpressionVisitor<Void> imple
     if (ref == null || ref instanceof ModuleReferable) {
       ModulePath modulePath = ref != null ? ((ModuleReferable) ref).path : definition.getRef().getLocation();
       if (modulePath != null) {
-        myDefLongNames.put(definition, modulePath);
+        myDefLongNames.put(definition.getRef(), modulePath);
       }
     } else {
       List<String> list = new ArrayList<>();
@@ -42,7 +44,7 @@ public class ConflictDefinitionRenamer extends VoidExpressionVisitor<Void> imple
         ref = ref.getLocatedReferableParent();
       }
       Collections.reverse(list);
-      myDefLongNames.put(definition, new LongName(list));
+      myDefLongNames.put(definition.getRef(), new LongName(list));
     }
   }
 
@@ -58,7 +60,7 @@ public class ConflictDefinitionRenamer extends VoidExpressionVisitor<Void> imple
             rename((Definition) definition);
           }
         }
-        if (!myDefLongNames.containsKey(expr.getDefinition())) {
+        if (!myDefLongNames.containsKey(expr.getDefinition().getRef())) {
           rename(expr.getDefinition());
         }
       }

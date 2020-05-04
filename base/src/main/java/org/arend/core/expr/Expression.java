@@ -32,6 +32,7 @@ import org.arend.extImpl.UncheckedExpressionImpl;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
+import org.arend.term.prettyprint.ToAbstractVisitor;
 import org.arend.typechecking.error.local.TypeComputationError;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.implicitargs.equations.Equations;

@@ -8,11 +8,12 @@ import org.arend.core.expr.*;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.typechecking.TypeCheckingTestCase;
+import org.arend.typechecking.error.local.HigherConstructorMatchingError;
 import org.junit.Test;
 
 import java.util.Collections;
 
-import static org.arend.Matchers.goalError;
+import static org.arend.Matchers.*;
 import static org.arend.core.expr.ExpressionFactory.*;
 
 public class ConditionsTest extends TypeCheckingTestCase {
@@ -148,7 +149,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
       "\\data Z | pos Nat | neg Nat { zero => pos zero }\n" +
       "\\func test (x y z : Z) : Nat\n" +
       "  | pos zero, pos zero, neg zero => 0\n" +
-      "  | _, _, _ => 1", 1);
+      "  | _, _, _ => 1", -1);
   }
 
   @Test
@@ -335,7 +336,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
       "\\data S1 | base | loop (i : I) \\with { | left => base | right => base }\n" +
       "\\func f (x y : S1) : S1\n" +
       "  | base, y => y\n" +
-      "  | x, base => x\n" +
+      "  | loop i, base => loop i\n" +
       "  | loop i, loop j => {?}", 1);
 
     DependentLink i = ((ElimBody) ((FunctionDefinition) getDefinition("f")).getBody()).getClauses().get(2).getPatterns().get(0).getFirstBinding();
@@ -355,7 +356,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
       "\\data S1 | base | loop (i : I) \\with { | left => base | right => base }\n" +
       "\\func f (x y : S1) : S1 => \\case x, y \\with {\n" +
       "  | base, y => y\n" +
-      "  | x, base => x\n" +
+      "  | loop i, base => loop i\n" +
       "  | loop i, loop j => {?}\n" +
       "}", 1);
 
@@ -402,5 +403,29 @@ public class ConditionsTest extends TypeCheckingTestCase {
     assertThatErrorsAre(goalError(
       new Condition(null, new ExprSubstitution(binding, Left()), ConCallExpression.make(base, Sort.STD, Collections.emptyList(), Collections.emptyList())),
       new Condition(null, new ExprSubstitution(binding, Right()), new ReferenceExpression(f.getParameters()))));
+  }
+
+  @Test
+  public void varPattern() {
+    typeCheckModule(
+      "\\data D | con1 | con2 | con3 (i : I) \\with { | left => con1 | right => con2 }\n" +
+      "\\func f (d : D) : Nat\n" +
+      "  | con1 => 0\n" +
+      "  | con2 => 1\n" +
+      "  | _ => 2", 1);
+    assertThatErrorsAre(typecheckingError(HigherConstructorMatchingError.class));
+  }
+
+  @Test
+  public void varPattern2() {
+    typeCheckModule(
+      "\\data S1 | base | base2 | loop I \\with { | left => base | right => base }\n" +
+      "\\func f (x y : S1) : S1\n" +
+      "  | base, y => y\n" +
+      "  | base2, y => y\n" +
+      "  | x, base => x\n" +
+      "  | x, base2 => x\n" +
+      "  | loop i, loop j => {?}", 2);
+    assertThatErrorsAre(goal(2), typecheckingError(HigherConstructorMatchingError.class));
   }
 }

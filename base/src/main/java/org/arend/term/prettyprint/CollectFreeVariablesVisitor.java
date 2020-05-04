@@ -1,6 +1,7 @@
-package org.arend.core.expr.visitor;
+package org.arend.term.prettyprint;
 
 import org.arend.core.context.binding.Binding;
+import org.arend.core.expr.visitor.VoidExpressionVisitor;
 import org.arend.ext.variable.Variable;
 import org.arend.ext.variable.VariableImpl;
 import org.arend.core.context.param.DependentLink;
@@ -120,7 +121,7 @@ public class CollectFreeVariablesVisitor extends VoidExpressionVisitor<Set<Varia
 
   @Override
   public Void visitDefCall(DefCallExpression expr, Set<Variable> variables) {
-    LongName longName = myDefinitionRenamer.getDefinitionPrefix(expr.getDefinition());
+    LongName longName = myDefinitionRenamer.getDefinitionPrefix(expr.getDefinition().getRef());
     if (longName != null) {
       variables.add(new VariableImpl(longName.getFirstName()));
     } else {

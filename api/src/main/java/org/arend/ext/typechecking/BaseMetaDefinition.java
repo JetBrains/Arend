@@ -118,14 +118,4 @@ public abstract class BaseMetaDefinition implements MetaDefinition {
 
     return ok;
   }
-
-  @Override
-  public @Nullable ConcreteExpression checkAndGetConcreteRepresentation(@NotNull List<? extends ConcreteArgument> arguments) {
-    return checkArguments(arguments) ? getConcreteRepresentation(arguments) : null;
-  }
-
-  @Override
-  public @Nullable TypedExpression checkAndInvokeMeta(@NotNull ExpressionTypechecker typechecker, @NotNull ContextData contextData) {
-    return checkContextData(contextData, typechecker.getErrorReporter()) ? invokeMeta(typechecker, contextData) : null;
-  }
 }

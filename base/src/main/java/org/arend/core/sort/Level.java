@@ -2,7 +2,7 @@ package org.arend.core.sort;
 
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
-import org.arend.core.expr.visitor.ToAbstractVisitor;
+import org.arend.term.prettyprint.ToAbstractVisitor;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.ext.core.level.CoreLevel;
 import org.arend.ext.core.ops.CMP;
