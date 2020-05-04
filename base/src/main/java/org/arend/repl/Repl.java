@@ -1,7 +1,6 @@
 package org.arend.repl;
 
 import org.arend.core.expr.Expression;
-import org.arend.core.expr.visitor.ToAbstractVisitor;
 import org.arend.error.ListErrorReporter;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.GeneralError;
@@ -28,6 +27,7 @@ import org.arend.repl.action.ShowTypeCommand;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.Group;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
+import org.arend.term.prettyprint.ToAbstractVisitor;
 import org.arend.typechecking.LibraryArendExtensionProvider;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
@@ -271,7 +271,7 @@ public abstract class Repl {
     if (expr == null || checkErrors()) return null;
     expr = expr
         .accept(new ExpressionResolveNameVisitor(myConcreteProvider,
-            myScope, Collections.emptyList(), myErrorReporter, null), null)
+            myScope, new ArrayList<>(), myErrorReporter, null), null)
         .accept(new SyntacticDesugarVisitor(myErrorReporter), null);
     if (checkErrors()) return null;
     return expr;
