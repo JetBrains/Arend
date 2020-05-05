@@ -29,6 +29,11 @@ public class JLineCliRepl extends CommmonCliRepl {
     myTerminal.writer().println(anything);
   }
 
+  @Override
+  public void println() {
+    myTerminal.writer().println();
+  }
+
   public void runRepl() {
     var reader = LineReaderBuilder.builder()
       .appName(APP_NAME)
@@ -83,6 +88,7 @@ public class JLineCliRepl extends CommmonCliRepl {
     }
     var repl = new JLineCliRepl(terminal);
     repl.println(ASCII_BANNER);
+    repl.println();
     repl.initialize();
     repl.runRepl();
   }

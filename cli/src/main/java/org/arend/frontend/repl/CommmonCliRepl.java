@@ -46,10 +46,10 @@ public abstract class CommmonCliRepl extends Repl {
   @Language("TEXT")
   public static final @NotNull String ASCII_BANNER =
       "    ___                        __\n" +
-      "   /   |  ________  ____  ____/ /  " + APP_NAME + " " + GeneratedVersion.VERSION_STRING + "\n" +
-      "  / /| | / ___/ _ \\/ __ \\/ __  /   https://arend-lang.github.io\n" +
-      " / ___ |/ /  /  __/ / / / /_/ /    :? for help\n" +
-      "/_/  |_/_/   \\___/_/ /_/\\__,_/  ";
+      "   /   |  ________  ____  ____/ /\n" +
+      "  / /| | / ___/ _ \\/ __ \\/ __  /  " + APP_NAME + " " + GeneratedVersion.VERSION_STRING + "\n" +
+      " / ___ |/ /  /  __/ / / / /_/ /   https://arend-lang.github.io\n" +
+      "/_/  |_/_/   \\___/_/ /_/\\__,_/    :? for help";
 
   private @NotNull String prompt = "\u03bb ";
   private final FileLibraryResolver myLibraryResolver;
@@ -118,6 +118,11 @@ public abstract class CommmonCliRepl extends Repl {
   @Override
   public void println(Object anything) {
     System.out.println(anything);
+  }
+
+  @Override
+  public void println() {
+    System.out.println();
   }
 
   @Override

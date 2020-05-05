@@ -227,6 +227,10 @@ public abstract class Repl {
     print(System.lineSeparator());
   }
 
+  public void println() {
+    print(System.lineSeparator());
+  }
+
   public abstract void print(Object anything);
 
   /**

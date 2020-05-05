@@ -22,6 +22,7 @@ public class PlainCliRepl extends CommmonCliRepl {
   public static void main(String... args) {
     var repl = new PlainCliRepl();
     repl.println(ASCII_BANNER);
+    repl.println();
     repl.println("Note: you're using the plain REPL.");
     repl.initialize();
     repl.runRepl(System.in);
