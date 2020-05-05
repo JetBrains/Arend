@@ -11,13 +11,21 @@ public class MetaReferable implements GlobalReferable, MetaRef {
   private final String myName;
   private final MetaDefinition myDefinition;
   public final String description;
+  private final String myAliasName;
+  private final Precedence myAliasPrecedence;
   public GlobalReferable underlyingReferable;
 
-  public MetaReferable(Precedence precedence, String name, String description, MetaDefinition definition) {
+  public MetaReferable(Precedence precedence, String name, Precedence aliasPrec, String aliasName, String description, MetaDefinition definition) {
     myPrecedence = precedence;
     myName = name;
+    myAliasName = aliasName;
+    myAliasPrecedence = aliasPrec == null ? Precedence.DEFAULT : aliasPrec;
     this.description = description;
     myDefinition = definition;
+  }
+
+  public MetaReferable(Precedence precedence, String name, String description, MetaDefinition definition) {
+    this(precedence, name, null, null, description, definition);
   }
 
   @Nullable
@@ -36,6 +44,16 @@ public class MetaReferable implements GlobalReferable, MetaRef {
   @Override
   public Precedence getPrecedence() {
     return myPrecedence;
+  }
+
+  @Override
+  public @Nullable String getAliasName() {
+    return myAliasName;
+  }
+
+  @Override
+  public @NotNull Precedence getAliasPrecedence() {
+    return myAliasPrecedence;
   }
 
   @NotNull

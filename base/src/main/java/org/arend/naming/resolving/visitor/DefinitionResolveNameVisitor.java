@@ -158,7 +158,9 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     }
   }
 
-  private void checkPrecedence(Concrete.ReferableDefinition definition) {
+  private void checkNameAndPrecedence(Concrete.ReferableDefinition definition) {
+    ExpressionResolveNameVisitor.checkName(definition.getData(), myLocalErrorReporter);
+
     Precedence prec = definition.getData().getPrecedence();
     if (prec.priority < 0 || prec.priority > 10) {
       myLocalErrorReporter.report(new ParsingError(ParsingError.Kind.INVALID_PRIORITY, definition));
@@ -189,7 +191,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       return null;
     }
 
-    checkPrecedence(def);
+    checkNameAndPrecedence(def);
 
     Concrete.FunctionBody body = def.getBody();
     List<Referable> context = new ArrayList<>();
@@ -335,7 +337,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
 
     myLocalErrorReporter = new ConcreteProxyErrorReporter(def);
 
-    checkPrecedence(def);
+    checkNameAndPrecedence(def);
 
     Map<String, TCReferable> constructorNames = new HashMap<>();
     for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
@@ -384,7 +386,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
   }
 
   private void visitConstructor(Concrete.Constructor def, Scope parentScope, List<Referable> context) {
-    checkPrecedence(def);
+    checkNameAndPrecedence(def);
 
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, parentScope, context, myLocalErrorReporter, myResolverListener);
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(context)) {
@@ -433,7 +435,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       return null;
     }
 
-    checkPrecedence(def);
+    checkNameAndPrecedence(def);
 
     if (def.isRecord() && def.withoutClassifying()) {
       myErrorReporter.report(new ParsingError(ParsingError.Kind.CLASSIFYING_FIELD_IN_RECORD, def));
@@ -470,7 +472,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     Concrete.Expression previousType = null;
     for (int i = 0; i < classFields.size(); i++) {
       Concrete.ClassField field = classFields.get(i);
-      checkPrecedence(field);
+      checkNameAndPrecedence(field);
 
       Concrete.Expression fieldType = field.getResultType();
       if (fieldType == previousType && field.getParameters().isEmpty()) {

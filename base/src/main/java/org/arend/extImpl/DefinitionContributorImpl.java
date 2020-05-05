@@ -6,7 +6,6 @@ import org.arend.ext.module.LongName;
 import org.arend.ext.module.ModulePath;
 import org.arend.ext.reference.Precedence;
 import org.arend.ext.typechecking.MetaDefinition;
-import org.arend.extImpl.Disableable;
 import org.arend.library.Library;
 import org.arend.library.error.LibraryError;
 import org.arend.module.scopeprovider.SimpleModuleScopeProvider;
@@ -15,6 +14,7 @@ import org.arend.naming.reference.MetaReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.scope.SimpleScope;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -31,6 +31,11 @@ public class DefinitionContributorImpl extends Disableable implements Definition
 
   @Override
   public void declare(@NotNull ModulePath module, @NotNull LongName longName, @NotNull String description, @NotNull Precedence precedence, @NotNull MetaDefinition meta) {
+    declare(module, longName, description, precedence, null, null, meta);
+  }
+
+  @Override
+  public void declare(@NotNull ModulePath module, @NotNull LongName longName, @NotNull String description, @NotNull Precedence precedence, @Nullable String alias, @Nullable Precedence aliasPrecedence, @NotNull MetaDefinition meta) {
     checkEnabled();
 
     SimpleScope scope = (SimpleScope) myModuleScopeProvider.forModule(module);
@@ -48,7 +53,7 @@ public class DefinitionContributorImpl extends Disableable implements Definition
           myErrorReporter.report(LibraryError.duplicateExtensionDefinition(myLibrary.getName(), module, longName));
           return;
         }
-        scope.names.put(name, new MetaReferable(precedence, name, description, meta));
+        scope.names.put(name, new MetaReferable(precedence, name, aliasPrecedence, alias, description, meta));
       } else {
         scope.names.put(name, new EmptyGlobalReferable(name));
         scope = scope.namespaces.computeIfAbsent(name, k -> new SimpleScope());

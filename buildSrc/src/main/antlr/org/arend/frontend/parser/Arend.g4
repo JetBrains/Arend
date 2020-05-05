@@ -14,7 +14,7 @@ nsUsing : USING? '(' nsId? (',' nsId)* ')';
 
 nsId : ID (AS precedence ID)?;
 
-classFieldDef : precedence ID tele* ':' returnExpr;
+classFieldDef : defId tele* ':' returnExpr;
 
 classFieldOrImpl : '|' classFieldDef    # classField
                  | localCoClause        # classImpl
@@ -30,12 +30,12 @@ classStat : classFieldOrImpl                            # classFieldOrImplStat
           | '\\override' longName tele* ':' returnExpr  # classOverrideStat
           ;
 
-definition  : funcKw precedence ID tele* (':' returnExpr)? functionBody where?                              # defFunction
-            | TRUNCATED? '\\data' precedence ID tele* (':' expr)? dataBody where?                           # defData
-            | classKw precedence ID NO_CLASSIFYING? fieldTele* ('\\extends' longName (',' longName)*)? classBody where? # defClass
-            | '\\module' ID where?                                                                          # defModule
-            | '\\meta' precedence ID where?                                                                 # defMeta
-            | instanceKw precedence ID tele* (':' returnExpr)? instanceBody where?                          # defInstance
+definition  : funcKw defId tele* (':' returnExpr)? functionBody where?                                          # defFunction
+            | TRUNCATED? '\\data' defId tele* (':' expr)? dataBody where?                                       # defData
+            | classKw defId NO_CLASSIFYING? fieldTele* ('\\extends' longName (',' longName)*)? classBody where? # defClass
+            | '\\module' defId where?                                                                           # defModule
+            | '\\meta' defId where?                                                                             # defMeta
+            | instanceKw defId tele* (':' returnExpr)? instanceBody where?                                      # defInstance
             ;
 
 returnExpr  : expr                                  # returnExprExpr
@@ -104,7 +104,11 @@ atomPatternOrID : atomPattern     # patternOrIDAtom
                 | longName        # patternID
                 ;
 
-constructor : precedence ID tele* /* TODO[hits] (':' expr)? */ (elim? '{' clause? ('|' clause)* '}')?;
+constructor : defId tele* /* TODO[hits] (':' expr)? */ (elim? '{' clause? ('|' clause)* '}')?;
+
+defId : precedence ID alias?;
+
+alias : '\\alias' precedence ID;
 
 precedence :                            # noPrecedence
            | associativity NUMBER       # withPrecedence
@@ -273,9 +277,9 @@ ARROW : '->';
 APPLY_HOLE : '__';
 UNDERSCORE : '_';
 WS : [ \t\r\n]+ -> skip;
-LINE_COMMENT : '--' '-'* (~[~!@#$%^&*\-+=<>?/|:[\u005Da-zA-Z_0-9'\r\n] ~[\r\n]* | ) -> skip;
+LINE_COMMENT : '--' '-'* (~[~!@#$%^&*\-+=<>?/|:[\u005Da-zA-Z_0-9'\u2200-\u22FF\r\n] ~[\r\n]* | ) -> skip;
 COMMENT : '{-' (COMMENT|.)*? '-}' -> skip;
-fragment START_CHAR : [~!@#$%^&*\-+=<>?/|:[\u005Da-zA-Z_];
+fragment START_CHAR : [~!@#$%^&*\-+=<>?/|:[\u005Da-zA-Z_\u2200-\u22FF];
 ID : START_CHAR (START_CHAR | [0-9'])*;
 INFIX : '`' ID '`';
 POSTFIX : '`' ID;

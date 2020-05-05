@@ -16,6 +16,7 @@ import org.arend.naming.scope.ScopeFactory;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.ChildGroup;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,15 +30,15 @@ public class ConcreteClassReferable extends ConcreteLocatedReferable implements 
   private final List<TCClassReferable> mySuperClasses;
   private boolean myResolved = false;
 
-  public ConcreteClassReferable(Position position, @NotNull String name, Precedence precedence, Collection<? extends ConcreteClassFieldReferable> fields, List<? extends Reference> superClasses, TCReferable parent) {
-    super(position, name, precedence, parent, Kind.TYPECHECKABLE);
+  public ConcreteClassReferable(Position position, @NotNull String name, Precedence precedence, @Nullable String aliasName, Precedence aliasPrecedence, Collection<? extends ConcreteClassFieldReferable> fields, List<? extends Reference> superClasses, TCReferable parent) {
+    super(position, name, precedence, aliasName, aliasPrecedence, parent, Kind.TYPECHECKABLE);
     myFields = fields;
     myUnresolvedSuperClasses = superClasses;
     mySuperClasses = new ArrayList<>(superClasses.size());
   }
 
-  public ConcreteClassReferable(Position position, @NotNull String name, Precedence precedence, Collection<? extends ConcreteClassFieldReferable> fields, List<? extends Reference> superClasses, FullModulePath parent) {
-    super(position, name, precedence, parent, Kind.TYPECHECKABLE);
+  public ConcreteClassReferable(Position position, @NotNull String name, Precedence precedence, @Nullable String aliasName, Precedence aliasPrecedence, Collection<? extends ConcreteClassFieldReferable> fields, List<? extends Reference> superClasses, FullModulePath parent) {
+    super(position, name, precedence, aliasName, aliasPrecedence, parent, Kind.TYPECHECKABLE);
     myFields = fields;
     myUnresolvedSuperClasses = superClasses;
     mySuperClasses = new ArrayList<>(superClasses.size());

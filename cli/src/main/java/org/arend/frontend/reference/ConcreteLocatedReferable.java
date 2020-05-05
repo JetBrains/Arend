@@ -16,22 +16,38 @@ import org.jetbrains.annotations.Nullable;
 
 public class ConcreteLocatedReferable extends LocatedReferableImpl implements SourceInfo, DataContainer {
   private final Position myPosition;
+  private final String myAliasName;
+  private final Precedence myAliasPrecedence;
   private Concrete.ReferableDefinition myDefinition;
 
-  public ConcreteLocatedReferable(Position position, @NotNull String name, Precedence precedence, TCReferable parent, Kind kind) {
+  public ConcreteLocatedReferable(Position position, @NotNull String name, Precedence precedence, @Nullable String aliasName, Precedence aliasPrecedence, TCReferable parent, Kind kind) {
     super(precedence, name, parent, kind);
     myPosition = position;
+    myAliasName = aliasName;
+    myAliasPrecedence = aliasPrecedence;
   }
 
-  public ConcreteLocatedReferable(Position position, @NotNull String name, Precedence precedence, FullModulePath modulePath, Kind kind) {
+  public ConcreteLocatedReferable(Position position, @NotNull String name, Precedence precedence, @Nullable String aliasName, Precedence aliasPrecedence, FullModulePath modulePath, Kind kind) {
     super(precedence, name, modulePath, kind);
     myPosition = position;
+    myAliasName = aliasName;
+    myAliasPrecedence = aliasPrecedence;
   }
 
   @Nullable
   @Override
   public Position getData() {
     return myPosition;
+  }
+
+  @Override
+  public @Nullable String getAliasName() {
+    return myAliasName;
+  }
+
+  @Override
+  public @NotNull Precedence getAliasPrecedence() {
+    return myAliasPrecedence;
   }
 
   public Concrete.ReferableDefinition getDefinition() {

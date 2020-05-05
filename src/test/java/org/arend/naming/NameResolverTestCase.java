@@ -4,6 +4,7 @@ import org.arend.core.context.binding.Binding;
 import org.arend.frontend.ConcreteReferableProvider;
 import org.arend.frontend.reference.ConcreteLocatedReferable;
 import org.arend.naming.reference.Referable;
+import org.arend.naming.reference.TCReferable;
 import org.arend.naming.resolving.visitor.DefinitionResolveNameVisitor;
 import org.arend.naming.resolving.visitor.ExpressionResolveNameVisitor;
 import org.arend.naming.scope.*;
@@ -23,6 +24,17 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
 public abstract class NameResolverTestCase extends ParserTestCase {
+  protected ChildGroup lastGroup;
+
+  public TCReferable get(String path) {
+    return get(lastGroup.getGroupScope(), path);
+  }
+
+  public Concrete.ReferableDefinition getConcrete(String path) {
+    TCReferable ref = get(path);
+    return ref instanceof ConcreteLocatedReferable ? ((ConcreteLocatedReferable) ref).getDefinition() : null;
+  }
+
   private Concrete.Expression resolveNamesExpr(Scope parentScope, List<Referable> context, String text, int errors) {
     Concrete.Expression expression = parseExpr(text);
     assertThat(expression, is(notNullValue()));
@@ -65,7 +77,8 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   }
 
   protected ChildGroup resolveNamesDefGroup(String text) {
-    return resolveNamesDefGroup(text, 0);
+    lastGroup = resolveNamesDefGroup(text, 0);
+    return lastGroup;
   }
 
   protected ConcreteLocatedReferable resolveNamesDef(String text, int errors) {
@@ -91,6 +104,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   }
 
   protected ChildGroup resolveNamesModule(String text) {
-    return resolveNamesModule(text, 0);
+    lastGroup = resolveNamesModule(text, 0);
+    return lastGroup;
   }
 }
