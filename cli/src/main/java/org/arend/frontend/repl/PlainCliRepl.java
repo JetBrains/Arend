@@ -1,6 +1,5 @@
 package org.arend.frontend.repl;
 
-import org.arend.prelude.GeneratedVersion;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.InputStream;
@@ -22,7 +21,8 @@ public class PlainCliRepl extends CommmonCliRepl {
 
   public static void main(String... args) {
     var repl = new PlainCliRepl();
-    repl.println(APP_NAME + " (plain) " + GeneratedVersion.VERSION_STRING + ": https://arend-lang.github.io   :? for help");
+    repl.println(ASCII_BANNER);
+    repl.println("Note: you're using the plain REPL.");
     repl.initialize();
     repl.runRepl(System.in);
   }

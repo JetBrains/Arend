@@ -1,7 +1,6 @@
 package org.arend.frontend.repl;
 
 import org.arend.naming.reference.Referable;
-import org.arend.prelude.GeneratedVersion;
 import org.jetbrains.annotations.NotNull;
 import org.jline.reader.*;
 import org.jline.reader.impl.DefaultParser;
@@ -83,7 +82,7 @@ public class JLineCliRepl extends CommmonCliRepl {
       return;
     }
     var repl = new JLineCliRepl(terminal);
-    repl.println(APP_NAME + " " + GeneratedVersion.VERSION_STRING + ": https://arend-lang.github.io   :? for help");
+    repl.println(ASCII_BANNER);
     repl.initialize();
     repl.runRepl();
   }

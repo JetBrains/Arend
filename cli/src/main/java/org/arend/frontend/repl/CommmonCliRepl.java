@@ -20,6 +20,7 @@ import org.arend.frontend.repl.action.UnloadModuleCommand;
 import org.arend.library.Library;
 import org.arend.library.SourceLibrary;
 import org.arend.naming.scope.Scope;
+import org.arend.prelude.GeneratedVersion;
 import org.arend.prelude.PreludeLibrary;
 import org.arend.prelude.PreludeResourceLibrary;
 import org.arend.repl.Repl;
@@ -28,6 +29,7 @@ import org.arend.term.concrete.Concrete;
 import org.arend.term.group.FileGroup;
 import org.arend.typechecking.SimpleTypecheckerState;
 import org.arend.util.Range;
+import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -40,6 +42,14 @@ import java.util.function.Supplier;
 
 public abstract class CommmonCliRepl extends Repl {
   public static final @NotNull String APP_NAME = "Arend REPL";
+  /** See https://gist.github.com/ice1000/a915b6fcbc6f90b0c3c65db44dab29cc */
+  @Language("TEXT")
+  public static final @NotNull String ASCII_BANNER =
+      "    ___                        __\n" +
+      "   /   |  ________  ____  ____/ /  " + APP_NAME + " " + GeneratedVersion.VERSION_STRING + "\n" +
+      "  / /| | / ___/ _ \\/ __ \\/ __  /   https://arend-lang.github.io\n" +
+      " / ___ |/ /  /  __/ / / / /_/ /    :? for help\n" +
+      "/_/  |_/_/   \\___/_/ /_/\\__,_/  ";
 
   private @NotNull String prompt = "\u03bb ";
   private final FileLibraryResolver myLibraryResolver;
