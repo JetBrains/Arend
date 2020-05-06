@@ -461,8 +461,10 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, scope, context, myLocalErrorReporter, myResolverListener);
     for (int i = 0; i < def.getSuperClasses().size(); i++) {
       Concrete.ReferenceExpression superClass = def.getSuperClasses().get(i);
-      if (exprVisitor.visitReference(superClass, null) != superClass || !(superClass.getReferent() instanceof ClassReferable)) {
-        if (!(superClass.getReferent() instanceof ErrorReference)) {
+      Concrete.Expression resolved = exprVisitor.visitReference(superClass, null);
+      Referable ref = RedirectingReferable.getOriginalReferable(superClass.getReferent());
+      if (resolved != superClass || !(ref instanceof ClassReferable)) {
+        if (!(ref instanceof ErrorReference)) {
           myLocalErrorReporter.report(new NamingError("Expected a class", superClass));
         }
         def.getSuperClasses().remove(i--);

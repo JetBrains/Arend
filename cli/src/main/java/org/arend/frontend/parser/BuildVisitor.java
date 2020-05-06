@@ -798,7 +798,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
 
     Position pos = tokenPosition(ctx.start);
     DefIdContext defId = ctx.defId();
-    String name = defId.getText();
+    String name = defId.ID().getText();
     Precedence prec = visitPrecedence(defId.precedence());
     ConcreteClassReferable reference;
     List<ConcreteClassFieldReferable> fieldReferables = new ArrayList<>();

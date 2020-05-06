@@ -745,4 +745,12 @@ public class NameResolverTest extends NameResolverTestCase {
       "\\func foo \\alias \\infix 5 bar (x y : Nat) => x\n" +
       "\\func test => (0, 0 bar 1 bar 2)", 1);
   }
+
+  @Test
+  public void aliasClassTest() {
+    resolveNamesModule(
+      "\\class Foo \\alias Bar\n" +
+      "\\instance foo : Foo\n" +
+      "\\instance bar : Bar");
+  }
 }
