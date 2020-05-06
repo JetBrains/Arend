@@ -738,4 +738,11 @@ public class NameResolverTest extends NameResolverTestCase {
     Concrete.FunctionDefinition test2 = (Concrete.FunctionDefinition) getConcrete("test2");
     assertFalse(new ConcreteCompareVisitor().compare(((Concrete.TermFunctionBody) test1.getBody()).getTerm(), ((Concrete.TermFunctionBody) test2.getBody()).getTerm()));
   }
+
+  @Test
+  public void aliasPrecedenceError3() {
+    resolveNamesModule(
+      "\\func foo \\alias \\infix 5 bar (x y : Nat) => x\n" +
+      "\\func test => (0, 0 bar 1 bar 2)", 1);
+  }
 }

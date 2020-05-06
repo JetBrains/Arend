@@ -10,6 +10,12 @@ public class AliasReferable implements RedirectingReferable {
     myReferable = referable;
   }
 
+  @NotNull
+  @Override
+  public Referable getUnderlyingReferable() {
+    return myReferable.getUnderlyingReferable();
+  }
+
   @Override
   public @NotNull GlobalReferable getOriginalReferable() {
     return myReferable;

@@ -37,6 +37,10 @@ public interface GlobalReferable extends TypedReferable {
     return Precedence.DEFAULT;
   }
 
+  default @NotNull Precedence getRepresentablePrecedence() {
+    return hasAlias() ? getAliasPrecedence() : getPrecedence();
+  }
+
   default GlobalReferable getTypecheckable() {
     return this;
   }
