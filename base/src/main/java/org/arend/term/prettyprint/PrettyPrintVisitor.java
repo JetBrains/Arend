@@ -140,10 +140,18 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     if (expr instanceof Concrete.LongReferenceExpression) {
       myBuilder.append(((Concrete.LongReferenceExpression) expr).getLongName()).append('.');
     }
-    if (expr.getReferent() instanceof CoreReferable && ((CoreReferable) expr.getReferent()).printExpression()) {
-      ToAbstractVisitor.convert(((CoreReferable) expr.getReferent()).result.expression, PrettyPrinterConfig.DEFAULT).accept(this, prec == null ? new Precedence(ReferenceExpression.PREC) : prec);
+    Referable ref = expr.getReferent();
+    if (ref instanceof CoreReferable && ((CoreReferable) ref).printExpression()) {
+      ToAbstractVisitor.convert(((CoreReferable) ref).result.expression, PrettyPrinterConfig.DEFAULT).accept(this, prec == null ? new Precedence(ReferenceExpression.PREC) : prec);
     } else {
-      myBuilder.append(expr.getReferent().textRepresentation());
+      if (ref instanceof GlobalReferable) {
+        String alias = ((GlobalReferable) ref).getAliasName();
+        if (alias != null) {
+          myBuilder.append(alias);
+          return;
+        }
+      }
+      myBuilder.append(ref.textRepresentation());
     }
   }
 
