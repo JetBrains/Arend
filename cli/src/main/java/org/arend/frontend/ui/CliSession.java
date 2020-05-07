@@ -35,6 +35,11 @@ public class CliSession extends BaseSession {
   private final List<Request> myRequests = new ArrayList<>();
 
   @Override
+  public void message(@NotNull String message) {
+    myRequests.add(new Request(message, null, null, null));
+  }
+
+  @Override
   public @NotNull <T> ArendQuery<T> listQuery(@Nullable String message, @NotNull List<T> options, @Nullable T defaultOption) {
     SimpleQuery<T> query = new SimpleQuery<>();
     myRequests.add(new Request(message, options, query, defaultOption));
@@ -104,6 +109,10 @@ public class CliSession extends BaseSession {
 
       if (request.message != null) {
         System.out.println(request.message);
+      }
+
+      if (request.data == null) {
+        continue;
       }
 
       Object defaultValue = request.defaultValue;

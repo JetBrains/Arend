@@ -19,6 +19,11 @@ public interface ArendSession {
   void setCallback(@Nullable Consumer<Boolean> callback);
 
   /**
+   * Adds a message.
+   */
+  void message(@NotNull String message);
+
+  /**
    * Adds a query that lets the user to chose one option from a list.
    *
    * @param message         a message that will be shown to the user.
