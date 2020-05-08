@@ -37,6 +37,11 @@ public interface GlobalReferable extends TypedReferable {
     return Precedence.DEFAULT;
   }
 
+  default @NotNull String getRepresentableName() {
+    String alias = getAliasName();
+    return alias != null ? alias : textRepresentation();
+  }
+
   default @NotNull Precedence getRepresentablePrecedence() {
     return hasAlias() ? getAliasPrecedence() : getPrecedence();
   }

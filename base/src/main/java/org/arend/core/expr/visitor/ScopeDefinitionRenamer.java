@@ -23,7 +23,7 @@ public class ScopeDefinitionRenamer implements DefinitionRenamer {
   }
 
   @Override
-  public @Nullable LongName getDefinitionPrefix(ArendRef arendRef) {
+  public @Nullable LongName renameDefinition(ArendRef arendRef) {
     if (!(arendRef instanceof LocatedReferable)) {
       return null;
     }
@@ -34,6 +34,7 @@ public class ScopeDefinitionRenamer implements DefinitionRenamer {
       }
 
       List<String> list = new ArrayList<>();
+      list.add(ref.getRepresentableName());
       while (true) {
         LocatedReferable parent = ref.getLocatedReferableParent();
         if ((ref.getKind() == GlobalReferable.Kind.CONSTRUCTOR || ref instanceof FieldReferable && !((FieldReferable) ref).isParameterField()) && parent != null && parent.getKind() == GlobalReferable.Kind.TYPECHECKABLE) {
@@ -56,9 +57,9 @@ public class ScopeDefinitionRenamer implements DefinitionRenamer {
         }
       }
 
-      return new LongName(list);
+      return new LongName(list.size() == 1 ? Collections.emptyList() : list);
     });
 
-    return result.toList().isEmpty() ? null : result;
+    return result.size() == 0 ? null : result;
   }
 }

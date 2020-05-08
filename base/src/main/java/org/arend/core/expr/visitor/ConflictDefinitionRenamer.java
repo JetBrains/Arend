@@ -26,7 +26,7 @@ public class ConflictDefinitionRenamer extends VoidExpressionVisitor<Void> imple
   private final Map<TCReferable, LongName> myDefLongNames = new HashMap<>();
 
   @Override
-  public @Nullable LongName getDefinitionPrefix(ArendRef ref) {
+  public @Nullable LongName renameDefinition(ArendRef ref) {
     return ref instanceof TCReferable ? myDefLongNames.get(ref) : null;
   }
 
@@ -35,7 +35,10 @@ public class ConflictDefinitionRenamer extends VoidExpressionVisitor<Void> imple
     if (ref == null || ref instanceof ModuleReferable) {
       ModulePath modulePath = ref != null ? ((ModuleReferable) ref).path : definition.getRef().getLocation();
       if (modulePath != null) {
-        myDefLongNames.put(definition.getRef(), modulePath);
+        List<String> fullName = new ArrayList<>(modulePath.size() + 1);
+        fullName.addAll(modulePath.toList());
+        fullName.add(definition.getReferable().getRepresentableName());
+        myDefLongNames.put(definition.getRef(), new LongName(fullName));
       }
     } else {
       List<String> list = new ArrayList<>();
@@ -44,6 +47,7 @@ public class ConflictDefinitionRenamer extends VoidExpressionVisitor<Void> imple
         ref = ref.getLocatedReferableParent();
       }
       Collections.reverse(list);
+      list.add(definition.getReferable().getRepresentableName());
       myDefLongNames.put(definition.getRef(), new LongName(list));
     }
   }

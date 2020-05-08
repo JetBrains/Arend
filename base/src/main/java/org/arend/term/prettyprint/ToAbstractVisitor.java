@@ -188,7 +188,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   private Concrete.ReferenceExpression makeReference(DefCallExpression defCall) {
     Referable ref = defCall.getDefinition().getReferable();
-    return hasFlag(PrettyPrinterFlag.SHOW_LEVELS) ? cDefCall(myDefinitionRenamer.getDefinitionPrefix(defCall.getDefinition().getRef()), ref, visitLevelNull(defCall.getSortArgument().getPLevel()), visitLevelNull(defCall.getSortArgument().getHLevel())) : cVar(myDefinitionRenamer.getDefinitionPrefix(defCall.getDefinition().getRef()), ref);
+    return hasFlag(PrettyPrinterFlag.SHOW_LEVELS) ? cDefCall(myDefinitionRenamer.renameDefinition(defCall.getDefinition().getRef()), ref, visitLevelNull(defCall.getSortArgument().getPLevel()), visitLevelNull(defCall.getSortArgument().getHLevel())) : cVar(myDefinitionRenamer.renameDefinition(defCall.getDefinition().getRef()), ref);
   }
 
   @Override
@@ -222,7 +222,8 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     }
 
     if (expr.getArgument() instanceof ReferenceExpression) {
-      return cVar(new LongName(((ReferenceExpression) expr.getArgument()).getBinding().getName()), expr.getDefinition().getReferable());
+      GlobalReferable ref = expr.getDefinition().getReferable();
+      return cVar(new LongName(((ReferenceExpression) expr.getArgument()).getBinding().getName(), ref.getRepresentableName()), ref);
     }
 
     Concrete.ReferenceExpression result = makeReference(expr);
