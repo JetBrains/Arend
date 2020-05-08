@@ -376,7 +376,27 @@ public abstract class BaseCliFrontend {
         System.out.println("--- Running tests in " + library.getName() + " ---");
         typechecking.clear();
         time = System.currentTimeMillis();
+
         typechecking.typecheckTests(library, null);
+        if (doubleCheck) {
+          boolean doCheck = true;
+          for (GeneralError error : myErrorReporter.getErrorList()) {
+            if (error.level == GeneralError.Level.ERROR) {
+              doCheck = false;
+              break;
+            }
+          }
+          if (doCheck) {
+            CoreModuleChecker checker = new CoreModuleChecker(myErrorReporter, myTypecheckerState);
+            for (ModulePath module : modules) {
+              Group group = library.getModuleGroup(module);
+              if (group != null) {
+                checker.checkGroup(group);
+              }
+            }
+          }
+        }
+
         time = System.currentTimeMillis() - time;
         flushErrors();
         System.out.println("Tests completed: " + typechecking.total + ", Failed: " + typechecking.failed);
