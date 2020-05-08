@@ -5,6 +5,7 @@ import org.arend.ext.module.ModulePath;
 import org.arend.ext.reference.Precedence;
 import org.arend.ext.typechecking.MetaDefinition;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * DefinitionContributor is used to declare meta definitions defined in the extension.
@@ -19,5 +20,5 @@ public interface DefinitionContributor {
    * @param precedence    the precedence of the definition
    * @param meta          the definition itself
    */
-  void declare(@NotNull ModulePath module, @NotNull LongName name, @NotNull String description, @NotNull Precedence precedence, @NotNull MetaDefinition meta);
+  void declare(@NotNull ModulePath module, @NotNull LongName name, @NotNull String description, @NotNull Precedence precedence, @Nullable MetaDefinition meta);
 }
