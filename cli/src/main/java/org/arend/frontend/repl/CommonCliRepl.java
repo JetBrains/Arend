@@ -43,7 +43,7 @@ import java.util.function.Supplier;
 
 public abstract class CommonCliRepl extends Repl {
   public static final @NotNull String APP_NAME = "Arend REPL";
-  private @NotNull Path pwd = Paths.get(".").toAbsolutePath();
+  public @NotNull Path pwd = Paths.get(".").toAbsolutePath();
   /** See https://gist.github.com/ice1000/a915b6fcbc6f90b0c3c65db44dab29cc */
   @Language("TEXT")
   public static final @NotNull String ASCII_BANNER =

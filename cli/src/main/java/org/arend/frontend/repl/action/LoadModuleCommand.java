@@ -3,8 +3,6 @@ package org.arend.frontend.repl.action;
 import org.arend.ext.module.ModulePath;
 import org.arend.frontend.repl.CommonCliRepl;
 import org.arend.naming.scope.Scope;
-import org.arend.repl.Repl;
-import org.arend.repl.action.ReplCommand;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -12,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
 import java.nio.file.InvalidPathException;
 import java.util.function.Supplier;
 
-public final class LoadModuleCommand implements ReplCommand {
+public final class LoadModuleCommand implements CliReplCommand {
   public static final @NotNull LoadModuleCommand INSTANCE = new LoadModuleCommand();
 
   private LoadModuleCommand() {
@@ -24,10 +22,9 @@ public final class LoadModuleCommand implements ReplCommand {
   }
 
   @Override
-  public void invoke(@NotNull String line, @NotNull Repl api, @NotNull Supplier<@NotNull String> scanner) {
+  public void invoke(@NotNull String line, @NotNull CommonCliRepl api, @NotNull Supplier<@NotNull String> scanner) {
     try {
-      assert api instanceof CommonCliRepl;
-      loadModule((CommonCliRepl) api, ModulePath.fromString(line));
+      loadModule(api, ModulePath.fromString(line));
     } catch (InvalidPathException e) {
       api.eprintln("The path `" + line + "` is not good because:");
       api.eprintln(e.getLocalizedMessage());
@@ -43,7 +40,7 @@ public final class LoadModuleCommand implements ReplCommand {
     if (!api.checkErrors()) ReloadModuleCommand.lastModulePath = modulePath;
   }
 
-  public static class ReloadModuleCommand implements ReplCommand {
+  public static class ReloadModuleCommand implements CliReplCommand {
     public static final @NotNull ReloadModuleCommand INSTANCE = new ReloadModuleCommand();
 
     private ReloadModuleCommand() {
@@ -52,10 +49,9 @@ public final class LoadModuleCommand implements ReplCommand {
     private volatile static @Nullable ModulePath lastModulePath = null;
 
     @Override
-    public void invoke(@NotNull String line, @NotNull Repl api, @NotNull Supplier<@NotNull String> scanner) {
-      assert api instanceof CommonCliRepl;
+    public void invoke(@NotNull String line, @NotNull CommonCliRepl api, @NotNull Supplier<@NotNull String> scanner) {
       if (lastModulePath != null)
-        LoadModuleCommand.loadModule((CommonCliRepl) api, lastModulePath);
+        LoadModuleCommand.loadModule(api, lastModulePath);
       else api.eprintln("[ERROR] No previous module to load.");
     }
 
