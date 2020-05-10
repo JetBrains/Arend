@@ -48,7 +48,7 @@ public final class CommandHandler implements ReplHandler {
         .mapToInt(String::length)
           .summaryStatistics();
       int maxWidth = Math.min(statistics.getMax(), 8) + 1;
-      api.println("There are " + statistics.getCount() + " action(s) available.");
+      api.println("There are " + statistics.getCount() + " actions available.");
       for (var replCommand : commandMap.entrySet()) {
         var description = replCommand.getValue().description();
         if (description == null) continue;
