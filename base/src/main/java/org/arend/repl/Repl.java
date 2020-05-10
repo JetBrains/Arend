@@ -22,6 +22,7 @@ import org.arend.naming.scope.MergeScope;
 import org.arend.naming.scope.Scope;
 import org.arend.naming.scope.ScopeFactory;
 import org.arend.repl.action.NormalizeCommand;
+import org.arend.repl.action.QuitCommand;
 import org.arend.repl.action.ReplCommand;
 import org.arend.repl.action.ShowTypeCommand;
 import org.arend.term.concrete.Concrete;
@@ -115,12 +116,16 @@ public abstract class Repl {
    * @return true if the REPL wants to quit
    */
   public final boolean repl(@NotNull String currentLine, @NotNull Supplier<@NotNull String> lineSupplier) {
-    if (currentLine.startsWith(":quit") || currentLine.equals(":q"))
-      return true;
+    boolean quit = false;
     for (var action : myHandlers)
-      if (action.isApplicable(currentLine))
-        action.invoke(currentLine, this, lineSupplier);
-    return false;
+      if (action.isApplicable(currentLine)) {
+        try {
+          action.invoke(currentLine, this, lineSupplier);
+        } catch (QuitReplException e) {
+          quit = true;
+        }
+      }
+    return quit;
   }
 
   protected final boolean typecheckLibrary(@NotNull Library library) {
@@ -174,6 +179,8 @@ public abstract class Repl {
   protected void loadCommands() {
     myHandlers.add(CodeParsingHandler.INSTANCE);
     myHandlers.add(CommandHandler.INSTANCE);
+    registerAction("quit", QuitCommand.INSTANCE);
+    registerAction("q", QuitCommand.INSTANCE);
     registerAction("type", ShowTypeCommand.INSTANCE);
     registerAction("t", ShowTypeCommand.INSTANCE);
     registerAction("?", CommandHandler.HELP_COMMAND_INSTANCE);
