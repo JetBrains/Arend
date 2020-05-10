@@ -34,6 +34,7 @@ import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Set;
@@ -42,6 +43,7 @@ import java.util.function.Supplier;
 
 public abstract class CommmonCliRepl extends Repl {
   public static final @NotNull String APP_NAME = "Arend REPL";
+  private @NotNull Path pwd = Paths.get(".").toAbsolutePath();
   /** See https://gist.github.com/ice1000/a915b6fcbc6f90b0c3c65db44dab29cc */
   @Language("TEXT")
   public static final @NotNull String ASCII_BANNER =
@@ -82,7 +84,7 @@ public abstract class CommmonCliRepl extends Repl {
         typecheckerState
     );
     myLibraryResolver = libraryResolver;
-    myReplLibrary = new FileSourceLibrary("Repl", Paths.get("."), null, null, null, modules, true, new ArrayList<>(), Range.unbound(), typecheckerState);
+    myReplLibrary = new FileSourceLibrary("Repl", pwd, null, null, null, modules, true, new ArrayList<>(), Range.unbound(), typecheckerState);
     myModules = modules;
   }
   //endregion
@@ -156,10 +158,12 @@ public abstract class CommmonCliRepl extends Repl {
     registerAction("r", LoadModuleCommand.ReloadModuleCommand.INSTANCE);
     registerAction("prompt", new ChangePromptCommand());
     registerAction("lib", LoadLibraryCommand.INSTANCE);
+    registerAction("pwd", new PwdCommand());
+    registerAction("cd", new CdCommand());
   }
 
   public  @Nullable Library createLibrary(@NotNull String path) {
-    return myLibraryResolver.registerLibrary(Paths.get(path).toAbsolutePath());
+    return myLibraryResolver.registerLibrary(pwd.resolve(path).toAbsolutePath());
   }
 
   @Override
@@ -225,6 +229,30 @@ public abstract class CommmonCliRepl extends Repl {
 
   public @NotNull SourceLibrary getReplLibrary() {
     return myReplLibrary;
+  }
+
+  private final class PwdCommand implements ReplCommand {
+    @Override
+    public @Nls(capitalization = Nls.Capitalization.Sentence) @NotNull String description() {
+      return "Show current working directory";
+    }
+
+    @Override
+    public void invoke(@NotNull String line, @NotNull Repl api, @NotNull Supplier<@NotNull String> scanner) {
+      api.println(pwd);
+    }
+  }
+
+  private final class CdCommand implements ReplCommand {
+    @Override
+    public @Nls(capitalization = Nls.Capitalization.Sentence) @NotNull String description() {
+      return "Modify current working directory";
+    }
+
+    @Override
+    public void invoke(@NotNull String line, @NotNull Repl api, @NotNull Supplier<@NotNull String> scanner) {
+      pwd = pwd.resolve(line);
+    }
   }
 
   private final class ChangePromptCommand implements ReplCommand {
