@@ -1,7 +1,7 @@
 package org.arend.frontend.repl.action;
 
 import org.arend.ext.module.ModulePath;
-import org.arend.frontend.repl.CommmonCliRepl;
+import org.arend.frontend.repl.CommonCliRepl;
 import org.arend.naming.scope.Scope;
 import org.arend.repl.Repl;
 import org.arend.repl.action.ReplCommand;
@@ -26,15 +26,15 @@ public final class LoadModuleCommand implements ReplCommand {
   @Override
   public void invoke(@NotNull String line, @NotNull Repl api, @NotNull Supplier<@NotNull String> scanner) {
     try {
-      assert api instanceof CommmonCliRepl;
-      loadModule((CommmonCliRepl) api, ModulePath.fromString(line));
+      assert api instanceof CommonCliRepl;
+      loadModule((CommonCliRepl) api, ModulePath.fromString(line));
     } catch (InvalidPathException e) {
       api.eprintln("The path `" + line + "` is not good because:");
       api.eprintln(e.getLocalizedMessage());
     }
   }
 
-  private static void loadModule(@NotNull CommmonCliRepl api, ModulePath modulePath) {
+  private static void loadModule(@NotNull CommonCliRepl api, ModulePath modulePath) {
     Scope existingScope = api.getAvailableModuleScopeProvider().forModule(modulePath);
     if (existingScope != null) api.removeScope(existingScope);
     Scope scope = api.loadModule(modulePath);
@@ -53,9 +53,9 @@ public final class LoadModuleCommand implements ReplCommand {
 
     @Override
     public void invoke(@NotNull String line, @NotNull Repl api, @NotNull Supplier<@NotNull String> scanner) {
-      assert api instanceof CommmonCliRepl;
+      assert api instanceof CommonCliRepl;
       if (lastModulePath != null)
-        LoadModuleCommand.loadModule((CommmonCliRepl) api, lastModulePath);
+        LoadModuleCommand.loadModule((CommonCliRepl) api, lastModulePath);
       else api.eprintln("[ERROR] No previous module to load.");
     }
 

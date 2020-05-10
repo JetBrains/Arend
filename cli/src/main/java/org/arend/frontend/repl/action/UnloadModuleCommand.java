@@ -1,7 +1,7 @@
 package org.arend.frontend.repl.action;
 
 import org.arend.ext.module.ModulePath;
-import org.arend.frontend.repl.CommmonCliRepl;
+import org.arend.frontend.repl.CommonCliRepl;
 import org.arend.naming.scope.Scope;
 import org.arend.repl.Repl;
 import org.arend.repl.action.ReplCommand;
@@ -24,8 +24,8 @@ public final class UnloadModuleCommand implements ReplCommand {
   @Override
   public void invoke(@NotNull String line, @NotNull Repl api, @NotNull Supplier<@NotNull String> scanner) {
     var modulePath = ModulePath.fromString(line);
-    assert api instanceof CommmonCliRepl;
-    var cliApi = (CommmonCliRepl) api;
+    assert api instanceof CommonCliRepl;
+    var cliApi = (CommonCliRepl) api;
     if (!cliApi.getReplLibrary().containsModule(modulePath)) {
       cliApi.eprintln("[ERROR] Module " + modulePath + " is not loaded.");
       return;

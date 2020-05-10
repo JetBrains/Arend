@@ -5,7 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.InputStream;
 import java.util.Scanner;
 
-public class PlainCliRepl extends CommmonCliRepl {
+public class PlainCliRepl extends CommonCliRepl {
   public PlainCliRepl() {
     super();
   }

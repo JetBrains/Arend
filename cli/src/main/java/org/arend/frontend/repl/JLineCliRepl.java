@@ -10,7 +10,7 @@ import org.jline.terminal.TerminalBuilder;
 
 import java.io.IOException;
 
-public class JLineCliRepl extends CommmonCliRepl {
+public class JLineCliRepl extends CommonCliRepl {
   private final Terminal myTerminal;
 
   public JLineCliRepl(@NotNull Terminal terminal) {

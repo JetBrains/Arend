@@ -41,7 +41,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Supplier;
 
-public abstract class CommmonCliRepl extends Repl {
+public abstract class CommonCliRepl extends Repl {
   public static final @NotNull String APP_NAME = "Arend REPL";
   private @NotNull Path pwd = Paths.get(".").toAbsolutePath();
   /** See https://gist.github.com/ice1000/a915b6fcbc6f90b0c3c65db44dab29cc */
@@ -64,14 +64,14 @@ public abstract class CommmonCliRepl extends Repl {
   // All of the parameters introduced here are used more than once,
   // and one cannot introduce them as variable before the `this` or
   // `super` call because that's the rule of javac.
-  private CommmonCliRepl(
+  private CommonCliRepl(
       @NotNull SimpleTypecheckerState typecheckerState,
       @NotNull Set<ModulePath> modules,
       @NotNull ListErrorReporter errorReporter) {
     this(typecheckerState, modules, new FileLibraryResolver(new ArrayList<>(), typecheckerState, errorReporter), errorReporter);
   }
 
-  private CommmonCliRepl(
+  private CommonCliRepl(
       @NotNull SimpleTypecheckerState typecheckerState,
       @NotNull Set<ModulePath> modules,
       @NotNull FileLibraryResolver libraryResolver,
@@ -180,7 +180,7 @@ public abstract class CommmonCliRepl extends Repl {
     return buildVisitor().visitExpr(parse(text).expr());
   }
 
-  public CommmonCliRepl() {
+  public CommonCliRepl() {
     this(new SimpleTypecheckerState(), new TreeSet<>(), new ListErrorReporter(new ArrayList<>()));
   }
 
@@ -212,7 +212,7 @@ public abstract class CommmonCliRepl extends Repl {
   }
 
   /**
-   * Like {@link CommmonCliRepl#loadModule(ModulePath)}, this will
+   * Like {@link CommonCliRepl#loadModule(ModulePath)}, this will
    * <strong>not</strong> modify the REPL scope as well.
    *
    * @return true if the module is already loaded before.
@@ -251,7 +251,7 @@ public abstract class CommmonCliRepl extends Repl {
 
     @Override
     public void invoke(@NotNull String line, @NotNull Repl api, @NotNull Supplier<@NotNull String> scanner) {
-      pwd = pwd.resolve(line);
+      pwd = pwd.resolve(line).toAbsolutePath();
     }
   }
 
