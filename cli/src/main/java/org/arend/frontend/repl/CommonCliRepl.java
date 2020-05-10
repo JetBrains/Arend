@@ -13,10 +13,7 @@ import org.arend.frontend.parser.ArendLexer;
 import org.arend.frontend.parser.ArendParser;
 import org.arend.frontend.parser.BuildVisitor;
 import org.arend.frontend.parser.ReporterErrorListener;
-import org.arend.frontend.repl.action.ListLoadedModulesAction;
-import org.arend.frontend.repl.action.LoadLibraryCommand;
-import org.arend.frontend.repl.action.LoadModuleCommand;
-import org.arend.frontend.repl.action.UnloadModuleCommand;
+import org.arend.frontend.repl.action.*;
 import org.arend.library.Library;
 import org.arend.library.SourceLibrary;
 import org.arend.naming.scope.Scope;
@@ -43,6 +40,7 @@ import java.util.function.Supplier;
 
 public abstract class CommonCliRepl extends Repl {
   public static final @NotNull String APP_NAME = "Arend REPL";
+
   public @NotNull Path pwd = Paths.get(".").toAbsolutePath();
   /** See https://gist.github.com/ice1000/a915b6fcbc6f90b0c3c65db44dab29cc */
   @Language("TEXT")
@@ -229,30 +227,6 @@ public abstract class CommonCliRepl extends Repl {
 
   public @NotNull SourceLibrary getReplLibrary() {
     return myReplLibrary;
-  }
-
-  private final class PwdCommand implements ReplCommand {
-    @Override
-    public @Nls(capitalization = Nls.Capitalization.Sentence) @NotNull String description() {
-      return "Show current working directory";
-    }
-
-    @Override
-    public void invoke(@NotNull String line, @NotNull Repl api, @NotNull Supplier<@NotNull String> scanner) {
-      api.println(pwd);
-    }
-  }
-
-  private final class CdCommand implements ReplCommand {
-    @Override
-    public @Nls(capitalization = Nls.Capitalization.Sentence) @NotNull String description() {
-      return "Modify current working directory";
-    }
-
-    @Override
-    public void invoke(@NotNull String line, @NotNull Repl api, @NotNull Supplier<@NotNull String> scanner) {
-      pwd = pwd.resolve(line).toAbsolutePath();
-    }
   }
 
   private final class ChangePromptCommand implements ReplCommand {
