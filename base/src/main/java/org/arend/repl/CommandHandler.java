@@ -53,8 +53,9 @@ public final class CommandHandler implements ReplHandler {
         var description = replCommand.getValue().description();
         if (description == null) continue;
         String command = replCommand.getKey();
-        api.println(command + " ".repeat(maxWidth - command.length()) + description);
+        api.println(":" + command + " ".repeat(maxWidth - command.length()) + description);
       }
+      api.println("Note: to use an Arend symbol beginning with `:`, start the line with a whitespace.");
     }
   }
 }
