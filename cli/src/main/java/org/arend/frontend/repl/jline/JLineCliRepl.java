@@ -1,6 +1,9 @@
 package org.arend.frontend.repl.jline;
 
 import org.arend.frontend.repl.CommonCliRepl;
+import org.arend.repl.action.DirectoryArgumentCommand;
+import org.arend.repl.action.ExpressionArgumentCommand;
+import org.arend.repl.action.FileArgumentCommand;
 import org.arend.util.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jline.reader.EndOfFileException;
@@ -17,7 +20,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
 
 public class JLineCliRepl extends CommonCliRepl {
   private final Terminal myTerminal;
@@ -65,11 +67,10 @@ public class JLineCliRepl extends CommonCliRepl {
       .variable(LineReader.HISTORY_FILE, history)
       .history(new DefaultHistory())
       .completer(new AggregateCompleter(
-        new ScopeCompleter(this::getInScopeElements),
-        new ExprCompleter(),
-        new SpecialCommandCompleter(List.of(":lib ", ":li ", ":cd ", ":c "), new Completers.DirectoriesCompleter(() -> pwd)),
-        new SpecialCommandCompleter(List.of(":load ", ":loa ", ":lo "), new Completers.FilesCompleter(() -> pwd)),
-        KeywordCompleter.INSTANCE,
+        new SpecialCommandCompleter(DirectoryArgumentCommand.class, new Completers.DirectoriesCompleter(() -> pwd)),
+        new SpecialCommandCompleter(FileArgumentCommand.class, new Completers.FilesCompleter(() -> pwd)),
+        new SpecialCommandCompleter(ExpressionArgumentCommand.class, new ScopeCompleter(this::getInScopeElements)),
+        new SpecialCommandCompleter(ExpressionArgumentCommand.class, KeywordCompleter.INSTANCE),
         CommandsCompleter.INSTANCE
       ))
       .terminal(myTerminal)

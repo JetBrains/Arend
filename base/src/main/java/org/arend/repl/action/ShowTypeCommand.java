@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Supplier;
 
-public final class ShowTypeCommand implements ReplCommand {
+public final class ShowTypeCommand implements ReplCommand, ExpressionArgumentCommand {
   public static final @NotNull ShowTypeCommand INSTANCE = new ShowTypeCommand();
 
   private ShowTypeCommand() {

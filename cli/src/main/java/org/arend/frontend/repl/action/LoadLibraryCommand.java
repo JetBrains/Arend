@@ -2,12 +2,13 @@ package org.arend.frontend.repl.action;
 
 import org.arend.frontend.repl.CommonCliRepl;
 import org.arend.library.Library;
+import org.arend.repl.action.DirectoryArgumentCommand;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Supplier;
 
-public final class LoadLibraryCommand implements CliReplCommand {
+public final class LoadLibraryCommand implements CliReplCommand, DirectoryArgumentCommand {
   public static final @NotNull LoadLibraryCommand INSTANCE = new LoadLibraryCommand();
 
   private LoadLibraryCommand() {
@@ -15,7 +16,7 @@ public final class LoadLibraryCommand implements CliReplCommand {
 
   @Override
   public final void invoke(@NotNull String line, @NotNull CommonCliRepl api, @NotNull Supplier<@NotNull String> scanner) {
-    Library library = api.createLibrary(line);
+    Library library = api.createLibrary(line.trim());
     if (library == null || api.checkErrors()) {
       api.eprintln("[ERROR] Cannot find a library at '" + line + "'.");
       // check again in case `library == null`
