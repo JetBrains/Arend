@@ -1,4 +1,4 @@
-package org.arend.frontend.repl;
+package org.arend.frontend.repl.jline;
 
 import org.jetbrains.annotations.NotNull;
 import org.jline.reader.Candidate;
@@ -8,7 +8,7 @@ import org.jline.reader.ParsedLine;
 
 import java.util.List;
 
-public class JLineKeywordCompleter implements Completer {
+public class KeywordCompleter implements Completer {
   public static final @NotNull List<@NotNull String> arendKeywords = List.of(
       "open", "import", "using", "as", "hiding", "func", "sfunc", "lemma", "cons",
       "classifying", "noclassifying", "field", "property", "override",

@@ -1,4 +1,4 @@
-package org.arend.frontend.repl;
+package org.arend.frontend.repl.jline;
 
 import org.arend.repl.CommandHandler;
 import org.jline.reader.Candidate;
@@ -8,7 +8,7 @@ import org.jline.reader.ParsedLine;
 
 import java.util.List;
 
-public class JLineCommandsCompleter implements Completer {
+public class CommandsCompleter implements Completer {
   @Override
   public void complete(LineReader reader, ParsedLine line, List<Candidate> candidates) {
     if (line.cursor() >= 1 && ':' == line.line().charAt(0) && line.wordIndex() <= 1) {

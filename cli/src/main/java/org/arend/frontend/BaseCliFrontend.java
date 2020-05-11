@@ -10,7 +10,7 @@ import org.arend.ext.prettyprinting.PrettyPrinterFlag;
 import org.arend.extImpl.DefinitionRequester;
 import org.arend.frontend.library.FileSourceLibrary;
 import org.arend.frontend.repl.PlainCliRepl;
-import org.arend.frontend.repl.JLineCliRepl;
+import org.arend.frontend.repl.jline.JLineCliRepl;
 import org.arend.library.*;
 import org.arend.library.error.LibraryError;
 import org.arend.naming.reference.LocatedReferable;

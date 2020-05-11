@@ -1,5 +1,6 @@
-package org.arend.frontend.repl;
+package org.arend.frontend.repl.jline;
 
+import org.arend.frontend.repl.CommonCliRepl;
 import org.arend.naming.reference.Referable;
 import org.arend.util.FileUtils;
 import org.jetbrains.annotations.NotNull;
@@ -62,9 +63,9 @@ public class JLineCliRepl extends CommonCliRepl {
       .history(new DefaultHistory())
       .completer(new AggregateCompleter(
         scopeCompleter(),
-        new JLineKeywordCompleter(),
-        new JLineExprCompleter(),
-        new JLineCommandsCompleter()
+        new KeywordCompleter(),
+        new ExprCompleter(),
+        new CommandsCompleter()
       ))
       .terminal(myTerminal)
       .parser(new DefaultParser() {

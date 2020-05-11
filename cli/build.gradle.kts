@@ -12,6 +12,7 @@ dependencies {
     implementation("org.jline:jline-terminal:$jlineVersion")
     implementation("org.jline:jline-terminal-jansi:$jlineVersion")
     implementation("org.jline:jline-reader:$jlineVersion")
+    // implementation("org.jline:jline-builtins:$jlineVersion")
 
     implementation("org.antlr:antlr4-runtime:$antlrVersion")
     implementation(project(":api"))
