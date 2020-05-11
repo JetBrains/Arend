@@ -143,7 +143,7 @@ public abstract class Repl {
   }
 
   public @NotNull String prompt() {
-    return "\u03bb ";
+    return ">";
   }
 
   protected abstract @Nullable Group parseStatements(@NotNull String line);

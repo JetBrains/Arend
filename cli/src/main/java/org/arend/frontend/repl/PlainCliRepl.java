@@ -8,6 +8,7 @@ import java.util.Scanner;
 public class PlainCliRepl extends CommonCliRepl {
   public PlainCliRepl() {
     super();
+    prompt = "\u03bb ";
   }
 
   public void runRepl(@NotNull InputStream inputStream) {

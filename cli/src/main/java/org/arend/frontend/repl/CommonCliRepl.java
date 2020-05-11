@@ -51,7 +51,8 @@ public abstract class CommonCliRepl extends Repl {
       " / ___ |/ /  /  __/ / / / /_/ /   https://arend-lang.github.io\n" +
       "/_/  |_/_/   \\___/_/ /_/\\__,_/    :? for help";
 
-  private @NotNull String prompt = "\u03bb ";
+  @NotNull
+  protected String prompt = ">";
   private final FileLibraryResolver myLibraryResolver;
   private final SourceLibrary myReplLibrary;
   private final Set<ModulePath> myModules;

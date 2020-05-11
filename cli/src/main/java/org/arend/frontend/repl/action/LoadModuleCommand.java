@@ -38,6 +38,7 @@ public final class LoadModuleCommand implements CliReplCommand {
     if (scope != null) api.addScope(scope);
     else api.println("[INFO] No module loaded.");
     if (!api.checkErrors()) ReloadModuleCommand.lastModulePath = modulePath;
+    else api.unloadModule(modulePath);
   }
 
   public static class ReloadModuleCommand implements CliReplCommand {

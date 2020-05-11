@@ -5,10 +5,17 @@ import org.jetbrains.annotations.NotNull;
 import org.jline.reader.*;
 import org.jline.reader.impl.DefaultParser;
 import org.jline.reader.impl.completer.AggregateCompleter;
+import org.jline.reader.impl.history.DefaultHistory;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
+import java.util.Set;
 
 public class JLineCliRepl extends CommonCliRepl {
   private final Terminal myTerminal;
@@ -35,22 +42,37 @@ public class JLineCliRepl extends CommonCliRepl {
   }
 
   public void runRepl() {
+    Path dir = Paths.get(System.getProperty("user.home")).resolve(".arend");
+    Path history = dir.resolve("history");
+    try {
+      // Assuming user.home exists
+      Files.createDirectory(dir);
+      if (Files.notExists(history) || Files.isDirectory(history)) {
+        Files.deleteIfExists(history);
+        Files.createFile(history);
+      }
+    } catch (IOException e) {
+      eprintln("[ERROR] Failed to load REPL history: " + e.getLocalizedMessage());
+      history = null;
+    }
     var reader = LineReaderBuilder.builder()
       .appName(APP_NAME)
+      .variable(LineReader.HISTORY_FILE, history)
+      .history(new DefaultHistory())
       .completer(new AggregateCompleter(
         scopeCompleter(),
         new JLineKeywordCompleter(),
         new JLineExprCompleter(),
         new JLineCommandsCompleter()
       ))
-        .terminal(myTerminal)
-        .parser(new DefaultParser() {
-          @Override
-          public boolean isEscapeChar(CharSequence buffer, int pos) {
-            return false;
-          }
-        }.escapeChars(new char[]{}))
-        .build();
+      .terminal(myTerminal)
+      .parser(new DefaultParser() {
+        @Override
+        public boolean isEscapeChar(CharSequence buffer, int pos) {
+          return false;
+        }
+      }.escapeChars(new char[]{}))
+      .build();
     while (true) {
       try {
         if (repl(reader.readLine(prompt()), reader::readLine)) break;
@@ -77,10 +99,10 @@ public class JLineCliRepl extends CommonCliRepl {
     Terminal terminal;
     try {
       terminal = TerminalBuilder
-          .builder()
-          .encoding("UTF-8")
-          .jansi(true)
-          .build();
+        .builder()
+        .encoding("UTF-8")
+        .jansi(true)
+        .build();
     } catch (IOException e) {
       System.err.println("[FATAL] Failed to create terminal: " + e.getLocalizedMessage());
       System.exit(1);
