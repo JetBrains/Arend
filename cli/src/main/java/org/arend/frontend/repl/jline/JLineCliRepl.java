@@ -1,10 +1,12 @@
 package org.arend.frontend.repl.jline;
 
 import org.arend.frontend.repl.CommonCliRepl;
-import org.arend.naming.reference.Referable;
 import org.arend.util.FileUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jline.reader.*;
+import org.jline.reader.EndOfFileException;
+import org.jline.reader.LineReader;
+import org.jline.reader.LineReaderBuilder;
+import org.jline.reader.UserInterruptException;
 import org.jline.reader.impl.DefaultParser;
 import org.jline.reader.impl.completer.AggregateCompleter;
 import org.jline.reader.impl.history.DefaultHistory;
@@ -62,18 +64,13 @@ public class JLineCliRepl extends CommonCliRepl {
       .variable(LineReader.HISTORY_FILE, history)
       .history(new DefaultHistory())
       .completer(new AggregateCompleter(
-        scopeCompleter(),
+        new ScopeCompleter(this::getInScopeElements),
         new KeywordCompleter(),
         new ExprCompleter(),
         new CommandsCompleter()
       ))
       .terminal(myTerminal)
-      .parser(new DefaultParser() {
-        @Override
-        public boolean isEscapeChar(CharSequence buffer, int pos) {
-          return false;
-        }
-      }.escapeChars(new char[]{}))
+      .parser(new DefaultParser().escapeChars(new char[]{}))
       .build();
     while (true) {
       try {
@@ -84,17 +81,6 @@ public class JLineCliRepl extends CommonCliRepl {
         break;
       }
     }
-  }
-
-  private @NotNull Completer scopeCompleter() {
-    return (lineReader, line, candidates) -> {
-      String word = line.word();
-      var firstChar = word.isEmpty() ? '+' : word.charAt(0);
-      if ("~!@#$%^&*-+=<>?/|:".indexOf(firstChar) > 0 || Character.isAlphabetic(firstChar)) {
-        for (Referable referable : getInScopeElements())
-          candidates.add(new Candidate(referable.getRefName()));
-      }
-    };
   }
 
   public static void main(String... args) {

@@ -7,8 +7,11 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Supplier;
 
-public class QuitCommand implements ReplCommand {
+public final class QuitCommand implements ReplCommand {
   public static final @NotNull QuitCommand INSTANCE = new QuitCommand();
+
+  private QuitCommand() {
+  }
 
   @Override
   public @Nls(capitalization = Nls.Capitalization.Sentence) @NotNull String description() {
