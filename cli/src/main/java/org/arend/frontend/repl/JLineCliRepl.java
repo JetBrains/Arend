@@ -1,6 +1,7 @@
 package org.arend.frontend.repl;
 
 import org.arend.naming.reference.Referable;
+import org.arend.util.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jline.reader.*;
 import org.jline.reader.impl.DefaultParser;
@@ -39,7 +40,7 @@ public class JLineCliRepl extends CommonCliRepl {
   }
 
   public void runRepl() {
-    Path dir = Paths.get(System.getProperty("user.home")).resolve(".arend");
+    Path dir = Paths.get(System.getProperty("user.home")).resolve(FileUtils.USER_CONFIG_DIR);
     Path history = dir.resolve("history");
     try {
       // Assuming user.home exists

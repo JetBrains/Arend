@@ -17,6 +17,7 @@ public class FileUtils {
   public static final String EXTENSION = ".ard";
   public static final String SERIALIZED_EXTENSION = ".arc";
   public static final String LIBRARY_CONFIG_FILE = "arend.yaml";
+  public static final String USER_CONFIG_DIR = ".arend";
 
   private static Path baseFile(Path root, ModulePath modulePath) {
     return root.resolve(Paths.get("", modulePath.toArray()));

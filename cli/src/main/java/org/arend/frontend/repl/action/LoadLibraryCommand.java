@@ -19,6 +19,8 @@ public class LoadLibraryCommand implements CliReplCommand {
     Library library = api.createLibrary(line);
     if (library == null || api.checkErrors()) {
       api.eprintln("[ERROR] Cannot find a library at '" + line + "'.");
+      // check again in case `library == null`
+      api.checkErrors();
       return;
     }
     api.println("[INFO] Starts loading library " + library.getName() + "...");
