@@ -8,7 +8,12 @@ import org.jline.reader.ParsedLine;
 
 import java.util.List;
 
-public class KeywordCompleter implements Completer {
+public final class KeywordCompleter implements Completer {
+  public static final @NotNull KeywordCompleter INSTANCE = new KeywordCompleter();
+
+  private KeywordCompleter() {
+  }
+
   public static final @NotNull List<@NotNull String> arendKeywords = List.of(
       "open", "import", "using", "as", "hiding", "func", "sfunc", "lemma", "cons",
       "classifying", "noclassifying", "field", "property", "override",

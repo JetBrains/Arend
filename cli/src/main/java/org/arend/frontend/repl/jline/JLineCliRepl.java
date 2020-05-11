@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
 public class JLineCliRepl extends CommonCliRepl {
   private final Terminal myTerminal;
@@ -65,9 +66,11 @@ public class JLineCliRepl extends CommonCliRepl {
       .history(new DefaultHistory())
       .completer(new AggregateCompleter(
         new ScopeCompleter(this::getInScopeElements),
-        new KeywordCompleter(),
         new ExprCompleter(),
-        new CommandsCompleter()
+        new SpecialCommandCompleter(List.of("\\lib ", "\\li "), new Completers.DirectoriesCompleter(() -> pwd)),
+        new SpecialCommandCompleter(List.of("\\load ", "\\loa ", "\\lo "), new Completers.FilesCompleter(() -> pwd)),
+        KeywordCompleter.INSTANCE,
+        CommandsCompleter.INSTANCE
       ))
       .terminal(myTerminal)
       .parser(new DefaultParser().escapeChars(new char[]{}))
