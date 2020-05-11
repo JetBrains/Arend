@@ -13,9 +13,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.attribute.PosixFilePermission;
-import java.nio.file.attribute.PosixFilePermissions;
-import java.util.Set;
 
 public class JLineCliRepl extends CommonCliRepl {
   private final Terminal myTerminal;
@@ -46,7 +43,10 @@ public class JLineCliRepl extends CommonCliRepl {
     Path history = dir.resolve("history");
     try {
       // Assuming user.home exists
-      Files.createDirectory(dir);
+      if (Files.notExists(dir) || Files.isRegularFile(dir)) {
+        Files.deleteIfExists(dir);
+        Files.createDirectory(dir);
+      }
       if (Files.notExists(history) || Files.isDirectory(history)) {
         Files.deleteIfExists(history);
         Files.createFile(history);
