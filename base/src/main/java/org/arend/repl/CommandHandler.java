@@ -1,14 +1,17 @@
 package org.arend.repl;
 
 import org.arend.repl.action.ReplCommand;
+import org.arend.util.Pair;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.IntSummaryStatistics;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public final class CommandHandler implements ReplHandler {
   public static final @NotNull CommandHandler INSTANCE = new CommandHandler();
@@ -24,23 +27,39 @@ public final class CommandHandler implements ReplHandler {
     return line.startsWith(":");
   }
 
-  @Override
-  public final void invoke(@NotNull String line, @NotNull Repl api, @NotNull Supplier<@NotNull String> lineSupplier) throws QuitReplException {
+  /**
+   * Split a command.
+   * @param line Example: <code>:f a</code>
+   * @return Example: <code>new Pair("f", "a")</code>
+   */
+  public static @NotNull Pair<@Nullable String, @NotNull String> splitCommand(@NotNull String line) {
+    if (line.isBlank() || !line.startsWith(":")) return new Pair<>(null, line);
     int indexOfSpace = line.indexOf(' ');
     var command = indexOfSpace > 0 ? line.substring(1, indexOfSpace) : line.substring(1);
-    var replCommand = commandMap.get(command);
-    String arguments = line.substring(indexOfSpace + 1);
-    if (replCommand != null) replCommand.invoke(arguments, api, lineSupplier);
+    var arguments = line.substring(indexOfSpace + 1);
+    return new Pair<>(command, arguments);
+  }
+
+  @Override
+  public final void invoke(@NotNull String line, @NotNull Repl api, @NotNull Supplier<@NotNull String> lineSupplier) throws QuitReplException {
+    var command = splitCommand(line);
+    if (command.proj1 == null) return;
+    var replCommand = commandMap.get(command.proj1);
+    if (replCommand != null) replCommand.invoke(command.proj2, api, lineSupplier);
     else {
-      var suitableCommands = commandMap.entrySet().stream().filter(entry -> entry.getKey().startsWith(command)).collect(Collectors.toList());
+      var suitableCommands = determineEntries(command.proj1).collect(Collectors.toList());
       if (suitableCommands.isEmpty())
         api.eprintln("[ERROR] Unrecognized command: " + command + ".");
       else if (suitableCommands.size() >= 2)
         api.eprintln("[ERROR] Cannot distinguish among commands :"
           + suitableCommands.stream().map(Map.Entry::getKey).collect(Collectors.joining(", :"))
           + ", please be more specific.");
-      else suitableCommands.get(0).getValue().invoke(arguments, api, lineSupplier);
+      else suitableCommands.get(0).getValue().invoke(command.proj2, api, lineSupplier);
     }
+  }
+
+  public @NotNull Stream<Map.Entry<String, ReplCommand>> determineEntries(@NotNull String command) {
+    return commandMap.entrySet().stream().filter(entry -> entry.getKey().startsWith(command));
   }
 
   public final class HelpCommand implements ReplCommand {

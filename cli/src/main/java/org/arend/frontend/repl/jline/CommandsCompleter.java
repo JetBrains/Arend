@@ -17,7 +17,7 @@ public final class CommandsCompleter implements Completer {
 
   @Override
   public void complete(LineReader reader, ParsedLine line, List<Candidate> candidates) {
-    if (line.cursor() >= 1 && ':' == line.line().charAt(0) && line.wordIndex() <= 1) {
+    if (line.cursor() >= 1 && ':' == line.line().charAt(0) && line.wordIndex() < 1) {
       for (var string : CommandHandler.INSTANCE.commandMap.keySet())
         candidates.add(new Candidate(":" + string));
     }

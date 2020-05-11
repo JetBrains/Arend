@@ -67,7 +67,7 @@ public class JLineCliRepl extends CommonCliRepl {
       .completer(new AggregateCompleter(
         new ScopeCompleter(this::getInScopeElements),
         new ExprCompleter(),
-        new SpecialCommandCompleter(List.of(":lib ", ":li "), new Completers.DirectoriesCompleter(() -> pwd)),
+        new SpecialCommandCompleter(List.of(":lib ", ":li ", ":cd ", ":c "), new Completers.DirectoriesCompleter(() -> pwd)),
         new SpecialCommandCompleter(List.of(":load ", ":loa ", ":lo "), new Completers.FilesCompleter(() -> pwd)),
         KeywordCompleter.INSTANCE,
         CommandsCompleter.INSTANCE
