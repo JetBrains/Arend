@@ -1,5 +1,7 @@
 package org.arend.frontend.repl.jline;
 
+import org.arend.repl.CommandHandler;
+import org.arend.repl.action.ExpressionArgumentCommand;
 import org.jetbrains.annotations.NotNull;
 import org.jline.reader.Candidate;
 import org.jline.reader.Completer;
@@ -29,6 +31,11 @@ public final class KeywordCompleter implements Completer {
   @Override
   public void complete(LineReader reader, ParsedLine line, List<Candidate> candidates) {
     if (!line.word().startsWith("\\")) return;
+    String command = CommandHandler.splitCommand(line.line()).proj1;
+    if (command != null && CommandHandler.INSTANCE
+      .determineEntries(command)
+      .noneMatch(entry -> entry.getValue() instanceof ExpressionArgumentCommand)
+    ) return;
     for (var arendKeyword : arendKeywords) candidates.add(new Candidate("\\" + arendKeyword));
   }
 }

@@ -2,7 +2,6 @@ package org.arend.frontend.repl.jline;
 
 import org.arend.frontend.repl.CommonCliRepl;
 import org.arend.repl.action.DirectoryArgumentCommand;
-import org.arend.repl.action.ExpressionArgumentCommand;
 import org.arend.repl.action.FileArgumentCommand;
 import org.arend.util.FileUtils;
 import org.jetbrains.annotations.NotNull;
@@ -69,8 +68,8 @@ public class JLineCliRepl extends CommonCliRepl {
       .completer(new AggregateCompleter(
         new SpecialCommandCompleter(DirectoryArgumentCommand.class, new Completers.DirectoriesCompleter(() -> pwd)),
         new SpecialCommandCompleter(FileArgumentCommand.class, new Completers.FilesCompleter(() -> pwd)),
-        new SpecialCommandCompleter(ExpressionArgumentCommand.class, new ScopeCompleter(this::getInScopeElements)),
-        new SpecialCommandCompleter(ExpressionArgumentCommand.class, KeywordCompleter.INSTANCE),
+        new ScopeCompleter(this::getInScopeElements),
+        KeywordCompleter.INSTANCE,
         CommandsCompleter.INSTANCE
       ))
       .terminal(myTerminal)
