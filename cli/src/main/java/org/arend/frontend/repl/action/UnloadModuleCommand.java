@@ -16,7 +16,7 @@ public final class UnloadModuleCommand implements CliReplCommand {
 
   @Override
   public @Nls(capitalization = Nls.Capitalization.Sentence) @NotNull String description() {
-    return "Unload an Arend module loaded before.";
+    return "Unload an Arend module loaded before";
   }
 
   @Override

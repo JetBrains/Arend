@@ -18,7 +18,7 @@ public final class LoadModuleCommand implements CliReplCommand {
 
   @Override
   public @Nls(capitalization = Nls.Capitalization.Sentence) @NotNull String description() {
-    return "Load an Arend module from working directory.";
+    return "Load an Arend module from working directory";
   }
 
   @Override

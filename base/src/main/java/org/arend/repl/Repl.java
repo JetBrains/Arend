@@ -50,6 +50,7 @@ import java.util.function.Supplier;
 
 public abstract class Repl {
   public static final @NotNull FullModulePath replModulePath = new FullModulePath(null, FullModulePath.LocationKind.SOURCE, Collections.singletonList("Repl"));
+  private @Nullable NormalizationMode myMode = null;
 
   protected final List<Scope> myMergedScopes = new ArrayList<>();
   private final List<ReplHandler> myHandlers = new ArrayList<>();
@@ -181,11 +182,8 @@ public abstract class Repl {
     myHandlers.add(CommandHandler.INSTANCE);
     registerAction("quit", QuitCommand.INSTANCE);
     registerAction("type", ShowTypeCommand.INSTANCE);
+    registerAction("normalize", NormalizeCommand.INSTANCE);
     registerAction("?", CommandHandler.HELP_COMMAND_INSTANCE);
-    for (NormalizationMode normalizationMode : NormalizationMode.values()) {
-      var name = normalizationMode.name().toLowerCase();
-      registerAction(name, new NormalizeCommand(normalizationMode));
-    }
   }
 
   public final @Nullable ReplCommand registerAction(@NotNull String name, @NotNull ReplCommand action) {
@@ -254,9 +252,13 @@ public abstract class Repl {
   public abstract void eprintln(Object anything);
 
   public final @NotNull StringBuilder prettyExpr(@NotNull StringBuilder builder, @NotNull Expression expression) {
-    var abs = ToAbstractVisitor.convert(expression, myPpConfig);
+    var abs = ToAbstractVisitor.convert(myMode != null ? expression.normalize(myMode) : expression, myPpConfig);
     abs.accept(new PrettyPrintVisitor(builder, 0), new Precedence(Concrete.Expression.PREC));
     return builder;
+  }
+
+  public void setNormalizationMode(@Nullable NormalizationMode normalizationMode) {
+    this.myMode = normalizationMode;
   }
 
   /**

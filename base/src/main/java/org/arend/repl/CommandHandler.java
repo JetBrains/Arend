@@ -36,7 +36,7 @@ public final class CommandHandler implements ReplHandler {
     if (line.isBlank() || !line.startsWith(":")) return new Pair<>(null, line);
     int indexOfSpace = line.indexOf(' ');
     var command = indexOfSpace > 0 ? line.substring(1, indexOfSpace) : line.substring(1);
-    var arguments = line.substring(indexOfSpace + 1);
+    var arguments = indexOfSpace > 0 ? line.substring(indexOfSpace + 1) : "";
     return new Pair<>(command, arguments);
   }
 
@@ -76,7 +76,7 @@ public final class CommandHandler implements ReplHandler {
       IntSummaryStatistics statistics = commandMap.keySet().stream()
         .mapToInt(String::length)
         .summaryStatistics();
-      int maxWidth = Math.min(statistics.getMax(), 8) + 1;
+      int maxWidth = Math.min(statistics.getMax(), 9) + 1;
       api.println("There are " + statistics.getCount() + " commands available.");
       for (var replCommand : commandMap.entrySet()) {
         var description = replCommand.getValue().description();

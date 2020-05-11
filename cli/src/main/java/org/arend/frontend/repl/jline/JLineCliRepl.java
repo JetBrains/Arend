@@ -3,6 +3,7 @@ package org.arend.frontend.repl.jline;
 import org.arend.frontend.repl.CommonCliRepl;
 import org.arend.repl.action.DirectoryArgumentCommand;
 import org.arend.repl.action.FileArgumentCommand;
+import org.arend.repl.action.NormalizeCommand;
 import org.arend.util.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jline.reader.EndOfFileException;
@@ -11,6 +12,7 @@ import org.jline.reader.LineReaderBuilder;
 import org.jline.reader.UserInterruptException;
 import org.jline.reader.impl.DefaultParser;
 import org.jline.reader.impl.completer.AggregateCompleter;
+import org.jline.reader.impl.completer.StringsCompleter;
 import org.jline.reader.impl.history.DefaultHistory;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
@@ -68,6 +70,7 @@ public class JLineCliRepl extends CommonCliRepl {
       .completer(new AggregateCompleter(
         new SpecialCommandCompleter(DirectoryArgumentCommand.class, new Completers.DirectoriesCompleter(() -> pwd)),
         new SpecialCommandCompleter(FileArgumentCommand.class, new Completers.FilesCompleter(() -> pwd)),
+        new SpecialCommandCompleter(NormalizeCommand.class, new StringsCompleter("whnf", "nf")),
         new ScopeCompleter(this::getInScopeElements),
         KeywordCompleter.INSTANCE,
         CommandsCompleter.INSTANCE
