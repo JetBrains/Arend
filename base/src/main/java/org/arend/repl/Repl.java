@@ -180,11 +180,8 @@ public abstract class Repl {
     myHandlers.add(CodeParsingHandler.INSTANCE);
     myHandlers.add(CommandHandler.INSTANCE);
     registerAction("quit", QuitCommand.INSTANCE);
-    registerAction("q", QuitCommand.INSTANCE);
     registerAction("type", ShowTypeCommand.INSTANCE);
-    registerAction("t", ShowTypeCommand.INSTANCE);
     registerAction("?", CommandHandler.HELP_COMMAND_INSTANCE);
-    registerAction("help", CommandHandler.HELP_COMMAND_INSTANCE);
     for (NormalizationMode normalizationMode : NormalizationMode.values()) {
       var name = normalizationMode.name().toLowerCase();
       registerAction(name, new NormalizeCommand(normalizationMode));

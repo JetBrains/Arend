@@ -152,9 +152,7 @@ public abstract class CommonCliRepl extends Repl {
     registerAction("modules", ListLoadedModulesAction.INSTANCE);
     registerAction("unload", UnloadModuleCommand.INSTANCE);
     registerAction("load", LoadModuleCommand.INSTANCE);
-    registerAction("l", LoadModuleCommand.INSTANCE);
     registerAction("reload", LoadModuleCommand.ReloadModuleCommand.INSTANCE);
-    registerAction("r", LoadModuleCommand.ReloadModuleCommand.INSTANCE);
     registerAction("prompt", new ChangePromptCommand());
     registerAction("lib", LoadLibraryCommand.INSTANCE);
     registerAction("pwd", new PwdCommand());

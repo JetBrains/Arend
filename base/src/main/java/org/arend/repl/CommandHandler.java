@@ -8,6 +8,7 @@ import java.util.IntSummaryStatistics;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public final class CommandHandler implements ReplHandler {
   public static final @NotNull CommandHandler INSTANCE = new CommandHandler();
@@ -28,9 +29,18 @@ public final class CommandHandler implements ReplHandler {
     int indexOfSpace = line.indexOf(' ');
     var command = indexOfSpace > 0 ? line.substring(1, indexOfSpace) : line.substring(1);
     var replCommand = commandMap.get(command);
-    if (replCommand != null)
-      replCommand.invoke(line.substring(indexOfSpace + 1), api, lineSupplier);
-    else api.eprintln("[ERROR] Unrecognized command: " + command + ".");
+    String arguments = line.substring(indexOfSpace + 1);
+    if (replCommand != null) replCommand.invoke(arguments, api, lineSupplier);
+    else {
+      var suitableCommands = commandMap.entrySet().stream().filter(entry -> entry.getKey().startsWith(command)).collect(Collectors.toList());
+      if (suitableCommands.isEmpty())
+        api.eprintln("[ERROR] Unrecognized command: " + command + ".");
+      else if (suitableCommands.size() >= 2)
+        api.eprintln("[ERROR] Cannot distinguish among commands :"
+          + suitableCommands.stream().map(Map.Entry::getKey).collect(Collectors.joining(", :"))
+          + ", please be more specific.");
+      else suitableCommands.get(0).getValue().invoke(arguments, api, lineSupplier);
+    }
   }
 
   public final class HelpCommand implements ReplCommand {
@@ -46,7 +56,7 @@ public final class CommandHandler implements ReplHandler {
     public void invoke(@NotNull String line, @NotNull Repl api, @NotNull Supplier<@NotNull String> scanner) {
       IntSummaryStatistics statistics = commandMap.keySet().stream()
         .mapToInt(String::length)
-          .summaryStatistics();
+        .summaryStatistics();
       int maxWidth = Math.min(statistics.getMax(), 8) + 1;
       api.println("There are " + statistics.getCount() + " commands available.");
       for (var replCommand : commandMap.entrySet()) {
