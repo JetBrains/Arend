@@ -4,11 +4,10 @@ import org.arend.frontend.repl.CommonCliRepl;
 import org.arend.library.Library;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Supplier;
 
-public class LoadLibraryCommand implements CliReplCommand {
+public final class LoadLibraryCommand implements CliReplCommand {
   public static final @NotNull LoadLibraryCommand INSTANCE = new LoadLibraryCommand();
 
   private LoadLibraryCommand() {
@@ -34,7 +33,7 @@ public class LoadLibraryCommand implements CliReplCommand {
   }
 
   @Override
-  public @Nls(capitalization = Nls.Capitalization.Sentence) @Nullable String description() {
+  public @Nls(capitalization = Nls.Capitalization.Sentence) @NotNull String description() {
     return "Load a library of given directory or arend.yaml file";
   }
 }
