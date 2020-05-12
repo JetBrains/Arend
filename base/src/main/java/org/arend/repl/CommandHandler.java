@@ -73,6 +73,19 @@ public final class CommandHandler implements ReplHandler {
 
     @Override
     public void invoke(@NotNull String line, @NotNull Repl api, @NotNull Supplier<@NotNull String> scanner) {
+      if (line.isBlank()) {
+        noArg(api);
+        return;
+      }
+      var replCommand = commandMap.get(line);
+      if (replCommand == null) {
+        api.eprintln("[ERROR] Cannot find command `:" + line + "`.");
+        return;
+      }
+      api.println(replCommand.help());
+    }
+
+    private void noArg(@NotNull Repl api) {
       IntSummaryStatistics statistics = commandMap.keySet().stream()
         .mapToInt(String::length)
         .summaryStatistics();

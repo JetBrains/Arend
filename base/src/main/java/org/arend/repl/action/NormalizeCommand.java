@@ -19,20 +19,36 @@ public final class NormalizeCommand implements ReplCommand {
   }
 
   @Override
+  public @Nls(capitalization = Nls.Capitalization.Sentence) @NotNull String help() {
+    return "Modify the normalization level of printed expressions.\n" +
+        "Available options (case insensitive) are:\n" +
+        " NULL (do not normalize)\n" +
+        " WHNF (Weak Head Normal Form)\n" +
+        " NF (Normal Form)\n" +
+        " RNF (the level best for pretty printing)." +
+        "If you did not pass a command argument, NULL will be chosen.";
+  }
+
+  @Override
   public void invoke(@NotNull String line, @NotNull Repl api, @NotNull Supplier<@NotNull String> scanner) {
-    if ("null".equalsIgnoreCase(line) || line.isBlank()) {
-      api.println("[INFO] Unset normalization mode.");
-      api.setNormalizationMode(null);
-    } else {
-      var mode = line.trim();
-      boolean found = false;
-      for (var normalizationMode : NormalizationMode.values())
-        if (normalizationMode.name().equalsIgnoreCase(mode)) {
-          found = true;
-          api.setNormalizationMode(normalizationMode);
-          break;
-        }
-      if (!found) api.eprintln("[ERROR] Unrecognized normalization level: " + mode);
+    switch (line.toUpperCase()) {
+      default:
+        api.eprintln("[ERROR] Unrecognized normalization level `" + line + "`, see `:help normalize`");
+        break;
+      case "NULL":
+      case "":
+        api.println("[INFO] Unset normalization mode.");
+        api.setNormalizationMode(null);
+        break;
+      case "WHNF":
+        api.setNormalizationMode(NormalizationMode.WHNF);
+        break;
+      case "NF":
+        api.setNormalizationMode(NormalizationMode.NF);
+        break;
+      case "RNF":
+        api.setNormalizationMode(NormalizationMode.RNF);
+        break;
     }
   }
 }

@@ -81,7 +81,7 @@ public class JLineCliRepl extends CommonCliRepl {
       .completer(new AggregateCompleter(
         new SpecialCommandCompleter(DirectoryArgumentCommand.class, new Completers.DirectoriesCompleter(() -> pwd)),
         new SpecialCommandCompleter(FileArgumentCommand.class, new Completers.FilesCompleter(() -> pwd)),
-        new SpecialCommandCompleter(NormalizeCommand.class, new StringsCompleter("whnf", "nf")),
+        new SpecialCommandCompleter(NormalizeCommand.class, new StringsCompleter("WHNF", "NF", "RNF", "NULL", "whnf", "nf", "rnf", "null")),
         new ScopeCompleter(this::getInScopeElements),
         KeywordCompleter.INSTANCE,
         CommandsCompleter.INSTANCE
@@ -92,8 +92,7 @@ public class JLineCliRepl extends CommonCliRepl {
     while (true) {
       try {
         if (repl(reader.readLine(prompt()), reader::readLine)) break;
-      } catch (UserInterruptException e) {
-        println("[INFO] Ignored input: `" + e.getPartialLine() + "`.");
+      } catch (UserInterruptException ignored) {
       } catch (EndOfFileException e) {
         break;
       }
