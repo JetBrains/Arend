@@ -65,6 +65,11 @@ public abstract class Repl {
     public @NotNull ScopeDefinitionRenamer getDefinitionRenamer() {
       return new ScopeDefinitionRenamer(myScope);
     }
+
+    @Override
+    public @Nullable NormalizationMode getNormalizationMode() {
+      return myMode;
+    }
   };
   protected final @NotNull ListErrorReporter myErrorReporter;
   protected final @NotNull LibraryManager myLibraryManager;
@@ -258,7 +263,7 @@ public abstract class Repl {
   public abstract void eprintln(Object anything);
 
   public final @NotNull StringBuilder prettyExpr(@NotNull StringBuilder builder, @NotNull Expression expression) {
-    var abs = ToAbstractVisitor.convert(myMode != null ? expression.normalize(myMode) : expression, myPpConfig);
+    var abs = ToAbstractVisitor.convert(expression, myPpConfig);
     abs.accept(new PrettyPrintVisitor(builder, 0), new Precedence(Concrete.Expression.PREC));
     return builder;
   }
