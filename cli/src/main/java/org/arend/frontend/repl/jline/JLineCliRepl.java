@@ -16,6 +16,8 @@ import org.jline.reader.impl.completer.StringsCompleter;
 import org.jline.reader.impl.history.DefaultHistory;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
+import org.jline.utils.AttributedStringBuilder;
+import org.jline.utils.AttributedStyle;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -27,6 +29,15 @@ public class JLineCliRepl extends CommonCliRepl {
 
   public JLineCliRepl(@NotNull Terminal terminal) {
     myTerminal = terminal;
+  }
+
+  @Override
+  public void eprintln(Object anything) {
+    println(new AttributedStringBuilder()
+        .style(AttributedStyle.DEFAULT.foreground(AttributedStyle.RED))
+        .append(String.valueOf(anything))
+        .style(AttributedStyle.DEFAULT)
+        .toAnsi());
   }
 
   @Override

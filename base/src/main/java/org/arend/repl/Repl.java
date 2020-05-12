@@ -287,6 +287,12 @@ public abstract class Repl {
     return expr;
   }
 
+  private static final List<GeneralError.Level> ERROR_LEVELS = List.of(
+      GeneralError.Level.ERROR,
+      GeneralError.Level.WARNING,
+      GeneralError.Level.GOAL
+  );
+
   /**
    * Check and print errors.
    *
@@ -295,7 +301,7 @@ public abstract class Repl {
   public final boolean checkErrors() {
     var errorList = myErrorReporter.getErrorList();
     for (GeneralError error : errorList)
-      printlnOpt(error.getDoc(myPpConfig), error.isSevere());
+      printlnOpt(error.getDoc(myPpConfig), ERROR_LEVELS.contains(error.level));
     boolean hasErrors = !errorList.isEmpty();
     errorList.clear();
     return hasErrors;

@@ -111,32 +111,6 @@ public abstract class CommonCliRepl extends Repl {
     return lexer;
   }
 
-  @Override
-  public void eprintln(Object anything) {
-    System.err.println(anything);
-  }
-
-  @Override
-  public void println(Object anything) {
-    System.out.println(anything);
-  }
-
-  @Override
-  public void println() {
-    System.out.println();
-  }
-
-  @Override
-  public void print(Object anything) {
-    System.out.print(anything);
-    System.out.flush();
-  }
-
-  @Override
-  public void printlnOpt(Object anything, boolean toError) {
-    (toError ? System.err : System.out).println(anything);
-  }
-
   private @NotNull ArendParser parse(String line) {
     return createParser(line, Repl.replModulePath, myErrorReporter);
   }

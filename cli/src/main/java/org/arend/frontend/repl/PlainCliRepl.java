@@ -11,6 +11,33 @@ public class PlainCliRepl extends CommonCliRepl {
     prompt = "\u03bb ";
   }
 
+  @Override
+  public void printlnOpt(Object anything, boolean toError) {
+    (toError ? System.err : System.out).println(anything);
+  }
+
+  @Override
+  public void eprintln(Object anything) {
+    System.err.println(anything);
+    System.err.flush();
+  }
+
+  @Override
+  public void println(Object anything) {
+    System.out.println(anything);
+  }
+
+  @Override
+  public void println() {
+    System.out.println();
+  }
+
+  @Override
+  public void print(Object anything) {
+    System.out.print(anything);
+    System.out.flush();
+  }
+
   public void runRepl(@NotNull InputStream inputStream) {
     var scanner = new Scanner(inputStream);
     print(prompt());
