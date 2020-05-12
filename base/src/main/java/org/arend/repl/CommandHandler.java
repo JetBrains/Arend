@@ -37,7 +37,7 @@ public final class CommandHandler implements ReplHandler {
     int indexOfSpace = line.indexOf(' ');
     var command = indexOfSpace > 0 ? line.substring(1, indexOfSpace) : line.substring(1);
     var arguments = indexOfSpace > 0 ? line.substring(indexOfSpace + 1) : "";
-    return new Pair<>(command, arguments);
+    return new Pair<>(command, arguments.trim());
   }
 
   @Override
@@ -49,7 +49,7 @@ public final class CommandHandler implements ReplHandler {
     else {
       var suitableCommands = determineEntries(command.proj1).collect(Collectors.toList());
       if (suitableCommands.isEmpty())
-        api.eprintln("[ERROR] Unrecognized command: " + command + ".");
+        api.eprintln("[ERROR] Unrecognized command: " + command.proj1 + ".");
       else if (suitableCommands.size() >= 2)
         api.eprintln("[ERROR] Cannot distinguish among commands :"
           + suitableCommands.stream().map(Map.Entry::getKey).collect(Collectors.joining(", :"))
@@ -80,7 +80,6 @@ public final class CommandHandler implements ReplHandler {
       api.println("There are " + statistics.getCount() + " commands available.");
       for (var replCommand : commandMap.entrySet()) {
         var description = replCommand.getValue().description();
-        if (description == null) continue;
         String command = replCommand.getKey();
         api.println(":" + command + " ".repeat(maxWidth - command.length()) + description);
       }

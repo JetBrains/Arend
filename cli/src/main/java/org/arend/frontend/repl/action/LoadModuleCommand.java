@@ -57,7 +57,7 @@ public final class LoadModuleCommand implements CliReplCommand {
     }
 
     @Override
-    public @Nls(capitalization = Nls.Capitalization.Sentence) @Nullable String description() {
+    public @Nls(capitalization = Nls.Capitalization.Sentence) @NotNull String description() {
       return lastModulePath == null
           ? "Reload the module loaded last time"
           : "Reload module `" + lastModulePath + "`";
