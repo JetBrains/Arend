@@ -33,7 +33,7 @@ public final class NormalizeCommand implements ReplCommand {
   public void invoke(@NotNull String line, @NotNull Repl api, @NotNull Supplier<@NotNull String> scanner) {
     switch (line.toUpperCase()) {
       default:
-        api.eprintln("[ERROR] Unrecognized normalization level `" + line + "`, see `:help normalize`");
+        api.eprintln("[ERROR] Unrecognized normalization level `" + line + "`, see `:? normalize`");
         break;
       case "NULL":
       case "":

@@ -106,6 +106,7 @@ public class JLineCliRepl extends CommonCliRepl {
         .builder()
         .encoding("UTF-8")
         .jansi(true)
+        .jna(false)
         .build();
     } catch (IOException e) {
       System.err.println("[FATAL] Failed to create terminal: " + e.getLocalizedMessage());
