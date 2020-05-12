@@ -1,6 +1,7 @@
 package org.arend.repl;
 
 import org.arend.core.expr.Expression;
+import org.arend.core.expr.visitor.ScopeDefinitionRenamer;
 import org.arend.error.ListErrorReporter;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.GeneralError;
@@ -59,7 +60,12 @@ public abstract class Repl {
   protected @NotNull Scope myScope = myMergeScope;
   protected final @NotNull TypecheckingOrderingListener myTypechecking;
   protected final @NotNull TypecheckerState myTypecheckerState;
-  protected final @NotNull PrettyPrinterConfig myPpConfig = PrettyPrinterConfig.DEFAULT;
+  protected final @NotNull PrettyPrinterConfig myPpConfig = new PrettyPrinterConfig() {
+    @Override
+    public @NotNull ScopeDefinitionRenamer getDefinitionRenamer() {
+      return new ScopeDefinitionRenamer(myScope);
+    }
+  };
   protected final @NotNull ListErrorReporter myErrorReporter;
   protected final @NotNull LibraryManager myLibraryManager;
 
