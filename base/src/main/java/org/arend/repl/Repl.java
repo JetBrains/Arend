@@ -117,6 +117,7 @@ public abstract class Repl {
   public final void initialize() {
     loadLibraries();
     loadCommands();
+    checkErrors();
   }
 
   /**

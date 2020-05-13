@@ -25,12 +25,14 @@ import org.arend.repl.action.ReplCommand;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.FileGroup;
 import org.arend.typechecking.SimpleTypecheckerState;
+import org.arend.util.FileUtils;
 import org.arend.util.Range;
 import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -83,7 +85,9 @@ public abstract class CommonCliRepl extends Repl {
         typecheckerState
     );
     myLibraryResolver = libraryResolver;
-    myReplLibrary = new FileSourceLibrary("Repl", pwd, null, null, null, modules, true, new ArrayList<>(), Range.unbound(), typecheckerState);
+    myReplLibrary = Files.exists(pwd.resolve(FileUtils.LIBRARY_CONFIG_FILE))
+        ? libraryResolver.registerLibrary(pwd)
+        : new FileSourceLibrary("Repl", pwd, null, null, null, modules, true, new ArrayList<>(), Range.unbound(), typecheckerState);
     myModules = modules;
   }
   //endregion
