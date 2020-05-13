@@ -23,13 +23,9 @@ public final class LoadLibraryCommand implements CliReplCommand, DirectoryArgume
       api.checkErrors();
       return;
     }
-    api.println("[INFO] Starts loading library " + library.getName() + "...");
-    long startTime = System.currentTimeMillis();
     if (!api.loadLibrary(library)) {
       api.checkErrors();
       api.eprintln("[ERROR] No library loaded.");
-    } else {
-      api.println("[INFO] Library " + library.getName() + " loaded in " + (System.currentTimeMillis() - startTime) + "ms.");
     }
   }
 
