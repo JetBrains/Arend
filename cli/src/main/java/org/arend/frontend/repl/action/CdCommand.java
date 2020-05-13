@@ -7,6 +7,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.function.Supplier;
 
 public final class CdCommand implements CliReplCommand, DirectoryArgumentCommand {
@@ -17,7 +18,11 @@ public final class CdCommand implements CliReplCommand, DirectoryArgumentCommand
 
   @Override
   public void invoke(@NotNull String line, @NotNull CommonCliRepl api, @NotNull Supplier<@NotNull String> scanner) {
-    Path newPath = api.pwd.resolve(line.trim()).normalize();
+    if (line.isBlank()) {
+      api.pwd = Paths.get(System.getProperty("user.home")).normalize();
+      return;
+    }
+    Path newPath = api.pwd.resolve(line).normalize();
     if (Files.notExists(newPath)) {
       api.eprintln("[ERROR] No such file or directory: `" + newPath + "`.");
       return;
