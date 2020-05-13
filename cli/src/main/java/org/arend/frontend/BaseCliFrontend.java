@@ -69,7 +69,7 @@ public abstract class BaseCliFrontend {
   }
 
   private class MyLibraryManager extends LibraryManager {
-    private final Stack<Long> times = new Stack<>();
+    private final Deque<Long> times = new ArrayDeque<>();
 
     MyLibraryManager() {
       super(myLibraryResolver, new InstanceProviderSet(), myErrorReporter, mySystemErrErrorReporter, DefinitionRequester.INSTANCE);
