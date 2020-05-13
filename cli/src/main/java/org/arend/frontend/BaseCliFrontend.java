@@ -9,11 +9,11 @@ import org.arend.ext.module.ModulePath;
 import org.arend.ext.prettyprinting.PrettyPrinterFlag;
 import org.arend.extImpl.DefinitionRequester;
 import org.arend.frontend.library.FileSourceLibrary;
+import org.arend.frontend.library.TimedLibraryManager;
 import org.arend.frontend.repl.PlainCliRepl;
 import org.arend.frontend.repl.jline.JLineCliRepl;
 import org.arend.library.*;
 import org.arend.library.error.LibraryError;
-import org.arend.library.resolver.LibraryResolver;
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.reference.ModuleReferable;
 import org.arend.naming.reference.TCReferable;
@@ -32,7 +32,6 @@ import org.arend.typechecking.instance.provider.InstanceProviderSet;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.arend.util.FileUtils;
 import org.arend.util.Range;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.nio.file.FileSystems;
@@ -40,6 +39,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+
+import static org.arend.frontend.library.TimedLibraryManager.timeToString;
 
 public abstract class BaseCliFrontend {
   // Typechecking
@@ -56,41 +57,13 @@ public abstract class BaseCliFrontend {
 
   // Libraries
   private final FileLibraryResolver myLibraryResolver = new FileLibraryResolver(new ArrayList<>(), myTypecheckerState, mySystemErrErrorReporter);
-  private final LibraryManager myLibraryManager = new MyLibraryManager(myLibraryResolver, new InstanceProviderSet(), myErrorReporter, mySystemErrErrorReporter, DefinitionRequester.INSTANCE);
-
-  private static String timeToString(long time) {
-    if (time < 10000) {
-      return time + "ms";
-    }
-    if (time < 60000) {
-      return time / 1000 + ("." + (time / 100 % 10)) + "s";
-    }
-
-    long seconds = time / 1000;
-    return (seconds / 60) + "m" + (seconds % 60) + "s";
-  }
-
-  private class MyLibraryManager extends LibraryManager {
-    private final Deque<Long> times = new ArrayDeque<>();
-
-    public MyLibraryManager(LibraryResolver libraryResolver, @Nullable InstanceProviderSet instanceProviderSet, ErrorReporter typecheckingErrorReporter, ErrorReporter libraryErrorReporter, DefinitionRequester definitionRequester) {
-      super(libraryResolver, instanceProviderSet, typecheckingErrorReporter, libraryErrorReporter, definitionRequester);
-    }
-
-    @Override
-    protected void beforeLibraryLoading(Library library) {
-      System.out.println("[INFO] Loading library " + library.getName());
-      times.push(System.currentTimeMillis());
-    }
-
+  private final LibraryManager myLibraryManager = new TimedLibraryManager(myLibraryResolver, new InstanceProviderSet(), myErrorReporter, mySystemErrErrorReporter, DefinitionRequester.INSTANCE) {
     @Override
     protected void afterLibraryLoading(Library library, boolean successful) {
-      long time = System.currentTimeMillis() - times.pop();
+      super.afterLibraryLoading(library, successful);
       flushErrors();
-      System.err.flush();
-      System.out.println("[INFO] " + (successful ? "Loaded " : "Failed loading ") + "library " + library.getName() + (successful ? " (" + timeToString(time) + ")" : ""));
     }
-  }
+  };
 
   public LibraryManager getLibraryManager() {
     return myLibraryManager;
