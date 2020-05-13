@@ -9,11 +9,10 @@ import org.arend.typechecking.instance.provider.InstanceProviderSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
+import java.util.Stack;
 
 public class TimedLibraryManager extends LibraryManager {
-  private final Deque<Long> times = new ArrayDeque<>();
+  private final Stack<Long> times = new Stack<>();
 
   public TimedLibraryManager(LibraryResolver libraryResolver, @Nullable InstanceProviderSet instanceProviderSet, ErrorReporter typecheckingErrorReporter, ErrorReporter libraryErrorReporter, DefinitionRequester definitionRequester) {
     super(libraryResolver, instanceProviderSet, typecheckingErrorReporter, libraryErrorReporter, definitionRequester);
