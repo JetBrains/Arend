@@ -5,6 +5,8 @@ import org.arend.repl.action.DirectoryArgumentCommand;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.function.Supplier;
 
 public final class CdCommand implements CliReplCommand, DirectoryArgumentCommand {
@@ -15,6 +17,15 @@ public final class CdCommand implements CliReplCommand, DirectoryArgumentCommand
 
   @Override
   public void invoke(@NotNull String line, @NotNull CommonCliRepl api, @NotNull Supplier<@NotNull String> scanner) {
-    api.pwd = api.pwd.resolve(line.trim()).normalize();
+    Path newPath = api.pwd.resolve(line.trim()).normalize();
+    if (Files.notExists(newPath)) {
+      api.eprintln("[ERROR] No such file or directory: `" + newPath + "`.");
+      return;
+    }
+    if (Files.isDirectory(newPath))
+      api.pwd = newPath;
+    else {
+      api.eprintln("[ERROR] Directory expected, found file: `" + newPath + "`.");
+    }
   }
 }
