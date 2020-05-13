@@ -5,10 +5,12 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.arend.error.ListErrorReporter;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.module.ModulePath;
+import org.arend.extImpl.DefinitionRequester;
 import org.arend.frontend.ConcreteReferableProvider;
 import org.arend.frontend.FileLibraryResolver;
 import org.arend.frontend.PositionComparator;
 import org.arend.frontend.library.FileSourceLibrary;
+import org.arend.frontend.library.TimedLibraryManager;
 import org.arend.frontend.parser.ArendLexer;
 import org.arend.frontend.parser.ArendParser;
 import org.arend.frontend.parser.BuildVisitor;
@@ -25,6 +27,7 @@ import org.arend.repl.action.ReplCommand;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.FileGroup;
 import org.arend.typechecking.SimpleTypecheckerState;
+import org.arend.typechecking.instance.provider.InstanceProviderSet;
 import org.arend.util.FileUtils;
 import org.arend.util.Range;
 import org.intellij.lang.annotations.Language;
@@ -48,7 +51,7 @@ public abstract class CommonCliRepl extends Repl {
   /** See https://gist.github.com/ice1000/a915b6fcbc6f90b0c3c65db44dab29cc */
   @Language("TEXT")
   public static final @NotNull String ASCII_BANNER =
-      "    ___                        __\n" +
+      "    ___                       __\n" +
       "   /   |  _______  ____  ____/ /\n" +
       "  / /| | / __/ _ \\/ __ \\/ __  /  " + APP_NAME + " " + GeneratedVersion.VERSION_STRING + "\n" +
       " / ___ |/ / /  __/ / / / /_/ /   https://arend-lang.github.io\n" +
@@ -70,19 +73,27 @@ public abstract class CommonCliRepl extends Repl {
       @NotNull SimpleTypecheckerState typecheckerState,
       @NotNull Set<ModulePath> modules,
       @NotNull ListErrorReporter errorReporter) {
-    this(typecheckerState, modules, new FileLibraryResolver(new ArrayList<>(), typecheckerState, errorReporter), errorReporter);
+    this(
+        typecheckerState,
+        modules,
+        new FileLibraryResolver(new ArrayList<>(), typecheckerState, errorReporter),
+        new InstanceProviderSet(),
+        errorReporter
+    );
   }
 
   private CommonCliRepl(
       @NotNull SimpleTypecheckerState typecheckerState,
       @NotNull Set<ModulePath> modules,
       @NotNull FileLibraryResolver libraryResolver,
+      @NotNull InstanceProviderSet instanceProviders,
       @NotNull ListErrorReporter errorReporter) {
     super(
         errorReporter,
-        libraryResolver,
+        libraryManager(libraryResolver, instanceProviders, errorReporter),
         ConcreteReferableProvider.INSTANCE,
         PositionComparator.INSTANCE,
+        instanceProviders,
         typecheckerState
     );
     myLibraryResolver = libraryResolver;
@@ -92,6 +103,11 @@ public abstract class CommonCliRepl extends Repl {
     myModules = modules;
   }
   //endregion
+
+  @NotNull
+  private static TimedLibraryManager libraryManager(@NotNull FileLibraryResolver libraryResolver, @NotNull InstanceProviderSet instanceProviders, @NotNull ListErrorReporter errorReporter) {
+    return new TimedLibraryManager(libraryResolver, instanceProviders, errorReporter, errorReporter, DefinitionRequester.INSTANCE);
+  }
 
   private @NotNull BuildVisitor buildVisitor() {
     return new BuildVisitor(Repl.replModulePath, myErrorReporter);

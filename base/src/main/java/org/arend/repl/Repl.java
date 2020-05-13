@@ -74,23 +74,6 @@ public abstract class Repl {
   protected final @NotNull ListErrorReporter myErrorReporter;
   protected final @NotNull LibraryManager myLibraryManager;
 
-  public Repl(@NotNull ListErrorReporter listErrorReporter,
-              @NotNull LibraryResolver libraryResolver,
-              @NotNull ConcreteProvider concreteProvider,
-              @NotNull PartialComparator<TCReferable> comparator,
-              @NotNull TypecheckerState typecheckerState) {
-    this(listErrorReporter, libraryResolver, concreteProvider, comparator, new InstanceProviderSet(), typecheckerState);
-  }
-
-  public Repl(@NotNull ListErrorReporter listErrorReporter,
-              @NotNull LibraryResolver libraryResolver,
-              @NotNull ConcreteProvider concreteProvider,
-              @NotNull PartialComparator<TCReferable> comparator,
-              @NotNull InstanceProviderSet instanceProviders,
-              @NotNull TypecheckerState typecheckerState) {
-    this(listErrorReporter, libraryManager(listErrorReporter, libraryResolver, instanceProviders), concreteProvider, comparator, instanceProviders, typecheckerState);
-  }
-
   protected static @NotNull LibraryManager libraryManager(@NotNull ListErrorReporter listErrorReporter, @NotNull LibraryResolver libraryResolver, @NotNull InstanceProviderSet instanceProviders) {
     return new LibraryManager(libraryResolver, instanceProviders, listErrorReporter, listErrorReporter, DefinitionRequester.INSTANCE);
   }
@@ -137,6 +120,7 @@ public abstract class Repl {
         } catch (QuitReplException e) {
           quit = true;
         }
+        checkErrors();
       }
     return quit;
   }
