@@ -13,6 +13,7 @@ import org.arend.frontend.repl.PlainCliRepl;
 import org.arend.frontend.repl.jline.JLineCliRepl;
 import org.arend.library.*;
 import org.arend.library.error.LibraryError;
+import org.arend.library.resolver.LibraryResolver;
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.reference.ModuleReferable;
 import org.arend.naming.reference.TCReferable;
@@ -31,6 +32,7 @@ import org.arend.typechecking.instance.provider.InstanceProviderSet;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.arend.util.FileUtils;
 import org.arend.util.Range;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.nio.file.FileSystems;
@@ -54,7 +56,7 @@ public abstract class BaseCliFrontend {
 
   // Libraries
   private final FileLibraryResolver myLibraryResolver = new FileLibraryResolver(new ArrayList<>(), myTypecheckerState, mySystemErrErrorReporter);
-  private final LibraryManager myLibraryManager = new MyLibraryManager();
+  private final LibraryManager myLibraryManager = new MyLibraryManager(myLibraryResolver, new InstanceProviderSet(), myErrorReporter, mySystemErrErrorReporter, DefinitionRequester.INSTANCE);
 
   private static String timeToString(long time) {
     if (time < 10000) {
@@ -71,8 +73,8 @@ public abstract class BaseCliFrontend {
   private class MyLibraryManager extends LibraryManager {
     private final Deque<Long> times = new ArrayDeque<>();
 
-    MyLibraryManager() {
-      super(myLibraryResolver, new InstanceProviderSet(), myErrorReporter, mySystemErrErrorReporter, DefinitionRequester.INSTANCE);
+    public MyLibraryManager(LibraryResolver libraryResolver, @Nullable InstanceProviderSet instanceProviderSet, ErrorReporter typecheckingErrorReporter, ErrorReporter libraryErrorReporter, DefinitionRequester definitionRequester) {
+      super(libraryResolver, instanceProviderSet, typecheckingErrorReporter, libraryErrorReporter, definitionRequester);
     }
 
     @Override
@@ -167,22 +169,6 @@ public abstract class BaseCliFrontend {
         return null;
       }
 
-      if (cmdLine.hasOption("i")) {
-        var opt = cmdLine.getOptionValue("i", "jline");
-        switch (opt) {
-          default:
-            System.err.println("Unrecognized repl type: " + opt);
-            break;
-          case "plain":
-            PlainCliRepl.main(args);
-            break;
-          case "jline":
-            JLineCliRepl.main(args);
-            break;
-        }
-        return null;
-      }
-
       return cmdLine;
     } catch (ParseException e) {
       myExitWithError = true;
@@ -199,28 +185,48 @@ public abstract class BaseCliFrontend {
       return null;
     }
 
+    var replKind = cmdLine.getOptionValue("i", "jline");
+    var libDirStrings = cmdLine.hasOption("L")
+        ? cmdLine.getOptionValues("L")
+        : new String[0];
+
+    // Get library directories
+    var libDirs = new ArrayList<Path>(libDirStrings.length);
+    for (String libDirString : libDirStrings) {
+      var libDir = Paths.get(libDirString);
+      if (Files.isDirectory(libDir)) {
+        libDirs.add(libDir);
+      } else {
+        myExitWithError = true;
+        System.err.println("[ERROR] " + libDir + " is not a directory");
+      }
+    }
+
+    if (replKind != null) {
+      switch (replKind.toLowerCase()) {
+        default:
+          System.err.println("[ERROR] Unrecognized repl type: " + replKind);
+          break;
+        case "plain":
+          PlainCliRepl.main(libDirs);
+          break;
+        case "jline":
+          JLineCliRepl.main(libDirs);
+          break;
+      }
+      return null;
+    }
+
     if (!myLibraryManager.loadLibrary(new PreludeResourceLibrary(myTypecheckerState), null)) {
       return null;
     }
 
-    // Get library directories
-    String[] libDirStrings = cmdLine.getOptionValues("L");
-    if (libDirStrings != null) {
-      for (String libDirString : libDirStrings) {
-        Path libDir = Paths.get(libDirString);
-        if (Files.isDirectory(libDir)) {
-          myLibraryResolver.addLibraryDirectory(libDir);
-        } else {
-          myExitWithError = true;
-          System.err.println("[ERROR] " + libDir + " is not a directory");
-        }
-      }
-    }
+    myLibraryResolver.addLibraryDirectories(libDirs);
 
     // Get library dependencies
     String[] libStrings = cmdLine.getOptionValues("l");
     List<LibraryDependency> libraryDependencies = new ArrayList<>();
-    if (libDirStrings != null && libStrings != null) {
+    if (libStrings != null) {
       for (String libString : libStrings) {
         if (FileUtils.isLibraryName(libString)) {
           libraryDependencies.add(new LibraryDependency(libString));

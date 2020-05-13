@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
+import java.util.Collections;
 
 public class JLineCliRepl extends CommonCliRepl {
   private final Terminal myTerminal;
@@ -100,6 +102,10 @@ public class JLineCliRepl extends CommonCliRepl {
   }
 
   public static void main(String... args) {
+    main(Collections.emptyList());
+  }
+
+  public static void main(@NotNull Collection<? extends Path> libDirs) {
     Terminal terminal;
     try {
       terminal = TerminalBuilder
@@ -116,6 +122,7 @@ public class JLineCliRepl extends CommonCliRepl {
     var repl = new JLineCliRepl(terminal);
     repl.println(ASCII_BANNER);
     repl.println();
+    repl.addLibraryDirectories(libDirs);
     repl.initialize();
     repl.runRepl();
   }

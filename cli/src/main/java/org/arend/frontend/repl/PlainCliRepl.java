@@ -3,6 +3,10 @@ package org.arend.frontend.repl;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.InputStream;
+import java.nio.file.Path;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Scanner;
 
 public class PlainCliRepl extends CommonCliRepl {
@@ -48,10 +52,15 @@ public class PlainCliRepl extends CommonCliRepl {
   }
 
   public static void main(String... args) {
+    main(Collections.emptyList());
+  }
+
+  public static void main(@NotNull Collection<? extends Path> libDirs) {
     var repl = new PlainCliRepl();
     repl.println(ASCII_BANNER);
     repl.println();
     repl.println("Note: you're using the plain REPL.");
+    repl.addLibraryDirectories(libDirs);
     repl.initialize();
     repl.runRepl(System.in);
   }

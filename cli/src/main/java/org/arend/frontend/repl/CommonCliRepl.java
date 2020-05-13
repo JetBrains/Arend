@@ -36,6 +36,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Supplier;
@@ -137,8 +138,12 @@ public abstract class CommonCliRepl extends Repl {
     registerAction("cd", new CdCommand());
   }
 
-  public  @Nullable Library createLibrary(@NotNull String path) {
+  public @Nullable Library createLibrary(@NotNull String path) {
     return myLibraryResolver.registerLibrary(pwd.resolve(path).toAbsolutePath());
+  }
+
+  public final void addLibraryDirectories(@NotNull Collection<? extends Path> libDirs) {
+    myLibraryResolver.addLibraryDirectories(libDirs);
   }
 
   @Override
