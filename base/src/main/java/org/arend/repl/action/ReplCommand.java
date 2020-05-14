@@ -16,8 +16,10 @@ public interface ReplCommand {
 
   /**
    * Displayed in <code>:help [name of command]</code>.
+   * @param api
+   * @return
    */
-  default @Nls(capitalization = Nls.Capitalization.Sentence) @NotNull String help() {
+  default @Nls @NotNull String help(@NotNull Repl api) {
     return description() + ".";
   }
 

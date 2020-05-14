@@ -68,7 +68,13 @@ public final class CommandHandler implements ReplHandler {
 
     @Override
     public @Nls(capitalization = Nls.Capitalization.Sentence) @NotNull String description() {
-      return "Show this message";
+      return "Show this message (`:? [command name]` to describe a command)";
+    }
+
+    @Override
+    public @Nls @NotNull String help(@NotNull Repl api) {
+      return "Command to show the help message.\n" +
+        "Use `:? [command name]` to describe a command (like `:? ?` to show this message).";
     }
 
     @Override
@@ -82,7 +88,7 @@ public final class CommandHandler implements ReplHandler {
         api.eprintln("[ERROR] Cannot find command `:" + line + "`.");
         return;
       }
-      api.println(replCommand.help());
+      api.println(replCommand.help(api));
     }
 
     private void noArg(@NotNull Repl api) {

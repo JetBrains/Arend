@@ -41,6 +41,7 @@ import org.arend.typechecking.provider.ConcreteProvider;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.arend.typechecking.visitor.SyntacticDesugarVisitor;
+import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -179,6 +180,7 @@ public abstract class Repl {
     registerAction("quit", QuitCommand.INSTANCE);
     registerAction("type", ShowTypeCommand.INSTANCE);
     registerAction("normalize", NormalizeCommand.INSTANCE);
+    registerAction("libraries", ShowLoadedLibrariesCommand.INSTANCE);
     registerAction("?", CommandHandler.HELP_COMMAND_INSTANCE);
   }
 
@@ -253,6 +255,10 @@ public abstract class Repl {
     return builder;
   }
 
+  public @Nullable NormalizationMode getNormalizationMode() {
+    return myMode;
+  }
+
   public void setNormalizationMode(@Nullable NormalizationMode normalizationMode) {
     this.myMode = normalizationMode;
   }
@@ -301,5 +307,31 @@ public abstract class Repl {
     boolean hasErrors = !errorList.isEmpty();
     errorList.clear();
     return hasErrors;
+  }
+
+  private static class ShowLoadedLibrariesCommand implements ReplCommand {
+    private static final ShowLoadedLibrariesCommand INSTANCE = new ShowLoadedLibrariesCommand();
+
+    private ShowLoadedLibrariesCommand() {
+    }
+
+    @Override
+    public @Nls(capitalization = Nls.Capitalization.Sentence) @NotNull String description() {
+      return "List registered libraries in the REPL";
+    }
+
+    @Override
+    public void invoke(@NotNull String line, @NotNull Repl api, @NotNull Supplier<@NotNull String> scanner) {
+      for (var registeredLibrary : api.myLibraryManager.getRegisteredLibraries()) {
+        boolean external = registeredLibrary.isExternal();
+        boolean notLoaded = !registeredLibrary.isLoaded();
+        var info = external && notLoaded
+          ? " (external, not loaded)"
+          : external ? " (external)"
+          : notLoaded ? " (not loaded)"
+          : "";
+        api.println(registeredLibrary.getName() + info);
+      }
+    }
   }
 }

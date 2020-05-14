@@ -19,8 +19,8 @@ public final class NormalizeCommand implements ReplCommand {
   }
 
   @Override
-  public @Nls(capitalization = Nls.Capitalization.Sentence) @NotNull String help() {
-    return "Modify the normalization level of printed expressions.\n" +
+  public @Nls @NotNull String help(@NotNull Repl api) {
+    return "Modify the normalization level of printed expressions (currently " + api.getNormalizationMode() + ").\n" +
         "Available options (case insensitive) are:\n" +
         " NULL (do not normalize)\n" +
         " WHNF (Weak Head Normal Form)\n" +
