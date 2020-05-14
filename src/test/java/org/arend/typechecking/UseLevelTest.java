@@ -147,15 +147,6 @@ public class UseLevelTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void useFunctionTest() {
-    typeCheckModule(
-      "\\data Empty : \\Set\n" +
-      "\\func empty => Empty\n" +
-      "  \\where \\use \\level isProp (x y : empty) : x = y\n" +
-      "\\lemma lem (x : empty) : empty => x");
-  }
-
-  @Test
   public void useRecordTest() {
     typeCheckModule(
       "\\record R\n" +
@@ -413,5 +404,26 @@ public class UseLevelTest extends TypeCheckingTestCase {
       "  \\where \\use \\level levelProp (d : D) (r1 r2 : R d) : r1 = r2\n" +
       "    => path (\\lam i => \\new R { | tField => d.tProp r1.tField r2.tField @ i })\n" +
       "\\func f (d : D) : \\Prop => R d");
+  }
+
+  @Test
+  public void useFunctionTest() {
+    typeCheckModule(
+      "\\data Empty\n" +
+      "\\func empty (e : Empty) : \\Set\n" +
+      "  \\where \\use \\level isProp (e : Empty) (x y : empty e) : x = y\n" +
+      "\\lemma lem (e : Empty) : empty e");
+    assertFalse(getDefinition("empty").getParametersLevels().isEmpty());
+  }
+
+  @Test
+  public void useFunctionDefTest() {
+    typeCheckModule(
+      "\\data Empty\n" +
+      "\\func empty (e : Empty) : \\Set\n" +
+      "  \\where \\use \\level isProp (e : Empty) (x y : empty e) : x = y\n" +
+      "\\func empty2 (e : Empty) => empty e\n" +
+      "\\lemma lem (e : Empty) : empty2 e");
+    assertFalse(getDefinition("empty2").getParametersLevels().isEmpty());
   }
 }

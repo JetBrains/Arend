@@ -921,6 +921,13 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     if (newDef) {
+      if (typedDef.getBody() instanceof DefCallExpression) {
+        Integer level = ((DefCallExpression) typedDef.getBody()).getUseLevel();
+        if (level != null) {
+          typedDef.addParametersLevel(new ParametersLevel(null, level));
+        }
+      }
+
       if (expectedType.isError() && typedDef.getResultType() != null) {
         typedDef.getResultType().accept(goodThisParametersVisitor, null);
       }

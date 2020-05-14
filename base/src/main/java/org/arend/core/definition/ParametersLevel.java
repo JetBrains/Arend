@@ -19,6 +19,10 @@ public class ParametersLevel {
     this.level = level;
   }
 
+  public boolean isAlwaysApplicable() {
+    return parameters == null;
+  }
+
   public boolean checkExpressionsTypes(List<? extends Expression> exprList) {
     if (parameters == null) {
       return true;
