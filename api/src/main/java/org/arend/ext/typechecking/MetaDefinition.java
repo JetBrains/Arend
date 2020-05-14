@@ -35,13 +35,6 @@ public interface MetaDefinition {
   }
 
   /**
-   * @return a short description of this meta.
-   */
-  default @Nullable String getShortDescription() {
-    return null;
-  }
-
-  /**
    * Checks if this meta is applicable can be invoked on the given arguments.
    */
   default boolean checkArguments(@NotNull List<? extends ConcreteArgument> arguments) {
