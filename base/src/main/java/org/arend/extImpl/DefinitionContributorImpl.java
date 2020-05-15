@@ -13,6 +13,7 @@ import org.arend.naming.reference.EmptyGlobalReferable;
 import org.arend.naming.reference.MetaReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.scope.SimpleScope;
+import org.arend.util.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -32,6 +33,16 @@ public class DefinitionContributorImpl extends Disableable implements Definition
   @Override
   public void declare(@NotNull ModulePath module, @NotNull LongName longName, @NotNull String description, @NotNull Precedence precedence, @Nullable MetaDefinition meta) {
     checkEnabled();
+
+    if (!FileUtils.isCorrectModulePath(module)) {
+      myErrorReporter.report(FileUtils.illegalModuleName(module.toString()));
+      return;
+    }
+
+    if (!FileUtils.isCorrectDefinitionName(longName)) {
+      myErrorReporter.report(FileUtils.illegalDefinitionName(longName.toString()));
+      return;
+    }
 
     SimpleScope scope = (SimpleScope) myModuleScopeProvider.forModule(module);
     if (scope == null) {
