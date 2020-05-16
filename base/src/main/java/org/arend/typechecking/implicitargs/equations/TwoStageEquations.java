@@ -148,8 +148,9 @@ public class TwoStageEquations implements Equations {
       if (cmp == CMP.EQ) {
         InferenceReferenceExpression infRef = cTypeExpr instanceof FieldCallExpression ? ((FieldCallExpression) cTypeExpr).getArgument().cast(InferenceReferenceExpression.class) : null;
         if (infRef == null || !(infRef.getVariable() instanceof TypeClassInferenceVariable)) {
-          solve(cInf, cType, false);
-          return true;
+          if (solve(cInf, cType, false, cInf instanceof TypeClassInferenceVariable) != SolveResult.NOT_SOLVED) {
+            return true;
+          }
         }
       }
 
@@ -552,9 +553,12 @@ public class TwoStageEquations implements Equations {
       }
     }
 
-    for (int i = 0; i < myEquations.size(); i++) {
-      Equation equation = myEquations.get(i);
-      myEquations.set(i, new Equation(equation.expr1.subst(result), equation.expr2.subst(result), equation.type == null ? null : equation.type.subst(result), equation.cmp, equation.sourceNode));
+    for (Equation equation : myEquations) {
+      equation.expr1 = equation.expr1.subst(result);
+      equation.expr2 = equation.expr2.subst(result);
+      if (equation.type != null) {
+        equation.type = equation.type.subst(result);
+      }
     }
 
     myPLevelEquations.clear();
@@ -563,13 +567,6 @@ public class TwoStageEquations implements Equations {
     myBasedHLevelEquations.clear();
     myBoundVariables.clear();
     myLowerBounds.clear();
-  }
-
-  private void normalizeEquations() {
-    for (int i = 0; i < myEquations.size(); i++) {
-      Equation equation = myEquations.get(i);
-      myEquations.set(i, new Equation(equation.expr1.normalize(NormalizationMode.WHNF), equation.expr2.normalize(NormalizationMode.WHNF), equation.type, equation.cmp, equation.sourceNode));
-    }
   }
 
   @Override
@@ -581,7 +578,17 @@ public class TwoStageEquations implements Equations {
       }
     }
 
-    normalizeEquations();
+    for (Equation equation : myEquations) {
+      equation.expr1 = equation.expr1.normalize(NormalizationMode.WHNF);
+      equation.expr2 = equation.expr2.normalize(NormalizationMode.WHNF);
+    }
+
+    while (!myEquations.isEmpty()) {
+      if (!solveClassCallsEq()) {
+        break;
+      }
+    }
+
     while (!myEquations.isEmpty()) {
       if (!solveClassCalls(CMP.LE) && !solveClassCalls(CMP.GE)) {
         break;
@@ -641,6 +648,33 @@ public class TwoStageEquations implements Equations {
   @Override
   public boolean supportsExpressions() {
     return true;
+  }
+
+  private boolean solveClassCallsEq() {
+    List<Pair<InferenceVariable, Expression>> solved = null;
+    for (Iterator<Equation> iterator = myEquations.iterator(); iterator.hasNext(); ) {
+      Equation equation = iterator.next();
+      if (equation.cmp == CMP.EQ) {
+        InferenceVariable var1 = equation.expr1.getInferenceVariable();
+        InferenceVariable var2 = equation.expr2.getInferenceVariable();
+        if (var1 != null && var2 == null || var2 != null && var1 == null) {
+          iterator.remove();
+          if (solved == null) {
+            solved = new ArrayList<>();
+          }
+          solved.add(new Pair<>(var1 != null ? var1 : var2, var1 != null ? equation.expr2 : equation.expr1));
+        }
+      }
+    }
+
+    if (solved != null) {
+      for (Pair<InferenceVariable, Expression> pair : solved) {
+        solve(pair.proj1, pair.proj2, false);
+      }
+      return true;
+    } else {
+      return false;
+    }
   }
 
   // If cmp == LE, then solve lower bounds; if cmp == GE, solve upper bounds.
@@ -918,8 +952,12 @@ public class TwoStageEquations implements Equations {
   private enum SolveResult { SOLVED, NOT_SOLVED, ERROR }
 
   private SolveResult solve(InferenceVariable var, Expression expr, boolean isLowerBound) {
+    return solve(var, expr, isLowerBound, false);
+  }
+
+  private SolveResult solve(InferenceVariable var, Expression expr, boolean isLowerBound, boolean trySolve) {
     if (expr.getInferenceVariable() == var) {
-      return SolveResult.NOT_SOLVED;
+      return SolveResult.SOLVED;
     }
     if (myProps.contains(var) && !expr.isInstance(UniverseExpression.class)) {
       LocalError error = var.getErrorInfer(new UniverseExpression(Sort.PROP), expr);
@@ -949,10 +987,14 @@ public class TwoStageEquations implements Equations {
       var.solve(this, OfTypeExpression.make(result, actualType, expectedType));
       return SolveResult.SOLVED;
     } else {
-      LocalError error = var.getErrorMismatch(expectedType, actualType, expr);
-      myVisitor.getErrorReporter().report(error);
-      var.solve(this, new ErrorExpression(actualType, error));
-      return SolveResult.ERROR;
+      if (trySolve) {
+        return SolveResult.NOT_SOLVED;
+      } else {
+        LocalError error = var.getErrorMismatch(expectedType, actualType, expr);
+        myVisitor.getErrorReporter().report(error);
+        var.solve(this, new ErrorExpression(result, error));
+        return SolveResult.ERROR;
+      }
     }
   }
 
