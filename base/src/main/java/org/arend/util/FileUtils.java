@@ -2,6 +2,7 @@ package org.arend.util;
 
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
+import org.arend.ext.module.LongName;
 import org.arend.ext.module.ModulePath;
 import org.arend.library.error.LibraryIOError;
 import org.arend.module.error.ExceptionError;
@@ -12,6 +13,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.regex.Pattern;
 
 public class FileUtils {
   public static final String EXTENSION = ".ard";
@@ -33,16 +35,44 @@ public class FileUtils {
     return base.resolveSibling(base.getFileName() + FileUtils.SERIALIZED_EXTENSION);
   }
 
-  private static final String MODULE_NAME_START_SYMBOL_REGEX = "a-zA-Z_"; // "~!@#$%^&*\\-+=<>?/|:;\\[\\]a-zA-Z_"
-  private static final String MODULE_NAME_REGEX = "[" + MODULE_NAME_START_SYMBOL_REGEX + "][" + MODULE_NAME_START_SYMBOL_REGEX + "0-9']*";
-  private static final String LIBRARY_NAME_REGEX = "[" + MODULE_NAME_START_SYMBOL_REGEX + "][" + MODULE_NAME_START_SYMBOL_REGEX + "0-9\\-.']*";
+  private static final String MODULE_NAME_START_SYMBOL_REGEX = "a-zA-Z_";
+  private static final Pattern MODULE_NAME_REGEX = Pattern.compile("[" + MODULE_NAME_START_SYMBOL_REGEX + "][" + MODULE_NAME_START_SYMBOL_REGEX + "0-9']*");
+  private static final Pattern LIBRARY_NAME_REGEX = Pattern.compile("[" + MODULE_NAME_START_SYMBOL_REGEX + "][" + MODULE_NAME_START_SYMBOL_REGEX + "0-9\\-.']*");
+  private static final String DEFINITION_NAME_START_SYMBOL_REGEX = "a-zA-Z\\Q~!@#$%^&*-+=<>?/|:[]_\\E";
+  private static final Pattern DEFINITION_NAME_REGEX = Pattern.compile("[" + DEFINITION_NAME_START_SYMBOL_REGEX + "][" + DEFINITION_NAME_START_SYMBOL_REGEX + "0-9']*");
 
   public static boolean isLibraryName(String name) {
-    return name.matches(LIBRARY_NAME_REGEX);
+    return LIBRARY_NAME_REGEX.matcher(name).matches();
   }
 
   public static boolean isModuleName(String name) {
-    return name.matches(MODULE_NAME_REGEX);
+    return MODULE_NAME_REGEX.matcher(name).matches();
+  }
+
+  public static boolean isCorrectModulePath(ModulePath modulePath) {
+    List<String> names = modulePath.toList();
+    if (names.isEmpty()) {
+      return false;
+    }
+    for (String name : names) {
+      if (!isModuleName(name)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  public static boolean isCorrectDefinitionName(LongName longName) {
+    List<String> names = longName.toList();
+    if (names.isEmpty()) {
+      return false;
+    }
+    for (String name : names) {
+      if (!DEFINITION_NAME_REGEX.matcher(name).matches()) {
+        return false;
+      }
+    }
+    return true;
   }
 
   public static ModulePath modulePath(Path path, String ext) {
@@ -59,7 +89,7 @@ public class FileUtils {
     List<String> names = new ArrayList<>();
     for (Path elem : path) {
       String name = elem.toString();
-      if (!name.matches(MODULE_NAME_REGEX)) {
+      if (!MODULE_NAME_REGEX.matcher(name).matches()) {
         return null;
       }
       names.add(name);
@@ -71,7 +101,7 @@ public class FileUtils {
   public static ModulePath modulePath(String path) {
     ModulePath modulePath = ModulePath.fromString(path);
     for (String name : modulePath.toList()) {
-      if (!name.matches(MODULE_NAME_REGEX)) {
+      if (!MODULE_NAME_REGEX.matcher(name).matches()) {
         return null;
       }
     }
@@ -84,6 +114,10 @@ public class FileUtils {
 
   public static GeneralError illegalModuleName(String module) {
     return new GeneralError(GeneralError.Level.ERROR, module + " is an illegal module path");
+  }
+
+  public static GeneralError illegalDefinitionName(String name) {
+    return new GeneralError(GeneralError.Level.ERROR, name + " is an illegal definition name");
   }
 
   public static void getModules(Path path, String ext, Collection<ModulePath> modules, ErrorReporter errorReporter) {

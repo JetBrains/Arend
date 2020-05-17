@@ -632,15 +632,20 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
 
   private boolean checkSubclassImpl(ClassCallExpression classCall1, ClassCallExpression classCall2, boolean correctOrder) {
     CMP origCMP = myCMP;
-    for (Map.Entry<ClassField, Expression> entry : classCall2.getImplementedHere().entrySet()) {
-      if (entry.getKey().isProperty()) {
+    for (ClassField field : classCall2.getDefinition().getFields()) {
+      if (field.isProperty()) {
         continue;
       }
 
-      Expression impl1 = classCall1.getAbsImplementationHere(entry.getKey());
+      Expression impl2 = classCall2.getAbsImplementationHere(field);
+      if (impl2 == null) {
+        continue;
+      }
+
+      Expression impl1 = classCall1.getAbsImplementationHere(field);
       Binding binding = classCall1.getThisBinding();
       if (impl1 == null) {
-        AbsExpression absImpl1 = classCall1.getDefinition().getImplementation(entry.getKey());
+        AbsExpression absImpl1 = classCall1.getDefinition().getImplementation(field);
         if (absImpl1 != null) {
           impl1 = absImpl1.getExpression();
           binding = absImpl1.getBinding();
@@ -649,11 +654,11 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       if (impl1 == null) {
         return false;
       }
-      if (!entry.getKey().isCovariant()) {
+      if (!field.isCovariant()) {
         myCMP = CMP.EQ;
       }
       mySubstitution.put(classCall2.getThisBinding(), binding);
-      boolean ok = compare(correctOrder ? impl1 : entry.getValue(), correctOrder ? entry.getValue() : impl1, entry.getKey().getType(classCall2.getSortArgument()).applyExpression(new ReferenceExpression(binding)));
+      boolean ok = compare(correctOrder ? impl1 : impl2, correctOrder ? impl2 : impl1, field.getType(classCall2.getSortArgument()).applyExpression(new ReferenceExpression(binding)));
       mySubstitution.remove(classCall2.getThisBinding());
       if (!ok) {
         return false;

@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
  * A deferred meta definition is invoked after inference variables are solved.
  */
 public class DeferredMetaDefinition extends BaseMetaDefinition {
-  private final MetaDefinition deferredMeta;
+  public final MetaDefinition deferredMeta;
 
   public DeferredMetaDefinition(MetaDefinition deferredMeta) {
     this.deferredMeta = deferredMeta;

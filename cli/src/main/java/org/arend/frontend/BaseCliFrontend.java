@@ -14,6 +14,7 @@ import org.arend.frontend.repl.PlainCliRepl;
 import org.arend.frontend.repl.jline.JLineCliRepl;
 import org.arend.library.*;
 import org.arend.library.error.LibraryError;
+import org.arend.module.FullModulePath;
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.reference.ModuleReferable;
 import org.arend.naming.reference.TCReferable;
@@ -433,7 +434,12 @@ public abstract class BaseCliFrontend {
     myErrorReporter.getErrorList().clear();
   }
 
-  private void updateSourceResult(ModulePath module, GeneralError.Level result) {
+  private void updateSourceResult(FullModulePath fullModulePath, GeneralError.Level result) {
+    if (fullModulePath == null) {
+      return;
+    }
+
+    ModulePath module = new ModulePath(fullModulePath.toList());
     GeneralError.Level prevResult = myModuleResults.get(module);
     if (prevResult == null || result.ordinal() > prevResult.ordinal()) {
       myModuleResults.put(module, result);
