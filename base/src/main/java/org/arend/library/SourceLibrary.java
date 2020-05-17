@@ -7,7 +7,7 @@ import org.arend.ext.module.ModulePath;
 import org.arend.ext.ui.ArendUI;
 import org.arend.extImpl.ConcreteFactoryImpl;
 import org.arend.extImpl.DefinitionContributorImpl;
-import org.arend.extImpl.ArendDefinitionProviderImpl;
+import org.arend.extImpl.ArendDependencyProviderImpl;
 import org.arend.extImpl.VariableRenamerFactoryImpl;
 import org.arend.library.classLoader.FileClassLoaderDelegate;
 import org.arend.library.classLoader.MultiClassLoader;
@@ -296,7 +296,7 @@ public abstract class SourceLibrary extends BaseLibrary {
         myExtension.setUI(ui);
       }
 
-      ArendDefinitionProviderImpl provider = new ArendDefinitionProviderImpl(typechecking, libraryManager.getAvailableModuleScopeProvider(this), libraryManager.getDefinitionRequester(), this);
+      ArendDependencyProviderImpl provider = new ArendDependencyProviderImpl(typechecking, libraryManager.getAvailableModuleScopeProvider(this), libraryManager.getDefinitionRequester(), this);
       try {
         myExtension.load(provider);
       } finally {

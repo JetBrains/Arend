@@ -1,6 +1,7 @@
 package org.arend.ext;
 
 import org.arend.ext.concrete.ConcreteFactory;
+import org.arend.ext.dependency.ArendDependencyProvider;
 import org.arend.ext.typechecking.GoalSolver;
 import org.arend.ext.ui.ArendUI;
 import org.arend.ext.variable.VariableRenamerFactory;
@@ -56,9 +57,9 @@ public interface ArendExtension {
    * This method is invoked last and can be used to initialize the extension.
    * It should store all the definition that will be used in the extension.
    *
-   * @param definitionProvider  provides the access to definitions defined in the library; can be used only inside this method.
+   * @param dependencyProvider  provides the access to definitions defined in the library; can be used only inside this method.
    */
-  default void load(@NotNull ArendDefinitionProvider definitionProvider) {}
+  default void load(@NotNull ArendDependencyProvider dependencyProvider) {}
 
   /**
    * @return a goal solver that will be used for ordinary goals
