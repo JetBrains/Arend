@@ -52,7 +52,7 @@ public class CollectDefCallsVisitor extends VoidConcreteVisitor<Void, Void> {
         }
       } else {
         Concrete.ReferableDefinition definition = myConcreteProvider.getConcrete(referable);
-        if (definition != null && !definition.isDesugarized()) {
+        if (definition != null && definition.getStage().ordinal() < Concrete.Stage.DESUGARIZED.ordinal()) {
           TCClassReferable enclosingClass = definition.getRelatedDefinition().enclosingClass;
           if (enclosingClass != null) {
             if (ignoreFirstParameter) {

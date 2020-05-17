@@ -88,7 +88,7 @@ public class Ordering extends BellmanFord<Concrete.Definition> {
 
   @Override
   public void order(Concrete.Definition definition) {
-    if (getTypechecked(definition.getData()) == null) {
+    if (definition.getStage() != Concrete.Stage.TYPECHECKED && getTypechecked(definition.getData()) == null) {
       ComputationRunner.checkCanceled();
       super.order(definition);
     }
@@ -130,7 +130,7 @@ public class Ordering extends BellmanFord<Concrete.Definition> {
       } else {
         myDependencyListener.dependsOn(definition.getData(), tcReferable);
         Concrete.ReferableDefinition dependency = myConcreteProvider.getConcrete(tcReferable);
-        if (dependency instanceof Concrete.Definition) {
+        if (dependency instanceof Concrete.Definition && dependency.getStage() != Concrete.Stage.TYPECHECKED) {
           Definition typechecked = myState.getTypechecked(tcReferable);
           if (typechecked == null || typechecked.status() == Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING) {
             consumer.accept((Concrete.Definition) dependency);
