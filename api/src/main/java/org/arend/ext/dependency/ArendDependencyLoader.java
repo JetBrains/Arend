@@ -13,11 +13,12 @@ public class ArendDependencyLoader {
       for (Field field : dependencyContainer.getClass().getDeclaredFields()) {
         Class<?> fieldType = field.getType();
         if (CoreDefinition.class.isAssignableFrom(fieldType)) {
-          field.setAccessible(true);
           Dependency dependency = field.getAnnotation(Dependency.class);
-          String name = dependency.name();
-          CoreDefinition definition = dependencyProvider.getDefinition(ModulePath.fromString(dependency.module()), name.isEmpty() ? new LongName(field.getName()) : LongName.fromString(name), fieldType.asSubclass(CoreDefinition.class));
-          field.set(dependencyContainer, definition);
+          if (dependency != null) {
+            field.setAccessible(true);
+            String name = dependency.name();
+            field.set(dependencyContainer, dependencyProvider.getDefinition(ModulePath.fromString(dependency.module()), name.isEmpty() ? new LongName(field.getName()) : LongName.fromString(name), fieldType.asSubclass(CoreDefinition.class)));
+          }
         }
       }
     } catch (IllegalAccessException e) {
