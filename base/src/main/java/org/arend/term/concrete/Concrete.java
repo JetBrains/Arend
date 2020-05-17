@@ -1317,8 +1317,9 @@ public final class Concrete {
           ClassField field = (ClassField) element;
           Expression type = field.getResultType();
           List<TypeParameter> fieldParams = field.getParameters();
-          if (fieldParams.size() > 1 || !fieldParams.isEmpty() && !definition.isDesugarized()) {
-            type = new PiExpression(field.getParameters().get(0).getData(), definition.isDesugarized() ? fieldParams.subList(1, fieldParams.size()) : fieldParams, type);
+          boolean isDesugarized = definition.getStage().ordinal() >= Stage.DESUGARIZED.ordinal();
+          if (fieldParams.size() > 1 || !fieldParams.isEmpty() && !isDesugarized) {
+            type = new PiExpression(field.getParameters().get(0).getData(), isDesugarized ? fieldParams.subList(1, fieldParams.size()) : fieldParams, type);
           }
           parameters.add(new Concrete.TypeParameter(field.getData(), field.getData().isExplicitField(), type));
         }
@@ -1344,8 +1345,8 @@ public final class Concrete {
     @NotNull
     public abstract Definition getRelatedDefinition();
 
-    public boolean isDesugarized() {
-      return getRelatedDefinition().isDesugarized();
+    public Stage getStage() {
+      return getRelatedDefinition().getStage();
     }
 
     @Override
@@ -1374,7 +1375,7 @@ public final class Concrete {
     }
   }
 
-  public enum Resolved { NOT_RESOLVED, TYPE_CLASS_REFERENCES_RESOLVED, RESOLVED }
+  public enum Stage { NOT_RESOLVED, TYPE_CLASS_REFERENCES_RESOLVED, RESOLVED, DESUGARIZED, TYPECHECKED }
 
   public enum Status {
     NO_ERRORS { @Override public org.arend.core.definition.Definition.TypeCheckingStatus getTypecheckingStatus() { return org.arend.core.definition.Definition.TypeCheckingStatus.NO_ERRORS; } },
@@ -1389,10 +1390,9 @@ public final class Concrete {
   }
 
   public static abstract class Definition extends ReferableDefinition {
-    Resolved myResolved = Resolved.TYPE_CLASS_REFERENCES_RESOLVED;
+    Stage stage = Stage.TYPE_CLASS_REFERENCES_RESOLVED;
     public TCClassReferable enclosingClass;
     private Status myStatus = Status.NO_ERRORS;
-    private boolean myDesugarized = false;
     private boolean myRecursive = false;
 
     public Definition(TCReferable referable) {
@@ -1424,25 +1424,25 @@ public final class Concrete {
     }
 
     @Override
-    public boolean isDesugarized() {
-      return myDesugarized;
-    }
-
-    public void setDesugarized() {
-      myDesugarized = true;
-    }
-
-    public Resolved getResolved() {
-      return myResolved;
+    public Stage getStage() {
+      return stage;
     }
 
     public void setResolved() {
-      myResolved = Resolved.RESOLVED;
+      stage = Stage.RESOLVED;
+    }
+
+    public void setDesugarized() {
+      stage = Stage.DESUGARIZED;
+    }
+
+    public void setTypechecked() {
+      stage = Stage.TYPECHECKED;
     }
 
     public void setTypeClassReferencesResolved() {
-      if (myResolved == Resolved.NOT_RESOLVED) {
-        myResolved = Resolved.TYPE_CLASS_REFERENCES_RESOLVED;
+      if (stage == Stage.NOT_RESOLVED) {
+        stage = Stage.TYPE_CLASS_REFERENCES_RESOLVED;
       }
     }
 
@@ -1482,7 +1482,7 @@ public final class Concrete {
       super(referable);
       myRecord = isRecord;
       myWithoutClassifying = withoutClassifying;
-      myResolved = Resolved.NOT_RESOLVED;
+      stage = Stage.NOT_RESOLVED;
       mySuperClasses = superClasses;
       myElements = elements;
     }
@@ -1795,7 +1795,7 @@ public final class Concrete {
 
     public BaseFunctionDefinition(TCReferable referable, List<Parameter> parameters, Expression resultType, Expression resultTypeLevel, FunctionBody body) {
       super(referable);
-      myResolved = Resolved.NOT_RESOLVED;
+      stage = Stage.NOT_RESOLVED;
       myParameters = parameters;
       myResultType = resultType;
       myResultTypeLevel = resultTypeLevel;
@@ -1850,7 +1850,7 @@ public final class Concrete {
     public FunctionDefinition(FunctionKind kind, TCReferable referable, List<Parameter> parameters, Expression resultType, Expression resultTypeLevel, FunctionBody body) {
       super(referable, parameters, resultType, resultTypeLevel, body);
       myKind = kind;
-      myResolved = Resolved.NOT_RESOLVED;
+      stage = Stage.NOT_RESOLVED;
     }
 
     @Override

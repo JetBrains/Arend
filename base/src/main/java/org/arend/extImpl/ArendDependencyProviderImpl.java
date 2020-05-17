@@ -1,7 +1,7 @@
 package org.arend.extImpl;
 
 import org.arend.core.definition.Definition;
-import org.arend.ext.ArendDefinitionProvider;
+import org.arend.ext.dependency.ArendDependencyProvider;
 import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.ext.module.LongName;
 import org.arend.ext.module.ModulePath;
@@ -16,13 +16,13 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
 
-public class ArendDefinitionProviderImpl extends Disableable implements ArendDefinitionProvider {
+public class ArendDependencyProviderImpl extends Disableable implements ArendDependencyProvider {
   private final TypecheckingOrderingListener myTypechecking;
   private final ModuleScopeProvider myModuleScopeProvider;
   private final DefinitionRequester myDefinitionRequester;
   private final Library myLibrary;
 
-  public ArendDefinitionProviderImpl(TypecheckingOrderingListener typechecking, ModuleScopeProvider moduleScopeProvider, DefinitionRequester definitionRequester, Library library) {
+  public ArendDependencyProviderImpl(TypecheckingOrderingListener typechecking, ModuleScopeProvider moduleScopeProvider, DefinitionRequester definitionRequester, Library library) {
     myTypechecking = typechecking;
     myModuleScopeProvider = moduleScopeProvider;
     myDefinitionRequester = definitionRequester;
@@ -34,7 +34,7 @@ public class ArendDefinitionProviderImpl extends Disableable implements ArendDef
   public <T extends CoreDefinition> T getDefinition(@NotNull ModulePath module, @NotNull LongName name, Class<T> clazz) {
     checkEnabled();
     Scope scope = myModuleScopeProvider.forModule(module);
-    Referable ref = scope == null ? null : Scope.Utils.resolveName(scope, name.toList());
+    Referable ref = scope == null ? null : Scope.Utils.resolveName(scope, name.toList(), true);
     Concrete.ReferableDefinition def = ref instanceof GlobalReferable ? myTypechecking.getConcreteProvider().getConcrete((GlobalReferable) ref) : null;
     if (def == null) {
       throw new IllegalArgumentException("Cannot find definition '" + name + "'");
