@@ -176,7 +176,7 @@ public abstract class BaseCliFrontend {
       }
     }
 
-    if (replKind != null) {
+    if (cmdLine.hasOption("i")) {
       switch (replKind.toLowerCase()) {
         default:
           System.err.println("[ERROR] Unrecognized repl type: " + replKind);
