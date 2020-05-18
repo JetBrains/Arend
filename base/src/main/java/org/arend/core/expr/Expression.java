@@ -117,10 +117,7 @@ public abstract class Expression implements Body, CoreExpression {
   @Override
   public @NotNull Expression computeType() {
     Expression type = getType(true);
-    if (type == null) {
-      throw new MetaException(new TypeComputationError(null, this, null));
-    }
-    return type;
+    return type != null ? type : new ErrorExpression(new TypeComputationError(null, this, null));
   }
 
   @Override
