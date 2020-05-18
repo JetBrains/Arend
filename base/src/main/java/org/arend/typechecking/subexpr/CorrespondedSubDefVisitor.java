@@ -3,12 +3,10 @@ package org.arend.typechecking.subexpr;
 import org.arend.core.definition.*;
 import org.arend.core.elimtree.Body;
 import org.arend.core.elimtree.ElimBody;
-import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.AbsExpression;
 import org.arend.core.expr.ClassCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.PiExpression;
-import org.arend.core.pattern.Pattern;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCFieldReferable;
 import org.arend.term.concrete.Concrete;
@@ -48,12 +46,10 @@ public class CorrespondedSubDefVisitor implements
       if (term != null) return term.accept(visitor, (Expression) coreBody);
     } else if (body instanceof Concrete.ElimFunctionBody && coreBody instanceof ElimBody) {
       // Assume they have the same order.
-      List<Concrete.FunctionClause> clauses = body.getClauses();
-      List<? extends ElimClause<Pattern>> coreClauses = ((ElimBody) coreBody).getClauses();
-      return visitor.visitElimTree(clauses, coreClauses);
+      return visitor.visitElimTree(body.getClauses(), ((ElimBody) coreBody).getClauses());
     } else if (body instanceof Concrete.CoelimFunctionBody && coreBody == null && coreResultType instanceof ClassCallExpression) {
       Map<ClassField, Expression> implementations = ((ClassCallExpression) coreResultType).getImplementedHere();
-      for (Concrete.CoClauseElement coclause : body.getCoClauseElements())
+      for (var coclause : body.getCoClauseElements())
         if (coclause instanceof Concrete.ClassFieldImpl) {
           var statementVisited = visitor.visitStatement(implementations, (Concrete.ClassFieldImpl) coclause);
           if (statementVisited != null) return statementVisited;
