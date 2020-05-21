@@ -4,6 +4,7 @@ import org.arend.ext.DefinitionContributor;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.module.LongName;
 import org.arend.ext.module.ModulePath;
+import org.arend.ext.reference.MetaRef;
 import org.arend.ext.reference.Precedence;
 import org.arend.ext.typechecking.MetaDefinition;
 import org.arend.library.Library;
@@ -31,17 +32,17 @@ public class DefinitionContributorImpl extends Disableable implements Definition
   }
 
   @Override
-  public void declare(@NotNull ModulePath module, @NotNull LongName longName, @NotNull String description, @NotNull Precedence precedence, @Nullable MetaDefinition meta) {
+  public MetaRef declare(@NotNull ModulePath module, @NotNull LongName longName, @NotNull String description, @NotNull Precedence precedence, @Nullable MetaDefinition meta) {
     checkEnabled();
 
     if (!FileUtils.isCorrectModulePath(module)) {
       myErrorReporter.report(FileUtils.illegalModuleName(module.toString()));
-      return;
+      return null;
     }
 
     if (!FileUtils.isCorrectDefinitionName(longName)) {
       myErrorReporter.report(FileUtils.illegalDefinitionName(longName.toString()));
-      return;
+      return null;
     }
 
     SimpleScope scope = (SimpleScope) myModuleScopeProvider.forModule(module);
@@ -57,13 +58,17 @@ public class DefinitionContributorImpl extends Disableable implements Definition
         Referable ref = scope.resolveName(name);
         if (!(ref == null || ref instanceof EmptyGlobalReferable)) {
           myErrorReporter.report(LibraryError.duplicateExtensionDefinition(myLibrary.getName(), module, longName));
-          return;
+          return null;
         }
-        scope.names.put(name, new MetaReferable(precedence, name, description, meta));
+        MetaReferable metaRef = new MetaReferable(precedence, name, description, meta);
+        scope.names.put(name, metaRef);
+        return metaRef;
       } else {
         scope.names.put(name, new EmptyGlobalReferable(name));
         scope = scope.namespaces.computeIfAbsent(name, k -> new SimpleScope());
       }
     }
+
+    return null;
   }
 }

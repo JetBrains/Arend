@@ -1,5 +1,6 @@
 package org.arend.ext.typechecking;
 
+import org.arend.ext.FreeBindingsModifier;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.definition.CoreClassDefinition;
 import org.arend.ext.core.expr.CoreExpression;
@@ -8,6 +9,7 @@ import org.arend.ext.core.ops.CMP;
 import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.error.ErrorReporter;
+import org.arend.ext.reference.ArendRef;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -22,6 +24,11 @@ public interface ExpressionTypechecker {
    * Returns the list of bindings available in the given context.
    */
   @NotNull List<CoreBinding> getFreeBindingsList();
+
+  /**
+   * Returns the free binding corresponding to the given reference.
+   */
+  @Nullable CoreBinding getFreeBinding(@NotNull ArendRef ref);
 
   /**
    * All errors that occur during invocation of a meta definition should be reported through the reporter returned by this method.
@@ -76,7 +83,12 @@ public interface ExpressionTypechecker {
    * Invokes the specified action with the specified error reporter.
    * Can be used to suppress errors or handle them in some specific way.
    */
-  <T> T withErrorReporter(@NotNull ErrorReporter errorReporter, Function<ExpressionTypechecker, T> action);
+  <T> T withErrorReporter(@NotNull ErrorReporter errorReporter, @NotNull Function<ExpressionTypechecker, T> action);
+
+  /**
+   * Invokes the specified action with modified set of free bindings
+   */
+  <T> T withFreeBindings(@NotNull FreeBindingsModifier modifier, @NotNull Function<ExpressionTypechecker, T> action);
 
   /**
    * Searches for an instance of the specified class.
