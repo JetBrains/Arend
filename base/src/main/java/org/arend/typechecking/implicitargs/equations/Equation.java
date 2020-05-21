@@ -7,9 +7,9 @@ import org.arend.ext.core.ops.CMP;
 import org.arend.term.concrete.Concrete;
 
 public class Equation implements InferenceVariableListener {
-  public final Expression expr1;
-  public final Expression expr2;
-  public final Expression type;
+  public Expression expr1;
+  public Expression expr2;
+  public Expression type;
   public final CMP cmp;
   public final Concrete.SourceNode sourceNode;
 

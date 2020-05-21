@@ -4,6 +4,7 @@ import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.concrete.expr.ConcreteArgument;
 import org.arend.ext.concrete.expr.ConcreteReferenceExpression;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -22,9 +23,6 @@ public interface ContextData {
    */
   @NotNull List<? extends ConcreteArgument> getArguments();
 
-  /**
-   * Sets the argument to the meta definition.
-   */
   void setArguments(@NotNull List<? extends ConcreteArgument> arguments);
 
   /**
@@ -33,4 +31,6 @@ public interface ContextData {
    * It can be {@code null} if the expected type is unknown.
    */
   CoreExpression getExpectedType();
+
+  void setExpectedType(@Nullable CoreExpression expectedType);
 }

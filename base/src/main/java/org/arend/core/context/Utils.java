@@ -30,10 +30,10 @@ public class Utils {
   }
 
   public static class ContextSaver implements AutoCloseable {
-    private final List myContext;
+    private final List<?> myContext;
     private final int myOldContextSize;
 
-    public ContextSaver(List context) {
+    public ContextSaver(List<?> context) {
       myContext = context;
       myOldContextSize = context != null ? context.size() : 0;
     }
@@ -50,20 +50,20 @@ public class Utils {
     }
   }
 
-  public static class CompleteContextSaver<T> implements AutoCloseable {
-    private final List<T> myContext;
-    private final List<T> myOldContext;
+  public static class CompleteSetContextSaver<T> implements AutoCloseable {
+    private final Set<T> myContext;
+    private final Set<T> myOldContext;
 
-    public CompleteContextSaver(List<T> context) {
+    public CompleteSetContextSaver(Set<T> context) {
       myContext = context;
-      myOldContext = new ArrayList<>(context);
+      myOldContext = new LinkedHashSet<>(context);
     }
 
-    public List<T> getCurrentContext() {
+    public Set<T> getCurrentContext() {
       return myContext;
     }
 
-    public List<T> getOldContext() {
+    public Set<T> getOldContext() {
       return myOldContext;
     }
 
@@ -71,6 +71,30 @@ public class Utils {
     public void close() {
       myContext.clear();
       myContext.addAll(myOldContext);
+    }
+  }
+
+  public static class CompleteMapContextSaver<K, V> implements AutoCloseable {
+    private final Map<K, V> myContext;
+    private final Map<K, V> myOldContext;
+
+    public CompleteMapContextSaver(Map<K, V> context) {
+      myContext = context;
+      myOldContext = new LinkedHashMap<>(context);
+    }
+
+    public Map<K, V> getCurrentContext() {
+      return myContext;
+    }
+
+    public Map<K, V> getOldContext() {
+      return myOldContext;
+    }
+
+    @Override
+    public void close() {
+      myContext.clear();
+      myContext.putAll(myOldContext);
     }
   }
 }

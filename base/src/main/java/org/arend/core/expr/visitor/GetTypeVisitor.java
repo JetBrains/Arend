@@ -101,7 +101,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitReference(ReferenceExpression expr, Void params) {
-    return expr.getBinding().getTypeExpr().copy();
+    return expr.getBinding().getTypeExpr();
   }
 
   @Override

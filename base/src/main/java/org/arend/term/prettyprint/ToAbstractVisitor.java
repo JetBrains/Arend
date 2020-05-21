@@ -221,7 +221,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       return expr.getArgument().accept(this, null);
     }
 
-    if (expr.getArgument() instanceof ReferenceExpression) {
+    if (hasFlag(PrettyPrinterFlag.SHOW_FIELD_INSTANCE) && expr.getArgument() instanceof ReferenceExpression) {
       GlobalReferable ref = expr.getDefinition().getReferable();
       return cVar(new LongName(((ReferenceExpression) expr.getArgument()).getBinding().getName(), ref.getRepresentableName()), ref);
     }

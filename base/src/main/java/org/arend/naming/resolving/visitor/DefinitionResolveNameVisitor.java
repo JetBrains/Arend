@@ -169,7 +169,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
 
   @Override
   public Void visitFunction(Concrete.BaseFunctionDefinition def, Scope scope) {
-    if (def.getResolved() == Concrete.Resolved.RESOLVED) {
+    if (def.getStage().ordinal() >= Concrete.Stage.RESOLVED.ordinal()) {
       return null;
     }
 
@@ -179,7 +179,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
 
     myLocalErrorReporter = new ConcreteProxyErrorReporter(def);
     if (myResolveTypeClassReferences) {
-      if (def.getResolved() == Concrete.Resolved.NOT_RESOLVED) {
+      if (def.getStage() == Concrete.Stage.NOT_RESOLVED) {
         if (def.getBody() instanceof Concrete.TermFunctionBody) {
           resolveTypeClassReference(def.getParameters(), ((Concrete.TermFunctionBody) def.getBody()).getTerm(), scope, false);
         }
@@ -204,7 +204,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       if (enclosingDef instanceof Concrete.BaseFunctionDefinition) {
         Concrete.BaseFunctionDefinition enclosingFunction = (Concrete.BaseFunctionDefinition) enclosingDef;
         if (enclosingFunction.getResultType() != null) {
-          if (enclosingFunction.getResolved() != Concrete.Resolved.RESOLVED) {
+          if (enclosingFunction.getStage().ordinal() < Concrete.Stage.RESOLVED.ordinal()) {
             enclosingFunction.setResultType(enclosingFunction.getResultType().accept(exprVisitor, null));
           }
           Referable classRef = enclosingFunction.getResultType().getUnderlyingReferable();
@@ -327,7 +327,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     if (myResolveTypeClassReferences) {
       return null;
     }
-    if (def.getResolved() == Concrete.Resolved.RESOLVED) {
+    if (def.getStage().ordinal() >= Concrete.Stage.RESOLVED.ordinal()) {
       return null;
     }
 
@@ -412,7 +412,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
 
   @Override
   public Void visitClass(Concrete.ClassDefinition def, Scope scope) {
-    if (def.getResolved() == Concrete.Resolved.RESOLVED) {
+    if (def.getStage().ordinal() >= Concrete.Stage.RESOLVED.ordinal()) {
       return null;
     }
 
@@ -422,7 +422,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
 
     myLocalErrorReporter = new ConcreteProxyErrorReporter(def);
     if (myResolveTypeClassReferences) {
-      if (def.getResolved() == Concrete.Resolved.NOT_RESOLVED) {
+      if (def.getStage() == Concrete.Stage.NOT_RESOLVED) {
         for (Concrete.ClassElement element : def.getElements()) {
           if (element instanceof Concrete.ClassField) {
             resolveTypeClassReference(((Concrete.ClassField) element).getParameters(), ((Concrete.ClassField) element).getResultType(), scope, true);

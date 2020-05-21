@@ -921,6 +921,13 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     if (newDef) {
+      if (typedDef.getBody() instanceof DefCallExpression) {
+        Integer level = ((DefCallExpression) typedDef.getBody()).getUseLevel();
+        if (level != null) {
+          typedDef.addParametersLevel(new ParametersLevel(null, level));
+        }
+      }
+
       if (expectedType.isError() && typedDef.getResultType() != null) {
         typedDef.getResultType().accept(goodThisParametersVisitor, null);
       }
@@ -1122,6 +1129,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     if (newDef) {
       typechecker.setStatus(def.getStatus().getTypecheckingStatus());
       typedDef.addStatus(typechecker.getStatus().max(!bodyIsOK && typedDef.getActualBody() == null ? Definition.TypeCheckingStatus.HAS_ERRORS : Definition.TypeCheckingStatus.NO_ERRORS));
+      def.setTypechecked();
     }
 
     return clauses;
@@ -1402,6 +1410,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         goodThisParametersVisitor.visitBody(constructor.getBody(), null);
       }
       dataDefinition.setGoodThisParameters(goodThisParametersVisitor.getGoodParameters());
+      def.setTypechecked();
     }
 
     return countingErrorReporter.getErrorsNumber() == 0;
@@ -1999,6 +2008,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       if (!typeClassFields.isEmpty()) {
         typedDef.setTypeClassFields(typeClassFields);
       }
+
+      def.setTypechecked();
     }
   }
 

@@ -2,6 +2,7 @@ package org.arend.ext;
 
 import org.arend.ext.module.LongName;
 import org.arend.ext.module.ModulePath;
+import org.arend.ext.reference.MetaRef;
 import org.arend.ext.reference.Precedence;
 import org.arend.ext.typechecking.MetaDefinition;
 import org.jetbrains.annotations.NotNull;
@@ -19,8 +20,10 @@ public interface DefinitionContributor {
    * @param description   the textual description of the definition
    * @param precedence    the precedence of the definition
    * @param meta          the definition itself
+   *
+   * @return a new reference corresponding to the meta definition or {@code null} if there was an error
    */
-  void declare(@NotNull ModulePath module, @NotNull LongName name, @NotNull String description, @NotNull Precedence precedence, @NotNull MetaDefinition meta);
+  MetaRef declare(@NotNull ModulePath module, @NotNull LongName name, @NotNull String description, @NotNull Precedence precedence, @Nullable MetaDefinition meta);
 
-  void declare(@NotNull ModulePath module, @NotNull LongName name, @NotNull String description, @NotNull Precedence precedence, @Nullable String alias, @Nullable Precedence aliasPrecedence, @NotNull MetaDefinition meta);
+  MetaRef declare(@NotNull ModulePath module, @NotNull LongName name, @NotNull String description, @NotNull Precedence precedence, @Nullable String alias, @Nullable Precedence aliasPrecedence, @Nullable MetaDefinition meta);
 }

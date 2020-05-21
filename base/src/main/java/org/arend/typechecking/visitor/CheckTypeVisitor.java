@@ -23,6 +23,7 @@ import org.arend.core.subst.InPlaceLevelSubstVisitor;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.error.*;
 import org.arend.ext.ArendExtension;
+import org.arend.ext.FreeBindingsModifier;
 import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.concrete.expr.ConcreteReferenceExpression;
@@ -35,6 +36,7 @@ import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.*;
 import org.arend.ext.prettyprinting.doc.DocFactory;
+import org.arend.ext.reference.ArendRef;
 import org.arend.ext.typechecking.*;
 import org.arend.extImpl.ContextDataImpl;
 import org.arend.extImpl.UncheckedExpressionImpl;
@@ -100,13 +102,15 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     final Map<Referable, Binding> context;
     final ContextDataImpl contextData;
     final InferenceReferenceExpression inferenceExpr;
+    final ErrorReporter errorReporter;
 
-    private DeferredMeta(MetaDefinition meta, Set<Binding> freeBindings, Map<Referable, Binding> context, ContextDataImpl contextData, InferenceReferenceExpression inferenceExpr) {
+    private DeferredMeta(MetaDefinition meta, Set<Binding> freeBindings, Map<Referable, Binding> context, ContextDataImpl contextData, InferenceReferenceExpression inferenceExpr, ErrorReporter errorReporter) {
       this.meta = meta;
       this.freeBindings = freeBindings;
       this.context = context;
       this.contextData = contextData;
       this.inferenceExpr = inferenceExpr;
+      this.errorReporter = errorReporter;
     }
   }
 
@@ -220,6 +224,14 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     result.addAll(myFreeBindings);
     result.addAll(context.values());
     return result;
+  }
+
+  @Override
+  public @Nullable CoreBinding getFreeBinding(@NotNull ArendRef ref) {
+    if (!(ref instanceof Referable)) {
+      throw new IllegalArgumentException();
+    }
+    return context.get(ref);
   }
 
   @NotNull
@@ -419,11 +431,11 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       Map<Referable, Binding> originalContext = context;
       if (stage != Stage.AFTER_LEVELS) {
         checkTypeVisitor = this;
-        errorReporter = new CompositeErrorReporter(errorReporter, countingErrorReporter);
+        errorReporter = new CompositeErrorReporter(deferredMeta.errorReporter, countingErrorReporter);
         myFreeBindings = deferredMeta.freeBindings;
         context = deferredMeta.context;
       } else {
-        checkTypeVisitor = new CheckTypeVisitor(state, deferredMeta.freeBindings, deferredMeta.context, new CompositeErrorReporter(errorReporter, countingErrorReporter), null, myArendExtension);
+        checkTypeVisitor = new CheckTypeVisitor(state, deferredMeta.freeBindings, deferredMeta.context, new CompositeErrorReporter(deferredMeta.errorReporter, countingErrorReporter), null, myArendExtension);
         checkTypeVisitor.setInstancePool(new GlobalInstancePool(myInstancePool.getInstanceProvider(), checkTypeVisitor, myInstancePool.getInstancePool()));
       }
 
@@ -440,7 +452,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       myFreeBindings = originalFreeBindings;
       context = originalContext;
       if (result == null && countingErrorReporter.getErrorsNumber() == 0) {
-        errorReporter.report(new TypecheckingError("Meta '" + refExpr.getReferent().getRefName() + "' failed", refExpr));
+        deferredMeta.errorReporter.report(new TypecheckingError("Meta '" + refExpr.getReferent().getRefName() + "' failed", refExpr));
       }
       deferredMeta.inferenceExpr.setSubstExpression(result == null ? new ErrorExpression() : result.expression);
     }
@@ -1873,7 +1885,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     ContextDataImpl contextDataImpl = new ContextDataImpl((Concrete.ReferenceExpression) refExpr, contextData.getArguments(), expectedType);
     InferenceReferenceExpression inferenceExpr = new InferenceReferenceExpression(new MetaInferenceVariable(expectedType, meta, (Concrete.ReferenceExpression) refExpr, getAllBindings()));
     // (stage == Stage.BEFORE_SOLVER ? myDeferredMetasBeforeSolver : stage == Stage.BEFORE_LEVELS ? myDeferredMetasBeforeLevels : myDeferredMetasAfterLevels)
-    myDeferredMetasBeforeSolver.add(new DeferredMeta(meta, new LinkedHashSet<>(myFreeBindings), new LinkedHashMap<>(context), contextDataImpl, inferenceExpr));
+    myDeferredMetasBeforeSolver.add(new DeferredMeta(meta, new LinkedHashSet<>(myFreeBindings), new LinkedHashMap<>(context), contextDataImpl, inferenceExpr, errorReporter));
     return new TypecheckingResult(inferenceExpr, expectedType);
   }
 
@@ -1995,13 +2007,90 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
   }
 
   @Override
-  public <T> T withErrorReporter(@NotNull ErrorReporter errorReporter, Function<ExpressionTypechecker, T> action) {
+  public <T> T withErrorReporter(@NotNull ErrorReporter errorReporter, @NotNull Function<ExpressionTypechecker, T> action) {
     ErrorReporter originalErrorReport = this.errorReporter;
     this.errorReporter = errorReporter;
     try {
       return action.apply(this);
     } finally {
       this.errorReporter = originalErrorReport;
+    }
+  }
+
+  private void addFreeBindings(Collection<?> bindings) {
+    for (Object binding : bindings) {
+      if (!(binding instanceof Binding)) {
+        throw new IllegalArgumentException();
+      }
+      myFreeBindings.add((Binding) binding);
+    }
+  }
+
+  @Override
+  public <T> T withFreeBindings(@NotNull FreeBindingsModifier modifier, @NotNull Function<ExpressionTypechecker, T> action) {
+    if (modifier.commands.isEmpty()) {
+      return action.apply(this);
+    }
+
+    try (var ignored = new Utils.CompleteMapContextSaver<>(context)) {
+      try (var ignored1 = new Utils.CompleteSetContextSaver<>(myFreeBindings)) {
+        for (FreeBindingsModifier.Command command : modifier.commands) {
+          switch (command.kind) {
+            case ADD:
+              addFreeBindings((Collection<?>) command.bindings);
+              break;
+            case CLEAR:
+              context.clear();
+              myFreeBindings.clear();
+              break;
+            case REMOVE: {
+              Set<?> bindings = (Set<?>) command.bindings;
+              context.entrySet().removeIf(entry -> bindings.contains(entry.getValue()));
+              myFreeBindings.removeIf(bindings::contains);
+              break;
+            }
+            case RETAIN: {
+              Set<?> bindings = (Set<?>) command.bindings;
+              context.entrySet().removeIf(entry -> !bindings.contains(entry.getValue()));
+              myFreeBindings.removeIf(binding -> !bindings.contains(binding));
+              break;
+            }
+            case REPLACE:
+            case REPLACE_REMOVE: {
+              Map<?, ?> replacement = (Map<?, ?>) command.bindings;
+              for (Iterator<Map.Entry<Referable, Binding>> iterator = context.entrySet().iterator(); iterator.hasNext(); ) {
+                Map.Entry<Referable, Binding> entry = iterator.next();
+                Object newBinding = replacement.get(entry.getValue());
+                if (newBinding != null) {
+                  if (!(newBinding instanceof Binding)) {
+                    throw new IllegalArgumentException();
+                  }
+                  entry.setValue((Binding) newBinding);
+                } else if (command.kind == FreeBindingsModifier.Command.Kind.REPLACE_REMOVE) {
+                  iterator.remove();
+                }
+              }
+              if (!myFreeBindings.isEmpty()) {
+                List<Object> newBindings = new ArrayList<>();
+                for (Iterator<Binding> iterator = myFreeBindings.iterator(); iterator.hasNext(); ) {
+                  Binding binding = iterator.next();
+                  Object newBinding = replacement.get(binding);
+                  if (newBinding != null) {
+                    iterator.remove();
+                    newBindings.add(newBinding);
+                  } else if (command.kind == FreeBindingsModifier.Command.Kind.REPLACE_REMOVE) {
+                    iterator.remove();
+                  }
+                }
+                addFreeBindings(newBindings);
+              }
+              break;
+            }
+          }
+        }
+
+        return action.apply(this);
+      }
     }
   }
 
