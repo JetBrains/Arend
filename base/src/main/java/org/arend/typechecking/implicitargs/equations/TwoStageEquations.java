@@ -375,6 +375,57 @@ public class TwoStageEquations implements Equations {
   }
 
   @Override
+  public boolean addPropEquationIfPossible(Level level) {
+    if (!(level.getVar() instanceof InferenceLevelVariable && level.isVarOnly())) {
+      return false;
+    }
+    InferenceLevelVariable var = (InferenceLevelVariable) level.getVar();
+    Level oldLevel = myConstantUpperBounds.get(var);
+    if (oldLevel != null && oldLevel.isProp()) {
+      return true;
+    }
+
+    if (trySolveProp(var)) {
+      myConstantUpperBounds.put(var, new Level(-1));
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  // needed for lemmas and properties
+  private boolean trySolveProp(InferenceLevelVariable var) {
+    Set<InferenceLevelVariable> visited = new HashSet<>();
+    Deque<InferenceLevelVariable> toVisit = new ArrayDeque<>();
+    toVisit.add(var);
+    while (!toVisit.isEmpty()) {
+      InferenceLevelVariable vVar = toVisit.removeLast();
+      if (!visited.add(vVar)) {
+        continue;
+      }
+
+      Set<LevelVariable> lowerBounds = myLowerBounds.get(vVar);
+      if (lowerBounds == null) {
+        continue;
+      }
+
+      for (LevelVariable lowerBound : lowerBounds) {
+        if (!(lowerBound instanceof InferenceLevelVariable)) {
+          return false;
+        }
+        toVisit.add((InferenceLevelVariable) lowerBound);
+      }
+    }
+
+    if (myHLevelEquations.isEmpty()) {
+      return true;
+    }
+
+    Map<InferenceLevelVariable, Integer> solution = new HashMap<>();
+    return myHLevelEquations.solve(solution) == null && solution.get(var) == 0;
+  }
+
+  @Override
   public boolean addVariable(InferenceLevelVariable var) {
     if (var.getType() == LevelVariable.LvlType.PLVL) {
       myPLevelEquations.addVariable(var);
@@ -602,7 +653,6 @@ public class TwoStageEquations implements Equations {
     solveLevelEquations(result);
 
     for (Map.Entry<InferenceLevelVariable, Level> entry : myConstantUpperBounds.entrySet()) {
-      int constant = entry.getValue().getConstant();
       Level level = result.get(entry.getKey());
       if (!Level.compare(level, entry.getValue(), CMP.LE, DummyEquations.getInstance(), null)) {
         int maxConstant = entry.getValue().getMaxAddedConstant();
@@ -613,7 +663,7 @@ public class TwoStageEquations implements Equations {
         if (level.withMaxConstant() && !Level.compare(new Level(level.getMaxAddedConstant()), entry.getValue(), CMP.LE, DummyEquations.getInstance(), null)) {
           equations.add(new LevelEquation<>(null, entry.getKey(), -level.getMaxAddedConstant()));
         }
-        equations.add(new LevelEquation<>(entry.getKey(), entry.getValue().getVar(), constant, maxConstant));
+        equations.add(new LevelEquation<>(entry.getKey(), entry.getValue().getVar(), entry.getValue().getConstant(), maxConstant));
         myVisitor.getErrorReporter().report(new SolveLevelEquationsError(equations, entry.getKey().getSourceNode()));
       }
     }

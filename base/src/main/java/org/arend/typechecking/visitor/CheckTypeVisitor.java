@@ -463,6 +463,12 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     invokeDeferredMetas(null, null, Stage.BEFORE_SOLVER);
     myEquations.solveEquations();
     invokeDeferredMetas(null, null, Stage.BEFORE_LEVELS);
+    if (propIfPossible) {
+      Sort sort = result.type.getSortOfType();
+      if (sort != null) {
+        myEquations.addPropEquationIfPossible(sort.getHLevel());
+      }
+    }
     InPlaceLevelSubstVisitor substVisitor = new InPlaceLevelSubstVisitor(myEquations.solveLevels(sourceNode));
     if (!substVisitor.isEmpty()) {
       if (result.expression != null) {
@@ -543,6 +549,12 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     invokeDeferredMetas(null, null, Stage.BEFORE_SOLVER);
     myEquations.solveEquations();
     invokeDeferredMetas(null, null, Stage.BEFORE_LEVELS);
+    if (propIfPossible) {
+      Sort sort = result.getSortOfType();
+      if (sort != null) {
+        myEquations.addPropEquationIfPossible(sort.getHLevel());
+      }
+    }
     InPlaceLevelSubstVisitor substVisitor = new InPlaceLevelSubstVisitor(myEquations.solveLevels(expr));
     if (!substVisitor.isEmpty()) {
       result.subst(substVisitor);

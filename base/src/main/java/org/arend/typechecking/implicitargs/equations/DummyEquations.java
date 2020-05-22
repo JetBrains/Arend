@@ -33,6 +33,11 @@ public class DummyEquations implements Equations {
   }
 
   @Override
+  public boolean addPropEquationIfPossible(Level level) {
+    return false;
+  }
+
+  @Override
   public boolean addVariable(InferenceLevelVariable var) {
     return false;
   }

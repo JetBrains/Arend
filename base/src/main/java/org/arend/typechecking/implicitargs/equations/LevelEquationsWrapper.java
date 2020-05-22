@@ -31,6 +31,11 @@ public class LevelEquationsWrapper implements Equations {
   }
 
   @Override
+  public boolean addPropEquationIfPossible(Level level) {
+    return myEquations.addPropEquationIfPossible(level);
+  }
+
+  @Override
   public boolean addVariable(InferenceLevelVariable var) {
     return myEquations.addVariable(var);
   }
