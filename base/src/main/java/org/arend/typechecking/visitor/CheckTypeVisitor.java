@@ -383,8 +383,11 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     }
   }
 
-  public TypecheckingResult finalCheckExpr(Concrete.Expression expr, Expression expectedType, boolean returnExpectedType) {
-    return finalize(checkExpr(expr, expectedType), returnExpectedType && !(expectedType instanceof Type && ((Type) expectedType).isOmega()) ? expectedType : null, expr);
+  public enum ReturnExpectedType { ALWAYS, WHEN_NOT_CLASS_CALL, NEVER }
+
+  public TypecheckingResult finalCheckExpr(Concrete.Expression expr, Expression expectedType, ReturnExpectedType returnExpectedType) {
+    TypecheckingResult result = checkExpr(expr, expectedType);
+    return result == null ? null : finalize(result, (returnExpectedType == ReturnExpectedType.ALWAYS || returnExpectedType == ReturnExpectedType.WHEN_NOT_CLASS_CALL && !result.type.isInstance(ClassCallExpression.class)) && !(expectedType instanceof Type && ((Type) expectedType).isOmega()) ? expectedType : null, expr);
   }
 
   private void invokeDeferredMetas(InPlaceLevelSubstVisitor substVisitor, StripVisitor stripVisitor, Stage stage) {
@@ -466,7 +469,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       }
       result = new TypecheckingResult(null, expectedType);
     } else {
-      if (expectedType != null && !result.type.isInstance(ClassCallExpression.class)) { // Use the inferred type if it is a class call
+      if (expectedType != null) {
         result.type = expectedType;
       }
     }

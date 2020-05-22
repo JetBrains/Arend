@@ -184,7 +184,7 @@ public class PatternTypechecking {
         // Typecheck the RHS
         TypecheckingResult tcResult;
         if (myFinal) {
-          tcResult = myVisitor.finalCheckExpr(clause.getExpression(), expectedType, false);
+          tcResult = myVisitor.finalCheckExpr(clause.getExpression(), expectedType, CheckTypeVisitor.ReturnExpectedType.NEVER);
         } else {
           tcResult = myVisitor.checkExpr(clause.getExpression(), expectedType);
         }
@@ -554,6 +554,7 @@ public class PatternTypechecking {
                 myErrorReporter.report(new IdpPatternError(IdpPatternError.subst(substVar.getName(), paramLink.getName(), banVar.getName()), null, conPattern));
                 return null;
               }
+              assert paramLink != null;
               paramLink.setType(paramLink.getType().subst(new SubstVisitor(varSubst, LevelSubstitution.EMPTY)));
             }
             listSubst(result, exprs, varSubst);

@@ -18,8 +18,6 @@ public class CertainTypecheckingError extends TypecheckingError {
     USELESS_LEVEL(Level.WARNING_UNUSED, "Actual level is smaller than the specified one"),
     TRUNCATED_WITHOUT_UNIVERSE(Level.WARNING, "The data type cannot be truncated since its universe is not specified"),
     CASE_RESULT_TYPE("Cannot infer the result type"),
-    LEMMA_LEVEL("The level of a lemma must be \\Prop"),
-    PROPERTY_LEVEL("The level of a property must be \\Prop"),
     REDUNDANT_COCLAUSE(Level.WARNING_UNUSED, "Coclause is redundant"),
     NO_CLASSIFYING_IGNORED(Level.WARNING_UNUSED, "\\noclassifying is ignored");
 
