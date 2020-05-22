@@ -184,7 +184,7 @@ public class PatternTypechecking {
         // Typecheck the RHS
         TypecheckingResult tcResult;
         if (myFinal) {
-          tcResult = myVisitor.finalCheckExpr(clause.getExpression(), expectedType, CheckTypeVisitor.ReturnExpectedType.NEVER);
+          tcResult = myVisitor.finalCheckExpr(clause.getExpression(), expectedType);
         } else {
           tcResult = myVisitor.checkExpr(clause.getExpression(), expectedType);
         }

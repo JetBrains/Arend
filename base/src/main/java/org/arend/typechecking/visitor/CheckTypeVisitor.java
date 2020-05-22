@@ -163,10 +163,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     return visitor;
   }
 
-  public Type checkType(Concrete.Expression expr, Expression expectedType, boolean isFinal) {
-    return isFinal ? finalCheckType(expr, expectedType) : checkType(expr, expectedType);
-  }
-
   public void addBinding(@Nullable Referable referable, Binding binding) {
     if (referable == null) {
       myFreeBindings.add(binding);
@@ -383,11 +379,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     }
   }
 
-  public enum ReturnExpectedType { ALWAYS, WHEN_NOT_CLASS_CALL, NEVER }
-
-  public TypecheckingResult finalCheckExpr(Concrete.Expression expr, Expression expectedType, ReturnExpectedType returnExpectedType) {
-    TypecheckingResult result = checkExpr(expr, expectedType);
-    return result == null ? null : finalize(result, (returnExpectedType == ReturnExpectedType.ALWAYS || returnExpectedType == ReturnExpectedType.WHEN_NOT_CLASS_CALL && !result.type.isInstance(ClassCallExpression.class)) && !(expectedType instanceof Type && ((Type) expectedType).isOmega()) ? expectedType : null, expr);
+  public TypecheckingResult finalCheckExpr(Concrete.Expression expr, Expression expectedType) {
+    return finalize(checkExpr(expr, expectedType), expr, false);
   }
 
   private void invokeDeferredMetas(InPlaceLevelSubstVisitor substVisitor, StripVisitor stripVisitor, Stage stage) {
@@ -448,7 +441,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       if (result != null) {
         result = checkTypeVisitor.checkResult(type, result, refExpr);
         if (stage == Stage.AFTER_LEVELS) {
-          result = checkTypeVisitor.finalize(result, null, refExpr);
+          result = checkTypeVisitor.finalize(result, refExpr, false);
         }
       }
       errorReporter = originalErrorReporter;
@@ -462,16 +455,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     deferredMetas.clear();
   }
 
-  public TypecheckingResult finalize(TypecheckingResult result, Expression expectedType, Concrete.SourceNode sourceNode) {
+  public TypecheckingResult finalize(TypecheckingResult result, Concrete.SourceNode sourceNode, boolean propIfPossible) {
     if (result == null) {
-      if (expectedType == null) {
-        return null;
-      }
-      result = new TypecheckingResult(null, expectedType);
-    } else {
-      if (expectedType != null) {
-        result.type = expectedType;
-      }
+      return null;
     }
 
     invokeDeferredMetas(null, null, Stage.BEFORE_SOLVER);
@@ -551,7 +537,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     return new TypeExpression(result.expression, universe.getSort());
   }
 
-  private Type finalCheckType(Concrete.Expression expr, Expression expectedType) {
+  public Type finalCheckType(Concrete.Expression expr, Expression expectedType, boolean propIfPossible) {
     Type result = checkType(expr, expectedType);
     if (result == null) return null;
     invokeDeferredMetas(null, null, Stage.BEFORE_SOLVER);
@@ -1312,7 +1298,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     try (var ignored = new Utils.SetContextSaver<>(context)) {
       try (var ignored1 = new Utils.SetContextSaver<>(myFreeBindings)) {
         for (Concrete.TypeParameter arg : parameters) {
-          Type result = checkType(arg.getType(), expectedType == null ? Type.OMEGA : expectedType, false);
+          Type result = checkType(arg.getType(), expectedType == null ? Type.OMEGA : expectedType);
           if (result == null) return null;
 
           if (arg instanceof Concrete.TelescopeParameter) {
@@ -1980,7 +1966,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
 
   @Override
   public TypecheckingResult visitTyped(Concrete.TypedExpression expr, Expression expectedType) {
-    Type type = checkType(expr.type, Type.OMEGA, false);
+    Type type = checkType(expr.type, Type.OMEGA);
     if (type == null) {
       return checkExpr(expr.expression, expectedType);
     } else {
