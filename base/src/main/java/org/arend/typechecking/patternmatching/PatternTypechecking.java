@@ -12,7 +12,9 @@ import org.arend.core.context.param.UntypedDependentLink;
 import org.arend.core.definition.Constructor;
 import org.arend.core.definition.DConstructor;
 import org.arend.core.definition.Definition;
+import org.arend.core.elimtree.Body;
 import org.arend.core.elimtree.ElimBody;
+import org.arend.core.elimtree.ElimClause;
 import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.*;
 import org.arend.core.expr.type.Type;
@@ -20,10 +22,7 @@ import org.arend.core.expr.visitor.CompareVisitor;
 import org.arend.core.expr.visitor.ElimBindingVisitor;
 import org.arend.core.expr.visitor.FreeVariablesCollector;
 import org.arend.core.expr.visitor.NormalizeVisitor;
-import org.arend.core.pattern.BindingPattern;
-import org.arend.core.pattern.ConstructorExpressionPattern;
-import org.arend.core.pattern.EmptyPattern;
-import org.arend.core.pattern.ExpressionPattern;
+import org.arend.core.pattern.*;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
@@ -48,6 +47,7 @@ import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.arend.util.Pair;
 import org.jetbrains.annotations.TestOnly;
 
+import java.math.BigInteger;
 import java.util.*;
 
 public class PatternTypechecking {
@@ -638,7 +638,7 @@ public class PatternTypechecking {
           myErrorReporter.report(new ImpossibleEliminationError(dataCall, pattern));
           return null;
         }
-        if (!conCalls.isEmpty()) {
+        if (!conCalls.isEmpty() && !checkDisjointConstructors(dataCall)) {
           myErrorReporter.report(new DataTypeNotEmptyError(dataCall, DataTypeNotEmptyError.getConstructors(conCalls), pattern));
           return null;
         }
@@ -727,6 +727,105 @@ public class PatternTypechecking {
     }
 
     return new Result(result, exprs, varSubst);
+  }
+
+  private static boolean addConstructor(Expression expr, Collection<Constructor> constructors) {
+    if (expr == null) {
+      return true;
+    }
+    if (expr instanceof ConCallExpression) {
+      constructors.add(((ConCallExpression) expr).getDefinition());
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  private static boolean checkInteger(BigInteger n, Expression expr) {
+    if (expr instanceof IntegerExpression) {
+      return !n.equals(((IntegerExpression) expr).getBigInteger());
+    }
+    if (!(expr instanceof ConCallExpression)) {
+      return false;
+    }
+
+    ConCallExpression conCall = (ConCallExpression) expr;
+    if (conCall.getDefinition() == Prelude.ZERO) {
+      return !n.equals(BigInteger.ZERO);
+    }
+    if (conCall.getDefinition() == Prelude.SUC) {
+      return n.equals(BigInteger.ZERO) || checkInteger(n.subtract(BigInteger.ONE), conCall.getDefCallArguments().get(0).normalize(NormalizationMode.WHNF));
+    }
+    return false;
+  }
+
+  private static boolean compareConstructors(Expression expr1, Expression expr2) {
+    expr1 = expr1.normalize(NormalizationMode.WHNF);
+    expr2 = expr2.normalize(NormalizationMode.WHNF);
+    if (expr1 instanceof IntegerExpression) {
+      return checkInteger(((IntegerExpression) expr1).getBigInteger(), expr2);
+    }
+    if (expr2 instanceof IntegerExpression) {
+      return checkInteger(((IntegerExpression) expr2).getBigInteger(), expr1);
+    }
+    if (!(expr1 instanceof ConCallExpression) || !(expr2 instanceof ConCallExpression)) {
+      return false;
+    }
+
+    ConCallExpression conCall1 = (ConCallExpression) expr1;
+    ConCallExpression conCall2 = (ConCallExpression) expr2;
+    Constructor con1 = conCall1.getDefinition();
+    Constructor con2 = conCall2.getDefinition();
+
+    if (con1 == con2) {
+      for (int i = 0; i < conCall1.getDefCallArguments().size(); i++) {
+        if (compareConstructors(conCall1.getDefCallArguments().get(i), conCall2.getDefCallArguments().get(i))) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    for (Constructor constructor : con1.getDataType().getConstructors()) {
+      Body body = constructor.getBody();
+      if (body == null) {
+        continue;
+      }
+
+      Set<Constructor> constructors = new HashSet<>();
+      constructors.add(constructor);
+      if (body instanceof Expression) {
+        if (!addConstructor((Expression) body, constructors)) {
+          return false;
+        }
+      } else if (body instanceof IntervalElim) {
+        for (IntervalElim.CasePair pair : ((IntervalElim) body).getCases()) {
+          if (!addConstructor(pair.proj1, constructors) || !addConstructor(pair.proj2, constructors)) {
+            return false;
+          }
+        }
+        body = ((IntervalElim) body).getOtherwise();
+      }
+      if (body instanceof ElimBody) {
+        for (ElimClause<Pattern> clause : ((ElimBody) body).getClauses()) {
+          if (!addConstructor(clause.getExpression(), constructors)) {
+            return false;
+          }
+        }
+      } else if (body != null) {
+        throw new IllegalStateException();
+      }
+
+      if (constructors.contains(con1) && constructors.contains(con2)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  public static boolean checkDisjointConstructors(DataCallExpression dataCall) {
+    return dataCall.getDefinition() == Prelude.PATH && dataCall.getDefCallArguments().get(0).removeConstLam() != null && compareConstructors(dataCall.getDefCallArguments().get(1), dataCall.getDefCallArguments().get(2));
   }
 
   // Chains the bindings in the leaves of patterns
