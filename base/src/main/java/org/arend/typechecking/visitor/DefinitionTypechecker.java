@@ -8,14 +8,12 @@ import org.arend.core.context.param.*;
 import org.arend.core.definition.*;
 import org.arend.core.elimtree.Body;
 import org.arend.core.elimtree.ElimBody;
+import org.arend.core.elimtree.ElimClause;
 import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.*;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.type.TypeExpression;
-import org.arend.core.expr.visitor.CompareVisitor;
-import org.arend.core.expr.visitor.FieldsCollector;
-import org.arend.core.expr.visitor.FreeVariablesCollector;
-import org.arend.core.expr.visitor.GoodThisParametersVisitor;
+import org.arend.core.expr.visitor.*;
 import org.arend.core.pattern.BindingPattern;
 import org.arend.core.pattern.ConstructorExpressionPattern;
 import org.arend.core.pattern.ExpressionPattern;
@@ -1519,6 +1517,35 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     return expression;
   }
 
+  private boolean checkConstructorsOnlyOnTop(Expression expr, DataDefinition dataDefinition) {
+    if (expr instanceof ConCallExpression && ((ConCallExpression) expr).getDefinition().getDataType() == dataDefinition) {
+      for (Expression argument : ((ConCallExpression) expr).getDataTypeArguments()) {
+        if (!checkConstructorsOnlyOnTop(argument, dataDefinition)) {
+          return false;
+        }
+      }
+      for (Expression argument : ((ConCallExpression) expr).getDefCallArguments()) {
+        if (!checkConstructorsOnlyOnTop(argument, dataDefinition)) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    return !expr.accept(new ProcessDefCallsVisitor<Void>() {
+      @Override
+      protected boolean processDefCall(DefCallExpression expression, Void param) {
+        return expression instanceof ConCallExpression && ((ConCallExpression) expression).getDefinition().getDataType() == dataDefinition;
+      }
+    }, null);
+  }
+
+  private void checkConstructorsOnlyOnTop(Expression expr, DataDefinition dataDefinition, Concrete.SourceNode sourceNode) {
+    if (expr != null && !checkConstructorsOnlyOnTop(expr, dataDefinition)) {
+      errorReporter.report(new TypecheckingError("Constructors can occur only on the top level of conditions", sourceNode));
+    }
+  }
+
   private Sort typecheckConstructor(Concrete.Constructor def, List<ExpressionPattern> patterns, DataDefinition dataDefinition, Set<DataDefinition> dataDefinitions, Sort userSort, boolean newDef) {
     Constructor constructor = newDef ? new Constructor(def.getData(), dataDefinition) : null;
     if (constructor != null) {
@@ -1576,6 +1603,11 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           Expression expectedType = oldConstructor.getDataTypeExpression(Sort.STD);
           PatternTypechecking patternTypechecking = new PatternTypechecking(errorReporter, PatternTypechecking.Mode.CONSTRUCTOR, typechecker, true);
           List<ExtElimClause> clauses = patternTypechecking.typecheckClauses(def.getClauses(), def.getParameters(), oldConstructor.getParameters(), elimParams, expectedType);
+          if (clauses != null) {
+            for (int i = 0; i < clauses.size(); i++) {
+              checkConstructorsOnlyOnTop(clauses.get(i).getExpression(), dataDefinition, def.getClauses().get(i).getExpression());
+            }
+          }
           Body body = clauses == null ? null : new ElimTypechecking(errorReporter, typechecker.getEquations(), expectedType, PatternTypechecking.Mode.CONSTRUCTOR, def.getClauses(), def).typecheckElim(clauses, def.getParameters(), oldConstructor.getParameters(), elimParams);
           if (constructor != null) {
             constructor.setBody(body);
