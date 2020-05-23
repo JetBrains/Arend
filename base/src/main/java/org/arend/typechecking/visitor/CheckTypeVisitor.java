@@ -26,6 +26,7 @@ import org.arend.ext.ArendExtension;
 import org.arend.ext.FreeBindingsModifier;
 import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.concrete.expr.ConcreteExpression;
+import org.arend.ext.concrete.expr.ConcreteGoalExpression;
 import org.arend.ext.concrete.expr.ConcreteReferenceExpression;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.definition.CoreClassDefinition;
@@ -2140,10 +2141,23 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       throw new IllegalArgumentException();
     }
 
-    GoalError error = new GoalError(expr.getName(), saveTypecheckingContext(), expectedType, goalResult == null ? null : (Concrete.Expression) goalResult.concreteExpression, errors, solver, expr);
+    GoalError error = new GoalError(saveTypecheckingContext(), expectedType, goalResult == null ? null : (Concrete.Expression) goalResult.concreteExpression, errors, solver, expr);
     errorReporter.report(error);
     Expression result = new GoalErrorExpression(goalResult == null || goalResult.typedExpression == null ? null : (Expression) goalResult.typedExpression.getExpression(), error);
     return new TypecheckingResult(result, expectedType != null && !(expectedType instanceof Type && ((Type) expectedType).isOmega()) ? expectedType : result);
+  }
+
+  @Override
+  public @NotNull TypecheckingResult typecheckGoal(@NotNull ConcreteGoalExpression goalExpression, @Nullable CoreExpression expectedType, @NotNull List<GeneralError> errors) {
+    if (!((expectedType == null || expectedType instanceof Expression) && goalExpression instanceof Concrete.GoalExpression)) {
+      throw new IllegalArgumentException();
+    }
+
+    Concrete.GoalExpression goalExpr = (Concrete.GoalExpression) goalExpression;
+    GoalError error = new GoalError(saveTypecheckingContext(), (Expression) expectedType, goalExpr.expression, errors, goalExpr.goalSolver, goalExpr);
+    errorReporter.report(error);
+    Expression result = new GoalErrorExpression(error);
+    return new TypecheckingResult(result, expectedType != null ? (Expression) expectedType : result);
   }
 
   @Override

@@ -1,10 +1,6 @@
-package org.arend.error;
-
-import org.arend.ext.error.ErrorReporter;
-import org.arend.ext.error.GeneralError;
+package org.arend.ext.error;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 public class ListErrorReporter implements ErrorReporter {
@@ -23,7 +19,7 @@ public class ListErrorReporter implements ErrorReporter {
     myErrorList.add(error);
   }
 
-  public Collection<? extends GeneralError> getErrorList() {
+  public List<GeneralError> getErrorList() {
     return myErrorList;
   }
 

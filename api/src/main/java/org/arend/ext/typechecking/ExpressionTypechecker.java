@@ -1,6 +1,7 @@
 package org.arend.ext.typechecking;
 
 import org.arend.ext.FreeBindingsModifier;
+import org.arend.ext.concrete.expr.ConcreteGoalExpression;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.definition.CoreClassDefinition;
 import org.arend.ext.core.expr.CoreExpression;
@@ -9,6 +10,7 @@ import org.arend.ext.core.ops.CMP;
 import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.error.ErrorReporter;
+import org.arend.ext.error.GeneralError;
 import org.arend.ext.reference.ArendRef;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -110,6 +112,17 @@ public interface ExpressionTypechecker {
    * @return                        an instance of the given class with the specified classifying expression or {@code null} if there is no such instance
    */
   @Nullable TypedExpression findInstance(@NotNull CoreClassDefinition classDefinition, @Nullable UncheckedExpression classifyingExpression, @Nullable CoreExpression expectedType, @NotNull ConcreteSourceNode sourceNode);
+
+  /**
+   * Checks a goal expression. Can be used to set the list of errors in the goal.
+   * The default goal solver will not be applied to this goal.
+   *
+   * @param goalExpression  a goal expression that should be registered
+   * @param expectedType    a type that will be displayed in "Expected type" field
+   * @param errors          a list of errors that will be displayed in this goal
+   * @return                a core representation of the goal
+   */
+  @NotNull TypedExpression typecheckGoal(@NotNull ConcreteGoalExpression goalExpression, @Nullable CoreExpression expectedType, @NotNull List<GeneralError> errors);
 
   /**
    * Checks if the type-checking was cancelled.

@@ -674,6 +674,7 @@ public final class Concrete {
       this.goalSolver = goalSolver;
     }
 
+    @Override
     public String getName() {
       return myName;
     }

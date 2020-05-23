@@ -59,13 +59,13 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
 
   @NotNull
   @Override
-  public ConcreteExpression core(String name, @NotNull TypedExpression expr) {
+  public ConcreteExpression core(@Nullable String name, @NotNull TypedExpression expr) {
     return new Concrete.ReferenceExpression(myData, new CoreReferable(name, TypecheckingResult.fromChecked(Objects.requireNonNull(expr))), null, null);
   }
 
   @NotNull
   @Override
-  public ConcreteExpression meta(String name, @NotNull MetaDefinition meta) {
+  public ConcreteExpression meta(@NotNull String name, @NotNull MetaDefinition meta) {
     return new Concrete.ReferenceExpression(myData, new MetaReferable(Precedence.DEFAULT, name, "", meta), null, null);
   }
 
@@ -143,7 +143,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
 
   @NotNull
   @Override
-  public ConcreteExpression goal(@Nullable String name, @Nullable ConcreteExpression expression) {
+  public Concrete.GoalExpression goal(@Nullable String name, @Nullable ConcreteExpression expression) {
     if (!(expression == null || expression instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }
