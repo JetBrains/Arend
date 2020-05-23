@@ -625,7 +625,7 @@ public class TwoStageEquations implements Equations {
     while (!myProps.isEmpty()) {
       InferenceVariable var = myProps.pop();
       if (!var.isSolved()) {
-        var.solve(this, new UniverseExpression(Sort.PROP));
+        solve(var, new UniverseExpression(Sort.PROP), false, false);
       }
     }
 
