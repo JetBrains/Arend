@@ -153,6 +153,10 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     this(state, new LinkedHashSet<>(), new LinkedHashMap<>(), errorReporter, pool, arendExtension);
   }
 
+  public ArendExtension getExtension() {
+    return myArendExtension;
+  }
+
   public TypecheckingContext saveTypecheckingContext() {
     return new TypecheckingContext(new LinkedHashSet<>(myFreeBindings), new LinkedHashMap<>(context), myInstancePool.getInstanceProvider(), myInstancePool.getInstancePool(), myArendExtension);
   }

@@ -3,6 +3,7 @@ package org.arend.ext;
 import org.arend.ext.concrete.ConcreteFactory;
 import org.arend.ext.dependency.ArendDependencyProvider;
 import org.arend.ext.typechecking.GoalSolver;
+import org.arend.ext.typechecking.LevelProver;
 import org.arend.ext.ui.ArendUI;
 import org.arend.ext.variable.VariableRenamerFactory;
 import org.jetbrains.annotations.NotNull;
@@ -65,6 +66,10 @@ public interface ArendExtension {
    * @return a goal solver that will be used for ordinary goals
    */
   default @Nullable GoalSolver getGoalSolver() {
+    return null;
+  }
+
+  default @Nullable LevelProver getLevelProver() {
     return null;
   }
 }

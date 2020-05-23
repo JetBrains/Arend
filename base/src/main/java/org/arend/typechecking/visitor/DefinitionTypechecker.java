@@ -32,6 +32,7 @@ import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.error.TypecheckingError;
+import org.arend.ext.typechecking.LevelProver;
 import org.arend.naming.reference.*;
 import org.arend.prelude.Prelude;
 import org.arend.term.ClassFieldKind;
@@ -327,33 +328,35 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     return false;
   }
 
-  private Integer typecheckResultTypeLevel(Concrete.Expression resultTypeLevel, boolean isLemma, boolean isProperty, Expression resultType, FunctionDefinition funDef, ClassField classField, boolean newDef) {
-    if (resultTypeLevel != null) {
-      TypecheckingResult result = typechecker.finalCheckExpr(resultTypeLevel, null);
-      if (result != null && resultType != null) {
-        Integer level = typechecker.getExpressionLevel(EmptyDependentLink.getInstance(), result.type, resultType, DummyEquations.getInstance(), resultTypeLevel);
-        if (level != null) {
-          if (!checkLevel(isLemma, isProperty, level, null, resultTypeLevel)) {
-            if (newDef && funDef != null) {
-              funDef.setKind(CoreFunctionDefinition.Kind.FUNC);
-            }
-            if (isProperty) {
-              return null;
-            }
-          }
-          if (newDef) {
-            if (funDef != null) {
-              funDef.setResultTypeLevel(result.expression);
-            }
-            if (classField != null) {
-              classField.setTypeLevel(result.expression);
-            }
-          }
+  private Integer checkResultTypeLevel(TypecheckingResult result, boolean isLemma, boolean isProperty, Expression resultType, FunctionDefinition funDef, ClassField classField, boolean newDef, Concrete.SourceNode sourceNode) {
+    if (result == null || resultType == null) {
+      return null;
+    }
+
+    Integer level = typechecker.getExpressionLevel(EmptyDependentLink.getInstance(), result.type, resultType, DummyEquations.getInstance(), sourceNode);
+    if (level != null) {
+      if (!checkLevel(isLemma, isProperty, level, null, sourceNode)) {
+        if (newDef && funDef != null) {
+          funDef.setKind(CoreFunctionDefinition.Kind.FUNC);
         }
-        return level;
+        if (isProperty) {
+          return null;
+        }
+      }
+      if (newDef) {
+        if (funDef != null) {
+          funDef.setResultTypeLevel(result.expression);
+        }
+        if (classField != null) {
+          classField.setTypeLevel(result.expression);
+        }
       }
     }
-    return null;
+    return level;
+  }
+
+  private Integer typecheckResultTypeLevel(Concrete.Expression resultTypeLevel, boolean isLemma, boolean isProperty, Expression resultType, FunctionDefinition funDef, ClassField classField, boolean newDef) {
+    return resultTypeLevel == null ? null : checkResultTypeLevel(typechecker.finalCheckExpr(resultTypeLevel, null), isLemma, isProperty, resultType, funDef, classField, newDef, resultTypeLevel);
   }
 
   private void calculateGoodThisParameters(Constructor definition) {
@@ -742,7 +745,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
   private Integer checkTypeLevel(Concrete.BaseFunctionDefinition def, FunctionDefinition typedDef, boolean newDef) {
     Expression type = typedDef.getResultType();
-    Integer resultTypeLevel = type.isError() ? null : typecheckResultTypeLevel(def.getResultTypeLevel(), def.getKind() == FunctionKind.LEMMA, false, typedDef.getResultType(), typedDef, null, newDef);
+    Integer resultTypeLevel = type.isError() ? null : typecheckResultTypeLevel(def.getResultTypeLevel(), def.getKind() == FunctionKind.LEMMA, false, type, typedDef, null, newDef);
     if (resultTypeLevel == null && !type.isError()) {
       DefCallExpression defCall = type.cast(DefCallExpression.class);
       resultTypeLevel = defCall == null ? null : defCall.getUseLevel();
@@ -754,11 +757,21 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
     }
 
-    if (def.getKind() == FunctionKind.LEMMA && resultTypeLevel == null && !typedDef.getResultType().isError()) {
-      Sort sort = typedDef.getResultType().getSortOfType();
+    if (def.getKind() == FunctionKind.LEMMA && resultTypeLevel == null && !type.isError()) {
+      Sort sort = type.getSortOfType();
       if (sort == null || !sort.isProp()) {
-        DefCallExpression defCall = typedDef.getResultType().cast(DefCallExpression.class);
+        DefCallExpression defCall = type.cast(DefCallExpression.class);
         Integer level = defCall == null ? null : defCall.getUseLevel();
+        if ((level == null || level != -1) && typechecker.getExtension() != null) {
+          LevelProver prover = typechecker.getExtension().getLevelProver();
+          if (prover != null) {
+            TypecheckingResult result = TypecheckingResult.fromChecked(prover.prove(type, -1, typechecker));
+            if (result != null) {
+              Integer level2 = checkResultTypeLevel(result, true, false, type, typedDef, null, newDef, def);
+              return level != null && level2 != null ? Math.min(level, level2) : level != null ? level : level2;
+            }
+          }
+        }
         if (!checkLevel(true, false, level, sort, def.getResultType() != null ? def.getResultType() : def)) {
           if (newDef) {
             typedDef.setKind(CoreFunctionDefinition.Kind.SFUNC);
@@ -2073,8 +2086,28 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           } else {
             DefCallExpression defCall = typeExpr.cast(DefCallExpression.class);
             Integer level = defCall == null ? null : defCall.getUseLevel();
-            if ((kind != ClassFieldKind.PROPERTY || checkLevel(false, true, level, sort, def)) && (kind != ClassFieldKind.ANY || level != null && level == -1)) {
-              isProperty = true;
+            if (kind == ClassFieldKind.PROPERTY) {
+              boolean check = true;
+              if ((level == null || level != -1) && typechecker.getExtension() != null) {
+                LevelProver prover = typechecker.getExtension().getLevelProver();
+                if (prover != null) {
+                  TypecheckingResult result = TypecheckingResult.fromChecked(prover.prove(typeExpr, -1, typechecker));
+                  if (result != null) {
+                    Integer level2 = checkResultTypeLevel(result, false, true, typeExpr, null, typedDef, newDef, def);
+                    if (level2 != null && level2 == -1) {
+                      isProperty = true;
+                    }
+                    check = false;
+                  }
+                }
+              }
+              if (check && checkLevel(false, true, level, sort, def)) {
+                isProperty = true;
+              }
+            } else {
+              if (level != null && level == -1) {
+                isProperty = true;
+              }
             }
           }
         }
