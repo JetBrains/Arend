@@ -56,7 +56,6 @@ import org.arend.typechecking.patternmatching.ElimTypechecking;
 import org.arend.typechecking.patternmatching.ExtElimClause;
 import org.arend.typechecking.patternmatching.PatternTypechecking;
 import org.arend.typechecking.result.TypecheckingResult;
-import org.arend.util.Decision;
 import org.arend.util.Pair;
 
 import java.util.*;
@@ -328,10 +327,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     return false;
   }
 
-  private Integer typecheckResultTypeLevel(Concrete.Expression typeLevel, FunctionKind kind, FunctionDefinition typedDef, boolean newDef) {
-    return typecheckResultTypeLevel(typeLevel, kind == FunctionKind.LEMMA, false, typedDef.getResultType(), typedDef, null, newDef);
-  }
-
   private Integer typecheckResultTypeLevel(Concrete.Expression resultTypeLevel, boolean isLemma, boolean isProperty, Expression resultType, FunctionDefinition funDef, ClassField classField, boolean newDef) {
     if (resultTypeLevel != null) {
       TypecheckingResult result = typechecker.finalCheckExpr(resultTypeLevel, null);
@@ -562,30 +557,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     return new Pair<>(sort, resultType == null ? null : resultType.subst(substitution));
   }
 
-  private Decision isPropLevel(Concrete.Expression expression) {
-    Referable fun = expression == null ? null : expression.getUnderlyingReferable();
-    if (fun instanceof TCReferable) {
-      Definition typeDef = typechecker.getTypechecked((TCReferable) fun);
-      if (typeDef != null) {
-        boolean couldBe = false;
-        for (ParametersLevel parametersLevel : typeDef.getParametersLevels()) {
-          if (parametersLevel.level == -1) {
-            if (parametersLevel.parameters == null) {
-              return Decision.YES;
-            }
-            couldBe = true;
-          }
-        }
-        if (couldBe) {
-          return Decision.MAYBE;
-        }
-      } else {
-        return Decision.MAYBE;
-      }
-    }
-    return Decision.NO;
-  }
-
   @SuppressWarnings("BooleanMethodIsAlwaysInverted")
   private boolean checkLevel(boolean isLemma, boolean isProperty, Integer level, Sort actualSort, Concrete.SourceNode sourceNode) {
     if ((isLemma || isProperty) && (level == null || level != -1)) {
@@ -610,12 +581,11 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     Expression expectedType = null;
     Concrete.Expression cResultType = def.getResultType();
     if (cResultType != null) {
-      Expression typeExpectedType = Type.OMEGA;
       Type expectedTypeResult = def.getBody() instanceof Concrete.CoelimFunctionBody && !def.isRecursive()
         ? null // The result type will be typechecked together with all field implementations during body typechecking.
         : def.getBody() instanceof Concrete.TermFunctionBody && !def.isRecursive() && kind != FunctionKind.LEVEL
-          ? typechecker.checkType(cResultType, typeExpectedType)
-          : typechecker.finalCheckType(cResultType, typeExpectedType, kind == FunctionKind.LEMMA);
+          ? typechecker.checkType(cResultType, Type.OMEGA)
+          : typechecker.finalCheckType(cResultType, Type.OMEGA, kind == FunctionKind.LEMMA && def.getResultTypeLevel() == null);
       if (expectedTypeResult != null) {
         expectedType = expectedTypeResult.getExpr();
       }
@@ -772,7 +742,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
   private Integer checkTypeLevel(Concrete.BaseFunctionDefinition def, FunctionDefinition typedDef, boolean newDef) {
     Expression type = typedDef.getResultType();
-    Integer resultTypeLevel = type.isError() ? null : typecheckResultTypeLevel(def.getResultTypeLevel(), def.getKind(), typedDef, newDef);
+    Integer resultTypeLevel = type.isError() ? null : typecheckResultTypeLevel(def.getResultTypeLevel(), def.getKind() == FunctionKind.LEMMA, false, typedDef.getResultType(), typedDef, null, newDef);
     if (resultTypeLevel == null && !type.isError()) {
       DefCallExpression defCall = type.cast(DefCallExpression.class);
       resultTypeLevel = defCall == null ? null : defCall.getUseLevel();
@@ -2035,7 +2005,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
     }
 
-    boolean isProperty;
+    boolean isProperty = false;
     boolean ok;
     PiExpression piType;
     try (var ignore = new Utils.SetContextSaver<>(typechecker.getFreeBindings())) {
@@ -2056,59 +2026,56 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
 
         setClassLocalInstancePool(localInstances, thisParam, def, !parentClass.isRecord() && !hasClassifyingField ? parentClass : null);
-        Decision propLevel = isPropLevel(codomain);
         ClassFieldKind kind = def instanceof Concrete.ClassField ? ((Concrete.ClassField) def).getKind() : typedDef == null ? ClassFieldKind.ANY : typedDef.isProperty() ? ClassFieldKind.PROPERTY : ClassFieldKind.FIELD;
-        boolean needProp = kind == ClassFieldKind.PROPERTY && def.getResultTypeLevel() == null;
-        isProperty = needProp && propLevel == Decision.NO;
-        Type typeResult = typechecker.finalCheckType(codomain, isProperty ? new UniverseExpression(Sort.PROP) : Type.OMEGA, false);
+        Type typeResult = typechecker.finalCheckType(codomain, Type.OMEGA, kind == ClassFieldKind.PROPERTY && def.getResultTypeLevel() == null);
         myInstancePool.setInstancePool(null);
         ok = typeResult != null;
         Expression typeExpr = ok ? typeResult.getExpr() : new ErrorExpression();
         piType = new PiExpression(ok ? Sort.STD.max(typeResult.getSortOfType()) : Sort.STD, thisParam, typeExpr);
-        if (ok) {
-          if (needProp && propLevel == Decision.YES) {
-            isProperty = true;
-          } else if (kind == ClassFieldKind.ANY || needProp && propLevel == Decision.MAYBE) {
-            isProperty = true;
-            Sort sort = typeResult.getSortOfType();
-            if (sort == null || !sort.isProp()) {
-              DefCallExpression defCall = propLevel == Decision.NO ? null : typeExpr.cast(DefCallExpression.class);
-              Integer level = defCall == null ? null : defCall.getUseLevel();
-              if (kind == ClassFieldKind.PROPERTY && !checkLevel(false, true, level, sort, def) || kind == ClassFieldKind.ANY && (level == null || level != -1)) {
-                isProperty = false;
-              }
-            }
-          }
-        }
 
         if (newDef && def instanceof Concrete.ClassField) {
           typedDef = addField(((Concrete.ClassField) def).getData(), parentClass, piType, null);
         }
 
-        if (def.getResultTypeLevel() != null) {
-          Expression resultType = piType;
-          SingleDependentLink link = EmptyDependentLink.getInstance();
-          loop:
-          for (Concrete.TypeParameter parameter : def.getParameters()) {
-            for (Referable referable : parameter.getReferableList()) {
-              if (!link.hasNext()) {
-                if (!(resultType instanceof PiExpression)) {
-                  resultType = null;
-                  break loop;
+        if (ok && def.getResultTypeLevel() != null) {
+          if (kind == ClassFieldKind.FIELD) {
+            errorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.LEVEL_IGNORED, def.getResultTypeLevel()));
+          } else {
+            Expression resultType = piType;
+            SingleDependentLink link = EmptyDependentLink.getInstance();
+            loop:
+            for (Concrete.TypeParameter parameter : def.getParameters()) {
+              for (Referable referable : parameter.getReferableList()) {
+                if (!link.hasNext()) {
+                  if (!(resultType instanceof PiExpression)) {
+                    resultType = null;
+                    break loop;
+                  }
+                  link = ((PiExpression) resultType).getParameters();
+                  resultType = ((PiExpression) resultType).getCodomain();
                 }
-                link = ((PiExpression) resultType).getParameters();
-                resultType = ((PiExpression) resultType).getCodomain();
+                typechecker.addBinding(referable, link);
+                link = link.getNext();
               }
-              typechecker.addBinding(referable, link);
-              link = link.getNext();
+            }
+            if (!link.hasNext() && resultType != null) {
+              Integer level = typecheckResultTypeLevel(def.getResultTypeLevel(), false, true, resultType, null, typedDef, newDef && def instanceof Concrete.ClassField);
+              isProperty = level != null && level == -1;
+            } else {
+              // Just reports an error
+              typechecker.getExpressionLevel(link, null, null, DummyEquations.getInstance(), def.getResultTypeLevel());
             }
           }
-          if (!link.hasNext() && resultType != null) {
-            Integer level = typecheckResultTypeLevel(def.getResultTypeLevel(), false, kind == ClassFieldKind.PROPERTY, resultType, null, typedDef, newDef && def instanceof Concrete.ClassField);
-            isProperty = level != null && level == -1;
+        } else if (ok && kind != ClassFieldKind.FIELD) {
+          Sort sort = typeResult.getSortOfType();
+          if (sort.isProp()) {
+            isProperty = true;
           } else {
-            // Just reports an error
-            typechecker.getExpressionLevel(link, null, null, DummyEquations.getInstance(), def.getResultTypeLevel());
+            DefCallExpression defCall = typeExpr.cast(DefCallExpression.class);
+            Integer level = defCall == null ? null : defCall.getUseLevel();
+            if ((kind != ClassFieldKind.PROPERTY || checkLevel(false, true, level, sort, def)) && (kind != ClassFieldKind.ANY || level != null && level == -1)) {
+              isProperty = true;
+            }
           }
         }
       }
