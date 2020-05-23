@@ -26,7 +26,6 @@ import org.arend.ext.ArendExtension;
 import org.arend.ext.FreeBindingsModifier;
 import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.concrete.expr.ConcreteExpression;
-import org.arend.ext.concrete.expr.ConcreteGoalExpression;
 import org.arend.ext.concrete.expr.ConcreteReferenceExpression;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.definition.CoreClassDefinition;
@@ -2123,11 +2122,11 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
 
   @Override
   public TypecheckingResult visitGoal(Concrete.GoalExpression expr, Expression expectedType) {
-    List<GeneralError> errors = Collections.emptyList();
+    List<GeneralError> errors = expr.errors;
     GoalSolver.CheckGoalResult goalResult = null;
-    GoalSolver solver = expr.goalSolver != null ? expr.goalSolver : myArendExtension != null ? myArendExtension.getGoalSolver() : null;
+    GoalSolver solver = expr.useGoalSolver ? expr.goalSolver : myArendExtension != null ? myArendExtension.getGoalSolver() : null;
     if (expr.getExpression() != null || solver != null) {
-      errors = new ArrayList<>();
+      errors = new ArrayList<>(expr.errors);
       goalResult = withErrorReporter(new ListErrorReporter(errors), tc -> {
         if (solver == null) {
           return new GoalSolver.CheckGoalResult(expr.getExpression(), checkExpr(expr.getExpression(), expectedType));
@@ -2145,19 +2144,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     errorReporter.report(error);
     Expression result = new GoalErrorExpression(goalResult == null || goalResult.typedExpression == null ? null : (Expression) goalResult.typedExpression.getExpression(), error);
     return new TypecheckingResult(result, expectedType != null && !(expectedType instanceof Type && ((Type) expectedType).isOmega()) ? expectedType : result);
-  }
-
-  @Override
-  public @NotNull TypecheckingResult typecheckGoal(@NotNull ConcreteGoalExpression goalExpression, @Nullable CoreExpression expectedType, @NotNull List<GeneralError> errors) {
-    if (!((expectedType == null || expectedType instanceof Expression) && goalExpression instanceof Concrete.GoalExpression)) {
-      throw new IllegalArgumentException();
-    }
-
-    Concrete.GoalExpression goalExpr = (Concrete.GoalExpression) goalExpression;
-    GoalError error = new GoalError(saveTypecheckingContext(), (Expression) expectedType, goalExpr.expression, errors, goalExpr.goalSolver, goalExpr);
-    errorReporter.report(error);
-    Expression result = new GoalErrorExpression(error);
-    return new TypecheckingResult(result, expectedType != null ? (Expression) expectedType : result);
   }
 
   @Override

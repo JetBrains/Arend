@@ -3,8 +3,8 @@ package org.arend.ext.concrete;
 import org.arend.ext.concrete.expr.ConcreteArgument;
 import org.arend.ext.concrete.expr.ConcreteCaseArgument;
 import org.arend.ext.concrete.expr.ConcreteExpression;
-import org.arend.ext.concrete.expr.ConcreteGoalExpression;
 import org.arend.ext.core.context.CoreBinding;
+import org.arend.ext.error.GeneralError;
 import org.arend.ext.reference.ArendRef;
 import org.arend.ext.typechecking.GoalSolver;
 import org.arend.ext.typechecking.TypedExpression;
@@ -14,6 +14,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.math.BigInteger;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * ConcreteFactory can be used to create concrete expressions, which can be checked by {@link org.arend.ext.typechecking.ExpressionTypechecker}
@@ -29,9 +30,10 @@ public interface ConcreteFactory {
   @NotNull ConcreteExpression pi(@NotNull Collection<? extends ConcreteParameter> parameters, @NotNull ConcreteExpression codomain);
   @NotNull ConcreteExpression universe(@Nullable ConcreteLevel pLevel, @Nullable ConcreteLevel hLevel);
   @NotNull ConcreteExpression hole();
-  @NotNull ConcreteGoalExpression goal(@Nullable String name, @Nullable ConcreteExpression expression);
-  @NotNull ConcreteExpression goal(@Nullable String name, @Nullable ConcreteExpression expression, @NotNull GoalSolver goalSolver);
   @NotNull ConcreteExpression goal();
+  @NotNull ConcreteExpression goal(@Nullable String name, @Nullable ConcreteExpression expression);
+  @NotNull ConcreteExpression goal(@Nullable String name, @Nullable ConcreteExpression expression, @Nullable GoalSolver goalSolver);
+  @NotNull ConcreteExpression goal(@Nullable String name, @Nullable ConcreteExpression expression, @Nullable GoalSolver goalSolver, @NotNull List<GeneralError> errors);
   @NotNull ConcreteExpression tuple(@NotNull ConcreteExpression... expressions);
   @NotNull ConcreteExpression tuple(@NotNull Collection<? extends ConcreteExpression> expressions);
   @NotNull ConcreteExpression sigma(@NotNull ConcreteParameter... parameters);

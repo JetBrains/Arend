@@ -114,17 +114,6 @@ public interface ExpressionTypechecker {
   @Nullable TypedExpression findInstance(@NotNull CoreClassDefinition classDefinition, @Nullable UncheckedExpression classifyingExpression, @Nullable CoreExpression expectedType, @NotNull ConcreteSourceNode sourceNode);
 
   /**
-   * Checks a goal expression. Can be used to set the list of errors in the goal.
-   * The default goal solver will not be applied to this goal.
-   *
-   * @param goalExpression  a goal expression that should be registered
-   * @param expectedType    a type that will be displayed in "Expected type" field
-   * @param errors          a list of errors that will be displayed in this goal
-   * @return                a core representation of the goal
-   */
-  @NotNull TypedExpression typecheckGoal(@NotNull ConcreteGoalExpression goalExpression, @Nullable CoreExpression expectedType, @NotNull List<GeneralError> errors);
-
-  /**
    * Checks if the type-checking was cancelled.
    * Should be invoked often during heavy computations.
    */
