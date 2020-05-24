@@ -49,7 +49,7 @@ import java.util.function.Supplier;
 
 public abstract class Repl {
   public static final @NotNull FullModulePath replModulePath = new FullModulePath(null, FullModulePath.LocationKind.SOURCE, Collections.singletonList("Repl"));
-  private @Nullable NormalizationMode myMode = null;
+  private @Nullable NormalizationMode myMode = NormalizationMode.RNF;
 
   protected final List<Scope> myMergedScopes = new ArrayList<>();
   private final List<ReplHandler> myHandlers = new ArrayList<>();

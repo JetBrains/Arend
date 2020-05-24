@@ -7,6 +7,9 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Supplier;
 
+/**
+ * @see AliasableCommand
+ */
 public interface ReplCommand {
   /**
    * Displayed in <code>:help</code>.
