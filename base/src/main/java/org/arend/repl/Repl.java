@@ -2,9 +2,9 @@ package org.arend.repl;
 
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.visitor.ScopeDefinitionRenamer;
-import org.arend.error.ListErrorReporter;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.GeneralError;
+import org.arend.ext.error.ListErrorReporter;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.reference.Precedence;
 import org.arend.extImpl.DefinitionRequester;
