@@ -5,6 +5,7 @@ import org.arend.core.context.binding.inference.BaseInferenceVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.context.param.TypedDependentLink;
+import org.arend.core.context.param.UnusedIntervalDependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
 import org.arend.core.definition.Definition;
@@ -217,7 +218,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
   }
 
   void addBinding(Binding binding, Expression expr) {
-    if (!myContext.add(binding)) {
+    if (binding != UnusedIntervalDependentLink.INSTANCE && !myContext.add(binding)) {
       throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Binding '" + binding.getName() + "' is already bound", mySourceNode), expr));
     }
   }

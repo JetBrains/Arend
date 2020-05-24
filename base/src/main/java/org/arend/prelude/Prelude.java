@@ -1,7 +1,7 @@
 package org.arend.prelude;
 
 import org.arend.core.context.binding.LevelVariable;
-import org.arend.core.context.param.TypedSingleDependentLink;
+import org.arend.core.context.param.UnusedIntervalDependentLink;
 import org.arend.core.definition.*;
 import org.arend.core.expr.*;
 import org.arend.core.pattern.*;
@@ -9,7 +9,6 @@ import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.error.DummyErrorReporter;
 import org.arend.ext.ArendPrelude;
-import org.arend.ext.module.ModulePath;
 import org.arend.module.FullModulePath;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
@@ -113,15 +112,18 @@ public class Prelude implements ArendPrelude {
         break;
       case "Path":
         PATH = (DataDefinition) definition;
-        PATH.getParameters().setType(new PiExpression(new Sort(new Level(LevelVariable.PVAR, 1), new Level(LevelVariable.HVAR, 2)), new TypedSingleDependentLink(true, null, new DataCallExpression(INTERVAL, new Sort(new Level(0), new Level(-1)), Collections.emptyList())), new UniverseExpression(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR, 1)))));
+        PATH.getParameters().setType(new PiExpression(new Sort(new Level(LevelVariable.PVAR, 1), new Level(LevelVariable.HVAR, 2)), UnusedIntervalDependentLink.INSTANCE, new UniverseExpression(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR, 1)))));
         PATH.setCovariant(1, false);
         PATH.setCovariant(2, false);
         PATH_CON = PATH.getConstructor("path");
         break;
-      case "=":
+      case "=": {
         PATH_INFIX = (FunctionDefinition) definition;
         PATH_INFIX.getParameters().setType(new UniverseExpression(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR, 1))));
+        DataCallExpression dataCall = (DataCallExpression) PATH_INFIX.getBody();
+        PATH_INFIX.setBody(new DataCallExpression(dataCall.getDefinition(), dataCall.getSortArgument(), Arrays.asList(new LamExpression(new Sort(new Level(0), Level.INFINITY), UnusedIntervalDependentLink.INSTANCE, ((LamExpression) dataCall.getDefCallArguments().get(0)).getBody()), dataCall.getDefCallArguments().get(1), dataCall.getDefCallArguments().get(2))));
         break;
+      }
       case "idp": {
         IDP = (DConstructor) definition;
         List<Expression> args = new ArrayList<>(2);
@@ -130,6 +132,8 @@ public class Prelude implements ArendPrelude {
         IDP.setPattern(new ConstructorExpressionPattern(new FunCallExpression(IDP, Sort.STD, args), Collections.emptyList()));
         IDP.setNumberOfParameters(2);
         IDP.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+        ConCallExpression conCall = (ConCallExpression) IDP.getBody();
+        IDP.setBody(new ConCallExpression(conCall.getDefinition(), conCall.getSortArgument(), conCall.getDataTypeArguments(), Collections.singletonList(new LamExpression(new Sort(new Level(0), Level.INFINITY), UnusedIntervalDependentLink.INSTANCE, ((LamExpression) conCall.getDefCallArguments().get(0)).getBody()))));
         break;
       }
       case "@": {

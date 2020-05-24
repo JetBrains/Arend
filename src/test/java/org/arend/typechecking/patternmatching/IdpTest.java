@@ -258,4 +258,12 @@ public class IdpTest extends TypeCheckingTestCase {
       "  | (true,idp,idp) => idp {\\Sigma (a : Bool) (f a = f true) (g (f true) = g (f true))} {(true,idp,idp)}\n" +
       "  | (false,idp,idp) => idp {\\Sigma (a : Bool) (f a = f false) (g (f false) = g (f false))} {(false,idp,idp)}");
   }
+
+  @Test
+  public void pathTest() {
+    typeCheckModule(
+      "\\func f (x y : Nat) (p : x = y) : Nat \\elim p" +
+      "  | idp => 1\n" +
+      "\\func test (t : 0 = 0) : f 0 0 (path (\\lam i => t @ i)) = 1 => idp", 1);
+  }
 }
