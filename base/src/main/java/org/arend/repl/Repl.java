@@ -22,10 +22,7 @@ import org.arend.naming.scope.CachingScope;
 import org.arend.naming.scope.MergeScope;
 import org.arend.naming.scope.Scope;
 import org.arend.naming.scope.ScopeFactory;
-import org.arend.repl.action.NormalizeCommand;
-import org.arend.repl.action.QuitCommand;
-import org.arend.repl.action.ReplCommand;
-import org.arend.repl.action.ShowTypeCommand;
+import org.arend.repl.action.*;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.Group;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
@@ -182,10 +179,16 @@ public abstract class Repl {
     registerAction("normalize", NormalizeCommand.INSTANCE);
     registerAction("libraries", ShowLoadedLibrariesCommand.INSTANCE);
     registerAction("?", CommandHandler.HELP_COMMAND_INSTANCE);
+    registerAlias("help", CommandHandler.HELP_COMMAND_INSTANCE);
   }
 
   public final @Nullable ReplCommand registerAction(@NotNull String name, @NotNull ReplCommand action) {
     return CommandHandler.INSTANCE.commandMap.put(name, action);
+  }
+
+  public final @Nullable ReplCommand registerAlias(@NotNull String name, @NotNull AliasableCommand action) {
+    action.aliases.add(name);
+    return registerAction(name, action);
   }
 
   public final @Nullable ReplCommand unregisterAction(@NotNull String name) {

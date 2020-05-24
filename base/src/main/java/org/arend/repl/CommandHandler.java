@@ -7,9 +7,7 @@ import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.IntSummaryStatistics;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -17,7 +15,6 @@ import java.util.stream.Stream;
 public final class CommandHandler implements ReplHandler {
   public static final @NotNull CommandHandler INSTANCE = new CommandHandler();
   public static final @NotNull HelpCommand HELP_COMMAND_INSTANCE = INSTANCE.createHelpCommand();
-  public static final @NotNull AliasableCommand.AliasCommand HELP_COMMAND_ALIAS_INSTANCE = HELP_COMMAND_INSTANCE.createAlias();
   public final @NotNull Map<String, ReplCommand> commandMap = new LinkedHashMap<>();
 
   private @NotNull HelpCommand createHelpCommand() {
@@ -67,6 +64,7 @@ public final class CommandHandler implements ReplHandler {
 
   public final class HelpCommand extends AliasableCommand {
     private HelpCommand() {
+      super(new ArrayList<>());
     }
 
     @Override
@@ -96,17 +94,29 @@ public final class CommandHandler implements ReplHandler {
 
     private void noArg(@NotNull Repl api) {
       IntSummaryStatistics statistics = commandMap.entrySet()
-        .stream()
-        .filter(it -> !(it.getValue() instanceof AliasableCommand))
-        .map(Map.Entry::getKey)
-        .mapToInt(String::length)
-        .summaryStatistics();
-      int maxWidth = Math.min(statistics.getMax(), 9) + 1;
+          .stream()
+          .filter(it -> !(it.getValue() instanceof AliasableCommand))
+          .map(Map.Entry::getKey)
+          .mapToInt(String::length)
+          .summaryStatistics();
+      int maxWidth = statistics.getMax() + 1;
       api.println("There are " + statistics.getCount() + " commands available.");
+      var set = new HashSet<AliasableCommand>();
       for (var replCommand : commandMap.entrySet()) {
-        var description = replCommand.getValue().description();
+        var commandValue = replCommand.getValue();
+        var description = commandValue.description();
         String command = replCommand.getKey();
-        api.println(":" + command + " ".repeat(maxWidth - command.length()) + description);
+        if (commandValue instanceof AliasableCommand) {
+          if (!set.contains(commandValue)) {
+            var aliasableCommand = (AliasableCommand) commandValue;
+            set.add(aliasableCommand);
+            api.println(aliasableCommand.aliases
+                .stream()
+                .map(it -> ":" + it)
+                .collect(Collectors.joining(", ", "", " " + description)));
+          }
+        } else
+          api.println(":" + command + " ".repeat(maxWidth - command.length()) + description);
       }
       api.println("Note: to use an Arend symbol beginning with `:`, start the line with a whitespace.");
     }

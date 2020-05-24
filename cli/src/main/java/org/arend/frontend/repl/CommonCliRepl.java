@@ -2,8 +2,8 @@ package org.arend.frontend.repl;
 
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
-import org.arend.error.ListErrorReporter;
 import org.arend.ext.error.ErrorReporter;
+import org.arend.ext.error.ListErrorReporter;
 import org.arend.ext.module.ModulePath;
 import org.arend.extImpl.DefinitionRequester;
 import org.arend.frontend.ConcreteReferableProvider;
