@@ -22,7 +22,6 @@ import org.arend.ext.core.expr.UncheckedExpression;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.ExpressionMapper;
 import org.arend.ext.core.ops.NormalizationMode;
-import org.arend.ext.error.MetaException;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.ext.prettyprinting.doc.DocFactory;
@@ -243,7 +242,7 @@ public abstract class Expression implements Body, CoreExpression {
     if (expr instanceof FunCallExpression && ((FunCallExpression) expr).getDefinition() == Prelude.PATH_INFIX) {
       return (FunCallExpression) expr;
     }
-    DataCallExpression dataCall = expr.normalize(NormalizationMode.WHNF).cast(DataCallExpression.class);
+    DataCallExpression dataCall = expr instanceof DataCallExpression ? (DataCallExpression) expr : expr.normalize(NormalizationMode.WHNF).cast(DataCallExpression.class);
     if (dataCall != null && dataCall.getDefinition() == Prelude.PATH) {
       List<Expression> args = dataCall.getDefCallArguments();
       Expression type = args.get(0).removeConstLam();
