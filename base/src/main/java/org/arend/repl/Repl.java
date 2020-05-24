@@ -179,16 +179,16 @@ public abstract class Repl {
     registerAction("normalize", NormalizeCommand.INSTANCE);
     registerAction("libraries", ShowLoadedLibrariesCommand.INSTANCE);
     registerAction("?", CommandHandler.HELP_COMMAND_INSTANCE);
-    registerAlias("help", CommandHandler.HELP_COMMAND_INSTANCE);
+    registerAction("help", CommandHandler.HELP_COMMAND_INSTANCE);
   }
 
   public final @Nullable ReplCommand registerAction(@NotNull String name, @NotNull ReplCommand action) {
     return CommandHandler.INSTANCE.commandMap.put(name, action);
   }
 
-  public final @Nullable ReplCommand registerAlias(@NotNull String name, @NotNull AliasableCommand action) {
+  public final @Nullable ReplCommand registerAction(@NotNull String name, @NotNull AliasableCommand action) {
     action.aliases.add(name);
-    return registerAction(name, action);
+    return registerAction(name, (ReplCommand) action);
   }
 
   public final @Nullable ReplCommand unregisterAction(@NotNull String name) {

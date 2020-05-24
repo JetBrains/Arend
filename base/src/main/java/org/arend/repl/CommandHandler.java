@@ -110,10 +110,11 @@ public final class CommandHandler implements ReplHandler {
           if (!set.contains(commandValue)) {
             var aliasableCommand = (AliasableCommand) commandValue;
             set.add(aliasableCommand);
-            api.println(aliasableCommand.aliases
+            String prefix = aliasableCommand.aliases
                 .stream()
                 .map(it -> ":" + it)
-                .collect(Collectors.joining(", ", "", " " + description)));
+                .collect(Collectors.joining(", "));
+            api.println(prefix + " ".repeat(1 + Math.max(0, maxWidth - prefix.length())) + description);
           }
         } else
           api.println(":" + command + " ".repeat(maxWidth - command.length()) + description);
