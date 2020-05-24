@@ -24,4 +24,6 @@ public interface DefinitionContributor {
    * @return a new reference corresponding to the meta definition or {@code null} if there was an error
    */
   MetaRef declare(@NotNull ModulePath module, @NotNull LongName name, @NotNull String description, @NotNull Precedence precedence, @Nullable MetaDefinition meta);
+
+  MetaRef declare(@NotNull ModulePath module, @NotNull LongName name, @NotNull String description, @NotNull Precedence precedence, @Nullable String alias, @Nullable Precedence aliasPrecedence, @Nullable MetaDefinition meta);
 }

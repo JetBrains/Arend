@@ -1,6 +1,7 @@
 package org.arend.naming.scope;
 
 import org.arend.ext.module.ModulePath;
+import org.arend.naming.reference.AliasReferable;
 import org.arend.naming.reference.ClassReferable;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.Referable;
@@ -55,6 +56,12 @@ public class LexicalScope implements Scope {
     String name = referable.textRepresentation();
     if (!name.isEmpty() && !"_".equals(name)) {
       elements.add(referable);
+    }
+    if (referable instanceof GlobalReferable) {
+      String alias = ((GlobalReferable) referable).getAliasName();
+      if (alias != null && !alias.isEmpty() && !"_".equals(alias)) {
+        elements.add(new AliasReferable((GlobalReferable) referable));
+      }
     }
   }
 
@@ -124,6 +131,10 @@ public class LexicalScope implements Scope {
         if (constructor.textRepresentation().equals(name)) {
           return constructor;
         }
+        String alias = constructor.getAliasName();
+        if (alias != null && alias.equals(name)) {
+          return new AliasReferable(constructor);
+        }
       }
     }
 
@@ -133,6 +144,10 @@ public class LexicalScope implements Scope {
           GlobalReferable field = internalReferable.getReferable();
           if (field.textRepresentation().equals(name)) {
             return field;
+          }
+          String alias = field.getAliasName();
+          if (alias != null && alias.equals(name)) {
+            return new AliasReferable(field);
           }
         }
       }
@@ -145,8 +160,18 @@ public class LexicalScope implements Scope {
   }
 
   private static Object resolveSubgroup(Group group, String name, ResolveType resolveType) {
-    Referable ref = group.getReferable();
-    if (ref.textRepresentation().equals(name)) {
+    GlobalReferable ref = group.getReferable();
+    boolean match = ref.textRepresentation().equals(name);
+    if (!match) {
+      String alias = ref.getAliasName();
+      if (alias != null && alias.equals(name)) {
+        if (resolveType == ResolveType.REF) {
+          return new AliasReferable(ref);
+        }
+        match = true;
+      }
+    }
+    if (match) {
       return resolveType == ResolveType.REF ? ref : LexicalScope.opened(group, resolveType == ResolveType.INTERNAL_SCOPE);
     }
 

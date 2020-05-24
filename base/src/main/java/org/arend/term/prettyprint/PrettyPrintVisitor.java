@@ -95,7 +95,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     List<Concrete.Argument> args = expr.getArguments();
 
     boolean infix = false;
-    if (fun instanceof Concrete.ReferenceExpression && ((ReferenceExpression) fun).getReferent() instanceof GlobalReferable && ((GlobalReferable) ((ReferenceExpression) fun).getReferent()).getPrecedence().isInfix) {
+    if (fun instanceof Concrete.ReferenceExpression && ((ReferenceExpression) fun).getReferent() instanceof GlobalReferable && ((GlobalReferable) ((ReferenceExpression) fun).getReferent()).getRepresentablePrecedence().isInfix) {
       for (int i = 0; i < args.size(); i++) {
         if (args.get(i).isExplicit()) {
           infix = i == args.size() - 2 && args.get(i + 1).isExplicit();
@@ -105,7 +105,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     }
 
     if (infix) {
-      visitBinOp(args.get(args.size() - 2).getExpression(), (ReferenceExpression) fun, ((GlobalReferable) ((ReferenceExpression) fun).getReferent()).getPrecedence(), args.subList(0, args.size() - 2), args.get(args.size() - 1).getExpression(), prec);
+      visitBinOp(args.get(args.size() - 2).getExpression(), (ReferenceExpression) fun, args.subList(0, args.size() - 2), args.get(args.size() - 1).getExpression(), prec);
     } else {
       if (prec.priority > Concrete.AppExpression.PREC) myBuilder.append('(');
       final Expression finalFun = fun;
@@ -137,19 +137,26 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   }
 
   private void printReferenceName(Concrete.ReferenceExpression expr, Precedence prec) {
-    if (expr instanceof Concrete.LongReferenceExpression) {
-      myBuilder.append(((Concrete.LongReferenceExpression) expr).getLongName()).append('.');
-    }
-    if (expr.getReferent() instanceof CoreReferable && ((CoreReferable) expr.getReferent()).printExpression()) {
-      ToAbstractVisitor.convert(((CoreReferable) expr.getReferent()).result.expression, PrettyPrinterConfig.DEFAULT).accept(this, prec == null ? new Precedence(ReferenceExpression.PREC) : prec);
+    Referable ref = expr.getReferent();
+    if (ref instanceof CoreReferable && ((CoreReferable) ref).printExpression()) {
+      ToAbstractVisitor.convert(((CoreReferable) ref).result.expression, PrettyPrinterConfig.DEFAULT).accept(this, prec == null ? new Precedence(ReferenceExpression.PREC) : prec);
+    } else if (expr instanceof Concrete.LongReferenceExpression) {
+      myBuilder.append(((Concrete.LongReferenceExpression) expr).getLongName());
     } else {
-      myBuilder.append(expr.getReferent().textRepresentation());
+      if (ref instanceof GlobalReferable) {
+        String alias = ((GlobalReferable) ref).getAliasName();
+        if (alias != null) {
+          myBuilder.append(alias);
+          return;
+        }
+      }
+      myBuilder.append(ref.textRepresentation());
     }
   }
 
   @Override
   public Void visitReference(Concrete.ReferenceExpression expr, Precedence prec) {
-    boolean parens = expr.getReferent() instanceof GlobalReferable && ((GlobalReferable) expr.getReferent()).getPrecedence().isInfix || expr.getPLevel() != null || expr.getHLevel() != null;
+    boolean parens = expr.getReferent() instanceof GlobalReferable && ((GlobalReferable) expr.getReferent()).getRepresentablePrecedence().isInfix || expr.getPLevel() != null || expr.getHLevel() != null;
     if (parens) {
       myBuilder.append('(');
     }
@@ -574,7 +581,8 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     return null;
   }
 
-  private void visitBinOp(Concrete.Expression left, Concrete.ReferenceExpression infix, Precedence infixPrec, List<Concrete.Argument> implicitArgs, Concrete.Expression right, Precedence prec) {
+  private void visitBinOp(Concrete.Expression left, Concrete.ReferenceExpression infix, List<Concrete.Argument> implicitArgs, Concrete.Expression right, Precedence prec) {
+    Precedence infixPrec = ((GlobalReferable) infix.getReferent()).getRepresentablePrecedence();
     boolean needParens = prec.priority > infixPrec.priority || prec.priority == infixPrec.priority && (prec.associativity != infixPrec.associativity || prec.associativity == Precedence.Associativity.NON_ASSOC);
     if (needParens) myBuilder.append('(');
     left.accept(this, infixPrec.associativity != Precedence.Associativity.LEFT_ASSOC ? new Precedence(Precedence.Associativity.NON_ASSOC, infixPrec.priority, infixPrec.isInfix) : infixPrec);

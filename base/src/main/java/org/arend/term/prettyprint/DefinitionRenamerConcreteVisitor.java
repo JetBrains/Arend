@@ -16,7 +16,7 @@ public class DefinitionRenamerConcreteVisitor extends BaseConcreteExpressionVisi
   @Override
   public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Void params) {
     if (expr.getReferent() instanceof LocatedReferable) {
-      LongName longName = myDefinitionRenamer.getDefinitionPrefix(expr.getReferent());
+      LongName longName = myDefinitionRenamer.renameDefinition(expr.getReferent());
       if (longName != null) {
         return new Concrete.LongReferenceExpression(expr.getData(), longName, expr.getReferent(), expr.getPLevel(), expr.getHLevel());
       }

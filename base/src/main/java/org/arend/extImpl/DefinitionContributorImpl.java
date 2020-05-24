@@ -33,6 +33,11 @@ public class DefinitionContributorImpl extends Disableable implements Definition
 
   @Override
   public MetaRef declare(@NotNull ModulePath module, @NotNull LongName longName, @NotNull String description, @NotNull Precedence precedence, @Nullable MetaDefinition meta) {
+    return declare(module, longName, description, precedence, null, null, meta);
+  }
+
+  @Override
+  public MetaRef declare(@NotNull ModulePath module, @NotNull LongName longName, @NotNull String description, @NotNull Precedence precedence, @Nullable String alias, @Nullable Precedence aliasPrecedence, @Nullable MetaDefinition meta) {
     checkEnabled();
 
     if (!FileUtils.isCorrectModulePath(module)) {
@@ -60,7 +65,7 @@ public class DefinitionContributorImpl extends Disableable implements Definition
           myErrorReporter.report(LibraryError.duplicateExtensionDefinition(myLibrary.getName(), module, longName));
           return null;
         }
-        MetaReferable metaRef = new MetaReferable(precedence, name, description, meta);
+        MetaReferable metaRef = new MetaReferable(precedence, name, aliasPrecedence, alias, description, meta);
         scope.names.put(name, metaRef);
         return metaRef;
       } else {
