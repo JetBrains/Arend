@@ -7,6 +7,7 @@ import org.arend.ext.module.LongName;
 import org.arend.ext.module.ModulePath;
 import org.arend.ext.prettyprinting.DefinitionRenamer;
 import org.arend.ext.reference.ArendRef;
+import org.arend.module.ModuleLocation;
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.reference.ModuleReferable;
 import org.arend.naming.reference.TCReferable;
@@ -33,7 +34,13 @@ public class ConflictDefinitionRenamer extends VoidExpressionVisitor<Void> imple
   private void rename(Definition definition) {
     LocatedReferable ref = definition.getRef().getLocatedReferableParent();
     if (ref == null || ref instanceof ModuleReferable) {
-      ModulePath modulePath = ref != null ? ((ModuleReferable) ref).path : definition.getRef().getLocation();
+      ModulePath modulePath;
+      if (ref != null) {
+        modulePath = ((ModuleReferable) ref).path;
+      } else {
+        ModuleLocation location = definition.getRef().getLocation();
+        modulePath = location == null ? null : location.getModulePath();
+      }
       if (modulePath != null) {
         List<String> fullName = new ArrayList<>(modulePath.size() + 1);
         fullName.addAll(modulePath.toList());

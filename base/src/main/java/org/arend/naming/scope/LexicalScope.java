@@ -1,6 +1,7 @@
 package org.arend.naming.scope;
 
 import org.arend.ext.module.ModulePath;
+import org.arend.module.ModuleLocation;
 import org.arend.naming.reference.AliasReferable;
 import org.arend.naming.reference.ClassReferable;
 import org.arend.naming.reference.GlobalReferable;
@@ -37,7 +38,8 @@ public class LexicalScope implements Scope {
   }
 
   public static LexicalScope insideOf(Group group, Scope parent, boolean onlyExternal) {
-    return new LexicalScope(parent, group, group.getReferable().getLocation(), Kind.INSIDE, onlyExternal);
+    ModuleLocation moduleLocation = group.getReferable().getLocation();
+    return new LexicalScope(parent, group, moduleLocation == null ? null : moduleLocation.getModulePath(), Kind.INSIDE, onlyExternal);
   }
 
   public static LexicalScope insideOf(Group group, Scope parent) {

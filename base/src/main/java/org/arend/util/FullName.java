@@ -1,7 +1,7 @@
 package org.arend.util;
 
 import org.arend.ext.module.LongName;
-import org.arend.ext.module.ModulePath;
+import org.arend.module.ModuleLocation;
 import org.arend.naming.reference.LocatedReferable;
 
 import java.util.ArrayList;
@@ -9,10 +9,10 @@ import java.util.List;
 import java.util.Objects;
 
 public class FullName {
-  public ModulePath modulePath;
+  public ModuleLocation modulePath;
   public LongName longName;
 
-  public FullName(ModulePath modulePath, LongName longName) {
+  public FullName(ModuleLocation modulePath, LongName longName) {
     this.modulePath = modulePath;
     this.longName = longName;
   }

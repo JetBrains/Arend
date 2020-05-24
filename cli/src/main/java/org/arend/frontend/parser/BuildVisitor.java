@@ -7,7 +7,7 @@ import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.reference.Precedence;
 import org.arend.frontend.group.SimpleNamespaceCommand;
 import org.arend.frontend.reference.*;
-import org.arend.module.FullModulePath;
+import org.arend.module.ModuleLocation;
 import org.arend.naming.reference.*;
 import org.arend.term.*;
 import org.arend.term.concrete.Concrete;
@@ -22,10 +22,10 @@ import java.util.List;
 import static org.arend.frontend.parser.ArendParser.*;
 
 public class BuildVisitor extends ArendBaseVisitor<Object> {
-  private final FullModulePath myModule;
+  private final ModuleLocation myModule;
   private final ErrorReporter myErrorReporter;
 
-  public BuildVisitor(FullModulePath module, ErrorReporter errorReporter) {
+  public BuildVisitor(ModuleLocation module, ErrorReporter errorReporter) {
     myModule = module;
     myErrorReporter = errorReporter;
   }
@@ -1634,6 +1634,6 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   }
 
   private Position tokenPosition(Token token) {
-    return new Position(myModule, token.getLine(), token.getCharPositionInLine());
+    return new Position(myModule.getModulePath(), token.getLine(), token.getCharPositionInLine());
   }
 }

@@ -3,7 +3,7 @@ package org.arend.naming;
 import org.arend.ext.module.ModulePath;
 import org.arend.ext.reference.Precedence;
 import org.arend.frontend.reference.ConcreteLocatedReferable;
-import org.arend.module.FullModulePath;
+import org.arend.module.ModuleLocation;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.LocatedReferableImpl;
 import org.arend.naming.reference.Referable;
@@ -662,7 +662,7 @@ public class NameResolverTest extends NameResolverTestCase {
   public void importOrder() {
     setModuleScopeProvider(module ->
       module.equals(new ModulePath("Mod"))
-        ? new SingletonScope(new LocatedReferableImpl(Precedence.DEFAULT, "foo", new FullModulePath(null, null, module.toList()), GlobalReferable.Kind.TYPECHECKABLE))
+        ? new SingletonScope(new LocatedReferableImpl(Precedence.DEFAULT, "foo", new ModuleLocation(null, null, module), GlobalReferable.Kind.TYPECHECKABLE))
         : EmptyScope.INSTANCE);
     /*
     resolveNamesModule(
