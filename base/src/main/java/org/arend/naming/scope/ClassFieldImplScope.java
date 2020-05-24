@@ -1,9 +1,6 @@
 package org.arend.naming.scope;
 
-import org.arend.naming.reference.ClassReferable;
-import org.arend.naming.reference.LocatedReferable;
-import org.arend.naming.reference.Referable;
-import org.arend.naming.reference.TypedReferable;
+import org.arend.naming.reference.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -44,6 +41,12 @@ public class ClassFieldImplScope implements Scope {
         if (pred.test(referable)) {
           return referable;
         }
+        if (referable.hasAlias()) {
+          AliasReferable aliasRef = new AliasReferable(referable);
+          if (pred.test(aliasRef)) {
+            return aliasRef;
+          }
+        }
       }
 
       List<? extends ClassReferable> superClasses = classRef.getSuperClassReferences();
@@ -51,6 +54,12 @@ public class ClassFieldImplScope implements Scope {
         for (ClassReferable superClass : superClasses) {
           if (pred.test(superClass)) {
             return superClass;
+          }
+          if (superClass.hasAlias()) {
+            AliasReferable aliasRef = new AliasReferable(superClass);
+            if (pred.test(aliasRef)) {
+              return aliasRef;
+            }
           }
         }
       }

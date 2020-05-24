@@ -15,7 +15,7 @@ import org.arend.core.pattern.*;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
-import org.arend.error.ListErrorReporter;
+import org.arend.ext.error.ListErrorReporter;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.prelude.Prelude;

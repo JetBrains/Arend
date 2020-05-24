@@ -67,9 +67,9 @@ public class FindBinding {
     return parameters(sigma.getParameters(), referable, DependentLink::getNext, expr.getParameters());
   }
 
-  private static @Nullable DependentLink visitClauses(
+  public static @Nullable DependentLink visitClauses(
       Object data,
-      List<Concrete.FunctionClause> clauses,
+      List<? extends Concrete.Clause> clauses,
       List<? extends ElimClause<Pattern>> coreClauses
   ) {
     return CorrespondedSubExprVisitor.visitElimBody(clauses, coreClauses, (coreClause, clause) ->

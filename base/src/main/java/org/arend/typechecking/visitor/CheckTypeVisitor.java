@@ -23,6 +23,7 @@ import org.arend.core.subst.InPlaceLevelSubstVisitor;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.error.*;
 import org.arend.ext.ArendExtension;
+import org.arend.ext.FreeBindingsModifier;
 import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.concrete.expr.ConcreteReferenceExpression;
@@ -35,6 +36,7 @@ import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.*;
 import org.arend.ext.prettyprinting.doc.DocFactory;
+import org.arend.ext.reference.ArendRef;
 import org.arend.ext.typechecking.*;
 import org.arend.extImpl.ContextDataImpl;
 import org.arend.extImpl.UncheckedExpressionImpl;
@@ -100,13 +102,15 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     final Map<Referable, Binding> context;
     final ContextDataImpl contextData;
     final InferenceReferenceExpression inferenceExpr;
+    final ErrorReporter errorReporter;
 
-    private DeferredMeta(MetaDefinition meta, Set<Binding> freeBindings, Map<Referable, Binding> context, ContextDataImpl contextData, InferenceReferenceExpression inferenceExpr) {
+    private DeferredMeta(MetaDefinition meta, Set<Binding> freeBindings, Map<Referable, Binding> context, ContextDataImpl contextData, InferenceReferenceExpression inferenceExpr, ErrorReporter errorReporter) {
       this.meta = meta;
       this.freeBindings = freeBindings;
       this.context = context;
       this.contextData = contextData;
       this.inferenceExpr = inferenceExpr;
+      this.errorReporter = errorReporter;
     }
   }
 
@@ -149,6 +153,10 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     this(state, new LinkedHashSet<>(), new LinkedHashMap<>(), errorReporter, pool, arendExtension);
   }
 
+  public ArendExtension getExtension() {
+    return myArendExtension;
+  }
+
   public TypecheckingContext saveTypecheckingContext() {
     return new TypecheckingContext(new LinkedHashSet<>(myFreeBindings), new LinkedHashMap<>(context), myInstancePool.getInstanceProvider(), myInstancePool.getInstancePool(), myArendExtension);
   }
@@ -157,10 +165,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     CheckTypeVisitor visitor = new CheckTypeVisitor(state, typecheckingContext.freeBindings, typecheckingContext.localContext, errorReporter, null, typecheckingContext.arendExtension);
     visitor.setInstancePool(new GlobalInstancePool(typecheckingContext.instanceProvider, visitor, typecheckingContext.localInstancePool));
     return visitor;
-  }
-
-  public Type checkType(Concrete.Expression expr, Expression expectedType, boolean isFinal) {
-    return isFinal ? finalCheckType(expr, expectedType) : checkType(expr, expectedType);
   }
 
   public void addBinding(@Nullable Referable referable, Binding binding) {
@@ -220,6 +224,14 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     result.addAll(myFreeBindings);
     result.addAll(context.values());
     return result;
+  }
+
+  @Override
+  public @Nullable CoreBinding getFreeBinding(@NotNull ArendRef ref) {
+    if (!(ref instanceof Referable)) {
+      throw new IllegalArgumentException();
+    }
+    return context.get(ref);
   }
 
   @NotNull
@@ -371,8 +383,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     }
   }
 
-  public TypecheckingResult finalCheckExpr(Concrete.Expression expr, Expression expectedType, boolean returnExpectedType) {
-    return finalize(checkExpr(expr, expectedType), returnExpectedType && !(expectedType instanceof Type && ((Type) expectedType).isOmega()) ? expectedType : null, expr);
+  public TypecheckingResult finalCheckExpr(Concrete.Expression expr, Expression expectedType) {
+    return finalize(checkExpr(expr, expectedType), expr, false);
   }
 
   private void invokeDeferredMetas(InPlaceLevelSubstVisitor substVisitor, StripVisitor stripVisitor, Stage stage) {
@@ -419,11 +431,11 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       Map<Referable, Binding> originalContext = context;
       if (stage != Stage.AFTER_LEVELS) {
         checkTypeVisitor = this;
-        errorReporter = new CompositeErrorReporter(errorReporter, countingErrorReporter);
+        errorReporter = new CompositeErrorReporter(deferredMeta.errorReporter, countingErrorReporter);
         myFreeBindings = deferredMeta.freeBindings;
         context = deferredMeta.context;
       } else {
-        checkTypeVisitor = new CheckTypeVisitor(state, deferredMeta.freeBindings, deferredMeta.context, new CompositeErrorReporter(errorReporter, countingErrorReporter), null, myArendExtension);
+        checkTypeVisitor = new CheckTypeVisitor(state, deferredMeta.freeBindings, deferredMeta.context, new CompositeErrorReporter(deferredMeta.errorReporter, countingErrorReporter), null, myArendExtension);
         checkTypeVisitor.setInstancePool(new GlobalInstancePool(myInstancePool.getInstanceProvider(), checkTypeVisitor, myInstancePool.getInstancePool()));
       }
 
@@ -433,35 +445,34 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       if (result != null) {
         result = checkTypeVisitor.checkResult(type, result, refExpr);
         if (stage == Stage.AFTER_LEVELS) {
-          result = checkTypeVisitor.finalize(result, null, refExpr);
+          result = checkTypeVisitor.finalize(result, refExpr, false);
         }
       }
       errorReporter = originalErrorReporter;
       myFreeBindings = originalFreeBindings;
       context = originalContext;
       if (result == null && countingErrorReporter.getErrorsNumber() == 0) {
-        errorReporter.report(new TypecheckingError("Meta '" + refExpr.getReferent().getRefName() + "' failed", refExpr));
+        deferredMeta.errorReporter.report(new TypecheckingError("Meta '" + refExpr.getReferent().getRefName() + "' failed", refExpr));
       }
       deferredMeta.inferenceExpr.setSubstExpression(result == null ? new ErrorExpression() : result.expression);
     }
     deferredMetas.clear();
   }
 
-  public TypecheckingResult finalize(TypecheckingResult result, Expression expectedType, Concrete.SourceNode sourceNode) {
+  public TypecheckingResult finalize(TypecheckingResult result, Concrete.SourceNode sourceNode, boolean propIfPossible) {
     if (result == null) {
-      if (expectedType == null) {
-        return null;
-      }
-      result = new TypecheckingResult(null, expectedType);
-    } else {
-      if (expectedType != null && !result.type.isInstance(ClassCallExpression.class)) { // Use the inferred type if it is a class call
-        result.type = expectedType;
-      }
+      return null;
     }
 
     invokeDeferredMetas(null, null, Stage.BEFORE_SOLVER);
     myEquations.solveEquations();
     invokeDeferredMetas(null, null, Stage.BEFORE_LEVELS);
+    if (propIfPossible) {
+      Sort sort = result.type.getSortOfType();
+      if (sort != null) {
+        myEquations.addPropEquationIfPossible(sort.getHLevel());
+      }
+    }
     InPlaceLevelSubstVisitor substVisitor = new InPlaceLevelSubstVisitor(myEquations.solveLevels(sourceNode));
     if (!substVisitor.isEmpty()) {
       if (result.expression != null) {
@@ -536,12 +547,18 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     return new TypeExpression(result.expression, universe.getSort());
   }
 
-  private Type finalCheckType(Concrete.Expression expr, Expression expectedType) {
+  public Type finalCheckType(Concrete.Expression expr, Expression expectedType, boolean propIfPossible) {
     Type result = checkType(expr, expectedType);
     if (result == null) return null;
     invokeDeferredMetas(null, null, Stage.BEFORE_SOLVER);
     myEquations.solveEquations();
     invokeDeferredMetas(null, null, Stage.BEFORE_LEVELS);
+    if (propIfPossible) {
+      Sort sort = result.getSortOfType();
+      if (sort != null) {
+        myEquations.addPropEquationIfPossible(sort.getHLevel());
+      }
+    }
     InPlaceLevelSubstVisitor substVisitor = new InPlaceLevelSubstVisitor(myEquations.solveLevels(expr));
     if (!substVisitor.isEmpty()) {
       result.subst(substVisitor);
@@ -1297,7 +1314,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     try (var ignored = new Utils.SetContextSaver<>(context)) {
       try (var ignored1 = new Utils.SetContextSaver<>(myFreeBindings)) {
         for (Concrete.TypeParameter arg : parameters) {
-          Type result = checkType(arg.getType(), expectedType == null ? Type.OMEGA : expectedType, false);
+          Type result = checkType(arg.getType(), expectedType == null ? Type.OMEGA : expectedType);
           if (result == null) return null;
 
           if (arg instanceof Concrete.TelescopeParameter) {
@@ -1873,7 +1890,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     ContextDataImpl contextDataImpl = new ContextDataImpl((Concrete.ReferenceExpression) refExpr, contextData.getArguments(), expectedType);
     InferenceReferenceExpression inferenceExpr = new InferenceReferenceExpression(new MetaInferenceVariable(expectedType, meta, (Concrete.ReferenceExpression) refExpr, getAllBindings()));
     // (stage == Stage.BEFORE_SOLVER ? myDeferredMetasBeforeSolver : stage == Stage.BEFORE_LEVELS ? myDeferredMetasBeforeLevels : myDeferredMetasAfterLevels)
-    myDeferredMetasBeforeSolver.add(new DeferredMeta(meta, new LinkedHashSet<>(myFreeBindings), new LinkedHashMap<>(context), contextDataImpl, inferenceExpr));
+    myDeferredMetasBeforeSolver.add(new DeferredMeta(meta, new LinkedHashSet<>(myFreeBindings), new LinkedHashMap<>(context), contextDataImpl, inferenceExpr, errorReporter));
     return new TypecheckingResult(inferenceExpr, expectedType);
   }
 
@@ -1965,7 +1982,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
 
   @Override
   public TypecheckingResult visitTyped(Concrete.TypedExpression expr, Expression expectedType) {
-    Type type = checkType(expr.type, Type.OMEGA, false);
+    Type type = checkType(expr.type, Type.OMEGA);
     if (type == null) {
       return checkExpr(expr.expression, expectedType);
     } else {
@@ -1995,13 +2012,90 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
   }
 
   @Override
-  public <T> T withErrorReporter(@NotNull ErrorReporter errorReporter, Function<ExpressionTypechecker, T> action) {
+  public <T> T withErrorReporter(@NotNull ErrorReporter errorReporter, @NotNull Function<ExpressionTypechecker, T> action) {
     ErrorReporter originalErrorReport = this.errorReporter;
     this.errorReporter = errorReporter;
     try {
       return action.apply(this);
     } finally {
       this.errorReporter = originalErrorReport;
+    }
+  }
+
+  private void addFreeBindings(Collection<?> bindings) {
+    for (Object binding : bindings) {
+      if (!(binding instanceof Binding)) {
+        throw new IllegalArgumentException();
+      }
+      myFreeBindings.add((Binding) binding);
+    }
+  }
+
+  @Override
+  public <T> T withFreeBindings(@NotNull FreeBindingsModifier modifier, @NotNull Function<ExpressionTypechecker, T> action) {
+    if (modifier.commands.isEmpty()) {
+      return action.apply(this);
+    }
+
+    try (var ignored = new Utils.CompleteMapContextSaver<>(context)) {
+      try (var ignored1 = new Utils.CompleteSetContextSaver<>(myFreeBindings)) {
+        for (FreeBindingsModifier.Command command : modifier.commands) {
+          switch (command.kind) {
+            case ADD:
+              addFreeBindings((Collection<?>) command.bindings);
+              break;
+            case CLEAR:
+              context.clear();
+              myFreeBindings.clear();
+              break;
+            case REMOVE: {
+              Set<?> bindings = (Set<?>) command.bindings;
+              context.entrySet().removeIf(entry -> bindings.contains(entry.getValue()));
+              myFreeBindings.removeIf(bindings::contains);
+              break;
+            }
+            case RETAIN: {
+              Set<?> bindings = (Set<?>) command.bindings;
+              context.entrySet().removeIf(entry -> !bindings.contains(entry.getValue()));
+              myFreeBindings.removeIf(binding -> !bindings.contains(binding));
+              break;
+            }
+            case REPLACE:
+            case REPLACE_REMOVE: {
+              Map<?, ?> replacement = (Map<?, ?>) command.bindings;
+              for (Iterator<Map.Entry<Referable, Binding>> iterator = context.entrySet().iterator(); iterator.hasNext(); ) {
+                Map.Entry<Referable, Binding> entry = iterator.next();
+                Object newBinding = replacement.get(entry.getValue());
+                if (newBinding != null) {
+                  if (!(newBinding instanceof Binding)) {
+                    throw new IllegalArgumentException();
+                  }
+                  entry.setValue((Binding) newBinding);
+                } else if (command.kind == FreeBindingsModifier.Command.Kind.REPLACE_REMOVE) {
+                  iterator.remove();
+                }
+              }
+              if (!myFreeBindings.isEmpty()) {
+                List<Object> newBindings = new ArrayList<>();
+                for (Iterator<Binding> iterator = myFreeBindings.iterator(); iterator.hasNext(); ) {
+                  Binding binding = iterator.next();
+                  Object newBinding = replacement.get(binding);
+                  if (newBinding != null) {
+                    iterator.remove();
+                    newBindings.add(newBinding);
+                  } else if (command.kind == FreeBindingsModifier.Command.Kind.REPLACE_REMOVE) {
+                    iterator.remove();
+                  }
+                }
+                addFreeBindings(newBindings);
+              }
+              break;
+            }
+          }
+        }
+
+        return action.apply(this);
+      }
     }
   }
 
@@ -2028,11 +2122,11 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
 
   @Override
   public TypecheckingResult visitGoal(Concrete.GoalExpression expr, Expression expectedType) {
-    List<GeneralError> errors = Collections.emptyList();
+    List<GeneralError> errors = expr.errors;
     GoalSolver.CheckGoalResult goalResult = null;
-    GoalSolver solver = expr.goalSolver != null ? expr.goalSolver : myArendExtension != null ? myArendExtension.getGoalSolver() : null;
+    GoalSolver solver = expr.useGoalSolver ? expr.goalSolver : myArendExtension != null ? myArendExtension.getGoalSolver() : null;
     if (expr.getExpression() != null || solver != null) {
-      errors = new ArrayList<>();
+      errors = new ArrayList<>(expr.errors);
       goalResult = withErrorReporter(new ListErrorReporter(errors), tc -> {
         if (solver == null) {
           return new GoalSolver.CheckGoalResult(expr.getExpression(), checkExpr(expr.getExpression(), expectedType));
@@ -2046,7 +2140,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       throw new IllegalArgumentException();
     }
 
-    GoalError error = new GoalError(expr.getName(), saveTypecheckingContext(), expectedType, goalResult == null ? null : (Concrete.Expression) goalResult.concreteExpression, errors, solver, expr);
+    GoalError error = new GoalError(saveTypecheckingContext(), expectedType, goalResult == null ? null : (Concrete.Expression) goalResult.concreteExpression, errors, solver, expr);
     errorReporter.report(error);
     Expression result = new GoalErrorExpression(goalResult == null || goalResult.typedExpression == null ? null : (Expression) goalResult.typedExpression.getExpression(), error);
     return new TypecheckingResult(result, expectedType != null && !(expectedType instanceof Type && ((Type) expectedType).isOmega()) ? expectedType : result);

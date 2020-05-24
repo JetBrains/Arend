@@ -17,7 +17,6 @@ import java.util.*;
 import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public class GoalError extends TypecheckingError {
-  public final String name;
   public final TypecheckingContext typecheckingContext;
   public final Expression expectedType;
   public final Concrete.Expression result;
@@ -25,9 +24,8 @@ public class GoalError extends TypecheckingError {
   public final GoalSolver goalSolver;
   private List<Condition> myConditions = Collections.emptyList();
 
-  public GoalError(String name, TypecheckingContext typecheckingContext, Expression expectedType, Concrete.Expression result, List<GeneralError> errors, GoalSolver goalSolver, Concrete.GoalExpression expression) {
-    super(Level.GOAL, "Goal" + (name == null ? "" : " " + name), expression);
-    this.name = name;
+  public GoalError(TypecheckingContext typecheckingContext, Expression expectedType, Concrete.Expression result, List<GeneralError> errors, GoalSolver goalSolver, Concrete.GoalExpression expression) {
+    super(Level.GOAL, "Goal" + (expression.getName() == null ? "" : " " + expression.getName()), expression);
     this.typecheckingContext = typecheckingContext;
     this.expectedType = expectedType;
     this.result = result;

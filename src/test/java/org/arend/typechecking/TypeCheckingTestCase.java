@@ -35,13 +35,12 @@ import static org.junit.Assert.assertTrue;
 
 public class TypeCheckingTestCase extends NameResolverTestCase {
   protected final LocalErrorReporter localErrorReporter = new TestLocalErrorReporter(errorReporter);
-  protected ChildGroup lastGroup;
 
   TypecheckingResult typeCheckExpr(Map<Referable, Binding> context, Concrete.Expression expression, Expression expectedType, int errors) {
     CheckTypeVisitor visitor = new CheckTypeVisitor(typecheckerState, localErrorReporter, null, null);
     visitor.addBindings(context);
     Concrete.Expression desugar = DesugarVisitor.desugar(expression, localErrorReporter);
-    TypecheckingResult result = visitor.finalCheckExpr(desugar, expectedType, false);
+    TypecheckingResult result = visitor.finalCheckExpr(desugar, expectedType);
     if (errors == 0) {
       assertThat(result, is(notNullValue()));
     }
@@ -126,10 +125,6 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
   }
 
 
-  public TCReferable get(String path) {
-    return get(lastGroup.getGroupScope(), path);
-  }
-
   public Definition getDefinition(ChildGroup group, String path) {
     TCReferable ref = get(group.getGroupScope(), path);
     return ref != null ? typecheckerState.getTypechecked(ref) : null;
@@ -146,7 +141,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
   }
 
   protected ChildGroup typeCheckModule(String text, int errors) {
-    lastGroup = resolveNamesModule(text);
+    resolveNamesModule(text);
     typeCheckModule(lastGroup, errors);
     return lastGroup;
   }
@@ -156,7 +151,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
   }
 
   protected ChildGroup typeCheckClass(String instance, String global, int errors) {
-    lastGroup = resolveNamesDefGroup("\\class Test {\n" + instance + (global.isEmpty() ? "" : "\n} \\where {\n" + global) + "\n}");
+    resolveNamesDefGroup("\\class Test {\n" + instance + (global.isEmpty() ? "" : "\n} \\where {\n" + global) + "\n}");
     typeCheckModule(lastGroup, errors);
     return lastGroup;
   }

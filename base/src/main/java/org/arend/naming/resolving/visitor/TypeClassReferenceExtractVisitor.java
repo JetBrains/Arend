@@ -3,6 +3,7 @@ package org.arend.naming.resolving.visitor;
 import org.arend.ext.reference.Precedence;
 import org.arend.naming.reference.ClassReferable;
 import org.arend.naming.reference.GlobalReferable;
+import org.arend.naming.reference.RedirectingReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteReferableDefinitionVisitor;
@@ -131,7 +132,7 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
       }
     }
 
-    return expr instanceof Concrete.ReferenceExpression ? ((Concrete.ReferenceExpression) expr).getReferent() : null;
+    return expr instanceof Concrete.ReferenceExpression ? RedirectingReferable.getOriginalReferable(((Concrete.ReferenceExpression) expr).getReferent()) : null;
   }
 
   private void handleParameters(Collection<? extends Concrete.Parameter> parameters) {

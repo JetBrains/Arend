@@ -76,7 +76,7 @@ public class DumbTypechecker extends VoidConcreteVisitor<Void, Void> {
 
   @Override
   public Void visitGoal(Concrete.GoalExpression expr, Void params) {
-    myTypechecker.errorReporter.report(new GoalError(expr.getName(), null, null, null, Collections.emptyList(), null, expr));
+    myTypechecker.errorReporter.report(new GoalError(null, null, null, Collections.emptyList(), null, expr));
     return null;
   }
 

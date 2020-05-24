@@ -1,9 +1,11 @@
 package org.arend.typechecking.definition;
 
 import org.arend.typechecking.TypeCheckingTestCase;
+import org.arend.typechecking.error.local.LevelMismatchError;
 import org.junit.Test;
 
 import static org.arend.Matchers.typeMismatchError;
+import static org.arend.Matchers.typecheckingError;
 
 public class LemmaTest extends TypeCheckingTestCase {
   @Test
@@ -19,13 +21,13 @@ public class LemmaTest extends TypeCheckingTestCase {
   @Test
   public void lemmaNotPropTyped() {
     typeCheckModule("\\lemma f : Nat => 0", 1);
-    assertThatErrorsAre(typeMismatchError());
+    assertThatErrorsAre(typecheckingError(LevelMismatchError.class));
   }
 
   @Test
   public void lemmaNotPropUntyped() {
     typeCheckModule("\\lemma f => 0", 1);
-    assertThatErrorsAre(typeMismatchError());
+    assertThatErrorsAre(typecheckingError(LevelMismatchError.class));
   }
 
   @Test
@@ -42,7 +44,7 @@ public class LemmaTest extends TypeCheckingTestCase {
       "\\lemma f (n : Nat) : Nat\n" +
       "  | 0 => 0\n" +
       "  | suc n => n", 1);
-    assertThatErrorsAre(typeMismatchError());
+    assertThatErrorsAre(typecheckingError(LevelMismatchError.class));
   }
 
   @Test
@@ -52,7 +54,7 @@ public class LemmaTest extends TypeCheckingTestCase {
       "\\lemma f : C \\cowith\n" +
       "  | n => 0\n" +
       "  | m => 1", 1);
-    assertThatErrorsAre(typeMismatchError());
+    assertThatErrorsAre(typecheckingError(LevelMismatchError.class));
   }
 
   @Test

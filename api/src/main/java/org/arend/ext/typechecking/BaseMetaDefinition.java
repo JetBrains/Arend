@@ -20,7 +20,7 @@ public abstract class BaseMetaDefinition implements MetaDefinition {
    * @return  true if this meta definition does not support level annotations
    */
   public boolean withoutLevels() {
-    return false;
+    return true;
   }
 
   /**

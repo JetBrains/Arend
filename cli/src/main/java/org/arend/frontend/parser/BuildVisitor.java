@@ -169,10 +169,10 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       return visitDefInstance((DefInstanceContext) ctx, parent, enclosingClass);
     } else if (ctx instanceof DefModuleContext) {
       DefModuleContext moduleCtx = (DefModuleContext) ctx;
-      return visitDefModule(tokenPosition(ctx.start), Precedence.DEFAULT, moduleCtx.ID().getText(), moduleCtx.where(), parent, enclosingClass);
+      return visitDefModule(tokenPosition(ctx.start), moduleCtx.defId(), moduleCtx.where(), parent, enclosingClass);
     } else if (ctx instanceof DefMetaContext) {
       DefMetaContext metaCtx = (DefMetaContext) ctx;
-      return visitDefModule(tokenPosition(ctx.start), visitPrecedence(metaCtx.precedence()), metaCtx.ID().getText(), metaCtx.where(), parent, enclosingClass);
+      return visitDefModule(tokenPosition(ctx.start), metaCtx.defId(), metaCtx.where(), parent, enclosingClass);
     } else {
       if (ctx != null) {
         myErrorReporter.report(new ParserError(tokenPosition(ctx.start), "Unknown definition"));
@@ -239,8 +239,8 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   }
 
   private static class PrecedenceWithoutPriority {
-    private Precedence.Associativity associativity;
-    private boolean isInfix;
+    private final Precedence.Associativity associativity;
+    private final boolean isInfix;
 
     private PrecedenceWithoutPriority(Precedence.Associativity associativity, boolean isInfix) {
       this.associativity = associativity;
@@ -428,16 +428,18 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return new Concrete.NamePattern(tokenPosition(ctx.start), true, null, null);
   }
 
-  private ConcreteLocatedReferable makeReferable(Position position, String name, Precedence precedence, ChildGroup parent, GlobalReferable.Kind kind) {
+  private ConcreteLocatedReferable makeReferable(Position position, String name, Precedence precedence, String aliasName, Precedence aliasPrecedence, ChildGroup parent, GlobalReferable.Kind kind) {
     return parent instanceof FileGroup
-      ? new ConcreteLocatedReferable(position, name, precedence, myModule, kind)
-      : new ConcreteLocatedReferable(position, name, precedence, (TCReferable) parent.getReferable(), kind);
+      ? new ConcreteLocatedReferable(position, name, precedence, aliasName, aliasPrecedence, myModule, kind)
+      : new ConcreteLocatedReferable(position, name, precedence, aliasName, aliasPrecedence, (TCReferable) parent.getReferable(), kind);
   }
 
   private StaticGroup visitDefInstance(DefInstanceContext ctx, ChildGroup parent, TCClassReferable enclosingClass) {
     boolean isInstance = ctx.instanceKw() instanceof FuncKwInstanceContext;
     List<Concrete.Parameter> parameters = visitLamTeles(ctx.tele());
-    ConcreteLocatedReferable reference = makeReferable(tokenPosition(ctx.start), ctx.ID().getText(), Precedence.DEFAULT, parent, isInstance ? LocatedReferableImpl.Kind.TYPECHECKABLE : GlobalReferable.Kind.DEFINED_CONSTRUCTOR);
+    DefIdContext defId = ctx.defId();
+    Pair<String, Precedence> alias = visitAlias(defId.alias());
+    ConcreteLocatedReferable reference = makeReferable(tokenPosition(ctx.start), defId.ID().getText(), visitPrecedence(defId.precedence()), alias.proj1, alias.proj2, parent, isInstance ? LocatedReferableImpl.Kind.TYPECHECKABLE : GlobalReferable.Kind.DEFINED_CONSTRUCTOR);
     Pair<Concrete.Expression,Concrete.Expression> returnPair = visitReturnExpr(ctx.returnExpr());
 
     List<Group> subgroups = new ArrayList<>();
@@ -527,7 +529,9 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   private StaticGroup visitDefFunction(DefFunctionContext ctx, ChildGroup parent, TCClassReferable enclosingClass) {
     Concrete.FunctionBody body;
     FunctionBodyContext functionBodyCtx = ctx.functionBody();
-    ConcreteLocatedReferable referable = makeReferable(tokenPosition(ctx.start), ctx.ID().getText(), visitPrecedence(ctx.precedence()), parent, GlobalReferable.Kind.TYPECHECKABLE);
+    DefIdContext defId = ctx.defId();
+    Pair<String, Precedence> alias = visitAlias(defId.alias());
+    ConcreteLocatedReferable referable = makeReferable(tokenPosition(ctx.start), defId.ID().getText(), visitPrecedence(defId.precedence()), alias.proj1, alias.proj2, parent, GlobalReferable.Kind.TYPECHECKABLE);
     List<Group> subgroups = new ArrayList<>();
     List<ChildNamespaceCommand> namespaceCommands = new ArrayList<>();
     StaticGroup resultGroup = new StaticGroup(referable, subgroups, namespaceCommands, parent);
@@ -593,7 +597,9 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     List<InternalConcreteLocatedReferable> constructors = new ArrayList<>();
     DataBodyContext dataBodyCtx = ctx.dataBody();
     List<Concrete.ReferenceExpression> eliminatedReferences = dataBodyCtx instanceof DataClausesContext ? visitElim(((DataClausesContext) dataBodyCtx).elim()) : null;
-    ConcreteLocatedReferable referable = makeReferable(tokenPosition(ctx.start), ctx.ID().getText(), visitPrecedence(ctx.precedence()), parent, LocatedReferableImpl.Kind.TYPECHECKABLE);
+    DefIdContext defId = ctx.defId();
+    Pair<String, Precedence> alias = visitAlias(defId.alias());
+    ConcreteLocatedReferable referable = makeReferable(tokenPosition(ctx.start), defId.ID().getText(), visitPrecedence(defId.precedence()), alias.proj1, alias.proj2, parent, LocatedReferableImpl.Kind.TYPECHECKABLE);
     Concrete.DataDefinition dataDefinition = new Concrete.DataDefinition(referable, visitTeles(ctx.tele()), eliminatedReferences, ctx.TRUNCATED() != null, universe, new ArrayList<>());
     dataDefinition.enclosingClass = enclosingClass;
     referable.setDefinition(dataDefinition);
@@ -668,7 +674,9 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
           }
         }
 
-        InternalConcreteLocatedReferable reference = new InternalConcreteLocatedReferable(tokenPosition(conCtx.start), conCtx.ID().getText(), visitPrecedence(conCtx.precedence()), true, def.getData(), LocatedReferableImpl.Kind.CONSTRUCTOR);
+        DefIdContext defId = conCtx.defId();
+        Pair<String, Precedence> alias = visitAlias(defId.alias());
+        InternalConcreteLocatedReferable reference = new InternalConcreteLocatedReferable(tokenPosition(conCtx.start), defId.ID().getText(), visitPrecedence(defId.precedence()), alias.proj1, alias.proj2, true, def.getData(), LocatedReferableImpl.Kind.CONSTRUCTOR);
         Concrete.Constructor constructor = new Concrete.Constructor(reference, def, visitTeles(conCtx.tele()), visitElim(elimCtx), clauses);
         reference.setDefinition(constructor);
         /* TODO[hits]
@@ -687,6 +695,11 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   }
 
   @Override
+  public Pair<String, Precedence> visitAlias(AliasContext ctx) {
+    return new Pair<>(ctx == null ? null : ctx.ID().getText(), ctx == null ? null : visitPrecedence(ctx.precedence()));
+  }
+
+  @Override
   public ClassFieldKind visitFieldField(FieldFieldContext ctx) {
     return ClassFieldKind.FIELD;
   }
@@ -699,7 +712,9 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   private Concrete.ClassField visitClassFieldDef(ClassFieldDefContext ctx, ClassFieldKind kind, Concrete.ClassDefinition parentClass) {
     List<Concrete.TypeParameter> parameters = visitTeles(ctx.tele());
     Pair<Concrete.Expression,Concrete.Expression> returnPair = visitReturnExpr(ctx.returnExpr());
-    ConcreteClassFieldReferable reference = new ConcreteClassFieldReferable(tokenPosition(ctx.start), ctx.ID().getText(), visitPrecedence(ctx.precedence()), true, true, false, parentClass.getData(), LocatedReferableImpl.Kind.FIELD);
+    DefIdContext defId = ctx.defId();
+    Pair<String, Precedence> alias = visitAlias(defId.alias());
+    ConcreteClassFieldReferable reference = new ConcreteClassFieldReferable(tokenPosition(ctx.start), defId.ID().getText(), visitPrecedence(defId.precedence()), alias.proj1, alias.proj2, true, true, false, parentClass.getData(), LocatedReferableImpl.Kind.FIELD);
     Concrete.ClassField field = new Concrete.ClassField(reference, parentClass, true, kind, parameters, returnPair.proj1, returnPair.proj2);
     reference.setDefinition(field);
     return field;
@@ -753,13 +768,16 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     }
   }
 
-  private StaticGroup visitDefModule(Position position, Precedence precedence, String name, WhereContext where, ChildGroup parent, TCClassReferable enclosingClass) {
+  private StaticGroup visitDefModule(Position position, DefIdContext defId, WhereContext where, ChildGroup parent, TCClassReferable enclosingClass) {
     List<Group> staticSubgroups = where == null ? Collections.emptyList() : new ArrayList<>();
     List<ChildNamespaceCommand> namespaceCommands = where == null ? Collections.emptyList() : new ArrayList<>();
 
+    String name = defId.ID().getText();
+    Precedence precedence = visitPrecedence(defId.precedence());
+    Pair<String, Precedence> alias = visitAlias(defId.alias());
     ConcreteLocatedReferable reference = parent instanceof FileGroup
-        ? new ConcreteLocatedReferable(position, name, precedence, myModule, GlobalReferable.Kind.OTHER)
-        : new ConcreteLocatedReferable(position, name, precedence, (TCReferable) parent.getReferable(), GlobalReferable.Kind.OTHER);
+        ? new ConcreteLocatedReferable(position, name, precedence, alias.proj1, alias.proj2, myModule, GlobalReferable.Kind.OTHER)
+        : new ConcreteLocatedReferable(position, name, precedence, alias.proj1, alias.proj2, (TCReferable) parent.getReferable(), GlobalReferable.Kind.OTHER);
 
     StaticGroup resultGroup = new StaticGroup(reference, staticSubgroups, namespaceCommands, parent);
     visitWhere(where, staticSubgroups, namespaceCommands, resultGroup, enclosingClass);
@@ -779,13 +797,15 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     }
 
     Position pos = tokenPosition(ctx.start);
-    String name = ctx.ID().getText();
-    Precedence prec = visitPrecedence(ctx.precedence());
+    DefIdContext defId = ctx.defId();
+    String name = defId.ID().getText();
+    Precedence prec = visitPrecedence(defId.precedence());
     ConcreteClassReferable reference;
     List<ConcreteClassFieldReferable> fieldReferables = new ArrayList<>();
+    Pair<String, Precedence> alias = visitAlias(defId.alias());
     reference = parent instanceof FileGroup
-      ? new ConcreteClassReferable(pos, name, prec, fieldReferables, superClasses, myModule)
-      : new ConcreteClassReferable(pos, name, prec, fieldReferables, superClasses, (TCReferable) parent.getReferable());
+      ? new ConcreteClassReferable(pos, name, prec, alias.proj1, alias.proj2, fieldReferables, superClasses, myModule)
+      : new ConcreteClassReferable(pos, name, prec, alias.proj1, alias.proj2, fieldReferables, superClasses, (TCReferable) parent.getReferable());
     ClassGroup resultGroup = new ClassGroup(reference, fieldReferables, dynamicSubgroups, staticSubgroups, namespaceCommands, parent);
     reference.setGroup(resultGroup);
     boolean isRecord = ctx.classKw() instanceof ClassKwRecordContext;
@@ -1045,7 +1065,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       }
     } else if (body instanceof CoClauseWithContext) {
       CoClauseWithContext withBody = (CoClauseWithContext) body;
-      ConcreteLocatedReferable reference = makeReferable(position, path.get(path.size() - 1), visitPrecedence(ctx.precedence()), parentGroup, LocatedReferableImpl.Kind.TYPECHECKABLE);
+      ConcreteLocatedReferable reference = makeReferable(position, path.get(path.size() - 1), visitPrecedence(ctx.precedence()), null, Precedence.DEFAULT, parentGroup, LocatedReferableImpl.Kind.TYPECHECKABLE);
       subgroups.add(new EmptyGroup(reference, parentGroup));
       Pair<Concrete.Expression, Concrete.Expression> pair = visitReturnExpr(withBody.returnExpr());
       Referable fieldRef = LongUnresolvedReference.make(position, path);
@@ -1363,7 +1383,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
 
       Concrete.Expression type = visitExpr(exprCtx);
       for (TerminalNode var : vars) {
-        ConcreteClassFieldReferable fieldRef = new ConcreteClassFieldReferable(tokenPosition(var.getSymbol()), var.getText(), Precedence.DEFAULT, false, explicit, true, classDef.getData(), LocatedReferableImpl.Kind.FIELD);
+        ConcreteClassFieldReferable fieldRef = new ConcreteClassFieldReferable(tokenPosition(var.getSymbol()), var.getText(), Precedence.DEFAULT, null, Precedence.DEFAULT, false, explicit, true, classDef.getData(), LocatedReferableImpl.Kind.FIELD);
         Concrete.ClassField field = new Concrete.ClassField(fieldRef, classDef, explicit, ClassFieldKind.ANY, new ArrayList<>(), type, null);
         fieldRef.setDefinition(field);
         fields.add(field);

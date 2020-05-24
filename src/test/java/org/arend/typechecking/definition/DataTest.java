@@ -1,5 +1,6 @@
 package org.arend.typechecking.definition;
 
+import org.arend.Matchers;
 import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
@@ -13,6 +14,7 @@ import org.arend.naming.reference.LocalReferable;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.TypeCheckingTestCase;
+import org.arend.typechecking.error.local.TruncatedDataError;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -151,8 +153,10 @@ public class DataTest extends TypeCheckingTestCase {
   @Test
   public void truncatedDataElimError() {
     typeCheckModule(
-      "\\truncated \\data S : \\Prop | base | loop I { | left => base | right => base }\n"+
-      "\\lemma f (x : S) : Nat | base => 0 | loop _ => 0", 1);
+      "\\data S | base | loop I { | left => base | right => base }\n"+
+      "\\truncated \\data MS : \\Prop | con1 | con2 S\n"+
+      "\\sfunc f (x : MS) : Nat | con1 => 0 | con2_ => 1", 1);
+    assertThatErrorsAre(Matchers.typecheckingError(TruncatedDataError.class));
   }
 
   @Test

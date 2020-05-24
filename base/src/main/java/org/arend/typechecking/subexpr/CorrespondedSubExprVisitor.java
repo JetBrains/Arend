@@ -352,9 +352,9 @@ public class CorrespondedSubExprVisitor implements
   }
 
   static <T> @Nullable T visitElimBody(
-      List<Concrete.FunctionClause> clauses,
-      List<? extends ElimClause<Pattern>> coreClauses,
-      BiFunction<ElimClause<Pattern>, Concrete.FunctionClause, @Nullable T> function
+    @NotNull List<? extends Concrete.Clause> clauses,
+    @NotNull List<? extends ElimClause<Pattern>> coreClauses,
+    BiFunction<ElimClause<Pattern>, Concrete.Clause, @Nullable T> function
   ) {
     // Interval pattern matching are stored in a special way,
     // maybe it's a TODO to implement it.

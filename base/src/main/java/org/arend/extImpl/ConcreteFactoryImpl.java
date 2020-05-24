@@ -7,6 +7,7 @@ import org.arend.ext.concrete.expr.ConcreteArgument;
 import org.arend.ext.concrete.expr.ConcreteCaseArgument;
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.core.context.CoreBinding;
+import org.arend.ext.error.GeneralError;
 import org.arend.ext.reference.ArendRef;
 import org.arend.ext.reference.Precedence;
 import org.arend.ext.typechecking.GoalSolver;
@@ -59,13 +60,13 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
 
   @NotNull
   @Override
-  public ConcreteExpression core(String name, @NotNull TypedExpression expr) {
+  public ConcreteExpression core(@Nullable String name, @NotNull TypedExpression expr) {
     return new Concrete.ReferenceExpression(myData, new CoreReferable(name, TypecheckingResult.fromChecked(Objects.requireNonNull(expr))), null, null);
   }
 
   @NotNull
   @Override
-  public ConcreteExpression meta(String name, @NotNull MetaDefinition meta) {
+  public ConcreteExpression meta(@NotNull String name, @NotNull MetaDefinition meta) {
     return new Concrete.ReferenceExpression(myData, new MetaReferable(Precedence.DEFAULT, name, "", meta), null, null);
   }
 
@@ -133,27 +134,32 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     return new Concrete.HoleExpression(myData);
   }
 
+  @NotNull
   @Override
-  public @NotNull ConcreteExpression goal(@Nullable String name, @Nullable ConcreteExpression expression, @NotNull GoalSolver goalSolver) {
-    if (!(expression == null || expression instanceof Concrete.Expression)) {
-      throw new IllegalArgumentException();
-    }
-    return new Concrete.GoalExpression(myData, name, (Concrete.Expression) expression, goalSolver);
+  public ConcreteExpression goal() {
+    return new Concrete.GoalExpression(myData, null, null);
   }
 
   @NotNull
   @Override
-  public ConcreteExpression goal(@Nullable String name, @Nullable ConcreteExpression expression) {
+  public Concrete.GoalExpression goal(@Nullable String name, @Nullable ConcreteExpression expression) {
     if (!(expression == null || expression instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }
     return new Concrete.GoalExpression(myData, name, (Concrete.Expression) expression);
   }
 
-  @NotNull
   @Override
-  public ConcreteExpression goal() {
-    return new Concrete.GoalExpression(myData, null, null);
+  public @NotNull ConcreteExpression goal(@Nullable String name, @Nullable ConcreteExpression expression, @Nullable GoalSolver goalSolver) {
+    return goal(name, expression, goalSolver, Collections.emptyList());
+  }
+
+  @Override
+  public @NotNull ConcreteExpression goal(@Nullable String name, @Nullable ConcreteExpression expression, @Nullable GoalSolver goalSolver, @NotNull List<GeneralError> errors) {
+    if (!(expression == null || expression instanceof Concrete.Expression)) {
+      throw new IllegalArgumentException();
+    }
+    return new Concrete.GoalExpression(myData, name, (Concrete.Expression) expression, goalSolver, true, errors);
   }
 
   @NotNull

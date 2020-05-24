@@ -121,11 +121,12 @@ public class CollectFreeVariablesVisitor extends VoidExpressionVisitor<Set<Varia
 
   @Override
   public Void visitDefCall(DefCallExpression expr, Set<Variable> variables) {
-    LongName longName = myDefinitionRenamer.getDefinitionPrefix(expr.getDefinition().getRef());
+    LongName longName = myDefinitionRenamer.renameDefinition(expr.getDefinition().getRef());
     if (longName != null) {
       variables.add(new VariableImpl(longName.getFirstName()));
     } else {
-      variables.add(expr.getDefinition());
+      String alias = expr.getDefinition().getReferable().getAliasName();
+      variables.add(alias != null ? new VariableImpl(alias) : expr.getDefinition());
     }
     return super.visitDefCall(expr, variables);
   }

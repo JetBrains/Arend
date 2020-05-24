@@ -659,21 +659,28 @@ public final class Concrete {
     private final String myName;
     public Expression expression;
     public final GoalSolver goalSolver;
+    public final boolean useGoalSolver;
+    public final List<GeneralError> errors;
 
     public GoalExpression(Object data, String name, Expression expression) {
       super(data);
       myName = name;
       this.expression = expression;
       this.goalSolver = null;
+      this.useGoalSolver = false;
+      this.errors = Collections.emptyList();
     }
 
-    public GoalExpression(Object data, String name, Expression expression, GoalSolver goalSolver) {
+    public GoalExpression(Object data, String name, Expression expression, GoalSolver goalSolver, boolean useGoalSolver, List<GeneralError> errors) {
       super(data);
       myName = name;
       this.expression = expression;
       this.goalSolver = goalSolver;
+      this.useGoalSolver = useGoalSolver;
+      this.errors = errors;
     }
 
+    @Override
     public String getName() {
       return myName;
     }

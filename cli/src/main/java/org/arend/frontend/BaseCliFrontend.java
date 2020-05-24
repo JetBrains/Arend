@@ -2,7 +2,7 @@ package org.arend.frontend;
 
 import org.apache.commons.cli.*;
 import org.arend.core.definition.Definition;
-import org.arend.error.ListErrorReporter;
+import org.arend.ext.error.ListErrorReporter;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.module.ModulePath;

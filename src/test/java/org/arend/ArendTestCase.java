@@ -1,6 +1,6 @@
 package org.arend;
 
-import org.arend.error.ListErrorReporter;
+import org.arend.ext.error.ListErrorReporter;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.extImpl.DefinitionRequester;

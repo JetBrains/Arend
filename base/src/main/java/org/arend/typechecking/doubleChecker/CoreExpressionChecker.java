@@ -492,14 +492,14 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       if (conCalls == null) {
         throw new CoreException(CoreErrorWrapper.make(new ImpossibleEliminationError(dataCall, mySourceNode), errorExpr));
       }
-      if (!conCalls.isEmpty()) {
+      if (!conCalls.isEmpty() && !PatternTypechecking.checkDisjointConstructors(dataCall)) {
         throw new CoreException(CoreErrorWrapper.make(new DataTypeNotEmptyError(dataCall, DataTypeNotEmptyError.getConstructors(conCalls), mySourceNode), errorExpr));
       }
       return false;
     }
 
     assert pattern instanceof ConstructorPattern;
-    var conPattern = (ConstructorPattern) pattern;
+    var conPattern = (ConstructorPattern<?>) pattern;
     if (!(conPattern.getDefinition() instanceof Constructor)) {
       throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Expected a constructor", mySourceNode), errorExpr));
     }

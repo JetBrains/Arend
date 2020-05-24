@@ -428,4 +428,15 @@ public class ConditionsTest extends TypeCheckingTestCase {
       "  | loop i, loop j => {?}", 2);
     assertThatErrorsAre(goal(2), typecheckingError(HigherConstructorMatchingError.class));
   }
+
+  @Test
+  public void constructorsOnlyOnTopLevel() {
+    typeCheckModule(
+      "\\func \\infixr 5 *> {A : \\Type} {a a' a'' : A} (p : a = a') (q : a' = a'')\n" +
+      "  => coe (\\lam i => a = q @ i) p right\n" +
+      "\\data D\n" +
+      "  | base\n" +
+      "  | loop I \\with { | left => base | right => base }\n" +
+      "  | loop2 (i j : I) \\elim i { | left => base | right => (path loop *> path loop) @ j }", 1);
+  }
 }
