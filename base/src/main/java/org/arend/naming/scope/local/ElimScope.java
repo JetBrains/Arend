@@ -20,8 +20,7 @@ public class ElimScope implements Scope {
 
   @Override
   public Referable find(Predicate<Referable> pred) {
-    Referable ref = myParent.find(pred);
-    return ref != null && myExcluded.contains(ref) ? null : ref;
+    return myParent.find(ref -> !myExcluded.contains(ref) && pred.test(ref));
   }
 
   @Override
