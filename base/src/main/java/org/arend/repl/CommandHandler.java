@@ -1,5 +1,6 @@
 package org.arend.repl;
 
+import org.arend.repl.action.AliasableCommand;
 import org.arend.repl.action.ReplCommand;
 import org.arend.util.Pair;
 import org.jetbrains.annotations.Nls;
@@ -16,6 +17,7 @@ import java.util.stream.Stream;
 public final class CommandHandler implements ReplHandler {
   public static final @NotNull CommandHandler INSTANCE = new CommandHandler();
   public static final @NotNull HelpCommand HELP_COMMAND_INSTANCE = INSTANCE.createHelpCommand();
+  public static final @NotNull AliasableCommand.AliasCommand HELP_COMMAND_ALIAS_INSTANCE = HELP_COMMAND_INSTANCE.createAlias();
   public final @NotNull Map<String, ReplCommand> commandMap = new LinkedHashMap<>();
 
   private @NotNull HelpCommand createHelpCommand() {
@@ -52,9 +54,10 @@ public final class CommandHandler implements ReplHandler {
         api.eprintln("[ERROR] Unrecognized command: " + command.proj1 + ".");
       else if (suitableCommands.size() >= 2)
         api.eprintln("[ERROR] Cannot distinguish among commands :"
-          + suitableCommands.stream().map(Map.Entry::getKey).collect(Collectors.joining(", :"))
-          + ", please be more specific.");
-      else suitableCommands.get(0).getValue().invoke(command.proj2, api, lineSupplier);
+            + suitableCommands.stream().map(Map.Entry::getKey).collect(Collectors.joining(", :"))
+            + ", please be more specific.");
+      else
+        suitableCommands.get(0).getValue().invoke(command.proj2, api, lineSupplier);
     }
   }
 
@@ -62,7 +65,7 @@ public final class CommandHandler implements ReplHandler {
     return commandMap.entrySet().stream().filter(entry -> entry.getKey().startsWith(command));
   }
 
-  public final class HelpCommand implements ReplCommand {
+  public final class HelpCommand extends AliasableCommand {
     private HelpCommand() {
     }
 
@@ -92,7 +95,10 @@ public final class CommandHandler implements ReplHandler {
     }
 
     private void noArg(@NotNull Repl api) {
-      IntSummaryStatistics statistics = commandMap.keySet().stream()
+      IntSummaryStatistics statistics = commandMap.entrySet()
+        .stream()
+        .filter(it -> !(it.getValue() instanceof AliasableCommand))
+        .map(Map.Entry::getKey)
         .mapToInt(String::length)
         .summaryStatistics();
       int maxWidth = Math.min(statistics.getMax(), 9) + 1;

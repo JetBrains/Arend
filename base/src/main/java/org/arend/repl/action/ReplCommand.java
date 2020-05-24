@@ -14,10 +14,13 @@ public interface ReplCommand {
    */
   @Nls(capitalization = Nls.Capitalization.Sentence) @NotNull String description();
 
+  default boolean isAliased() {
+    return false;
+  }
+
   /**
    * Displayed in <code>:help [name of command]</code>.
-   * @param api
-   * @return
+   * @param api Repl context.
    */
   default @Nls @NotNull String help(@NotNull Repl api) {
     return description() + ".";
