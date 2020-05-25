@@ -19,7 +19,7 @@ public final class CdCommand implements CliReplCommand, DirectoryArgumentCommand
   @Override
   public void invoke(@NotNull String line, @NotNull CommonCliRepl api, @NotNull Supplier<@NotNull String> scanner) {
     if (line.isBlank()) {
-      api.pwd = Paths.get(System.getProperty("user.home")).normalize();
+      api.pwd = CommonCliRepl.USER_HOME;
       return;
     }
     Path newPath = api.pwd.resolve(line).normalize();

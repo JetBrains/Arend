@@ -23,6 +23,7 @@ import org.arend.prelude.GeneratedVersion;
 import org.arend.prelude.PreludeLibrary;
 import org.arend.prelude.PreludeResourceLibrary;
 import org.arend.repl.Repl;
+import org.arend.repl.action.NormalizeCommand;
 import org.arend.repl.action.ReplCommand;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.FileGroup;
@@ -35,26 +36,28 @@ import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.function.Supplier;
 
 public abstract class CommonCliRepl extends Repl {
+  private final Properties properties = new Properties();
+  public static final @NotNull Path USER_HOME = Paths.get(System.getProperty("user.home")).toAbsolutePath().normalize();
   public static final @NotNull String APP_NAME = "Arend REPL";
 
   public @NotNull Path pwd = Paths.get("").toAbsolutePath();
-  /** See https://gist.github.com/ice1000/a915b6fcbc6f90b0c3c65db44dab29cc */
+  /**
+   * See https://gist.github.com/ice1000/a915b6fcbc6f90b0c3c65db44dab29cc
+   */
   @Language("TEXT")
   public static final @NotNull String ASCII_BANNER =
       "    ___                       __\n" +
-      "   /   |  _______  ____  ____/ /\n" +
-      "  / /| | / __/ _ \\/ __ \\/ __  /  " + APP_NAME + " " + GeneratedVersion.VERSION_STRING + "\n" +
-      " / ___ |/ / /  __/ / / / /_/ /   https://arend-lang.github.io\n" +
+          "   /   |  _______  ____  ____/ /\n" +
+          "  / /| | / __/ _ \\/ __ \\/ __  /  " + APP_NAME + " " + GeneratedVersion.VERSION_STRING + "\n" +
+          " / ___ |/ / /  __/ / / / /_/ /   https://arend-lang.github.io\n" +
       "/_/  |_/_/  \\___/_/ /_/\\__,_/    :? for help";
 
   @NotNull
@@ -103,6 +106,38 @@ public abstract class CommonCliRepl extends Repl {
     myModules = modules;
   }
   //endregion
+
+  public static final @NotNull String NORMALIZATION_KEY = "normalization";
+  public static final @NotNull String PROMPT_KEY = "prompt";
+  public static final @NotNull String REPL_CONFIG_FILE = "repl_config.properties";
+  private static final Path config = USER_HOME.resolve(FileUtils.USER_CONFIG_DIR).resolve(REPL_CONFIG_FILE);
+
+  {
+    try {
+      if (Files.exists(config)) {
+        properties.load(Files.newInputStream(config));
+        var normalization = String.valueOf(properties.get(NORMALIZATION_KEY));
+        NormalizeCommand.INSTANCE.invoke(normalization, this, () -> "");
+        var promptConfig = properties.get(PROMPT_KEY);
+        if (promptConfig != null) prompt = String.valueOf(promptConfig);
+      }
+    } catch (IOException e) {
+      eprintln("[ERROR] Failed to load repl config: " + e.getLocalizedMessage());
+    }
+  }
+
+  public final void saveUserConfig() {
+    try {
+      if (Files.notExists(config)) Files.createFile(config);
+      properties.setProperty(NORMALIZATION_KEY, String.valueOf(getNormalizationMode()));
+      properties.setProperty(PROMPT_KEY, prompt);
+      try (var out = Files.newOutputStream(config)) {
+        properties.store(out, "Created automatically by Arend REPL");
+      }
+    } catch (IOException e) {
+      eprintln("[ERROR] Failed to save repl config: " + e.getLocalizedMessage());
+    }
+  }
 
   @NotNull
   private static TimedLibraryManager libraryManager(@NotNull FileLibraryResolver libraryResolver, @NotNull InstanceProviderSet instanceProviders, @NotNull ListErrorReporter errorReporter) {

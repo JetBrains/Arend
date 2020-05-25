@@ -48,6 +48,7 @@ public class PlainCliRepl extends CommonCliRepl {
       if (repl(scanner.nextLine(), scanner::nextLine)) break;
       print(prompt());
     }
+    saveUserConfig();
   }
 
   public static void main(String... args) {

@@ -60,7 +60,7 @@ public class JLineCliRepl extends CommonCliRepl {
   }
 
   public void runRepl() {
-    Path dir = Paths.get(System.getProperty("user.home")).resolve(FileUtils.USER_CONFIG_DIR);
+    Path dir = USER_HOME.resolve(FileUtils.USER_CONFIG_DIR);
     Path history = dir.resolve("history");
     try {
       // Assuming user.home exists
@@ -91,14 +91,13 @@ public class JLineCliRepl extends CommonCliRepl {
       .terminal(myTerminal)
       .parser(new DefaultParser().escapeChars(new char[]{}))
       .build();
-    while (true) {
-      try {
-        if (repl(reader.readLine(prompt()), reader::readLine)) break;
-      } catch (UserInterruptException ignored) {
-      } catch (EndOfFileException e) {
-        break;
-      }
+    while (true) try {
+      if (repl(reader.readLine(prompt()), reader::readLine)) break;
+    } catch (UserInterruptException ignored) {
+    } catch (EndOfFileException e) {
+      break;
     }
+    saveUserConfig();
   }
 
   public static void main(String... args) {
