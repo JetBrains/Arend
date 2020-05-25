@@ -17,10 +17,12 @@ public final class LoadLibraryCommand implements CliReplCommand, DirectoryArgume
 
   @Override
   public final void invoke(@NotNull String line, @NotNull CommonCliRepl api, @NotNull Supplier<@NotNull String> scanner) {
+/*
     if (!FileUtils.isLibraryName(line)) {
       api.eprintln("[ERROR] `" + line + "` is not a valid library name.");
       return;
     }
+*/
     Library library = api.createLibrary(line);
     if (library == null || api.checkErrors()) {
       api.eprintln("[ERROR] Cannot find a library at '" + line + "'.");
