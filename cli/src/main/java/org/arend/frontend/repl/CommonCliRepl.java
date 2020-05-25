@@ -157,7 +157,7 @@ public abstract class CommonCliRepl extends Repl {
   public @Nullable Library createLibrary(@NotNull String path) {
     var library = myLibraryResolver.resolve(myReplLibrary, path);
     if (library != null) return library;
-    return myLibraryResolver.registerLibrary(pwd.resolve(path).toAbsolutePath());
+    return myLibraryResolver.registerLibrary(pwd.resolve(path).toAbsolutePath().normalize());
   }
 
   public final void addLibraryDirectories(@NotNull Collection<? extends Path> libDirs) {

@@ -239,7 +239,7 @@ public abstract class BaseCliFrontend {
         boolean isPath = fileName.contains(FileSystems.getDefault().getSeparator());
         Path path = Paths.get(fileName);
         if (fileName.endsWith(FileUtils.LIBRARY_CONFIG_FILE) || isPath && Files.isDirectory(path)) {
-          UnmodifiableSourceLibrary library = myLibraryResolver.registerLibrary(path.toAbsolutePath());
+          UnmodifiableSourceLibrary library = myLibraryResolver.registerLibrary(path.toAbsolutePath().normalize());
           if (library != null) {
             requestedLibraries.add(library);
           }
@@ -271,7 +271,7 @@ public abstract class BaseCliFrontend {
     if (requestedLibraries.isEmpty()) {
       Path path = Paths.get(FileUtils.LIBRARY_CONFIG_FILE);
       if (Files.isRegularFile(path)) {
-        UnmodifiableSourceLibrary library = myLibraryResolver.registerLibrary(path.toAbsolutePath());
+        UnmodifiableSourceLibrary library = myLibraryResolver.registerLibrary(path.toAbsolutePath().normalize());
         if (library != null) {
           requestedLibraries.add(library);
         }
