@@ -198,16 +198,13 @@ public abstract class Expression implements Body, CoreExpression {
   }
 
   @Override
-  public @NotNull UncheckedExpression substitute(@NotNull Map<? extends CoreBinding, ? extends CoreExpression> map) {
+  public @NotNull UncheckedExpression substitute(@NotNull Map<? extends CoreBinding, ? extends UncheckedExpression> map) {
     if (map.isEmpty()) {
       return this;
     }
     ExprSubstitution substitution = new ExprSubstitution();
-    for (Map.Entry<? extends CoreBinding, ? extends CoreExpression> entry : map.entrySet()) {
-      if (!(entry.getValue() instanceof Expression)) {
-        throw new IllegalArgumentException();
-      }
-      substitution.add(entry.getKey(), (Expression) entry.getValue());
+    for (Map.Entry<? extends CoreBinding, ? extends UncheckedExpression> entry : map.entrySet()) {
+      substitution.add(entry.getKey(), UncheckedExpressionImpl.extract(entry.getValue()));
     }
     return new UncheckedExpressionImpl(accept(new SubstVisitor(substitution, LevelSubstitution.EMPTY), null));
   }

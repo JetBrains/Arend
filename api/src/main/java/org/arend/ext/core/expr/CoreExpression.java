@@ -67,7 +67,7 @@ public interface CoreExpression extends CoreBody, UncheckedExpression, PrettyPri
   /**
    * Performs a substitution.
    */
-  @NotNull UncheckedExpression substitute(@NotNull Map<? extends CoreBinding, ? extends CoreExpression> map);
+  @NotNull UncheckedExpression substitute(@NotNull Map<? extends CoreBinding, ? extends UncheckedExpression> map);
 
   /**
    * Compares this expression with another one.
