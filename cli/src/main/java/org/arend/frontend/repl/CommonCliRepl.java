@@ -56,9 +56,9 @@ public abstract class CommonCliRepl extends Repl {
   @Language("TEXT")
   public static final @NotNull String ASCII_BANNER =
       "    ___                       __\n" +
-          "   /   |  _______  ____  ____/ /\n" +
-          "  / /| | / __/ _ \\/ __ \\/ __  /  " + APP_NAME + " " + GeneratedVersion.VERSION_STRING + "\n" +
-          " / ___ |/ / /  __/ / / / /_/ /   https://arend-lang.github.io\n" +
+      "   /   |  _______  ____  ____/ /\n" +
+      "  / /| | / __/ _ \\/ __ \\/ __  /  " + APP_NAME + " " + GeneratedVersion.VERSION_STRING + "\n" +
+      " / ___ |/ / /  __/ / / / /_/ /   https://arend-lang.github.io\n" +
       "/_/  |_/_/  \\___/_/ /_/\\__,_/    :? for help";
 
   @NotNull

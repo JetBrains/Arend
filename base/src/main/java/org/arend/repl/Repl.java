@@ -38,6 +38,7 @@ import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.arend.typechecking.provider.ConcreteProvider;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
+import org.arend.typechecking.visitor.DesugarVisitor;
 import org.arend.typechecking.visitor.SyntacticDesugarVisitor;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
@@ -289,6 +290,7 @@ public abstract class Repl {
         .accept(new ExpressionResolveNameVisitor(myConcreteProvider,
             myScope, new ArrayList<>(), myErrorReporter, null), null)
         .accept(new SyntacticDesugarVisitor(myErrorReporter), null);
+    expr = DesugarVisitor.desugar(expr, myErrorReporter);
     if (checkErrors()) return null;
     return expr;
   }
