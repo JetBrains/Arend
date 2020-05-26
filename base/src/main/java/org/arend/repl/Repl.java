@@ -51,7 +51,7 @@ import java.util.function.Supplier;
 
 public abstract class Repl {
   public static final @NotNull ModuleLocation replModulePath = new ModuleLocation(null, ModuleLocation.LocationKind.SOURCE, ModulePath.fromString("Repl"));
-  private @Nullable NormalizationMode myMode = NormalizationMode.RNF;
+  public @Nullable NormalizationMode normalizationMode = NormalizationMode.RNF;
 
   protected final List<Scope> myMergedScopes = new ArrayList<>();
   private final List<ReplHandler> myHandlers = new ArrayList<>();
@@ -68,7 +68,7 @@ public abstract class Repl {
 
     @Override
     public @Nullable NormalizationMode getNormalizationMode() {
-      return myMode;
+      return normalizationMode;
     }
   };
   protected final @NotNull ListErrorReporter myErrorReporter;
@@ -260,14 +260,6 @@ public abstract class Repl {
     return builder;
   }
 
-  public @Nullable NormalizationMode getNormalizationMode() {
-    return myMode;
-  }
-
-  public void setNormalizationMode(@Nullable NormalizationMode normalizationMode) {
-    this.myMode = normalizationMode;
-  }
-
   /**
    * @param expr input concrete expression.
    * @see Repl#preprocessExpr(String)
@@ -290,6 +282,7 @@ public abstract class Repl {
         .accept(new ExpressionResolveNameVisitor(myConcreteProvider,
             myScope, new ArrayList<>(), myErrorReporter, null), null)
         .accept(new SyntacticDesugarVisitor(myErrorReporter), null);
+    if (checkErrors()) return null;
     expr = DesugarVisitor.desugar(expr, myErrorReporter);
     if (checkErrors()) return null;
     return expr;

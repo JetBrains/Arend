@@ -20,7 +20,7 @@ public final class NormalizeCommand implements ReplCommand {
 
   @Override
   public @Nls @NotNull String help(@NotNull Repl api) {
-    return "Modify the normalization level of printed expressions (currently " + api.getNormalizationMode() + ").\n" +
+    return "Modify the normalization level of printed expressions (currently " + api.normalizationMode + ").\n" +
         "Available options (case insensitive) are:\n" +
         " NULL (do not normalize)\n" +
         " WHNF (Weak Head Normal Form)\n" +
@@ -38,16 +38,16 @@ public final class NormalizeCommand implements ReplCommand {
       case "NULL":
       case "":
         api.println("[INFO] Unset normalization mode.");
-        api.setNormalizationMode(null);
+        api.normalizationMode = null;
         break;
       case "WHNF":
-        api.setNormalizationMode(NormalizationMode.WHNF);
+        api.normalizationMode = NormalizationMode.WHNF;
         break;
       case "NF":
-        api.setNormalizationMode(NormalizationMode.NF);
+        api.normalizationMode = NormalizationMode.NF;
         break;
       case "RNF":
-        api.setNormalizationMode(NormalizationMode.RNF);
+        api.normalizationMode = NormalizationMode.RNF;
         break;
     }
   }

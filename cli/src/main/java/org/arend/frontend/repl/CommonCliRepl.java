@@ -130,7 +130,7 @@ public abstract class CommonCliRepl extends Repl {
   public final void saveUserConfig() {
     try {
       if (Files.notExists(config)) Files.createFile(config);
-      properties.setProperty(NORMALIZATION_KEY, String.valueOf(getNormalizationMode()));
+      properties.setProperty(NORMALIZATION_KEY, String.valueOf(normalizationMode));
       properties.setProperty(PROMPT_KEY, prompt);
       try (var out = Files.newOutputStream(config)) {
         properties.store(out, "Created automatically by Arend REPL");
