@@ -6,6 +6,7 @@ import org.arend.core.context.binding.EvaluatingBinding;
 import org.arend.core.context.binding.inference.MetaInferenceVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
+import org.arend.core.context.param.UnusedIntervalDependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
@@ -140,10 +141,17 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitLam(LamExpression expr, Void params) {
-    SingleDependentLink parameters = DependentLink.Helper.subst(expr.getParameters(), this);
-    LamExpression result = new LamExpression(expr.getResultSort().subst(myLevelSubstitution), parameters, expr.getBody().accept(this, null));
-    DependentLink.Helper.freeSubsts(expr.getParameters(), myExprSubstitution);
-    return result;
+    boolean isUnused = expr.getParameters() == UnusedIntervalDependentLink.INSTANCE;
+    SingleDependentLink oldParameters = isUnused ? expr.getParameters().getNext() : expr.getParameters();
+    Expression result;
+    if (oldParameters.hasNext()) {
+      SingleDependentLink parameters = DependentLink.Helper.subst(oldParameters, this);
+      result = new LamExpression(expr.getResultSort().subst(myLevelSubstitution), parameters, expr.getBody().accept(this, null));
+      DependentLink.Helper.freeSubsts(oldParameters, myExprSubstitution);
+    } else {
+      result = expr.getBody().accept(this, null);
+    }
+    return isUnused ? new LamExpression(expr.getResultSort().subst(myLevelSubstitution), UnusedIntervalDependentLink.INSTANCE, result) : result;
   }
 
   @Override

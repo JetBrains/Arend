@@ -2,6 +2,7 @@ package org.arend.core.expr.visitor;
 
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.EvaluatingBinding;
+import org.arend.core.context.param.UnusedIntervalDependentLink;
 import org.arend.ext.variable.Variable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
@@ -32,7 +33,11 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
   }
 
   public static Expression elimLamBinding(LamExpression expr) {
-    return expr == null ? null : elimBinding(expr.getParameters().getNext().hasNext() ? new LamExpression(expr.getResultSort(), expr.getParameters().getNext(), expr.getBody()) : expr.getBody(), expr.getParameters());
+    if (expr == null) {
+      return null;
+    }
+    Expression result = expr.getParameters().getNext().hasNext() ? new LamExpression(expr.getResultSort(), expr.getParameters().getNext(), expr.getBody()) : expr.getBody();
+    return expr.getParameters() == UnusedIntervalDependentLink.INSTANCE ? result : elimBinding(result, expr.getParameters());
   }
 
   public static Expression elimBinding(Expression expression, Binding binding) {

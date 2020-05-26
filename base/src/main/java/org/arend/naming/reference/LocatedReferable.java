@@ -1,7 +1,7 @@
 package org.arend.naming.reference;
 
 import org.arend.ext.module.LongName;
-import org.arend.module.FullModulePath;
+import org.arend.module.ModuleLocation;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.scope.Scope;
 import org.jetbrains.annotations.NotNull;
@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public interface LocatedReferable extends GlobalReferable {
-  @Nullable FullModulePath getLocation();
+  @Nullable ModuleLocation getLocation();
   @Nullable LocatedReferable getLocatedReferableParent();
 
   @NotNull
@@ -23,13 +23,13 @@ public interface LocatedReferable extends GlobalReferable {
   }
 
   class Helper {
-    public static FullModulePath getLocation(LocatedReferable referable, List<String> fullName) {
+    public static ModuleLocation getLocation(LocatedReferable referable, List<String> fullName) {
       LocatedReferable parent = referable.getLocatedReferableParent();
       if (parent == null) {
         return referable.getLocation();
       }
 
-      FullModulePath location = getLocation(parent, fullName);
+      ModuleLocation location = getLocation(parent, fullName);
       fullName.add(referable.textRepresentation());
       return location;
     }
@@ -37,11 +37,11 @@ public interface LocatedReferable extends GlobalReferable {
     public static Scope resolveNamespace(LocatedReferable locatedReferable, ModuleScopeProvider moduleScopeProvider) {
       LocatedReferable parent = locatedReferable.getLocatedReferableParent();
       if (parent == null) {
-        FullModulePath modulePath = locatedReferable.getLocation();
-        if (modulePath == null) {
+        ModuleLocation moduleLocation = locatedReferable.getLocation();
+        if (moduleLocation == null) {
           return null;
         }
-        return moduleScopeProvider.forModule(modulePath);
+        return moduleScopeProvider.forModule(moduleLocation.getModulePath());
       } else {
         Scope scope = resolveNamespace(parent, moduleScopeProvider);
         return scope == null ? null : scope.resolveNamespace(locatedReferable.textRepresentation(), true);

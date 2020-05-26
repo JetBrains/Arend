@@ -4,6 +4,7 @@ import org.arend.ext.module.LongName;
 import org.arend.ext.module.ModulePath;
 import org.arend.ext.prettyprinting.DefinitionRenamer;
 import org.arend.ext.reference.ArendRef;
+import org.arend.module.ModuleLocation;
 import org.arend.naming.reference.FieldReferable;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.LocatedReferable;
@@ -42,7 +43,13 @@ public class ScopeDefinitionRenamer implements DefinitionRenamer {
         }
         if (parent == null || parent instanceof ModuleReferable) {
           Collections.reverse(list);
-          ModulePath modulePath = parent != null ? ((ModuleReferable) parent).path : ref.getLocation();
+          ModulePath modulePath;
+          if (parent != null) {
+            modulePath = ((ModuleReferable) parent).path;
+          } else {
+            ModuleLocation location = ref.getLocation();
+            modulePath = location == null ? null : location.getModulePath();
+          }
           if (modulePath != null) {
             list.addAll(0, modulePath.toList());
           }

@@ -133,4 +133,16 @@ public class Case extends TypeCheckingTestCase {
       "    | _, _ => 1\n" +
       "})");
   }
+
+  @Test
+  public void letElimTest() {
+    typeCheckModule(
+      "\\data Or (A B : \\Type) | inl A | inr B\n" +
+      "\\func test (f : Nat -> Nat) : Or (f 0 = 0) (\\Sigma (n : Nat) (f 0 = suc n)) =>\n" +
+      "  \\let x => f 0\n" +
+      "  \\in \\case \\elim x \\return Or (x = 0) (\\Sigma (n : Nat) (x = suc n)) \\with {\n" +
+      "    | 0 => inl idp\n" +
+      "    | suc n => inr (n, idp)\n" +
+      "  }");
+  }
 }

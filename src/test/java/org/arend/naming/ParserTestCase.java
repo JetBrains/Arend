@@ -1,9 +1,10 @@
 package org.arend.naming;
 
 import org.arend.ArendTestCase;
+import org.arend.ext.module.ModulePath;
 import org.arend.frontend.parser.*;
 import org.arend.frontend.repl.CommonCliRepl;
-import org.arend.module.FullModulePath;
+import org.arend.module.ModuleLocation;
 import org.arend.naming.reference.FullModuleReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.expr.ConcreteCompareVisitor;
@@ -18,7 +19,7 @@ import java.util.List;
 import static org.junit.Assert.assertThat;
 
 public abstract class ParserTestCase extends ArendTestCase {
-  protected static final FullModulePath MODULE_PATH = new FullModulePath(null, null, Collections.singletonList("$TestCase$"));
+  protected static final ModuleLocation MODULE_PATH = new ModuleLocation(null, null, new ModulePath("$TestCase$"));
 
   private ArendParser _parse(String text) {
     return CommonCliRepl.createParser(text, MODULE_PATH, errorReporter);

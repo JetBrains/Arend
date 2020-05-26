@@ -3,7 +3,7 @@ package org.arend.typechecking;
 import org.arend.ext.ArendExtension;
 import org.arend.library.Library;
 import org.arend.library.LibraryManager;
-import org.arend.module.FullModulePath;
+import org.arend.module.ModuleLocation;
 import org.arend.naming.reference.TCReferable;
 import org.jetbrains.annotations.Nullable;
 
@@ -35,7 +35,7 @@ public class LibraryArendExtensionProvider implements ArendExtensionProvider {
       return myUniqueArendExtension;
     }
 
-    FullModulePath modulePath = ref.getLocation();
+    ModuleLocation modulePath = ref.getLocation();
     if (modulePath == null) {
       return null;
     }

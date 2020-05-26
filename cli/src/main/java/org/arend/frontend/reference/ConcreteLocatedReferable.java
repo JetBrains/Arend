@@ -5,7 +5,7 @@ import org.arend.ext.reference.DataContainer;
 import org.arend.ext.reference.Precedence;
 import org.arend.frontend.ConcreteReferableProvider;
 import org.arend.frontend.parser.Position;
-import org.arend.module.FullModulePath;
+import org.arend.module.ModuleLocation;
 import org.arend.naming.reference.ClassReferable;
 import org.arend.naming.reference.LocatedReferableImpl;
 import org.arend.naming.reference.TCReferable;
@@ -27,7 +27,7 @@ public class ConcreteLocatedReferable extends LocatedReferableImpl implements So
     myAliasPrecedence = aliasPrecedence;
   }
 
-  public ConcreteLocatedReferable(Position position, @NotNull String name, Precedence precedence, @Nullable String aliasName, Precedence aliasPrecedence, FullModulePath modulePath, Kind kind) {
+  public ConcreteLocatedReferable(Position position, @NotNull String name, Precedence precedence, @Nullable String aliasName, Precedence aliasPrecedence, ModuleLocation modulePath, Kind kind) {
     super(precedence, name, modulePath, kind);
     myPosition = position;
     myAliasName = aliasName;

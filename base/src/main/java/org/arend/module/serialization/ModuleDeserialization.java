@@ -3,7 +3,7 @@ package org.arend.module.serialization;
 import org.arend.core.definition.*;
 import org.arend.ext.module.ModulePath;
 import org.arend.ext.reference.Precedence;
-import org.arend.module.FullModulePath;
+import org.arend.module.ModuleLocation;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.reference.*;
 import org.arend.naming.reference.converter.ReferableConverter;
@@ -183,12 +183,12 @@ public class ModuleDeserialization {
   }
 
   @NotNull
-  public ChildGroup readGroup(FullModulePath modulePath) throws DeserializationException {
+  public ChildGroup readGroup(ModuleLocation modulePath) throws DeserializationException {
     return readGroup(myModuleProto.getGroup(), null, modulePath);
   }
 
   @NotNull
-  private ChildGroup readGroup(ModuleProtos.Group groupProto, ChildGroup parent, FullModulePath modulePath) throws DeserializationException {
+  private ChildGroup readGroup(ModuleProtos.Group groupProto, ChildGroup parent, ModuleLocation modulePath) throws DeserializationException {
     DefinitionProtos.Referable referableProto = groupProto.getReferable();
     List<TCFieldReferable> fieldReferables;
     LocatedReferable referable;

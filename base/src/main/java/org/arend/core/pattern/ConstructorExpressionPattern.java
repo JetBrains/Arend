@@ -64,7 +64,7 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Expression>
     result.add(new ConstructorExpressionPattern(data, subPatterns));
     for (ExpressionPattern pattern : getSubPatterns()) {
       //noinspection unchecked
-      link = pattern.replaceBindings(link, (List<Pattern>) (List) subPatterns);
+      link = pattern.replaceBindings(link, (List<Pattern>) (List<?>) subPatterns);
     }
     return link;
   }
@@ -229,7 +229,7 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Expression>
 
   @Override
   public Decision match(Expression expression, List<Expression> result) {
-    expression = expression.normalize(NormalizationMode.WHNF); // TODO[idp]: Implement IDP_WHNF
+    expression = expression.normalize(NormalizationMode.WHNF);
     List<? extends Expression> arguments = getMatchingExpressionArguments(expression, true);
     if (arguments != null) {
       return ExpressionPattern.match(getSubPatterns(), arguments, result);

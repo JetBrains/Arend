@@ -6,7 +6,7 @@ import org.arend.ext.module.ModulePath;
 import org.arend.library.SourceLibrary;
 import org.arend.library.error.LibraryError;
 import org.arend.library.error.PartialModuleError;
-import org.arend.module.FullModulePath;
+import org.arend.module.ModuleLocation;
 import org.arend.module.error.DeserializationError;
 import org.arend.module.error.ExceptionError;
 import org.arend.module.serialization.DeserializationException;
@@ -81,7 +81,7 @@ public abstract class StreamBinarySource implements BinarySource {
       myModuleDeserialization = new ModuleDeserialization(moduleProto, library.getTypecheckerState(), referableConverter);
 
       if (referableConverter == null) {
-        group = myModuleDeserialization.readGroup(new FullModulePath(library.getName(), FullModulePath.LocationKind.SOURCE, modulePath.toList()));
+        group = myModuleDeserialization.readGroup(new ModuleLocation(library.getName(), ModuleLocation.LocationKind.SOURCE, modulePath));
         library.onGroupLoaded(modulePath, group, false);
       } else {
         group = library.getModuleGroup(modulePath);

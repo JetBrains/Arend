@@ -444,7 +444,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
   }
 
   private ElimTree updateStack(Stack<Expression> stack, List<Expression> argList, BranchElimTree branchElimTree) {
-    Expression argument = stack.peek().accept(this, NormalizationMode.WHNF); // TODO[idp]: Normalize only until idp
+    Expression argument = stack.peek().accept(this, NormalizationMode.WHNF);
     ConCallExpression conCall = argument.cast(ConCallExpression.class);
     Constructor constructor = conCall == null ? null : conCall.getDefinition();
     IntegerExpression intExpr = constructor == null ? argument.cast(IntegerExpression.class) : null;

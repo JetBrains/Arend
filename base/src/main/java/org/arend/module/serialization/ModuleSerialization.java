@@ -5,6 +5,7 @@ import org.arend.core.definition.Constructor;
 import org.arend.core.definition.Definition;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.module.ModulePath;
+import org.arend.module.ModuleLocation;
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.reference.ModuleReferable;
 import org.arend.naming.reference.TCReferable;
@@ -48,18 +49,19 @@ public class ModuleSerialization {
 
       TCReferable targetReferable = entry.getKey().getReferable();
       List<String> longName = new ArrayList<>();
-      ModulePath targetModulePath = LocatedReferable.Helper.getLocation(targetReferable, longName);
-      if (targetModulePath == null || longName.isEmpty()) {
+      ModuleLocation targetModuleLocation = LocatedReferable.Helper.getLocation(targetReferable, longName);
+      if (targetModuleLocation == null || longName.isEmpty()) {
         myErrorReporter.report(LocationError.definition(targetReferable, modulePath));
         return null;
       }
 
-      Map<String, CallTargetTree> map = moduleCallTargets.computeIfAbsent(targetModulePath, k -> new HashMap<>());
+      Map<String, CallTargetTree> map = moduleCallTargets.computeIfAbsent(targetModuleLocation.getModulePath(), k -> new HashMap<>());
       CallTargetTree tree = null;
       for (String name : longName) {
         tree = map.computeIfAbsent(name, k -> new CallTargetTree(0));
         map = tree.subtreeMap;
       }
+      assert tree != null;
       tree.index = entry.getValue();
     }
 
