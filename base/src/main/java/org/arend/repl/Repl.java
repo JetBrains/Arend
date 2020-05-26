@@ -5,13 +5,14 @@ import org.arend.core.expr.visitor.ScopeDefinitionRenamer;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.error.ListErrorReporter;
+import org.arend.ext.module.ModulePath;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.reference.Precedence;
 import org.arend.extImpl.DefinitionRequester;
 import org.arend.library.Library;
 import org.arend.library.LibraryManager;
 import org.arend.library.resolver.LibraryResolver;
-import org.arend.module.FullModulePath;
+import org.arend.module.ModuleLocation;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
@@ -48,7 +49,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 public abstract class Repl {
-  public static final @NotNull FullModulePath replModulePath = new FullModulePath(null, FullModulePath.LocationKind.SOURCE, Collections.singletonList("Repl"));
+  public static final @NotNull ModuleLocation replModulePath = new ModuleLocation(null, ModuleLocation.LocationKind.SOURCE, ModulePath.fromString("Repl"));
   private @Nullable NormalizationMode myMode = NormalizationMode.RNF;
 
   protected final List<Scope> myMergedScopes = new ArrayList<>();

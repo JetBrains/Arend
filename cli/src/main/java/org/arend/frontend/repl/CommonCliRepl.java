@@ -18,6 +18,7 @@ import org.arend.frontend.parser.ReporterErrorListener;
 import org.arend.frontend.repl.action.*;
 import org.arend.library.Library;
 import org.arend.library.SourceLibrary;
+import org.arend.module.ModuleLocation;
 import org.arend.naming.scope.Scope;
 import org.arend.prelude.GeneratedVersion;
 import org.arend.prelude.PreludeLibrary;
@@ -148,8 +149,8 @@ public abstract class CommonCliRepl extends Repl {
     return new BuildVisitor(Repl.replModulePath, myErrorReporter);
   }
 
-  public static @NotNull ArendParser createParser(@NotNull String text, @NotNull ModulePath modulePath, @NotNull ErrorReporter reporter) {
-    var errorListener = new ReporterErrorListener(reporter, modulePath);
+  public static @NotNull ArendParser createParser(@NotNull String text, @NotNull ModuleLocation moduleLocation, @NotNull ErrorReporter reporter) {
+    var errorListener = new ReporterErrorListener(reporter, moduleLocation.getModulePath());
     var parser = new ArendParser(
         new CommonTokenStream(createLexer(text, errorListener)));
     parser.removeErrorListeners();
