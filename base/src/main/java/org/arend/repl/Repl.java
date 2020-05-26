@@ -46,6 +46,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -53,7 +54,7 @@ public abstract class Repl {
   public static final @NotNull ModuleLocation replModulePath = new ModuleLocation(null, ModuleLocation.LocationKind.SOURCE, ModulePath.fromString("Repl"));
   public @Nullable NormalizationMode normalizationMode = NormalizationMode.RNF;
 
-  protected final List<Scope> myMergedScopes = new ArrayList<>();
+  protected final List<Scope> myMergedScopes = new LinkedList<>();
   private final List<ReplHandler> myHandlers = new ArrayList<>();
   private final MergeScope myMergeScope = new MergeScope(myMergedScopes);
   private final ConcreteProvider myConcreteProvider;
@@ -152,7 +153,7 @@ public abstract class Repl {
     if (group == null) return;
     var moduleScopeProvider = getAvailableModuleScopeProvider();
     Scope scope = CachingScope.make(ScopeFactory.forGroup(group, moduleScopeProvider));
-    myMergedScopes.add(scope);
+    myMergedScopes.add(0, scope);
     new DefinitionResolveNameVisitor(myConcreteProvider, myErrorReporter)
         .resolveGroupWithTypes(group, null, myScope);
     if (checkErrors()) {
