@@ -142,7 +142,7 @@ public abstract class Expression implements Body, CoreExpression {
 
   @Override
   public @Nullable CoreBinding findFreeBindings(@NotNull Set<? extends CoreBinding> bindings) {
-    return (CoreBinding) accept(new FindBindingVisitor(bindings), null);
+    return bindings.isEmpty() ? null : (CoreBinding) accept(new FindBindingVisitor(bindings), null);
   }
 
   public Expression copy() {
@@ -279,30 +279,7 @@ public abstract class Expression implements Body, CoreExpression {
 
   public Expression getPiParameters(List<? super SingleDependentLink> params, boolean implicitOnly) {
     Expression cod = normalize(NormalizationMode.WHNF);
-    for (PiExpression piCod = cod.cast(PiExpression.class); piCod != null; piCod = cod.cast(PiExpression.class)) {
-      if (implicitOnly) {
-        if (piCod.getParameters().isExplicit()) {
-          break;
-        }
-        for (SingleDependentLink link = piCod.getParameters(); link.hasNext(); link = link.getNext()) {
-          if (link.isExplicit()) {
-            return null;
-          }
-          if (params != null) {
-            params.add(link);
-          }
-        }
-      } else {
-        if (params != null) {
-          for (SingleDependentLink link = piCod.getParameters(); link.hasNext(); link = link.getNext()) {
-            params.add(link);
-          }
-        }
-      }
-
-      cod = piCod.getCodomain().normalize(NormalizationMode.WHNF);
-    }
-    return cod;
+    return cod instanceof PiExpression ? cod.getPiParameters(params, implicitOnly) : cod;
   }
 
   public Expression getLamParameters(List<DependentLink> params) {

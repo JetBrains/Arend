@@ -13,7 +13,9 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.InPlaceLevelSubstVisitor;
 import org.arend.core.subst.LevelSubstitution;
+import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.core.expr.CoreAbsExpression;
+import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CorePiExpression;
 import org.arend.ext.core.ops.CMP;
@@ -22,6 +24,9 @@ import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
 
 public class PiExpression extends Expression implements Type, CorePiExpression, CoreAbsExpression {
   private Sort myResultSort;
@@ -108,6 +113,40 @@ public class PiExpression extends Expression implements Type, CorePiExpression, 
   @Override
   public Sort getSortOfType() {
     return myResultSort;
+  }
+
+  @Override
+  public @NotNull CoreExpression getPiParameters(@Nullable List<? super CoreParameter> parameters) {
+    return getPiParameters(parameters, false);
+  }
+
+  @Override
+  public Expression getPiParameters(List<? super SingleDependentLink> params, boolean implicitOnly) {
+    Expression cod = this;
+    while (cod instanceof PiExpression) {
+      PiExpression piCod = (PiExpression) cod;
+      if (implicitOnly) {
+        if (piCod.getParameters().isExplicit()) {
+          break;
+        }
+        for (SingleDependentLink link = piCod.getParameters(); link.hasNext(); link = link.getNext()) {
+          if (link.isExplicit()) {
+            return null;
+          }
+          if (params != null) {
+            params.add(link);
+          }
+        }
+      } else {
+        if (params != null) {
+          for (SingleDependentLink link = piCod.getParameters(); link.hasNext(); link = link.getNext()) {
+            params.add(link);
+          }
+        }
+      }
+      cod = piCod.getCodomain().normalize(NormalizationMode.WHNF);
+    }
+    return cod;
   }
 
   @Override
