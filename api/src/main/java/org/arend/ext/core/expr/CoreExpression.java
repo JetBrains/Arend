@@ -13,7 +13,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * A core expression is an internal representation of Arend expressions.
@@ -22,16 +21,11 @@ public interface CoreExpression extends CoreBody, UncheckedExpression, PrettyPri
   <P, R> R accept(@NotNull CoreExpressionVisitor<? super P, ? extends R> visitor, P params);
 
   /**
-   * Checks if this expression represents an error expression.
-   */
-  boolean isError();
-
-  /**
    * Expressions produces during type-checking may not implement the correct interface.
    * This method returns the underlying expression which always implements it.
    * Note that expressions stored in type-checked definitions are always correct, so this method just returns the expression itself for them.
    */
-  @NotNull CoreExpression getUnderlyingExpression();
+  @Override @NotNull CoreExpression getUnderlyingExpression();
 
   /**
    * Computes the type of this expression.
@@ -46,7 +40,7 @@ public interface CoreExpression extends CoreBody, UncheckedExpression, PrettyPri
   /**
    * Normalizes expression.
    */
-  @NotNull CoreExpression normalize(@NotNull NormalizationMode mode);
+  @Override @NotNull CoreExpression normalize(@NotNull NormalizationMode mode);
 
   /**
    * Removes pi parameters and returns the codomain.
@@ -62,12 +56,12 @@ public interface CoreExpression extends CoreBody, UncheckedExpression, PrettyPri
    * If it returns {@code null}, the subexpression won't be changed.
    * If it returns some expression, the subexpression will be replaced with it.
    */
-  @Nullable UncheckedExpression replaceSubexpressions(@NotNull ExpressionMapper mapper);
+  @Override @Nullable UncheckedExpression replaceSubexpressions(@NotNull ExpressionMapper mapper);
 
   /**
    * Performs a substitution.
    */
-  @NotNull UncheckedExpression substitute(@NotNull Map<? extends CoreBinding, ? extends UncheckedExpression> map);
+  @Override @NotNull UncheckedExpression substitute(@NotNull Map<? extends CoreBinding, ? extends UncheckedExpression> map);
 
   /**
    * Compares this expression with another one.
@@ -82,31 +76,17 @@ public interface CoreExpression extends CoreBody, UncheckedExpression, PrettyPri
    * Returns an expression equivalent to this one in which the given binding does not occur.
    * Returns {@code null} if the binding cannot be eliminated from this expression.
    */
-  @Nullable CoreExpression removeUnusedBinding(@NotNull CoreBinding binding);
+  @Override @Nullable CoreExpression removeUnusedBinding(@NotNull CoreBinding binding);
 
   /**
    * Checks that this expression is equivalent to a lambda expression such that its parameters does not occur in its body.
    * Returns the body of the lambda or {@code null} if this expression is not a lambda or if its parameter occurs in the body.
    */
-  @Nullable CoreExpression removeConstLam();
+  @Override @Nullable CoreExpression removeConstLam();
 
   /**
    * Checks that this expression is equivalent to expression of the form {@code a = a'}.
    * @return  an expression of the form {@code a = a'} equivalent to this one or {@code null} if there is no such expression.
    */
   @Nullable CoreFunCallExpression toEquality();
-
-  /**
-   * Checks if this expression contains the given free binding.
-   *
-   * @return  true if the expression contains the given binding; false otherwise
-   */
-  boolean findFreeBinding(@NotNull CoreBinding binding);
-
-  /**
-   * Finds a free binding from the given set.
-   *
-   * @return  a free binding from the given set or {@code null} if there is no such a binding
-   */
-  @Nullable CoreBinding findFreeBindings(@NotNull Set<? extends CoreBinding> bindings);
 }
