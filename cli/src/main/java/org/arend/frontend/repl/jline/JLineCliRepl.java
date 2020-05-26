@@ -24,6 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.stream.Stream;
 
 public class JLineCliRepl extends CommonCliRepl {
   private final Terminal myTerminal;
@@ -84,6 +85,7 @@ public class JLineCliRepl extends CommonCliRepl {
         new SpecialCommandCompleter(FileArgumentCommand.class, new Completers.FilesCompleter(() -> pwd)),
         new SpecialCommandCompleter(NormalizeCommand.class, new StringsCompleter("WHNF", "NF", "RNF", "NULL", "whnf", "nf", "rnf", "null")),
         new ScopeCompleter(this::getInScopeElements),
+        new ImportCompleter(this::modulePaths),
         KeywordCompleter.INSTANCE,
         CommandsCompleter.INSTANCE
       ))
@@ -97,6 +99,14 @@ public class JLineCliRepl extends CommonCliRepl {
       break;
     }
     saveUserConfig();
+  }
+
+  @NotNull
+  private Stream<String> modulePaths() {
+    return myLibraryManager.getRegisteredLibraries()
+        .stream()
+        .flatMap(library -> library.getLoadedModules().stream())
+        .map(String::valueOf);
   }
 
   public static void main(String... args) {
