@@ -217,9 +217,13 @@ public abstract class CommonCliRepl extends Repl {
     this(new SimpleTypecheckerState(), new TreeSet<>(), new ListErrorReporter(new ArrayList<>()));
   }
 
+  /**
+   * @return false means type checking failed.
+   */
   public final boolean loadLibrary(@NotNull Library library) {
     if (!myLibraryManager.loadLibrary(library, myTypechecking)) return false;
     myLibraryManager.registerDependency(myReplLibrary, library);
+    typecheckLibrary(library);
     return true;
   }
 
