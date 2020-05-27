@@ -16,7 +16,9 @@ import org.arend.prelude.Prelude;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class FunctionDefinition extends Definition implements Function, CoreFunctionDefinition {
   private DependentLink myParameters;
@@ -30,6 +32,7 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
   private List<TypeClassParameterKind> myTypeClassParameters = Collections.emptyList();
   private int myVisibleParameter = -1;
   private final ParametersLevels<ParametersLevel> myParametersLevels = new ParametersLevels<>();
+  private Set<Definition> myRecursiveDefinitions = Collections.emptySet();
 
   public FunctionDefinition(TCReferable referable) {
     super(referable, TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
@@ -56,6 +59,15 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
 
   public void setBody(Body body) {
     myBody = body;
+  }
+
+  @Override
+  public @NotNull Set<? extends Definition> getRecursiveDefinitions() {
+    return myRecursiveDefinitions;
+  }
+
+  public void setRecursiveDefinitions(Set<Definition> recursiveDefinitions) {
+    myRecursiveDefinitions = recursiveDefinitions;
   }
 
   public boolean isSFunc() {

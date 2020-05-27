@@ -30,7 +30,8 @@ public class DataDefinition extends Definition implements CoreDataDefinition {
   private List<Integer> myParametersTypecheckingOrder;
   private List<Boolean> myGoodThisParameters = Collections.emptyList();
   private List<TypeClassParameterKind> myTypeClassParameters = Collections.emptyList();
-  private ParametersLevels<ParametersLevel> myParametersLevels = new ParametersLevels<>();
+  private final ParametersLevels<ParametersLevel> myParametersLevels = new ParametersLevels<>();
+  private Set<Definition> myRecursiveDefinitions = Collections.emptySet();
 
   public DataDefinition(TCReferable referable) {
     super(referable, TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
@@ -45,6 +46,15 @@ public class DataDefinition extends Definition implements CoreDataDefinition {
 
   public void setSort(Sort sort) {
     mySort = sort;
+  }
+
+  @Override
+  public @NotNull Set<? extends Definition> getRecursiveDefinitions() {
+    return myRecursiveDefinitions;
+  }
+
+  public void setRecursiveDefinitions(Set<Definition> recursiveDefinitions) {
+    myRecursiveDefinitions = recursiveDefinitions;
   }
 
   @Override

@@ -160,6 +160,9 @@ public class DefinitionSerialization {
       builder.addTypeClassParameters(writeTypeClassParameterKind(kind));
     }
     builder.addAllParametersLevels(writeParametersLevels(defSerializer, definition.getParametersLevels()));
+    for (Definition recursiveDefinition : definition.getRecursiveDefinitions()) {
+      builder.addRecursiveDefinition(myCallTargetIndexProvider.getDefIndex(recursiveDefinition));
+    }
     if (definition.getSort() != null) {
       builder.setSort(defSerializer.writeSort(definition.getSort()));
     }
@@ -255,6 +258,9 @@ public class DefinitionSerialization {
       builder.addTypeClassParameters(writeTypeClassParameterKind(kind));
     }
     builder.addAllParametersLevels(writeParametersLevels(defSerializer, definition.getParametersLevels()));
+    for (Definition recursiveDefinition : definition.getRecursiveDefinitions()) {
+      builder.addRecursiveDefinition(myCallTargetIndexProvider.getDefIndex(recursiveDefinition));
+    }
     if (definition.getResultType() != null) {
       builder.setType(defSerializer.writeExpr(definition.getResultType()));
     }

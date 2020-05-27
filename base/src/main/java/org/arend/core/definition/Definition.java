@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 public abstract class Definition implements CoreDefinition {
   private final TCReferable myReferable;
@@ -35,6 +36,11 @@ public abstract class Definition implements CoreDefinition {
 
   public TCReferable getReferable() {
     return myReferable;
+  }
+
+  @Override
+  public @NotNull Set<? extends Definition> getRecursiveDefinitions() {
+    return Collections.emptySet();
   }
 
   @NotNull

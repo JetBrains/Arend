@@ -200,6 +200,14 @@ public class DefinitionDeserialization {
     for (DefinitionProtos.Definition.ParametersLevel levelParametersProto : dataProto.getParametersLevelsList()) {
       dataDef.addParametersLevel(readParametersLevel(defDeserializer, levelParametersProto));
     }
+    List<Integer> recursiveDefIndices = dataProto.getRecursiveDefinitionList();
+    if (!recursiveDefIndices.isEmpty()) {
+      Set<Definition> recursiveDefs = new HashSet<>();
+      for (Integer index : recursiveDefIndices) {
+        recursiveDefs.add(myCallTargetProvider.getCallTarget(index));
+      }
+      dataDef.setRecursiveDefinitions(recursiveDefs);
+    }
     dataDef.setSort(defDeserializer.readSort(dataProto.getSort()));
 
     for (DefinitionProtos.Definition.DataData.Constructor constructorProto : dataProto.getConstructorList()) {
@@ -302,6 +310,14 @@ public class DefinitionDeserialization {
     functionDef.setTypeClassParameters(readTypeClassParametersKind(functionProto.getTypeClassParametersList()));
     for (DefinitionProtos.Definition.ParametersLevel parametersLevelProto : functionProto.getParametersLevelsList()) {
       functionDef.addParametersLevel(readParametersLevel(defDeserializer, parametersLevelProto));
+    }
+    List<Integer> recursiveDefIndices = functionProto.getRecursiveDefinitionList();
+    if (!recursiveDefIndices.isEmpty()) {
+      Set<Definition> recursiveDefs = new HashSet<>();
+      for (Integer index : recursiveDefIndices) {
+        recursiveDefs.add(myCallTargetProvider.getCallTarget(index));
+      }
+      functionDef.setRecursiveDefinitions(recursiveDefs);
     }
     if (functionProto.hasType()) {
       functionDef.setResultType(defDeserializer.readExpr(functionProto.getType()));

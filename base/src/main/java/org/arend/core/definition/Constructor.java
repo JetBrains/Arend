@@ -15,6 +15,7 @@ import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.definition.CoreConstructor;
 import org.arend.core.elimtree.BranchKey;
+import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.naming.reference.TCReferable;
 import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
@@ -22,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 public class Constructor extends Definition implements Function, BranchKey, CoreConstructor {
   private final DataDefinition myDataType;
@@ -53,6 +55,11 @@ public class Constructor extends Definition implements Function, BranchKey, Core
   @Override
   public Body getBody() {
     return myConditions;
+  }
+
+  @Override
+  public @NotNull Set<? extends Definition> getRecursiveDefinitions() {
+    return myDataType.getRecursiveDefinitions();
   }
 
   @NotNull

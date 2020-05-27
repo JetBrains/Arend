@@ -71,6 +71,7 @@ message Definition {
         repeated int32 parameters_typechecking_order = 2;
         repeated bool good_this_parameters = 3;
         repeated TypeClassParameterKind type_class_parameters = 4;
+        repeated int32 recursive_definition = 14;
         Sort sort = 5;
         repeated Constructor constructor = 6;
         bool is_truncated = 7;
@@ -95,6 +96,7 @@ message Definition {
         repeated int32 parameters_typechecking_order = 2;
         repeated bool good_this_parameters = 3;
         repeated TypeClassParameterKind type_class_parameters = 4;
+        repeated int32 recursive_definition = 12;
         Expression type = 5;
         Expression type_level = 6;
         Body body = 7;

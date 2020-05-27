@@ -330,8 +330,17 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
       }
     }
 
+    Set<Definition> allDefinitions = new HashSet<>();
     for (Concrete.Definition definition : orderedDefinitions) {
-      typecheckingBodyFinished(definition.getData(), myState.getTypechecked(definition.getData()));
+      Definition typechecked = myState.getTypechecked(definition.getData());
+      if (typechecked instanceof FunctionDefinition) {
+        ((FunctionDefinition) typechecked).setRecursiveDefinitions(allDefinitions);
+        allDefinitions.add(typechecked);
+      } else if (typechecked instanceof DataDefinition) {
+        ((DataDefinition) typechecked).setRecursiveDefinitions(allDefinitions);
+        allDefinitions.add(typechecked);
+      }
+      typecheckingBodyFinished(definition.getData(), typechecked);
     }
   }
 
