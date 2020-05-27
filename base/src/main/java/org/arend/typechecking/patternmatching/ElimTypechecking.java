@@ -324,7 +324,7 @@ public class ElimTypechecking {
 
   private static List<ConCallExpression> getMatchedConstructors(Expression expr) {
     DataCallExpression dataCall = expr.normalize(NormalizationMode.WHNF).cast(DataCallExpression.class);
-    return dataCall == null ? null : PatternTypechecking.checkDisjointConstructors(dataCall) ? Collections.emptyList() : dataCall.getMatchedConstructors();
+    return dataCall == null ? null : dataCall.getMatchedConstructors();
   }
 
   private static List<List<ExpressionPattern>> generateMissingClauses(List<DependentLink> eliminatedParameters, int i, ExprSubstitution substitution) {
@@ -674,19 +674,15 @@ public class ElimTypechecking {
         dataType = ((Constructor) someConPattern.getDefinition()).getDataType();
         if (dataType.hasIndexedConstructors() || dataType == Prelude.PATH) {
           DataCallExpression dataCall = GetTypeVisitor.INSTANCE.visitConCall(((ConCallExpression) someConPattern.getDataExpression().subst(conClause.substitution)), null);
-          if (PatternTypechecking.checkDisjointConstructors(dataCall)) {
-            branchKeys = Collections.emptyList();
-          } else {
-            conCalls = dataCall.getMatchedConstructors();
-            if (conCalls == null) {
-              myErrorReporter.report(new ImpossibleEliminationError(dataCall, getClause(conClause.index)));
-              myOK = false;
-              return null;
-            }
-            branchKeys = new ArrayList<>(conCalls.size());
-            for (ConCallExpression conCall : conCalls) {
-              branchKeys.add(conCall.getDefinition());
-            }
+          conCalls = dataCall.getMatchedConstructors();
+          if (conCalls == null) {
+            myErrorReporter.report(new ImpossibleEliminationError(dataCall, getClause(conClause.index)));
+            myOK = false;
+            return null;
+          }
+          branchKeys = new ArrayList<>(conCalls.size());
+          for (ConCallExpression conCall : conCalls) {
+            branchKeys.add(conCall.getDefinition());
           }
         } else {
           branchKeys = new ArrayList<>(dataType.getConstructors());

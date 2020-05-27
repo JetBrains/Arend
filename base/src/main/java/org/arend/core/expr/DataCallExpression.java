@@ -2,24 +2,30 @@ package org.arend.core.expr;
 
 import org.arend.core.definition.Constructor;
 import org.arend.core.definition.DataDefinition;
+import org.arend.core.elimtree.Body;
+import org.arend.core.elimtree.ElimBody;
+import org.arend.core.elimtree.ElimClause;
+import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.pattern.ExpressionPattern;
+import org.arend.core.pattern.Pattern;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.InPlaceLevelSubstVisitor;
 import org.arend.ext.core.definition.CoreConstructor;
 import org.arend.ext.core.expr.CoreDataCallExpression;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.prelude.Prelude;
 import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.math.BigInteger;
+import java.util.*;
 
 public class DataCallExpression extends DefCallExpression implements Type, CoreDataCallExpression {
   private final List<Expression> myArguments;
@@ -110,7 +116,106 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
     return constructors;
   }
 
+  private static boolean addConstructor(Expression expr, Collection<Constructor> constructors) {
+    if (expr == null) {
+      return true;
+    }
+    if (expr instanceof ConCallExpression) {
+      constructors.add(((ConCallExpression) expr).getDefinition());
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  private static boolean checkInteger(BigInteger n, Expression expr) {
+    if (expr instanceof IntegerExpression) {
+      return !n.equals(((IntegerExpression) expr).getBigInteger());
+    }
+    if (!(expr instanceof ConCallExpression)) {
+      return false;
+    }
+
+    ConCallExpression conCall = (ConCallExpression) expr;
+    if (conCall.getDefinition() == Prelude.ZERO) {
+      return !n.equals(BigInteger.ZERO);
+    }
+    if (conCall.getDefinition() == Prelude.SUC) {
+      return n.equals(BigInteger.ZERO) || checkInteger(n.subtract(BigInteger.ONE), conCall.getDefCallArguments().get(0).normalize(NormalizationMode.WHNF));
+    }
+    return false;
+  }
+
+  private static boolean compareConstructors(Expression expr1, Expression expr2) {
+    expr1 = expr1.normalize(NormalizationMode.WHNF);
+    expr2 = expr2.normalize(NormalizationMode.WHNF);
+    if (expr1 instanceof IntegerExpression) {
+      return checkInteger(((IntegerExpression) expr1).getBigInteger(), expr2);
+    }
+    if (expr2 instanceof IntegerExpression) {
+      return checkInteger(((IntegerExpression) expr2).getBigInteger(), expr1);
+    }
+    if (!(expr1 instanceof ConCallExpression) || !(expr2 instanceof ConCallExpression)) {
+      return false;
+    }
+
+    ConCallExpression conCall1 = (ConCallExpression) expr1;
+    ConCallExpression conCall2 = (ConCallExpression) expr2;
+    Constructor con1 = conCall1.getDefinition();
+    Constructor con2 = conCall2.getDefinition();
+
+    if (con1 == con2) {
+      for (int i = 0; i < conCall1.getDefCallArguments().size(); i++) {
+        if (compareConstructors(conCall1.getDefCallArguments().get(i), conCall2.getDefCallArguments().get(i))) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    for (Constructor constructor : con1.getDataType().getConstructors()) {
+      Body body = constructor.getBody();
+      if (body == null) {
+        continue;
+      }
+
+      Set<Constructor> constructors = new HashSet<>();
+      constructors.add(constructor);
+      if (body instanceof Expression) {
+        if (!addConstructor((Expression) body, constructors)) {
+          return false;
+        }
+      } else if (body instanceof IntervalElim) {
+        for (IntervalElim.CasePair pair : ((IntervalElim) body).getCases()) {
+          if (!addConstructor(pair.proj1, constructors) || !addConstructor(pair.proj2, constructors)) {
+            return false;
+          }
+        }
+        body = ((IntervalElim) body).getOtherwise();
+      }
+      if (body instanceof ElimBody) {
+        for (ElimClause<Pattern> clause : ((ElimBody) body).getClauses()) {
+          if (!addConstructor(clause.getExpression(), constructors)) {
+            return false;
+          }
+        }
+      } else if (body != null) {
+        throw new IllegalStateException();
+      }
+
+      if (constructors.contains(con1) && constructors.contains(con2)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   public List<ConCallExpression> getMatchedConstructors() {
+    if (getDefinition() == Prelude.PATH && getDefCallArguments().get(0).removeConstLam() != null && compareConstructors(getDefCallArguments().get(1), getDefCallArguments().get(2))) {
+      return Collections.emptyList();
+    }
+
     List<ConCallExpression> result = new ArrayList<>();
     for (Constructor constructor : getDefinition().getConstructors()) {
       if (!getMatchedConCall(constructor, result)) {
