@@ -3,6 +3,7 @@ package org.arend.ext.concrete;
 import org.arend.ext.concrete.expr.ConcreteArgument;
 import org.arend.ext.concrete.expr.ConcreteCaseArgument;
 import org.arend.ext.concrete.expr.ConcreteExpression;
+import org.arend.ext.concrete.expr.ConcreteReferenceExpression;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.reference.ArendRef;
@@ -20,9 +21,9 @@ import java.util.List;
  * ConcreteFactory can be used to create concrete expressions, which can be checked by {@link org.arend.ext.typechecking.ExpressionTypechecker}
  */
 public interface ConcreteFactory {
-  @NotNull ConcreteExpression ref(@NotNull ArendRef ref);
-  @NotNull ConcreteExpression ref(@NotNull ArendRef ref, @Nullable ConcreteLevel pLevel, @Nullable ConcreteLevel hLevel);
-  @NotNull ConcreteExpression ref(@NotNull CoreBinding ref);
+  @NotNull ConcreteReferenceExpression ref(@NotNull ArendRef ref);
+  @NotNull ConcreteReferenceExpression ref(@NotNull ArendRef ref, @Nullable ConcreteLevel pLevel, @Nullable ConcreteLevel hLevel);
+  @NotNull ConcreteReferenceExpression ref(@NotNull CoreBinding ref);
   @NotNull ConcreteExpression core(@Nullable String name, @NotNull TypedExpression expr);
   @NotNull ConcreteExpression meta(@NotNull String name, @NotNull MetaDefinition meta);
   @NotNull ConcreteExpression thisExpr();
@@ -69,6 +70,7 @@ public interface ConcreteFactory {
   @NotNull ConcreteClassElement implementation(@NotNull ArendRef field, @Nullable ConcreteExpression expression, @NotNull Collection<? extends ConcreteClassElement> subclauses);
 
   @NotNull ConcreteCaseArgument caseArg(@NotNull ConcreteExpression expression, @Nullable ArendRef asRef, @Nullable ConcreteExpression type);
+  @NotNull ConcreteCaseArgument caseArg(@NotNull ConcreteReferenceExpression expression, @Nullable ConcreteExpression type);
   @NotNull ConcreteClause clause(@NotNull Collection<? extends ConcretePattern> patterns, @Nullable ConcreteExpression expression);
   @NotNull ConcretePattern refPattern(@Nullable ArendRef ref, @Nullable ConcreteExpression type);
   @NotNull ConcretePattern tuplePattern(@NotNull ConcretePattern... subpatterns);

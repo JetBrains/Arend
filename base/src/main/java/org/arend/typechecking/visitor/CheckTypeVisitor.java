@@ -2157,6 +2157,16 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     return null;
   }
 
+  public static Expression getLevelExpression(Type type, int level) {
+    if (level < -1) {
+      return type.getExpr();
+    }
+
+    SingleDependentLink params = ExpressionFactory.singleParams(true, Arrays.asList("x" + (level + 2), "y" + (level + 2)), type);
+    Sort sort = type.getSortOfType();
+    return new PiExpression(sort, params, getLevelExpression(new TypeExpression(new FunCallExpression(Prelude.PATH_INFIX, sort, Arrays.asList(type.getExpr(), new ReferenceExpression(params), new ReferenceExpression(params.getNext()))), sort), level - 1));
+  }
+
   public Integer getExpressionLevel(DependentLink link, Expression type, Expression expr, Equations equations, Concrete.SourceNode sourceNode) {
     return getExpressionLevel(link, type, expr, equations, sourceNode, errorReporter);
   }

@@ -1,5 +1,6 @@
 package org.arend.ext.core.expr;
 
+import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.core.definition.CoreConstructor;
 import org.arend.ext.core.level.CoreSort;
 import org.arend.ext.core.definition.CoreDataDefinition;
@@ -32,4 +33,9 @@ public interface CoreDataCallExpression extends CoreExpression {
    * @return the list of constructors with data arguments matching this type or {@code null} if it cannot be determined
    */
   @Nullable List<ConstructorWithDataArguments> computeMatchedConstructorsWithDataArguments();
+
+  /**
+   * @return parameters of the given constructor with substituted arguments
+   */
+  @NotNull CoreParameter getConstructorParameters(CoreConstructor constructor);
 }

@@ -1,5 +1,6 @@
 package org.arend.core.expr;
 
+import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.Constructor;
 import org.arend.core.definition.DataDefinition;
 import org.arend.core.elimtree.Body;
@@ -14,6 +15,7 @@ import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.pattern.ExpressionPattern;
 import org.arend.core.pattern.Pattern;
 import org.arend.core.sort.Sort;
+import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.InPlaceLevelSubstVisitor;
 import org.arend.ext.core.definition.CoreConstructor;
 import org.arend.ext.core.expr.CoreDataCallExpression;
@@ -114,6 +116,17 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
       constructors.add(new ConstructorWithDataArguments(conCall.getDefinition(), conCall.getDataTypeArguments()));
     }
     return constructors;
+  }
+
+  @Override
+  public @NotNull DependentLink getConstructorParameters(CoreConstructor constructor) {
+    if (!(constructor instanceof Constructor && constructor.getDataType() == getDefinition())) {
+      throw new IllegalArgumentException();
+    }
+    if (!constructor.getParameters().hasNext() || myArguments.isEmpty()) {
+      return ((Constructor) constructor).getParameters();
+    }
+    return DependentLink.Helper.subst(((Constructor) constructor).getParameters(), new ExprSubstitution().add(getDefinition().getParameters(), myArguments));
   }
 
   private static boolean addConstructor(Expression expr, Collection<Constructor> constructors) {

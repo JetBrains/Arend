@@ -216,6 +216,12 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
     clauses = definition.accept(new DefinitionTypechecker(checkTypeVisitor), null);
     typechecked = myState.getTypechecked(definition.getData());
 
+    if (recursive && typechecked instanceof FunctionDefinition) {
+      ((FunctionDefinition) typechecked).setRecursiveDefinitions(Collections.singleton(typechecked));
+    }
+    if (recursive && typechecked instanceof DataDefinition) {
+      ((DataDefinition) typechecked).setRecursiveDefinitions(Collections.singleton(typechecked));
+    }
     if (definition.isRecursive() && typechecked instanceof FunctionDefinition && clauses != null) {
       checkRecursiveFunctions(Collections.singletonMap((FunctionDefinition) typechecked, definition), Collections.singletonMap((FunctionDefinition) typechecked, clauses));
     }

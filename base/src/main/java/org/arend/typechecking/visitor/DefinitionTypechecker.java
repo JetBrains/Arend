@@ -8,7 +8,6 @@ import org.arend.core.context.param.*;
 import org.arend.core.definition.*;
 import org.arend.core.elimtree.Body;
 import org.arend.core.elimtree.ElimBody;
-import org.arend.core.elimtree.ElimClause;
 import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.*;
 import org.arend.core.expr.type.Type;
@@ -760,17 +759,18 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       if (sort == null || !sort.isProp()) {
         DefCallExpression defCall = type.cast(DefCallExpression.class);
         Integer level = defCall == null ? null : defCall.getUseLevel();
-        if ((level == null || level != -1) && typechecker.getExtension() != null) {
+        Concrete.SourceNode sourceNode = def.getResultType() != null ? def.getResultType() : def;
+        if ((level == null || level != -1) && sort != null && typechecker.getExtension() != null) {
           LevelProver prover = typechecker.getExtension().getLevelProver();
           if (prover != null) {
-            TypecheckingResult result = TypecheckingResult.fromChecked(prover.prove(type, -1, typechecker));
+            TypecheckingResult result = typechecker.finalize(TypecheckingResult.fromChecked(prover.prove(type, CheckTypeVisitor.getLevelExpression(new TypeExpression(type, sort), -1), -1, sourceNode, typechecker)), sourceNode, false);
             if (result != null) {
               Integer level2 = checkResultTypeLevel(result, true, false, type, typedDef, null, newDef, def);
-              return level != null && level2 != null ? Math.min(level, level2) : level != null ? level : level2;
+              return level != null && level2 != null ? Integer.valueOf(Math.min(level, level2)) : level != null ? level : level2;
             }
           }
         }
-        if (!checkLevel(true, false, level, sort, def.getResultType() != null ? def.getResultType() : def)) {
+        if (!checkLevel(true, false, level, sort, sourceNode)) {
           if (newDef) {
             typedDef.setKind(CoreFunctionDefinition.Kind.SFUNC);
           }
@@ -2123,7 +2123,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
               if ((level == null || level != -1) && typechecker.getExtension() != null) {
                 LevelProver prover = typechecker.getExtension().getLevelProver();
                 if (prover != null) {
-                  TypecheckingResult result = TypecheckingResult.fromChecked(prover.prove(typeExpr, -1, typechecker));
+                  TypecheckingResult result = typechecker.finalize(TypecheckingResult.fromChecked(prover.prove(typeExpr, CheckTypeVisitor.getLevelExpression(typeResult, -1), -1, def.getResultType(), typechecker)), def.getResultType(), false);
                   if (result != null) {
                     Integer level2 = checkResultTypeLevel(result, false, true, typeExpr, null, typedDef, newDef, def);
                     if (level2 != null && level2 == -1) {

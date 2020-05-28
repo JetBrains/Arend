@@ -6,6 +6,7 @@ import org.arend.ext.concrete.*;
 import org.arend.ext.concrete.expr.ConcreteArgument;
 import org.arend.ext.concrete.expr.ConcreteCaseArgument;
 import org.arend.ext.concrete.expr.ConcreteExpression;
+import org.arend.ext.concrete.expr.ConcreteReferenceExpression;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.reference.ArendRef;
@@ -34,7 +35,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
 
   @NotNull
   @Override
-  public ConcreteExpression ref(@NotNull ArendRef ref) {
+  public ConcreteReferenceExpression ref(@NotNull ArendRef ref) {
     if (!(ref instanceof Referable)) {
       throw new IllegalArgumentException();
     }
@@ -43,7 +44,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
 
   @NotNull
   @Override
-  public ConcreteExpression ref(@NotNull ArendRef ref, @Nullable ConcreteLevel pLevel, @Nullable ConcreteLevel hLevel) {
+  public ConcreteReferenceExpression ref(@NotNull ArendRef ref, @Nullable ConcreteLevel pLevel, @Nullable ConcreteLevel hLevel) {
     if (!(ref instanceof Referable && (pLevel == null || pLevel instanceof Concrete.LevelExpression) && (hLevel == null || hLevel instanceof Concrete.LevelExpression) )) {
       throw new IllegalArgumentException();
     }
@@ -51,7 +52,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
   }
 
   @Override
-  public @NotNull ConcreteExpression ref(@NotNull CoreBinding ref) {
+  public @NotNull ConcreteReferenceExpression ref(@NotNull CoreBinding ref) {
     if (!(ref instanceof Binding)) {
       throw new IllegalArgumentException();
     }
@@ -525,6 +526,14 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
       throw new IllegalArgumentException();
     }
     return new Concrete.CaseArgument((Concrete.Expression) expression, (Referable) asRef, (Concrete.Expression) type);
+  }
+
+  @Override
+  public @NotNull ConcreteCaseArgument caseArg(@NotNull ConcreteReferenceExpression expression, @Nullable ConcreteExpression type) {
+    if (!(expression instanceof Concrete.ReferenceExpression && (type == null || type instanceof Concrete.Expression))) {
+      throw new IllegalArgumentException();
+    }
+    return new Concrete.CaseArgument((Concrete.ReferenceExpression) expression, (Concrete.Expression) type);
   }
 
   private List<Concrete.Pattern> patterns(Collection<? extends ConcretePattern> patterns) {
