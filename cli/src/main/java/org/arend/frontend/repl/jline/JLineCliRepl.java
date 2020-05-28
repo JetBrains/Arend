@@ -25,6 +25,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 public class JLineCliRepl extends CommonCliRepl {
@@ -107,12 +109,16 @@ public class JLineCliRepl extends CommonCliRepl {
     return myLibraryManager.getRegisteredLibraries()
       .stream()
       .flatMap(library -> Stream.concat(
-        library.getLoadedModules().stream(),
+        library.getLoadedModules()
+          .stream()
+          .map(Objects::toString),
         library instanceof SourceLibrary
-          ? ((SourceLibrary) library).getAdditionalModules().stream()
+          ? ((SourceLibrary) library).getAdditionalModules()
+          .stream()
+          .map(Map.Entry::getKey)
+          .map(Objects::toString)
           : Stream.empty()
-      ))
-      .map(String::valueOf);
+      ));
   }
 
   public static void main(String... args) {
