@@ -176,16 +176,17 @@ public abstract class BaseCliFrontend {
       }
     }
 
+    boolean recompile = cmdLine.hasOption("r");
     if (cmdLine.hasOption("i")) {
       switch (replKind.toLowerCase()) {
         default:
           System.err.println("[ERROR] Unrecognized repl type: " + replKind);
           break;
         case "plain":
-          PlainCliRepl.main(libDirs);
+          PlainCliRepl.launch(recompile, libDirs);
           break;
         case "jline":
-          JLineCliRepl.main(libDirs);
+          JLineCliRepl.launch(recompile, libDirs);
           break;
       }
       return null;
@@ -283,7 +284,6 @@ public abstract class BaseCliFrontend {
 
     // Load and typecheck libraries
     MyTypechecking typechecking = new MyTypechecking();
-    boolean recompile = cmdLine.hasOption("r");
     boolean doubleCheck = cmdLine.hasOption("c");
     for (UnmodifiableSourceLibrary library : requestedLibraries) {
       myModuleResults.clear();

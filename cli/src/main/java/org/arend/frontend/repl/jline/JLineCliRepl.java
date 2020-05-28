@@ -116,10 +116,13 @@ public class JLineCliRepl extends CommonCliRepl {
   }
 
   public static void main(String... args) {
-    main(Collections.emptyList());
+    launch(false, Collections.emptyList());
   }
 
-  public static void main(@NotNull Collection<? extends Path> libDirs) {
+  public static void launch(
+    boolean recompile,
+    @NotNull Collection<? extends Path> libDirs
+  ) {
     Terminal terminal;
     try {
       terminal = TerminalBuilder
@@ -137,6 +140,7 @@ public class JLineCliRepl extends CommonCliRepl {
     repl.println(ASCII_BANNER);
     repl.println();
     repl.addLibraryDirectories(libDirs);
+    if (recompile) repl.getReplLibrary().addFlag(SourceLibrary.Flag.RECOMPILE);
     repl.initialize();
     repl.runRepl();
   }

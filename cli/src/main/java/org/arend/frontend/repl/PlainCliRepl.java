@@ -1,5 +1,6 @@
 package org.arend.frontend.repl;
 
+import org.arend.library.SourceLibrary;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.InputStream;
@@ -52,15 +53,19 @@ public class PlainCliRepl extends CommonCliRepl {
   }
 
   public static void main(String... args) {
-    main(Collections.emptyList());
+    launch(false, Collections.emptyList());
   }
 
-  public static void main(@NotNull Collection<? extends Path> libDirs) {
+  public static void launch(
+    boolean recompile,
+    @NotNull Collection<? extends Path> libDirs
+  ) {
     var repl = new PlainCliRepl();
     repl.println(ASCII_BANNER);
     repl.println();
     repl.println("Note: you're using the plain REPL.");
     repl.addLibraryDirectories(libDirs);
+    if (recompile) repl.getReplLibrary().addFlag(SourceLibrary.Flag.RECOMPILE);
     repl.initialize();
     repl.runRepl(System.in);
   }
