@@ -14,8 +14,7 @@ import org.arend.library.LibraryManager;
 import org.arend.library.resolver.LibraryResolver;
 import org.arend.module.ModuleLocation;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
-import org.arend.naming.reference.Referable;
-import org.arend.naming.reference.TCReferable;
+import org.arend.naming.reference.*;
 import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.naming.resolving.visitor.DefinitionResolveNameVisitor;
 import org.arend.naming.resolving.visitor.ExpressionResolveNameVisitor;
@@ -32,7 +31,6 @@ import org.arend.typechecking.LibraryArendExtensionProvider;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
-import org.arend.typechecking.instance.provider.SimpleInstanceProvider;
 import org.arend.typechecking.order.PartialComparator;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.arend.typechecking.provider.ConcreteProvider;
@@ -44,7 +42,10 @@ import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.function.Supplier;
 
 public abstract class Repl {
@@ -55,7 +56,7 @@ public abstract class Repl {
   private final List<ReplHandler> myHandlers = new ArrayList<>();
   private final MergeScope myMergeScope = new MergeScope(myMergedScopes);
   private final ConcreteProvider myConcreteProvider;
-  private final SimpleInstanceProvider myExprInstanceProvider = new SimpleInstanceProvider();
+  private final TCReferable myModuleReferable;
   protected @NotNull Scope myScope = myMergeScope;
   protected final @NotNull TypecheckingOrderingListener myTypechecking;
   protected final @NotNull TypecheckerState myTypecheckerState;
@@ -88,6 +89,7 @@ public abstract class Repl {
     myTypecheckerState = typecheckerState;
     myLibraryManager = libraryManager;
     myTypechecking = new TypecheckingOrderingListener(instanceProviders, myTypecheckerState, myConcreteProvider, IdReferableConverter.INSTANCE, myErrorReporter, comparator, new LibraryArendExtensionProvider(myLibraryManager));
+    myModuleReferable = new LocatedReferableImpl(Precedence.DEFAULT, replModulePath.getLibraryName(), new FullModuleReferable(replModulePath), GlobalReferable.Kind.OTHER);
   }
 
   protected abstract void loadLibraries();
@@ -158,10 +160,6 @@ public abstract class Repl {
       myMergedScopes.remove(scope);
       return;
     }
-    var instanceProviders = myLibraryManager.getInstanceProviderSet();
-    if (instanceProviders != null) instanceProviders.collectInstances(group,
-        CachingScope.make(ScopeFactory.parentScopeForGroup(group, moduleScopeProvider, true)),
-        myConcreteProvider, null);
     if (checkErrors()) {
       myMergedScopes.remove(scope);
       return;
@@ -170,10 +168,18 @@ public abstract class Repl {
       checkErrors();
       myMergedScopes.remove(scope);
     }
-    onScopeChanged();
+    onScopeAdded(group);
   }
 
-  protected void onScopeChanged() {
+  protected void onScopeAdded(Group group) {
+    var instanceProviders = myLibraryManager.getInstanceProviderSet();
+    if (instanceProviders != null) instanceProviders.collectInstances(
+      group,
+      myScope,
+      myModuleReferable,
+      myConcreteProvider,
+      myTypechecking.getReferableConverter()
+    );
   }
 
   protected void loadCommands() {
@@ -209,7 +215,6 @@ public abstract class Repl {
    */
   public final void addScope(@NotNull Scope scope) {
     myMergedScopes.add(scope);
-    onScopeChanged();
   }
 
   /**
@@ -218,10 +223,8 @@ public abstract class Repl {
    * @return true if there is indeed a scope removed
    */
   public final boolean removeScope(@NotNull Scope scope) {
-    boolean ret = removeScopeImpl(scope);
     removeScopeImpl(scope.getGlobalSubscopeWithoutOpens());
-    onScopeChanged();
-    return ret;
+    return removeScopeImpl(scope);
   }
 
   private boolean removeScopeImpl(Scope scope) {
@@ -276,7 +279,8 @@ public abstract class Repl {
    */
   public final @Nullable TypecheckingResult checkExpr(@NotNull Concrete.Expression expr, @Nullable Expression expectedType) {
     var typechecker = new CheckTypeVisitor(myTypecheckerState, myErrorReporter, null, null);
-    var instancePool = new GlobalInstancePool(myExprInstanceProvider, typechecker);
+    var instanceProvider = myLibraryManager.getInstanceProviderSet().get(myModuleReferable);
+    var instancePool = new GlobalInstancePool(instanceProvider, typechecker);
     typechecker.setInstancePool(instancePool);
     var result = typechecker.finalCheckExpr(expr, expectedType);
     return checkErrors() ? null : result;
