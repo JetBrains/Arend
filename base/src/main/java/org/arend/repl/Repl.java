@@ -31,8 +31,8 @@ import org.arend.term.prettyprint.ToAbstractVisitor;
 import org.arend.typechecking.LibraryArendExtensionProvider;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
-import org.arend.typechecking.instance.provider.EmptyInstanceProvider;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
+import org.arend.typechecking.instance.provider.SimpleInstanceProvider;
 import org.arend.typechecking.order.PartialComparator;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.arend.typechecking.provider.ConcreteProvider;
@@ -44,10 +44,7 @@ import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.function.Supplier;
 
 public abstract class Repl {
@@ -58,6 +55,7 @@ public abstract class Repl {
   private final List<ReplHandler> myHandlers = new ArrayList<>();
   private final MergeScope myMergeScope = new MergeScope(myMergedScopes);
   private final ConcreteProvider myConcreteProvider;
+  private final SimpleInstanceProvider myExprInstanceProvider = new SimpleInstanceProvider();
   protected @NotNull Scope myScope = myMergeScope;
   protected final @NotNull TypecheckingOrderingListener myTypechecking;
   protected final @NotNull TypecheckerState myTypecheckerState;
@@ -172,6 +170,10 @@ public abstract class Repl {
       checkErrors();
       myMergedScopes.remove(scope);
     }
+    onScopeChanged();
+  }
+
+  protected void onScopeChanged() {
   }
 
   protected void loadCommands() {
@@ -207,6 +209,7 @@ public abstract class Repl {
    */
   public final void addScope(@NotNull Scope scope) {
     myMergedScopes.add(scope);
+    onScopeChanged();
   }
 
   /**
@@ -215,10 +218,16 @@ public abstract class Repl {
    * @return true if there is indeed a scope removed
    */
   public final boolean removeScope(@NotNull Scope scope) {
+    boolean ret = removeScopeImpl(scope);
+    removeScopeImpl(scope.getGlobalSubscopeWithoutOpens());
+    onScopeChanged();
+    return ret;
+  }
+
+  private boolean removeScopeImpl(Scope scope) {
     for (Referable element : scope.getElements())
       if (element instanceof TCReferable)
         myTypecheckerState.reset((TCReferable) element);
-    removeScope(scope.getGlobalSubscopeWithoutOpens());
     return myMergedScopes.remove(scope);
   }
 
@@ -267,9 +276,9 @@ public abstract class Repl {
    */
   public final @Nullable TypecheckingResult checkExpr(@NotNull Concrete.Expression expr, @Nullable Expression expectedType) {
     var typechecker = new CheckTypeVisitor(myTypecheckerState, myErrorReporter, null, null);
-    var instancePool = new GlobalInstancePool(EmptyInstanceProvider.getInstance(), typechecker);
+    var instancePool = new GlobalInstancePool(myExprInstanceProvider, typechecker);
     typechecker.setInstancePool(instancePool);
-    var result = typechecker.checkExpr(expr, expectedType);
+    var result = typechecker.finalCheckExpr(expr, expectedType);
     return checkErrors() ? null : result;
   }
 
