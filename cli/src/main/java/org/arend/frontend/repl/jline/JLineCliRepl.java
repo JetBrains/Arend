@@ -1,6 +1,7 @@
 package org.arend.frontend.repl.jline;
 
 import org.arend.frontend.repl.CommonCliRepl;
+import org.arend.library.SourceLibrary;
 import org.arend.repl.action.DirectoryArgumentCommand;
 import org.arend.repl.action.FileArgumentCommand;
 import org.arend.repl.action.NormalizeCommand;
@@ -104,9 +105,14 @@ public class JLineCliRepl extends CommonCliRepl {
   @NotNull
   private Stream<String> modulePaths() {
     return myLibraryManager.getRegisteredLibraries()
-        .stream()
-        .flatMap(library -> library.getLoadedModules().stream())
-        .map(String::valueOf);
+      .stream()
+      .flatMap(library -> Stream.concat(
+        library.getLoadedModules().stream(),
+        library instanceof SourceLibrary
+          ? ((SourceLibrary) library).getAdditionalModules().stream()
+          : Stream.empty()
+      ))
+      .map(String::valueOf);
   }
 
   public static void main(String... args) {
