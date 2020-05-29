@@ -2215,7 +2215,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       }
     }
 
-    if (!ok) {
+    if (!ok || level < -1) {
       errorReporter.report(new TypecheckingError("\\level has wrong format", sourceNode));
       return null;
     } else {

@@ -518,7 +518,11 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     Concrete.Expression resultType = null;
     Concrete.Expression resultTypeLevel = null;
     if (returnExprCtx instanceof ReturnExprExprContext) {
-      resultType = visitExpr(((ReturnExprExprContext) returnExprCtx).expr());
+      List<ExprContext> exprs = ((ReturnExprExprContext) returnExprCtx).expr();
+      resultType = visitExpr(exprs.get(0));
+      if (exprs.size() > 1) {
+        resultTypeLevel = visitExpr(exprs.get(1));
+      }
     } else if (returnExprCtx instanceof ReturnExprLevelContext) {
       resultType = visitAtomFieldsAcc(((ReturnExprLevelContext) returnExprCtx).atomFieldsAcc(0));
       resultTypeLevel = visitAtomFieldsAcc(((ReturnExprLevelContext) returnExprCtx).atomFieldsAcc(1));

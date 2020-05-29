@@ -557,7 +557,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     return new Pair<>(sort, resultType == null ? null : resultType.subst(substitution));
   }
 
-  @SuppressWarnings("BooleanMethodIsAlwaysInverted")
   private boolean checkLevel(boolean isLemma, boolean isProperty, Integer level, Sort actualSort, Concrete.SourceNode sourceNode) {
     if ((isLemma || isProperty) && (level == null || level != -1)) {
       Sort sort = level != null ? new Sort(new Level(LevelVariable.PVAR), new Level(actualSort == null || !actualSort.getHLevel().isClosed() ? level : Math.min(level, actualSort.getHLevel().getConstant()))) : actualSort;

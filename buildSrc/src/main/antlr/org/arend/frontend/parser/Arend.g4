@@ -38,7 +38,7 @@ definition  : funcKw defId tele* (':' returnExpr)? functionBody where?          
             | instanceKw defId tele* (':' returnExpr)? instanceBody where?                                      # defInstance
             ;
 
-returnExpr  : expr                                  # returnExprExpr
+returnExpr  : expr ('\\level' expr)?                # returnExprExpr
             | '\\level' atomFieldsAcc atomFieldsAcc # returnExprLevel
             ;
 
