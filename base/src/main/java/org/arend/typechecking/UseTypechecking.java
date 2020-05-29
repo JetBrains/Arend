@@ -37,7 +37,7 @@ public class UseTypechecking {
       }
 
       FunctionDefinition useDefinition = (FunctionDefinition) typedDefinition;
-      if (definition.getKind() == FunctionKind.LEVEL) {
+      if (definition.getKind() == FunctionKind.LEVEL && !useDefinition.getResultType().isError()) {
         Definition useParent = state.getTypechecked(definition.getUseParent());
         ParametersLevel parametersLevel = typecheckLevel(definition, useDefinition, useParent, errorReporter);
         if (parametersLevel != null) {
