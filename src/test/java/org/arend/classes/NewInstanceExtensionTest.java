@@ -74,7 +74,7 @@ public class NewInstanceExtensionTest extends TypeCheckingTestCase {
   public void levelTest() {
     typeCheckModule(
       "\\record C (A : \\Type) (a : A)\n" +
-      "\\func f : \\Sigma (C (\\suc \\lp) (\\suc \\lh)) Nat => (\\new C \\level 1 1 Nat 0, 0)");
+      "\\func f : \\Sigma (C (\\suc \\lp) (\\suc \\lh)) Nat => (\\new C \\levels 1 1 Nat 0, 0)");
     assertEquals(new Sort(new Level(1), new Level(1)), ((Expression) ((FunctionDefinition) getDefinition("f")).getBody()).cast(TupleExpression.class).getFields().get(0).cast(NewExpression.class).getClassCall().getSortArgument());
   }
 

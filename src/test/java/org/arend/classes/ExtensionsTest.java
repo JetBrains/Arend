@@ -362,14 +362,14 @@ public class ExtensionsTest extends TypeCheckingTestCase {
   public void universesTest() {
     typeCheckModule(
       "\\record C (A : \\Type) (a : A)\n" +
-      "\\func f (c : C \\level 1 1 Nat) : C \\level 0 1 => c");
+      "\\func f (c : C \\levels 1 1 Nat) : C \\levels 0 1 => c");
   }
 
   @Test
   public void universesTestError() {
     typeCheckModule(
       "\\record C (A : \\Type) (a : A)\n" +
-      "\\func f (c : C \\level 1 1 \\Set0) : C \\level 0 1 => c", 1);
+      "\\func f (c : C \\levels 1 1 \\Set0) : C \\levels 0 1 => c", 1);
   }
 
   @Test

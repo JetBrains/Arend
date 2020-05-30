@@ -199,7 +199,7 @@ levelExpr : levelAtom                     # atomLevel
 onlyLevelAtom : '\\lp'                                                # pOnlyLevel
               | '\\lh'                                                # hOnlyLevel
               | '\\oo'                                                # infOnlyLevel
-              | '\\level' (maybeLevelAtom maybeLevelAtom | '\\Prop')  # levelsOnlyLevel
+              | '\\levels' (maybeLevelAtom maybeLevelAtom | '\\Prop') # levelsOnlyLevel
               | '(' onlyLevelExpr ')'                                 # parenOnlyLevel
               ;
 
