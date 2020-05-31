@@ -14,6 +14,7 @@ import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.serialization.ArendDeserializer;
 import org.arend.ext.serialization.DeserializationException;
 import org.arend.ext.serialization.SerializableKey;
+import org.arend.ext.typechecking.DefinitionListener;
 import org.arend.extImpl.SerializableKeyRegistryImpl;
 import org.arend.naming.reference.ClassReferableImpl;
 import org.arend.naming.reference.DataLocatedReferableImpl;
@@ -30,11 +31,13 @@ public class DefinitionDeserialization implements ArendDeserializer {
   private final CallTargetProvider myCallTargetProvider;
   private final DependencyListener myDependencyListener;
   private final SerializableKeyRegistryImpl myKeyRegistry;
+  private final DefinitionListener myDefinitionListener;
 
-  public DefinitionDeserialization(CallTargetProvider callTargetProvider, DependencyListener dependencyListener, SerializableKeyRegistryImpl keyRegistry) {
+  public DefinitionDeserialization(CallTargetProvider callTargetProvider, DependencyListener dependencyListener, SerializableKeyRegistryImpl keyRegistry, DefinitionListener definitionListener) {
     myCallTargetProvider = callTargetProvider;
     myDependencyListener = dependencyListener;
     myKeyRegistry = keyRegistry;
+    myDefinitionListener = definitionListener;
   }
 
   public void fillInDefinition(DefinitionProtos.Definition defProto, Definition def) throws DeserializationException {
@@ -69,6 +72,10 @@ public class DefinitionDeserialization implements ArendDeserializer {
         }
         def.putUserData(key, key.deserialize(this, entry.getValue().toByteArray()));
       }
+    }
+
+    if (myDefinitionListener != null) {
+      myDefinitionListener.loaded(def);
     }
   }
 

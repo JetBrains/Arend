@@ -3,6 +3,7 @@ package org.arend.source;
 import com.google.protobuf.CodedInputStream;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.module.ModulePath;
+import org.arend.ext.typechecking.DefinitionListener;
 import org.arend.extImpl.SerializableKeyRegistryImpl;
 import org.arend.library.SourceLibrary;
 import org.arend.library.error.LibraryError;
@@ -32,10 +33,16 @@ import java.io.OutputStream;
 public abstract class StreamBinarySource implements BinarySource {
   private ModuleDeserialization myModuleDeserialization;
   private SerializableKeyRegistryImpl myKeyRegistry;
+  private DefinitionListener myDefinitionListener;
 
   @Override
   public void setKeyRegistry(SerializableKeyRegistryImpl keyRegistry) {
     myKeyRegistry = keyRegistry;
+  }
+
+  @Override
+  public void setDefinitionListener(DefinitionListener definitionListener) {
+    myDefinitionListener = definitionListener;
   }
 
   @NotNull
@@ -79,13 +86,13 @@ public abstract class StreamBinarySource implements BinarySource {
 
       for (ModuleProtos.ModuleCallTargets moduleCallTargets : moduleProto.getModuleCallTargetsList()) {
         ModulePath module = new ModulePath(moduleCallTargets.getNameList());
-        if (library.containsModule(module) && !sourceLoader.preloadBinary(module, myKeyRegistry)) {
+        if (library.containsModule(module) && !sourceLoader.preloadBinary(module, myKeyRegistry, myDefinitionListener)) {
           return false;
         }
       }
 
       ReferableConverter referableConverter = sourceLoader.getReferableConverter();
-      myModuleDeserialization = new ModuleDeserialization(moduleProto, library.getTypecheckerState(), referableConverter, myKeyRegistry);
+      myModuleDeserialization = new ModuleDeserialization(moduleProto, library.getTypecheckerState(), referableConverter, myKeyRegistry, myDefinitionListener);
 
       if (referableConverter == null) {
         group = myModuleDeserialization.readGroup(new ModuleLocation(library.getName(), ModuleLocation.LocationKind.SOURCE, modulePath));

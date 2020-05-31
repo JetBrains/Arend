@@ -2,6 +2,7 @@ package org.arend.source;
 
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.module.ModulePath;
+import org.arend.ext.typechecking.DefinitionListener;
 import org.arend.extImpl.SerializableKeyRegistryImpl;
 import org.arend.library.LibraryManager;
 import org.arend.library.SourceLibrary;
@@ -133,8 +134,8 @@ public final class SourceLoader {
    * @param modulePath  a module to load.
    * @return true if the source was successfully loaded, false otherwise.
    */
-  public boolean loadBinary(ModulePath modulePath, SerializableKeyRegistryImpl keyRegistry) {
-    return preloadBinary(modulePath, keyRegistry) && fillInBinary(modulePath);
+  public boolean loadBinary(ModulePath modulePath, SerializableKeyRegistryImpl keyRegistry, DefinitionListener definitionListener) {
+    return preloadBinary(modulePath, keyRegistry, definitionListener) && fillInBinary(modulePath);
   }
 
   boolean fillInBinary(ModulePath modulePath) {
@@ -160,7 +161,7 @@ public final class SourceLoader {
    * @param modulePath  a module to load.
    * @return true if the source was successfully loaded, false otherwise.
    */
-  boolean preloadBinary(ModulePath modulePath, SerializableKeyRegistryImpl keyRegistry) {
+  boolean preloadBinary(ModulePath modulePath, SerializableKeyRegistryImpl keyRegistry, DefinitionListener definitionListener) {
     SourceType sourceType = myLoadedModules.get(modulePath);
     if (sourceType == SourceType.BINARY || sourceType == SourceType.BINARY_FAIL) {
       return sourceType == SourceType.BINARY;
@@ -177,6 +178,7 @@ public final class SourceLoader {
       return false;
     }
     binarySource.setKeyRegistry(keyRegistry);
+    binarySource.setDefinitionListener(definitionListener);
 
     if (myLibrary.hasRawSources()) {
       Source rawSource = myLibrary.getRawSource(modulePath);

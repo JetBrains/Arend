@@ -10,8 +10,10 @@ import org.arend.core.expr.PiExpression;
 import org.arend.core.sort.Sort;
 import org.arend.error.CompositeErrorReporter;
 import org.arend.error.CountingErrorReporter;
+import org.arend.ext.ArendExtension;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.TypecheckingError;
+import org.arend.ext.typechecking.DefinitionListener;
 import org.arend.library.Library;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.TCClassReferable;
@@ -119,6 +121,7 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
   public boolean typecheckTests(Library library, CancellationIndicator cancellationIndicator) {
     return run(cancellationIndicator, () -> library.orderTestModules(new Ordering(myInstanceProviderSet, myConcreteProvider, this, myDependencyListener, myReferableConverter, myState, myComparator)));
   }
+
   public boolean typecheckCollected(CollectingOrderingListener collector, CancellationIndicator cancellationIndicator) {
     return run(cancellationIndicator, () -> {
       collector.feed(this);
@@ -208,7 +211,8 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
 
     List<ExtElimClause> clauses;
     Definition typechecked;
-    CheckTypeVisitor checkTypeVisitor = new CheckTypeVisitor(myState, new LocalErrorReporter(definition.getData(), myErrorReporter), null, myExtensionProvider.getArendExtension(definition.getData()));
+    ArendExtension extension = myExtensionProvider.getArendExtension(definition.getData());
+    CheckTypeVisitor checkTypeVisitor = new CheckTypeVisitor(myState, new LocalErrorReporter(definition.getData(), myErrorReporter), null, extension);
     checkTypeVisitor.setInstancePool(new GlobalInstancePool(myInstanceProviderSet.get(definition.getData()), checkTypeVisitor));
     DesugarVisitor.desugar(definition, myConcreteProvider, checkTypeVisitor.getErrorReporter());
     myCurrentDefinitions = Collections.singletonList(definition.getData());
@@ -227,6 +231,14 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
     }
 
     typecheckingUnitFinished(definition.getData(), typechecked);
+
+    if (extension != null) {
+      DefinitionListener listener = extension.getDefinitionListener();
+      if (listener != null) {
+        listener.typechecked(typechecked);
+      }
+    }
+
     myCurrentDefinitions = Collections.emptyList();
   }
 
@@ -297,6 +309,8 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
     for (Concrete.Definition definition : orderedDefinitions) {
       myCurrentDefinitions.add(definition.getData());
     }
+
+    List<Pair<Definition, DefinitionListener>> listeners = new ArrayList<>();
     for (Concrete.Definition definition : orderedDefinitions) {
       typecheckingBodyStarted(definition.getData());
 
@@ -308,6 +322,14 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
         if (clauses != null) {
           functionDefinitions.put((FunctionDefinition) def, definition);
           clausesMap.put((FunctionDefinition) def, clauses);
+        }
+
+        ArendExtension extension = pair.proj1.getExtension();
+        if (extension != null) {
+          DefinitionListener listener = extension.getDefinitionListener();
+          if (listener != null) {
+            listeners.add(new Pair<>(def, listener));
+          }
         }
       }
     }
@@ -347,6 +369,10 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
         allDefinitions.add(typechecked);
       }
       typecheckingBodyFinished(definition.getData(), typechecked);
+    }
+
+    for (Pair<Definition, DefinitionListener> pair : listeners) {
+      pair.proj2.typechecked(pair.proj1);
     }
   }
 

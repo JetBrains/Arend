@@ -5,6 +5,7 @@ import org.arend.ext.dependency.ArendDependencyProvider;
 import org.arend.ext.serialization.SerializableKeyRegistry;
 import org.arend.ext.typechecking.GoalSolver;
 import org.arend.ext.typechecking.LevelProver;
+import org.arend.ext.typechecking.DefinitionListener;
 import org.arend.ext.ui.ArendUI;
 import org.arend.ext.variable.VariableRenamerFactory;
 import org.jetbrains.annotations.NotNull;
@@ -61,6 +62,13 @@ public interface ArendExtension {
    * Can be used to get access to a {@link ArendUI}.
    */
   default void setUI(@NotNull ArendUI ui) {}
+
+  /**
+   * @return a listener which is invoked after typechecking of a definition is finished.
+   */
+  default @Nullable DefinitionListener getDefinitionListener() {
+    return null;
+  }
 
   /**
    * This method is invoked last and can be used to initialize the extension.
