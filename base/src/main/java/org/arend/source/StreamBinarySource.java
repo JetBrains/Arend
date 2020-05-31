@@ -3,13 +3,14 @@ package org.arend.source;
 import com.google.protobuf.CodedInputStream;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.module.ModulePath;
+import org.arend.extImpl.SerializableKeyRegistryImpl;
 import org.arend.library.SourceLibrary;
 import org.arend.library.error.LibraryError;
 import org.arend.library.error.PartialModuleError;
 import org.arend.module.ModuleLocation;
 import org.arend.module.error.DeserializationError;
 import org.arend.module.error.ExceptionError;
-import org.arend.module.serialization.DeserializationException;
+import org.arend.ext.serialization.DeserializationException;
 import org.arend.module.serialization.ModuleDeserialization;
 import org.arend.module.serialization.ModuleProtos;
 import org.arend.module.serialization.ModuleSerialization;
@@ -30,6 +31,12 @@ import java.io.OutputStream;
  */
 public abstract class StreamBinarySource implements BinarySource {
   private ModuleDeserialization myModuleDeserialization;
+  private SerializableKeyRegistryImpl myKeyRegistry;
+
+  @Override
+  public void setKeyRegistry(SerializableKeyRegistryImpl keyRegistry) {
+    myKeyRegistry = keyRegistry;
+  }
 
   @NotNull
   @Override
@@ -72,13 +79,13 @@ public abstract class StreamBinarySource implements BinarySource {
 
       for (ModuleProtos.ModuleCallTargets moduleCallTargets : moduleProto.getModuleCallTargetsList()) {
         ModulePath module = new ModulePath(moduleCallTargets.getNameList());
-        if (library.containsModule(module) && !sourceLoader.preloadBinary(module)) {
+        if (library.containsModule(module) && !sourceLoader.preloadBinary(module, myKeyRegistry)) {
           return false;
         }
       }
 
       ReferableConverter referableConverter = sourceLoader.getReferableConverter();
-      myModuleDeserialization = new ModuleDeserialization(moduleProto, library.getTypecheckerState(), referableConverter);
+      myModuleDeserialization = new ModuleDeserialization(moduleProto, library.getTypecheckerState(), referableConverter, myKeyRegistry);
 
       if (referableConverter == null) {
         group = myModuleDeserialization.readGroup(new ModuleLocation(library.getName(), ModuleLocation.LocationKind.SOURCE, modulePath));

@@ -1,5 +1,6 @@
 package org.arend.module.serialization;
 
+import com.google.protobuf.ByteString;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.*;
 import org.arend.core.elimtree.Body;
@@ -13,17 +14,18 @@ import org.arend.core.pattern.ConstructorExpressionPattern;
 import org.arend.core.pattern.EmptyPattern;
 import org.arend.core.pattern.ExpressionPattern;
 import org.arend.core.sort.Sort;
+import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.ext.reference.Precedence;
+import org.arend.ext.serialization.ArendSerializer;
+import org.arend.ext.userData.Key;
+import org.arend.ext.serialization.SerializableKey;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.util.Pair;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-public class DefinitionSerialization {
+public class DefinitionSerialization implements ArendSerializer {
   private final CallTargetIndexProvider myCallTargetIndexProvider;
 
   public DefinitionSerialization(CallTargetIndexProvider callTargetIndexProvider) {
@@ -36,6 +38,7 @@ public class DefinitionSerialization {
     final DefinitionProtos.Definition.Builder out = DefinitionProtos.Definition.newBuilder();
     out.setHasTypeClassReference(definition.getReferable().getTypeClassReference() != null);
     out.setUniverseKind(defSerializer.writeUniverseKind(definition.getUniverseKind()));
+    out.putAllUserData(writeUserData(definition));
 
     if (definition instanceof ClassDefinition) {
       // type cannot possibly have errors
@@ -51,6 +54,18 @@ public class DefinitionSerialization {
     }
 
     return out.build();
+  }
+
+  private Map<String, ByteString> writeUserData(Definition definition) {
+    Map<String, ByteString> result = new HashMap<>();
+    for (Map.Entry<Key<?>, Object> entry : definition.getUserDataMap().entrySet()) {
+      if (entry.getKey() instanceof SerializableKey) {
+        //noinspection unchecked
+        SerializableKey<Object> key = (SerializableKey<Object>) entry.getKey();
+        result.put(key.getName(), ByteString.copyFrom(key.serialize(this, entry.getValue())));
+      }
+    }
+    return result;
   }
 
   private DefinitionProtos.Definition.ClassData writeClassDefinition(ExpressionSerialization defSerializer, ClassDefinition definition) {
@@ -71,6 +86,7 @@ public class DefinitionSerialization {
       fBuilder.setIsHideable(field.isHideable());
       fBuilder.setIsCovariant(field.isCovariant());
       fBuilder.setUniverseKind(defSerializer.writeUniverseKind(field.getUniverseKind()));
+      fBuilder.putAllUserData(writeUserData(field));
       builder.addPersonalField(fBuilder.build());
     }
 
@@ -186,6 +202,7 @@ public class DefinitionSerialization {
       if (constructor.getBody() != null) {
         cBuilder.setConditions(writeBody(defSerializer, constructor.getBody()));
       }
+      cBuilder.putAllUserData(writeUserData(constructor));
 
       builder.addConstructor(cBuilder.build());
     }
@@ -374,5 +391,13 @@ public class DefinitionSerialization {
     builder.setPriority(precedence.priority);
     builder.setInfix(precedence.isInfix);
     return builder.build();
+  }
+
+  @Override
+  public int getDefIndex(@NotNull CoreDefinition definition) {
+    if (!(definition instanceof Definition)) {
+      throw new IllegalArgumentException();
+    }
+    return myCallTargetIndexProvider.getDefIndex((Definition) definition);
   }
 }

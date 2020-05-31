@@ -17,6 +17,7 @@ import org.arend.core.expr.type.TypeExpression;
 import org.arend.core.pattern.*;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
+import org.arend.ext.serialization.DeserializationException;
 import org.arend.naming.reference.TCReferable;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.order.dependency.DependencyListener;

@@ -17,6 +17,7 @@ message Definition {
     }
     bool hasTypeClassReference = 5;
     UniverseKind universe_kind = 6;
+    map<string, bytes> user_data = 7;
 
     message ClassifyingFields {
         repeated int32 field_ref = 1;
@@ -48,6 +49,7 @@ message Definition {
             bool isHideable = 9;
             bool isCovariant = 10;
             UniverseKind universe_kind = 11;
+            map<string, bytes> user_data = 12;
         }
     }
     message ParametersLevel {
@@ -89,6 +91,7 @@ message Definition {
             repeated bool good_this_parameters = 5;
             repeated TypeClassParameterKind type_class_parameters = 6;
             Body conditions = 8;
+            map<string, bytes> user_data = 9;
         }
     }
     message FunctionData {

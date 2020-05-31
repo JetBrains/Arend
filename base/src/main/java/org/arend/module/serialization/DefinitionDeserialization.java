@@ -1,5 +1,6 @@
 package org.arend.module.serialization;
 
+import com.google.protobuf.ByteString;
 import org.arend.core.context.LinkList;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.param.DependentLink;
@@ -8,7 +9,12 @@ import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
 import org.arend.core.pattern.*;
 import org.arend.core.sort.Sort;
+import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
+import org.arend.ext.serialization.ArendDeserializer;
+import org.arend.ext.serialization.DeserializationException;
+import org.arend.ext.serialization.SerializableKey;
+import org.arend.extImpl.SerializableKeyRegistryImpl;
 import org.arend.naming.reference.ClassReferableImpl;
 import org.arend.naming.reference.DataLocatedReferableImpl;
 import org.arend.naming.reference.TCClassReferable;
@@ -16,16 +22,19 @@ import org.arend.naming.reference.TCReferable;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.order.dependency.DependencyListener;
 import org.arend.util.Pair;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-public class DefinitionDeserialization {
+public class DefinitionDeserialization implements ArendDeserializer {
   private final CallTargetProvider myCallTargetProvider;
   private final DependencyListener myDependencyListener;
+  private final SerializableKeyRegistryImpl myKeyRegistry;
 
-  public DefinitionDeserialization(CallTargetProvider callTargetProvider, DependencyListener dependencyListener) {
+  public DefinitionDeserialization(CallTargetProvider callTargetProvider, DependencyListener dependencyListener, SerializableKeyRegistryImpl keyRegistry) {
     myCallTargetProvider = callTargetProvider;
     myDependencyListener = dependencyListener;
+    myKeyRegistry = keyRegistry;
   }
 
   public void fillInDefinition(DefinitionProtos.Definition defProto, Definition def) throws DeserializationException {
@@ -50,6 +59,17 @@ public class DefinitionDeserialization {
 
     def.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     def.setUniverseKind(defDeserializer.readUniverseKind(defProto.getUniverseKind()));
+
+    if (myKeyRegistry != null) {
+      for (Map.Entry<String, ByteString> entry : defProto.getUserDataMap().entrySet()) {
+        //noinspection unchecked
+        SerializableKey<Object> key = (SerializableKey<Object>) myKeyRegistry.getKey(entry.getKey());
+        if (key == null) {
+          throw new DeserializationException("Key '" + entry.getKey() + "' is not registered");
+        }
+        def.putUserData(key, key.deserialize(this, entry.getValue().toByteArray()));
+      }
+    }
   }
 
   private PiExpression checkFieldType(PiExpression expr, ClassDefinition classDef) throws DeserializationException {
@@ -419,5 +439,19 @@ public class DefinitionDeserialization {
     if (type instanceof ClassCallExpression) {
       ((DataLocatedReferableImpl) referable).setTypeClassReference(((ClassCallExpression) type).getDefinition().getReferable());
     }
+  }
+
+  @Override
+  public @NotNull CoreDefinition getDefFromIndex(int index) throws DeserializationException {
+    return myCallTargetProvider.getCallTarget(index);
+  }
+
+  @Override
+  public <D extends CoreDefinition> @NotNull D getDefFromIndex(int index, Class<D> clazz) throws DeserializationException {
+    CoreDefinition def = getDefFromIndex(index);
+    if (!clazz.isInstance(def)) {
+      throw new DeserializationException("Class mismatch\nExpected class: " + clazz.getName() + "\nActual class: " + def.getClass().getName());
+    }
+    return clazz.cast(def);
   }
 }

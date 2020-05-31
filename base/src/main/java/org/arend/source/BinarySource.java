@@ -1,6 +1,7 @@
 package org.arend.source;
 
 import org.arend.ext.error.ErrorReporter;
+import org.arend.extImpl.SerializableKeyRegistryImpl;
 import org.arend.library.SourceLibrary;
 import org.arend.naming.reference.converter.ReferableConverter;
 
@@ -8,6 +9,8 @@ import org.arend.naming.reference.converter.ReferableConverter;
  * Represents a module persisted in a binary format.
  */
 public interface BinarySource extends Source {
+  void setKeyRegistry(SerializableKeyRegistryImpl keyRegistry);
+
   /**
    * Persists the source.
    *

@@ -3,6 +3,8 @@ package org.arend.module.serialization;
 import org.arend.core.definition.*;
 import org.arend.ext.module.ModulePath;
 import org.arend.ext.reference.Precedence;
+import org.arend.ext.serialization.DeserializationException;
+import org.arend.extImpl.SerializableKeyRegistryImpl;
 import org.arend.module.ModuleLocation;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.reference.*;
@@ -22,11 +24,13 @@ public class ModuleDeserialization {
   private final TypecheckerState myState;
   private final ReferableConverter myReferableConverter;
   private final List<Pair<DefinitionProtos.Definition, Definition>> myDefinitions = new ArrayList<>();
+  private final SerializableKeyRegistryImpl myKeyRegistry;
 
-  public ModuleDeserialization(ModuleProtos.Module moduleProto, TypecheckerState state, ReferableConverter referableConverter) {
+  public ModuleDeserialization(ModuleProtos.Module moduleProto, TypecheckerState state, ReferableConverter referableConverter, SerializableKeyRegistryImpl keyRegistry) {
     myModuleProto = moduleProto;
     myState = state;
     myReferableConverter = referableConverter;
+    myKeyRegistry = keyRegistry;
   }
 
   public ModuleProtos.Module getModuleProto() {
@@ -50,7 +54,7 @@ public class ModuleDeserialization {
       }
     }
 
-    DefinitionDeserialization defDeserialization = new DefinitionDeserialization(myCallTargetProvider, dependencyListener);
+    DefinitionDeserialization defDeserialization = new DefinitionDeserialization(myCallTargetProvider, dependencyListener, myKeyRegistry);
     for (Pair<DefinitionProtos.Definition, Definition> pair : myDefinitions) {
       defDeserialization.fillInDefinition(pair.proj1, pair.proj2);
     }

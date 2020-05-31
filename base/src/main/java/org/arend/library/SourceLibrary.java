@@ -5,10 +5,7 @@ import org.arend.ext.DefaultArendExtension;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.module.ModulePath;
 import org.arend.ext.ui.ArendUI;
-import org.arend.extImpl.ConcreteFactoryImpl;
-import org.arend.extImpl.DefinitionContributorImpl;
-import org.arend.extImpl.ArendDependencyProviderImpl;
-import org.arend.extImpl.VariableRenamerFactoryImpl;
+import org.arend.extImpl.*;
 import org.arend.library.classLoader.FileClassLoaderDelegate;
 import org.arend.library.classLoader.MultiClassLoader;
 import org.arend.library.error.LibraryError;
@@ -255,6 +252,7 @@ public abstract class SourceLibrary extends BaseLibrary {
       libraryManager.getLibraryErrorReporter().report(new ExceptionError(e, "loading of library " + getName()));
     }
 
+    SerializableKeyRegistryImpl keyRegistry = new SerializableKeyRegistryImpl();
     if (myExtension == null) {
       myExtension = new DefaultArendExtension();
     } else {
@@ -264,6 +262,7 @@ public abstract class SourceLibrary extends BaseLibrary {
       } finally {
         contributor.disable();
       }
+      myExtension.registerKeys(keyRegistry);
     }
 
     try {
@@ -277,7 +276,7 @@ public abstract class SourceLibrary extends BaseLibrary {
 
       if (!myFlags.contains(Flag.RECOMPILE)) {
         for (ModulePath module : header.modules) {
-          sourceLoader.loadBinary(module);
+          sourceLoader.loadBinary(module, keyRegistry);
         }
       }
     } catch (Throwable e) {

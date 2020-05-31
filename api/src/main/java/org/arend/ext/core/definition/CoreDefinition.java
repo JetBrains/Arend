@@ -2,6 +2,7 @@ package org.arend.ext.core.definition;
 
 import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.reference.ArendRef;
+import org.arend.ext.userData.UserDataHolder;
 import org.arend.ext.variable.Variable;
 import org.jetbrains.annotations.NotNull;
 
@@ -10,7 +11,7 @@ import java.util.Set;
 /**
  * Represents a core definition.
  */
-public interface CoreDefinition extends Variable {
+public interface CoreDefinition extends Variable, UserDataHolder {
   /**
    * Returns the underlying reference of this definition.
    */

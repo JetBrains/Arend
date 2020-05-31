@@ -2,6 +2,7 @@ package org.arend.ext;
 
 import org.arend.ext.concrete.ConcreteFactory;
 import org.arend.ext.dependency.ArendDependencyProvider;
+import org.arend.ext.serialization.SerializableKeyRegistry;
 import org.arend.ext.typechecking.GoalSolver;
 import org.arend.ext.typechecking.LevelProver;
 import org.arend.ext.ui.ArendUI;
@@ -21,6 +22,13 @@ public interface ArendExtension {
    * All definitions must be declared in this method, that is {@code contributor} cannot be stored and invoked later.
    */
   default void declareDefinitions(@NotNull DefinitionContributor contributor) {}
+
+  /**
+   * All serializable keys must be registered in this method.
+   */
+  default void registerKeys(@NotNull SerializableKeyRegistry keyRegistry) {
+    keyRegistry.registerAllKeys(this);
+  }
 
   /**
    * Can be used to get access to extensions of libraries on which this library depends.
