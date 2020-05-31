@@ -9,5 +9,13 @@ import org.jetbrains.annotations.NotNull;
  * Provides access to definitions defined in the library.
  */
 public interface ArendDependencyProvider {
+  /**
+   * @return a definition of type {@code clazz} with name {@code name} defined in module {@code module}.
+   */
   @NotNull <T extends CoreDefinition> T getDefinition(@NotNull ModulePath module, @NotNull LongName name, Class<T> clazz);
+
+  /**
+   * Fills all fields of {@code dependencyContainer} annotated with {@link Dependency} annotation.
+   */
+  void load(@NotNull Object dependencyContainer);
 }

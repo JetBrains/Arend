@@ -60,7 +60,9 @@ public interface ArendExtension {
    *
    * @param dependencyProvider  provides the access to definitions defined in the library; can be used only inside this method.
    */
-  default void load(@NotNull ArendDependencyProvider dependencyProvider) {}
+  default void load(@NotNull ArendDependencyProvider dependencyProvider) {
+    dependencyProvider.load(this);
+  }
 
   /**
    * @return a goal solver that will be used for ordinary goals

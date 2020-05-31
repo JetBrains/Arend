@@ -3,6 +3,7 @@ package org.arend.extImpl;
 import org.arend.core.definition.Definition;
 import org.arend.ext.dependency.ArendDependencyProvider;
 import org.arend.ext.core.definition.CoreDefinition;
+import org.arend.ext.dependency.Dependency;
 import org.arend.ext.module.LongName;
 import org.arend.ext.module.ModulePath;
 import org.arend.library.Library;
@@ -14,6 +15,7 @@ import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.jetbrains.annotations.NotNull;
 
+import java.lang.reflect.Field;
 import java.util.Collections;
 
 public class ArendDependencyProviderImpl extends Disableable implements ArendDependencyProvider {
@@ -46,5 +48,24 @@ public class ArendDependencyProviderImpl extends Disableable implements ArendDep
     }
     myDefinitionRequester.request(result, myLibrary);
     return clazz.cast(result);
+  }
+
+  @Override
+  public void load(@NotNull Object dependencyContainer) {
+    try {
+      for (Field field : dependencyContainer.getClass().getDeclaredFields()) {
+        Class<?> fieldType = field.getType();
+        if (CoreDefinition.class.isAssignableFrom(fieldType)) {
+          Dependency dependency = field.getAnnotation(Dependency.class);
+          if (dependency != null) {
+            field.setAccessible(true);
+            String name = dependency.name();
+            field.set(dependencyContainer, getDefinition(ModulePath.fromString(dependency.module()), name.isEmpty() ? new LongName(field.getName()) : LongName.fromString(name), fieldType.asSubclass(CoreDefinition.class)));
+          }
+        }
+      }
+    } catch (IllegalAccessException e) {
+      throw new IllegalStateException(e);
+    }
   }
 }
