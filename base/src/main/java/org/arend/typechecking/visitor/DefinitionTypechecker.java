@@ -1743,6 +1743,30 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
   }
 
+  private ClassField findClassifyingField(ClassDefinition superClass, ClassDefinition classDef, Set<ClassDefinition> visited) {
+    if (!visited.add(superClass)) {
+      return null;
+    }
+
+    ClassField field = superClass.getClassifyingField();
+    if (field == null) {
+      return null;
+    }
+
+    if (!classDef.isImplemented(field)) {
+      return field;
+    }
+
+    for (ClassDefinition superSuperClass : superClass.getSuperClasses()) {
+      ClassField field1 = findClassifyingField(superSuperClass, classDef, visited);
+      if (field1 != null) {
+        return field1;
+      }
+    }
+
+    return null;
+  }
+
   private void typecheckClass(Concrete.ClassDefinition def, ClassDefinition typedDef, boolean newDef) {
     if (newDef) {
       typedDef.clear();
@@ -1974,17 +1998,17 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       field.setCovariant(true);
     }
 
-    // Process coercing field
+    // Process classifying field
     if (!def.isRecord()) {
       ClassField classifyingField = null;
-      for (ClassDefinition superClass : typedDef.getSuperClasses()) {
-        classifyingField = superClass.getClassifyingField();
-        if (classifyingField != null) {
-          break;
+      if (!def.isForcedCoercingField() && !typedDef.getSuperClasses().isEmpty()) {
+        Set<ClassDefinition> visited = new HashSet<>();
+        for (ClassDefinition superClass : typedDef.getSuperClasses()) {
+          classifyingField = findClassifyingField(superClass, typedDef, visited);
+          if (classifyingField != null) {
+            break;
+          }
         }
-      }
-      if (classifyingField != null && def.isForcedCoercingField() && def.getCoercingField() != null) {
-        errorReporter.report(new AnotherClassifyingFieldError(def.getCoercingField(), classifyingField, def));
       }
       if (classifyingField == null && def.getCoercingField() != null) {
         Definition definition = typechecker.getTypechecked(def.getCoercingField());

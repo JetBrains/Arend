@@ -119,7 +119,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
   private void typeCheckModule(Group group, int errors) {
     assertTrue(new TypecheckingOrderingListener(libraryManager.getInstanceProviderSet(), typecheckerState, ConcreteReferableProvider.INSTANCE, IdReferableConverter.INSTANCE, localErrorReporter, PositionComparator.INSTANCE, ref -> null).typecheckModules(Collections.singletonList(group), null));
-    boolean ok = errors != 0 || new CoreModuleChecker(errorReporter, typecheckerState).checkGroup(group);
+    boolean ok = errors != 0 || !errorList.isEmpty() || new CoreModuleChecker(errorReporter, typecheckerState).checkGroup(group);
     assertThat(errorList, containsErrors(errors));
     assertTrue(ok);
   }

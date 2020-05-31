@@ -1,5 +1,7 @@
 package org.arend.typechecking.typeclass;
 
+import org.arend.core.definition.ClassDefinition;
+import org.arend.core.definition.ClassField;
 import org.arend.core.definition.DataDefinition;
 import org.arend.core.sort.Sort;
 import org.arend.typechecking.TypeCheckingTestCase;
@@ -9,6 +11,7 @@ import static org.arend.ExpressionFactory.DataCall;
 import static org.arend.Matchers.*;
 import static org.arend.core.expr.ExpressionFactory.Nat;
 import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertEquals;
 
 public class TypeClassesGlobal extends TypeCheckingTestCase {
   @Test
@@ -368,6 +371,35 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
     typeCheckModule(
       "\\class C (X : \\hType)\n" +
       "\\class D \\extends C | X => Nat -> Nat\n" +
-      "\\instance ddd : D", 1);
+      "\\instance ddd : D");
+  }
+
+  @Test
+  public void changeClassifying() {
+    typeCheckModule(
+      "\\class C (A : \\Type)\n" +
+        "\\class D (\\classifying B : \\Type) \\extends C | b : B\n" +
+        "\\instance inst1 : D Int Nat | b => 1\n" +
+        "\\instance inst2 : D Int (\\Sigma Nat Nat) | b => (2,2)\n" +
+        "\\func test1 : Nat => b\n" +
+        "\\func test2 : \\Sigma Nat Nat => b");
+    ClassDefinition classD = (ClassDefinition) getDefinition("D");
+    ClassField fieldB = (ClassField) getDefinition("D.B");
+    assertEquals(classD.getClassifyingField(), fieldB);
+  }
+
+  @Test
+  public void implementClassifying() {
+    typeCheckModule(
+      "\\class C (A : \\Set)\n" +
+        "\\class D (\\classifying B : \\Set) \\extends C | b : B\n" +
+        "\\class E \\extends D | B => Nat | a : A\n" +
+        "\\instance inst1 : E Nat 0 | a => 1\n" +
+        "\\instance inst2 : E (\\Sigma Nat Nat) 0 | a => (2,2)\n" +
+        "\\func test1 : Nat => a\n" +
+        "\\func test2 : \\Sigma Nat Nat => a");
+    ClassDefinition classE = (ClassDefinition) getDefinition("E");
+    ClassField fieldA = (ClassField) getDefinition("E.A");
+    assertEquals(classE.getClassifyingField(), fieldA);
   }
 }
