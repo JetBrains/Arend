@@ -9,6 +9,9 @@ import org.arend.ext.module.ModulePath;
 import org.arend.ext.prettyprinting.PrettyPrinterFlag;
 import org.arend.extImpl.DefinitionRequester;
 import org.arend.frontend.library.FileSourceLibrary;
+import org.arend.frontend.library.TimedLibraryManager;
+import org.arend.frontend.repl.PlainCliRepl;
+import org.arend.frontend.repl.jline.JLineCliRepl;
 import org.arend.library.*;
 import org.arend.library.error.LibraryError;
 import org.arend.module.ModuleLocation;
@@ -38,6 +41,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
+import static org.arend.frontend.library.TimedLibraryManager.timeToString;
+
 public abstract class BaseCliFrontend {
   // Typechecking
   private final TypecheckerState myTypecheckerState = new SimpleTypecheckerState();
@@ -53,41 +58,13 @@ public abstract class BaseCliFrontend {
 
   // Libraries
   private final FileLibraryResolver myLibraryResolver = new FileLibraryResolver(new ArrayList<>(), myTypecheckerState, mySystemErrErrorReporter);
-  private final LibraryManager myLibraryManager = new MyLibraryManager();
-
-  private static String timeToString(long time) {
-    if (time < 10000) {
-      return time + "ms";
-    }
-    if (time < 60000) {
-      return time / 1000 + ("." + (time / 100 % 10)) + "s";
-    }
-
-    long seconds = time / 1000;
-    return (seconds / 60) + "m" + (seconds % 60) + "s";
-  }
-
-  private class MyLibraryManager extends LibraryManager {
-    private final Stack<Long> times = new Stack<>();
-
-    MyLibraryManager() {
-      super(myLibraryResolver, new InstanceProviderSet(), myErrorReporter, mySystemErrErrorReporter, DefinitionRequester.INSTANCE);
-    }
-
-    @Override
-    protected void beforeLibraryLoading(Library library) {
-      System.out.println("[INFO] Loading library " + library.getName());
-      times.push(System.currentTimeMillis());
-    }
-
+  private final LibraryManager myLibraryManager = new TimedLibraryManager(myLibraryResolver, new InstanceProviderSet(), myErrorReporter, mySystemErrErrorReporter, DefinitionRequester.INSTANCE) {
     @Override
     protected void afterLibraryLoading(Library library, boolean successful) {
-      long time = System.currentTimeMillis() - times.pop();
+      super.afterLibraryLoading(library, successful);
       flushErrors();
-      System.err.flush();
-      System.out.println("[INFO] " + (successful ? "Loaded " : "Failed loading ") + "library " + library.getName() + (successful ? " (" + timeToString(time) + ")" : ""));
     }
-  }
+  };
 
   public LibraryManager getLibraryManager() {
     return myLibraryManager;
@@ -150,6 +127,7 @@ public abstract class BaseCliFrontend {
       cmdOptions.addOption(Option.builder("m").longOpt("extension-main").hasArg().argName("class").desc("main extension class").build());
       cmdOptions.addOption(Option.builder("r").longOpt("recompile").desc("recompile files").build());
       cmdOptions.addOption(Option.builder("c").longOpt("double-check").desc("double check correctness of the result").build());
+      cmdOptions.addOption(Option.builder("i").longOpt("interactive").hasArg().optionalArg(true).argName("type").desc("start an interactive REPL, type can be plain or jline (default)").build());
       cmdOptions.addOption("t", "test", false, "run tests");
       cmdOptions.addOption("v", "version", false, "print language version");
       addCommandOptions(cmdOptions);
@@ -181,28 +159,49 @@ public abstract class BaseCliFrontend {
       return null;
     }
 
+    var replKind = cmdLine.getOptionValue("i", "jline");
+    var libDirStrings = cmdLine.hasOption("L")
+        ? cmdLine.getOptionValues("L")
+        : new String[0];
+
+    // Get library directories
+    var libDirs = new ArrayList<Path>(libDirStrings.length);
+    for (String libDirString : libDirStrings) {
+      var libDir = Paths.get(libDirString);
+      if (Files.isDirectory(libDir)) {
+        libDirs.add(libDir);
+      } else {
+        myExitWithError = true;
+        System.err.println("[ERROR] " + libDir + " is not a directory");
+      }
+    }
+
+    boolean recompile = cmdLine.hasOption("r");
+    if (cmdLine.hasOption("i")) {
+      switch (replKind.toLowerCase()) {
+        default:
+          System.err.println("[ERROR] Unrecognized repl type: " + replKind);
+          break;
+        case "plain":
+          PlainCliRepl.launch(recompile, libDirs);
+          break;
+        case "jline":
+          JLineCliRepl.launch(recompile, libDirs);
+          break;
+      }
+      return null;
+    }
+
     if (!myLibraryManager.loadLibrary(new PreludeResourceLibrary(myTypecheckerState), null)) {
       return null;
     }
 
-    // Get library directories
-    String[] libDirStrings = cmdLine.getOptionValues("L");
-    if (libDirStrings != null) {
-      for (String libDirString : libDirStrings) {
-        Path libDir = Paths.get(libDirString);
-        if (Files.isDirectory(libDir)) {
-          myLibraryResolver.addLibraryDirectory(libDir);
-        } else {
-          myExitWithError = true;
-          System.err.println("[ERROR] " + libDir + " is not a directory");
-        }
-      }
-    }
+    myLibraryResolver.addLibraryDirectories(libDirs);
 
     // Get library dependencies
     String[] libStrings = cmdLine.getOptionValues("l");
     List<LibraryDependency> libraryDependencies = new ArrayList<>();
-    if (libDirStrings != null && libStrings != null) {
+    if (libStrings != null) {
       for (String libString : libStrings) {
         if (FileUtils.isLibraryName(libString)) {
           libraryDependencies.add(new LibraryDependency(libString));
@@ -241,7 +240,7 @@ public abstract class BaseCliFrontend {
         boolean isPath = fileName.contains(FileSystems.getDefault().getSeparator());
         Path path = Paths.get(fileName);
         if (fileName.endsWith(FileUtils.LIBRARY_CONFIG_FILE) || isPath && Files.isDirectory(path)) {
-          UnmodifiableSourceLibrary library = myLibraryResolver.registerLibrary(path.toAbsolutePath());
+          UnmodifiableSourceLibrary library = myLibraryResolver.registerLibrary(path.toAbsolutePath().normalize());
           if (library != null) {
             requestedLibraries.add(library);
           }
@@ -273,7 +272,7 @@ public abstract class BaseCliFrontend {
     if (requestedLibraries.isEmpty()) {
       Path path = Paths.get(FileUtils.LIBRARY_CONFIG_FILE);
       if (Files.isRegularFile(path)) {
-        UnmodifiableSourceLibrary library = myLibraryResolver.registerLibrary(path.toAbsolutePath());
+        UnmodifiableSourceLibrary library = myLibraryResolver.registerLibrary(path.toAbsolutePath().normalize());
         if (library != null) {
           requestedLibraries.add(library);
         }
@@ -285,7 +284,6 @@ public abstract class BaseCliFrontend {
 
     // Load and typecheck libraries
     MyTypechecking typechecking = new MyTypechecking();
-    boolean recompile = cmdLine.hasOption("r");
     boolean doubleCheck = cmdLine.hasOption("c");
     for (UnmodifiableSourceLibrary library : requestedLibraries) {
       myModuleResults.clear();

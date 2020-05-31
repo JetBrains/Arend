@@ -71,6 +71,10 @@ public class FileLibraryResolver implements LibraryResolver {
     myLibDirs.addAll(libDirs);
   }
 
+  /**
+   * @param libPath Recommended to use a
+   *                <code>.toAbsolutePath().normalize()</code> path.
+   */
   public UnmodifiableSourceLibrary registerLibrary(Path libPath) {
     if (Files.isDirectory(libPath)) {
       libPath = libPath.resolve(FileUtils.LIBRARY_CONFIG_FILE);

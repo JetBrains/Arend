@@ -59,12 +59,7 @@ public abstract class StreamRawSource implements Source {
     final CompositeErrorReporter compositeErrorReporter = new CompositeErrorReporter(errorReporter, countingErrorReporter);
 
     try {
-      BaseErrorListener errorListener = new BaseErrorListener() {
-        @Override
-        public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-          compositeErrorReporter.report(new ParserError(new Position(modulePath, line, pos), msg));
-        }
-      };
+      var errorListener = new ReporterErrorListener(compositeErrorReporter, modulePath);
 
       ArendLexer lexer = new ArendLexer(CharStreams.fromStream(getInputStream()));
       lexer.removeErrorListeners();

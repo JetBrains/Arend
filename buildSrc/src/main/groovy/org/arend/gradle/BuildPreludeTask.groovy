@@ -13,11 +13,11 @@ class BuildPreludeTask extends JavaExec {
     }
 
     @Input
-    private final String projectVersion = project.version
+    final String projectVersion = project.version
 
     @InputFile
-    private final File preludeDotArd = project.rootProject.file("lib/Prelude.ard")
+    final File preludeDotArd = project.rootProject.file("lib/Prelude.ard")
 
     @OutputFile
-    private final File preludeDotArc = project.rootProject.file("lib/Prelude.arc")
+    final File preludeDotArc = project.rootProject.file("lib/Prelude.arc")
 }

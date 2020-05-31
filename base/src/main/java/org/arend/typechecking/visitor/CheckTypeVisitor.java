@@ -1056,7 +1056,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
 
   private TResult getLocalVar(Referable ref, Concrete.SourceNode sourceNode) {
     if (ref instanceof UnresolvedReference || ref instanceof RedirectingReferable) {
-      throw new IllegalStateException();
+      throw new IllegalStateException("Unresolved reference `" + ref.textRepresentation() + "`");
     }
     if (ref instanceof ErrorReference) {
       return null;

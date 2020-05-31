@@ -76,16 +76,20 @@ public class InstanceProviderSet {
     }
   }
 
-  public boolean collectInstances(Group group, Scope parentScope, ConcreteProvider concreteProvider, ReferableConverter referableConverter) {
+  public boolean collectInstances(Group group, Scope parentScope, LocatedReferable referable, ConcreteProvider concreteProvider, ReferableConverter referableConverter) {
     if (!myCollected.add(group)) {
       return false;
     }
 
-    MyPredicate predicate = new MyPredicate(concreteProvider, referableConverter);
+    var predicate = new MyPredicate(concreteProvider, referableConverter);
     parentScope.find(predicate);
     processGroup(group, parentScope, predicate);
-    predicate.recordInstances(group.getReferable());
+    predicate.recordInstances(referable);
     return true;
+  }
+
+  public boolean collectInstances(Group group, Scope parentScope, ConcreteProvider concreteProvider, ReferableConverter referableConverter) {
+    return collectInstances(group, parentScope, group.getReferable(), concreteProvider, referableConverter);
   }
 
   private void processGroup(Group group, Scope parentScope, MyPredicate predicate) {

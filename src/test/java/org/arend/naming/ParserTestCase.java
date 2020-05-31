@@ -1,9 +1,9 @@
 package org.arend.naming;
 
-import org.antlr.v4.runtime.*;
 import org.arend.ArendTestCase;
 import org.arend.ext.module.ModulePath;
 import org.arend.frontend.parser.*;
+import org.arend.frontend.repl.CommonCliRepl;
 import org.arend.module.ModuleLocation;
 import org.arend.naming.reference.FullModuleReferable;
 import org.arend.term.concrete.Concrete;
@@ -22,28 +22,7 @@ public abstract class ParserTestCase extends ArendTestCase {
   protected static final ModuleLocation MODULE_PATH = new ModuleLocation(null, null, new ModulePath("$TestCase$"));
 
   private ArendParser _parse(String text) {
-    CharStream input = CharStreams.fromString(text);
-    ArendLexer lexer = new ArendLexer(input);
-    lexer.removeErrorListeners();
-    lexer.addErrorListener(new BaseErrorListener() {
-      @Override
-      public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-        errorReporter.report(new ParserError(new Position(MODULE_PATH.getModulePath(), line, pos), msg));
-      }
-    });
-
-    CommonTokenStream tokens = new CommonTokenStream(lexer);
-    ArendParser parser = new ArendParser(tokens);
-    parser.removeErrorListeners();
-    parser.addErrorListener(new BaseErrorListener() {
-      @Override
-      public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-        errorReporter.report(new ParserError(new Position(MODULE_PATH.getModulePath(), line, pos), msg));
-      }
-    });
-    // parser.addErrorListener(new DiagnosticErrorListener());
-    // parser.getInterpreter().setPredictionMode(PredictionMode.LL_EXACT_AMBIG_DETECTION);
-    return parser;
+    return CommonCliRepl.createParser(text, MODULE_PATH, errorReporter);
   }
 
 
