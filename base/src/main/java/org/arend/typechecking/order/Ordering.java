@@ -2,6 +2,7 @@ package org.arend.typechecking.order;
 
 import org.arend.core.definition.Definition;
 import org.arend.naming.reference.LocatedReferable;
+import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.term.concrete.Concrete;
@@ -106,6 +107,12 @@ public class Ordering extends BellmanFord<Concrete.Definition> {
     if (myWithUse) {
       if (definition.enclosingClass != null) {
         visitor.addDependency(definition.enclosingClass);
+      }
+      if (definition instanceof Concrete.CoClauseFunctionDefinition) {
+        Referable ref = ((Concrete.CoClauseFunctionDefinition) definition).getImplementedField();
+        if (ref instanceof TCReferable) {
+          visitor.addDependency((TCReferable) ref);
+        }
       }
       if (definition instanceof Concrete.UseDefinition) {
         visitor.addDependency(((Concrete.UseDefinition) definition).getUseParent());
