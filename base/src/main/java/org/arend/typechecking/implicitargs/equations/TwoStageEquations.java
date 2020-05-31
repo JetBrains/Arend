@@ -59,7 +59,7 @@ public class TwoStageEquations implements Equations {
 
   private Expression getInstance(InferenceVariable variable, FieldCallExpression fieldCall, Expression expr) {
     if (variable instanceof TypeClassInferenceVariable) {
-      ClassDefinition classDef = (ClassDefinition) myVisitor.getTypecheckingState().getTypechecked(((TypeClassInferenceVariable) variable).getClassReferable());
+      ClassDefinition classDef = ((TypeClassInferenceVariable) variable).getClassDefinition();
       if (classDef == null) {
         return null;
       }

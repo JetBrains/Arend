@@ -3,13 +3,11 @@ package org.arend.typechecking.instance.pool;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassDefinition;
 import org.arend.core.definition.ClassField;
-import org.arend.core.definition.Definition;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.*;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.ext.core.ops.NormalizationMode;
-import org.arend.naming.reference.TCClassReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.instance.provider.InstanceProvider;
 import org.arend.typechecking.result.TypecheckingResult;
@@ -54,9 +52,9 @@ public class GlobalInstancePool implements InstancePool {
   }
 
   @Override
-  public TypecheckingResult getInstance(Expression classifyingExpression, Expression expectedType, TCClassReferable classRef, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveHoleExpression) {
+  public TypecheckingResult getInstance(Expression classifyingExpression, Expression expectedType, ClassDefinition classDef, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveHoleExpression) {
     if (myInstancePool != null) {
-      TypecheckingResult result = myInstancePool.getInstance(classifyingExpression, expectedType, classRef, sourceNode, recursiveHoleExpression);
+      TypecheckingResult result = myInstancePool.getInstance(classifyingExpression, expectedType, classDef, sourceNode, recursiveHoleExpression);
       if (result != null) {
         return result;
       }
@@ -66,7 +64,7 @@ public class GlobalInstancePool implements InstancePool {
       return null;
     }
 
-    Pair<Concrete.Expression, ClassDefinition> pair = getInstanceX(classifyingExpression, classRef, sourceNode, recursiveHoleExpression);
+    Pair<Concrete.Expression, ClassDefinition> pair = getInstancePair(classifyingExpression, classDef, sourceNode, recursiveHoleExpression);
     if (pair == null) {
       return null;
     }
@@ -87,9 +85,9 @@ public class GlobalInstancePool implements InstancePool {
   }
 
   @Override
-  public Concrete.Expression getInstance(Expression classifyingExpression, TCClassReferable classRef, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveHoleExpression) {
+  public Concrete.Expression getInstance(Expression classifyingExpression, ClassDefinition classDef, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveHoleExpression) {
     if (myInstancePool != null) {
-      Concrete.Expression result = myInstancePool.getInstance(classifyingExpression, classRef, sourceNode, recursiveHoleExpression);
+      Concrete.Expression result = myInstancePool.getInstance(classifyingExpression, classDef, sourceNode, recursiveHoleExpression);
       if (result != null) {
         return result;
       }
@@ -99,11 +97,11 @@ public class GlobalInstancePool implements InstancePool {
       return null;
     }
 
-    Pair<Concrete.Expression, ClassDefinition> pair = getInstanceX(classifyingExpression, classRef, sourceNode, recursiveHoleExpression);
+    Pair<Concrete.Expression, ClassDefinition> pair = getInstancePair(classifyingExpression, classDef, sourceNode, recursiveHoleExpression);
     return pair == null ? null : pair.proj1;
   }
 
-  private Pair<Concrete.Expression, ClassDefinition> getInstanceX(Expression classifyingExpression, TCClassReferable classRef, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveHoleExpression) {
+  private Pair<Concrete.Expression, ClassDefinition> getInstancePair(Expression classifyingExpression, ClassDefinition classDef, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveHoleExpression) {
     ClassField classifyingField;
     Expression normClassifyingExpression = classifyingExpression;
     if (classifyingExpression != null) {
@@ -115,11 +113,7 @@ public class GlobalInstancePool implements InstancePool {
         return null;
       }
 
-      Definition typechecked = myCheckTypeVisitor.getTypecheckingState().getTypechecked(classRef);
-      if (!(typechecked instanceof ClassDefinition)) {
-        return null;
-      }
-      classifyingField = ((ClassDefinition) typechecked).getClassifyingField();
+      classifyingField = classDef.getClassifyingField();
       if (classifyingField == null) {
         return null;
       }
@@ -134,7 +128,7 @@ public class GlobalInstancePool implements InstancePool {
       @Override
       public boolean test(Concrete.FunctionDefinition instance) {
         instanceDef = (FunctionDefinition) myCheckTypeVisitor.getTypecheckingState().getTypechecked(instance.getData());
-        if (instanceDef == null || !instanceDef.status().headerIsOK() || !(instanceDef.getResultType() instanceof ClassCallExpression)) {
+        if (!(instanceDef != null && instanceDef.status().headerIsOK() && instanceDef.getResultType() instanceof ClassCallExpression && ((ClassCallExpression) instanceDef.getResultType()).getDefinition().isSubClassOf(classDef))) {
           return false;
         }
 
@@ -159,23 +153,23 @@ public class GlobalInstancePool implements InstancePool {
     }
 
     MyPredicate predicate = new MyPredicate();
-    Concrete.FunctionDefinition instance = myInstanceProvider.findInstance(classRef, predicate);
+    Concrete.FunctionDefinition instance = myInstanceProvider.findInstance(predicate);
     if (instance == null || predicate.instanceDef == null) {
       return null;
     }
 
-    ClassDefinition classDef = ((ClassCallExpression) predicate.instanceDef.getResultType()).getDefinition();
+    ClassDefinition actualClass = ((ClassCallExpression) predicate.instanceDef.getResultType()).getDefinition();
     Concrete.Expression instanceExpr = new Concrete.ReferenceExpression(sourceNode.getData(), instance.getData());
     for (DependentLink link = predicate.instanceDef.getParameters(); link.hasNext(); link = link.getNext()) {
       List<RecursiveInstanceData> newRecursiveData = new ArrayList<>((recursiveHoleExpression == null ? 0 : recursiveHoleExpression.recursiveData.size()) + 1);
       if (recursiveHoleExpression != null) {
         newRecursiveData.addAll(recursiveHoleExpression.recursiveData);
       }
-      newRecursiveData.add(new RecursiveInstanceData(instance.getData(), classDef.getReferable(), classifyingExpression));
+      newRecursiveData.add(new RecursiveInstanceData(instance.getData(), actualClass.getReferable(), classifyingExpression));
       instanceExpr = Concrete.AppExpression.make(sourceNode.getData(), instanceExpr, new RecursiveInstanceHoleExpression(recursiveHoleExpression == null ? sourceNode : recursiveHoleExpression.getData(), newRecursiveData), link.isExplicit());
     }
 
-    return new Pair<>(instanceExpr, classDef);
+    return new Pair<>(instanceExpr, actualClass);
   }
 
   @Override

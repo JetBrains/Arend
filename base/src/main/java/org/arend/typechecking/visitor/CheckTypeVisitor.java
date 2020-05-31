@@ -76,6 +76,7 @@ import org.jetbrains.annotations.Nullable;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import static org.arend.typechecking.error.local.inference.ArgInferenceError.expression;
 
@@ -779,7 +780,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       ClassDefinition classDef = ((ClassCallExpression) type).getDefinition();
       RecursiveInstanceHoleExpression holeExpr = implBody instanceof RecursiveInstanceHoleExpression ? (RecursiveInstanceHoleExpression) implBody : null;
       if (classDef.getClassifyingField() == null) {
-        TypecheckingResult instance = myInstancePool.getInstance(null, type, classDef.getReferable(), implBody, holeExpr);
+        TypecheckingResult instance = myInstancePool.getInstance(null, type, classDef, implBody, holeExpr);
         if (instance == null) {
           ArgInferenceError error = new InstanceInferenceError(classDef.getReferable(), implBody, holeExpr, new Expression[0]);
           errorReporter.report(error);
@@ -791,7 +792,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
           }
         }
       } else {
-        result = new TypecheckingResult(new InferenceReferenceExpression(new TypeClassInferenceVariable(field.getName(), type, classDef.getReferable(), false, implBody, holeExpr, getAllBindings()), myEquations), type);
+        result = new TypecheckingResult(new InferenceReferenceExpression(new TypeClassInferenceVariable(field.getName(), type, classDef, false, implBody, holeExpr, getAllBindings()), myEquations), type);
       }
       return result;
     }
@@ -2104,7 +2105,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     if (!(classDefinition instanceof ClassDefinition && sourceNode instanceof Concrete.SourceNode)) {
       throw new IllegalArgumentException();
     }
-    return myInstancePool.getInstance(UncheckedExpressionImpl.extract(classifyingExpression), ((ClassDefinition) classDefinition).getReferable(), (Concrete.SourceNode) sourceNode, null);
+    return myInstancePool.getInstance(UncheckedExpressionImpl.extract(classifyingExpression), (ClassDefinition) classDefinition, (Concrete.SourceNode) sourceNode, null);
   }
 
   @Override
@@ -2112,7 +2113,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     if (!(classDefinition instanceof ClassDefinition && (expectedType == null || expectedType instanceof Expression) && sourceNode instanceof Concrete.SourceNode)) {
       throw new IllegalArgumentException();
     }
-    return myInstancePool.getInstance(UncheckedExpressionImpl.extract(classifyingExpression), expectedType == null ? null : (Expression) expectedType, ((ClassDefinition) classDefinition).getReferable(), (Concrete.SourceNode) sourceNode, null);
+    return myInstancePool.getInstance(UncheckedExpressionImpl.extract(classifyingExpression), expectedType == null ? null : (Expression) expectedType, (ClassDefinition) classDefinition, (Concrete.SourceNode) sourceNode, null);
   }
 
   @Override

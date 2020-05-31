@@ -89,16 +89,15 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
         DefCallResult defCallResult = (DefCallResult) result;
         ClassDefinition classDef = getClassRefFromDefCall(defCallResult.getDefinition(), i);
         if (classDef != null && !classDef.isRecord()) {
-          TCClassReferable classRef = classDef.getReferable();
           Definition.TypeClassParameterKind kind = defCallResult.getDefinition().getTypeClassParameterKind(i);
           if (kind != Definition.TypeClassParameterKind.NO) {
             // If the class does not have a classifying field, infer instance immediately
             if (classDef.getClassifyingField() == null) {
               InstancePool instancePool = kind == Definition.TypeClassParameterKind.ONLY_LOCAL ? myVisitor.getInstancePool().getLocalInstancePool() : myVisitor.getInstancePool();
-              TypecheckingResult instanceResult = instancePool.getInstance(null, defCallResult.getParameter().getTypeExpr(), classRef, expr, holeExpr);
+              TypecheckingResult instanceResult = instancePool.getInstance(null, defCallResult.getParameter().getTypeExpr(), classDef, expr, holeExpr);
               Expression instance;
               if (instanceResult == null) {
-                ArgInferenceError error = new InstanceInferenceError(classRef, expr, holeExpr, new Expression[0]);
+                ArgInferenceError error = new InstanceInferenceError(classDef.getReferable(), expr, holeExpr, new Expression[0]);
                 myVisitor.getErrorReporter().report(error);
                 instance = new ErrorExpression(error);
               } else {
@@ -111,7 +110,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
             }
 
             // Otherwise, generate type class inference variable
-            infVar = new TypeClassInferenceVariable(parameter.getName(), type, classRef, kind == Definition.TypeClassParameterKind.ONLY_LOCAL, defCallResult.getDefCall(), holeExpr, myVisitor.getAllBindings());
+            infVar = new TypeClassInferenceVariable(parameter.getName(), type, classDef, kind == Definition.TypeClassParameterKind.ONLY_LOCAL, defCallResult.getDefCall(), holeExpr, myVisitor.getAllBindings());
           }
         }
       }

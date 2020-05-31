@@ -81,8 +81,12 @@ public class CollectDefCallsVisitor extends VoidConcreteVisitor<Void, Void> {
   }
 
   private void addClassInstances(ClassReferable classRef) {
-    myInstanceProvider.findInstance(classRef, instance -> {
-      myDeque.push(instance.getData());
+    myInstanceProvider.findInstance(instance -> {
+      Concrete.Expression type = instance.getResultType();
+      Referable ref = type == null ? null : type.getUnderlyingReferable();
+      if (ref instanceof ClassReferable && ((ClassReferable) ref).isSubClassOf(classRef)) {
+        myDeque.push(instance.getData());
+      }
       return false;
     });
   }

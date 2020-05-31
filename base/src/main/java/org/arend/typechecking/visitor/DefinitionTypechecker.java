@@ -542,10 +542,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             for (DependentLink link = param; i < numberOfParameters; link = link.getNext(), i++) {
               ReferenceExpression reference = new ReferenceExpression(link);
               if (classifyingField == null) {
-                localInstancePool.addInstance(null, null, classRef, reference, parameter);
+                localInstancePool.addInstance(null, null, classDef, reference, parameter);
               } else {
                 Sort sortArg = paramResult.getSortOfType();
-                localInstancePool.addInstance(FieldCallExpression.make(classifyingField, sortArg, reference), classifyingField.getType(sortArg).applyExpression(reference), classRef, reference, parameter);
+                localInstancePool.addInstance(FieldCallExpression.make(classifyingField, sortArg, reference), classifyingField.getType(sortArg).applyExpression(reference), classDef, reference, parameter);
               }
             }
           }
@@ -1731,13 +1731,11 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
   private static class LocalInstance {
     final ClassDefinition classDefinition;
-    final TCClassReferable classReferable;
     final ClassField instanceField;
     final Concrete.ClassField concreteField;
 
-    LocalInstance(ClassDefinition classDefinition, TCClassReferable classReferable, ClassField instanceField, Concrete.ClassField concreteField) {
+    LocalInstance(ClassDefinition classDefinition, ClassField instanceField, Concrete.ClassField concreteField) {
       this.classDefinition = classDefinition;
-      this.classReferable = classReferable;
       this.instanceField = instanceField;
       this.concreteField = concreteField;
     }
@@ -1902,7 +1900,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
               ClassDefinition classDef = (ClassDefinition) typechecker.getTypechecked(classRef);
               if (classDef != null && !classDef.isRecord()) {
                 ClassField typecheckedField = previousField != null ? previousField : (ClassField) typechecker.getTypechecked(field.getData());
-                localInstances.add(new LocalInstance(classDef, classRef, typecheckedField, field));
+                localInstances.add(new LocalInstance(classDef, typecheckedField, field));
               }
             }
           }
@@ -2285,16 +2283,16 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     LocalInstancePool localInstancePool = new LocalInstancePool(typechecker);
     myInstancePool.setInstancePool(localInstancePool);
     if (classDef != null) {
-      localInstancePool.addInstance(null, null, classDef.getReferable(), new ReferenceExpression(thisParam), thisSourceNode);
+      localInstancePool.addInstance(null, null, classDef, new ReferenceExpression(thisParam), thisSourceNode);
     }
     for (LocalInstance localInstance : localInstances) {
       ClassField classifyingField = localInstance.classDefinition.getClassifyingField();
       Expression instance = FieldCallExpression.make(localInstance.instanceField, Sort.STD, new ReferenceExpression(thisParam));
       if (classifyingField == null) {
-        localInstancePool.addInstance(null, null, localInstance.classReferable, instance, localInstance.concreteField);
+        localInstancePool.addInstance(null, null, localInstance.classDefinition, instance, localInstance.concreteField);
       } else {
         Sort sortArg = localInstance.instanceField.getType(Sort.STD).getSortOfType();
-        localInstancePool.addInstance(FieldCallExpression.make(classifyingField, sortArg, instance), classifyingField.getType(sortArg).applyExpression(instance), localInstance.classReferable, instance, localInstance.concreteField);
+        localInstancePool.addInstance(FieldCallExpression.make(classifyingField, sortArg, instance), classifyingField.getType(sortArg).applyExpression(instance), localInstance.classDefinition, instance, localInstance.concreteField);
       }
     }
   }
