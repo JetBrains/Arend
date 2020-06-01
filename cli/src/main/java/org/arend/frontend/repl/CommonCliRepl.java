@@ -17,8 +17,10 @@ import org.arend.frontend.parser.BuildVisitor;
 import org.arend.frontend.parser.ReporterErrorListener;
 import org.arend.frontend.repl.action.*;
 import org.arend.library.Library;
+import org.arend.library.LibraryManager;
 import org.arend.library.SourceLibrary;
 import org.arend.module.ModuleLocation;
+import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.naming.scope.Scope;
 import org.arend.prelude.GeneratedVersion;
 import org.arend.prelude.PreludeLibrary;
@@ -28,8 +30,11 @@ import org.arend.repl.action.NormalizeCommand;
 import org.arend.repl.action.ReplCommand;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.FileGroup;
+import org.arend.typechecking.LibraryArendExtensionProvider;
 import org.arend.typechecking.SimpleTypecheckerState;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
+import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
+import org.arend.typechecking.provider.ConcreteProvider;
 import org.arend.util.FileUtils;
 import org.arend.util.Range;
 import org.intellij.lang.annotations.Language;
@@ -92,13 +97,29 @@ public abstract class CommonCliRepl extends Repl {
       @NotNull FileLibraryResolver libraryResolver,
       @NotNull InstanceProviderSet instanceProviders,
       @NotNull ListErrorReporter errorReporter) {
+    this(typecheckerState,
+      libraryManager(libraryResolver, instanceProviders, errorReporter),
+      modules,
+      libraryResolver,
+      ConcreteReferableProvider.INSTANCE,
+      instanceProviders,
+      errorReporter);
+  }
+
+  private CommonCliRepl(
+      @NotNull SimpleTypecheckerState typecheckerState,
+      @NotNull LibraryManager libraryManager,
+      @NotNull Set<ModulePath> modules,
+      @NotNull FileLibraryResolver libraryResolver,
+      @NotNull ConcreteProvider concreteProvider,
+      @NotNull InstanceProviderSet instanceProviders,
+      @NotNull ListErrorReporter errorReporter) {
     super(
         errorReporter,
-        libraryManager(libraryResolver, instanceProviders, errorReporter),
-        ConcreteReferableProvider.INSTANCE,
-        PositionComparator.INSTANCE,
+        libraryManager,
+        concreteProvider,
         instanceProviders,
-        typecheckerState
+        new TypecheckingOrderingListener(instanceProviders, typecheckerState, concreteProvider, IdReferableConverter.INSTANCE, errorReporter, PositionComparator.INSTANCE, new LibraryArendExtensionProvider(libraryManager)), typecheckerState
     );
     myLibraryResolver = libraryResolver;
     myReplLibrary = Files.exists(pwd.resolve(FileUtils.LIBRARY_CONFIG_FILE))
