@@ -118,7 +118,7 @@ public abstract class CommonCliRepl extends Repl {
       if (Files.exists(config)) {
         properties.load(Files.newInputStream(config));
         var normalization = String.valueOf(properties.get(NORMALIZATION_KEY));
-        NormalizeCommand.INSTANCE.invoke(normalization, this, () -> "");
+        NormalizeCommand.INSTANCE.loadNormalize(normalization, this, false);
         var promptConfig = properties.get(PROMPT_KEY);
         if (promptConfig != null) prompt = String.valueOf(promptConfig);
       }

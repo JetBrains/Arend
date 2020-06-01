@@ -89,7 +89,7 @@ public abstract class Repl {
     myTypecheckerState = typecheckerState;
     myLibraryManager = libraryManager;
     myTypechecking = new TypecheckingOrderingListener(instanceProviders, myTypecheckerState, myConcreteProvider, IdReferableConverter.INSTANCE, myErrorReporter, comparator, new LibraryArendExtensionProvider(myLibraryManager));
-    myModuleReferable = new LocatedReferableImpl(Precedence.DEFAULT, replModulePath.getLibraryName(), new FullModuleReferable(replModulePath), GlobalReferable.Kind.OTHER);
+    myModuleReferable = new LocatedReferableImpl(Precedence.DEFAULT, replModulePath.getLibraryName(), new FullModuleReferable(replModulePath), GlobalReferable.Kind.TYPECHECKABLE);
   }
 
   protected abstract void loadLibraries();
