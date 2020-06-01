@@ -104,7 +104,7 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
   }
 
   @Test
-  public void mutuallyRecursiveInstanceError() {
+  public void mutuallyRecursiveInstance2() {
     typeCheckModule(
       "\\instance Nat-X : X | A => Nat | B => \\lam _ => Nat\n" +
       "\\data D | c\n" +
@@ -113,7 +113,7 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
       "\\func f : \\Set0 => g\n" +
       "\\class X (A : \\Type0) {\n" +
       "  | B : A -> \\Type0\n" +
-      "}", 2);
+      "}");
   }
 
   // We do not check for duplicate global instances currently

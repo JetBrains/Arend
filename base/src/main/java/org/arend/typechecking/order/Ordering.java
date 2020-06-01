@@ -5,10 +5,12 @@ import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.naming.reference.converter.ReferableConverter;
+import org.arend.term.FunctionKind;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.Group;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.computation.ComputationRunner;
+import org.arend.typechecking.instance.provider.InstanceProvider;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
 import org.arend.typechecking.order.dependency.DependencyListener;
 import org.arend.typechecking.order.listener.OrderingListener;
@@ -27,10 +29,11 @@ public class Ordering extends BellmanFord<Concrete.Definition> {
   private final TypecheckerState myState;
   private final PartialComparator<TCReferable> myComparator;
   private final Set<TCReferable> myAllowedDependencies;
-  private final boolean myWithBodies;
-  private final boolean myWithUse;
+  private final Stage myStage;
 
-  private Ordering(InstanceProviderSet instanceProviderSet, ConcreteProvider concreteProvider, OrderingListener orderingListener, DependencyListener dependencyListener, ReferableConverter referableConverter, TypecheckerState state, PartialComparator<TCReferable> comparator, Set<TCReferable> allowedDependencies, boolean withBodies, boolean withUse) {
+  private enum Stage { EVERYTHING, WITHOUT_INSTANCES, WITHOUT_USE, WITHOUT_BODIES }
+
+  private Ordering(InstanceProviderSet instanceProviderSet, ConcreteProvider concreteProvider, OrderingListener orderingListener, DependencyListener dependencyListener, ReferableConverter referableConverter, TypecheckerState state, PartialComparator<TCReferable> comparator, Set<TCReferable> allowedDependencies, Stage stage) {
     myInstanceProviderSet = instanceProviderSet;
     myConcreteProvider = concreteProvider;
     myOrderingListener = orderingListener;
@@ -39,16 +42,15 @@ public class Ordering extends BellmanFord<Concrete.Definition> {
     myState = state;
     myComparator = comparator;
     myAllowedDependencies = allowedDependencies;
-    myWithBodies = withBodies;
-    myWithUse = withUse;
+    myStage = stage;
   }
 
-  private Ordering(Ordering ordering, Set<TCReferable> allowedDependencies, boolean withBodies, boolean withUse) {
-    this(ordering.myInstanceProviderSet, ordering.myConcreteProvider, ordering.myOrderingListener, ordering.myDependencyListener, ordering.myReferableConverter, ordering.myState, ordering.myComparator, allowedDependencies, withBodies, withUse);
+  private Ordering(Ordering ordering, Set<TCReferable> allowedDependencies, Stage stage) {
+    this(ordering.myInstanceProviderSet, ordering.myConcreteProvider, ordering.myOrderingListener, ordering.myDependencyListener, ordering.myReferableConverter, ordering.myState, ordering.myComparator, allowedDependencies, stage);
   }
 
   public Ordering(InstanceProviderSet instanceProviderSet, ConcreteProvider concreteProvider, OrderingListener orderingListener, DependencyListener dependencyListener, ReferableConverter referableConverter, TypecheckerState state, PartialComparator<TCReferable> comparator) {
-    this(instanceProviderSet, concreteProvider, orderingListener, dependencyListener, referableConverter, state, comparator, null, true, true);
+    this(instanceProviderSet, concreteProvider, orderingListener, dependencyListener, referableConverter, state, comparator, null, Stage.EVERYTHING);
   }
 
   public TypecheckerState getTypecheckerState() {
@@ -103,8 +105,17 @@ public class Ordering extends BellmanFord<Concrete.Definition> {
   @Override
   protected boolean forDependencies(Concrete.Definition definition, Consumer<Concrete.Definition> consumer) {
     Set<TCReferable> dependencies = new LinkedHashSet<>();
-    CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myConcreteProvider, myWithUse ? myInstanceProviderSet.get(definition.getData()) : null, dependencies, myWithBodies);
-    if (myWithUse) {
+    CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(dependencies, myStage.ordinal() < Stage.WITHOUT_BODIES.ordinal());
+    if (myStage.ordinal() < Stage.WITHOUT_USE.ordinal()) {
+      if (myStage.ordinal() < Stage.WITHOUT_INSTANCES.ordinal()) {
+        InstanceProvider instanceProvider = myInstanceProviderSet.get(definition.getData());
+        if (instanceProvider != null) {
+          instanceProvider.findInstance(instance -> {
+            visitor.addDependency(instance.getData());
+            return false;
+          });
+        }
+      }
       if (definition.enclosingClass != null) {
         visitor.addDependency(definition.enclosingClass);
       }
@@ -150,7 +161,7 @@ public class Ordering extends BellmanFord<Concrete.Definition> {
 
   @Override
   protected void unitFound(Concrete.Definition unit, boolean withLoops) {
-    if (myWithBodies) {
+    if (myStage.ordinal() < Stage.WITHOUT_BODIES.ordinal()) {
       myOrderingListener.unitFound(unit, withLoops);
     } else {
       if (withLoops) {
@@ -163,7 +174,7 @@ public class Ordering extends BellmanFord<Concrete.Definition> {
 
   @Override
   protected void sccFound(List<Concrete.Definition> scc) {
-    if (!myWithBodies) {
+    if (myStage.ordinal() >= Stage.WITHOUT_BODIES.ordinal()) {
       myOrderingListener.cycleFound(scc);
       return;
     }
@@ -176,10 +187,22 @@ public class Ordering extends BellmanFord<Concrete.Definition> {
     }
 
     boolean hasUse = false;
+    boolean hasInstances = false;
     for (Concrete.Definition definition : scc) {
-      if (definition instanceof Concrete.UseDefinition) {
-        hasUse = true;
+      if (definition instanceof Concrete.FunctionDefinition && ((Concrete.FunctionDefinition) definition).getKind() == FunctionKind.INSTANCE) {
+        if (myStage.ordinal() >= Stage.WITHOUT_INSTANCES.ordinal()) {
+          myOrderingListener.cycleFound(scc);
+          return;
+        }
+        hasInstances = true;
         break;
+      }
+      if (definition instanceof Concrete.UseDefinition) {
+        if (myStage.ordinal() >= Stage.WITHOUT_USE.ordinal()) {
+          myOrderingListener.cycleFound(scc);
+          return;
+        }
+        hasUse = true;
       }
     }
 
@@ -188,13 +211,16 @@ public class Ordering extends BellmanFord<Concrete.Definition> {
       dependencies.add(definition.getData());
     }
 
-    if (hasUse) {
-      if (!myWithUse) {
-        myOrderingListener.cycleFound(scc);
-        return;
+    if (hasInstances) {
+      Ordering ordering = new Ordering(this, dependencies, Stage.WITHOUT_INSTANCES);
+      for (Concrete.Definition definition : scc) {
+        ordering.order(definition);
       }
+      return;
+    }
 
-      Ordering ordering = new Ordering(this, dependencies, true, false);
+    if (hasUse) {
+      Ordering ordering = new Ordering(this, dependencies, Stage.WITHOUT_USE);
       for (Concrete.Definition definition : scc) {
         ordering.order(definition);
       }
@@ -216,7 +242,7 @@ public class Ordering extends BellmanFord<Concrete.Definition> {
       }
     }
 
-    Ordering ordering = new Ordering(this, dependencies, false, false);
+    Ordering ordering = new Ordering(this, dependencies, Stage.WITHOUT_BODIES);
     for (Concrete.Definition definition : scc) {
       ordering.order(definition);
     }

@@ -198,7 +198,7 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
 
     if (recursive) {
       Set<TCReferable> dependencies = new HashSet<>();
-      definition.accept(new CollectDefCallsVisitor(myConcreteProvider, myInstanceProviderSet.get(definition.getData()), dependencies, false), null);
+      definition.accept(new CollectDefCallsVisitor(dependencies, false), null);
       if (dependencies.contains(definition.getData())) {
         typecheckingUnitStarted(definition.getData());
         myErrorReporter.report(new CycleError(Collections.singletonList(definition.getData())));
