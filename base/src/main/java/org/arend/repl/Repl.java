@@ -57,6 +57,7 @@ public abstract class Repl {
   private final MergeScope myMergeScope = new MergeScope(myMergedScopes);
   private final ConcreteProvider myConcreteProvider;
   private final TCReferable myModuleReferable;
+  private final InstanceProviderSet myInstanceProviderSet;
   protected @NotNull Scope myScope = myMergeScope;
   protected final @NotNull TypecheckingOrderingListener myTypechecking;
   protected final @NotNull TypecheckerState myTypecheckerState;
@@ -86,6 +87,7 @@ public abstract class Repl {
               @NotNull TypecheckerState typecheckerState) {
     myErrorReporter = listErrorReporter;
     myConcreteProvider = concreteProvider;
+    myInstanceProviderSet = instanceProviders;
     myTypecheckerState = typecheckerState;
     myLibraryManager = libraryManager;
     myTypechecking = new TypecheckingOrderingListener(instanceProviders, myTypecheckerState, myConcreteProvider, IdReferableConverter.INSTANCE, myErrorReporter, comparator, new LibraryArendExtensionProvider(myLibraryManager));
@@ -172,8 +174,7 @@ public abstract class Repl {
   }
 
   protected void onScopeAdded(Group group) {
-    var instanceProviders = myLibraryManager.getInstanceProviderSet();
-    if (instanceProviders != null) instanceProviders.collectInstances(
+    myInstanceProviderSet.collectInstances(
       group,
       myScope,
       myModuleReferable,
@@ -279,7 +280,7 @@ public abstract class Repl {
    */
   public final @Nullable TypecheckingResult checkExpr(@NotNull Concrete.Expression expr, @Nullable Expression expectedType) {
     var typechecker = new CheckTypeVisitor(myTypecheckerState, myErrorReporter, null, null);
-    var instanceProvider = myLibraryManager.getInstanceProviderSet().get(myModuleReferable);
+    var instanceProvider = myInstanceProviderSet.get(myModuleReferable);
     var instancePool = new GlobalInstancePool(instanceProvider, typechecker);
     typechecker.setInstancePool(instancePool);
     var result = typechecker.finalCheckExpr(expr, expectedType);
