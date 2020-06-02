@@ -81,13 +81,23 @@ public interface ArendExtension {
   }
 
   /**
-   * @return a goal solver that will be used for ordinary goals
+   * @return a goal solver that will be used for ordinary goals.
    */
   default @Nullable GoalSolver getGoalSolver() {
     return null;
   }
 
+  /**
+   * @return a level prover that will be used to check that types of lemmas and properties are propositions.
+   */
   default @Nullable LevelProver getLevelProver() {
+    return null;
+  }
+
+  /**
+   * A number checker is used to interpret numerical literals.
+   */
+  default @Nullable NumberTypechecker getNumberTypechecker() {
     return null;
   }
 }

@@ -2,6 +2,7 @@ package org.arend.extImpl;
 
 import org.arend.core.expr.Expression;
 import org.arend.ext.concrete.expr.ConcreteArgument;
+import org.arend.ext.concrete.expr.ConcreteReferenceExpression;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.typechecking.ContextData;
 import org.arend.term.concrete.Concrete;
@@ -11,21 +12,26 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 public class ContextDataImpl implements ContextData {
-  private final Concrete.ReferenceExpression myExpression;
+  private final Concrete.Expression myExpression;
   private List<? extends ConcreteArgument> myArguments;
   private Expression myExpectedType;
   private Object myUserData;
 
-  public ContextDataImpl(Concrete.ReferenceExpression expression, List<? extends ConcreteArgument> arguments, Expression expectedType, Object userData) {
+  public ContextDataImpl(Concrete.Expression expression, List<? extends ConcreteArgument> arguments, Expression expectedType, Object userData) {
     myExpression = expression;
     myArguments = arguments;
     myExpectedType = expectedType;
     myUserData = userData;
   }
 
-  @NotNull
   @Override
   public Concrete.ReferenceExpression getReferenceExpression() {
+    return myExpression instanceof Concrete.ReferenceExpression ? (Concrete.ReferenceExpression) myExpression : null;
+  }
+
+  @NotNull
+  @Override
+  public Concrete.Expression getMarker() {
     return myExpression;
   }
 

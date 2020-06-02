@@ -24,6 +24,7 @@ import org.arend.core.subst.LevelSubstitution;
 import org.arend.error.*;
 import org.arend.ext.ArendExtension;
 import org.arend.ext.FreeBindingsModifier;
+import org.arend.ext.NumberTypechecker;
 import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.concrete.expr.ConcreteReferenceExpression;
@@ -1877,7 +1878,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       return TypecheckingResult.fromChecked(meta.invokeMeta(this, contextData));
     } catch (MetaException e) {
       if (e.error.cause == null) {
-        e.error.cause = contextData.getReferenceExpression();
+        e.error.cause = contextData.getMarker();
       }
       errorReporter.report(e.error);
       ErrorExpression expr = new ErrorExpression(e.error);
@@ -1954,10 +1955,13 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
   }
 
   @Override
-  public TypecheckingResult visitNumericLiteral(Concrete.NumericLiteral expr, Expression expectedType) {
-    Expression resultExpr;
-    BigInteger number = expr.getNumber();
+  public @Nullable TypecheckingResult checkNumber(@NotNull BigInteger number, @Nullable CoreExpression expectedType, @NotNull ConcreteExpression marker) {
+    if (!((expectedType == null || expectedType instanceof Expression) && marker instanceof Concrete.Expression)) {
+      throw new IllegalArgumentException();
+    }
+
     boolean isNegative = number.signum() < 0;
+    Expression resultExpr;
     try {
       int value = number.intValueExact();
       resultExpr = new SmallIntegerExpression(isNegative ? -value : value);
@@ -1971,7 +1975,25 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     } else {
       result = new TypecheckingResult(resultExpr, ExpressionFactory.Nat());
     }
-    return checkResult(expectedType, result, expr);
+    return checkResult((Expression) expectedType, result, (Concrete.Expression) marker);
+  }
+
+  @Override
+  public TypecheckingResult visitNumericLiteral(Concrete.NumericLiteral expr, Expression expectedType) {
+    BigInteger number = expr.getNumber();
+    if (myArendExtension != null) {
+      NumberTypechecker checker = myArendExtension.getNumberTypechecker();
+      if (checker != null) {
+        int numberOfErrors = myErrorReporter.myErrorReporter.getErrorsNumber();
+        TypecheckingResult result = TypecheckingResult.fromChecked(checker.typecheckNumber(number, this, new ContextDataImpl(expr, Collections.emptyList(), expectedType, null)));
+        if (myErrorReporter.myErrorReporter.getErrorsNumber() == numberOfErrors) {
+          errorReporter.report(new TypecheckingError("Cannot check number", expr));
+        }
+        return result;
+      }
+    }
+
+    return checkNumber(number, expectedType, expr);
   }
 
   @Override

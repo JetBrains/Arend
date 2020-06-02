@@ -15,6 +15,7 @@ import org.arend.ext.reference.ArendRef;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.math.BigInteger;
 import java.util.List;
 import java.util.function.Function;
 
@@ -137,6 +138,12 @@ public interface ExpressionTypechecker {
    * @return                        an instance of the given class with the specified classifying expression or {@code null} if there is no such instance
    */
   @Nullable TypedExpression findInstance(@NotNull InstanceSearchParameters parameters, @Nullable UncheckedExpression classifyingExpression, @Nullable CoreExpression expectedType, @NotNull ConcreteSourceNode sourceNode);
+
+  /**
+   * @return either natural or integer representation of {@code number}.
+   *         The type depends on the sign of {@code number} and on {@code expectedType}.
+   */
+  @Nullable TypedExpression checkNumber(@NotNull BigInteger number, @Nullable CoreExpression expectedType, @NotNull ConcreteExpression marker);
 
   /**
    * Checks if the type-checking was cancelled.

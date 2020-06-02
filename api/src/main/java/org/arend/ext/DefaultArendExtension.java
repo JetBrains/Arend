@@ -39,4 +39,15 @@ public class DefaultArendExtension implements ArendExtension {
     }
     return null;
   }
+
+  @Override
+  public @Nullable NumberTypechecker getNumberTypechecker() {
+    for (ArendExtension extension : dependencies.values()) {
+      NumberTypechecker checker = extension.getNumberTypechecker();
+      if (checker != null) {
+        return checker;
+      }
+    }
+    return null;
+  }
 }

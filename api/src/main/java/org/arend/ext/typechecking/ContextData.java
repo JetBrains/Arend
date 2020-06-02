@@ -1,5 +1,6 @@
 package org.arend.ext.typechecking;
 
+import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.concrete.expr.ConcreteArgument;
 import org.arend.ext.concrete.expr.ConcreteReferenceExpression;
@@ -16,7 +17,15 @@ public interface ContextData {
    * If the definition was explicitly invoked from code,
    * returns the reference expression corresponding to this invocation.
    */
-  @NotNull ConcreteReferenceExpression getReferenceExpression();
+  default ConcreteReferenceExpression getReferenceExpression() {
+    ConcreteExpression marker = getMarker();
+    return marker instanceof ConcreteReferenceExpression ? (ConcreteReferenceExpression) marker : null;
+  }
+
+  /**
+   * A marker that can be used for error reporting.
+   */
+  @NotNull ConcreteExpression getMarker();
 
   /**
    * Returns the arguments passed to the meta definition.
@@ -34,9 +43,7 @@ public interface ContextData {
 
   void setExpectedType(@Nullable CoreExpression expectedType);
 
-  default Object getUserData() {
-    return null;
-  }
+  Object getUserData();
 
-  default void setUserData(Object userData) {}
+  void setUserData(Object userData);
 }
