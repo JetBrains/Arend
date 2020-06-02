@@ -1,7 +1,9 @@
 package org.arend.repl;
 
 import org.arend.core.expr.Expression;
-import org.arend.core.expr.visitor.ScopeDefinitionRenamer;
+import org.arend.ext.prettyprinting.DefinitionRenamer;
+import org.arend.extImpl.definitionRenamer.CachingDefinitionRenamer;
+import org.arend.extImpl.definitionRenamer.ScopeDefinitionRenamer;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.error.ListErrorReporter;
@@ -60,8 +62,8 @@ public abstract class Repl {
   protected final @NotNull TypecheckerState myTypecheckerState;
   protected final @NotNull PrettyPrinterConfig myPpConfig = new PrettyPrinterConfig() {
     @Override
-    public @NotNull ScopeDefinitionRenamer getDefinitionRenamer() {
-      return new ScopeDefinitionRenamer(myScope);
+    public @NotNull DefinitionRenamer getDefinitionRenamer() {
+      return new CachingDefinitionRenamer(new ScopeDefinitionRenamer(myScope));
     }
 
     @Override

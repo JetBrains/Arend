@@ -1,7 +1,8 @@
-package org.arend.core.expr.visitor;
+package org.arend.extImpl.definitionRenamer;
 
 import org.arend.core.definition.Definition;
 import org.arend.core.expr.DefCallExpression;
+import org.arend.core.expr.visitor.VoidExpressionVisitor;
 import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.ext.module.LongName;
 import org.arend.ext.module.ModulePath;

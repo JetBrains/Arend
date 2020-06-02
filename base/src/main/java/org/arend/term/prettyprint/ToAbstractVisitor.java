@@ -3,7 +3,7 @@ package org.arend.term.prettyprint;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.expr.visitor.BaseExpressionVisitor;
-import org.arend.core.expr.visitor.ConflictDefinitionRenamer;
+import org.arend.extImpl.definitionRenamer.ConflictDefinitionRenamer;
 import org.arend.ext.variable.Variable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.core.context.param.DependentLink;
