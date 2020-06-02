@@ -9,6 +9,8 @@ import org.arend.ext.core.ops.CMP;
 import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.error.ErrorReporter;
+import org.arend.ext.instance.InstanceSearchParameters;
+import org.arend.ext.instance.SubclassSearchParameters;
 import org.arend.ext.reference.ArendRef;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -98,7 +100,9 @@ public interface ExpressionTypechecker {
    * @param sourceNode              a marker for errors that might occur during the search
    * @return                        an instance of the given class with the specified classifying expression or {@code null} if there is no such instance
    */
-  @Nullable ConcreteExpression findInstance(@NotNull CoreClassDefinition classDefinition, @Nullable UncheckedExpression classifyingExpression, @NotNull ConcreteSourceNode sourceNode);
+  default @Nullable ConcreteExpression findInstance(@NotNull CoreClassDefinition classDefinition, @Nullable UncheckedExpression classifyingExpression, @NotNull ConcreteSourceNode sourceNode) {
+    return findInstance(new SubclassSearchParameters(classDefinition), classifyingExpression, sourceNode);
+  }
 
   /**
    * Searches for an instance of the specified class.
@@ -109,7 +113,30 @@ public interface ExpressionTypechecker {
    * @param sourceNode              a marker for errors that might occur during the search
    * @return                        an instance of the given class with the specified classifying expression or {@code null} if there is no such instance
    */
-  @Nullable TypedExpression findInstance(@NotNull CoreClassDefinition classDefinition, @Nullable UncheckedExpression classifyingExpression, @Nullable CoreExpression expectedType, @NotNull ConcreteSourceNode sourceNode);
+  default @Nullable TypedExpression findInstance(@NotNull CoreClassDefinition classDefinition, @Nullable UncheckedExpression classifyingExpression, @Nullable CoreExpression expectedType, @NotNull ConcreteSourceNode sourceNode) {
+    return findInstance(new SubclassSearchParameters(classDefinition), classifyingExpression, expectedType, sourceNode);
+  }
+
+  /**
+   * Searches for an instance of a class satisfying the specified predicate.
+   *
+   * @param parameters              specifies parameters for the search
+   * @param classifyingExpression   the classifying expression of the instance
+   * @param sourceNode              a marker for errors that might occur during the search
+   * @return                        an instance of the given class with the specified classifying expression or {@code null} if there is no such instance
+   */
+  @Nullable ConcreteExpression findInstance(@NotNull InstanceSearchParameters parameters, @Nullable UncheckedExpression classifyingExpression, @NotNull ConcreteSourceNode sourceNode);
+
+  /**
+   * Searches for an instance of a class satisfying the specified predicate.
+   *
+   * @param parameters              specifies parameters for the search
+   * @param classifyingExpression   the classifying expression of the instance
+   * @param expectedType            the expected type of the instance
+   * @param sourceNode              a marker for errors that might occur during the search
+   * @return                        an instance of the given class with the specified classifying expression or {@code null} if there is no such instance
+   */
+  @Nullable TypedExpression findInstance(@NotNull InstanceSearchParameters parameters, @Nullable UncheckedExpression classifyingExpression, @Nullable CoreExpression expectedType, @NotNull ConcreteSourceNode sourceNode);
 
   /**
    * Checks if the type-checking was cancelled.

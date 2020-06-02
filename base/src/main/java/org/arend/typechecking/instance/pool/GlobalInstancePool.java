@@ -2,12 +2,12 @@ package org.arend.typechecking.instance.pool;
 
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassDefinition;
-import org.arend.core.definition.ClassField;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.*;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.ext.instance.InstanceSearchParameters;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.instance.provider.InstanceProvider;
 import org.arend.typechecking.result.TypecheckingResult;
@@ -52,9 +52,9 @@ public class GlobalInstancePool implements InstancePool {
   }
 
   @Override
-  public TypecheckingResult getInstance(Expression classifyingExpression, Expression expectedType, ClassDefinition classDef, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveHoleExpression) {
+  public TypecheckingResult getInstance(Expression classifyingExpression, Expression expectedType, InstanceSearchParameters parameters, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveHoleExpression) {
     if (myInstancePool != null) {
-      TypecheckingResult result = myInstancePool.getInstance(classifyingExpression, expectedType, classDef, sourceNode, recursiveHoleExpression);
+      TypecheckingResult result = myInstancePool.getInstance(classifyingExpression, expectedType, parameters, sourceNode, recursiveHoleExpression);
       if (result != null) {
         return result;
       }
@@ -64,7 +64,7 @@ public class GlobalInstancePool implements InstancePool {
       return null;
     }
 
-    Pair<Concrete.Expression, ClassDefinition> pair = getInstancePair(classifyingExpression, classDef, sourceNode, recursiveHoleExpression);
+    Pair<Concrete.Expression, ClassDefinition> pair = getInstancePair(classifyingExpression, parameters, sourceNode, recursiveHoleExpression);
     if (pair == null) {
       return null;
     }
@@ -85,9 +85,9 @@ public class GlobalInstancePool implements InstancePool {
   }
 
   @Override
-  public Concrete.Expression getInstance(Expression classifyingExpression, ClassDefinition classDef, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveHoleExpression) {
+  public Concrete.Expression getInstance(Expression classifyingExpression, InstanceSearchParameters parameters, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveHoleExpression) {
     if (myInstancePool != null) {
-      Concrete.Expression result = myInstancePool.getInstance(classifyingExpression, classDef, sourceNode, recursiveHoleExpression);
+      Concrete.Expression result = myInstancePool.getInstance(classifyingExpression, parameters, sourceNode, recursiveHoleExpression);
       if (result != null) {
         return result;
       }
@@ -97,28 +97,24 @@ public class GlobalInstancePool implements InstancePool {
       return null;
     }
 
-    Pair<Concrete.Expression, ClassDefinition> pair = getInstancePair(classifyingExpression, classDef, sourceNode, recursiveHoleExpression);
+    Pair<Concrete.Expression, ClassDefinition> pair = getInstancePair(classifyingExpression, parameters, sourceNode, recursiveHoleExpression);
     return pair == null ? null : pair.proj1;
   }
 
-  private Pair<Concrete.Expression, ClassDefinition> getInstancePair(Expression classifyingExpression, ClassDefinition classDef, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveHoleExpression) {
-    ClassField classifyingField;
+  private Pair<Concrete.Expression, ClassDefinition> getInstancePair(Expression classifyingExpression, InstanceSearchParameters parameters, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveHoleExpression) {
+    if (!parameters.searchGlobal()) {
+      return null;
+    }
+
     Expression normClassifyingExpression = classifyingExpression;
     if (classifyingExpression != null) {
-      normClassifyingExpression = normClassifyingExpression.normalize(NormalizationMode.WHNF).getUnderlyingExpression();
+      normClassifyingExpression = normClassifyingExpression.normalize(NormalizationMode.WHNF);
       while (normClassifyingExpression instanceof LamExpression) {
-        normClassifyingExpression = ((LamExpression) normClassifyingExpression).getBody().getUnderlyingExpression();
+        normClassifyingExpression = ((LamExpression) normClassifyingExpression).getBody().normalize(NormalizationMode.WHNF);
       }
       if (!(normClassifyingExpression instanceof DefCallExpression || normClassifyingExpression instanceof SigmaExpression || normClassifyingExpression instanceof UniverseExpression || normClassifyingExpression instanceof IntegerExpression)) {
         return null;
       }
-
-      classifyingField = classDef.getClassifyingField();
-      if (classifyingField == null) {
-        return null;
-      }
-    } else {
-      classifyingField = null;
     }
 
     Expression finalClassifyingExpression = normClassifyingExpression;
@@ -128,15 +124,16 @@ public class GlobalInstancePool implements InstancePool {
       @Override
       public boolean test(Concrete.FunctionDefinition instance) {
         instanceDef = (FunctionDefinition) myCheckTypeVisitor.getTypecheckingState().getTypechecked(instance.getData());
-        if (!(instanceDef != null && instanceDef.status().headerIsOK() && instanceDef.getResultType() instanceof ClassCallExpression && ((ClassCallExpression) instanceDef.getResultType()).getDefinition().isSubClassOf(classDef))) {
+        if (!(instanceDef != null && instanceDef.status().headerIsOK() && instanceDef.getResultType() instanceof ClassCallExpression && parameters.testClass(((ClassCallExpression) instanceDef.getResultType()).getDefinition()) && parameters.testGlobalInstance(instanceDef))) {
           return false;
         }
 
-        if (finalClassifyingExpression == null) {
+        ClassCallExpression classCall = (ClassCallExpression) instanceDef.getResultType();
+        if (finalClassifyingExpression == null || classCall.getDefinition().getClassifyingField() == null) {
           return true;
         }
 
-        Expression instanceClassifyingExpr = ((ClassCallExpression) instanceDef.getResultType()).getAbsImplementationHere(classifyingField);
+        Expression instanceClassifyingExpr = classCall.getAbsImplementationHere(classCall.getDefinition().getClassifyingField());
         if (instanceClassifyingExpr != null) {
           instanceClassifyingExpr = instanceClassifyingExpr.normalize(NormalizationMode.WHNF);
         }
@@ -169,7 +166,7 @@ public class GlobalInstancePool implements InstancePool {
       instanceExpr = Concrete.AppExpression.make(sourceNode.getData(), instanceExpr, new RecursiveInstanceHoleExpression(recursiveHoleExpression == null ? sourceNode : recursiveHoleExpression.getData(), newRecursiveData), link.isExplicit());
     }
 
-    return new Pair<>(instanceExpr, actualClass);
+    return parameters.testGlobalInstance(instanceExpr) ? new Pair<>(instanceExpr, actualClass) : null;
   }
 
   @Override

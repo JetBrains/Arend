@@ -10,6 +10,8 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.error.TypeMismatchError;
 import org.arend.ext.error.TypecheckingError;
+import org.arend.ext.instance.InstanceSearchParameters;
+import org.arend.ext.instance.SubclassSearchParameters;
 import org.arend.naming.reference.CoreReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.result.TypecheckingResult;
@@ -43,8 +45,8 @@ public class LocalInstancePool implements InstancePool {
   }
 
   @Override
-  public TypecheckingResult getInstance(Expression classifyingExpression, Expression expectedType, ClassDefinition classDef, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveData) {
-    Expression result = getInstance(classifyingExpression, classDef);
+  public TypecheckingResult getInstance(Expression classifyingExpression, Expression expectedType, InstanceSearchParameters parameters, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveData) {
+    Expression result = getInstance(classifyingExpression, parameters);
     if (result == null) {
       return null;
     }
@@ -71,9 +73,9 @@ public class LocalInstancePool implements InstancePool {
   }
 
   @Override
-  public Concrete.Expression getInstance(Expression classifyingExpression, ClassDefinition classDef, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveData) {
-    Expression result = getInstance(classifyingExpression, classDef);
-    return result == null ? null : new Concrete.ReferenceExpression(sourceNode, new CoreReferable("I", new TypecheckingResult(result, null)));
+  public Concrete.Expression getInstance(Expression classifyingExpression, InstanceSearchParameters parameters, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveData) {
+    Expression result = getInstance(classifyingExpression, parameters);
+    return result == null ? null : new Concrete.ReferenceExpression(sourceNode, new CoreReferable(null, new TypecheckingResult(result, null)));
   }
 
   @Override
@@ -92,10 +94,13 @@ public class LocalInstancePool implements InstancePool {
     return this;
   }
 
-  private Expression getInstance(Expression classifyingExpression, ClassDefinition classDef) {
+  private Expression getInstance(Expression classifyingExpression, InstanceSearchParameters parameters) {
+    if (!parameters.searchLocal()) {
+      return null;
+    }
     for (int i = myPool.size() - 1; i >= 0; i--) {
       InstanceData instanceData = myPool.get(i);
-      if (instanceData.classDef.isSubClassOf(classDef) && (instanceData.key == classifyingExpression || instanceData.key != null && classifyingExpression != null && Expression.compare(instanceData.key, classifyingExpression, instanceData.keyType, CMP.EQ))) {
+      if (parameters.testClass(instanceData.classDef) && (instanceData.key == classifyingExpression || instanceData.key != null && classifyingExpression != null && Expression.compare(instanceData.key, classifyingExpression, instanceData.keyType, CMP.EQ)) && parameters.testLocalInstance(instanceData.value)) {
         return instanceData.value;
       }
     }
@@ -103,7 +108,7 @@ public class LocalInstancePool implements InstancePool {
   }
 
   public Expression addInstance(Expression classifyingExpression, Expression classifyingExpressionType, ClassDefinition classDef, Expression instance, Concrete.SourceNode sourceNode) {
-    Expression oldInstance = getInstance(classifyingExpression, classDef);
+    Expression oldInstance = getInstance(classifyingExpression, new SubclassSearchParameters(classDef));
     if (oldInstance != null) {
       return oldInstance;
     } else {

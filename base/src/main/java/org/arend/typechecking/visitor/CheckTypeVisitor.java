@@ -28,13 +28,14 @@ import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.concrete.expr.ConcreteReferenceExpression;
 import org.arend.ext.core.context.CoreBinding;
-import org.arend.ext.core.definition.CoreClassDefinition;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.core.expr.UncheckedExpression;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.*;
+import org.arend.ext.instance.InstanceSearchParameters;
+import org.arend.ext.instance.SubclassSearchParameters;
 import org.arend.ext.prettyprinting.doc.DocFactory;
 import org.arend.ext.reference.ArendRef;
 import org.arend.ext.typechecking.*;
@@ -76,7 +77,6 @@ import org.jetbrains.annotations.Nullable;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 import static org.arend.typechecking.error.local.inference.ArgInferenceError.expression;
 
@@ -780,7 +780,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       ClassDefinition classDef = ((ClassCallExpression) type).getDefinition();
       RecursiveInstanceHoleExpression holeExpr = implBody instanceof RecursiveInstanceHoleExpression ? (RecursiveInstanceHoleExpression) implBody : null;
       if (classDef.getClassifyingField() == null) {
-        TypecheckingResult instance = myInstancePool.getInstance(null, type, classDef, implBody, holeExpr);
+        TypecheckingResult instance = myInstancePool.getInstance(null, type, new SubclassSearchParameters(classDef), implBody, holeExpr);
         if (instance == null) {
           ArgInferenceError error = new InstanceInferenceError(classDef.getReferable(), implBody, holeExpr, new Expression[0]);
           errorReporter.report(error);
@@ -2101,19 +2101,19 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
   }
 
   @Override
-  public @Nullable ConcreteExpression findInstance(@NotNull CoreClassDefinition classDefinition, @Nullable UncheckedExpression classifyingExpression, @NotNull ConcreteSourceNode sourceNode) {
-    if (!(classDefinition instanceof ClassDefinition && sourceNode instanceof Concrete.SourceNode)) {
+  public @Nullable ConcreteExpression findInstance(@NotNull InstanceSearchParameters parameters, @Nullable UncheckedExpression classifyingExpression, @NotNull ConcreteSourceNode sourceNode) {
+    if (!(sourceNode instanceof Concrete.SourceNode)) {
       throw new IllegalArgumentException();
     }
-    return myInstancePool.getInstance(UncheckedExpressionImpl.extract(classifyingExpression), (ClassDefinition) classDefinition, (Concrete.SourceNode) sourceNode, null);
+    return myInstancePool.getInstance(UncheckedExpressionImpl.extract(classifyingExpression), parameters, (Concrete.SourceNode) sourceNode, null);
   }
 
   @Override
-  public @Nullable TypedExpression findInstance(@NotNull CoreClassDefinition classDefinition, @Nullable UncheckedExpression classifyingExpression, @Nullable CoreExpression expectedType, @NotNull ConcreteSourceNode sourceNode) {
-    if (!(classDefinition instanceof ClassDefinition && (expectedType == null || expectedType instanceof Expression) && sourceNode instanceof Concrete.SourceNode)) {
+  public @Nullable TypedExpression findInstance(@NotNull InstanceSearchParameters parameters, @Nullable UncheckedExpression classifyingExpression, @Nullable CoreExpression expectedType, @NotNull ConcreteSourceNode sourceNode) {
+    if (!((expectedType == null || expectedType instanceof Expression) && sourceNode instanceof Concrete.SourceNode)) {
       throw new IllegalArgumentException();
     }
-    return myInstancePool.getInstance(UncheckedExpressionImpl.extract(classifyingExpression), expectedType == null ? null : (Expression) expectedType, (ClassDefinition) classDefinition, (Concrete.SourceNode) sourceNode, null);
+    return myInstancePool.getInstance(UncheckedExpressionImpl.extract(classifyingExpression), expectedType == null ? null : (Expression) expectedType, parameters, (Concrete.SourceNode) sourceNode, null);
   }
 
   @Override

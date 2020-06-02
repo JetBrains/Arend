@@ -18,7 +18,7 @@ import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.ArgumentExplicitnessError;
 import org.arend.ext.error.TypeMismatchError;
-import org.arend.naming.reference.TCClassReferable;
+import org.arend.ext.instance.SubclassSearchParameters;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.NotPiType;
@@ -94,7 +94,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
             // If the class does not have a classifying field, infer instance immediately
             if (classDef.getClassifyingField() == null) {
               InstancePool instancePool = kind == Definition.TypeClassParameterKind.ONLY_LOCAL ? myVisitor.getInstancePool().getLocalInstancePool() : myVisitor.getInstancePool();
-              TypecheckingResult instanceResult = instancePool.getInstance(null, defCallResult.getParameter().getTypeExpr(), classDef, expr, holeExpr);
+              TypecheckingResult instanceResult = instancePool.getInstance(null, defCallResult.getParameter().getTypeExpr(), new SubclassSearchParameters(classDef), expr, holeExpr);
               Expression instance;
               if (instanceResult == null) {
                 ArgInferenceError error = new InstanceInferenceError(classDef.getReferable(), expr, holeExpr, new Expression[0]);
