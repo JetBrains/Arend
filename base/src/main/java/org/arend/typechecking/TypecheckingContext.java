@@ -10,14 +10,12 @@ import java.util.Map;
 import java.util.Set;
 
 public class TypecheckingContext {
-  public final Set<Binding> freeBindings;
   public final Map<Referable, Binding> localContext;
   public final InstanceProvider instanceProvider;
   public final InstancePool localInstancePool;
   public final ArendExtension arendExtension;
 
-  public TypecheckingContext(Set<Binding> freeBindings, Map<Referable, Binding> localContext, InstanceProvider instanceProvider, InstancePool localInstancePool, ArendExtension arendExtension) {
-    this.freeBindings = freeBindings;
+  public TypecheckingContext(Map<Referable, Binding> localContext, InstanceProvider instanceProvider, InstancePool localInstancePool, ArendExtension arendExtension) {
     this.localContext = localContext;
     this.instanceProvider = instanceProvider;
     this.localInstancePool = localInstancePool;

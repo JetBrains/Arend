@@ -7,6 +7,7 @@ import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.ext.typechecking.GoalSolver;
+import org.arend.naming.reference.LocalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.TypecheckingContext;
@@ -47,7 +48,7 @@ public class GoalError extends TypecheckingError {
     if (!context.isEmpty()) {
       List<Doc> contextDocs = new ArrayList<>(context.size());
       for (Map.Entry<Referable, Binding> entry : context.entrySet()) {
-        if (!entry.getValue().isHidden()) {
+        if (!entry.getValue().isHidden() && (!(entry.getKey() instanceof LocalReferable) || !((LocalReferable) entry.getKey()).isHidden())) {
           Expression type = entry.getValue().getTypeExpr();
           contextDocs.add(hang(hList(entry.getKey() == null ? text("_") : refDoc(entry.getKey()), text(" :")), type == null ? text("{?}") : termDoc(type, ppConfig)));
         }

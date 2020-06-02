@@ -31,6 +31,7 @@ import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.TypeMismatchError;
 import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.prettyprinting.doc.DocFactory;
+import org.arend.naming.reference.FakeLocalReferable;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
@@ -134,66 +135,64 @@ public class PatternTypechecking {
 
   private ExtElimClause typecheckClause(Concrete.FunctionClause clause, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, Expression expectedType) {
     try (var ignored = new Utils.SetContextSaver<>(myVisitor.getContext())) {
-      try (var ignored1 = new Utils.SetContextSaver<>(myVisitor.getFreeBindings())) {
-        // Typecheck patterns
-        ExprSubstitution substitution = new ExprSubstitution();
-        ExprSubstitution totalSubst = new ExprSubstitution();
-        Result result = typecheckPatterns(clause.getPatterns(), abstractParameters, parameters, substitution, totalSubst, elimParams, clause);
-        if (result == null) {
-          return null;
-        }
-
-        ExtElimClause elimClause = new ExtElimClause(result.patterns, null, totalSubst);
-
-        // If we have the absurd pattern, then RHS is ignored
-        if (result.hasEmptyPattern()) {
-          if (clause.getExpression() != null) {
-            myErrorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.BODY_IGNORED, clause.getExpression()));
-          }
-          return elimClause;
-        } else {
-          if (clause.getExpression() == null) {
-            myErrorReporter.report(new TypecheckingError("Required a body", clause));
-            return null;
-          }
-        }
-
-        for (Map.Entry<Referable, Binding> entry : myContext.entrySet()) {
-          Binding binding = entry.getValue();
-          Expression expr = substitution.get(binding);
-          Binding newBinding = expr instanceof ReferenceExpression
-            ? ((ReferenceExpression) expr).getBinding()
-            : expr != null
-              ? new TypedEvaluatingBinding(binding.getName(), expr, binding.getTypeExpr())
-              : null;
-          if (newBinding != null) {
-            entry.setValue(newBinding);
-          }
-        }
-        expectedType = expectedType.subst(substitution);
-
-        GlobalInstancePool globalInstancePool = myVisitor.getInstancePool();
-        InstancePool instancePool = globalInstancePool == null ? null : globalInstancePool.getInstancePool();
-        if (instancePool != null) {
-          globalInstancePool.setInstancePool(instancePool.subst(substitution));
-        }
-
-        // Typecheck the RHS
-        TypecheckingResult tcResult;
-        if (myFinal) {
-          tcResult = myVisitor.finalCheckExpr(clause.getExpression(), expectedType);
-        } else {
-          tcResult = myVisitor.checkExpr(clause.getExpression(), expectedType);
-        }
-        if (instancePool != null) {
-          globalInstancePool.setInstancePool(instancePool);
-        }
-        if (tcResult == null) {
-          return null;
-        }
-        elimClause.setExpression(tcResult.expression);
-        return elimClause;
+      // Typecheck patterns
+      ExprSubstitution substitution = new ExprSubstitution();
+      ExprSubstitution totalSubst = new ExprSubstitution();
+      Result result = typecheckPatterns(clause.getPatterns(), abstractParameters, parameters, substitution, totalSubst, elimParams, clause);
+      if (result == null) {
+        return null;
       }
+
+      ExtElimClause elimClause = new ExtElimClause(result.patterns, null, totalSubst);
+
+      // If we have the absurd pattern, then RHS is ignored
+      if (result.hasEmptyPattern()) {
+        if (clause.getExpression() != null) {
+          myErrorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.BODY_IGNORED, clause.getExpression()));
+        }
+        return elimClause;
+      } else {
+        if (clause.getExpression() == null) {
+          myErrorReporter.report(new TypecheckingError("Required a body", clause));
+          return null;
+        }
+      }
+
+      for (Map.Entry<Referable, Binding> entry : myContext.entrySet()) {
+        Binding binding = entry.getValue();
+        Expression expr = substitution.get(binding);
+        Binding newBinding = expr instanceof ReferenceExpression
+          ? ((ReferenceExpression) expr).getBinding()
+          : expr != null
+            ? new TypedEvaluatingBinding(binding.getName(), expr, binding.getTypeExpr())
+            : null;
+        if (newBinding != null) {
+          entry.setValue(newBinding);
+        }
+      }
+      expectedType = expectedType.subst(substitution);
+
+      GlobalInstancePool globalInstancePool = myVisitor.getInstancePool();
+      InstancePool instancePool = globalInstancePool == null ? null : globalInstancePool.getInstancePool();
+      if (instancePool != null) {
+        globalInstancePool.setInstancePool(instancePool.subst(substitution));
+      }
+
+      // Typecheck the RHS
+      TypecheckingResult tcResult;
+      if (myFinal) {
+        tcResult = myVisitor.finalCheckExpr(clause.getExpression(), expectedType);
+      } else {
+        tcResult = myVisitor.checkExpr(clause.getExpression(), expectedType);
+      }
+      if (instancePool != null) {
+        globalInstancePool.setInstancePool(instancePool);
+      }
+      if (tcResult == null) {
+        return null;
+      }
+      elimClause.setExpression(tcResult.expression);
+      return elimClause;
     }
   }
 
@@ -223,7 +222,7 @@ public class PatternTypechecking {
       }
 
       if (myMode.isContextFree()) {
-        myVisitor.getFreeBindings().clear();
+        myContext.entrySet().removeIf(entry -> entry.getKey() instanceof FakeLocalReferable);
       }
       collectBindings(result.patterns);
     }
@@ -351,9 +350,7 @@ public class PatternTypechecking {
             if (exprs != null) {
               exprs.add(new ReferenceExpression(newParam));
             }
-            if (myVisitor != null) {
-              myVisitor.addBinding(null, newParam);
-            }
+            addBinding(null, newParam);
             parameters = parameters.getNext();
             if (!parameters.hasNext()) {
               myErrorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.TOO_MANY_PATTERNS, pattern));

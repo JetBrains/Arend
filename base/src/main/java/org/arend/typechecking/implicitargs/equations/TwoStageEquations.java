@@ -161,7 +161,7 @@ public class TwoStageEquations implements Equations {
         Sort codSort = Sort.generateInferVars(this, false, sourceNode);
         Sort piSort = PiExpression.generateUpperBound(domSort, codSort, this, sourceNode);
 
-        try (var ignore = new Utils.SetContextSaver<>(myVisitor.getFreeBindings())) {
+        try (var ignore = new Utils.SetContextSaver<>(myVisitor.getContext())) {
           for (SingleDependentLink link = pi.getParameters(); link.hasNext(); link = link.getNext()) {
             myVisitor.addBinding(null, link);
           }

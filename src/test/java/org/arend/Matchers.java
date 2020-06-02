@@ -1,5 +1,6 @@
 package org.arend;
 
+import org.arend.core.context.binding.Binding;
 import org.arend.core.expr.Expression;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.error.LocalError;
@@ -7,6 +8,7 @@ import org.arend.ext.error.TypeMismatchError;
 import org.arend.naming.error.DuplicateNameError;
 import org.arend.naming.error.NotInScopeError;
 import org.arend.naming.reference.GlobalReferable;
+import org.arend.naming.reference.LocalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.term.concrete.Concrete;
@@ -19,10 +21,7 @@ import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class Matchers {
   public static Matcher<? super GeneralError> typecheckingError() {
@@ -331,7 +330,12 @@ public class Matchers {
       protected boolean matchesSafely(GeneralError error, Description description) {
         if (error instanceof GoalError) {
           description.appendText("goal with ");
-          int size = ((GoalError) error).typecheckingContext.localContext.size();
+          int size = 0;
+          for (Map.Entry<Referable, Binding> entry : ((GoalError) error).typecheckingContext.localContext.entrySet()) {
+            if (!entry.getValue().isHidden() && (!(entry.getKey() instanceof LocalReferable) || !((LocalReferable) entry.getKey()).isHidden())) {
+              size++;
+            }
+          }
           if (size == 0) {
             description.appendText("empty context");
           } else {
