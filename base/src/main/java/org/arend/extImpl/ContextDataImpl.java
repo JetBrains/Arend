@@ -14,11 +14,13 @@ public class ContextDataImpl implements ContextData {
   private final Concrete.ReferenceExpression myExpression;
   private List<? extends ConcreteArgument> myArguments;
   private Expression myExpectedType;
+  private Object myUserData;
 
-  public ContextDataImpl(Concrete.ReferenceExpression expression, List<? extends ConcreteArgument> arguments, Expression expectedType) {
+  public ContextDataImpl(Concrete.ReferenceExpression expression, List<? extends ConcreteArgument> arguments, Expression expectedType, Object userData) {
     myExpression = expression;
     myArguments = arguments;
     myExpectedType = expectedType;
+    myUserData = userData;
   }
 
   @NotNull
@@ -49,5 +51,15 @@ public class ContextDataImpl implements ContextData {
       throw new IllegalArgumentException();
     }
     myExpectedType = (Expression) expectedType;
+  }
+
+  @Override
+  public Object getUserData() {
+    return myUserData;
+  }
+
+  @Override
+  public void setUserData(Object userData) {
+    myUserData = userData;
   }
 }

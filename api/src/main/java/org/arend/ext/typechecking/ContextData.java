@@ -33,4 +33,10 @@ public interface ContextData {
   CoreExpression getExpectedType();
 
   void setExpectedType(@Nullable CoreExpression expectedType);
+
+  default Object getUserData() {
+    return null;
+  }
+
+  default void setUserData(Object userData) {}
 }
