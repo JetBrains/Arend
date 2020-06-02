@@ -53,7 +53,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   }
 
   public static <R> R convert(ReferableConverter referableConverter, boolean allowErrors, Function<ConcreteBuilder,R> function) {
-    ErrorReporter errorReporter = allowErrors ? DummyErrorReporter.INSTANCE : new CountingErrorReporter();
+    ErrorReporter errorReporter = allowErrors ? DummyErrorReporter.INSTANCE : new CountingErrorReporter(DummyErrorReporter.INSTANCE);
     R result = function.apply(new ConcreteBuilder(referableConverter, errorReporter, null));
     return errorReporter instanceof CountingErrorReporter && ((CountingErrorReporter) errorReporter).getErrorsNumber() != 0 ? null : result;
 }

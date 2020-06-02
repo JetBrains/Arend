@@ -1,7 +1,6 @@
 package org.arend.frontend.source;
 
 import org.antlr.v4.runtime.*;
-import org.arend.error.CompositeErrorReporter;
 import org.arend.error.CountingErrorReporter;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.module.ModulePath;
@@ -55,11 +54,10 @@ public abstract class StreamRawSource implements Source {
     SourceLibrary library = sourceLoader.getLibrary();
     ModulePath modulePath = getModulePath();
     ErrorReporter errorReporter = sourceLoader.getTypecheckingErrorReporter();
-    CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
-    final CompositeErrorReporter compositeErrorReporter = new CompositeErrorReporter(errorReporter, countingErrorReporter);
+    CountingErrorReporter countingErrorReporter = new CountingErrorReporter(errorReporter);
 
     try {
-      var errorListener = new ReporterErrorListener(compositeErrorReporter, modulePath);
+      var errorListener = new ReporterErrorListener(countingErrorReporter, modulePath);
 
       ArendLexer lexer = new ArendLexer(CharStreams.fromStream(getInputStream()));
       lexer.removeErrorListeners();

@@ -113,11 +113,11 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
   }
 
   private static class MyErrorReporter implements ErrorReporter {
-    private final ErrorReporter myErrorReporter;
+    private final CountingErrorReporter myErrorReporter;
     private Definition.TypeCheckingStatus myStatus = Definition.TypeCheckingStatus.NO_ERRORS;
 
     private MyErrorReporter(ErrorReporter errorReporter) {
-      myErrorReporter = errorReporter;
+      myErrorReporter = new CountingErrorReporter(GeneralError.Level.ERROR, errorReporter);
     }
 
     private void setStatus(GeneralError error) {
@@ -402,19 +402,19 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
         }
       }
 
-      CountingErrorReporter countingErrorReporter = new CountingErrorReporter(GeneralError.Level.ERROR);
       CheckTypeVisitor checkTypeVisitor;
       ErrorReporter originalErrorReporter = errorReporter;
       Map<Referable, Binding> originalContext = context;
       if (stage != Stage.AFTER_LEVELS) {
         checkTypeVisitor = this;
-        errorReporter = new CompositeErrorReporter(deferredMeta.errorReporter, countingErrorReporter);
+        errorReporter = deferredMeta.errorReporter;
         context = deferredMeta.context;
       } else {
-        checkTypeVisitor = new CheckTypeVisitor(state, deferredMeta.context, new CompositeErrorReporter(deferredMeta.errorReporter, countingErrorReporter), null, myArendExtension);
+        checkTypeVisitor = new CheckTypeVisitor(state, deferredMeta.context, deferredMeta.errorReporter, null, myArendExtension);
         checkTypeVisitor.setInstancePool(new GlobalInstancePool(myInstancePool.getInstanceProvider(), checkTypeVisitor, myInstancePool.getInstancePool()));
       }
 
+      int numberOfErrors = checkTypeVisitor.myErrorReporter.myErrorReporter.getErrorsNumber();
       Concrete.ReferenceExpression refExpr = deferredMeta.contextData.getReferenceExpression();
       TypecheckingResult result = checkTypeVisitor.invokeMeta(deferredMeta.meta, deferredMeta.contextData);
       fixCheckedExpression(result, refExpr.getReferent(), refExpr);
@@ -426,7 +426,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       }
       errorReporter = originalErrorReporter;
       context = originalContext;
-      if (result == null && countingErrorReporter.getErrorsNumber() == 0) {
+      if (result == null && checkTypeVisitor.myErrorReporter.myErrorReporter.getErrorsNumber() == numberOfErrors) {
         deferredMeta.errorReporter.report(new TypecheckingError("Meta '" + refExpr.getReferent().getRefName() + "' failed", refExpr));
       }
       deferredMeta.inferenceExpr.setSubstExpression(result == null ? new ErrorExpression() : result.expression);
@@ -1896,15 +1896,13 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       return null;
     }
 
-    CountingErrorReporter countingErrorReporter = new CountingErrorReporter(GeneralError.Level.ERROR);
-    errorReporter = new CompositeErrorReporter(errorReporter, countingErrorReporter);
+    int numberOfErrors = myErrorReporter.myErrorReporter.getErrorsNumber();
     TypecheckingResult result = invokeMeta(meta, contextData);
     fixCheckedExpression(result, refExpr.getReferent(), refExpr);
-    errorReporter = ((CompositeErrorReporter) errorReporter).getErrorReporters().get(0);
     if (result != null) {
       return result.getType() == expectedType ? result : checkResult(expectedType, result, refExpr);
     }
-    if (countingErrorReporter.getErrorsNumber() == 0) {
+    if (myErrorReporter.myErrorReporter.getErrorsNumber() == numberOfErrors) {
       errorReporter.report(new TypecheckingError("Meta '" + refExpr.getReferent().getRefName() + "' failed", refExpr));
     }
     return null;

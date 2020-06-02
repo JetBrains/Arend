@@ -8,7 +8,6 @@ import org.arend.core.expr.ClassCallExpression;
 import org.arend.core.expr.ErrorExpression;
 import org.arend.core.expr.PiExpression;
 import org.arend.core.sort.Sort;
-import org.arend.error.CompositeErrorReporter;
 import org.arend.error.CountingErrorReporter;
 import org.arend.ext.ArendExtension;
 import org.arend.ext.error.ErrorReporter;
@@ -268,8 +267,8 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
     myCurrentDefinitions = Collections.singletonList(definition.getData());
     typecheckingHeaderStarted(definition.getData());
 
-    CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
-    CheckTypeVisitor visitor = new CheckTypeVisitor(myState, new LocalErrorReporter(definition.getData(), new CompositeErrorReporter(myErrorReporter, countingErrorReporter)), null, myExtensionProvider.getArendExtension(definition.getData()));
+    CountingErrorReporter countingErrorReporter = new CountingErrorReporter(myErrorReporter);
+    CheckTypeVisitor visitor = new CheckTypeVisitor(myState, new LocalErrorReporter(definition.getData(), countingErrorReporter), null, myExtensionProvider.getArendExtension(definition.getData()));
     visitor.setStatus(definition.getStatus().getTypecheckingStatus());
     DesugarVisitor.desugar(definition, myConcreteProvider, visitor.getErrorReporter());
     Definition oldTypechecked = visitor.getTypecheckingState().getTypechecked(definition.getData());

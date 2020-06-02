@@ -22,7 +22,6 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
-import org.arend.error.CompositeErrorReporter;
 import org.arend.error.CountingErrorReporter;
 import org.arend.error.IncorrectExpressionException;
 import org.arend.ext.ArendExtension;
@@ -848,8 +847,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             Sort sort = type.getSortOfType();
             if (sort != null) {
               int level = ((UniverseExpression) typedDef.getResultType()).getSort().getHLevel().getConstant();
-              CountingErrorReporter countingErrorReporter = new CountingErrorReporter(GeneralError.Level.ERROR);
-              TypecheckingResult result = typechecker.withErrorReporter(new CompositeErrorReporter(errorReporter, countingErrorReporter), tc ->
+              CountingErrorReporter countingErrorReporter = new CountingErrorReporter(GeneralError.Level.ERROR, errorReporter);
+              TypecheckingResult result = typechecker.withErrorReporter(countingErrorReporter, tc ->
                   typechecker.finalize(TypecheckingResult.fromChecked(prover.prove(body.getTerm(), type, CheckTypeVisitor.getLevelExpression(new TypeExpression(type, sort), level), level, def, tc)), def, false));
               if (result == null) {
                 if (countingErrorReporter.getErrorsNumber() == 0) {
