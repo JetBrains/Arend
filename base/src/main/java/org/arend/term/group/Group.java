@@ -6,6 +6,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.function.Consumer;
 
 public interface Group {
   @NotNull LocatedReferable getReferable();
@@ -30,5 +31,15 @@ public interface Group {
   interface InternalReferable {
     LocatedReferable getReferable();
     boolean isVisible();
+  }
+
+  default void traverseGroup(Consumer<Group> consumer) {
+    consumer.accept(this);
+    for (Group subgroup : getSubgroups()) {
+      subgroup.traverseGroup(consumer);
+    }
+    for (Group subgroup : getDynamicSubgroups()) {
+      subgroup.traverseGroup(consumer);
+    }
   }
 }

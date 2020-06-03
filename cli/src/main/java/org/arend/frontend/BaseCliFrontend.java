@@ -5,6 +5,7 @@ import org.arend.core.definition.Definition;
 import org.arend.ext.error.ListErrorReporter;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
+import org.arend.ext.module.LongName;
 import org.arend.ext.module.ModulePath;
 import org.arend.ext.prettyprinting.PrettyPrinterFlag;
 import org.arend.extImpl.DefinitionRequester;
@@ -15,13 +16,13 @@ import org.arend.frontend.repl.jline.JLineCliRepl;
 import org.arend.library.*;
 import org.arend.library.error.LibraryError;
 import org.arend.module.ModuleLocation;
-import org.arend.naming.reference.LocatedReferable;
-import org.arend.naming.reference.ModuleReferable;
-import org.arend.naming.reference.TCReferable;
+import org.arend.naming.reference.*;
 import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.naming.scope.EmptyScope;
+import org.arend.naming.scope.Scope;
 import org.arend.prelude.Prelude;
 import org.arend.prelude.PreludeResourceLibrary;
+import org.arend.term.concrete.Concrete;
 import org.arend.term.group.Group;
 import org.arend.term.prettyprint.PrettyPrinterConfigWithRenamer;
 import org.arend.typechecking.LibraryArendExtensionProvider;
@@ -33,6 +34,7 @@ import org.arend.typechecking.instance.provider.InstanceProviderSet;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.arend.util.FileUtils;
 import org.arend.util.Range;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.nio.file.FileSystems;
@@ -60,7 +62,7 @@ public abstract class BaseCliFrontend {
   private final FileLibraryResolver myLibraryResolver = new FileLibraryResolver(new ArrayList<>(), myTypecheckerState, mySystemErrErrorReporter);
   private final LibraryManager myLibraryManager = new TimedLibraryManager(myLibraryResolver, new InstanceProviderSet(), myErrorReporter, mySystemErrErrorReporter, DefinitionRequester.INSTANCE) {
     @Override
-    protected void afterLibraryLoading(Library library, boolean successful) {
+    protected void afterLibraryLoading(@NotNull Library library, boolean successful) {
       super.afterLibraryLoading(library, successful);
       flushErrors();
     }
@@ -125,7 +127,7 @@ public abstract class BaseCliFrontend {
       cmdOptions.addOption(Option.builder("b").longOpt("binaries").hasArg().argName("dir").desc("project output directory").build());
       cmdOptions.addOption(Option.builder("e").longOpt("extensions").hasArg().argName("dir").desc("language extensions directory").build());
       cmdOptions.addOption(Option.builder("m").longOpt("extension-main").hasArg().argName("class").desc("main extension class").build());
-      cmdOptions.addOption(Option.builder("r").longOpt("recompile").desc("recompile files").build());
+      cmdOptions.addOption(Option.builder("r").longOpt("recompile").hasArg().optionalArg(true).argName("target").desc("recompile files").build());
       cmdOptions.addOption(Option.builder("c").longOpt("double-check").desc("double check correctness of the result").build());
       cmdOptions.addOption(Option.builder("i").longOpt("interactive").hasArg().optionalArg(true).argName("type").desc("start an interactive REPL, type can be plain or jline (default)").build());
       cmdOptions.addOption("t", "test", false, "run tests");
@@ -176,7 +178,30 @@ public abstract class BaseCliFrontend {
       }
     }
 
-    boolean recompile = cmdLine.hasOption("r");
+    String recompileString = cmdLine.getOptionValue("r");
+    if (recompileString != null && recompileString.length() <= 4 && recompileString.matches("[tcvh]*]")) {
+      recompileString = null;
+    }
+    ModulePath recompileModule = null;
+    LongName recompileDef = null;
+    if (recompileString != null) {
+      int index = recompileString.indexOf(':');
+      if (index >= 0) {
+        recompileDef = LongName.fromString(recompileString.substring(index + 1));
+        if (!FileUtils.isCorrectDefinitionName(recompileDef)) {
+          System.err.println(FileUtils.illegalDefinitionName(recompileDef.toString()));
+          recompileDef = null;
+        }
+        recompileString = recompileString.substring(0, index);
+      }
+      recompileModule = ModulePath.fromString(recompileString);
+      if (!FileUtils.isCorrectModulePath(recompileModule)) {
+        System.err.println(FileUtils.illegalModuleName(recompileModule.toString()));
+        recompileModule = null;
+      }
+    }
+
+    boolean recompile = recompileString == null && cmdLine.hasOption("r");
     if (cmdLine.hasOption("i")) {
       switch (replKind.toLowerCase()) {
         default:
@@ -294,15 +319,65 @@ public abstract class BaseCliFrontend {
         continue;
       }
 
+      List<Concrete.Definition> forcedDefs;
+      if (recompileModule != null) {
+        List<TCReferable> forcedRefs = new ArrayList<>();
+        if (recompileDef != null) {
+          Scope scope = library.getModuleScopeProvider().forModule(recompileModule);
+          if (scope == null) {
+            System.err.println("[ERROR] Cannot find module '" + recompileModule + "' in library '" + library.getName() + "'");
+          } else {
+            Referable ref = Scope.Utils.resolveName(scope, recompileDef.toList());
+            if (!(ref instanceof TCReferable)) {
+              System.err.println("[ERROR] Cannot find definition '" + recompileDef + "' in module '" + recompileModule + "' in library '" + library.getName() + "'");
+            } else {
+              forcedRefs.add((TCReferable) ref);
+            }
+          }
+        } else {
+          Group group = library.getModuleGroup(recompileModule);
+          if (group == null) {
+            System.err.println("[ERROR] Cannot find module '" + recompileModule + "' in library '" + library.getName() + "'");
+          } else {
+            group.traverseGroup(g -> {
+              LocatedReferable ref = g.getReferable();
+              if (ref instanceof TCReferable) {
+                forcedRefs.add((TCReferable) ref);
+              }
+            });
+          }
+        }
+
+        forcedDefs = new ArrayList<>();
+        for (TCReferable ref : forcedRefs) {
+          Concrete.ReferableDefinition def = typechecking.getConcreteProvider().getConcrete(ref);
+          if (def instanceof Concrete.Definition) {
+            forcedDefs.add((Concrete.Definition) def);
+            Definition typechecked = myTypecheckerState.reset(ref);
+            if (typechecked != null) {
+              for (Definition recursive : typechecked.getRecursiveDefinitions()) {
+                myTypecheckerState.reset(recursive.getRef());
+              }
+            }
+          }
+        }
+      } else {
+        forcedDefs = null;
+      }
+
       Collection<? extends ModulePath> modules = library.getUpdatedModules();
-      if (modules.isEmpty()) {
+      if (modules.isEmpty() && forcedDefs == null) {
         continue;
       }
 
       System.out.println();
       System.out.println("--- Typechecking " + library.getName() + " ---");
       long time = System.currentTimeMillis();
-      typechecking.typecheckLibrary(library);
+      if (forcedDefs == null) {
+        typechecking.typecheckLibrary(library);
+      } else {
+        typechecking.typecheckDefinitions(forcedDefs, null);
+      }
       time = System.currentTimeMillis() - time;
       flushErrors();
 
