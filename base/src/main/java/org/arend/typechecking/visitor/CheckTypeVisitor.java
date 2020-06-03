@@ -1986,7 +1986,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       if (checker != null) {
         int numberOfErrors = myErrorReporter.myErrorReporter.getErrorsNumber();
         TypecheckingResult result = TypecheckingResult.fromChecked(checker.typecheckNumber(number, this, new ContextDataImpl(expr, Collections.emptyList(), expectedType, null)));
-        if (myErrorReporter.myErrorReporter.getErrorsNumber() == numberOfErrors) {
+        if (result == null && myErrorReporter.myErrorReporter.getErrorsNumber() == numberOfErrors) {
           errorReporter.report(new TypecheckingError("Cannot check number", expr));
         }
         return result;
