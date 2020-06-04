@@ -696,6 +696,12 @@ public final class Concrete {
     }
   }
 
+  public static class IncompleteExpression extends GoalExpression implements ConcreteIncompleteExpression {
+    public IncompleteExpression(Object data) {
+      super(data, null, null);
+    }
+  }
+
   public static class HoleExpression extends Expression {
     public static final byte PREC = 12;
 

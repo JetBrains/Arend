@@ -1634,7 +1634,15 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       clauses.add(visitLetClause(clauseCtx));
     }
 
-    return new Concrete.LetExpression(tokenPosition(ctx.start), ctx.LETS() != null, clauses, visitExpr(ctx.expr()));
+    ExprContext exprCtx = ctx.expr();
+    Concrete.Expression expr;
+    if (exprCtx == null) {
+      expr = new Concrete.IncompleteExpression(new Position(myModule.getModulePath(), ctx.stop.getLine(), ctx.stop.getCharPositionInLine() + ctx.stop.getText().length()));
+    } else {
+      expr = visitExpr(exprCtx);
+    }
+
+    return new Concrete.LetExpression(tokenPosition(ctx.start), ctx.LETS() != null, clauses, expr);
   }
 
   private Position tokenPosition(Token token) {

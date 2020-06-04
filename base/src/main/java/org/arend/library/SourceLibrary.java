@@ -122,6 +122,10 @@ public abstract class SourceLibrary extends BaseLibrary {
     return myExtension != null ? myExtension : super.getArendExtension();
   }
 
+  public void setArendExtension(ArendExtension extension) {
+    myExtension = extension;
+  }
+
   @Nullable
   public ArendUI getUI() {
     return null;

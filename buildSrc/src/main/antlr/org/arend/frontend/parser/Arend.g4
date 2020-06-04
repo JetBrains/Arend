@@ -127,7 +127,7 @@ expr  : newExpr                                                           # app
       | '\\Pi' tele+ '->' expr                                            # pi
       | '\\Sigma' tele*                                                   # sigma
       | '\\lam' tele+ '=>' expr                                           # lam
-      | (LET | LETS) '|'? letClause ('|' letClause)* '\\in' expr          # let
+      | (LET | LETS) '|'? letClause ('|' letClause)* ('\\in' expr?)?      # let
       | (EVAL | PEVAL)? (CASE | SCASE) caseArg (',' caseArg)*
           ('\\return' returnExpr)? '\\with' '{' clause? ('|' clause)* '}' # case
       ;

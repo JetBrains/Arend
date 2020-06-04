@@ -640,16 +640,13 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
   @Override
   public Concrete.Expression visitLet(@Nullable Object data, boolean isStrict, @NotNull Collection<? extends Abstract.LetClause> absClauses, @Nullable Abstract.Expression expression, Void params) {
-    if (expression == null) {
-      myErrorLevel = GeneralError.Level.ERROR;
-      return new Concrete.ErrorHoleExpression(data, null);
-    }
     if (absClauses.isEmpty()) {
       myErrorLevel = GeneralError.Level.ERROR;
-      return expression.accept(this, null);
+      return expression != null ? expression.accept(this, null) : new Concrete.ErrorHoleExpression(data, null);
     }
 
     List<Concrete.LetClause> clauses = new ArrayList<>(absClauses.size());
+    boolean ok = true;
     for (Abstract.LetClause clause : absClauses) {
       Abstract.Expression term = clause.getTerm();
       if (term != null) {
@@ -666,10 +663,11 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
         }
       } else {
         myErrorLevel = GeneralError.Level.ERROR;
+        ok = false;
       }
     }
 
-    return new Concrete.LetExpression(data, isStrict, clauses, expression.accept(this, null));
+    return new Concrete.LetExpression(data, isStrict, clauses, expression != null ? expression.accept(this, null) : ok ? new Concrete.IncompleteExpression(data) : new Concrete.ErrorHoleExpression(data, null));
   }
 
   @Override
