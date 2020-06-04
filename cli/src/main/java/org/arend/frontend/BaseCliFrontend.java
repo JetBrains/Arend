@@ -179,9 +179,6 @@ public abstract class BaseCliFrontend {
     }
 
     String recompileString = cmdLine.getOptionValue("r");
-    if (recompileString != null && recompileString.length() <= 4 && recompileString.matches("[tcvh]*")) {
-      recompileString = null;
-    }
     ModulePath recompileModule = null;
     LongName recompileDef = null;
     if (recompileString != null) {
