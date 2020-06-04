@@ -61,7 +61,7 @@ public class BaseAbstractExpressionVisitor<P, R> implements AbstractExpressionVi
   }
 
   @Override
-  public R visitTuple(@Nullable Object data, @NotNull Collection<? extends Abstract.Expression> fields, P params) {
+  public R visitTuple(@Nullable Object data, @NotNull Collection<? extends Abstract.Expression> fields, @Nullable Object trailingComma, P params) {
     return defaultValue;
   }
 

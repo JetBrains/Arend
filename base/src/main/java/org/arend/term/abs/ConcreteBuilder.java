@@ -465,10 +465,10 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
   @Override
   public Concrete.Expression visitLam(@Nullable Object data, @NotNull Collection<? extends Abstract.Parameter> parameters, @Nullable Abstract.Expression body, Void params) {
-    if (body == null) {
-      myErrorLevel = GeneralError.Level.ERROR;
+    if (parameters.isEmpty() && body == null) {
+      return new Concrete.ErrorHoleExpression(data, null);
     }
-    Concrete.Expression cBody = body == null ? new Concrete.ErrorHoleExpression(data, null) : body.accept(this, null);
+    Concrete.Expression cBody = body == null ? new Concrete.IncompleteExpression(data) : body.accept(this, null);
     return parameters.isEmpty() ? cBody : new Concrete.LamExpression(data, buildParameters(parameters), cBody);
   }
 
@@ -510,10 +510,13 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   }
 
   @Override
-  public Concrete.TupleExpression visitTuple(@Nullable Object data, @NotNull Collection<? extends Abstract.Expression> absFields, Void params) {
-    List<Concrete.Expression> fields = new ArrayList<>(absFields.size());
+  public Concrete.TupleExpression visitTuple(@Nullable Object data, @NotNull Collection<? extends Abstract.Expression> absFields, @Nullable Object trailingComma, Void params) {
+    List<Concrete.Expression> fields = new ArrayList<>();
     for (Abstract.Expression field : absFields) {
       fields.add(field.accept(this, null));
+    }
+    if (trailingComma != null) {
+      fields.add(new Concrete.IncompleteExpression(trailingComma));
     }
 
     return new Concrete.TupleExpression(data, fields);

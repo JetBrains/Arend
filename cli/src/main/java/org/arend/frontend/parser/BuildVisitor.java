@@ -1,5 +1,6 @@
 package org.arend.frontend.parser;
 
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.arend.error.ParsingError;
@@ -892,21 +893,24 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return exprs.size() > 1 ? new Concrete.TypedExpression(expr.getData(), expr, visitExpr(exprs.get(1))) : expr;
   }
 
-  private Concrete.Expression visitTupleExprs(List<TupleExprContext> exprs, Token token) {
-    if (exprs.size() == 1) {
+  private Concrete.Expression visitTupleExprs(List<TupleExprContext> exprs, List<TerminalNode> commas, ParserRuleContext parentCtx) {
+    if (exprs.size() == 1 && commas.isEmpty()) {
       return visitTupleExpr(exprs.get(0));
     } else {
-      List<Concrete.Expression> fields = new ArrayList<>(exprs.size());
+      List<Concrete.Expression> fields = new ArrayList<>();
       for (TupleExprContext exprCtx : exprs) {
         fields.add(visitTupleExpr(exprCtx));
       }
-      return new Concrete.TupleExpression(tokenPosition(token), fields);
+      if (commas.size() == exprs.size() && !commas.isEmpty()) {
+        fields.add(new Concrete.IncompleteExpression(tokenPosition(commas.get(commas.size() - 1).getSymbol())));
+      }
+      return new Concrete.TupleExpression(tokenPosition(parentCtx.start), fields);
     }
   }
 
   @Override
   public Concrete.Expression visitTuple(TupleContext ctx) {
-    return visitTupleExprs(ctx.tupleExpr(), ctx.start);
+    return visitTupleExprs(ctx.tupleExpr(), ctx.COMMA(), ctx);
   }
 
   private List<Concrete.Parameter> visitLamTele(TeleContext tele) {
@@ -966,7 +970,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
 
   @Override
   public Concrete.LamExpression visitLam(LamContext ctx) {
-    return new Concrete.LamExpression(tokenPosition(ctx.start), visitLamTeles(ctx.tele()), visitExpr(ctx.expr()));
+    return new Concrete.LamExpression(tokenPosition(ctx.start), visitLamTeles(ctx.tele()), visitIncompleteExpression(ctx.expr(), ctx));
   }
 
   private Concrete.Expression visitAppExpr(AppExprContext ctx) {
@@ -1047,7 +1051,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
 
   @Override
   public Concrete.BinOpSequenceElem visitArgumentImplicit(ArgumentImplicitContext ctx) {
-    return new Concrete.BinOpSequenceElem(visitTupleExprs(ctx.tupleExpr(), ctx.start), Fixity.NONFIX, false);
+    return new Concrete.BinOpSequenceElem(visitTupleExprs(ctx.tupleExpr(), ctx.COMMA(), ctx), Fixity.NONFIX, false);
   }
 
   private Concrete.CoClauseElement visitCoClause(CoClauseContext ctx, List<Group> subgroups, ChildGroup parentGroup, TCClassReferable enclosingClass, TCReferable enclosingDefinition) {
@@ -1627,6 +1631,14 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return new Concrete.LetClause(visitLetClausePattern(tuplePattern), resultType, visitExpr(ctx.expr()));
   }
 
+  private Concrete.Expression visitIncompleteExpression(ExprContext exprCtx, ParserRuleContext parentCtx) {
+    if (exprCtx == null) {
+      return new Concrete.IncompleteExpression(new Position(myModule.getModulePath(), parentCtx.stop.getLine(), parentCtx.stop.getCharPositionInLine() + parentCtx.stop.getText().length()));
+    } else {
+      return visitExpr(exprCtx);
+    }
+  }
+
   @Override
   public Concrete.LetExpression visitLet(LetContext ctx) {
     List<Concrete.LetClause> clauses = new ArrayList<>();
@@ -1634,15 +1646,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       clauses.add(visitLetClause(clauseCtx));
     }
 
-    ExprContext exprCtx = ctx.expr();
-    Concrete.Expression expr;
-    if (exprCtx == null) {
-      expr = new Concrete.IncompleteExpression(new Position(myModule.getModulePath(), ctx.stop.getLine(), ctx.stop.getCharPositionInLine() + ctx.stop.getText().length()));
-    } else {
-      expr = visitExpr(exprCtx);
-    }
-
-    return new Concrete.LetExpression(tokenPosition(ctx.start), ctx.LETS() != null, clauses, expr);
+    return new Concrete.LetExpression(tokenPosition(ctx.start), ctx.LETS() != null, clauses, visitIncompleteExpression(ctx.expr(), ctx));
   }
 
   private Position tokenPosition(Token token) {

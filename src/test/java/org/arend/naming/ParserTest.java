@@ -227,13 +227,6 @@ public class ParserTest extends NameResolverTestCase {
     parseModule("\\func test (n : Nat) => suc (\\elim n | suc n => n | zero => 0)", 1);
   }
 
-  @Test
-  public void insideBody() {
-    parseModule(
-      "\\func test (n : Nat)\n" +
-      "  | zero => \\lam _ -> zero", 1);
-  }
-
   private void postfixTest(String name) {
     Group module = resolveNamesModule(
       "\\func \\fix 5 " + name + " (A : \\Prop) => A\n" +

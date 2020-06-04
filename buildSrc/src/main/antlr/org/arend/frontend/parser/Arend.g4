@@ -126,7 +126,7 @@ expr  : newExpr                                                           # app
       | <assoc=right> expr '->' expr                                      # arr
       | '\\Pi' tele+ '->' expr                                            # pi
       | '\\Sigma' tele*                                                   # sigma
-      | '\\lam' tele+ '=>' expr                                           # lam
+      | '\\lam' tele+ ('=>' expr?)?                                       # lam
       | (LET | LETS) '|'? letClause ('|' letClause)* ('\\in' expr?)?      # let
       | (EVAL | PEVAL)? (CASE | SCASE) caseArg (',' caseArg)*
           ('\\return' returnExpr)? '\\with' '{' clause? ('|' clause)* '}' # case
@@ -150,10 +150,10 @@ appExpr : argumentAppExpr                             # appArgument
 
 argumentAppExpr : atomFieldsAcc onlyLevelAtom* argument*;
 
-argument : atomFieldsAcc                          # argumentExplicit
-         | appPrefix appExpr implementStatements? # argumentNew
-         | universeAtom                           # argumentUniverse
-         | '{' tupleExpr (',' tupleExpr)* '}'     # argumentImplicit
+argument : atomFieldsAcc                            # argumentExplicit
+         | appPrefix appExpr implementStatements?   # argumentNew
+         | universeAtom                             # argumentUniverse
+         | '{' tupleExpr (',' tupleExpr)* ','? '}'  # argumentImplicit
          ;
 
 clauses : '{' clause? ('|' clause)* '}' # clausesWithBraces
@@ -214,12 +214,12 @@ onlyLevelExpr : onlyLevelAtom                                         # atomOnly
 
 tupleExpr : expr (':' expr)?;
 
-atom  : literal                               # atomLiteral
-      | '(' (tupleExpr (',' tupleExpr)*)? ')' # tuple
-      | NUMBER                                # atomNumber
-      | APPLY_HOLE                            # atomApplyHole
-      | NEGATIVE_NUMBER                       # atomNegativeNumber
-      | '\\this'                              # atomThis
+atom  : literal                                     # atomLiteral
+      | '(' (tupleExpr (',' tupleExpr)* ','?)? ')'  # tuple
+      | NUMBER                                      # atomNumber
+      | APPLY_HOLE                                  # atomApplyHole
+      | NEGATIVE_NUMBER                             # atomNegativeNumber
+      | '\\this'                                    # atomThis
       ;
 
 atomFieldsAcc : atom ('.' NUMBER)*;
@@ -261,6 +261,7 @@ EVAL : '\\eval';
 PEVAL : '\\peval';
 CASE : '\\case';
 SCASE : '\\scase';
+COMMA : ',';
 AS : '\\as';
 USING : '\\using';
 TRUNCATED : '\\truncated';
