@@ -148,7 +148,7 @@ public abstract class SourceLibrary extends BaseLibrary {
    * @param group       the group of the loaded module or null if the group was not loaded.
    * @param isRaw       true if the module was loaded from a raw source, false otherwise.
    */
-  public void onGroupLoaded(ModulePath modulePath, @Nullable ChildGroup group, boolean isRaw) {
+  public void groupLoaded(ModulePath modulePath, @Nullable ChildGroup group, boolean isRaw, boolean inTests) {
 
   }
 
@@ -158,7 +158,7 @@ public abstract class SourceLibrary extends BaseLibrary {
    * @param modulePath  the path to the loaded module.
    * @param isComplete  true if the module was loaded completely, false otherwise.
    */
-  public void onBinaryLoaded(ModulePath modulePath, boolean isComplete) {
+  public void binaryLoaded(ModulePath modulePath, boolean isComplete) {
 
   }
 

@@ -98,7 +98,7 @@ public interface Library {
    * @return the group of a module or null if the module is not found.
    */
   @Nullable
-  ChildGroup getModuleGroup(ModulePath modulePath);
+  ChildGroup getModuleGroup(ModulePath modulePath, boolean inTests);
 
   /**
    * Checks if this library contains a specified module.

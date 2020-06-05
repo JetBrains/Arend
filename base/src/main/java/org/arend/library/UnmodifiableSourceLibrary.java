@@ -5,7 +5,9 @@ import org.arend.ext.module.ModulePath;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.module.scopeprovider.SimpleModuleScopeProvider;
 import org.arend.naming.reference.converter.IdReferableConverter;
+import org.arend.naming.scope.LexicalScope;
 import org.arend.term.group.ChildGroup;
+import org.arend.term.group.Group;
 import org.arend.typechecking.TypecheckerState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -20,6 +22,7 @@ public abstract class UnmodifiableSourceLibrary extends SourceLibrary {
   private final String myName;
   private final SimpleModuleScopeProvider myModuleScopeProvider = new SimpleModuleScopeProvider();
   private final Map<ModulePath, ChildGroup> myGroups = new HashMap<>();
+  private final Map<ModulePath, ChildGroup> myTestGroups = new HashMap<>();
   private final Set<ModulePath> myUpdatedModules = new LinkedHashSet<>();
 
   /**
@@ -46,14 +49,15 @@ public abstract class UnmodifiableSourceLibrary extends SourceLibrary {
   }
 
   @Override
-  public void onGroupLoaded(ModulePath modulePath, @Nullable ChildGroup group, boolean isRaw) {
+  public void groupLoaded(ModulePath modulePath, @Nullable ChildGroup group, boolean isRaw, boolean inTests) {
     if (isRaw) {
+      Map<ModulePath, ChildGroup> groups = inTests ? myTestGroups : myGroups;
       if (group == null) {
-        myGroups.remove(modulePath);
+        groups.remove(modulePath);
         myModuleScopeProvider.unregisterModule(modulePath);
         myUpdatedModules.remove(modulePath);
       } else {
-        myGroups.put(modulePath, group);
+        groups.put(modulePath, group);
         myModuleScopeProvider.registerModule(modulePath, group);
         myUpdatedModules.add(modulePath);
       }
@@ -61,7 +65,7 @@ public abstract class UnmodifiableSourceLibrary extends SourceLibrary {
   }
 
   @Override
-  public void onBinaryLoaded(ModulePath modulePath, boolean isComplete) {
+  public void binaryLoaded(ModulePath modulePath, boolean isComplete) {
     if (isComplete) {
       myUpdatedModules.remove(modulePath);
     }
@@ -127,7 +131,7 @@ public abstract class UnmodifiableSourceLibrary extends SourceLibrary {
 
   @Nullable
   @Override
-  public ChildGroup getModuleGroup(ModulePath modulePath) {
-    return myGroups.get(modulePath);
+  public ChildGroup getModuleGroup(ModulePath modulePath, boolean inTests) {
+    return (inTests ? myTestGroups : myGroups).get(modulePath);
   }
 }

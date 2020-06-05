@@ -4,6 +4,8 @@ import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.module.ModulePath;
 import org.arend.source.BinarySource;
 import org.arend.source.Source;
+import org.arend.term.group.ChildGroup;
+import org.arend.term.group.Group;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.util.Range;
 import org.jetbrains.annotations.NotNull;
@@ -17,6 +19,10 @@ public class MemoryLibrary extends UnmodifiableSourceLibrary {
 
   protected MemoryLibrary(TypecheckerState typecheckerState) {
     super("test_library", typecheckerState);
+  }
+
+  public ChildGroup getModuleGroup(ModulePath modulePath) {
+    return getModuleGroup(modulePath, false);
   }
 
   @Nullable

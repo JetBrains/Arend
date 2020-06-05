@@ -96,12 +96,12 @@ public abstract class StreamBinarySource implements BinarySource {
 
       if (referableConverter == null) {
         group = myModuleDeserialization.readGroup(new ModuleLocation(library.getName(), ModuleLocation.LocationKind.SOURCE, modulePath));
-        library.onGroupLoaded(modulePath, group, false);
+        library.groupLoaded(modulePath, group, false, false);
       } else {
-        group = library.getModuleGroup(modulePath);
+        group = library.getModuleGroup(modulePath, false);
         if (group == null) {
           sourceLoader.getLibraryErrorReporter().report(LibraryError.moduleNotFound(modulePath, library.getName()));
-          library.onGroupLoaded(modulePath, null, false);
+          library.groupLoaded(modulePath, null, false, false);
           return false;
         }
         myModuleDeserialization.readDefinitions(group);
@@ -122,7 +122,7 @@ public abstract class StreamBinarySource implements BinarySource {
       for (ModuleProtos.ModuleCallTargets moduleCallTargets : myModuleDeserialization.getModuleProto().getModuleCallTargetsList()) {
         ModulePath module = new ModulePath(moduleCallTargets.getNameList());
         if (library.containsModule(module) && !sourceLoader.fillInBinary(module)) {
-          ChildGroup group = library.getModuleGroup(modulePath);
+          ChildGroup group = library.getModuleGroup(modulePath, false);
           if (group != null) {
             library.resetGroup(group);
           }
@@ -131,11 +131,11 @@ public abstract class StreamBinarySource implements BinarySource {
       }
 
       myModuleDeserialization.readModule(sourceLoader.getModuleScopeProvider(false), library.getDependencyListener());
-      library.onBinaryLoaded(modulePath, myModuleDeserialization.getModuleProto().getComplete());
+      library.binaryLoaded(modulePath, myModuleDeserialization.getModuleProto().getComplete());
       myModuleDeserialization = null;
       return LoadResult.SUCCESS;
     } catch (DeserializationException e) {
-      loadingFailed(sourceLoader, modulePath, library.getModuleGroup(modulePath), e);
+      loadingFailed(sourceLoader, modulePath, library.getModuleGroup(modulePath, false), e);
       return LoadResult.FAIL;
     }
   }
@@ -143,7 +143,7 @@ public abstract class StreamBinarySource implements BinarySource {
   private void loadingFailed(SourceLoader sourceLoader, ModulePath modulePath, Group group, Exception e) {
     sourceLoader.getLibraryErrorReporter().report(new DeserializationError(modulePath, e));
     if (!sourceLoader.getLibrary().hasRawSources()) {
-      sourceLoader.getLibrary().onGroupLoaded(modulePath, null, false);
+      sourceLoader.getLibrary().groupLoaded(modulePath, null, false, false);
     }
     if (group != null) {
       sourceLoader.getLibrary().resetGroup(group);
@@ -153,7 +153,7 @@ public abstract class StreamBinarySource implements BinarySource {
   @Override
   public boolean persist(SourceLibrary library, ReferableConverter referableConverter, ErrorReporter errorReporter) {
     ModulePath currentModulePath = getModulePath();
-    Group group = library.getModuleGroup(currentModulePath);
+    Group group = library.getModuleGroup(currentModulePath, false);
     if (group == null) {
       errorReporter.report(LocationError.module(currentModulePath));
       return false;

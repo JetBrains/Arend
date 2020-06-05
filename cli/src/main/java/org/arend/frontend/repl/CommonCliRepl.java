@@ -280,7 +280,7 @@ public abstract class CommonCliRepl extends Repl {
     boolean isLoadedBefore = myModules.remove(modulePath);
     if (isLoadedBefore) {
       myLibraryManager.unloadLibrary(myReplLibrary);
-      myReplLibrary.onGroupLoaded(modulePath, null, true);
+      myReplLibrary.groupLoaded(modulePath, null, true, false);
       typecheckLibrary(myReplLibrary);
     }
     return isLoadedBefore;

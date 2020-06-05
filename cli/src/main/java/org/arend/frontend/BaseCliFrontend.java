@@ -332,7 +332,7 @@ public abstract class BaseCliFrontend {
             }
           }
         } else {
-          Group group = library.getModuleGroup(recompileModule);
+          Group group = library.getModuleGroup(recompileModule, false);
           if (group == null) {
             System.err.println("[ERROR] Cannot find module '" + recompileModule + "' in library '" + library.getName() + "'");
           } else {
@@ -383,7 +383,7 @@ public abstract class BaseCliFrontend {
       int numWithGoals = 0;
       for (ModulePath module : modules) {
         GeneralError.Level result = myModuleResults.get(module);
-        if (result == null && library.getModuleGroup(module) == null) {
+        if (result == null && library.getModuleGroup(module, false) == null) {
           result = GeneralError.Level.ERROR;
         }
         reportTypeCheckResult(module, result);
@@ -413,7 +413,7 @@ public abstract class BaseCliFrontend {
 
         CoreModuleChecker checker = new CoreModuleChecker(myErrorReporter, myTypecheckerState);
         for (ModulePath module : library.getLoadedModules()) {
-          Group group = library.getModuleGroup(module);
+          Group group = library.getModuleGroup(module, false);
           if (group != null) {
             checker.checkGroup(group);
           }
@@ -460,7 +460,7 @@ public abstract class BaseCliFrontend {
           if (doCheck) {
             CoreModuleChecker checker = new CoreModuleChecker(myErrorReporter, myTypecheckerState);
             for (ModulePath module : modules) {
-              Group group = library.getModuleGroup(module);
+              Group group = library.getModuleGroup(module, true);
               if (group != null) {
                 checker.checkGroup(group);
               }

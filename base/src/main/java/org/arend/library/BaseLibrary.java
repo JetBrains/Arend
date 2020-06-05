@@ -61,7 +61,13 @@ public abstract class BaseLibrary implements Library {
   @Override
   public void reset() {
     for (ModulePath modulePath : getLoadedModules()) {
-      Group group = getModuleGroup(modulePath);
+      Group group = getModuleGroup(modulePath, false);
+      if (group != null) {
+        resetGroup(group);
+      }
+    }
+    for (ModulePath modulePath : getTestModules()) {
+      Group group = getModuleGroup(modulePath, true);
       if (group != null) {
         resetGroup(group);
       }
@@ -99,7 +105,7 @@ public abstract class BaseLibrary implements Library {
   @Override
   public ModuleScopeProvider getDeclaredModuleScopeProvider() {
     return module -> {
-      Group group = getModuleGroup(module);
+      Group group = getModuleGroup(module, false);
       return group == null ? null : LexicalScope.opened(group);
     };
   }
@@ -112,7 +118,10 @@ public abstract class BaseLibrary implements Library {
 
   @Override
   public @NotNull ModuleScopeProvider getTestsModuleScopeProvider() {
-    return EmptyModuleScopeProvider.INSTANCE;
+    return module -> {
+      Group group = getModuleGroup(module, true);
+      return group == null ? null : LexicalScope.opened(group);
+    };
   }
 
   public Collection<? extends ModulePath> getUpdatedModules() {
@@ -124,14 +133,14 @@ public abstract class BaseLibrary implements Library {
     return false;
   }
 
-  private void orderModules(Collection<? extends ModulePath> modules, Ordering ordering) {
+  private void orderModules(Collection<? extends ModulePath> modules, Ordering ordering, boolean inTests) {
     if (modules.isEmpty()) {
       return;
     }
 
     List<Group> groups = new ArrayList<>(modules.size());
     for (ModulePath module : modules) {
-      Group group = getModuleGroup(module);
+      Group group = getModuleGroup(module, inTests);
       if (group != null) {
         groups.add(group);
       }
@@ -142,13 +151,13 @@ public abstract class BaseLibrary implements Library {
 
   @Override
   public boolean orderModules(Ordering ordering) {
-    orderModules(getUpdatedModules(), ordering);
+    orderModules(getUpdatedModules(), ordering, false);
     return true;
   }
 
   @Override
   public boolean orderTestModules(Ordering ordering) {
-    orderModules(getTestModules(), ordering);
+    orderModules(getTestModules(), ordering, true);
     return true;
   }
 

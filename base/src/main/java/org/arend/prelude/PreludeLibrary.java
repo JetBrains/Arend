@@ -47,7 +47,7 @@ public abstract class PreludeLibrary extends SourceLibrary {
   }
 
   @Override
-  public void onGroupLoaded(ModulePath modulePath, @Nullable ChildGroup group, boolean isRaw) {
+  public void groupLoaded(ModulePath modulePath, @Nullable ChildGroup group, boolean isRaw, boolean inTests) {
     if (!modulePath.equals(Prelude.MODULE_PATH)) {
       throw new IllegalStateException();
     }
@@ -101,8 +101,8 @@ public abstract class PreludeLibrary extends SourceLibrary {
 
   @Nullable
   @Override
-  public ChildGroup getModuleGroup(ModulePath modulePath) {
-    return modulePath.equals(Prelude.MODULE_PATH) ? myGroup : null;
+  public ChildGroup getModuleGroup(ModulePath modulePath, boolean inTests) {
+    return !inTests && modulePath.equals(Prelude.MODULE_PATH) ? myGroup : null;
   }
 
   @Override

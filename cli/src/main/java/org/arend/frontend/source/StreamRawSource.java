@@ -73,13 +73,13 @@ public abstract class StreamRawSource implements Source {
       }
 
       myGroup = new BuildVisitor(new ModuleLocation(library.getName(), myInTests ? ModuleLocation.LocationKind.TEST : ModuleLocation.LocationKind.SOURCE, modulePath), errorReporter).visitStatements(tree);
-      library.onGroupLoaded(modulePath, myGroup, true);
+      library.groupLoaded(modulePath, myGroup, true, myInTests);
 
       for (NamespaceCommand command : myGroup.getNamespaceCommands()) {
         if (command.getKind() == NamespaceCommand.Kind.IMPORT) {
           ModulePath module = new ModulePath(command.getPath());
           if (library.containsModule(module) && !sourceLoader.preloadRaw(module, myInTests)) {
-            library.onGroupLoaded(modulePath, null, true);
+            library.groupLoaded(modulePath, null, true, myInTests);
             myGroup = null;
             return false;
           }
@@ -89,7 +89,7 @@ public abstract class StreamRawSource implements Source {
       return true;
     } catch (IOException e) {
       errorReporter.report(new ExceptionError(e, "loading", modulePath));
-      library.onGroupLoaded(modulePath, null, true);
+      library.groupLoaded(modulePath, null, true, myInTests);
       return false;
     }
   }
