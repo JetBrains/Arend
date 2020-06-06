@@ -48,7 +48,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 public abstract class Repl {
-  public static final @NotNull ModuleLocation replModulePath = new ModuleLocation(null, ModuleLocation.LocationKind.SOURCE, ModulePath.fromString("Repl"));
+  public static final @NotNull ModuleLocation replModulePath = new ModuleLocation("Repl", ModuleLocation.LocationKind.SOURCE, ModulePath.fromString("Repl"));
   public @Nullable NormalizationMode normalizationMode = NormalizationMode.RNF;
 
   protected final List<Scope> myMergedScopes = new LinkedList<>();
