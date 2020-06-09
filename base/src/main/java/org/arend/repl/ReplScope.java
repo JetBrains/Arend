@@ -3,6 +3,7 @@ package org.arend.repl;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.scope.CachingScope;
 import org.arend.naming.scope.ImportedScope;
+import org.arend.naming.scope.MergeScope;
 import org.arend.naming.scope.Scope;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -15,6 +16,7 @@ import java.util.function.Predicate;
 public class ReplScope implements Scope {
   private @Nullable Scope myCurrentLineScope;
   private final @NotNull List<Scope> myPreviousScopes;
+  private final MergeScope myPreviousMergeScope;
 
   /**
    * @param previousScopes recommended implementation: {@link java.util.LinkedList}
@@ -22,6 +24,7 @@ public class ReplScope implements Scope {
   public ReplScope(@Nullable Scope currentLineScope, @NotNull List<Scope> previousScopes) {
     myCurrentLineScope = currentLineScope;
     myPreviousScopes = previousScopes;
+    myPreviousMergeScope = new MergeScope(previousScopes);
   }
 
   /**
@@ -50,41 +53,26 @@ public class ReplScope implements Scope {
 
   @Override
   public @Nullable Referable find(Predicate<Referable> pred) {
-    if (myCurrentLineScope != null) {
-      var found = myCurrentLineScope.find(pred);
-      if (found != null) return found;
-    }
-    for (Scope previousScope : myPreviousScopes) {
-      var found = previousScope.find(pred);
-      if (found != null) return found;
-    }
-    return null;
+    return Optional
+      .ofNullable(myCurrentLineScope)
+      .map(scope -> scope.find(pred))
+      .orElseGet(() -> myPreviousMergeScope.find(pred));
   }
 
   @Override
   public @Nullable Scope resolveNamespace(String name, boolean onlyInternal) {
-    var currentNamespace = Optional
+    return Optional
       .ofNullable(myCurrentLineScope)
-      .map(scope -> scope.resolveNamespace(name, onlyInternal));
-    if (currentNamespace.isPresent()) return currentNamespace.get();
-    for (Scope scope : myPreviousScopes) {
-      var result = scope.resolveNamespace(name, onlyInternal);
-      if (result != null) return result;
-    }
-    return null;
+      .map(scope -> scope.resolveNamespace(name, onlyInternal))
+      .orElseGet(() -> myPreviousMergeScope.resolveNamespace(name, onlyInternal));
   }
 
   @Override
   public @Nullable Referable resolveName(String name) {
-    var currentNamespace = Optional
+    return Optional
       .ofNullable(myCurrentLineScope)
-      .map(scope -> scope.resolveName(name));
-    if (currentNamespace.isPresent()) return currentNamespace.get();
-    for (Scope scope : myPreviousScopes) {
-      var result = scope.resolveName(name);
-      if (result != null) return result;
-    }
-    return null;
+      .map(scope -> scope.resolveName(name))
+      .orElseGet(() -> myPreviousMergeScope.resolveName(name));
   }
 
   @Override
@@ -108,14 +96,9 @@ public class ReplScope implements Scope {
 
   @Override
   public @Nullable ImportedScope getImportedSubscope() {
-    var currentImportedScope = Optional
+    return Optional
       .ofNullable(myCurrentLineScope)
-      .map(Scope::getImportedSubscope);
-    if (currentImportedScope.isPresent()) return currentImportedScope.get();
-    for (Scope scope : myPreviousScopes) {
-      var importedScope = scope.getImportedSubscope();
-      if (importedScope != null) return importedScope;
-    }
-    return null;
+      .map(Scope::getImportedSubscope)
+      .orElseGet(myPreviousMergeScope::getImportedSubscope);
   }
 }

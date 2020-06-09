@@ -256,6 +256,7 @@ public abstract class CommonCliRepl extends Repl {
     else myReplScope.addPreludeScope(PreludeLibrary.getPreludeScope());
     if (!myLibraryManager.loadLibrary(myReplLibrary, myTypechecking))
       eprintln("[FATAL] Failed to load the REPL virtual library");
+    typecheckLibrary(myReplLibrary);
   }
 
   /**
