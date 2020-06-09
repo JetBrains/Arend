@@ -253,7 +253,7 @@ public abstract class CommonCliRepl extends Repl {
   protected final void loadLibraries() {
     if (!loadLibrary(new PreludeResourceLibrary(myTypecheckerState)))
       eprintln("[FATAL] Failed to load Prelude");
-    else myMergedScopes.add(PreludeLibrary.getPreludeScope());
+    else myReplScope.addPreludeScope(PreludeLibrary.getPreludeScope());
     if (!myLibraryManager.loadLibrary(myReplLibrary, myTypechecking))
       eprintln("[FATAL] Failed to load the REPL virtual library");
   }

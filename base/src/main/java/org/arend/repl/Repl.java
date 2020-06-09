@@ -19,8 +19,6 @@ import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.reference.*;
 import org.arend.naming.resolving.visitor.DefinitionResolveNameVisitor;
 import org.arend.naming.resolving.visitor.ExpressionResolveNameVisitor;
-import org.arend.naming.scope.CachingScope;
-import org.arend.naming.scope.MergeScope;
 import org.arend.naming.scope.Scope;
 import org.arend.naming.scope.ScopeFactory;
 import org.arend.repl.action.*;
@@ -53,11 +51,11 @@ public abstract class Repl {
 
   protected final List<Scope> myMergedScopes = new LinkedList<>();
   private final List<ReplHandler> myHandlers = new ArrayList<>();
-  private final MergeScope myMergeScope = new MergeScope(myMergedScopes);
   private final ConcreteProvider myConcreteProvider;
   private final TCReferable myModuleReferable;
   private final InstanceProviderSet myInstanceProviderSet;
-  protected @NotNull Scope myScope = myMergeScope;
+  protected final ReplScope myReplScope = new ReplScope(null, myMergedScopes);
+  protected @NotNull Scope myScope = myReplScope;
   protected final @NotNull TypecheckingOrderingListener myTypechecking;
   protected final @NotNull TypecheckerState myTypecheckerState;
   protected final @NotNull PrettyPrinterConfig myPpConfig = new PrettyPrinterConfig() {
@@ -96,7 +94,7 @@ public abstract class Repl {
   protected abstract void loadLibraries();
 
   protected final @NotNull List<Referable> getInScopeElements() {
-    return myMergeScope.getElements();
+    return myReplScope.getElements();
   }
 
   public final void initialize() {
@@ -153,8 +151,8 @@ public abstract class Repl {
     var group = parseStatements(line);
     if (group == null) return;
     var moduleScopeProvider = getAvailableModuleScopeProvider();
-    Scope scope = CachingScope.make(ScopeFactory.forGroup(group, moduleScopeProvider));
-    myMergedScopes.add(0, scope);
+    myReplScope.currentLine(ScopeFactory.forGroup(group, moduleScopeProvider));
+    var scope = myReplScope.freezeAndFlushCurrentLine();
     new DefinitionResolveNameVisitor(myConcreteProvider, myErrorReporter)
         .resolveGroupWithTypes(group, null, myScope);
     if (checkErrors()) {
@@ -167,7 +165,7 @@ public abstract class Repl {
     }
     if (!myTypechecking.typecheckModules(Collections.singletonList(group), null)) {
       checkErrors();
-      myMergedScopes.remove(scope);
+      if (scope != null) removeScope(scope);
     }
     onScopeAdded(group);
   }
@@ -213,8 +211,8 @@ public abstract class Repl {
   /**
    * Multiplex the scope into the current REPL scope.
    */
-  public final void addScope(@NotNull Scope scope) {
-    myMergedScopes.add(scope);
+  public void addScope(@NotNull Scope scope) {
+    myReplScope.addScope(scope);
   }
 
   /**
