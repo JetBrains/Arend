@@ -424,21 +424,21 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
 
   @NotNull
   @Override
-  public ConcreteParameter param(@Nullable ArendRef ref) {
+  public ConcreteParameter param(boolean explicit, @Nullable ArendRef ref) {
     if (!(ref == null || ref instanceof Referable)) {
       throw new IllegalArgumentException();
     }
-    return new Concrete.NameParameter(myData, true, (Referable) ref);
+    return new Concrete.NameParameter(myData, explicit, (Referable) ref);
   }
 
   @NotNull
   @Override
-  public ConcreteParameter param(@NotNull Collection<? extends ArendRef> refs, @NotNull ConcreteExpression type) {
+  public ConcreteParameter param(boolean explicit, @NotNull Collection<? extends ArendRef> refs, @NotNull ConcreteExpression type) {
     if (!(type instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }
     if (refs.isEmpty()) {
-      return new Concrete.TypeParameter(myData, true, (Concrete.Expression) type);
+      return new Concrete.TypeParameter(myData, explicit, (Concrete.Expression) type);
     }
     List<Referable> cRefs = new ArrayList<>(refs.size());
     for (ArendRef ref : refs) {
@@ -447,7 +447,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
       }
       cRefs.add((Referable) ref);
     }
-    return new Concrete.TelescopeParameter(myData, true, cRefs, (Concrete.Expression) type);
+    return new Concrete.TelescopeParameter(myData, explicit, cRefs, (Concrete.Expression) type);
   }
 
   @NotNull

@@ -57,8 +57,16 @@ public interface ConcreteFactory {
   @NotNull ConcreteAppBuilder appBuilder(@NotNull ConcreteExpression function);
 
   @NotNull ArendRef local(@NotNull String name);
-  @NotNull ConcreteParameter param(@Nullable ArendRef ref);
-  @NotNull ConcreteParameter param(@NotNull Collection<? extends ArendRef> refs, @NotNull ConcreteExpression type);
+  @NotNull ConcreteParameter param(boolean explicit, @Nullable ArendRef ref);
+  @NotNull ConcreteParameter param(boolean explicit, @NotNull Collection<? extends ArendRef> refs, @NotNull ConcreteExpression type);
+
+  default @NotNull ConcreteParameter param(@Nullable ArendRef ref) {
+    return param(true, ref);
+  }
+
+  default @NotNull ConcreteParameter param(@NotNull Collection<? extends ArendRef> refs, @NotNull ConcreteExpression type) {
+    return param(true, refs, type);
+  }
 
   @NotNull ConcreteLetClause letClause(@NotNull ArendRef ref, @NotNull Collection<? extends ConcreteParameter> parameters, @Nullable ConcreteExpression type, @NotNull ConcreteExpression term);
   @NotNull ConcreteLetClause letClause(@NotNull ConcreteSinglePattern pattern, @Nullable ConcreteExpression type, @NotNull ConcreteExpression term);
