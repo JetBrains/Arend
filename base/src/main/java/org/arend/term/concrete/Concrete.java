@@ -742,7 +742,7 @@ public final class Concrete {
     }
   }
 
-  public static class LamExpression extends Expression {
+  public static class LamExpression extends Expression implements ConcreteLamExpression {
     public static final byte PREC = -5;
     private final List<Parameter> myArguments;
     public Expression body;
@@ -753,11 +753,13 @@ public final class Concrete {
       this.body = body;
     }
 
+    @Override
     @NotNull
     public List<Parameter> getParameters() {
       return myArguments;
     }
 
+    @Override
     @NotNull
     public Expression getBody() {
       return body;
@@ -876,7 +878,7 @@ public final class Concrete {
     }
   }
 
-  public static class LetExpression extends Expression {
+  public static class LetExpression extends Expression implements ConcreteLetExpression {
     public static final byte PREC = -9;
     private final boolean myStrict;
     private final List<LetClause> myClauses;
@@ -889,15 +891,18 @@ public final class Concrete {
       this.expression = expression;
     }
 
+    @Override
     public boolean isStrict() {
       return myStrict;
     }
 
+    @Override
     @NotNull
     public List<LetClause> getClauses() {
       return myClauses;
     }
 
+    @Override
     @NotNull
     public Expression getExpression() {
       return expression;
