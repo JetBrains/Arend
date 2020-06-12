@@ -1,5 +1,6 @@
 package org.arend.naming.scope.local;
 
+import org.arend.ext.reference.ArendRef;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.scope.ImportedScope;
 import org.arend.naming.scope.Scope;
@@ -11,9 +12,9 @@ import java.util.function.Predicate;
 
 public class ElimScope implements Scope {
   private final Scope myParent;
-  private final Set<? extends Referable> myExcluded;
+  private final Set<? extends ArendRef> myExcluded;
 
-  public ElimScope(Scope parent, Set<? extends Referable> excluded) {
+  public ElimScope(Scope parent, Set<? extends ArendRef> excluded) {
     myParent = parent;
     myExcluded = excluded;
   }

@@ -4,6 +4,7 @@ import org.arend.error.ParsingError;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.reference.Precedence;
 import org.arend.naming.error.NamingError;
+import org.arend.naming.error.PrecedenceError;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.LocalReferable;
 import org.arend.naming.reference.Referable;
@@ -52,9 +53,6 @@ public class BinOpParser {
         reference = (Concrete.ReferenceExpression) ((Concrete.AppExpression) elem.expression).getFunction();
       }
       Precedence precedence = reference != null && reference.getReferent() instanceof GlobalReferable ? ((GlobalReferable) reference.getReferent()).getPrecedence() : null;
-      if (precedence == null && reference != null && reference.getReferent() instanceof GlobalReferable) {
-        precedence = ((GlobalReferable) reference.getReferent()).getPrecedence();
-      }
 
       if (reference != null && (elem.fixity == Fixity.INFIX || elem.fixity == Fixity.POSTFIX || elem.fixity == Fixity.UNKNOWN && precedence != null && precedence.isInfix)) {
         if (precedence == null) {
@@ -116,19 +114,18 @@ public class BinOpParser {
       }
 
       if (!(nextElem.precedence.priority > precedence.priority || nextElem.precedence.associativity == Precedence.Associativity.LEFT_ASSOC && (isPostfix || precedence.associativity == Precedence.Associativity.LEFT_ASSOC))) {
-        String msg = "Precedence parsing error: cannot mix " + getOperator(nextElem.expression).textRepresentation() + " [" + nextElem.precedence + "] and " + reference.getReferent().textRepresentation() + " [" + precedence + "] in the same infix expression";
-        myErrorReporter.report(new NamingError(msg, reference));
+        myErrorReporter.report(new PrecedenceError(getOperator(nextElem.expression), (GlobalReferable) reference.getReferent(), reference));
       }
 
       foldTop();
     }
   }
 
-  private Referable getOperator(Concrete.Expression expr) {
+  private GlobalReferable getOperator(Concrete.Expression expr) {
     if (expr instanceof Concrete.AppExpression) {
       expr = ((Concrete.AppExpression) expr).getFunction();
     }
-    return ((Concrete.ReferenceExpression) expr).getReferent();
+    return (GlobalReferable) ((Concrete.ReferenceExpression) expr).getReferent();
   }
 
   private void foldTop() {

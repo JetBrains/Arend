@@ -1,24 +1,32 @@
 package org.arend.naming.resolving.visitor;
 
 import org.arend.core.context.Utils;
+import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.error.LocalError;
+import org.arend.ext.reference.ArendRef;
+import org.arend.ext.reference.ExpressionResolver;
+import org.arend.ext.typechecking.MetaDefinition;
+import org.arend.naming.MetaBinOpParser;
 import org.arend.naming.error.DuplicateNameError;
 import org.arend.naming.error.NamingError;
 import org.arend.naming.error.ReferenceError;
 import org.arend.naming.reference.*;
 import org.arend.naming.resolving.ResolverListener;
 import org.arend.naming.scope.*;
+import org.arend.naming.scope.local.ElimScope;
 import org.arend.term.Fixity;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.ExpectedConstructorError;
 import org.arend.typechecking.provider.ConcreteProvider;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.function.Function;
 
-public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<Void> {
+public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<Void> implements ExpressionResolver {
   final TypeClassReferenceExtractVisitor typeClassReferenceExtractVisitor;
   private final Scope myParentScope;
   private final Scope myScope;
@@ -26,13 +34,40 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   private final ErrorReporter myErrorReporter;
   private final ResolverListener myResolverListener;
 
-  public ExpressionResolveNameVisitor(ConcreteProvider concreteProvider, Scope parentScope, List<Referable> context, ErrorReporter errorReporter, ResolverListener resolverListener) {
-    typeClassReferenceExtractVisitor = new TypeClassReferenceExtractVisitor(concreteProvider);
+  private ExpressionResolveNameVisitor(TypeClassReferenceExtractVisitor typeClassReferenceExtractVisitor, Scope parentScope, Scope scope, List<Referable> context, ErrorReporter errorReporter, ResolverListener resolverListener) {
+    this.typeClassReferenceExtractVisitor = typeClassReferenceExtractVisitor;
     myParentScope = parentScope;
-    myScope = context == null ? parentScope : new MergeScope(new ListScope(context), parentScope);
+    myScope = scope;
     myContext = context;
     myErrorReporter = errorReporter;
     myResolverListener = resolverListener;
+  }
+
+  public ExpressionResolveNameVisitor(ConcreteProvider concreteProvider, Scope parentScope, List<Referable> context, ErrorReporter errorReporter, ResolverListener resolverListener) {
+    this(new TypeClassReferenceExtractVisitor(concreteProvider), parentScope, context == null ? parentScope : new MergeScope(new ListScope(context), parentScope), context, errorReporter, resolverListener);
+  }
+
+  @Override
+  public @NotNull ErrorReporter getErrorReporter() {
+    return myErrorReporter;
+  }
+
+  @Override
+  public @NotNull ConcreteExpression resolve(@NotNull ConcreteExpression expression) {
+    if (!(expression instanceof Concrete.Expression)) {
+      throw new IllegalArgumentException();
+    }
+    return ((Concrete.Expression) expression).accept(this, null);
+  }
+
+  @Override
+  public <T> T hidingRefs(@NotNull Set<? extends ArendRef> refs, @NotNull Function<ExpressionResolver, T> action) {
+    return action.apply(new ExpressionResolveNameVisitor(typeClassReferenceExtractVisitor, myParentScope, new ElimScope(myScope, refs), myContext, myErrorReporter, myResolverListener));
+  }
+
+  @Override
+  public boolean isLongUnresolvedReference(@NotNull ArendRef ref) {
+    return ref instanceof LongUnresolvedReference && ((LongUnresolvedReference) ref).getPath().size() > 1;
   }
 
   Scope getScope() {
@@ -107,20 +142,127 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     while (origRef instanceof RedirectingReferable) {
       origRef = ((RedirectingReferable) origRef).getOriginalReferable();
     }
-    if (!(origRef instanceof UnresolvedReference)) {
+
+    Concrete.Expression argument;
+    if (origRef instanceof UnresolvedReference) {
+      expr.setReferent(origRef);
+      List<Referable> resolvedList = myResolverListener == null ? null : new ArrayList<>();
+      argument = resolve(expr, myScope, false, resolvedList);
+      if (expr.getReferent() instanceof ErrorReference) {
+        myErrorReporter.report(((ErrorReference) expr.getReferent()).getError());
+      }
+      if (myResolverListener != null) {
+        myResolverListener.referenceResolved(argument, origRef, expr, resolvedList);
+      }
+    } else {
+      argument = null;
+    }
+
+    if (expr.getReferent() instanceof MetaReferable) {
+      MetaDefinition metaDef = ((MetaReferable) expr.getReferent()).getDefinition();
+      if (metaDef != null && metaDef.isResolver()) {
+        return castExpr(metaDef.resolvePrefix(this, expr, argument == null ? Collections.emptyList() : Collections.singletonList(new Concrete.Argument(argument, false))), expr.getData());
+      }
+    }
+
+    return argument == null ? expr : Concrete.AppExpression.make(expr.getData(), expr, argument, false);
+  }
+
+  public static Concrete.Expression castExpr(ConcreteExpression expr, Object data) {
+    if (!(expr == null || expr instanceof Concrete.Expression)) {
+      throw new IllegalArgumentException();
+    }
+    return expr == null ? new Concrete.ErrorHoleExpression(data, null) : (Concrete.Expression) expr;
+  }
+
+  @Override
+  public Concrete.Expression visitApp(Concrete.AppExpression expr, Void params) {
+    Concrete.Expression function = expr.getFunction().accept(this, null);
+    Concrete.ReferenceExpression refExpr;
+    if (function instanceof Concrete.AppExpression && ((Concrete.AppExpression) function).getFunction() instanceof Concrete.ReferenceExpression) {
+      refExpr = (Concrete.ReferenceExpression) ((Concrete.AppExpression) function).getFunction();
+    } else if (function instanceof Concrete.ReferenceExpression) {
+      refExpr = (Concrete.ReferenceExpression) function;
+    } else {
+      refExpr = null;
+    }
+
+    if (refExpr != null && refExpr.getReferent() instanceof MetaReferable) {
+      MetaDefinition metaDef = ((MetaReferable) refExpr.getReferent()).getDefinition();
+      if (metaDef != null && metaDef.isResolver()) {
+        return castExpr(metaDef.resolvePrefix(this, refExpr, expr.getArguments()), expr.getData());
+      }
+    }
+
+    for (Concrete.Argument argument : expr.getArguments()) {
+      function = Concrete.AppExpression.make(function.getData(), function, argument.expression.accept(this, null), argument.isExplicit());
+    }
+    return function;
+  }
+
+  @Override
+  public Concrete.Expression visitBinOpSequence(Concrete.BinOpSequenceExpression expr, Void params) {
+    if (expr.getSequence().isEmpty()) {
+      return expr;
+    }
+    if (expr.getSequence().size() == 1) {
+      return expr.getSequence().get(0).expression.accept(this, null);
+    }
+
+    boolean hasMeta = false;
+    List<MetaBinOpParser.ResolvedReference> resolvedRefs = new ArrayList<>();
+    for (Concrete.BinOpSequenceElem elem : expr.getSequence()) {
+      if (elem.expression instanceof Concrete.ReferenceExpression) {
+        Concrete.ReferenceExpression refExpr = (Concrete.ReferenceExpression) elem.expression;
+        Referable ref = refExpr.getReferent();
+        while (ref instanceof RedirectingReferable) {
+          ref = ((RedirectingReferable) ref).getOriginalReferable();
+        }
+        if (ref instanceof UnresolvedReference) {
+          List<Referable> resolvedList = myResolverListener == null ? null : new ArrayList<>();
+          Concrete.Expression argument = resolve(refExpr, myScope, false, resolvedList);
+          elem.expression = argument == null ? refExpr : Concrete.AppExpression.make(refExpr.getData(), refExpr, argument, false);
+          if (refExpr.getReferent() instanceof MetaReferable && !hasMeta) {
+            MetaDefinition metaDef = ((MetaReferable) refExpr.getReferent()).getDefinition();
+            if (metaDef != null && metaDef.isResolver()) {
+              hasMeta = true;
+            }
+          }
+          resolvedRefs.add(new MetaBinOpParser.ResolvedReference(refExpr, (UnresolvedReference) ref, resolvedList));
+        } else {
+          resolvedRefs.add(new MetaBinOpParser.ResolvedReference(refExpr, null, null));
+        }
+      } else {
+        resolvedRefs.add(null);
+      }
+    }
+
+    if (!hasMeta) {
+      for (int i = 0; i < resolvedRefs.size(); i++) {
+        finalizeReference(expr.getSequence().get(i), resolvedRefs.get(i));
+      }
       return expr;
     }
 
-    expr.setReferent(origRef);
-    List<Referable> resolvedList = myResolverListener == null ? null : new ArrayList<>();
-    Concrete.Expression argument = resolve(expr, myScope, false, resolvedList);
-    if (expr.getReferent() instanceof ErrorReference) {
-      myErrorReporter.report(((ErrorReference) expr.getReferent()).getError());
+    return new MetaBinOpParser(this, expr, resolvedRefs).parse();
+  }
+
+  public void finalizeReference(Concrete.BinOpSequenceElem elem, MetaBinOpParser.ResolvedReference resolvedReference) {
+    if (resolvedReference == null) {
+      elem.expression = elem.expression.accept(this, null);
+      return;
     }
-    if (myResolverListener != null) {
-      myResolverListener.referenceResolved(argument, origRef, expr, resolvedList);
+    if (resolvedReference.originalReference == null) {
+      return;
     }
-    return argument == null ? expr : Concrete.AppExpression.make(expr.getData(), expr, argument, false);
+
+    if (resolvedReference.refExpr.getReferent() instanceof ErrorReference) {
+      myErrorReporter.report(((ErrorReference) resolvedReference.refExpr.getReferent()).getError());
+    }
+    if (resolvedReference.resolvedList != null && myResolverListener != null) {
+      Concrete.Expression argument = elem.expression instanceof Concrete.AppExpression ? ((Concrete.AppExpression) elem.expression).getArguments().get(0).expression : null;
+      myResolverListener.referenceResolved(argument, resolvedReference.originalReference, resolvedReference.refExpr, resolvedReference.resolvedList);
+    }
   }
 
   void updateScope(Collection<? extends Concrete.Parameter> parameters) {

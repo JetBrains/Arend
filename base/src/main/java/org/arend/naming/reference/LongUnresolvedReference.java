@@ -175,6 +175,11 @@ public class LongUnresolvedReference implements UnresolvedReference {
     return null;
   }
 
+  @Override
+  public void reset() {
+    resolved = null;
+  }
+
   private Concrete.Expression resolveField(Scope scope, int i, List<Referable> resolvedRefs) {
     if (i == -1) {
       resolved = scope.resolveName(myPath.get(0));

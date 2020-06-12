@@ -75,4 +75,9 @@ public class NamedUnresolvedReference implements UnresolvedReference {
     resolve(scope, resolvedRefs);
     return null;
   }
+
+  @Override
+  public void reset() {
+    resolved = null;
+  }
 }

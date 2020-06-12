@@ -108,11 +108,15 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
           Concrete.ReferenceExpression referenceExpression = (Concrete.ReferenceExpression) elem.expression;
           Referable ref = referenceExpression.getReferent();
           if (ref instanceof UnresolvedReference) {
-            ref = ((UnresolvedReference) ref).tryResolve(scope);
-            if (ref == null) {
+            Referable newRef = ((UnresolvedReference) ref).tryResolve(scope);
+            if (newRef instanceof MetaReferable) {
+              ((UnresolvedReference) ref).reset();
               return;
             }
-            referenceExpression.setReferent(ref);
+            if (newRef == null) {
+              return;
+            }
+            referenceExpression.setReferent(newRef);
           }
         }
       }
@@ -126,9 +130,13 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       ref = ((RedirectingReferable) ref).getOriginalReferable();
     }
     if (ref instanceof UnresolvedReference) {
-      ref = ((UnresolvedReference) ref).tryResolve(scope);
-      if (ref != null) {
-        ((Concrete.ReferenceExpression) expr).setReferent(ref);
+      Referable newRef = ((UnresolvedReference) ref).tryResolve(scope);
+      if (newRef instanceof MetaReferable) {
+        ((UnresolvedReference) ref).reset();
+        return;
+      }
+      if (newRef != null) {
+        ((Concrete.ReferenceExpression) expr).setReferent(newRef);
       }
     }
   }
