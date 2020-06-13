@@ -61,6 +61,12 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
 
   @NotNull
   @Override
+  public ConcreteExpression core(@NotNull TypedExpression expr) {
+    return core(null, expr);
+  }
+
+  @NotNull
+  @Override
   public ConcreteExpression core(@Nullable String name, @NotNull TypedExpression expr) {
     return new Concrete.ReferenceExpression(myData, new CoreReferable(name, TypecheckingResult.fromChecked(Objects.requireNonNull(expr))), null, null);
   }
