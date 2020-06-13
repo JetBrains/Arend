@@ -1,7 +1,6 @@
 package org.arend.repl;
 
 import org.arend.naming.reference.Referable;
-import org.arend.naming.scope.CachingScope;
 import org.arend.naming.scope.ImportedScope;
 import org.arend.naming.scope.MergeScope;
 import org.arend.naming.scope.Scope;
@@ -27,18 +26,6 @@ public class ReplScope implements Scope {
     myPreviousMergeScope = new MergeScope(previousScopes);
   }
 
-  /**
-   * @return the scope added to the scope list
-   */
-  public @Nullable Scope freezeAndFlushCurrentLine() {
-    if (myCurrentLineScope != null) {
-      var scope = CachingScope.make(myCurrentLineScope);
-      addScope(scope);
-      myCurrentLineScope = null;
-      return scope;
-    } else return null;
-  }
-
   public void addScope(@NotNull Scope scope) {
     myPreviousScopes.add(0, scope);
   }
@@ -47,8 +34,8 @@ public class ReplScope implements Scope {
     myPreviousScopes.add(preludeScope);
   }
 
-  public void currentLine(@Nullable Scope nextLineScope) {
-    myCurrentLineScope = nextLineScope;
+  public void setCurrentLineScope(@Nullable Scope currentLineScope) {
+    myCurrentLineScope = currentLineScope;
   }
 
   @Override
@@ -86,11 +73,9 @@ public class ReplScope implements Scope {
 
   @Override
   public @NotNull List<Referable> getElements() {
-    var list = new ArrayList<Referable>();
+    var list = myPreviousMergeScope.getElements();
     if (myCurrentLineScope != null)
       list.addAll(myCurrentLineScope.getElements());
-    for (Scope previousScope : myPreviousScopes)
-      list.addAll(previousScope.getElements());
     return list;
   }
 

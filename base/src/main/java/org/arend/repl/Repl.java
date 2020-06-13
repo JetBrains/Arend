@@ -19,6 +19,7 @@ import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.reference.*;
 import org.arend.naming.resolving.visitor.DefinitionResolveNameVisitor;
 import org.arend.naming.resolving.visitor.ExpressionResolveNameVisitor;
+import org.arend.naming.scope.CachingScope;
 import org.arend.naming.scope.Scope;
 import org.arend.naming.scope.ScopeFactory;
 import org.arend.repl.action.*;
@@ -151,8 +152,8 @@ public abstract class Repl {
     var group = parseStatements(line);
     if (group == null) return;
     var moduleScopeProvider = getAvailableModuleScopeProvider();
-    myReplScope.currentLine(ScopeFactory.forGroup(group, moduleScopeProvider));
-    var scope = myReplScope.freezeAndFlushCurrentLine();
+    var scope = CachingScope.make(ScopeFactory.forGroup(group, moduleScopeProvider));
+    myReplScope.addScope(scope);
     new DefinitionResolveNameVisitor(myConcreteProvider, myErrorReporter)
         .resolveGroupWithTypes(group, null, myScope);
     if (checkErrors()) {
@@ -165,7 +166,7 @@ public abstract class Repl {
     }
     if (!myTypechecking.typecheckModules(Collections.singletonList(group), null)) {
       checkErrors();
-      if (scope != null) removeScope(scope);
+      removeScope(scope);
     }
     onScopeAdded(group);
   }
