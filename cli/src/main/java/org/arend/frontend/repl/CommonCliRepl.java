@@ -115,11 +115,10 @@ public abstract class CommonCliRepl extends Repl {
       @NotNull InstanceProviderSet instanceProviders,
       @NotNull ListErrorReporter errorReporter) {
     super(
-        errorReporter,
-        libraryManager,
-        concreteProvider,
-        instanceProviders,
-        new TypecheckingOrderingListener(instanceProviders, typecheckerState, concreteProvider, IdReferableConverter.INSTANCE, errorReporter, PositionComparator.INSTANCE, new LibraryArendExtensionProvider(libraryManager)), typecheckerState
+      errorReporter,
+      libraryManager,
+      concreteProvider,
+      new TypecheckingOrderingListener(instanceProviders, typecheckerState, concreteProvider, IdReferableConverter.INSTANCE, errorReporter, PositionComparator.INSTANCE, new LibraryArendExtensionProvider(libraryManager)), typecheckerState
     );
     myLibraryResolver = libraryResolver;
     myReplLibrary = Files.exists(pwd.resolve(FileUtils.LIBRARY_CONFIG_FILE))

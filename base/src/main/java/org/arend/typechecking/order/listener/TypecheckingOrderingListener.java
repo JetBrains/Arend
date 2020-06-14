@@ -75,6 +75,10 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
     return myConcreteProvider;
   }
 
+  public InstanceProviderSet getInstanceProviderSet() {
+    return myInstanceProviderSet;
+  }
+
   public ReferableConverter getReferableConverter() {
     return myReferableConverter;
   }

@@ -10,10 +10,8 @@ import org.arend.ext.error.ListErrorReporter;
 import org.arend.ext.module.ModulePath;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.reference.Precedence;
-import org.arend.extImpl.DefinitionRequester;
 import org.arend.library.Library;
 import org.arend.library.LibraryManager;
-import org.arend.library.resolver.LibraryResolver;
 import org.arend.module.ModuleLocation;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.reference.*;
@@ -54,7 +52,6 @@ public abstract class Repl {
   private final List<ReplHandler> myHandlers = new ArrayList<>();
   private final ConcreteProvider myConcreteProvider;
   private final TCReferable myModuleReferable;
-  private final InstanceProviderSet myInstanceProviderSet;
   protected final ReplScope myReplScope = new ReplScope(null, myMergedScopes);
   protected @NotNull Scope myScope = myReplScope;
   protected final @NotNull TypecheckingOrderingListener myTypechecking;
@@ -73,19 +70,13 @@ public abstract class Repl {
   protected final @NotNull ListErrorReporter myErrorReporter;
   protected final @NotNull LibraryManager myLibraryManager;
 
-  protected static @NotNull LibraryManager libraryManager(@NotNull ListErrorReporter listErrorReporter, @NotNull LibraryResolver libraryResolver, @NotNull InstanceProviderSet instanceProviders) {
-    return new LibraryManager(libraryResolver, instanceProviders, listErrorReporter, listErrorReporter, DefinitionRequester.INSTANCE);
-  }
-
   public Repl(@NotNull ListErrorReporter listErrorReporter,
               @NotNull LibraryManager libraryManager,
               @NotNull ConcreteProvider concreteProvider,
-              @NotNull InstanceProviderSet instanceProviders,
               @NotNull TypecheckingOrderingListener typecheckingOrderingListener,
               @NotNull TypecheckerState typecheckerState) {
     myErrorReporter = listErrorReporter;
     myConcreteProvider = concreteProvider;
-    myInstanceProviderSet = instanceProviders;
     myTypecheckerState = typecheckerState;
     myLibraryManager = libraryManager;
     myTypechecking = typecheckingOrderingListener;
@@ -172,7 +163,7 @@ public abstract class Repl {
   }
 
   protected void onScopeAdded(Group group) {
-    myInstanceProviderSet.collectInstances(
+    myTypechecking.getInstanceProviderSet().collectInstances(
       group,
       myScope,
       myModuleReferable,
@@ -278,7 +269,7 @@ public abstract class Repl {
    */
   public final @Nullable TypecheckingResult checkExpr(@NotNull Concrete.Expression expr, @Nullable Expression expectedType) {
     var typechecker = new CheckTypeVisitor(myTypecheckerState, myErrorReporter, null, null);
-    var instanceProvider = myInstanceProviderSet.get(myModuleReferable);
+    var instanceProvider = myTypechecking.getInstanceProviderSet().get(myModuleReferable);
     var instancePool = new GlobalInstancePool(instanceProvider, typechecker);
     typechecker.setInstancePool(instancePool);
     var result = typechecker.finalCheckExpr(expr, expectedType);
