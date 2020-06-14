@@ -6,6 +6,7 @@ import org.arend.core.definition.Definition;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.module.ModulePath;
 import org.arend.module.ModuleLocation;
+import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.reference.ModuleReferable;
 import org.arend.naming.reference.TCReferable;
@@ -94,7 +95,7 @@ public class ModuleSerialization {
       refBuilder.setIndex(index);
       myCurrentDefinitions.add(index);
     }
-    if (tcReferable != null && (typechecked == null || typechecked.status() != Definition.TypeCheckingStatus.NO_ERRORS)) {
+    if (tcReferable != null && (typechecked == null || typechecked.status() != Definition.TypeCheckingStatus.NO_ERRORS) && tcReferable.getKind() != GlobalReferable.Kind.OTHER) {
       myComplete = false;
     }
     builder.setReferable(refBuilder.build());
