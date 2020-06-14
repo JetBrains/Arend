@@ -321,6 +321,9 @@ public abstract class BaseCliFrontend {
         List<TCReferable> forcedRefs = new ArrayList<>();
         if (recompileDef != null) {
           Scope scope = library.getModuleScopeProvider().forModule(recompileModule);
+          if (scope == null && library.loadTests(myLibraryManager, Collections.singletonList(recompileModule))) {
+            scope = library.getTestsModuleScopeProvider().forModule(recompileModule);
+          }
           if (scope == null) {
             System.err.println("[ERROR] Cannot find module '" + recompileModule + "' in library '" + library.getName() + "'");
           } else {
@@ -333,6 +336,9 @@ public abstract class BaseCliFrontend {
           }
         } else {
           Group group = library.getModuleGroup(recompileModule, false);
+          if (group == null && library.loadTests(myLibraryManager, Collections.singletonList(recompileModule))) {
+            group = library.getModuleGroup(recompileModule, true);
+          }
           if (group == null) {
             System.err.println("[ERROR] Cannot find module '" + recompileModule + "' in library '" + library.getName() + "'");
           } else {

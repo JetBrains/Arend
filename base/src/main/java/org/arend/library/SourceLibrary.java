@@ -314,9 +314,7 @@ public abstract class SourceLibrary extends BaseLibrary {
     return super.load(libraryManager, typechecking);
   }
 
-  @Override
-  public boolean loadTests(LibraryManager libraryManager) {
-    Collection<? extends ModulePath> modules = getTestModules();
+  public boolean loadTests(LibraryManager libraryManager, Collection<? extends ModulePath> modules) {
     if (modules.isEmpty()) {
       return true;
     }
@@ -331,6 +329,11 @@ public abstract class SourceLibrary extends BaseLibrary {
     sourceLoader.loadRawSources();
 
     return true;
+  }
+
+  @Override
+  public boolean loadTests(LibraryManager libraryManager) {
+    return loadTests(libraryManager, getTestModules());
   }
 
   @Override
