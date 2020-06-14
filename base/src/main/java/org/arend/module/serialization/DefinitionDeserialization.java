@@ -63,8 +63,16 @@ public class DefinitionDeserialization implements ArendDeserializer {
     def.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     def.setUniverseKind(defDeserializer.readUniverseKind(defProto.getUniverseKind()));
 
+    loadKeys(defProto.getUserDataMap(), def);
+
+    if (myDefinitionListener != null) {
+      myDefinitionListener.loaded(def);
+    }
+  }
+
+  private void loadKeys(Map<String, ByteString> proto, Definition def) throws DeserializationException {
     if (myKeyRegistry != null) {
-      for (Map.Entry<String, ByteString> entry : defProto.getUserDataMap().entrySet()) {
+      for (Map.Entry<String, ByteString> entry : proto.entrySet()) {
         //noinspection unchecked
         SerializableKey<Object> key = (SerializableKey<Object>) myKeyRegistry.getKey(entry.getKey());
         if (key == null) {
@@ -72,10 +80,6 @@ public class DefinitionDeserialization implements ArendDeserializer {
         }
         def.putUserData(key, key.deserialize(this, entry.getValue().toByteArray()));
       }
-    }
-
-    if (myDefinitionListener != null) {
-      myDefinitionListener.loaded(def);
     }
   }
 
@@ -109,6 +113,7 @@ public class DefinitionDeserialization implements ArendDeserializer {
       field.setCovariant(fieldProto.getIsCovariant());
       field.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
       field.setUniverseKind(defDeserializer.readUniverseKind(fieldProto.getUniverseKind()));
+      loadKeys(fieldProto.getUserDataMap(), field);
     }
 
     for (int classFieldRef : classProto.getFieldRefList()) {
@@ -255,6 +260,7 @@ public class DefinitionDeserialization implements ArendDeserializer {
       if (constructorProto.hasConditions()) {
         constructor.setBody(readBody(defDeserializer, constructorProto.getConditions(), DependentLink.Helper.size(constructor.getParameters())));
       }
+      loadKeys(constructorProto.getUserDataMap(), constructor);
     }
 
     dataDef.setTruncated(dataProto.getIsTruncated());
