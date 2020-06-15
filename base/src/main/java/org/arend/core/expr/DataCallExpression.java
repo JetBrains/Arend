@@ -119,14 +119,17 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
   }
 
   @Override
-  public @NotNull DependentLink getConstructorParameters(CoreConstructor constructor) {
-    if (!(constructor instanceof Constructor && constructor.getDataType() == getDefinition())) {
-      throw new IllegalArgumentException();
+  public @Nullable List<ConstructorWithParameters> computeMatchedConstructorsWithParameters() {
+    List<ConCallExpression> conCalls = getMatchedConstructors();
+    if (conCalls == null) {
+      return null;
     }
-    if (!constructor.getParameters().hasNext() || myArguments.isEmpty()) {
-      return ((Constructor) constructor).getParameters();
+
+    List<ConstructorWithParameters> constructors = new ArrayList<>();
+    for (ConCallExpression conCall : conCalls) {
+      constructors.add(new ConstructorWithParameters(conCall.getDefinition(), conCall.getDataTypeArguments(), conCall.getDataTypeArguments().isEmpty() ? conCall.getDefinition().getParameters() : DependentLink.Helper.subst(conCall.getDefinition().getParameters(), new ExprSubstitution().add(getDefinition().getParameters(), conCall.getDataTypeArguments()))));
     }
-    return DependentLink.Helper.subst(((Constructor) constructor).getParameters(), new ExprSubstitution().add(getDefinition().getParameters(), myArguments));
+    return constructors;
   }
 
   private static boolean addConstructor(Expression expr, Collection<Constructor> constructors) {

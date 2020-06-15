@@ -20,10 +20,10 @@ public interface CoreDataCallExpression extends CoreExpression {
   @Nullable List<CoreConstructor> computeMatchedConstructors();
 
   class ConstructorWithDataArguments {
-    public final CoreConstructor constructor;
-    public final List<? extends CoreExpression> dataTypeArguments;
+    public final @NotNull CoreConstructor constructor;
+    public final @NotNull List<? extends CoreExpression> dataTypeArguments;
 
-    public ConstructorWithDataArguments(CoreConstructor constructor, List<? extends CoreExpression> dataTypeArguments) {
+    public ConstructorWithDataArguments(@NotNull CoreConstructor constructor, @NotNull List<? extends CoreExpression> dataTypeArguments) {
       this.constructor = constructor;
       this.dataTypeArguments = dataTypeArguments;
     }
@@ -34,8 +34,17 @@ public interface CoreDataCallExpression extends CoreExpression {
    */
   @Nullable List<ConstructorWithDataArguments> computeMatchedConstructorsWithDataArguments();
 
+  class ConstructorWithParameters extends ConstructorWithDataArguments {
+    public final @NotNull CoreParameter parameters;
+
+    public ConstructorWithParameters(CoreConstructor constructor, List<? extends CoreExpression> dataTypeArguments, @NotNull CoreParameter parameters) {
+      super(constructor, dataTypeArguments);
+      this.parameters = parameters;
+    }
+  }
+
   /**
-   * @return parameters of the given constructor with substituted arguments
+   * @return the list of constructors with data arguments matching this type and their parameters with substituted arguments or {@code null} if it cannot be determined
    */
-  @NotNull CoreParameter getConstructorParameters(CoreConstructor constructor);
+  @Nullable List<ConstructorWithParameters> computeMatchedConstructorsWithParameters();
 }
