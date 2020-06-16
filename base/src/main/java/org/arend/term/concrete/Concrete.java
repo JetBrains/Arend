@@ -1063,7 +1063,7 @@ public final class Concrete {
     }
   }
 
-  public static class CaseExpression extends Expression {
+  public static class CaseExpression extends Expression implements ConcreteCaseExpression {
     public static final byte PREC = -8;
     private final boolean mySCase;
     private final List<CaseArgument> myArguments;
@@ -1080,15 +1080,18 @@ public final class Concrete {
       myClauses = clauses;
     }
 
+    @Override
     public boolean isSCase() {
       return mySCase;
     }
 
+    @Override
     @NotNull
     public List<? extends CaseArgument> getArguments() {
       return myArguments;
     }
 
+    @Override
     @Nullable
     public Expression getResultType() {
       return myResultType;
@@ -1098,6 +1101,7 @@ public final class Concrete {
       myResultType = resultType;
     }
 
+    @Override
     @Nullable
     public Expression getResultTypeLevel() {
       return myResultTypeLevel;
@@ -1107,6 +1111,7 @@ public final class Concrete {
       myResultTypeLevel = resultTypeLevel;
     }
 
+    @Override
     @NotNull
     public List<FunctionClause> getClauses() {
       return myClauses;
