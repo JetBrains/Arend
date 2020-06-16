@@ -204,9 +204,21 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     return new HashSet<>(context.values());
   }
 
+  private static class VeryFakeLocalReferable extends FakeLocalReferable {
+    public VeryFakeLocalReferable(String name) {
+      super(name);
+    }
+  }
+
   @Override
   public @NotNull List<CoreBinding> getFreeBindingsList() {
-    return new ArrayList<>(context.values());
+    List<CoreBinding> result = new ArrayList<>();
+    for (Map.Entry<Referable, Binding> entry : context.entrySet()) {
+      if (!(entry.getKey() instanceof VeryFakeLocalReferable)) {
+        result.add(entry.getValue());
+      }
+    }
+    return result;
   }
 
   @Override
@@ -2007,15 +2019,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     }
   }
 
-  private void addFreeBindings(Collection<?> bindings) {
-    for (Object binding : bindings) {
-      if (!(binding instanceof Binding)) {
-        throw new IllegalArgumentException();
-      }
-      addBinding(null, (Binding) binding);
-    }
-  }
-
   @Override
   public <T> T withFreeBindings(@NotNull FreeBindingsModifier modifier, @NotNull Function<ExpressionTypechecker, T> action) {
     if (modifier.commands.isEmpty()) {
@@ -2026,7 +2029,12 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       for (FreeBindingsModifier.Command command : modifier.commands) {
         switch (command.kind) {
           case ADD:
-            addFreeBindings((Collection<?>) command.bindings);
+            for (Object binding : (Collection<?>) command.bindings) {
+              if (!(binding instanceof Binding)) {
+                throw new IllegalArgumentException();
+              }
+              addBinding(null, (Binding) binding);
+            }
             break;
           case CLEAR:
             context.clear();
@@ -2275,7 +2283,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     List<Referable> addedRefs = new ArrayList<>();
     for (Map.Entry<Referable, Binding> entry : origElimBindings.entrySet()) {
       context.remove(entry.getKey());
-      addedRefs.add(addBinding(null, entry.getValue()));
+      VeryFakeLocalReferable ref = new VeryFakeLocalReferable(entry.getValue().getName());
+      context.put(ref, entry.getValue());
+      addedRefs.add(ref);
     }
 
     // Check if the level of the result type is specified explicitly

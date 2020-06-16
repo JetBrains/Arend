@@ -1052,7 +1052,7 @@ public final class Concrete {
       this.expression = expression;
       this.referable = null;
       this.type = type;
-      isElim = true;
+      isElim = !(expression.getReferent() instanceof CoreReferable);
     }
 
     public CaseArgument(@NotNull ApplyHoleExpression expression, @Nullable Expression type) {
