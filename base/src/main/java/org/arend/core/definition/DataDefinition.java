@@ -4,6 +4,7 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.context.param.TypedDependentLink;
 import org.arend.core.context.param.TypedSingleDependentLink;
+import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.*;
 import org.arend.core.expr.type.TypeExpression;
 import org.arend.core.sort.Sort;
@@ -55,6 +56,15 @@ public class DataDefinition extends Definition implements CoreDataDefinition {
 
   public void setRecursiveDefinitions(Set<Definition> recursiveDefinitions) {
     myRecursiveDefinitions = recursiveDefinitions;
+  }
+
+  public boolean isHIT() {
+    for (Constructor constructor : myConstructors) {
+      if (constructor.getBody() instanceof IntervalElim) {
+        return true;
+      }
+    }
+    return false;
   }
 
   @Override

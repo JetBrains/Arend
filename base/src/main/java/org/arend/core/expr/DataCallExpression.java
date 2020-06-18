@@ -23,6 +23,7 @@ import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
 import org.arend.util.Decision;
+import org.arend.util.GraphClosure;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -132,12 +133,12 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
     return constructors;
   }
 
-  private static boolean addConstructor(Expression expr, Collection<Constructor> constructors) {
+  private static boolean addConstructor(Expression expr, Constructor constructor, GraphClosure<Constructor> closure) {
     if (expr == null) {
       return true;
     }
     if (expr instanceof ConCallExpression) {
-      constructors.add(((ConCallExpression) expr).getDefinition());
+      closure.addSymmetric(((ConCallExpression) expr).getDefinition(), constructor);
       return true;
     } else {
       return false;
@@ -189,21 +190,24 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
       return false;
     }
 
+    if (con1.getBody() == null && con2.getBody() == null && !con1.getDataType().isHIT()) {
+      return true;
+    }
+
+    GraphClosure<Constructor> closure = new GraphClosure<>();
     for (Constructor constructor : con1.getDataType().getConstructors()) {
       Body body = constructor.getBody();
       if (body == null) {
         continue;
       }
 
-      Set<Constructor> constructors = new HashSet<>();
-      constructors.add(constructor);
       if (body instanceof Expression) {
-        if (!addConstructor((Expression) body, constructors)) {
+        if (!addConstructor((Expression) body, constructor, closure)) {
           return false;
         }
       } else if (body instanceof IntervalElim) {
         for (IntervalElim.CasePair pair : ((IntervalElim) body).getCases()) {
-          if (!addConstructor(pair.proj1, constructors) || !addConstructor(pair.proj2, constructors)) {
+          if (!addConstructor(pair.proj1, constructor, closure) || !addConstructor(pair.proj2, constructor, closure)) {
             return false;
           }
         }
@@ -211,20 +215,16 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
       }
       if (body instanceof ElimBody) {
         for (ElimClause<Pattern> clause : ((ElimBody) body).getClauses()) {
-          if (!addConstructor(clause.getExpression(), constructors)) {
+          if (!addConstructor(clause.getExpression(), constructor, closure)) {
             return false;
           }
         }
       } else if (body != null) {
         throw new IllegalStateException();
       }
-
-      if (constructors.contains(con1) && constructors.contains(con2)) {
-        return false;
-      }
     }
 
-    return true;
+    return !closure.areEquivalent(con1, con2);
   }
 
   public List<ConCallExpression> getMatchedConstructors() {

@@ -111,4 +111,11 @@ public class DisjointConstructorsTest extends TypeCheckingTestCase {
       "\\data D | con1 | con2 | con3 | seg I \\with { | left => con1 | right => con2 }\n" +
       "\\func f (p : con1 = con3) : Nat");
   }
+
+  @Test
+  public void hitTransitivelyHomotopicConstructors() {
+    typeCheckModule(
+      "\\data D | con1 | con2 | con3 | seg1 I \\with { | left => con1 | right => con2 } | seg2 I \\with { | left => con1 | right => con3 }\n" +
+      "\\func f (p : con2 = con3) : Nat", 1);
+  }
 }
