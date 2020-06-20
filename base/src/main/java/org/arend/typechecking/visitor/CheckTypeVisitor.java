@@ -1775,40 +1775,48 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
   @Override
   public TypecheckingResult visitLet(Concrete.LetExpression expr, Expression expectedType) {
     try (var ignored = new Utils.SetContextSaver<>(context)) {
-      List<? extends Concrete.LetClause> abstractClauses = expr.getClauses();
-      List<LetClause> clauses = new ArrayList<>(abstractClauses.size());
-      for (Concrete.LetClause clause : abstractClauses) {
-        Pair<LetClause, Expression> pair = typecheckLetClause(clause);
-        if (pair == null) {
-          return null;
-        }
-        Referable referable = clause.getPattern().getReferable();
-        if (referable != null || clause.getPattern().isIgnored()) {
-          pair.proj1.setPattern(new NameLetClausePattern(referable == null ? null : referable.textRepresentation()));
-          if (referable != null) {
-            addBinding(referable, pair.proj1);
-          }
-        } else {
-          addBinding(null, pair.proj1);
-          LetClausePattern pattern = typecheckLetClausePattern(clause.getPattern(), new ReferenceExpression(pair.proj1), pair.proj2);
-          if (pattern == null) {
+      try (var ignored1 = new Utils.ContextSaver(myInstancePool == null ? Collections.emptyList() : myInstancePool.getLocalInstances())) {
+        List<? extends Concrete.LetClause> abstractClauses = expr.getClauses();
+        List<LetClause> clauses = new ArrayList<>(abstractClauses.size());
+        for (Concrete.LetClause clause : abstractClauses) {
+          Pair<LetClause, Expression> pair = typecheckLetClause(clause);
+          if (pair == null) {
             return null;
           }
-          pair.proj1.setPattern(pattern);
+          Referable referable = clause.getPattern().getReferable();
+          if (referable != null || clause.getPattern().isIgnored()) {
+            pair.proj1.setPattern(new NameLetClausePattern(referable == null ? null : referable.textRepresentation()));
+            if (referable != null) {
+              addBinding(referable, pair.proj1);
+            }
+          } else {
+            addBinding(null, pair.proj1);
+            LetClausePattern pattern = typecheckLetClausePattern(clause.getPattern(), new ReferenceExpression(pair.proj1), pair.proj2);
+            if (pattern == null) {
+              return null;
+            }
+            pair.proj1.setPattern(pattern);
+          }
+          clauses.add(pair.proj1);
+
+          if (myInstancePool != null && pair.proj2 instanceof ClassCallExpression && !((ClassCallExpression) pair.proj2).getDefinition().isRecord()) {
+            ClassDefinition classDef = ((ClassCallExpression) pair.proj2).getDefinition();
+            Expression instance = new ReferenceExpression(pair.proj1);
+            myInstancePool.addLocalInstance(classDef.getClassifyingField() == null ? null : FieldCallExpression.make(classDef.getClassifyingField(), ((ClassCallExpression) pair.proj2).getSortArgument(), instance), classDef, instance, clause);
+          }
         }
-        clauses.add(pair.proj1);
-      }
 
-      TypecheckingResult result = checkExpr(expr.getExpression(), expectedType);
-      if (result == null) {
-        return null;
-      }
+        TypecheckingResult result = checkExpr(expr.getExpression(), expectedType);
+        if (result == null) {
+          return null;
+        }
 
-      ExprSubstitution substitution = new ExprSubstitution();
-      for (LetClause clause : clauses) {
-        substitution.add(clause, clause.getExpression().subst(substitution));
+        ExprSubstitution substitution = new ExprSubstitution();
+        for (LetClause clause : clauses) {
+          substitution.add(clause, clause.getExpression().subst(substitution));
+        }
+        return new TypecheckingResult(new LetExpression(expr.isStrict(), clauses, result.expression), result.type.subst(substitution));
       }
-      return new TypecheckingResult(new LetExpression(expr.isStrict(), clauses, result.expression), result.type.subst(substitution));
     }
   }
 

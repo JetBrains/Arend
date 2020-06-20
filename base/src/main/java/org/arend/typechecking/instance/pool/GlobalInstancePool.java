@@ -15,6 +15,7 @@ import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.arend.util.Pair;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
 
@@ -49,6 +50,16 @@ public class GlobalInstancePool implements InstancePool {
   @Override
   public InstancePool getLocalInstancePool() {
     return myInstancePool.getLocalInstancePool();
+  }
+
+  @Override
+  public Expression addLocalInstance(Expression classifyingExpression, ClassDefinition classDef, Expression instance, Concrete.SourceNode sourceNode) {
+    return myInstancePool.addLocalInstance(classifyingExpression, classDef, instance, sourceNode);
+  }
+
+  @Override
+  public List<?> getLocalInstances() {
+    return myInstancePool == null ? Collections.emptyList() : myInstancePool.getLocalInstances();
   }
 
   @Override

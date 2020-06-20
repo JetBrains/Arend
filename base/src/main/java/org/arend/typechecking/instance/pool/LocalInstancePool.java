@@ -23,14 +23,12 @@ import java.util.List;
 public class LocalInstancePool implements InstancePool {
   static private class InstanceData {
     final Expression key;
-    final Expression keyType;
     final ClassDefinition classDef;
     final Expression value;
     final Concrete.SourceNode sourceNode;
 
-    InstanceData(Expression key, Expression keyType, ClassDefinition classDef, Expression value, Concrete.SourceNode sourceNode) {
+    InstanceData(Expression key, ClassDefinition classDef, Expression value, Concrete.SourceNode sourceNode) {
       this.key = key;
-      this.keyType = keyType;
       this.classDef = classDef;
       this.value = value;
       this.sourceNode = sourceNode;
@@ -84,7 +82,7 @@ public class LocalInstancePool implements InstancePool {
     for (InstanceData data : myPool) {
       Expression newValue = data.value instanceof ReferenceExpression ? substitution.get(((ReferenceExpression) data.value).getBinding()) : null;
       newValue = newValue == null ? null : newValue.cast(ReferenceExpression.class);
-      result.myPool.add(new InstanceData(data.key == null ? null : data.key.subst(substitution), data.keyType == null ? null : data.keyType.subst(substitution), data.classDef, newValue == null ? data.value : newValue, data.sourceNode));
+      result.myPool.add(new InstanceData(data.key == null ? null : data.key.subst(substitution), data.classDef, newValue == null ? data.value : newValue, data.sourceNode));
     }
     return result;
   }
@@ -100,20 +98,26 @@ public class LocalInstancePool implements InstancePool {
     }
     for (int i = myPool.size() - 1; i >= 0; i--) {
       InstanceData instanceData = myPool.get(i);
-      if (parameters.testClass(instanceData.classDef) && (instanceData.key == classifyingExpression || instanceData.key != null && classifyingExpression != null && Expression.compare(instanceData.key, classifyingExpression, instanceData.keyType, CMP.EQ)) && parameters.testLocalInstance(instanceData.value)) {
+      if (parameters.testClass(instanceData.classDef) && (instanceData.key == classifyingExpression || instanceData.key != null && classifyingExpression != null && Expression.compare(instanceData.key, classifyingExpression, null, CMP.EQ)) && parameters.testLocalInstance(instanceData.value)) {
         return instanceData.value;
       }
     }
     return null;
   }
 
-  public Expression addInstance(Expression classifyingExpression, Expression classifyingExpressionType, ClassDefinition classDef, Expression instance, Concrete.SourceNode sourceNode) {
+  @Override
+  public Expression addLocalInstance(Expression classifyingExpression, ClassDefinition classDef, Expression instance, Concrete.SourceNode sourceNode) {
     Expression oldInstance = getInstance(classifyingExpression, new SubclassSearchParameters(classDef));
     if (oldInstance != null) {
       return oldInstance;
     } else {
-      myPool.add(new InstanceData(classifyingExpression, classifyingExpressionType, classDef, instance, sourceNode));
+      myPool.add(new InstanceData(classifyingExpression, classDef, instance, sourceNode));
       return null;
     }
+  }
+
+  @Override
+  public List<?> getLocalInstances() {
+    return myPool;
   }
 }

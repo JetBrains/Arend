@@ -229,4 +229,25 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
       "\\data D {c : C}\n" +
       "  | con D");
   }
+
+  @Test
+  public void letTest() {
+    typeCheckModule(
+      "\\class C | field : Nat\n" +
+      "\\func test => \\let inst => \\new C 0 \\in field");
+  }
+
+  @Test
+  public void letWithClassifying() {
+    typeCheckModule(
+      "\\class C {A : \\Type} | field : A\n" +
+      "\\func test : Nat => \\let inst => \\new C 0 \\in field");
+  }
+
+  @Test
+  public void letWithClassifyingError() {
+    typeCheckModule(
+      "\\class C {A : \\Type} | field : A\n" +
+      "\\func test : Nat => \\let inst => \\new C (pos 0) \\in field", 1);
+  }
 }

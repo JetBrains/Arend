@@ -531,21 +531,17 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
       }
 
-      if (localInstancePool != null) {
-        TCClassReferable classRef = parameter.getType() == null ? null : parameter.getType().getUnderlyingTypeClass();
-        if (classRef != null) {
-          ClassDefinition classDef = (ClassDefinition) typechecker.getTypechecked(classRef);
-          if (classDef != null && !classDef.isRecord()) {
-            ClassField classifyingField = classDef.getClassifyingField();
-            int i = 0;
-            for (DependentLink link = param; i < numberOfParameters; link = link.getNext(), i++) {
-              ReferenceExpression reference = new ReferenceExpression(link);
-              if (classifyingField == null) {
-                localInstancePool.addInstance(null, null, classDef, reference, parameter);
-              } else {
-                Sort sortArg = paramResult.getSortOfType();
-                localInstancePool.addInstance(FieldCallExpression.make(classifyingField, sortArg, reference), classifyingField.getType(sortArg).applyExpression(reference), classDef, reference, parameter);
-              }
+      if (localInstancePool != null && paramResult instanceof ClassCallExpression) {
+        ClassDefinition classDef = ((ClassCallExpression) paramResult).getDefinition();
+        if (!classDef.isRecord()) {
+          ClassField classifyingField = classDef.getClassifyingField();
+          int i = 0;
+          for (DependentLink link = param; i < numberOfParameters; link = link.getNext(), i++) {
+            ReferenceExpression reference = new ReferenceExpression(link);
+            if (classifyingField == null) {
+              localInstancePool.addLocalInstance(null, classDef, reference, parameter);
+            } else {
+              localInstancePool.addLocalInstance(FieldCallExpression.make(classifyingField, ((ClassCallExpression) paramResult).getSortArgument(), reference), classDef, reference, parameter);
             }
           }
         }
@@ -1722,12 +1718,12 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   }
 
   private static class LocalInstance {
-    final ClassDefinition classDefinition;
+    final ClassCallExpression classCall;
     final ClassField instanceField;
     final Concrete.ClassField concreteField;
 
-    LocalInstance(ClassDefinition classDefinition, ClassField instanceField, Concrete.ClassField concreteField) {
-      this.classDefinition = classDefinition;
+    LocalInstance(ClassCallExpression classCall, ClassField instanceField, Concrete.ClassField concreteField) {
+      this.classCall = classCall;
       this.instanceField = instanceField;
       this.concreteField = concreteField;
     }
@@ -1887,12 +1883,11 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           }
 
           if (field.getData().isParameterField() && !field.getData().isExplicitField()) {
-            TCClassReferable classRef = previousType.getUnderlyingTypeClass();
-            if (classRef != null) {
-              ClassDefinition classDef = (ClassDefinition) typechecker.getTypechecked(classRef);
-              if (classDef != null && !classDef.isRecord()) {
-                ClassField typecheckedField = previousField != null ? previousField : (ClassField) typechecker.getTypechecked(field.getData());
-                localInstances.add(new LocalInstance(classDef, typecheckedField, field));
+            ClassField typecheckedField = previousField != null ? previousField : (ClassField) typechecker.getTypechecked(field.getData());
+            if (typecheckedField.getResultType() instanceof ClassCallExpression) {
+              ClassCallExpression classCall = (ClassCallExpression) typecheckedField.getResultType();
+              if (!classCall.getDefinition().isRecord()) {
+                localInstances.add(new LocalInstance(classCall, typecheckedField, field));
               }
             }
           }
@@ -2272,16 +2267,15 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     LocalInstancePool localInstancePool = new LocalInstancePool(typechecker);
     myInstancePool.setInstancePool(localInstancePool);
     if (classDef != null) {
-      localInstancePool.addInstance(null, null, classDef, new ReferenceExpression(thisParam), thisSourceNode);
+      localInstancePool.addLocalInstance(null, classDef, new ReferenceExpression(thisParam), thisSourceNode);
     }
     for (LocalInstance localInstance : localInstances) {
-      ClassField classifyingField = localInstance.classDefinition.getClassifyingField();
+      ClassField classifyingField = localInstance.classCall.getDefinition().getClassifyingField();
       Expression instance = FieldCallExpression.make(localInstance.instanceField, Sort.STD, new ReferenceExpression(thisParam));
       if (classifyingField == null) {
-        localInstancePool.addInstance(null, null, localInstance.classDefinition, instance, localInstance.concreteField);
+        localInstancePool.addLocalInstance(null, localInstance.classCall.getDefinition(), instance, localInstance.concreteField);
       } else {
-        Sort sortArg = localInstance.instanceField.getType(Sort.STD).getSortOfType();
-        localInstancePool.addInstance(FieldCallExpression.make(classifyingField, sortArg, instance), classifyingField.getType(sortArg).applyExpression(instance), localInstance.classDefinition, instance, localInstance.concreteField);
+        localInstancePool.addLocalInstance(FieldCallExpression.make(classifyingField, localInstance.classCall.getSortArgument(), instance), localInstance.classCall.getDefinition(), instance, localInstance.concreteField);
       }
     }
   }
