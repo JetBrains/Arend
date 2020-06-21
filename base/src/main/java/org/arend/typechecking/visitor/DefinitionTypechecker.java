@@ -2096,6 +2096,25 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
   }
 
+  private Pair<DependentLink, Expression> addPiParametersToContext(List<? extends Concrete.Parameter> parameters, Expression piType) {
+    Expression resultType = piType;
+    SingleDependentLink link = EmptyDependentLink.getInstance();
+    for (Concrete.Parameter parameter : parameters) {
+      for (Referable referable : parameter.getReferableList()) {
+        if (!link.hasNext()) {
+          if (!(resultType instanceof PiExpression)) {
+            return new Pair<>(link, null);
+          }
+          link = ((PiExpression) resultType).getParameters();
+          resultType = ((PiExpression) resultType).getCodomain();
+        }
+        typechecker.addBinding(referable, link);
+        link = link.getNext();
+      }
+    }
+    return new Pair<>(link, resultType);
+  }
+
   private ClassField typecheckClassField(Concrete.BaseClassField def, ClassDefinition parentClass, List<LocalInstance> localInstances, boolean newDef, boolean hasClassifyingField) {
     ClassField typedDef = null;
     if (def instanceof Concrete.OverriddenField) {
@@ -2145,29 +2164,13 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         if (kind == ClassFieldKind.FIELD) {
           errorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.LEVEL_IGNORED, def.getResultTypeLevel()));
         } else {
-          Expression resultType = piType;
-          SingleDependentLink link = EmptyDependentLink.getInstance();
-          loop:
-          for (Concrete.TypeParameter parameter : def.getParameters()) {
-            for (Referable referable : parameter.getReferableList()) {
-              if (!link.hasNext()) {
-                if (!(resultType instanceof PiExpression)) {
-                  resultType = null;
-                  break loop;
-                }
-                link = ((PiExpression) resultType).getParameters();
-                resultType = ((PiExpression) resultType).getCodomain();
-              }
-              typechecker.addBinding(referable, link);
-              link = link.getNext();
-            }
-          }
-          if (!link.hasNext() && resultType != null) {
-            Integer level = typecheckResultTypeLevel(def.getResultTypeLevel(), false, true, resultType, null, typedDef, newDef && def instanceof Concrete.ClassField);
+          var pair = addPiParametersToContext(def.getParameters(), piType);
+          if (!pair.proj1.hasNext() && pair.proj2 != null) {
+            Integer level = typecheckResultTypeLevel(def.getResultTypeLevel(), false, true, pair.proj2, null, typedDef, newDef && def instanceof Concrete.ClassField);
             isProperty = level != null && level == -1;
           } else {
             // Just reports an error
-            typechecker.getExpressionLevel(link, null, null, DummyEquations.getInstance(), def.getResultTypeLevel());
+            typechecker.getExpressionLevel(pair.proj1, null, null, DummyEquations.getInstance(), def.getResultTypeLevel());
           }
         }
       } else if (ok && kind != ClassFieldKind.FIELD) {
@@ -2182,9 +2185,21 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             if ((level == null || level != -1) && typechecker.getExtension() != null) {
               LevelProver prover = typechecker.getExtension().getLevelProver();
               if (prover != null) {
-                TypecheckingResult result = typechecker.finalize(TypecheckingResult.fromChecked(prover.prove(null, typeExpr, CheckTypeVisitor.getLevelExpression(typeResult, -1), -1, def.getResultType(), typechecker)), def.getResultType(), false);
+                var pair = addPiParametersToContext(def.getParameters(), piType);
+                Type typeType;
+                Expression type = pair.proj2;
+                if (type == null) {
+                  type = typeExpr;
+                  typeType = typeResult;
+                } else if (type instanceof Type) {
+                  typeType = (Type) type;
+                } else {
+                  Sort typeSort = type.getSortOfType();
+                  typeType = new TypeExpression(type, typeSort != null ? typeSort : typeResult.getSortOfType());
+                }
+                TypecheckingResult result = pair.proj2 == null ? null : typechecker.finalize(TypecheckingResult.fromChecked(prover.prove(null, type, CheckTypeVisitor.getLevelExpression(typeType, -1), -1, def.getResultType(), typechecker)), def.getResultType(), false);
                 if (result != null) {
-                  Integer level2 = checkResultTypeLevel(result, false, true, typeExpr, null, typedDef, newDef, def);
+                  Integer level2 = checkResultTypeLevel(result, false, true, type, null, typedDef, newDef, def);
                   if (level2 != null && level2 == -1) {
                     isProperty = true;
                   }
