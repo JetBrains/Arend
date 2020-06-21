@@ -166,12 +166,16 @@ coClauses : coClause*                         # coClausesWithoutBraces
 
 clause : pattern (',' pattern)* ('=>' expr)?;
 
-coClause : '|' precedence longName tele* coClauseBody;
+coClause : '|' (longName coClauseBody | precedence longName tele* (COLON returnExpr)? coClauseDefBody);
 
-coClauseBody : '=>' expr                                            # coClauseExpr
-             | (':' returnExpr)? elim '{' clause? ('|' clause)* '}' # coClauseWith
-             | '{' localCoClause* '}'                               # coClauseCowith
+coClauseBody : tele* '=>' expr          # coClauseImpl
+             | '{' localCoClause* '}'   # coClauseRec
              ;
+
+coClauseDefBody : '=>' expr                                 # coClauseExpr
+                | '\\cowith' coClauses                      # coClauseCowith
+                | elim? ('{' clause? ('|' clause)* '}')?    # coClauseWith
+                ;
 
 localCoClause : '|' longName tele* ('=>' expr | '{' localCoClause* '}');
 

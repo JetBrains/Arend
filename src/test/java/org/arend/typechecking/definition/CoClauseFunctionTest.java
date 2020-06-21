@@ -193,4 +193,20 @@ public class CoClauseFunctionTest extends TypeCheckingTestCase {
       "    | suc n => n\n" +
       "  }", 1);
   }
+
+  @Test
+  public void termTest() {
+    typeCheckModule(
+      "\\class D | \\infix 3 func (x y : Nat) : Nat\n" +
+      "\\instance D-inst : D\n" +
+      "  | \\infix 3 func (x y : Nat) : Nat => x");
+  }
+
+  @Test
+  public void termTest2() {
+    typeCheckModule(
+      "\\class D | \\infix 3 func (x y : Nat) : Nat\n" +
+      "\\instance D-inst : D\n" +
+      "  | \\infix 3 func (x y : Nat) => x");
+  }
 }

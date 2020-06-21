@@ -3,7 +3,6 @@ package org.arend.frontend.parser;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
-import org.arend.error.ParsingError;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.reference.Precedence;
 import org.arend.frontend.group.SimpleNamespaceCommand;
@@ -1057,39 +1056,49 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   private Concrete.CoClauseElement visitCoClause(CoClauseContext ctx, List<Group> subgroups, ChildGroup parentGroup, TCClassReferable enclosingClass, TCReferable enclosingDefinition) {
     List<String> path = visitLongNamePath(ctx.longName());
     Position position = tokenPosition(ctx.start);
-    List<TeleContext> teleCtxs = ctx.tele();
-    List<Concrete.Parameter> parameters = visitLamTeles(teleCtxs);
     Concrete.Expression term = null;
     List<Concrete.ClassFieldImpl> subClassFieldImpls = Collections.emptyList();
     CoClauseBodyContext body = ctx.coClauseBody();
-    if (!(body instanceof CoClauseWithContext) && ctx.precedence() instanceof WithPrecedenceContext) {
-      myErrorReporter.report(new ParsingError(ParsingError.Kind.PRECEDENCE_IGNORED, tokenPosition(ctx.precedence().start)));
-    }
+    CoClauseDefBodyContext defBody = ctx.coClauseDefBody();
 
-    if (body instanceof CoClauseExprContext) {
-      term = visitExpr(((CoClauseExprContext) body).expr());
+    if (body instanceof CoClauseImplContext) {
+      List<TeleContext> teleCtxs = ((CoClauseImplContext) body).tele();
+      List<Concrete.Parameter> parameters = visitLamTeles(teleCtxs);
+      term = visitExpr(((CoClauseImplContext) body).expr());
       if (!parameters.isEmpty()) {
         term = new Concrete.LamExpression(tokenPosition(teleCtxs.get(0).start), parameters, term);
       }
-    } else if (body instanceof CoClauseWithContext) {
-      CoClauseWithContext withBody = (CoClauseWithContext) body;
+    } else if (body instanceof CoClauseRecContext) {
+      subClassFieldImpls = visitLocalCoClauses(((CoClauseRecContext) body).localCoClause());
+    } else if (defBody != null) {
       ConcreteLocatedReferable reference = makeReferable(position, path.get(path.size() - 1), visitPrecedence(ctx.precedence()), null, Precedence.DEFAULT, parentGroup, LocatedReferableImpl.Kind.TYPECHECKABLE);
-      subgroups.add(new EmptyGroup(reference, parentGroup));
-      Pair<Concrete.Expression, Concrete.Expression> pair = visitReturnExpr(withBody.returnExpr());
+      ChildGroup myGroup = new EmptyGroup(reference, parentGroup);
+      subgroups.add(myGroup);
+      Pair<Concrete.Expression, Concrete.Expression> pair = visitReturnExpr(ctx.returnExpr());
       Referable fieldRef = LongUnresolvedReference.make(position, path);
-      List<Concrete.FunctionClause> clauses = new ArrayList<>();
-      for (ClauseContext clauseCtx : withBody.clause()) {
-        clauses.add(visitClause(clauseCtx));
+      Concrete.FunctionBody fBody;
+      if (defBody instanceof CoClauseExprContext) {
+        fBody = new Concrete.TermFunctionBody(tokenPosition(defBody.start), visitExpr(((CoClauseExprContext) defBody).expr()));
+      } else if (defBody instanceof CoClauseWithContext) {
+        CoClauseWithContext withBody = (CoClauseWithContext) defBody;
+        List<Concrete.FunctionClause> clauses = new ArrayList<>();
+        for (ClauseContext clauseCtx : withBody.clause()) {
+          clauses.add(visitClause(clauseCtx));
+        }
+        fBody = new Concrete.ElimFunctionBody(tokenPosition(withBody.elim().start), visitElim(withBody.elim()), clauses);
+      } else if (defBody instanceof CoClauseCowithContext) {
+        List<CoClauseContext> coClauses = getCoClauses(((CoClauseCowithContext) defBody).coClauses());
+        fBody = new Concrete.CoelimFunctionBody(tokenPosition(defBody.start), new ArrayList<>());
+        visitCoClauses(coClauses, subgroups, myGroup, reference, fBody.getCoClauseElements());
+      } else {
+        throw new IllegalStateException();
       }
-      Concrete.CoClauseFunctionDefinition def = new Concrete.CoClauseFunctionDefinition(reference, enclosingDefinition, fieldRef, parameters, pair.proj1, pair.proj2, new Concrete.ElimFunctionBody(tokenPosition(withBody.elim().start), visitElim(withBody.elim()), clauses));
+      List<TeleContext> teleCtxs = ctx.tele();
+      List<Concrete.Parameter> parameters = visitLamTeles(teleCtxs);
+      Concrete.CoClauseFunctionDefinition def = new Concrete.CoClauseFunctionDefinition(reference, enclosingDefinition, fieldRef, parameters, pair.proj1, pair.proj2, fBody);
       def.enclosingClass = enclosingClass;
       reference.setDefinition(def);
       return new Concrete.CoClauseFunctionReference(fieldRef, reference);
-    } else if (body instanceof CoClauseCowithContext) {
-      if (!parameters.isEmpty()) {
-        myErrorReporter.report(new ParserError(tokenPosition(teleCtxs.get(0).start), "Parameters are not allowed for fields implemented by copattern matching"));
-      }
-      subClassFieldImpls = visitLocalCoClauses(((CoClauseCowithContext) body).localCoClause());
     } else {
       throw new IllegalStateException();
     }
