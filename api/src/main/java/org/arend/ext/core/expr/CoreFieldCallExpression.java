@@ -1,11 +1,9 @@
 package org.arend.ext.core.expr;
 
-import org.arend.ext.core.level.CoreSort;
 import org.arend.ext.core.definition.CoreClassField;
 import org.jetbrains.annotations.NotNull;
 
-public interface CoreFieldCallExpression extends CoreExpression {
-  @NotNull CoreClassField getDefinition();
-  @NotNull CoreSort getSortArgument();
+public interface CoreFieldCallExpression extends CoreDefCallExpression {
+  @Override @NotNull CoreClassField getDefinition();
   @NotNull CoreExpression getArgument();
 }

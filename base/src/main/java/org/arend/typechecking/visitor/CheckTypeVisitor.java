@@ -1069,7 +1069,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     if (ref instanceof CoreReferable) {
       TypecheckingResult result = ((CoreReferable) ref).result;
       fixCheckedExpression(result, ref, expr);
-      return result;
+      return new TypecheckingResult(result.expression, result.type);
     }
 
     if (!(ref instanceof GlobalReferable) && (expr.getPLevel() != null || expr.getHLevel() != null)) {

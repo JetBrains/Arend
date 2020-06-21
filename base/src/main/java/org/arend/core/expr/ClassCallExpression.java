@@ -21,7 +21,9 @@ import org.arend.ext.core.expr.CoreClassCallExpression;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.ext.typechecking.TypedExpression;
 import org.arend.naming.renamer.Renamer;
+import org.arend.typechecking.result.TypecheckingResult;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -137,6 +139,50 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
     }
     AbsExpression impl = getDefinition().getImplementation(field);
     return impl == null ? null : impl.apply((Expression) thisExpr);
+  }
+
+  private static void checkImplementation(CoreClassField field, Expression type) {
+    type = type.normalize(NormalizationMode.WHNF);
+    if (!(type instanceof CoreClassCallExpression && ((CoreClassCallExpression) type).getDefinition().isSubClassOf(field.getParentClass()))) {
+      throw new IllegalArgumentException("Expected an expression of type '" + field.getParentClass().getName() + "'");
+    }
+  }
+
+  @Override
+  public @Nullable CoreExpression getImplementationHere(@NotNull CoreClassField field, @NotNull TypedExpression thisExpr) {
+    if (!(field instanceof ClassField)) {
+      throw new IllegalArgumentException();
+    }
+
+    Expression expr = myImplementations.get(field);
+    if (expr == null) {
+      return null;
+    }
+
+    TypecheckingResult result = TypecheckingResult.fromChecked(thisExpr);
+    checkImplementation(field, result.type);
+    return expr.subst(myThisBinding, result.expression);
+  }
+
+  @Override
+  public @Nullable CoreExpression getImplementation(@NotNull CoreClassField field, @NotNull TypedExpression thisExpr) {
+    if (!(field instanceof ClassField)) {
+      throw new IllegalArgumentException();
+    }
+    TypecheckingResult result = TypecheckingResult.fromChecked(thisExpr);
+
+    Expression expr = myImplementations.get(field);
+    if (expr != null) {
+      checkImplementation(field, result.type);
+      return expr.subst(myThisBinding, result.expression);
+    }
+
+    AbsExpression impl = getDefinition().getImplementation(field);
+    if (impl == null) {
+      return null;
+    }
+    checkImplementation(field, result.type);
+    return impl.apply(result.expression);
   }
 
   @Override

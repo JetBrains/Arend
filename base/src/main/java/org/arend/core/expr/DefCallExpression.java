@@ -7,13 +7,14 @@ import org.arend.core.definition.UniverseKind;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
+import org.arend.ext.core.expr.CoreDefCallExpression;
 import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
 import java.util.List;
 
-public abstract class DefCallExpression extends Expression {
+public abstract class DefCallExpression extends Expression implements CoreDefCallExpression {
   private final Definition myDefinition;
   private Sort mySortArgument;
 
@@ -22,7 +23,8 @@ public abstract class DefCallExpression extends Expression {
     mySortArgument = sortArgument;
   }
 
-  public List<? extends Expression> getDefCallArguments() {
+  @Override
+  public @NotNull List<? extends Expression> getDefCallArguments() {
     return Collections.emptyList();
   }
 
@@ -48,7 +50,8 @@ public abstract class DefCallExpression extends Expression {
     mySortArgument = mySortArgument.subst(substitution);
   }
 
-  public Definition getDefinition() {
+  @Override
+  public @NotNull Definition getDefinition() {
     return myDefinition;
   }
 
