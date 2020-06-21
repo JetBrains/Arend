@@ -1065,11 +1065,12 @@ public final class Concrete {
 
   public static class CaseExpression extends Expression implements ConcreteCaseExpression {
     public static final byte PREC = -8;
-    private final boolean mySCase;
+    private boolean mySCase;
     private final List<CaseArgument> myArguments;
     private Expression myResultType;
     private Expression myResultTypeLevel;
     private final List<FunctionClause> myClauses;
+    public int level = -2; // the level of the result type; -2 means not truncated
 
     public CaseExpression(Object data, boolean isSCase, List<CaseArgument> arguments, Expression resultType, Expression resultTypeLevel, List<FunctionClause> clauses) {
       super(data);
@@ -1083,6 +1084,10 @@ public final class Concrete {
     @Override
     public boolean isSCase() {
       return mySCase;
+    }
+
+    public void setSCase(boolean isSCase) {
+      mySCase = isSCase;
     }
 
     @Override

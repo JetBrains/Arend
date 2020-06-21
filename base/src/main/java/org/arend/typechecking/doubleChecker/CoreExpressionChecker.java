@@ -142,7 +142,18 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     addBinding(expr.getThisBinding(), expr);
     Expression thisExpr = new ReferenceExpression(expr.getThisBinding());
     for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
-      entry.getValue().accept(this, entry.getKey().getType(expr.getSortArgument()).applyExpression(thisExpr));
+      Expression type = entry.getKey().getType(expr.getSortArgument()).applyExpression(thisExpr);
+      if (entry.getKey().isProperty()) {
+        if (entry.getValue() instanceof LamExpression) {
+          checkLam((LamExpression) entry.getValue(), type, -1);
+        } else if (entry.getValue() instanceof CaseExpression) {
+          checkCase((CaseExpression) entry.getValue(), type, -1);
+        } else {
+          entry.getValue().accept(this, type);
+        }
+      } else {
+        entry.getValue().accept(this, type);
+      }
     }
     myContext.remove(expr.getThisBinding());
 
@@ -264,12 +275,23 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     }
   }
 
-  @Override
-  public Expression visitLam(LamExpression expr, Expression expectedType) {
+  private Expression checkLam(LamExpression expr, Expression expectedType, Integer level) {
     checkDependentLink(expr.getParameters(), new UniverseExpression(new Sort(expr.getResultSort().getPLevel(), Level.INFINITY)), expr);
-    Expression type = expr.getBody().accept(this, null);
+    Expression type;
+    if (expr.getBody() instanceof LamExpression) {
+      type = checkLam((LamExpression) expr.getBody(), null, level);
+    } else if (expr.getBody() instanceof CaseExpression) {
+      type = checkCase((CaseExpression) expr.getBody(), null, level);
+    } else {
+      type = expr.getBody().accept(this, null);
+    }
     freeDependentLink(expr.getParameters());
     return check(expectedType, new PiExpression(expr.getResultSort(), expr.getParameters(), type), expr);
+  }
+
+  @Override
+  public Expression visitLam(LamExpression expr, Expression expectedType) {
+    return checkLam(expr, expectedType, null);
   }
 
   @Override
@@ -593,7 +615,11 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       if (noEmpty) {
         if (clause.getExpression() != null) {
           substitution.addSubst(idpSubst);
-          clause.getExpression().accept(this, type.subst(substitution));
+          if (clause.getExpression() instanceof CaseExpression && mode == PatternTypechecking.Mode.FUNCTION) {
+            checkCase((CaseExpression) clause.getExpression(), type.subst(substitution), level);
+          } else {
+            clause.getExpression().accept(this, type.subst(substitution));
+          }
         } else {
           throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("The right hand side cannot be omitted without absurd pattern", mySourceNode), errorExpr));
         }
@@ -644,18 +670,22 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     }
   }
 
-  @Override
-  public Expression visitCase(CaseExpression expr, Expression expectedType) {
+  Expression checkCase(CaseExpression expr, Expression expectedType, Integer level) {
     ExprSubstitution substitution = new ExprSubstitution();
     checkDependentLink(expr.getParameters(), Type.OMEGA, expr);
     checkList(expr.getArguments(), expr.getParameters(), substitution, LevelSubstitution.EMPTY);
     expr.getResultType().accept(this, Type.OMEGA);
 
-    Integer level = expr.getResultTypeLevel() == null ? null : checkLevelProof(expr.getResultTypeLevel(), expr.getResultType());
+    Integer level2 = expr.getResultTypeLevel() == null ? null : checkLevelProof(expr.getResultTypeLevel(), expr.getResultType());
 
     freeDependentLink(expr.getParameters());
-    checkElimBody(null, expr.getElimBody(), expr.getParameters(), expr.getResultType(), level, expr, expr.isSCase(), PatternTypechecking.Mode.CASE);
+    checkElimBody(null, expr.getElimBody(), expr.getParameters(), expr.getResultType(), level == null ? level2 : level2 == null ? level : Integer.valueOf(Math.min(level, level2)), expr, expr.isSCase(), PatternTypechecking.Mode.CASE);
     return check(expectedType, expr.getResultType().subst(substitution), expr);
+  }
+
+  @Override
+  public Expression visitCase(CaseExpression expr, Expression expectedType) {
+    return checkCase(expr, expectedType, null);
   }
 
   @Override

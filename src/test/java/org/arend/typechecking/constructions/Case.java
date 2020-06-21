@@ -2,6 +2,8 @@ package org.arend.typechecking.constructions;
 
 import org.arend.Matchers;
 import org.arend.typechecking.TypeCheckingTestCase;
+import org.arend.typechecking.error.local.SquashedDataError;
+import org.arend.typechecking.error.local.TruncatedDataError;
 import org.junit.Test;
 
 import static org.arend.Matchers.*;
@@ -144,5 +146,44 @@ public class Case extends TypeCheckingTestCase {
       "    | 0 => inl idp\n" +
       "    | suc n => inr (n, idp)\n" +
       "  }");
+  }
+
+  @Test
+  public void lemmaLevelTest() {
+    typeCheckModule(
+      "\\truncated \\data Trunc (A : \\Type) : \\Prop | in A\n" +
+      "\\lemma test {A : \\Type} (p : \\Pi (a a' : A) -> a = a') (t : Trunc A) : \\level A p => \\case t \\with { | in a => a }");
+  }
+
+  @Test
+  public void funcLevelTest() {
+    typeCheckModule(
+      "\\truncated \\data Trunc (A : \\Type) : \\Prop | in A\n" +
+      "\\func test {A : \\Type} (p : \\Pi (a a' : A) -> a = a') (t : Trunc A) : \\level A p => \\case t \\with { | in a => a }");
+  }
+
+  @Test
+  public void propertyLevelTest() {
+    typeCheckModule(
+      "\\truncated \\data Trunc (A : \\Type) : \\Prop | in A\n" +
+      "\\record R | field {A : \\Set} (p : \\Pi (a a' : A) -> a = a') (t : Trunc A) : \\level A p\n" +
+      "\\func test : R \\cowith | field _ t => \\case t \\with { | in a => a }");
+  }
+
+  @Test
+  public void propertyLevelError() {
+    typeCheckModule(
+      "\\truncated \\data Trunc (A : \\Type) : \\Prop | in A\n" +
+      "\\record R | field {A : \\Set} (p : \\Pi (a a' : A) -> a = a') (t : Trunc A) : A\n" +
+      "\\func test : R \\cowith | field _ t => \\scase t \\with { | in a => a }", 1);
+    assertThatErrorsAre(Matchers.typecheckingError(TruncatedDataError.class));
+  }
+
+  @Test
+  public void propertyExtendsLevelTest() {
+    typeCheckModule(
+      "\\truncated \\data Trunc (A : \\Type) : \\Prop | in A\n" +
+      "\\record R | field {A : \\Set} (p : \\Pi (a a' : A) -> a = a') (t : Trunc A) : \\level A p\n" +
+      "\\record S \\extends R | field _ t => \\case t \\with { | in a => a }");
   }
 }

@@ -565,6 +565,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
   }
 
+  private static boolean checkResultTypeLater(Concrete.BaseFunctionDefinition def) {
+    return def.getBody() instanceof Concrete.TermFunctionBody && !def.isRecursive() && def.getKind() != FunctionKind.LEVEL && (!(def.getBody().getTerm() instanceof Concrete.CaseExpression) || ((Concrete.CaseExpression) def.getBody().getTerm()).getResultType() != null);
+  }
+
   @SuppressWarnings("UnusedReturnValue")
   private boolean typecheckFunctionHeader(FunctionDefinition typedDef, Concrete.BaseFunctionDefinition def, LocalInstancePool localInstancePool, boolean newDef) {
     ClassField implementedField = def instanceof Concrete.CoClauseFunctionDefinition ? typechecker.referableToClassField(((Concrete.CoClauseFunctionDefinition) def).getImplementedField(), def) : null;
@@ -580,7 +584,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     if (cResultType != null) {
       Type expectedTypeResult = def.getBody() instanceof Concrete.CoelimFunctionBody && !def.isRecursive()
         ? null // The result type will be typechecked together with all field implementations during body typechecking.
-        : def.getBody() instanceof Concrete.TermFunctionBody && !def.isRecursive() && kind != FunctionKind.LEVEL
+        : checkResultTypeLater(def)
           ? typechecker.checkType(cResultType, Type.OMEGA)
           : typechecker.finalCheckType(cResultType, Type.OMEGA, kind == FunctionKind.LEMMA && def.getResultTypeLevel() == null);
       if (expectedTypeResult != null) {
@@ -809,6 +813,24 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
     List<ExtElimClause> clauses = null;
     Concrete.FunctionBody body = def.getBody();
+    boolean checkLevelNow = (body instanceof Concrete.ElimFunctionBody || body.getTerm() instanceof Concrete.CaseExpression && def.getKind() != FunctionKind.LEVEL) && !checkResultTypeLater(def);
+    Integer typeLevel = checkLevelNow ? checkTypeLevel(def, typedDef, newDef) : null;
+    if (typeLevel != null) {
+      if (body instanceof Concrete.ElimFunctionBody) {
+        for (Concrete.FunctionClause clause : body.getClauses()) {
+          if (clause.getExpression() instanceof Concrete.CaseExpression) {
+            Concrete.CaseExpression caseExpr = (Concrete.CaseExpression) clause.getExpression();
+            caseExpr.level = typeLevel;
+            caseExpr.setSCase(true);
+          }
+        }
+      } else {
+        Concrete.CaseExpression caseExpr = (Concrete.CaseExpression) body.getTerm();
+        caseExpr.level = typeLevel;
+        caseExpr.setSCase(true);
+      }
+    }
+
     boolean bodyIsOK = false;
     ClassCallExpression consType = null;
     if (def.getKind() == FunctionKind.LEVEL && typedDef.getResultType() instanceof UniverseExpression && ((UniverseExpression) typedDef.getResultType()).getSort().getHLevel().isClosed() && (body instanceof Concrete.TermFunctionBody || body instanceof Concrete.ElimFunctionBody && body.getClauses().isEmpty())) {
@@ -860,13 +882,12 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
       }
     } else if (body instanceof Concrete.ElimFunctionBody) {
-      Integer level = checkTypeLevel(def, typedDef, newDef);
       Concrete.ElimFunctionBody elimBody = (Concrete.ElimFunctionBody) body;
       List<DependentLink> elimParams = ElimTypechecking.getEliminatedParameters(elimBody.getEliminatedReferences(), elimBody.getClauses(), typedDef.getParameters(), typechecker);
       PatternTypechecking patternTypechecking = new PatternTypechecking(errorReporter, PatternTypechecking.Mode.FUNCTION, typechecker, true);
       clauses = elimParams == null ? null : patternTypechecking.typecheckClauses(elimBody.getClauses(), def.getParameters(), typedDef.getParameters(), elimParams, expectedType);
       Sort sort = expectedType.getSortOfType();
-      Body typedBody = clauses == null ? null : new ElimTypechecking(errorReporter, typechecker.getEquations(), expectedType, PatternTypechecking.Mode.FUNCTION, level, sort != null ? sort.getHLevel() : Level.INFINITY, kind.isSFunc(), elimBody.getClauses(), def).typecheckElim(clauses, def.getParameters(), typedDef.getParameters(), elimParams);
+      Body typedBody = clauses == null ? null : new ElimTypechecking(errorReporter, typechecker.getEquations(), expectedType, PatternTypechecking.Mode.FUNCTION, typeLevel, sort != null ? sort.getHLevel() : Level.INFINITY, kind.isSFunc(), elimBody.getClauses(), def).typecheckElim(clauses, def.getParameters(), typedDef.getParameters(), elimParams);
       if (typedBody != null) {
         if (newDef) {
           typedDef.setBody(typedBody);
@@ -992,7 +1013,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
     }
 
-    if (!(body instanceof Concrete.ElimFunctionBody)) {
+    if (!checkLevelNow) {
       checkTypeLevel(def, typedDef, newDef);
     }
 
@@ -1937,6 +1958,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             fieldType = field.getType(Sort.STD);
           }
           setClassLocalInstancePool(localInstances, thisBinding, lamImpl, !typedDef.isRecord() && typedDef.getClassifyingField() == null ? typedDef : null);
+          CheckTypeVisitor.setCaseLevel(lamImpl.body);
           result = typechecker.finalCheckExpr(lamImpl.body, fieldType.getCodomain().subst(fieldType.getParameters(), new ReferenceExpression(thisBinding)));
           myInstancePool.setInstancePool(null);
         } else {

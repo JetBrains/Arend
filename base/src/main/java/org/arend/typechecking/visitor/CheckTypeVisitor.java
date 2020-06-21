@@ -754,6 +754,17 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     return checkResult(expectedType, new TypecheckingResult(resultClassCall, new UniverseExpression(resultClassCall.getSort())), expr);
   }
 
+  static void setCaseLevel(Concrete.Expression expr) {
+    while (expr instanceof Concrete.LamExpression) {
+      expr = ((Concrete.LamExpression) expr).getBody();
+    }
+    if (expr instanceof Concrete.CaseExpression) {
+      Concrete.CaseExpression caseExpr = (Concrete.CaseExpression) expr;
+      caseExpr.level = -1;
+      caseExpr.setSCase(true);
+    }
+  }
+
   private TypecheckingResult typecheckImplementation(ClassField field, Concrete.Expression implBody, ClassCallExpression fieldSetClass) {
     PiExpression piType = fieldSetClass.getDefinition().getOverriddenType(field, Sort.STD);
     if (piType == null) {
@@ -784,6 +795,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       return result;
     }
 
+    if (field.isProperty()) {
+      setCaseLevel(implBody);
+    }
     TypecheckingResult result = fieldSetClass.getDefinition().isGoodField(field) ? checkArgument(implBody, type, null) : checkExpr(implBody, type);
     if (result == null) {
       return null;
@@ -2220,6 +2234,10 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     return result;
   }
 
+  private Integer minInteger(Integer int1, Integer int2) {
+    return int1 == null ? int2 : int2 == null ? int1 : Integer.valueOf(Math.min(int1, int2));
+  }
+
   @Override
   public TypecheckingResult visitCase(Concrete.CaseExpression expr, Expression expectedType) {
     if (expectedType == null && expr.getResultType() == null) {
@@ -2234,7 +2252,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     ExprSubstitution substitution = new ExprSubstitution();
     Type resultType = null;
     Expression resultExpr;
-    Integer level = null;
+    Integer level = expr.level >= -1 ? expr.level : null;
     Expression resultTypeLevel = null;
     Map<Referable, Binding> origElimBindings = new HashMap<>();
     ExprSubstitution elimSubst = new ExprSubstitution();
@@ -2283,7 +2301,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
         TypecheckingResult levelResult = checkExpr(expr.getResultTypeLevel(), null);
         if (levelResult != null) {
           resultTypeLevel = levelResult.expression;
-          level = getExpressionLevel(EmptyDependentLink.getInstance(), levelResult.type, resultExpr, myEquations, expr.getResultTypeLevel());
+          level = minInteger(level, getExpressionLevel(EmptyDependentLink.getInstance(), levelResult.type, resultExpr, myEquations, expr.getResultTypeLevel()));
         }
       }
     }
@@ -2302,7 +2320,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       if (typeType instanceof Concrete.UniverseExpression) {
         Concrete.UniverseExpression universeType = (Concrete.UniverseExpression) typeType;
         if (universeType.getHLevel() instanceof Concrete.NumberLevelExpression) {
-          level = ((Concrete.NumberLevelExpression) universeType.getHLevel()).getNumber();
+          level = minInteger(level, ((Concrete.NumberLevelExpression) universeType.getHLevel()).getNumber());
         }
       }
     }
@@ -2317,10 +2335,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
           level2 = defCall.getUseLevel();
         }
       }
-
-      if (level2 != null && (level == null || level2 < level)) {
-        level = level2;
-      }
+      level = minInteger(level, level2);
     }
 
     Level actualLevel;

@@ -20,7 +20,7 @@ public class BaseDefinitionTypechecker {
   }
 
   protected void checkFunctionLevel(Concrete.BaseFunctionDefinition def, FunctionKind kind) {
-    if (def.getResultTypeLevel() != null && !(kind == FunctionKind.LEMMA || kind == FunctionKind.COCLAUSE_FUNC || def.getBody() instanceof Concrete.ElimFunctionBody)) {
+    if (def.getResultTypeLevel() != null && !(kind == FunctionKind.LEMMA || kind == FunctionKind.COCLAUSE_FUNC || def.getBody() instanceof Concrete.ElimFunctionBody || def.getBody().getTerm() instanceof Concrete.CaseExpression)) {
       errorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.LEVEL_IGNORED, def.getResultTypeLevel()));
       def.setResultTypeLevel(null);
     }
