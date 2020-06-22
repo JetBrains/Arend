@@ -107,11 +107,11 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     while (origRef instanceof RedirectingReferable) {
       origRef = ((RedirectingReferable) origRef).getOriginalReferable();
     }
-    expr.setReferent(origRef);
     if (!(origRef instanceof UnresolvedReference)) {
       return expr;
     }
 
+    expr.setReferent(origRef);
     List<Referable> resolvedList = myResolverListener == null ? null : new ArrayList<>();
     Concrete.Expression argument = resolve(expr, myScope, false, resolvedList);
     if (expr.getReferent() instanceof ErrorReference) {

@@ -6,7 +6,6 @@ import org.arend.error.ParsingError;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.reference.Precedence;
-import org.arend.naming.BinOpParser;
 import org.arend.naming.error.*;
 import org.arend.naming.reference.*;
 import org.arend.naming.reference.converter.ReferableConverter;
@@ -116,15 +115,6 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
             referenceExpression.setReferent(ref);
           }
         }
-      }
-
-      BinOpParser binOpParser = new BinOpParser(myLocalErrorReporter);
-      expr = binOpParser.parse(binOpExpr);
-      binOpExpr.getSequence().clear();
-      binOpExpr.getSequence().add(new Concrete.BinOpSequenceElem(expr));
-
-      if (expr instanceof Concrete.AppExpression) {
-        expr = ((Concrete.AppExpression) expr).getFunction();
       }
     }
 
