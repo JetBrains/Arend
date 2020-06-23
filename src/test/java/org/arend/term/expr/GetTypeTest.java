@@ -105,8 +105,12 @@ public class GetTypeTest extends TypeCheckingTestCase {
     List<DependentLink> c2Params = new ArrayList<>();
     Expression c2Type = data.getConstructor("c2").getTypeWithParams(c2Params, Sort.SET0);
     DependentLink params = data.getConstructor("c2").getDataTypeParameters();
+    List<DependentLink> expectedParams = DependentLink.Helper.toList(params);
+    for (DependentLink param : expectedParams) {
+      param.setExplicit(false);
+    }
     assertEquals(
-        fromPiParameters(Pi(Nat(), DataCall(data, Sort.SET0, Suc(Ref(params)))), DependentLink.Helper.toList(params)),
+        fromPiParameters(Pi(Nat(), DataCall(data, Sort.SET0, Suc(Ref(params)))), expectedParams),
         fromPiParameters(c2Type, c2Params)
     );
   }
@@ -120,22 +124,34 @@ public class GetTypeTest extends TypeCheckingTestCase {
     DataDefinition d = (DataDefinition) getDefinition("D");
     List<DependentLink> dzeroParams = new ArrayList<>();
     Expression dzeroType = d.getConstructor("dzero").getTypeWithParams(dzeroParams, Sort.STD);
+    List<DependentLink> zeroExpectedParams = DependentLink.Helper.toList(d.getConstructor("dzero").getDataTypeParameters());
+    for (DependentLink param : zeroExpectedParams) {
+      param.setExplicit(false);
+    }
     assertEquals(
-        fromPiParameters(DataCall(d, Sort.STD, Zero(), Ref(d.getConstructor("dzero").getDataTypeParameters())), DependentLink.Helper.toList(d.getConstructor("dzero").getDataTypeParameters())),
+        fromPiParameters(DataCall(d, Sort.STD, Zero(), Ref(d.getConstructor("dzero").getDataTypeParameters())), zeroExpectedParams),
         fromPiParameters(dzeroType, dzeroParams)
     );
     List<DependentLink> doneAllParams = new ArrayList<>();
     Expression doneType = d.getConstructor("done").getTypeWithParams(doneAllParams, Sort.STD);
     DependentLink doneParams = d.getConstructor("done").getDataTypeParameters();
+    List<DependentLink> doneExpectedParams = DependentLink.Helper.toList(d.getConstructor("done").getDataTypeParameters());
+    for (DependentLink param : doneExpectedParams) {
+      param.setExplicit(false);
+    }
     assertEquals(
-        fromPiParameters(DataCall(d, Sort.STD, Suc(Ref(doneParams)), Ref(doneParams.getNext())), DependentLink.Helper.toList(d.getConstructor("done").getDataTypeParameters())),
+        fromPiParameters(DataCall(d, Sort.STD, Suc(Ref(doneParams)), Ref(doneParams.getNext())), doneExpectedParams),
         fromPiParameters(doneType, doneAllParams)
     );
     List<DependentLink> consAllParams = new ArrayList<>();
     Expression consType = vec.getConstructor("Cons").getTypeWithParams(consAllParams, Sort.STD);
     DependentLink consParams = vec.getConstructor("Cons").getDataTypeParameters();
+    List<DependentLink> consExpectedParams = DependentLink.Helper.toList(consParams);
+    for (DependentLink param : consExpectedParams) {
+      param.setExplicit(false);
+    }
     assertEquals(
-        fromPiParameters(Pi(Ref(consParams), Pi(DataCall(vec, Sort.STD, Ref(consParams), Ref(consParams.getNext())), DataCall(vec, Sort.STD, Ref(consParams), Suc(Ref(consParams.getNext()))))), DependentLink.Helper.toList(consParams)),
+        fromPiParameters(Pi(Ref(consParams), Pi(DataCall(vec, Sort.STD, Ref(consParams), Ref(consParams.getNext())), DataCall(vec, Sort.STD, Ref(consParams), Suc(Ref(consParams.getNext()))))), consExpectedParams),
         fromPiParameters(consType, consAllParams)
     );
   }
@@ -150,8 +166,12 @@ public class GetTypeTest extends TypeCheckingTestCase {
     DependentLink A = c.getConstructor("c").getDataTypeParameters();
     List<DependentLink> cParams = new ArrayList<>();
     Expression cType = c.getConstructor("c").getTypeWithParams(cParams, Sort.SET0);
+    List<DependentLink> expectedParams = DependentLink.Helper.toList(c.getConstructor("c").getDataTypeParameters());
+    for (DependentLink param : expectedParams) {
+      param.setExplicit(false);
+    }
     assertEquals(
-        fromPiParameters(Pi(Ref(A), DataCall(c, Sort.SET0, ConCall(d.getConstructor("d"), Sort.SET0, Collections.emptyList(), Ref(A)))), DependentLink.Helper.toList(c.getConstructor("c").getDataTypeParameters())),
+        fromPiParameters(Pi(Ref(A), DataCall(c, Sort.SET0, ConCall(d.getConstructor("d"), Sort.SET0, Collections.emptyList(), Ref(A)))), expectedParams),
         fromPiParameters(cType, cParams)
     );
   }
@@ -164,8 +184,12 @@ public class GetTypeTest extends TypeCheckingTestCase {
     DataDefinition d = (DataDefinition) getDefinition("D");
     List<DependentLink> dParams = new ArrayList<>();
     Expression dType = d.getConstructor("d").getTypeWithParams(dParams, Sort.SET0);
+    List<DependentLink> expectedParams = DependentLink.Helper.toList(d.getConstructor("d").getDataTypeParameters());
+    for (DependentLink param : expectedParams) {
+      param.setExplicit(false);
+    }
     assertEquals(
-        fromPiParameters(DataCall(d, Sort.SET0, Zero(), Ref(d.getConstructor("d").getDataTypeParameters())), DependentLink.Helper.toList(d.getConstructor("d").getDataTypeParameters())),
+        fromPiParameters(DataCall(d, Sort.SET0, Zero(), Ref(d.getConstructor("d").getDataTypeParameters())), expectedParams),
         fromPiParameters(dType, dParams)
     );
   }

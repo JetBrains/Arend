@@ -126,6 +126,10 @@ public class ExpressionFactory {
     return new PiExpression(getMaxSort(domain, codomain), singleParam(null, domain), codomain);
   }
 
+  public static PiExpression Pi(boolean isExplicit, Expression domain, Expression codomain) {
+    return new PiExpression(getMaxSort(domain, codomain), singleParam(isExplicit, (String) null, domain), codomain);
+  }
+
   public static UniverseExpression Universe(int pLevel) {
     return new UniverseExpression(Sort.TypeOfLevel(pLevel));
   }

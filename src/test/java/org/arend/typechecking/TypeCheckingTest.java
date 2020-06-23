@@ -237,4 +237,12 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
     typeCheckModule("\\func setExt (A B : \\Set0) (f : A -> B) (g : B -> A) (p : \\Pi (x : A) -> g (f x) = x) (q : \\Pi (y : B) -> f (g y) = y) : A = {\\Prop} B => path (iso f g p q)", 1);
     assertThatErrorsAre(typeMismatchError());
   }
+
+  @Test
+  public void piParametersTest() {
+    typeCheckModule(
+      "\\func pair : \\Sigma (Nat -> Nat) Nat => (\\lam x => x, 1)\n" +
+      "\\func test : \\Pi {n : Nat} -> Nat => pair.1", 1);
+    assertThatErrorsAre(typeMismatchError());
+  }
 }

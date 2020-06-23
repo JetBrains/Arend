@@ -837,6 +837,9 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
 
     SingleDependentLink link1 = expr1.getParameters(), link2 = piExpr2.getParameters();
     for (; link1.hasNext() && link2.hasNext(); link1 = link1.getNext(), link2 = link2.getNext()) {
+      if (link1.isExplicit() != link2.isExplicit()) {
+        return false;
+      }
       mySubstitution.put(link2, link1);
     }
 

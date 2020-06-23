@@ -498,7 +498,7 @@ public class DynamicTest extends TypeCheckingTestCase {
     FunctionDefinition qFun = (FunctionDefinition) getDefinition("A.q");
     List<DependentLink> qParams = new ArrayList<>();
     Expression qType = qFun.getTypeWithParams(qParams, Sort.SET0);
-    assertEquals(Pi(ClassCall(aClass), Nat()), fromPiParameters(qType, qParams));
+    assertEquals(Pi(false, ClassCall(aClass), Nat()), fromPiParameters(qType, qParams));
     assertEquals(FunCall(pFun, Sort.SET0), qFun.getBody());
 
     ClassDefinition bClass = (ClassDefinition) getDefinition("A.B");
@@ -509,7 +509,7 @@ public class DynamicTest extends TypeCheckingTestCase {
     FunctionDefinition gFun = (FunctionDefinition) getDefinition("A.B.g");
     List<DependentLink> gParams = new ArrayList<>();
     Expression gType = gFun.getTypeWithParams(gParams, Sort.SET0);
-    assertEquals(Pi(ClassCall(bClass), Nat()), fromPiParameters(gType, gParams));
+    assertEquals(Pi(false, ClassCall(bClass), Nat()), fromPiParameters(gType, gParams));
     assertEquals(FunCall(plus, Sort.SET0, FunCall(fFun, Sort.SET0), FunCall(pFun, Sort.SET0)), gFun.getBody());
 
     ClassDefinition cClass = (ClassDefinition) getDefinition("A.C");
@@ -519,13 +519,13 @@ public class DynamicTest extends TypeCheckingTestCase {
     FunctionDefinition hFun = (FunctionDefinition) getDefinition("A.C.h");
     List<DependentLink> hParams = new ArrayList<>();
     Expression hType = hFun.getTypeWithParams(hParams, Sort.SET0);
-    assertEquals(Pi(ClassCall(aClass), Nat()), fromPiParameters(hType, hParams));
+    assertEquals(Pi(false, ClassCall(aClass), Nat()), fromPiParameters(hType, hParams));
     DependentLink hFunParam = param("\\this", ClassCall(aClass));
     assertEquals(FunCall(plus, Sort.SET0, FunCall(pFun, Sort.SET0), FunCall(qFun, Sort.SET0, Ref(hFunParam))), hFun.getBody());
     FunctionDefinition kFun = (FunctionDefinition) getDefinition("A.C.k");
     List<DependentLink> kParams = new ArrayList<>();
     Expression kType = kFun.getTypeWithParams(kParams, Sort.SET0);
-    assertEquals(Pi(ClassCall(cClass), Nat()), fromPiParameters(kType, kParams));
+    assertEquals(Pi(false, ClassCall(cClass), Nat()), fromPiParameters(kType, kParams));
     DependentLink kFunParam = param("\\this", ClassCall(cClass));
     Expression aRef = FieldCall(cParent, Sort.PROP, Ref(kFunParam));
     assertEquals(FunCall(plus, Sort.SET0, FunCall(hFun, Sort.SET0, aRef), FunCall(plus, Sort.SET0, FunCall(pFun, Sort.SET0), FunCall(qFun, Sort.SET0, aRef))), kFun.getBody());

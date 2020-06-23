@@ -60,6 +60,9 @@ public class DataTest extends TypeCheckingTestCase {
     substitution.add(link, Ref(b));
     List<DependentLink> con1Params = new ArrayList<>();
     Expression con1Type = typedDef.getConstructors().get(0).getTypeWithParams(con1Params, Sort.SET0);
+    I.setExplicit(false);
+    a.setExplicit(false);
+    b.setExplicit(false);
     assertEquals(Pi(A, Pi(I, Pi(a, Pi(b, Pi(x, Pi(Apps(Ref(I), Ref(x), Ref(b)), DataCall(typedDef, Sort.SET0,
       Ref(A),
       Ref(B),
@@ -95,6 +98,7 @@ public class DataTest extends TypeCheckingTestCase {
     assertEquals(Pi(A, Universe(6, 7)), fromPiParameters(type, params));
     assertEquals(2, typedDef.getConstructors().size());
 
+    A.setExplicit(false);
     assertEquals(Pi(A, Pi(X, Pi(Ref(X), DataCall(typedDef, Sort.SET0, Ref(A))))), fromPiParameters(con1Type, con1Params));
     assertEquals(Pi(A, Pi(Y, Pi(Ref(A), Pi(Ref(Y), DataCall(typedDef, Sort.SET0, Ref(A)))))), fromPiParameters(con2Type, con2Params));
   }
