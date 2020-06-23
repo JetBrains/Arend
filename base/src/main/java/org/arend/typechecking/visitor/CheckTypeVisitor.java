@@ -2234,7 +2234,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       }
     }
 
-    Set<Binding> foundVars = new HashSet<>();
+    Set<Object> foundVars = new LinkedHashSet<>();
     expr.accept(new FindMissingBindingVisitor(allowedBindings) {
       @Override
       public Binding visitReference(ReferenceExpression expr, Void params) {
@@ -2247,6 +2247,11 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     }, null);
 
     if (!foundVars.isEmpty()) {
+      for (Map.Entry<Referable, Binding> entry : context.entrySet()) {
+        if (foundVars.remove(entry.getValue())) {
+          foundVars.add(entry.getKey());
+        }
+      }
       myErrorReporter.report(new ElimSubstError(foundVars, sourceNode));
       return expr;
     }
