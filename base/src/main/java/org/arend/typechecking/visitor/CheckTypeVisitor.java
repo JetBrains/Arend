@@ -1394,7 +1394,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
         Referable referable = ((Concrete.NameParameter) param).getReferable();
         SingleDependentLink piParams = piExpectedType.getParameters();
         if (piParams.isExplicit() && !param.isExplicit()) {
-          errorReporter.report(new ImplicitLambdaError(referable, expr));
+          errorReporter.report(new ImplicitLambdaError(referable, -1, param));
         }
 
         Type paramType = piParams.getType();
@@ -1477,7 +1477,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
 
           Expression argExpectedType = piExpectedType.getParameters().getTypeExpr().subst(substitution);
           if (piExpectedType.getParameters().isExplicit() && !param.isExplicit()) {
-            errorReporter.report(new ImplicitLambdaError(param.getReferableList().get(checked), expr));
+            errorReporter.report(new ImplicitLambdaError(param.getReferableList().get(checked), namesCount > 1 ? checked : -1, param));
           }
           if (!CompareVisitor.compare(myEquations, CMP.EQ, argExpr, argExpectedType, Type.OMEGA, paramType)) {
             if (!argType.isError()) {
