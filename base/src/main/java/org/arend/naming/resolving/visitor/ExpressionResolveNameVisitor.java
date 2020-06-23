@@ -286,13 +286,12 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       }
 
       Referable referable = namePattern.getReferable();
-      String name = referable == null ? null : referable.textRepresentation();
-      if (name == null) {
+      if (referable == null || referable instanceof GlobalReferable) {
         return null;
       }
 
       if (namePattern.type == null) {
-        Referable ref = myParentScope.resolveName(name);
+        Referable ref = myParentScope.resolveName(referable.getRefName());
         if (ref instanceof GlobalReferable && ((GlobalReferable) ref).getKind().isConstructor()) {
           return (GlobalReferable) ref;
         }
@@ -321,9 +320,17 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
 
   void visitPatterns(List<Concrete.Pattern> patterns, Map<String, Referable> usedNames, boolean resolvePatterns) {
     for (int i = 0; i < patterns.size(); i++) {
-      Referable constructor = visitPattern(patterns.get(i), usedNames);
+      Concrete.Pattern pattern = patterns.get(i);
+      Referable ref = pattern instanceof Concrete.NamePattern ? ((Concrete.NamePattern) pattern).getReferable() : null;
+      Referable constructor = visitPattern(pattern, usedNames);
       if (constructor != null) {
-        patterns.set(i, new Concrete.ConstructorPattern(patterns.get(i).getData(), patterns.get(i).isExplicit(), constructor, Collections.emptyList(), Collections.emptyList()));
+        Concrete.ConstructorPattern newPattern = new Concrete.ConstructorPattern(pattern.getData(), pattern.isExplicit(), constructor, Collections.emptyList(), Collections.emptyList());
+        patterns.set(i, newPattern);
+        if (myResolverListener != null) {
+          myResolverListener.patternResolved(ref, newPattern, Collections.singletonList(constructor));
+        }
+      } else if (pattern instanceof Concrete.NamePattern && myResolverListener != null) {
+        myResolverListener.patternResolved((Concrete.NamePattern) pattern);
       }
       if (resolvePatterns) {
         resolvePattern(patterns.get(i));
