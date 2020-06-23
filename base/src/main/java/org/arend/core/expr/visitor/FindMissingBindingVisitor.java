@@ -15,8 +15,8 @@ import java.util.Set;
 public class FindMissingBindingVisitor extends BaseExpressionVisitor<Void, Variable> {
   private final Set<Binding> myBindings;
 
-  FindMissingBindingVisitor(Set<Binding> binding) {
-    myBindings = new HashSet<>(binding);
+  public FindMissingBindingVisitor(Set<Binding> binding) {
+    myBindings = binding;
   }
 
   Set<Binding> getBindings() {

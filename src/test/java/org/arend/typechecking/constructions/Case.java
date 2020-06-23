@@ -2,7 +2,6 @@ package org.arend.typechecking.constructions;
 
 import org.arend.Matchers;
 import org.arend.typechecking.TypeCheckingTestCase;
-import org.arend.typechecking.error.local.SquashedDataError;
 import org.arend.typechecking.error.local.TruncatedDataError;
 import org.junit.Test;
 
@@ -110,9 +109,9 @@ public class Case extends TypeCheckingTestCase {
     typeCheckModule(
       "\\func test (A : \\Type) (x : A) (p : x = x) : p = p =>\n" +
       "  \\case \\elim x \\with {\n" +
-      "    | _ => idp\n" +
-      "  }", 1);
-    assertThatErrorsAre(error());
+      "    | _ => {?}\n" +
+      "  }", 2);
+    assertThatErrorsAre(elimSubstError("p"), goal(2));
   }
 
   @Test
@@ -120,9 +119,9 @@ public class Case extends TypeCheckingTestCase {
     typeCheckModule(
       "\\func test (A : \\Type) (x : A) (p : x = x) : p = p =>\n" +
       "  \\case \\elim x, p \\with {\n" +
-      "    | _, _ => idp\n" +
-      "  }", 1);
-    assertThatErrorsAre(error());
+      "    | _, _ => {?}\n" +
+      "  }", 2);
+    assertThatErrorsAre(elimSubstError("p"), goal(2));
   }
 
   @Test

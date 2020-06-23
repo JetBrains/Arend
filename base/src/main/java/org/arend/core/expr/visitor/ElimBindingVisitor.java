@@ -24,7 +24,7 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
   private Variable myFoundVariable = null;
 
   private ElimBindingVisitor(Set<Binding> bindings, boolean keep) {
-    myKeepVisitor = keep ? new FindMissingBindingVisitor(bindings) : null;
+    myKeepVisitor = keep ? new FindMissingBindingVisitor(new HashSet<>(bindings)) : null;
     myElimVisitor = keep ? null : new FindBindingVisitor(bindings);
   }
 

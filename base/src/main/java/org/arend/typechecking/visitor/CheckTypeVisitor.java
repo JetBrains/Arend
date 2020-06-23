@@ -13,9 +13,7 @@ import org.arend.core.expr.*;
 import org.arend.core.expr.let.*;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.type.TypeExpression;
-import org.arend.core.expr.visitor.CompareVisitor;
-import org.arend.core.expr.visitor.FieldsCollector;
-import org.arend.core.expr.visitor.StripVisitor;
+import org.arend.core.expr.visitor.*;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
@@ -40,6 +38,7 @@ import org.arend.ext.instance.SubclassSearchParameters;
 import org.arend.ext.prettyprinting.doc.DocFactory;
 import org.arend.ext.reference.ArendRef;
 import org.arend.ext.typechecking.*;
+import org.arend.ext.variable.Variable;
 import org.arend.extImpl.ContextDataImpl;
 import org.arend.extImpl.UncheckedExpressionImpl;
 import org.arend.naming.reference.*;
@@ -2223,19 +2222,36 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     }
   }
 
-  private Expression checkedSubst(Expression type, ExprSubstitution substitution, Concrete.SourceNode sourceNode) {
+  private Expression checkedSubst(Expression expr, ExprSubstitution substitution, Concrete.SourceNode sourceNode) {
     if (substitution.isEmpty()) {
-      return type;
+      return expr;
     }
 
-    Expression result = type.subst(substitution);
-    try {
-      result.accept(new CoreExpressionChecker(getAllBindings(), myEquations, sourceNode), Type.OMEGA);
-    } catch (CoreException e) {
-      errorReporter.report(new ReplacementError(new SubstitutionData(type, substitution), sourceNode));
-      return type;
+    Set<Binding> allowedBindings = new HashSet<>();
+    for (Variable variable : substitution.getKeys()) {
+      if (variable instanceof Binding) {
+        allowedBindings.add((Binding) variable);
+      }
     }
-    return result;
+
+    Set<Binding> foundVars = new HashSet<>();
+    expr.accept(new FindMissingBindingVisitor(allowedBindings) {
+      @Override
+      public Binding visitReference(ReferenceExpression expr, Void params) {
+        Binding binding = expr.getBinding();
+        if (!allowedBindings.contains(binding) && binding.getTypeExpr().findBinding(substitution.getKeys()) != null) {
+          foundVars.add(binding);
+        }
+        return null;
+      }
+    }, null);
+
+    if (!foundVars.isEmpty()) {
+      myErrorReporter.report(new ElimSubstError(foundVars, sourceNode));
+      return expr;
+    }
+
+    return expr.subst(substitution);
   }
 
   Integer minInteger(Integer int1, Integer int2) {

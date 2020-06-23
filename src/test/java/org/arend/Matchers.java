@@ -88,6 +88,46 @@ public class Matchers {
     };
   }
 
+  public static Matcher<? super GeneralError> elimSubstError(String... vars) {
+    return new TypeSafeDiagnosingMatcher<>() {
+      @Override
+      protected boolean matchesSafely(GeneralError error, Description description) {
+        if (error instanceof ElimSubstError) {
+          Collection<?> bindings = ((ElimSubstError) error).notEliminatedBindings;
+          boolean ok = bindings.size() == vars.length;
+          if (ok) {
+            int i = 0;
+            for (Object binding : bindings) {
+              if (binding instanceof Binding) {
+                ok = ((Binding) binding).getName().equals(vars[i]);
+              } else if (binding instanceof Referable) {
+                ok = ((Referable) binding).getRefName().equals(vars[i]);
+              } else {
+                ok = false;
+              }
+              i++;
+            }
+          }
+          if (!ok) {
+            description.appendText("elim subst error with " + Arrays.asList(vars));
+            return false;
+          } else {
+            description.appendText("elim subst error");
+            return true;
+          }
+        } else {
+          description.appendText("not an elim subst error");
+          return false;
+        }
+      }
+
+      @Override
+      public void describeTo(Description description) {
+        description.appendText("should be an elim subst error");
+      }
+    };
+  }
+
   public static Matcher<? super GeneralError> goalError(Condition... conditions) {
     return new TypeSafeDiagnosingMatcher<>() {
       @Override
