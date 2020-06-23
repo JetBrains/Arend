@@ -28,6 +28,7 @@ import org.arend.ext.ArendExtension;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.ext.error.ArgumentExplicitnessError;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.error.TypecheckingError;
@@ -439,7 +440,12 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         paramResult = typechecker.finalCheckType(parameter.getType(), expectedSort == null ? Type.OMEGA : new UniverseExpression(expectedSort), false);
       } else {
         if (resultType instanceof PiExpression) {
-          Type paramType = ((PiExpression) resultType).getParameters().getType();
+          SingleDependentLink param = ((PiExpression) resultType).getParameters();
+          if (param.isExplicit() != parameter.isExplicit()) {
+            errorReporter.report(new ArgumentExplicitnessError(param.isExplicit(), parameter));
+            break;
+          }
+          Type paramType = param.getType();
           if (paramType.getExpr().findBinding(thisRef)) {
             errorReporter.report(new TypeFromFieldError(TypeFromFieldError.parameter(), paramType.getExpr(), parameter));
           } else {
@@ -504,8 +510,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             oldParametersOK = false;
           }
         } else {
-          param = parameter(parameter.isExplicit(), (String) null, paramResult);
-          typechecker.addBinding(parameter.getReferableList().get(0), param);
+          Referable ref = parameter.getReferableList().get(0);
+          param = parameter(parameter.isExplicit(), ref == null ? null : ref.getRefName(), paramResult);
+          typechecker.addBinding(ref, param);
         }
       }
       if (!oldParametersOK) {
@@ -572,21 +579,22 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   @SuppressWarnings("UnusedReturnValue")
   private boolean typecheckFunctionHeader(FunctionDefinition typedDef, Concrete.BaseFunctionDefinition def, LocalInstancePool localInstancePool, boolean newDef) {
     ClassField implementedField = def instanceof Concrete.CoClauseFunctionDefinition ? typechecker.referableToClassField(((Concrete.CoClauseFunctionDefinition) def).getImplementedField(), def) : null;
-    FunctionKind kind = implementedField == null ? def.getKind() : implementedField.isProperty() ? FunctionKind.LEMMA : FunctionKind.FUNC;
+    FunctionKind kind = implementedField == null ? def.getKind() : implementedField.isProperty() && implementedField.getTypeLevel() == null ? FunctionKind.LEMMA : FunctionKind.FUNC;
     checkFunctionLevel(def, kind);
 
     LinkList list = new LinkList();
     Pair<Sort, Expression> pair = typecheckParameters(def, list, localInstancePool, null, newDef ? null : typedDef.getParameters(), implementedField == null ? null : implementedField.getType(Sort.STD));
-    boolean paramsOk = pair != null;
 
     Expression expectedType = null;
     Concrete.Expression cResultType = def.getResultType();
     if (cResultType != null) {
-      Type expectedTypeResult = def.getBody() instanceof Concrete.CoelimFunctionBody && !def.isRecursive()
-        ? null // The result type will be typechecked together with all field implementations during body typechecking.
-        : checkResultTypeLater(def)
-          ? typechecker.checkType(cResultType, Type.OMEGA)
-          : typechecker.finalCheckType(cResultType, Type.OMEGA, kind == FunctionKind.LEMMA && def.getResultTypeLevel() == null);
+      Type expectedTypeResult = pair == null
+        ? new ErrorExpression()
+        : def.getBody() instanceof Concrete.CoelimFunctionBody && !def.isRecursive()
+          ? null // The result type will be typechecked together with all field implementations during body typechecking.
+          : checkResultTypeLater(def)
+            ? typechecker.checkType(cResultType, Type.OMEGA)
+            : typechecker.finalCheckType(cResultType, Type.OMEGA, kind == FunctionKind.LEMMA && def.getResultTypeLevel() == null);
       if (expectedTypeResult != null) {
         expectedType = expectedTypeResult.getExpr();
       }
@@ -607,7 +615,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       typedDef.setParameters(list.getFirst());
       typedDef.setResultType(expectedType);
       typedDef.setStatus(Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING);
-      typedDef.setKind(kind.isSFunc()? (kind == FunctionKind.LEMMA ? CoreFunctionDefinition.Kind.LEMMA : CoreFunctionDefinition.Kind.SFUNC) : kind == FunctionKind.INSTANCE ? CoreFunctionDefinition.Kind.INSTANCE : CoreFunctionDefinition.Kind.FUNC);
+      typedDef.setKind(kind.isSFunc() ? (kind == FunctionKind.LEMMA ? CoreFunctionDefinition.Kind.LEMMA : CoreFunctionDefinition.Kind.SFUNC) : kind == FunctionKind.INSTANCE ? CoreFunctionDefinition.Kind.INSTANCE : CoreFunctionDefinition.Kind.FUNC);
     }
 
     if (newDef) {
@@ -616,7 +624,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       calculateParametersTypecheckingOrder(typedDef);
     }
 
-    return paramsOk;
+    return pair != null;
   }
 
   // Returns a pair consisting of classCalls corresponding to the body and the type (so, the first one is an extension of the second).
@@ -788,9 +796,31 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       Referable ref = ((Concrete.CoClauseFunctionDefinition) def).getImplementedField();
       if (ref instanceof TCReferable) {
         Definition fieldDef = typechecker.getTypechecked((TCReferable) ref);
-        if (fieldDef instanceof ClassField) {
-          kind = ((ClassField) fieldDef).isProperty() ? FunctionKind.LEMMA : FunctionKind.FUNC;
+        if (fieldDef instanceof ClassField && DependentLink.Helper.size(typedDef.getParameters()) != Concrete.getNumberOfParameters(def.getParameters())) {
+          if (newDef) {
+            typechecker.setStatus(def.getStatus().getTypecheckingStatus());
+            typedDef.addStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
+            def.setTypechecked();
+          }
+          return null;
         }
+
+        if (fieldDef instanceof ClassField && ((ClassField) fieldDef).getTypeLevel() == null) {
+          kind = FunctionKind.LEMMA;
+        } else if (fieldDef instanceof ClassField && ((ClassField) fieldDef).isProperty() && def.getResultType() == null) {
+          boolean ok = true;
+          for (Concrete.Parameter parameter : def.getParameters()) {
+            if (parameter.getType() != null) {
+              ok = false;
+            }
+          }
+          if (ok) {
+            kind = FunctionKind.LEMMA;
+          }
+        }
+      }
+      if (kind != FunctionKind.LEMMA) {
+        kind = FunctionKind.FUNC;
       }
     }
 

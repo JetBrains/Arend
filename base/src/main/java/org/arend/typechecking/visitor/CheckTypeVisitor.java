@@ -191,6 +191,10 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     myInstancePool = pool;
   }
 
+  public int getNumberOfErrors() {
+    return myErrorReporter.myErrorReporter.getErrorsNumber();
+  }
+
   @NotNull
   public Map<Referable, Binding> getContext() {
     return context;
@@ -2234,7 +2238,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     return result;
   }
 
-  private Integer minInteger(Integer int1, Integer int2) {
+  Integer minInteger(Integer int1, Integer int2) {
     return int1 == null ? int2 : int2 == null ? int1 : Integer.valueOf(Math.min(int1, int2));
   }
 

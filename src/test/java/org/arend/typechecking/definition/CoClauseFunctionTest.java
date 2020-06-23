@@ -1,11 +1,11 @@
 package org.arend.typechecking.definition;
 
+import org.arend.ext.error.ArgumentExplicitnessError;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import static org.arend.Matchers.notInScope;
-import static org.arend.Matchers.typeMismatchError;
+import static org.arend.Matchers.*;
 
 public class CoClauseFunctionTest extends TypeCheckingTestCase {
   @Test
@@ -208,5 +208,29 @@ public class CoClauseFunctionTest extends TypeCheckingTestCase {
       "\\class D | \\infix 3 func (x y : Nat) : Nat\n" +
       "\\instance D-inst : D\n" +
       "  | \\infix 3 func (x y : Nat) => x");
+  }
+
+  @Test
+  public void levelTest() {
+    typeCheckModule(
+      "\\data Wrap (A : \\Type) | in A\n" +
+      "\\record R | field {A : \\Type} (p : \\Pi (a a' : A) -> a = a') (t s : Wrap A) : A \\level p\n" +
+      "\\func test : R \\cowith | field {A : \\Type} (p : \\Pi (a a' : A) -> a = a') (t s : Wrap A) : A \\elim t { | in a => a }");
+  }
+
+  @Test
+  public void levelTest2() {
+    typeCheckModule(
+      "\\data Wrap (A : \\Type) | in A\n" +
+      "\\record R | field {A : \\Type} (p : \\Pi (a a' : A) -> a = a') (t s : Wrap A) : A \\level p\n" +
+      "\\func test : R \\cowith | field {A} p t s \\elim t { | in a => a }");
+  }
+
+  @Test
+  public void implicitParameterError() {
+    typeCheckModule(
+      "\\record R | field {A : \\Type} : A -> A\n" +
+      "\\func test : R \\cowith | \\fix 5 field t => {?}", 1);
+    assertThatErrorsAre(typecheckingError(ArgumentExplicitnessError.class));
   }
 }
