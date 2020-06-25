@@ -1444,7 +1444,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         if (inferredSort.isLessOrEquals(userSort)) {
           originalErrorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.DATA_WONT_BE_TRUNCATED, def.getUniverse() == null ? def : def.getUniverse()));
         } else if (newDef) {
-          dataDefinition.setTruncated(true);
+          dataDefinition.setTruncatedLevel(userSort.getHLevel().getConstant());
           dataDefinition.setSquashed(true);
         }
       }

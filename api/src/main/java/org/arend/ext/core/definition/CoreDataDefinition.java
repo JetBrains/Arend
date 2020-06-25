@@ -6,9 +6,13 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 
 public interface CoreDataDefinition extends CoreDefinition {
-  boolean isTruncated();
+  int getTruncatedLevel();
   CoreSort getSort();
   @NotNull List<? extends CoreConstructor> getConstructors();
+
+  default boolean isTruncated() {
+    return getTruncatedLevel() >= -1;
+  }
 
   CoreConstructor findConstructor(@NotNull String name);
 }

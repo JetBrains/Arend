@@ -263,7 +263,10 @@ public class DefinitionDeserialization implements ArendDeserializer {
       loadKeys(constructorProto.getUserDataMap(), constructor);
     }
 
-    dataDef.setTruncated(dataProto.getIsTruncated());
+    int truncatedLevel = dataProto.getTruncatedLevel();
+    if (truncatedLevel >= -1) {
+      dataDef.setTruncatedLevel(truncatedLevel);
+    }
     dataDef.setSquashed(dataProto.getIsSquashed());
     int squasher = dataProto.getSquasher();
     if (squasher != 0) {

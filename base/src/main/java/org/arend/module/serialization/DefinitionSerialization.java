@@ -207,7 +207,7 @@ public class DefinitionSerialization implements ArendSerializer {
       builder.addConstructor(cBuilder.build());
     }
 
-    builder.setIsTruncated(definition.isTruncated());
+    builder.setTruncatedLevel(definition.getTruncatedLevel());
     builder.setIsSquashed(definition.isSquashed());
     if (definition.getSquasher() != null) {
       builder.setSquasher(myCallTargetIndexProvider.getDefIndex(definition.getSquasher()));

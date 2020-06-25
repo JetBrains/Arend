@@ -23,7 +23,7 @@ public class DataDefinition extends Definition implements CoreDataDefinition {
   private final List<Constructor> myConstructors;
   private DependentLink myParameters;
   private Sort mySort;
-  private boolean myTruncated;
+  private int myTruncatedLevel = -2;
   private boolean mySquashed;
   private FunctionDefinition mySquasher;
   private final Set<Integer> myCovariantParameters = new HashSet<>();
@@ -85,12 +85,12 @@ public class DataDefinition extends Definition implements CoreDataDefinition {
   }
 
   @Override
-  public boolean isTruncated() {
-    return myTruncated;
+  public int getTruncatedLevel() {
+    return myTruncatedLevel;
   }
 
-  public void setTruncated(boolean value) {
-    myTruncated = value;
+  public void setTruncatedLevel(int level) {
+    myTruncatedLevel = level;
   }
 
   public boolean isSquashed() {

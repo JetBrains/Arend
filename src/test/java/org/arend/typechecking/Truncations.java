@@ -77,4 +77,20 @@ public class Truncations extends TypeCheckingTestCase {
     assertTrue(definition.getSort().getPLevel().isClosed() && definition.getSort().getPLevel().getConstant() == 0);
     assertTrue(definition.getSort().getHLevel().isInfinity());
   }
+
+  @Test
+  public void useLevel() {
+    typeCheckModule(
+      "\\truncated \\data D (A : \\Type) : \\Set\n" +
+      "  | con A\n" +
+      "  | pathCon (a a' : A) (i : I) \\elim i {\n" +
+      "    | left => con a\n" +
+      "    | right => con a'\n" +
+      "  }\n" +
+      "  \\where \\use \\level proof {A : \\Type} (d1 d2 : D A) : d1 = d2\n" +
+      "    | con a, con a' => path (pathCon a a')\n" +
+      "\\sfunc f (d : D Nat) : Nat\n" +
+      "  | con _ => 0\n" +
+      "  | pathCon _ _ _ => 0");
+  }
 }

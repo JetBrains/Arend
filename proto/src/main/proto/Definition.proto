@@ -76,7 +76,7 @@ message Definition {
         repeated int32 recursive_definition = 14;
         Sort sort = 5;
         repeated Constructor constructor = 6;
-        bool is_truncated = 7;
+        int32 truncated_level = 15;
         bool is_squashed = 8;
         int32 squasher = 10;
         repeated bool covariant_parameter = 11;

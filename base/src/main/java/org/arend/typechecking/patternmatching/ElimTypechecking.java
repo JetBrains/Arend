@@ -711,7 +711,7 @@ public class ElimTypechecking {
           myErrorReporter.report(new SquashedDataError(dataType, myActualLevel, myActualLevelSub, getClause(conClause.index)));
         }
 
-        boolean ok = !dataType.isTruncated() || myLevel != null && myLevel <= dataType.getSort().getHLevel().getConstant() + 1;
+        boolean ok = !dataType.isTruncated() || myLevel != null && myLevel <= dataType.getTruncatedLevel() + 1;
         if (!ok) {
           Expression type = myExpectedType.getType();
           if (type != null) {
