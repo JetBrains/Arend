@@ -439,4 +439,18 @@ public class ConditionsTest extends TypeCheckingTestCase {
       "  | loop I \\with { | left => base | right => base }\n" +
       "  | loop2 (i j : I) \\elim i { | left => base | right => (path loop *> path loop) @ j }", 1);
   }
+
+  @Test
+  public void sfunc() {
+    typeCheckModule(
+      "\\data D (A : \\Type)\n" +
+      "  | con A\n" +
+      "  | pathCon (a a' : A) (i : I) \\elim i {\n" +
+      "    | left => con a\n" +
+      "    | right => con a'\n" +
+      "  }\n" +
+      "\\sfunc f (d : D Nat) : Nat\n" +
+      "  | con _ => 0\n" +
+      "  | pathCon _ _ _ => 0");
+  }
 }

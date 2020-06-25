@@ -7,6 +7,7 @@ import org.arend.core.context.param.TypedSingleDependentLink;
 import org.arend.core.definition.Constructor;
 import org.arend.core.definition.Definition;
 import org.arend.core.definition.Function;
+import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
 import org.arend.core.expr.visitor.CompareVisitor;
@@ -15,6 +16,7 @@ import org.arend.core.pattern.*;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
+import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.error.ListErrorReporter;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.error.ErrorReporter;
@@ -254,7 +256,7 @@ public class ConditionsChecking {
       }
 
       Expression evaluatedExpr1;
-      if (elimBody != null && (definition == null || expr instanceof GoalErrorExpression)) {
+      if (elimBody != null && (definition == null || definition instanceof FunctionDefinition && ((FunctionDefinition) definition).getKind() == CoreFunctionDefinition.Kind.SFUNC || expr instanceof GoalErrorExpression)) {
         evaluatedExpr1 = NormalizeVisitor.INSTANCE.eval(elimBody, pair.proj1, new ExprSubstitution(), LevelSubstitution.EMPTY);
         if (evaluatedExpr1 == null && definition != null) {
           evaluatedExpr1 = definition.getDefCall(Sort.STD, pair.proj1);
