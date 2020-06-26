@@ -291,7 +291,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       }
 
       if (namePattern.type == null) {
-        Referable ref = myParentScope.resolveName(referable.getRefName());
+        Referable ref = RedirectingReferable.getOriginalReferable(myParentScope.resolveName(referable.getRefName()));
         if (ref instanceof GlobalReferable && ((GlobalReferable) ref).getKind().isConstructor()) {
           return (GlobalReferable) ref;
         }
