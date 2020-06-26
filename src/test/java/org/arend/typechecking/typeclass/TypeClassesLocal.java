@@ -250,4 +250,13 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
       "\\class C {A : \\Type} | field : A\n" +
       "\\func test : Nat => \\let inst => \\new C (pos 0) \\in field", 1);
   }
+
+  @Test
+  public void fieldInstanceInDynamicDefinition() {
+    typeCheckModule(
+      "\\class C | foo : Nat\n" +
+      "\\class D (c : C) {\n" +
+      "  \\func test => foo\n" +
+      "}");
+  }
 }
