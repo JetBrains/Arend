@@ -1819,7 +1819,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
           if (myInstancePool != null && pair.proj2 instanceof ClassCallExpression && !((ClassCallExpression) pair.proj2).getDefinition().isRecord()) {
             ClassDefinition classDef = ((ClassCallExpression) pair.proj2).getDefinition();
             Expression instance = new ReferenceExpression(pair.proj1);
-            myInstancePool.addLocalInstance(classDef.getClassifyingField() == null ? null : FieldCallExpression.make(classDef.getClassifyingField(), ((ClassCallExpression) pair.proj2).getSortArgument(), instance), classDef, instance, clause);
+            myInstancePool.addLocalInstance(classDef.getClassifyingField() == null ? null : FieldCallExpression.make(classDef.getClassifyingField(), ((ClassCallExpression) pair.proj2).getSortArgument(), instance), classDef, instance);
           }
         }
 

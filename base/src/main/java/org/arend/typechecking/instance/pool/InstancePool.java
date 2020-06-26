@@ -14,6 +14,6 @@ public interface InstancePool {
   Concrete.Expression getInstance(Expression classifyingExpression, InstanceSearchParameters parameters, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveData);
   InstancePool subst(ExprSubstitution substitution);
   InstancePool getLocalInstancePool();
-  Expression addLocalInstance(Expression classifyingExpression, ClassDefinition classDef, Expression instance, Concrete.SourceNode sourceNode);
+  Expression addLocalInstance(Expression classifyingExpression, ClassDefinition classDef, Expression instance);
   List<?> getLocalInstances();
 }

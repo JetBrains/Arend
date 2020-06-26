@@ -546,9 +546,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           for (DependentLink link = param; i < numberOfParameters; link = link.getNext(), i++) {
             ReferenceExpression reference = new ReferenceExpression(link);
             if (classifyingField == null) {
-              localInstancePool.addLocalInstance(null, classDef, reference, parameter);
+              localInstancePool.addLocalInstance(null, classDef, reference);
             } else {
-              localInstancePool.addLocalInstance(FieldCallExpression.make(classifyingField, ((ClassCallExpression) paramResult).getSortArgument(), reference), classDef, reference, parameter);
+              localInstancePool.addLocalInstance(FieldCallExpression.make(classifyingField, ((ClassCallExpression) paramResult).getSortArgument(), reference), classDef, reference);
             }
           }
         }
@@ -1771,12 +1771,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   private static class LocalInstance {
     final ClassCallExpression classCall;
     final ClassField instanceField;
-    final Concrete.ClassField concreteField;
 
-    LocalInstance(ClassCallExpression classCall, ClassField instanceField, Concrete.ClassField concreteField) {
+    LocalInstance(ClassCallExpression classCall, ClassField instanceField) {
       this.classCall = classCall;
       this.instanceField = instanceField;
-      this.concreteField = concreteField;
     }
   }
 
@@ -1938,7 +1936,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             if (typecheckedField.getResultType() instanceof ClassCallExpression) {
               ClassCallExpression classCall = (ClassCallExpression) typecheckedField.getResultType();
               if (!classCall.getDefinition().isRecord()) {
-                localInstances.add(new LocalInstance(classCall, typecheckedField, field));
+                localInstances.add(new LocalInstance(classCall, typecheckedField));
               }
             }
           }
@@ -1987,7 +1985,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           if (fieldType == null) {
             fieldType = field.getType(Sort.STD);
           }
-          setClassLocalInstancePool(localInstances, thisBinding, lamImpl, !typedDef.isRecord() && typedDef.getClassifyingField() == null ? typedDef : null);
+          setClassLocalInstancePool(localInstances, thisBinding, !typedDef.isRecord() && typedDef.getClassifyingField() == null ? typedDef : null);
           CheckTypeVisitor.setCaseLevel(lamImpl.body);
           result = typechecker.finalCheckExpr(lamImpl.body, fieldType.getCodomain().subst(fieldType.getParameters(), new ReferenceExpression(thisBinding)));
           myInstancePool.setInstancePool(null);
@@ -2200,7 +2198,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         codomain = def.getResultType();
       }
 
-      setClassLocalInstancePool(localInstances, thisParam, def, !parentClass.isRecord() && !hasClassifyingField ? parentClass : null);
+      setClassLocalInstancePool(localInstances, thisParam, !parentClass.isRecord() && !hasClassifyingField ? parentClass : null);
       ClassFieldKind kind = def instanceof Concrete.ClassField ? ((Concrete.ClassField) def).getKind() : typedDef == null ? ClassFieldKind.ANY : typedDef.isProperty() ? ClassFieldKind.PROPERTY : ClassFieldKind.FIELD;
       Type typeResult = typechecker.finalCheckType(codomain, Type.OMEGA, kind == ClassFieldKind.PROPERTY && def.getResultTypeLevel() == null);
       myInstancePool.setInstancePool(null);
@@ -2326,7 +2324,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     return typedDef;
   }
 
-  private void setClassLocalInstancePool(List<LocalInstance> localInstances, Binding thisParam, Concrete.SourceNode thisSourceNode, ClassDefinition classDef) {
+  private void setClassLocalInstancePool(List<LocalInstance> localInstances, Binding thisParam, ClassDefinition classDef) {
     if (localInstances.isEmpty() && classDef == null) {
       return;
     }
@@ -2334,15 +2332,15 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     LocalInstancePool localInstancePool = new LocalInstancePool(typechecker);
     myInstancePool.setInstancePool(localInstancePool);
     if (classDef != null) {
-      localInstancePool.addLocalInstance(null, classDef, new ReferenceExpression(thisParam), thisSourceNode);
+      localInstancePool.addLocalInstance(null, classDef, new ReferenceExpression(thisParam));
     }
     for (LocalInstance localInstance : localInstances) {
       ClassField classifyingField = localInstance.classCall.getDefinition().getClassifyingField();
       Expression instance = FieldCallExpression.make(localInstance.instanceField, Sort.STD, new ReferenceExpression(thisParam));
       if (classifyingField == null) {
-        localInstancePool.addLocalInstance(null, localInstance.classCall.getDefinition(), instance, localInstance.concreteField);
+        localInstancePool.addLocalInstance(null, localInstance.classCall.getDefinition(), instance);
       } else {
-        localInstancePool.addLocalInstance(FieldCallExpression.make(classifyingField, localInstance.classCall.getSortArgument(), instance), localInstance.classCall.getDefinition(), instance, localInstance.concreteField);
+        localInstancePool.addLocalInstance(FieldCallExpression.make(classifyingField, localInstance.classCall.getSortArgument(), instance), localInstance.classCall.getDefinition(), instance);
       }
     }
   }

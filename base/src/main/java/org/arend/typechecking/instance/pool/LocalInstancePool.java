@@ -25,13 +25,11 @@ public class LocalInstancePool implements InstancePool {
     final Expression key;
     final ClassDefinition classDef;
     final Expression value;
-    final Concrete.SourceNode sourceNode;
 
-    InstanceData(Expression key, ClassDefinition classDef, Expression value, Concrete.SourceNode sourceNode) {
+    InstanceData(Expression key, ClassDefinition classDef, Expression value) {
       this.key = key;
       this.classDef = classDef;
       this.value = value;
-      this.sourceNode = sourceNode;
     }
   }
 
@@ -82,7 +80,7 @@ public class LocalInstancePool implements InstancePool {
     for (InstanceData data : myPool) {
       Expression newValue = data.value instanceof ReferenceExpression ? substitution.get(((ReferenceExpression) data.value).getBinding()) : null;
       newValue = newValue == null ? null : newValue.cast(ReferenceExpression.class);
-      result.myPool.add(new InstanceData(data.key == null ? null : data.key.subst(substitution), data.classDef, newValue == null ? data.value : newValue, data.sourceNode));
+      result.myPool.add(new InstanceData(data.key == null ? null : data.key.subst(substitution), data.classDef, newValue == null ? data.value : newValue));
     }
     return result;
   }
@@ -106,12 +104,12 @@ public class LocalInstancePool implements InstancePool {
   }
 
   @Override
-  public Expression addLocalInstance(Expression classifyingExpression, ClassDefinition classDef, Expression instance, Concrete.SourceNode sourceNode) {
+  public Expression addLocalInstance(Expression classifyingExpression, ClassDefinition classDef, Expression instance) {
     Expression oldInstance = getInstance(classifyingExpression, new SubclassSearchParameters(classDef));
     if (oldInstance != null) {
       return oldInstance;
     } else {
-      myPool.add(new InstanceData(classifyingExpression, classDef, instance, sourceNode));
+      myPool.add(new InstanceData(classifyingExpression, classDef, instance));
       return null;
     }
   }

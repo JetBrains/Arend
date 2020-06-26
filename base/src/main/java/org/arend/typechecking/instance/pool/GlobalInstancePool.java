@@ -53,8 +53,8 @@ public class GlobalInstancePool implements InstancePool {
   }
 
   @Override
-  public Expression addLocalInstance(Expression classifyingExpression, ClassDefinition classDef, Expression instance, Concrete.SourceNode sourceNode) {
-    return myInstancePool.addLocalInstance(classifyingExpression, classDef, instance, sourceNode);
+  public Expression addLocalInstance(Expression classifyingExpression, ClassDefinition classDef, Expression instance) {
+    return myInstancePool.addLocalInstance(classifyingExpression, classDef, instance);
   }
 
   @Override
