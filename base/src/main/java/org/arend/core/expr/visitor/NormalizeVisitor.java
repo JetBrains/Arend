@@ -380,7 +380,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
       if (body instanceof Expression) {
         return ((Expression) body).subst(new ExprSubstitution().add(funCall.getDefinition().getParameters(), funCall.getDefCallArguments()), funCall.getSortArgument().toLevelSubstitution());
       } else if (body instanceof ElimBody) {
-        return eval((ElimBody) body, funCall.getDefCallArguments(), getDataTypeArgumentsSubstitution(funCall), funCall.getSortArgument().toLevelSubstitution());
+        return eval((ElimBody) body, funCall.getDefCallArguments(), new ExprSubstitution(), funCall.getSortArgument().toLevelSubstitution());
       } else {
         return null;
       }
@@ -394,6 +394,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
   public Expression eval(ElimBody elimBody, List<? extends Expression> arguments, ExprSubstitution substitution, LevelSubstitution levelSubstitution) {
     Stack<Expression> stack = makeStack(arguments);
     List<Expression> result = new ArrayList<>();
+    Expression resultExpr = null;
 
     ElimTree elimTree = elimBody.getElimTree();
     while (true) {
@@ -408,12 +409,26 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
         for (DependentLink link = clause.getParameters(); link.hasNext(); link = link.getNext(), i++) {
           substitution.add(link, result.get(leafElimTree.getArgumentIndex(i)));
         }
-        return Objects.requireNonNull(clause.getExpression()).subst(substitution, levelSubstitution);
+        resultExpr = Objects.requireNonNull(clause.getExpression()).subst(substitution, levelSubstitution);
+        if (resultExpr instanceof FunCallExpression && ((FunCallExpression) resultExpr).getDefinition().getBody() == elimBody) {
+          elimTree = elimBody.getElimTree();
+          substitution.clear();
+          result.clear();
+          stack.clear();
+
+          FunCallExpression funCall = (FunCallExpression) resultExpr;
+          levelSubstitution = funCall.getSortArgument().toLevelSubstitution();
+          for (int j = funCall.getDefCallArguments().size() - 1; j >= 0; j--) {
+            stack.push(funCall.getDefCallArguments().get(j));
+          }
+          continue;
+        }
+        return resultExpr;
       }
 
       elimTree = updateStack(stack, result, (BranchElimTree) elimTree);
       if (elimTree == null) {
-        return null;
+        return resultExpr;
       }
     }
   }
