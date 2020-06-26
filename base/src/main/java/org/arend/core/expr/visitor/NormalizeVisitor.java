@@ -391,6 +391,10 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
     }
   }
 
+  private static boolean isBlocked(FunctionDefinition def) {
+    return def.isSFunc() || def == Prelude.PLUS || def == Prelude.MUL || def == Prelude.MINUS || def == Prelude.DIV || def == Prelude.MOD || def == Prelude.DIV_MOD || def == Prelude.COERCE || def == Prelude.COERCE2;
+  }
+
   public Expression eval(ElimBody elimBody, List<? extends Expression> arguments, ExprSubstitution substitution, LevelSubstitution levelSubstitution, NormalizationMode mode) {
     Stack<Expression> stack = makeStack(arguments);
     List<Expression> result = new ArrayList<>();
@@ -420,7 +424,8 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
           resultExpr = let.isStrict() ? let.getExpression().subst(let.getClausesSubstitution()) : let.getExpression();
         }
 
-        if (resultExpr instanceof FunCallExpression && ((FunCallExpression) resultExpr).getDefinition().getBody() == elimBody) {
+        if (resultExpr instanceof FunCallExpression && ((FunCallExpression) resultExpr).getDefinition().getBody() instanceof ElimBody && !isBlocked(((FunCallExpression) resultExpr).getDefinition()) || resultExpr instanceof CaseExpression && !((CaseExpression) resultExpr).isSCase()) {
+          elimBody = resultExpr instanceof FunCallExpression ? (ElimBody) ((FunCallExpression) resultExpr).getDefinition().getBody() : ((CaseExpression) resultExpr).getElimBody();
           elimTree = elimBody.getElimTree();
           substitution.clear();
           result.clear();
@@ -428,10 +433,10 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
 
           ComputationRunner.checkCanceled();
 
-          FunCallExpression funCall = (FunCallExpression) resultExpr;
-          levelSubstitution = funCall.getSortArgument().toLevelSubstitution();
-          for (int j = funCall.getDefCallArguments().size() - 1; j >= 0; j--) {
-            stack.push(funCall.getDefCallArguments().get(j));
+          levelSubstitution = resultExpr instanceof FunCallExpression ? ((FunCallExpression) resultExpr).getSortArgument().toLevelSubstitution() : LevelSubstitution.EMPTY;
+          List<? extends Expression> args = resultExpr instanceof FunCallExpression ? ((FunCallExpression) resultExpr).getDefCallArguments() : ((CaseExpression) resultExpr).getArguments();
+          for (int j = args.size() - 1; j >= 0; j--) {
+            stack.push(args.get(j));
           }
           continue;
         }
