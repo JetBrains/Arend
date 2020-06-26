@@ -831,17 +831,19 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           return null;
         }
 
-        if (fieldDef instanceof ClassField && ((ClassField) fieldDef).getTypeLevel() == null) {
-          kind = FunctionKind.LEMMA;
-        } else if (fieldDef instanceof ClassField && ((ClassField) fieldDef).isProperty() && def.getResultType() == null) {
-          boolean ok = true;
-          for (Concrete.Parameter parameter : def.getParameters()) {
-            if (parameter.getType() != null) {
-              ok = false;
-            }
-          }
-          if (ok) {
+        if (fieldDef instanceof ClassField && ((ClassField) fieldDef).isProperty()) {
+          if (((ClassField) fieldDef).getTypeLevel() == null) {
             kind = FunctionKind.LEMMA;
+          } else if (def.getResultType() == null) {
+            boolean ok = true;
+            for (Concrete.Parameter parameter : def.getParameters()) {
+              if (parameter.getType() != null) {
+                ok = false;
+              }
+            }
+            if (ok) {
+              kind = FunctionKind.LEMMA;
+            }
           }
         }
       }
