@@ -142,7 +142,7 @@ public class CoerceData {
         }
 
         substitution.add(link, result.expression);
-        result = new TypecheckingResult(new FunCallExpression((FunctionDefinition) def, sortArg, arguments), ((FunctionDefinition) def).getResultType().subst(substitution, levelSubst).normalize(NormalizationMode.WHNF));
+        result = new TypecheckingResult(FunCallExpression.make((FunctionDefinition) def, sortArg, arguments), ((FunctionDefinition) def).getResultType().subst(substitution, levelSubst).normalize(NormalizationMode.WHNF));
       }
     }
 

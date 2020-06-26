@@ -33,12 +33,12 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
   }
 
   @Override
-  public FunCallExpression visitFunCall(FunCallExpression expr, Void params) {
+  public Expression visitFunCall(FunCallExpression expr, Void params) {
     List<Expression> args = new ArrayList<>(expr.getDefCallArguments().size());
     for (Expression arg : expr.getDefCallArguments()) {
       args.add(arg.accept(this, null));
     }
-    return new FunCallExpression(expr.getDefinition(), expr.getSortArgument(), args);
+    return FunCallExpression.make(expr.getDefinition(), expr.getSortArgument(), args);
   }
 
   @Override

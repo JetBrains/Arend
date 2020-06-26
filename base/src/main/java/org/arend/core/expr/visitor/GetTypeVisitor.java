@@ -218,6 +218,6 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
     args.add(type);
     args.add(expr.getExpression());
     args.add(normExpr);
-    return new FunCallExpression(Prelude.PATH_INFIX, sortArg, args);
+    return FunCallExpression.make(Prelude.PATH_INFIX, sortArg, args);
   }
 }

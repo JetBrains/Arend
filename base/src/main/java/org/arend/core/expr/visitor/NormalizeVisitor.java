@@ -58,7 +58,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
     }
 
     if (expr instanceof FunCallExpression) {
-      return new FunCallExpression((FunctionDefinition) expr.getDefinition(), expr.getSortArgument(), args);
+      return FunCallExpression.make((FunctionDefinition) expr.getDefinition(), expr.getSortArgument(), args);
     }
 
     if (expr instanceof DataCallExpression) {
@@ -99,7 +99,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
 
     List<Expression> newDefCallArgs = new ArrayList<>(2);
     newDefCallArgs.add(arg1.accept(this, mode));
-    Expression result = new FunCallExpression(Prelude.PLUS, expr.getSortArgument(), newDefCallArgs);
+    Expression result = FunCallExpression.make(Prelude.PLUS, expr.getSortArgument(), newDefCallArgs);
     ConCallExpression conCall2 = arg2.cast(ConCallExpression.class);
     while (conCall2 != null && conCall2.getDefinition() == Prelude.SUC) {
       result = Suc(result);
@@ -140,7 +140,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
       List<Expression> newDefCallArgs = new ArrayList<>(2);
       newDefCallArgs.add(intExpr1);
       newDefCallArgs.add(mode == NormalizationMode.WHNF ? arg2 : arg2.accept(this, mode));
-      return new FunCallExpression(Prelude.MINUS, expr.getSortArgument(), newDefCallArgs);
+      return FunCallExpression.make(Prelude.MINUS, expr.getSortArgument(), newDefCallArgs);
     }
 
     ConCallExpression conCall1 = arg1.cast(ConCallExpression.class);
@@ -148,7 +148,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
       List<Expression> newDefCallArgs = new ArrayList<>(2);
       newDefCallArgs.add(mode == NormalizationMode.WHNF ? arg1 : arg1.accept(this, mode));
       newDefCallArgs.add(arg2.accept(this, mode));
-      return new FunCallExpression(Prelude.MINUS, expr.getSortArgument(), newDefCallArgs);
+      return FunCallExpression.make(Prelude.MINUS, expr.getSortArgument(), newDefCallArgs);
     }
 
     arg2 = arg2.accept(this, NormalizationMode.WHNF);
@@ -167,7 +167,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
       List<Expression> newDefCallArgs = new ArrayList<>(2);
       newDefCallArgs.add(mode == NormalizationMode.WHNF ? arg1 : arg1.accept(this, mode));
       newDefCallArgs.add(intExpr2);
-      return new FunCallExpression(Prelude.MINUS, expr.getSortArgument(), newDefCallArgs);
+      return FunCallExpression.make(Prelude.MINUS, expr.getSortArgument(), newDefCallArgs);
     }
 
     ConCallExpression conCall2 = arg2.cast(ConCallExpression.class);
@@ -181,7 +181,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
     List<Expression> newDefCallArgs = new ArrayList<>(2);
     newDefCallArgs.add(mode == NormalizationMode.WHNF ? arg1 : arg1.accept(this, mode));
     newDefCallArgs.add(mode == NormalizationMode.WHNF ? arg2 : arg2.accept(this, mode));
-    return new FunCallExpression(Prelude.MINUS, expr.getSortArgument(), newDefCallArgs);
+    return FunCallExpression.make(Prelude.MINUS, expr.getSortArgument(), newDefCallArgs);
   }
 
   private Expression visitFunctionDefCall(DefCallExpression expr, NormalizationMode mode) {

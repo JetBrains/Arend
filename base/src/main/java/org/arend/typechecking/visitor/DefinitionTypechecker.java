@@ -1571,7 +1571,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       args.add(newArg);
       args.add(funCall.getDefCallArguments().get(1));
       args.add(funCall.getDefCallArguments().get(2));
-      return new FunCallExpression(Prelude.PATH_INFIX, sort.max(funCall.getSortArgument()), args);
+      return FunCallExpression.make(Prelude.PATH_INFIX, sort.max(funCall.getSortArgument()), args);
     }
 
     if (type instanceof DataCallExpression) {
@@ -1633,7 +1633,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       args.add(expression);
       LamExpression lamExpr = (LamExpression) ((DataCallExpression) type).getDefCallArguments().get(0);
       args.add(new ReferenceExpression(param));
-      expression = new FunCallExpression(Prelude.AT, ((DataCallExpression) type).getSortArgument(), args);
+      expression = FunCallExpression.make(Prelude.AT, ((DataCallExpression) type).getSortArgument(), args);
       type = lamExpr.getBody();
       param = param.getNext();
     }

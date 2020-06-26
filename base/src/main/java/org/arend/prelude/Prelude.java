@@ -131,11 +131,11 @@ public class Prelude implements ArendPrelude {
         List<Expression> args = new ArrayList<>(2);
         args.add(new ReferenceExpression(IDP.getParameters()));
         args.add(new ReferenceExpression(IDP.getParameters().getNext()));
-        IDP.setPattern(new ConstructorExpressionPattern(new FunCallExpression(IDP, Sort.STD, args), Collections.emptyList()));
+        IDP.setPattern(new ConstructorExpressionPattern(FunCallExpression.makeFunCall(IDP, Sort.STD, args), Collections.emptyList()));
         IDP.setNumberOfParameters(2);
         IDP.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         ConCallExpression conCall = (ConCallExpression) IDP.getBody();
-        IDP.setBody(new ConCallExpression(conCall.getDefinition(), conCall.getSortArgument(), conCall.getDataTypeArguments(), Collections.singletonList(new LamExpression(new Sort(new Level(0), Level.INFINITY), UnusedIntervalDependentLink.INSTANCE, ((LamExpression) conCall.getDefCallArguments().get(0)).getBody()))));
+        IDP.setBody(ConCallExpression.make(conCall.getDefinition(), conCall.getSortArgument(), conCall.getDataTypeArguments(), Collections.singletonList(new LamExpression(new Sort(new Level(0), Level.INFINITY), UnusedIntervalDependentLink.INSTANCE, ((LamExpression) conCall.getDefCallArguments().get(0)).getBody()))));
         break;
       }
       case "@": {

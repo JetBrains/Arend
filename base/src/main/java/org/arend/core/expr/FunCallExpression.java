@@ -16,9 +16,31 @@ import java.util.List;
 public class FunCallExpression extends DefCallExpression implements CoreFunCallExpression {
   private final List<Expression> myArguments;
 
-  public FunCallExpression(FunctionDefinition definition, Sort sortArgument, List<Expression> arguments) {
+  private FunCallExpression(FunctionDefinition definition, Sort sortArgument, List<Expression> arguments) {
     super(definition, sortArgument);
     myArguments = arguments;
+  }
+
+  public static Expression make(FunctionDefinition definition, Sort sortArgument, List<Expression> arguments) {
+    if ((definition == Prelude.PLUS || definition == Prelude.MUL || definition == Prelude.MINUS || definition == Prelude.DIV || definition == Prelude.MOD || definition == Prelude.DIV_MOD) && arguments.size() == 2 && arguments.get(0) instanceof IntegerExpression && arguments.get(1) instanceof IntegerExpression) {
+      IntegerExpression expr1 = (IntegerExpression) arguments.get(0);
+      IntegerExpression expr2 = (IntegerExpression) arguments.get(1);
+      return definition == Prelude.PLUS ? expr1.plus(expr2)
+        : definition == Prelude.MUL ? expr1.mul(expr2)
+        : definition == Prelude.MINUS ? expr1.minus(expr2)
+        : definition == Prelude.DIV ? expr1.div(expr2)
+        : definition == Prelude.MOD ? expr1.mod(expr2)
+        : expr1.divMod(expr2);
+    }
+    return new FunCallExpression(definition, sortArgument, arguments);
+  }
+
+  public static FunCallExpression makeFunCall(FunctionDefinition definition, Sort sortArgument, List<Expression> arguments) {
+    Expression result = make(definition, sortArgument, arguments);
+    if (!(result instanceof FunCallExpression)) {
+      throw new IllegalArgumentException();
+    }
+    return (FunCallExpression) result;
   }
 
   @NotNull

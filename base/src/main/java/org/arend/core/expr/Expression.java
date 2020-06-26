@@ -244,7 +244,7 @@ public abstract class Expression implements Body, CoreExpression {
       List<Expression> args = dataCall.getDefCallArguments();
       Expression type = args.get(0).removeConstLam();
       if (type != null) {
-        return new FunCallExpression(Prelude.PATH_INFIX, dataCall.getSortArgument(), Arrays.asList(type, args.get(1), args.get(2)));
+        return FunCallExpression.makeFunCall(Prelude.PATH_INFIX, dataCall.getSortArgument(), Arrays.asList(type, args.get(1), args.get(2)));
       }
     }
 

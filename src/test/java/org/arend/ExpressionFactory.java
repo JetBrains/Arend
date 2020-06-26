@@ -36,8 +36,8 @@ public class ExpressionFactory {
     return result;
   }
 
-  public static FunCallExpression FunCall(FunctionDefinition definition, Sort sortArgument, Expression... arguments) {
-    return new FunCallExpression(definition, sortArgument, Arrays.asList(arguments));
+  public static Expression FunCall(FunctionDefinition definition, Sort sortArgument, Expression... arguments) {
+    return FunCallExpression.make(definition, sortArgument, Arrays.asList(arguments));
   }
 
   public static DataCallExpression DataCall(DataDefinition definition, Sort sortArgument, List<Expression> arguments) {

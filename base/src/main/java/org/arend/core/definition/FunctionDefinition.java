@@ -192,8 +192,8 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
   }
 
   @Override
-  public FunCallExpression getDefCall(Sort sortArgument, List<Expression> arguments) {
-    return new FunCallExpression(this, sortArgument, arguments);
+  public Expression getDefCall(Sort sortArgument, List<Expression> arguments) {
+    return FunCallExpression.make(this, sortArgument, arguments);
   }
 
   @Override

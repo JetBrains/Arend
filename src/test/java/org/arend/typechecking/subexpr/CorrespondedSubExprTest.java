@@ -1,14 +1,22 @@
 package org.arend.typechecking.subexpr;
 
+import org.arend.core.context.binding.Binding;
+import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.definition.Definition;
 import org.arend.core.expr.*;
 import org.arend.frontend.reference.ConcreteLocatedReferable;
+import org.arend.naming.reference.LocalReferable;
+import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.arend.util.Arend;
 import org.arend.util.Pair;
 import org.junit.Test;
 
+import java.util.Collections;
+import java.util.Map;
+
+import static org.arend.core.expr.ExpressionFactory.Nat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -94,38 +102,39 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
 
   @Test
   public void infixDefCall() {
-    // (1+3*2)-4
-    Concrete.AppExpression expr = (Concrete.AppExpression) resolveNamesExpr("1 Nat.+ 3 Nat.* 2 Nat.- 4");
-    Expression core = typeCheckExpr(expr, null).expression;
+    // (1+x*2)-4
+    Map<Referable, Binding> context = Collections.singletonMap(new LocalReferable("x"), new TypedBinding("x", Nat()));
+    Concrete.AppExpression expr = (Concrete.AppExpression) resolveNamesExpr(context, "1 Nat.+ x Nat.* 2 Nat.- 4");
+    Expression core = typeCheckExpr(context, expr, null).expression;
     // Concrete.Expression sub = expr.getFunction();
     // Concrete.Argument four = expr.getArguments().get(1);
-    // 1+3*2
+    // 1+x*2
     Concrete.Argument arg1 = expr.getArguments().get(0);
-    // 1+3*2
+    // 1+x*2
     Concrete.AppExpression expr2 = (Concrete.AppExpression) arg1.getExpression();
     Concrete.Expression add = expr2.getFunction();
     Concrete.Argument one = expr2.getArguments().get(0);
-    // 3*2
+    // x*2
     Concrete.Argument arg2 = expr2.getArguments().get(1);
     Concrete.AppExpression expr3 = (Concrete.AppExpression) arg2.getExpression();
     Concrete.Expression mul = expr3.getFunction();
     Concrete.Argument three = expr3.getArguments().get(0);
     Concrete.Argument two = expr3.getArguments().get(1);
     {
-      // 3* -> 3*2
+      // x* -> x*2
       Concrete.Expression make = Concrete.AppExpression.make(expr3.getData(), mul, three.getExpression(), true);
       Pair<Expression, Concrete.Expression> accept = expr.accept(new CorrespondedSubExprVisitor(make), core);
       assertNotNull(accept);
-      assertEquals("3 * 2", accept.proj1.toString());
-      assertEquals("3 * 2", accept.proj2.toString());
+      assertEquals("x * 2", accept.proj1.toString());
+      assertEquals("x * 2", accept.proj2.toString());
     }
     {
-      // *2 -> 3*2
+      // *2 -> x*2
       Concrete.Expression make = Concrete.AppExpression.make(expr3.getData(), mul, two.getExpression(), true);
       Pair<Expression, Concrete.Expression> accept = expr.accept(new CorrespondedSubExprVisitor(make), core);
       assertNotNull(accept);
-      assertEquals("3 * 2", accept.proj1.toString());
-      assertEquals("3 * 2", accept.proj2.toString());
+      assertEquals("x * 2", accept.proj1.toString());
+      assertEquals("x * 2", accept.proj2.toString());
     }
     {
       // 2 -> 2
@@ -135,19 +144,19 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
       assertEquals("2", accept.proj2.toString());
     }
     {
-      // 3*2 -> 3*2
+      // x*2 -> x*2
       Pair<Expression, Concrete.Expression> accept = expr.accept(new CorrespondedSubExprVisitor(expr3), core);
       assertNotNull(accept);
-      assertEquals("3 * 2", accept.proj1.toString());
-      assertEquals("3 * 2", accept.proj2.toString());
+      assertEquals("x * 2", accept.proj1.toString());
+      assertEquals("x * 2", accept.proj2.toString());
     }
     {
-      // 1+ -> 1+3*2
+      // 1+ -> 1+x*2
       Concrete.Expression make = Concrete.AppExpression.make(expr3.getData(), add, one.getExpression(), true);
       Pair<Expression, Concrete.Expression> accept = expr.accept(new CorrespondedSubExprVisitor(make), core);
       assertNotNull(accept);
-      assertEquals("1 + 3 * 2", accept.proj1.toString());
-      assertEquals("1 + 3 * 2", accept.proj2.toString());
+      assertEquals("1 + x * 2", accept.proj1.toString());
+      assertEquals("1 + x * 2", accept.proj2.toString());
     }
   }
 

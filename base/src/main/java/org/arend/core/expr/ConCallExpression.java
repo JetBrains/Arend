@@ -36,6 +36,14 @@ public class ConCallExpression extends DefCallExpression implements CoreConCallE
     return new ConCallExpression(constructor, sortArgument, dataTypeArguments, arguments);
   }
 
+  public static ConCallExpression makeConCall(Constructor constructor, Sort sortArgument, List<Expression> dataTypeArguments, List<Expression> arguments) {
+    Expression conCall = make(constructor, sortArgument, dataTypeArguments, arguments);
+    if (!(conCall instanceof ConCallExpression)) {
+      throw new IllegalArgumentException();
+    }
+    return (ConCallExpression) conCall;
+  }
+
   @NotNull
   @Override
   public List<Expression> getDataTypeArguments() {

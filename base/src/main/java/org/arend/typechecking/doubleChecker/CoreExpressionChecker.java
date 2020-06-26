@@ -394,7 +394,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     args.add(type);
     args.add(expr.getExpression());
     args.add(expr.eval());
-    return check(expectedType, new FunCallExpression(Prelude.PATH_INFIX, sortArg, args), expr);
+    return check(expectedType, FunCallExpression.make(Prelude.PATH_INFIX, sortArg, args), expr);
   }
 
   @Override
@@ -426,7 +426,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       args.add(type);
       args.add(new ReferenceExpression(params.get(i)));
       args.add(new ReferenceExpression(params.get(i + 1)));
-      type = new FunCallExpression(Prelude.PATH_INFIX, Sort.PROP, args);
+      type = FunCallExpression.make(Prelude.PATH_INFIX, Sort.PROP, args);
     }
 
     return params.size() / 2 - 2;

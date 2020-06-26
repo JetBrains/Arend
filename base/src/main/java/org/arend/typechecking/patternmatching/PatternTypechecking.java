@@ -601,7 +601,7 @@ public class PatternTypechecking {
             typecheckAsPatterns(pattern.getAsReferables(), null, null);
           } else {
             args.addAll(conResult.exprs);
-            Expression newExpr = new FunCallExpression(constructor, sortArg.subst(levelSolution), args);
+            Expression newExpr = FunCallExpression.make(constructor, sortArg.subst(levelSolution), args);
             typecheckAsPatterns(pattern.getAsReferables(), newExpr, expr);
             exprs.add(newExpr);
             paramsSubst.add(parameters, newExpr);

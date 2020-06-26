@@ -277,7 +277,8 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Expression>
     for (ExpressionPattern pattern : getSubPatterns()) {
       patterns.add(pattern.subst(exprSubst, levelSubst, patternSubst));
     }
-    return new ConstructorExpressionPattern(data.subst(exprSubst, levelSubst), patterns);
+    Expression expr = data.subst(exprSubst, levelSubst);
+    return new ConstructorExpressionPattern(expr instanceof SmallIntegerExpression && ((SmallIntegerExpression) expr).getInteger() == 0 ? new ConCallExpression(Prelude.ZERO, Sort.PROP, Collections.emptyList(), Collections.emptyList()) : expr, patterns);
   }
 
   @Override

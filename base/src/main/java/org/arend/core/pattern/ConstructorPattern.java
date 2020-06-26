@@ -62,7 +62,7 @@ public abstract class ConstructorPattern<T> implements Pattern {
       if (equality == null) {
         return null;
       }
-      return new ConstructorExpressionPattern(new FunCallExpression(Prelude.IDP, equality.getSortArgument(), Arrays.asList(equality.getDefCallArguments().get(0), equality.getDefCallArguments().get(1))), Collections.emptyList());
+      return new ConstructorExpressionPattern(FunCallExpression.makeFunCall(Prelude.IDP, equality.getSortArgument(), Arrays.asList(equality.getDefCallArguments().get(0), equality.getDefCallArguments().get(1))), Collections.emptyList());
     } else if (type instanceof ClassCallExpression) {
       ClassCallExpression classCall = (ClassCallExpression) type;
       List<ExpressionPattern> subPatterns = Pattern.toExpressionPatterns(mySubPatterns, classCall.getClassFieldParameters());

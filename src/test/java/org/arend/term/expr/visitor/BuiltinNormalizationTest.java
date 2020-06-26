@@ -22,7 +22,7 @@ public class BuiltinNormalizationTest extends TypeCheckingTestCase {
     List<Expression> args = new ArrayList<>(2);
     args.add(arg1);
     args.add(arg2);
-    return new FunCallExpression(definition, Sort.STD, args);
+    return FunCallExpression.make(definition, Sort.STD, args);
   }
 
   private static IntegerExpression val(int x) {

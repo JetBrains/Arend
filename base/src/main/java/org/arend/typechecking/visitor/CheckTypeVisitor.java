@@ -1430,7 +1430,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
             if (definition instanceof DataDefinition) {
               paramType = new DataCallExpression((DataDefinition) definition, sortArg, new ArrayList<>(defCallParamType.getDefCallArguments()));
             } else if (definition instanceof FunctionDefinition) {
-              paramType = new TypeExpression(new FunCallExpression((FunctionDefinition) definition, sortArg, new ArrayList<>(defCallParamType.getDefCallArguments())), paramType.getSortOfType());
+              paramType = new TypeExpression(FunCallExpression.make((FunctionDefinition) definition, sortArg, new ArrayList<>(defCallParamType.getDefCallArguments())), paramType.getSortOfType());
             } else {
               ClassCallExpression classCall = (ClassCallExpression) defCallParamType;
               paramType = new ClassCallExpression((ClassDefinition) definition, sortArg, classCall.getImplementedHere(), classCall.getDefinition().computeSort(sortArg, classCall.getImplementedHere(), classCall.getThisBinding()), classCall.getUniverseKind());
@@ -2163,7 +2163,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
 
     SingleDependentLink params = ExpressionFactory.singleParams(true, Arrays.asList("x" + (level + 2), "y" + (level + 2)), type);
     Sort sort = type.getSortOfType();
-    return new PiExpression(sort, params, getLevelExpression(new TypeExpression(new FunCallExpression(Prelude.PATH_INFIX, sort, Arrays.asList(type.getExpr(), new ReferenceExpression(params), new ReferenceExpression(params.getNext()))), sort), level - 1));
+    return new PiExpression(sort, params, getLevelExpression(new TypeExpression(FunCallExpression.make(Prelude.PATH_INFIX, sort, Arrays.asList(type.getExpr(), new ReferenceExpression(params), new ReferenceExpression(params.getNext()))), sort), level - 1));
   }
 
   public Integer getExpressionLevel(DependentLink link, Expression type, Expression expr, Equations equations, Concrete.SourceNode sourceNode) {
@@ -2205,7 +2205,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
         }
 
         pathArgs.add(new ReferenceExpression(link));
-        expr = new FunCallExpression(Prelude.PATH_INFIX, Sort.STD, pathArgs);
+        expr = FunCallExpression.make(Prelude.PATH_INFIX, Sort.STD, pathArgs);
         level++;
       }
 
@@ -2446,6 +2446,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     args.add(result.type);
     args.add(result.expression);
     args.add(normExpr);
-    return checkResult(expectedType, new TypecheckingResult(pEvalResult, new FunCallExpression(Prelude.PATH_INFIX, sortArg, args)), expr);
+    return checkResult(expectedType, new TypecheckingResult(pEvalResult, FunCallExpression.make(Prelude.PATH_INFIX, sortArg, args)), expr);
   }
 }

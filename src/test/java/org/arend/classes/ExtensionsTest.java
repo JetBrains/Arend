@@ -168,7 +168,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
       "\\class A { | n : Nat -> Nat | k : Nat }\n" +
       "\\class B { | m : Nat | a : A }\n" +
       "\\func f => \\new B { | m => 0 | a => \\new A { | n => \\lam x => x | k => 1 } }");
-    FunCallExpression funCall = new FunCallExpression((FunctionDefinition) getDefinition("f"), Sort.STD, Collections.emptyList());
+    Expression funCall = FunCallExpression.make((FunctionDefinition) getDefinition("f"), Sort.STD, Collections.emptyList());
 
     Expression fieldCallA = FieldCallExpression.make((ClassField) getDefinition("B.a"), Sort.STD, funCall);
     Expression fieldCallANorm = fieldCallA.normalize(NormalizationMode.WHNF);
@@ -191,7 +191,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
       "\\class B { | m : Nat | a : A }\n" +
       "\\class C { | l : Nat | b : B }\n" +
       "\\func f => \\new C { | l => 2 | b { | m => 1 | a { | n => \\lam x => x | k => 0 } } }");
-    FunCallExpression funCall = new FunCallExpression((FunctionDefinition) getDefinition("f"), Sort.STD, Collections.emptyList());
+    Expression funCall = FunCallExpression.make((FunctionDefinition) getDefinition("f"), Sort.STD, Collections.emptyList());
 
     Expression fieldCallL = FieldCallExpression.make((ClassField) getDefinition("C.l"), Sort.STD, funCall);
     fieldCallL = fieldCallL.normalize(NormalizationMode.WHNF);
@@ -241,7 +241,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
       "\\class A { | n : Nat -> Nat | k : Nat }\n" +
       "\\class B { | m : Nat | a : A }\n" +
       "\\func f => \\new B { | m => 0 | a { | n => \\lam x => x | k => 1 } }");
-    FunCallExpression funCall = new FunCallExpression((FunctionDefinition) getDefinition("f"), Sort.STD, Collections.emptyList());
+    Expression funCall = FunCallExpression.make((FunctionDefinition) getDefinition("f"), Sort.STD, Collections.emptyList());
 
     Expression fieldCallA = FieldCallExpression.make((ClassField) getDefinition("B.a"), Sort.STD, funCall);
     Expression fieldCallANorm = fieldCallA.normalize(NormalizationMode.WHNF);
@@ -263,7 +263,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
       "\\class A { | n : Nat -> Nat | k : Nat }\n" +
       "\\class B { | m : Nat | a : A }\n" +
       "\\instance f : B | m => 0 | a { | n => \\lam x => x | k => 1 }");
-    FunCallExpression funCall = new FunCallExpression((FunctionDefinition) getDefinition("f"), Sort.STD, Collections.emptyList());
+    Expression funCall = FunCallExpression.make((FunctionDefinition) getDefinition("f"), Sort.STD, Collections.emptyList());
 
     Expression fieldCallA = FieldCallExpression.make((ClassField) getDefinition("B.a"), Sort.STD, funCall);
     Expression fieldCallANorm = fieldCallA.normalize(NormalizationMode.WHNF);

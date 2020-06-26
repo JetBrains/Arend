@@ -320,10 +320,10 @@ class ExpressionDeserialization {
     return AppExpression.make(readExpr(proto.getFunction()), readExpr(proto.getArgument()), proto.getIsExplicit());
   }
 
-  private FunCallExpression readFunCall(ExpressionProtos.Expression.FunCall proto) throws DeserializationException {
+  private Expression readFunCall(ExpressionProtos.Expression.FunCall proto) throws DeserializationException {
     FunctionDefinition functionDefinition = myCallTargetProvider.getCallTarget(proto.getFunRef(), FunctionDefinition.class);
     myDependencyListener.dependsOn(myDefinition, functionDefinition.getReferable());
-    return new FunCallExpression(functionDefinition, new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readExprList(proto.getArgumentList()));
+    return FunCallExpression.make(functionDefinition, new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readExprList(proto.getArgumentList()));
   }
 
   private Expression readConCall(ExpressionProtos.Expression.ConCall proto) throws DeserializationException {

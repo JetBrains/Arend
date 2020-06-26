@@ -164,7 +164,7 @@ public class UseTypechecking {
         if (link.hasNext() || resultType != null) {
           type = useParent instanceof DataDefinition
             ? new DataCallExpression((DataDefinition) useParent, Sort.STD, defCallArgs)
-            : new FunCallExpression((FunctionDefinition) useParent, Sort.STD, defCallArgs);
+            : FunCallExpression.make((FunctionDefinition) useParent, Sort.STD, defCallArgs);
         } else {
           ok = false;
         }

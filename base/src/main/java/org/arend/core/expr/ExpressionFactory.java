@@ -67,10 +67,10 @@ public class ExpressionFactory {
   }
 
   public static ConCallExpression Pos(Expression expr) {
-    return new ConCallExpression(Prelude.POS, Sort.PROP, Collections.emptyList(), Collections.singletonList(expr));
+    return ConCallExpression.makeConCall(Prelude.POS, Sort.PROP, Collections.emptyList(), Collections.singletonList(expr));
   }
 
   public static ConCallExpression Neg(Expression expr) {
-    return new ConCallExpression(Prelude.NEG, Sort.PROP, Collections.emptyList(), Collections.singletonList(expr));
+    return ConCallExpression.makeConCall(Prelude.NEG, Sort.PROP, Collections.emptyList(), Collections.singletonList(expr));
   }
 }
