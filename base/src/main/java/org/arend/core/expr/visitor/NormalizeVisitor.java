@@ -426,6 +426,8 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
           result.clear();
           stack.clear();
 
+          ComputationRunner.checkCanceled();
+
           FunCallExpression funCall = (FunCallExpression) resultExpr;
           levelSubstitution = funCall.getSortArgument().toLevelSubstitution();
           for (int j = funCall.getDefCallArguments().size() - 1; j >= 0; j--) {
