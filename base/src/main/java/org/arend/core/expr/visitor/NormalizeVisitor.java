@@ -354,7 +354,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
     if (body instanceof Expression) {
       result = mode == NormalizationMode.RNF || mode == NormalizationMode.RNF_EXP ? null : ((Expression) body).subst(getDataTypeArgumentsSubstitution(expr).add(definition.getParameters(), defCallArgs), expr.getSortArgument().toLevelSubstitution());
     } else if (body instanceof ElimBody) {
-      result = eval((ElimBody) body, defCallArgs, getDataTypeArgumentsSubstitution(expr), expr.getSortArgument().toLevelSubstitution());
+      result = eval((ElimBody) body, defCallArgs, getDataTypeArgumentsSubstitution(expr), expr.getSortArgument().toLevelSubstitution(), mode);
     } else {
       assert body == null;
       result = null;
@@ -380,18 +380,18 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
       if (body instanceof Expression) {
         return ((Expression) body).subst(new ExprSubstitution().add(funCall.getDefinition().getParameters(), funCall.getDefCallArguments()), funCall.getSortArgument().toLevelSubstitution());
       } else if (body instanceof ElimBody) {
-        return eval((ElimBody) body, funCall.getDefCallArguments(), new ExprSubstitution(), funCall.getSortArgument().toLevelSubstitution());
+        return eval((ElimBody) body, funCall.getDefCallArguments(), new ExprSubstitution(), funCall.getSortArgument().toLevelSubstitution(), null);
       } else {
         return null;
       }
     } else if (expr instanceof CaseExpression) {
-      return eval(((CaseExpression) expr).getElimBody(), ((CaseExpression) expr).getArguments(), new ExprSubstitution(), LevelSubstitution.EMPTY);
+      return eval(((CaseExpression) expr).getElimBody(), ((CaseExpression) expr).getArguments(), new ExprSubstitution(), LevelSubstitution.EMPTY, null);
     } else {
       return null;
     }
   }
 
-  public Expression eval(ElimBody elimBody, List<? extends Expression> arguments, ExprSubstitution substitution, LevelSubstitution levelSubstitution) {
+  public Expression eval(ElimBody elimBody, List<? extends Expression> arguments, ExprSubstitution substitution, LevelSubstitution levelSubstitution, NormalizationMode mode) {
     Stack<Expression> stack = makeStack(arguments);
     List<Expression> result = new ArrayList<>();
     Expression resultExpr = null;
@@ -410,6 +410,16 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
           substitution.add(link, result.get(leafElimTree.getArgumentIndex(i)));
         }
         resultExpr = Objects.requireNonNull(clause.getExpression()).subst(substitution, levelSubstitution);
+
+        if (mode == null) {
+          return resultExpr;
+        }
+
+        if (resultExpr instanceof LetExpression && mode != NormalizationMode.RNF && mode != NormalizationMode.RNF_EXP) {
+          LetExpression let = (LetExpression) resultExpr;
+          resultExpr = let.isStrict() ? let.getExpression().subst(let.getClausesSubstitution()) : let.getExpression();
+        }
+
         if (resultExpr instanceof FunCallExpression && ((FunCallExpression) resultExpr).getDefinition().getBody() == elimBody) {
           elimTree = elimBody.getElimTree();
           substitution.clear();
@@ -423,6 +433,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
           }
           continue;
         }
+
         return resultExpr;
       }
 
@@ -684,7 +695,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
   @Override
   public Expression visitCase(CaseExpression expr, NormalizationMode mode) {
     if (!expr.isSCase()) {
-      Expression result = eval(expr.getElimBody(), expr.getArguments(), new ExprSubstitution(), LevelSubstitution.EMPTY);
+      Expression result = eval(expr.getElimBody(), expr.getArguments(), new ExprSubstitution(), LevelSubstitution.EMPTY, mode);
       if (result != null) {
         return result.accept(this, mode);
       }
