@@ -18,10 +18,10 @@ jobs:
     - uses: actions/setup-java@v1
       with:
         java-version: ${{ matrix.java }}
-    - uses: eskatos/gradle-command-action@v1
+    - uses: eskatos/gradle-command-action@v1.2.1
       with:
         arguments: check --info --no-daemon --stacktrace
-    - uses: eskatos/gradle-command-action@v1
+    - uses: eskatos/gradle-command-action@v1.2.1
       # Normally, macOS runs faster than the other two
       if: matrix.os == 'macOS-latest' && matrix.java == '11'
       with:
