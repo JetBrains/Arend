@@ -1,15 +1,15 @@
 package org.arend.repl;
 
 import org.arend.core.expr.Expression;
-import org.arend.ext.prettyprinting.DefinitionRenamer;
-import org.arend.extImpl.definitionRenamer.CachingDefinitionRenamer;
-import org.arend.extImpl.definitionRenamer.ScopeDefinitionRenamer;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.error.ListErrorReporter;
 import org.arend.ext.module.ModulePath;
+import org.arend.ext.prettyprinting.DefinitionRenamer;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.reference.Precedence;
+import org.arend.extImpl.definitionRenamer.CachingDefinitionRenamer;
+import org.arend.extImpl.definitionRenamer.ScopeDefinitionRenamer;
 import org.arend.library.Library;
 import org.arend.library.LibraryManager;
 import org.arend.module.ModuleLocation;
@@ -27,9 +27,7 @@ import org.arend.term.prettyprint.PrettyPrintVisitor;
 import org.arend.term.prettyprint.ToAbstractVisitor;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
-import org.arend.typechecking.instance.provider.InstanceProviderSet;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
-import org.arend.typechecking.provider.ConcreteProvider;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.arend.typechecking.visitor.DesugarVisitor;
@@ -50,11 +48,10 @@ public abstract class Repl {
 
   protected final List<Scope> myMergedScopes = new LinkedList<>();
   private final List<ReplHandler> myHandlers = new ArrayList<>();
-  private final ConcreteProvider myConcreteProvider;
   private final TCReferable myModuleReferable;
   protected final ReplScope myReplScope = new ReplScope(null, myMergedScopes);
   protected @NotNull Scope myScope = myReplScope;
-  protected final @NotNull TypecheckingOrderingListener myTypechecking;
+  protected @NotNull TypecheckingOrderingListener myTypechecking;
   protected final @NotNull TypecheckerState myTypecheckerState;
   protected final @NotNull PrettyPrinterConfig myPpConfig = new PrettyPrinterConfig() {
     @Override
@@ -72,11 +69,9 @@ public abstract class Repl {
 
   public Repl(@NotNull ListErrorReporter listErrorReporter,
               @NotNull LibraryManager libraryManager,
-              @NotNull ConcreteProvider concreteProvider,
               @NotNull TypecheckingOrderingListener typecheckingOrderingListener,
               @NotNull TypecheckerState typecheckerState) {
     myErrorReporter = listErrorReporter;
-    myConcreteProvider = concreteProvider;
     myTypecheckerState = typecheckerState;
     myLibraryManager = libraryManager;
     myTypechecking = typecheckingOrderingListener;
@@ -145,7 +140,7 @@ public abstract class Repl {
     var moduleScopeProvider = getAvailableModuleScopeProvider();
     var scope = CachingScope.make(ScopeFactory.forGroup(group, moduleScopeProvider));
     myReplScope.addScope(scope);
-    new DefinitionResolveNameVisitor(myConcreteProvider, myErrorReporter)
+    new DefinitionResolveNameVisitor(myTypechecking.getConcreteProvider(), myErrorReporter)
         .resolveGroupWithTypes(group, null, myScope);
     if (checkErrors()) {
       myMergedScopes.remove(scope);
@@ -167,7 +162,7 @@ public abstract class Repl {
       group,
       myScope,
       myModuleReferable,
-      myConcreteProvider,
+      myTypechecking.getConcreteProvider(),
       myTypechecking.getReferableConverter()
     );
   }
@@ -283,7 +278,7 @@ public abstract class Repl {
     var expr = parseExpr(text);
     if (expr == null || checkErrors()) return null;
     expr = expr
-        .accept(new ExpressionResolveNameVisitor(myConcreteProvider,
+        .accept(new ExpressionResolveNameVisitor(myTypechecking.getConcreteProvider(),
             myScope, new ArrayList<>(), myErrorReporter, null), null)
         .accept(new SyntacticDesugarVisitor(myErrorReporter), null);
     if (checkErrors()) return null;
