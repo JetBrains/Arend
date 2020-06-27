@@ -39,8 +39,12 @@ public final class NormalizeCommand implements ReplCommand {
       default:
         api.eprintln("[ERROR] Unrecognized normalization level `" + line + "`, see `:? normalize`");
         break;
-      case "NULL":
       case "":
+        if (log) {
+          api.println("Normalization mode: " + api.normalizationMode + " (:? normalize for further instruction)");
+          break;
+        }
+      case "NULL":
         if (log) api.println("[INFO] Unset normalization mode.");
         api.normalizationMode = null;
         break;
