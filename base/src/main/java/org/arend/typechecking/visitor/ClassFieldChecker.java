@@ -151,4 +151,9 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> {
     myClassCallNumber--;
     return expr;
   }
+
+  @Override
+  public Concrete.Expression visitGoal(Concrete.GoalExpression expr, Void params) {
+    return expr;
+  }
 }
