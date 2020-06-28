@@ -419,9 +419,11 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
           return resultExpr;
         }
 
-        if (resultExpr instanceof LetExpression && mode != NormalizationMode.RNF && mode != NormalizationMode.RNF_EXP) {
-          LetExpression let = (LetExpression) resultExpr;
-          resultExpr = let.isStrict() ? let.getExpression().subst(let.getClausesSubstitution()) : let.getExpression();
+        if (mode != NormalizationMode.RNF && mode != NormalizationMode.RNF_EXP) {
+          while (resultExpr instanceof LetExpression) {
+            LetExpression let = (LetExpression) resultExpr;
+            resultExpr = let.isStrict() ? let.getExpression().subst(let.getClausesSubstitution()) : let.getExpression();
+          }
         }
 
         if (resultExpr instanceof FunCallExpression && ((FunCallExpression) resultExpr).getDefinition().getBody() instanceof ElimBody && !isBlocked(((FunCallExpression) resultExpr).getDefinition()) || resultExpr instanceof CaseExpression && !((CaseExpression) resultExpr).isSCase()) {
