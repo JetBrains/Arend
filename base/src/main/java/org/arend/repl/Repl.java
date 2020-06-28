@@ -138,7 +138,7 @@ public abstract class Repl {
     var group = parseStatements(line);
     if (group == null) return;
     var moduleScopeProvider = getAvailableModuleScopeProvider();
-    var scope = CachingScope.make(ScopeFactory.forGroup(group, moduleScopeProvider));
+    var scope = ScopeFactory.forGroup(group, moduleScopeProvider);
     myReplScope.addScope(scope);
     new DefinitionResolveNameVisitor(myTypechecking.getConcreteProvider(), myErrorReporter)
         .resolveGroupWithTypes(group, null, myScope);
