@@ -15,7 +15,6 @@ dependencies {
     // implementation("org.jline:jline-builtins:$jlineVersion")
 
     implementation("org.antlr:antlr4-runtime:$antlrVersion")
-    implementation(project(":api"))
     implementation(project(":base"))
     implementation(project(":parser"))
 }
@@ -27,6 +26,7 @@ val execRepl = task<JavaExec>("execRepl") {
     standardInput = System.`in`
     standardOutput = System.out
     main = "org.arend.frontend.repl.CliReplState"
+    dependsOn(tasks["classes"])
 }
 
 // Prelude stuff
@@ -35,6 +35,7 @@ val buildPrelude = task<org.arend.gradle.BuildPreludeTask>("buildPrelude") {
     classpath = sourceSets["main"].runtimeClasspath
     workingDir(rootProject.rootDir)
     args = listOf(".")
+    doFirst { deleteArcFile() }
 }
 
 val copyPrelude = task<Copy>("copyPrelude") {
@@ -49,5 +50,6 @@ task<Jar>("jarDep") {
     from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it as Any else zipTree(it) })
     from(sourceSets["main"].output)
     archiveClassifier.set("full")
-    dependsOn(copyPrelude)
 }
+
+tasks.withType<Jar> { dependsOn(copyPrelude) }

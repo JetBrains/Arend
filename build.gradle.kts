@@ -84,7 +84,6 @@ dependencies {
     testImplementation("org.jetbrains:annotations:$annotationsVersion")
     testImplementation("org.antlr:antlr4-runtime:$antlrVersion")
 
-    testImplementation(project(":api"))
     testImplementation(project(":base"))
     testImplementation(project(":parser"))
     testImplementation(project(":cli"))
