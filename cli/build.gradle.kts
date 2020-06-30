@@ -1,14 +1,12 @@
 dependencies {
-    val annotationsVersion: String by rootProject.ext
     val antlrVersion: String by rootProject.ext
-    implementation("org.jetbrains:annotations:$annotationsVersion")
     implementation("commons-cli:commons-cli:1.4")
 
     val jacksonVersion = "2.10.3"
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:$jacksonVersion")
     implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
 
-    val jlineVersion = "3.14.1"
+    val jlineVersion = "3.15.0"
     implementation("org.jline:jline-terminal:$jlineVersion")
     implementation("org.jline:jline-terminal-jansi:$jlineVersion")
     implementation("org.jline:jline-reader:$jlineVersion")
