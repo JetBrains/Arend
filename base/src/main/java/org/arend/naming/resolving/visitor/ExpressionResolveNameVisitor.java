@@ -40,17 +40,12 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   }
 
   public static Referable resolve(Referable referable, Scope scope, boolean withArg, List<Referable> resolvedRefs) {
-    while (referable instanceof RedirectingReferable) {
-      referable = ((RedirectingReferable) referable).getOriginalReferable();
-    }
+    referable = RedirectingReferable.getOriginalReferable(referable);
     if (referable instanceof UnresolvedReference) {
       if (withArg) {
         ((UnresolvedReference) referable).resolveArgument(scope, resolvedRefs);
       }
-      referable = ((UnresolvedReference) referable).resolve(scope, withArg ? null : resolvedRefs);
-      while (referable instanceof RedirectingReferable) {
-        referable = ((RedirectingReferable) referable).getOriginalReferable();
-      }
+      referable = RedirectingReferable.getOriginalReferable(((UnresolvedReference) referable).resolve(scope, withArg ? null : resolvedRefs));
     }
     return referable;
   }
@@ -116,6 +111,21 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     Concrete.Expression argument = resolve(expr, myScope, false, resolvedList);
     if (expr.getReferent() instanceof ErrorReference) {
       myErrorReporter.report(((ErrorReference) expr.getReferent()).getError());
+    }
+    if (expr.getReferent() instanceof GlobalReferable && !(expr.getReferent() instanceof TCReferable)) {
+      TCReferable tcRef = typeClassReferenceExtractVisitor.concreteProvider.getTCReferable((GlobalReferable) expr.getReferent());
+      if (tcRef != null) {
+        expr.setReferent(tcRef);
+      }
+    }
+    for (Concrete.Expression arg = argument; arg instanceof Concrete.AppExpression; arg = ((Concrete.AppExpression) arg).getArguments().get(0).expression) {
+      Concrete.ReferenceExpression refExpr = (Concrete.ReferenceExpression) ((Concrete.AppExpression) arg).getFunction();
+      if (refExpr.getReferent() instanceof GlobalReferable && !(refExpr.getReferent() instanceof TCReferable)) {
+        TCReferable tcRef = typeClassReferenceExtractVisitor.concreteProvider.getTCReferable((GlobalReferable) refExpr.getReferent());
+        if (tcRef != null) {
+          refExpr.setReferent(tcRef);
+        }
+      }
     }
     if (myResolverListener != null) {
       myResolverListener.referenceResolved(argument, origRef, expr, resolvedList);
@@ -380,6 +390,9 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     Referable ref = typeClassReferenceExtractVisitor.getTypeReference(Collections.emptyList(), expr.getBaseClassExpression(), true);
     if (!(ref instanceof TypedReferable)) {
       ref = expr.getBaseClassExpression().getUnderlyingReferable();
+      if (!(ref instanceof ClassReferable || ref instanceof TypedReferable)) {
+        ref = ref.getUnderlyingReferable();
+      }
     }
     ClassReferable classRef = null;
     if (ref instanceof ClassReferable) {
@@ -411,6 +424,11 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       }
       if (field instanceof ErrorReference) {
         myErrorReporter.report(((ErrorReference) field).getError());
+      } else if (field instanceof GlobalReferable && !(field instanceof TCReferable)) {
+        TCReferable tcField = typeClassReferenceExtractVisitor.concreteProvider.getTCReferable((GlobalReferable) field);
+        if (tcField != null) {
+          field = tcField;
+        }
       }
       if (element instanceof Concrete.CoClauseElement) {
         ((Concrete.CoClauseElement) element).setImplementedField(field);
@@ -426,13 +444,16 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     visitClassFieldReference(impl, impl.getImplementedField(), classDef);
 
     if (impl.implementation == null) {
-      ClassReferable classRef = impl.getImplementedField() instanceof ClassReferable
-        ? (ClassReferable) impl.getImplementedField()
-        : impl.getImplementedField() instanceof TypedReferable
-        ? ((TypedReferable) impl.getImplementedField()).getTypeClassReference()
-        : null;
-      if (classRef != null) {
-        visitClassFieldImpls(impl.subClassFieldImpls, classRef);
+      Referable ref = impl.getImplementedField();
+      if (!(ref instanceof ClassReferable || ref instanceof TypedReferable)) {
+        ref = ref.getUnderlyingReferable();
+      }
+      if (!(ref instanceof ClassReferable) && ref instanceof TypedReferable) {
+        ref = ((TypedReferable) ref).getTypeClassReference();
+      }
+      if (ref instanceof ClassReferable) {
+        impl.classRef = typeClassReferenceExtractVisitor.concreteProvider.getTCReferable((ClassReferable) ref);
+        visitClassFieldImpls(impl.subClassFieldImpls, (ClassReferable) ref);
       }
     } else {
       impl.implementation = impl.implementation.accept(this, null);

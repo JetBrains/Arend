@@ -271,10 +271,7 @@ public class ModuleDeserialization {
     final Definition def;
     switch (defProto.getDefinitionDataCase()) {
       case CLASS:
-        if (!(referable instanceof TCClassReferable)) {
-          throw new DeserializationException("'" + referable.textRepresentation() + "' expected to be a class");
-        }
-        ClassDefinition classDef = new ClassDefinition((TCClassReferable) referable);
+        ClassDefinition classDef = new ClassDefinition(referable);
         if (fillInternalDefinitions) {
           for (DefinitionProtos.Definition.ClassData.Field fieldProto : defProto.getClass_().getPersonalFieldList()) {
             DefinitionProtos.Referable fieldReferable = fieldProto.getReferable();

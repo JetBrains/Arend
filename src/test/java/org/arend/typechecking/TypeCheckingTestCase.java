@@ -39,7 +39,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
   TypecheckingResult typeCheckExpr(Map<Referable, Binding> context, Concrete.Expression expression, Expression expectedType, int errors) {
     CheckTypeVisitor visitor = new CheckTypeVisitor(typecheckerState, localErrorReporter, null, null);
     visitor.addBindings(context);
-    Concrete.Expression desugar = DesugarVisitor.desugar(expression, localErrorReporter);
+    Concrete.Expression desugar = DesugarVisitor.desugar(expression, typecheckerState, localErrorReporter);
     TypecheckingResult result = visitor.finalCheckExpr(desugar, expectedType);
     if (errors == 0) {
       assertThat(result, is(notNullValue()));

@@ -12,11 +12,11 @@ import org.arend.typechecking.provider.ConcreteProvider;
 import java.util.*;
 
 public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefinitionVisitor<Void, ClassReferable> {
-  private final ConcreteProvider myConcreteProvider;
+  public final ConcreteProvider concreteProvider;
   private int myArguments;
 
   public TypeClassReferenceExtractVisitor(ConcreteProvider concreteProvider) {
-    myConcreteProvider = concreteProvider;
+    this.concreteProvider = concreteProvider;
   }
 
   @Override
@@ -132,7 +132,8 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
       }
     }
 
-    return expr instanceof Concrete.ReferenceExpression ? RedirectingReferable.getOriginalReferable(((Concrete.ReferenceExpression) expr).getReferent()) : null;
+    Referable ref = expr instanceof Concrete.ReferenceExpression ? RedirectingReferable.getOriginalReferable(((Concrete.ReferenceExpression) expr).getReferent()) : null;
+    return ref instanceof ClassReferable || ref == null ? ref : ref.getUnderlyingReferable();
   }
 
   private void handleParameters(Collection<? extends Concrete.Parameter> parameters) {
@@ -155,7 +156,7 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
       if (!(referent instanceof GlobalReferable)) {
         return null;
       }
-      Concrete.FunctionDefinition function = myConcreteProvider.getConcreteFunction((GlobalReferable) referent);
+      Concrete.FunctionDefinition function = concreteProvider.getConcreteFunction((GlobalReferable) referent);
       if (function == null) {
         return null;
       }

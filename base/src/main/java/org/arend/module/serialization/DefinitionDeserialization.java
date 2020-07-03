@@ -16,10 +16,7 @@ import org.arend.ext.serialization.DeserializationException;
 import org.arend.ext.serialization.SerializableKey;
 import org.arend.ext.typechecking.DefinitionListener;
 import org.arend.extImpl.SerializableKeyRegistryImpl;
-import org.arend.naming.reference.ClassReferableImpl;
-import org.arend.naming.reference.DataLocatedReferableImpl;
-import org.arend.naming.reference.TCClassReferable;
-import org.arend.naming.reference.TCReferable;
+import org.arend.naming.reference.*;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.order.dependency.DependencyListener;
 import org.arend.util.Pair;
@@ -131,9 +128,12 @@ public class DefinitionDeserialization implements ArendDeserializer {
       ClassDefinition superClass = myCallTargetProvider.getCallTarget(superClassRef, ClassDefinition.class);
       classDef.addSuperClass(superClass);
       myDependencyListener.dependsOn(classDef.getReferable(), superClass.getReferable());
-      TCClassReferable classRef = classDef.getReferable();
+      TCReferable classRef = classDef.getReferable();
       if (classRef instanceof ClassReferableImpl) {
-        ((ClassReferableImpl) classRef).getSuperClassReferences().add(superClass.getReferable());
+        Referable superRef = superClass.getReferable().getUnderlyingReferable();
+        if (superRef instanceof ClassReferable) {
+          ((ClassReferableImpl) classRef).getSuperClassReferences().add((ClassReferable) superRef);
+        }
       }
 
       for (Map.Entry<ClassField, AbsExpression> entry : superClass.getImplemented()) {
@@ -453,7 +453,7 @@ public class DefinitionDeserialization implements ArendDeserializer {
     }
 
     if (type instanceof ClassCallExpression) {
-      ((DataLocatedReferableImpl) referable).setTypeClassReference(((ClassCallExpression) type).getDefinition().getReferable());
+      ((DataLocatedReferableImpl) referable).setTypeClassReference((ClassReferableImpl) ((ClassCallExpression) type).getDefinition().getReferable());
     }
   }
 

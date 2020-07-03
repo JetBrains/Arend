@@ -1,14 +1,18 @@
 package org.arend.typechecking.visitor;
 
+import org.arend.core.definition.ClassDefinition;
+import org.arend.core.definition.ClassField;
+import org.arend.core.definition.Definition;
+import org.arend.core.expr.ClassCallExpression;
 import org.arend.ext.error.ArgumentExplicitnessError;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.LocalError;
 import org.arend.ext.error.TypecheckingError;
 import org.arend.naming.reference.*;
-import org.arend.naming.scope.ClassFieldImplScope;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
+import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.error.local.CertainTypecheckingError;
 import org.arend.typechecking.error.local.WrongReferable;
 import org.arend.typechecking.error.local.inference.ArgInferenceError;
@@ -19,41 +23,28 @@ import java.util.*;
 
 public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
   private final ConcreteProvider myConcreteProvider;
+  private final TypecheckerState myTypecheckerState;
   private final ErrorReporter myErrorReporter;
 
-  private DesugarVisitor(ConcreteProvider concreteProvider, ErrorReporter errorReporter) {
+  private DesugarVisitor(ConcreteProvider concreteProvider, TypecheckerState typecheckerState, ErrorReporter errorReporter) {
     myConcreteProvider = concreteProvider;
+    myTypecheckerState = typecheckerState;
     myErrorReporter = errorReporter;
   }
 
-  public static void desugar(Concrete.Definition definition, ConcreteProvider concreteProvider, ErrorReporter errorReporter) {
-    definition.accept(new DesugarVisitor(concreteProvider, errorReporter), null);
+  public static void desugar(Concrete.Definition definition, ConcreteProvider concreteProvider, TypecheckerState typecheckerState, ErrorReporter errorReporter) {
+    definition.accept(new DesugarVisitor(concreteProvider, typecheckerState, errorReporter), null);
     definition.setDesugarized();
   }
 
-  public static Concrete.Expression desugar(Concrete.Expression expression, ErrorReporter errorReporter) {
-    return expression.accept(new DesugarVisitor(EmptyConcreteProvider.INSTANCE, errorReporter), null);
-  }
-
-  public static void desugarPatterns(List<Concrete.Pattern> patterns, ErrorReporter errorReporter) {
-    new DesugarVisitor(EmptyConcreteProvider.INSTANCE, errorReporter).visitPatterns(patterns);
-  }
-
-  private Set<LocatedReferable> getClassFields(ClassReferable classRef) {
-    Set<LocatedReferable> fields = new HashSet<>();
-    new ClassFieldImplScope(classRef, false).find(ref -> {
-      if (ref instanceof LocatedReferable) {
-        fields.add((LocatedReferable) ref);
-      }
-      return false;
-    });
-    return fields;
+  public static Concrete.Expression desugar(Concrete.Expression expression, TypecheckerState typecheckerState, ErrorReporter errorReporter) {
+    return expression.accept(new DesugarVisitor(EmptyConcreteProvider.INSTANCE, typecheckerState, errorReporter), null);
   }
 
   private Referable checkDefinition(Concrete.Definition def) {
     if (def.enclosingClass != null) {
       Referable thisParameter = new HiddenLocalReferable("this");
-      def.accept(new ClassFieldChecker(thisParameter, def.enclosingClass, myConcreteProvider, getClassFields(def.enclosingClass), null, myErrorReporter), null);
+      def.accept(new ClassFieldChecker(thisParameter, def.enclosingClass, myConcreteProvider, myConcreteProvider.getClassFields(def.enclosingClass), null, myErrorReporter), null);
       return thisParameter;
     } else {
       return null;
@@ -100,7 +91,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
 
   @Override
   public Void visitClass(Concrete.ClassDefinition def, Void params) {
-    Set<LocatedReferable> fields = getClassFields(def.getData());
+    Set<TCReferable> fields = myConcreteProvider.getClassFields(def.getData());
 
     List<Concrete.ClassField> classFields = new ArrayList<>();
     for (Concrete.ClassElement element : def.getElements()) {
@@ -164,24 +155,45 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
     return null;
   }
 
+  private void getNotImplementedFields(ClassDefinition origClassDef, ClassDefinition classDef, List<ClassField> result, Set<ClassDefinition> visited) {
+    if (!visited.add(classDef)) {
+      return;
+    }
+
+    for (ClassDefinition superClass : classDef.getSuperClasses()) {
+      getNotImplementedFields(origClassDef, superClass, result, visited);
+    }
+    for (ClassField field : classDef.getPersonalFields()) {
+      if (!origClassDef.isImplemented(field)) {
+        result.add(field);
+      }
+    }
+  }
+
   private Concrete.Expression visitApp(Concrete.ReferenceExpression fun, List<Concrete.Argument> arguments, Concrete.Expression expr, boolean inferTailImplicits) {
     Referable ref = fun.getReferent();
-    if (!(ref instanceof ClassReferable)) {
+    if (!(ref instanceof TCReferable)) {
       return expr;
     }
+    Definition def = myTypecheckerState.getTypechecked((TCReferable) ref);
+    if (!(def instanceof ClassDefinition)) {
+      return expr;
+    }
+    ClassDefinition classDef = (ClassDefinition) def;
 
     // Convert class call with arguments to class extension.
     List<Concrete.ClassFieldImpl> classFieldImpls = new ArrayList<>();
-    Set<FieldReferable> notImplementedFields = ClassReferable.Helper.getNotImplementedFields((ClassReferable) ref);
-    Iterator<FieldReferable> it = notImplementedFields.iterator();
-    for (int i = 0; i < arguments.size(); i++) {
-      if (!it.hasNext()) {
+    List<ClassField> notImplementedFields = new ArrayList<>();
+    getNotImplementedFields(classDef, classDef, notImplementedFields, new HashSet<>());
+    int j = 0;
+    for (int i = 0; i < arguments.size(); i++, j++) {
+      if (j >= notImplementedFields.size()) {
         myErrorReporter.report(new TypecheckingError("Too many arguments. Class '" + ref.textRepresentation() + "' " + (notImplementedFields.isEmpty() ? "does not have fields" : "has only " + ArgInferenceError.number(notImplementedFields.size(), "field")), arguments.get(i).expression));
         break;
       }
 
-      FieldReferable fieldRef = it.next();
-      boolean fieldExplicit = fieldRef.isExplicitField();
+      ClassField field = notImplementedFields.get(j);
+      boolean fieldExplicit = field.getReferable().isExplicitField();
       if (fieldExplicit && !arguments.get(i).isExplicit()) {
         myErrorReporter.report(new ArgumentExplicitnessError(true, arguments.get(i).expression));
         while (i < arguments.size() && !arguments.get(i).isExplicit()) {
@@ -194,26 +206,25 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
 
       Concrete.Expression argument = arguments.get(i).expression;
       if (fieldExplicit == arguments.get(i).isExplicit()) {
-        classFieldImpls.add(new Concrete.ClassFieldImpl(argument.getData(), fieldRef, argument, Collections.emptyList()));
+        classFieldImpls.add(new Concrete.ClassFieldImpl(argument.getData(), field.getReferable(), argument, Collections.emptyList()));
       } else {
-        classFieldImpls.add(new Concrete.ClassFieldImpl(argument.getData(), fieldRef, new Concrete.HoleExpression(argument.getData()), Collections.emptyList()));
+        classFieldImpls.add(new Concrete.ClassFieldImpl(argument.getData(), field.getReferable(), new Concrete.HoleExpression(argument.getData()), Collections.emptyList()));
         i--;
       }
     }
 
     if (inferTailImplicits) {
-      while (it.hasNext()) {
-        FieldReferable fieldRef = it.next();
-        if (fieldRef.isExplicitField() || !fieldRef.isParameterField()) {
+      for (; j < notImplementedFields.size(); j++) {
+        ClassField field = notImplementedFields.get(j);
+        if (field.getReferable().isExplicitField() || !field.getReferable().isParameterField()) {
           break;
         }
-        ClassReferable classRef = fieldRef.getTypeClassReference();
-        if (classRef == null || classRef.isRecord()) {
+        if (!(field.getResultType() instanceof ClassCallExpression) || ((ClassCallExpression) field.getResultType()).getDefinition().isRecord()) {
           break;
         }
 
         Object data = arguments.isEmpty() ? fun.getData() : arguments.get(arguments.size() - 1).getExpression().getData();
-        classFieldImpls.add(new Concrete.ClassFieldImpl(data, fieldRef, new Concrete.HoleExpression(data), Collections.emptyList()));
+        classFieldImpls.add(new Concrete.ClassFieldImpl(data, field.getReferable(), new Concrete.HoleExpression(data), Collections.emptyList()));
       }
     }
 
@@ -305,24 +316,19 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
       result.add(classFieldImpl);
     } else {
       boolean ok = true;
-      if (classFieldImpl.getImplementedField() instanceof ClassReferable) {
+      if (classFieldImpl.getImplementedField() instanceof GlobalReferable && myConcreteProvider.isClass((GlobalReferable) classFieldImpl.getImplementedField())) {
         if (classFieldImpl.subClassFieldImpls.isEmpty()) {
           myErrorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.REDUNDANT_COCLAUSE, classFieldImpl));
         }
         for (Concrete.ClassFieldImpl subClassFieldImpl : classFieldImpl.subClassFieldImpls) {
           visitClassFieldImpl(subClassFieldImpl, result);
         }
-      } else if (classFieldImpl.getImplementedField() instanceof TypedReferable) {
-        ClassReferable classRef = ((TypedReferable) classFieldImpl.getImplementedField()).getTypeClassReference();
-        if (classRef != null) {
-          visitClassElements(classFieldImpl.subClassFieldImpls, null);
-          Object data = classFieldImpl.getData();
-          classFieldImpl.implementation = new Concrete.NewExpression(data, Concrete.ClassExtExpression.make(data, new Concrete.ReferenceExpression(data, classRef), new ArrayList<>(classFieldImpl.subClassFieldImpls)));
-          classFieldImpl.subClassFieldImpls.clear();
-          result.add(classFieldImpl);
-        } else {
-          ok = false;
-        }
+      } else if (classFieldImpl.classRef != null) {
+        visitClassElements(classFieldImpl.subClassFieldImpls, null);
+        Object data = classFieldImpl.getData();
+        classFieldImpl.implementation = new Concrete.NewExpression(data, Concrete.ClassExtExpression.make(data, new Concrete.ReferenceExpression(data, classFieldImpl.classRef), new ArrayList<>(classFieldImpl.subClassFieldImpls)));
+        classFieldImpl.subClassFieldImpls.clear();
+        result.add(classFieldImpl);
       } else {
         ok = classFieldImpl.getImplementedField() instanceof ErrorReference || classFieldImpl.getImplementedField() instanceof UnresolvedReference;
       }

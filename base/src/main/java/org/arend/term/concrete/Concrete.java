@@ -22,10 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public final class Concrete {
   private Concrete() {}
@@ -209,11 +206,6 @@ public final class Concrete {
       return expr == null ? null : expr.getReferent();
     }
 
-    public TCClassReferable getUnderlyingTypeClass() {
-      Referable ref = getUnderlyingReferable();
-      return ref instanceof TCClassReferable && !((TCClassReferable) ref).isRecord() ? (TCClassReferable) ref : null;
-    }
-
     @Override
     public String toString() {
       StringBuilder builder = new StringBuilder();
@@ -222,16 +214,9 @@ public final class Concrete {
     }
   }
 
-  public static Expression makeRightSection(Object data, Referable function, Referable firstArg, Expression secondArg) {
-    List<Argument> arguments = new ArrayList<>(2);
-    arguments.add(new Argument(new ReferenceExpression(data, firstArg), true));
-    arguments.add(new Argument(secondArg, true));
-    return new LamExpression(data, Collections.singletonList(new NameParameter(data, true, firstArg)), AppExpression.make(data, new ReferenceExpression(data, function), arguments));
-  }
-
   public static class Argument implements ConcreteArgument {
     public Expression expression;
-    private boolean myExplicit;
+    private final boolean myExplicit;
 
     public Argument(Expression expression, boolean explicit) {
       this.expression = expression;
@@ -614,6 +599,7 @@ public final class Concrete {
   public static class ClassFieldImpl extends SourceNodeImpl implements CoClauseElement {
     private Referable myImplementedField;
     public Expression implementation;
+    public TCReferable classRef; // the class of fields in subClassFieldImpls
     public final List<ClassFieldImpl> subClassFieldImpls;
 
     public ClassFieldImpl(Object data, Referable implementedField, Expression implementation, List<ClassFieldImpl> subClassFieldImpls) {
@@ -1419,7 +1405,7 @@ public final class Concrete {
 
   public static abstract class Definition extends ReferableDefinition {
     Stage stage = Stage.TYPE_CLASS_REFERENCES_RESOLVED;
-    public TCClassReferable enclosingClass;
+    public TCReferable enclosingClass;
     private Status myStatus = Status.NO_ERRORS;
     private boolean myRecursive = false;
 
@@ -1506,19 +1492,13 @@ public final class Concrete {
     private boolean myForcedCoercingField;
     private List<TCReferable> myUsedDefinitions = Collections.emptyList();
 
-    public ClassDefinition(TCClassReferable referable, boolean isRecord, boolean withoutClassifying, List<ReferenceExpression> superClasses, List<ClassElement> elements) {
+    public ClassDefinition(TCReferable referable, boolean isRecord, boolean withoutClassifying, List<ReferenceExpression> superClasses, List<ClassElement> elements) {
       super(referable);
       myRecord = isRecord;
       myWithoutClassifying = withoutClassifying;
       stage = Stage.NOT_RESOLVED;
       mySuperClasses = superClasses;
       myElements = elements;
-    }
-
-    @NotNull
-    @Override
-    public TCClassReferable getData() {
-      return (TCClassReferable) super.getData();
     }
 
     public boolean isRecord() {

@@ -6,6 +6,9 @@ public interface RedirectingReferable extends GlobalReferable {
   @NotNull Referable getOriginalReferable();
 
   static @NotNull Referable getOriginalReferable(Referable ref) {
-    return ref instanceof RedirectingReferable ? ((RedirectingReferable) ref).getOriginalReferable() : ref;
+    while (ref instanceof RedirectingReferable) {
+      ref = ((RedirectingReferable) ref).getOriginalReferable();
+    }
+    return ref;
   }
 }

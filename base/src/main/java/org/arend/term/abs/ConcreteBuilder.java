@@ -66,8 +66,8 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
   private void setEnclosingClass(Concrete.Definition definition, Abstract.Definition abstractDef) {
     TCReferable enclosingClass = myReferableConverter.toDataLocatedReferable(abstractDef.getEnclosingClass());
-    if (enclosingClass instanceof TCClassReferable && !(definition instanceof Concrete.ClassDefinition)) {
-      definition.enclosingClass = (TCClassReferable) enclosingClass;
+    if (!(definition instanceof Concrete.ClassDefinition)) {
+      definition.enclosingClass = enclosingClass;
     }
   }
 
@@ -212,12 +212,8 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
   @Override
   public Concrete.Definition visitClass(Abstract.ClassDefinition def) {
-    if (!(myDefinition instanceof TCClassReferable)) {
-      return null;
-    }
-
     List<Concrete.ClassElement> elements = new ArrayList<>();
-    Concrete.ClassDefinition classDef = new Concrete.ClassDefinition((TCClassReferable) myDefinition, def.isRecord(), def.withoutClassifying(), buildReferences(def.getSuperClasses()), elements);
+    Concrete.ClassDefinition classDef = new Concrete.ClassDefinition(myDefinition, def.isRecord(), def.withoutClassifying(), buildReferences(def.getSuperClasses()), elements);
     buildClassParameters(def.getParameters(), classDef, elements);
     setEnclosingClass(classDef, def);
 

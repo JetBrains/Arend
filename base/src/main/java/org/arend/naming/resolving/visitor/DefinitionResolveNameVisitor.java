@@ -198,6 +198,9 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
             enclosingFunction.setResultType(enclosingFunction.getResultType().accept(exprVisitor, null));
           }
           Referable classRef = enclosingFunction.getResultType().getUnderlyingReferable();
+          if (!(classRef instanceof ClassReferable)) {
+            classRef = classRef.getUnderlyingReferable();
+          }
           if (classRef instanceof ClassReferable) {
             Concrete.CoClauseFunctionReference functionRef = null;
             for (Concrete.CoClauseElement element : enclosingFunction.getBody().getCoClauseElements()) {
@@ -266,7 +269,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     if (def.getKind().isUse()) {
       TCReferable useParent = def.getUseParent();
       boolean isFunc = myConcreteProvider.isFunction(useParent);
-      if (isFunc || useParent instanceof ClassReferable || myConcreteProvider.isData(useParent)) {
+      if (isFunc || myConcreteProvider.isClass(useParent) || myConcreteProvider.isData(useParent)) {
         if (def.getKind() == FunctionKind.COERCE) {
           if (isFunc) {
             myLocalErrorReporter.report(new ParsingError(ParsingError.Kind.MISPLACED_COERCE, def));
@@ -453,7 +456,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       Concrete.ReferenceExpression superClass = def.getSuperClasses().get(i);
       Concrete.Expression resolved = exprVisitor.visitReference(superClass, null);
       Referable ref = RedirectingReferable.getOriginalReferable(superClass.getReferent());
-      if (resolved != superClass || !(ref instanceof ClassReferable)) {
+      if (resolved != superClass || !(ref instanceof GlobalReferable && myConcreteProvider.isClass((GlobalReferable) ref))) {
         if (!(ref instanceof ErrorReference)) {
           myLocalErrorReporter.report(new NamingError("Expected a class", superClass));
         }
@@ -488,10 +491,22 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     }
     for (Concrete.ClassElement element : def.getElements()) {
       if (element instanceof Concrete.ClassFieldImpl) {
-        exprVisitor.visitClassFieldImpl((Concrete.ClassFieldImpl) element, def.getData());
+        Referable ref = def.getData();
+        if (!(ref instanceof ClassReferable)) {
+          ref = ref.getUnderlyingReferable();
+        }
+        if (ref instanceof ClassReferable) {
+          exprVisitor.visitClassFieldImpl((Concrete.ClassFieldImpl) element, (ClassReferable) ref);
+        }
       } else if (element instanceof Concrete.OverriddenField) {
         Concrete.OverriddenField field = (Concrete.OverriddenField) element;
-        exprVisitor.visitClassFieldReference(field, field.getOverriddenField(), def.getData());
+        Referable ref = def.getData().getUnderlyingReferable();
+        if (!(ref instanceof ClassReferable)) {
+          ref = ref.getUnderlyingReferable();
+        }
+        if (ref instanceof ClassReferable) {
+          exprVisitor.visitClassFieldReference(field, field.getOverriddenField(), (ClassReferable) ref);
+        }
         try (Utils.ContextSaver ignore = new Utils.ContextSaver(context)) {
           exprVisitor.visitParameters(field.getParameters(), null);
           field.setResultType(field.getResultType().accept(exprVisitor, null));

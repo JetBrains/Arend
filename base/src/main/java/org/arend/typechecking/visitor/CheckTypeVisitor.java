@@ -344,7 +344,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     if (!(expression instanceof Concrete.Expression && (expectedType == null || expectedType instanceof Expression))) {
       throw new IllegalArgumentException();
     }
-    Concrete.Expression expr = DesugarVisitor.desugar((Concrete.Expression) expression, errorReporter);
+    Concrete.Expression expr = DesugarVisitor.desugar((Concrete.Expression) expression, state, errorReporter);
     Expression type = expectedType == null ? null : (Expression) expectedType;
     TypecheckingResult result = checkExpr(expr, type);
     if (result == null || result.expression.isError()) {
@@ -818,7 +818,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
         expectedType = expectedType.normalize(NormalizationMode.WHNF);
       }
       Concrete.Expression baseExpr = expr.getExpression() instanceof Concrete.ClassExtExpression ? ((Concrete.ClassExtExpression) expr.getExpression()).getBaseClassExpression() : expr.getExpression();
-      if (baseExpr instanceof Concrete.HoleExpression || baseExpr instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) baseExpr).getReferent() instanceof ClassReferable && expectedType instanceof ClassCallExpression) {
+      Definition actualDef = expectedType instanceof ClassCallExpression && baseExpr instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) baseExpr).getReferent() instanceof TCReferable ? state.getTypechecked((TCReferable) ((Concrete.ReferenceExpression) baseExpr).getReferent()) : null;
+      if (baseExpr instanceof Concrete.HoleExpression || actualDef instanceof ClassDefinition) {
         ClassCallExpression actualClassCall = null;
         if (baseExpr instanceof Concrete.HoleExpression && !(expectedType instanceof ClassCallExpression)) {
           errorReporter.report(new TypecheckingError("Cannot infer an expression", baseExpr));
@@ -828,30 +829,21 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
         ClassCallExpression expectedClassCall = (ClassCallExpression) expectedType;
         if (baseExpr instanceof Concrete.ReferenceExpression) {
           Concrete.ReferenceExpression baseRefExpr = (Concrete.ReferenceExpression) baseExpr;
-          Referable ref = baseRefExpr.getReferent();
-          boolean ok = ref instanceof TCReferable;
-          if (ok) {
-            Definition actualDef = state.getTypechecked((TCReferable) ref);
-            if (actualDef instanceof ClassDefinition) {
-              ok = ((ClassDefinition) actualDef).isSubClassOf(expectedClassCall.getDefinition());
-              if (ok && (actualDef != expectedClassCall.getDefinition() || baseRefExpr.getPLevel() != null || baseRefExpr.getHLevel() != null)) {
-                boolean fieldsOK = true;
-                for (ClassField implField : expectedClassCall.getImplementedHere().keySet()) {
-                  if (((ClassDefinition) actualDef).isImplemented(implField)) {
-                    fieldsOK = false;
-                    break;
-                  }
-                }
-                Level pLevel = baseRefExpr.getPLevel() == null ? null : baseRefExpr.getPLevel().accept(this, LevelVariable.PVAR);
-                Level hLevel = baseRefExpr.getHLevel() == null ? null : baseRefExpr.getHLevel().accept(this, LevelVariable.HVAR);
-                Sort expectedSort = expectedClassCall.getSortArgument();
-                actualClassCall = new ClassCallExpression((ClassDefinition) actualDef, pLevel == null && hLevel == null ? expectedSort : new Sort(pLevel == null ? expectedSort.getPLevel() : pLevel, hLevel == null ? expectedSort.getHLevel() : hLevel), new HashMap<>(), expectedClassCall.getSort(), actualDef.getUniverseKind());
-                if (fieldsOK) {
-                  actualClassCall.copyImplementationsFrom(expectedClassCall);
-                }
+          boolean ok = ((ClassDefinition) actualDef).isSubClassOf(expectedClassCall.getDefinition());
+          if (ok && (actualDef != expectedClassCall.getDefinition() || baseRefExpr.getPLevel() != null || baseRefExpr.getHLevel() != null)) {
+            boolean fieldsOK = true;
+            for (ClassField implField : expectedClassCall.getImplementedHere().keySet()) {
+              if (((ClassDefinition) actualDef).isImplemented(implField)) {
+                fieldsOK = false;
+                break;
               }
-            } else {
-              ok = false;
+            }
+            Level pLevel = baseRefExpr.getPLevel() == null ? null : baseRefExpr.getPLevel().accept(this, LevelVariable.PVAR);
+            Level hLevel = baseRefExpr.getHLevel() == null ? null : baseRefExpr.getHLevel().accept(this, LevelVariable.HVAR);
+            Sort expectedSort = expectedClassCall.getSortArgument();
+            actualClassCall = new ClassCallExpression((ClassDefinition) actualDef, pLevel == null && hLevel == null ? expectedSort : new Sort(pLevel == null ? expectedSort.getPLevel() : pLevel, hLevel == null ? expectedSort.getHLevel() : hLevel), new HashMap<>(), expectedClassCall.getSort(), actualDef.getUniverseKind());
+            if (fieldsOK) {
+              actualClassCall.copyImplementationsFrom(expectedClassCall);
             }
           }
           if (!ok) {

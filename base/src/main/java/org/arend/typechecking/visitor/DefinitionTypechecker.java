@@ -404,7 +404,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     for (Concrete.Parameter parameter : Objects.requireNonNull(Concrete.getParameters(refDef, true))) {
-      boolean isTypeClass = parameter.getType() != null && parameter.getType().getUnderlyingTypeClass() != null;
+      boolean isTypeClass = isTypeClassRef(parameter.getType(), false);
       for (int i = 0; i < parameter.getNumberOfParameters(); i++) {
         typeClassParameters.add(isTypeClass ? Definition.TypeClassParameterKind.YES : Definition.TypeClassParameterKind.NO);
       }
@@ -416,6 +416,15 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         return;
       }
     }
+  }
+
+  private boolean isTypeClassRef(Concrete.Expression expr, boolean allowRecord) {
+    if (expr == null) {
+      return false;
+    }
+    Referable typeRef = expr.getUnderlyingReferable();
+    Definition typeDef = typeRef instanceof TCReferable ? typechecker.state.getTypechecked((TCReferable) typeRef) : null;
+    return typeDef instanceof ClassDefinition && (allowRecord || !((ClassDefinition) typeDef).isRecord());
   }
 
   private Pair<Sort,Expression> typecheckParameters(Concrete.ReferableDefinition def, LinkList list, LocalInstancePool localInstancePool, Sort expectedSort, DependentLink oldParameters, PiExpression fieldType) {
@@ -960,8 +969,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
     } else if (body instanceof Concrete.CoelimFunctionBody) {
       if (def.getResultType() != null) {
-        Referable typeRef = def.getResultType().getUnderlyingReferable();
-        if (typeRef instanceof ClassReferable) {
+        if (isTypeClassRef(def.getResultType(), true)) {
           Pair<ClassCallExpression, ClassCallExpression> result = typecheckCoClauses(typedDef, def, kind, body.getCoClauseElements());
           if (result != null) {
             if (newDef && !def.isRecursive()) {
@@ -2160,7 +2168,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           if (resultType instanceof Concrete.PiExpression) {
             resultType = ((Concrete.PiExpression) resultType).getCodomain();
           }
-          if (resultType.getUnderlyingTypeClass() != null) {
+          if (isTypeClassRef(resultType, false)) {
             ClassField field = typechecker.referableToClassField(((Concrete.ClassField) element).getData(), null);
             if (field != null) {
               typeClassFields.add(field);

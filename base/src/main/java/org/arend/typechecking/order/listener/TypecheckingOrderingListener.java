@@ -15,7 +15,6 @@ import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.typechecking.DefinitionListener;
 import org.arend.library.Library;
 import org.arend.naming.reference.GlobalReferable;
-import org.arend.naming.reference.TCClassReferable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.term.FunctionKind;
@@ -178,7 +177,7 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
       typechecked = ((Concrete.BaseFunctionDefinition) definition).getKind() == FunctionKind.CONS ? new DConstructor(definition.getData()) : new FunctionDefinition(definition.getData());
       ((FunctionDefinition) typechecked).setResultType(new ErrorExpression());
     } else if (definition instanceof Concrete.ClassDefinition) {
-      typechecked = new ClassDefinition((TCClassReferable) definition.getData());
+      typechecked = new ClassDefinition(definition.getData());
       for (Concrete.ClassElement element : ((Concrete.ClassDefinition) definition).getElements()) {
         if (element instanceof Concrete.ClassField) {
           ClassField classField = new ClassField(((Concrete.ClassField) element).getData(), (ClassDefinition) typechecked, new PiExpression(Sort.PROP, new TypedSingleDependentLink(false, "this", new ClassCallExpression((ClassDefinition) typechecked, Sort.STD), true), new ErrorExpression()), null);
@@ -217,7 +216,7 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
     ArendExtension extension = myExtensionProvider.getArendExtension(definition.getData());
     CheckTypeVisitor checkTypeVisitor = new CheckTypeVisitor(myState, new LocalErrorReporter(definition.getData(), myErrorReporter), null, extension);
     checkTypeVisitor.setInstancePool(new GlobalInstancePool(myInstanceProviderSet.get(definition.getData()), checkTypeVisitor));
-    DesugarVisitor.desugar(definition, myConcreteProvider, checkTypeVisitor.getErrorReporter());
+    DesugarVisitor.desugar(definition, myConcreteProvider, myState, checkTypeVisitor.getErrorReporter());
     myCurrentDefinitions = Collections.singletonList(definition.getData());
     typecheckingUnitStarted(definition.getData());
     clauses = definition.accept(new DefinitionTypechecker(checkTypeVisitor), null);
@@ -274,7 +273,7 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
     CountingErrorReporter countingErrorReporter = new CountingErrorReporter(myErrorReporter);
     CheckTypeVisitor visitor = new CheckTypeVisitor(myState, new LocalErrorReporter(definition.getData(), countingErrorReporter), null, myExtensionProvider.getArendExtension(definition.getData()));
     visitor.setStatus(definition.getStatus().getTypecheckingStatus());
-    DesugarVisitor.desugar(definition, myConcreteProvider, visitor.getErrorReporter());
+    DesugarVisitor.desugar(definition, myConcreteProvider, myState, visitor.getErrorReporter());
     Definition oldTypechecked = visitor.getTypecheckingState().getTypechecked(definition.getData());
     definition.setRecursive(true);
     Definition typechecked = new DefinitionTypechecker(visitor).typecheckHeader(oldTypechecked, new GlobalInstancePool(myInstanceProviderSet.get(definition.getData()), visitor), definition);

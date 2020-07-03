@@ -12,14 +12,14 @@ import java.util.Set;
 
 public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> {
   private Referable myThisParameter;
-  private final TCClassReferable myClassReferable;
+  private final TCReferable myClassReferable;
   private final ConcreteProvider myConcreteProvider;
   private final Set<? extends LocatedReferable> myFields;
   private final Set<TCReferable> myFutureFields;
   private final ErrorReporter myErrorReporter;
   private int myClassCallNumber;
 
-  ClassFieldChecker(Referable thisParameter, TCClassReferable classReferable, ConcreteProvider concreteProvider, Set<? extends LocatedReferable> fields, Set<TCReferable> futureFields, ErrorReporter errorReporter) {
+  ClassFieldChecker(Referable thisParameter, TCReferable classReferable, ConcreteProvider concreteProvider, Set<? extends LocatedReferable> fields, Set<TCReferable> futureFields, ErrorReporter errorReporter) {
     myThisParameter = thisParameter;
     myClassReferable = classReferable;
     myConcreteProvider = concreteProvider;
@@ -38,13 +38,13 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> {
     return new Concrete.ErrorHoleExpression(expr.getData(), error);
   }
 
-  private boolean isParent(TCClassReferable parent, TCClassReferable child) {
+  private boolean isParent(TCReferable parent, TCReferable child) {
     if (parent == null) {
       return false;
     }
 
     while (child != null) {
-      if (child.isSubClassOf(parent)) {
+      if (myConcreteProvider.isSubClassOf(child, parent)) {
         return true;
       }
       Concrete.ClassDefinition def = myConcreteProvider.getConcreteClass(child);
@@ -57,9 +57,9 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> {
     return false;
   }
 
-  private Concrete.Expression getParentCall(TCClassReferable parent, TCClassReferable child, Concrete.Expression expr) {
+  private Concrete.Expression getParentCall(TCReferable parent, TCReferable child, Concrete.Expression expr) {
     while (child != null) {
-      if (child.isSubClassOf(parent)) {
+      if (myConcreteProvider.isSubClassOf(child, parent)) {
         return expr;
       }
       Concrete.ClassDefinition def = myConcreteProvider.getConcreteClass(child);
@@ -86,7 +86,7 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> {
       } else {
         Concrete.ReferableDefinition def = myConcreteProvider.getConcrete((TCReferable) ref);
         if (def != null && !(def instanceof Concrete.ClassField)) {
-          TCClassReferable defEnclosingClass = def.getRelatedDefinition().enclosingClass;
+          TCReferable defEnclosingClass = def.getRelatedDefinition().enclosingClass;
           if (myFutureFields != null && myClassReferable.equals(defEnclosingClass)) {
             return makeErrorExpression(expr);
           }

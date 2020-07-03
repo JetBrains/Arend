@@ -369,53 +369,51 @@ public abstract class BaseCliFrontend {
       }
 
       Collection<? extends ModulePath> modules = library.getUpdatedModules();
-      if (modules.isEmpty() && forcedDefs == null) {
-        continue;
-      }
-
-      System.out.println();
-      System.out.println("--- Typechecking " + library.getName() + " ---");
-      long time = System.currentTimeMillis();
-      if (forcedDefs == null) {
-        typechecking.typecheckLibrary(library);
-      } else {
-        typechecking.typecheckDefinitions(forcedDefs, null);
-      }
-      time = System.currentTimeMillis() - time;
-      flushErrors();
-
-      // Output nice per-module typechecking results
       int numWithErrors = 0;
-      int numWithGoals = 0;
-      for (ModulePath module : modules) {
-        GeneralError.Level result = myModuleResults.get(module);
-        if (result == null && library.getModuleGroup(module, false) == null) {
-          result = GeneralError.Level.ERROR;
+      if (!modules.isEmpty() || forcedDefs != null) {
+        System.out.println();
+        System.out.println("--- Typechecking " + library.getName() + " ---");
+        long time = System.currentTimeMillis();
+        if (forcedDefs == null) {
+          typechecking.typecheckLibrary(library);
+        } else {
+          typechecking.typecheckDefinitions(forcedDefs, null);
         }
-        reportTypeCheckResult(module, result);
-        if (result == GeneralError.Level.ERROR) numWithErrors++;
-        if (result == GeneralError.Level.GOAL) numWithGoals++;
-      }
+        time = System.currentTimeMillis() - time;
+        flushErrors();
 
-      if (numWithErrors > 0) {
-        myExitWithError = true;
-        System.out.println("Number of modules with errors: " + numWithErrors);
-      }
-      if (numWithGoals > 0) {
-        System.out.println("Number of modules with goals: " + numWithGoals);
-      }
-      System.out.println("--- Done (" + timeToString(time) + ") ---");
+        // Output nice per-module typechecking results
+        int numWithGoals = 0;
+        for (ModulePath module : modules) {
+          GeneralError.Level result = myModuleResults.get(module);
+          if (result == null && library.getModuleGroup(module, false) == null) {
+            result = GeneralError.Level.ERROR;
+          }
+          reportTypeCheckResult(module, result);
+          if (result == GeneralError.Level.ERROR) numWithErrors++;
+          if (result == GeneralError.Level.GOAL) numWithGoals++;
+        }
 
-      // Persist updated modules
-      if (library.supportsPersisting()) {
-        library.persistUpdatedModules(mySystemErrErrorReporter);
-        library.clearUpdateModules();
+        if (numWithErrors > 0) {
+          myExitWithError = true;
+          System.out.println("Number of modules with errors: " + numWithErrors);
+        }
+        if (numWithGoals > 0) {
+          System.out.println("Number of modules with goals: " + numWithGoals);
+        }
+        System.out.println("--- Done (" + timeToString(time) + ") ---");
+
+        // Persist updated modules
+        if (library.supportsPersisting()) {
+          library.persistUpdatedModules(mySystemErrErrorReporter);
+          library.clearUpdateModules();
+        }
       }
 
       if (doubleCheck && numWithErrors == 0) {
         System.out.println();
         System.out.println("--- Checking " + library.getName() + " ---");
-        time = System.currentTimeMillis();
+        long time = System.currentTimeMillis();
 
         CoreModuleChecker checker = new CoreModuleChecker(myErrorReporter, myTypecheckerState);
         for (ModulePath module : library.getLoadedModules()) {

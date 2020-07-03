@@ -7,7 +7,6 @@ import java.util.*;
 public interface ClassReferable extends LocatedReferable {
   boolean isRecord();
   @NotNull List<? extends ClassReferable> getSuperClassReferences();
-  @NotNull Collection<? extends Reference> getUnresolvedSuperClassReferences();
   @NotNull Collection<? extends FieldReferable> getFieldReferables();
   @NotNull Collection<? extends Referable> getImplementedFields();
 

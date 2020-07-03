@@ -10,7 +10,7 @@ import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.definition.CoreClassDefinition;
 import org.arend.ext.core.definition.CoreClassField;
 import org.arend.ext.core.ops.NormalizationMode;
-import org.arend.naming.reference.TCClassReferable;
+import org.arend.naming.reference.TCReferable;
 import org.arend.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -32,13 +32,8 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
   private final ParametersLevels<ParametersLevel> myParametersLevels = new ParametersLevels<>();
   private FunctionDefinition mySquasher;
 
-  public ClassDefinition(TCClassReferable referable) {
+  public ClassDefinition(TCReferable referable) {
     super(referable, TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
-  }
-
-  @Override
-  public TCClassReferable getReferable() {
-    return (TCClassReferable) super.getReferable();
   }
 
   @Override

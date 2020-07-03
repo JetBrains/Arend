@@ -282,7 +282,7 @@ public abstract class Repl {
             myScope, new ArrayList<>(), myErrorReporter, null), null)
         .accept(new SyntacticDesugarVisitor(myErrorReporter), null);
     if (checkErrors()) return null;
-    expr = DesugarVisitor.desugar(expr, myErrorReporter);
+    expr = DesugarVisitor.desugar(expr, myTypecheckerState, myErrorReporter);
     if (checkErrors()) return null;
     return expr;
   }

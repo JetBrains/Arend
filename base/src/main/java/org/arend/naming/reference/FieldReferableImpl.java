@@ -6,7 +6,7 @@ public class FieldReferableImpl extends DataLocatedReferableImpl implements TCFi
   private final boolean myExplicit;
   private final boolean myParameter;
 
-  public FieldReferableImpl(Precedence precedence, String name, boolean isExplicit, boolean isParameter, LocatedReferable parent, TCClassReferable typeClassReferable) {
+  public FieldReferableImpl(Precedence precedence, String name, boolean isExplicit, boolean isParameter, LocatedReferable parent, ClassReferableImpl typeClassReferable) {
     super(precedence, name, parent, typeClassReferable, Kind.FIELD);
     myExplicit = isExplicit;
     myParameter = isParameter;

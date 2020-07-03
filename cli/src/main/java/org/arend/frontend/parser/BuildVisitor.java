@@ -120,7 +120,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return (Concrete.UniverseExpression) visit(expr);
   }
 
-  private void visitStatementList(List<StatementContext> statementCtxs, List<Group> subgroups, List<ChildNamespaceCommand> namespaceCommands, ChildGroup parent, TCClassReferable enclosingClass) {
+  private void visitStatementList(List<StatementContext> statementCtxs, List<Group> subgroups, List<ChildNamespaceCommand> namespaceCommands, ChildGroup parent, TCReferable enclosingClass) {
     for (StatementContext statementCtx : statementCtxs) {
       try {
         Object statement = visitStatement(statementCtx, parent, enclosingClass);
@@ -139,7 +139,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     }
   }
 
-  private Object visitStatement(StatementContext statementCtx, ChildGroup parent, TCClassReferable enclosingClass) {
+  private Object visitStatement(StatementContext statementCtx, ChildGroup parent, TCReferable enclosingClass) {
     if (statementCtx instanceof StatCmdContext) {
       return visitStatCmd((StatCmdContext) statementCtx, parent);
     } else if (statementCtx instanceof StatDefContext) {
@@ -158,7 +158,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return parentGroup;
   }
 
-  public ChildGroup visitDefinition(DefinitionContext ctx, ChildGroup parent, TCClassReferable enclosingClass) {
+  public ChildGroup visitDefinition(DefinitionContext ctx, ChildGroup parent, TCReferable enclosingClass) {
     if (ctx instanceof DefFunctionContext) {
       return visitDefFunction((DefFunctionContext) ctx, parent, enclosingClass);
     } else if (ctx instanceof DefDataContext) {
@@ -434,7 +434,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       : new ConcreteLocatedReferable(position, name, precedence, aliasName, aliasPrecedence, (TCReferable) parent.getReferable(), kind);
   }
 
-  private StaticGroup visitDefInstance(DefInstanceContext ctx, ChildGroup parent, TCClassReferable enclosingClass) {
+  private StaticGroup visitDefInstance(DefInstanceContext ctx, ChildGroup parent, TCReferable enclosingClass) {
     boolean isInstance = ctx.instanceKw() instanceof FuncKwInstanceContext;
     List<Concrete.Parameter> parameters = visitLamTeles(ctx.tele());
     DefIdContext defId = ctx.defId();
@@ -490,7 +490,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     }
   }
 
-  private void visitWhere(WhereContext ctx, List<Group> subgroups, List<ChildNamespaceCommand> namespaceCommands, ChildGroup parent, TCClassReferable enclosingClass) {
+  private void visitWhere(WhereContext ctx, List<Group> subgroups, List<ChildNamespaceCommand> namespaceCommands, ChildGroup parent, TCReferable enclosingClass) {
     if (ctx != null) {
       visitStatementList(ctx.statement(), subgroups, namespaceCommands, parent, enclosingClass);
     }
@@ -530,7 +530,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return new Pair<>(resultType, resultTypeLevel);
   }
 
-  private StaticGroup visitDefFunction(DefFunctionContext ctx, ChildGroup parent, TCClassReferable enclosingClass) {
+  private StaticGroup visitDefFunction(DefFunctionContext ctx, ChildGroup parent, TCReferable enclosingClass) {
     Concrete.FunctionBody body;
     FunctionBodyContext functionBodyCtx = ctx.functionBody();
     DefIdContext defId = ctx.defId();
@@ -583,7 +583,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return resultGroup;
   }
 
-  private StaticGroup visitDefData(DefDataContext ctx, ChildGroup parent, TCClassReferable enclosingClass) {
+  private StaticGroup visitDefData(DefDataContext ctx, ChildGroup parent, TCReferable enclosingClass) {
     final Concrete.UniverseExpression universe;
     ExprContext exprCtx = ctx.expr();
     if (exprCtx != null) {
@@ -772,7 +772,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     }
   }
 
-  private StaticGroup visitDefModule(Position position, DefIdContext defId, WhereContext where, ChildGroup parent, TCClassReferable enclosingClass) {
+  private StaticGroup visitDefModule(Position position, DefIdContext defId, WhereContext where, ChildGroup parent, TCReferable enclosingClass) {
     List<Group> staticSubgroups = where == null ? Collections.emptyList() : new ArrayList<>();
     List<ChildNamespaceCommand> namespaceCommands = where == null ? Collections.emptyList() : new ArrayList<>();
 
@@ -788,7 +788,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return resultGroup;
   }
 
-  private ClassGroup visitDefClass(DefClassContext ctx, ChildGroup parent, TCClassReferable enclosingClass) {
+  private ClassGroup visitDefClass(DefClassContext ctx, ChildGroup parent, TCReferable enclosingClass) {
     WhereContext where = ctx.where();
 
     List<Group> staticSubgroups = where == null ? Collections.emptyList() : new ArrayList<>();
@@ -1053,7 +1053,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return new Concrete.BinOpSequenceElem(visitTupleExprs(ctx.tupleExpr(), ctx.COMMA(), ctx), Fixity.NONFIX, false);
   }
 
-  private Concrete.CoClauseElement visitCoClause(CoClauseContext ctx, List<Group> subgroups, ChildGroup parentGroup, TCClassReferable enclosingClass, TCReferable enclosingDefinition) {
+  private Concrete.CoClauseElement visitCoClause(CoClauseContext ctx, List<Group> subgroups, ChildGroup parentGroup, TCReferable enclosingClass, TCReferable enclosingDefinition) {
     List<String> path = visitLongNamePath(ctx.longName());
     Position position = tokenPosition(ctx.start);
     Concrete.Expression term = null;
