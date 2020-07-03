@@ -16,6 +16,11 @@ public class EmptyGlobalReferable implements GlobalReferable {
   }
 
   @Override
+  public @NotNull Kind getKind() {
+    return Kind.OTHER;
+  }
+
+  @Override
   public @NotNull String textRepresentation() {
     return myName;
   }

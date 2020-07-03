@@ -15,7 +15,12 @@ public class TestLocalErrorReporter extends LocalErrorReporter {
                                               return Precedence.DEFAULT;
                                                                         }
 
-        @NotNull
+      @Override
+      public @NotNull Kind getKind() {
+        return Kind.OTHER;
+      }
+
+      @NotNull
         @Override
         public String textRepresentation() {
                                                return "testDefinition";

@@ -21,6 +21,11 @@ public interface TCReferable extends LocatedReferable, DataContainer {
       return this;
     }
 
+    @Override
+    public @NotNull Kind getKind() {
+      return Kind.OTHER;
+    }
+
     @Nullable
     @Override
     public ModuleLocation getLocation() {

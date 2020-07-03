@@ -316,7 +316,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
       result.add(classFieldImpl);
     } else {
       boolean ok = true;
-      if (classFieldImpl.getImplementedField() instanceof GlobalReferable && myConcreteProvider.isClass((GlobalReferable) classFieldImpl.getImplementedField())) {
+      if (classFieldImpl.getImplementedField() instanceof GlobalReferable && ((GlobalReferable) classFieldImpl.getImplementedField()).getKind() == GlobalReferable.Kind.CLASS) {
         if (classFieldImpl.subClassFieldImpls.isEmpty()) {
           myErrorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.REDUNDANT_COCLAUSE, classFieldImpl));
         }

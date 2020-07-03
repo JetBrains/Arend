@@ -17,7 +17,6 @@ import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.reference.*;
 import org.arend.naming.resolving.visitor.DefinitionResolveNameVisitor;
 import org.arend.naming.resolving.visitor.ExpressionResolveNameVisitor;
-import org.arend.naming.scope.CachingScope;
 import org.arend.naming.scope.Scope;
 import org.arend.naming.scope.ScopeFactory;
 import org.arend.repl.action.*;
@@ -75,7 +74,7 @@ public abstract class Repl {
     myTypecheckerState = typecheckerState;
     myLibraryManager = libraryManager;
     myTypechecking = typecheckingOrderingListener;
-    myModuleReferable = new LocatedReferableImpl(Precedence.DEFAULT, replModulePath.getLibraryName(), new FullModuleReferable(replModulePath), GlobalReferable.Kind.TYPECHECKABLE);
+    myModuleReferable = new LocatedReferableImpl(Precedence.DEFAULT, replModulePath.getLibraryName(), new FullModuleReferable(replModulePath), GlobalReferable.Kind.OTHER);
   }
 
   protected abstract void loadLibraries();

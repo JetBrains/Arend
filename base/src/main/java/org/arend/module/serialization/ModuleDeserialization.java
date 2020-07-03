@@ -194,12 +194,23 @@ public class ModuleDeserialization {
     return readGroup(myModuleProto.getGroup(), null, modulePath);
   }
 
+  private static GlobalReferable.Kind getDefinitionKind(DefinitionProtos.Definition.DefinitionDataCase kind) {
+    switch (kind) {
+      case CLASS: return GlobalReferable.Kind.CLASS;
+      case DATA: return GlobalReferable.Kind.DATA;
+      case FUNCTION: return GlobalReferable.Kind.FUNCTION;
+      case CONSTRUCTOR: return GlobalReferable.Kind.DEFINED_CONSTRUCTOR;
+      default: return GlobalReferable.Kind.OTHER;
+    }
+  }
+
   @NotNull
   private ChildGroup readGroup(ModuleProtos.Group groupProto, ChildGroup parent, ModuleLocation modulePath) throws DeserializationException {
     DefinitionProtos.Referable referableProto = groupProto.getReferable();
     List<TCFieldReferable> fieldReferables;
     LocatedReferable referable;
-    if (groupProto.hasDefinition() && groupProto.getDefinition().getDefinitionDataCase() == DefinitionProtos.Definition.DefinitionDataCase.CLASS) {
+    GlobalReferable.Kind kind = getDefinitionKind(groupProto.getDefinition().getDefinitionDataCase());
+    if (groupProto.hasDefinition() && kind == GlobalReferable.Kind.CLASS) {
       fieldReferables = new ArrayList<>();
       referable = new ClassReferableImpl(readPrecedence(referableProto.getPrecedence()), referableProto.getName(), groupProto.getDefinition().getClass_().getIsRecord(), new ArrayList<>(), fieldReferables, modulePath);
     } else {
@@ -207,7 +218,7 @@ public class ModuleDeserialization {
       if (parent == null) {
         referable = new FullModuleReferable(modulePath);
       } else {
-        referable = new DataLocatedReferableImpl(readPrecedence(referableProto.getPrecedence()), referableProto.getName(), parent.getReferable(), null, groupProto.getDefinition().getDefinitionDataCase() == DefinitionProtos.Definition.DefinitionDataCase.CONSTRUCTOR ? LocatedReferableImpl.Kind.DEFINED_CONSTRUCTOR : LocatedReferableImpl.Kind.TYPECHECKABLE);
+        referable = new DataLocatedReferableImpl(readPrecedence(referableProto.getPrecedence()), referableProto.getName(), parent.getReferable(), null, kind);
       }
     }
 

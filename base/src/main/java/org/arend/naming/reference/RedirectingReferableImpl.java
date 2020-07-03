@@ -45,12 +45,6 @@ public class RedirectingReferableImpl implements RedirectingReferable {
     return myOriginalReferable instanceof GlobalReferable ? ((GlobalReferable) myOriginalReferable).getTypecheckable() : null;
   }
 
-  @NotNull
-  @Override
-  public Kind getKind() {
-    return myOriginalReferable instanceof GlobalReferable ? ((GlobalReferable) myOriginalReferable).getKind() : Kind.OTHER;
-  }
-
   @Nullable
   @Override
   public ClassReferable getTypeClassReference() {

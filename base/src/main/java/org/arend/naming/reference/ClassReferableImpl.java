@@ -14,7 +14,7 @@ public class ClassReferableImpl extends LocatedReferableImpl implements ClassRef
   private final List<? extends TCFieldReferable> myFieldReferables;
 
   public ClassReferableImpl(Precedence precedence, String name, boolean isRecord, List<ClassReferable> superClassReferences, List<? extends TCFieldReferable> fieldReferables, ModuleLocation parent) {
-    super(precedence, name, parent, Kind.TYPECHECKABLE);
+    super(precedence, name, parent, Kind.CLASS);
     myRecord = isRecord;
     mySuperClassReferences = superClassReferences;
     myFieldReferables = fieldReferables;

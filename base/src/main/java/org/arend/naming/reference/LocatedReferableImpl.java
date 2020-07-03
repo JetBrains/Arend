@@ -12,7 +12,7 @@ public class LocatedReferableImpl implements TCReferable {
   private final Kind myKind;
 
   public LocatedReferableImpl(Precedence precedence, String name, @Nullable LocatedReferable parent, Kind kind) {
-    assert kind.isTypecheckable() || parent instanceof TCReferable;
+    assert kind.isTypecheckable() || kind == Kind.OTHER || parent instanceof TCReferable;
     myPrecedence = precedence;
     myName = name;
     myParent = parent;
@@ -40,7 +40,7 @@ public class LocatedReferableImpl implements TCReferable {
 
   @Override
   public TCReferable getTypecheckable() {
-    return myKind.isTypecheckable() ? this : (TCReferable) myParent;
+    return myKind.isTypecheckable() || myKind == Kind.OTHER ? this : (TCReferable) myParent;
   }
 
   @NotNull

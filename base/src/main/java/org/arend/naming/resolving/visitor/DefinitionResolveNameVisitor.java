@@ -268,8 +268,8 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
 
     if (def.getKind().isUse()) {
       TCReferable useParent = def.getUseParent();
-      boolean isFunc = myConcreteProvider.isFunction(useParent);
-      if (isFunc || myConcreteProvider.isClass(useParent) || myConcreteProvider.isData(useParent)) {
+      boolean isFunc = useParent.getKind() == GlobalReferable.Kind.FUNCTION;
+      if (isFunc || useParent.getKind() == GlobalReferable.Kind.CLASS || useParent.getKind() == GlobalReferable.Kind.DATA) {
         if (def.getKind() == FunctionKind.COERCE) {
           if (isFunc) {
             myLocalErrorReporter.report(new ParsingError(ParsingError.Kind.MISPLACED_COERCE, def));
@@ -456,7 +456,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       Concrete.ReferenceExpression superClass = def.getSuperClasses().get(i);
       Concrete.Expression resolved = exprVisitor.visitReference(superClass, null);
       Referable ref = RedirectingReferable.getOriginalReferable(superClass.getReferent());
-      if (resolved != superClass || !(ref instanceof GlobalReferable && myConcreteProvider.isClass((GlobalReferable) ref))) {
+      if (resolved != superClass || !(ref instanceof GlobalReferable && ((GlobalReferable) ref).getKind() == GlobalReferable.Kind.CLASS)) {
         if (!(ref instanceof ErrorReference)) {
           myLocalErrorReporter.report(new NamingError("Expected a class", superClass));
         }
