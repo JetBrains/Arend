@@ -7,16 +7,19 @@ class BuildPreludeTask extends JavaExec {
         description = "Builds the prelude cache"
         group = "build"
         main = "${project.group}.frontend.PreludeBinaryGenerator"
+        args = [".", "--recompile"]
 
         dependsOn(project.tasks.getByName("classes"))
     }
 
     void deleteArcFile() {
+/*
         if (preludeDotArc.exists()) {
             if (!preludeDotArc.delete()) {
                 println "Failed to delete $preludeDotArc"
             }
         }
+*/
     }
 
     @Input

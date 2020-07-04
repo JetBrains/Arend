@@ -17,22 +17,11 @@ dependencies {
     implementation(project(":parser"))
 }
 
-val execRepl = task<JavaExec>("execRepl") {
-    workingDir(rootProject.rootDir)
-    classpath = sourceSets["main"].runtimeClasspath
-    defaultCharacterEncoding = "UTF-8"
-    standardInput = System.`in`
-    standardOutput = System.out
-    main = "org.arend.frontend.repl.CliReplState"
-    dependsOn(tasks["classes"])
-}
-
 // Prelude stuff
 
 val buildPrelude = task<org.arend.gradle.BuildPreludeTask>("buildPrelude") {
     classpath = sourceSets["main"].runtimeClasspath
     workingDir(rootProject.rootDir)
-    args = listOf(".")
     doFirst { deleteArcFile() }
 }
 
@@ -40,14 +29,23 @@ val copyPrelude = task<Copy>("copyPrelude") {
     dependsOn(buildPrelude)
     from(rootProject.file("lib"))
     into(buildDir.resolve("classes/java/main/lib"))
+    outputs.upToDateWhen { false }
 }
 
-task<Jar>("jarDep") {
+val jarDep = task<Jar>("jarDep") {
+    group = "build"
     manifest.attributes["Main-Class"] = "${project.group}.frontend.ConsoleMain"
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
     from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it as Any else zipTree(it) })
     from(sourceSets["main"].output)
     archiveClassifier.set("full")
+}
+
+val copyJarDep = task<Copy>("copyJarDep") {
+    dependsOn(jarDep)
+    from(jarDep.archiveFile.get().asFile)
+    into(".")
+    outputs.upToDateWhen { false }
 }
 
 tasks.withType<Jar> { dependsOn(copyPrelude) }
