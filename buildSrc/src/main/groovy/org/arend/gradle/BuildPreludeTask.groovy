@@ -12,16 +12,6 @@ class BuildPreludeTask extends JavaExec {
         dependsOn(project.tasks.getByName("classes"))
     }
 
-    void deleteArcFile() {
-/*
-        if (preludeDotArc.exists()) {
-            if (!preludeDotArc.delete()) {
-                println "Failed to delete $preludeDotArc"
-            }
-        }
-*/
-    }
-
     @Input
     final String projectVersion = project.version
 

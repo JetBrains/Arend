@@ -22,7 +22,6 @@ dependencies {
 val buildPrelude = task<org.arend.gradle.BuildPreludeTask>("buildPrelude") {
     classpath = sourceSets["main"].runtimeClasspath
     workingDir(rootProject.rootDir)
-    doFirst { deleteArcFile() }
 }
 
 val copyPrelude = task<Copy>("copyPrelude") {
@@ -44,7 +43,7 @@ val jarDep = task<Jar>("jarDep") {
 val copyJarDep = task<Copy>("copyJarDep") {
     dependsOn(jarDep)
     from(jarDep.archiveFile.get().asFile)
-    into(".")
+    into(System.getProperty("user.dir"))
     outputs.upToDateWhen { false }
 }
 
