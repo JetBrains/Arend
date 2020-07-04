@@ -132,8 +132,7 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
       }
     }
 
-    Referable ref = expr instanceof Concrete.ReferenceExpression ? RedirectingReferable.getOriginalReferable(((Concrete.ReferenceExpression) expr).getReferent()) : null;
-    return ref instanceof ClassReferable || ref == null ? ref : ref.getUnderlyingReferable();
+    return expr instanceof Concrete.ReferenceExpression ? RedirectingReferable.getOriginalReferable(((Concrete.ReferenceExpression) expr).getReferent()) : null;
   }
 
   private void handleParameters(Collection<? extends Concrete.Parameter> parameters) {
@@ -150,8 +149,12 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
   private ClassReferable findClassReference(Referable referent) {
     Set<GlobalReferable> visited = null;
     while (true) {
-      if (referent instanceof ClassReferable) {
+      if (referent instanceof ClassReferable || referent == null) {
         return (ClassReferable) referent;
+      }
+      Referable underlyingRef = referent.getUnderlyingReferable();
+      if (underlyingRef instanceof ClassReferable) {
+        return (ClassReferable) underlyingRef;
       }
       if (!(referent instanceof GlobalReferable)) {
         return null;

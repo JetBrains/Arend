@@ -102,10 +102,6 @@ public abstract class Definition implements CoreDefinition {
 
   }
 
-  public boolean isResultTypeClassReference() {
-    return false;
-  }
-
   public UniverseKind getUniverseKind() {
     return myUniverseKind;
   }

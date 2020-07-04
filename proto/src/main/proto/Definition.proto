@@ -41,7 +41,6 @@ message Definition {
             Expression.Pi type = 2;
             Expression type_level = 3;
             int32 number_of_parameters = 4;
-            bool hasTypeClassReference = 5;
             bool isExplicit = 6;
             bool isParameter = 7;
             bool isProperty = 8;
@@ -106,7 +105,6 @@ message Definition {
         int32 visible_parameter = 9;
         repeated ParametersLevel parameters_levels = 10;
         bool body_is_hidden = 11;
-        bool hasTypeClassReference = 13;
     }
     message DConstructorData {
         FunctionData function = 1;

@@ -389,9 +389,12 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
 
     Referable ref = typeClassReferenceExtractVisitor.getTypeReference(Collections.emptyList(), expr.getBaseClassExpression(), true);
     if (!(ref instanceof ClassReferable || ref instanceof TypedReferable)) {
-      ref = expr.getBaseClassExpression().getUnderlyingReferable();
+      ref = ref.getUnderlyingReferable();
       if (!(ref instanceof ClassReferable || ref instanceof TypedReferable)) {
-        ref = ref.getUnderlyingReferable();
+        ref = expr.getBaseClassExpression().getUnderlyingReferable();
+        if (!(ref instanceof ClassReferable || ref instanceof TypedReferable)) {
+          ref = ref.getUnderlyingReferable();
+        }
       }
     }
     ClassReferable classRef = null;

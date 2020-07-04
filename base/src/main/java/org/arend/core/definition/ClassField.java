@@ -22,7 +22,6 @@ public class ClassField extends Definition implements CoreClassField {
   private int myNumberOfParameters;
   private boolean myHideable;
   private boolean myCovariant;
-  private boolean myResultTypeClassReference = false;
 
   public ClassField(TCFieldReferable referable, ClassDefinition parentClass) {
     super(referable, TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
@@ -137,15 +136,6 @@ public class ClassField extends Definition implements CoreClassField {
   @Override
   public TypeClassParameterKind getTypeClassParameterKind(int index) {
     return index == 0 && !myParentClass.isRecord() ? TypeClassParameterKind.YES : TypeClassParameterKind.NO;
-  }
-
-  @Override
-  public boolean isResultTypeClassReference() {
-    return myResultTypeClassReference;
-  }
-
-  public void setResultTypeClassReference(boolean resultTypeClassReference) {
-    myResultTypeClassReference = resultTypeClassReference;
   }
 
   @NotNull

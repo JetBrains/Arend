@@ -73,7 +73,6 @@ public class DefinitionSerialization implements ArendSerializer {
     for (ClassField field : definition.getPersonalFields()) {
       DefinitionProtos.Definition.ClassData.Field.Builder fBuilder = DefinitionProtos.Definition.ClassData.Field.newBuilder();
       fBuilder.setReferable(writeReferable(field));
-      fBuilder.setHasTypeClassReference(field.isResultTypeClassReference());
       fBuilder.setType(defSerializer.visitPi(field.getType(Sort.STD)));
       if (field.getTypeLevel() != null) {
         fBuilder.setTypeLevel(defSerializer.writeExpr(field.getTypeLevel()));
@@ -265,7 +264,6 @@ public class DefinitionSerialization implements ArendSerializer {
   private DefinitionProtos.Definition.FunctionData writeFunctionDefinition(ExpressionSerialization defSerializer, FunctionDefinition definition) {
     DefinitionProtos.Definition.FunctionData.Builder builder = DefinitionProtos.Definition.FunctionData.newBuilder();
 
-    builder.setHasTypeClassReference(definition.isResultTypeClassReference());
     builder.addAllParam(defSerializer.writeParameters(definition.getParameters()));
     if (definition.getParametersTypecheckingOrder() != null) {
       builder.addAllParametersTypecheckingOrder(definition.getParametersTypecheckingOrder());

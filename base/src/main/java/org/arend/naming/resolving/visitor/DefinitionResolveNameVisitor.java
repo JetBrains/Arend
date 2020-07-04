@@ -228,6 +228,9 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     }
     if (body instanceof Concrete.CoelimFunctionBody) {
       Referable typeRef = def.getResultType() == null ? null : exprVisitor.typeClassReferenceExtractVisitor.getTypeReference(Collections.emptyList(), def.getResultType(), true);
+      if (typeRef != null && !(typeRef instanceof ClassReferable)) {
+        typeRef = typeRef.getUnderlyingReferable();
+      }
       if (typeRef instanceof ClassReferable) {
         if (def.getKind() == FunctionKind.INSTANCE && ((ClassReferable) typeRef).isRecord()) {
           myLocalErrorReporter.report(new NamingError("Expected a class, got a record", def));
