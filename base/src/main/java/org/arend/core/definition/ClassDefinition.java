@@ -185,13 +185,26 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
     return myCoerce;
   }
 
+  public static boolean isSubClassOf(ArrayDeque<CoreClassDefinition> classDefs, CoreClassDefinition classDef) {
+    Set<CoreClassDefinition> visited = new HashSet<>();
+    while (!classDefs.isEmpty()) {
+      CoreClassDefinition subClass = classDefs.pop();
+      if (!visited.add(subClass)) {
+        continue;
+      }
+      if (subClass == classDef) {
+        return true;
+      }
+      classDefs.addAll(subClass.getSuperClasses());
+    }
+    return false;
+  }
+
   @Override
   public boolean isSubClassOf(@NotNull CoreClassDefinition classDefinition) {
     if (this.equals(classDefinition)) return true;
-    for (ClassDefinition superClass : mySuperClasses) {
-      if (superClass.isSubClassOf(classDefinition)) return true;
-    }
-    return false;
+    ArrayDeque<CoreClassDefinition> classDefs = new ArrayDeque<>(mySuperClasses);
+    return isSubClassOf(classDefs, classDefinition);
   }
 
   @NotNull

@@ -613,6 +613,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
   @SuppressWarnings("UnusedReturnValue")
   private boolean typecheckFunctionHeader(FunctionDefinition typedDef, Concrete.BaseFunctionDefinition def, LocalInstancePool localInstancePool, boolean newDef) {
+    if (def.enclosingClass != null) {
+      typedDef.setHasEnclosingClass(true);
+    }
     ClassField implementedField = def instanceof Concrete.CoClauseFunctionDefinition ? typechecker.referableToClassField(((Concrete.CoClauseFunctionDefinition) def).getImplementedField(), def) : null;
     FunctionKind kind = implementedField == null ? def.getKind() : implementedField.isProperty() && implementedField.getTypeLevel() == null ? FunctionKind.LEMMA : FunctionKind.FUNC;
     checkFunctionLevel(def, kind);
@@ -1259,6 +1262,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   }
 
   private void typecheckDataHeader(DataDefinition dataDefinition, Concrete.DataDefinition def, LocalInstancePool localInstancePool, boolean newDef) {
+    if (def.enclosingClass != null) {
+      dataDefinition.setHasEnclosingClass(true);
+    }
     LinkList list = new LinkList();
 
     Sort userSort = null;

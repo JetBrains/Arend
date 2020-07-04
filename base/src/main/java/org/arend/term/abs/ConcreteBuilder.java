@@ -215,7 +215,6 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     List<Concrete.ClassElement> elements = new ArrayList<>();
     Concrete.ClassDefinition classDef = new Concrete.ClassDefinition(myDefinition, def.isRecord(), def.withoutClassifying(), buildReferences(def.getSuperClasses()), elements);
     buildClassParameters(def.getParameters(), classDef, elements);
-    setEnclosingClass(classDef, def);
 
     for (Abstract.ClassElement element : def.getClassElements()) {
       if (element instanceof Abstract.ClassField) {

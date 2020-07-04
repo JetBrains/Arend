@@ -219,6 +219,9 @@ public class DefinitionDeserialization implements ArendDeserializer {
   }
 
   private void fillInDataDefinition(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.DataData dataProto, DataDefinition dataDef) throws DeserializationException {
+    if (dataProto.getHasEnclosingClass()) {
+      dataDef.setHasEnclosingClass(true);
+    }
     dataDef.setParameters(defDeserializer.readParameters(dataProto.getParamList()));
     List<Integer> parametersTypecheckingOrder = dataProto.getParametersTypecheckingOrderList();
     if (!parametersTypecheckingOrder.isEmpty()) {
@@ -334,6 +337,9 @@ public class DefinitionDeserialization implements ArendDeserializer {
   }
 
   private void fillInFunctionDefinition(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.FunctionData functionProto, FunctionDefinition functionDef) throws DeserializationException {
+    if (functionProto.getHasEnclosingClass()) {
+      functionDef.setHasEnclosingClass(true);
+    }
     functionDef.setParameters(defDeserializer.readParameters(functionProto.getParamList()));
     List<Integer> parametersTypecheckingOrder = functionProto.getParametersTypecheckingOrderList();
     if (!parametersTypecheckingOrder.isEmpty()) {

@@ -80,6 +80,7 @@ message Definition {
         repeated bool covariant_parameter = 11;
         CoerceData coerce_data = 12;
         repeated ParametersLevel parameters_levels = 13;
+        bool has_enclosing_class = 16;
 
         message Constructor {
             Referable referable = 1;
@@ -105,6 +106,7 @@ message Definition {
         int32 visible_parameter = 9;
         repeated ParametersLevel parameters_levels = 10;
         bool body_is_hidden = 11;
+        bool has_enclosing_class = 13;
     }
     message DConstructorData {
         FunctionData function = 1;
