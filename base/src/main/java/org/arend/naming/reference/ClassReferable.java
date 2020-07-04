@@ -73,7 +73,7 @@ public interface ClassReferable extends LocatedReferable {
           if (field.isExplicitField() || !field.isParameterField()) {
             break;
           }
-          ClassReferable typeClass = field.getTypeClassReference();
+          ClassReferable typeClass = field instanceof TypedReferable ? ((TypedReferable) field).getTypeClassReference() : null;
           if (typeClass == null || typeClass.isRecord()) {
             break;
           }

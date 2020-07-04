@@ -4,7 +4,7 @@ import org.arend.ext.reference.Precedence;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class TypedRedirectingReferable implements RedirectingReferable {
+public class TypedRedirectingReferable implements RedirectingReferable, TypedReferable {
   private final Referable myOriginalReferable;
   private final ClassReferable myTypeClassReference;
 

@@ -15,7 +15,6 @@ message Definition {
         FunctionData function = 3;
         DConstructorData constructor = 4;
     }
-    bool hasTypeClassReference = 5;
     UniverseKind universe_kind = 6;
     map<string, bytes> user_data = 7;
 
@@ -107,6 +106,7 @@ message Definition {
         int32 visible_parameter = 9;
         repeated ParametersLevel parameters_levels = 10;
         bool body_is_hidden = 11;
+        bool hasTypeClassReference = 13;
     }
     message DConstructorData {
         FunctionData function = 1;

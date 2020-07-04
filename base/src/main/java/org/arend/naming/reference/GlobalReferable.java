@@ -4,7 +4,7 @@ import org.arend.ext.reference.Precedence;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public interface GlobalReferable extends TypedReferable {
+public interface GlobalReferable extends Referable {
   enum Kind {
     DATA, CLASS, FUNCTION,
     DEFINED_CONSTRUCTOR { @Override public boolean isConstructor() { return true; } },

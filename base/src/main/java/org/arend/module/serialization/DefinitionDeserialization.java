@@ -96,6 +96,9 @@ public class DefinitionDeserialization implements ArendDeserializer {
       if (!fieldProto.hasType()) {
         throw new DeserializationException("Missing class field type");
       }
+      if (fieldProto.getHasTypeClassReference()) {
+        field.setResultTypeClassReference(true);
+      }
       PiExpression fieldType = checkFieldType(defDeserializer.readPi(fieldProto.getType()), classDef);
       if (fieldProto.getIsProperty()) {
         field.setIsProperty();
@@ -334,6 +337,9 @@ public class DefinitionDeserialization implements ArendDeserializer {
   }
 
   private void fillInFunctionDefinition(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.FunctionData functionProto, FunctionDefinition functionDef) throws DeserializationException {
+    if (functionProto.getHasTypeClassReference()) {
+      functionDef.setResultTypeClassReference(true);
+    }
     functionDef.setParameters(defDeserializer.readParameters(functionProto.getParamList()));
     List<Integer> parametersTypecheckingOrder = functionProto.getParametersTypecheckingOrderList();
     if (!parametersTypecheckingOrder.isEmpty()) {

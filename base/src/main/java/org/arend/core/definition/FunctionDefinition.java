@@ -33,6 +33,7 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
   private int myVisibleParameter = -1;
   private final ParametersLevels<ParametersLevel> myParametersLevels = new ParametersLevels<>();
   private Set<Definition> myRecursiveDefinitions = Collections.emptySet();
+  private boolean myResultTypeClassReference = false;
 
   public FunctionDefinition(TCReferable referable) {
     super(referable, TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
@@ -155,6 +156,15 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
     if (index < myTypeClassParameters.size()) {
       myTypeClassParameters.set(index, kind);
     }
+  }
+
+  @Override
+  public boolean isResultTypeClassReference() {
+    return myResultTypeClassReference;
+  }
+
+  public void setResultTypeClassReference(boolean resultTypeClassReference) {
+    myResultTypeClassReference = resultTypeClassReference;
   }
 
   @Override

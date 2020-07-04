@@ -9,12 +9,13 @@ import org.arend.module.ModuleLocation;
 import org.arend.naming.reference.ClassReferable;
 import org.arend.naming.reference.LocatedReferableImpl;
 import org.arend.naming.reference.TCReferable;
+import org.arend.naming.reference.TypedReferable;
 import org.arend.naming.resolving.visitor.TypeClassReferenceExtractVisitor;
 import org.arend.term.concrete.Concrete;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class ConcreteLocatedReferable extends LocatedReferableImpl implements SourceInfo, DataContainer {
+public class ConcreteLocatedReferable extends LocatedReferableImpl implements SourceInfo, DataContainer, TypedReferable {
   private final Position myPosition;
   private final String myAliasName;
   private final Precedence myAliasPrecedence;

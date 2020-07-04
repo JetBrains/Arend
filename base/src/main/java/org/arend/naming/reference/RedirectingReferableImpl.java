@@ -1,9 +1,7 @@
 package org.arend.naming.reference;
 
 import org.arend.ext.reference.Precedence;
-import org.arend.term.abs.Abstract;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public class RedirectingReferableImpl implements RedirectingReferable {
   private final Referable myOriginalReferable;
@@ -43,17 +41,5 @@ public class RedirectingReferableImpl implements RedirectingReferable {
   @Override
   public GlobalReferable getTypecheckable() {
     return myOriginalReferable instanceof GlobalReferable ? ((GlobalReferable) myOriginalReferable).getTypecheckable() : null;
-  }
-
-  @Nullable
-  @Override
-  public ClassReferable getTypeClassReference() {
-    return myOriginalReferable instanceof TypedReferable ? ((TypedReferable) myOriginalReferable).getTypeClassReference() : null;
-  }
-
-  @Nullable
-  @Override
-  public Abstract.Expression getTypeOf() {
-    return myOriginalReferable instanceof TypedReferable ? ((TypedReferable) myOriginalReferable).getTypeOf() : null;
   }
 }

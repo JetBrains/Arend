@@ -3,7 +3,7 @@ package org.arend.naming.reference;
 import org.arend.ext.reference.Precedence;
 import org.jetbrains.annotations.Nullable;
 
-public class DataLocatedReferableImpl extends LocatedReferableImpl {
+public class DataLocatedReferableImpl extends LocatedReferableImpl implements TypedReferable {
   private ClassReferable myTypeClassReference;
 
   public DataLocatedReferableImpl(Precedence precedence, String name, LocatedReferable parent, ClassReferable typeClassReference, Kind kind) {
