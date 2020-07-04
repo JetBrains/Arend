@@ -28,7 +28,6 @@ val copyPrelude = task<Copy>("copyPrelude") {
     dependsOn(buildPrelude)
     from(rootProject.file("lib"))
     into(buildDir.resolve("classes/java/main/lib"))
-    outputs.upToDateWhen { false }
 }
 
 val jarDep = task<Jar>("jarDep") {
