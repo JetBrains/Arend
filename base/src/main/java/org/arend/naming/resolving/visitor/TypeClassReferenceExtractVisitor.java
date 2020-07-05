@@ -1,23 +1,14 @@
 package org.arend.naming.resolving.visitor;
 
 import org.arend.ext.reference.Precedence;
-import org.arend.naming.reference.ClassReferable;
-import org.arend.naming.reference.GlobalReferable;
-import org.arend.naming.reference.RedirectingReferable;
-import org.arend.naming.reference.Referable;
+import org.arend.naming.reference.*;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteReferableDefinitionVisitor;
-import org.arend.typechecking.provider.ConcreteProvider;
 
 import java.util.*;
 
 public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefinitionVisitor<Void, ClassReferable> {
-  public final ConcreteProvider concreteProvider;
   private int myArguments;
-
-  public TypeClassReferenceExtractVisitor(ConcreteProvider concreteProvider) {
-    this.concreteProvider = concreteProvider;
-  }
 
   @Override
   public ClassReferable visitFunction(Concrete.BaseFunctionDefinition def, Void params) {
@@ -45,10 +36,9 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
   }
 
   public Referable getTypeReference(Collection<? extends Concrete.Parameter> parameters, Concrete.Expression expr, boolean isType) {
-    for (Concrete.Parameter parameter : parameters) {
-      if (parameter.isExplicit()) {
-        return null;
-      }
+    handleParameters(parameters);
+    if (myArguments < 0) {
+      return null;
     }
 
     if (isType) {
@@ -146,8 +136,13 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
     }
   }
 
+  public boolean decrease(int count) {
+    myArguments -= count;
+    return myArguments >= 0;
+  }
+
   private ClassReferable findClassReference(Referable referent) {
-    Set<GlobalReferable> visited = null;
+    Set<Referable> visited = null;
     while (true) {
       if (referent instanceof ClassReferable || referent == null) {
         return (ClassReferable) referent;
@@ -156,31 +151,22 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
       if (underlyingRef instanceof ClassReferable) {
         return (ClassReferable) underlyingRef;
       }
-      if (!(referent instanceof GlobalReferable)) {
+      if (!(underlyingRef instanceof TypedReferable)) {
         return null;
       }
-      Concrete.FunctionDefinition function = concreteProvider.getConcreteFunction((GlobalReferable) referent);
-      if (function == null) {
-        return null;
-      }
-      if (!(function.getBody() instanceof Concrete.TermFunctionBody)) {
-        return null;
-      }
-
-      Concrete.Expression term = ((Concrete.TermFunctionBody) function.getBody()).getTerm();
-      handleParameters(function.getParameters());
-      if (myArguments < 0) {
+      Referable ref = ((TypedReferable) underlyingRef).getBodyReference(this);
+      if (!(ref instanceof GlobalReferable)) {
         return null;
       }
 
       if (visited == null) {
         visited = new HashSet<>();
       }
-      if (!visited.add((GlobalReferable) referent)) {
+      if (!visited.add(underlyingRef)) {
         return null;
       }
 
-      referent = getTypeReference(Collections.emptyList(), term, false);
+      referent = ref;
     }
   }
 

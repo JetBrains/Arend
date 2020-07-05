@@ -218,7 +218,7 @@ public class ModuleDeserialization {
       if (parent == null) {
         referable = new FullModuleReferable(modulePath);
       } else {
-        referable = new DataLocatedReferableImpl(readPrecedence(referableProto.getPrecedence()), referableProto.getName(), parent.getReferable(), null, kind);
+        referable = new LocatedReferableImpl(readPrecedence(referableProto.getPrecedence()), referableProto.getName(), parent.getReferable(), kind);
       }
     }
 
@@ -286,7 +286,7 @@ public class ModuleDeserialization {
         if (fillInternalDefinitions) {
           for (DefinitionProtos.Definition.ClassData.Field fieldProto : defProto.getClass_().getPersonalFieldList()) {
             DefinitionProtos.Referable fieldReferable = fieldProto.getReferable();
-            TCFieldReferable absField = new FieldReferableImpl(readPrecedence(fieldReferable.getPrecedence()), fieldReferable.getName(), fieldProto.getIsExplicit(), fieldProto.getIsParameter(), referable, null);
+            TCFieldReferable absField = new FieldReferableImpl(readPrecedence(fieldReferable.getPrecedence()), fieldReferable.getName(), fieldProto.getIsExplicit(), fieldProto.getIsParameter(), referable);
             ClassField res = new ClassField(absField, classDef);
             classDef.addPersonalField(res);
             myState.record(absField, res);

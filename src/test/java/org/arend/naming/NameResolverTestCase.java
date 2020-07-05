@@ -41,7 +41,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     assertThat(expression, is(notNullValue()));
 
     expression = expression
-      .accept(new ExpressionResolveNameVisitor(ConcreteReferableProvider.INSTANCE, IdReferableConverter.INSTANCE, parentScope, context, new TestLocalErrorReporter(errorReporter), null), null)
+      .accept(new ExpressionResolveNameVisitor(IdReferableConverter.INSTANCE, parentScope, context, new TestLocalErrorReporter(errorReporter), null), null)
       .accept(new SyntacticDesugarVisitor(errorReporter), null);
     assertThat(errorList, containsErrors(errors));
     return expression;

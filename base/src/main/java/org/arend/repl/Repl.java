@@ -277,8 +277,8 @@ public abstract class Repl {
     var expr = parseExpr(text);
     if (expr == null || checkErrors()) return null;
     expr = expr
-        .accept(new ExpressionResolveNameVisitor(myTypechecking.getConcreteProvider(),
-            myTypechecking.getReferableConverter(), myScope, new ArrayList<>(), myErrorReporter, null), null)
+        .accept(new ExpressionResolveNameVisitor(myTypechecking.getReferableConverter(),
+            myScope, new ArrayList<>(), myErrorReporter, null), null)
         .accept(new SyntacticDesugarVisitor(myErrorReporter), null);
     if (checkErrors()) return null;
     expr = DesugarVisitor.desugar(expr, myTypecheckerState, myErrorReporter);
