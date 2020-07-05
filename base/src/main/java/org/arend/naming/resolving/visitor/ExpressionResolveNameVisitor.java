@@ -19,7 +19,6 @@ import org.arend.typechecking.error.local.ExpectedConstructorError;
 import java.util.*;
 
 public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<Void> {
-  private final TypeClassReferenceExtractVisitor myTypeClassReferenceExtractVisitor;
   private final ReferableConverter myReferableConverter;
   private final Scope myParentScope;
   private final Scope myScope;
@@ -28,7 +27,6 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   private final ResolverListener myResolverListener;
 
   public ExpressionResolveNameVisitor(ReferableConverter referableConverter, Scope parentScope, List<Referable> context, ErrorReporter errorReporter, ResolverListener resolverListener) {
-    myTypeClassReferenceExtractVisitor = new TypeClassReferenceExtractVisitor();
     myReferableConverter = referableConverter;
     myParentScope = parentScope;
     myScope = context == null ? parentScope : new MergeScope(new ListScope(context), parentScope);
@@ -187,7 +185,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       ((Concrete.TypeParameter) parameter).type = ((Concrete.TypeParameter) parameter).type.accept(this, null);
     }
 
-    ClassReferable classRef = myTypeClassReferenceExtractVisitor.getTypeClassReference(Collections.emptyList(), parameter.getType());
+    ClassReferable classRef = new TypeClassReferenceExtractVisitor().getTypeClassReference(Collections.emptyList(), parameter.getType());
     List<? extends Referable> referableList = parameter.getReferableList();
     for (int i = 0; i < referableList.size(); i++) {
       Referable referable = referableList.get(i);
@@ -300,7 +298,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       myErrorReporter.report(new DuplicateNameError(GeneralError.Level.WARNING, referable, prev));
     }
 
-    ClassReferable classRef = type == null ? null : myTypeClassReferenceExtractVisitor.getTypeClassReference(Collections.emptyList(), type);
+    ClassReferable classRef = type == null ? null : new TypeClassReferenceExtractVisitor().getTypeClassReference(Collections.emptyList(), type);
     if (checkName(referable, myErrorReporter)) {
       myContext.add(classRef == null ? referable : new TypedRedirectingReferable(referable, classRef));
     }
@@ -407,8 +405,8 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       return expr;
     }
 
-    Referable ref = myTypeClassReferenceExtractVisitor.getTypeReference(Collections.emptyList(), expr.getBaseClassExpression(), true);
-    if (!(ref instanceof ClassReferable || ref instanceof TypedReferable)) {
+    Referable ref = new TypeClassReferenceExtractVisitor().getTypeReference(Collections.emptyList(), expr.getBaseClassExpression(), true);
+    if (ref != null && !(ref instanceof ClassReferable || ref instanceof TypedReferable)) {
       ref = ref.getUnderlyingReferable();
       if (!(ref instanceof ClassReferable || ref instanceof TypedReferable)) {
         ref = expr.getBaseClassExpression().getUnderlyingReferable();
@@ -515,9 +513,9 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
         Concrete.LetClausePattern pattern = clause.getPattern();
         if (pattern.getReferable() != null) {
           ClassReferable classRef = clause.resultType != null
-            ? myTypeClassReferenceExtractVisitor.getTypeClassReference(clause.getParameters(), clause.resultType)
+            ? new TypeClassReferenceExtractVisitor().getTypeClassReference(clause.getParameters(), clause.resultType)
             : clause.term instanceof Concrete.NewExpression
-              ? myTypeClassReferenceExtractVisitor.getTypeClassReference(clause.getParameters(), ((Concrete.NewExpression) clause.term).expression)
+              ? new TypeClassReferenceExtractVisitor().getTypeClassReference(clause.getParameters(), ((Concrete.NewExpression) clause.term).expression)
               : null;
           if (checkName(pattern.getReferable(), myErrorReporter)) {
             myContext.add(classRef == null ? pattern.getReferable() : new TypedRedirectingReferable(pattern.getReferable(), classRef));
