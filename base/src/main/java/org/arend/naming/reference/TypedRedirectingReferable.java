@@ -47,4 +47,9 @@ public class TypedRedirectingReferable implements RedirectingReferable, TypedRef
   public ClassReferable getTypeClassReference() {
     return myTypeClassReference;
   }
+
+  @Override
+  public boolean equals(Object obj) {
+    return obj instanceof RedirectingReferable && ((RedirectingReferable) obj).getOriginalReferable().equals(getOriginalReferable());
+  }
 }
