@@ -59,10 +59,7 @@ public class InstanceProviderSet {
 
     @Override
     public boolean test(Referable ref) {
-      if (referableConverter != null && ref instanceof LocatedReferable && !(ref instanceof TCReferable)) {
-        ref = referableConverter.toDataLocatedReferable((LocatedReferable) ref);
-      }
-      if (ref instanceof TCReferable) {
+      if (ref instanceof GlobalReferable) {
         Concrete.FunctionDefinition instance = concreteProvider.getConcreteInstance((GlobalReferable) ref);
         if (instance != null && instance.getKind() == FunctionKind.INSTANCE) {
           if (used) {
