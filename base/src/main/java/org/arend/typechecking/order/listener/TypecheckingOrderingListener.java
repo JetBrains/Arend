@@ -275,10 +275,11 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
     visitor.setStatus(definition.getStatus().getTypecheckingStatus());
     DesugarVisitor.desugar(definition, myState, visitor.getErrorReporter());
     Definition oldTypechecked = visitor.getTypecheckingState().getTypechecked(definition.getData());
+    boolean isNew = oldTypechecked == null || !oldTypechecked.status().headerIsOK();
     definition.setRecursive(true);
     Definition typechecked = new DefinitionTypechecker(visitor).typecheckHeader(oldTypechecked, new GlobalInstancePool(myInstanceProviderSet.get(definition.getData()), visitor), definition);
     if (typechecked.status() == Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING) {
-      mySuspensions.put(definition.getData(), new Pair<>(visitor, oldTypechecked == null));
+      mySuspensions.put(definition.getData(), new Pair<>(visitor, isNew));
     }
 
     typecheckingHeaderFinished(definition.getData(), typechecked);
