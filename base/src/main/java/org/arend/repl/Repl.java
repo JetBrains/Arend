@@ -139,8 +139,8 @@ public abstract class Repl {
     var moduleScopeProvider = getAvailableModuleScopeProvider();
     var scope = ScopeFactory.forGroup(group, moduleScopeProvider);
     myReplScope.addScope(scope);
-    new DefinitionResolveNameVisitor(myTypechecking.getConcreteProvider(), myErrorReporter)
-        .resolveGroupWithTypes(group, null, myScope);
+    new DefinitionResolveNameVisitor(myTypechecking.getConcreteProvider(), null, myErrorReporter)
+        .resolveGroupWithTypes(group, myScope);
     if (checkErrors()) {
       myMergedScopes.remove(scope);
       return;
@@ -278,7 +278,7 @@ public abstract class Repl {
     if (expr == null || checkErrors()) return null;
     expr = expr
         .accept(new ExpressionResolveNameVisitor(myTypechecking.getConcreteProvider(),
-            myScope, new ArrayList<>(), myErrorReporter, null), null)
+            myTypechecking.getReferableConverter(), myScope, new ArrayList<>(), myErrorReporter, null), null)
         .accept(new SyntacticDesugarVisitor(myErrorReporter), null);
     if (checkErrors()) return null;
     expr = DesugarVisitor.desugar(expr, myTypecheckerState, myErrorReporter);

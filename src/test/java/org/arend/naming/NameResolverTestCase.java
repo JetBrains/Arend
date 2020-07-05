@@ -5,6 +5,7 @@ import org.arend.frontend.ConcreteReferableProvider;
 import org.arend.frontend.reference.ConcreteLocatedReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
+import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.naming.resolving.visitor.DefinitionResolveNameVisitor;
 import org.arend.naming.resolving.visitor.ExpressionResolveNameVisitor;
 import org.arend.naming.scope.*;
@@ -40,7 +41,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     assertThat(expression, is(notNullValue()));
 
     expression = expression
-      .accept(new ExpressionResolveNameVisitor(ConcreteReferableProvider.INSTANCE, parentScope, context, new TestLocalErrorReporter(errorReporter), null), null)
+      .accept(new ExpressionResolveNameVisitor(ConcreteReferableProvider.INSTANCE, IdReferableConverter.INSTANCE, parentScope, context, new TestLocalErrorReporter(errorReporter), null), null)
       .accept(new SyntacticDesugarVisitor(errorReporter), null);
     assertThat(errorList, containsErrors(errors));
     return expression;
@@ -71,7 +72,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   ChildGroup resolveNamesDefGroup(String text, int errors) {
     ChildGroup group = parseDef(text);
     Scope parentScope = new MergeScope(new SingletonScope(group.getReferable()), PreludeLibrary.getPreludeScope());
-    new DefinitionResolveNameVisitor(ConcreteReferableProvider.INSTANCE, errorReporter).resolveGroupWithTypes(group, null, CachingScope.make(LexicalScope.insideOf(group, parentScope)));
+    new DefinitionResolveNameVisitor(ConcreteReferableProvider.INSTANCE, null, errorReporter).resolveGroupWithTypes(group, CachingScope.make(LexicalScope.insideOf(group, parentScope)));
     assertThat(errorList, containsErrors(errors));
     return group;
   }
@@ -92,7 +93,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
 
   private void resolveNamesModule(ChildGroup group, int errors) {
     Scope scope = CachingScope.make(ScopeFactory.forGroup(group, moduleScopeProvider));
-    new DefinitionResolveNameVisitor(ConcreteReferableProvider.INSTANCE, errorReporter).resolveGroupWithTypes(group, null, scope);
+    new DefinitionResolveNameVisitor(ConcreteReferableProvider.INSTANCE, null, errorReporter).resolveGroupWithTypes(group, scope);
     libraryManager.getInstanceProviderSet().collectInstances(group, CachingScope.make(ScopeFactory.parentScopeForGroup(group, moduleScopeProvider, true)), ConcreteReferableProvider.INSTANCE, null);
     assertThat(errorList, containsErrors(errors));
   }
