@@ -117,7 +117,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
             if (ref == null) {
               return;
             }
-            referenceExpression.setReferent(myReferableConverter.convert(ref));
+            referenceExpression.setReferent(exprVisitor.convertReferable(ref));
           }
         }
       }
@@ -133,7 +133,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     if (ref instanceof UnresolvedReference) {
       ref = ((UnresolvedReference) ref).tryResolve(scope);
       if (ref != null) {
-        ((Concrete.ReferenceExpression) expr).setReferent(myReferableConverter.convert(ref));
+        ((Concrete.ReferenceExpression) expr).setReferent(exprVisitor.convertReferable(ref));
       }
     }
   }

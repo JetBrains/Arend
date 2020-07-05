@@ -100,6 +100,9 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     if (origRef instanceof ModuleReferable) {
       return origRef;
     }
+    if (!(origRef instanceof GlobalReferable)) {
+      return referable;
+    }
 
     origRef = myReferableConverter.convert(origRef);
     if (referable instanceof RedirectingReferable) {
@@ -132,19 +135,19 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     if (expr.getReferent() instanceof ErrorReference) {
       myErrorReporter.report(((ErrorReference) expr.getReferent()).getError());
     }
-    if (expr.getReferent() instanceof LocatedReferable && !(expr.getReferent() instanceof TCReferable)) {
+    if (expr.getReferent() instanceof GlobalReferable && !(expr.getReferent() instanceof TCReferable)) {
       expr.setReferent(convertReferable(expr.getReferent()));
     }
     Concrete.Expression arg = argument;
     for (; arg instanceof Concrete.AppExpression; arg = ((Concrete.AppExpression) arg).getArguments().get(0).expression) {
       Concrete.ReferenceExpression refExpr = (Concrete.ReferenceExpression) ((Concrete.AppExpression) arg).getFunction();
-      if (refExpr.getReferent() instanceof LocatedReferable && !(refExpr.getReferent() instanceof TCReferable)) {
+      if (refExpr.getReferent() instanceof GlobalReferable && !(refExpr.getReferent() instanceof TCReferable)) {
         refExpr.setReferent(convertReferable(refExpr.getReferent()));
       }
     }
     if (arg instanceof Concrete.ReferenceExpression) {
       Concrete.ReferenceExpression refExpr = (Concrete.ReferenceExpression) arg;
-      if (refExpr.getReferent() instanceof LocatedReferable && !(refExpr.getReferent() instanceof TCReferable)) {
+      if (refExpr.getReferent() instanceof GlobalReferable && !(refExpr.getReferent() instanceof TCReferable)) {
         refExpr.setReferent(convertReferable(refExpr.getReferent()));
       }
     }
@@ -444,7 +447,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       }
       if (field instanceof ErrorReference) {
         myErrorReporter.report(((ErrorReference) field).getError());
-      } else if (field instanceof LocatedReferable && !(field instanceof TCReferable)) {
+      } else if (field instanceof GlobalReferable && !(field instanceof TCReferable)) {
         TCReferable tcField = myReferableConverter.toDataLocatedReferable((LocatedReferable) field);
         if (tcField != null) {
           field = tcField;
