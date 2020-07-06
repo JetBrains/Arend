@@ -100,4 +100,11 @@ public interface ArendExtension {
   default @Nullable NumberTypechecker getNumberTypechecker() {
     return null;
   }
+
+  /**
+   * A string checker is used to interpret string literals.
+   */
+  default @Nullable StringTypechecker getStringTypechecker() {
+    return null;
+  }
 }

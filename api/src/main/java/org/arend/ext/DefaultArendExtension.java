@@ -50,4 +50,15 @@ public class DefaultArendExtension implements ArendExtension {
     }
     return null;
   }
+
+  @Override
+  public @Nullable StringTypechecker getStringTypechecker() {
+    for (var extension : dependencies.values()) {
+      var checker = extension.getStringTypechecker();
+      if (checker != null) {
+        return checker;
+      }
+    }
+    return null;
+  }
 }

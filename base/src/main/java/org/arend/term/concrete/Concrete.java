@@ -1186,6 +1186,25 @@ public final class Concrete {
     }
   }
 
+  public static class StringLiteral extends Expression implements ConcreteStringExpression {
+    private final String myUnescapedString;
+
+    public StringLiteral(Object data, String unescapedString) {
+      super(data);
+      myUnescapedString = unescapedString;
+    }
+
+    @Override
+    public @NotNull String getUnescapedString() {
+      return myUnescapedString;
+    }
+
+    @Override
+    public <P, R> R accept(ConcreteExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitStringLiteral(this, params);
+    }
+  }
+
   // Level expressions
 
   public static abstract class LevelExpression extends SourceNodeImpl implements ConcreteLevel {

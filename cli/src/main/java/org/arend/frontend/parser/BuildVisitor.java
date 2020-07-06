@@ -13,6 +13,7 @@ import org.arend.term.*;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.*;
 import org.arend.util.Pair;
+import org.arend.util.StringEscapeUtils;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -1431,6 +1432,11 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   @Override
   public Concrete.NumericLiteral visitAtomNumber(AtomNumberContext ctx) {
     return new Concrete.NumericLiteral(tokenPosition(ctx.start), new BigInteger(ctx.NUMBER().getText(), 10));
+  }
+
+  @Override
+  public Object visitAtomString(AtomStringContext ctx) {
+    return new Concrete.StringLiteral(tokenPosition(ctx.start), StringEscapeUtils.unescapeStringCharacters(ctx.STRING().getText()));
   }
 
   @Override

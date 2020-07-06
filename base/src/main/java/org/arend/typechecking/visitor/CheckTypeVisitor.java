@@ -303,7 +303,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     return null;
   }
 
-  @SuppressWarnings("BooleanMethodIsAlwaysInverted")
   public boolean checkNormalizedResult(Expression expectedType, TypecheckingResult result, Concrete.Expression expr, boolean strict) {
     boolean isOmega = expectedType instanceof Type && ((Type) expectedType).isOmega();
     if (isOmega && result.type.isInstance(UniverseExpression.class) || expectedType != null && !isOmega && new CompareVisitor(strict ? new LevelEquationsWrapper(myEquations) : myEquations, CMP.LE, expr).normalizedCompare(result.type, expectedType, Type.OMEGA)) {
@@ -2012,6 +2011,25 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     }
 
     return checkNumber(number, expectedType, expr);
+  }
+
+  @Override
+  public TypecheckingResult visitStringLiteral(Concrete.StringLiteral expr, Expression expectedType) {
+    var string = expr.getUnescapedString();
+    if (myArendExtension != null) {
+      var checker = myArendExtension.getStringTypechecker();
+      if (checker != null) {
+        int numberOfErrors = myErrorReporter.myErrorReporter.getErrorsNumber();
+        TypecheckingResult result = TypecheckingResult.fromChecked(checker.typecheckString(string, this, new ContextDataImpl(expr, Collections.emptyList(), expectedType, null)));
+        if (result == null && myErrorReporter.myErrorReporter.getErrorsNumber() == numberOfErrors) {
+          errorReporter.report(new TypecheckingError("Cannot check string", expr));
+        }
+        return result;
+      }
+    }
+
+    errorReporter.report(new GeneralError(GeneralError.Level.ERROR, "`StringTypechecker` not found!"));
+    return null;
   }
 
   @Override

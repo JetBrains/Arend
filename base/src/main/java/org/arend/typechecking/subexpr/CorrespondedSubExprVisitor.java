@@ -85,6 +85,11 @@ public class CorrespondedSubExprVisitor implements
   }
 
   @Override
+  public @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression> visitStringLiteral(Concrete.StringLiteral expr, @NotNull Expression coreExpr) {
+    return atomicExpr(expr, coreExpr);
+  }
+
+  @Override
   public Pair<Expression, Concrete.Expression> visitUniverse(Concrete.UniverseExpression expr, Expression coreExpr) {
     return atomicExpr(expr, coreExpr);
   }

@@ -661,6 +661,11 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   }
 
   @Override
+  public Concrete.Expression visitStringLiteral(@Nullable Object data, @NotNull String unescapedString, Void params) {
+    return new Concrete.StringLiteral(data, unescapedString);
+  }
+
+  @Override
   public Concrete.Expression visitTyped(@Nullable Object data, @NotNull Abstract.Expression expr, @NotNull Abstract.Expression type, Void params) {
     return new Concrete.TypedExpression(data, expr.accept(this, null), type.accept(this, null));
   }
