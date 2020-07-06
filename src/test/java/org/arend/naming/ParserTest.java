@@ -439,6 +439,11 @@ public class ParserTest extends NameResolverTestCase {
   }
 
   @Test
+  public void stringTest() {
+    resolveNamesModule("\\func f => \"996.icu\"");
+  }
+
+  @Test
   public void nestedCommentsTest() {
     parseModule(
       "\\func f => 0 {- \\x\n" +
