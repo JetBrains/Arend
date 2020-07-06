@@ -53,19 +53,23 @@ public class DependencyCollector implements DependencyListener {
       }
     }
 
+    Set<TCReferable> additional = new HashSet<>();
     for (TCReferable updatedDef : updated) {
       Definition def = myState.reset(updatedDef);
       if (def instanceof ClassDefinition) {
         for (ClassField field : ((ClassDefinition) def).getPersonalFields()) {
           myState.reset(field.getReferable());
+          additional.add(field.getReferable());
         }
       } else if (def instanceof DataDefinition) {
         for (Constructor constructor : ((DataDefinition) def).getConstructors()) {
           myState.reset(constructor.getReferable());
+          additional.add(constructor.getReferable());
         }
       }
     }
 
+    updated.addAll(additional);
     return updated;
   }
 }
