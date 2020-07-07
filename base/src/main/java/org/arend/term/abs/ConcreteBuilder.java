@@ -16,11 +16,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.function.Function;
+import java.util.*;
 
 @SuppressWarnings("WeakerAccess")
 public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Definition>, AbstractExpressionVisitor<Void, Concrete.Expression>, AbstractLevelExpressionVisitor<Void, Concrete.LevelExpression> {
@@ -43,7 +39,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     };
   }
 
-  public static Concrete.Definition convert(ReferableConverter referableConverter, Abstract.Definition definition, ErrorReporter errorReporter) {
+  public static @NotNull Concrete.Definition convert(ReferableConverter referableConverter, Abstract.Definition definition, ErrorReporter errorReporter) {
     ConcreteBuilder builder = new ConcreteBuilder(referableConverter, errorReporter, referableConverter.toDataLocatedReferable(definition.getReferable()));
     Concrete.Definition result = definition.accept(builder);
     if (builder.myErrorLevel != null) {
@@ -52,14 +48,18 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     return result;
   }
 
-  public static <R> R convert(ReferableConverter referableConverter, boolean allowErrors, Function<ConcreteBuilder,R> function) {
-    ErrorReporter errorReporter = allowErrors ? DummyErrorReporter.INSTANCE : new CountingErrorReporter(DummyErrorReporter.INSTANCE);
-    R result = function.apply(new ConcreteBuilder(referableConverter, errorReporter, null));
-    return errorReporter instanceof CountingErrorReporter && ((CountingErrorReporter) errorReporter).getErrorsNumber() != 0 ? null : result;
-}
+  public static @Nullable Concrete.Expression convertWithoutErrors(Abstract.Expression expression) {
+    CountingErrorReporter errorReporter = new CountingErrorReporter(DummyErrorReporter.INSTANCE);
+    Concrete.Expression result = expression.accept(new ConcreteBuilder(null, errorReporter, null), null);
+    return errorReporter.getErrorsNumber() == 0 ? result : null;
+  }
 
-  public static Concrete.Expression convertExpression(ReferableConverter referableConverter, Abstract.Expression expression) {
-    return convert(referableConverter, false, builder -> expression.accept(builder, null));
+  public static @NotNull Concrete.Expression convertExpression(Abstract.Expression expression, ErrorReporter errorReporter) {
+    return expression.accept(new ConcreteBuilder(null, errorReporter, null), null);
+  }
+
+  public static @NotNull Concrete.Expression convertExpression(Abstract.Expression expression) {
+    return convertExpression(expression, DummyErrorReporter.INSTANCE);
   }
 
   // Definition
@@ -335,7 +335,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     } else {
       List<Referable> dataReferableList = new ArrayList<>(referableList.size());
       for (Referable referable : referableList) {
-        dataReferableList.add(referable instanceof LocatedReferable ? myReferableConverter.toDataLocatedReferable((LocatedReferable) referable) : DataLocalReferable.make(referable));
+        dataReferableList.add(referable instanceof LocatedReferable && myReferableConverter != null ? myReferableConverter.toDataLocatedReferable((LocatedReferable) referable) : DataLocalReferable.make(referable));
       }
       return new Concrete.TelescopeParameter(parameter.getData(), parameter.isExplicit(), dataReferableList, cType);
     }
