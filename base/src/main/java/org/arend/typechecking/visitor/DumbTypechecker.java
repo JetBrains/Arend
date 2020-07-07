@@ -100,7 +100,7 @@ public class DumbTypechecker extends VoidConcreteVisitor<Void, Void> {
     super.visitPattern(pattern, params);
   }
 
-  public static void findImplicitPatterns(List<? extends Concrete.PatternHolder> clauses, ErrorReporter errorReporter, boolean reportAll) {
+  public static void findImplicitPatterns(List<? extends Concrete.PatternHolder> clauses, ErrorReporter errorReporter) {
     for (Concrete.PatternHolder clause : clauses) {
       if (clause.getPatterns() == null) {
         continue;
@@ -108,9 +108,6 @@ public class DumbTypechecker extends VoidConcreteVisitor<Void, Void> {
       for (Concrete.Pattern pattern : clause.getPatterns()) {
         if (!pattern.isExplicit()) {
           errorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.IMPLICIT_PATTERN, pattern));
-          if (!reportAll) {
-            return;
-          }
         }
       }
     }
@@ -118,7 +115,7 @@ public class DumbTypechecker extends VoidConcreteVisitor<Void, Void> {
 
   private void checkClauses(List<? extends Concrete.PatternHolder> clauses, List<Boolean> arguments, int numberOfArguments) {
     if (arguments == null) {
-      findImplicitPatterns(clauses, myTypechecker.errorReporter, true);
+      findImplicitPatterns(clauses, myTypechecker.errorReporter);
     }
 
     loop:

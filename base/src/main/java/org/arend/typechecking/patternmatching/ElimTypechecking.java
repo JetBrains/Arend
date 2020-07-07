@@ -124,7 +124,7 @@ public class ElimTypechecking {
     List<DependentLink> elimParams = Collections.emptyList();
     if (!expressions.isEmpty()) {
       int expectedNumberOfPatterns = expressions.size();
-      DumbTypechecker.findImplicitPatterns(clauses, errorReporter, false);
+      DumbTypechecker.findImplicitPatterns(clauses, errorReporter);
       for (Concrete.Clause clause : clauses) {
         if (clause.getPatterns() != null && clause.getPatterns().size() != expectedNumberOfPatterns) {
           if (clause.getPatterns().size() > expectedNumberOfPatterns) {
