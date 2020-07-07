@@ -12,7 +12,6 @@ import org.arend.source.BinarySource;
 import org.arend.source.FileBinarySource;
 import org.arend.source.GZIPStreamBinarySource;
 import org.arend.source.Source;
-import org.arend.typechecking.TypecheckerState;
 import org.arend.util.Range;
 import org.arend.util.Version;
 import org.jetbrains.annotations.NotNull;
@@ -47,10 +46,9 @@ public class FileSourceLibrary extends UnmodifiableSourceLibrary {
    * @param isComplete        true if {@code modules} contains all modules of this library, false otherwise.
    * @param dependencies      the list of dependencies of this library.
    * @param languageVersion   language versions appropriate for this library.
-   * @param typecheckerState  a typechecker state in which the result of loading of cached modules will be stored.
    */
-  public FileSourceLibrary(String name, Path sourceBasePath, Path binaryBasePath, Path extBasePath, String extMainClass, Set<ModulePath> modules, boolean isComplete, List<LibraryDependency> dependencies, Range<Version> languageVersion, TypecheckerState typecheckerState) {
-    super(name, typecheckerState);
+  public FileSourceLibrary(String name, Path sourceBasePath, Path binaryBasePath, Path extBasePath, String extMainClass, Set<ModulePath> modules, boolean isComplete, List<LibraryDependency> dependencies, Range<Version> languageVersion) {
+    super(name);
     mySourceBasePath = sourceBasePath;
     myBinaryBasePath = binaryBasePath;
     myExtBasePath = extBasePath;

@@ -37,11 +37,6 @@ public class TypedRedirectingReferable implements RedirectingReferable, TypedRef
     return myOriginalReferable.textRepresentation();
   }
 
-  @Override
-  public GlobalReferable getTypecheckable() {
-    return myOriginalReferable instanceof GlobalReferable ? ((GlobalReferable) myOriginalReferable).getTypecheckable() : null;
-  }
-
   @Nullable
   @Override
   public ClassReferable getTypeClassReference() {

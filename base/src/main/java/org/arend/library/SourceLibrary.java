@@ -22,7 +22,6 @@ import org.arend.source.Source;
 import org.arend.source.SourceLoader;
 import org.arend.source.error.PersistingError;
 import org.arend.term.group.ChildGroup;
-import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.order.dependency.DependencyListener;
 import org.arend.typechecking.order.dependency.DummyDependencyListener;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
@@ -43,15 +42,6 @@ public abstract class SourceLibrary extends BaseLibrary {
   private final EnumSet<Flag> myFlags = EnumSet.noneOf(Flag.class);
   private final SimpleModuleScopeProvider myAdditionalModuleScopeProvider = new SimpleModuleScopeProvider();
   private ArendExtension myExtension;
-
-  /**
-   * Creates a new {@code SourceLibrary}
-   *
-   * @param typecheckerState  the underling typechecker state of this library.
-   */
-  protected SourceLibrary(TypecheckerState typecheckerState) {
-    super(typecheckerState);
-  }
 
   /**
    * Adds a flag.
@@ -294,7 +284,7 @@ public abstract class SourceLibrary extends BaseLibrary {
       myExtension.setDependencies(dependenciesExtensions);
       myExtension.setPrelude(new Prelude());
       myExtension.setConcreteFactory(new ConcreteFactoryImpl(null));
-      myExtension.setDefinitionProvider(getTypecheckerState());
+      myExtension.setDefinitionProvider(DefinitionProviderImpl.INSTANCE);
       myExtension.setVariableRenamerFactory(VariableRenamerFactoryImpl.INSTANCE);
       ArendUI ui = getUI();
       if (ui != null) {

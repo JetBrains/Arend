@@ -4,7 +4,6 @@ import org.arend.ext.ArendExtension;
 import org.arend.ext.module.ModulePath;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.term.group.ChildGroup;
-import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.order.Ordering;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.jetbrains.annotations.NotNull;
@@ -65,14 +64,6 @@ public interface Library {
    */
   @NotNull
   ArendExtension getArendExtension();
-
-  /**
-   * Gets the underling typechecker state of this library.
-   *
-   * @return the typechecker state.
-   */
-  @NotNull
-  TypecheckerState getTypecheckerState();
 
   /**
    * Gets the list of loaded modules of this library.

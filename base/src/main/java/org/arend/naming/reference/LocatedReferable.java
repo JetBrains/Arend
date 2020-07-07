@@ -14,6 +14,10 @@ public interface LocatedReferable extends GlobalReferable {
   @Nullable ModuleLocation getLocation();
   @Nullable LocatedReferable getLocatedReferableParent();
 
+  default @NotNull LocatedReferable getTypecheckable() {
+    return this;
+  }
+
   @NotNull
   @Override
   default LongName getRefLongName() {

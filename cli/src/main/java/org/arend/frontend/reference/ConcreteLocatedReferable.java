@@ -11,8 +11,6 @@ import org.arend.term.concrete.Concrete;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
-
 public class ConcreteLocatedReferable extends LocatedReferableImpl implements SourceInfo, DataContainer, TypedReferable {
   private final Position myPosition;
   private final String myAliasName;
@@ -54,8 +52,8 @@ public class ConcreteLocatedReferable extends LocatedReferableImpl implements So
   }
 
   @Override
-  public TCReferable getTypecheckable() {
-    return myDefinition == null ? null : myDefinition.getRelatedDefinition().getData();
+  public @NotNull TCReferable getTypecheckable() {
+    return myDefinition == null ? this : myDefinition.getRelatedDefinition().getData();
   }
 
   public void setDefinition(Concrete.ReferableDefinition definition) {

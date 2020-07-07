@@ -2,18 +2,12 @@ package org.arend.typechecking.order.dependency;
 
 import org.arend.core.definition.*;
 import org.arend.naming.reference.TCReferable;
-import org.arend.typechecking.TypecheckerState;
 
 import java.util.*;
 
 public class DependencyCollector implements DependencyListener {
   private final Map<TCReferable, Set<TCReferable>> myDependencies = new HashMap<>();
   private final Map<TCReferable, Set<TCReferable>> myReverseDependencies = new HashMap<>();
-  private final TypecheckerState myState;
-
-  public DependencyCollector(TypecheckerState state) {
-    myState = state;
-  }
 
   @Override
   public void dependsOn(TCReferable def1, TCReferable def2) {
@@ -23,7 +17,7 @@ public class DependencyCollector implements DependencyListener {
 
   @Override
   public Set<? extends TCReferable> update(TCReferable definition) {
-    if (myState.getTypechecked(definition) == null) {
+    if (definition.getTypechecked() == null) {
       return Collections.emptySet();
     }
 
@@ -55,15 +49,16 @@ public class DependencyCollector implements DependencyListener {
 
     Set<TCReferable> additional = new HashSet<>();
     for (TCReferable updatedDef : updated) {
-      Definition def = myState.reset(updatedDef);
+      Definition def = updatedDef.getTypechecked();
+      updatedDef.setTypechecked(null);
       if (def instanceof ClassDefinition) {
         for (ClassField field : ((ClassDefinition) def).getPersonalFields()) {
-          myState.reset(field.getReferable());
+          field.getReferable().setTypechecked(null);
           additional.add(field.getReferable());
         }
       } else if (def instanceof DataDefinition) {
         for (Constructor constructor : ((DataDefinition) def).getConstructors()) {
-          myState.reset(constructor.getReferable());
+          constructor.getReferable().setTypechecked(null);
           additional.add(constructor.getReferable());
         }
       }

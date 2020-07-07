@@ -47,9 +47,5 @@ public interface GlobalReferable extends Referable {
     return hasAlias() ? getAliasPrecedence() : getPrecedence();
   }
 
-  default GlobalReferable getTypecheckable() {
-    return this;
-  }
-
   @NotNull Kind getKind();
 }

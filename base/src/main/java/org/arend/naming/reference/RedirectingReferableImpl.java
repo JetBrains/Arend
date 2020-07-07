@@ -39,11 +39,6 @@ public class RedirectingReferableImpl implements RedirectingReferable {
   }
 
   @Override
-  public GlobalReferable getTypecheckable() {
-    return myOriginalReferable instanceof GlobalReferable ? ((GlobalReferable) myOriginalReferable).getTypecheckable() : null;
-  }
-
-  @Override
   public boolean equals(Object obj) {
     return obj instanceof RedirectingReferable && ((RedirectingReferable) obj).getOriginalReferable().equals(getOriginalReferable());
   }

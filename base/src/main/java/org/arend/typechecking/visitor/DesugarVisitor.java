@@ -13,7 +13,6 @@ import org.arend.naming.reference.*;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
-import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.error.local.CertainTypecheckingError;
 import org.arend.typechecking.error.local.WrongReferable;
 import org.arend.typechecking.error.local.inference.ArgInferenceError;
@@ -21,25 +20,23 @@ import org.arend.typechecking.error.local.inference.ArgInferenceError;
 import java.util.*;
 
 public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
-  private final TypecheckerState myTypecheckerState;
   private final ErrorReporter myErrorReporter;
 
-  private DesugarVisitor(TypecheckerState typecheckerState, ErrorReporter errorReporter) {
-    myTypecheckerState = typecheckerState;
+  private DesugarVisitor(ErrorReporter errorReporter) {
     myErrorReporter = errorReporter;
   }
 
-  public static void desugar(Concrete.Definition definition, TypecheckerState typecheckerState, ErrorReporter errorReporter) {
-    definition.accept(new DesugarVisitor(typecheckerState, errorReporter), null);
+  public static void desugar(Concrete.Definition definition, ErrorReporter errorReporter) {
+    definition.accept(new DesugarVisitor(errorReporter), null);
     definition.setDesugarized();
   }
 
-  public static Concrete.Expression desugar(Concrete.Expression expression, TypecheckerState typecheckerState, ErrorReporter errorReporter) {
-    return expression.accept(new DesugarVisitor(typecheckerState, errorReporter), null);
+  public static Concrete.Expression desugar(Concrete.Expression expression, ErrorReporter errorReporter) {
+    return expression.accept(new DesugarVisitor(errorReporter), null);
   }
 
   private void getFields(TCReferable ref, Set<TCReferable> result) {
-    Definition def = myTypecheckerState.getTypechecked(ref);
+    Definition def = ref.getTypechecked();
     if (def instanceof ClassDefinition) {
       for (ClassField field : ((ClassDefinition) def).getFields()) {
         result.add(field.getReferable());
@@ -51,11 +48,11 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
     if (def.enclosingClass != null) {
       Set<TCReferable> fields = new HashSet<>();
       getFields(def.enclosingClass, fields);
-      Definition enclosingClass = myTypecheckerState.getTypechecked(def.enclosingClass);
+      Definition enclosingClass = def.enclosingClass.getTypechecked();
       List<CoreClassDefinition> superClasses = enclosingClass instanceof ClassDefinition ? Collections.singletonList((CoreClassDefinition) enclosingClass) : Collections.emptyList();
 
       Referable thisParameter = new HiddenLocalReferable("this");
-      def.accept(new ClassFieldChecker(thisParameter, def.getData(), def.enclosingClass, superClasses, myTypecheckerState, fields, null, myErrorReporter), null);
+      def.accept(new ClassFieldChecker(thisParameter, def.getData(), def.enclosingClass, superClasses, fields, null, myErrorReporter), null);
       return thisParameter;
     } else {
       return null;
@@ -125,7 +122,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
     List<CoreClassDefinition> superClasses = new ArrayList<>();
     for (Concrete.ReferenceExpression superClassRef : def.getSuperClasses()) {
       if (superClassRef.getReferent() instanceof TCReferable) {
-        Definition superClass = myTypecheckerState.getTypechecked((TCReferable) superClassRef.getReferent());
+        Definition superClass = ((TCReferable) superClassRef.getReferent()).getTypechecked();
         if (superClass instanceof ClassDefinition) {
           superClasses.add((ClassDefinition) superClass);
         }
@@ -133,7 +130,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
     }
 
     // Check fields
-    ClassFieldChecker classFieldChecker = new ClassFieldChecker(null, def.getData(), def.getData(), superClasses, myTypecheckerState, fields, futureFields, myErrorReporter);
+    ClassFieldChecker classFieldChecker = new ClassFieldChecker(null, def.getData(), def.getData(), superClasses, fields, futureFields, myErrorReporter);
     Concrete.Expression previousType = null;
     for (int i = 0; i < classFields.size(); i++) {
       Concrete.ClassField classField = classFields.get(i);
@@ -202,7 +199,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
     if (!(ref instanceof TCReferable)) {
       return expr;
     }
-    Definition def = myTypecheckerState.getTypechecked((TCReferable) ref);
+    Definition def = ((TCReferable) ref).getTypechecked();
     if (!(def instanceof ClassDefinition)) {
       return expr;
     }

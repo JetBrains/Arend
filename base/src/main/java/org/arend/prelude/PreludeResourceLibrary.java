@@ -6,7 +6,6 @@ import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.source.BinarySource;
 import org.arend.source.GZIPStreamBinarySource;
 import org.arend.source.Source;
-import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,22 +13,13 @@ import org.jetbrains.annotations.Nullable;
  * A library which is used to load prelude from a resource.
  */
 public class PreludeResourceLibrary extends PreludeLibrary {
-  /**
-   * Creates a new {@code PreludeResourceLibrary}
-   *
-   * @param typecheckerState the underling typechecker state of this library.
-   */
-  public PreludeResourceLibrary(TypecheckerState typecheckerState) {
-    super(typecheckerState);
-  }
-
   @Override
   public boolean load(LibraryManager libraryManager, TypecheckingOrderingListener typechecking) {
     synchronized (PreludeLibrary.class) {
       if (getPreludeScope() == null) {
         if (super.load(libraryManager, typechecking)) {
           if (!Prelude.isInitialized()) {
-            Prelude.initialize(getPreludeScope(), getTypecheckerState());
+            Prelude.initialize(getPreludeScope());
           }
           return true;
         } else {
@@ -38,7 +28,7 @@ public class PreludeResourceLibrary extends PreludeLibrary {
       }
     }
 
-    Prelude.fillInTypecheckerState(getTypecheckerState());
+    Prelude.fillInTypecheckerState();
     setLoaded();
     return true;
   }

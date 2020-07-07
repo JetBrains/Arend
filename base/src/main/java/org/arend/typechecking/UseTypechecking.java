@@ -26,25 +26,25 @@ import java.util.*;
 import java.util.function.Consumer;
 
 public class UseTypechecking {
-  public static void typecheck(List<Concrete.UseDefinition> definitions, TypecheckerState state, ErrorReporter errorReporter) {
+  public static void typecheck(List<Concrete.UseDefinition> definitions, ErrorReporter errorReporter) {
     Map<Definition, List<Pair<Definition,FunctionDefinition>>> fromMap = new HashMap<>();
     Map<Definition, List<Pair<Definition,FunctionDefinition>>> toMap = new HashMap<>();
 
     for (Concrete.UseDefinition definition : definitions) {
-      Definition typedDefinition = state.getTypechecked(definition.getData());
+      Definition typedDefinition = definition.getData().getTypechecked();
       if (!(typedDefinition instanceof FunctionDefinition)) {
         continue;
       }
 
       FunctionDefinition useDefinition = (FunctionDefinition) typedDefinition;
       if (definition.getKind() == FunctionKind.LEVEL && !useDefinition.getResultType().isError()) {
-        Definition useParent = state.getTypechecked(definition.getUseParent());
+        Definition useParent = definition.getUseParent().getTypechecked();
         ParametersLevel parametersLevel = typecheckLevel(definition, useDefinition, useParent, errorReporter);
         if (parametersLevel != null) {
           registerParametersLevel(useDefinition, useParent, parametersLevel);
         }
       } else if (definition.getKind() == FunctionKind.COERCE) {
-        typecheckCoerce(definition, useDefinition, state, errorReporter, fromMap, toMap);
+        typecheckCoerce(definition, useDefinition, errorReporter, fromMap, toMap);
       }
     }
 
@@ -106,12 +106,12 @@ public class UseTypechecking {
     }
   }
 
-  private static void typecheckCoerce(Concrete.UseDefinition def, FunctionDefinition typedDef, TypecheckerState state, ErrorReporter errorReporter, Map<Definition, List<Pair<Definition,FunctionDefinition>>> fromMap, Map<Definition, List<Pair<Definition,FunctionDefinition>>> toMap) {
-    Definition useParent = state.getTypechecked(def.getUseParent());
+  private static void typecheckCoerce(Concrete.UseDefinition def, FunctionDefinition typedDef, ErrorReporter errorReporter, Map<Definition, List<Pair<Definition,FunctionDefinition>>> fromMap, Map<Definition, List<Pair<Definition,FunctionDefinition>>> toMap) {
+    Definition useParent = def.getUseParent().getTypechecked();
     if ((useParent instanceof DataDefinition || useParent instanceof ClassDefinition) && !def.getParameters().isEmpty()) {
       Concrete.Expression type = def.getParameters().get(def.getParameters().size() - 1).getType();
       Referable paramRef = type == null ? null : type.getUnderlyingReferable();
-      Definition paramDef = paramRef instanceof TCReferable ? state.getTypechecked((TCReferable) paramRef) : null;
+      Definition paramDef = paramRef instanceof TCReferable ? ((TCReferable) paramRef).getTypechecked() : null;
       DefCallExpression resultDefCall = typedDef.getResultType() == null ? null : typedDef.getResultType().cast(DefCallExpression.class);
       Definition resultDef = resultDefCall == null ? null : resultDefCall.getDefinition();
 

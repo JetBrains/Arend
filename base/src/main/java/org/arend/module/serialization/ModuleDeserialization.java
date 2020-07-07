@@ -12,7 +12,6 @@ import org.arend.naming.reference.*;
 import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.naming.scope.Scope;
 import org.arend.term.group.*;
-import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.order.dependency.DependencyListener;
 import org.arend.util.Pair;
 import org.jetbrains.annotations.NotNull;
@@ -22,15 +21,13 @@ import java.util.*;
 public class ModuleDeserialization {
   private final ModuleProtos.Module myModuleProto;
   private final SimpleCallTargetProvider myCallTargetProvider = new SimpleCallTargetProvider();
-  private final TypecheckerState myState;
   private final ReferableConverter myReferableConverter;
   private final List<Pair<DefinitionProtos.Definition, Definition>> myDefinitions = new ArrayList<>();
   private final SerializableKeyRegistryImpl myKeyRegistry;
   private final DefinitionListener myDefinitionListener;
 
-  public ModuleDeserialization(ModuleProtos.Module moduleProto, TypecheckerState state, ReferableConverter referableConverter, SerializableKeyRegistryImpl keyRegistry, DefinitionListener definitionListener) {
+  public ModuleDeserialization(ModuleProtos.Module moduleProto, ReferableConverter referableConverter, SerializableKeyRegistryImpl keyRegistry, DefinitionListener definitionListener) {
     myModuleProto = moduleProto;
-    myState = state;
     myReferableConverter = referableConverter;
     myKeyRegistry = keyRegistry;
     myDefinitionListener = definitionListener;
@@ -73,7 +70,7 @@ public class ModuleDeserialization {
       if (referable == null) {
         throw new DeserializationException("Cannot resolve reference '" + callTargetTree.getName() + "' in " + module);
       }
-      Definition callTarget = myState.getTypechecked(referable);
+      Definition callTarget = referable.getTypechecked();
       if (callTarget == null) {
         throw new DeserializationException("Definition '" + callTargetTree.getName() + "' was not typechecked");
       }
@@ -106,7 +103,7 @@ public class ModuleDeserialization {
       }
 
       Definition def = readDefinition(groupProto.getDefinition(), tcReferable, false);
-      myState.record(tcReferable, def);
+      tcReferable.setTypecheckedIfAbsent(def);
       myCallTargetProvider.putCallTarget(groupProto.getReferable().getIndex(), def);
       myDefinitions.add(new Pair<>(groupProto.getDefinition(), def));
 
@@ -131,7 +128,7 @@ public class ModuleDeserialization {
           assert def instanceof ClassDefinition;
           ClassField res = new ClassField((TCFieldReferable) absField, (ClassDefinition) def);
           ((ClassDefinition) def).addPersonalField(res);
-          myState.record(absField, res);
+          absField.setTypecheckedIfAbsent(res);
           myCallTargetProvider.putCallTarget(fieldProto.getReferable().getIndex(), res);
         }
       }
@@ -154,7 +151,7 @@ public class ModuleDeserialization {
           assert def instanceof DataDefinition;
           Constructor res = new Constructor(absConstructor, (DataDefinition) def);
           ((DataDefinition) def).addConstructor(res);
-          myState.record(absConstructor, res);
+          absConstructor.setTypecheckedIfAbsent(res);
           myCallTargetProvider.putCallTarget(constructorProto.getReferable().getIndex(), res);
         }
       }
@@ -225,7 +222,7 @@ public class ModuleDeserialization {
     Definition def;
     if (referable instanceof TCReferable && groupProto.hasDefinition()) {
       def = readDefinition(groupProto.getDefinition(), (TCReferable) referable, true);
-      myState.record((TCReferable) referable, def);
+      ((TCReferable) referable).setTypecheckedIfAbsent(def);
       myCallTargetProvider.putCallTarget(referableProto.getIndex(), def);
       myDefinitions.add(new Pair<>(groupProto.getDefinition(), def));
     } else {
@@ -289,7 +286,7 @@ public class ModuleDeserialization {
             TCFieldReferable absField = new FieldReferableImpl(readPrecedence(fieldReferable.getPrecedence()), fieldReferable.getName(), fieldProto.getIsExplicit(), fieldProto.getIsParameter(), referable);
             ClassField res = new ClassField(absField, classDef);
             classDef.addPersonalField(res);
-            myState.record(absField, res);
+            absField.setTypecheckedIfAbsent(res);
             myCallTargetProvider.putCallTarget(fieldReferable.getIndex(), res);
           }
         }
@@ -303,7 +300,7 @@ public class ModuleDeserialization {
             TCReferable absConstructor = new LocatedReferableImpl(readPrecedence(conReferable.getPrecedence()), conReferable.getName(), referable, LocatedReferableImpl.Kind.CONSTRUCTOR);
             Constructor res = new Constructor(absConstructor, dataDef);
             dataDef.addConstructor(res);
-            myState.record(absConstructor, res);
+            absConstructor.setTypecheckedIfAbsent(res);
             myCallTargetProvider.putCallTarget(conReferable.getIndex(), res);
           }
         }

@@ -9,7 +9,6 @@ import org.arend.source.BinarySource;
 import org.arend.source.FileBinarySource;
 import org.arend.source.GZIPStreamBinarySource;
 import org.arend.source.Source;
-import org.arend.typechecking.TypecheckerState;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
@@ -23,11 +22,8 @@ public class PreludeFileLibrary extends PreludeTypecheckingLibrary {
 
   /**
    * Creates a new {@code PreludeFileLibrary}
-   *
-   * @param typecheckerState the underling typechecker state of this library.
    */
-  public PreludeFileLibrary(Path binaryPath, TypecheckerState typecheckerState) {
-    super(typecheckerState);
+  public PreludeFileLibrary(Path binaryPath) {
     myBinaryPath = binaryPath;
   }
 

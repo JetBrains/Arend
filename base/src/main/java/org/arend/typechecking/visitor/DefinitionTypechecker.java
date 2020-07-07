@@ -137,7 +137,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
   @Override
   public List<ExtElimClause> visitFunction(Concrete.BaseFunctionDefinition def, Void params) {
-    Definition typechecked = typechecker.getTypechecked(def.getData());
+    Definition typechecked = def.getData().getTypechecked();
     LocalInstancePool localInstancePool = new LocalInstancePool(typechecker);
     myInstancePool.setInstancePool(localInstancePool);
     typechecker.setInstancePool(myInstancePool);
@@ -154,7 +154,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
   @Override
   public List<ExtElimClause> visitData(Concrete.DataDefinition def, Void params) {
-    Definition typechecked = typechecker.getTypechecked(def.getData());
+    Definition typechecked = def.getData().getTypechecked();
     LocalInstancePool localInstancePool = new LocalInstancePool(typechecker);
     myInstancePool.setInstancePool(localInstancePool);
     typechecker.setInstancePool(myInstancePool);
@@ -174,7 +174,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
   @Override
   public List<ExtElimClause> visitClass(Concrete.ClassDefinition def, Void params) {
-    Definition typechecked = typechecker.getTypechecked(def.getData());
+    Definition typechecked = def.getData().getTypechecked();
     typechecker.setStatus(def.getStatus().getTypecheckingStatus());
 
     if (def.isRecursive()) {
@@ -186,7 +186,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
     ClassDefinition definition = typechecked != null ? (ClassDefinition) typechecked : new ClassDefinition(def.getData());
     if (typechecked == null) {
-      typechecker.getTypecheckingState().record(def.getData(), definition);
+      def.getData().setTypecheckedIfAbsent(definition);
     }
     if (def.isRecursive()) {
       definition.setStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
@@ -423,7 +423,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       return false;
     }
     Referable typeRef = expr.getUnderlyingReferable();
-    Definition typeDef = typeRef instanceof TCReferable ? typechecker.state.getTypechecked((TCReferable) typeRef) : null;
+    Definition typeDef = typeRef instanceof TCReferable ? ((TCReferable) typeRef).getTypechecked() : null;
     return typeDef instanceof ClassDefinition && (allowRecord || !((ClassDefinition) typeDef).isRecord());
   }
 
@@ -593,7 +593,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   }
 
   private void addEnclosingClassInstances(Concrete.Definition def, Binding thisParam, LocalInstancePool localInstancePool) {
-    Definition classDef = typechecker.state.getTypechecked(def.enclosingClass);
+    Definition classDef = def.enclosingClass.getTypechecked();
     if (!(classDef instanceof ClassDefinition)) {
       return;
     }
@@ -657,7 +657,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     if (newDef) {
-      typechecker.getTypecheckingState().record(def.getData(), typedDef);
+      def.getData().setTypecheckedIfAbsent(typedDef);
       calculateTypeClassParameters(def, typedDef);
       calculateParametersTypecheckingOrder(typedDef);
     }
@@ -833,7 +833,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     if (def instanceof Concrete.CoClauseFunctionDefinition) {
       Referable ref = ((Concrete.CoClauseFunctionDefinition) def).getImplementedField();
       if (ref instanceof TCReferable) {
-        Definition fieldDef = typechecker.getTypechecked((TCReferable) ref);
+        Definition fieldDef = ((TCReferable) ref).getTypechecked();
         if (fieldDef instanceof ClassField && DependentLink.Helper.size(typedDef.getParameters()) != Concrete.getNumberOfParameters(def.getParameters())) {
           if (newDef) {
             typechecker.setStatus(def.getStatus().getTypecheckingStatus());
@@ -906,7 +906,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     if (def.getKind() == FunctionKind.LEVEL && typedDef.getResultType() instanceof UniverseExpression && ((UniverseExpression) typedDef.getResultType()).getSort().getHLevel().isClosed() && (body instanceof Concrete.TermFunctionBody || body instanceof Concrete.ElimFunctionBody && body.getClauses().isEmpty())) {
       ArendExtension extension = typechecker.getExtension();
       LevelProver prover = extension == null ? null : extension.getLevelProver();
-      Definition useParent = def.getUseParent() == null ? null : typechecker.getTypecheckingState().getTypechecked(def.getUseParent());
+      Definition useParent = def.getUseParent() == null ? null : def.getUseParent().getTypechecked();
       if (prover != null && useParent != null && (!typedDef.getParameters().hasNext() || DependentLink.Helper.size(typedDef.getParameters()) == DependentLink.Helper.size(useParent.getParameters()))) {
         try (var ignored = new Utils.SetContextSaver<>(typechecker.getContext())) {
           boolean ok = true;
@@ -1286,14 +1286,14 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
     dataDefinition.setParameters(list.getFirst());
     dataDefinition.setSort(userSort);
-    typechecker.getTypecheckingState().record(def.getData(), dataDefinition);
+    def.getData().setTypecheckedIfAbsent(dataDefinition);
     calculateTypeClassParameters(def, dataDefinition);
     calculateParametersTypecheckingOrder(dataDefinition);
 
     if (!paramsOk) {
       for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
         for (Concrete.Constructor constructor : clause.getConstructors()) {
-          typechecker.getTypecheckingState().rewrite(constructor.getData(), new Constructor(constructor.getData(), dataDefinition));
+          constructor.getData().setTypechecked(new Constructor(constructor.getData(), dataDefinition));
         }
       }
     }
@@ -1688,7 +1688,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     if (constructor != null) {
       constructor.setPatterns(patterns);
     }
-    Constructor oldConstructor = constructor != null ? constructor : (Constructor) typechecker.getTypechecked(def.getData());
+    Constructor oldConstructor = constructor != null ? constructor : (Constructor) def.getData().getTypechecked();
 
     List<DependentLink> elimParams = null;
     Expression constructorType = null;
@@ -1697,7 +1697,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
     try (var ignored = new Utils.SetContextSaver<>(typechecker.getContext())) {
       if (constructor != null) {
-        typechecker.getTypecheckingState().rewrite(def.getData(), constructor);
+        def.getData().setTypechecked(constructor);
         dataDefinition.addConstructor(constructor);
       }
 
@@ -1974,7 +1974,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           }
 
           if (field.getData().isParameterField() && !field.getData().isExplicitField()) {
-            ClassField typecheckedField = previousField != null ? previousField : (ClassField) typechecker.getTypechecked(field.getData());
+            ClassField typecheckedField = previousField != null ? previousField : (ClassField) field.getData().getTypechecked();
             if (typecheckedField.getResultType() instanceof ClassCallExpression) {
               ClassCallExpression classCall = (ClassCallExpression) typecheckedField.getResultType();
               if (!classCall.getDefinition().isRecord()) {
@@ -2089,7 +2089,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
       }
       if (classifyingField == null && def.getCoercingField() != null) {
-        Definition definition = typechecker.getTypechecked(def.getCoercingField());
+        Definition definition = def.getCoercingField().getTypechecked();
         if (definition instanceof ClassField && ((ClassField) definition).getParentClass().equals(typedDef)) {
           classifyingField = (ClassField) definition;
         } else {
@@ -2391,7 +2391,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
   private ClassField addField(TCFieldReferable fieldRef, ClassDefinition parentClass, PiExpression piType, Expression typeLevel) {
     ClassField typedDef = new ClassField(fieldRef, parentClass, piType, typeLevel);
-    typechecker.getTypecheckingState().rewrite(fieldRef, typedDef);
+    fieldRef.setTypechecked(typedDef);
     parentClass.addField(typedDef);
     parentClass.addPersonalField(typedDef);
     return typedDef;

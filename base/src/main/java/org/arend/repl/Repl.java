@@ -24,7 +24,6 @@ import org.arend.term.concrete.Concrete;
 import org.arend.term.group.Group;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
 import org.arend.term.prettyprint.ToAbstractVisitor;
-import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.arend.typechecking.result.TypecheckingResult;
@@ -51,7 +50,6 @@ public abstract class Repl {
   protected final ReplScope myReplScope = new ReplScope(null, myMergedScopes);
   protected @NotNull Scope myScope = myReplScope;
   protected @NotNull TypecheckingOrderingListener myTypechecking;
-  protected final @NotNull TypecheckerState myTypecheckerState;
   protected final @NotNull PrettyPrinterConfig myPpConfig = new PrettyPrinterConfig() {
     @Override
     public @NotNull DefinitionRenamer getDefinitionRenamer() {
@@ -68,10 +66,8 @@ public abstract class Repl {
 
   public Repl(@NotNull ListErrorReporter listErrorReporter,
               @NotNull LibraryManager libraryManager,
-              @NotNull TypecheckingOrderingListener typecheckingOrderingListener,
-              @NotNull TypecheckerState typecheckerState) {
+              @NotNull TypecheckingOrderingListener typecheckingOrderingListener) {
     myErrorReporter = listErrorReporter;
-    myTypecheckerState = typecheckerState;
     myLibraryManager = libraryManager;
     myTypechecking = typecheckingOrderingListener;
     myModuleReferable = new LocatedReferableImpl(Precedence.DEFAULT, replModulePath.getLibraryName(), new FullModuleReferable(replModulePath), GlobalReferable.Kind.OTHER);
@@ -214,7 +210,7 @@ public abstract class Repl {
   private boolean removeScopeImpl(Scope scope) {
     for (Referable element : scope.getElements())
       if (element instanceof TCReferable)
-        myTypecheckerState.reset((TCReferable) element);
+        ((TCReferable) element).setTypechecked(null);
     return myMergedScopes.remove(scope);
   }
 
@@ -262,7 +258,7 @@ public abstract class Repl {
    * @see Repl#preprocessExpr(String)
    */
   public final @Nullable TypecheckingResult checkExpr(@NotNull Concrete.Expression expr, @Nullable Expression expectedType) {
-    var typechecker = new CheckTypeVisitor(myTypecheckerState, myErrorReporter, null, null);
+    var typechecker = new CheckTypeVisitor(myErrorReporter, null, null);
     var instanceProvider = myTypechecking.getInstanceProviderSet().get(myModuleReferable);
     var instancePool = new GlobalInstancePool(instanceProvider, typechecker);
     typechecker.setInstancePool(instancePool);
@@ -281,7 +277,7 @@ public abstract class Repl {
             myScope, new ArrayList<>(), myErrorReporter, null), null)
         .accept(new SyntacticDesugarVisitor(myErrorReporter), null);
     if (checkErrors()) return null;
-    expr = DesugarVisitor.desugar(expr, myTypecheckerState, myErrorReporter);
+    expr = DesugarVisitor.desugar(expr, myErrorReporter);
     if (checkErrors()) return null;
     return expr;
   }
