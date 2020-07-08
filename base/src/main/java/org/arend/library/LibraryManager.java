@@ -17,6 +17,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 /**
  * Contains all necessary information for the library loading.
@@ -288,7 +289,7 @@ public class LibraryManager {
     myReverseDependencies.keySet().removeIf(Library::unload);
   }
 
-  private void reloadLibraries(List<Library> libraries, TypecheckingOrderingListener typechecking, boolean reloadExternal) {
+  private void reloadLibraries(List<Library> libraries, Supplier<TypecheckingOrderingListener> supplier, boolean reloadExternal) {
     if (!myLoadingLibraries.isEmpty()) {
       myLibraryErrorReporter.report(LibraryError.unloadDuringLoading(myLoadingLibraries.stream().map(Library::getName)));
     }
@@ -304,6 +305,8 @@ public class LibraryManager {
       myExternalClassLoader = new MultiClassLoader<>(ArendExtension.class.getClassLoader());
     }
     myInternalClassLoader = new MultiClassLoader<>(myExternalClassLoader);
+
+    TypecheckingOrderingListener typechecking = supplier.get();
     for (Library library : libraries) {
       loadLibrary(library, typechecking);
     }
@@ -314,7 +317,7 @@ public class LibraryManager {
    *
    * @param typechecking  a typechecker for language extensions.
    */
-  public void reloadInternalLibraries(TypecheckingOrderingListener typechecking) {
+  public void reloadInternalLibraries(Supplier<TypecheckingOrderingListener> typechecking) {
     List<Library> libraries = new ArrayList<>();
     Iterator<Library> it = myReverseDependencies.keySet().iterator();
     while (it.hasNext()) {
@@ -334,7 +337,7 @@ public class LibraryManager {
    *
    * @param typechecking  a typechecker for language extensions.
    */
-  public void reload(TypecheckingOrderingListener typechecking) {
+  public void reload(Supplier<TypecheckingOrderingListener> typechecking) {
     List<Library> libraries = new ArrayList<>(myReverseDependencies.keySet());
     myFailedLibraries.clear();
     myReverseDependencies.clear();
