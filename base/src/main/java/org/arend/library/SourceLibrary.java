@@ -191,6 +191,8 @@ public abstract class SourceLibrary extends BaseLibrary {
     return false;
   }
 
+  protected void loadGeneratedModules() {}
+
   @Override
   public boolean load(LibraryManager libraryManager, TypecheckingOrderingListener typechecking) {
     if (isLoaded()) {
@@ -257,6 +259,7 @@ public abstract class SourceLibrary extends BaseLibrary {
       } finally {
         contributor.disable();
       }
+      loadGeneratedModules();
       myExtension.registerKeys(keyRegistry);
     }
 
