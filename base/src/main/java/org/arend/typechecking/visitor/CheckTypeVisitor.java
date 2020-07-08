@@ -386,7 +386,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       }
       if (stripVisitor != null) {
         type = type.accept(stripVisitor, null);
-        deferredMeta.contextData.setExpectedType(type);
+        deferredMeta.contextData.setExpectedType(type.accept(new StripVisitor(), null));
 
         TypedDependentLink lastTyped = null;
         for (Binding binding : deferredMeta.context.values()) {
@@ -1910,7 +1910,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       errorReporter.report(new TypecheckingError("Meta '" + refExpr.getReferent().getRefName() + "' is empty", refExpr));
       return null;
     }
-    ContextData contextData = new ContextDataImpl(refExpr, arguments, expectedType, null);
+    ContextData contextData = new ContextDataImpl(refExpr, arguments, expectedType == null ? null : expectedType.accept(new StripVisitor(), null), null);
     if (!meta.checkContextData(contextData, errorReporter)) {
       return null;
     }
