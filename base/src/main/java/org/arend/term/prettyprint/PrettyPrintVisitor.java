@@ -162,6 +162,29 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     }
   }
 
+  private void printLevels(Concrete.LevelExpression pLevel, Concrete.LevelExpression hLevel) {
+    if (pLevel == null && hLevel == null) {
+      return;
+    }
+
+    myBuilder.append(" \\level ");
+    if (hLevel instanceof Concrete.NumberLevelExpression && ((Concrete.NumberLevelExpression) hLevel).getNumber() == -1) {
+      myBuilder.append("\\Prop");
+    } else {
+      if (pLevel != null) {
+        pLevel.accept(this, new Precedence((byte) (Concrete.AppExpression.PREC + 1)));
+      } else {
+        myBuilder.append('_');
+      }
+      myBuilder.append(' ');
+      if (hLevel != null) {
+        hLevel.accept(this, new Precedence((byte) (Concrete.AppExpression.PREC + 1)));
+      } else {
+        myBuilder.append('_');
+      }
+    }
+  }
+
   @Override
   public Void visitReference(Concrete.ReferenceExpression expr, Precedence prec) {
     boolean parens = expr.getReferent() instanceof GlobalReferable && ((GlobalReferable) expr.getReferent()).getRepresentablePrecedence().isInfix || expr.getPLevel() != null || expr.getHLevel() != null;
@@ -169,25 +192,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       myBuilder.append('(');
     }
     printReferenceName(expr, prec);
-
-    if (expr.getPLevel() != null || expr.getHLevel() != null) {
-      myBuilder.append(" \\level ");
-      if (expr.getHLevel() instanceof Concrete.NumberLevelExpression && ((Concrete.NumberLevelExpression) expr.getHLevel()).getNumber() == -1) {
-        myBuilder.append("\\Prop");
-      } else {
-        if (expr.getPLevel() != null) {
-          expr.getPLevel().accept(this, new Precedence((byte) (Concrete.AppExpression.PREC + 1)));
-        } else {
-          myBuilder.append('_');
-        }
-        myBuilder.append(' ');
-        if (expr.getHLevel() != null) {
-          expr.getHLevel().accept(this, new Precedence((byte) (Concrete.AppExpression.PREC + 1)));
-        } else {
-          myBuilder.append('_');
-        }
-      }
-    }
+    printLevels(expr.getPLevel(), expr.getHLevel());
     if (parens) {
       myBuilder.append(')');
     }
@@ -460,6 +465,16 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   @Override
   public Void visitApplyHole(Concrete.ApplyHoleExpression expr, Precedence params) {
     myBuilder.append("__");
+    return null;
+  }
+
+  @Override
+  public Void visitFieldCall(Concrete.FieldCallExpression expr, Precedence prec) {
+    if (prec.priority > Concrete.FieldCallExpression.PREC) myBuilder.append('(');
+    expr.argument.accept(this, new Precedence(Concrete.FieldCallExpression.PREC));
+    myBuilder.append('.').append(expr.getFieldName());
+    printLevels(expr.getPLevel(), expr.getHLevel());
+    if (prec.priority > Concrete.FieldCallExpression.PREC) myBuilder.append(')');
     return null;
   }
 

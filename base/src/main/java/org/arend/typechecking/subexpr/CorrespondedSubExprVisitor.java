@@ -75,6 +75,14 @@ public class CorrespondedSubExprVisitor implements
   }
 
   @Override
+  public @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression> visitFieldCall(Concrete.FieldCallExpression expr, @NotNull Expression coreExpr) {
+    if (matchesSubExpr(expr)) return new Pair<>(coreExpr, expr);
+    var coreProjExpr = coreExpr.cast(FieldCallExpression.class);
+    if (coreProjExpr == null) return nullWithError(SubExprError.mismatch(coreExpr));
+    return expr.argument.accept(this, coreProjExpr.getArgument());
+  }
+
+  @Override
   public Pair<Expression, Concrete.Expression> visitInferenceReference(Concrete.InferenceReferenceExpression expr, Expression coreExpr) {
     return atomicExpr(expr, coreExpr);
   }

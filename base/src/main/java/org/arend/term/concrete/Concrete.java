@@ -425,6 +425,39 @@ public final class Concrete {
     }
   }
 
+  public static class FieldCallExpression extends Expression {
+    public static final byte PREC = 12;
+    private final String myFieldName;
+    public Expression argument;
+    private final Concrete.LevelExpression myPLevel;
+    private final Concrete.LevelExpression myHLevel;
+
+    public FieldCallExpression(Object data, String fieldName, Expression argument, Concrete.LevelExpression pLevel, Concrete.LevelExpression hLevel) {
+      super(data);
+      myFieldName = fieldName;
+      this.argument = argument;
+      myPLevel = pLevel;
+      myHLevel = hLevel;
+    }
+
+    public String getFieldName() {
+      return myFieldName;
+    }
+
+    public LevelExpression getPLevel() {
+      return myPLevel;
+    }
+
+    public LevelExpression getHLevel() {
+      return myHLevel;
+    }
+
+    @Override
+    public <P, R> R accept(ConcreteExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitFieldCall(this, params);
+    }
+  }
+
   public static class LongReferenceExpression extends ReferenceExpression {
     private final LongName myLongName;
 

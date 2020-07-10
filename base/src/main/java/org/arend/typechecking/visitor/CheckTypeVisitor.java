@@ -41,6 +41,7 @@ import org.arend.ext.typechecking.*;
 import org.arend.ext.variable.Variable;
 import org.arend.extImpl.ContextDataImpl;
 import org.arend.extImpl.UncheckedExpressionImpl;
+import org.arend.naming.error.NotInScopeError;
 import org.arend.naming.reference.*;
 import org.arend.naming.renamer.Renamer;
 import org.arend.prelude.Prelude;
@@ -2137,6 +2138,64 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     return null;
   }
 
+  private ClassField getClassFieldByName(ClassDefinition originalClass, String fieldName, Concrete.Expression expr) {
+    Set<ClassDefinition> visitedClasses = new HashSet<>();
+    Deque<ClassDefinition> toVisit = new ArrayDeque<>();
+    toVisit.add(originalClass);
+
+    while (!toVisit.isEmpty()) {
+      ClassDefinition classDef = toVisit.removeLast();
+      if (!visitedClasses.add(classDef)) {
+        continue;
+      }
+
+      for (ClassField field : classDef.getPersonalFields()) {
+        if (field.getName().equals(fieldName)) {
+          return field;
+        }
+      }
+
+      toVisit.addAll(classDef.getSuperClasses());
+    }
+
+    errorReporter.report(new NotInScopeError(expr.getData(), originalClass.getReferable(), -1, fieldName, GeneralError.Stage.TYPECHECKER));
+    return null;
+  }
+
+  @Override
+  public TypecheckingResult visitFieldCall(Concrete.FieldCallExpression expr, Expression expectedType) {
+    TypecheckingResult result = checkExpr(expr.argument, null);
+    if (result == null) {
+      return null;
+    }
+
+    ClassCallExpression classCall = result.type.cast(ClassCallExpression.class);
+    if (classCall == null) {
+      errorReporter.report(new TypeMismatchError(DocFactory.text("a classCall"), result.type, expr.argument));
+      return null;
+    }
+
+    ClassField classField = getClassFieldByName(classCall.getDefinition(), expr.getFieldName(), expr);
+    if (classField == null) {
+      return null;
+    }
+
+    TResult tResult = typeCheckDefCall(classField.getReferable(), new Concrete.ReferenceExpression(expr.getData(), classField.getReferable(), expr.getPLevel(), expr.getHLevel()));
+    if (tResult == null) {
+      return null;
+    }
+
+    if (tResult instanceof DefCallResult) {
+      ClassCallExpression expectedClassCall = new ClassCallExpression(classCall.getDefinition(), ((DefCallResult) tResult).getSortArgument());
+      if (!new CompareVisitor(myEquations, CMP.LE, expr).compareClassCallSortArguments(classCall, expectedClassCall)) {
+        errorReporter.report(new TypeMismatchError(expectedClassCall, classCall, expr.argument));
+        return null;
+      }
+    }
+
+    return tResultToResult(expectedType, tResult.applyExpression(result.expression, false, errorReporter, expr), expr);
+  }
+
   public static Expression getLevelExpression(Type type, int level) {
     if (level < -1) {
       return type.getExpr();
@@ -2233,7 +2292,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
           foundVars.add(entry.getKey());
         }
       }
-      myErrorReporter.report(new ElimSubstError(foundVars, sourceNode));
+      errorReporter.report(new ElimSubstError(foundVars, sourceNode));
       return expr;
     }
 

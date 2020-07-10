@@ -13,13 +13,19 @@ public class NotInScopeError extends LocalError {
   public final String name;
   public final Referable referable;
   public final int index;
+  private final Stage myStage;
 
-  public NotInScopeError(Object cause, Referable referable, int index, String name) {
+  public NotInScopeError(Object cause, Referable referable, int index, String name, Stage stage) {
     super(Level.ERROR, "Cannot resolve reference");
     myCause = cause;
     this.name = name;
     this.referable = referable;
     this.index = index;
+    myStage = stage;
+  }
+
+  public NotInScopeError(Object cause, Referable referable, int index, String name) {
+    this(cause, referable, index, name, Stage.RESOLVER);
   }
 
   @Override
@@ -36,6 +42,6 @@ public class NotInScopeError extends LocalError {
   @NotNull
   @Override
   public Stage getStage() {
-    return Stage.RESOLVER;
+    return myStage;
   }
 }

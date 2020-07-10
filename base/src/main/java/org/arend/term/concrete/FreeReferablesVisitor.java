@@ -128,6 +128,11 @@ public class FreeReferablesVisitor implements ConcreteExpressionVisitor<Void, TC
   }
 
   @Override
+  public TCReferable visitFieldCall(Concrete.FieldCallExpression expr, Void params) {
+    return expr.argument.accept(this, null);
+  }
+
+  @Override
   public TCReferable visitGoal(Concrete.GoalExpression expr, Void params) {
     return expr.expression != null ? expr.expression.accept(this, null) : null;
   }

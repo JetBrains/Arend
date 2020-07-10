@@ -72,6 +72,12 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
   }
 
   @Override
+  public Concrete.Expression visitFieldCall(Concrete.FieldCallExpression expr, P params) {
+    expr.argument = expr.argument.accept(this, params);
+    return expr;
+  }
+
+  @Override
   public Concrete.Expression visitGoal(Concrete.GoalExpression expr, P params) {
     if (expr.expression != null) {
       expr.expression = expr.expression.accept(this, params);

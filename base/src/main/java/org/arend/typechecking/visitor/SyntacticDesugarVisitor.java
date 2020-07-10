@@ -60,6 +60,15 @@ public class SyntacticDesugarVisitor extends BaseConcreteExpressionVisitor<Void>
   }
 
   @Override
+  public Concrete.Expression visitFieldCall(Concrete.FieldCallExpression expr, Void params) {
+    List<Concrete.Parameter> parameters = new ArrayList<>();
+    convertFieldCallAppHoles(expr, parameters);
+    return !parameters.isEmpty()
+      ? new Concrete.LamExpression(expr.argument.getData(), parameters, expr).accept(this, null)
+      : super.visitFieldCall(expr, params);
+  }
+
+  @Override
   public Concrete.Expression visitProj(Concrete.ProjExpression expr, Void params) {
     List<Concrete.Parameter> parameters = new ArrayList<>();
     convertProjAppHoles(expr, parameters);
@@ -150,6 +159,8 @@ public class SyntacticDesugarVisitor extends BaseConcreteExpressionVisitor<Void>
       convertAppHoles((Concrete.AppExpression) expression, parameters);
     else if (expression instanceof Concrete.ProjExpression)
       convertProjAppHoles((Concrete.ProjExpression) expression, parameters);
+    else if (expression instanceof Concrete.FieldCallExpression)
+      convertFieldCallAppHoles((Concrete.FieldCallExpression) expression, parameters);
     else if (expression instanceof Concrete.BinOpSequenceExpression)
       convertBinOpAppHoles((Concrete.BinOpSequenceExpression) expression, parameters);
     else if (expression instanceof Concrete.ClassExtExpression)
@@ -185,6 +196,12 @@ public class SyntacticDesugarVisitor extends BaseConcreteExpressionVisitor<Void>
     if (proj.expression instanceof Concrete.ApplyHoleExpression)
       proj.expression = createAppHoleRef(parameters, proj.expression.getData());
     else convertRecursively(proj.expression, parameters);
+  }
+
+  private void convertFieldCallAppHoles(Concrete.FieldCallExpression fieldCall, List<Concrete.Parameter> parameters) {
+    if (fieldCall.argument instanceof Concrete.ApplyHoleExpression)
+      fieldCall.argument = createAppHoleRef(parameters, fieldCall.argument.getData());
+    else convertRecursively(fieldCall.argument, parameters);
   }
 
   private void convertNewAppHoles(Concrete.NewExpression expr, List<Concrete.Parameter> parameters) {

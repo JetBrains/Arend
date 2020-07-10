@@ -155,6 +155,12 @@ public class VoidConcreteVisitor<P, R> implements ConcreteExpressionVisitor<P,Vo
   }
 
   @Override
+  public Void visitFieldCall(Concrete.FieldCallExpression expr, P params) {
+    expr.argument.accept(this, params);
+    return null;
+  }
+
+  @Override
   public Void visitGoal(Concrete.GoalExpression expr, P params) {
     return null;
   }
