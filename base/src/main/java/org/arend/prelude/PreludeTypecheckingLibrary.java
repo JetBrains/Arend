@@ -2,7 +2,6 @@ package org.arend.prelude;
 
 import org.arend.ext.module.ModulePath;
 import org.arend.library.LibraryManager;
-import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.order.Ordering;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 
@@ -15,15 +14,6 @@ import java.util.Collections;
 public abstract class PreludeTypecheckingLibrary extends PreludeLibrary {
   private boolean myTypechecked = false;
 
-  /**
-   * Creates a new {@code PreludeTypecheckingLibrary}
-   *
-   * @param typecheckerState the underling typechecker state of this library.
-   */
-  public PreludeTypecheckingLibrary(TypecheckerState typecheckerState) {
-    super(typecheckerState);
-  }
-
   @Override
   public boolean load(LibraryManager libraryManager, TypecheckingOrderingListener typechecking) {
     synchronized (PreludeLibrary.class) {
@@ -33,7 +23,7 @@ public abstract class PreludeTypecheckingLibrary extends PreludeLibrary {
     }
 
     myTypechecked = true;
-    Prelude.fillInTypecheckerState(getTypecheckerState());
+    Prelude.fillInTypecheckerState();
     setLoaded();
     return true;
   }
@@ -52,7 +42,7 @@ public abstract class PreludeTypecheckingLibrary extends PreludeLibrary {
     if (super.orderModules(ordering)) {
       synchronized (PreludeLibrary.class) {
         if (!Prelude.isInitialized()) {
-          Prelude.initialize(getPreludeScope(), getTypecheckerState());
+          Prelude.initialize(getPreludeScope());
         }
       }
       return true;

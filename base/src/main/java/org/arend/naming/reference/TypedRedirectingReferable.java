@@ -4,7 +4,7 @@ import org.arend.ext.reference.Precedence;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class TypedRedirectingReferable implements RedirectingReferable {
+public class TypedRedirectingReferable implements RedirectingReferable, TypedReferable {
   private final Referable myOriginalReferable;
   private final ClassReferable myTypeClassReference;
 
@@ -37,20 +37,14 @@ public class TypedRedirectingReferable implements RedirectingReferable {
     return myOriginalReferable.textRepresentation();
   }
 
-  @Override
-  public GlobalReferable getTypecheckable() {
-    return myOriginalReferable instanceof GlobalReferable ? ((GlobalReferable) myOriginalReferable).getTypecheckable() : null;
-  }
-
-  @NotNull
-  @Override
-  public Kind getKind() {
-    return myOriginalReferable instanceof GlobalReferable ? ((GlobalReferable) myOriginalReferable).getKind() : Kind.OTHER;
-  }
-
   @Nullable
   @Override
   public ClassReferable getTypeClassReference() {
     return myTypeClassReference;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    return obj instanceof RedirectingReferable && ((RedirectingReferable) obj).getOriginalReferable().equals(getOriginalReferable());
   }
 }

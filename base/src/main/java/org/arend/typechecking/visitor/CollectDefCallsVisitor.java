@@ -1,7 +1,6 @@
 package org.arend.typechecking.visitor;
 
 import org.arend.naming.reference.*;
-import org.arend.naming.scope.ClassFieldImplScope;
 import org.arend.term.concrete.Concrete;
 
 import java.util.*;
@@ -49,12 +48,11 @@ public class CollectDefCallsVisitor extends VoidConcreteVisitor<Void, Void> {
     visitClassHeader(def, null);
 
     myExcluded = new HashSet<>();
-    new ClassFieldImplScope(def.getData(), false).find(ref -> {
-      if (ref instanceof TCReferable) {
-        myExcluded.add((TCReferable) ref);
+    for (Concrete.ClassElement element : def.getElements()) {
+      if (element instanceof Concrete.ClassField) {
+        myExcluded.add(((Concrete.ClassField) element).getData());
       }
-      return false;
-    });
+    }
 
     visitClassBody(def, null);
 

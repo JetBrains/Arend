@@ -75,8 +75,9 @@ public interface ConcreteFactory {
   @NotNull ConcreteSinglePattern singlePatternConstructor(@NotNull ConcreteSinglePattern... subpatterns);
   @NotNull ConcreteSinglePattern singlePatternConstructor(@NotNull Collection<? extends ConcreteSinglePattern> subpatterns);
 
-  @NotNull ConcreteClassElement implementation(@NotNull ArendRef field, @Nullable ConcreteExpression expression, @NotNull ConcreteClassElement... subclauses);
-  @NotNull ConcreteClassElement implementation(@NotNull ArendRef field, @Nullable ConcreteExpression expression, @NotNull Collection<? extends ConcreteClassElement> subclauses);
+  @NotNull ConcreteClassElement implementation(@NotNull ArendRef field, @Nullable ConcreteExpression expression);
+  @NotNull ConcreteClassElement implementation(@NotNull ArendRef field, @Nullable ConcreteExpression expression, @NotNull ArendRef classRef, @NotNull ConcreteClassElement... subclauses);
+  @NotNull ConcreteClassElement implementation(@NotNull ArendRef field, @Nullable ConcreteExpression expression, @NotNull ArendRef classRef, @NotNull Collection<? extends ConcreteClassElement> subclauses);
 
   @NotNull ConcreteCaseArgument caseArg(@NotNull ConcreteExpression expression, @Nullable ArendRef asRef, @Nullable ConcreteExpression type);
   @NotNull ConcreteCaseArgument caseArg(@NotNull ConcreteReferenceExpression expression, @Nullable ConcreteExpression type);

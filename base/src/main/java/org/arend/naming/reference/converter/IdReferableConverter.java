@@ -10,11 +10,6 @@ public class IdReferableConverter implements ReferableConverter {
   private IdReferableConverter() { }
 
   @Override
-  public Referable toDataReferable(Referable referable) {
-    return referable;
-  }
-
-  @Override
   public TCReferable toDataLocatedReferable(LocatedReferable referable) {
     return referable instanceof TCReferable ? (TCReferable) referable : null;
   }

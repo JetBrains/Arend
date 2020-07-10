@@ -5,8 +5,6 @@ import org.arend.ext.module.ModulePath;
 import org.arend.source.BinarySource;
 import org.arend.source.Source;
 import org.arend.term.group.ChildGroup;
-import org.arend.term.group.Group;
-import org.arend.typechecking.TypecheckerState;
 import org.arend.util.Range;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -17,8 +15,8 @@ public class MemoryLibrary extends UnmodifiableSourceLibrary {
   private final Map<ModulePath, MemoryRawSource> myRawSources = new LinkedHashMap<>();
   private final Map<ModulePath, BinarySource> myBinarySources = new LinkedHashMap<>();
 
-  protected MemoryLibrary(TypecheckerState typecheckerState) {
-    super("test_library", typecheckerState);
+  protected MemoryLibrary() {
+    super("test_library");
   }
 
   public ChildGroup getModuleGroup(ModulePath modulePath) {

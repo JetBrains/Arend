@@ -5,10 +5,7 @@ import org.arend.ext.module.ModulePath;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.module.scopeprovider.SimpleModuleScopeProvider;
 import org.arend.naming.reference.converter.IdReferableConverter;
-import org.arend.naming.scope.LexicalScope;
 import org.arend.term.group.ChildGroup;
-import org.arend.term.group.Group;
-import org.arend.typechecking.TypecheckerState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,10 +26,8 @@ public abstract class UnmodifiableSourceLibrary extends SourceLibrary {
    * Creates a new {@code UnmodifiableSourceLibrary}
    *
    * @param name              the name of this library.
-   * @param typecheckerState  the underling typechecker state of this library.
    */
-  protected UnmodifiableSourceLibrary(String name, TypecheckerState typecheckerState) {
-    super(typecheckerState);
+  protected UnmodifiableSourceLibrary(String name) {
     myName = name;
   }
 

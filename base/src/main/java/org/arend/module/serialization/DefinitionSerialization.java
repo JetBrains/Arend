@@ -36,7 +36,6 @@ public class DefinitionSerialization implements ArendSerializer {
     final ExpressionSerialization defSerializer = new ExpressionSerialization(myCallTargetIndexProvider);
 
     final DefinitionProtos.Definition.Builder out = DefinitionProtos.Definition.newBuilder();
-    out.setHasTypeClassReference(definition.getReferable().getTypeClassReference() != null);
     out.setUniverseKind(defSerializer.writeUniverseKind(definition.getUniverseKind()));
     out.putAllUserData(writeUserData(definition));
 
@@ -74,7 +73,6 @@ public class DefinitionSerialization implements ArendSerializer {
     for (ClassField field : definition.getPersonalFields()) {
       DefinitionProtos.Definition.ClassData.Field.Builder fBuilder = DefinitionProtos.Definition.ClassData.Field.newBuilder();
       fBuilder.setReferable(writeReferable(field));
-      fBuilder.setHasTypeClassReference(field.getReferable().getTypeClassReference() != null);
       fBuilder.setType(defSerializer.visitPi(field.getType(Sort.STD)));
       if (field.getTypeLevel() != null) {
         fBuilder.setTypeLevel(defSerializer.writeExpr(field.getTypeLevel()));
@@ -167,6 +165,7 @@ public class DefinitionSerialization implements ArendSerializer {
   private DefinitionProtos.Definition.DataData writeDataDefinition(ExpressionSerialization defSerializer, DataDefinition definition) {
     DefinitionProtos.Definition.DataData.Builder builder = DefinitionProtos.Definition.DataData.newBuilder();
 
+    builder.setHasEnclosingClass(definition.getEnclosingClass() != null);
     builder.addAllParam(defSerializer.writeParameters(definition.getParameters()));
     if (definition.getParametersTypecheckingOrder() != null) {
       builder.addAllParametersTypecheckingOrder(definition.getParametersTypecheckingOrder());
@@ -266,6 +265,7 @@ public class DefinitionSerialization implements ArendSerializer {
   private DefinitionProtos.Definition.FunctionData writeFunctionDefinition(ExpressionSerialization defSerializer, FunctionDefinition definition) {
     DefinitionProtos.Definition.FunctionData.Builder builder = DefinitionProtos.Definition.FunctionData.newBuilder();
 
+    builder.setHasEnclosingClass(definition.getEnclosingClass() != null);
     builder.addAllParam(defSerializer.writeParameters(definition.getParameters()));
     if (definition.getParametersTypecheckingOrder() != null) {
       builder.addAllParametersTypecheckingOrder(definition.getParametersTypecheckingOrder());

@@ -37,7 +37,7 @@ public class ScopeDefinitionRenamer implements DefinitionRenamer {
     list.add(ref.getRepresentableName());
     while (true) {
       LocatedReferable parent = ref.getLocatedReferableParent();
-      if ((ref.getKind() == GlobalReferable.Kind.CONSTRUCTOR || ref instanceof FieldReferable && !((FieldReferable) ref).isParameterField()) && parent != null && parent.getKind() == GlobalReferable.Kind.TYPECHECKABLE) {
+      if ((ref.getKind() == GlobalReferable.Kind.CONSTRUCTOR || ref instanceof FieldReferable && !((FieldReferable) ref).isParameterField()) && parent != null && parent.getKind().isTypecheckable()) {
         parent = parent.getLocatedReferableParent();
       }
       if (parent == null || parent instanceof ModuleReferable) {

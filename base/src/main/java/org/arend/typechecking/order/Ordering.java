@@ -8,7 +8,6 @@ import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.term.FunctionKind;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.Group;
-import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.computation.ComputationRunner;
 import org.arend.typechecking.instance.provider.InstanceProvider;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
@@ -26,35 +25,29 @@ public class Ordering extends BellmanFord<Concrete.Definition> {
   private final OrderingListener myOrderingListener;
   private final DependencyListener myDependencyListener;
   private final ReferableConverter myReferableConverter;
-  private final TypecheckerState myState;
   private final PartialComparator<TCReferable> myComparator;
   private final Set<TCReferable> myAllowedDependencies;
   private final Stage myStage;
 
   private enum Stage { EVERYTHING, WITHOUT_INSTANCES, WITHOUT_USE, WITHOUT_BODIES }
 
-  private Ordering(InstanceProviderSet instanceProviderSet, ConcreteProvider concreteProvider, OrderingListener orderingListener, DependencyListener dependencyListener, ReferableConverter referableConverter, TypecheckerState state, PartialComparator<TCReferable> comparator, Set<TCReferable> allowedDependencies, Stage stage) {
+  private Ordering(InstanceProviderSet instanceProviderSet, ConcreteProvider concreteProvider, OrderingListener orderingListener, DependencyListener dependencyListener, ReferableConverter referableConverter, PartialComparator<TCReferable> comparator, Set<TCReferable> allowedDependencies, Stage stage) {
     myInstanceProviderSet = instanceProviderSet;
     myConcreteProvider = concreteProvider;
     myOrderingListener = orderingListener;
     myDependencyListener = dependencyListener;
     myReferableConverter = referableConverter;
-    myState = state;
     myComparator = comparator;
     myAllowedDependencies = allowedDependencies;
     myStage = stage;
   }
 
   private Ordering(Ordering ordering, Set<TCReferable> allowedDependencies, Stage stage) {
-    this(ordering.myInstanceProviderSet, ordering.myConcreteProvider, ordering.myOrderingListener, ordering.myDependencyListener, ordering.myReferableConverter, ordering.myState, ordering.myComparator, allowedDependencies, stage);
+    this(ordering.myInstanceProviderSet, ordering.myConcreteProvider, ordering.myOrderingListener, ordering.myDependencyListener, ordering.myReferableConverter, ordering.myComparator, allowedDependencies, stage);
   }
 
-  public Ordering(InstanceProviderSet instanceProviderSet, ConcreteProvider concreteProvider, OrderingListener orderingListener, DependencyListener dependencyListener, ReferableConverter referableConverter, TypecheckerState state, PartialComparator<TCReferable> comparator) {
-    this(instanceProviderSet, concreteProvider, orderingListener, dependencyListener, referableConverter, state, comparator, null, Stage.EVERYTHING);
-  }
-
-  public TypecheckerState getTypecheckerState() {
-    return myState;
+  public Ordering(InstanceProviderSet instanceProviderSet, ConcreteProvider concreteProvider, OrderingListener orderingListener, DependencyListener dependencyListener, ReferableConverter referableConverter, PartialComparator<TCReferable> comparator) {
+    this(instanceProviderSet, concreteProvider, orderingListener, dependencyListener, referableConverter, comparator, null, Stage.EVERYTHING);
   }
 
   public ConcreteProvider getConcreteProvider() {
@@ -98,7 +91,7 @@ public class Ordering extends BellmanFord<Concrete.Definition> {
   }
 
   public Definition getTypechecked(TCReferable definition) {
-    Definition typechecked = myState.getTypechecked(definition);
+    Definition typechecked = definition.getTypechecked();
     return typechecked == null || typechecked.status().needsTypeChecking() ? null : typechecked;
   }
 
@@ -137,7 +130,7 @@ public class Ordering extends BellmanFord<Concrete.Definition> {
     boolean withLoops = false;
     for (TCReferable referable : dependencies) {
       TCReferable tcReferable = referable.getTypecheckable();
-      if (tcReferable == null || myAllowedDependencies != null && !myAllowedDependencies.contains(tcReferable)) {
+      if (myAllowedDependencies != null && !myAllowedDependencies.contains(tcReferable)) {
         continue;
       }
 
@@ -149,7 +142,7 @@ public class Ordering extends BellmanFord<Concrete.Definition> {
         myDependencyListener.dependsOn(definition.getData(), tcReferable);
         Concrete.ReferableDefinition dependency = myConcreteProvider.getConcrete(tcReferable);
         if (dependency instanceof Concrete.Definition && dependency.getStage() != Concrete.Stage.TYPECHECKED) {
-          Definition typechecked = myState.getTypechecked(tcReferable);
+          Definition typechecked = tcReferable.getTypechecked();
           if (typechecked == null || typechecked.status() == Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING) {
             consumer.accept((Concrete.Definition) dependency);
           }

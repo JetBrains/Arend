@@ -26,8 +26,6 @@ import org.arend.term.concrete.Concrete;
 import org.arend.term.group.Group;
 import org.arend.term.prettyprint.PrettyPrinterConfigWithRenamer;
 import org.arend.typechecking.LibraryArendExtensionProvider;
-import org.arend.typechecking.SimpleTypecheckerState;
-import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.doubleChecker.CoreModuleChecker;
 import org.arend.typechecking.error.local.GoalError;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
@@ -47,7 +45,6 @@ import static org.arend.frontend.library.TimedLibraryManager.timeToString;
 
 public abstract class BaseCliFrontend {
   // Typechecking
-  private final TypecheckerState myTypecheckerState = new SimpleTypecheckerState();
   private final ListErrorReporter myErrorReporter = new ListErrorReporter();
   private final Map<ModulePath, GeneralError.Level> myModuleResults = new LinkedHashMap<>();
 
@@ -59,7 +56,7 @@ public abstract class BaseCliFrontend {
   };
 
   // Libraries
-  private final FileLibraryResolver myLibraryResolver = new FileLibraryResolver(new ArrayList<>(), myTypecheckerState, mySystemErrErrorReporter);
+  private final FileLibraryResolver myLibraryResolver = new FileLibraryResolver(new ArrayList<>(), mySystemErrErrorReporter);
   private final LibraryManager myLibraryManager = new TimedLibraryManager(myLibraryResolver, new InstanceProviderSet(), myErrorReporter, mySystemErrErrorReporter, DefinitionRequester.INSTANCE) {
     @Override
     protected void afterLibraryLoading(@NotNull Library library, boolean successful) {
@@ -72,17 +69,13 @@ public abstract class BaseCliFrontend {
     return myLibraryManager;
   }
 
-  public TypecheckerState getTypecheckerState() {
-    return myTypecheckerState;
-  }
-
 
   private class MyTypechecking extends TypecheckingOrderingListener {
     private int total;
     private int failed;
 
     MyTypechecking() {
-      super(myLibraryManager.getInstanceProviderSet(), myTypecheckerState, ConcreteReferableProvider.INSTANCE, IdReferableConverter.INSTANCE, myErrorReporter, PositionComparator.INSTANCE, new LibraryArendExtensionProvider(myLibraryManager));
+      super(myLibraryManager.getInstanceProviderSet(), ConcreteReferableProvider.INSTANCE, IdReferableConverter.INSTANCE, myErrorReporter, PositionComparator.INSTANCE, new LibraryArendExtensionProvider(myLibraryManager));
     }
 
     @Override
@@ -214,7 +207,7 @@ public abstract class BaseCliFrontend {
       return null;
     }
 
-    if (!myLibraryManager.loadLibrary(new PreludeResourceLibrary(myTypecheckerState), null)) {
+    if (!myLibraryManager.loadLibrary(new PreludeResourceLibrary(), null)) {
       return null;
     }
 
@@ -288,7 +281,7 @@ public abstract class BaseCliFrontend {
         e.printStackTrace();
         outDir = null;
       }
-      requestedLibraries.add(new FileSourceLibrary("\\default", sourceDir, outDir, extDir, extMainClass, requestedModules, argFiles.isEmpty(), libraryDependencies, Range.unbound(), myTypecheckerState));
+      requestedLibraries.add(new FileSourceLibrary("\\default", sourceDir, outDir, extDir, extMainClass, requestedModules, argFiles.isEmpty(), libraryDependencies, Range.unbound()));
     }
 
     if (requestedLibraries.isEmpty()) {
@@ -356,10 +349,11 @@ public abstract class BaseCliFrontend {
           Concrete.ReferableDefinition def = typechecking.getConcreteProvider().getConcrete(ref);
           if (def instanceof Concrete.Definition) {
             forcedDefs.add((Concrete.Definition) def);
-            Definition typechecked = myTypecheckerState.reset(ref);
+            Definition typechecked = ref.getTypechecked();
+            ref.setTypechecked(null);
             if (typechecked != null) {
               for (Definition recursive : typechecked.getRecursiveDefinitions()) {
-                myTypecheckerState.reset(recursive.getRef());
+                recursive.getRef().setTypechecked(null);
               }
             }
           }
@@ -369,55 +363,53 @@ public abstract class BaseCliFrontend {
       }
 
       Collection<? extends ModulePath> modules = library.getUpdatedModules();
-      if (modules.isEmpty() && forcedDefs == null) {
-        continue;
-      }
-
-      System.out.println();
-      System.out.println("--- Typechecking " + library.getName() + " ---");
-      long time = System.currentTimeMillis();
-      if (forcedDefs == null) {
-        typechecking.typecheckLibrary(library);
-      } else {
-        typechecking.typecheckDefinitions(forcedDefs, null);
-      }
-      time = System.currentTimeMillis() - time;
-      flushErrors();
-
-      // Output nice per-module typechecking results
       int numWithErrors = 0;
-      int numWithGoals = 0;
-      for (ModulePath module : modules) {
-        GeneralError.Level result = myModuleResults.get(module);
-        if (result == null && library.getModuleGroup(module, false) == null) {
-          result = GeneralError.Level.ERROR;
+      if (!modules.isEmpty() || forcedDefs != null) {
+        System.out.println();
+        System.out.println("--- Typechecking " + library.getName() + " ---");
+        long time = System.currentTimeMillis();
+        if (forcedDefs == null) {
+          typechecking.typecheckLibrary(library);
+        } else {
+          typechecking.typecheckDefinitions(forcedDefs, null);
         }
-        reportTypeCheckResult(module, result);
-        if (result == GeneralError.Level.ERROR) numWithErrors++;
-        if (result == GeneralError.Level.GOAL) numWithGoals++;
-      }
+        time = System.currentTimeMillis() - time;
+        flushErrors();
 
-      if (numWithErrors > 0) {
-        myExitWithError = true;
-        System.out.println("Number of modules with errors: " + numWithErrors);
-      }
-      if (numWithGoals > 0) {
-        System.out.println("Number of modules with goals: " + numWithGoals);
-      }
-      System.out.println("--- Done (" + timeToString(time) + ") ---");
+        // Output nice per-module typechecking results
+        int numWithGoals = 0;
+        for (ModulePath module : modules) {
+          GeneralError.Level result = myModuleResults.get(module);
+          if (result == null && library.getModuleGroup(module, false) == null) {
+            result = GeneralError.Level.ERROR;
+          }
+          reportTypeCheckResult(module, result);
+          if (result == GeneralError.Level.ERROR) numWithErrors++;
+          if (result == GeneralError.Level.GOAL) numWithGoals++;
+        }
 
-      // Persist updated modules
-      if (library.supportsPersisting()) {
-        library.persistUpdatedModules(mySystemErrErrorReporter);
-        library.clearUpdateModules();
+        if (numWithErrors > 0) {
+          myExitWithError = true;
+          System.out.println("Number of modules with errors: " + numWithErrors);
+        }
+        if (numWithGoals > 0) {
+          System.out.println("Number of modules with goals: " + numWithGoals);
+        }
+        System.out.println("--- Done (" + timeToString(time) + ") ---");
+
+        // Persist updated modules
+        if (library.supportsPersisting()) {
+          library.persistUpdatedModules(mySystemErrErrorReporter);
+          library.clearUpdateModules();
+        }
       }
 
       if (doubleCheck && numWithErrors == 0) {
         System.out.println();
         System.out.println("--- Checking " + library.getName() + " ---");
-        time = System.currentTimeMillis();
+        long time = System.currentTimeMillis();
 
-        CoreModuleChecker checker = new CoreModuleChecker(myErrorReporter, myTypecheckerState);
+        CoreModuleChecker checker = new CoreModuleChecker(myErrorReporter);
         for (ModulePath module : library.getLoadedModules()) {
           Group group = library.getModuleGroup(module, false);
           if (group != null) {
@@ -464,7 +456,7 @@ public abstract class BaseCliFrontend {
             }
           }
           if (doCheck) {
-            CoreModuleChecker checker = new CoreModuleChecker(myErrorReporter, myTypecheckerState);
+            CoreModuleChecker checker = new CoreModuleChecker(myErrorReporter);
             for (ModulePath module : modules) {
               Group group = library.getModuleGroup(module, true);
               if (group != null) {

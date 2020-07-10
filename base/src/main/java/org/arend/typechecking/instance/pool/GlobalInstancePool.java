@@ -134,7 +134,7 @@ public class GlobalInstancePool implements InstancePool {
 
       @Override
       public boolean test(Concrete.FunctionDefinition instance) {
-        instanceDef = (FunctionDefinition) myCheckTypeVisitor.getTypecheckingState().getTypechecked(instance.getData());
+        instanceDef = (FunctionDefinition) instance.getData().getTypechecked();
         if (!(instanceDef != null && instanceDef.status().headerIsOK() && instanceDef.getResultType() instanceof ClassCallExpression && parameters.testClass(((ClassCallExpression) instanceDef.getResultType()).getDefinition()) && parameters.testGlobalInstance(instanceDef))) {
           return false;
         }

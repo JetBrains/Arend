@@ -17,7 +17,6 @@ import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.reference.*;
 import org.arend.naming.resolving.visitor.DefinitionResolveNameVisitor;
 import org.arend.naming.resolving.visitor.ExpressionResolveNameVisitor;
-import org.arend.naming.scope.CachingScope;
 import org.arend.naming.scope.Scope;
 import org.arend.naming.scope.ScopeFactory;
 import org.arend.repl.action.*;
@@ -25,7 +24,6 @@ import org.arend.term.concrete.Concrete;
 import org.arend.term.group.Group;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
 import org.arend.term.prettyprint.ToAbstractVisitor;
-import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.arend.typechecking.result.TypecheckingResult;
@@ -52,7 +50,6 @@ public abstract class Repl {
   protected final ReplScope myReplScope = new ReplScope(null, myMergedScopes);
   protected @NotNull Scope myScope = myReplScope;
   protected @NotNull TypecheckingOrderingListener myTypechecking;
-  protected final @NotNull TypecheckerState myTypecheckerState;
   protected final @NotNull PrettyPrinterConfig myPpConfig = new PrettyPrinterConfig() {
     @Override
     public @NotNull DefinitionRenamer getDefinitionRenamer() {
@@ -69,13 +66,11 @@ public abstract class Repl {
 
   public Repl(@NotNull ListErrorReporter listErrorReporter,
               @NotNull LibraryManager libraryManager,
-              @NotNull TypecheckingOrderingListener typecheckingOrderingListener,
-              @NotNull TypecheckerState typecheckerState) {
+              @NotNull TypecheckingOrderingListener typecheckingOrderingListener) {
     myErrorReporter = listErrorReporter;
-    myTypecheckerState = typecheckerState;
     myLibraryManager = libraryManager;
     myTypechecking = typecheckingOrderingListener;
-    myModuleReferable = new LocatedReferableImpl(Precedence.DEFAULT, replModulePath.getLibraryName(), new FullModuleReferable(replModulePath), GlobalReferable.Kind.TYPECHECKABLE);
+    myModuleReferable = new LocatedReferableImpl(Precedence.DEFAULT, replModulePath.getLibraryName(), new FullModuleReferable(replModulePath), GlobalReferable.Kind.OTHER);
   }
 
   protected abstract void loadLibraries();
@@ -140,8 +135,8 @@ public abstract class Repl {
     var moduleScopeProvider = getAvailableModuleScopeProvider();
     var scope = ScopeFactory.forGroup(group, moduleScopeProvider);
     myReplScope.addScope(scope);
-    new DefinitionResolveNameVisitor(myTypechecking.getConcreteProvider(), myErrorReporter)
-        .resolveGroupWithTypes(group, null, myScope);
+    new DefinitionResolveNameVisitor(myTypechecking.getConcreteProvider(), null, myErrorReporter)
+        .resolveGroupWithTypes(group, myScope);
     if (checkErrors()) {
       myMergedScopes.remove(scope);
       return;
@@ -215,7 +210,7 @@ public abstract class Repl {
   private boolean removeScopeImpl(Scope scope) {
     for (Referable element : scope.getElements())
       if (element instanceof TCReferable)
-        myTypecheckerState.reset((TCReferable) element);
+        ((TCReferable) element).setTypechecked(null);
     return myMergedScopes.remove(scope);
   }
 
@@ -263,7 +258,7 @@ public abstract class Repl {
    * @see Repl#preprocessExpr(String)
    */
   public final @Nullable TypecheckingResult checkExpr(@NotNull Concrete.Expression expr, @Nullable Expression expectedType) {
-    var typechecker = new CheckTypeVisitor(myTypecheckerState, myErrorReporter, null, null);
+    var typechecker = new CheckTypeVisitor(myErrorReporter, null, null);
     var instanceProvider = myTypechecking.getInstanceProviderSet().get(myModuleReferable);
     var instancePool = new GlobalInstancePool(instanceProvider, typechecker);
     typechecker.setInstancePool(instancePool);
@@ -278,7 +273,7 @@ public abstract class Repl {
     var expr = parseExpr(text);
     if (expr == null || checkErrors()) return null;
     expr = expr
-        .accept(new ExpressionResolveNameVisitor(myTypechecking.getConcreteProvider(),
+        .accept(new ExpressionResolveNameVisitor(myTypechecking.getReferableConverter(),
             myScope, new ArrayList<>(), myErrorReporter, null), null)
         .accept(new SyntacticDesugarVisitor(myErrorReporter), null);
     if (checkErrors()) return null;

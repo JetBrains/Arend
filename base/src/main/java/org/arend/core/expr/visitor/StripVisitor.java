@@ -19,6 +19,10 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
   private final Set<EvaluatingBinding> myBoundEvaluatingBindings = new HashSet<>();
   private ErrorReporter myErrorReporter;
 
+  public StripVisitor() {
+    myErrorReporter = null;
+  }
+
   public StripVisitor(ErrorReporter errorReporter) {
     myErrorReporter = errorReporter;
   }
@@ -95,14 +99,14 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
   @Override
   public Expression visitInferenceReference(InferenceReferenceExpression expr, Void params) {
     if (expr.getSubstExpression() == null) {
-      if (expr.getVariable() instanceof InferenceVariable) {
+      if (myErrorReporter == null || expr.getVariable() instanceof MetaInferenceVariable) {
+        return expr;
+      } else if (expr.getVariable() instanceof InferenceVariable) {
         LocalError error = ((InferenceVariable) expr.getVariable()).getErrorInfer();
         myErrorReporter.report(error);
         Expression result = new ErrorExpression(error);
         expr.setSubstExpression(result);
         return result;
-      } else if (expr.getVariable() instanceof MetaInferenceVariable) {
-        return expr;
       } else {
         throw new IllegalStateException("Unknown BaseInferenceVariable: " + expr.getVariable().getClass());
       }

@@ -2,6 +2,7 @@ package org.arend.core.definition;
 
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
+import org.arend.core.expr.ClassCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.sort.Sort;
 import org.arend.ext.core.definition.CoreDefinition;
@@ -48,6 +49,23 @@ public abstract class Definition implements CoreDefinition {
   @Override
   public DependentLink getParameters() {
     return EmptyDependentLink.getInstance();
+  }
+
+  protected boolean hasEnclosingClass() {
+    return false;
+  }
+
+  public ClassDefinition getEnclosingClass() {
+    if (hasEnclosingClass()) {
+      DependentLink parameters = getParameters();
+      if (!parameters.hasNext()) {
+        return null;
+      }
+      Expression type = parameters.getTypeExpr();
+      return type instanceof ClassCallExpression ? ((ClassCallExpression) type).getDefinition() : null;
+    } else {
+      return null;
+    }
   }
 
   public abstract Expression getTypeWithParams(List<? super DependentLink> params, Sort sortArgument);

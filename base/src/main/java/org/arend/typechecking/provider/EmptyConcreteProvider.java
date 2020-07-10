@@ -1,6 +1,5 @@
 package org.arend.typechecking.provider;
 
-import org.arend.naming.reference.ClassReferable;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.term.concrete.Concrete;
 import org.jetbrains.annotations.Nullable;
@@ -30,7 +29,7 @@ public class EmptyConcreteProvider implements ConcreteProvider {
 
   @Nullable
   @Override
-  public Concrete.ClassDefinition getConcreteClass(ClassReferable referable) {
+  public Concrete.ClassDefinition getConcreteClass(GlobalReferable referable) {
     return null;
   }
 

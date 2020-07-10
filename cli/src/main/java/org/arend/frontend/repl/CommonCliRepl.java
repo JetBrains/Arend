@@ -31,7 +31,6 @@ import org.arend.repl.action.ReplCommand;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.FileGroup;
 import org.arend.typechecking.LibraryArendExtensionProvider;
-import org.arend.typechecking.SimpleTypecheckerState;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.arend.util.FileUtils;
@@ -78,25 +77,22 @@ public abstract class CommonCliRepl extends Repl {
   // and one cannot introduce them as variable before the `this` or
   // `super` call because that's the rule of javac.
   private CommonCliRepl(
-      @NotNull SimpleTypecheckerState typecheckerState,
       @NotNull Set<ModulePath> modules,
       @NotNull ListErrorReporter errorReporter) {
     this(
-        typecheckerState,
         modules,
-        new FileLibraryResolver(new ArrayList<>(), typecheckerState, errorReporter),
+        new FileLibraryResolver(new ArrayList<>(), errorReporter),
         new InstanceProviderSet(),
         errorReporter
     );
   }
 
   private CommonCliRepl(
-      @NotNull SimpleTypecheckerState typecheckerState,
       @NotNull Set<ModulePath> modules,
       @NotNull FileLibraryResolver libraryResolver,
       @NotNull InstanceProviderSet instanceProviders,
       @NotNull ListErrorReporter errorReporter) {
-    this(typecheckerState,
+    this(
       libraryManager(libraryResolver, instanceProviders, errorReporter),
       modules,
       libraryResolver,
@@ -105,7 +101,6 @@ public abstract class CommonCliRepl extends Repl {
   }
 
   private CommonCliRepl(
-      @NotNull SimpleTypecheckerState typecheckerState,
       @NotNull LibraryManager libraryManager,
       @NotNull Set<ModulePath> modules,
       @NotNull FileLibraryResolver libraryResolver,
@@ -114,12 +109,12 @@ public abstract class CommonCliRepl extends Repl {
     super(
       errorReporter,
       libraryManager,
-      new TypecheckingOrderingListener(instanceProviders, typecheckerState, ConcreteReferableProvider.INSTANCE, IdReferableConverter.INSTANCE, errorReporter, PositionComparator.INSTANCE, new LibraryArendExtensionProvider(libraryManager)), typecheckerState
+      new TypecheckingOrderingListener(instanceProviders, ConcreteReferableProvider.INSTANCE, IdReferableConverter.INSTANCE, errorReporter, PositionComparator.INSTANCE, new LibraryArendExtensionProvider(libraryManager))
     );
     myLibraryResolver = libraryResolver;
     myReplLibrary = Files.exists(pwd.resolve(FileUtils.LIBRARY_CONFIG_FILE))
         ? libraryResolver.registerLibrary(pwd)
-        : new FileSourceLibrary("Repl", pwd, null, null, null, modules, true, new ArrayList<>(), Range.unbound(), typecheckerState);
+        : new FileSourceLibrary("Repl", pwd, null, null, null, modules, true, new ArrayList<>(), Range.unbound());
     myModules = modules;
   }
   //endregion
@@ -231,7 +226,7 @@ public abstract class CommonCliRepl extends Repl {
   }
 
   public CommonCliRepl() {
-    this(new SimpleTypecheckerState(), new TreeSet<>(), new ListErrorReporter(new ArrayList<>()));
+    this(new TreeSet<>(), new ListErrorReporter(new ArrayList<>()));
   }
 
   /**
@@ -246,7 +241,7 @@ public abstract class CommonCliRepl extends Repl {
 
   @Override
   protected final void loadLibraries() {
-    if (!loadLibrary(new PreludeResourceLibrary(myTypecheckerState)))
+    if (!loadLibrary(new PreludeResourceLibrary()))
       eprintln("[FATAL] Failed to load Prelude");
     else myReplScope.addPreludeScope(PreludeLibrary.getPreludeScope());
     if (!myLibraryManager.loadLibrary(myReplLibrary, myTypechecking))

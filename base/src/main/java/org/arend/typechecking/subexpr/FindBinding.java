@@ -97,7 +97,7 @@ public class FindBinding {
           corePattern = corePatterns.next();
           continue;
         }
-        if (Objects.equals(((Concrete.NamePattern) pattern).getReferable(), data)
+        if (Objects.equals(Referable.getUnderlyingReferable(((Concrete.NamePattern) pattern).getReferable()), data)
             || Objects.equals(pattern.getData(), data)) return binding;
           // Go to next binding
         else continue findBinding;
@@ -123,7 +123,7 @@ public class FindBinding {
       Object patternData, Concrete.LetExpression expr, LetExpression let) {
     return visitLet(expr, let, (coreLetClause, exprLetClause) ->
         Objects.equals(exprLetClause.getPattern().getData(), patternData)
-            || Objects.equals(exprLetClause.getPattern().getReferable(), patternData)
+            || Objects.equals(Referable.getUnderlyingReferable(exprLetClause.getPattern().getReferable()), patternData)
             ? coreLetClause.getTypeExpr() : null);
   }
 
@@ -173,7 +173,7 @@ public class FindBinding {
   ) {
     for (Concrete.Parameter concrete : parameters)
       for (Referable ref : concrete.getReferableList()) {
-        if (ref == referable) return core;
+        if (Referable.getUnderlyingReferable(ref) == referable) return core;
         if (concrete.isExplicit() != core.isExplicit()) continue;
         core = next.apply(core);
         if (core == null) return null;
