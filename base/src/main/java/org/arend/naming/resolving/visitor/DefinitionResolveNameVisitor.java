@@ -411,6 +411,20 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     }
   }
 
+  private void resolveSuperClasses(Concrete.ClassDefinition def, ExpressionResolveNameVisitor exprVisitor) {
+    for (int i = 0; i < def.getSuperClasses().size(); i++) {
+      Concrete.ReferenceExpression superClass = def.getSuperClasses().get(i);
+      Concrete.Expression resolved = exprVisitor.visitReference(superClass, null);
+      Referable ref = RedirectingReferable.getOriginalReferable(superClass.getReferent());
+      if (resolved != superClass || !(ref instanceof GlobalReferable && ((GlobalReferable) ref).getKind() == GlobalReferable.Kind.CLASS)) {
+        if (!(ref instanceof ErrorReference)) {
+          myLocalErrorReporter.report(new NamingError("Expected a class", superClass));
+        }
+        def.getSuperClasses().remove(i--);
+      }
+    }
+  }
+
   @Override
   public Void visitClass(Concrete.ClassDefinition def, Scope scope) {
     if (def.getStage().ordinal() >= Concrete.Stage.RESOLVED.ordinal()) {
@@ -460,17 +474,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
 
     List<Referable> context = new ArrayList<>();
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myReferableConverter, scope, context, myLocalErrorReporter, myResolverListener);
-    for (int i = 0; i < def.getSuperClasses().size(); i++) {
-      Concrete.ReferenceExpression superClass = def.getSuperClasses().get(i);
-      Concrete.Expression resolved = exprVisitor.visitReference(superClass, null);
-      Referable ref = RedirectingReferable.getOriginalReferable(superClass.getReferent());
-      if (resolved != superClass || !(ref instanceof GlobalReferable && ((GlobalReferable) ref).getKind() == GlobalReferable.Kind.CLASS)) {
-        if (!(ref instanceof ErrorReference)) {
-          myLocalErrorReporter.report(new NamingError("Expected a class", superClass));
-        }
-        def.getSuperClasses().remove(i--);
-      }
-    }
+    resolveSuperClasses(def, exprVisitor);
 
     Concrete.Expression previousType = null;
     for (int i = 0; i < classFields.size(); i++) {
@@ -564,6 +568,9 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     Collection<? extends Group> dynamicSubgroups = group.getDynamicSubgroups();
 
     Concrete.ReferableDefinition def = myConcreteProvider.getConcrete(groupRef);
+    if (def instanceof Concrete.ClassDefinition && !((Concrete.ClassDefinition) def).getSuperClasses().isEmpty()) {
+      resolveSuperClasses((Concrete.ClassDefinition) def, new ExpressionResolveNameVisitor(myReferableConverter, scope, null, myErrorReporter, myResolverListener));
+    }
     Scope convertedScope = CachingScope.make(scope);
     if (def instanceof Concrete.Definition) {
       ((Concrete.Definition) def).accept(this, convertedScope);
