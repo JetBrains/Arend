@@ -191,11 +191,12 @@ public class ModuleDeserialization {
     return readGroup(myModuleProto.getGroup(), null, modulePath);
   }
 
-  private static GlobalReferable.Kind getDefinitionKind(DefinitionProtos.Definition.DefinitionDataCase kind) {
+  private static GlobalReferable.Kind getDefinitionKind(DefinitionProtos.Definition defProto) {
+    DefinitionProtos.Definition.DefinitionDataCase kind = defProto.getDefinitionDataCase();
     switch (kind) {
       case CLASS: return GlobalReferable.Kind.CLASS;
       case DATA: return GlobalReferable.Kind.DATA;
-      case FUNCTION: return GlobalReferable.Kind.FUNCTION;
+      case FUNCTION: return defProto.getFunction().getIsInstance() ? GlobalReferable.Kind.INSTANCE : GlobalReferable.Kind.FUNCTION;
       case CONSTRUCTOR: return GlobalReferable.Kind.DEFINED_CONSTRUCTOR;
       default: return GlobalReferable.Kind.OTHER;
     }
@@ -206,7 +207,7 @@ public class ModuleDeserialization {
     DefinitionProtos.Referable referableProto = groupProto.getReferable();
     List<TCFieldReferable> fieldReferables;
     LocatedReferable referable;
-    GlobalReferable.Kind kind = getDefinitionKind(groupProto.getDefinition().getDefinitionDataCase());
+    GlobalReferable.Kind kind = getDefinitionKind(groupProto.getDefinition());
     if (groupProto.hasDefinition() && kind == GlobalReferable.Kind.CLASS) {
       fieldReferables = new ArrayList<>();
       referable = new ClassReferableImpl(readPrecedence(referableProto.getPrecedence()), referableProto.getName(), groupProto.getDefinition().getClass_().getIsRecord(), new ArrayList<>(), fieldReferables, modulePath);

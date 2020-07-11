@@ -104,7 +104,7 @@ public class Ordering extends BellmanFord<Concrete.Definition> {
         InstanceProvider instanceProvider = myInstanceProviderSet.get(definition.getData());
         if (instanceProvider != null) {
           instanceProvider.findInstance(instance -> {
-            visitor.addDependency(instance.getData());
+            visitor.addDependency(instance);
             return false;
           });
         }

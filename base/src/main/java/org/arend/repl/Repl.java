@@ -157,7 +157,6 @@ public abstract class Repl {
       group,
       myScope,
       myModuleReferable,
-      myTypechecking.getConcreteProvider(),
       myTypechecking.getReferableConverter()
     );
   }

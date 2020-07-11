@@ -107,6 +107,7 @@ message Definition {
         repeated ParametersLevel parameters_levels = 10;
         bool body_is_hidden = 11;
         bool has_enclosing_class = 13;
+        bool is_instance = 14;
     }
     message DConstructorData {
         FunctionData function = 1;

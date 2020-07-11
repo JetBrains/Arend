@@ -1,6 +1,6 @@
 package org.arend.typechecking.instance.provider;
 
-import org.arend.term.concrete.Concrete;
+import org.arend.naming.reference.TCReferable;
 
 import java.util.function.Predicate;
 
@@ -14,7 +14,7 @@ public class EmptyInstanceProvider implements InstanceProvider {
   }
 
   @Override
-  public Concrete.FunctionDefinition findInstance(Predicate<Concrete.FunctionDefinition> pred) {
+  public TCReferable findInstance(Predicate<TCReferable> pred) {
     return null;
   }
 }

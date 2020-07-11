@@ -8,6 +8,7 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.instance.InstanceSearchParameters;
+import org.arend.naming.reference.TCReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.instance.provider.InstanceProvider;
 import org.arend.typechecking.result.TypecheckingResult;
@@ -129,12 +130,12 @@ public class GlobalInstancePool implements InstancePool {
     }
 
     Expression finalClassifyingExpression = normClassifyingExpression;
-    class MyPredicate implements Predicate<Concrete.FunctionDefinition> {
+    class MyPredicate implements Predicate<TCReferable> {
       private FunctionDefinition instanceDef = null;
 
       @Override
-      public boolean test(Concrete.FunctionDefinition instance) {
-        instanceDef = (FunctionDefinition) instance.getData().getTypechecked();
+      public boolean test(TCReferable instance) {
+        instanceDef = (FunctionDefinition) instance.getTypechecked();
         if (!(instanceDef != null && instanceDef.status().headerIsOK() && instanceDef.getResultType() instanceof ClassCallExpression && parameters.testClass(((ClassCallExpression) instanceDef.getResultType()).getDefinition()) && parameters.testGlobalInstance(instanceDef))) {
           return false;
         }
@@ -161,19 +162,19 @@ public class GlobalInstancePool implements InstancePool {
     }
 
     MyPredicate predicate = new MyPredicate();
-    Concrete.FunctionDefinition instance = myInstanceProvider.findInstance(predicate);
+    TCReferable instance = myInstanceProvider.findInstance(predicate);
     if (instance == null || predicate.instanceDef == null) {
       return null;
     }
 
     ClassDefinition actualClass = ((ClassCallExpression) predicate.instanceDef.getResultType()).getDefinition();
-    Concrete.Expression instanceExpr = new Concrete.ReferenceExpression(sourceNode.getData(), instance.getData());
+    Concrete.Expression instanceExpr = new Concrete.ReferenceExpression(sourceNode.getData(), instance);
     for (DependentLink link = predicate.instanceDef.getParameters(); link.hasNext(); link = link.getNext()) {
       List<RecursiveInstanceData> newRecursiveData = new ArrayList<>((recursiveHoleExpression == null ? 0 : recursiveHoleExpression.recursiveData.size()) + 1);
       if (recursiveHoleExpression != null) {
         newRecursiveData.addAll(recursiveHoleExpression.recursiveData);
       }
-      newRecursiveData.add(new RecursiveInstanceData(instance.getData(), actualClass.getReferable(), classifyingExpression));
+      newRecursiveData.add(new RecursiveInstanceData(instance, actualClass.getReferable(), classifyingExpression));
       instanceExpr = Concrete.AppExpression.make(sourceNode.getData(), instanceExpr, new RecursiveInstanceHoleExpression(recursiveHoleExpression == null ? sourceNode : recursiveHoleExpression.getData(), newRecursiveData), link.isExplicit());
     }
 

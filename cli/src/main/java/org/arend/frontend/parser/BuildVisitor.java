@@ -439,7 +439,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     List<Concrete.Parameter> parameters = visitLamTeles(ctx.tele());
     DefIdContext defId = ctx.defId();
     Pair<String, Precedence> alias = visitAlias(defId.alias());
-    ConcreteLocatedReferable reference = makeReferable(tokenPosition(ctx.start), defId.ID().getText(), visitPrecedence(defId.precedence()), alias.proj1, alias.proj2, parent, isInstance ? LocatedReferableImpl.Kind.FUNCTION : GlobalReferable.Kind.DEFINED_CONSTRUCTOR);
+    ConcreteLocatedReferable reference = makeReferable(tokenPosition(ctx.start), defId.ID().getText(), visitPrecedence(defId.precedence()), alias.proj1, alias.proj2, parent, isInstance ? LocatedReferableImpl.Kind.INSTANCE : GlobalReferable.Kind.DEFINED_CONSTRUCTOR);
     Pair<Concrete.Expression,Concrete.Expression> returnPair = visitReturnExpr(ctx.returnExpr());
 
     List<Group> subgroups = new ArrayList<>();

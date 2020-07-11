@@ -276,7 +276,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
 
     if (def.getKind().isUse()) {
       TCReferable useParent = def.getUseParent();
-      boolean isFunc = useParent.getKind() == GlobalReferable.Kind.FUNCTION;
+      boolean isFunc = useParent.getKind() == GlobalReferable.Kind.FUNCTION || useParent.getKind() == GlobalReferable.Kind.INSTANCE;
       if (isFunc || useParent.getKind() == GlobalReferable.Kind.CLASS || useParent.getKind() == GlobalReferable.Kind.DATA) {
         if (def.getKind() == FunctionKind.COERCE) {
           if (isFunc) {
