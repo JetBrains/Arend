@@ -84,6 +84,11 @@ public class UncheckedExpressionImpl implements UncheckedExpression {
   }
 
   @Override
+  public boolean areDisjointConstructors(@NotNull UncheckedExpression expression) {
+    return myExpression.areDisjointConstructors(expression);
+  }
+
+  @Override
   public String toString() {
     return myExpression.toString();
   }
