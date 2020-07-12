@@ -11,19 +11,27 @@ import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.pattern.Pattern;
 import org.arend.ext.error.ErrorReporter;
+import org.arend.ext.error.ListErrorReporter;
 import org.arend.ext.error.LocalError;
 
 import java.util.*;
 
 public class StripVisitor implements ExpressionVisitor<Void, Expression> {
-  private final Set<EvaluatingBinding> myBoundEvaluatingBindings = new HashSet<>();
+  private final Set<EvaluatingBinding> myBoundEvaluatingBindings;
   private ErrorReporter myErrorReporter;
 
   public StripVisitor() {
+    myBoundEvaluatingBindings = new HashSet<>();
     myErrorReporter = null;
   }
 
   public StripVisitor(ErrorReporter errorReporter) {
+    myBoundEvaluatingBindings = new HashSet<>();
+    myErrorReporter = errorReporter;
+  }
+
+  private StripVisitor(Set<EvaluatingBinding> boundEvaluatingBindings, ErrorReporter errorReporter) {
+    myBoundEvaluatingBindings = boundEvaluatingBindings;
     myErrorReporter = errorReporter;
   }
 
@@ -152,7 +160,14 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public ErrorExpression visitError(ErrorExpression expr, Void params) {
-    return expr.getExpression() == null ? expr : expr.replaceExpression(expr.getExpression().accept(this, null));
+    if (expr.getExpression() == null) {
+      return expr;
+    }
+    if (expr instanceof GoalErrorExpression) {
+      return expr.replaceExpression(expr.getExpression().accept(new StripVisitor(myBoundEvaluatingBindings, new ListErrorReporter(((GoalErrorExpression) expr).goalError.errors)), null));
+    } else {
+      return new ErrorExpression(null, expr.isGoal(), expr.useExpression());
+    }
   }
 
   @Override
