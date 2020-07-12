@@ -2105,11 +2105,11 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     List<GeneralError> errors = expr.errors;
     GoalSolver.CheckGoalResult goalResult = null;
     GoalSolver solver = expr.useGoalSolver ? expr.goalSolver : myArendExtension != null ? myArendExtension.getGoalSolver() : null;
-    if (expr.getExpression() != null || solver != null) {
+    if (expr.expression != null || solver != null) {
       errors = new ArrayList<>(expr.errors);
       goalResult = withErrorReporter(new ListErrorReporter(errors), tc -> {
         if (solver == null) {
-          return new GoalSolver.CheckGoalResult(expr.getExpression(), checkExpr(expr.getExpression(), expectedType));
+          return new GoalSolver.CheckGoalResult(expr.originalExpression, checkExpr(expr.expression, expectedType));
         } else {
           return solver.checkGoal(tc, expr, expectedType);
         }

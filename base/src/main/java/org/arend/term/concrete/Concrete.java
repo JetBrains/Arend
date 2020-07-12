@@ -644,6 +644,7 @@ public final class Concrete {
     public static final byte PREC = 12;
     private final String myName;
     public Expression expression;
+    public final Expression originalExpression;
     public final GoalSolver goalSolver;
     public final boolean useGoalSolver;
     public final List<GeneralError> errors;
@@ -652,6 +653,7 @@ public final class Concrete {
       super(data);
       myName = name;
       this.expression = expression;
+      this.originalExpression = expression;
       this.goalSolver = null;
       this.useGoalSolver = false;
       this.errors = Collections.emptyList();
@@ -661,6 +663,7 @@ public final class Concrete {
       super(data);
       myName = name;
       this.expression = expression;
+      this.originalExpression = expression;
       this.goalSolver = goalSolver;
       this.useGoalSolver = useGoalSolver;
       this.errors = errors;
@@ -669,6 +672,11 @@ public final class Concrete {
     @Override
     public String getName() {
       return myName;
+    }
+
+    @Override
+    public @Nullable ConcreteExpression getOriginalExpression() {
+      return originalExpression;
     }
 
     @Override
