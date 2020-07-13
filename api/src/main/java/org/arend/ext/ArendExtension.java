@@ -95,16 +95,9 @@ public interface ArendExtension {
   }
 
   /**
-   * A number checker is used to interpret numerical literals.
+   * A literal checker is used to interpret string and numerical literals.
    */
-  default @Nullable NumberTypechecker getNumberTypechecker() {
-    return null;
-  }
-
-  /**
-   * A string checker is used to interpret string literals.
-   */
-  default @Nullable StringTypechecker getStringTypechecker() {
+  default @Nullable LiteralTypechecker getLiteralTypechecker() {
     return null;
   }
 }

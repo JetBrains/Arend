@@ -8,6 +8,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.math.BigInteger;
 
-public interface NumberTypechecker {
+public interface LiteralTypechecker {
+  @Nullable TypedExpression typecheckString(@NotNull String unescapedString, @NotNull ExpressionTypechecker typechecker, @NotNull ContextData contextData);
+
   @Nullable TypedExpression typecheckNumber(@NotNull BigInteger number, @NotNull ExpressionTypechecker typechecker, @NotNull ContextData contextData);
 }

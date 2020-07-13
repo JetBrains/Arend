@@ -22,7 +22,6 @@ import org.arend.core.subst.LevelSubstitution;
 import org.arend.error.*;
 import org.arend.ext.ArendExtension;
 import org.arend.ext.FreeBindingsModifier;
-import org.arend.ext.NumberTypechecker;
 import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.concrete.expr.ConcreteReferenceExpression;
@@ -1999,7 +1998,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
   public TypecheckingResult visitNumericLiteral(Concrete.NumericLiteral expr, Expression expectedType) {
     BigInteger number = expr.getNumber();
     if (myArendExtension != null) {
-      NumberTypechecker checker = myArendExtension.getNumberTypechecker();
+      var checker = myArendExtension.getLiteralTypechecker();
       if (checker != null) {
         int numberOfErrors = myErrorReporter.myErrorReporter.getErrorsNumber();
         TypecheckingResult result = TypecheckingResult.fromChecked(checker.typecheckNumber(number, this, new ContextDataImpl(expr, Collections.emptyList(), expectedType, null)));
@@ -2017,7 +2016,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
   public TypecheckingResult visitStringLiteral(Concrete.StringLiteral expr, Expression expectedType) {
     var string = expr.getUnescapedString();
     if (myArendExtension != null) {
-      var checker = myArendExtension.getStringTypechecker();
+      var checker = myArendExtension.getLiteralTypechecker();
       if (checker != null) {
         int numberOfErrors = myErrorReporter.myErrorReporter.getErrorsNumber();
         TypecheckingResult result = TypecheckingResult.fromChecked(checker.typecheckString(string, this, new ContextDataImpl(expr, Collections.emptyList(), expectedType, null)));

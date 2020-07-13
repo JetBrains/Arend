@@ -5,7 +5,8 @@ import org.arend.ext.typechecking.LevelProver;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Map;
 
 /**
  * This extension is used for libraries without extension classes.
@@ -41,20 +42,9 @@ public class DefaultArendExtension implements ArendExtension {
   }
 
   @Override
-  public @Nullable NumberTypechecker getNumberTypechecker() {
-    for (ArendExtension extension : dependencies.values()) {
-      NumberTypechecker checker = extension.getNumberTypechecker();
-      if (checker != null) {
-        return checker;
-      }
-    }
-    return null;
-  }
-
-  @Override
-  public @Nullable StringTypechecker getStringTypechecker() {
+  public @Nullable LiteralTypechecker getLiteralTypechecker() {
     for (var extension : dependencies.values()) {
-      var checker = extension.getStringTypechecker();
+      var checker = extension.getLiteralTypechecker();
       if (checker != null) {
         return checker;
       }
