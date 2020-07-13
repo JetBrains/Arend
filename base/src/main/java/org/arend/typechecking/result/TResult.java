@@ -13,4 +13,5 @@ public interface TResult {
   DependentLink getParameter();
   TResult applyExpression(Expression expression, boolean isExplicit, ErrorReporter errorReporter, Concrete.SourceNode sourceNode);
   List<? extends DependentLink> getImplicitParameters();
+  Expression getType();
 }

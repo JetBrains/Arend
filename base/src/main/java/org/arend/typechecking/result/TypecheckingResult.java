@@ -76,7 +76,7 @@ public class TypecheckingResult implements TResult, TypedExpression {
 
   @NotNull
   @Override
-  public CoreExpression getType() {
+  public Expression getType() {
     return type;
   }
 
