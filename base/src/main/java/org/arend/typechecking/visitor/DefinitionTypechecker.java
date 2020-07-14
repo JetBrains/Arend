@@ -236,7 +236,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         } else {
           FreeVariablesClassifier classifier = new FreeVariablesClassifier(link);
           boolean isDataTypeParam = isDataTypeParameter;
-          DependentLink link1 = link.getNext();
+          DependentLink link1 = definition instanceof FunctionDefinition ? link : link.getNext(); // if link1 == link, check the result type
           boolean found = false;
           while (true) {
             if (!link1.hasNext()) {
@@ -249,28 +249,36 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
               }
             }
 
-            FreeVariablesClassifier.Result result = classifier.checkBinding(link1);
-            if ((result == FreeVariablesClassifier.Result.GOOD || result == FreeVariablesClassifier.Result.BOTH) && processed.contains(link1)) {
+            boolean checkResultType = link1 == link && definition instanceof FunctionDefinition;
+            DependentLink actualLink = checkResultType ? EmptyDependentLink.getInstance() : link1;
+            FreeVariablesClassifier.Result result;
+            if (checkResultType) {
+              Expression type = ((FunctionDefinition) definition).getResultType();
+              result = type instanceof ReferenceExpression && ((ReferenceExpression) type).getBinding() == link ? FreeVariablesClassifier.Result.BAD : type.accept(classifier, true);
+            } else {
+              result = classifier.checkBinding(link1);
+            }
+            if ((result == FreeVariablesClassifier.Result.GOOD || result == FreeVariablesClassifier.Result.BOTH) && processed.contains(actualLink)) {
               found = true;
               processed.add(link);
               break;
             }
-            if (result == FreeVariablesClassifier.Result.GOOD && link1.isExplicit()) {
+            if (result == FreeVariablesClassifier.Result.GOOD && (checkResultType || link1.isExplicit())) {
               found = true;
               processed.add(link);
               Set<Binding> freeVars = new HashSet<>();
-              getFreeVariablesClosure(link1.getTypeExpr(), freeVars);
+              getFreeVariablesClosure(checkResultType ? ((FunctionDefinition) definition).getResultType() : link1.getTypeExpr(), freeVars);
               for (DependentLink link2 : parametersList) {
-                for (; link2.hasNext() && link2 != link1; link2 = link2.getNext()) {
+                for (; link2.hasNext() && link2 != actualLink; link2 = link2.getNext()) {
                   if (freeVars.contains(link2)) {
                     processed.add(link2);
                   }
                 }
-                if (link2 == link1) {
+                if (!checkResultType && link2 == link1) {
                   break;
                 }
               }
-              processed.add(link1);
+              processed.add(actualLink);
               break;
             }
 
@@ -292,15 +300,20 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         needReorder = true;
         break;
       }
-      link = link.getNext();
-      if (!link.hasNext() && isDataTypeParameter) {
-        link = parametersList.get(1);
-        isDataTypeParameter = false;
+      if (link.hasNext()) {
+        link = link.getNext();
+        if (!link.hasNext() && isDataTypeParameter) {
+          link = parametersList.get(1);
+          isDataTypeParameter = false;
+        }
       }
     }
 
     if (needReorder) {
       Map<Binding,Integer> map = new HashMap<>();
+      if (definition instanceof FunctionDefinition) {
+        map.put(EmptyDependentLink.getInstance(), -1);
+      }
       int i = 0;
       for (DependentLink link1 : parametersList) {
         for (; link1.hasNext(); link1 = link1.getNext()) {
@@ -312,6 +325,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       List<Integer> order = new ArrayList<>(processed.size());
       for (Binding binding : processed) {
         order.add(map.get(binding));
+      }
+      if (order.get(order.size() - 1) == -1) {
+        order.remove(order.size() - 1);
       }
 
       definition.setParametersTypecheckingOrder(order);
