@@ -23,11 +23,7 @@ public interface LiteralTypechecker {
    * @return <code>null</code> if check failed
    * @see ExpressionTypechecker#checkNumber(BigInteger, CoreExpression, ConcreteExpression)
    */
-  default @Nullable TypedExpression typecheckNumber(
-    @NotNull BigInteger number,
-    @NotNull ExpressionTypechecker typechecker,
-    @NotNull ContextData contextData
-  ) {
+  default @Nullable TypedExpression typecheckNumber(@NotNull BigInteger number, @NotNull ExpressionTypechecker typechecker, @NotNull ContextData contextData) {
     return typechecker.checkNumber(number, contextData.getExpectedType(), contextData.getMarker());
   }
 }
