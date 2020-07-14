@@ -1436,7 +1436,8 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
 
   @Override
   public Object visitAtomString(AtomStringContext ctx) {
-    return new Concrete.StringLiteral(tokenPosition(ctx.start), StringEscapeUtils.unescapeStringCharacters(ctx.STRING().getText()));
+    var unescapedString = StringEscapeUtils.unescapeStringCharacters(ctx.STRING().getText());
+    return new Concrete.StringLiteral(tokenPosition(ctx.start), unescapedString.substring(1, unescapedString.length() - 1));
   }
 
   @Override
