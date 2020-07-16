@@ -313,4 +313,20 @@ public class ClassParametersTest extends TypeCheckingTestCase {
       "\\record R {x : C} (y : Nat)\n" +
       "\\func f => R {\\new C 0} { | y => 0}");
   }
+
+  @Test
+  public void lamTest() {
+    typeCheckModule(
+      "\\record R (x y : Nat)\n" +
+      "\\func f : Nat -> Nat -> \\Type => R\n" +
+      "\\func g : f 0 1 => \\new R");
+  }
+
+  @Test
+  public void lamTest2() {
+    typeCheckModule(
+      "\\record R (x y : Nat)\n" +
+      "\\func f : Nat -> \\Type => R 0\n" +
+      "\\func g : f 1 => \\new R");
+  }
 }

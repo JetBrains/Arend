@@ -387,6 +387,30 @@ public abstract class Expression implements Body, CoreExpression {
     return cod instanceof PiExpression ? cod.getPiParameters(params, implicitOnly) : cod;
   }
 
+  public Expression normalizePi(List<? super SingleDependentLink> parameters) {
+    Expression expr = normalize(NormalizationMode.WHNF);
+    if (!(expr instanceof PiExpression)) {
+      return expr;
+    }
+
+    List<PiExpression> piExprs = new ArrayList<>();
+    while (expr instanceof PiExpression) {
+      PiExpression piExpr = (PiExpression) expr;
+      piExprs.add(piExpr);
+      if (parameters != null) {
+        for (SingleDependentLink link = piExpr.getParameters(); link.hasNext(); link = link.getNext()) {
+          parameters.add(link);
+        }
+      }
+      expr = piExpr.getCodomain();
+    }
+
+    for (int i = piExprs.size() - 1; i >= 0; i--) {
+      expr = new PiExpression(piExprs.get(i).getResultSort(), piExprs.get(i).getParameters(), expr);
+    }
+    return expr;
+  }
+
   public Expression getLamParameters(List<DependentLink> params) {
     Expression body = this;
     for (LamExpression lamBody = body.cast(LamExpression.class); lamBody != null; lamBody = body.cast(LamExpression.class)) {

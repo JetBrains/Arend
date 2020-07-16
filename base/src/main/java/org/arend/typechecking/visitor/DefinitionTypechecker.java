@@ -712,7 +712,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
     } else {
       pseudoImplemented = Collections.emptySet();
-      result = typechecker.finalCheckExpr(Concrete.ClassExtExpression.make(def.getData(), resultType, classFieldImpls), Type.OMEGA);
+      result = typechecker.finalCheckExpr(Concrete.ClassExtExpression.make(def.getData(), typechecker.desugarClassApp(resultType, true), classFieldImpls), Type.OMEGA);
       if (result == null || !(result.expression instanceof ClassCallExpression)) {
         return null;
       }
