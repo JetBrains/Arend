@@ -63,10 +63,7 @@ public class TypecheckingResult implements TResult, TypedExpression {
   @Override
   public List<SingleDependentLink> getImplicitParameters() {
     List<SingleDependentLink> params = new ArrayList<>();
-    type = type.normalize(NormalizationMode.WHNF);
-    if (type instanceof PiExpression) {
-      type.getPiParameters(params, true);
-    }
+    type.getPiParameters(params, true);
     return params;
   }
 
