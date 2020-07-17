@@ -16,11 +16,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.function.Function;
+import java.util.*;
 
 @SuppressWarnings("WeakerAccess")
 public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Definition>, AbstractExpressionVisitor<Void, Concrete.Expression>, AbstractLevelExpressionVisitor<Void, Concrete.LevelExpression> {
@@ -43,7 +39,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     };
   }
 
-  public static Concrete.Definition convert(ReferableConverter referableConverter, Abstract.Definition definition, ErrorReporter errorReporter) {
+  public static @NotNull Concrete.Definition convert(ReferableConverter referableConverter, Abstract.Definition definition, ErrorReporter errorReporter) {
     ConcreteBuilder builder = new ConcreteBuilder(referableConverter, errorReporter, referableConverter.toDataLocatedReferable(definition.getReferable()));
     Concrete.Definition result = definition.accept(builder);
     if (builder.myErrorLevel != null) {
@@ -52,22 +48,26 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     return result;
   }
 
-  public static <R> R convert(ReferableConverter referableConverter, boolean allowErrors, Function<ConcreteBuilder,R> function) {
-    ErrorReporter errorReporter = allowErrors ? DummyErrorReporter.INSTANCE : new CountingErrorReporter(DummyErrorReporter.INSTANCE);
-    R result = function.apply(new ConcreteBuilder(referableConverter, errorReporter, null));
-    return errorReporter instanceof CountingErrorReporter && ((CountingErrorReporter) errorReporter).getErrorsNumber() != 0 ? null : result;
-}
+  public static @Nullable Concrete.Expression convertWithoutErrors(Abstract.Expression expression) {
+    CountingErrorReporter errorReporter = new CountingErrorReporter(DummyErrorReporter.INSTANCE);
+    Concrete.Expression result = expression.accept(new ConcreteBuilder(null, errorReporter, null), null);
+    return errorReporter.getErrorsNumber() == 0 ? result : null;
+  }
 
-  public static Concrete.Expression convertExpression(ReferableConverter referableConverter, Abstract.Expression expression) {
-    return convert(referableConverter, false, builder -> expression.accept(builder, null));
+  public static @NotNull Concrete.Expression convertExpression(Abstract.Expression expression, ErrorReporter errorReporter) {
+    return expression.accept(new ConcreteBuilder(null, errorReporter, null), null);
+  }
+
+  public static @NotNull Concrete.Expression convertExpression(Abstract.Expression expression) {
+    return convertExpression(expression, DummyErrorReporter.INSTANCE);
   }
 
   // Definition
 
   private void setEnclosingClass(Concrete.Definition definition, Abstract.Definition abstractDef) {
     TCReferable enclosingClass = myReferableConverter.toDataLocatedReferable(abstractDef.getEnclosingClass());
-    if (enclosingClass instanceof TCClassReferable && !(definition instanceof Concrete.ClassDefinition)) {
-      definition.enclosingClass = (TCClassReferable) enclosingClass;
+    if (!(definition instanceof Concrete.ClassDefinition)) {
+      definition.enclosingClass = enclosingClass;
     }
   }
 
@@ -212,14 +212,9 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
   @Override
   public Concrete.Definition visitClass(Abstract.ClassDefinition def) {
-    if (!(myDefinition instanceof TCClassReferable)) {
-      return null;
-    }
-
     List<Concrete.ClassElement> elements = new ArrayList<>();
-    Concrete.ClassDefinition classDef = new Concrete.ClassDefinition((TCClassReferable) myDefinition, def.isRecord(), def.withoutClassifying(), buildReferences(def.getSuperClasses()), elements);
+    Concrete.ClassDefinition classDef = new Concrete.ClassDefinition(myDefinition, def.isRecord(), def.withoutClassifying(), buildReferences(def.getSuperClasses()), elements);
     buildClassParameters(def.getParameters(), classDef, elements);
-    setEnclosingClass(classDef, def);
 
     for (Abstract.ClassElement element : def.getClassElements()) {
       if (element instanceof Abstract.ClassField) {
@@ -326,7 +321,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     Concrete.Expression cType;
     if (type == null) {
       if (referableList.size() == 1) {
-        return new Concrete.NameParameter(parameter.getData(), parameter.isExplicit(), myReferableConverter.toDataReferable(referableList.get(0)));
+        return new Concrete.NameParameter(parameter.getData(), parameter.isExplicit(), DataLocalReferable.make(referableList.get(0)));
       } else {
         myErrorLevel = GeneralError.Level.ERROR;
         cType = new Concrete.ErrorHoleExpression(parameter.getData(), null);
@@ -340,7 +335,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     } else {
       List<Referable> dataReferableList = new ArrayList<>(referableList.size());
       for (Referable referable : referableList) {
-        dataReferableList.add(referable instanceof LocatedReferable ? myReferableConverter.toDataLocatedReferable((LocatedReferable) referable) : myReferableConverter.toDataReferable(referable));
+        dataReferableList.add(referable instanceof LocatedReferable && myReferableConverter != null ? myReferableConverter.toDataLocatedReferable((LocatedReferable) referable) : DataLocalReferable.make(referable));
       }
       return new Concrete.TelescopeParameter(parameter.getData(), parameter.isExplicit(), dataReferableList, cType);
     }
@@ -367,26 +362,13 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     return parameters;
   }
 
-  public List<Concrete.TelescopeParameter> buildTelescopeParameters(Collection<? extends Abstract.Parameter> absParameters) {
-    List<Concrete.TelescopeParameter> parameters = new ArrayList<>(absParameters.size());
-    for (Abstract.Parameter absParameter : absParameters) {
-      Concrete.Parameter parameter = buildParameter(absParameter, true);
-      if (parameter instanceof Concrete.TelescopeParameter) {
-        parameters.add((Concrete.TelescopeParameter) parameter);
-      } else {
-        myErrorReporter.report(new AbstractExpressionError(GeneralError.Level.ERROR, "Expected a typed parameter", parameter.getData()));
-      }
-    }
-    return parameters;
-  }
-
   public List<Concrete.TypedReferable> buildTypedReferables(List<? extends Abstract.TypedReferable> typedReferables) {
     List<Concrete.TypedReferable> result = new ArrayList<>();
     for (Abstract.TypedReferable typedReferable : typedReferables) {
       Referable referable = typedReferable.getReferable();
       if (referable != null) {
         Abstract.Expression type = typedReferable.getType();
-        result.add(new Concrete.TypedReferable(typedReferable.getData(), myReferableConverter.toDataReferable(referable), type == null ? null : type.accept(this, null)));
+        result.add(new Concrete.TypedReferable(typedReferable.getData(), DataLocalReferable.make(referable), type == null ? null : type.accept(this, null)));
       }
     }
     return result;
@@ -414,7 +396,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
         }
         return new Concrete.ConstructorPattern(pattern.getData(), pattern.isExplicit(), reference, buildPatterns(args), buildTypedReferables(pattern.getAsPatterns()));
       } else {
-        return new Concrete.NamePattern(pattern.getData(), pattern.isExplicit(), myReferableConverter.toDataReferable(reference), type == null ? null : type.accept(this, null));
+        return new Concrete.NamePattern(pattern.getData(), pattern.isExplicit(), DataLocalReferable.make(reference), type == null ? null : type.accept(this, null));
       }
     }
   }
@@ -573,7 +555,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
             myErrorLevel = GeneralError.Level.ERROR;
           }
           Concrete.Expression cExpr = expr == null ? new Concrete.ErrorHoleExpression(data, null) : expr.accept(this, null);
-          concreteCaseArgs.add(new Concrete.CaseArgument(cExpr, myReferableConverter.toDataReferable(caseArg.getReferable()), cType));
+          concreteCaseArgs.add(new Concrete.CaseArgument(cExpr, DataLocalReferable.make(caseArg.getReferable()), cType));
         }
       }
     }
@@ -631,7 +613,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
     if (referable != null) {
       Abstract.Expression type = pattern.getType();
-      return new Concrete.LetClausePattern(myReferableConverter.toDataReferable(referable), type == null ? null : type.accept(this, null));
+      return new Concrete.LetClausePattern(DataLocalReferable.make(referable), type == null ? null : type.accept(this, null));
     } else {
       List<Concrete.LetClausePattern> concretePatterns = new ArrayList<>();
       for (Abstract.LetClausePattern subPattern : pattern.getPatterns()) {
@@ -657,7 +639,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
         List<? extends Abstract.Parameter> parameters = clause.getParameters();
         Abstract.Expression resultType = clause.getResultType();
         if (referable != null) {
-          clauses.add(new Concrete.LetClause(myReferableConverter.toDataReferable(referable), buildParameters(parameters), resultType == null ? null : resultType.accept(this, null), term.accept(this, null)));
+          clauses.add(new Concrete.LetClause(DataLocalReferable.make(referable), buildParameters(parameters), resultType == null ? null : resultType.accept(this, null), term.accept(this, null)));
         } else {
           Abstract.LetClausePattern pattern = clause.getPattern();
           if (pattern != null) {
@@ -676,6 +658,11 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   @Override
   public Concrete.NumericLiteral visitNumericLiteral(@Nullable Object data, @NotNull BigInteger number, Void params) {
     return new Concrete.NumericLiteral(data, number);
+  }
+
+  @Override
+  public Concrete.Expression visitStringLiteral(@Nullable Object data, @NotNull String unescapedString, Void params) {
+    return new Concrete.StringLiteral(data, unescapedString);
   }
 
   @Override

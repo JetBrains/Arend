@@ -1,8 +1,6 @@
 package org.arend.naming.scope;
 
-import org.arend.naming.reference.ErrorReference;
-import org.arend.naming.reference.RedirectingReferableImpl;
-import org.arend.naming.reference.Referable;
+import org.arend.naming.reference.*;
 import org.arend.naming.resolving.visitor.ExpressionResolveNameVisitor;
 import org.arend.term.NameRenaming;
 import org.arend.term.NamespaceCommand;
@@ -41,7 +39,12 @@ public class NamespaceCommandNamespace implements Scope {
   public Collection<? extends Referable> getElements() {
     Set<String> hidden = new HashSet<>();
     for (Referable hiddenElement : myNamespaceCommand.getHiddenReferences()) {
-      hidden.add(hiddenElement.textRepresentation());
+      Referable oldRef = ExpressionResolveNameVisitor.resolve(hiddenElement, myModuleNamespace);
+      hidden.add(oldRef.textRepresentation());
+      String alias = oldRef instanceof GlobalReferable ? ((GlobalReferable) oldRef).getAliasName() : null;
+      if (alias != null) {
+        hidden.add(alias);
+      }
     }
 
     List<Referable> elements = new ArrayList<>();
@@ -51,10 +54,17 @@ public class NamespaceCommandNamespace implements Scope {
       if (!(oldRef == null || oldRef instanceof ErrorReference)) {
         String newName = renaming.getName();
         String name = newName != null ? newName : oldRef.textRepresentation();
-        if (!hidden.contains(name)) {
+        String alias = oldRef instanceof GlobalReferable ? ((GlobalReferable) oldRef).getAliasName() : null;
+        if (!hidden.contains(name) && (alias == null || !hidden.contains(alias))) {
           elements.add(newName != null ? new RedirectingReferableImpl(oldRef, renaming.getPrecedence(), newName) : oldRef);
+          if (alias != null && newName == null) {
+            elements.add(new AliasReferable((GlobalReferable) oldRef));
+          }
         }
         hidden.add(oldRef.textRepresentation());
+        if (alias != null) {
+          hidden.add(alias);
+        }
       }
     }
 
@@ -78,66 +88,97 @@ public class NamespaceCommandNamespace implements Scope {
     return elements;
   }
 
+  private boolean isHidden(String name) {
+    for (Referable hiddenRef : myNamespaceCommand.getHiddenReferences()) {
+      Referable oldRef = ExpressionResolveNameVisitor.resolve(hiddenRef, myModuleNamespace);
+      if (oldRef.getRefName().equals(name)) {
+        return true;
+      }
+      String alias = oldRef instanceof GlobalReferable ? ((GlobalReferable) oldRef).getAliasName() : null;
+      if (alias != null && alias.equals(name)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private boolean isHiddenByUsing(String name) {
+    if (!myNamespaceCommand.isUsing()) {
+      return true;
+    }
+
+    for (NameRenaming renaming : myNamespaceCommand.getOpenedReferences()) {
+      Referable oldRef = ExpressionResolveNameVisitor.resolve(renaming.getOldReference(), myModuleNamespace);
+      if (oldRef.textRepresentation().equals(name)) {
+        return true;
+      }
+      String alias = oldRef instanceof GlobalReferable ? ((GlobalReferable) oldRef).getAliasName() : null;
+      if (alias != null && alias.equals(name)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   @Nullable
   @Override
   public Referable resolveName(String name) {
-    for (Referable hiddenRef : myNamespaceCommand.getHiddenReferences()) {
-      if (hiddenRef.textRepresentation().equals(name)) {
-        return null;
-      }
+    if (isHidden(name)) {
+      return null;
     }
 
     Collection<? extends NameRenaming> opened = myNamespaceCommand.getOpenedReferences();
     for (NameRenaming renaming : opened) {
       String newName = renaming.getName();
       Referable oldRef = renaming.getOldReference();
-      if ((newName != null ? newName : oldRef.textRepresentation()).equals(name)) {
+      boolean ok;
+      if (newName != null) {
+        ok = newName.equals(name);
+      } else {
+        oldRef = ExpressionResolveNameVisitor.resolve(oldRef, myModuleNamespace);
+        ok = oldRef.getRefName().equals(name);
+        if (!ok) {
+          String alias = oldRef instanceof GlobalReferable ? ((GlobalReferable) oldRef).getAliasName() : null;
+          ok = alias != null && alias.equals(name);
+        }
+      }
+      if (ok) {
         oldRef = ExpressionResolveNameVisitor.resolve(oldRef, myModuleNamespace);
         return oldRef == null || oldRef instanceof ErrorReference ? null : newName != null ? new RedirectingReferableImpl(oldRef, renaming.getPrecedence(), newName) : oldRef;
       }
     }
 
-    if (!myNamespaceCommand.isUsing()) {
-      return null;
-    }
-
-    for (NameRenaming renaming : opened) {
-      if (renaming.getOldReference().textRepresentation().equals(name)) {
-        return null;
-      }
-    }
-
-    return myModuleNamespace.resolveName(name);
+    return isHiddenByUsing(name) ? null : myModuleNamespace.resolveName(name);
   }
 
   @Nullable
   @Override
   public Scope resolveNamespace(String name, boolean onlyInternal) {
-    for (Referable hiddenRef : myNamespaceCommand.getHiddenReferences()) {
-      if (hiddenRef.textRepresentation().equals(name)) {
-        return null;
-      }
+    if (isHidden(name)) {
+      return null;
     }
 
     Collection<? extends NameRenaming> opened = myNamespaceCommand.getOpenedReferences();
     for (NameRenaming renaming : opened) {
       String newName = renaming.getName();
       Referable oldRef = renaming.getOldReference();
-      if ((newName != null ? newName : oldRef.textRepresentation()).equals(name)) {
-        return myModuleNamespace.resolveNamespace(oldRef.textRepresentation(), onlyInternal);
+      boolean ok;
+      if (newName != null) {
+        ok = newName.equals(name);
+      } else {
+        oldRef = ExpressionResolveNameVisitor.resolve(oldRef, myModuleNamespace);
+        ok = oldRef.getRefName().equals(name);
+        if (!ok) {
+          String alias = oldRef instanceof GlobalReferable ? ((GlobalReferable) oldRef).getAliasName() : null;
+          ok = alias != null && alias.equals(name);
+        }
+      }
+      if (ok) {
+        return myModuleNamespace.resolveNamespace(oldRef.getRefName(), onlyInternal);
       }
     }
 
-    if (!myNamespaceCommand.isUsing()) {
-      return null;
-    }
-
-    for (NameRenaming renaming : opened) {
-      if (renaming.getOldReference().textRepresentation().equals(name)) {
-        return null;
-      }
-    }
-
-    return myModuleNamespace.resolveNamespace(name, onlyInternal);
+    return isHiddenByUsing(name) ? null : myModuleNamespace.resolveNamespace(name, onlyInternal);
   }
 }

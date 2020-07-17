@@ -130,6 +130,11 @@ public class DefCallResult implements TResult {
     return params;
   }
 
+  @Override
+  public Expression getType() {
+    return myResultType;
+  }
+
   public Concrete.ReferenceExpression getDefCall() {
     return myDefCall;
   }

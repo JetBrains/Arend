@@ -13,12 +13,10 @@ import org.arend.naming.reference.TCReferable;
 import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.source.error.LocationError;
 import org.arend.term.group.Group;
-import org.arend.typechecking.TypecheckerState;
 
 import java.util.*;
 
 public class ModuleSerialization {
-  private final TypecheckerState myState;
   private final ErrorReporter myErrorReporter;
   private final SimpleCallTargetIndexProvider myCallTargetIndexProvider = new SimpleCallTargetIndexProvider();
   private final DefinitionSerialization myDefinitionSerialization = new DefinitionSerialization(myCallTargetIndexProvider);
@@ -27,8 +25,7 @@ public class ModuleSerialization {
 
   static final int VERSION = 4;
 
-  public ModuleSerialization(TypecheckerState state, ErrorReporter errorReporter) {
-    myState = state;
+  public ModuleSerialization(ErrorReporter errorReporter) {
     myErrorReporter = errorReporter;
   }
 
@@ -88,7 +85,7 @@ public class ModuleSerialization {
     refBuilder.setPrecedence(DefinitionSerialization.writePrecedence(referable.getPrecedence()));
 
     TCReferable tcReferable = referableConverter.toDataLocatedReferable(referable);
-    Definition typechecked = tcReferable == null ? null : myState.getTypechecked(tcReferable);
+    Definition typechecked = tcReferable == null ? null : tcReferable.getTypechecked();
     if (typechecked != null && typechecked.status() == Definition.TypeCheckingStatus.NO_ERRORS && !(typechecked instanceof Constructor || typechecked instanceof ClassField)) {
       builder.setDefinition(myDefinitionSerialization.writeDefinition(typechecked));
       int index = myCallTargetIndexProvider.getDefIndex(typechecked);
@@ -109,7 +106,7 @@ public class ModuleSerialization {
     }
     for (Group.InternalReferable internalReferable : group.getInternalReferables()) {
       if (!internalReferable.isVisible()) {
-        Definition def = myState.getTypechecked(referableConverter.toDataLocatedReferable(internalReferable.getReferable()));
+        Definition def = referableConverter.toDataLocatedReferable(internalReferable.getReferable()).getTypechecked();
         if (def != null) {
           builder.addInvisibleInternalReferable(myCallTargetIndexProvider.getDefIndex(def));
         }

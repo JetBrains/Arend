@@ -79,4 +79,9 @@ public interface UncheckedExpression {
    * @return  a free binding from the given set or {@code null} if there is no such a binding
    */
   @Nullable CoreBinding findFreeBindings(@NotNull Set<? extends CoreBinding> bindings);
+
+  /**
+   * Checks if this expression and {@param expression} are disjoint constructors of the same data type.
+   */
+  boolean areDisjointConstructors(@NotNull UncheckedExpression expression);
 }

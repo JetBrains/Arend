@@ -1,14 +1,9 @@
-plugins {
-    idea
-}
-
 dependencies {
-    val annotationsVersion: String by rootProject.ext
     val protobufVersion: String by rootProject.ext
-    implementation("org.jetbrains:annotations:$annotationsVersion")
     implementation("com.google.protobuf:protobuf-java:$protobufVersion")
-    implementation(project(":api"))
     implementation(project(":proto"))
+
+    api(project(":api"))
 }
 
 val genDir = file("src/main/gen")

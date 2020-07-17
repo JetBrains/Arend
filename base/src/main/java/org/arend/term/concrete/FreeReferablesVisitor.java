@@ -268,6 +268,11 @@ public class FreeReferablesVisitor implements ConcreteExpressionVisitor<Void, TC
   }
 
   @Override
+  public TCReferable visitStringLiteral(Concrete.StringLiteral expr, Void params) {
+    return null;
+  }
+
+  @Override
   public TCReferable visitTyped(Concrete.TypedExpression expr, Void params) {
     TCReferable ref = expr.expression.accept(this, null);
     return ref != null ? ref : expr.type.accept(this, null);

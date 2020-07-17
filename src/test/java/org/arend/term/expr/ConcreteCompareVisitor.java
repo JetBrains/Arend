@@ -415,6 +415,11 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
   }
 
   @Override
+  public Boolean visitStringLiteral(Concrete.StringLiteral expr1, Concrete.Expression expr2) {
+    return expr2 instanceof Concrete.StringLiteral && expr1.getUnescapedString().equals(((Concrete.StringLiteral) expr2).getUnescapedString());
+  }
+
+  @Override
   public Boolean visitTyped(Concrete.TypedExpression expr, Concrete.Expression expr2) {
     return expr2 instanceof Concrete.TypedExpression && compare(expr.expression, ((Concrete.TypedExpression) expr2).expression) && compare(expr.type, ((Concrete.TypedExpression) expr2).type);
   }

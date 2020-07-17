@@ -16,10 +16,7 @@ import org.arend.ext.serialization.DeserializationException;
 import org.arend.ext.serialization.SerializableKey;
 import org.arend.ext.typechecking.DefinitionListener;
 import org.arend.extImpl.SerializableKeyRegistryImpl;
-import org.arend.naming.reference.ClassReferableImpl;
-import org.arend.naming.reference.DataLocatedReferableImpl;
-import org.arend.naming.reference.TCClassReferable;
-import org.arend.naming.reference.TCReferable;
+import org.arend.naming.reference.*;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.order.dependency.DependencyListener;
 import org.arend.util.Pair;
@@ -131,9 +128,12 @@ public class DefinitionDeserialization implements ArendDeserializer {
       ClassDefinition superClass = myCallTargetProvider.getCallTarget(superClassRef, ClassDefinition.class);
       classDef.addSuperClass(superClass);
       myDependencyListener.dependsOn(classDef.getReferable(), superClass.getReferable());
-      TCClassReferable classRef = classDef.getReferable();
+      TCReferable classRef = classDef.getReferable();
       if (classRef instanceof ClassReferableImpl) {
-        ((ClassReferableImpl) classRef).getSuperClassReferences().add(superClass.getReferable());
+        Referable superRef = superClass.getReferable().getUnderlyingReferable();
+        if (superRef instanceof ClassReferable) {
+          ((ClassReferableImpl) classRef).getSuperClassReferences().add((ClassReferable) superRef);
+        }
       }
 
       for (Map.Entry<ClassField, AbsExpression> entry : superClass.getImplemented()) {
@@ -219,6 +219,9 @@ public class DefinitionDeserialization implements ArendDeserializer {
   }
 
   private void fillInDataDefinition(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.DataData dataProto, DataDefinition dataDef) throws DeserializationException {
+    if (dataProto.getHasEnclosingClass()) {
+      dataDef.setHasEnclosingClass(true);
+    }
     dataDef.setParameters(defDeserializer.readParameters(dataProto.getParamList()));
     List<Integer> parametersTypecheckingOrder = dataProto.getParametersTypecheckingOrderList();
     if (!parametersTypecheckingOrder.isEmpty()) {
@@ -334,6 +337,9 @@ public class DefinitionDeserialization implements ArendDeserializer {
   }
 
   private void fillInFunctionDefinition(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.FunctionData functionProto, FunctionDefinition functionDef) throws DeserializationException {
+    if (functionProto.getHasEnclosingClass()) {
+      functionDef.setHasEnclosingClass(true);
+    }
     functionDef.setParameters(defDeserializer.readParameters(functionProto.getParamList()));
     List<Integer> parametersTypecheckingOrder = functionProto.getParametersTypecheckingOrderList();
     if (!parametersTypecheckingOrder.isEmpty()) {
@@ -426,34 +432,6 @@ public class DefinitionDeserialization implements ArendDeserializer {
         throw new DeserializationException("Wrong pattern expression");
       default:
         throw new DeserializationException("Unknown Pattern kind: " + proto.getKindCase());
-    }
-  }
-
-  // To implement this function properly, we need to serialize references to class synonyms
-  private void setTypeClassReference(TCReferable referable, DependentLink parameters, Expression type) {
-    if (!(referable instanceof DataLocatedReferableImpl)) {
-      return;
-    }
-
-    for (; parameters.hasNext(); parameters = parameters.getNext()) {
-      parameters = parameters.getNextTyped(null);
-      if (parameters.isExplicit()) {
-        return;
-      }
-    }
-
-    while (type instanceof PiExpression) {
-      for (DependentLink link = ((PiExpression) type).getParameters(); link.hasNext(); link = link.getNext()) {
-        link = link.getNextTyped(null);
-        if (link.isExplicit()) {
-          return;
-        }
-      }
-      type = ((PiExpression) type).getCodomain();
-    }
-
-    if (type instanceof ClassCallExpression) {
-      ((DataLocatedReferableImpl) referable).setTypeClassReference(((ClassCallExpression) type).getDefinition().getReferable());
     }
   }
 

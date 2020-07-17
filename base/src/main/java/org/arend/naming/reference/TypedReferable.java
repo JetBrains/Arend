@@ -1,6 +1,6 @@
 package org.arend.naming.reference;
 
-import org.arend.term.abs.Abstract;
+import org.arend.naming.resolving.visitor.TypeClassReferenceExtractVisitor;
 import org.jetbrains.annotations.Nullable;
 
 public interface TypedReferable extends Referable {
@@ -8,7 +8,7 @@ public interface TypedReferable extends Referable {
     return null;
   }
 
-  default @Nullable Abstract.Expression getTypeOf() {
+  default @Nullable Referable getBodyReference(TypeClassReferenceExtractVisitor visitor) {
     return null;
   }
 }

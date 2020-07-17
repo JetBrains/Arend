@@ -1,7 +1,3 @@
-plugins {
-    idea
-}
-
 dependencies {
     val antlrVersion: String by rootProject.ext
     implementation("org.antlr:antlr4-runtime:$antlrVersion")

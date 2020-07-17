@@ -364,7 +364,7 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
     Definition coreDef = typeCheckDef(resolved);
     assertNotNull(concrete);
     {
-      Concrete.Expression c = concrete.getStatements().get(1).implementation;
+      Concrete.Expression c = concrete.getStatements().get(0).implementation;
       Pair<Expression, Concrete.Expression> accept = concreteDef.accept(
           new CorrespondedSubDefVisitor(c), coreDef);
       assertNotNull(accept);
@@ -372,7 +372,7 @@ public class CorrespondedSubExprTest extends TypeCheckingTestCase {
       assertEquals("114514", accept.proj2.toString());
     }
     {
-      Concrete.Expression c = concrete.getStatements().get(0).implementation;
+      Concrete.Expression c = ((Concrete.AppExpression) concrete.getBaseClassExpression()).getArguments().get(0).expression;
       Pair<Expression, Concrete.Expression> accept = concreteDef.accept(
           new CorrespondedSubDefVisitor(c), coreDef);
       assertNotNull(accept);

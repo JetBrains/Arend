@@ -31,4 +31,9 @@ public class AliasReferable implements RedirectingReferable {
     String name = myReferable.getAliasName();
     return name == null ? myReferable.textRepresentation() : name;
   }
+
+  @Override
+  public boolean equals(Object obj) {
+    return obj instanceof RedirectingReferable && ((RedirectingReferable) obj).getOriginalReferable().equals(getOriginalReferable());
+  }
 }

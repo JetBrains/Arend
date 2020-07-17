@@ -14,10 +14,7 @@ import org.arend.ext.reference.Precedence;
 import org.arend.ext.typechecking.GoalSolver;
 import org.arend.ext.typechecking.TypedExpression;
 import org.arend.ext.typechecking.MetaDefinition;
-import org.arend.naming.reference.CoreReferable;
-import org.arend.naming.reference.LocalReferable;
-import org.arend.naming.reference.MetaReferable;
-import org.arend.naming.reference.Referable;
+import org.arend.naming.reference.*;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.jetbrains.annotations.NotNull;
@@ -510,19 +507,32 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
 
   @NotNull
   @Override
-  public ConcreteClassElement implementation(@NotNull ArendRef field, @Nullable ConcreteExpression expression, @NotNull ConcreteClassElement... subclauses) {
+  public ConcreteClassElement implementation(@NotNull ArendRef field, @Nullable ConcreteExpression expression) {
     if (!(field instanceof Referable && (expression == null || expression instanceof Concrete.Expression))) {
       throw new IllegalArgumentException();
     }
-    return new Concrete.ClassFieldImpl(myData, (Referable) field, (Concrete.Expression) expression, classFieldImpls(subclauses));
+    return new Concrete.ClassFieldImpl(myData, (Referable) field, (Concrete.Expression) expression, Collections.emptyList());
+  }
+
+  @NotNull
+  @Override
+  public ConcreteClassElement implementation(@NotNull ArendRef field, @Nullable ConcreteExpression expression, @NotNull ArendRef classRef, @NotNull ConcreteClassElement... subclauses) {
+    if (!(field instanceof Referable && (expression == null || expression instanceof Concrete.Expression) && classRef instanceof TCReferable)) {
+      throw new IllegalArgumentException();
+    }
+    Concrete.ClassFieldImpl classFieldImpl = new Concrete.ClassFieldImpl(myData, (Referable) field, (Concrete.Expression) expression, classFieldImpls(subclauses));
+    classFieldImpl.classRef = (TCReferable) classRef;
+    return classFieldImpl;
   }
 
   @Override
-  public @NotNull ConcreteClassElement implementation(@NotNull ArendRef field, @Nullable ConcreteExpression expression, @NotNull Collection<? extends ConcreteClassElement> subclauses) {
+  public @NotNull ConcreteClassElement implementation(@NotNull ArendRef field, @Nullable ConcreteExpression expression, @NotNull ArendRef classRef, @NotNull Collection<? extends ConcreteClassElement> subclauses) {
     if (!(field instanceof Referable && (expression == null || expression instanceof Concrete.Expression))) {
       throw new IllegalArgumentException();
     }
-    return new Concrete.ClassFieldImpl(myData, (Referable) field, (Concrete.Expression) expression, classFieldImpls(subclauses));
+    Concrete.ClassFieldImpl classFieldImpl = new Concrete.ClassFieldImpl(myData, (Referable) field, (Concrete.Expression) expression, classFieldImpls(subclauses));
+    classFieldImpl.classRef = (TCReferable) classRef;
+    return classFieldImpl;
   }
 
   @NotNull

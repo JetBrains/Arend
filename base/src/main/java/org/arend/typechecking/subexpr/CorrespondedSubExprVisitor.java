@@ -9,8 +9,7 @@ import org.arend.core.expr.let.LetClause;
 import org.arend.core.pattern.Pattern;
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.typechecking.MetaDefinition;
-import org.arend.naming.reference.ClassReferable;
-import org.arend.naming.reference.FieldReferable;
+import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.MetaReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.prelude.Prelude;
@@ -82,6 +81,11 @@ public class CorrespondedSubExprVisitor implements
 
   @Override
   public Pair<Expression, Concrete.Expression> visitNumericLiteral(Concrete.NumericLiteral expr, Expression coreExpr) {
+    return atomicExpr(expr, coreExpr);
+  }
+
+  @Override
+  public @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression> visitStringLiteral(Concrete.StringLiteral expr, @NotNull Expression coreExpr) {
     return atomicExpr(expr, coreExpr);
   }
 
@@ -428,13 +432,10 @@ public class CorrespondedSubExprVisitor implements
     Referable implementedField = statement.getImplementedField();
     if (implementedField == null) return nullWithError(new SubExprError(SubExprError.Kind.MissingImplementationField));
     // Class extension -- base class call.
-    if (implementedField instanceof ClassReferable
-        && statement.implementation != null) {
-      Collection<? extends FieldReferable> fields = ((ClassReferable) implementedField).getFieldReferables();
+    if (implementedField instanceof GlobalReferable && ((GlobalReferable) implementedField).getKind() != GlobalReferable.Kind.FIELD && statement.implementation != null) {
       var baseClassCall = implementedHere.entrySet()
           .stream()
-          // The suppressed warning presents here, but it's considered safe.
-          .filter(entry -> fields.contains(entry.getKey().getReferable()))
+          .filter(entry -> entry.getKey().getReferable() == implementedField)
           .map(Map.Entry::getValue)
           .filter(expr -> expr instanceof FieldCallExpression)
           .findFirst()

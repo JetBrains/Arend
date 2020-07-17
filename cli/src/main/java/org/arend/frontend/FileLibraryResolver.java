@@ -9,7 +9,6 @@ import org.arend.library.UnmodifiableSourceLibrary;
 import org.arend.library.error.LibraryIOError;
 import org.arend.library.error.MultipleLibraries;
 import org.arend.library.resolver.LibraryResolver;
-import org.arend.typechecking.TypecheckerState;
 import org.arend.util.FileUtils;
 import org.jetbrains.annotations.Nullable;
 
@@ -20,13 +19,11 @@ import java.util.*;
 
 public class FileLibraryResolver implements LibraryResolver {
   private final List<Path> myLibDirs;
-  private final TypecheckerState myTypecheckerState;
   private final ErrorReporter myErrorReporter;
   private final Map<String, FileLoadableHeaderLibrary> myLibraries = new HashMap<>();
 
-  public FileLibraryResolver(List<Path> libDirs, TypecheckerState typecheckerState, ErrorReporter errorReporter) {
+  public FileLibraryResolver(List<Path> libDirs, ErrorReporter errorReporter) {
     myLibDirs = libDirs;
-    myTypecheckerState = typecheckerState;
     myErrorReporter = errorReporter;
   }
 
@@ -45,7 +42,7 @@ public class FileLibraryResolver implements LibraryResolver {
       if (config.getSourcesDir() == null) {
         config.setSourcesDir(headerFile.getParent().toString());
       }
-      return new FileLoadableHeaderLibrary(config, headerFile, myTypecheckerState);
+      return new FileLoadableHeaderLibrary(config, headerFile);
     } catch (IOException e) {
       myErrorReporter.report(new LibraryIOError(headerFile.toString(), "Failed to read header file", e.getLocalizedMessage()));
       return null;

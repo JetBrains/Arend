@@ -33,6 +33,7 @@ public class DataDefinition extends Definition implements CoreDataDefinition {
   private List<TypeClassParameterKind> myTypeClassParameters = Collections.emptyList();
   private final ParametersLevels<ParametersLevel> myParametersLevels = new ParametersLevels<>();
   private Set<Definition> myRecursiveDefinitions = Collections.emptySet();
+  private boolean myHasEnclosingClass;
 
   public DataDefinition(TCReferable referable) {
     super(referable, TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
@@ -117,6 +118,15 @@ public class DataDefinition extends Definition implements CoreDataDefinition {
 
   public void setParameters(DependentLink parameters) {
     myParameters = parameters;
+  }
+
+  @Override
+  protected boolean hasEnclosingClass() {
+    return myHasEnclosingClass;
+  }
+
+  public void setHasEnclosingClass(boolean hasEnclosingClass) {
+    myHasEnclosingClass = hasEnclosingClass;
   }
 
   @NotNull

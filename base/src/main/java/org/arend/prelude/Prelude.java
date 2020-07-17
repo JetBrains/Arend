@@ -15,7 +15,6 @@ import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.naming.scope.Scope;
-import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
 import org.arend.typechecking.order.PartialComparator;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
@@ -229,14 +228,14 @@ public class Prelude implements ArendPrelude {
     consumer.accept(MOD_PROPERTY);
   }
 
-  public static void fillInTypecheckerState(TypecheckerState state) {
-    forEach(def -> state.record(def.getReferable(), def));
+  public static void fillInTypecheckerState() {
+    forEach(def -> def.getReferable().setTypechecked(def));
   }
 
-  public static void initialize(Scope scope, TypecheckerState state) {
+  public static void initialize(Scope scope) {
     for (Referable ref : scope.getElements()) {
       if (ref instanceof TCReferable && ((TCReferable) ref).getKind().isTypecheckable()) {
-        update(state.getTypechecked((TCReferable) ref));
+        update(((TCReferable) ref).getTypechecked());
       }
     }
 
@@ -245,15 +244,15 @@ public class Prelude implements ArendPrelude {
       assert childScope != null;
       for (Referable ref : childScope.getElements()) {
         if (ref instanceof TCReferable && ((TCReferable) ref).getKind().isTypecheckable()) {
-          update(state.getTypechecked((TCReferable) ref));
+          update(((TCReferable) ref).getTypechecked());
         }
       }
     }
   }
 
   public static class PreludeTypechecking extends TypecheckingOrderingListener {
-    public PreludeTypechecking(InstanceProviderSet instanceProviderSet, TypecheckerState state, ConcreteProvider concreteProvider, PartialComparator<TCReferable> comparator) {
-      super(instanceProviderSet, state, concreteProvider, IdReferableConverter.INSTANCE, DummyErrorReporter.INSTANCE, comparator, ref -> null);
+    public PreludeTypechecking(InstanceProviderSet instanceProviderSet, ConcreteProvider concreteProvider, PartialComparator<TCReferable> comparator) {
+      super(instanceProviderSet, concreteProvider, IdReferableConverter.INSTANCE, DummyErrorReporter.INSTANCE, comparator, ref -> null);
     }
 
     @Override

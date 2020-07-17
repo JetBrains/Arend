@@ -37,7 +37,6 @@ import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
-import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.error.local.*;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.instance.pool.InstancePool;
@@ -52,7 +51,6 @@ public class PatternTypechecking {
   private final ErrorReporter myErrorReporter;
   private final Mode myMode;
   private final CheckTypeVisitor myVisitor;
-  private final TypecheckerState myState;
   private Map<Referable, Binding> myContext;
   private final boolean myFinal;
 
@@ -85,15 +83,13 @@ public class PatternTypechecking {
     myErrorReporter = errorReporter;
     myMode = mode;
     myVisitor = visitor;
-    myState = visitor.getTypecheckingState();
     myFinal = isFinal;
   }
 
-  public PatternTypechecking(ErrorReporter errorReporter, Mode mode, TypecheckerState state) {
+  public PatternTypechecking(ErrorReporter errorReporter, Mode mode) {
     myErrorReporter = errorReporter;
     myMode = mode;
     myVisitor = null;
-    myState = state;
     myFinal = true;
   }
 
@@ -108,6 +104,7 @@ public class PatternTypechecking {
   private void collectBindings(List<? extends ExpressionPattern> patterns) {
     for (ExpressionPattern pattern : patterns) {
       if (pattern instanceof BindingPattern) {
+        assert myVisitor != null;
         myVisitor.addBinding(null, ((BindingPattern) pattern).getBinding());
       } else if (pattern instanceof ConstructorExpressionPattern) {
         collectBindings(((ConstructorExpressionPattern) pattern).getSubPatterns());
@@ -134,6 +131,7 @@ public class PatternTypechecking {
   }
 
   private ExtElimClause typecheckClause(Concrete.FunctionClause clause, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, Expression expectedType) {
+    assert myVisitor != null;
     try (var ignored = new Utils.SetContextSaver<>(myVisitor.getContext())) {
       // Typecheck patterns
       ExprSubstitution substitution = new ExprSubstitution();
@@ -197,6 +195,7 @@ public class PatternTypechecking {
   }
 
   public Result typecheckPatterns(List<? extends Concrete.Pattern> patterns, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, ExprSubstitution substitution, ExprSubstitution totalSubst, List<DependentLink> elimParams, Concrete.SourceNode sourceNode) {
+    assert myVisitor != null;
     myContext = myVisitor.getContext();
     if (myMode.isContextFree()) {
       myContext.clear();
@@ -445,7 +444,7 @@ public class PatternTypechecking {
       // Defined constructor patterns
       if (pattern instanceof Concrete.ConstructorPattern) {
         Concrete.ConstructorPattern conPattern = (Concrete.ConstructorPattern) pattern;
-        Definition def = conPattern.getConstructor() instanceof TCReferable ? myState.getTypechecked((TCReferable) conPattern.getConstructor()) : null;
+        Definition def = conPattern.getConstructor() instanceof TCReferable ? ((TCReferable) conPattern.getConstructor()).getTypechecked() : null;
         if (def instanceof DConstructor) {
           if (myVisitor == null || ((DConstructor) def).getPattern() == null) {
             return null;

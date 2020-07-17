@@ -6,7 +6,6 @@ import org.arend.library.LibraryConfig;
 import org.arend.library.LibraryDependency;
 import org.arend.library.LibraryHeader;
 import org.arend.library.error.LibraryIOError;
-import org.arend.typechecking.TypecheckerState;
 import org.arend.util.FileUtils;
 import org.arend.util.Range;
 import org.arend.util.Version;
@@ -21,8 +20,8 @@ public class FileLoadableHeaderLibrary extends FileSourceLibrary {
   private final LibraryConfig myConfig;
   private final Path myHeaderFile;
 
-  public FileLoadableHeaderLibrary(LibraryConfig config, Path headerFile, TypecheckerState typecheckerState) {
-    super(config.getName(), null, null, null, null, Collections.emptySet(), config.getModules() != null, Collections.emptyList(), Range.unbound(), typecheckerState);
+  public FileLoadableHeaderLibrary(LibraryConfig config, Path headerFile) {
+    super(config.getName(), null, null, null, null, Collections.emptySet(), config.getModules() != null, Collections.emptyList(), Range.unbound());
     myConfig = config;
     myHeaderFile = headerFile;
   }

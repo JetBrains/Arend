@@ -1,5 +1,6 @@
 package org.arend.naming.reference;
 
+import org.arend.core.definition.Definition;
 import org.arend.ext.reference.Precedence;
 import org.arend.module.ModuleLocation;
 import org.jetbrains.annotations.NotNull;
@@ -10,9 +11,10 @@ public class LocatedReferableImpl implements TCReferable {
   private final String myName;
   private final LocatedReferable myParent;
   private final Kind myKind;
+  private Definition myTypechecked;
 
   public LocatedReferableImpl(Precedence precedence, String name, @Nullable LocatedReferable parent, Kind kind) {
-    assert kind.isTypecheckable() || parent instanceof TCReferable;
+    assert kind.isTypecheckable() || kind == Kind.OTHER || parent instanceof TCReferable;
     myPrecedence = precedence;
     myName = name;
     myParent = parent;
@@ -39,8 +41,18 @@ public class LocatedReferableImpl implements TCReferable {
   }
 
   @Override
-  public TCReferable getTypecheckable() {
-    return myKind.isTypecheckable() ? this : (TCReferable) myParent;
+  public @NotNull TCReferable getTypecheckable() {
+    return myKind.isTypecheckable() || myKind == Kind.OTHER ? this : (TCReferable) myParent;
+  }
+
+  @Override
+  public void setTypechecked(Definition definition) {
+    myTypechecked = definition;
+  }
+
+  @Override
+  public Definition getTypechecked() {
+    return myTypechecked;
   }
 
   @NotNull

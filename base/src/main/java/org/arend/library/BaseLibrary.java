@@ -3,13 +3,11 @@ package org.arend.library;
 import org.arend.ext.ArendExtension;
 import org.arend.ext.DefaultArendExtension;
 import org.arend.ext.module.ModulePath;
-import org.arend.module.scopeprovider.EmptyModuleScopeProvider;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.naming.scope.LexicalScope;
 import org.arend.term.group.Group;
-import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.order.Ordering;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.jetbrains.annotations.NotNull;
@@ -23,23 +21,7 @@ import java.util.List;
  * Provides a basic implementation of some of the methods of {@link Library}.
  */
 public abstract class BaseLibrary implements Library {
-  private final TypecheckerState myTypecheckerState;
   private boolean myLoaded = false;
-
-  /**
-   * Creates a new {@code BaseLibrary}
-   *
-   * @param typecheckerState  the underling typechecker state of this library.
-   */
-  protected BaseLibrary(TypecheckerState typecheckerState) {
-    myTypecheckerState = typecheckerState;
-  }
-
-  @NotNull
-  @Override
-  public TypecheckerState getTypecheckerState() {
-    return myTypecheckerState;
-  }
 
   @Override
   public boolean load(LibraryManager libraryManager, TypecheckingOrderingListener typechecking) {
@@ -86,7 +68,7 @@ public abstract class BaseLibrary implements Library {
 
   public void resetDefinition(LocatedReferable referable) {
     if (referable instanceof TCReferable) {
-      myTypecheckerState.reset((TCReferable) referable);
+      ((TCReferable) referable).setTypechecked(null);
     }
   }
 

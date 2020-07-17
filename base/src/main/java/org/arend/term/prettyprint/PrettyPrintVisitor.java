@@ -15,6 +15,7 @@ import org.arend.term.concrete.Concrete.BinOpSequenceElem;
 import org.arend.term.concrete.Concrete.Constructor;
 import org.arend.term.concrete.Concrete.Expression;
 import org.arend.term.concrete.Concrete.ReferenceExpression;
+import org.arend.util.StringEscapeUtils;
 
 import java.util.*;
 
@@ -868,6 +869,15 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   @Override
   public Void visitNumericLiteral(Concrete.NumericLiteral expr, Precedence params) {
     myBuilder.append(expr.getNumber());
+    return null;
+  }
+
+  @Override
+  public Void visitStringLiteral(Concrete.StringLiteral expr, Precedence params) {
+    var unescapedString = expr.getUnescapedString();
+    myBuilder.append("\"");
+    StringEscapeUtils.escapeStringCharacters(unescapedString.length(), unescapedString, "\"", myBuilder);
+    myBuilder.append("\"");
     return null;
   }
 

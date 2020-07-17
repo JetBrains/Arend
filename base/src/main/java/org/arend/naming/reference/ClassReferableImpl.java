@@ -8,13 +8,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-public class ClassReferableImpl extends LocatedReferableImpl implements TCClassReferable {
+public class ClassReferableImpl extends LocatedReferableImpl implements ClassReferable {
   private final boolean myRecord;
-  private final List<TCClassReferable> mySuperClassReferences;
+  private final List<ClassReferable> mySuperClassReferences;
   private final List<? extends TCFieldReferable> myFieldReferables;
 
-  public ClassReferableImpl(Precedence precedence, String name, boolean isRecord, List<TCClassReferable> superClassReferences, List<? extends TCFieldReferable> fieldReferables, ModuleLocation parent) {
-    super(precedence, name, parent, Kind.TYPECHECKABLE);
+  public ClassReferableImpl(Precedence precedence, String name, boolean isRecord, List<ClassReferable> superClassReferences, List<? extends TCFieldReferable> fieldReferables, ModuleLocation parent) {
+    super(precedence, name, parent, Kind.CLASS);
     myRecord = isRecord;
     mySuperClassReferences = superClassReferences;
     myFieldReferables = fieldReferables;
@@ -22,14 +22,8 @@ public class ClassReferableImpl extends LocatedReferableImpl implements TCClassR
 
   @NotNull
   @Override
-  public List<TCClassReferable> getSuperClassReferences() {
+  public List<ClassReferable> getSuperClassReferences() {
     return mySuperClassReferences;
-  }
-
-  @NotNull
-  @Override
-  public Collection<? extends Reference> getUnresolvedSuperClassReferences() {
-    return Collections.emptyList();
   }
 
   @NotNull

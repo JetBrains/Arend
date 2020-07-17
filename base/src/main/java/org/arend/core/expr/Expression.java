@@ -1,6 +1,11 @@
 package org.arend.core.expr;
 
 import org.arend.core.context.binding.Binding;
+import org.arend.core.definition.Constructor;
+import org.arend.core.elimtree.ElimBody;
+import org.arend.core.elimtree.ElimClause;
+import org.arend.core.elimtree.IntervalElim;
+import org.arend.core.pattern.Pattern;
 import org.arend.ext.variable.Variable;
 import org.arend.core.context.binding.inference.BaseInferenceVariable;
 import org.arend.core.context.binding.inference.InferenceVariable;
@@ -37,10 +42,12 @@ import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.util.Decision;
+import org.arend.util.GraphClosure;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
+import java.math.BigInteger;
 import java.util.*;
 
 public abstract class Expression implements Body, CoreExpression {
@@ -251,6 +258,104 @@ public abstract class Expression implements Body, CoreExpression {
     return null;
   }
 
+  private static boolean addConstructor(Expression expr, Constructor constructor, GraphClosure<Constructor> closure) {
+    if (expr == null) {
+      return true;
+    }
+    if (expr instanceof ConCallExpression) {
+      closure.addSymmetric(((ConCallExpression) expr).getDefinition(), constructor);
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  private static boolean checkInteger(BigInteger n, UncheckedExpression expr) {
+    if (expr instanceof IntegerExpression) {
+      return !n.equals(((IntegerExpression) expr).getBigInteger());
+    }
+    if (!(expr instanceof ConCallExpression)) {
+      return false;
+    }
+
+    ConCallExpression conCall = (ConCallExpression) expr;
+    if (conCall.getDefinition() == Prelude.ZERO) {
+      return !n.equals(BigInteger.ZERO);
+    }
+    if (conCall.getDefinition() == Prelude.SUC) {
+      return n.equals(BigInteger.ZERO) || checkInteger(n.subtract(BigInteger.ONE), conCall.getDefCallArguments().get(0).normalize(NormalizationMode.WHNF));
+    }
+    return false;
+  }
+
+  @Override
+  public boolean areDisjointConstructors(@NotNull UncheckedExpression expr2) {
+    Expression expr1 = normalize(NormalizationMode.WHNF);
+    expr2 = UncheckedExpressionImpl.extract(expr2).normalize(NormalizationMode.WHNF);
+    if (expr1 instanceof IntegerExpression) {
+      return checkInteger(((IntegerExpression) expr1).getBigInteger(), expr2);
+    }
+    if (expr2 instanceof IntegerExpression) {
+      return checkInteger(((IntegerExpression) expr2).getBigInteger(), expr1);
+    }
+    if (!(expr1 instanceof ConCallExpression) || !(expr2 instanceof ConCallExpression)) {
+      return false;
+    }
+
+    ConCallExpression conCall1 = (ConCallExpression) expr1;
+    ConCallExpression conCall2 = (ConCallExpression) expr2;
+    Constructor con1 = conCall1.getDefinition();
+    Constructor con2 = conCall2.getDefinition();
+    if (con1.getDataType() != con2.getDataType()) {
+      return false;
+    }
+
+    if (con1 == con2) {
+      for (int i = 0; i < conCall1.getDefCallArguments().size(); i++) {
+        if (conCall1.getDefCallArguments().get(i).areDisjointConstructors(conCall2.getDefCallArguments().get(i))) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    if (con1.getBody() == null && con2.getBody() == null && !con1.getDataType().isHIT()) {
+      return true;
+    }
+
+    GraphClosure<Constructor> closure = new GraphClosure<>();
+    for (Constructor constructor : con1.getDataType().getConstructors()) {
+      Body body = constructor.getBody();
+      if (body == null) {
+        continue;
+      }
+
+      if (body instanceof Expression) {
+        if (!addConstructor((Expression) body, constructor, closure)) {
+          return false;
+        }
+      } else if (body instanceof IntervalElim) {
+        for (IntervalElim.CasePair pair : ((IntervalElim) body).getCases()) {
+          if (!addConstructor(pair.proj1, constructor, closure) || !addConstructor(pair.proj2, constructor, closure)) {
+            return false;
+          }
+        }
+        body = ((IntervalElim) body).getOtherwise();
+      }
+      if (body instanceof ElimBody) {
+        for (ElimClause<Pattern> clause : ((ElimBody) body).getClauses()) {
+          if (!addConstructor(clause.getExpression(), constructor, closure)) {
+            return false;
+          }
+        }
+      } else if (body != null) {
+        throw new IllegalStateException();
+      }
+    }
+
+    return !closure.areEquivalent(con1, con2);
+  }
+
   public Expression dropPiParameter(int n) {
     if (n == 0) {
       return this;
@@ -280,6 +385,30 @@ public abstract class Expression implements Body, CoreExpression {
   public Expression getPiParameters(List<? super SingleDependentLink> params, boolean implicitOnly) {
     Expression cod = normalize(NormalizationMode.WHNF);
     return cod instanceof PiExpression ? cod.getPiParameters(params, implicitOnly) : cod;
+  }
+
+  public Expression normalizePi(List<? super SingleDependentLink> parameters) {
+    Expression expr = normalize(NormalizationMode.WHNF);
+    if (!(expr instanceof PiExpression)) {
+      return expr;
+    }
+
+    List<PiExpression> piExprs = new ArrayList<>();
+    while (expr instanceof PiExpression) {
+      PiExpression piExpr = (PiExpression) expr;
+      piExprs.add(piExpr);
+      if (parameters != null) {
+        for (SingleDependentLink link = piExpr.getParameters(); link.hasNext(); link = link.getNext()) {
+          parameters.add(link);
+        }
+      }
+      expr = piExpr.getCodomain();
+    }
+
+    for (int i = piExprs.size() - 1; i >= 0; i--) {
+      expr = new PiExpression(piExprs.get(i).getResultSort(), piExprs.get(i).getParameters(), expr);
+    }
+    return expr;
   }
 
   public Expression getLamParameters(List<DependentLink> params) {

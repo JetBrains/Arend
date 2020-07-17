@@ -1,7 +1,6 @@
 package org.arend.frontend;
 
 import org.arend.frontend.reference.ConcreteLocatedReferable;
-import org.arend.naming.reference.ClassReferable;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.term.FunctionKind;
 import org.arend.term.concrete.Concrete;
@@ -44,7 +43,7 @@ public class ConcreteReferableProvider implements ConcreteProvider {
 
   @Nullable
   @Override
-  public Concrete.ClassDefinition getConcreteClass(ClassReferable referable) {
+  public Concrete.ClassDefinition getConcreteClass(GlobalReferable referable) {
     if (referable instanceof ConcreteLocatedReferable) {
       Concrete.ReferableDefinition def = ((ConcreteLocatedReferable) referable).getDefinition();
       if (def instanceof Concrete.ClassDefinition) {

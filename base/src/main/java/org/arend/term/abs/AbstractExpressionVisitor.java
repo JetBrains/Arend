@@ -26,5 +26,6 @@ public interface AbstractExpressionVisitor<P, R> {
   R visitClassExt(@Nullable Object data, boolean isNew, @Nullable Abstract.EvalKind evalKind, /* @NotNull */ @Nullable Abstract.Expression baseClass, @Nullable Collection<? extends Abstract.ClassFieldImpl> implementations, @NotNull Collection<? extends Abstract.BinOpSequenceElem> sequence, P params);
   R visitLet(@Nullable Object data, boolean isStrict, @NotNull Collection<? extends Abstract.LetClause> clauses, /* @NotNull */ @Nullable Abstract.Expression expression, P params);
   R visitNumericLiteral(@Nullable Object data, @NotNull BigInteger number, P params);
+  R visitStringLiteral(@Nullable Object data, @NotNull String unescapedString, P params);
   R visitTyped(@Nullable Object data, @NotNull Abstract.Expression expr, @NotNull Abstract.Expression type, P params);
 }

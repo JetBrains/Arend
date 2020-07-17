@@ -308,6 +308,11 @@ public class VoidConcreteVisitor<P, R> implements ConcreteExpressionVisitor<P,Vo
   }
 
   @Override
+  public Void visitStringLiteral(Concrete.StringLiteral expr, P params) {
+    return null;
+  }
+
+  @Override
   public Void visitTyped(Concrete.TypedExpression expr, P params) {
     expr.expression.accept(this, params);
     expr.type.accept(this, params);

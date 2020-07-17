@@ -16,7 +16,6 @@ import org.arend.prelude.Prelude;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -33,6 +32,7 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
   private int myVisibleParameter = -1;
   private final ParametersLevels<ParametersLevel> myParametersLevels = new ParametersLevels<>();
   private Set<Definition> myRecursiveDefinitions = Collections.emptySet();
+  private boolean myHasEnclosingClass;
 
   public FunctionDefinition(TCReferable referable) {
     super(referable, TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
@@ -139,6 +139,15 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
   @Override
   public void setGoodThisParameters(List<Boolean> goodThisParameters) {
     myGoodThisParameters = goodThisParameters;
+  }
+
+  @Override
+  protected boolean hasEnclosingClass() {
+    return myHasEnclosingClass;
+  }
+
+  public void setHasEnclosingClass(boolean hasEnclosingClass) {
+    myHasEnclosingClass = hasEnclosingClass;
   }
 
   @Override

@@ -15,7 +15,6 @@ import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.typechecking.DefinitionListener;
 import org.arend.library.Library;
 import org.arend.naming.reference.GlobalReferable;
-import org.arend.naming.reference.TCClassReferable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.term.FunctionKind;
@@ -44,7 +43,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 
 public class TypecheckingOrderingListener extends ComputationRunner<Boolean> implements OrderingListener {
-  private final TypecheckerState myState;
   private final DependencyListener myDependencyListener;
   private final Map<GlobalReferable, Pair<CheckTypeVisitor,Boolean>> mySuspensions = new HashMap<>();
   private final ErrorReporter myErrorReporter;
@@ -56,8 +54,7 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
   private List<TCReferable> myCurrentDefinitions = Collections.emptyList();
   private boolean myHeadersAreOK = true;
 
-  public TypecheckingOrderingListener(InstanceProviderSet instanceProviderSet, TypecheckerState state, ConcreteProvider concreteProvider, ReferableConverter referableConverter, ErrorReporter errorReporter, DependencyListener dependencyListener, PartialComparator<TCReferable> comparator, ArendExtensionProvider extensionProvider) {
-    myState = state;
+  public TypecheckingOrderingListener(InstanceProviderSet instanceProviderSet, ConcreteProvider concreteProvider, ReferableConverter referableConverter, ErrorReporter errorReporter, DependencyListener dependencyListener, PartialComparator<TCReferable> comparator, ArendExtensionProvider extensionProvider) {
     myErrorReporter = errorReporter;
     myDependencyListener = dependencyListener;
     myInstanceProviderSet = instanceProviderSet;
@@ -67,8 +64,8 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
     myExtensionProvider = extensionProvider;
   }
 
-  public TypecheckingOrderingListener(InstanceProviderSet instanceProviderSet, TypecheckerState state, ConcreteProvider concreteProvider, ReferableConverter referableConverter, ErrorReporter errorReporter, PartialComparator<TCReferable> comparator, ArendExtensionProvider extensionProvider) {
-    this(instanceProviderSet, state, concreteProvider, referableConverter, errorReporter, DummyDependencyListener.INSTANCE, comparator, extensionProvider);
+  public TypecheckingOrderingListener(InstanceProviderSet instanceProviderSet, ConcreteProvider concreteProvider, ReferableConverter referableConverter, ErrorReporter errorReporter, PartialComparator<TCReferable> comparator, ArendExtensionProvider extensionProvider) {
+    this(instanceProviderSet, concreteProvider, referableConverter, errorReporter, DummyDependencyListener.INSTANCE, comparator, extensionProvider);
   }
 
   public ConcreteProvider getConcreteProvider() {
@@ -83,14 +80,12 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
     return myReferableConverter;
   }
 
-  public TypecheckerState getTypecheckerState() {
-    return myState;
-  }
-
   @Override
   protected Boolean computationInterrupted() {
     for (TCReferable currentDefinition : myCurrentDefinitions) {
-      typecheckingInterrupted(currentDefinition, myState.reset(currentDefinition));
+      Definition typechecked = currentDefinition.getTypechecked();
+      currentDefinition.setTypechecked(null);
+      typecheckingInterrupted(currentDefinition, typechecked);
     }
     myCurrentDefinitions = Collections.emptyList();
     return false;
@@ -98,7 +93,7 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
 
   public boolean typecheckDefinitions(final Collection<? extends Concrete.Definition> definitions, CancellationIndicator cancellationIndicator) {
     return run(cancellationIndicator, () -> {
-      Ordering ordering = new Ordering(myInstanceProviderSet, myConcreteProvider, this, myDependencyListener, myReferableConverter, myState, myComparator);
+      Ordering ordering = new Ordering(myInstanceProviderSet, myConcreteProvider, this, myDependencyListener, myReferableConverter, myComparator);
       for (Concrete.Definition definition : definitions) {
         ordering.order(definition);
       }
@@ -108,13 +103,13 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
 
   public boolean typecheckModules(final Collection<? extends Group> modules, CancellationIndicator cancellationIndicator) {
     return run(cancellationIndicator, () -> {
-      new Ordering(myInstanceProviderSet, myConcreteProvider, this, myDependencyListener, myReferableConverter, myState, myComparator).orderModules(modules);
+      new Ordering(myInstanceProviderSet, myConcreteProvider, this, myDependencyListener, myReferableConverter, myComparator).orderModules(modules);
       return true;
     });
   }
 
   public boolean typecheckLibrary(Library library, CancellationIndicator cancellationIndicator) {
-    return run(cancellationIndicator, () -> library.orderModules(new Ordering(myInstanceProviderSet, myConcreteProvider, this, myDependencyListener, myReferableConverter, myState, myComparator)));
+    return run(cancellationIndicator, () -> library.orderModules(new Ordering(myInstanceProviderSet, myConcreteProvider, this, myDependencyListener, myReferableConverter, myComparator)));
   }
 
   public boolean typecheckLibrary(Library library) {
@@ -122,7 +117,7 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
   }
 
   public boolean typecheckTests(Library library, CancellationIndicator cancellationIndicator) {
-    return run(cancellationIndicator, () -> library.orderTestModules(new Ordering(myInstanceProviderSet, myConcreteProvider, this, myDependencyListener, myReferableConverter, myState, myComparator)));
+    return run(cancellationIndicator, () -> library.orderTestModules(new Ordering(myInstanceProviderSet, myConcreteProvider, this, myDependencyListener, myReferableConverter, myComparator)));
   }
 
   public boolean typecheckCollected(CollectingOrderingListener collector, CancellationIndicator cancellationIndicator) {
@@ -171,27 +166,27 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
           tcConstructor.setParameters(EmptyDependentLink.getInstance());
           tcConstructor.setStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
           ((DataDefinition) typechecked).addConstructor(tcConstructor);
-          myState.record(constructor.getData(), tcConstructor);
+          constructor.getData().setTypecheckedIfAbsent(tcConstructor);
         }
       }
     } else if (definition instanceof Concrete.BaseFunctionDefinition) {
       typechecked = ((Concrete.BaseFunctionDefinition) definition).getKind() == FunctionKind.CONS ? new DConstructor(definition.getData()) : new FunctionDefinition(definition.getData());
       ((FunctionDefinition) typechecked).setResultType(new ErrorExpression());
     } else if (definition instanceof Concrete.ClassDefinition) {
-      typechecked = new ClassDefinition((TCClassReferable) definition.getData());
+      typechecked = new ClassDefinition(definition.getData());
       for (Concrete.ClassElement element : ((Concrete.ClassDefinition) definition).getElements()) {
         if (element instanceof Concrete.ClassField) {
           ClassField classField = new ClassField(((Concrete.ClassField) element).getData(), (ClassDefinition) typechecked, new PiExpression(Sort.PROP, new TypedSingleDependentLink(false, "this", new ClassCallExpression((ClassDefinition) typechecked, Sort.STD), true), new ErrorExpression()), null);
           classField.setStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
           ((ClassDefinition) typechecked).addPersonalField(classField);
-          myState.record(classField.getReferable(), classField);
+          classField.getReferable().setTypecheckedIfAbsent(classField);
         }
       }
     } else {
       throw new IllegalStateException();
     }
     typechecked.setStatus(Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
-    myState.record(definition.getData(), typechecked);
+    definition.getData().setTypecheckedIfAbsent(typechecked);
     return typechecked;
   }
 
@@ -215,13 +210,13 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
     List<ExtElimClause> clauses;
     Definition typechecked;
     ArendExtension extension = myExtensionProvider.getArendExtension(definition.getData());
-    CheckTypeVisitor checkTypeVisitor = new CheckTypeVisitor(myState, new LocalErrorReporter(definition.getData(), myErrorReporter), null, extension);
+    CheckTypeVisitor checkTypeVisitor = new CheckTypeVisitor(new LocalErrorReporter(definition.getData(), myErrorReporter), null, extension);
     checkTypeVisitor.setInstancePool(new GlobalInstancePool(myInstanceProviderSet.get(definition.getData()), checkTypeVisitor));
-    DesugarVisitor.desugar(definition, myConcreteProvider, checkTypeVisitor.getErrorReporter());
+    DesugarVisitor.desugar(definition, checkTypeVisitor.getErrorReporter());
     myCurrentDefinitions = Collections.singletonList(definition.getData());
     typecheckingUnitStarted(definition.getData());
     clauses = definition.accept(new DefinitionTypechecker(checkTypeVisitor), null);
-    typechecked = myState.getTypechecked(definition.getData());
+    typechecked = definition.getData().getTypechecked();
 
     if (recursive && typechecked instanceof FunctionDefinition) {
       ((FunctionDefinition) typechecked).setRecursiveDefinitions(Collections.singleton(typechecked));
@@ -253,7 +248,7 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
         cycle.add(definition.getData());
       }
 
-      Definition typechecked = myState.getTypechecked(definition.getData());
+      Definition typechecked = definition.getData().getTypechecked();
       if (typechecked == null) {
         typechecked = newDefinition(definition);
       }
@@ -272,14 +267,15 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
     typecheckingHeaderStarted(definition.getData());
 
     CountingErrorReporter countingErrorReporter = new CountingErrorReporter(myErrorReporter);
-    CheckTypeVisitor visitor = new CheckTypeVisitor(myState, new LocalErrorReporter(definition.getData(), countingErrorReporter), null, myExtensionProvider.getArendExtension(definition.getData()));
+    CheckTypeVisitor visitor = new CheckTypeVisitor(new LocalErrorReporter(definition.getData(), countingErrorReporter), null, myExtensionProvider.getArendExtension(definition.getData()));
     visitor.setStatus(definition.getStatus().getTypecheckingStatus());
-    DesugarVisitor.desugar(definition, myConcreteProvider, visitor.getErrorReporter());
-    Definition oldTypechecked = visitor.getTypecheckingState().getTypechecked(definition.getData());
+    DesugarVisitor.desugar(definition, visitor.getErrorReporter());
+    Definition oldTypechecked = definition.getData().getTypechecked();
+    boolean isNew = oldTypechecked == null || !oldTypechecked.status().headerIsOK();
     definition.setRecursive(true);
     Definition typechecked = new DefinitionTypechecker(visitor).typecheckHeader(oldTypechecked, new GlobalInstancePool(myInstanceProviderSet.get(definition.getData()), visitor), definition);
     if (typechecked.status() == Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING) {
-      mySuspensions.put(definition.getData(), new Pair<>(visitor, oldTypechecked == null));
+      mySuspensions.put(definition.getData(), new Pair<>(visitor, isNew));
     }
 
     typecheckingHeaderFinished(definition.getData(), typechecked);
@@ -297,7 +293,7 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
     List<Concrete.Definition> orderedDefinitions = new ArrayList<>(definitions.size());
     List<Concrete.Definition> otherDefs = new ArrayList<>();
     for (Concrete.Definition definition : definitions) {
-      Definition typechecked = myState.getTypechecked(definition.getData());
+      Definition typechecked = definition.getData().getTypechecked();
       if (typechecked instanceof DataDefinition) {
         dataDefinitions.add((DataDefinition) typechecked);
         orderedDefinitions.add(definition);
@@ -317,7 +313,7 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
     for (Concrete.Definition definition : orderedDefinitions) {
       typecheckingBodyStarted(definition.getData());
 
-      Definition def = myState.getTypechecked(definition.getData());
+      Definition def = definition.getData().getTypechecked();
       Pair<CheckTypeVisitor, Boolean> pair = mySuspensions.remove(definition.getData());
       if (myHeadersAreOK && pair != null) {
         typechecking.setTypechecker(pair.proj1);
@@ -363,7 +359,7 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
 
     Set<Definition> allDefinitions = new HashSet<>();
     for (Concrete.Definition definition : orderedDefinitions) {
-      Definition typechecked = myState.getTypechecked(definition.getData());
+      Definition typechecked = definition.getData().getTypechecked();
       if (typechecked instanceof FunctionDefinition) {
         ((FunctionDefinition) typechecked).setRecursiveDefinitions(allDefinitions);
         allDefinitions.add(typechecked);
@@ -386,7 +382,7 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
       myCurrentDefinitions.add(definition.getData());
       myCurrentDefinitions.add(definition.getUseParent());
     }
-    UseTypechecking.typecheck(definitions, myState, myErrorReporter);
+    UseTypechecking.typecheck(definitions, myErrorReporter);
     myCurrentDefinitions = Collections.emptyList();
   }
 

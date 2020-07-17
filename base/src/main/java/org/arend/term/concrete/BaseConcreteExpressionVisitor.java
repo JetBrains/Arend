@@ -239,6 +239,11 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
   }
 
   @Override
+  public Concrete.Expression visitStringLiteral(Concrete.StringLiteral expr, P params) {
+    return expr;
+  }
+
+  @Override
   public Concrete.Expression visitTyped(Concrete.TypedExpression expr, P params) {
     expr.expression = expr.expression.accept(this, params);
     expr.type = expr.type.accept(this, params);

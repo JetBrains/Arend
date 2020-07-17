@@ -45,8 +45,7 @@ public class TypecheckingResult implements TResult, TypedExpression {
   @Override
   public DependentLink getParameter() {
     type = type.normalize(NormalizationMode.WHNF);
-    PiExpression pi = type.cast(PiExpression.class);
-    return pi != null ? pi.getParameters() : EmptyDependentLink.getInstance();
+    return type instanceof PiExpression ? ((PiExpression) type).getParameters() : EmptyDependentLink.getInstance();
   }
 
   @Override
@@ -76,7 +75,7 @@ public class TypecheckingResult implements TResult, TypedExpression {
 
   @NotNull
   @Override
-  public CoreExpression getType() {
+  public Expression getType() {
     return type;
   }
 

@@ -79,10 +79,10 @@ public class NameResolverTest extends NameResolverTestCase {
 
   @Test
   public void parserInfix() {
-    ConcreteLocatedReferable plusRef = new ConcreteLocatedReferable(null, "+", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6, true), null, Precedence.DEFAULT, MODULE_PATH, GlobalReferable.Kind.TYPECHECKABLE);
+    ConcreteLocatedReferable plusRef = new ConcreteLocatedReferable(null, "+", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6, true), null, Precedence.DEFAULT, MODULE_PATH, GlobalReferable.Kind.FUNCTION);
     Concrete.Definition plus = new Concrete.FunctionDefinition(FunctionKind.FUNC, plusRef, Collections.emptyList(), null, null, null);
     plusRef.setDefinition(plus);
-    ConcreteLocatedReferable mulRef = new ConcreteLocatedReferable(null, "*", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 7, true), null, Precedence.DEFAULT, MODULE_PATH, GlobalReferable.Kind.TYPECHECKABLE);
+    ConcreteLocatedReferable mulRef = new ConcreteLocatedReferable(null, "*", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 7, true), null, Precedence.DEFAULT, MODULE_PATH, GlobalReferable.Kind.FUNCTION);
     Concrete.Definition mul = new Concrete.FunctionDefinition(FunctionKind.FUNC, mulRef, Collections.emptyList(), null, null, null);
     mulRef.setDefinition(mul);
 
@@ -93,10 +93,10 @@ public class NameResolverTest extends NameResolverTestCase {
 
   @Test
   public void parserInfixError() {
-    ConcreteLocatedReferable plusRef = new ConcreteLocatedReferable(null, "+", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6, true), null, Precedence.DEFAULT, MODULE_PATH, GlobalReferable.Kind.TYPECHECKABLE);
+    ConcreteLocatedReferable plusRef = new ConcreteLocatedReferable(null, "+", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6, true), null, Precedence.DEFAULT, MODULE_PATH, GlobalReferable.Kind.FUNCTION);
     Concrete.Definition plus = new Concrete.FunctionDefinition(FunctionKind.FUNC, plusRef, Collections.emptyList(), null, null, null);
     plusRef.setDefinition(plus);
-    ConcreteLocatedReferable mulRef = new ConcreteLocatedReferable(null, "*", new Precedence(Precedence.Associativity.RIGHT_ASSOC, (byte) 6, true), null, Precedence.DEFAULT, MODULE_PATH, GlobalReferable.Kind.TYPECHECKABLE);
+    ConcreteLocatedReferable mulRef = new ConcreteLocatedReferable(null, "*", new Precedence(Precedence.Associativity.RIGHT_ASSOC, (byte) 6, true), null, Precedence.DEFAULT, MODULE_PATH, GlobalReferable.Kind.FUNCTION);
     Concrete.Definition mul = new Concrete.FunctionDefinition(FunctionKind.FUNC, mulRef, Collections.emptyList(), null, null, null);
     mulRef.setDefinition(mul);
     resolveNamesExpr(new ListScope(plusRef, mulRef), "11 + 2 * 3", 1);
@@ -593,8 +593,7 @@ public class NameResolverTest extends NameResolverTestCase {
     resolveNamesModule(
       "\\class X \\where { \\func f => 0 }\n" +
       "\\open X(f \\as f') \\hiding(f)\n" +
-      "\\func g => f'", 1);
-    assertThatErrorsAre(notInScope("f"));
+      "\\func g => f'");
   }
 
   @Test
@@ -603,8 +602,8 @@ public class NameResolverTest extends NameResolverTestCase {
       "\\class X \\where { \\func f => 0 }\n" +
       "\\open X(f \\as f') \\hiding(f')\n" +
       "\\func g => f\n" +
-      "\\func g' => f'", 2);
-    assertThatErrorsAre(notInScope("f"), notInScope("f'"));
+      "\\func g' => f'", 3);
+    assertThatErrorsAre(notInScope("f"), notInScope("f'"), notInScope("f'"));
   }
 
   @Test
@@ -662,7 +661,7 @@ public class NameResolverTest extends NameResolverTestCase {
   public void importOrder() {
     setModuleScopeProvider(module ->
       module.equals(new ModulePath("Mod"))
-        ? new SingletonScope(new LocatedReferableImpl(Precedence.DEFAULT, "foo", new ModuleLocation(null, null, module), GlobalReferable.Kind.TYPECHECKABLE))
+        ? new SingletonScope(new LocatedReferableImpl(Precedence.DEFAULT, "foo", new ModuleLocation(null, null, module), GlobalReferable.Kind.FUNCTION))
         : EmptyScope.INSTANCE);
     /*
     resolveNamesModule(
@@ -677,80 +676,7 @@ public class NameResolverTest extends NameResolverTestCase {
   }
 
   @Test
-  public void aliasTest() {
-    resolveNamesModule(
-      "\\func foo \\alias bar => 0\n" +
-      "\\func baz => foo Nat.+ bar");
-  }
-
-  @Test
-  public void unicodeAliasTest() {
-    resolveNamesModule(
-      "\\func foo \\alias ∀ => 0\n" +
-      "\\func baz => foo Nat.+ ∀");
-  }
-
-  @Test
   public void unicodeError() {
     resolveNamesModule("\\func ∀ => 0", 1);
-  }
-
-  @Test
-  public void aliasPrecedenceTest() {
-    resolveNamesModule(
-      "\\func foo \\alias \\infix 5 bar (x y : Nat) => x\n" +
-      "\\func test1 => foo 0 1\n" +
-      "\\func test2 => 0 bar 1");
-    Concrete.FunctionDefinition test1 = (Concrete.FunctionDefinition) getConcrete("test1");
-    Concrete.FunctionDefinition test2 = (Concrete.FunctionDefinition) getConcrete("test2");
-    assertTrue(new ConcreteCompareVisitor().compare(((Concrete.TermFunctionBody) test1.getBody()).getTerm(), ((Concrete.TermFunctionBody) test2.getBody()).getTerm()));
-  }
-
-  @Test
-  public void aliasPrecedenceError() {
-    resolveNamesModule(
-      "\\func foo \\alias \\infix 5 bar (x y : Nat) => x\n" +
-      "\\func test1 => 0 foo 1\n" +
-      "\\func test2 => 0 bar 1");
-    Concrete.FunctionDefinition test1 = (Concrete.FunctionDefinition) getConcrete("test1");
-    Concrete.FunctionDefinition test2 = (Concrete.FunctionDefinition) getConcrete("test2");
-    assertFalse(new ConcreteCompareVisitor().compare(((Concrete.TermFunctionBody) test1.getBody()).getTerm(), ((Concrete.TermFunctionBody) test2.getBody()).getTerm()));
-  }
-
-  @Test
-  public void aliasPrecedenceTest2() {
-    resolveNamesModule(
-      "\\func \\infix 5 foo \\alias bar (x y : Nat) => x\n" +
-      "\\func test1 => 0 foo 1\n" +
-      "\\func test2 => bar 0 1");
-    Concrete.FunctionDefinition test1 = (Concrete.FunctionDefinition) getConcrete("test1");
-    Concrete.FunctionDefinition test2 = (Concrete.FunctionDefinition) getConcrete("test2");
-    assertTrue(new ConcreteCompareVisitor().compare(((Concrete.TermFunctionBody) test1.getBody()).getTerm(), ((Concrete.TermFunctionBody) test2.getBody()).getTerm()));
-  }
-
-  @Test
-  public void aliasPrecedenceError2() {
-    resolveNamesModule(
-      "\\func \\infix 5 foo \\alias bar (x y : Nat) => x\n" +
-      "\\func test1 => 0 foo 1\n" +
-      "\\func test2 => 0 bar 1");
-    Concrete.FunctionDefinition test1 = (Concrete.FunctionDefinition) getConcrete("test1");
-    Concrete.FunctionDefinition test2 = (Concrete.FunctionDefinition) getConcrete("test2");
-    assertFalse(new ConcreteCompareVisitor().compare(((Concrete.TermFunctionBody) test1.getBody()).getTerm(), ((Concrete.TermFunctionBody) test2.getBody()).getTerm()));
-  }
-
-  @Test
-  public void aliasPrecedenceError3() {
-    resolveNamesModule(
-      "\\func foo \\alias \\infix 5 bar (x y : Nat) => x\n" +
-      "\\func test => (0, 0 bar 1 bar 2)", 1);
-  }
-
-  @Test
-  public void aliasClassTest() {
-    resolveNamesModule(
-      "\\class Foo \\alias Bar\n" +
-      "\\instance foo : Foo\n" +
-      "\\instance bar : Bar");
   }
 }

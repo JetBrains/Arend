@@ -9,11 +9,8 @@ import org.arend.naming.scope.CachingScope;
 import org.arend.naming.scope.LexicalScope;
 import org.arend.naming.scope.NamespaceCommandNamespace;
 import org.arend.naming.scope.Scope;
-import org.arend.term.FunctionKind;
 import org.arend.term.NamespaceCommand;
-import org.arend.term.concrete.Concrete;
 import org.arend.term.group.Group;
-import org.arend.typechecking.provider.ConcreteProvider;
 
 import java.util.*;
 import java.util.function.Function;
@@ -36,35 +33,28 @@ public class InstanceProviderSet {
   }
 
   private class MyPredicate implements Predicate<Referable> {
-    private final ConcreteProvider concreteProvider;
     private final ReferableConverter referableConverter;
     private SimpleInstanceProvider instanceProvider;
     private boolean used = false;
 
-    private MyPredicate(ConcreteProvider concreteProvider, ReferableConverter referableConverter) {
-      this.concreteProvider = concreteProvider;
+    private MyPredicate(ReferableConverter referableConverter) {
       this.referableConverter = referableConverter;
       this.instanceProvider = new SimpleInstanceProvider();
     }
 
     public LocatedReferable recordInstances(LocatedReferable ref) {
-      if (referableConverter != null && !(ref instanceof TCReferable)) {
-        ref = referableConverter.toDataLocatedReferable(ref);
-      }
-      if (ref instanceof TCReferable) {
-        myProviders.put((TCReferable) ref, instanceProvider);
+      TCReferable tcRef = referableConverter.toDataLocatedReferable(ref);
+      if (tcRef != null) {
+        myProviders.put(tcRef, instanceProvider);
       }
       return ref;
     }
 
     @Override
     public boolean test(Referable ref) {
-      if (referableConverter != null && ref instanceof LocatedReferable && !(ref instanceof TCReferable)) {
-        ref = referableConverter.toDataLocatedReferable((LocatedReferable) ref);
-      }
-      if (ref instanceof TCReferable) {
-        Concrete.FunctionDefinition instance = concreteProvider.getConcreteInstance((GlobalReferable) ref);
-        if (instance != null && instance.getKind() == FunctionKind.INSTANCE) {
+      if (ref instanceof LocatedReferable) {
+        TCReferable instance = referableConverter.toDataLocatedReferable((LocatedReferable) ref);
+        if (instance != null && instance.getKind() == GlobalReferable.Kind.INSTANCE) {
           if (used) {
             instanceProvider = new SimpleInstanceProvider(instanceProvider);
             used = false;
@@ -76,20 +66,20 @@ public class InstanceProviderSet {
     }
   }
 
-  public boolean collectInstances(Group group, Scope parentScope, LocatedReferable referable, ConcreteProvider concreteProvider, ReferableConverter referableConverter) {
+  public boolean collectInstances(Group group, Scope parentScope, LocatedReferable referable, ReferableConverter referableConverter) {
     if (!myCollected.add(group)) {
       return false;
     }
 
-    var predicate = new MyPredicate(concreteProvider, referableConverter);
+    var predicate = new MyPredicate(referableConverter);
     parentScope.find(predicate);
     processGroup(group, parentScope, predicate);
     predicate.recordInstances(referable);
     return true;
   }
 
-  public boolean collectInstances(Group group, Scope parentScope, ConcreteProvider concreteProvider, ReferableConverter referableConverter) {
-    return collectInstances(group, parentScope, group.getReferable(), concreteProvider, referableConverter);
+  public boolean collectInstances(Group group, Scope parentScope, ReferableConverter referableConverter) {
+    return collectInstances(group, parentScope, group.getReferable(), referableConverter);
   }
 
   private void processGroup(Group group, Scope parentScope, MyPredicate predicate) {

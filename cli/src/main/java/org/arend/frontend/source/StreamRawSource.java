@@ -9,6 +9,7 @@ import org.arend.frontend.parser.*;
 import org.arend.library.SourceLibrary;
 import org.arend.module.ModuleLocation;
 import org.arend.module.error.ExceptionError;
+import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.naming.resolving.visitor.DefinitionResolveNameVisitor;
 import org.arend.naming.scope.CachingScope;
 import org.arend.naming.scope.ScopeFactory;
@@ -106,12 +107,12 @@ public abstract class StreamRawSource implements Source {
       return LoadResult.CONTINUE;
     }
 
-    new DefinitionResolveNameVisitor(ConcreteReferableProvider.INSTANCE, myPass == 1, sourceLoader.getTypecheckingErrorReporter()).resolveGroup(myGroup, null, myGroup.getGroupScope());
+    new DefinitionResolveNameVisitor(ConcreteReferableProvider.INSTANCE, null, myPass == 1, sourceLoader.getTypecheckingErrorReporter()).resolveGroup(myGroup, myGroup.getGroupScope());
     if (myPass == 1) {
       myPass = 2;
       return LoadResult.CONTINUE;
     }
-    sourceLoader.getInstanceProviderSet().collectInstances(myGroup, CachingScope.make(ScopeFactory.parentScopeForGroup(myGroup, sourceLoader.getModuleScopeProvider(myInTests), true)), ConcreteReferableProvider.INSTANCE, null);
+    sourceLoader.getInstanceProviderSet().collectInstances(myGroup, CachingScope.make(ScopeFactory.parentScopeForGroup(myGroup, sourceLoader.getModuleScopeProvider(myInTests), true)), IdReferableConverter.INSTANCE);
     return LoadResult.SUCCESS;
   }
 }

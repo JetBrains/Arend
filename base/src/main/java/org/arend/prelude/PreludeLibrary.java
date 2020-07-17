@@ -12,7 +12,6 @@ import org.arend.naming.scope.LexicalScope;
 import org.arend.naming.scope.Scope;
 import org.arend.term.group.ChildGroup;
 import org.arend.term.group.Group;
-import org.arend.typechecking.TypecheckerState;
 import org.arend.util.Range;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -28,15 +27,6 @@ import java.util.Collections;
 public abstract class PreludeLibrary extends SourceLibrary {
   private static ChildGroup myGroup;
   private static Scope myScope;
-
-  /**
-   * Creates a new {@code PreludeLibrary}
-   *
-   * @param typecheckerState the underling typechecker state of this library.
-   */
-  protected PreludeLibrary(TypecheckerState typecheckerState) {
-    super(typecheckerState);
-  }
 
   public static ChildGroup getPreludeGroup() {
     return myGroup;

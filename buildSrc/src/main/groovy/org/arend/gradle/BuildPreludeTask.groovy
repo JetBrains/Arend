@@ -1,16 +1,15 @@
 package org.arend.gradle
 
-import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputDirectory
-import org.gradle.api.tasks.InputFile
-import org.gradle.api.tasks.JavaExec
-import org.gradle.api.tasks.OutputFile
+import org.gradle.api.tasks.*
 
 class BuildPreludeTask extends JavaExec {
     {
         description = "Builds the prelude cache"
         group = "build"
         main = "${project.group}.frontend.PreludeBinaryGenerator"
+        args = [".", "--recompile"]
+
+        dependsOn(project.tasks.getByName("classes"))
     }
 
     @Input

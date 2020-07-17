@@ -3,7 +3,6 @@ package org.arend.naming.reference.converter;
 import org.arend.ext.module.LongName;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.LocatedReferable;
-import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.util.FullName;
 
@@ -16,11 +15,6 @@ import java.util.function.Function;
 public class SimpleReferableConverter implements ReferableConverter {
   private final Map<FullName, TCReferable> myMap = new HashMap<>();
   private final Map<FullName, List<FullName>> myInternalReferables = new HashMap<>();
-
-  @Override
-  public Referable toDataReferable(Referable referable) {
-    return referable;
-  }
 
   @Override
   public TCReferable toDataLocatedReferable(LocatedReferable referable) {

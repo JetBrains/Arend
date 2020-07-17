@@ -18,8 +18,6 @@ import org.arend.naming.scope.Scope;
 import org.arend.prelude.Prelude;
 import org.arend.prelude.PreludeLibrary;
 import org.arend.term.prettyprint.PrettyPrinterConfigWithRenamer;
-import org.arend.typechecking.SimpleTypecheckerState;
-import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.hamcrest.Description;
@@ -42,18 +40,17 @@ public abstract class ArendTestCase {
   protected Library preludeLibrary;
   protected ModuleScopeProvider moduleScopeProvider;
 
-  protected final TypecheckerState typecheckerState = new SimpleTypecheckerState();
   protected final List<GeneralError> errorList = new ArrayList<>();
   protected final ListErrorReporter errorReporter = new ListErrorReporter(errorList);
-  protected final TypecheckingOrderingListener typechecking = new TypecheckingOrderingListener(new InstanceProviderSet(), typecheckerState, ConcreteReferableProvider.INSTANCE, IdReferableConverter.INSTANCE, errorReporter, PositionComparator.INSTANCE, ref -> null);
+  protected final TypecheckingOrderingListener typechecking = new TypecheckingOrderingListener(new InstanceProviderSet(), ConcreteReferableProvider.INSTANCE, IdReferableConverter.INSTANCE, errorReporter, PositionComparator.INSTANCE, ref -> null);
 
   @Before
   public void loadPrelude() {
     libraryManager = new LibraryManager((lib,name) -> { throw new IllegalStateException(); }, new InstanceProviderSet(), errorReporter, errorReporter, DefinitionRequester.INSTANCE);
-    preludeLibrary = new PreludeFileLibrary(null, typecheckerState);
+    preludeLibrary = new PreludeFileLibrary(null);
     moduleScopeProvider = preludeLibrary.getModuleScopeProvider();
     libraryManager.loadLibrary(preludeLibrary, null);
-    new Prelude.PreludeTypechecking(new InstanceProviderSet(), typecheckerState, ConcreteReferableProvider.INSTANCE, PositionComparator.INSTANCE).typecheckLibrary(preludeLibrary);
+    new Prelude.PreludeTypechecking(new InstanceProviderSet(), ConcreteReferableProvider.INSTANCE, PositionComparator.INSTANCE).typecheckLibrary(preludeLibrary);
     errorList.clear();
   }
 

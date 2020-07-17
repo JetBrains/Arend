@@ -221,6 +221,7 @@ tupleExpr : expr (':' expr)?;
 atom  : literal                                     # atomLiteral
       | '(' (tupleExpr (',' tupleExpr)* ','?)? ')'  # tuple
       | NUMBER                                      # atomNumber
+      | STRING                                      # atomString
       | APPLY_HOLE                                  # atomApplyHole
       | NEGATIVE_NUMBER                             # atomNegativeNumber
       | '\\this'                                    # atomThis
@@ -277,6 +278,13 @@ NEGATIVE_NUMBER : '-' [0-9]+;
 UNIVERSE : '\\Type' [0-9]*;
 TRUNCATED_UNIVERSE : '\\' (NUMBER '-' | 'oo-' | 'h') 'Type' [0-9]*;
 SET : '\\Set' [0-9]*;
+STRING : INCOMPLETE_STRING '"';
+INCOMPLETE_STRING : '"' (~["\\\r\n] | ESCAPE_SEQ | EOF)*;
+fragment ESCAPE_SEQ : '\\' [btnfr"'\\] | OCT_ESCAPE | UNICODE_ESCAPE;
+fragment OCT_ESCAPE : '\\' OCT_DIGIT OCT_DIGIT? | '\\' [0-3] OCT_DIGIT OCT_DIGIT;
+fragment UNICODE_ESCAPE : '\\' 'u'+ HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT;
+fragment HEX_DIGIT : [0-9a-fA-F];
+fragment OCT_DIGIT : [0-8];
 COLON : ':';
 ARROW : '->';
 APPLY_HOLE : '__';

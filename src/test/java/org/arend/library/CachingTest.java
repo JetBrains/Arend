@@ -33,7 +33,7 @@ public class CachingTest extends LibraryTestCase {
     assertThat(errorList, hasSize(1));
     errorList.clear();
 
-    Definition.TypeCheckingStatus aStatus = typecheckerState.getTypechecked(get(aClass.getGroupScope(), "a")).status();
+    Definition.TypeCheckingStatus aStatus = get(aClass.getGroupScope(), "a").getTypechecked().status();
 
     libraryManager.unloadLibrary(library);
 
@@ -41,9 +41,9 @@ public class CachingTest extends LibraryTestCase {
     aClass = library.getModuleGroup(new ModulePath("A"));
     assertThat(aClass, is(notNullValue()));
 
-    assertThat(typecheckerState.getTypechecked(get(aClass.getGroupScope(), "a")).status(), is(equalTo(aStatus)));
-    assertThat(typecheckerState.getTypechecked(get(aClass.getGroupScope(), "b1")), is(nullValue()));
-    assertThat(typecheckerState.getTypechecked(get(aClass.getGroupScope(), "b2")), is(nullValue()));
+    assertThat(get(aClass.getGroupScope(), "a").getTypechecked().status(), is(equalTo(aStatus)));
+    assertThat(get(aClass.getGroupScope(), "b1").getTypechecked(), is(nullValue()));
+    assertThat(get(aClass.getGroupScope(), "b2").getTypechecked(), is(nullValue()));
   }
 
   @Test
@@ -72,16 +72,16 @@ public class CachingTest extends LibraryTestCase {
     errorList.clear();
 
     libraryManager.unloadLibrary(library);
-    assertThat(typecheckerState.getTypechecked(get(aGroup.getGroupScope(), "a")), is(nullValue()));
-    assertThat(typecheckerState.getTypechecked(get(aGroup.getGroupScope(), "b")), is(nullValue()));
+    assertThat(get(aGroup.getGroupScope(), "a").getTypechecked(), is(nullValue()));
+    assertThat(get(aGroup.getGroupScope(), "b").getTypechecked(), is(nullValue()));
 
     libraryManager.loadLibrary(library, null);
     typechecking.typecheckLibrary(library);
     library.persistUpdatedModules(errorReporter);
     ChildGroup aGroup2 = library.getModuleGroup(new ModulePath("A"));
     assertThat(aGroup2, is(notNullValue()));
-    assertThat(typecheckerState.getTypechecked(get(aGroup2.getGroupScope(), "a")), is(notNullValue()));
-    assertThat(typecheckerState.getTypechecked(get(aGroup2.getGroupScope(), "b")), is(notNullValue()));
+    assertThat(get(aGroup2.getGroupScope(), "a").getTypechecked(), is(notNullValue()));
+    assertThat(get(aGroup2.getGroupScope(), "b").getTypechecked(), is(notNullValue()));
   }
 
   @Test
@@ -100,17 +100,17 @@ public class CachingTest extends LibraryTestCase {
     errorList.clear();
 
     libraryManager.unloadLibrary(library);
-    assertThat(typecheckerState.getTypechecked(get(aGroup.getGroupScope(), "D")), is(nullValue()));
-    assertThat(typecheckerState.getTypechecked(get(aGroup.getGroupScope(), "a")), is(nullValue()));
-    assertThat(typecheckerState.getTypechecked(get(aGroup.getGroupScope(), "b")), is(nullValue()));
+    assertThat(get(aGroup.getGroupScope(), "D").getTypechecked(), is(nullValue()));
+    assertThat(get(aGroup.getGroupScope(), "a").getTypechecked(), is(nullValue()));
+    assertThat(get(aGroup.getGroupScope(), "b").getTypechecked(), is(nullValue()));
 
     libraryManager.loadLibrary(library, null);
     aGroup = library.getModuleGroup(new ModulePath("A"));
     assertThat(aGroup, is(notNullValue()));
 
-    assertThat(typecheckerState.getTypechecked(get(aGroup.getGroupScope(), "D")), is(notNullValue()));
-    assertThat(typecheckerState.getTypechecked(get(aGroup.getGroupScope(), "a")), is(nullValue()));
-    assertThat(typecheckerState.getTypechecked(get(aGroup.getGroupScope(), "b")), is(nullValue()));
+    assertThat(get(aGroup.getGroupScope(), "D").getTypechecked(), is(notNullValue()));
+    assertThat(get(aGroup.getGroupScope(), "a").getTypechecked(), is(nullValue()));
+    assertThat(get(aGroup.getGroupScope(), "b").getTypechecked(), is(nullValue()));
   }
 
   @Test
@@ -142,7 +142,7 @@ public class CachingTest extends LibraryTestCase {
     typechecking.typecheckLibrary(library);
     library.persistUpdatedModules(errorReporter);
     assertThat(get(library.getModuleScopeProvider().forModule(new ModulePath("a")), "D"), is(nullValue()));
-    assertThat(typecheckerState.getTypechecked(get(library.getModuleScopeProvider().forModule(new ModulePath("A")), "f")), is(notNullValue()));
+    assertThat(get(library.getModuleScopeProvider().forModule(new ModulePath("A")), "f").getTypechecked(), is(notNullValue()));
   }
 
   @Test

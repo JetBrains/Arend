@@ -3,18 +3,15 @@ package org.arend.frontend.reference;
 import org.arend.ext.error.SourceInfo;
 import org.arend.ext.reference.DataContainer;
 import org.arend.ext.reference.Precedence;
-import org.arend.frontend.ConcreteReferableProvider;
 import org.arend.frontend.parser.Position;
 import org.arend.module.ModuleLocation;
-import org.arend.naming.reference.ClassReferable;
-import org.arend.naming.reference.LocatedReferableImpl;
-import org.arend.naming.reference.TCReferable;
+import org.arend.naming.reference.*;
 import org.arend.naming.resolving.visitor.TypeClassReferenceExtractVisitor;
 import org.arend.term.concrete.Concrete;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class ConcreteLocatedReferable extends LocatedReferableImpl implements SourceInfo, DataContainer {
+public class ConcreteLocatedReferable extends LocatedReferableImpl implements SourceInfo, DataContainer, TypedReferable {
   private final Position myPosition;
   private final String myAliasName;
   private final Precedence myAliasPrecedence;
@@ -55,8 +52,8 @@ public class ConcreteLocatedReferable extends LocatedReferableImpl implements So
   }
 
   @Override
-  public TCReferable getTypecheckable() {
-    return myDefinition == null ? null : myDefinition.getRelatedDefinition().getData();
+  public @NotNull TCReferable getTypecheckable() {
+    return myDefinition == null ? this : myDefinition.getRelatedDefinition().getData();
   }
 
   public void setDefinition(Concrete.ReferableDefinition definition) {
@@ -77,6 +74,17 @@ public class ConcreteLocatedReferable extends LocatedReferableImpl implements So
   @Nullable
   @Override
   public ClassReferable getTypeClassReference() {
-    return myDefinition == null ? null : myDefinition.accept(new TypeClassReferenceExtractVisitor(ConcreteReferableProvider.INSTANCE), null);
+    return myDefinition == null ? null : myDefinition.accept(new TypeClassReferenceExtractVisitor(), null);
+  }
+
+  @Override
+  public @Nullable Referable getBodyReference(TypeClassReferenceExtractVisitor visitor) {
+    if (myDefinition instanceof Concrete.FunctionDefinition) {
+      Concrete.FunctionDefinition function = (Concrete.FunctionDefinition) myDefinition;
+      if (function.getBody() instanceof Concrete.TermFunctionBody) {
+        return visitor.getTypeReference(function.getParameters(), function.getBody().getTerm(), false);
+      }
+    }
+    return null;
   }
 }

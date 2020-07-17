@@ -92,7 +92,7 @@ public abstract class StreamBinarySource implements BinarySource {
       }
 
       ReferableConverter referableConverter = sourceLoader.getReferableConverter();
-      myModuleDeserialization = new ModuleDeserialization(moduleProto, library.getTypecheckerState(), referableConverter, myKeyRegistry, myDefinitionListener);
+      myModuleDeserialization = new ModuleDeserialization(moduleProto, referableConverter, myKeyRegistry, myDefinitionListener);
 
       if (referableConverter == null) {
         group = myModuleDeserialization.readGroup(new ModuleLocation(library.getName(), ModuleLocation.LocationKind.SOURCE, modulePath));
@@ -165,7 +165,7 @@ public abstract class StreamBinarySource implements BinarySource {
         return false;
       }
 
-      ModuleProtos.Module module = new ModuleSerialization(library.getTypecheckerState(), errorReporter).writeModule(group, currentModulePath, referableConverter);
+      ModuleProtos.Module module = new ModuleSerialization(errorReporter).writeModule(group, currentModulePath, referableConverter);
       if (module == null) {
         return false;
       }

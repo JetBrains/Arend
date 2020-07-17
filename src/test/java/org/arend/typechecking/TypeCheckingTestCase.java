@@ -37,7 +37,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
   protected final LocalErrorReporter localErrorReporter = new TestLocalErrorReporter(errorReporter);
 
   TypecheckingResult typeCheckExpr(Map<Referable, Binding> context, Concrete.Expression expression, Expression expectedType, int errors) {
-    CheckTypeVisitor visitor = new CheckTypeVisitor(typecheckerState, localErrorReporter, null, null);
+    CheckTypeVisitor visitor = new CheckTypeVisitor(localErrorReporter, null, null);
     visitor.addBindings(context);
     Concrete.Expression desugar = DesugarVisitor.desugar(expression, localErrorReporter);
     TypecheckingResult result = visitor.finalCheckExpr(desugar, expectedType);
@@ -100,8 +100,8 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
   }
 
   private Definition typeCheckDef(ConcreteLocatedReferable reference, int errors) {
-    new TypecheckingOrderingListener(libraryManager.getInstanceProviderSet(), typecheckerState, ConcreteReferableProvider.INSTANCE, IdReferableConverter.INSTANCE, errorReporter, PositionComparator.INSTANCE, ref -> null).typecheckDefinitions(Collections.singletonList((Concrete.Definition) reference.getDefinition()), null);
-    Definition definition = typecheckerState.getTypechecked(reference);
+    new TypecheckingOrderingListener(libraryManager.getInstanceProviderSet(), ConcreteReferableProvider.INSTANCE, IdReferableConverter.INSTANCE, errorReporter, PositionComparator.INSTANCE, ref -> null).typecheckDefinitions(Collections.singletonList((Concrete.Definition) reference.getDefinition()), null);
+    Definition definition = reference.getTypechecked();
     boolean ok = errors != 0 || new CoreDefinitionChecker(errorReporter).check(definition);
     assertThat(errorList, containsErrors(errors));
     assertTrue(ok);
@@ -118,8 +118,8 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
 
   private void typeCheckModule(Group group, int errors) {
-    assertTrue(new TypecheckingOrderingListener(libraryManager.getInstanceProviderSet(), typecheckerState, ConcreteReferableProvider.INSTANCE, IdReferableConverter.INSTANCE, localErrorReporter, PositionComparator.INSTANCE, ref -> null).typecheckModules(Collections.singletonList(group), null));
-    boolean ok = errors != 0 || !errorList.isEmpty() || new CoreModuleChecker(errorReporter, typecheckerState).checkGroup(group);
+    assertTrue(new TypecheckingOrderingListener(libraryManager.getInstanceProviderSet(), ConcreteReferableProvider.INSTANCE, IdReferableConverter.INSTANCE, localErrorReporter, PositionComparator.INSTANCE, ref -> null).typecheckModules(Collections.singletonList(group), null));
+    boolean ok = errors != 0 || !errorList.isEmpty() || new CoreModuleChecker(errorReporter).checkGroup(group);
     assertThat(errorList, containsErrors(errors));
     assertTrue(ok);
   }
@@ -127,12 +127,12 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
   public Definition getDefinition(ChildGroup group, String path) {
     TCReferable ref = get(group.getGroupScope(), path);
-    return ref != null ? typecheckerState.getTypechecked(ref) : null;
+    return ref != null ? ref.getTypechecked() : null;
   }
 
   public Definition getDefinition(String path) {
     TCReferable ref = get(path);
-    return ref != null ? typecheckerState.getTypechecked(ref) : null;
+    return ref != null ? ref.getTypechecked() : null;
   }
 
   protected void typeCheckModule(ChildGroup group) {

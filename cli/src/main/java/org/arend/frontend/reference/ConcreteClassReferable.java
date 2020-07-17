@@ -4,10 +4,7 @@ import org.arend.ext.reference.Precedence;
 import org.arend.frontend.parser.Position;
 import org.arend.module.ModuleLocation;
 import org.arend.module.scopeprovider.EmptyModuleScopeProvider;
-import org.arend.naming.reference.Referable;
-import org.arend.naming.reference.Reference;
-import org.arend.naming.reference.TCClassReferable;
-import org.arend.naming.reference.TCReferable;
+import org.arend.naming.reference.*;
 import org.arend.naming.resolving.visitor.ExpressionResolveNameVisitor;
 import org.arend.naming.scope.CachingScope;
 import org.arend.naming.scope.LexicalScope;
@@ -23,22 +20,22 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-public class ConcreteClassReferable extends ConcreteLocatedReferable implements TCClassReferable {
+public class ConcreteClassReferable extends ConcreteLocatedReferable implements ClassReferable {
   private ChildGroup myGroup;
   private final Collection<? extends ConcreteClassFieldReferable> myFields;
   private final List<? extends Reference> myUnresolvedSuperClasses;
-  private final List<TCClassReferable> mySuperClasses;
+  private final List<ClassReferable> mySuperClasses;
   private boolean myResolved = false;
 
   public ConcreteClassReferable(Position position, @NotNull String name, Precedence precedence, @Nullable String aliasName, Precedence aliasPrecedence, Collection<? extends ConcreteClassFieldReferable> fields, List<? extends Reference> superClasses, TCReferable parent) {
-    super(position, name, precedence, aliasName, aliasPrecedence, parent, Kind.TYPECHECKABLE);
+    super(position, name, precedence, aliasName, aliasPrecedence, parent, Kind.CLASS);
     myFields = fields;
     myUnresolvedSuperClasses = superClasses;
     mySuperClasses = new ArrayList<>(superClasses.size());
   }
 
   public ConcreteClassReferable(Position position, @NotNull String name, Precedence precedence, @Nullable String aliasName, Precedence aliasPrecedence, Collection<? extends ConcreteClassFieldReferable> fields, List<? extends Reference> superClasses, ModuleLocation parent) {
-    super(position, name, precedence, aliasName, aliasPrecedence, parent, Kind.TYPECHECKABLE);
+    super(position, name, precedence, aliasName, aliasPrecedence, parent, Kind.CLASS);
     myFields = fields;
     myUnresolvedSuperClasses = superClasses;
     mySuperClasses = new ArrayList<>(superClasses.size());
@@ -55,7 +52,7 @@ public class ConcreteClassReferable extends ConcreteLocatedReferable implements 
 
   @NotNull
   @Override
-  public List<? extends TCClassReferable> getSuperClassReferences() {
+  public List<? extends ClassReferable> getSuperClassReferences() {
     if (myUnresolvedSuperClasses.isEmpty()) {
       return Collections.emptyList();
     }
@@ -76,16 +73,10 @@ public class ConcreteClassReferable extends ConcreteLocatedReferable implements 
     mySuperClasses.clear();
     for (Reference superClass : myUnresolvedSuperClasses) {
       Referable ref = ExpressionResolveNameVisitor.resolve(superClass.getReferent(), scope, true, null);
-      if (ref instanceof TCClassReferable) {
-        mySuperClasses.add((TCClassReferable) ref);
+      if (ref instanceof ClassReferable) {
+        mySuperClasses.add((ClassReferable) ref);
       }
     }
-  }
-
-  @NotNull
-  @Override
-  public Collection<? extends Reference> getUnresolvedSuperClassReferences() {
-    return myUnresolvedSuperClasses;
   }
 
   @NotNull

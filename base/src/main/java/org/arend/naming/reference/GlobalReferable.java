@@ -4,18 +4,19 @@ import org.arend.ext.reference.Precedence;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public interface GlobalReferable extends TypedReferable {
+public interface GlobalReferable extends Referable {
   enum Kind {
-    TYPECHECKABLE { @Override public boolean isTypecheckable() { return true; } },
-    CONSTRUCTOR { @Override public boolean isConstructor() { return true; } },
-    DEFINED_CONSTRUCTOR {
-      @Override public boolean isTypecheckable() { return true; }
+    DATA, CLASS, FUNCTION, INSTANCE,
+    DEFINED_CONSTRUCTOR { @Override public boolean isConstructor() { return true; } },
+    CONSTRUCTOR {
+      @Override public boolean isTypecheckable() { return false; }
       @Override public boolean isConstructor() { return true; }
     },
-    FIELD, OTHER;
+    FIELD { @Override public boolean isTypecheckable() { return false; } },
+    OTHER { @Override public boolean isTypecheckable() { return false; } };
 
     public boolean isTypecheckable() {
-      return false;
+      return true;
     }
 
     public boolean isConstructor() {
@@ -46,11 +47,5 @@ public interface GlobalReferable extends TypedReferable {
     return hasAlias() ? getAliasPrecedence() : getPrecedence();
   }
 
-  default GlobalReferable getTypecheckable() {
-    return this;
-  }
-
-  default @NotNull Kind getKind() {
-    return Kind.TYPECHECKABLE;
-  }
+  @NotNull Kind getKind();
 }

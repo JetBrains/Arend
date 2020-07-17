@@ -8,16 +8,13 @@ import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.prelude.Prelude;
 import org.arend.source.BinarySource;
 import org.arend.source.Source;
-import org.arend.typechecking.SimpleTypecheckerState;
-import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
 
 import java.nio.file.Paths;
 
 public class PreludeBinaryGenerator {
   public static void main(String[] args) {
-    TypecheckerState typecheckerState = new SimpleTypecheckerState();
-    PreludeFileLibrary library = new PreludeFileLibrary(Paths.get(args[0]), typecheckerState);
+    PreludeFileLibrary library = new PreludeFileLibrary(Paths.get(args[0]));
     BinarySource binarySource = library.getBinarySource(Prelude.MODULE_PATH);
     assert binarySource != null;
 
@@ -34,7 +31,7 @@ public class PreludeBinaryGenerator {
 
     LibraryManager manager = new LibraryManager((lib,name) -> { throw new IllegalStateException(); }, new InstanceProviderSet(), System.err::println, System.err::println, DefinitionRequester.INSTANCE);
     if (manager.loadLibrary(library, null)) {
-      if (new Prelude.PreludeTypechecking(manager.getInstanceProviderSet(), typecheckerState, ConcreteReferableProvider.INSTANCE, PositionComparator.INSTANCE).typecheckLibrary(library)) {
+      if (new Prelude.PreludeTypechecking(manager.getInstanceProviderSet(), ConcreteReferableProvider.INSTANCE, PositionComparator.INSTANCE).typecheckLibrary(library)) {
         library.persistModule(Prelude.MODULE_PATH, IdReferableConverter.INSTANCE, System.err::println);
       }
     }

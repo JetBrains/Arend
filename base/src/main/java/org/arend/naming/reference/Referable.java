@@ -16,4 +16,8 @@ public interface Referable extends ArendRef {
   default Referable getUnderlyingReferable() {
     return this;
   }
+
+  static Referable getUnderlyingReferable(Referable ref) {
+    return ref == null ? null : ref.getUnderlyingReferable();
+  }
 }

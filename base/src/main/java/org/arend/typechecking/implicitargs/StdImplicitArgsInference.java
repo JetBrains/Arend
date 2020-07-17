@@ -11,9 +11,11 @@ import org.arend.core.definition.*;
 import org.arend.core.expr.*;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.visitor.CompareVisitor;
+import org.arend.core.expr.visitor.FreeVariablesCollector;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
+import org.arend.ext.concrete.expr.ConcreteArgument;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.ArgumentExplicitnessError;
@@ -269,7 +271,8 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
       }
     }
 
-    List<Integer> order = result instanceof DefCallResult ? ((DefCallResult) result).getDefinition().getParametersTypecheckingOrder() : null;
+    Definition definition = result instanceof DefCallResult ? ((DefCallResult) result).getDefinition() : null;
+    List<Integer> order = definition != null ? definition.getParametersTypecheckingOrder() : null;
     if (order != null) {
       int skip = ((DefCallResult) result).getArguments().size();
       if (skip > 0) {
@@ -297,6 +300,14 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
       int numberOfImplicitArguments = 0; // Number of arguments not present in expr.getArguments()
       Map<Integer,Pair<InferenceVariable,Concrete.Expression>> deferredArguments = new LinkedHashMap<>();
       for (Integer i : order) {
+        if (i == -1) {
+          Expression expectedType1 = dropPiParameters(definition, expr.getArguments(), expectedType);
+          if (expectedType1 != null) {
+            new CompareVisitor(myVisitor.getEquations(), CMP.LE, expr).compare(result.getType(), expectedType1, Type.OMEGA);
+          }
+          continue;
+        }
+
         // Defer arguments up to i
         while (current < expr.getArguments().size()) {
           DependentLink parameter = result.getParameter();
@@ -354,12 +365,201 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
         result = inferArg(result, expr.getArguments().get(current).expression, expr.getArguments().get(current).isExplicit(), fun);
       }
     } else {
-      for (Concrete.Argument argument : expr.getArguments()) {
+      int i = 0;
+      if (expectedType != null && expectedType.getStuckInferenceVariable() == null) {
+        for (; i < expr.getArguments().size(); i++) {
+          Concrete.Argument argument = expr.getArguments().get(i);
+          if (result instanceof TypecheckingResult && argument.isExplicit()) {
+            DependentLink param = result.getParameter();
+            if (param.hasNext() && !param.isExplicit()) {
+              break;
+            }
+          }
+          result = inferArg(result, argument.expression, argument.isExplicit(), fun);
+        }
+
+        if (result == null || i == expr.getArguments().size()) {
+          return result;
+        }
+
+        Pair<Expression, Integer> pair = normalizePi(expr.getArguments(), i, result.getType());
+        ((TypecheckingResult) result).type = pair.proj1;
+
+        for (; i < pair.proj2; i++) {
+          Concrete.Argument argument = expr.getArguments().get(i);
+          result = inferArg(result, argument.expression, argument.isExplicit(), fun);
+        }
+
+        if (result == null) {
+          return null;
+        }
+        if (i < expr.getArguments().size()) {
+          result = fixImplicitArgs(result, result.getImplicitParameters(), fun, false, null);
+          new CompareVisitor(myVisitor.getEquations(), CMP.LE, fun).compare(dropPiParameters(result.getType(), expr.getArguments(), i), expectedType, Type.OMEGA);
+        }
+      }
+
+      for (; i < expr.getArguments().size(); i++) {
+        Concrete.Argument argument = expr.getArguments().get(i);
         result = inferArg(result, argument.expression, argument.isExplicit(), fun);
       }
     }
 
     return result;
+  }
+
+  /** Normalizes {@param type}
+   * @return (normalized type, actual type that will be compared with expected type, the first index in arguments from which type is non-dependent pi-type)
+  */
+  private Pair<Expression, Integer> normalizePi(List<? extends ConcreteArgument> arguments, int startIndex, Expression type) {
+    List<PiExpression> piTypes = new ArrayList<>();
+    int i = startIndex;
+    boolean ok = true;
+    loop:
+    while (true) {
+      type = type.normalize(NormalizationMode.WHNF);
+      if (!(type instanceof PiExpression)) {
+        break;
+      }
+
+      PiExpression pi = (PiExpression) type;
+      piTypes.add(pi);
+      type = pi.getCodomain();
+      SingleDependentLink link = pi.getParameters();
+      for (; i < arguments.size() && link.hasNext(); link = link.getNext()) {
+        if (!arguments.get(i).isExplicit() && link.isExplicit()) {
+          ok = false;
+          break loop;
+        }
+        if (arguments.get(i).isExplicit() == link.isExplicit()) {
+          i++;
+        }
+      }
+      if (i == arguments.size()) {
+        if (link.hasNext()) {
+          ok = link.isExplicit();
+        } else {
+          type = type.normalize(NormalizationMode.WHNF);
+          if (type instanceof PiExpression) {
+            ok = ((PiExpression) type).getParameters().isExplicit();
+          } else if (type instanceof ReferenceExpression) {
+            loop2:
+            for (PiExpression pi2 : piTypes) {
+              for (SingleDependentLink link2 = pi2.getParameters(); link2.hasNext(); link2 = link2.getNext()) {
+                if (((ReferenceExpression) type).getBinding() == link2) {
+                  ok = false;
+                  break loop2;
+                }
+              }
+            }
+          }
+        }
+        break;
+      }
+    }
+
+    Expression result = type;
+    for (int j = piTypes.size() - 1; j >= 0; j--) {
+      result = new PiExpression(piTypes.get(j).getResultSort(), piTypes.get(j).getParameters(), result);
+    }
+
+    if (!ok) {
+      return new Pair<>(result, arguments.size());
+    }
+
+    // find the last pi-parameter that occurs in the actual type
+    FreeVariablesCollector collector = new FreeVariablesCollector();
+    type.accept(collector, null);
+    SingleDependentLink param = null;
+    for (int j = piTypes.size() - 1; j >= 0; j--) {
+      for (SingleDependentLink link = piTypes.get(j).getParameters(); link.hasNext(); link = link.getNext()) {
+        if (collector.getResult().contains(link)) {
+          param = link;
+        }
+      }
+      if (param != null) {
+        if (param.getNext().hasNext()) {
+          param = param.getNext();
+        } else if (j < piTypes.size() - 1) {
+          param = piTypes.get(j + 1).getParameters();
+        } else {
+          // all parameters occur in the result type
+          return new Pair<>(result, arguments.size());
+        }
+        break;
+      }
+    }
+    if (param == null) {
+      param = piTypes.get(0).getParameters();
+    }
+
+    i = startIndex;
+    for (PiExpression pi : piTypes) {
+      for (SingleDependentLink link = pi.getParameters(); i < arguments.size() && link.hasNext(); link = link.getNext()) {
+        if (link == param) {
+          return new Pair<>(result, i);
+        }
+        if (arguments.get(i).isExplicit() == link.isExplicit()) {
+          i++;
+        }
+      }
+    }
+
+    return new Pair<>(result, arguments.size());
+  }
+
+  private Expression dropPiParameters(Expression type, List<? extends ConcreteArgument> arguments, int i) {
+    while (i < arguments.size()) {
+      PiExpression pi = (PiExpression) type;
+      type = pi.getCodomain();
+      SingleDependentLink param = pi.getParameters();
+      for (; param.hasNext() && i < arguments.size(); param = param.getNext(), i++) {
+        while (param.hasNext() && param.isExplicit() != arguments.get(i).isExplicit()) {
+          param = param.getNext();
+        }
+      }
+      if (i == arguments.size()) {
+        return param.hasNext() ? new PiExpression(pi.getResultSort(), param, type) : type;
+      }
+    }
+    return type;
+  }
+
+  private Expression dropPiParameters(Definition definition, List<? extends ConcreteArgument> arguments, Expression expectedType) {
+    if (expectedType == null) {
+      return null;
+    }
+
+    DependentLink param = definition.getParameters();
+    for (ConcreteArgument argument : arguments) {
+      while (param.hasNext() && !param.isExplicit() && argument.isExplicit()) {
+        param = param.getNext();
+      }
+      if (!param.hasNext()) {
+        return null;
+      }
+      if (argument.isExplicit() == param.isExplicit()) {
+        param = param.getNext();
+      }
+    }
+
+    while (param.hasNext()) {
+      PiExpression piExpr = expectedType.normalize(NormalizationMode.WHNF).cast(PiExpression.class);
+      if (piExpr == null) {
+        return null;
+      }
+
+      SingleDependentLink piParam = piExpr.getParameters();
+      for (; piParam.hasNext() && param.hasNext(); piParam = piParam.getNext(), param = param.getNext()) {
+        if (param.isExplicit() != piParam.isExplicit()) {
+          return null;
+        }
+      }
+
+      expectedType = piParam.hasNext() ? new PiExpression(piExpr.getResultSort(), piParam, piExpr.getCodomain()) : piExpr.getCodomain();
+    }
+
+    return expectedType;
   }
 
   @Override
