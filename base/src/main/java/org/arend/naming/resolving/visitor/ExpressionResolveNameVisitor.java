@@ -258,15 +258,16 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
           convertExpr(refExpr);
           convertArgument(argument);
           elem.expression = argument == null ? refExpr : Concrete.AppExpression.make(refExpr.getData(), refExpr, argument, false);
-          if (refExpr.getReferent() instanceof MetaReferable && !hasMeta) {
-            MetaDefinition metaDef = ((MetaReferable) refExpr.getReferent()).getDefinition();
-            if (metaDef != null && metaDef.isResolver()) {
-              hasMeta = true;
-            }
-          }
           resolvedRefs.add(new MetaBinOpParser.ResolvedReference(refExpr, (UnresolvedReference) ref, resolvedList));
         } else {
           resolvedRefs.add(new MetaBinOpParser.ResolvedReference(refExpr, null, null));
+        }
+
+        if (refExpr.getReferent() instanceof MetaReferable && !hasMeta) {
+          MetaDefinition metaDef = ((MetaReferable) refExpr.getReferent()).getDefinition();
+          if (metaDef != null && metaDef.isResolver()) {
+            hasMeta = true;
+          }
         }
       } else {
         resolvedRefs.add(null);

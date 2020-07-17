@@ -260,7 +260,18 @@ public abstract class SourceLibrary extends BaseLibrary {
         contributor.disable();
       }
       loadGeneratedModules();
+    }
+
+    if (myExtension != null) {
       myExtension.registerKeys(keyRegistry);
+      myExtension.setDependencies(dependenciesExtensions);
+      myExtension.setPrelude(new Prelude());
+      myExtension.setConcreteFactory(new ConcreteFactoryImpl(null));
+      myExtension.setVariableRenamerFactory(VariableRenamerFactoryImpl.INSTANCE);
+      ArendUI ui = getUI();
+      if (ui != null) {
+        myExtension.setUI(ui);
+      }
     }
 
     try {
@@ -284,16 +295,7 @@ public abstract class SourceLibrary extends BaseLibrary {
     }
 
     if (myExtension != null) {
-      myExtension.setDependencies(dependenciesExtensions);
-      myExtension.setPrelude(new Prelude());
-      myExtension.setConcreteFactory(new ConcreteFactoryImpl(null));
       myExtension.setDefinitionProvider(DefinitionProviderImpl.INSTANCE);
-      myExtension.setVariableRenamerFactory(VariableRenamerFactoryImpl.INSTANCE);
-      ArendUI ui = getUI();
-      if (ui != null) {
-        myExtension.setUI(ui);
-      }
-
       ArendDependencyProviderImpl provider = new ArendDependencyProviderImpl(typechecking, libraryManager.getAvailableModuleScopeProvider(this), libraryManager.getDefinitionRequester(), this);
       try {
         myExtension.load(provider);
