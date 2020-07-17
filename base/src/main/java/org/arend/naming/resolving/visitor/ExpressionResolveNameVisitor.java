@@ -120,7 +120,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
         myErrorReporter.report(((ErrorReference) expr.getReferent()).getError());
       }
       if (myResolverListener != null) {
-        myResolverListener.referenceResolved(null, origRef, expr, resolvedList);
+        myResolverListener.referenceResolved(null, origRef, expr, resolvedList, myScope);
       }
     }
   }
@@ -186,7 +186,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       convertExpr(expr);
       convertArgument(argument);
       if (myResolverListener != null) {
-        myResolverListener.referenceResolved(argument, origRef, expr, resolvedList);
+        myResolverListener.referenceResolved(argument, origRef, expr, resolvedList, myScope);
       }
     } else {
       argument = null;
@@ -297,7 +297,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     }
     if (resolvedReference.resolvedList != null && myResolverListener != null) {
       Concrete.Expression argument = elem.expression instanceof Concrete.AppExpression ? ((Concrete.AppExpression) elem.expression).getArguments().get(0).expression : null;
-      myResolverListener.referenceResolved(argument, resolvedReference.originalReference, resolvedReference.refExpr, resolvedReference.resolvedList);
+      myResolverListener.referenceResolved(argument, resolvedReference.originalReference, resolvedReference.refExpr, resolvedReference.resolvedList, myScope);
     }
   }
 

@@ -130,8 +130,8 @@ public class LongUnresolvedReference implements UnresolvedReference {
 
   @Nullable
   @Override
-  public Referable tryResolve(Scope scope) {
-    if (resolve(scope, null) instanceof ErrorReference) {
+  public Referable tryResolve(Scope scope, List<Referable> resolvedRefs) {
+    if (resolve(scope, resolvedRefs) instanceof ErrorReference) {
       resolved = null;
     }
     return resolved;

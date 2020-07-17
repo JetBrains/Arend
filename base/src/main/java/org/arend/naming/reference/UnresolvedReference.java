@@ -10,7 +10,7 @@ import java.util.List;
 
 public interface UnresolvedReference extends Referable, DataContainer {
   @NotNull Referable resolve(Scope scope, List<Referable> resolvedRefs);
-  @Nullable Referable tryResolve(Scope scope);
+  @Nullable Referable tryResolve(Scope scope, List<Referable> resolvedRefs);
   @Nullable Concrete.Expression resolveArgument(Scope scope, List<Referable> resolvedRefs);
   void reset();
 }

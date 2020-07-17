@@ -46,7 +46,8 @@ public class CachingScope implements Scope {
   @Nullable
   @Override
   public Referable resolveName(String name) {
-    return myElements.get(name);
+    Referable ref = myElements.get(name);
+    return ref instanceof ModuleReferable ? null : ref;
   }
 
   @Nullable

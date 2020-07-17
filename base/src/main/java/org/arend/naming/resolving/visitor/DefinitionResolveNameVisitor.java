@@ -53,12 +53,12 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     myResolverListener = resolverListener;
   }
 
-  public DefinitionResolveNameVisitor(ConcreteProvider concreteProvider, ReferableConverter referableConverter, boolean resolveTypeClassReferences, ErrorReporter errorReporter) {
+  public DefinitionResolveNameVisitor(ConcreteProvider concreteProvider, ReferableConverter referableConverter, boolean resolveTypeClassReferences, ErrorReporter errorReporter, ResolverListener resolverListener) {
     myResolveTypeClassReferences = resolveTypeClassReferences;
     myConcreteProvider = concreteProvider;
     myReferableConverter = referableConverter == null ? IdReferableConverter.INSTANCE : referableConverter;
     myErrorReporter = errorReporter;
-    myResolverListener = null;
+    myResolverListener = resolverListener;
   }
 
   private void resolveTypeClassReference(List<? extends Concrete.Parameter> parameters, Concrete.Expression expr, Scope scope, boolean isType) {
@@ -104,46 +104,45 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       }
     }
 
-    scope = exprVisitor.getScope();
-
     if (expr instanceof Concrete.BinOpSequenceExpression) {
       Concrete.BinOpSequenceExpression binOpExpr = (Concrete.BinOpSequenceExpression) expr;
       for (Concrete.BinOpSequenceElem elem : binOpExpr.getSequence()) {
         if (elem.expression instanceof Concrete.ReferenceExpression) {
-          Concrete.ReferenceExpression referenceExpression = (Concrete.ReferenceExpression) elem.expression;
-          Referable ref = referenceExpression.getReferent();
-          if (ref instanceof UnresolvedReference) {
-            Referable newRef = ((UnresolvedReference) ref).tryResolve(scope);
-            if (newRef instanceof MetaReferable) {
-              ((UnresolvedReference) ref).reset();
-              return;
-            }
-            if (newRef == null) {
-              return;
-            }
-            referenceExpression.setReferent(exprVisitor.convertReferable(newRef));
+          if (!tryResolve((Concrete.ReferenceExpression) elem.expression, exprVisitor)) {
+            return;
           }
         }
       }
     }
 
-    if (!(expr instanceof Concrete.ReferenceExpression)) {
-      return;
+    if (expr instanceof Concrete.ReferenceExpression) {
+      tryResolve((Concrete.ReferenceExpression) expr, exprVisitor);
     }
-    Referable ref = ((Concrete.ReferenceExpression) expr).getReferent();
+  }
+
+  private boolean tryResolve(Concrete.ReferenceExpression expr, ExpressionResolveNameVisitor exprVisitor) {
+    Referable ref = expr.getReferent();
     while (ref instanceof RedirectingReferable) {
       ref = ((RedirectingReferable) ref).getOriginalReferable();
     }
+
     if (ref instanceof UnresolvedReference) {
-      Referable newRef = ((UnresolvedReference) ref).tryResolve(scope);
+      List<Referable> resolvedRefs = new ArrayList<>();
+      Referable newRef = ((UnresolvedReference) ref).tryResolve(exprVisitor.getScope(), resolvedRefs);
       if (newRef instanceof MetaReferable) {
         ((UnresolvedReference) ref).reset();
-        return;
+        return false;
       }
-      if (newRef != null) {
-        ((Concrete.ReferenceExpression) expr).setReferent(exprVisitor.convertReferable(newRef));
+      if (newRef == null) {
+        return false;
+      }
+      expr.setReferent(exprVisitor.convertReferable(newRef));
+      if (myResolverListener != null) {
+        myResolverListener.referenceResolved(null, ref, expr, resolvedRefs, exprVisitor.getScope());
       }
     }
+
+    return true;
   }
 
   private class ConcreteProxyErrorReporter extends LocalErrorReporter {
@@ -211,7 +210,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
             enclosingFunction.setResultType(enclosingFunction.getResultType().accept(exprVisitor, null));
           }
           Referable classRef = enclosingFunction.getResultType().getUnderlyingReferable();
-          if (!(classRef instanceof ClassReferable)) {
+          if (classRef != null && !(classRef instanceof ClassReferable)) {
             classRef = classRef.getUnderlyingReferable();
           }
           if (classRef instanceof ClassReferable) {
