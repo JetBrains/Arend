@@ -190,6 +190,11 @@ public final class Concrete {
 
     public abstract <P, R> R accept(ConcreteExpressionVisitor<? super P, ? extends R> visitor, P params);
 
+    @Override
+    public @NotNull List<ConcreteArgument> getArgumentsSequence() {
+      return Collections.singletonList(new Argument(this, true));
+    }
+
     public ReferenceExpression getUnderlyingReferenceExpression() {
       Expression expr = this;
       if (expr instanceof ClassExtExpression) {
@@ -277,7 +282,7 @@ public final class Concrete {
       if (arguments.isEmpty()) {
         return function;
       }
-      if (function instanceof Concrete.AppExpression) {
+      if (function instanceof AppExpression) {
         ((AppExpression) function).myArguments.addAll(arguments);
         return function;
       }
@@ -285,7 +290,7 @@ public final class Concrete {
     }
 
     public static Expression make(Object data, Expression function, Expression argument, boolean isExplicit) {
-      if (function instanceof Concrete.AppExpression) {
+      if (function instanceof AppExpression) {
         ((AppExpression) function).myArguments.add(new Argument(argument, isExplicit));
         return function;
       }
@@ -320,6 +325,14 @@ public final class Concrete {
     @Override
     public <P, R> R accept(ConcreteExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitApp(this, params);
+    }
+
+    @Override
+    public @NotNull List<ConcreteArgument> getArgumentsSequence() {
+      List<ConcreteArgument> result = new ArrayList<>(1 + myArguments.size());
+      result.add(new Argument(myFunction, true));
+      result.addAll(myArguments);
+      return result;
     }
   }
 
@@ -360,12 +373,12 @@ public final class Concrete {
     }
 
     public Precedence getReferencePrecedence() {
-      Concrete.Expression expr = expression;
+      Expression expr = expression;
       // after the reference is resolved, it may become an application
-      if (expression instanceof Concrete.AppExpression && fixity != Fixity.NONFIX) {
+      if (expression instanceof AppExpression && fixity != Fixity.NONFIX) {
         expr = ((AppExpression) expression).getFunction();
       }
-      return expr instanceof Concrete.ReferenceExpression && ((ReferenceExpression) expr).getReferent() instanceof GlobalReferable ? ((GlobalReferable) ((ReferenceExpression) expr).getReferent()).getPrecedence() : Precedence.DEFAULT;
+      return expr instanceof ReferenceExpression && ((ReferenceExpression) expr).getReferent() instanceof GlobalReferable ? ((GlobalReferable) ((ReferenceExpression) expr).getReferent()).getPrecedence() : Precedence.DEFAULT;
     }
   }
 
@@ -387,13 +400,22 @@ public final class Concrete {
     public <P, R> R accept(ConcreteExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitBinOpSequence(this, params);
     }
+
+    @Override
+    public @NotNull List<ConcreteArgument> getArgumentsSequence() {
+      List<ConcreteArgument> result = new ArrayList<>(mySequence.size());
+      for (BinOpSequenceElem elem : mySequence) {
+        result.add(new Argument(elem.expression, elem.isExplicit));
+      }
+      return result;
+    }
   }
 
   public static class ReferenceExpression extends Expression implements Reference, ConcreteReferenceExpression {
     public static final byte PREC = 12;
     private Referable myReferent;
-    private final Concrete.LevelExpression myPLevel;
-    private final Concrete.LevelExpression myHLevel;
+    private final LevelExpression myPLevel;
+    private final LevelExpression myHLevel;
 
     public ReferenceExpression(Object data, Referable referable, LevelExpression pLevel, LevelExpression hLevel) {
       super(data);
@@ -1353,7 +1375,7 @@ public final class Concrete {
       if (onlyThisDef) {
         return ((Constructor) definition).getParameters();
       } else {
-        List<TypeParameter> dataTypeParameters = ((Concrete.Constructor) definition).getRelatedDefinition().getParameters();
+        List<TypeParameter> dataTypeParameters = ((Constructor) definition).getRelatedDefinition().getParameters();
         List<TypeParameter> parameters = ((Constructor) definition).getParameters();
         List<TypeParameter> totalParameters = new ArrayList<>(dataTypeParameters.size() + parameters.size());
         totalParameters.addAll(dataTypeParameters);
@@ -1362,7 +1384,7 @@ public final class Concrete {
       }
     }
     if (definition instanceof ClassDefinition) {
-      List<Concrete.TypeParameter> parameters = new ArrayList<>();
+      List<TypeParameter> parameters = new ArrayList<>();
       for (ClassElement element : ((ClassDefinition) definition).getElements()) {
         if (element instanceof ClassField && ((ClassField) element).getData().isParameterField()) {
           ClassField field = (ClassField) element;
@@ -1372,7 +1394,7 @@ public final class Concrete {
           if (fieldParams.size() > 1 || !fieldParams.isEmpty() && !isDesugarized) {
             type = new PiExpression(field.getParameters().get(0).getData(), isDesugarized ? fieldParams.subList(1, fieldParams.size()) : fieldParams, type);
           }
-          parameters.add(new Concrete.TypeParameter(field.getData(), field.getData().isExplicitField(), type));
+          parameters.add(new TypeParameter(field.getData(), field.getData().isExplicitField(), type));
         }
       }
       return parameters;
@@ -1460,9 +1482,9 @@ public final class Concrete {
 
     public void setStatus(GeneralError.Level level) {
       if (level == GeneralError.Level.ERROR) {
-        myStatus = myStatus.max(Concrete.Status.HAS_ERRORS);
+        myStatus = myStatus.max(Status.HAS_ERRORS);
       } else if (level.ordinal() >= GeneralError.Level.WARNING_UNUSED.ordinal()) {
-        myStatus = myStatus.max(Concrete.Status.HAS_WARNINGS);
+        myStatus = myStatus.max(Status.HAS_WARNINGS);
       }
     }
 
