@@ -11,6 +11,7 @@ import org.arend.ext.typechecking.MetaResolver;
 import org.arend.library.Library;
 import org.arend.library.error.LibraryError;
 import org.arend.module.scopeprovider.SimpleModuleScopeProvider;
+import org.arend.naming.reference.AliasReferable;
 import org.arend.naming.reference.EmptyGlobalReferable;
 import org.arend.naming.reference.MetaReferable;
 import org.arend.naming.reference.Referable;
@@ -73,10 +74,29 @@ public class DefinitionContributorImpl extends Disableable implements Definition
         }
         MetaReferable metaRef = new MetaReferable(precedence, name, aliasPrecedence, alias, description, meta, resolver);
         scope.names.put(name, metaRef);
+        if (alias != null) {
+          scope.names.putIfAbsent(alias, new AliasReferable(metaRef));
+          SimpleScope namespace = scope.namespaces.get(name);
+          if (namespace != null) {
+            scope.namespaces.putIfAbsent(alias, namespace);
+          }
+          namespace = scope.namespaces.get(alias);
+          if (namespace != null) {
+            scope.namespaces.putIfAbsent(name, namespace);
+          }
+        }
         return metaRef;
       } else {
-        scope.names.put(name, new EmptyGlobalReferable(name));
+        Referable prevRef = scope.names.putIfAbsent(name, new EmptyGlobalReferable(name));
         scope = scope.namespaces.computeIfAbsent(name, k -> new SimpleScope());
+        if (prevRef instanceof AliasReferable) {
+          scope.namespaces.putIfAbsent(((AliasReferable) prevRef).getOriginalReferable().getRefName(), scope);
+        } else if (prevRef instanceof MetaReferable) {
+          String aliasName = ((MetaReferable) prevRef).getAliasName();
+          if (aliasName != null) {
+            scope.namespaces.putIfAbsent(aliasName, scope);
+          }
+        }
       }
     }
 
