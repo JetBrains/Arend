@@ -706,7 +706,7 @@ public final class Concrete {
     }
   }
 
-  public static class HoleExpression extends Expression {
+  public static class HoleExpression extends Expression implements ConcreteHoleExpression {
     public static final byte PREC = 12;
 
     public HoleExpression(Object data) {
