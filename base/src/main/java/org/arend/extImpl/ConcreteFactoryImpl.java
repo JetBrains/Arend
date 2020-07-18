@@ -429,7 +429,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     if (!(ref == null || ref instanceof Referable) || ref instanceof LongUnresolvedReference) {
       throw new IllegalArgumentException();
     }
-    return ref instanceof UnresolvedReference ? new LocalReferable(ref.getRefName()) : (Referable) ref;
+    return ref instanceof UnresolvedReference ? new DataLocalReferable(((UnresolvedReference) ref).getData(), ref.getRefName()) : (Referable) ref;
   }
 
   @NotNull
