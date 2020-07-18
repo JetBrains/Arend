@@ -425,13 +425,17 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     return new LocalReferable(name);
   }
 
+  private static Referable makeLocalRef(ArendRef ref) {
+    if (!(ref == null || ref instanceof Referable) || ref instanceof LongUnresolvedReference) {
+      throw new IllegalArgumentException();
+    }
+    return ref instanceof UnresolvedReference ? new LocalReferable(ref.getRefName()) : (Referable) ref;
+  }
+
   @NotNull
   @Override
   public ConcreteParameter param(boolean explicit, @Nullable ArendRef ref) {
-    if (!(ref == null || ref instanceof Referable)) {
-      throw new IllegalArgumentException();
-    }
-    return new Concrete.NameParameter(myData, explicit, (Referable) ref);
+    return new Concrete.NameParameter(myData, explicit, makeLocalRef(ref));
   }
 
   @NotNull
@@ -445,10 +449,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     }
     List<Referable> cRefs = new ArrayList<>(refs.size());
     for (ArendRef ref : refs) {
-      if (!(ref instanceof Referable)) {
-        throw new IllegalArgumentException();
-      }
-      cRefs.add((Referable) ref);
+      cRefs.add(makeLocalRef(ref));
     }
     return new Concrete.TelescopeParameter(myData, explicit, cRefs, (Concrete.Expression) type);
   }
@@ -456,10 +457,10 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
   @NotNull
   @Override
   public ConcreteLetClause letClause(@NotNull ArendRef ref, @NotNull Collection<? extends ConcreteParameter> parameters, @Nullable ConcreteExpression type, @NotNull ConcreteExpression term) {
-    if (!(ref instanceof Referable && (type == null || type instanceof Concrete.Expression) && term instanceof Concrete.Expression)) {
+    if (!((type == null || type instanceof Concrete.Expression) && term instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }
-    return new Concrete.LetClause((Referable) ref, parameters(parameters), (Concrete.Expression) type, (Concrete.Expression) term);
+    return new Concrete.LetClause(makeLocalRef(ref), parameters(parameters), (Concrete.Expression) type, (Concrete.Expression) term);
   }
 
   @NotNull
@@ -474,10 +475,10 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
   @NotNull
   @Override
   public ConcreteSinglePattern singlePatternRef(@Nullable ArendRef ref, @Nullable ConcreteExpression type) {
-    if (!((ref == null || ref instanceof Referable) && (type == null || type instanceof Concrete.Expression))) {
+    if (!(type == null || type instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }
-    return new Concrete.LetClausePattern((Referable) ref, (Concrete.Expression) type);
+    return new Concrete.LetClausePattern(makeLocalRef(ref), (Concrete.Expression) type);
   }
 
   @NotNull
@@ -538,10 +539,10 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
   @NotNull
   @Override
   public ConcreteCaseArgument caseArg(@NotNull ConcreteExpression expression, @Nullable ArendRef asRef, @Nullable ConcreteExpression type) {
-    if (!(expression instanceof Concrete.Expression && (asRef == null || asRef instanceof Referable) && (type == null || type instanceof Concrete.Expression))) {
+    if (!(expression instanceof Concrete.Expression && (type == null || type instanceof Concrete.Expression))) {
       throw new IllegalArgumentException();
     }
-    return new Concrete.CaseArgument((Concrete.Expression) expression, (Referable) asRef, (Concrete.Expression) type);
+    return new Concrete.CaseArgument((Concrete.Expression) expression, makeLocalRef(asRef), (Concrete.Expression) type);
   }
 
   @Override
@@ -575,10 +576,10 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
   @NotNull
   @Override
   public ConcretePattern refPattern(@Nullable ArendRef ref, @Nullable ConcreteExpression type) {
-    if (!((ref == null || ref instanceof Referable) && (type == null || type instanceof Concrete.Expression))) {
+    if (!(type == null || type instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }
-    return new Concrete.NamePattern(myData, true, (Referable) ref, (Concrete.Expression) type);
+    return new Concrete.NamePattern(myData, true, makeLocalRef(ref), (Concrete.Expression) type);
   }
 
   @NotNull
