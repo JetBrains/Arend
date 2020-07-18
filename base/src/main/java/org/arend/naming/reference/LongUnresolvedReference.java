@@ -93,9 +93,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
     return result;
   }
 
-  @NotNull
-  @Override
-  public Referable resolve(Scope scope, List<Referable> resolvedRefs) {
+  private Referable resolve(Scope scope, List<Referable> resolvedRefs, boolean onlyTry) {
     if (resolved != null) {
       return resolved;
     }
@@ -106,10 +104,12 @@ public class LongUnresolvedReference implements UnresolvedReference {
       }
       scope = scope.resolveNamespace(myPath.get(i), i < myPath.size() - 2);
       if (scope == null) {
-        Object data = getData();
-        resolved = new ErrorReference(data, make(data, myPath.subList(0, i + 1)), i + 1, myPath.get(i + 1));
-        if (resolvedRefs != null) {
-          resolvedRefs.set(i, resolved);
+        if (!onlyTry) {
+          Object data = getData();
+          resolved = new ErrorReference(data, make(data, myPath.subList(0, i + 1)), i + 1, myPath.get(i + 1));
+          if (resolvedRefs != null) {
+            resolvedRefs.set(i, resolved);
+          }
         }
         return resolved;
       }
@@ -117,24 +117,27 @@ public class LongUnresolvedReference implements UnresolvedReference {
 
     String name = myPath.get(myPath.size() - 1);
     resolved = scope.resolveName(name);
-    if (resolved == null) {
+    if (resolved == null && !onlyTry) {
       Object data = getData();
       resolved = new ErrorReference(data, myPath.size() == 1 ? null : make(data, myPath.subList(0, myPath.size() - 1)), myPath.size() - 1, name);
     }
-    if (resolvedRefs != null) {
+    if (resolvedRefs != null && resolved != null) {
       resolvedRefs.add(resolved);
     }
 
     return resolved;
   }
 
+  @NotNull
+  @Override
+  public Referable resolve(Scope scope, List<Referable> resolvedRefs) {
+    return resolve(scope, resolvedRefs, false);
+  }
+
   @Nullable
   @Override
   public Referable tryResolve(Scope scope, List<Referable> resolvedRefs) {
-    if (resolve(scope, resolvedRefs) instanceof ErrorReference) {
-      resolved = null;
-    }
-    return resolved;
+    return resolve(scope, resolvedRefs, true);
   }
 
   @Nullable

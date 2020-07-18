@@ -63,9 +63,15 @@ public class NamedUnresolvedReference implements UnresolvedReference {
   @Nullable
   @Override
   public Referable tryResolve(Scope scope, List<Referable> resolvedRefs) {
-    if (resolve(scope, resolvedRefs) instanceof ErrorReference) {
-      resolved = null;
+    if (resolved != null) {
+      return resolved;
     }
+
+    resolved = scope.resolveName(myName);
+    if (resolved != null && resolvedRefs != null) {
+      resolvedRefs.add(resolved);
+    }
+
     return resolved;
   }
 
