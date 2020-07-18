@@ -7,7 +7,7 @@ import org.arend.ext.error.GeneralError;
 import org.arend.ext.error.LocalError;
 import org.arend.ext.reference.ArendRef;
 import org.arend.ext.reference.ExpressionResolver;
-import org.arend.ext.typechecking.MetaDefinition;
+import org.arend.ext.typechecking.MetaResolver;
 import org.arend.naming.MetaBinOpParser;
 import org.arend.naming.error.DuplicateNameError;
 import org.arend.naming.error.NamingError;
@@ -193,8 +193,8 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     }
 
     if (expr.getReferent() instanceof MetaReferable) {
-      MetaDefinition metaDef = ((MetaReferable) expr.getReferent()).getDefinition();
-      if (metaDef != null && metaDef.isResolver()) {
+      MetaResolver metaDef = ((MetaReferable) expr.getReferent()).getResolver();
+      if (metaDef != null) {
         return castExpr(metaDef.resolvePrefix(this, expr, argument == null ? Collections.emptyList() : Collections.singletonList(new Concrete.Argument(argument, false))), expr.getData());
       }
     }
@@ -222,8 +222,8 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     }
 
     if (refExpr != null && refExpr.getReferent() instanceof MetaReferable) {
-      MetaDefinition metaDef = ((MetaReferable) refExpr.getReferent()).getDefinition();
-      if (metaDef != null && metaDef.isResolver()) {
+      MetaResolver metaDef = ((MetaReferable) refExpr.getReferent()).getResolver();
+      if (metaDef != null) {
         return castExpr(metaDef.resolvePrefix(this, refExpr, expr.getArguments()), expr.getData());
       }
     }
@@ -263,11 +263,8 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
           resolvedRefs.add(new MetaBinOpParser.ResolvedReference(refExpr, null, null));
         }
 
-        if (refExpr.getReferent() instanceof MetaReferable && !hasMeta) {
-          MetaDefinition metaDef = ((MetaReferable) refExpr.getReferent()).getDefinition();
-          if (metaDef != null && metaDef.isResolver()) {
-            hasMeta = true;
-          }
+        if (!hasMeta && refExpr.getReferent() instanceof MetaReferable && ((MetaReferable) refExpr.getReferent()).getResolver() != null) {
+          hasMeta = true;
         }
       } else {
         resolvedRefs.add(null);

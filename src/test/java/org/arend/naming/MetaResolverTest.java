@@ -6,6 +6,7 @@ import org.arend.ext.concrete.expr.ConcreteReferenceExpression;
 import org.arend.ext.reference.ExpressionResolver;
 import org.arend.ext.reference.Precedence;
 import org.arend.ext.typechecking.MetaDefinition;
+import org.arend.ext.typechecking.MetaResolver;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.jetbrains.annotations.NotNull;
@@ -18,13 +19,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 public class MetaResolverTest extends NameResolverTestCase {
-  private static class BaseMetaDefinition implements MetaDefinition {
+  private static class BaseMetaDefinition implements MetaDefinition, MetaResolver {
     int numberOfInvocations = 0;
-
-    @Override
-    public boolean isResolver() {
-      return true;
-    }
 
     @Override
     public @Nullable ConcreteExpression resolvePrefix(@NotNull ExpressionResolver resolver, @NotNull ConcreteReferenceExpression refExpr, @NotNull List<? extends ConcreteArgument> arguments) {

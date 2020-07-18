@@ -7,6 +7,7 @@ import org.arend.ext.module.ModulePath;
 import org.arend.ext.reference.MetaRef;
 import org.arend.ext.reference.Precedence;
 import org.arend.ext.typechecking.MetaDefinition;
+import org.arend.ext.typechecking.MetaResolver;
 import org.arend.library.Library;
 import org.arend.library.error.LibraryError;
 import org.arend.module.scopeprovider.SimpleModuleScopeProvider;
@@ -38,6 +39,11 @@ public class DefinitionContributorImpl extends Disableable implements Definition
 
   @Override
   public MetaRef declare(@NotNull ModulePath module, @NotNull LongName longName, @NotNull String description, @NotNull Precedence precedence, @Nullable String alias, @Nullable Precedence aliasPrecedence, @Nullable MetaDefinition meta) {
+    return declare(module, longName, description, precedence, alias, aliasPrecedence, meta, meta instanceof MetaResolver ? (MetaResolver) meta : null);
+  }
+
+  @Override
+  public MetaRef declare(@NotNull ModulePath module, @NotNull LongName longName, @NotNull String description, @NotNull Precedence precedence, @Nullable String alias, @Nullable Precedence aliasPrecedence, @Nullable MetaDefinition meta, @Nullable MetaResolver resolver) {
     checkEnabled();
 
     if (!FileUtils.isCorrectModulePath(module)) {
@@ -65,7 +71,7 @@ public class DefinitionContributorImpl extends Disableable implements Definition
           myErrorReporter.report(LibraryError.duplicateExtensionDefinition(myLibrary.getName(), module, longName));
           return null;
         }
-        MetaReferable metaRef = new MetaReferable(precedence, name, aliasPrecedence, alias, description, meta);
+        MetaReferable metaRef = new MetaReferable(precedence, name, aliasPrecedence, alias, description, meta, resolver);
         scope.names.put(name, metaRef);
         return metaRef;
       } else {

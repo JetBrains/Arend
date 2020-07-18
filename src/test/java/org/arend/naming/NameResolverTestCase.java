@@ -3,6 +3,7 @@ package org.arend.naming;
 import org.arend.core.context.binding.Binding;
 import org.arend.ext.reference.Precedence;
 import org.arend.ext.typechecking.MetaDefinition;
+import org.arend.ext.typechecking.MetaResolver;
 import org.arend.frontend.ConcreteReferableProvider;
 import org.arend.frontend.reference.ConcreteLocatedReferable;
 import org.arend.naming.reference.MetaReferable;
@@ -51,7 +52,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   }
 
   protected void addMeta(String name, Precedence prec, MetaDefinition meta) {
-    metaDefs.put(name, new MetaReferable(prec, name, "", meta));
+    metaDefs.put(name, new MetaReferable(prec, name, "", meta, meta instanceof MetaResolver ? (MetaResolver) meta : null));
   }
 
   private Concrete.Expression resolveNamesExpr(Scope parentScope, List<Referable> context, String text, int errors) {

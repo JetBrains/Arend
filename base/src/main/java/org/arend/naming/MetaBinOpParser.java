@@ -2,7 +2,7 @@ package org.arend.naming;
 
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.reference.Precedence;
-import org.arend.ext.typechecking.MetaDefinition;
+import org.arend.ext.typechecking.MetaResolver;
 import org.arend.naming.error.PrecedenceError;
 import org.arend.naming.reference.*;
 import org.arend.naming.renamer.Renamer;
@@ -32,11 +32,7 @@ public class MetaBinOpParser {
     }
 
     boolean isMeta() {
-      if (!(refExpr.getReferent() instanceof MetaReferable)) {
-        return false;
-      }
-      MetaDefinition metaDef = ((MetaReferable) refExpr.getReferent()).getDefinition();
-      return metaDef != null && metaDef.isResolver();
+      return refExpr.getReferent() instanceof MetaReferable && ((MetaReferable) refExpr.getReferent()).getResolver() != null;
     }
   }
 
@@ -125,7 +121,7 @@ public class MetaBinOpParser {
           resetReference(sequence.get(i), myResolvedReferences.get(i));
           args.add(new Concrete.Argument(sequence.get(i).expression, sequence.get(i).isExplicit));
         }
-        myResult.add(new Concrete.BinOpSequenceElem(ExpressionResolveNameVisitor.castExpr(Objects.requireNonNull(((MetaReferable) firstRef.refExpr.getReferent()).getDefinition()).resolvePrefix(myVisitor, firstRef.refExpr, args), firstRef.refExpr.getData())));
+        myResult.add(new Concrete.BinOpSequenceElem(ExpressionResolveNameVisitor.castExpr(Objects.requireNonNull(((MetaReferable) firstRef.refExpr.getReferent()).getResolver()).resolvePrefix(myVisitor, firstRef.refExpr, args), firstRef.refExpr.getData())));
       } else {
         for (int i = start; i < end; i++) {
           myVisitor.finalizeReference(sequence.get(i), myResolvedReferences.get(i));
@@ -149,7 +145,7 @@ public class MetaBinOpParser {
         }
       }
 
-      MetaDefinition metaDef = Objects.requireNonNull(((MetaReferable) refExpr.getReferent()).getDefinition());
+      MetaResolver metaDef = Objects.requireNonNull(((MetaReferable) refExpr.getReferent()).getResolver());
       ConcreteExpression metaResult;
       Concrete.Expression leftArg = start == minIndex ? null : new Concrete.BinOpSequenceExpression(myExpression.getData(), sequence.subList(start, minIndex));
       if (sequence.get(minIndex).fixity == Fixity.POSTFIX) {
