@@ -235,7 +235,7 @@ public final class Concrete {
     }
   }
 
-  public static class TypedExpression extends Expression {
+  public static class TypedExpression extends Expression implements ConcreteTypedExpression {
     public static final byte PREC = 0;
     public Expression expression;
     public Expression type;
@@ -249,6 +249,16 @@ public final class Concrete {
     @Override
     public <P, R> R accept(ConcreteExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitTyped(this, params);
+    }
+
+    @Override
+    public @NotNull ConcreteExpression getExpression() {
+      return expression;
+    }
+
+    @Override
+    public @NotNull ConcreteExpression getType() {
+      return type;
     }
   }
 
