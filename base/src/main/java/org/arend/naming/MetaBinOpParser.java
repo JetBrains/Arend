@@ -117,7 +117,7 @@ public class MetaBinOpParser {
           resetReference(sequence.get(i), myResolvedReferences.get(i));
           args.add(new Concrete.Argument(sequence.get(i).expression, sequence.get(i).isExplicit));
         }
-        myResult.add(new Concrete.BinOpSequenceElem(ExpressionResolveNameVisitor.castExpr(meta.resolvePrefix(myVisitor, firstRef.refExpr, args), firstRef.refExpr.getData())));
+        myResult.add(new Concrete.BinOpSequenceElem(myVisitor.convertMetaResult(meta.resolvePrefix(myVisitor, firstRef.refExpr, args), firstRef.refExpr)));
       } else {
         for (int i = start; i < end; i++) {
           myVisitor.finalizeReference(sequence.get(i), myResolvedReferences.get(i));
@@ -152,7 +152,7 @@ public class MetaBinOpParser {
       } else {
         metaResult = minMeta.resolveInfix(myVisitor, refExpr, leftArg, minIndex + 1 == end ? null : new Concrete.BinOpSequenceExpression(myExpression.getData(), sequence.subList(minIndex + 1, end)));
       }
-      myResult.add(new Concrete.BinOpSequenceElem(ExpressionResolveNameVisitor.castExpr(metaResult, refExpr.getData())));
+      myResult.add(new Concrete.BinOpSequenceElem(myVisitor.convertMetaResult(metaResult, refExpr)));
     } else {
       parse(start, minIndex);
       myVisitor.finalizeReference(sequence.get(minIndex), myResolvedReferences.get(minIndex));

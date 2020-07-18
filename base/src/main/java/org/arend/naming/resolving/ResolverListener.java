@@ -16,6 +16,7 @@ public interface ResolverListener {
   default void overriddenFieldResolved(Concrete.OverriddenField overriddenField, Referable originalRef, Referable referable, List<Referable> resolvedRefs) {}
   default void namespaceResolved(NamespaceCommand namespaceCommand, List<Referable> resolvedRefs) {}
   default void renamingResolved(NameRenaming renaming, Referable originalRef, Referable resolvedRef) {}
+  default void metaResolved(Concrete.ReferenceExpression expression, Concrete.Expression result) {}
 
   default void beforeDefinitionResolved(Concrete.Definition definition) {}
   default void definitionResolved(Concrete.Definition definition) {}

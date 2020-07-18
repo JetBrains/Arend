@@ -129,7 +129,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
 
     if (ref instanceof UnresolvedReference) {
       List<Referable> resolvedRefs = new ArrayList<>();
-      Referable newRef = ((UnresolvedReference) ref).tryResolve(exprVisitor.getScope(), resolvedRefs);
+      Referable newRef = myReferableConverter.convert(((UnresolvedReference) ref).tryResolve(exprVisitor.getScope(), resolvedRefs));
       if (newRef instanceof MetaReferable) {
         ((UnresolvedReference) ref).reset();
         return false;
