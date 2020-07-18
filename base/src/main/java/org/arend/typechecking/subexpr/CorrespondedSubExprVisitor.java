@@ -9,8 +9,6 @@ import org.arend.core.expr.let.LetClause;
 import org.arend.core.pattern.Pattern;
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.typechecking.MetaDefinition;
-import org.arend.ext.typechecking.MetaResolver;
-import org.arend.extImpl.FakeExpressionResolver;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.MetaReferable;
 import org.arend.naming.reference.Referable;
@@ -63,7 +61,19 @@ public class CorrespondedSubExprVisitor implements
 
   @Override
   public Pair<Expression, Concrete.Expression> visitReference(Concrete.ReferenceExpression expr, Expression coreExpr) {
-    return atomicExpr(expr, coreExpr);
+    if (matchesSubExpr(expr)) return new Pair<>(coreExpr, expr);
+    Referable ref = expr.getReferent();
+    if (ref instanceof MetaReferable) {
+      MetaDefinition meta = ((MetaReferable) ref).getDefinition();
+      if (meta != null) {
+        ConcreteExpression concrete = meta.checkAndGetConcreteRepresentation(Collections.emptyList());
+        if (concrete instanceof Concrete.Expression) {
+          return ((Concrete.Expression) concrete).accept(this, coreExpr);
+        }
+      }
+      return nullWithError(new SubExprError(SubExprError.Kind.MetaRef, coreExpr));
+    }
+    return null;
   }
 
   @Override
@@ -265,16 +275,12 @@ public class CorrespondedSubExprVisitor implements
     Concrete.ReferenceExpression refExpr = function.getUnderlyingReferenceExpression();
     Referable ref = refExpr.getReferent();
     if (ref instanceof MetaReferable) {
-      ConcreteExpression concrete;
       MetaDefinition meta = ((MetaReferable) ref).getDefinition();
       if (meta != null) {
-        concrete = meta.checkAndGetConcreteRepresentation(expr.getArguments());
-      } else {
-        MetaResolver resolver = ((MetaReferable) ref).getResolver();
-        concrete = resolver == null ? null : resolver.resolvePrefix(FakeExpressionResolver.INSTANCE, refExpr, expr.getArguments());
-      }
-      if (concrete instanceof Concrete.Expression) {
-        return ((Concrete.Expression) concrete).accept(this, coreExpr);
+        ConcreteExpression concrete = meta.checkAndGetConcreteRepresentation(expr.getArguments());
+        if (concrete instanceof Concrete.Expression) {
+          return ((Concrete.Expression) concrete).accept(this, coreExpr);
+        }
       }
       return nullWithError(new SubExprError(SubExprError.Kind.MetaRef, coreExpr));
     }
