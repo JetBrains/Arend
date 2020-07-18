@@ -161,6 +161,13 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     }
   }
 
+  public static MetaResolver getMetaResolver(Referable ref) {
+    while (ref instanceof RedirectingReferable) {
+      ref = ((RedirectingReferable) ref).getOriginalReferable();
+    }
+    return ref instanceof MetaReferable ? ((MetaReferable) ref).getResolver() : null;
+  }
+
   @Override
   public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Void params) {
     if (expr instanceof Concrete.FixityReferenceExpression) {
@@ -192,11 +199,9 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       argument = null;
     }
 
-    if (expr.getReferent() instanceof MetaReferable) {
-      MetaResolver metaDef = ((MetaReferable) expr.getReferent()).getResolver();
-      if (metaDef != null) {
-        return castExpr(metaDef.resolvePrefix(this, expr, argument == null ? Collections.emptyList() : Collections.singletonList(new Concrete.Argument(argument, false))), expr.getData());
-      }
+    MetaResolver metaDef = getMetaResolver(expr.getReferent());
+    if (metaDef != null) {
+      return castExpr(metaDef.resolvePrefix(this, expr, argument == null ? Collections.emptyList() : Collections.singletonList(new Concrete.Argument(argument, false))), expr.getData());
     }
 
     return argument == null ? expr : Concrete.AppExpression.make(expr.getData(), expr, argument, false);
@@ -221,11 +226,9 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       refExpr = null;
     }
 
-    if (refExpr != null && refExpr.getReferent() instanceof MetaReferable) {
-      MetaResolver metaDef = ((MetaReferable) refExpr.getReferent()).getResolver();
-      if (metaDef != null) {
-        return castExpr(metaDef.resolvePrefix(this, refExpr, expr.getArguments()), expr.getData());
-      }
+    MetaResolver metaDef = refExpr == null ? null : getMetaResolver(refExpr.getReferent());
+    if (metaDef != null) {
+      return castExpr(metaDef.resolvePrefix(this, refExpr, expr.getArguments()), expr.getData());
     }
 
     for (Concrete.Argument argument : expr.getArguments()) {
@@ -263,7 +266,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
           resolvedRefs.add(new MetaBinOpParser.ResolvedReference(refExpr, null, null));
         }
 
-        if (!hasMeta && refExpr.getReferent() instanceof MetaReferable && ((MetaReferable) refExpr.getReferent()).getResolver() != null) {
+        if (!hasMeta && getMetaResolver(refExpr.getReferent()) != null) {
           hasMeta = true;
         }
       } else {

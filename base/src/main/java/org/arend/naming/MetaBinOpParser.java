@@ -14,7 +14,6 @@ import org.arend.typechecking.order.PartialComparator;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * This class extracts and invokes meta resolvers from a binOp sequences and replaces corresponding subsequences with results
@@ -29,10 +28,6 @@ public class MetaBinOpParser {
       this.refExpr = refExpr;
       this.originalReference = originalReference;
       this.resolvedList = resolvedList;
-    }
-
-    boolean isMeta() {
-      return refExpr.getReferent() instanceof MetaReferable && ((MetaReferable) refExpr.getReferent()).getResolver() != null;
     }
   }
 
@@ -114,14 +109,15 @@ public class MetaBinOpParser {
 
     if (minIndex == -1) {
       ResolvedReference firstRef = myResolvedReferences.get(start);
-      if (firstRef != null && firstRef.isMeta()) {
+      MetaResolver meta = firstRef == null ? null : ExpressionResolveNameVisitor.getMetaResolver(firstRef.refExpr.getReferent());
+      if (meta != null) {
         myVisitor.finalizeReference(sequence.get(start), firstRef);
         List<Concrete.Argument> args = new ArrayList<>(end - start - 1);
         for (int i = start + 1; i < end; i++) {
           resetReference(sequence.get(i), myResolvedReferences.get(i));
           args.add(new Concrete.Argument(sequence.get(i).expression, sequence.get(i).isExplicit));
         }
-        myResult.add(new Concrete.BinOpSequenceElem(ExpressionResolveNameVisitor.castExpr(Objects.requireNonNull(((MetaReferable) firstRef.refExpr.getReferent()).getResolver()).resolvePrefix(myVisitor, firstRef.refExpr, args), firstRef.refExpr.getData())));
+        myResult.add(new Concrete.BinOpSequenceElem(ExpressionResolveNameVisitor.castExpr(meta.resolvePrefix(myVisitor, firstRef.refExpr, args), firstRef.refExpr.getData())));
       } else {
         for (int i = start; i < end; i++) {
           myVisitor.finalizeReference(sequence.get(i), myResolvedReferences.get(i));
@@ -131,12 +127,12 @@ public class MetaBinOpParser {
       return;
     }
 
-    boolean isMeta = myResolvedReferences.get(minIndex).isMeta();
-    if (conflictIndex != -1 && (isMeta || myResolvedReferences.get(conflictIndex).isMeta())) {
-      myVisitor.getErrorReporter().report(new PrecedenceError((GlobalReferable) myResolvedReferences.get(conflictIndex).refExpr.getReferent(), (GlobalReferable) myResolvedReferences.get(minIndex).refExpr.getReferent(), myResolvedReferences.get(isMeta ? minIndex : conflictIndex).refExpr));
+    MetaResolver minMeta = ExpressionResolveNameVisitor.getMetaResolver(myResolvedReferences.get(minIndex).refExpr.getReferent());
+    if (conflictIndex != -1 && (minMeta != null || ExpressionResolveNameVisitor.getMetaResolver(myResolvedReferences.get(conflictIndex).refExpr.getReferent()) != null)) {
+      myVisitor.getErrorReporter().report(new PrecedenceError((GlobalReferable) myResolvedReferences.get(conflictIndex).refExpr.getReferent(), (GlobalReferable) myResolvedReferences.get(minIndex).refExpr.getReferent(), myResolvedReferences.get(minMeta != null ? minIndex : conflictIndex).refExpr));
     }
 
-    if (isMeta) {
+    if (minMeta != null) {
       Concrete.ReferenceExpression refExpr = myResolvedReferences.get(minIndex).refExpr;
       myVisitor.finalizeReference(sequence.get(minIndex), myResolvedReferences.get(minIndex));
       for (int i = start; i < end; i++) {
@@ -145,7 +141,6 @@ public class MetaBinOpParser {
         }
       }
 
-      MetaResolver metaDef = Objects.requireNonNull(((MetaReferable) refExpr.getReferent()).getResolver());
       ConcreteExpression metaResult;
       Concrete.Expression leftArg = start == minIndex ? null : new Concrete.BinOpSequenceExpression(myExpression.getData(), sequence.subList(start, minIndex));
       if (sequence.get(minIndex).fixity == Fixity.POSTFIX) {
@@ -153,9 +148,9 @@ public class MetaBinOpParser {
         for (int i = minIndex + 1; i < end; i++) {
           args.add(new Concrete.Argument(sequence.get(i).expression, sequence.get(i).isExplicit));
         }
-        metaResult = metaDef.resolvePostfix(myVisitor, refExpr, leftArg, args);
+        metaResult = minMeta.resolvePostfix(myVisitor, refExpr, leftArg, args);
       } else {
-        metaResult = metaDef.resolveInfix(myVisitor, refExpr, leftArg, minIndex + 1 == end ? null : new Concrete.BinOpSequenceExpression(myExpression.getData(), sequence.subList(minIndex + 1, end)));
+        metaResult = minMeta.resolveInfix(myVisitor, refExpr, leftArg, minIndex + 1 == end ? null : new Concrete.BinOpSequenceExpression(myExpression.getData(), sequence.subList(minIndex + 1, end)));
       }
       myResult.add(new Concrete.BinOpSequenceElem(ExpressionResolveNameVisitor.castExpr(metaResult, refExpr.getData())));
     } else {
