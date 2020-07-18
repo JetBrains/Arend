@@ -1,12 +1,13 @@
 package org.arend.naming.error;
 
+import org.arend.ext.error.NameResolverError;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.arend.term.NameRenaming;
 
 import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
-public class ExistingOpenedNameError extends NamingError {
+public class ExistingOpenedNameError extends NameResolverError {
   public ExistingOpenedNameError(NameRenaming cause) {
     super(Level.WARNING, "", cause);
   }

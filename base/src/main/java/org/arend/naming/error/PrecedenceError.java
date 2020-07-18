@@ -1,12 +1,13 @@
 package org.arend.naming.error;
 
+import org.arend.ext.error.NameResolverError;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.arend.naming.reference.GlobalReferable;
 
 import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
-public class PrecedenceError extends NamingError {
+public class PrecedenceError extends NameResolverError {
   public final GlobalReferable ref1;
   public final GlobalReferable ref2;
 

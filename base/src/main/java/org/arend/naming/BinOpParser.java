@@ -3,7 +3,7 @@ package org.arend.naming;
 import org.arend.error.ParsingError;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.reference.Precedence;
-import org.arend.naming.error.NamingError;
+import org.arend.ext.error.NameResolverError;
 import org.arend.naming.error.PrecedenceError;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.LocalReferable;
@@ -99,7 +99,7 @@ public class BinOpParser {
     while (true) {
       StackElem topElem = myStack.get(myStack.size() - 1);
       if (topElem.precedence != null) {
-        myErrorReporter.report(new NamingError("Expected an expression after an infix operator", topElem.expression));
+        myErrorReporter.report(new NameResolverError("Expected an expression after an infix operator", topElem.expression));
         return;
       }
 
@@ -132,7 +132,7 @@ public class BinOpParser {
     StackElem topElem = myStack.remove(myStack.size() - 1);
     if (topElem.precedence != null && myStack.size() > 1) {
       StackElem nextElem = myStack.get(myStack.size() - 2);
-      myErrorReporter.report(new NamingError("The operator " + getOperator(topElem.expression) + " [" + topElem.precedence + "] of a section must have lower precedence than that of the operand, namely " + getOperator(nextElem.expression) + " [" + nextElem.precedence + "]", topElem.expression));
+      myErrorReporter.report(new NameResolverError("The operator " + getOperator(topElem.expression) + " [" + topElem.precedence + "] of a section must have lower precedence than that of the operand, namely " + getOperator(nextElem.expression) + " [" + nextElem.precedence + "]", topElem.expression));
       topElem = myStack.remove(myStack.size() - 1);
     }
     StackElem midElem = myStack.remove(myStack.size() - 1);

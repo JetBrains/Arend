@@ -10,7 +10,7 @@ import org.arend.ext.reference.ExpressionResolver;
 import org.arend.ext.typechecking.MetaResolver;
 import org.arend.naming.MetaBinOpParser;
 import org.arend.naming.error.DuplicateNameError;
-import org.arend.naming.error.NamingError;
+import org.arend.ext.error.NameResolverError;
 import org.arend.naming.error.ReferenceError;
 import org.arend.naming.reference.*;
 import org.arend.naming.reference.converter.ReferableConverter;
@@ -166,7 +166,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     if (expr instanceof Concrete.FixityReferenceExpression) {
       Fixity fixity = ((Concrete.FixityReferenceExpression) expr).fixity;
       if (fixity == Fixity.INFIX || fixity == Fixity.POSTFIX) {
-        myErrorReporter.report(new NamingError((fixity == Fixity.INFIX ? "Infix" : "Postfix") + " notation is not allowed here", expr));
+        myErrorReporter.report(new NameResolverError((fixity == Fixity.INFIX ? "Infix" : "Postfix") + " notation is not allowed here", expr));
       }
     }
 
@@ -378,7 +378,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       visitParameters(expr.getParameters(), null);
       for (Concrete.TypeParameter parameter : expr.getParameters()) {
         if (!parameter.isExplicit()) {
-          myErrorReporter.report(new NamingError("Parameters in sigma types must be explicit", parameter));
+          myErrorReporter.report(new NameResolverError("Parameters in sigma types must be explicit", parameter));
           parameter.setExplicit(true);
         }
       }
@@ -573,7 +573,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     if (classRef != null) {
       visitClassFieldImpls(expr.getStatements(), classRef);
     } else {
-      LocalError error = new NamingError("Expected a class or a class instance", expr.getBaseClassExpression());
+      LocalError error = new NameResolverError("Expected a class or a class instance", expr.getBaseClassExpression());
       myErrorReporter.report(error);
       return new Concrete.ErrorHoleExpression(expr.getData(), error);
     }

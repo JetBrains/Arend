@@ -1,5 +1,6 @@
 package org.arend.naming.error;
 
+import org.arend.ext.error.NameResolverError;
 import org.arend.ext.module.LongName;
 import org.arend.ext.module.ModulePath;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
@@ -10,7 +11,7 @@ import org.arend.term.NamespaceCommand;
 
 import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
-public class DuplicateOpenedNameError extends NamingError {
+public class DuplicateOpenedNameError extends NameResolverError {
   public final Referable referable;
   public final NamespaceCommand previousNamespaceCommand;
 

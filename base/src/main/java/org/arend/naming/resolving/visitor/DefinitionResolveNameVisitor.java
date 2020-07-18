@@ -5,6 +5,7 @@ import org.arend.error.DummyErrorReporter;
 import org.arend.error.ParsingError;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
+import org.arend.ext.error.NameResolverError;
 import org.arend.ext.reference.Precedence;
 import org.arend.naming.error.*;
 import org.arend.naming.reference.*;
@@ -245,7 +246,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       }
       if (typeRef instanceof ClassReferable) {
         if (def.getKind() == FunctionKind.INSTANCE && ((ClassReferable) typeRef).isRecord()) {
-          myLocalErrorReporter.report(new NamingError("Expected a class, got a record", def));
+          myLocalErrorReporter.report(new NameResolverError("Expected a class, got a record", def));
           body.getCoClauseElements().clear();
         } else {
           for (Concrete.CoClauseElement element : body.getCoClauseElements()) {
@@ -266,14 +267,14 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
         }
       } else {
         if (!(typeRef instanceof ErrorReference)) {
-          myLocalErrorReporter.report(def.getResultType() != null ? new NamingError("Expected a class", def.getResultType()) : new NamingError("The type of a function defined by copattern matching must be specified explicitly", def));
+          myLocalErrorReporter.report(def.getResultType() != null ? new NameResolverError("Expected a class", def.getResultType()) : new NameResolverError("The type of a function defined by copattern matching must be specified explicitly", def));
         }
         body.getCoClauseElements().clear();
       }
     }
     if (body instanceof Concrete.ElimFunctionBody) {
       if (def.getResultType() == null && !(def instanceof Concrete.CoClauseFunctionDefinition)) {
-        myLocalErrorReporter.report(new NamingError("The type of a function defined by pattern matching must be specified explicitly", def));
+        myLocalErrorReporter.report(new NameResolverError("The type of a function defined by pattern matching must be specified explicitly", def));
       }
       visitEliminatedReferences(exprVisitor, body.getEliminatedReferences());
       context.clear();
@@ -425,7 +426,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       Referable ref = RedirectingReferable.getOriginalReferable(superClass.getReferent());
       if (resolved != superClass || !(ref instanceof GlobalReferable && ((GlobalReferable) ref).getKind() == GlobalReferable.Kind.CLASS)) {
         if (!(ref instanceof ErrorReference)) {
-          myLocalErrorReporter.report(new NamingError("Expected a class", superClass));
+          myLocalErrorReporter.report(new NameResolverError("Expected a class", superClass));
         }
         def.getSuperClasses().remove(i--);
       }

@@ -5,7 +5,7 @@ import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Definition;
 import org.arend.ext.core.definition.CoreClassDefinition;
 import org.arend.ext.error.ErrorReporter;
-import org.arend.naming.error.NamingError;
+import org.arend.ext.error.NameResolverError;
 import org.arend.naming.reference.*;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
@@ -40,7 +40,7 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> {
   }
 
   private Concrete.Expression makeErrorExpression(Concrete.ReferenceExpression expr) {
-    LocalError error = new NamingError("Fields may refer only to previous fields", expr);
+    LocalError error = new NameResolverError("Fields may refer only to previous fields", expr);
     myErrorReporter.report(error);
     return new Concrete.ErrorHoleExpression(expr.getData(), error);
   }
