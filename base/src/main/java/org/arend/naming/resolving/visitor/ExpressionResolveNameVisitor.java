@@ -303,7 +303,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     for (Concrete.Parameter parameter : parameters) {
       for (Referable referable : parameter.getReferableList()) {
         if (referable != null && !referable.textRepresentation().equals("_")) {
-          myContext.add(referable);
+          addLocalRef(referable, null);
         }
       }
     }
@@ -323,6 +323,15 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     return true;
   }
 
+  private void addLocalRef(Referable ref, ClassReferable classRef) {
+    if (checkName(ref, myErrorReporter)) {
+      if (ref instanceof UnresolvedReference) {
+        ref = new LocalReferable(ref.getRefName());
+      }
+      myContext.add(classRef == null ? ref : new TypedRedirectingReferable(ref, classRef));
+    }
+  }
+
   @Override
   protected void visitParameter(Concrete.Parameter parameter, Void params) {
     if (parameter instanceof Concrete.TypeParameter) {
@@ -340,9 +349,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
             myErrorReporter.report(new DuplicateNameError(GeneralError.Level.WARNING, referable, referable1));
           }
         }
-        if (checkName(referable, myErrorReporter)) {
-          myContext.add(classRef == null ? referable : new TypedRedirectingReferable(referable, classRef));
-        }
+        addLocalRef(referable, classRef);
       }
     }
   }
@@ -442,10 +449,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       myErrorReporter.report(new DuplicateNameError(GeneralError.Level.WARNING, referable, prev));
     }
 
-    ClassReferable classRef = type == null ? null : new TypeClassReferenceExtractVisitor().getTypeClassReference(Collections.emptyList(), type);
-    if (checkName(referable, myErrorReporter)) {
-      myContext.add(classRef == null ? referable : new TypedRedirectingReferable(referable, classRef));
-    }
+    addLocalRef(referable, type == null ? null : new TypeClassReferenceExtractVisitor().getTypeClassReference(Collections.emptyList(), type));
   }
 
   private GlobalReferable visitPattern(Concrete.Pattern pattern, Map<String, Referable> usedNames) {
@@ -661,9 +665,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
             : clause.term instanceof Concrete.NewExpression
               ? new TypeClassReferenceExtractVisitor().getTypeClassReference(clause.getParameters(), ((Concrete.NewExpression) clause.term).expression)
               : null;
-          if (checkName(pattern.getReferable(), myErrorReporter)) {
-            myContext.add(classRef == null ? pattern.getReferable() : new TypedRedirectingReferable(pattern.getReferable(), classRef));
-          }
+          addLocalRef(pattern.getReferable(), classRef);
         } else {
           visitLetClausePattern(pattern);
         }
