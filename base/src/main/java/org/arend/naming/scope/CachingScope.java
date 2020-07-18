@@ -30,11 +30,11 @@ public class CachingScope implements Scope {
   }
 
   public static Scope make(Scope scope) {
-    return scope instanceof CachingScope || scope instanceof ImportedScope || scope == EmptyScope.INSTANCE ? scope : new CachingScope(scope, false);
+    return scope instanceof CachingScope || scope instanceof ImportedScope || scope == EmptyScope.INSTANCE || scope instanceof SimpleScope ? scope : new CachingScope(scope, false);
   }
 
   public static Scope makeWithModules(Scope scope) {
-    return scope instanceof CachingScope || scope instanceof ImportedScope || scope == EmptyScope.INSTANCE ? scope : new CachingScope(scope, true);
+    return scope instanceof CachingScope || scope instanceof ImportedScope || scope == EmptyScope.INSTANCE || scope instanceof SimpleScope ? scope : new CachingScope(scope, true);
   }
 
   @NotNull
