@@ -13,4 +13,9 @@ public class IdReferableConverter implements ReferableConverter {
   public TCReferable toDataLocatedReferable(LocatedReferable referable) {
     return referable instanceof TCReferable ? (TCReferable) referable : null;
   }
+
+  @Override
+  public Referable convert(Referable referable) {
+    return referable;
+  }
 }

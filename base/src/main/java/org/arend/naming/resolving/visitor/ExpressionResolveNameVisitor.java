@@ -600,10 +600,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       if (field instanceof ErrorReference) {
         myErrorReporter.report(((ErrorReference) field).getError());
       } else if (field instanceof GlobalReferable && !(field instanceof TCReferable)) {
-        TCReferable tcField = myReferableConverter.toDataLocatedReferable((LocatedReferable) field);
-        if (tcField != null) {
-          field = tcField;
-        }
+        field = myReferableConverter.convert(field);
       }
       if (element instanceof Concrete.CoClauseElement) {
         ((Concrete.CoClauseElement) element).setImplementedField(field);
