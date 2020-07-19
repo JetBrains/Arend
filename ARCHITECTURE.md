@@ -18,9 +18,12 @@ automatically as long as you have JDK (version >= 11) installed.
 
 ## Common Gradle Tasks
 
+All gradle tasks are case-insensitive.
+
 |Command|Description|
 |:---|:---|
 |`./gradlew :cli:jarDep`|build a jar file which includes all the dependencies which can be found at `cli/build/libs`.<br/>A short-hand version of this task is `./gradlew jarDep`.|
+|`./gradlew :cli:copyJarDep`|build `jarDep` and copy it to the current directory.<br/>A short-hand version of this task is `./gradlew copyJarDep`.|
 |`./gradlew :api:assemble`|build Arend extension API jar which can be found at `api/build/libs`.|
 |`./gradlew test`|run all tests.|
 
