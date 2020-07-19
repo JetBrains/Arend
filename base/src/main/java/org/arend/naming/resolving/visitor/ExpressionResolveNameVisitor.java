@@ -201,13 +201,13 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
 
     MetaResolver metaDef = getMetaResolver(expr.getReferent());
     if (metaDef != null) {
-      return convertMetaResult(metaDef.resolvePrefix(this, expr, argument == null ? Collections.emptyList() : Collections.singletonList(new Concrete.Argument(argument, false))), expr);
+      return convertMetaResult(metaDef.resolvePrefix(this, expr, argument == null ? Collections.emptyList() : Collections.singletonList(new Concrete.Argument(argument, false))), expr, Collections.emptyList());
     }
 
     return argument == null ? expr : Concrete.AppExpression.make(expr.getData(), expr, argument, false);
   }
 
-  public Concrete.Expression convertMetaResult(ConcreteExpression expr, Concrete.ReferenceExpression refExpr) {
+  public Concrete.Expression convertMetaResult(ConcreteExpression expr, Concrete.ReferenceExpression refExpr, List<Concrete.Argument> args) {
     if (!(expr == null || expr instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }
@@ -215,7 +215,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       return new Concrete.ErrorHoleExpression(refExpr.getData(), null);
     }
     if (myResolverListener != null) {
-      myResolverListener.metaResolved(refExpr, (Concrete.Expression) expr);
+      myResolverListener.metaResolved(refExpr, args, (Concrete.Expression) expr);
     }
     return (Concrete.Expression) expr;
   }
@@ -234,7 +234,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
 
     MetaResolver metaDef = refExpr == null ? null : getMetaResolver(refExpr.getReferent());
     if (metaDef != null) {
-      return convertMetaResult(metaDef.resolvePrefix(this, refExpr, expr.getArguments()), refExpr);
+      return convertMetaResult(metaDef.resolvePrefix(this, refExpr, expr.getArguments()), refExpr, expr.getArguments());
     }
 
     for (Concrete.Argument argument : expr.getArguments()) {

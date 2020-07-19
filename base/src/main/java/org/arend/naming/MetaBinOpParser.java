@@ -117,7 +117,7 @@ public class MetaBinOpParser {
           resetReference(sequence.get(i), myResolvedReferences.get(i));
           args.add(new Concrete.Argument(sequence.get(i).expression, sequence.get(i).isExplicit));
         }
-        myResult.add(new Concrete.BinOpSequenceElem(myVisitor.convertMetaResult(meta.resolvePrefix(myVisitor, firstRef.refExpr, args), firstRef.refExpr)));
+        myResult.add(new Concrete.BinOpSequenceElem(myVisitor.convertMetaResult(meta.resolvePrefix(myVisitor, firstRef.refExpr, args), firstRef.refExpr, args)));
       } else {
         for (int i = start; i < end; i++) {
           myVisitor.finalizeReference(sequence.get(i), myResolvedReferences.get(i));
@@ -143,22 +143,29 @@ public class MetaBinOpParser {
 
       ConcreteExpression metaResult;
       Concrete.Expression leftArg = start == minIndex ? null : new Concrete.BinOpSequenceExpression(myExpression.getData(), sequence.subList(start, minIndex));
+      List<Concrete.Argument> resultArgs = binOpSeqToArgs(sequence, start, minIndex);
+      List<Concrete.Argument> args = binOpSeqToArgs(sequence, minIndex + 1, end);
+      resultArgs.addAll(args);
       if (sequence.get(minIndex).fixity == Fixity.POSTFIX) {
-        List<Concrete.Argument> args = new ArrayList<>(end - minIndex - 1);
-        for (int i = minIndex + 1; i < end; i++) {
-          args.add(new Concrete.Argument(sequence.get(i).expression, sequence.get(i).isExplicit));
-        }
         metaResult = minMeta.resolvePostfix(myVisitor, refExpr, leftArg, args);
       } else {
         metaResult = minMeta.resolveInfix(myVisitor, refExpr, leftArg, minIndex + 1 == end ? null : new Concrete.BinOpSequenceExpression(myExpression.getData(), sequence.subList(minIndex + 1, end)));
       }
-      myResult.add(new Concrete.BinOpSequenceElem(myVisitor.convertMetaResult(metaResult, refExpr)));
+      myResult.add(new Concrete.BinOpSequenceElem(myVisitor.convertMetaResult(metaResult, refExpr, resultArgs)));
     } else {
       parse(start, minIndex);
       myVisitor.finalizeReference(sequence.get(minIndex), myResolvedReferences.get(minIndex));
       myResult.add(sequence.get(minIndex));
       parse(minIndex + 1, end);
     }
+  }
+
+  private static List<Concrete.Argument> binOpSeqToArgs(List<Concrete.BinOpSequenceElem> sequence, int start, int end) {
+    List<Concrete.Argument> args = new ArrayList<>();
+    for (int i = start; i < end; i++) {
+      args.add(new Concrete.Argument(sequence.get(i).expression, sequence.get(i).isExplicit));
+    }
+    return args;
   }
 
   private static PartialComparator.Result comparePrecedence(Precedence prec1, Precedence prec2) {
