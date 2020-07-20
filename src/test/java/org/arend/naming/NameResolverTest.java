@@ -12,7 +12,6 @@ import org.arend.naming.scope.ListScope;
 import org.arend.naming.scope.SingletonScope;
 import org.arend.term.FunctionKind;
 import org.arend.term.concrete.Concrete;
-import org.arend.term.expr.ConcreteCompareVisitor;
 import org.arend.term.group.ChildGroup;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -617,7 +616,7 @@ public class NameResolverTest extends NameResolverTestCase {
     for (Referable element : group.getGroupScope().getElements()) {
       names.add(element.textRepresentation());
     }
-    assertEquals(Arrays.asList("X", "g", "f"), names);
+    assertEquals(Arrays.asList("X", "g", "f", "Prelude"), names);
   }
 
   @Test

@@ -30,10 +30,6 @@ public class CachingScope implements Scope {
   }
 
   public static Scope make(Scope scope) {
-    return scope instanceof CachingScope || scope instanceof ImportedScope || scope == EmptyScope.INSTANCE || scope instanceof SimpleScope ? scope : new CachingScope(scope, false);
-  }
-
-  public static Scope makeWithModules(Scope scope) {
     return scope instanceof CachingScope || scope instanceof ImportedScope || scope == EmptyScope.INSTANCE || scope instanceof SimpleScope ? scope : new CachingScope(scope, true);
   }
 
@@ -46,8 +42,7 @@ public class CachingScope implements Scope {
   @Nullable
   @Override
   public Referable resolveName(String name) {
-    Referable ref = myElements.get(name);
-    return ref instanceof ModuleReferable ? null : ref;
+    return myElements.get(name);
   }
 
   @Nullable
