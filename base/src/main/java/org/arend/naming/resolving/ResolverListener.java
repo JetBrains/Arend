@@ -9,6 +9,7 @@ import org.arend.term.concrete.Concrete;
 import java.util.List;
 
 public interface ResolverListener {
+  default void bindingResolved(Referable binding) {}
   default void referenceResolved(Concrete.Expression argument, Referable originalRef, Concrete.ReferenceExpression refExpr, List<Referable> resolvedRefs, Scope scope) {}
   default void patternResolved(Referable originalRef, Concrete.ConstructorPattern pattern, List<Referable> resolvedRefs) {}
   default void patternResolved(Concrete.NamePattern pattern) {}

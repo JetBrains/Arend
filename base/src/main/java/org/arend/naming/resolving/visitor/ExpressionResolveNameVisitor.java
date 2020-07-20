@@ -335,6 +335,9 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   private void addLocalRef(Referable ref, ClassReferable classRef) {
     if (checkName(ref, myErrorReporter)) {
       myContext.add(classRef == null ? ref : new TypedRedirectingReferable(ref, classRef));
+      if (myResolverListener != null) {
+        myResolverListener.bindingResolved(ref);
+      }
     }
   }
 
