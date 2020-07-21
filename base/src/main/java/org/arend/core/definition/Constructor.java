@@ -33,6 +33,7 @@ public class Constructor extends Definition implements Function, BranchKey, Core
   private List<Integer> myParametersTypecheckingOrder;
   private List<Boolean> myGoodThisParameters = Collections.emptyList();
   private List<TypeClassParameterKind> myTypeClassParameters = Collections.emptyList();
+  private int mySingleRecursiveParameter = -1;
 
   public Constructor(TCReferable referable, DataDefinition dataType) {
     super(referable, TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
@@ -60,6 +61,14 @@ public class Constructor extends Definition implements Function, BranchKey, Core
   @Override
   public @NotNull Set<? extends Definition> getRecursiveDefinitions() {
     return myDataType.getRecursiveDefinitions();
+  }
+
+  public int getRecursiveParameter() {
+    return mySingleRecursiveParameter;
+  }
+
+  public void setRecursiveParameter(int recursiveParameter) {
+    mySingleRecursiveParameter = recursiveParameter;
   }
 
   @NotNull

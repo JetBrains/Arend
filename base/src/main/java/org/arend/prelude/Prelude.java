@@ -19,6 +19,7 @@ import org.arend.typechecking.instance.provider.InstanceProviderSet;
 import org.arend.typechecking.order.PartialComparator;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.arend.typechecking.provider.ConcreteProvider;
+import org.arend.util.SingletonList;
 import org.arend.util.Version;
 
 import java.util.*;
@@ -134,7 +135,7 @@ public class Prelude implements ArendPrelude {
         IDP.setNumberOfParameters(2);
         IDP.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         ConCallExpression conCall = (ConCallExpression) IDP.getBody();
-        IDP.setBody(ConCallExpression.make(conCall.getDefinition(), conCall.getSortArgument(), conCall.getDataTypeArguments(), Collections.singletonList(new LamExpression(new Sort(new Level(0), Level.INFINITY), UnusedIntervalDependentLink.INSTANCE, ((LamExpression) conCall.getDefCallArguments().get(0)).getBody()))));
+        IDP.setBody(ConCallExpression.make(conCall.getDefinition(), conCall.getSortArgument(), conCall.getDataTypeArguments(), new SingletonList<>(new LamExpression(new Sort(new Level(0), Level.INFINITY), UnusedIntervalDependentLink.INSTANCE, ((LamExpression) conCall.getDefCallArguments().get(0)).getBody()))));
         break;
       }
       case "@": {

@@ -13,6 +13,7 @@ import org.arend.core.pattern.Pattern;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.ListErrorReporter;
 import org.arend.ext.error.LocalError;
+import org.arend.prelude.Prelude;
 
 import java.util.*;
 
@@ -55,26 +56,57 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitConCall(ConCallExpression expr, Void params) {
-    List<Expression> dataTypeArgs = new ArrayList<>(expr.getDataTypeArguments().size());
-    for (Expression arg : expr.getDataTypeArguments()) {
-      dataTypeArgs.add(arg.accept(this, null));
+    Expression it = expr;
+    if (expr.getDefinition() == Prelude.SUC) {
+      int n = 0;
+      do {
+        n++;
+        List<Expression> args = ((ConCallExpression) it).getDefCallArguments();
+        it = args.get(0).accept(this, null);
+        args.set(0, it);
+      } while (it instanceof ConCallExpression && ((ConCallExpression) it).getDefinition() == Prelude.SUC);
+
+      return it instanceof IntegerExpression ? ((IntegerExpression) it).plus(n) : expr;
     }
 
-    List<Expression> args = new ArrayList<>(expr.getDefCallArguments().size());
-    for (Expression arg : expr.getDefCallArguments()) {
-      args.add(arg.accept(this, null));
-    }
+    List<Expression> args;
+    int recursiveParam;
+    do {
+      ConCallExpression conCall = (ConCallExpression) it;
+      args = conCall.getDataTypeArguments();
+      for (int i = 0; i < args.size(); i++) {
+        args.set(i, args.get(i).accept(this, null));
+      }
 
-    return ConCallExpression.make(expr.getDefinition(), expr.getSortArgument(), dataTypeArgs, args);
+      args = conCall.getDefCallArguments();
+      recursiveParam = conCall.getDefinition().getRecursiveParameter();
+      if (recursiveParam < 0) {
+        for (int i = 0; i < args.size(); i++) {
+          args.set(i, args.get(i).accept(this, null));
+        }
+        return expr;
+      }
+
+      for (int i = 0; i < args.size(); i++) {
+        if (i != recursiveParam) {
+          args.set(i, args.get(i).accept(this, null));
+        }
+      }
+
+      it = args.get(recursiveParam);
+    } while (it instanceof ConCallExpression);
+
+    args.set(recursiveParam, it.accept(this, null));
+    return expr;
   }
 
   @Override
   public DataCallExpression visitDataCall(DataCallExpression expr, Void params) {
-    List<Expression> args = new ArrayList<>(expr.getDefCallArguments().size());
-    for (Expression arg : expr.getDefCallArguments()) {
-      args.add(arg.accept(this, null));
+    List<Expression> args = expr.getDefCallArguments();
+    for (int i = 0; i < args.size(); i++) {
+      args.set(i, args.get(i).accept(this, null));
     }
-    return new DataCallExpression(expr.getDefinition(), expr.getSortArgument(), args);
+    return expr;
   }
 
   @Override

@@ -1822,6 +1822,31 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       calculateTypeClassParameters(def, constructor);
       calculateGoodThisParameters(constructor);
       calculateParametersTypecheckingOrder(constructor);
+
+      int recursiveIndex = -1;
+      int i = 0;
+      loop:
+      for (DependentLink link = constructor.getParameters(); link.hasNext(); link = link.getNext(), i++) {
+        if (link.getTypeExpr() instanceof DataCallExpression && dataDefinitions.contains(((DataCallExpression) link.getTypeExpr()).getDefinition())) {
+          for (DependentLink link2 = link.getNext(); link2.hasNext(); link2 = link2.getNext()) {
+            link2 = link2.getNextTyped(null);
+            if (link2.getTypeExpr().findFreeBinding(link)) {
+              continue loop;
+            }
+          }
+
+          if (recursiveIndex != -1) {
+            recursiveIndex = -1;
+            break;
+          } else {
+            recursiveIndex = i;
+          }
+        }
+      }
+
+      if (recursiveIndex != -1) {
+        constructor.setRecursiveParameter(recursiveIndex);
+      }
     }
     return sort;
   }

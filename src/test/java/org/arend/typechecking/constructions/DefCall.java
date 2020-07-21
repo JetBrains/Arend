@@ -14,6 +14,7 @@ import org.arend.term.group.ChildGroup;
 import org.arend.term.group.Group;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.arend.typechecking.result.TypecheckingResult;
+import org.arend.util.SingletonList;
 import org.junit.Test;
 
 import java.util.*;
@@ -234,7 +235,7 @@ public class DefCall extends TypeCheckingTestCase {
     typeCheckClass(
         "\\data D | c\n" +
         "\\func test => c", "");
-    test(ConCall((Constructor) getDefinition("c"), Sort.SET0, Collections.singletonList(Ref(getThis()))));
+    test(ConCall((Constructor) getDefinition("c"), Sort.SET0, new SingletonList<>(Ref(getThis()))));
     assertEquals(getDefinition("c"), getDefinition("D.c"));
   }
 
@@ -246,7 +247,7 @@ public class DefCall extends TypeCheckingTestCase {
         "\\class Test {\n" +
         "  \\func test => c\n" +
         "}", "");
-    testFI(ConCall((Constructor) getDefinition("c"), Sort.SET0, Collections.singletonList(getThisFI())));
+    testFI(ConCall((Constructor) getDefinition("c"), Sort.SET0, new SingletonList<>(getThisFI())));
   }
   */
 
@@ -255,7 +256,7 @@ public class DefCall extends TypeCheckingTestCase {
     typeCheckClass(
         "\\data D | c\n" +
         "\\func test => D.c", "");
-    test(ConCall((Constructor) getDefinition("c"), Sort.SET0, Collections.singletonList(Ref(getThis()))));
+    test(ConCall((Constructor) getDefinition("c"), Sort.SET0, new SingletonList<>(Ref(getThis()))));
     assertEquals(getDefinition("c"), getDefinition("D.c"));
   }
 
@@ -267,7 +268,7 @@ public class DefCall extends TypeCheckingTestCase {
         "\\class Test {\n" +
         "  \\func test => D.c\n" +
         "}", "");
-    testFI(ConCall((Constructor) getDefinition("c"), Sort.SET0, Collections.singletonList(getThisFI())));
+    testFI(ConCall((Constructor) getDefinition("c"), Sort.SET0, new SingletonList<>(getThisFI())));
   }
   */
 
@@ -372,7 +373,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\func test => A.B.c", "");
-    test(ConCall((Constructor) getDefinition("A.B.c"), Sort.SET0, Collections.singletonList(Ref(getThis()))));
+    test(ConCall((Constructor) getDefinition("A.B.c"), Sort.SET0, new SingletonList<>(Ref(getThis()))));
     assertEquals(getDefinition("A.B.c"), getDefinition("A.B.D.c"));
   }
 
@@ -385,7 +386,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\func test => A.B.D.c", "");
-    test(ConCall((Constructor) getDefinition("A.B.c"), Sort.SET0, Collections.singletonList(Ref(getThis()))));
+    test(ConCall((Constructor) getDefinition("A.B.c"), Sort.SET0, new SingletonList<>(Ref(getThis()))));
     assertEquals(getDefinition("A.B.c"), getDefinition("A.B.D.c"));
   }
 
@@ -411,7 +412,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  \\data D | c\n" +
         "}\n" +
         "\\func test (e : E) => E.c {e}");
-    test(ConCall((Constructor) getDefinition("E.c"), Sort.SET0, Collections.singletonList(Ref(getThis()))));
+    test(ConCall((Constructor) getDefinition("E.c"), Sort.SET0, new SingletonList<>(Ref(getThis()))));
     assertEquals(getDefinition("E.c"), getDefinition("E.D.c"));
   }
 
@@ -422,7 +423,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  \\data D | c\n" +
         "}\n" +
         "\\func test (e : E) => E.D.c {e}");
-    test(ConCall((Constructor) getDefinition("E.c"), Sort.SET0, Collections.singletonList(Ref(getThis()))));
+    test(ConCall((Constructor) getDefinition("E.c"), Sort.SET0, new SingletonList<>(Ref(getThis()))));
     assertEquals(getDefinition("E.c"), getDefinition("E.D.c"));
   }
 
@@ -464,7 +465,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  \\data D | c\n" +
         "}\n" +
         "\\func test (e : E) => E.c {e}", "");
-    test(ConCall((Constructor) getDefinition("E.c"), Sort.SET0, Collections.singletonList(Ref(getThis().getNext()))));
+    test(ConCall((Constructor) getDefinition("E.c"), Sort.SET0, new SingletonList<>(Ref(getThis().getNext()))));
     assertEquals(getDefinition("E.c"), getDefinition("E.D.c"));
   }
 
@@ -475,7 +476,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  \\data D | c\n" +
         "}\n" +
         "\\func test (e : E) => E.D.c {e}", "");
-    test(ConCall((Constructor) getDefinition("E.c"), Sort.SET0, Collections.singletonList(Ref(getThis().getNext()))));
+    test(ConCall((Constructor) getDefinition("E.c"), Sort.SET0, new SingletonList<>(Ref(getThis().getNext()))));
     assertEquals(getDefinition("E.c"), getDefinition("E.D.c"));
   }
 
@@ -503,7 +504,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\func test (e : E) => E.A.B.c {e}");
-    test(ConCall((Constructor) getDefinition("E.A.B.c"), Sort.SET0, Collections.singletonList(Ref(getThis()))));
+    test(ConCall((Constructor) getDefinition("E.A.B.c"), Sort.SET0, new SingletonList<>(Ref(getThis()))));
     assertEquals(getDefinition("E.A.B.c"), getDefinition("E.A.B.D.c"));
   }
 
@@ -518,7 +519,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\func test (e : E) => E.A.B.D.c {e}");
-    test(ConCall((Constructor) getDefinition("E.A.B.c"), Sort.SET0, Collections.singletonList(Ref(getThis()))));
+    test(ConCall((Constructor) getDefinition("E.A.B.c"), Sort.SET0, new SingletonList<>(Ref(getThis()))));
     assertEquals(getDefinition("E.A.B.c"), getDefinition("E.A.B.D.c"));
   }
 

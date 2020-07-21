@@ -9,6 +9,7 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.arend.typechecking.error.local.HigherConstructorMatchingError;
+import org.arend.util.SingletonList;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -342,8 +343,8 @@ public class ConditionsTest extends TypeCheckingTestCase {
     DependentLink i = ((ElimBody) ((FunctionDefinition) getDefinition("f")).getBody()).getClauses().get(2).getPatterns().get(0).getFirstBinding();
     DependentLink j = i.getNext();
     Constructor loop = (Constructor) getDefinition("S1.loop");
-    Expression iResult = ConCallExpression.make(loop, Sort.STD, Collections.emptyList(), Collections.singletonList(new ReferenceExpression(j)));
-    Expression jResult = ConCallExpression.make(loop, Sort.STD, Collections.emptyList(), Collections.singletonList(new ReferenceExpression(i)));
+    Expression iResult = ConCallExpression.make(loop, Sort.STD, Collections.emptyList(), new SingletonList<>(new ReferenceExpression(j)));
+    Expression jResult = ConCallExpression.make(loop, Sort.STD, Collections.emptyList(), new SingletonList<>(new ReferenceExpression(i)));
 
     assertThatErrorsAre(goalError(
       new Condition(null, new ExprSubstitution(i, Left()), iResult), new Condition(null, new ExprSubstitution(i, Right()), iResult),
@@ -363,8 +364,8 @@ public class ConditionsTest extends TypeCheckingTestCase {
     DependentLink i = ((CaseExpression) ((FunctionDefinition) getDefinition("f")).getBody()).getElimBody().getClauses().get(2).getPatterns().get(0).getFirstBinding();
     DependentLink j = i.getNext();
     Constructor loop = (Constructor) getDefinition("S1.loop");
-    Expression iResult = ConCallExpression.make(loop, Sort.STD, Collections.emptyList(), Collections.singletonList(new ReferenceExpression(j)));
-    Expression jResult = ConCallExpression.make(loop, Sort.STD, Collections.emptyList(), Collections.singletonList(new ReferenceExpression(i)));
+    Expression iResult = ConCallExpression.make(loop, Sort.STD, Collections.emptyList(), new SingletonList<>(new ReferenceExpression(j)));
+    Expression jResult = ConCallExpression.make(loop, Sort.STD, Collections.emptyList(), new SingletonList<>(new ReferenceExpression(i)));
 
     assertThatErrorsAre(goalError(
       new Condition(null, new ExprSubstitution(i, Left()), iResult), new Condition(null, new ExprSubstitution(i, Right()), iResult),

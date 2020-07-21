@@ -93,11 +93,42 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   @Override
   public Expression visitConCall(ConCallExpression expr, Expression expectedType) {
-    LevelSubstitution levelSubst = expr.getSortArgument().toLevelSubstitution();
-    ExprSubstitution substitution = new ExprSubstitution();
-    checkList(expr.getDataTypeArguments(), expr.getDefinition().getDataTypeParameters(), substitution, levelSubst);
-    checkList(expr.getDefCallArguments(), expr.getDefinition().getParameters(), substitution, levelSubst);
-    return check(expectedType, expr.getDefinition().getDataTypeExpression(expr.getSortArgument(), expr.getDataTypeArguments()), expr);
+    Expression result = null;
+    Expression it = expr;
+    do {
+      ConCallExpression conCall = (ConCallExpression) it;
+      LevelSubstitution levelSubst = conCall.getSortArgument().toLevelSubstitution();
+      ExprSubstitution substitution = new ExprSubstitution();
+      checkList(conCall.getDataTypeArguments(), conCall.getDefinition().getDataTypeParameters(), substitution, levelSubst);
+      Expression actualType = conCall.getDefinition().getDataTypeExpression(conCall.getSortArgument(), conCall.getDataTypeArguments());
+      check(expectedType, actualType, conCall);
+      if (result == null) {
+        result = actualType;
+      }
+
+      int recursiveParam = conCall.getDefinition().getRecursiveParameter();
+      if (recursiveParam < 0) {
+        checkList(conCall.getDefCallArguments(), conCall.getDefinition().getParameters(), substitution, levelSubst);
+        return result;
+      }
+
+      DependentLink link = conCall.getDefinition().getParameters();
+      for (int i = 0; i < conCall.getDefCallArguments().size(); i++) {
+        if (i != recursiveParam) {
+          Expression arg = conCall.getDefCallArguments().get(i);
+          arg.accept(this, link.getTypeExpr().subst(substitution, levelSubst));
+          substitution.add(link, arg);
+        } else {
+          expectedType = link.getTypeExpr().subst(substitution, levelSubst);
+        }
+        link = link.getNext();
+      }
+
+      it = conCall.getDefCallArguments().get(recursiveParam);
+    } while (it instanceof ConCallExpression);
+
+    it.accept(this, expectedType);
+    return result;
   }
 
   @Override

@@ -202,6 +202,7 @@ public class DefinitionSerialization implements ArendSerializer {
         cBuilder.setConditions(writeBody(defSerializer, constructor.getBody()));
       }
       cBuilder.putAllUserData(writeUserData(constructor));
+      cBuilder.setRecursiveParameter(constructor.getRecursiveParameter() + 1);
 
       builder.addConstructor(cBuilder.build());
     }

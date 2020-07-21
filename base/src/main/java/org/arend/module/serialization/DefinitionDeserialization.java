@@ -263,6 +263,7 @@ public class DefinitionDeserialization implements ArendDeserializer {
       if (constructorProto.hasConditions()) {
         constructor.setBody(readBody(defDeserializer, constructorProto.getConditions(), DependentLink.Helper.size(constructor.getParameters())));
       }
+      constructor.setRecursiveParameter(constructorProto.getRecursiveParameter() - 1);
       loadKeys(constructorProto.getUserDataMap(), constructor);
     }
 

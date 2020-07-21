@@ -91,6 +91,7 @@ message Definition {
             repeated TypeClassParameterKind type_class_parameters = 6;
             Body conditions = 8;
             map<string, bytes> user_data = 9;
+            int32 recursive_parameter = 10;
         }
     }
     message FunctionData {
