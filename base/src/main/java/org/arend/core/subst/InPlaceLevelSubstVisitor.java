@@ -50,10 +50,8 @@ public class InPlaceLevelSubstVisitor extends VoidExpressionVisitor<Void> {
   }
 
   @Override
-  public Void visitConCall(ConCallExpression expr, Void params) {
+  protected void processConCall(ConCallExpression expr, Void params) {
     expr.substSort(mySubstitution);
-    super.visitConCall(expr, params);
-    return null;
   }
 
   @Override

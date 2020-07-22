@@ -69,8 +69,33 @@ public class FieldsCollector extends VoidExpressionVisitor<Void> {
 
   @Override
   public Void visitConCall(ConCallExpression expr, Void params) {
-    checkArguments(expr.getDefinition().getDataTypeParameters(), expr.getDataTypeArguments());
-    checkArguments(expr.getDefinition().getParameters(), expr.getDefCallArguments());
+    Expression it = expr;
+    Expression type = null;
+    do {
+      expr = (ConCallExpression) it;
+
+      checkArguments(expr.getDefinition().getDataTypeParameters(), expr.getDataTypeArguments());
+
+      int recursiveParam = expr.getDefinition().getRecursiveParameter();
+      if (recursiveParam < 0) {
+        checkArguments(expr.getDefinition().getParameters(), expr.getDefCallArguments());
+        return null;
+      }
+
+      DependentLink link = expr.getDefinition().getParameters();
+      for (int i = 0; i < expr.getDefCallArguments().size(); i++) {
+        if (i != recursiveParam) {
+          checkArgument(expr.getDefCallArguments().get(i), link.getTypeExpr());
+        } else {
+          type = link.getTypeExpr();
+        }
+        link = link.getNext();
+      }
+
+      it = expr.getDefCallArguments().get(recursiveParam);
+    } while (it instanceof ConCallExpression);
+
+    checkArgument(it, type);
     return null;
   }
 

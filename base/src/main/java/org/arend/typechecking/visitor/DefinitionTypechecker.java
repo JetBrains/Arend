@@ -1685,7 +1685,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       return true;
     }
 
-    return !expr.accept(new ProcessDefCallsVisitor<Void>() {
+    return !expr.accept(new SearchVisitor<Void>() {
       @Override
       protected boolean processDefCall(DefCallExpression expression, Void param) {
         return expression instanceof ConCallExpression && ((ConCallExpression) expression).getDefinition().getDataType() == dataDefinition;

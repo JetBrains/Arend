@@ -2,12 +2,11 @@ package org.arend.typechecking.visitor;
 
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.elimtree.ElimBody;
-import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.visitor.BaseExpressionVisitor;
 
-public abstract class ProcessDefCallsVisitor<P> extends BaseExpressionVisitor<P, Boolean> {
+public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean> {
   protected boolean processDefCall(DefCallExpression expression, P param) {
     return false;
   }
@@ -17,9 +16,45 @@ public abstract class ProcessDefCallsVisitor<P> extends BaseExpressionVisitor<P,
     return processDefCall(expression, param) || expression.getDefCallArguments().stream().anyMatch(arg -> arg.accept(this, param));
   }
 
+  protected boolean visitConCallArgument(Expression arg, P param) {
+    return arg.accept(this, param);
+  }
+
   @Override
   public Boolean visitConCall(ConCallExpression expression, P param) {
-    return visitDefCall(expression, param) || expression.getDataTypeArguments().stream().anyMatch(arg -> arg.accept(this, param));
+    Expression it = expression;
+    do {
+      expression = (ConCallExpression) it;
+      if (processDefCall(expression, param)) {
+        return true;
+      }
+
+      for (Expression arg : expression.getDataTypeArguments()) {
+        if (visitConCallArgument(arg, param)) {
+          return true;
+        }
+      }
+
+      int recursiveParam = expression.getDefinition().getRecursiveParameter();
+      if (recursiveParam < 0) {
+        for (Expression arg : expression.getDefCallArguments()) {
+          if (visitConCallArgument(arg, param)) {
+            return true;
+          }
+        }
+        return false;
+      }
+
+      for (int i = 0; i < expression.getDefCallArguments().size(); i++) {
+        if (i != recursiveParam && visitConCallArgument(expression.getDefCallArguments().get(i), param)) {
+          return true;
+        }
+      }
+
+      it = expression.getDefCallArguments().get(recursiveParam);
+    } while (it instanceof ConCallExpression);
+
+    return visitConCallArgument(it, param);
   }
 
   @Override
@@ -43,7 +78,7 @@ public abstract class ProcessDefCallsVisitor<P> extends BaseExpressionVisitor<P,
 
   protected boolean visitElimBody(ElimBody elimBody, P param) {
     for (var clause : elimBody.getClauses()) {
-      if (clause.getExpression() != null && clause.getExpression().accept(this, param)) {
+      if (visitDependentLink(clause.getParameters(), null) || clause.getExpression() != null && clause.getExpression().accept(this, param)) {
         return true;
       }
     }
@@ -60,7 +95,7 @@ public abstract class ProcessDefCallsVisitor<P> extends BaseExpressionVisitor<P,
     return visitDefCall(expression, param) || expression.getImplementedHere().values().stream().anyMatch(expr -> expr.accept(this, param));
   }
 
-  private boolean visitDependentLink(DependentLink link, P param) {
+  protected boolean visitDependentLink(DependentLink link, P param) {
     for (; link.hasNext(); link = link.getNext()) {
       link = link.getNextTyped(null);
       if (link.getTypeExpr().accept(this, param)) {

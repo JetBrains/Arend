@@ -42,13 +42,13 @@ public class ElimBindingVisitor extends ExpressionTransformer<Void> {
 
   public static Expression elimBinding(Expression expression, Binding binding) {
     ElimBindingVisitor visitor = new ElimBindingVisitor(Collections.singleton(binding), false);
-    visitor.myFoundVariable = expression.accept(visitor.myElimVisitor, null);
+    visitor.myFoundVariable = expression.accept(visitor.myElimVisitor, null) ? visitor.myElimVisitor.getResult() : null;
     return visitor.myFoundVariable == null ? expression : expression.normalize(NormalizationMode.WHNF).accept(visitor, null);
   }
 
   public static Expression keepBindings(Expression expression, Set<Binding> bindings, boolean removeImplementations) {
     ElimBindingVisitor visitor = new ElimBindingVisitor(bindings, true);
-    visitor.myFoundVariable = expression.accept(visitor.myKeepVisitor, null);
+    visitor.myFoundVariable = expression.accept(visitor.myKeepVisitor, null) ? visitor.myKeepVisitor.getResult() : null;
     if (visitor.myFoundVariable == null) {
       return expression;
     }
@@ -65,7 +65,7 @@ public class ElimBindingVisitor extends ExpressionTransformer<Void> {
   }
 
   private Expression acceptSelf(Expression expression, boolean normalize) {
-    myFoundVariable = expression.accept(myKeepVisitor != null ? myKeepVisitor : myElimVisitor, null);
+    myFoundVariable = expression.accept(myKeepVisitor != null ? myKeepVisitor : myElimVisitor, null) ? (myKeepVisitor != null ? myKeepVisitor.getResult() : myElimVisitor.getResult()) : null;
     if (myFoundVariable == null) {
       return expression;
     }

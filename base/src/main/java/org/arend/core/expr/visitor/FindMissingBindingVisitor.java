@@ -1,19 +1,18 @@
 package org.arend.core.expr.visitor;
 
 import org.arend.core.context.binding.Binding;
-import org.arend.ext.variable.Variable;
 import org.arend.core.context.param.DependentLink;
-import org.arend.core.definition.ClassField;
 import org.arend.core.elimtree.ElimBody;
-import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
+import org.arend.ext.variable.Variable;
+import org.arend.core.expr.*;
+import org.arend.typechecking.visitor.SearchVisitor;
 
-import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
-public class FindMissingBindingVisitor extends BaseExpressionVisitor<Void, Variable> {
+public class FindMissingBindingVisitor extends SearchVisitor<Void> {
   private final Set<Binding> myBindings;
+  private Variable myResult = null;
 
   public FindMissingBindingVisitor(Set<Binding> binding) {
     myBindings = binding;
@@ -23,131 +22,61 @@ public class FindMissingBindingVisitor extends BaseExpressionVisitor<Void, Varia
     return myBindings;
   }
 
+  public Variable getResult() {
+    return myResult;
+  }
+
   @Override
-  public Variable visitApp(AppExpression expr, Void params) {
-    Variable result = expr.getFunction().accept(this, null);
-    if (result != null) {
-      return result;
+  public Boolean visitReference(ReferenceExpression expr, Void params) {
+    if (!myBindings.contains(expr.getBinding())) {
+      myResult = expr.getBinding();
+      return true;
+    } else {
+      return false;
     }
-    return expr.getArgument().accept(this, null);
   }
 
   @Override
-  public Variable visitDefCall(DefCallExpression expr, Void params) {
-    for (Expression arg : expr.getDefCallArguments()) {
-      Variable result = arg.accept(this, null);
-      if (result != null) {
-        return result;
-      }
-    }
-    return null;
-  }
-
-  @Override
-  public Variable visitConCall(ConCallExpression expr, Void params) {
-    for (Expression arg : expr.getDataTypeArguments()) {
-      Variable result = arg.accept(this, null);
-      if (result != null) {
-        return result;
-      }
-    }
-    return visitDefCall(expr, null);
-  }
-
-  @Override
-  public Variable visitClassCall(ClassCallExpression expr, Void params) {
-    for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
-      Variable result = entry.getValue().accept(this, null);
-      if (result != null) {
-        return result;
-      }
-    }
-    return visitDefCall(expr, null);
-  }
-
-  @Override
-  public Variable visitReference(ReferenceExpression expr, Void params) {
-    return !myBindings.contains(expr.getBinding()) ? expr.getBinding() : null;
-  }
-
-  @Override
-  public Variable visitInferenceReference(InferenceReferenceExpression expr, Void params) {
-    return expr.getSubstExpression() != null ? expr.getSubstExpression().accept(this, null) : null;
-  }
-
-  @Override
-  public Variable visitSubst(SubstExpression expr, Void params) {
-    return expr.getSubstExpression().accept(this, null);
-  }
-
-  @Override
-  public Variable visitLam(LamExpression expr, Void params) {
-    Variable result = visitParameters(expr.getParameters());
-    if (result != null) {
-      return result;
+  public Boolean visitLam(LamExpression expr, Void params) {
+    if (visitDependentLink(expr.getParameters(), null)) {
+      return true;
     }
 
-    result = expr.getBody().accept(this, null);
+    boolean found = expr.getBody().accept(this, null);
     freeParameters(expr.getParameters());
-    return result;
+    return found;
   }
 
   @Override
-  public Variable visitPi(PiExpression expr, Void params) {
-    Variable result = visitParameters(expr.getParameters());
-    if (result != null) {
-      return result;
+  public Boolean visitPi(PiExpression expr, Void params) {
+    if (visitDependentLink(expr.getParameters(), null)) {
+      return true;
     }
 
-    result = expr.getCodomain().accept(this, null);
+    boolean found = expr.getCodomain().accept(this, null);
     freeParameters(expr.getParameters());
-    return result;
+    return found;
   }
 
   @Override
-  public Variable visitUniverse(UniverseExpression expr, Void params) {
-    return null;
-  }
-
-  @Override
-  public Variable visitError(ErrorExpression expr, Void params) {
-    return null;
-  }
-
-  @Override
-  public Variable visitTuple(TupleExpression expr, Void params) {
-    for (Expression field : expr.getFields()) {
-      Variable result = field.accept(this, null);
-      if (result != null) {
-        return result;
-      }
+  public Boolean visitSigma(SigmaExpression expr, Void params) {
+    if (visitDependentLink(expr.getParameters(), null)) {
+      return true;
     }
-    return expr.getSigmaType().accept(this, null);
+
+    freeParameters(expr.getParameters());
+    return false;
   }
 
   @Override
-  public Variable visitSigma(SigmaExpression expr, Void params) {
-    Variable result = visitParameters(expr.getParameters());
-    if (result == null) {
-      freeParameters(expr.getParameters());
-    }
-    return result;
-  }
-
-  @Override
-  public Variable visitProj(ProjExpression expr, Void params) {
-    return expr.getExpression().accept(this, null);
-  }
-
-  private Variable visitParameters(DependentLink parameters) {
+  protected boolean visitDependentLink(DependentLink parameters, Void params) {
     for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
       DependentLink link1 = link.getNextTyped(null);
-      Variable result = link1.getTypeExpr().accept(this, null);
-      if (result != null) {
+      if (link1.getTypeExpr().accept(this, null)) {
         for (; parameters != link; parameters = parameters.getNext()) {
           myBindings.remove(parameters);
         }
-        return result;
+        return true;
       }
 
       for (; link != link1; link = link.getNext()) {
@@ -155,7 +84,7 @@ public class FindMissingBindingVisitor extends BaseExpressionVisitor<Void, Varia
       }
       myBindings.add(link);
     }
-    return null;
+    return false;
   }
 
   void freeParameters(DependentLink link) {
@@ -165,82 +94,53 @@ public class FindMissingBindingVisitor extends BaseExpressionVisitor<Void, Varia
   }
 
   @Override
-  public Variable visitNew(NewExpression expr, Void params) {
-    Variable result = visitClassCall(expr.getClassCall(), null);
-    return result != null ? result : expr.getRenewExpression() == null ? null : expr.getRenewExpression().accept(this, null);
-  }
-
-  @Override
-  public Variable visitPEval(PEvalExpression expr, Void params) {
-    return expr.getExpression().accept(this, null);
-  }
-
-  @Override
-  public Variable visitLet(LetExpression letExpression, Void params) {
+  public Boolean visitLet(LetExpression letExpression, Void params) {
     for (LetClause clause : letExpression.getClauses()) {
-      Variable result = clause.getExpression().accept(this, null);
-      if (result != null) {
-        return result;
+      if (clause.getExpression().accept(this, null)) {
+        return true;
       }
       myBindings.add(clause);
     }
-    Variable result = letExpression.getExpression().accept(this, null);
+
+    boolean found = letExpression.getExpression().accept(this, null);
     letExpression.getClauses().forEach(myBindings::remove);
-    return result;
+    return found;
   }
 
   @Override
-  public Variable visitCase(CaseExpression expr, Void params) {
+  public Boolean visitCase(CaseExpression expr, Void params) {
     for (Expression argument : expr.getArguments()) {
-      Variable result = argument.accept(this, null);
-      if (result != null) {
-        return result;
+      if (argument.accept(this, null)) {
+        return true;
       }
     }
 
-    Variable result = visitParameters(expr.getParameters());
-    if (result != null) {
-      return result;
+    if (visitDependentLink(expr.getParameters(), null)) {
+      return true;
     }
 
-    result = expr.getResultType().accept(this, null);
-    if (result == null && expr.getResultTypeLevel() != null) {
-      result = expr.getResultTypeLevel().accept(this, null);
+    boolean found = expr.getResultType().accept(this, null);
+    if (!found && expr.getResultTypeLevel() != null) {
+      found = expr.getResultTypeLevel().accept(this, null);
     }
     freeParameters(expr.getParameters());
-    if (result != null) {
-      return result;
-    }
-
-    return findBindingInElimBody(expr.getElimBody());
+    return found || visitElimBody(expr.getElimBody(), null);
   }
 
-  private Variable findBindingInElimBody(ElimBody elimBody) {
+  @Override
+  protected boolean visitElimBody(ElimBody elimBody, Void params) {
     for (var clause : elimBody.getClauses()) {
-      Variable result = visitParameters(clause.getParameters());
-      if (result != null) {
-        return result;
+      if (visitDependentLink(clause.getParameters(), null)) {
+        return true;
       }
       if (clause.getExpression() != null) {
-        result = clause.getExpression().accept(this, null);
-        if (result != null) {
-          return result;
+        if (clause.getExpression().accept(this, null)) {
+          return true;
         }
       }
       freeParameters(clause.getParameters());
     }
 
-    return null;
-  }
-
-  @Override
-  public Variable visitOfType(OfTypeExpression expr, Void params) {
-    Variable result = expr.getExpression().accept(this, null);
-    return result != null ? result : expr.getTypeOf().accept(this, null);
-  }
-
-  @Override
-  public Variable visitInteger(IntegerExpression expr, Void params) {
-    return null;
+    return false;
   }
 }
