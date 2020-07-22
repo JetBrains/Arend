@@ -22,7 +22,7 @@ import java.util.*;
 
 import static org.arend.core.expr.ExpressionFactory.*;
 
-public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, Expression>  {
+public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  {
   public static final NormalizeVisitor INSTANCE = new NormalizeVisitor();
 
   private NormalizeVisitor() {
@@ -298,13 +298,14 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
       }
     }
 
-    if (definition == Prelude.SUC) {
-      Expression arg = defCallArgs.get(0).accept(this, mode);
-      IntegerExpression intArg = arg.cast(IntegerExpression.class);
-      return intArg != null ? intArg.suc() : Suc(arg);
-    }
+    Expression result = visitBody(((Function) definition).getBody(), defCallArgs, expr, mode);
+    return result == null ? applyDefCall(expr, mode) : result.accept(this, mode);
+  }
 
-    Body body = ((Function) definition).getBody();
+  private Expression visitBody(Body body, List<? extends Expression> defCallArgs, DefCallExpression expr, NormalizationMode mode) {
+    ComputationRunner.checkCanceled();
+    Definition definition = expr.getDefinition();
+
     if (body instanceof IntervalElim) {
       IntervalElim elim = (IntervalElim) body;
       int i0 = defCallArgs.size() - elim.getCases().size();
@@ -350,19 +351,14 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
       body = elim.getOtherwise();
     }
 
-    Expression result;
     if (body instanceof Expression) {
-      result = mode == NormalizationMode.RNF || mode == NormalizationMode.RNF_EXP ? null : ((Expression) body).subst(getDataTypeArgumentsSubstitution(expr).add(definition.getParameters(), defCallArgs), expr.getSortArgument().toLevelSubstitution());
+      return mode == NormalizationMode.RNF || mode == NormalizationMode.RNF_EXP ? null : ((Expression) body).subst(getDataTypeArgumentsSubstitution(expr).add(definition.getParameters(), defCallArgs), expr.getSortArgument().toLevelSubstitution());
     } else if (body instanceof ElimBody) {
-      result = eval((ElimBody) body, defCallArgs, getDataTypeArgumentsSubstitution(expr), expr.getSortArgument().toLevelSubstitution(), mode);
+      return eval((ElimBody) body, defCallArgs, getDataTypeArgumentsSubstitution(expr), expr.getSortArgument().toLevelSubstitution(), mode);
     } else {
       assert body == null;
-      result = null;
+      return null;
     }
-
-    ComputationRunner.checkCanceled();
-
-    return result == null ? applyDefCall(expr, mode) : result.accept(this, mode);
   }
 
   public Stack<Expression> makeStack(List<? extends Expression> arguments) {
@@ -561,6 +557,27 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizationMode, E
     }
 
     return expr.getDefinition() instanceof Function ? visitFunctionDefCall(expr, mode) : applyDefCall(expr, mode);
+  }
+
+  @Override
+  protected Expression visitDataTypeArgument(Expression expr, NormalizationMode mode) {
+    return mode == NormalizationMode.NF ? expr.accept(this, NormalizationMode.NF) : expr;
+  }
+
+  @Override
+  protected Expression preVisitConCall(ConCallExpression expr, NormalizationMode mode) {
+    Expression result = visitBody(expr.getDefinition().getBody(), expr.getDefCallArguments(), expr, mode);
+    return result == null ? null : result.accept(this, mode);
+  }
+
+  @Override
+  public Expression visitConCall(ConCallExpression expr, NormalizationMode mode) {
+    Constructor constructor = expr.getDefinition();
+    if ((mode == NormalizationMode.WHNF || constructor.status() != Definition.TypeCheckingStatus.NO_ERRORS) && constructor.getBody() == null) {
+      return applyDefCall(expr, mode);
+    }
+
+    return super.visitConCall(expr, mode);
   }
 
   @Override
