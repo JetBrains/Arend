@@ -393,13 +393,18 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
 
   public Expression eval(ElimBody elimBody, List<? extends Expression> arguments, ExprSubstitution substitution, LevelSubstitution levelSubstitution, NormalizationMode mode) {
     Stack<Expression> stack = makeStack(arguments);
-    List<Expression> result = new ArrayList<>();
+    List<Expression> argList = new ArrayList<>();
+    Expression result = null;
     Expression resultExpr = null;
+
+    List<Expression> conArgs = null;
+    int recursiveParam = -1;
+    int sucs = 0;
 
     ElimTree elimTree = elimBody.getElimTree();
     while (true) {
       for (int i = 0; i < elimTree.getSkip(); i++) {
-        result.add(stack.pop());
+        argList.add(stack.pop());
       }
 
       if (elimTree instanceof LeafElimTree) {
@@ -407,7 +412,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
         ElimClause<Pattern> clause = elimBody.getClauses().get(leafElimTree.getClauseIndex());
         int i = 0;
         for (DependentLink link = clause.getParameters(); link.hasNext(); link = link.getNext(), i++) {
-          substitution.add(link, result.get(leafElimTree.getArgumentIndex(i)));
+          substitution.add(link, argList.get(leafElimTree.getArgumentIndex(i)));
         }
         resultExpr = Objects.requireNonNull(clause.getExpression()).subst(substitution, levelSubstitution);
 
@@ -422,11 +427,30 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
           }
         }
 
+        if (mode != NormalizationMode.WHNF && resultExpr instanceof ConCallExpression) {
+          ConCallExpression conCall = (ConCallExpression) resultExpr;
+          if (conCall.getDefinition() == Prelude.SUC) {
+            sucs++;
+            resultExpr = conCall.getDefCallArguments().get(0);
+          } else if (conCall.getDefinition().getRecursiveParameter() >= 0) {
+            List<Expression> newConArgs = new ArrayList<>(conCall.getDefCallArguments());
+            Expression newExpr = ConCallExpression.make(conCall.getDefinition(), conCall.getSortArgument(), conCall.getDataTypeArguments(), newConArgs);
+            if (conArgs == null) {
+              result = newExpr;
+            } else {
+              conArgs.set(recursiveParam, newExpr);
+            }
+            conArgs = newConArgs;
+            recursiveParam = conCall.getDefinition().getRecursiveParameter();
+            resultExpr = conArgs.get(recursiveParam);
+          }
+        }
+
         if (resultExpr instanceof FunCallExpression && ((FunCallExpression) resultExpr).getDefinition().getBody() instanceof ElimBody && !isBlocked(((FunCallExpression) resultExpr).getDefinition()) || resultExpr instanceof CaseExpression && !((CaseExpression) resultExpr).isSCase()) {
           elimBody = resultExpr instanceof FunCallExpression ? (ElimBody) ((FunCallExpression) resultExpr).getDefinition().getBody() : ((CaseExpression) resultExpr).getElimBody();
           elimTree = elimBody.getElimTree();
           substitution.clear();
-          result.clear();
+          argList.clear();
           stack.clear();
 
           ComputationRunner.checkCanceled();
@@ -439,12 +463,28 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
           continue;
         }
 
-        return resultExpr;
+        if (result == null) {
+          result = resultExpr;
+        }
+        if (sucs > 0) {
+          if (result instanceof IntegerExpression) {
+            return ((IntegerExpression) result).plus(sucs);
+          }
+          for (int j = 0; j < sucs; j++) {
+            result = Suc(result);
+          }
+        }
+        return result;
       }
 
-      elimTree = updateStack(stack, result, (BranchElimTree) elimTree);
+      elimTree = updateStack(stack, argList, (BranchElimTree) elimTree);
       if (elimTree == null) {
-        return resultExpr;
+        if (result == null) {
+          result = resultExpr;
+        } else {
+          conArgs.set(recursiveParam, resultExpr);
+        }
+        return result;
       }
     }
   }
