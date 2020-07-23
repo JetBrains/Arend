@@ -266,8 +266,8 @@ class ExpressionDeserialization {
         return readApp(proto.getApp());
       case FUN_CALL:
         return readFunCall(proto.getFunCall());
-      case CON_CALL:
-        return readConCall(proto.getConCall());
+      case CON_CALLS:
+        return readConCalls(proto.getConCalls());
       case DATA_CALL:
         return readDataCall(proto.getDataCall());
       case CLASS_CALL:
@@ -326,11 +326,51 @@ class ExpressionDeserialization {
     return FunCallExpression.make(functionDefinition, new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readExprList(proto.getArgumentList()));
   }
 
-  private Expression readConCall(ExpressionProtos.Expression.ConCall proto) throws DeserializationException {
+  private Expression readConCalls(ExpressionProtos.Expression.ConCalls protos) throws DeserializationException {
+    List<ExpressionProtos.Expression.ConCall> conCalls = protos.getConCallList();
+    if (conCalls.isEmpty()) {
+      throw new DeserializationException("Empty constructors list");
+    }
+
+    if (conCalls.size() == 1) {
+      return readConCall(conCalls.get(0), true);
+    }
+
+    ConCallExpression result = readConCall(conCalls.get(0), false);
+    ConCallExpression expr = result;
+    for (int i = 1; i < conCalls.size(); i++) {
+      ConCallExpression arg = readConCall(conCalls.get(i), i == conCalls.size() - 1);
+      expr.getDefCallArguments().set(expr.getDefinition().getRecursiveParameter(), arg);
+      expr = arg;
+    }
+
+    return result;
+  }
+
+  private ConCallExpression readConCall(ExpressionProtos.Expression.ConCall proto, boolean last) throws DeserializationException {
     Constructor constructor = myCallTargetProvider.getCallTarget(proto.getConstructorRef(), Constructor.class);
     myDependencyListener.dependsOn(myDefinition, constructor.getDataType().getReferable());
-    return ConCallExpression.make(constructor, new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())),
-        readExprList(proto.getDatatypeArgumentList()), readExprList(proto.getArgumentList()));
+
+    if (!last && constructor.getRecursiveParameter() < 0) {
+      throw new DeserializationException("Incorrect sequence of constructors");
+    }
+
+    List<ExpressionProtos.Expression> protos = proto.getArgumentList();
+    List<Expression> args = new ArrayList<>(protos.size());
+    ConCallExpression result = ConCallExpression.makeConCall(constructor, new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readExprList(proto.getDatatypeArgumentList()), args);
+    for (int i = 0; i < protos.size(); i++) {
+      if (!last && i == constructor.getRecursiveParameter()) {
+        args.add(null);
+        last = true;
+        i--;
+      } else {
+        args.add(readExpr(protos.get(i)));
+      }
+    }
+    if (!last && protos.size() == constructor.getRecursiveParameter()) {
+      args.add(null);
+    }
+    return result;
   }
 
   private DataCallExpression readDataCall(ExpressionProtos.Expression.DataCall proto) throws DeserializationException {

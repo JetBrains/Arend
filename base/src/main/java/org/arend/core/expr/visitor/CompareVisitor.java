@@ -236,25 +236,23 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       }
     }
 
-    Expression uExpr1 = expr1.getUnderlyingExpression();
-    if (uExpr1 instanceof ErrorExpression) {
+    if (expr1 instanceof ErrorExpression) {
       return true;
     }
-    if (!(uExpr1 instanceof UniverseExpression || uExpr1 instanceof PiExpression || uExpr1 instanceof ClassCallExpression || uExpr1 instanceof DataCallExpression || uExpr1 instanceof AppExpression || uExpr1 instanceof SigmaExpression || uExpr1 instanceof LamExpression)) {
+    if (!(expr1 instanceof UniverseExpression || expr1 instanceof PiExpression || expr1 instanceof ClassCallExpression || expr1 instanceof DataCallExpression || expr1 instanceof AppExpression || expr1 instanceof SigmaExpression || expr1 instanceof LamExpression)) {
       myCMP = CMP.EQ;
     }
 
     boolean ok;
-    Expression uExpr2 = expr2.getUnderlyingExpression();
-    if (uExpr2 instanceof ErrorExpression) {
+    if (expr2 instanceof ErrorExpression) {
       return true;
     }
-    if (uExpr2 instanceof ConCallExpression && ((ConCallExpression) uExpr2).getDefinition() == Prelude.PATH_CON) {
-      ok = visitDefCall((ConCallExpression) uExpr2, expr1, type, false);
-    } else if (uExpr2 instanceof LamExpression) {
-      ok = visitLam((LamExpression) uExpr2, expr1, type, false);
-    } else if (uExpr2 instanceof TupleExpression) {
-      ok = visitTuple((TupleExpression) uExpr2, expr1, false);
+    if (expr2 instanceof ConCallExpression && ((ConCallExpression) expr2).getDefinition() == Prelude.PATH_CON && !(expr1 instanceof ConCallExpression)) {
+      ok = comparePathEta((ConCallExpression) expr2, expr1, false);
+    } else if (expr2 instanceof LamExpression) {
+      ok = visitLam((LamExpression) expr2, expr1, type, false);
+    } else if (expr2 instanceof TupleExpression) {
+      ok = visitTuple((TupleExpression) expr2, expr1, false);
     } else {
       ok = expr1.accept(this, expr2, type);
     }
@@ -379,7 +377,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     return correctOrder ? compare(conCall1.getDefCallArguments().get(0), expr2, type) : compare(expr2, conCall1.getDefCallArguments().get(0), type);
   }
 
-  private boolean compareDef(DefCallExpression expr1, DefCallExpression expr2, boolean correctOrder) {
+  private boolean compareDef(DefCallExpression expr1, DefCallExpression expr2) {
     if (expr2 == null || expr1.getDefinition() != expr2.getDefinition()) {
       return false;
     }
@@ -388,39 +386,23 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       return true;
     }
     CMP cmp = universeKind == UniverseKind.ONLY_COVARIANT ? myCMP : CMP.EQ;
-    return correctOrder
-      ? Sort.compare(expr1.getSortArgument(), expr2.getSortArgument(), cmp, myNormalCompare ? myEquations : DummyEquations.getInstance(), mySourceNode)
-      : Sort.compare(expr2.getSortArgument(), expr1.getSortArgument(), cmp, myNormalCompare ? myEquations : DummyEquations.getInstance(), mySourceNode);
+    return Sort.compare(expr1.getSortArgument(), expr2.getSortArgument(), cmp, myNormalCompare ? myEquations : DummyEquations.getInstance(), mySourceNode);
   }
 
-  private Boolean visitDefCall(DefCallExpression expr1, Expression expr2, Expression type, boolean correctOrder) {
+  private Boolean visitDefCall(DefCallExpression expr1, Expression expr2) {
     DefCallExpression defCall2 = expr2.cast(DefCallExpression.class);
-    if (expr1.getDefinition() == Prelude.PATH_CON && !(defCall2 instanceof ConCallExpression)) {
-      return comparePathEta((ConCallExpression) expr1, expr2, correctOrder);
-    }
-
-    if (!compareDef(expr1, defCall2, correctOrder)) {
+    if (!compareDef(expr1, defCall2)) {
       return false;
     }
 
-    ExprSubstitution substitution;
-    if (expr1 instanceof ConCallExpression) {
-      substitution = null;
-      DataCallExpression dataCall = type == null ? null : type.cast(DataCallExpression.class);
-      if (dataCall != null) {
-        substitution = new ExprSubstitution();
-        dataCall.addArguments(substitution);
-        }
-    } else {
-      substitution = new ExprSubstitution();
-    }
+    ExprSubstitution substitution = new ExprSubstitution();
 
     /* Stricter version of iso
     if (expr1.getDefinition() == Prelude.ISO) {
       return correctOrder ? compareIsoArgs(expr1.getDefCallArguments(), defCall2.getDefCallArguments(), substitution) : compareIsoArgs(defCall2.getDefCallArguments(), expr1.getDefCallArguments(), substitution);
     }
     */
-    return correctOrder ? compareLists(expr1.getDefCallArguments(), defCall2.getDefCallArguments(), expr1.getDefinition().getParameters(), expr1.getDefinition(), substitution) : compareLists(defCall2.getDefCallArguments(), expr1.getDefCallArguments(), defCall2.getDefinition().getParameters(), defCall2.getDefinition(), substitution);
+    return compareLists(expr1.getDefCallArguments(), defCall2.getDefCallArguments(), expr1.getDefinition().getParameters(), expr1.getDefinition(), substitution);
   }
 
   /*
@@ -445,29 +427,88 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
   }
   */
 
-  private boolean visitDefCall(DefCallExpression expr1, Expression expr2, Expression type) {
-    if (expr1 instanceof ConCallExpression) {
-      IntegerExpression intExpr = expr2.cast(IntegerExpression.class);
-      if (intExpr != null) {
-        return visitInteger(intExpr, expr1);
-      }
-    }
-    return visitDefCall(expr1, expr2, type, true);
-  }
-
   @Override
   public Boolean visitFunCall(FunCallExpression expr1, Expression expr2, Expression type) {
-    return visitDefCall(expr1, expr2, type);
+    return visitDefCall(expr1, expr2);
   }
 
   @Override
   public Boolean visitConCall(ConCallExpression expr1, Expression expr2, Expression type) {
-    return visitDefCall(expr1, expr2, type);
+    ConCallExpression conCall2 = expr2.cast(ConCallExpression.class);
+    if (expr1.getDefinition() == Prelude.PATH_CON && conCall2 == null) {
+      return comparePathEta(expr1, expr2, true);
+    }
+
+    Expression it = expr1;
+    while (true) {
+      expr1 = (ConCallExpression) it;
+      if (expr2 instanceof IntegerExpression) {
+        return visitInteger((IntegerExpression) expr2, expr1) || myOnlySolveVars;
+      }
+      conCall2 = expr2.cast(ConCallExpression.class);
+      if (!compareDef(expr1, conCall2)) {
+        return myOnlySolveVars;
+      }
+
+      int recursiveParam = expr1.getDefinition().getRecursiveParameter();
+      if (recursiveParam < 0) {
+        return compareLists(expr1.getDefCallArguments(), conCall2.getDefCallArguments(), expr1.getDefinition().getParameters(), expr1.getDefinition(), null) || myOnlySolveVars;
+      }
+
+      for (int i = 0; i < expr1.getDefCallArguments().size(); i++) {
+        if (i != recursiveParam && !compare(expr1.getDefCallArguments().get(i), conCall2.getDefCallArguments().get(i), null)) {
+          return myOnlySolveVars;
+        }
+      }
+
+      it = expr1.getDefCallArguments().get(recursiveParam).getUnderlyingExpression();
+      expr2 = conCall2.getDefCallArguments().get(recursiveParam).getUnderlyingExpression();
+      if (!(it instanceof ConCallExpression)) {
+        break;
+      }
+
+      // compare(it, expr2, null)
+      if (it == expr2) {
+        return true;
+      }
+      InferenceReferenceExpression infRefExpr2 = expr2.cast(InferenceReferenceExpression.class);
+      if (infRefExpr2 != null && infRefExpr2.getVariable() instanceof InferenceVariable) {
+        return myNormalCompare && myEquations.addEquation(it.normalize(NormalizationMode.WHNF), infRefExpr2, type, myCMP, ((InferenceVariable) infRefExpr2.getVariable()).getSourceNode(), it.getStuckInferenceVariable(), (InferenceVariable) infRefExpr2.getVariable()) || myOnlySolveVars;
+      }
+      InferenceVariable stuckVar2 = expr2.getStuckInferenceVariable();
+      if (stuckVar2 != null && (!myNormalCompare || myEquations == DummyEquations.getInstance())) {
+        return myOnlySolveVars;
+      }
+      if (!myNormalCompare || !myNormalize || myOnlySolveVars && stuckVar2 != null) {
+        return true;
+      }
+
+      it = it.normalize(NormalizationMode.WHNF);
+      expr2 = expr2.normalize(NormalizationMode.WHNF);
+      if (!(it instanceof ConCallExpression)) {
+        return normalizedCompare(it, expr2, null) || myOnlySolveVars;
+      }
+
+      // normalizedCompare(it, expr2, null)
+      if (expr2 instanceof ErrorExpression) {
+        return true;
+      }
+      Expression stuck2 = expr2.getStuckExpression();
+      if (stuck2 != null && stuck2.isError()) {
+        return true;
+      }
+      stuckVar2 = expr2.getInferenceVariable();
+      if (stuckVar2 != null) {
+        return myNormalCompare && myEquations.addEquation(it, expr2.subst(getSubstitution()), type, myCMP, stuckVar2.getSourceNode(), null, stuckVar2) || myOnlySolveVars;
+      }
+    }
+
+    return compare(it, expr2, null);
   }
 
   @Override
   public Boolean visitDataCall(DataCallExpression expr1, Expression expr2, Expression type) {
-    return visitDefCall(expr1, expr2, type);
+    return visitDefCall(expr1, expr2);
   }
 
   private Boolean checkDefCallAndApp(Expression expr1, Expression expr2, boolean correctOrder) {

@@ -174,9 +174,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   private Concrete.Expression visitParameters(Concrete.Expression expr, DependentLink parameters, List<? extends Expression> arguments) {
     List<Concrete.Argument> concreteArguments = new ArrayList<>(arguments.size());
     for (Expression arg : arguments) {
-      if (parameters.isExplicit() || hasFlag(PrettyPrinterFlag.SHOW_IMPLICIT_ARGS)) {
-        visitArgument(arg, parameters.isExplicit(), concreteArguments);
-      }
+      visitArgument(arg, parameters.isExplicit(), concreteArguments);
       parameters = parameters.getNext();
     }
     return checkApp(Concrete.AppExpression.make(null, expr, concreteArguments));
@@ -237,15 +235,86 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   @Override
   public Concrete.Expression visitConCall(ConCallExpression expr, Void params) {
-    Concrete.Expression result = makeReference(expr);
-    if (expr.getDefinition().status().headerIsOK() && hasFlag(PrettyPrinterFlag.SHOW_CON_PARAMS)) {
-      List<Concrete.Argument> arguments = new ArrayList<>(expr.getDataTypeArguments().size());
-      for (Expression arg : expr.getDataTypeArguments()) {
-        visitArgument(arg, false, arguments);
+    Expression it = expr;
+    Concrete.Expression result = null;
+    List<Concrete.Argument> args = null;
+    int concreteParam = -1;
+    boolean concreteExplicit = true;
+    do {
+      expr = (ConCallExpression) it;
+      boolean showImplicitArgs = hasFlag(PrettyPrinterFlag.SHOW_BIN_OP_IMPLICIT_ARGS) || !expr.getDefinition().getReferable().getPrecedence().isInfix;
+
+      Concrete.Expression cExpr = makeReference(expr);
+      if (showImplicitArgs && expr.getDefinition().status().headerIsOK() && hasFlag(PrettyPrinterFlag.SHOW_CON_PARAMS)) {
+        List<Concrete.Argument> arguments = new ArrayList<>(expr.getDataTypeArguments().size());
+        for (Expression arg : expr.getDataTypeArguments()) {
+          visitArgument(arg, false, arguments);
+        }
+        cExpr = Concrete.AppExpression.make(null, cExpr, arguments);
       }
-      result = checkApp(Concrete.AppExpression.make(null, result, arguments));
+
+      int recursiveParam = expr.getDefinition().getRecursiveParameter();
+      if (recursiveParam < 0) {
+        cExpr = visitParameters(cExpr, expr.getDefinition().getParameters(), expr.getDefCallArguments());
+        if (args != null) {
+          args.set(concreteParam, new Concrete.Argument(cExpr, concreteExplicit));
+        } else {
+          result = cExpr;
+        }
+        return result;
+      }
+
+      List<Concrete.Argument> newArgs = new ArrayList<>();
+      DependentLink parameters = expr.getDefinition().getParameters();
+      int newConcreteParam = -1;
+      boolean newConcreteExplicit = true;
+      for (int i = 0; i < expr.getDefCallArguments().size(); i++) {
+        if (i != recursiveParam) {
+          if (showImplicitArgs || parameters.isExplicit()) {
+            visitArgument(expr.getDefCallArguments().get(i), parameters.isExplicit(), newArgs);
+          }
+        } else {
+          if (parameters.isExplicit() || showImplicitArgs && hasFlag(PrettyPrinterFlag.SHOW_IMPLICIT_ARGS)) {
+            newConcreteParam = newArgs.size();
+            newConcreteExplicit = parameters.isExplicit();
+            newArgs.add(null);
+          }
+        }
+        if (parameters.isExplicit()) {
+          showImplicitArgs = true;
+        }
+        parameters = parameters.getNext();
+      }
+
+      cExpr = Concrete.AppExpression.make(null, cExpr, newArgs);
+      if (args != null) {
+        args.set(concreteParam, new Concrete.Argument(cExpr, concreteExplicit));
+      } else {
+        result = cExpr;
+      }
+
+      if (newConcreteParam == -1) {
+        return result;
+      }
+
+      args = cExpr instanceof Concrete.AppExpression ? ((Concrete.AppExpression) cExpr).getArguments() : newArgs;
+      concreteParam = newConcreteParam;
+      concreteExplicit = newConcreteExplicit;
+      if (args.size() > newArgs.size()) {
+        concreteParam += args.size() - newArgs.size();
+      }
+
+      it = expr.getDefCallArguments().get(recursiveParam);
+    } while (it instanceof ConCallExpression);
+
+    ReferenceExpression refExpr = it.cast(ReferenceExpression.class);
+    if (refExpr != null && refExpr.getBinding().isHidden()) {
+      args.remove(concreteParam);
+    } else {
+      args.set(concreteParam, new Concrete.Argument(it.accept(this, null), concreteExplicit));
     }
-    return visitParameters(result, expr.getDefinition().getParameters(), expr.getDefCallArguments());
+
+    return result;
   }
 
   @Override

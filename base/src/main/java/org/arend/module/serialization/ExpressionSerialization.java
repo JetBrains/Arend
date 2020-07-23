@@ -22,6 +22,7 @@ import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.pattern.*;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -289,17 +290,40 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
 
   @Override
   public ExpressionProtos.Expression visitConCall(ConCallExpression expr, Void params) {
-    ExpressionProtos.Expression.ConCall.Builder builder = ExpressionProtos.Expression.ConCall.newBuilder();
-    builder.setConstructorRef(myCallTargetIndexProvider.getDefIndex(expr.getDefinition()));
-    builder.setPLevel(writeLevel(expr.getSortArgument().getPLevel()));
-    builder.setHLevel(writeLevel(expr.getSortArgument().getHLevel()));
-    for (Expression arg : expr.getDataTypeArguments()) {
-      builder.addDatatypeArgument(arg.accept(this, null));
+    ExpressionProtos.Expression.ConCalls.Builder builders = ExpressionProtos.Expression.ConCalls.newBuilder();
+
+    while (true) {
+      ExpressionProtos.Expression.ConCall.Builder builder = ExpressionProtos.Expression.ConCall.newBuilder();
+      builder.setConstructorRef(myCallTargetIndexProvider.getDefIndex(expr.getDefinition()));
+      builder.setPLevel(writeLevel(expr.getSortArgument().getPLevel()));
+      builder.setHLevel(writeLevel(expr.getSortArgument().getHLevel()));
+      for (Expression arg : expr.getDataTypeArguments()) {
+        builder.addDatatypeArgument(arg.accept(this, null));
+      }
+
+      int recursiveParam = expr.getDefinition().getRecursiveParameter();
+      List<Expression> defCallArgs = expr.getDefCallArguments();
+      for (int i = 0; i < defCallArgs.size(); i++) {
+        Expression arg = defCallArgs.get(i);
+        if (i == recursiveParam) {
+          if (!(arg instanceof ConCallExpression)) {
+            recursiveParam = -1;
+          } else {
+            expr = (ConCallExpression) arg;
+          }
+        }
+        if (i != recursiveParam) {
+          builder.addArgument(arg.accept(this, null));
+        }
+      }
+
+      builders.addConCall(builder);
+      if (recursiveParam < 0 || defCallArgs.isEmpty()) {
+        break;
+      }
     }
-    for (Expression arg : expr.getDefCallArguments()) {
-      builder.addArgument(arg.accept(this, null));
-    }
-    return ExpressionProtos.Expression.newBuilder().setConCall(builder).build();
+
+    return ExpressionProtos.Expression.newBuilder().setConCalls(builders).build();
   }
 
   @Override
