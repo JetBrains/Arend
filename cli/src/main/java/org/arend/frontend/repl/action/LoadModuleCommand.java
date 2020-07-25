@@ -9,7 +9,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.Objects;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 public final class LoadModuleCommand implements CliReplCommand {
   public static final @NotNull LoadModuleCommand INSTANCE = new LoadModuleCommand();
@@ -25,11 +31,15 @@ public final class LoadModuleCommand implements CliReplCommand {
   @Override
   public void invoke(@NotNull String line, @NotNull CommonCliRepl api, @NotNull Supplier<@NotNull String> scanner) {
     try {
-      if (line.endsWith(FileUtils.EXTENSION))
-        line = line
-          .substring(0, line.length() - FileUtils.EXTENSION.length())
-          .replace('\\', '.')
-          .replace('/', '.');
+      if (line.endsWith(FileUtils.EXTENSION)) {
+        line = line.substring(0, line.length() - FileUtils.EXTENSION.length());
+        var paths = StreamSupport
+          .stream(Paths.get(line).normalize().spliterator(), false)
+          .map(Objects::toString)
+          .collect(Collectors.toList());
+        if (Objects.equals(paths.get(0), ".")) paths.remove(0);
+        line = String.join(".", paths);
+      }
       loadModule(api, ModulePath.fromString(line));
     } catch (InvalidPathException e) {
       api.eprintln("The path `" + line + "` is not good because:");
