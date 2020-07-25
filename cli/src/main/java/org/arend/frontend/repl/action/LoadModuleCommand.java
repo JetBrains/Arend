@@ -9,9 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.InvalidPathException;
-import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collections;
 import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
