@@ -340,10 +340,10 @@ public class ElimTypechecking {
       List<List<ExpressionPattern>> totalResult = new ArrayList<>();
       if (conCalls.isEmpty()) {
         List<ExpressionPattern> patterns = new ArrayList<>();
-        patterns.add(EmptyPattern.INSTANCE);
-        for (i++; i < eliminatedParameters.size(); i++) {
-          patterns.add(new BindingPattern(eliminatedParameters.get(i)));
+        for (int j = eliminatedParameters.size() - 1; j > i; j--) {
+          patterns.add(new BindingPattern(eliminatedParameters.get(j)));
         }
+        patterns.add(EmptyPattern.INSTANCE);
         totalResult.add(patterns);
       } else {
         boolean firstHasEmpty = false;
