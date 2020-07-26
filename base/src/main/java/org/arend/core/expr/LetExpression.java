@@ -40,7 +40,7 @@ public class LetExpression extends Expression implements CoreLetExpression {
     return myClauses;
   }
 
-  private Expression normalizeClauseExpression(LetClausePattern pattern, Expression expression) {
+  public static Expression normalizeClauseExpression(LetClausePattern pattern, Expression expression) {
     expression = expression.normalize(NormalizationMode.WHNF);
     if (!pattern.isMatching()) {
       return expression;
@@ -82,12 +82,16 @@ public class LetExpression extends Expression implements CoreLetExpression {
     return expression;
   }
 
-  public ExprSubstitution getClausesSubstitution() {
+  public Expression getResult() {
+    if (!myStrict) {
+      return myExpression;
+    }
+
     ExprSubstitution substitution = new ExprSubstitution();
     for (LetClause clause : myClauses) {
       substitution.add(clause, normalizeClauseExpression(clause.getPattern(), clause.getExpression().subst(substitution)));
     }
-    return substitution;
+    return myExpression.subst(substitution);
   }
 
   @NotNull

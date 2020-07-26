@@ -414,17 +414,33 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
         for (DependentLink link = clause.getParameters(); link.hasNext(); link = link.getNext(), i++) {
           substitution.add(link, argList.get(leafElimTree.getArgumentIndex(i)));
         }
-        resultExpr = Objects.requireNonNull(clause.getExpression()).subst(substitution, levelSubstitution);
+        resultExpr = Objects.requireNonNull(clause.getExpression());
 
         if (mode == null) {
-          return resultExpr;
+          return resultExpr.subst(substitution, levelSubstitution);
         }
 
-        if (mode != NormalizationMode.RNF && mode != NormalizationMode.RNF_EXP) {
+        if (mode != NormalizationMode.RNF && mode != NormalizationMode.RNF_EXP && resultExpr instanceof LetExpression) {
           while (resultExpr instanceof LetExpression) {
             LetExpression let = (LetExpression) resultExpr;
-            resultExpr = let.isStrict() ? let.getExpression().subst(let.getClausesSubstitution()) : let.getExpression();
+            if (let.isStrict()) {
+              for (LetClause letClause : let.getClauses()) {
+                substitution.add(letClause, LetExpression.normalizeClauseExpression(letClause.getPattern(), letClause.getExpression().subst(substitution, levelSubstitution)));
+              }
+            } else {
+              for (LetClause letClause : let.getClauses()) {
+                substitution.add(letClause, new ReferenceExpression(new LetClause(letClause.getName(), letClause.getPattern(), letClause.getExpression().subst(substitution, levelSubstitution))));
+              }
+            }
+            resultExpr = let.getExpression();
           }
+
+          resultExpr = resultExpr.subst(substitution, levelSubstitution);
+          while (resultExpr instanceof LetExpression) {
+            resultExpr = ((LetExpression) resultExpr).getResult();
+          }
+        } else {
+          resultExpr = resultExpr.subst(substitution, levelSubstitution);
         }
 
         if (mode != NormalizationMode.WHNF && resultExpr instanceof ConCallExpression) {
@@ -754,7 +770,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
       }
       return new LetExpression(let.isStrict(), newClauses, let.getExpression().accept(this, mode).subst(substitution));
     } else {
-      return let.isStrict() ? let.getExpression().subst(let.getClausesSubstitution()).accept(this, mode) : let.getExpression().accept(this, mode);
+      return let.getResult().accept(this, mode);
     }
   }
 
