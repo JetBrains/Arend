@@ -434,13 +434,15 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
             }
             resultExpr = let.getExpression();
           }
+        }
 
+        if (!(resultExpr instanceof CaseExpression) || ((CaseExpression) resultExpr).isSCase()) {
           resultExpr = resultExpr.subst(substitution, levelSubstitution);
+          substitution.clear();
+          levelSubstitution = LevelSubstitution.EMPTY;
           while (resultExpr instanceof LetExpression) {
             resultExpr = ((LetExpression) resultExpr).getResult();
           }
-        } else {
-          resultExpr = resultExpr.subst(substitution, levelSubstitution);
         }
 
         if (mode != NormalizationMode.WHNF && resultExpr instanceof ConCallExpression) {
@@ -465,16 +467,17 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
         if (resultExpr instanceof FunCallExpression && ((FunCallExpression) resultExpr).getDefinition().getBody() instanceof ElimBody && !isBlocked(((FunCallExpression) resultExpr).getDefinition()) || resultExpr instanceof CaseExpression && !((CaseExpression) resultExpr).isSCase()) {
           elimBody = resultExpr instanceof FunCallExpression ? (ElimBody) ((FunCallExpression) resultExpr).getDefinition().getBody() : ((CaseExpression) resultExpr).getElimBody();
           elimTree = elimBody.getElimTree();
-          substitution.clear();
           argList.clear();
           stack.clear();
 
           ComputationRunner.checkCanceled();
 
-          levelSubstitution = resultExpr instanceof FunCallExpression ? ((FunCallExpression) resultExpr).getSortArgument().toLevelSubstitution() : LevelSubstitution.EMPTY;
+          if (resultExpr instanceof FunCallExpression) {
+            levelSubstitution = ((FunCallExpression) resultExpr).getSortArgument().toLevelSubstitution();
+          }
           List<? extends Expression> args = resultExpr instanceof FunCallExpression ? ((FunCallExpression) resultExpr).getDefCallArguments() : ((CaseExpression) resultExpr).getArguments();
           for (int j = args.size() - 1; j >= 0; j--) {
-            stack.push(args.get(j));
+            stack.push(resultExpr instanceof CaseExpression ? args.get(j).subst(substitution, levelSubstitution) : args.get(j));
           }
           continue;
         }
@@ -482,27 +485,34 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
         if (result == null) {
           result = resultExpr;
         }
-        if (sucs > 0) {
-          if (result instanceof IntegerExpression) {
-            return ((IntegerExpression) result).plus(sucs);
-          }
-          for (int j = 0; j < sucs; j++) {
-            result = Suc(result);
-          }
-        }
-        return result;
+        return addSucs(result, sucs);
       }
 
       elimTree = updateStack(stack, argList, (BranchElimTree) elimTree);
       if (elimTree == null) {
+        if (resultExpr instanceof CaseExpression) {
+          resultExpr = resultExpr.subst(substitution, levelSubstitution);
+        }
         if (result == null) {
           result = resultExpr;
         } else {
           conArgs.set(recursiveParam, resultExpr);
         }
-        return result;
+        return addSucs(result, sucs);
       }
     }
+  }
+
+  private Expression addSucs(Expression result, int sucs) {
+    if (sucs > 0) {
+      if (result instanceof IntegerExpression) {
+        return ((IntegerExpression) result).plus(sucs);
+      }
+      for (int j = 0; j < sucs; j++) {
+        result = Suc(result);
+      }
+    }
+    return result;
   }
 
   public boolean doesEvaluate(ElimTree elimTree, List<? extends Expression> arguments, boolean might) {
