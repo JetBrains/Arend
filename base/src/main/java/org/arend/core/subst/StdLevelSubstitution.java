@@ -22,4 +22,9 @@ public class StdLevelSubstitution implements LevelSubstitution {
   public Level get(Variable variable) {
     return variable == LevelVariable.PVAR ? myPLevel : variable == LevelVariable.HVAR ? myHLevel : null;
   }
+
+  @Override
+  public LevelSubstitution subst(LevelSubstitution substitution) {
+    return new StdLevelSubstitution(myPLevel.subst(substitution), myHLevel.subst(substitution));
+  }
 }

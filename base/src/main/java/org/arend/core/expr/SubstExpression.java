@@ -3,6 +3,7 @@ package org.arend.core.expr;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
 import org.arend.core.subst.ExprSubstitution;
+import org.arend.core.subst.LevelSubstitution;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
@@ -10,23 +11,28 @@ import org.jetbrains.annotations.NotNull;
 public class SubstExpression extends Expression {
   private final Expression myExpression;
   private final ExprSubstitution mySubstitution;
+  private final LevelSubstitution myLevelSubstitution;
 
-  private SubstExpression(Expression expression, ExprSubstitution substitution) {
+  private SubstExpression(Expression expression, ExprSubstitution substitution, LevelSubstitution levelSubstitution) {
     myExpression = expression;
     mySubstitution = substitution;
+    myLevelSubstitution = levelSubstitution;
   }
 
-  public static Expression make(Expression expression, ExprSubstitution substitution) {
-    if (substitution.isEmpty()) {
+  public static Expression make(Expression expression, ExprSubstitution substitution, LevelSubstitution levelSubstitution) {
+    if (substitution.isEmpty() && levelSubstitution.isEmpty()) {
       return expression;
     }
     if (expression instanceof SubstExpression) {
-      ExprSubstitution newSubstitution = new ExprSubstitution(((SubstExpression) expression).mySubstitution);
+      SubstExpression substExpr = (SubstExpression) expression;
+      ExprSubstitution newSubstitution = new ExprSubstitution(substExpr.mySubstitution);
       newSubstitution.subst(substitution);
       newSubstitution.addAll(substitution);
       substitution = newSubstitution;
+      levelSubstitution = substExpr.myLevelSubstitution.subst(levelSubstitution);
+      expression = substExpr.getExpression();
     }
-    return new SubstExpression(expression, substitution);
+    return new SubstExpression(expression, substitution, levelSubstitution);
   }
 
   public Expression getExpression() {
@@ -37,8 +43,12 @@ public class SubstExpression extends Expression {
     return mySubstitution;
   }
 
+  public LevelSubstitution getLevelSubstitution() {
+    return myLevelSubstitution;
+  }
+
   public Expression getSubstExpression() {
-    return myExpression instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) myExpression).getSubstExpression() == null ? myExpression : myExpression.subst(mySubstitution);
+    return myExpression instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) myExpression).getSubstExpression() == null ? myExpression : myExpression.subst(mySubstitution, myLevelSubstitution);
   }
 
   @Override
@@ -59,7 +69,7 @@ public class SubstExpression extends Expression {
   @NotNull
   @Override
   public Expression getUnderlyingExpression() {
-    return getSubstExpression().getUnderlyingExpression();
+    return myExpression instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) myExpression).getSubstExpression() == null ? this : myExpression.subst(mySubstitution, myLevelSubstitution).getUnderlyingExpression();
   }
 
   @Override

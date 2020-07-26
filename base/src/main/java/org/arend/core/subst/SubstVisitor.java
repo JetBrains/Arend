@@ -117,7 +117,7 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
     }
 
     if (expr.getVariable() instanceof MetaInferenceVariable) {
-      if (Collections.disjoint(expr.getVariable().getBounds(), myExprSubstitution.getKeys())) {
+      if (myLevelSubstitution.isEmpty() && Collections.disjoint(expr.getVariable().getBounds(), myExprSubstitution.getKeys())) {
         return expr;
       }
 
@@ -128,7 +128,7 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
           newSubst.add(var, substExpr);
         }
       }
-      return SubstExpression.make(expr, newSubst);
+      return SubstExpression.make(expr, newSubst, myLevelSubstitution);
     }
 
     //noinspection SuspiciousMethodCalls
@@ -138,10 +138,7 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
 
   @Override
   public Expression visitSubst(SubstExpression expr, Void params) {
-    ExprSubstitution newSubstitution = new ExprSubstitution(expr.getSubstitution());
-    newSubstitution.subst(myExprSubstitution);
-    newSubstitution.addAll(myExprSubstitution);
-    return expr.getExpression().accept(new SubstVisitor(newSubstitution, myLevelSubstitution), null);
+    return SubstExpression.make(expr, myExprSubstitution, myLevelSubstitution);
   }
 
   @Override
