@@ -420,8 +420,8 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
           return resultExpr.subst(substitution, levelSubstitution);
         }
 
-        if (mode != NormalizationMode.RNF && mode != NormalizationMode.RNF_EXP && resultExpr instanceof LetExpression) {
-          while (resultExpr instanceof LetExpression) {
+        while (true) {
+          if (mode != NormalizationMode.RNF && mode != NormalizationMode.RNF_EXP && resultExpr instanceof LetExpression) {
             LetExpression let = (LetExpression) resultExpr;
             if (let.isStrict()) {
               for (LetClause letClause : let.getClauses()) {
@@ -433,34 +433,50 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
               }
             }
             resultExpr = let.getExpression();
-          }
-        }
-
-        if (!(resultExpr instanceof CaseExpression) || ((CaseExpression) resultExpr).isSCase()) {
-          resultExpr = resultExpr.subst(substitution, levelSubstitution);
-          substitution.clear();
-          levelSubstitution = LevelSubstitution.EMPTY;
-          while (resultExpr instanceof LetExpression) {
-            resultExpr = ((LetExpression) resultExpr).getResult();
-          }
-        }
-
-        if (mode != NormalizationMode.WHNF && resultExpr instanceof ConCallExpression) {
-          ConCallExpression conCall = (ConCallExpression) resultExpr;
-          if (conCall.getDefinition() == Prelude.SUC) {
-            sucs++;
-            resultExpr = conCall.getDefCallArguments().get(0);
-          } else if (conCall.getDefinition().getRecursiveParameter() >= 0) {
-            List<Expression> newConArgs = new ArrayList<>(conCall.getDefCallArguments());
-            Expression newExpr = ConCallExpression.make(conCall.getDefinition(), conCall.getSortArgument(), conCall.getDataTypeArguments(), newConArgs);
-            if (conArgs == null) {
-              result = newExpr;
+          } else if (mode != NormalizationMode.WHNF && resultExpr instanceof ConCallExpression) {
+            ConCallExpression conCall = (ConCallExpression) resultExpr;
+            if (conCall.getDefinition() == Prelude.SUC) {
+              sucs++;
+              resultExpr = conCall.getDefCallArguments().get(0);
+            } else if (conCall.getDefinition().getRecursiveParameter() >= 0) {
+              int recParam = conCall.getDefinition().getRecursiveParameter();
+              List<Expression> newDataTypeArgs;
+              List<Expression> newConArgs;
+              if (substitution.isEmpty() && levelSubstitution.isEmpty()) {
+                newDataTypeArgs = conCall.getDataTypeArguments();
+                newConArgs = new ArrayList<>(conCall.getDefCallArguments());
+              } else {
+                newDataTypeArgs = new ArrayList<>(conCall.getDataTypeArguments().size());
+                for (Expression arg : conCall.getDataTypeArguments()) {
+                  newDataTypeArgs.add(arg.subst(substitution, levelSubstitution));
+                }
+                newConArgs = new ArrayList<>(conCall.getDefCallArguments().size());
+                for (int j = 0; j < conCall.getDefCallArguments().size(); j++) {
+                  if (j != recParam) {
+                    newConArgs.add(conCall.getDefCallArguments().get(j).subst(substitution, levelSubstitution));
+                  } else {
+                    newConArgs.add(conCall.getDefCallArguments().get(j));
+                  }
+                }
+              }
+              Expression newExpr = ConCallExpression.make(conCall.getDefinition(), conCall.getSortArgument(), newDataTypeArgs, newConArgs);
+              if (conArgs == null) {
+                result = newExpr;
+              } else {
+                conArgs.set(recursiveParam, newExpr);
+              }
+              conArgs = newConArgs;
+              recursiveParam = recParam;
+              resultExpr = conArgs.get(recursiveParam);
             } else {
-              conArgs.set(recursiveParam, newExpr);
+              break;
             }
-            conArgs = newConArgs;
-            recursiveParam = conCall.getDefinition().getRecursiveParameter();
-            resultExpr = conArgs.get(recursiveParam);
+          } else if ((!substitution.isEmpty() || !levelSubstitution.isEmpty()) && (!(resultExpr instanceof CaseExpression) || ((CaseExpression) resultExpr).isSCase())) {
+            resultExpr = resultExpr.subst(substitution, levelSubstitution);
+            substitution.clear();
+            levelSubstitution = LevelSubstitution.EMPTY;
+          } else {
+            break;
           }
         }
 
@@ -484,6 +500,8 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
 
         if (result == null) {
           result = resultExpr;
+        } else {
+          conArgs.set(recursiveParam, resultExpr);
         }
         return addSucs(result, sucs);
       }
