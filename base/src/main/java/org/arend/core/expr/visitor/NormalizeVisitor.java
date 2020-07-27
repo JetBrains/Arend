@@ -559,7 +559,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
   }
 
   private ElimTree updateStack(Stack<Expression> stack, List<Expression> argList, BranchElimTree branchElimTree) {
-    Expression argument = stack.peek().accept(this, NormalizationMode.WHNF);
+    Expression argument = stack.pop().accept(this, NormalizationMode.WHNF);
     ConCallExpression conCall = argument.cast(ConCallExpression.class);
     Constructor constructor = conCall == null ? null : conCall.getDefinition();
     IntegerExpression intExpr = constructor == null ? argument.cast(IntegerExpression.class) : null;
@@ -573,7 +573,6 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
       constructor = null;
     }
     if (elimTree != null) {
-      stack.pop();
       if (argList != null && branchElimTree.keepConCall()) {
         argList.add(argument);
       }
@@ -600,6 +599,8 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
       for (int i = args.size() - 1; i >= 0; i--) {
         stack.push(args.get(i));
       }
+    } else {
+      stack.push(argument);
     }
 
     return elimTree;
