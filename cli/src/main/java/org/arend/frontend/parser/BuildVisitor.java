@@ -1650,7 +1650,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
 
   private Concrete.Expression visitIncompleteExpression(ExprContext exprCtx, ParserRuleContext parentCtx) {
     if (exprCtx == null) {
-      return new Concrete.IncompleteExpression(new Position(myModule.getModulePath(), parentCtx.stop.getLine(), parentCtx.stop.getCharPositionInLine() + parentCtx.stop.getText().length()));
+      return new Concrete.IncompleteExpression(new Position(myModule.getModulePath(), parentCtx.stop.getLine(), parentCtx.stop.getCharPositionInLine(), parentCtx.stop.getText().length()));
     } else {
       return visitExpr(exprCtx);
     }
@@ -1667,6 +1667,6 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   }
 
   private Position tokenPosition(Token token) {
-    return new Position(myModule.getModulePath(), token.getLine(), token.getCharPositionInLine());
+    return new Position(myModule.getModulePath(), token.getLine(), token.getCharPositionInLine(), token.getText().length());
   }
 }

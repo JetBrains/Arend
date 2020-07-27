@@ -6,8 +6,8 @@ import org.arend.ext.module.ModulePath;
 public class Position extends SourcePosition {
   public final ModulePath module;
 
-  public Position(ModulePath module, int line, int column) {
-    super(module == null ? null : module.toString(), line, column + 1);
+  public Position(ModulePath module, int line, int column, int length) {
+    super(module == null ? null : module.toString(), line, column + 1, length);
     this.module = module;
   }
 

@@ -22,6 +22,6 @@ public class ReporterErrorListener extends BaseErrorListener {
 
   @Override
   public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-    myErrorReporter.report(new ParserError(new Position(myModulePath, line, pos), msg));
+    myErrorReporter.report(new ParserError(new Position(myModulePath, line, pos, 1), msg));
   }
 }
