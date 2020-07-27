@@ -361,8 +361,8 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
     }
   }
 
-  public Stack<Expression> makeStack(List<? extends Expression> arguments) {
-    Stack<Expression> stack = new Stack<>();
+  public Deque<Expression> makeStack(List<? extends Expression> arguments) {
+    Deque<Expression> stack = new ArrayDeque<>();
     for (int i = arguments.size() - 1; i >= 0; i--) {
       stack.push(arguments.get(i));
     }
@@ -392,7 +392,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
   }
 
   public Expression eval(ElimBody elimBody, List<? extends Expression> arguments, ExprSubstitution substitution, LevelSubstitution levelSubstitution, NormalizationMode mode) {
-    Stack<Expression> stack = makeStack(arguments);
+    Deque<Expression> stack = makeStack(arguments);
     List<Expression> argList = new ArrayList<>();
     Expression result = null;
     Expression resultExpr = null;
@@ -537,7 +537,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
   }
 
   public boolean doesEvaluate(ElimTree elimTree, List<? extends Expression> arguments, boolean might) {
-    Stack<Expression> stack = makeStack(arguments);
+    Deque<Expression> stack = makeStack(arguments);
 
     while (true) {
       for (int i = 0; i < elimTree.getSkip(); i++) {
@@ -555,13 +555,13 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
         if (!might) {
           return false;
         }
-        Expression top = stack.peek().getUnderlyingExpression();
+        Expression top = stack.isEmpty() ? null : stack.peek().getUnderlyingExpression();
         return !(top instanceof ConCallExpression || top instanceof IntegerExpression);
       }
     }
   }
 
-  private ElimTree updateStack(Stack<Expression> stack, List<Expression> argList, BranchElimTree branchElimTree) {
+  private ElimTree updateStack(Deque<Expression> stack, List<Expression> argList, BranchElimTree branchElimTree) {
     Expression argument = stack.pop().accept(this, NormalizationMode.WHNF);
     ConCallExpression conCall = argument.cast(ConCallExpression.class);
     Constructor constructor = conCall == null ? null : conCall.getDefinition();
