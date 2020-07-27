@@ -471,6 +471,9 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
             } else {
               break;
             }
+          } else if (resultExpr instanceof FunCallExpression && ((FunCallExpression) resultExpr).getDefinition().getBody() instanceof Expression) {
+            FunCallExpression funCall = (FunCallExpression) resultExpr;
+            resultExpr = ((Expression) funCall.getDefinition().getBody()).subst(DependentLink.Helper.toSubstitution(funCall.getDefinition().getParameters(), funCall.getDefCallArguments()), funCall.getSortArgument().toLevelSubstitution());
           } else if ((!substitution.isEmpty() || !levelSubstitution.isEmpty()) && (!(resultExpr instanceof CaseExpression) || ((CaseExpression) resultExpr).isSCase())) {
             resultExpr = resultExpr.subst(substitution, levelSubstitution);
             substitution.clear();
