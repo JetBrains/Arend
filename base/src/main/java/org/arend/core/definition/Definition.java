@@ -51,6 +51,10 @@ public abstract class Definition implements CoreDefinition {
     return EmptyDependentLink.getInstance();
   }
 
+  public boolean isStrict() {
+    return false;
+  }
+
   protected boolean hasEnclosingClass() {
     return false;
   }

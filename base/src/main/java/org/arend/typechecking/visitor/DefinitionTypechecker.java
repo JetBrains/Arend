@@ -666,6 +666,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         expectedType = new ErrorExpression();
       }
 
+      if (def.isStrict()) {
+        typedDef.setStrict();
+      }
       typedDef.setParameters(list.getFirst());
       typedDef.setResultType(expectedType);
       typedDef.setStatus(Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING);

@@ -465,7 +465,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       throw new IllegalStateException();
     }
 
-    Concrete.FunctionDefinition funcDef = new Concrete.FunctionDefinition(isInstance ? FunctionKind.INSTANCE : FunctionKind.CONS, reference, parameters, returnPair.proj1, returnPair.proj2, body);
+    Concrete.FunctionDefinition funcDef = new Concrete.FunctionDefinition(ctx.instanceKw() instanceof FuncKwConsStrictContext, isInstance ? FunctionKind.INSTANCE : FunctionKind.CONS, reference, parameters, returnPair.proj1, returnPair.proj2, body);
     if (coClauses != null) {
       visitCoClauses(coClauses, subgroups, resultGroup, reference, body.getCoClauseElements());
     }
@@ -555,7 +555,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
 
     FuncKwContext funcKw = ctx.funcKw();
     boolean isUse = funcKw instanceof FuncKwUseContext;
-    Concrete.FunctionDefinition funDef = Concrete.UseDefinition.make(
+    Concrete.FunctionDefinition funDef = Concrete.UseDefinition.make(funcKw instanceof FuncKwFuncStrictContext,
       isUse ? (((FuncKwUseContext) funcKw).useMod() instanceof UseCoerceContext
               ? FunctionKind.COERCE
               : FunctionKind.LEVEL)

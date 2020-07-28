@@ -1869,6 +1869,10 @@ public final class Concrete {
       myBody = body;
     }
 
+    public boolean isStrict() {
+      return false;
+    }
+
     @NotNull
     public abstract FunctionKind getKind();
 
@@ -1911,13 +1915,20 @@ public final class Concrete {
   }
 
   public static class FunctionDefinition extends BaseFunctionDefinition {
+    private final boolean myStrict;
     private final FunctionKind myKind;
     private List<TCReferable> myUsedDefinitions = Collections.emptyList();
 
-    public FunctionDefinition(FunctionKind kind, TCReferable referable, List<Parameter> parameters, Expression resultType, Expression resultTypeLevel, FunctionBody body) {
+    public FunctionDefinition(boolean isStrict, FunctionKind kind, TCReferable referable, List<Parameter> parameters, Expression resultType, Expression resultTypeLevel, FunctionBody body) {
       super(referable, parameters, resultType, resultTypeLevel, body);
+      myStrict = isStrict;
       myKind = kind;
       stage = Stage.NOT_RESOLVED;
+    }
+
+    @Override
+    public boolean isStrict() {
+      return myStrict;
     }
 
     @Override
@@ -1939,13 +1950,13 @@ public final class Concrete {
   public static class UseDefinition extends FunctionDefinition {
     private final TCReferable myCoerceParent;
 
-    private UseDefinition(FunctionKind kind, TCReferable referable, List<Parameter> parameters, Expression resultType, Expression resultTypeLevel, FunctionBody body, TCReferable coerceParent) {
-      super(kind, referable, parameters, resultType, resultTypeLevel, body);
+    private UseDefinition(boolean isStrict, FunctionKind kind, TCReferable referable, List<Parameter> parameters, Expression resultType, Expression resultTypeLevel, FunctionBody body, TCReferable coerceParent) {
+      super(isStrict, kind, referable, parameters, resultType, resultTypeLevel, body);
       myCoerceParent = coerceParent;
     }
 
-    public static FunctionDefinition make(FunctionKind kind, TCReferable referable, List<Parameter> parameters, Expression resultType, Expression resultTypeLevel, FunctionBody body, LocatedReferable coerceParent) {
-      return coerceParent instanceof TCReferable && kind.isUse() ? new UseDefinition(kind, referable, parameters, resultType, resultTypeLevel, body, (TCReferable) coerceParent) : new FunctionDefinition(kind.isUse() ? FunctionKind.FUNC : kind, referable, parameters, resultType, resultTypeLevel, body);
+    public static FunctionDefinition make(boolean isStrict, FunctionKind kind, TCReferable referable, List<Parameter> parameters, Expression resultType, Expression resultTypeLevel, FunctionBody body, LocatedReferable coerceParent) {
+      return coerceParent instanceof TCReferable && kind.isUse() ? new UseDefinition(isStrict, kind, referable, parameters, resultType, resultTypeLevel, body, (TCReferable) coerceParent) : new FunctionDefinition(isStrict, kind.isUse() ? FunctionKind.FUNC : kind, referable, parameters, resultType, resultTypeLevel, body);
     }
 
     public TCReferable getUseParent() {

@@ -121,7 +121,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       Abstract.Reference implementedField = def.getImplementedField();
       result = new Concrete.CoClauseFunctionDefinition(myDefinition, parentRef, implementedField == null ? null : implementedField.getReferent(), parameters, type, typeLevel, body);
     } else {
-      result = Concrete.UseDefinition.make(def.getFunctionKind(), myDefinition, parameters, type, typeLevel, body, parentRef);
+      result = Concrete.UseDefinition.make(def.isStrict(), def.getFunctionKind(), myDefinition, parameters, type, typeLevel, body, parentRef);
     }
     setEnclosingClass(result, def);
     if (result instanceof Concrete.FunctionDefinition) {

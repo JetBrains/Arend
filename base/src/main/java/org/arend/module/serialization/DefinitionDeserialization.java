@@ -341,6 +341,9 @@ public class DefinitionDeserialization implements ArendDeserializer {
     if (functionProto.getHasEnclosingClass()) {
       functionDef.setHasEnclosingClass(true);
     }
+    if (functionProto.getIsStrict()) {
+      functionDef.setStrict();
+    }
     functionDef.setParameters(defDeserializer.readParameters(functionProto.getParamList()));
     List<Integer> parametersTypecheckingOrder = functionProto.getParametersTypecheckingOrderList();
     if (!parametersTypecheckingOrder.isEmpty()) {

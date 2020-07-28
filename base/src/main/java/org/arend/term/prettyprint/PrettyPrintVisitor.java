@@ -12,7 +12,6 @@ import org.arend.term.Fixity;
 import org.arend.term.FunctionKind;
 import org.arend.term.concrete.*;
 import org.arend.term.concrete.Concrete.BinOpSequenceElem;
-import org.arend.term.concrete.Concrete.Constructor;
 import org.arend.term.concrete.Concrete.Expression;
 import org.arend.term.concrete.Concrete.ReferenceExpression;
 import org.arend.util.StringEscapeUtils;
@@ -840,7 +839,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     myBuilder.append("\n");
     myIndent += INDENT;
     printIndent();
-    String let = "\\let ";
+    String let = expr.isStrict() ? "\\let! " : "\\let ";
     myBuilder.append(let);
 
     final int INDENT0 = let.length();
@@ -954,7 +953,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   public Void visitFunction(final Concrete.BaseFunctionDefinition def, Void ignored) {
     printIndent();
     switch (def.getKind()) {
-      case FUNC: myBuilder.append("\\func "); break;
+      case FUNC: myBuilder.append(def.isStrict() ? "\\func! " : "\\func "); break;
       case COCLAUSE_FUNC: myBuilder.append("| "); break;
       case LEMMA: myBuilder.append("\\lemma "); break;
       case LEVEL: myBuilder.append("\\use \\level "); break;
@@ -1063,7 +1062,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
           void printRight(PrettyPrintVisitor pp) {
             new ListLayout<Concrete.Constructor>(){
               @Override
-              void printListElement(PrettyPrintVisitor ppv, Constructor constructor) {
+              void printListElement(PrettyPrintVisitor ppv, Concrete.Constructor constructor) {
                 ppv.visitConstructor(constructor);
               }
 

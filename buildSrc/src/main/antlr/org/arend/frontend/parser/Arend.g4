@@ -43,6 +43,7 @@ returnExpr  : expr ('\\level' expr)?                # returnExprExpr
             ;
 
 funcKw      : '\\func'            # funcKwFunc
+            | '\\func!'           # funcKwFuncStrict
             | '\\sfunc'           # funcKwSFunc
             | '\\lemma'           # funcKwLemma
             | '\\use' useMod      # funcKwUse
@@ -50,6 +51,7 @@ funcKw      : '\\func'            # funcKwFunc
 
 instanceKw  : '\\instance'        # funcKwInstance
             | '\\cons'            # funcKwCons
+            | '\\cons!'           # funcKwConsStrict
             ;
 
 useMod    : '\\coerce'          # useCoerce

@@ -352,13 +352,32 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
     }
 
     if (body instanceof Expression) {
-      return mode == NormalizationMode.RNF || mode == NormalizationMode.RNF_EXP ? null : ((Expression) body).subst(getDataTypeArgumentsSubstitution(expr).add(definition.getParameters(), defCallArgs), expr.getSortArgument().toLevelSubstitution());
+      return mode == NormalizationMode.RNF || mode == NormalizationMode.RNF_EXP ? null : ((Expression) body).subst(addArguments(getDataTypeArgumentsSubstitution(expr), definition.getParameters(), defCallArgs, definition.isStrict()), expr.getSortArgument().toLevelSubstitution());
     } else if (body instanceof ElimBody) {
+      if (definition.isStrict()) {
+        List<Expression> normDefCalls = new ArrayList<>(defCallArgs.size());
+        for (Expression arg : defCallArgs) {
+          normDefCalls.add(arg.accept(this, NormalizationMode.WHNF));
+        }
+        defCallArgs = normDefCalls;
+      }
       return eval((ElimBody) body, defCallArgs, getDataTypeArgumentsSubstitution(expr), expr.getSortArgument().toLevelSubstitution(), mode);
     } else {
       assert body == null;
       return null;
     }
+  }
+
+  private ExprSubstitution addArguments(ExprSubstitution substitution, DependentLink link, List<? extends Expression> args, boolean isStrict) {
+    if (isStrict) {
+      for (Expression arg : args) {
+        substitution.add(link, arg.accept(this, NormalizationMode.WHNF));
+        link = link.getNext();
+      }
+    } else {
+      substitution.add(link, args);
+    }
+    return substitution;
   }
 
   public Deque<Expression> makeStack(List<? extends Expression> arguments) {
@@ -473,7 +492,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
             }
           } else if (resultExpr instanceof FunCallExpression && ((FunCallExpression) resultExpr).getDefinition().getBody() instanceof Expression) {
             FunCallExpression funCall = (FunCallExpression) resultExpr;
-            resultExpr = ((Expression) funCall.getDefinition().getBody()).subst(DependentLink.Helper.toSubstitution(funCall.getDefinition().getParameters(), funCall.getDefCallArguments()), funCall.getSortArgument().toLevelSubstitution());
+            resultExpr = ((Expression) funCall.getDefinition().getBody()).subst(addArguments(new ExprSubstitution(), funCall.getDefinition().getParameters(), funCall.getDefCallArguments(), funCall.getDefinition().isStrict()), funCall.getSortArgument().toLevelSubstitution());
           } else if (resultExpr instanceof ReferenceExpression && ((ReferenceExpression) resultExpr).getBinding() instanceof EvaluatingBinding) {
             resultExpr = ((EvaluatingBinding) ((ReferenceExpression) resultExpr).getBinding()).getExpression();
           } else if ((!substitution.isEmpty() || !levelSubstitution.isEmpty()) && (!(resultExpr instanceof CaseExpression) || ((CaseExpression) resultExpr).isSCase())) {
@@ -497,8 +516,10 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
             levelSubstitution = ((FunCallExpression) resultExpr).getSortArgument().toLevelSubstitution();
           }
           List<? extends Expression> args = resultExpr instanceof FunCallExpression ? ((FunCallExpression) resultExpr).getDefCallArguments() : ((CaseExpression) resultExpr).getArguments();
+          boolean isStrict = resultExpr instanceof FunCallExpression && ((FunCallExpression) resultExpr).getDefinition().isStrict();
           for (int j = args.size() - 1; j >= 0; j--) {
-            stack.push(resultExpr instanceof CaseExpression ? args.get(j).subst(substitution, levelSubstitution) : args.get(j));
+            Expression arg = isStrict ? args.get(j).accept(this, NormalizationMode.WHNF) : args.get(j);
+            stack.push(resultExpr instanceof CaseExpression ? arg.subst(substitution, levelSubstitution) : arg);
           }
           continue;
         }

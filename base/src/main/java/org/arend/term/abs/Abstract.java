@@ -216,6 +216,7 @@ public final class Abstract {
     @NotNull Collection<? extends LocatedReferable> getUsedDefinitions();
     boolean withTerm();
     boolean isCowith();
+    boolean isStrict();
     FunctionKind getFunctionKind();
     @Nullable Reference getImplementedField();
   }
