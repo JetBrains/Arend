@@ -2123,6 +2123,8 @@ public final class Concrete {
       myExplicit = isExplicit;
     }
 
+    public abstract Pattern copy();
+
     @NotNull
     @Override
     public ConcretePattern implicit() {
@@ -2158,6 +2160,13 @@ public final class Concrete {
     public int getNumber() {
       return myNumber;
     }
+
+    @Override
+    public Pattern copy() {
+      NumberPattern result = new NumberPattern(getData(), myNumber, getAsReferables());
+      result.setExplicit(isExplicit());
+      return result;
+    }
   }
 
   public static class NamePattern extends Pattern {
@@ -2174,6 +2183,11 @@ public final class Concrete {
     @Nullable
     public Referable getReferable() {
       return myReferable;
+    }
+
+    @Override
+    public Pattern copy() {
+      return new NamePattern(getData(), isExplicit(), myReferable, type);
     }
 
     @NotNull
@@ -2235,6 +2249,11 @@ public final class Concrete {
     public ConstructorPattern getSourceNode() {
       return this;
     }
+
+    @Override
+    public Pattern copy() {
+      return new ConstructorPattern(getData(), isExplicit(), myConstructor, myArguments, getAsReferables());
+    }
   }
 
   public static class TuplePattern extends Pattern {
@@ -2253,6 +2272,11 @@ public final class Concrete {
 
     public List<Pattern> getPatterns() {
       return myPatterns;
+    }
+
+    @Override
+    public Pattern copy() {
+      return new TuplePattern(getData(), isExplicit(), myPatterns, getAsReferables());
     }
   }
 }
