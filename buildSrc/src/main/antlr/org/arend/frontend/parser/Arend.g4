@@ -34,7 +34,7 @@ definition  : funcKw defId tele* (':' returnExpr)? functionBody where?          
             | TRUNCATED? '\\data' defId tele* (':' expr)? dataBody where?                                       # defData
             | classKw defId NO_CLASSIFYING? fieldTele* ('\\extends' longName (',' longName)*)? classBody where? # defClass
             | '\\module' defId where?                                                                           # defModule
-            | '\\meta' defId where?                                                                             # defMeta
+            | '\\meta' defId (ID* '=>' expr)? where?                                                                             # defMeta
             | instanceKw defId tele* (':' returnExpr)? instanceBody where?                                      # defInstance
             ;
 

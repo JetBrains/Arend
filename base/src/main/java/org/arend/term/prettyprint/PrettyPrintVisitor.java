@@ -10,11 +10,14 @@ import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.term.Fixity;
 import org.arend.term.FunctionKind;
-import org.arend.term.concrete.*;
+import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.Concrete.BinOpSequenceElem;
 import org.arend.term.concrete.Concrete.Constructor;
 import org.arend.term.concrete.Concrete.Expression;
 import org.arend.term.concrete.Concrete.ReferenceExpression;
+import org.arend.term.concrete.ConcreteDefinitionVisitor;
+import org.arend.term.concrete.ConcreteExpressionVisitor;
+import org.arend.term.concrete.ConcreteLevelExpressionVisitor;
 import org.arend.util.StringEscapeUtils;
 
 import java.util.*;
@@ -1309,6 +1312,65 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       printIndent();
       myBuilder.append("}");
     }
+
+    return null;
+  }
+
+  @Override
+  public Void visitMeta(Concrete.MetaDefinition def, Void params) {
+    myBuilder.append("\\meta ");
+    prettyPrintNameWithPrecedence(def.getData());
+    for (var parameter : def.parameters) {
+      myBuilder.append(" ").append(
+        Objects.requireNonNull(parameter.getReferable()).textRepresentation());
+    }
+    myBuilder.append(" => ");
+
+    final BinOpLayout l = new BinOpLayout(){
+      @Override
+      void printLeft(PrettyPrintVisitor pp) {
+        pp.prettyPrintParameters(def.getParameters(), Concrete.ReferenceExpression.PREC);
+      }
+
+      @Override
+      void printRight(PrettyPrintVisitor pp) {
+      }
+
+      @Override
+      boolean printSpaceBefore() {
+        return def.getParameters().size() > 0;
+      }
+
+      @Override
+      String getOpText() {
+        return "";
+      }
+    };
+
+    final BinOpLayout r = new BinOpLayout(){
+      @Override
+      String getOpText() {
+        return "";
+      }
+
+      @Override
+      void printRight(PrettyPrintVisitor pp) {
+        def.body.accept(pp, new Precedence(Concrete.Expression.PREC));
+      }
+
+      @Override
+      void printLeft(PrettyPrintVisitor pp) {
+        l.printLeft(pp);
+      }
+
+      @Override
+      boolean printSpaceBefore() { return true; }
+
+      @Override
+      boolean printSpaceAfter() { return false; }
+    };
+
+    r.doPrettyPrint(this, noIndent);
 
     return null;
   }

@@ -136,6 +136,17 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   }
 
   @Override
+  public List<ExtElimClause> visitMeta(Concrete.MetaDefinition def, Void params) {
+    Definition typechecked = def.getData().getTypechecked();
+    var localInstancePool = new LocalInstancePool(typechecker);
+    myInstancePool.setInstancePool(localInstancePool);
+    typechecker.setInstancePool(myInstancePool);
+
+    // TODO: produce a meta definition here
+    return null;
+  }
+
+  @Override
   public List<ExtElimClause> visitFunction(Concrete.BaseFunctionDefinition def, Void params) {
     Definition typechecked = def.getData().getTypechecked();
     LocalInstancePool localInstancePool = new LocalInstancePool(typechecker);

@@ -7,7 +7,10 @@ import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.error.NameResolverError;
 import org.arend.ext.reference.Precedence;
-import org.arend.naming.error.*;
+import org.arend.naming.error.DuplicateNameError;
+import org.arend.naming.error.DuplicateOpenedNameError;
+import org.arend.naming.error.ExistingOpenedNameError;
+import org.arend.naming.error.ReferenceError;
 import org.arend.naming.reference.*;
 import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.naming.reference.converter.ReferableConverter;
@@ -168,6 +171,41 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     if (prec.priority < 0 || prec.priority > 10) {
       myLocalErrorReporter.report(new ParsingError(ParsingError.Kind.INVALID_PRIORITY, definition));
     }
+  }
+
+  @Override
+  public Void visitMeta(Concrete.MetaDefinition def, Scope scope) {
+    if (def.getStage().ordinal() >= Concrete.Stage.RESOLVED.ordinal()) {
+      return null;
+    }
+
+    if (myResolverListener != null) {
+      myResolverListener.beforeDefinitionResolved(def);
+    }
+
+    myLocalErrorReporter = new ConcreteProxyErrorReporter(def);
+    if (myResolveTypeClassReferences) {
+      if (def.getStage() == Concrete.Stage.NOT_RESOLVED)
+        resolveTypeClassReference(def.getParameters(), def.getBody(), scope, false);
+      def.setTypeClassReferencesResolved();
+      return null;
+    }
+
+    checkNameAndPrecedence(def);
+
+    List<Referable> context = new ArrayList<>();
+    var exprVisitor = new ExpressionResolveNameVisitor(myReferableConverter, scope, context, myLocalErrorReporter, myResolverListener);
+    exprVisitor.visitParameters(def.getParameters(), null);
+
+    def.body = def.getBody().accept(exprVisitor, null);
+
+    def.setResolved();
+    def.accept(new SyntacticDesugarVisitor(myLocalErrorReporter), null);
+    if (myResolverListener != null) {
+      myResolverListener.definitionResolved(def);
+    }
+
+    return null;
   }
 
   @Override

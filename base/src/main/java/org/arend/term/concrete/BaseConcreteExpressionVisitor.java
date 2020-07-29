@@ -290,6 +290,13 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
   }
 
   @Override
+  public Void visitMeta(Concrete.MetaDefinition def, P params) {
+    visitParameters(def.parameters, params);
+    def.body = def.body.accept(this, params);
+    return null;
+  }
+
+  @Override
   public Void visitClass(Concrete.ClassDefinition def, P params) {
     List<Concrete.ClassField> classFields = new ArrayList<>();
     for (Concrete.ClassElement element : def.getElements()) {

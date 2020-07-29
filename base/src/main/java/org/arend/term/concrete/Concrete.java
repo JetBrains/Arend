@@ -1542,6 +1542,33 @@ public final class Concrete {
     }
   }
 
+  /**
+   * User-defined meta in Arend, not Java extension meta.
+   */
+  public static class MetaDefinition extends Definition {
+    public final List<NameParameter> parameters;
+    public Expression body;
+
+    public MetaDefinition(TCReferable referable, List<NameParameter> parameters, Expression body) {
+      super(referable);
+      this.parameters = parameters;
+      this.body = body;
+    }
+
+    public List<NameParameter> getParameters() {
+      return parameters;
+    }
+
+    public Expression getBody() {
+      return body;
+    }
+
+    @Override
+    public <P, R> R accept(ConcreteDefinitionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitMeta(this, params);
+    }
+  }
+
   public static class ClassDefinition extends Definition {
     private final boolean myRecord;
     private final boolean myWithoutClassifying;

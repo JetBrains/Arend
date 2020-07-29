@@ -2,6 +2,7 @@ package org.arend.frontend.parser;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.reference.Precedence;
@@ -19,6 +20,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.arend.frontend.parser.ArendParser.*;
 
@@ -172,8 +174,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       DefModuleContext moduleCtx = (DefModuleContext) ctx;
       return visitDefModule(moduleCtx.defId(), moduleCtx.where(), parent, enclosingClass);
     } else if (ctx instanceof DefMetaContext) {
-      DefMetaContext metaCtx = (DefMetaContext) ctx;
-      return visitDefModule(metaCtx.defId(), metaCtx.where(), parent, enclosingClass);
+      return visitDefMeta((DefMetaContext) ctx, parent, enclosingClass);
     } else {
       if (ctx != null) {
         myErrorReporter.report(new ParserError(tokenPosition(ctx.start), "Unknown definition"));
@@ -531,6 +532,31 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return new Pair<>(resultType, resultTypeLevel);
   }
 
+  private StaticGroup visitDefMeta(DefMetaContext ctx, ChildGroup parent, TCReferable enclosingClass) {
+    var defId = ctx.defId();
+    var where = ctx.where();
+    List<Group> staticSubgroups = where == null ? Collections.emptyList() : new ArrayList<>();
+    List<ChildNamespaceCommand> namespaceCommands = where == null ? Collections.emptyList() : new ArrayList<>();
+
+    String name = defId.ID().getText();
+    var precedence = visitPrecedence(defId.precedence());
+    var alias = visitAlias(defId.alias());
+    var reference = makeReferable(tokenPosition(defId.ID().getSymbol()), name, precedence, alias.proj1, alias.proj2, parent, GlobalReferable.Kind.OTHER);
+    var body = ctx.expr();
+    if (body != null) {
+      var params = ctx.ID().stream()
+        .map(r -> new Concrete.NameParameter(tokenPosition(r.getSymbol()), true, new LocalReferable(r.getText())))
+        .collect(Collectors.toList());
+      var metaDef = new Concrete.MetaDefinition(reference, params, visitExpr(body));
+      metaDef.enclosingClass = enclosingClass;
+      reference.setDefinition(metaDef);
+    }
+
+    var resultGroup = new StaticGroup(reference, staticSubgroups, namespaceCommands, parent);
+    visitWhere(where, staticSubgroups, namespaceCommands, resultGroup, enclosingClass);
+    return resultGroup;
+  }
+
   private StaticGroup visitDefFunction(DefFunctionContext ctx, ChildGroup parent, TCReferable enclosingClass) {
     Concrete.FunctionBody body;
     FunctionBodyContext functionBodyCtx = ctx.functionBody();
@@ -774,16 +800,11 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   }
 
   private StaticGroup visitDefModule(DefIdContext defId, WhereContext where, ChildGroup parent, TCReferable enclosingClass) {
-    var position = tokenPosition(defId.ID().getSymbol());
     List<Group> staticSubgroups = where == null ? Collections.emptyList() : new ArrayList<>();
     List<ChildNamespaceCommand> namespaceCommands = where == null ? Collections.emptyList() : new ArrayList<>();
 
-    String name = defId.ID().getText();
-    Precedence precedence = visitPrecedence(defId.precedence());
     Pair<String, Precedence> alias = visitAlias(defId.alias());
-    ConcreteLocatedReferable reference = parent instanceof FileGroup
-        ? new ConcreteLocatedReferable(position, name, precedence, alias.proj1, alias.proj2, myModule, GlobalReferable.Kind.OTHER)
-        : new ConcreteLocatedReferable(position, name, precedence, alias.proj1, alias.proj2, (TCReferable) parent.getReferable(), GlobalReferable.Kind.OTHER);
+    var reference = makeReferable(tokenPosition(defId.ID().getSymbol()), defId.ID().getText(), visitPrecedence(defId.precedence()), alias.proj1, alias.proj2, parent, GlobalReferable.Kind.OTHER);
 
     StaticGroup resultGroup = new StaticGroup(reference, staticSubgroups, namespaceCommands, parent);
     visitWhere(where, staticSubgroups, namespaceCommands, resultGroup, enclosingClass);
