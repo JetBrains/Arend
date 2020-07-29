@@ -194,7 +194,7 @@ public class PatternTypechecking {
     }
   }
 
-  public Result typecheckPatterns(List<? extends Concrete.Pattern> patterns, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, ExprSubstitution substitution, ExprSubstitution totalSubst, List<DependentLink> elimParams, Concrete.SourceNode sourceNode) {
+  public Result typecheckPatterns(List<Concrete.Pattern> patterns, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, ExprSubstitution substitution, ExprSubstitution totalSubst, List<DependentLink> elimParams, Concrete.SourceNode sourceNode) {
     assert myVisitor != null;
     myContext = myVisitor.getContext();
     if (myMode.isContextFree()) {
@@ -230,7 +230,7 @@ public class PatternTypechecking {
   }
 
   @TestOnly
-  Pair<List<ExpressionPattern>, Map<Referable, Binding>> typecheckPatterns(List<? extends Concrete.Pattern> patterns, DependentLink parameters, Concrete.SourceNode sourceNode, @SuppressWarnings("SameParameterValue") boolean withElim) {
+  Pair<List<ExpressionPattern>, Map<Referable, Binding>> typecheckPatterns(List<Concrete.Pattern> patterns, DependentLink parameters, Concrete.SourceNode sourceNode, @SuppressWarnings("SameParameterValue") boolean withElim) {
     myContext = myVisitor == null ? new HashMap<>() : myVisitor.getContext();
     Result result = doTypechecking(patterns, parameters, new LinkList(), new ExprSubstitution(), null, sourceNode, withElim);
     if (result == null) {
@@ -274,7 +274,7 @@ public class PatternTypechecking {
     }
   }
 
-  private Result doTypechecking(List<? extends Concrete.Pattern> patterns, DependentLink parameters, ExprSubstitution paramSubst, ExprSubstitution totalSubst, List<DependentLink> elimParams, Concrete.SourceNode sourceNode) {
+  private Result doTypechecking(List<Concrete.Pattern> patterns, DependentLink parameters, ExprSubstitution paramSubst, ExprSubstitution totalSubst, List<DependentLink> elimParams, Concrete.SourceNode sourceNode) {
     // Put patterns in the correct order
     // If some parameters are not eliminated (i.e. absent in elimParams), then we put null in corresponding patterns
     if (!elimParams.isEmpty()) {
@@ -329,12 +329,13 @@ public class PatternTypechecking {
     }
   }
 
-  private Result doTypechecking(List<? extends Concrete.Pattern> patterns, DependentLink parameters, LinkList linkList, ExprSubstitution paramsSubst, ExprSubstitution totalSubst, Concrete.SourceNode sourceNode, boolean withElim) {
+  private Result doTypechecking(List<Concrete.Pattern> patterns, DependentLink parameters, LinkList linkList, ExprSubstitution paramsSubst, ExprSubstitution totalSubst, Concrete.SourceNode sourceNode, boolean withElim) {
     List<ExpressionPattern> result = new ArrayList<>();
     List<Expression> exprs = new ArrayList<>();
     ExprSubstitution varSubst = new ExprSubstitution();
 
-    for (Concrete.Pattern pattern : patterns) {
+    for (int k = 0; k < patterns.size(); k++) {
+      Concrete.Pattern pattern = patterns.get(k);
       if (!parameters.hasNext()) {
         myErrorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.TOO_MANY_PATTERNS, pattern));
         return null;
@@ -555,13 +556,22 @@ public class PatternTypechecking {
             sortArg = Sort.generateInferVars(myVisitor.getEquations(), def.getUniverseKind(), conPattern);
             LevelSubstitution levelSubst = sortArg.toLevelSubstitution();
 
-            if (constructor.getNumberOfParameters() > 0) {
+            FreeVariablesCollector collector = new FreeVariablesCollector();
+            constructor.getResultType().accept(collector, null);
+            if (constructor.getNumberOfParameters() > 0 || !collector.getResult().isEmpty()) {
               Set<Binding> bindings = myVisitor.getAllBindings();
-              for (int i = 0; i < constructor.getNumberOfParameters(); i++) {
+              int i = 0;
+              for (; i < constructor.getNumberOfParameters(); i++) {
                 Expression arg = new InferenceReferenceExpression(new FunctionInferenceVariable(constructor, link, i + 1, link.getTypeExpr().subst(substitution, levelSubst), conPattern, bindings), myVisitor.getEquations());
                 args.add(arg);
                 substitution.add(link, arg);
+                collector.getResult().remove(link);
                 link = link.getNext();
+              }
+              if (!collector.getResult().isEmpty()) {
+                for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext(), i++) {
+                  substitution.add(link1, new InferenceReferenceExpression(new FunctionInferenceVariable(constructor, link1, i + 1, link1.getTypeExpr().subst(substitution, levelSubst), conPattern, bindings), myVisitor.getEquations()));
+                }
               }
             }
 
@@ -570,6 +580,37 @@ public class PatternTypechecking {
               myErrorReporter.report(new TypeMismatchError(expr, actualType, conPattern));
               return null;
             }
+            myVisitor.getEquations().solveEquations();
+
+            Map<DependentLink, Concrete.Pattern> concretePatterns = new HashMap<>();
+            DependentLink param = constructor.getParameters();
+            for (int j = 0; j < constructor.getNumberOfParameters() && param.hasNext(); j++) {
+              param = param.getNext();
+            }
+
+            for (Concrete.Pattern subPattern : conPattern.getPatterns()) {
+              while (param.hasNext() && subPattern.isExplicit() && !param.isExplicit()) {
+                param = param.getNext();
+              }
+              if (!param.hasNext()) {
+                break;
+              }
+
+              if (param.isExplicit() != subPattern.isExplicit()) {
+                myErrorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.EXPECTED_EXPLICIT_PATTERN, subPattern));
+                continue;
+              }
+
+              concretePatterns.put(param, subPattern);
+              param = param.getNext();
+            }
+
+            if (param.hasNext()) {
+              myErrorReporter.report(new NotEnoughPatternsError(DependentLink.Helper.size(param), conPattern));
+            }
+
+            patterns.set(k--, constructor.getPattern().toConcrete(conPattern.getData(), conPattern.isExplicit(), concretePatterns));
+            continue;
           }
           myVisitor.getEquations().solveEquations();
           LevelSubstitution levelSolution = myFinal ? myVisitor.getEquations().solveLevels(conPattern) : LevelSubstitution.EMPTY;
@@ -588,9 +629,17 @@ public class PatternTypechecking {
           }
 
           Map<DependentLink, ExpressionPattern> patternSubst = new HashMap<>();
+          DependentLink link1 = link;
           for (ExpressionPattern patternArg : conResult.patterns) {
-            patternSubst.put(link, patternArg);
-            link = link.getNext();
+            patternSubst.put(link1, patternArg);
+            link1 = link1.getNext();
+          }
+          if (conResult.exprs != null) {
+            link1 = link;
+            for (Expression expression : conResult.exprs) {
+              substitution.add(link1, expression);
+              link1 = link1.getNext();
+            }
           }
 
           substitution.subst(conResult.varSubst);
@@ -655,7 +704,7 @@ public class PatternTypechecking {
 
       Constructor constructor = conPattern.getConstructor() instanceof GlobalReferable ? dataCall.getDefinition().getConstructor((GlobalReferable) conPattern.getConstructor()) : null;
       List<ConCallExpression> conCalls = new ArrayList<>(1);
-      if (constructor == null || !dataCall.getMatchedConCall(constructor, conCalls) || conCalls.isEmpty() ) {
+      if (constructor == null || !dataCall.getMatchedConCall(constructor, conCalls) || conCalls.isEmpty()) {
         Referable conRef = conPattern.getConstructor();
         if (constructor != null || conRef instanceof TCReferable && ((TCReferable) conRef).getKind() == GlobalReferable.Kind.CONSTRUCTOR) {
           myErrorReporter.report(new ExpectedConstructorError((GlobalReferable) conRef, dataCall, conPattern));

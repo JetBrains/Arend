@@ -59,6 +59,26 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Expression>
   }
 
   @Override
+  public Concrete.Pattern toConcrete(Object data, boolean isExplicit, Map<DependentLink, Concrete.Pattern> subPatterns) {
+    Definition definition = getDefinition();
+    DependentLink param = definition != null ? definition.getParameters() : EmptyDependentLink.getInstance();
+
+    List<Concrete.Pattern> patterns = new ArrayList<>();
+    for (ExpressionPattern subPattern : getSubPatterns()) {
+      patterns.add(subPattern.toConcrete(data, !param.hasNext() || param.isExplicit(), subPatterns));
+      if (param.hasNext()) {
+        param = param.getNext();
+      }
+    }
+
+    if (definition != null && !(definition instanceof ClassDefinition)) {
+      return new Concrete.ConstructorPattern(data, isExplicit, definition.getRef(), patterns, Collections.emptyList());
+    } else {
+      return new Concrete.TuplePattern(data, isExplicit, patterns, Collections.emptyList());
+    }
+  }
+
+  @Override
   public DependentLink replaceBindings(DependentLink link, List<Pattern> result) {
     List<ExpressionPattern> subPatterns = new ArrayList<>();
     result.add(new ConstructorExpressionPattern(data, subPatterns));

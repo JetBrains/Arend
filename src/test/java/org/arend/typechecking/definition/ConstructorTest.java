@@ -244,4 +244,13 @@ public class ConstructorTest extends TypeCheckingTestCase {
     typeCheckDef("\\cons test => suc {?}", 1);
     assertThatErrorsAre(goalError());
   }
+
+  @Test
+  public void dependentTypeTest() {
+    typeCheckModule(
+      "\\data D (n : Nat) | con {m : Nat} (m = n)\n" +
+      "\\cons con2 (x : Nat) : D x => con idp\n" +
+      "\\func f (d : D 0) : Nat | con2 y => y\n" +
+      "\\func test : f (con idp) = 0 => idp");
+  }
 }

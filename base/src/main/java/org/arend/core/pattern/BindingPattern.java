@@ -56,6 +56,16 @@ public class BindingPattern implements ExpressionPattern {
   }
 
   @Override
+  public Concrete.Pattern toConcrete(Object data, boolean isExplicit, Map<DependentLink, Concrete.Pattern> subPatterns) {
+    Concrete.Pattern subPattern = subPatterns.get(myBinding);
+    if (subPattern != null && subPattern.isExplicit() != isExplicit) {
+      subPattern = subPattern.copy();
+      subPattern.setExplicit(isExplicit);
+    }
+    return subPattern == null ? new Concrete.NamePattern(data, isExplicit, null, null) : subPattern;
+  }
+
+  @Override
   public DependentLink replaceBindings(DependentLink link, List<Pattern> result) {
     result.add(new BindingPattern(link));
     return link.getNext();
