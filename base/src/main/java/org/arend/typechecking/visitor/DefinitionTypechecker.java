@@ -143,7 +143,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     typechecker.setInstancePool(myInstancePool);
 
     // TODO: produce a meta definition here
-    return null;
+    throw new UnsupportedOperationException();
   }
 
   @Override
