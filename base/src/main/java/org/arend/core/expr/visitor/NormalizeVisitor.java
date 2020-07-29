@@ -103,7 +103,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
     ConCallExpression conCall2 = arg2.cast(ConCallExpression.class);
     while (conCall2 != null && conCall2.getDefinition() == Prelude.SUC) {
       result = Suc(result);
-      arg2 = conCall2.getDefCallArguments().get(0);
+      arg2 = conCall2.getDefCallArguments().get(0).accept(this, NormalizationMode.WHNF);
       conCall2 = arg2.cast(ConCallExpression.class);
     }
     newDefCallArgs.add(mode == NormalizationMode.WHNF ? arg2 : arg2.accept(this, mode));
@@ -129,7 +129,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
       ConCallExpression conCall2 = arg2.cast(ConCallExpression.class);
       while (!intExpr1.isZero() && conCall2 != null && conCall2.getDefinition() == Prelude.SUC) {
         intExpr1 = intExpr1.pred();
-        arg2 = conCall2.getDefCallArguments().get(0);
+        arg2 = conCall2.getDefCallArguments().get(0).accept(this, NormalizationMode.WHNF);
         conCall2 = arg2.cast(ConCallExpression.class);
       }
 
@@ -156,7 +156,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
     if (intExpr2 != null) {
       while (!intExpr2.isZero() && conCall1 != null && conCall1.getDefinition() == Prelude.SUC) {
         intExpr2 = intExpr2.pred();
-        arg1 = conCall1.getDefCallArguments().get(0);
+        arg1 = conCall1.getDefCallArguments().get(0).accept(this, NormalizationMode.WHNF);
         conCall1 = arg1.cast(ConCallExpression.class);
       }
 
@@ -172,9 +172,9 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
 
     ConCallExpression conCall2 = arg2.cast(ConCallExpression.class);
     while (conCall1 != null && conCall1.getDefinition() == Prelude.SUC && conCall2 != null && conCall2.getDefinition() == Prelude.SUC) {
-      arg1 = conCall1.getDefCallArguments().get(0);
+      arg1 = conCall1.getDefCallArguments().get(0).accept(this, NormalizationMode.WHNF);
       conCall1 = arg1.cast(ConCallExpression.class);
-      arg2 = conCall2.getDefCallArguments().get(0);
+      arg2 = conCall2.getDefCallArguments().get(0).accept(this, NormalizationMode.WHNF);
       conCall2 = arg2.cast(ConCallExpression.class);
     }
 
