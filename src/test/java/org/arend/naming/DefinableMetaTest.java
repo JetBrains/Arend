@@ -10,8 +10,7 @@ public class DefinableMetaTest extends NameResolverTestCase {
 
   @Test
   public void someArgsDef() {
-    var m = resolveNamesModule("\\meta sepush a b c => a b c");
-    System.out.println(m);
+    resolveNamesModule("\\meta sepush a b c => a b c");
   }
 
   @Test
