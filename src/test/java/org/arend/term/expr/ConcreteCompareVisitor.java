@@ -452,18 +452,6 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
   }
 
   @Override
-  public Boolean visitMeta(Concrete.DefinableMetaDefinition def, Concrete.Definition def2) {
-    if (!(def2 instanceof Concrete.DefinableMetaDefinition)) {
-      return false;
-    }
-    var meta2 = (Concrete.DefinableMetaDefinition) def2;
-    if (!compareParameters(def.myParameters, meta2.myParameters)) {
-      return false;
-    }
-    return compare(def.myBody, meta2.myBody);
-  }
-
-  @Override
   public Boolean visitFunction(Concrete.BaseFunctionDefinition def, Concrete.Definition def2) {
     if (!(def2 instanceof Concrete.BaseFunctionDefinition)) {
       return false;
