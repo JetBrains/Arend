@@ -12,8 +12,8 @@ import org.arend.ext.error.GeneralError;
 import org.arend.ext.reference.ArendRef;
 import org.arend.ext.reference.Precedence;
 import org.arend.ext.typechecking.GoalSolver;
-import org.arend.ext.typechecking.TypedExpression;
 import org.arend.ext.typechecking.MetaDefinition;
+import org.arend.ext.typechecking.TypedExpression;
 import org.arend.naming.reference.*;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.result.TypecheckingResult;
@@ -71,7 +71,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
   @NotNull
   @Override
   public ConcreteExpression meta(@NotNull String name, @NotNull MetaDefinition meta) {
-    return new Concrete.ReferenceExpression(myData, new MetaReferable(Precedence.DEFAULT, name, "", meta, null), null, null);
+    return new Concrete.ReferenceExpression(myData, new MetaReferable(Precedence.DEFAULT, name, null, "", meta, null), null, null);
   }
 
   @NotNull

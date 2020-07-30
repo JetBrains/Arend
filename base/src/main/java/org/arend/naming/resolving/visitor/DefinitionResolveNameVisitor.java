@@ -174,41 +174,6 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
   }
 
   @Override
-  public Void visitMeta(Concrete.MetaDefinition def, Scope scope) {
-    if (def.getStage().ordinal() >= Concrete.Stage.RESOLVED.ordinal()) {
-      return null;
-    }
-
-    if (myResolverListener != null) {
-      myResolverListener.beforeDefinitionResolved(def);
-    }
-
-    myLocalErrorReporter = new ConcreteProxyErrorReporter(def);
-    if (myResolveTypeClassReferences) {
-      if (def.getStage() == Concrete.Stage.NOT_RESOLVED)
-        resolveTypeClassReference(def.getParameters(), def.getBody(), scope, false);
-      def.setTypeClassReferencesResolved();
-      return null;
-    }
-
-    checkNameAndPrecedence(def);
-
-    List<Referable> context = new ArrayList<>();
-    var exprVisitor = new ExpressionResolveNameVisitor(myReferableConverter, scope, context, myLocalErrorReporter, myResolverListener);
-    exprVisitor.visitParameters(def.getParameters(), null);
-
-    def.body = def.getBody().accept(exprVisitor, null);
-
-    def.setResolved();
-    def.accept(new SyntacticDesugarVisitor(myLocalErrorReporter), null);
-    if (myResolverListener != null) {
-      myResolverListener.definitionResolved(def);
-    }
-
-    return null;
-  }
-
-  @Override
   public Void visitFunction(Concrete.BaseFunctionDefinition def, Scope scope) {
     if (def.getStage().ordinal() >= Concrete.Stage.RESOLVED.ordinal()) {
       return null;

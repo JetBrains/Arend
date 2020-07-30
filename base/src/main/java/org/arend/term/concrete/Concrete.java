@@ -1545,27 +1545,36 @@ public final class Concrete {
   /**
    * User-defined meta in Arend, not Java extension meta.
    */
-  public static class MetaDefinition extends Definition {
-    public final List<NameParameter> parameters;
-    public Expression body;
+  public static class DefinableMetaDefinition implements ConcreteSourceNode {
+    public final List<NameParameter> myParameters;
+    private MetaReferable myReferable;
+    public Expression myBody;
 
-    public MetaDefinition(TCReferable referable, List<NameParameter> parameters, Expression body) {
-      super(referable);
-      this.parameters = parameters;
-      this.body = body;
+    public DefinableMetaDefinition(List<NameParameter> parameters, Expression body) {
+      myParameters = parameters;
+      myBody = body;
+    }
+
+    public void setReferable(@NotNull MetaReferable referable) {
+      myReferable = referable;
     }
 
     public List<NameParameter> getParameters() {
-      return parameters;
+      return myParameters;
     }
 
     public Expression getBody() {
-      return body;
+      return myBody;
     }
 
     @Override
-    public <P, R> R accept(ConcreteDefinitionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitMeta(this, params);
+    public void prettyPrint(StringBuilder builder, PrettyPrinterConfig ppConfig) {
+
+    }
+
+    @Override
+    public @NotNull MetaReferable getData() {
+      return myReferable;
     }
   }
 

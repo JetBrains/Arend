@@ -1316,11 +1316,10 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     return null;
   }
 
-  @Override
-  public Void visitMeta(Concrete.MetaDefinition def, Void params) {
+  public void visitMeta(Concrete.DefinableMetaDefinition def) {
     myBuilder.append("\\meta ");
     prettyPrintNameWithPrecedence(def.getData());
-    for (var parameter : def.parameters) {
+    for (var parameter : def.myParameters) {
       myBuilder.append(" ").append(
         Objects.requireNonNull(parameter.getReferable()).textRepresentation());
     }
@@ -1355,7 +1354,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
       @Override
       void printRight(PrettyPrintVisitor pp) {
-        def.body.accept(pp, new Precedence(Concrete.Expression.PREC));
+        def.myBody.accept(pp, new Precedence(Concrete.Expression.PREC));
       }
 
       @Override
@@ -1371,8 +1370,6 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     };
 
     r.doPrettyPrint(this, noIndent);
-
-    return null;
   }
 
   static public void printArguments(PrettyPrintVisitor pp, List<Concrete.Argument> args, boolean noIndent) {

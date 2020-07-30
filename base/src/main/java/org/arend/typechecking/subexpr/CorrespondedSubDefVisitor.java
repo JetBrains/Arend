@@ -77,11 +77,6 @@ public class CorrespondedSubDefVisitor implements
   }
 
   @Override
-  public Pair<Expression, Concrete.Expression> visitMeta(Concrete.MetaDefinition def, Definition params) {
-    return null;
-  }
-
-  @Override
   public Pair<Expression, Concrete.Expression> visitData(Concrete.DataDefinition def, Definition params) {
     DataDefinition coreDef;
     if (params instanceof DataDefinition) coreDef = (DataDefinition) params;

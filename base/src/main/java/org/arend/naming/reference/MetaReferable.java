@@ -4,22 +4,25 @@ import org.arend.ext.reference.MetaRef;
 import org.arend.ext.reference.Precedence;
 import org.arend.ext.typechecking.MetaDefinition;
 import org.arend.ext.typechecking.MetaResolver;
+import org.arend.module.ModuleLocation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class MetaReferable implements GlobalReferable, MetaRef {
+public class MetaReferable implements LocatedReferable, MetaRef {
   private final Precedence myPrecedence;
   private final String myName;
-  private final MetaDefinition myDefinition;
+  private MetaDefinition myDefinition;
+  private final ModuleLocation myLocation;
   private final MetaResolver myResolver;
   public final String description;
   private final String myAliasName;
   private final Precedence myAliasPrecedence;
   public GlobalReferable underlyingReferable;
 
-  public MetaReferable(Precedence precedence, String name, Precedence aliasPrec, String aliasName, String description, MetaDefinition definition, MetaResolver resolver) {
+  public MetaReferable(Precedence precedence, String name, ModuleLocation location, Precedence aliasPrec, String aliasName, String description, MetaDefinition definition, MetaResolver resolver) {
     myPrecedence = precedence;
     myName = name;
+    myLocation = location;
     myAliasName = aliasName;
     myAliasPrecedence = aliasPrec == null ? Precedence.DEFAULT : aliasPrec;
     this.description = description;
@@ -27,14 +30,28 @@ public class MetaReferable implements GlobalReferable, MetaRef {
     myResolver = resolver;
   }
 
-  public MetaReferable(Precedence precedence, String name, String description, MetaDefinition definition, MetaResolver resolver) {
-    this(precedence, name, null, null, description, definition, resolver);
+  public MetaReferable(Precedence precedence, String name, ModuleLocation location, String description, MetaDefinition definition, MetaResolver resolver) {
+    this(precedence, name, location, null, null, description, definition, resolver);
+  }
+
+  @Override
+  public @NotNull ModuleLocation getLocation() {
+    return myLocation;
+  }
+
+  @Override
+  public @Nullable LocatedReferable getLocatedReferableParent() {
+    return null;
   }
 
   @Nullable
   @Override
   public MetaDefinition getDefinition() {
     return myDefinition;
+  }
+
+  public void setDefinition(@NotNull MetaDefinition definition) {
+    myDefinition = definition;
   }
 
   @Override

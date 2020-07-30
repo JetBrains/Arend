@@ -2,7 +2,6 @@ package org.arend.frontend.parser;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
-import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.reference.Precedence;
@@ -541,15 +540,14 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     String name = defId.ID().getText();
     var precedence = visitPrecedence(defId.precedence());
     var alias = visitAlias(defId.alias());
-    var reference = makeReferable(tokenPosition(defId.ID().getSymbol()), name, precedence, alias.proj1, alias.proj2, parent, GlobalReferable.Kind.OTHER);
+    var reference = new MetaReferable(precedence, name, myModule, alias.proj2, alias.proj1, "", null, null);
     var body = ctx.expr();
     if (body != null) {
       var params = ctx.ID().stream()
         .map(r -> new Concrete.NameParameter(tokenPosition(r.getSymbol()), true, new LocalReferable(r.getText())))
         .collect(Collectors.toList());
-      var metaDef = new Concrete.MetaDefinition(reference, params, visitExpr(body));
-      metaDef.enclosingClass = enclosingClass;
-      reference.setDefinition(metaDef);
+      var metaDef = new Concrete.DefinableMetaDefinition(params, visitExpr(body));
+      // [TODO] reference.setDefinition(metaDef);
     }
 
     var resultGroup = new StaticGroup(reference, staticSubgroups, namespaceCommands, parent);

@@ -14,6 +14,11 @@ public class DefinableMetaTest extends NameResolverTestCase {
   }
 
   @Test
+  public void conflictDef() {
+    // resolveNamesModule("\\meta sepush a b c => a b c");
+  }
+
+  @Test
   public void noArgCall() {
     resolveNamesModule("\\meta sepush => 123" +
       "\\func qlbf => sepush");

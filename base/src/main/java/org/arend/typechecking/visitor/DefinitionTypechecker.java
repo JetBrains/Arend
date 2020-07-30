@@ -12,7 +12,10 @@ import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.*;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.type.TypeExpression;
-import org.arend.core.expr.visitor.*;
+import org.arend.core.expr.visitor.CompareVisitor;
+import org.arend.core.expr.visitor.FieldsCollector;
+import org.arend.core.expr.visitor.FreeVariablesCollector;
+import org.arend.core.expr.visitor.GoodThisParametersVisitor;
 import org.arend.core.pattern.BindingPattern;
 import org.arend.core.pattern.ConstructorExpressionPattern;
 import org.arend.core.pattern.ExpressionPattern;
@@ -133,17 +136,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       throw new IllegalStateException();
     }
     return null;
-  }
-
-  @Override
-  public List<ExtElimClause> visitMeta(Concrete.MetaDefinition def, Void params) {
-    Definition typechecked = def.getData().getTypechecked();
-    var localInstancePool = new LocalInstancePool(typechecker);
-    myInstancePool.setInstancePool(localInstancePool);
-    typechecker.setInstancePool(myInstancePool);
-
-    // TODO: produce a meta definition here
-    throw new UnsupportedOperationException();
   }
 
   @Override

@@ -10,6 +10,7 @@ import org.arend.ext.typechecking.MetaDefinition;
 import org.arend.ext.typechecking.MetaResolver;
 import org.arend.library.Library;
 import org.arend.library.error.LibraryError;
+import org.arend.module.ModuleLocation;
 import org.arend.module.scopeprovider.SimpleModuleScopeProvider;
 import org.arend.naming.reference.AliasReferable;
 import org.arend.naming.reference.EmptyGlobalReferable;
@@ -72,7 +73,8 @@ public class DefinitionContributorImpl extends Disableable implements Definition
           myErrorReporter.report(LibraryError.duplicateExtensionDefinition(myLibrary.getName(), module, longName));
           return null;
         }
-        MetaReferable metaRef = new MetaReferable(precedence, name, aliasPrecedence, alias, description, meta, resolver);
+        var location = new ModuleLocation(myLibrary.getName(), ModuleLocation.LocationKind.GENERATED, module);
+        MetaReferable metaRef = new MetaReferable(precedence, name, location, aliasPrecedence, alias, description, meta, resolver);
         scope.names.put(name, metaRef);
         if (alias != null) {
           scope.names.putIfAbsent(alias, new AliasReferable(metaRef));

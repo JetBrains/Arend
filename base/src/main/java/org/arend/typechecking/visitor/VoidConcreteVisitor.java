@@ -34,13 +34,6 @@ public class VoidConcreteVisitor<P, R> implements ConcreteExpressionVisitor<P,Vo
     return visitFunctionBody(def, params);
   }
 
-  @Override
-  public R visitMeta(Concrete.MetaDefinition def, P params) {
-    visitParameters(def.getParameters(), params);
-    def.accept(this, params);
-    return null;
-  }
-
   protected void visitDataHeader(Concrete.DataDefinition def, P params) {
     visitParameters(def.getParameters(), params);
     Concrete.Expression universe = def.getUniverse();

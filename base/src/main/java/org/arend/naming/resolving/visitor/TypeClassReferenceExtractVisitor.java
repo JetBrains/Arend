@@ -16,11 +16,6 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
   }
 
   @Override
-  public ClassReferable visitMeta(Concrete.MetaDefinition def, Void params) {
-    return null;
-  }
-
-  @Override
   public ClassReferable visitData(Concrete.DataDefinition def, Void params) {
     return null;
   }
