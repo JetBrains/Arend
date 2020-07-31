@@ -3,6 +3,7 @@ package org.arend.core.expr;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
+import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.InPlaceLevelSubstVisitor;
@@ -137,6 +138,11 @@ public class ErrorExpression extends Expression implements CoreErrorExpression, 
     }
 
     return new ErrorExpression(myExpression.accept(visitor, null), myGoal, myUseExpression);
+  }
+
+  @Override
+  public Type normalize(NormalizeVisitor visitor, NormalizationMode mode) {
+    return this;
   }
 
   @Override

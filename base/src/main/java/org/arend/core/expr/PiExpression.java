@@ -159,6 +159,11 @@ public class PiExpression extends Expression implements Type, CorePiExpression, 
     return visitor.visitPi(this, null);
   }
 
+  @Override
+  public Type normalize(NormalizeVisitor visitor, NormalizationMode mode) {
+    return visitor.visitPi(this, mode);
+  }
+
   @NotNull
   @Override
   public PiExpression normalize(@NotNull NormalizationMode mode) {

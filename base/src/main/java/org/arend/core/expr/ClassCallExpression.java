@@ -294,6 +294,11 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
     return visitor.visitClassCall(this, null);
   }
 
+  @Override
+  public Type normalize(NormalizeVisitor visitor, NormalizationMode mode) {
+    return visitor.visitClassCall(this, mode);
+  }
+
   @NotNull
   @Override
   public ClassCallExpression normalize(@NotNull NormalizationMode mode) {

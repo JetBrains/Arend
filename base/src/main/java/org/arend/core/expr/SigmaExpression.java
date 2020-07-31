@@ -74,6 +74,11 @@ public class SigmaExpression extends Expression implements Type, CoreSigmaExpres
     return visitor.visitSigma(this, null);
   }
 
+  @Override
+  public Type normalize(NormalizeVisitor visitor, NormalizationMode mode) {
+    return visitor.visitSigma(this, mode);
+  }
+
   @NotNull
   @Override
   public SigmaExpression normalize(@NotNull NormalizationMode mode) {

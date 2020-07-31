@@ -78,6 +78,11 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
     return visitor.visitDataCall(this, null);
   }
 
+  @Override
+  public Type normalize(NormalizeVisitor visitor, NormalizationMode mode) {
+    return visitor.visitDataCall(this, mode);
+  }
+
   @NotNull
   @Override
   public DataCallExpression normalize(@NotNull NormalizationMode mode) {

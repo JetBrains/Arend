@@ -1,6 +1,7 @@
 package org.arend.core.expr.type;
 
 import org.arend.core.expr.Expression;
+import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.InPlaceLevelSubstVisitor;
@@ -48,8 +49,8 @@ public class TypeExpression implements Type {
   }
 
   @Override
-  public Type normalize(NormalizationMode mode) {
-    Expression expr = myType.normalize(mode);
+  public Type normalize(NormalizeVisitor visitor, NormalizationMode mode) {
+    Expression expr = myType.accept(visitor, mode);
     return expr instanceof Type ? (Type) expr : new TypeExpression(expr, mySort);
   }
 }

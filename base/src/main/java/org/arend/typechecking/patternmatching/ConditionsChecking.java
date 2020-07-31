@@ -257,7 +257,7 @@ public class ConditionsChecking {
 
       Expression evaluatedExpr1;
       if (elimBody != null && (definition == null || definition instanceof FunctionDefinition && ((FunctionDefinition) definition).getKind() == CoreFunctionDefinition.Kind.SFUNC || expr instanceof GoalErrorExpression)) {
-        evaluatedExpr1 = NormalizeVisitor.INSTANCE.eval(elimBody, pair.proj1, new ExprSubstitution(), LevelSubstitution.EMPTY, null);
+        evaluatedExpr1 = NormalizeVisitor.INSTANCE.eval(elimBody, pair.proj1, null);
         if (evaluatedExpr1 == null && definition != null) {
           evaluatedExpr1 = definition.getDefCall(Sort.STD, pair.proj1);
         }

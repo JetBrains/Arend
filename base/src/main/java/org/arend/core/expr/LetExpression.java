@@ -6,8 +6,8 @@ import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.let.LetClausePattern;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
+import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Sort;
-import org.arend.core.subst.ExprSubstitution;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CoreLetExpression;
 import org.arend.ext.core.ops.NormalizationMode;
@@ -41,7 +41,6 @@ public class LetExpression extends Expression implements CoreLetExpression {
   }
 
   public static Expression normalizeClauseExpression(LetClausePattern pattern, Expression expression) {
-    expression = expression.normalize(NormalizationMode.WHNF);
     if (!pattern.isMatching()) {
       return expression;
     }
@@ -54,7 +53,7 @@ public class LetExpression extends Expression implements CoreLetExpression {
 
       List<Expression> fields = new ArrayList<>(tuple.getFields().size());
       for (int i = 0; i < pattern.getPatterns().size(); i++) {
-        fields.add(normalizeClauseExpression(pattern.getPatterns().get(i), tuple.getFields().get(i)));
+        fields.add(normalizeClauseExpression(pattern.getPatterns().get(i), tuple.getFields().get(i).normalize(NormalizationMode.WHNF)));
       }
       return new TupleExpression(fields, tuple.getSigmaType());
     }
@@ -70,7 +69,7 @@ public class LetExpression extends Expression implements CoreLetExpression {
         ClassField classField = pattern.getFields().get(i);
         Expression impl = classCall.getImplementationHere(classField, newExpr);
         if (impl != null) {
-          implementations.put(classField, normalizeClauseExpression(pattern.getPatterns().get(i), impl));
+          implementations.put(classField, normalizeClauseExpression(pattern.getPatterns().get(i), impl.normalize(NormalizationMode.WHNF)));
           someNotImplemented = true;
         }
       }
@@ -80,18 +79,6 @@ public class LetExpression extends Expression implements CoreLetExpression {
     }
 
     return expression;
-  }
-
-  public Expression getResult() {
-    if (!myStrict) {
-      return myExpression;
-    }
-
-    ExprSubstitution substitution = new ExprSubstitution();
-    for (LetClause clause : myClauses) {
-      substitution.add(clause, normalizeClauseExpression(clause.getPattern(), clause.getExpression().subst(substitution)));
-    }
-    return myExpression.subst(substitution);
   }
 
   @NotNull

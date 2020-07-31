@@ -2,6 +2,7 @@ package org.arend.core.expr.type;
 
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.UniverseExpression;
+import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
@@ -15,7 +16,7 @@ public interface Type {
   Type subst(SubstVisitor substVisitor);
   void subst(InPlaceLevelSubstVisitor substVisitor);
   Type strip(StripVisitor visitor);
-  Type normalize(NormalizationMode mode);
+  Type normalize(NormalizeVisitor visitor, NormalizationMode mode);
 
   Expression OMEGA = new UniverseExpression(new Sort(Level.INFINITY, Level.INFINITY));
 

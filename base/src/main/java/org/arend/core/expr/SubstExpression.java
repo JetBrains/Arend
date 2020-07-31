@@ -13,7 +13,7 @@ public class SubstExpression extends Expression {
   private final ExprSubstitution mySubstitution;
   private final LevelSubstitution myLevelSubstitution;
 
-  private SubstExpression(Expression expression, ExprSubstitution substitution, LevelSubstitution levelSubstitution) {
+  public SubstExpression(Expression expression, ExprSubstitution substitution, LevelSubstitution levelSubstitution) {
     myExpression = expression;
     mySubstitution = substitution;
     myLevelSubstitution = levelSubstitution;
