@@ -8,6 +8,7 @@ import org.arend.core.elimtree.BranchKey;
 import org.arend.core.elimtree.ElimTree;
 import org.arend.core.expr.*;
 import org.arend.core.expr.visitor.VoidExpressionVisitor;
+import org.arend.ext.variable.Variable;
 
 import java.util.Map;
 
@@ -87,6 +88,16 @@ public class InPlaceLevelSubstVisitor extends VoidExpressionVisitor<Void> {
   public Void visitUniverse(UniverseExpression expr, Void params) {
     expr.substSort(mySubstitution);
     super.visitUniverse(expr, null);
+    return null;
+  }
+
+  @Override
+  public Void visitSubst(SubstExpression expr, Void params) {
+    expr.getExpression().accept(this, params);
+    for (Map.Entry<Variable, Expression> entry : expr.getSubstitution().getEntries()) {
+      entry.getValue().accept(this, params);
+    }
+    expr.levelSubstitution = expr.levelSubstitution.subst(mySubstitution);
     return null;
   }
 
