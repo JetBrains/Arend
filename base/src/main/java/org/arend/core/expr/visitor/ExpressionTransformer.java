@@ -40,6 +40,9 @@ public abstract class ExpressionTransformer<P> extends BaseExpressionVisitor<P, 
       } while (it instanceof ConCallExpression && ((ConCallExpression) it).getDefinition() == Prelude.SUC);
 
       it = visit(it, params);
+      if (it == null) {
+        return null;
+      }
       if (it instanceof IntegerExpression) {
         return ((IntegerExpression) it).plus(n);
       }

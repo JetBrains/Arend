@@ -79,13 +79,13 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
 
     IntegerExpression intExpr2 = arg2.cast(IntegerExpression.class);
     if (intExpr2 != null) {
+      if (intExpr2.isZero()) {
+        return arg1.accept(this, mode);
+      }
       arg1 = arg1.accept(this, NormalizationMode.WHNF);
       IntegerExpression intExpr1 = arg1.cast(IntegerExpression.class);
       if (intExpr1 != null) {
         return intExpr1.plus(intExpr2);
-      }
-      if (intExpr2.isZero()) {
-        return arg1.accept(this, mode);
       }
 
       if (mode != NormalizationMode.WHNF) {
@@ -117,13 +117,13 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
 
     IntegerExpression intExpr1 = arg1.cast(IntegerExpression.class);
     if (intExpr1 != null) {
+      if (intExpr1.isZero()) {
+        return Neg(arg2.accept(this, mode));
+      }
       arg2 = arg2.accept(this, NormalizationMode.WHNF);
       IntegerExpression intExpr2 = arg2.cast(IntegerExpression.class);
       if (intExpr2 != null) {
         return intExpr1.minus(intExpr2);
-      }
-      if (intExpr1.isZero()) {
-        return Neg(mode == NormalizationMode.WHNF ? arg2 : arg2.accept(this, mode));
       }
 
       ConCallExpression conCall2 = arg2.cast(ConCallExpression.class);
@@ -478,7 +478,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
                   }
                 }
               }
-              Expression newExpr = ConCallExpression.make(conCall.getDefinition(), conCall.getSortArgument(), newDataTypeArgs, newConArgs);
+              Expression newExpr = ConCallExpression.make(conCall.getDefinition(), conCall.getSortArgument().subst(levelSubstitution), newDataTypeArgs, newConArgs);
               if (conArgs == null) {
                 result = newExpr;
               } else {
