@@ -41,6 +41,7 @@ public final class Abstract {
   public interface Parameter extends SourceNode, org.arend.naming.reference.Parameter {
     @Nullable Object getData();
     @Nullable Expression getType();
+    boolean isStrict();
   }
 
   public interface FieldParameter extends Parameter {
@@ -216,7 +217,6 @@ public final class Abstract {
     @NotNull Collection<? extends LocatedReferable> getUsedDefinitions();
     boolean withTerm();
     boolean isCowith();
-    boolean isStrict();
     FunctionKind getFunctionKind();
     @Nullable Reference getImplementedField();
   }

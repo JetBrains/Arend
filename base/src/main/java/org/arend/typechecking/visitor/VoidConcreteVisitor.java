@@ -119,8 +119,8 @@ public class VoidConcreteVisitor<P, R> implements ConcreteExpressionVisitor<P,Vo
 
   protected void visitParameters(List<? extends Concrete.Parameter> parameters, P params) {
     for (Concrete.Parameter parameter : parameters) {
-      if (parameter instanceof Concrete.TypeParameter) {
-        ((Concrete.TypeParameter) parameter).getType().accept(this, params);
+      if (parameter.getType() != null) {
+        parameter.getType().accept(this, params);
       }
     }
   }

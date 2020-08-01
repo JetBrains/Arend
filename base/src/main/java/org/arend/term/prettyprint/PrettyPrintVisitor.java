@@ -237,9 +237,11 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
         myBuilder.append('{').append(name);
         printClosingBrace();
       }
-    } else
-    if (parameter instanceof Concrete.TelescopeParameter) {
+    } else if (parameter instanceof Concrete.TelescopeParameter) {
       myBuilder.append(parameter.isExplicit() ? '(' : '{');
+      if (parameter.isStrict()) {
+        myBuilder.append("\\strict ");
+      }
       for (Referable referable : parameter.getReferableList()) {
         myBuilder.append(referable == null ? "_" : referable.textRepresentation()).append(' ');
       }
@@ -251,15 +253,25 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       } else {
         printClosingBrace();
       }
-    } else
-    if (parameter instanceof Concrete.TypeParameter) {
-      Concrete.Expression type = ((Concrete.TypeParameter) parameter).getType();
-      if (parameter.isExplicit()) {
-        type.accept(this, new Precedence((byte) (ReferenceExpression.PREC + 1)));
-      } else {
-        myBuilder.append('{');
-        type.accept(this, new Precedence(Concrete.Expression.PREC));
-        printClosingBrace();
+    } else {
+      Concrete.Expression type = parameter.getType();
+      if (type != null) {
+        if (parameter.isExplicit()) {
+          if (parameter.isStrict()) {
+            myBuilder.append("(\\strict ");
+          }
+          type.accept(this, new Precedence((byte) (ReferenceExpression.PREC + 1)));
+          if (parameter.isStrict()) {
+            myBuilder.append(")");
+          }
+        } else {
+          myBuilder.append('{');
+          if (parameter.isStrict()) {
+            myBuilder.append("\\strict ");
+          }
+          type.accept(this, new Precedence(Concrete.Expression.PREC));
+          printClosingBrace();
+        }
       }
     }
   }
@@ -953,7 +965,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   public Void visitFunction(final Concrete.BaseFunctionDefinition def, Void ignored) {
     printIndent();
     switch (def.getKind()) {
-      case FUNC: myBuilder.append(def.isStrict() ? "\\func! " : "\\func "); break;
+      case FUNC: myBuilder.append("\\func "); break;
       case COCLAUSE_FUNC: myBuilder.append("| "); break;
       case LEMMA: myBuilder.append("\\lemma "); break;
       case LEVEL: myBuilder.append("\\use \\level "); break;
