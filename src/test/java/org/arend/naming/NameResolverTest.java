@@ -79,10 +79,10 @@ public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void parserInfix() {
     ConcreteLocatedReferable plusRef = new ConcreteLocatedReferable(null, "+", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6, true), null, Precedence.DEFAULT, MODULE_PATH, GlobalReferable.Kind.FUNCTION);
-    Concrete.Definition plus = new Concrete.FunctionDefinition(false, FunctionKind.FUNC, plusRef, Collections.emptyList(), null, null, null);
+    Concrete.Definition plus = new Concrete.FunctionDefinition(FunctionKind.FUNC, plusRef, Collections.emptyList(), null, null, null);
     plusRef.setDefinition(plus);
     ConcreteLocatedReferable mulRef = new ConcreteLocatedReferable(null, "*", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 7, true), null, Precedence.DEFAULT, MODULE_PATH, GlobalReferable.Kind.FUNCTION);
-    Concrete.Definition mul = new Concrete.FunctionDefinition(false, FunctionKind.FUNC, mulRef, Collections.emptyList(), null, null, null);
+    Concrete.Definition mul = new Concrete.FunctionDefinition(FunctionKind.FUNC, mulRef, Collections.emptyList(), null, null, null);
     mulRef.setDefinition(mul);
 
     Concrete.Expression result = resolveNamesExpr(new ListScope(plusRef, mulRef), "0 + 1 * 2 + 3 * (4 * 5) * (6 + 7)");
@@ -93,10 +93,10 @@ public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void parserInfixError() {
     ConcreteLocatedReferable plusRef = new ConcreteLocatedReferable(null, "+", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6, true), null, Precedence.DEFAULT, MODULE_PATH, GlobalReferable.Kind.FUNCTION);
-    Concrete.Definition plus = new Concrete.FunctionDefinition(false, FunctionKind.FUNC, plusRef, Collections.emptyList(), null, null, null);
+    Concrete.Definition plus = new Concrete.FunctionDefinition(FunctionKind.FUNC, plusRef, Collections.emptyList(), null, null, null);
     plusRef.setDefinition(plus);
     ConcreteLocatedReferable mulRef = new ConcreteLocatedReferable(null, "*", new Precedence(Precedence.Associativity.RIGHT_ASSOC, (byte) 6, true), null, Precedence.DEFAULT, MODULE_PATH, GlobalReferable.Kind.FUNCTION);
-    Concrete.Definition mul = new Concrete.FunctionDefinition(false, FunctionKind.FUNC, mulRef, Collections.emptyList(), null, null, null);
+    Concrete.Definition mul = new Concrete.FunctionDefinition(FunctionKind.FUNC, mulRef, Collections.emptyList(), null, null, null);
     mulRef.setDefinition(mul);
     resolveNamesExpr(new ListScope(plusRef, mulRef), "11 + 2 * 3", 1);
   }

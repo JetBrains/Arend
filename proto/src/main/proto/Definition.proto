@@ -92,6 +92,7 @@ message Definition {
             Body conditions = 8;
             map<string, bytes> user_data = 9;
             int32 recursive_parameter = 10;
+            repeated bool strict_parameters = 11;
         }
     }
     message FunctionData {
@@ -109,7 +110,7 @@ message Definition {
         bool body_is_hidden = 11;
         bool has_enclosing_class = 13;
         bool is_instance = 14;
-        bool is_strict = 15;
+        repeated bool strict_parameters = 15;
     }
     message DConstructorData {
         FunctionData function = 1;

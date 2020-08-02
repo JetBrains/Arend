@@ -51,7 +51,11 @@ public abstract class Definition implements CoreDefinition {
     return EmptyDependentLink.getInstance();
   }
 
-  public boolean isStrict() {
+  public boolean hasStrictParameters() {
+    return false;
+  }
+
+  public boolean isStrict(int parameter) {
     return false;
   }
 

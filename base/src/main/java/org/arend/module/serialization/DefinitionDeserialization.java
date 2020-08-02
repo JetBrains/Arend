@@ -255,6 +255,10 @@ public class DefinitionDeserialization implements ArendDeserializer {
       if (!constructorParametersTypecheckingOrder.isEmpty()) {
         constructor.setParametersTypecheckingOrder(constructorParametersTypecheckingOrder);
       }
+      List<Boolean> strictParameters = constructorProto.getStrictParametersList();
+      if (!strictParameters.isEmpty()) {
+        constructor.setStrictParameters(strictParameters);
+      }
       List<Boolean> cGoodThisParameters = constructorProto.getGoodThisParametersList();
       if (!cGoodThisParameters.isEmpty()) {
         constructor.setGoodThisParameters(cGoodThisParameters);
@@ -341,8 +345,9 @@ public class DefinitionDeserialization implements ArendDeserializer {
     if (functionProto.getHasEnclosingClass()) {
       functionDef.setHasEnclosingClass(true);
     }
-    if (functionProto.getIsStrict()) {
-      functionDef.setStrict();
+    List<Boolean> strictParameters = functionProto.getStrictParametersList();
+    if (!strictParameters.isEmpty()) {
+      functionDef.setStrictParameters(strictParameters);
     }
     functionDef.setParameters(defDeserializer.readParameters(functionProto.getParamList()));
     List<Integer> parametersTypecheckingOrder = functionProto.getParametersTypecheckingOrderList();

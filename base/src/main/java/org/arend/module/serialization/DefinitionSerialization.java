@@ -194,6 +194,7 @@ public class DefinitionSerialization implements ArendSerializer {
       if (constructor.getParametersTypecheckingOrder() != null) {
         cBuilder.addAllParametersTypecheckingOrder(constructor.getParametersTypecheckingOrder());
       }
+      cBuilder.addAllStrictParameters(constructor.getStrictParameters());
       cBuilder.addAllGoodThisParameters(constructor.getGoodThisParameters());
       for (Definition.TypeClassParameterKind kind : constructor.getTypeClassParameters()) {
         cBuilder.addTypeClassParameters(writeTypeClassParameterKind(kind));
@@ -266,7 +267,7 @@ public class DefinitionSerialization implements ArendSerializer {
   private DefinitionProtos.Definition.FunctionData writeFunctionDefinition(ExpressionSerialization defSerializer, FunctionDefinition definition) {
     DefinitionProtos.Definition.FunctionData.Builder builder = DefinitionProtos.Definition.FunctionData.newBuilder();
 
-    builder.setIsStrict(definition.isStrict());
+    builder.addAllStrictParameters(definition.getStrictParameters());
     builder.setIsInstance(definition.getReferable().getKind() == GlobalReferable.Kind.INSTANCE);
     builder.setHasEnclosingClass(definition.getEnclosingClass() != null);
     builder.addAllParam(defSerializer.writeParameters(definition.getParameters()));
@@ -330,7 +331,7 @@ public class DefinitionSerialization implements ArendSerializer {
     } else if (pattern instanceof ConstructorExpressionPattern) {
       DefinitionProtos.Definition.DPattern.Constructor.Builder pBuilder = DefinitionProtos.Definition.DPattern.Constructor.newBuilder();
       pBuilder.setExpression(defSerializer.writeExpr(((ConstructorExpressionPattern) pattern).getDataExpression()));
-      for (ExpressionPattern patternArgument : ((ConstructorExpressionPattern) pattern).getSubPatterns()) {
+      for (ExpressionPattern patternArgument : pattern.getSubPatterns()) {
         pBuilder.addPattern(writeDPattern(defSerializer, patternArgument));
       }
       builder.setConstructor(pBuilder.build());

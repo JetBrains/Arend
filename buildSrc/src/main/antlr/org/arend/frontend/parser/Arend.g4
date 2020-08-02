@@ -43,7 +43,6 @@ returnExpr  : expr ('\\level' expr)?                # returnExprExpr
             ;
 
 funcKw      : '\\func'            # funcKwFunc
-            | '\\func!'           # funcKwFuncStrict
             | '\\sfunc'           # funcKwSFunc
             | '\\lemma'           # funcKwLemma
             | '\\use' useMod      # funcKwUse
@@ -51,7 +50,6 @@ funcKw      : '\\func'            # funcKwFunc
 
 instanceKw  : '\\instance'        # funcKwInstance
             | '\\cons'            # funcKwCons
-            | '\\cons!'           # funcKwConsStrict
             ;
 
 useMod    : '\\coerce'          # useCoerce
@@ -254,9 +252,7 @@ tele : literal                          # teleLiteral
      | '{' typedExpr '}'                # implicit
      ;
 
-typedExpr : expr                        # notTyped
-          | expr ':' expr               # typed
-          ;
+typedExpr : STRICT? expr (':' expr)? ;
 
 fieldTele : '(' CLASSIFYING? ID+ ':' expr ')'        # explicitFieldTele
           | '{' CLASSIFYING? ID+ ':' expr '}'        # implicitFieldTele
@@ -264,6 +260,7 @@ fieldTele : '(' CLASSIFYING? ID+ ':' expr ')'        # explicitFieldTele
 
 LET : '\\let';
 LETS : '\\let!';
+STRICT : '\\strict';
 EVAL : '\\eval';
 PEVAL : '\\peval';
 CASE : '\\case';

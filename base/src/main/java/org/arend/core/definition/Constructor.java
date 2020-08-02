@@ -34,6 +34,7 @@ public class Constructor extends Definition implements Function, BranchKey, Core
   private List<Boolean> myGoodThisParameters = Collections.emptyList();
   private List<TypeClassParameterKind> myTypeClassParameters = Collections.emptyList();
   private int mySingleRecursiveParameter = -1;
+  private List<Boolean> myStrictParameters = Collections.emptyList();
 
   public Constructor(TCReferable referable, DataDefinition dataType) {
     super(referable, TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
@@ -156,6 +157,24 @@ public class Constructor extends Definition implements Function, BranchKey, Core
   @Override
   public void setParametersTypecheckingOrder(List<Integer> order) {
     myParametersTypecheckingOrder = order;
+  }
+
+  @Override
+  public boolean hasStrictParameters() {
+    return !myStrictParameters.isEmpty();
+  }
+
+  @Override
+  public boolean isStrict(int parameter) {
+    return parameter < myStrictParameters.size() && myStrictParameters.get(parameter);
+  }
+
+  public List<Boolean> getStrictParameters() {
+    return myStrictParameters;
+  }
+
+  public void setStrictParameters(List<Boolean> parameters) {
+    myStrictParameters = parameters;
   }
 
   @Override

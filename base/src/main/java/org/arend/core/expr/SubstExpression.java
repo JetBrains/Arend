@@ -1,5 +1,6 @@
 package org.arend.core.expr;
 
+import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
 import org.arend.core.subst.ExprSubstitution;
@@ -11,26 +12,21 @@ import org.jetbrains.annotations.NotNull;
 public class SubstExpression extends Expression {
   private final Expression myExpression;
   private final ExprSubstitution mySubstitution;
-  private final LevelSubstitution myLevelSubstitution;
+  public LevelSubstitution levelSubstitution;
 
   public SubstExpression(Expression expression, ExprSubstitution substitution, LevelSubstitution levelSubstitution) {
     myExpression = expression;
     mySubstitution = substitution;
-    myLevelSubstitution = levelSubstitution;
+    this.levelSubstitution = levelSubstitution;
   }
 
   public static Expression make(Expression expression, ExprSubstitution substitution, LevelSubstitution levelSubstitution) {
     if (substitution.isEmpty() && levelSubstitution.isEmpty()) {
       return expression;
     }
-    if (expression instanceof SubstExpression) {
-      SubstExpression substExpr = (SubstExpression) expression;
-      ExprSubstitution newSubstitution = new ExprSubstitution(substExpr.mySubstitution);
-      newSubstitution.subst(substitution);
-      newSubstitution.addAll(substitution);
-      substitution = newSubstitution;
-      levelSubstitution = substExpr.myLevelSubstitution.subst(levelSubstitution);
-      expression = substExpr.getExpression();
+    if (expression instanceof ReferenceExpression && !substitution.isEmpty()) {
+      Expression result = substitution.get(((ReferenceExpression) expression).getBinding());
+      return result != null ? result : expression;
     }
     return new SubstExpression(expression, substitution, levelSubstitution);
   }
@@ -44,11 +40,32 @@ public class SubstExpression extends Expression {
   }
 
   public LevelSubstitution getLevelSubstitution() {
-    return myLevelSubstitution;
+    return levelSubstitution;
   }
 
   public Expression getSubstExpression() {
-    return myExpression instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) myExpression).getSubstExpression() == null ? myExpression : myExpression.subst(mySubstitution, myLevelSubstitution);
+    Expression expr = myExpression instanceof SubstExpression ? ((SubstExpression) myExpression).getSubstExpression() : myExpression;
+    return expr instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) expr).getSubstExpression() == null ? expr : expr.subst(mySubstitution, levelSubstitution);
+  }
+
+  public Expression eval() {
+    if (myExpression instanceof LetExpression) {
+      ExprSubstitution substitution = new ExprSubstitution(mySubstitution);
+      LetExpression let = (LetExpression) myExpression;
+      if (let.isStrict()) {
+        for (LetClause letClause : let.getClauses()) {
+          substitution.add(letClause, LetExpression.normalizeClauseExpression(letClause.getPattern(), letClause.getExpression().subst(substitution, levelSubstitution)));
+        }
+      } else {
+        for (LetClause letClause : let.getClauses()) {
+          substitution.add(letClause, new ReferenceExpression(new LetClause(letClause.getName(), letClause.getPattern(), make(letClause.getExpression(), substitution, levelSubstitution))));
+        }
+      }
+      return make(let.getExpression(), substitution, levelSubstitution);
+    }
+
+    Expression expr = myExpression instanceof SubstExpression ? ((SubstExpression) myExpression).getSubstExpression() : myExpression;
+    return expr instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) expr).getSubstExpression() == null ? (expr == myExpression ? this : new SubstExpression(expr, mySubstitution, levelSubstitution)) : expr.subst(mySubstitution, levelSubstitution);
   }
 
   @Override
@@ -69,7 +86,8 @@ public class SubstExpression extends Expression {
   @NotNull
   @Override
   public Expression getUnderlyingExpression() {
-    return myExpression instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) myExpression).getSubstExpression() == null ? this : myExpression.subst(mySubstitution, myLevelSubstitution).getUnderlyingExpression();
+    Expression expr = myExpression instanceof SubstExpression ? ((SubstExpression) myExpression).getSubstExpression() : myExpression;
+    return expr instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) expr).getSubstExpression() == null ? (expr == myExpression ? this : new SubstExpression(expr, mySubstitution, levelSubstitution)) : expr.subst(mySubstitution, levelSubstitution).getUnderlyingExpression();
   }
 
   @Override

@@ -158,7 +158,7 @@ public class Case extends TypeCheckingTestCase {
   public void funcLevelTest() {
     typeCheckModule(
       "\\truncated \\data Trunc (A : \\Type) : \\Prop | in A\n" +
-      "\\func test {A : \\Type} (p : \\Pi (a a' : A) -> a = a') (t : Trunc A) : \\level A p => \\case t \\with { | in a => a }");
+      "\\func test {A : \\Type} (p : \\Pi (a a' : A) -> a = a') (t : Trunc A) : \\level A p => \\case t \\with { | in a => a }", -1);
   }
 
   @Test

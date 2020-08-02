@@ -33,7 +33,7 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
   private final ParametersLevels<ParametersLevel> myParametersLevels = new ParametersLevels<>();
   private Set<Definition> myRecursiveDefinitions = Collections.emptySet();
   private boolean myHasEnclosingClass;
-  private boolean myStrict;
+  private List<Boolean> myStrictParameters = Collections.emptyList();
 
   public FunctionDefinition(TCReferable referable) {
     super(referable, TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
@@ -63,12 +63,21 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
   }
 
   @Override
-  public boolean isStrict() {
-    return myStrict;
+  public boolean hasStrictParameters() {
+    return !myStrictParameters.isEmpty();
   }
 
-  public void setStrict() {
-    myStrict = true;
+  @Override
+  public boolean isStrict(int parameter) {
+    return parameter < myStrictParameters.size() && myStrictParameters.get(parameter);
+  }
+
+  public List<Boolean> getStrictParameters() {
+    return myStrictParameters;
+  }
+
+  public void setStrictParameters(List<Boolean> parameters) {
+    myStrictParameters = parameters;
   }
 
   @Override
