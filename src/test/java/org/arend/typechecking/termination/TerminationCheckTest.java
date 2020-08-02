@@ -207,6 +207,12 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void test_ise(){
+    typeCheckModule("\\func h (a : Nat) : Nat \\elim a\n  | zero => 1\n  | suc a => \\case (a, a) \\with {\n    | p => g a p\n  }\n\n" +
+            "\\func g (a : Nat) (p : \\Sigma Nat Nat) : Nat \\elim a\n  | 0 => 0\n  | suc a => h a\n", 0);
+  }
+
+  @Test
   public void test34() {
     TestVertex ack = new TestVertex("ack", "x", "y");
     Set<BaseCallMatrix<TestVertex>> cms = new HashSet<>();
