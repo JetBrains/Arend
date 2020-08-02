@@ -300,7 +300,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
     }
 
     Expression result = visitBody(((Function) definition).getBody(), defCallArgs, expr, mode);
-    return result == null ? applyDefCall(expr, mode) : result.accept(this, mode);
+    return result == null ? applyDefCall(expr, mode) : result;
   }
 
   private Expression visitBody(Body body, List<? extends Expression> defCallArgs, DefCallExpression expr, NormalizationMode mode) {
@@ -366,9 +366,10 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
         for (Expression arg : caseExpr.getArguments()) {
           args.add(arg.subst(substitution, levelSubstitution));
         }
-        return eval(caseExpr.getElimBody(), args, substitution, levelSubstitution, mode);
+        Expression result = eval(caseExpr.getElimBody(), args, substitution, levelSubstitution, mode);
+        return result == null ? null : result.accept(this, mode);
       } else {
-        return ((Expression) body).subst(substitution, levelSubstitution);
+        return ((Expression) body).subst(substitution, levelSubstitution).accept(this, mode);
       }
     } else if (body instanceof ElimBody) {
       if (definition.hasStrictParameters()) {
@@ -378,7 +379,8 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
         }
         defCallArgs = normDefCalls;
       }
-      return eval((ElimBody) body, defCallArgs, getDataTypeArgumentsSubstitution(expr), expr.getSortArgument().toLevelSubstitution(), mode);
+      Expression result = eval((ElimBody) body, defCallArgs, getDataTypeArgumentsSubstitution(expr), expr.getSortArgument().toLevelSubstitution(), mode);
+      return result == null ? null : result.accept(this, mode);
     } else {
       assert body == null;
       return null;
@@ -676,28 +678,32 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
 
   @Override
   public Expression visitDefCall(DefCallExpression expr, NormalizationMode mode) {
-    if (expr.getDefinition() instanceof FunctionDefinition && ((FunctionDefinition) expr.getDefinition()).isSFunc() ||
-        expr.getDefinition() instanceof ClassField && ((ClassField) expr.getDefinition()).isProperty() ||
-        expr.getDefinition().status() != Definition.TypeCheckingStatus.NO_ERRORS && expr.getDefinition() instanceof Function && ((Function) expr.getDefinition()).getBody() == null) {
+    if (expr.getDefinition() instanceof FunctionDefinition && ((FunctionDefinition) expr.getDefinition()).isSFunc() || !(expr.getDefinition() instanceof Function) || ((Function) expr.getDefinition()).getBody() == null) {
+      return applyDefCall(expr, mode);
+    } else {
+      return visitFunctionDefCall(expr, mode);
+    }
+  }
+
+  @Override
+  public Expression visitFieldCall(FieldCallExpression expr, NormalizationMode mode) {
+    if (expr.getDefinition().isProperty()) {
       return applyDefCall(expr, mode);
     }
 
-    if (expr instanceof FieldCallExpression) {
-      Expression thisExpr = ((FieldCallExpression) expr).getArgument().accept(this, NormalizationMode.WHNF);
-      if (!(thisExpr.getInferenceVariable() instanceof TypeClassInferenceVariable)) {
-        Expression type = thisExpr.getType();
-        ClassCallExpression classCall = type == null ? null : type.accept(this, NormalizationMode.WHNF).cast(ClassCallExpression.class);
-        if (classCall != null) {
-          Expression impl = classCall.getImplementation((ClassField) expr.getDefinition(), thisExpr);
-          if (impl != null) {
-            return impl.accept(this, mode);
-          }
+    Expression thisExpr = expr.getArgument().accept(this, NormalizationMode.WHNF);
+    if (!(thisExpr.getInferenceVariable() instanceof TypeClassInferenceVariable)) {
+      Expression type = thisExpr.getType();
+      ClassCallExpression classCall = type == null ? null : type.accept(this, NormalizationMode.WHNF).cast(ClassCallExpression.class);
+      if (classCall != null) {
+        Expression impl = classCall.getImplementation(expr.getDefinition(), thisExpr);
+        if (impl != null) {
+          return impl.accept(this, mode);
         }
       }
-      return FieldCallExpression.make((ClassField) expr.getDefinition(), expr.getSortArgument(), mode == NormalizationMode.NF ? thisExpr.accept(this, mode) : thisExpr);
     }
 
-    return expr.getDefinition() instanceof Function ? visitFunctionDefCall(expr, mode) : applyDefCall(expr, mode);
+    return FieldCallExpression.make(expr.getDefinition(), expr.getSortArgument(), mode == NormalizationMode.NF ? thisExpr.accept(this, mode) : thisExpr);
   }
 
   @Override
@@ -707,8 +713,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
 
   @Override
   protected Expression preVisitConCall(ConCallExpression expr, NormalizationMode mode) {
-    Expression result = visitBody(expr.getDefinition().getBody(), expr.getDefCallArguments(), expr, mode);
-    return result == null ? null : result.accept(this, mode);
+    return visitBody(expr.getDefinition().getBody(), expr.getDefCallArguments(), expr, mode);
   }
 
   @Override
