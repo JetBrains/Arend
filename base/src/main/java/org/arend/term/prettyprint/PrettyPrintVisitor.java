@@ -51,7 +51,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       return true;
     }
     if (node instanceof Concrete.Parameter) {
-      prettyPrintParameter((Concrete.Parameter) node, prec);
+      prettyPrintParameter((Concrete.Parameter) node);
       return true;
     }
     if (node instanceof Concrete.Definition) {
@@ -211,7 +211,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       new ListLayout<Concrete.Parameter>(){
         @Override
         void printListElement(PrettyPrintVisitor ppv, Concrete.Parameter parameter) {
-          ppv.prettyPrintParameter(parameter, prec);
+          ppv.prettyPrintParameter(parameter);
         }
 
         @Override
@@ -224,7 +224,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     }
   }
 
-  private void prettyPrintParameter(Concrete.Parameter parameter, byte prec) {
+  private void prettyPrintParameter(Concrete.Parameter parameter) {
     if (parameter instanceof Concrete.NameParameter) {
       Referable referable = ((Concrete.NameParameter) parameter).getReferable();
       String name = referable == null ? null : referable.textRepresentation();
@@ -316,7 +316,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
         } else {
           pp.myBuilder.append("\\Pi ");
           for (Concrete.Parameter parameter : expr.getParameters()) {
-            pp.prettyPrintParameter(parameter, domPrec);
+            pp.prettyPrintParameter(parameter);
             pp.myBuilder.append(' ');
           }
         }
@@ -693,7 +693,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   @Override
   public Void visitCase(Concrete.CaseExpression expr, Precedence prec) {
     if (prec.priority > Concrete.CaseExpression.PREC) myBuilder.append('(');
-    myBuilder.append("\\case ");
+    myBuilder.append(expr.isSCase() ? "\\scase " : "\\case ");
     new ListLayout<Concrete.CaseArgument>() {
       @Override
       void printListElement(PrettyPrintVisitor ppv, Concrete.CaseArgument caseArg) {
@@ -818,7 +818,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     prettyPrintLetClausePattern(letClause.getPattern());
     for (Concrete.Parameter arg : letClause.getParameters()) {
       myBuilder.append(" ");
-      prettyPrintParameter(arg, Concrete.LetExpression.PREC);
+      prettyPrintParameter(arg);
     }
 
     if (letClause.getResultType()!=null) {
@@ -1038,7 +1038,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     List<? extends Concrete.TypeParameter> parameters = def.getParameters();
     for (Concrete.TypeParameter parameter : parameters) {
       myBuilder.append(' ');
-      prettyPrintParameter(parameter, Concrete.ReferenceExpression.PREC);
+      prettyPrintParameter(parameter);
     }
 
     Concrete.Expression universe = def.getUniverse();
@@ -1240,7 +1240,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     prettyPrintNameWithPrecedence(def.getData());
     for (Concrete.TypeParameter parameter : def.getParameters()) {
       myBuilder.append(' ');
-      prettyPrintParameter(parameter, Concrete.ReferenceExpression.PREC);
+      prettyPrintParameter(parameter);
     }
 
     if (def.getResultType() != null) {

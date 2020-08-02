@@ -936,7 +936,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     Concrete.FunctionBody body = def.getBody();
     boolean checkLevelNow = (body instanceof Concrete.ElimFunctionBody || body.getTerm() instanceof Concrete.CaseExpression && def.getKind() != FunctionKind.LEVEL) && !checkResultTypeLater(def);
     Integer typeLevel = checkLevelNow ? checkTypeLevel(def, typedDef, newDef) : null;
-    if (typeLevel != null) {
+    if (typeLevel != null && typedDef.isSFunc()) {
       if (body instanceof Concrete.ElimFunctionBody) {
         for (Concrete.FunctionClause clause : body.getClauses()) {
           if (clause.getExpression() instanceof Concrete.CaseExpression) {
