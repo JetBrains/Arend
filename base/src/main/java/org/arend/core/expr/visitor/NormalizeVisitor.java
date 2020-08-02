@@ -353,7 +353,23 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
     }
 
     if (body instanceof Expression) {
-      return mode == NormalizationMode.RNF || mode == NormalizationMode.RNF_EXP ? null : ((Expression) body).subst(addArguments(getDataTypeArgumentsSubstitution(expr), defCallArgs, definition), expr.getSortArgument().toLevelSubstitution());
+      // return mode == NormalizationMode.RNF || mode == NormalizationMode.RNF_EXP ? null : ((Expression) body).subst(addArguments(getDataTypeArgumentsSubstitution(expr), defCallArgs, definition), expr.getSortArgument().toLevelSubstitution());
+      if (mode == NormalizationMode.RNF || mode == NormalizationMode.RNF_EXP) {
+        return null;
+      }
+
+      ExprSubstitution substitution = addArguments(getDataTypeArgumentsSubstitution(expr), defCallArgs, definition);
+      LevelSubstitution levelSubstitution = expr.getSortArgument().toLevelSubstitution();
+      if (body instanceof CaseExpression && !((CaseExpression) body).isSCase()) {
+        CaseExpression caseExpr = (CaseExpression) body;
+        List<Expression> args = new ArrayList<>(caseExpr.getArguments().size());
+        for (Expression arg : caseExpr.getArguments()) {
+          args.add(arg.subst(substitution, levelSubstitution));
+        }
+        return eval(caseExpr.getElimBody(), args, substitution, levelSubstitution, mode);
+      } else {
+        return ((Expression) body).subst(substitution, levelSubstitution);
+      }
     } else if (body instanceof ElimBody) {
       if (definition.hasStrictParameters()) {
         List<Expression> normDefCalls = new ArrayList<>(defCallArgs.size());
