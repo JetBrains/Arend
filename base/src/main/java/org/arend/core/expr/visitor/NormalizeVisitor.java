@@ -375,27 +375,24 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
       body = elim.getOtherwise();
     }
 
-    if (body instanceof Expression) {
-      return mode == NormalizationMode.RNF || mode == NormalizationMode.RNF_EXP ? null : ((Expression) body).accept(makeVisitor(addArguments(getDataTypeArgumentsSubstitution(expr), defCallArgs, definition), expr.getSortArgument().toLevelSubstitution()), mode);
-    } else if (body instanceof ElimBody) {
-      if (definition.hasStrictParameters()) {
-        List<Expression> normDefCalls = new ArrayList<>(defCallArgs.size());
-        for (int i = 0; i < defCallArgs.size(); i++) {
-          normDefCalls.add(definition.isStrict(i) ? defCallArgs.get(i).accept(this, NormalizationMode.WHNF) : defCallArgs.get(i));
-        }
-        ExprSubstitution substitution = getDataTypeArgumentsSubstitution(expr);
-        if (mySubstStack != null) {
-          for (Map.Entry<Variable, Expression> entry : substitution.getEntries()) {
-            entry.setValue(applySubst(entry.getValue()));
-          }
-        }
-        return new NormalizeVisitor(null).makeVisitor(substitution, applySubst(expr.getSortArgument()).toLevelSubstitution()).eval((ElimBody) body, normDefCalls, mode);
-      } else {
-        return new NormalizeVisitor(mySubstStack).makeVisitor(getDataTypeArgumentsSubstitution(expr), expr.getSortArgument().toLevelSubstitution()).eval((ElimBody) body, defCallArgs, mode);
-      }
-    } else {
-      assert body == null;
+    if (body == null || body instanceof Expression && (mode == NormalizationMode.RNF || mode == NormalizationMode.RNF_EXP)) {
       return null;
+    }
+
+    if (definition.hasStrictParameters()) {
+      List<Expression> normDefCalls = new ArrayList<>(defCallArgs.size());
+      for (int i = 0; i < defCallArgs.size(); i++) {
+        normDefCalls.add(definition.isStrict(i) ? defCallArgs.get(i).accept(this, NormalizationMode.WHNF) : defCallArgs.get(i));
+      }
+      defCallArgs = normDefCalls;
+    }
+
+    if (body instanceof Expression) {
+      return ((Expression) body).accept(makeVisitor(addArguments(getDataTypeArgumentsSubstitution(expr), defCallArgs, definition), expr.getSortArgument().toLevelSubstitution()), mode);
+    } else if (body instanceof ElimBody) {
+      return new NormalizeVisitor(mySubstStack).makeVisitor(getDataTypeArgumentsSubstitution(expr), expr.getSortArgument().toLevelSubstitution()).eval((ElimBody) body, defCallArgs, mode);
+    } else {
+      throw new IllegalStateException();
     }
   }
 
