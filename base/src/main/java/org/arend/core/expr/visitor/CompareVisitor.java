@@ -463,17 +463,19 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
 
       it = expr1.getDefCallArguments().get(recursiveParam).getUnderlyingExpression();
       expr2 = conCall2.getDefCallArguments().get(recursiveParam).getUnderlyingExpression();
+      if (it == expr2) {
+        return true;
+      }
+      it = it.normalize(NormalizationMode.WHNF);
+      expr2 = expr2.normalize(NormalizationMode.WHNF);
       if (!(it instanceof ConCallExpression)) {
         break;
       }
 
       // compare(it, expr2, null)
-      if (it == expr2) {
-        return true;
-      }
       InferenceReferenceExpression infRefExpr2 = expr2.cast(InferenceReferenceExpression.class);
       if (infRefExpr2 != null && infRefExpr2.getVariable() instanceof InferenceVariable) {
-        return myNormalCompare && myEquations.addEquation(it.normalize(NormalizationMode.WHNF), infRefExpr2, type, myCMP, ((InferenceVariable) infRefExpr2.getVariable()).getSourceNode(), it.getStuckInferenceVariable(), (InferenceVariable) infRefExpr2.getVariable()) || myOnlySolveVars;
+        return myNormalCompare && myEquations.addEquation(it, infRefExpr2, type, myCMP, ((InferenceVariable) infRefExpr2.getVariable()).getSourceNode(), it.getStuckInferenceVariable(), (InferenceVariable) infRefExpr2.getVariable()) || myOnlySolveVars;
       }
       InferenceVariable stuckVar2 = expr2.getStuckInferenceVariable();
       if (stuckVar2 != null && (!myNormalCompare || myEquations == DummyEquations.getInstance())) {
@@ -481,12 +483,6 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       }
       if (!myNormalCompare || !myNormalize || myOnlySolveVars && stuckVar2 != null) {
         return true;
-      }
-
-      it = it.normalize(NormalizationMode.WHNF);
-      expr2 = expr2.normalize(NormalizationMode.WHNF);
-      if (!(it instanceof ConCallExpression)) {
-        return normalizedCompare(it, expr2, null) || myOnlySolveVars;
       }
 
       // normalizedCompare(it, expr2, null)
