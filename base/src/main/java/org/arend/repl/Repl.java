@@ -42,7 +42,7 @@ import java.util.function.Supplier;
 
 public abstract class Repl {
   public static final @NotNull ModuleLocation replModulePath = new ModuleLocation("Repl", ModuleLocation.LocationKind.SOURCE, ModulePath.fromString("Repl"));
-  public @Nullable NormalizationMode normalizationMode = NormalizationMode.RNF;
+  public @Nullable NormalizationMode normalizationMode = NormalizationMode.WHNF;
 
   protected final List<Scope> myMergedScopes = new LinkedList<>();
   private final List<ReplHandler> myHandlers = new ArrayList<>();
