@@ -352,12 +352,19 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
       body = elim.getOtherwise();
     }
 
-    if (body instanceof Expression) {
-      // return mode == NormalizationMode.RNF || mode == NormalizationMode.RNF_EXP ? null : ((Expression) body).subst(addArguments(getDataTypeArgumentsSubstitution(expr), defCallArgs, definition), expr.getSortArgument().toLevelSubstitution());
-      if (mode == NormalizationMode.RNF || mode == NormalizationMode.RNF_EXP) {
-        return null;
-      }
+    if (body == null || body instanceof Expression && (mode == NormalizationMode.RNF || mode == NormalizationMode.RNF_EXP)) {
+      return null;
+    }
 
+    if (definition.hasStrictParameters()) {
+      List<Expression> normDefCalls = new ArrayList<>(defCallArgs.size());
+      for (int i = 0; i < defCallArgs.size(); i++) {
+        normDefCalls.add(definition.isStrict(i) ? defCallArgs.get(i).accept(this, NormalizationMode.WHNF) : defCallArgs.get(i));
+      }
+      defCallArgs = normDefCalls;
+    }
+
+    if (body instanceof Expression) {
       ExprSubstitution substitution = addArguments(getDataTypeArgumentsSubstitution(expr), defCallArgs, definition);
       LevelSubstitution levelSubstitution = expr.getSortArgument().toLevelSubstitution();
       if (body instanceof CaseExpression && !((CaseExpression) body).isSCase()) {
@@ -372,18 +379,10 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
         return ((Expression) body).subst(substitution, levelSubstitution).accept(this, mode);
       }
     } else if (body instanceof ElimBody) {
-      if (definition.hasStrictParameters()) {
-        List<Expression> normDefCalls = new ArrayList<>(defCallArgs.size());
-        for (int i = 0; i < defCallArgs.size(); i++) {
-          normDefCalls.add(definition.isStrict(i) ? defCallArgs.get(i).accept(this, NormalizationMode.WHNF) : defCallArgs.get(i));
-        }
-        defCallArgs = normDefCalls;
-      }
       Expression result = eval((ElimBody) body, defCallArgs, getDataTypeArgumentsSubstitution(expr), expr.getSortArgument().toLevelSubstitution(), mode);
       return result == null ? null : result.accept(this, mode);
     } else {
-      assert body == null;
-      return null;
+      throw new IllegalStateException();
     }
   }
 
