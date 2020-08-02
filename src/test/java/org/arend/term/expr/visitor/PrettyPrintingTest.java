@@ -214,4 +214,53 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
     Expression expr = new LamExpression(Sort.SET0, lamParam, FunCallExpression.make((FunctionDefinition) getDefinition("M.foo"), Sort.STD, Arrays.asList(new ReferenceExpression(lamParam), FunCallExpression.make((FunctionDefinition) getDefinition("N.foo"), Sort.STD, Collections.emptyList()))));
     assertEquals("\\lam (foo : Nat) => M.foo foo N.foo", expr.toString());
   }
+
+  private String printTestExpr() {
+    return ToAbstractVisitor.convert((Expression) ((FunctionDefinition) getDefinition("test")).getBody(), new PrettyPrinterConfig() {
+      @Override
+      public @NotNull EnumSet<PrettyPrinterFlag> getExpressionFlags() {
+        return EnumSet.noneOf(PrettyPrinterFlag.class);
+      }
+    }).toString();
+  }
+
+  @Test
+  public void prefixConstructorRight() {
+    typeCheckModule(
+      "\\data List (A : \\Type) | nil | cons A (List A)\n" +
+      "\\func test => cons 0 (cons 1 (cons 2 nil))");
+    assertEquals("cons 0 (cons 1 (cons 2 nil))", printTestExpr());
+  }
+
+  @Test
+  public void prefixConstructorLeft() {
+    typeCheckModule(
+      "\\data List (A : \\Type) | nil | cons (List A) A\n" +
+      "\\func test => cons (cons (cons nil 2) 1) 0");
+    assertEquals("cons (cons (cons nil 2) 1) 0", printTestExpr());
+  }
+
+  @Test
+  public void infixConstructorRight() {
+    typeCheckModule(
+      "\\data List (A : \\Type) | nil | \\infixr 5 :: A (List A)\n" +
+      "\\func test => 0 :: 1 :: 2 :: nil");
+    assertEquals("0 :: 1 :: 2 :: nil", printTestExpr());
+  }
+
+  @Test
+  public void infixConstructorLeft() {
+    typeCheckModule(
+      "\\data List (A : \\Type) | nil | \\infixr 5 :: (List A) A\n" +
+      "\\func test => ((nil :: 2) :: 1) :: 0");
+    assertEquals("((nil :: 2) :: 1) :: 0", printTestExpr());
+  }
+
+  @Test
+  public void infixConstructorLeftAssoc() {
+    typeCheckModule(
+      "\\data List (A : \\Type) | nil | \\infixl 5 :: (List A) A\n" +
+      "\\func test => ((nil :: 2) :: 1) :: 0");
+    assertEquals("nil :: 2 :: 1 :: 0", printTestExpr());
+  }
 }

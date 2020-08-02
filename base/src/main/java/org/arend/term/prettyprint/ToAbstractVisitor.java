@@ -96,8 +96,8 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     if (pattern instanceof ConstructorExpressionPattern) {
       Definition def = pattern.getDefinition();
       return def instanceof Constructor || def instanceof DConstructor
-        ? cConPattern(isExplicit, def.getReferable(), visitPatterns(((ConstructorExpressionPattern) pattern).getSubPatterns(), def.getParameters()))
-        : cTuplePattern(isExplicit, visitPatterns(((ConstructorExpressionPattern) pattern).getSubPatterns(), EmptyDependentLink.getInstance()));
+        ? cConPattern(isExplicit, def.getReferable(), visitPatterns(pattern.getSubPatterns(), def.getParameters()))
+        : cTuplePattern(isExplicit, visitPatterns(pattern.getSubPatterns(), EmptyDependentLink.getInstance()));
     }
     throw new IllegalStateException();
   }
@@ -175,7 +175,9 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     List<Concrete.Argument> concreteArguments = new ArrayList<>(arguments.size());
     for (Expression arg : arguments) {
       visitArgument(arg, parameters.isExplicit(), concreteArguments);
-      parameters = parameters.getNext();
+      if (parameters.hasNext()) {
+        parameters = parameters.getNext();
+      }
     }
     return checkApp(Concrete.AppExpression.make(null, expr, concreteArguments));
   }
@@ -663,7 +665,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       DependentLink param = def == null ? null : def.getParameters();
       for (Pattern subPattern : pattern.getSubPatterns()) {
         visitElimPattern(subPattern, param == null || param.isExplicit(), subPatterns);
-        if (param != null) {
+        if (param != null && param.hasNext()) {
           param = param.getNext();
         }
       }

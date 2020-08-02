@@ -2,6 +2,8 @@ package org.arend.term.prettyprint;
 
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
+import org.arend.core.context.param.DependentLink;
+import org.arend.core.definition.Constructor;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.reference.Precedence;
 import org.arend.naming.reference.CoreReferable;
@@ -90,29 +92,140 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   }
 
   @Override
-  public Void visitApp(final Concrete.AppExpression expr, Precedence prec) {
-    Concrete.Expression fun = expr.getFunction();
-    List<Concrete.Argument> args = expr.getArguments();
+  public Void visitApp(Concrete.AppExpression expr, Precedence prec) {
+    List<String> tail = null;
 
-    boolean infix = false;
-    if (fun instanceof Concrete.ReferenceExpression && ((ReferenceExpression) fun).getReferent() instanceof GlobalReferable && ((GlobalReferable) ((ReferenceExpression) fun).getReferent()).getRepresentablePrecedence().isInfix) {
-      for (int i = 0; i < args.size(); i++) {
-        if (args.get(i).isExplicit()) {
-          infix = i == args.size() - 2 && args.get(i + 1).isExplicit();
+    Concrete.Expression it = expr;
+    do {
+      expr = (Concrete.AppExpression) it;
+      TCReferable tcRef = expr.getFunction() instanceof Concrete.ReferenceExpression && ((ReferenceExpression) expr.getFunction()).getReferent() instanceof TCReferable ? (TCReferable) ((ReferenceExpression) expr.getFunction()).getReferent() : null;
+      Constructor constructor = tcRef == null ? null : tcRef.getTypechecked() instanceof Constructor ? (Constructor) tcRef.getTypechecked() : null;
+      if (constructor == null || constructor.getRecursiveParameter() < 0) {
+        break;
+      }
+
+      List<Concrete.Argument> args = expr.getArguments();
+      if (tcRef.getRepresentablePrecedence().isInfix && isInfix(args)) {
+        int explicitIndex = -1;
+        int i = 0;
+        for (DependentLink link = constructor.getParameters(); link.hasNext(); link = link.getNext(), i++) {
+          if (link.isExplicit()) {
+            if (link.getNext().hasNext() && link.getNext().isExplicit()) {
+              explicitIndex = i;
+            }
+            break;
+          }
+        }
+        if (explicitIndex == -1 || explicitIndex != constructor.getRecursiveParameter() && explicitIndex + 1 != constructor.getRecursiveParameter()) {
           break;
         }
+
+        StringBuilder tailBuilder = new StringBuilder();
+        boolean leftParamIsRecursive = explicitIndex == constructor.getRecursiveParameter();
+        prec = visitBinOp(leftParamIsRecursive ? null : args.get(args.size() - 2).getExpression(), (Concrete.ReferenceExpression) expr.getFunction(), args.subList(0, args.size() - 2), leftParamIsRecursive ? args.get(args.size() - 1).getExpression() : null, prec, tailBuilder);
+        if (tailBuilder.length() != 0) {
+          if (tail == null) {
+            tail = new ArrayList<>();
+          }
+          tail.add(tailBuilder.toString());
+        }
+        it = args.get(args.size() - (leftParamIsRecursive ? 2 : 1)).getExpression();
+      } else {
+        int recursiveArg = 0;
+        int recursiveParam = 0;
+        for (DependentLink link = constructor.getParameters(); link.hasNext() && recursiveArg < args.size(); link = link.getNext(), recursiveArg++, recursiveParam++) {
+          while (link.hasNext() && recursiveArg < args.size() && link.isExplicit() != args.get(recursiveArg).isExplicit()) {
+            if (link.isExplicit()) {
+              recursiveArg++;
+            } else {
+              link = link.getNext();
+              recursiveParam++;
+            }
+          }
+          if (recursiveParam == constructor.getRecursiveParameter()) {
+            break;
+          }
+        }
+        if (recursiveArg == args.size()) {
+          break;
+        }
+
+        if (prec.priority > Concrete.AppExpression.PREC) myBuilder.append('(');
+        expr.getFunction().accept(this, new Precedence(Concrete.AppExpression.PREC));
+        for (int i = 0; i < recursiveArg; i++) {
+          myBuilder.append(' ');
+          printArgument(args.get(i));
+        }
+        myBuilder.append(' ');
+        if (!args.get(recursiveArg).isExplicit()) {
+          myBuilder.append('{');
+        }
+        if (!args.get(recursiveArg).isExplicit() || recursiveArg < args.size() - 1 || prec.priority > Concrete.AppExpression.PREC) {
+          if (tail == null) {
+            tail = new ArrayList<>();
+          }
+          PrettyPrintVisitor ppVisitor = new PrettyPrintVisitor(new StringBuilder(), myIndent, !noIndent);
+          if (!args.get(recursiveArg).isExplicit()) {
+            ppVisitor.printClosingBrace();
+          }
+          for (int i = recursiveArg + 1; i < args.size(); i++) {
+            ppVisitor.myBuilder.append(' ');
+            ppVisitor.printArgument(args.get(i));
+          }
+          if (prec.priority > Concrete.AppExpression.PREC) ppVisitor.myBuilder.append(')');
+          tail.add(ppVisitor.myBuilder.toString());
+        }
+        it = args.get(recursiveArg).getExpression();
+        prec = args.get(recursiveArg).isExplicit() ? new Precedence((byte) (Concrete.AppExpression.PREC + 1)) : new Precedence(Concrete.Expression.PREC);
+      }
+    } while (it instanceof Concrete.AppExpression);
+
+    if (it instanceof Concrete.AppExpression) {
+      visitAppImpl((Concrete.AppExpression) it, prec);
+    } else {
+      it.accept(this, prec);
+    }
+
+    if (tail != null) {
+      for (int i = tail.size() - 1; i >= 0; i--) {
+        myBuilder.append(tail.get(i));
       }
     }
 
-    if (infix) {
-      visitBinOp(args.get(args.size() - 2).getExpression(), (ReferenceExpression) fun, args.subList(0, args.size() - 2), args.get(args.size() - 1).getExpression(), prec);
+    return null;
+  }
+
+  private void printArgument(Concrete.Argument arg) {
+    if (arg.isExplicit()) {
+      arg.getExpression().accept(this, new Precedence((byte) (Concrete.AppExpression.PREC + 1)));
+    } else {
+      myBuilder.append("{");
+      arg.getExpression().accept(this, new Precedence(Concrete.Expression.PREC));
+      printClosingBrace();
+    }
+  }
+
+  private boolean isInfix(List<Concrete.Argument> args) {
+    for (int i = 0; i < args.size(); i++) {
+      if (args.get(i).isExplicit()) {
+        return i == args.size() - 2 && args.get(i + 1).isExplicit();
+      }
+    }
+    return false;
+  }
+
+  private void visitAppImpl(final Concrete.AppExpression expr, Precedence prec) {
+    Concrete.Expression fun = expr.getFunction();
+    List<Concrete.Argument> args = expr.getArguments();
+
+    if (fun instanceof Concrete.ReferenceExpression && ((ReferenceExpression) fun).getReferent() instanceof GlobalReferable && ((GlobalReferable) ((ReferenceExpression) fun).getReferent()).getRepresentablePrecedence().isInfix && isInfix(args)) {
+      visitBinOp(args.get(args.size() - 2).getExpression(), (ReferenceExpression) fun, args.subList(0, args.size() - 2), args.get(args.size() - 1).getExpression(), prec, null);
     } else {
       if (prec.priority > Concrete.AppExpression.PREC) myBuilder.append('(');
-      final Expression finalFun = fun;
       new BinOpLayout() {
         @Override
         void printLeft(PrettyPrintVisitor pp) {
-          finalFun.accept(pp, new Precedence(Concrete.AppExpression.PREC));
+          fun.accept(pp, new Precedence(Concrete.AppExpression.PREC));
         }
 
         @Override
@@ -132,8 +245,6 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       }.doPrettyPrint(this, noIndent);
       if (prec.priority > Concrete.AppExpression.PREC) myBuilder.append(')');
     }
-
-    return null;
   }
 
   private void printReferenceName(Concrete.ReferenceExpression expr, Precedence prec) {
@@ -206,7 +317,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     return null;
   }
 
-  public void prettyPrintParameters(List<? extends Concrete.Parameter> parameters, final byte prec) {
+  public void prettyPrintParameters(List<? extends Concrete.Parameter> parameters) {
     if (parameters != null) {
       new ListLayout<Concrete.Parameter>(){
         @Override
@@ -284,7 +395,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     new BinOpLayout(){
       @Override
       void printLeft(PrettyPrintVisitor pp) {
-        pp.prettyPrintParameters(expr.getParameters(), Concrete.Expression.PREC);
+        pp.prettyPrintParameters(expr.getParameters());
       }
 
       @Override
@@ -309,7 +420,6 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     new BinOpLayout(){
       @Override
       void printLeft(PrettyPrintVisitor pp) {
-        byte domPrec = (byte) (expr.getParameters().size() > 1 ? Concrete.AppExpression.PREC + 1 : Concrete.PiExpression.PREC + 1);
         if (expr.getParameters().size() == 1 && !(expr.getParameters().get(0) instanceof Concrete.TelescopeParameter)) {
           expr.getParameters().get(0).getType().accept(pp, new Precedence((byte) (Concrete.PiExpression.PREC + 1)));
           pp.myBuilder.append(' ');
@@ -513,7 +623,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       myBuilder.append(' ');
     }
 
-    prettyPrintParameters(expr.getParameters(), (byte) (Concrete.AppExpression.PREC + 1));
+    prettyPrintParameters(expr.getParameters());
 
     if (prec.priority > Concrete.SigmaExpression.PREC) myBuilder.append(')');
     return null;
@@ -610,21 +720,35 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     return null;
   }
 
-  private void visitBinOp(Concrete.Expression left, Concrete.ReferenceExpression infix, List<Concrete.Argument> implicitArgs, Concrete.Expression right, Precedence prec) {
+  private Precedence visitBinOp(Concrete.Expression left, Concrete.ReferenceExpression infix, List<Concrete.Argument> implicitArgs, Concrete.Expression right, Precedence prec, StringBuilder builder) {
     Precedence infixPrec = ((GlobalReferable) infix.getReferent()).getRepresentablePrecedence();
     boolean needParens = prec.priority > infixPrec.priority || prec.priority == infixPrec.priority && (prec.associativity != infixPrec.associativity || prec.associativity == Precedence.Associativity.NON_ASSOC);
     if (needParens) myBuilder.append('(');
-    left.accept(this, infixPrec.associativity != Precedence.Associativity.LEFT_ASSOC ? new Precedence(Precedence.Associativity.NON_ASSOC, infixPrec.priority, infixPrec.isInfix) : infixPrec);
-    myBuilder.append(' ');
-    printReferenceName(infix, null);
-    for (Concrete.Argument arg : implicitArgs) {
-      myBuilder.append(" {");
-      arg.expression.accept(this, new Precedence(Expression.PREC));
-      printClosingBrace();
+    PrettyPrintVisitor ppVisitor;
+    Precedence leftPrec = infixPrec.associativity != Precedence.Associativity.LEFT_ASSOC ? new Precedence(Precedence.Associativity.NON_ASSOC, infixPrec.priority, infixPrec.isInfix) : infixPrec;
+    if (left != null) {
+      left.accept(this, leftPrec);
+      ppVisitor = this;
+    } else {
+      ppVisitor = new PrettyPrintVisitor(builder, myIndent, !noIndent);
     }
-    myBuilder.append(' ');
-    right.accept(this, infixPrec.associativity != Precedence.Associativity.RIGHT_ASSOC ? new Precedence(Precedence.Associativity.NON_ASSOC, infixPrec.priority, infixPrec.isInfix) : infixPrec);
-    if (needParens) myBuilder.append(')');
+    ppVisitor.myBuilder.append(' ');
+    ppVisitor.printReferenceName(infix, null);
+    for (Concrete.Argument arg : implicitArgs) {
+      ppVisitor.myBuilder.append(" {");
+      arg.expression.accept(ppVisitor, new Precedence(Expression.PREC));
+      ppVisitor.printClosingBrace();
+    }
+    ppVisitor.myBuilder.append(' ');
+    Precedence rightPrec = infixPrec.associativity != Precedence.Associativity.RIGHT_ASSOC ? new Precedence(Precedence.Associativity.NON_ASSOC, infixPrec.priority, infixPrec.isInfix) : infixPrec;
+    if (right != null) {
+      right.accept(ppVisitor, rightPrec);
+      if (needParens) ppVisitor.myBuilder.append(')');
+      return leftPrec;
+    } else {
+      if (needParens) builder.append(')');
+      return rightPrec;
+    }
   }
 
   public void prettyPrintFunctionClause(final Concrete.FunctionClause clause) {
@@ -979,7 +1103,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     final BinOpLayout l = new BinOpLayout(){
       @Override
       void printLeft(PrettyPrintVisitor pp) {
-        pp.prettyPrintParameters(def.getParameters(), Concrete.ReferenceExpression.PREC);
+        pp.prettyPrintParameters(def.getParameters());
       }
 
       @Override
@@ -1292,7 +1416,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
           prettyPrintNameWithPrecedence(field.getData());
           if (!field.getParameters().isEmpty()) {
             myBuilder.append(" ");
-            prettyPrintParameters(field.getParameters(), Concrete.ReferenceExpression.PREC);
+            prettyPrintParameters(field.getParameters());
           }
           myBuilder.append(" : ");
           printTypeLevel(field.getResultType(), field.getResultTypeLevel());
@@ -1306,7 +1430,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
             .append(field.getOverriddenField().textRepresentation());
           if (!field.getParameters().isEmpty()) {
             myBuilder.append(" ");
-            prettyPrintParameters(field.getParameters(), Concrete.ReferenceExpression.PREC);
+            prettyPrintParameters(field.getParameters());
           }
           myBuilder.append(" : ");
           printTypeLevel(field.getResultType(), field.getResultTypeLevel());
@@ -1328,13 +1452,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     new ListLayout<Concrete.Argument>() {
       @Override
       void printListElement(PrettyPrintVisitor ppv, Concrete.Argument arg) {
-        if (arg.isExplicit()) {
-          arg.getExpression().accept(ppv, new Precedence((byte) (Concrete.AppExpression.PREC + 1)));
-        } else {
-          ppv.myBuilder.append("{");
-          arg.getExpression().accept(ppv, new Precedence(Concrete.Expression.PREC));
-          ppv.printClosingBrace();
-        }
+        ppv.printArgument(arg);
       }
 
       @Override
