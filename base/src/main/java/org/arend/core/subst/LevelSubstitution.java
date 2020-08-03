@@ -6,6 +6,7 @@ import org.arend.core.sort.Level;
 public interface LevelSubstitution {
   boolean isEmpty();
   Level get(Variable variable);
+  LevelSubstitution subst(LevelSubstitution substitution);
 
   LevelSubstitution EMPTY = new LevelSubstitution() {
     @Override
@@ -16,6 +17,11 @@ public interface LevelSubstitution {
     @Override
     public Level get(Variable variable) {
       return null;
+    }
+
+    @Override
+    public LevelSubstitution subst(LevelSubstitution substitution) {
+      return this;
     }
   };
 }

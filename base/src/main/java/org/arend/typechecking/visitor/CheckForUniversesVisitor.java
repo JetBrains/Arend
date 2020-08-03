@@ -6,7 +6,7 @@ import org.arend.core.expr.DefCallExpression;
 import org.arend.core.expr.UniverseExpression;
 import org.arend.core.sort.Sort;
 
-public class CheckForUniversesVisitor extends ProcessDefCallsVisitor<Void> {
+public class CheckForUniversesVisitor extends SearchVisitor<Void> {
   public static boolean visitSort(Sort sort) {
     return !sort.getPLevel().isClosed() || !sort.getHLevel().isClosed();
   }

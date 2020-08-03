@@ -6,6 +6,7 @@ import org.arend.core.expr.ExpressionFactory;
 import org.arend.core.sort.Sort;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.typechecking.TypeCheckingTestCase;
+import org.arend.util.SingletonList;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -18,7 +19,7 @@ public class SFuncTest extends TypeCheckingTestCase {
   @Test
   public void normTest() {
     typeCheckModule("\\sfunc pred (n : Nat) : Nat | 0 => 0 | suc n => n");
-    Expression expr = getDefinition("pred").getDefCall(Sort.STD, Collections.singletonList(ExpressionFactory.Zero()));
+    Expression expr = getDefinition("pred").getDefCall(Sort.STD, new SingletonList<>(ExpressionFactory.Zero()));
     assertSame(expr, expr.normalize(NormalizationMode.WHNF));
   }
 

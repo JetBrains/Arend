@@ -15,11 +15,16 @@ public class StdLevelSubstitution implements LevelSubstitution {
 
   @Override
   public boolean isEmpty() {
-    return false;
+    return myPLevel.getVar() == LevelVariable.PVAR && myPLevel.isVarOnly() && myHLevel.getVar() == LevelVariable.HVAR && myHLevel.isVarOnly();
   }
 
   @Override
   public Level get(Variable variable) {
     return variable == LevelVariable.PVAR ? myPLevel : variable == LevelVariable.HVAR ? myHLevel : null;
+  }
+
+  @Override
+  public LevelSubstitution subst(LevelSubstitution substitution) {
+    return new StdLevelSubstitution(myPLevel.subst(substitution), myHLevel.subst(substitution));
   }
 }

@@ -62,20 +62,20 @@ class CallMatrix extends BaseCallMatrix<Definition> {
     int lenJ = rangeJ.proj2 - rangeJ.proj1 + 1;
     if (lenI == 1 && lenJ == 1) {
       this.set(rangeI.proj1, rangeJ.proj1, value);
-    } else if (lenI == lenJ) switch (value) {
+    } else switch (value) {
       case Equal:
+        if (lenI != lenJ) throw new IllegalStateException();
         for (int ii = rangeI.proj1; ii <= rangeI.proj2; ii++)
           this.set(ii, rangeJ.proj1 + ii - rangeI.proj1, R.Equal);
       case Unknown:
         for (int ii = rangeI.proj1; ii <= rangeI.proj2; ii++)
           for (int jj = rangeJ.proj1; jj <= rangeJ.proj2; jj++)
-            if (ii - rangeI.proj1 != jj - rangeJ.proj1)
+            if (value == R.Unknown || ii - rangeI.proj1 != jj - rangeJ.proj1)
               this.set(ii, jj, R.Unknown);
         break;
       case LessThan:
         throw new IllegalStateException();
     }
-    else throw new IllegalStateException();
   }
 
   @Override

@@ -26,12 +26,37 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> {
     return null;
   }
 
+  protected void processConCall(ConCallExpression expr, P params) {}
+
   @Override
   public Void visitConCall(ConCallExpression expr, P params) {
-    for (Expression arg : expr.getDataTypeArguments()) {
-      arg.accept(this, params);
-    }
-    visitDefCall(expr, params);
+    Expression it = expr;
+    do {
+      expr = (ConCallExpression) it;
+      processConCall(expr, params);
+
+      for (Expression arg : expr.getDataTypeArguments()) {
+        arg.accept(this, params);
+      }
+
+      int recursiveParam = expr.getDefinition().getRecursiveParameter();
+      if (recursiveParam < 0) {
+        for (Expression arg : expr.getDefCallArguments()) {
+          arg.accept(this, params);
+        }
+        return null;
+      }
+
+      for (int i = 0; i < expr.getDefCallArguments().size(); i++) {
+        if (i != recursiveParam) {
+          expr.getDefCallArguments().get(i).accept(this, params);
+        }
+      }
+
+      it = expr.getDefCallArguments().get(recursiveParam);
+    } while (it instanceof ConCallExpression);
+
+    it.accept(this, params);
     return null;
   }
 

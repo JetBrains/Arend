@@ -27,7 +27,7 @@ import org.arend.typechecking.error.local.SolveEquationError;
 import org.arend.typechecking.error.local.SolveEquationsError;
 import org.arend.typechecking.error.local.SolveLevelEquationsError;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
-import org.arend.typechecking.visitor.ProcessDefCallsVisitor;
+import org.arend.typechecking.visitor.SearchVisitor;
 import org.arend.util.Pair;
 
 import java.util.*;
@@ -973,7 +973,7 @@ public class TwoStageEquations implements Equations {
       if (!implementations.containsKey(field)) {
         continue;
       }
-      field.getType(sortArgument).getCodomain().accept(new ProcessDefCallsVisitor<Void>() {
+      field.getType(sortArgument).getCodomain().accept(new SearchVisitor<Void>() {
         @Override
         protected boolean processDefCall(DefCallExpression expression, Void param) {
           if (expression instanceof FieldCallExpression && classDef.getFields().contains(((FieldCallExpression) expression).getDefinition()) && !solution.isImplemented((ClassField) expression.getDefinition())) {

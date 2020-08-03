@@ -6,11 +6,12 @@ import org.arend.core.definition.ClassField;
 import org.arend.core.elimtree.ElimBody;
 import org.arend.core.expr.*;
 import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.typechecking.visitor.SearchVisitor;
 
 import java.util.Collections;
 import java.util.Map;
 
-public class NormalizingFindBindingVisitor extends BaseExpressionVisitor<Void, Boolean> {
+public class NormalizingFindBindingVisitor extends SearchVisitor<Void> {
   private final FindBindingVisitor myVisitor;
 
   private NormalizingFindBindingVisitor(Variable binding) {
@@ -22,7 +23,7 @@ public class NormalizingFindBindingVisitor extends BaseExpressionVisitor<Void, B
   }
 
   private boolean findBinding(Expression expression, boolean normalize) {
-    if (expression.accept(myVisitor, null) == null) {
+    if (!expression.accept(myVisitor, null)) {
       return false;
     }
     return (normalize ? expression.normalize(NormalizationMode.WHNF) : expression).accept(this, null);
@@ -44,13 +45,8 @@ public class NormalizingFindBindingVisitor extends BaseExpressionVisitor<Void, B
   }
 
   @Override
-  public Boolean visitConCall(ConCallExpression expr, Void params) {
-    for (Expression arg : expr.getDataTypeArguments()) {
-      if (findBinding(arg, true)) {
-        return true;
-      }
-    }
-    return visitDefCall(expr, null);
+  protected boolean visitConCallArgument(Expression arg, Void param) {
+    return findBinding(arg, true);
   }
 
   @Override

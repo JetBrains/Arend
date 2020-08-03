@@ -103,13 +103,17 @@ public class GoodThisParametersVisitor extends VoidExpressionVisitor<Void> {
     return null;
   }
 
+  private void visitArgument(Expression arg, Boolean goodParameter) {
+    if (arg instanceof FieldCallExpression && goodParameter) {
+      visitDefCall((FieldCallExpression) arg, null);
+    } else if (!(arg instanceof ReferenceExpression && goodParameter)) {
+      arg.accept(this, null);
+    }
+  }
+
   private void visitArguments(List<? extends Expression> args, List<Boolean> goodParameters) {
     for (int i = 0; i < args.size(); i++) {
-      if (args.get(i) instanceof FieldCallExpression && i < goodParameters.size() && goodParameters.get(i)) {
-        visitDefCall((FieldCallExpression) args.get(i), null);
-      } else if (!(args.get(i) instanceof ReferenceExpression && i < goodParameters.size() && goodParameters.get(i))) {
-        args.get(i).accept(this, null);
-      }
+      visitArgument(args.get(i), i < goodParameters.size() && goodParameters.get(i));
     }
   }
 
@@ -121,14 +125,32 @@ public class GoodThisParametersVisitor extends VoidExpressionVisitor<Void> {
 
   @Override
   public Void visitConCall(ConCallExpression expr, Void params) {
-    if (expr.getDefinition().getPatterns() == null) {
+    Expression it = expr;
+    boolean goodParam = false;
+    do {
+      expr = (ConCallExpression) it;
+
       visitArguments(expr.getDataTypeArguments(), expr.getDefinition().getDataType().getGoodThisParameters());
-      visitArguments(expr.getDefCallArguments(), expr.getDefinition().getGoodThisParameters());
-    } else {
-      List<Expression> args = new ArrayList<>(expr.getDataTypeArguments());
-      args.addAll(expr.getDefCallArguments());
-      visitArguments(args, expr.getDefinition().getGoodThisParameters());
-    }
+
+      int recursiveParam = expr.getDefinition().getRecursiveParameter();
+      if (recursiveParam < 0) {
+        visitArguments(expr.getDefCallArguments(), expr.getDefinition().getGoodThisParameters());
+        return null;
+      }
+
+      List<Boolean> goodParams = expr.getDefinition().getGoodThisParameters();
+      for (int i = 0; i < expr.getDefCallArguments().size(); i++) {
+        if (i != recursiveParam) {
+          visitArgument(expr.getDefCallArguments().get(i), i < goodParams.size() && goodParams.get(i));
+        } else {
+          goodParam = i < goodParams.size() && goodParams.get(i);
+        }
+      }
+
+      it = expr.getDefCallArguments().get(recursiveParam);
+    } while (it instanceof ConCallExpression);
+
+    visitArgument(it, goodParam);
     return null;
   }
 

@@ -75,6 +75,10 @@ public final class Concrete {
       return this;
     }
 
+    public boolean isStrict() {
+      return false;
+    }
+
     @Override
     @NotNull
     public abstract List<? extends Referable> getReferableList();
@@ -168,6 +172,39 @@ public final class Concrete {
     @Override
     public int getNumberOfParameters() {
       return myReferableList.size();
+    }
+  }
+
+  public static class DefinitionTypeParameter extends TelescopeParameter {
+    private final boolean myStrict;
+
+    public DefinitionTypeParameter(Object data, boolean explicit, boolean isStrict, Expression type) {
+      super(data, explicit, Collections.singletonList(null), type);
+      myStrict = isStrict;
+    }
+
+    public DefinitionTypeParameter(boolean explicit, boolean isStrict, Expression type) {
+      super(type.getData(), explicit, Collections.singletonList(null), type);
+      myStrict = isStrict;
+    }
+
+    @Override
+    public boolean isStrict() {
+      return myStrict;
+    }
+  }
+
+  public static class DefinitionTelescopeParameter extends TelescopeParameter {
+    private final boolean myStrict;
+
+    public DefinitionTelescopeParameter(Object data, boolean explicit, boolean myStrict, List<? extends Referable> referableList, Expression type) {
+      super(data, explicit, referableList, type);
+      this.myStrict = myStrict;
+    }
+
+    @Override
+    public boolean isStrict() {
+      return myStrict;
     }
   }
 

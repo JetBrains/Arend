@@ -8,15 +8,17 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.context.param.UnusedIntervalDependentLink;
 import org.arend.core.definition.ClassField;
+import org.arend.core.definition.Constructor;
 import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
-import org.arend.core.expr.visitor.BaseExpressionVisitor;
+import org.arend.core.expr.visitor.ExpressionTransformer;
 import org.arend.core.pattern.Pattern;
+import org.arend.core.sort.Sort;
 
 import java.util.*;
 
-public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
+public class SubstVisitor extends ExpressionTransformer<Void> {
   private final ExprSubstitution myExprSubstitution;
   private final LevelSubstitution myLevelSubstitution;
 
@@ -54,18 +56,21 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
   }
 
   @Override
+  protected Expression makeConCall(Constructor constructor, Sort sortArgument, List<Expression> dataTypeArguments, List<Expression> arguments) {
+    return new ConCallExpression(constructor, sortArgument.subst(myLevelSubstitution), dataTypeArguments, arguments);
+  }
+
+  @Override
   public Expression visitConCall(ConCallExpression expr, Void params) {
-    List<Expression> dataTypeArgs = new ArrayList<>(expr.getDataTypeArguments().size());
-    for (Expression parameter : expr.getDataTypeArguments()) {
-      dataTypeArgs.add(parameter.accept(this, null));
+    if (expr.getDefCallArguments().isEmpty()) {
+      List<Expression> dataTypeArgs = new ArrayList<>(expr.getDataTypeArguments().size());
+      for (Expression parameter : expr.getDataTypeArguments()) {
+        dataTypeArgs.add(parameter.accept(this, null));
+      }
+      return ConCallExpression.make(expr.getDefinition(), expr.getSortArgument().subst(myLevelSubstitution), dataTypeArgs, Collections.emptyList());
+    } else {
+      return super.visitConCall(expr, null);
     }
-
-    List<Expression> args = new ArrayList<>(expr.getDefCallArguments().size());
-    for (Expression arg : expr.getDefCallArguments()) {
-      args.add(arg.accept(this, null));
-    }
-
-    return ConCallExpression.make(expr.getDefinition(), expr.getSortArgument().subst(myLevelSubstitution), dataTypeArgs, args);
   }
 
   @Override
@@ -112,7 +117,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
     }
 
     if (expr.getVariable() instanceof MetaInferenceVariable) {
-      if (Collections.disjoint(expr.getVariable().getBounds(), myExprSubstitution.getKeys())) {
+      if (myLevelSubstitution.isEmpty() && Collections.disjoint(expr.getVariable().getBounds(), myExprSubstitution.getKeys())) {
         return expr;
       }
 
@@ -123,7 +128,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
           newSubst.add(var, substExpr);
         }
       }
-      return SubstExpression.make(expr, newSubst);
+      return SubstExpression.make(expr, newSubst, myLevelSubstitution);
     }
 
     //noinspection SuspiciousMethodCalls
@@ -133,10 +138,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitSubst(SubstExpression expr, Void params) {
-    ExprSubstitution newSubstitution = new ExprSubstitution(expr.getSubstitution());
-    newSubstitution.subst(myExprSubstitution);
-    newSubstitution.addAll(myExprSubstitution);
-    return expr.getExpression().accept(new SubstVisitor(newSubstitution, myLevelSubstitution), null);
+    return SubstExpression.make(expr, myExprSubstitution, myLevelSubstitution);
   }
 
   @Override

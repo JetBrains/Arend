@@ -23,7 +23,6 @@ public abstract class PreludeTypecheckingLibrary extends PreludeLibrary {
     }
 
     myTypechecked = true;
-    Prelude.fillInTypecheckerState();
     setLoaded();
     return true;
   }

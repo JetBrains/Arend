@@ -2,7 +2,6 @@ package org.arend.typechecking.visitor;
 
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.param.DependentLink;
-import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.visitor.ExpressionVisitor;
@@ -10,6 +9,7 @@ import org.arend.prelude.Prelude;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class FreeVariablesClassifier implements ExpressionVisitor<Boolean, FreeVariablesClassifier.Result> {
@@ -63,9 +63,37 @@ public class FreeVariablesClassifier implements ExpressionVisitor<Boolean, FreeV
 
   @Override
   public Result visitConCall(ConCallExpression expr, Boolean good) {
-    boolean goodArg = good && expr.getDefinition().getBody() == null;
-    Result result = visitList(expr.getDataTypeArguments(), goodArg);
-    return result == Result.BOTH || result != Result.NONE && !goodArg ? result : result.add(visitList(expr.getDefCallArguments(), goodArg));
+    Result result;
+    Expression it = expr;
+    boolean goodArg;
+
+    do {
+      expr = (ConCallExpression) it;
+      goodArg = good && expr.getDefinition().getBody() == null;
+      result = visitList(expr.getDataTypeArguments(), goodArg);
+      if (result == Result.BOTH || result != Result.NONE && !goodArg) {
+        return result;
+      }
+
+      int recursiveParam = expr.getDefinition().getRecursiveParameter();
+      if (recursiveParam < 0) {
+        return result.add(visitList(expr.getDefCallArguments(), goodArg));
+      }
+
+      List<Expression> args = ((ConCallExpression) it).getDefCallArguments();
+      for (int i = 0; i < args.size(); i++) {
+        if (i != recursiveParam) {
+          result = result.add(args.get(i).accept(this, goodArg));
+          if (result == Result.BOTH || result != Result.NONE && !goodArg) {
+            return result;
+          }
+        }
+      }
+
+      it = args.get(recursiveParam);
+    } while (it instanceof ConCallExpression);
+
+    return result.add(it.accept(this, goodArg));
   }
 
   @Override

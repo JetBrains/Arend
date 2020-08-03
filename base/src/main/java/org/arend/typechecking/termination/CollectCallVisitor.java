@@ -9,12 +9,12 @@ import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.*;
 import org.arend.core.pattern.*;
 import org.arend.prelude.Prelude;
-import org.arend.typechecking.visitor.ProcessDefCallsVisitor;
+import org.arend.typechecking.visitor.SearchVisitor;
 import org.arend.util.Pair;
 
 import java.util.*;
 
-public class CollectCallVisitor extends ProcessDefCallsVisitor<Void> {
+public class CollectCallVisitor extends SearchVisitor<Void> {
     private final Set<BaseCallMatrix<Definition>> myCollectedCalls;
     private final FunctionDefinition myDefinition;
     private final Set<? extends Definition> myCycle;

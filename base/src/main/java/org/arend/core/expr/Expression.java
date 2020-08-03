@@ -132,7 +132,7 @@ public abstract class Expression implements Body, CoreExpression {
   }
 
   public boolean findBinding(Variable binding) {
-    return accept(new FindBindingVisitor(Collections.singleton(binding)), null) != null;
+    return accept(new FindBindingVisitor(Collections.singleton(binding)), null);
   }
 
   @Override
@@ -140,16 +140,21 @@ public abstract class Expression implements Body, CoreExpression {
     if (!(binding instanceof Binding)) {
       return false;
     }
-    return accept(new FindBindingVisitor(Collections.singleton((Binding) binding)), null) != null;
+    return accept(new FindBindingVisitor(Collections.singleton((Binding) binding)), null);
   }
 
   public Variable findBinding(Set<? extends Variable> bindings) {
-    return accept(new FindBindingVisitor(bindings), null);
+    FindBindingVisitor visitor = new FindBindingVisitor(bindings);
+    return accept(visitor, null) ? visitor.getResult() : null;
   }
 
   @Override
   public @Nullable CoreBinding findFreeBindings(@NotNull Set<? extends CoreBinding> bindings) {
-    return bindings.isEmpty() ? null : (CoreBinding) accept(new FindBindingVisitor(bindings), null);
+    if (bindings.isEmpty()) {
+      return null;
+    }
+    FindBindingVisitor visitor = new FindBindingVisitor(bindings);
+    return accept(visitor, null) ? (CoreBinding) visitor.getResult() : null;
   }
 
   public Expression copy() {

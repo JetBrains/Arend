@@ -597,6 +597,28 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     return new Pair<>(sort, resultType == null ? null : resultType.subst(substitution));
   }
 
+  private List<Boolean> getStrictParameters(List<? extends Concrete.Parameter> parameters) {
+    boolean hasStrict = false;
+    for (Concrete.Parameter parameter : parameters) {
+      if (parameter.isStrict()) {
+        hasStrict = true;
+        break;
+      }
+    }
+
+    if (!hasStrict) {
+      return Collections.emptyList();
+    }
+
+    List<Boolean> result = new ArrayList<>();
+    for (Concrete.Parameter parameter : parameters) {
+      for (Referable ignored : parameter.getReferableList()) {
+        result.add(parameter.isStrict());
+      }
+    }
+    return result;
+  }
+
   private boolean checkLevel(boolean isLemma, boolean isProperty, Integer level, Sort actualSort, Concrete.SourceNode sourceNode) {
     if ((isLemma || isProperty) && (level == null || level != -1)) {
       Sort sort = level != null ? new Sort(new Level(LevelVariable.PVAR), new Level(actualSort == null || !actualSort.getHLevel().isClosed() ? level : Math.min(level, actualSort.getHLevel().getConstant()))) : actualSort;
@@ -630,6 +652,14 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     addLocalInstances(instances, thisParam, null, localInstancePool);
   }
 
+  private void checkNoStrictParameters(List<? extends Concrete.Parameter> parameters) {
+    for (Concrete.Parameter parameter : parameters) {
+      if (parameter.isStrict()) {
+        errorReporter.report(new TypecheckingError(GeneralError.Level.WARNING_UNUSED, "\\strict is ignored", parameter));
+      }
+    }
+  }
+
   @SuppressWarnings("UnusedReturnValue")
   private boolean typecheckFunctionHeader(FunctionDefinition typedDef, Concrete.BaseFunctionDefinition def, LocalInstancePool localInstancePool, boolean newDef) {
     if (def.enclosingClass != null) {
@@ -641,6 +671,11 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
     LinkList list = new LinkList();
     Pair<Sort, Expression> pair = typecheckParameters(def, list, localInstancePool, null, newDef ? null : typedDef.getParameters(), implementedField == null ? null : implementedField.getType(Sort.STD));
+    if (def.getBody() instanceof Concrete.CoelimFunctionBody || def.getBody() instanceof Concrete.ElimFunctionBody && def.getBody().getClauses().isEmpty()) {
+      checkNoStrictParameters(def.getParameters());
+    } else if (newDef) {
+      typedDef.setStrictParameters(getStrictParameters(def.getParameters()));
+    }
 
     Expression expectedType = null;
     Concrete.Expression cResultType = def.getResultType();
@@ -904,7 +939,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     Concrete.FunctionBody body = def.getBody();
     boolean checkLevelNow = (body instanceof Concrete.ElimFunctionBody || body.getTerm() instanceof Concrete.CaseExpression && def.getKind() != FunctionKind.LEVEL) && !checkResultTypeLater(def);
     Integer typeLevel = checkLevelNow ? checkTypeLevel(def, typedDef, newDef) : null;
-    if (typeLevel != null) {
+    if (typeLevel != null && typedDef.isSFunc()) {
       if (body instanceof Concrete.ElimFunctionBody) {
         for (Concrete.FunctionClause clause : body.getClauses()) {
           if (clause.getExpression() instanceof Concrete.CaseExpression) {
@@ -1288,6 +1323,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
     Sort userSort = null;
     boolean paramsOk = typecheckParameters(def, list, localInstancePool, null, newDef || dataDefinition == null ? null : dataDefinition.getParameters(), null) != null;
+    checkNoStrictParameters(def.getParameters());
 
     if (def.getUniverse() != null) {
       Type userTypeResult = typechecker.finalCheckType(def.getUniverse(), Type.OMEGA, false);
@@ -1688,7 +1724,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       return true;
     }
 
-    return !expr.accept(new ProcessDefCallsVisitor<Void>() {
+    return !expr.accept(new SearchVisitor<Void>() {
       @Override
       protected boolean processDefCall(DefCallExpression expression, Void param) {
         return expression instanceof ConCallExpression && ((ConCallExpression) expression).getDefinition().getDataType() == dataDefinition;
@@ -1722,6 +1758,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
       Pair<Sort, Expression> pair = typecheckParameters(def, list, null, userSort, newDef ? null : oldConstructor.getParameters(), null);
       sort = pair == null ? null : pair.proj1;
+      if (newDef) {
+        constructor.setStrictParameters(getStrictParameters(def.getParameters()));
+      }
 
       int i = 0;
       for (DependentLink link = list.getFirst(); link.hasNext(); link = link.getNext(), i++) {
@@ -1825,6 +1864,31 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       calculateTypeClassParameters(def, constructor);
       calculateGoodThisParameters(constructor);
       calculateParametersTypecheckingOrder(constructor);
+
+      int recursiveIndex = -1;
+      int i = 0;
+      loop:
+      for (DependentLink link = constructor.getParameters(); link.hasNext(); link = link.getNext(), i++) {
+        if (link.getTypeExpr() instanceof DataCallExpression && dataDefinitions.contains(((DataCallExpression) link.getTypeExpr()).getDefinition())) {
+          for (DependentLink link2 = link.getNext(); link2.hasNext(); link2 = link2.getNext()) {
+            link2 = link2.getNextTyped(null);
+            if (link2.getTypeExpr().findFreeBinding(link)) {
+              continue loop;
+            }
+          }
+
+          if (recursiveIndex != -1) {
+            recursiveIndex = -1;
+            break;
+          } else {
+            recursiveIndex = i;
+          }
+        }
+      }
+
+      if (recursiveIndex != -1) {
+        constructor.setRecursiveParameter(recursiveIndex);
+      }
     }
     return sort;
   }

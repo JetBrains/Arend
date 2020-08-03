@@ -11,7 +11,7 @@ message Expression {
     oneof kind {
         App app = 1;
         ClassCall class_call = 2;
-        ConCall con_call = 3;
+        ConCalls con_calls = 21;
         DataCall data_call = 4;
         Error error = 5;
         FieldCall field_call = 6;
@@ -47,6 +47,9 @@ message Expression {
         map<int32, Expression> field_set = 4;
         Sort sort = 5;
         UniverseKind universe_kind = 6;
+    }
+    message ConCalls {
+      repeated ConCall con_call = 1;
     }
     message ConCall {
         int32 constructor_ref = 1;

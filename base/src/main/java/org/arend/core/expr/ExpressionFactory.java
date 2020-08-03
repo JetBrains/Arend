@@ -5,6 +5,7 @@ import org.arend.core.definition.ClassField;
 import org.arend.core.expr.type.Type;
 import org.arend.core.sort.Sort;
 import org.arend.prelude.Prelude;
+import org.arend.util.SingletonList;
 
 import java.util.Collections;
 import java.util.List;
@@ -63,14 +64,14 @@ public class ExpressionFactory {
   }
 
   public static Expression Suc(Expression expr) {
-    return ConCallExpression.make(Prelude.SUC, Sort.PROP, Collections.emptyList(), Collections.singletonList(expr));
+    return ConCallExpression.make(Prelude.SUC, Sort.PROP, Collections.emptyList(), new SingletonList<>(expr));
   }
 
   public static ConCallExpression Pos(Expression expr) {
-    return ConCallExpression.makeConCall(Prelude.POS, Sort.PROP, Collections.emptyList(), Collections.singletonList(expr));
+    return ConCallExpression.makeConCall(Prelude.POS, Sort.PROP, Collections.emptyList(), new SingletonList<>(expr));
   }
 
   public static ConCallExpression Neg(Expression expr) {
-    return ConCallExpression.makeConCall(Prelude.NEG, Sort.PROP, Collections.emptyList(), Collections.singletonList(expr));
+    return ConCallExpression.makeConCall(Prelude.NEG, Sort.PROP, Collections.emptyList(), new SingletonList<>(expr));
   }
 }

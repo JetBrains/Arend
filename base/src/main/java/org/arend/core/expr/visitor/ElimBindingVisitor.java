@@ -18,7 +18,7 @@ import org.arend.ext.core.ops.NormalizationMode;
 
 import java.util.*;
 
-public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> {
+public class ElimBindingVisitor extends ExpressionTransformer<Void> {
   private final FindMissingBindingVisitor myKeepVisitor;
   private final FindBindingVisitor myElimVisitor;
   private Variable myFoundVariable = null;
@@ -42,13 +42,13 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
 
   public static Expression elimBinding(Expression expression, Binding binding) {
     ElimBindingVisitor visitor = new ElimBindingVisitor(Collections.singleton(binding), false);
-    visitor.myFoundVariable = expression.accept(visitor.myElimVisitor, null);
+    visitor.myFoundVariable = expression.accept(visitor.myElimVisitor, null) ? visitor.myElimVisitor.getResult() : null;
     return visitor.myFoundVariable == null ? expression : expression.normalize(NormalizationMode.WHNF).accept(visitor, null);
   }
 
   public static Expression keepBindings(Expression expression, Set<Binding> bindings, boolean removeImplementations) {
     ElimBindingVisitor visitor = new ElimBindingVisitor(bindings, true);
-    visitor.myFoundVariable = expression.accept(visitor.myKeepVisitor, null);
+    visitor.myFoundVariable = expression.accept(visitor.myKeepVisitor, null) ? visitor.myKeepVisitor.getResult() : null;
     if (visitor.myFoundVariable == null) {
       return expression;
     }
@@ -65,7 +65,7 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
   }
 
   private Expression acceptSelf(Expression expression, boolean normalize) {
-    myFoundVariable = expression.accept(myKeepVisitor != null ? myKeepVisitor : myElimVisitor, null);
+    myFoundVariable = expression.accept(myKeepVisitor != null ? myKeepVisitor : myElimVisitor, null) ? (myKeepVisitor != null ? myKeepVisitor.getResult() : myElimVisitor.getResult()) : null;
     if (myFoundVariable == null) {
       return expression;
     }
@@ -85,16 +85,20 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
     return AppExpression.make(result, arg, expr.isExplicit());
   }
 
-  private List<Expression> visitDefCallArguments(List<? extends Expression> args) {
-    List<Expression> result = new ArrayList<>(args.size());
+  private boolean visitDefCallArguments(List<? extends Expression> args, List<Expression> result) {
     for (Expression arg : args) {
       Expression newArg = acceptSelf(arg, true);
       if (newArg == null) {
-        return null;
+        return false;
       }
       result.add(newArg);
     }
-    return result;
+    return true;
+  }
+
+  private List<Expression> visitDefCallArguments(List<? extends Expression> args) {
+    List<Expression> result = new ArrayList<>(args.size());
+    return visitDefCallArguments(args, result) ? result : null;
   }
 
   @Override
@@ -110,20 +114,8 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
   }
 
   @Override
-  public Expression visitConCall(ConCallExpression expr, Void params) {
-    List<Expression> newArgs = visitDefCallArguments(expr.getDefCallArguments());
-    if (newArgs == null) {
-      return null;
-    }
-    List<Expression> dataTypeArgs = new ArrayList<>(expr.getDataTypeArguments().size());
-    for (Expression arg : expr.getDataTypeArguments()) {
-      Expression newArg = acceptSelf(arg, true);
-      if (newArg == null) {
-        return null;
-      }
-      dataTypeArgs.add(newArg);
-    }
-    return ConCallExpression.make(expr.getDefinition(), expr.getSortArgument(), dataTypeArgs, newArgs);
+  protected Expression visit(Expression expr, Void params) {
+    return acceptSelf(expr, true);
   }
 
   public ClassCallExpression visitClassCall(ClassCallExpression expr, boolean removeImplementations) {

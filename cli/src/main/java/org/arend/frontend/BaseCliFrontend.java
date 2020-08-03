@@ -380,7 +380,7 @@ public abstract class BaseCliFrontend {
         int numWithGoals = 0;
         for (ModulePath module : modules) {
           GeneralError.Level result = myModuleResults.get(module);
-          if (result == null && library.getModuleGroup(module, false) == null) {
+          if (result == null && library.getModuleGroup(module, false) == null && library.getModuleGroup(module, true) == null) {
             result = GeneralError.Level.ERROR;
           }
           reportTypeCheckResult(module, result);

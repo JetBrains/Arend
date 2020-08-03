@@ -208,13 +208,7 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
     ConcreteLocatedReferable referable = resolveNamesDef("\\data D Int | c Nat");
     Concrete.DataDefinition def = (Concrete.DataDefinition) referable.getDefinition();
     assertFalse(def.getConstructorClauses().isEmpty());
-    var accept = def.accept(
-        new CorrespondedSubDefVisitor(def
-            .getConstructorClauses().get(0)
-            .getConstructors().get(0)
-            .getParameters().get(0)
-            .getType()
-        ), typeCheckDef(referable));
+    var accept = def.accept(new CorrespondedSubDefVisitor(def.getConstructorClauses().get(0).getConstructors().get(0).getParameters().get(0).getType()), typeCheckDef(referable));
     assertNotNull(accept);
     assertEquals("Nat", accept.proj1.toString());
     assertEquals("Nat", accept.proj2.toString());

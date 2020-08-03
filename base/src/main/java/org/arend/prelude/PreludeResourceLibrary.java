@@ -28,7 +28,6 @@ public class PreludeResourceLibrary extends PreludeLibrary {
       }
     }
 
-    Prelude.fillInTypecheckerState();
     setLoaded();
     return true;
   }

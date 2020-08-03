@@ -41,6 +41,7 @@ public final class Abstract {
   public interface Parameter extends SourceNode, org.arend.naming.reference.Parameter {
     @Nullable Object getData();
     @Nullable Expression getType();
+    boolean isStrict();
   }
 
   public interface FieldParameter extends Parameter {

@@ -2392,12 +2392,12 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     Set<Object> foundVars = new LinkedHashSet<>();
     expr.accept(new FindMissingBindingVisitor(allowedBindings) {
       @Override
-      public Binding visitReference(ReferenceExpression expr, Void params) {
+      public Boolean visitReference(ReferenceExpression expr, Void params) {
         Binding binding = expr.getBinding();
         if (!allowedBindings.contains(binding) && binding.getTypeExpr().findBinding(substitution.getKeys()) != null) {
           foundVars.add(binding);
         }
-        return null;
+        return false;
       }
     }, null);
 

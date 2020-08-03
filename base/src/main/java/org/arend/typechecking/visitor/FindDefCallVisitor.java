@@ -10,7 +10,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-public class FindDefCallVisitor<T extends Definition> extends ProcessDefCallsVisitor<Void> {
+public class FindDefCallVisitor<T extends Definition> extends SearchVisitor<Void> {
   private final Set<T> myFoundDefinitions = new HashSet<>();
   private final Set<? extends T> myDefinitions;
   private final boolean myFindAll;
@@ -78,5 +78,15 @@ public class FindDefCallVisitor<T extends Definition> extends ProcessDefCallsVis
     } else {
       return false;
     }
+  }
+
+  @Override
+  protected boolean visitElimBody(ElimBody elimBody, Void param) {
+    for (var clause : elimBody.getClauses()) {
+      if (clause.getExpression() != null && clause.getExpression().accept(this, param)) {
+        return true;
+      }
+    }
+    return false;
   }
 }

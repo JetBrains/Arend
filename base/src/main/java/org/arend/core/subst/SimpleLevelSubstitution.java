@@ -26,4 +26,13 @@ public class SimpleLevelSubstitution implements LevelSubstitution {
   public Level get(Variable variable) {
     return myLevels.get(variable);
   }
+
+  @Override
+  public LevelSubstitution subst(LevelSubstitution substitution) {
+    SimpleLevelSubstitution result = new SimpleLevelSubstitution();
+    for (Map.Entry<Variable, Level> entry : myLevels.entrySet()) {
+      result.myLevels.put(entry.getKey(), entry.getValue().subst(substitution));
+    }
+    return result;
+  }
 }
