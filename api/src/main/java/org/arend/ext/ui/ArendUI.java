@@ -1,5 +1,7 @@
 package org.arend.ext.ui;
 
+import org.arend.ext.prettyprinting.doc.Doc;
+import org.arend.ext.prettyprinting.doc.DocFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -12,4 +14,10 @@ public interface ArendUI {
   void showMessage(@Nullable String title, @NotNull String message);
 
   void showErrorMessage(@Nullable String title, @NotNull String message);
+
+  void println(@NotNull Doc doc);
+
+  default void println(@NotNull String text) {
+    println(DocFactory.text(text));
+  }
 }

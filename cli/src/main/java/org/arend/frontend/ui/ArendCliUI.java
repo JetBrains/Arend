@@ -1,5 +1,7 @@
 package org.arend.frontend.ui;
 
+import org.arend.ext.prettyprinting.doc.Doc;
+import org.arend.ext.prettyprinting.doc.DocStringBuilder;
 import org.arend.ext.ui.ArendSession;
 import org.arend.ext.ui.ArendUI;
 import org.jetbrains.annotations.NotNull;
@@ -19,5 +21,10 @@ public class ArendCliUI implements ArendUI {
   @Override
   public void showErrorMessage(@Nullable String title, @NotNull String message) {
     System.err.println((title == null ? "" : title + ": ") + message);
+  }
+
+  @Override
+  public void println(@NotNull Doc doc) {
+    System.out.println(DocStringBuilder.build(doc));
   }
 }
