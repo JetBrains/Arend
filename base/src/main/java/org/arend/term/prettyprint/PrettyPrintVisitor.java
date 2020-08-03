@@ -1463,7 +1463,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     final BinOpLayout l = new BinOpLayout(){
       @Override
       void printLeft(PrettyPrintVisitor pp) {
-        pp.prettyPrintParameters(def.getParameters(), Concrete.ReferenceExpression.PREC);
+        pp.prettyPrintParameters(def.getParameters());
       }
 
       @Override
