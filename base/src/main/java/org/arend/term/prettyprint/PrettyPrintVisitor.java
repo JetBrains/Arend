@@ -1354,7 +1354,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
       @Override
       void printRight(PrettyPrintVisitor pp) {
-        def.myBody.accept(pp, new Precedence(Concrete.Expression.PREC));
+        def.body.accept(pp, new Precedence(Concrete.Expression.PREC));
       }
 
       @Override

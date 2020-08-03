@@ -5,6 +5,7 @@ import org.arend.ext.reference.Precedence;
 import org.arend.ext.typechecking.MetaDefinition;
 import org.arend.ext.typechecking.MetaResolver;
 import org.arend.module.ModuleLocation;
+import org.arend.term.concrete.Concrete;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -12,6 +13,7 @@ public class MetaReferable implements LocatedReferable, MetaRef {
   private final Precedence myPrecedence;
   private final String myName;
   private MetaDefinition myDefinition;
+  private Concrete.DefinableMetaDefinition myConcrete;
   private final ModuleLocation myLocation;
   private final MetaResolver myResolver;
   public final String description;
@@ -50,8 +52,16 @@ public class MetaReferable implements LocatedReferable, MetaRef {
     return myDefinition;
   }
 
+  public Concrete.DefinableMetaDefinition getConcrete() {
+    return myConcrete;
+  }
+
   public void setDefinition(@NotNull MetaDefinition definition) {
     myDefinition = definition;
+  }
+
+  public void setConcrete(@NotNull Concrete.DefinableMetaDefinition concrete) {
+    myConcrete = concrete;
   }
 
   @Override

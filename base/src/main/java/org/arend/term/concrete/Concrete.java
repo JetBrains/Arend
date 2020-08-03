@@ -1548,23 +1548,19 @@ public final class Concrete {
   public static class DefinableMetaDefinition implements ConcreteSourceNode {
     public final List<NameParameter> myParameters;
     private MetaReferable myReferable;
-    public Expression myBody;
+    public Expression body;
 
     public DefinableMetaDefinition(List<NameParameter> parameters, Expression body) {
       myParameters = parameters;
-      myBody = body;
+      this.body = body;
     }
 
     public void setReferable(@NotNull MetaReferable referable) {
       myReferable = referable;
     }
 
-    public List<NameParameter> getParameters() {
+    public List<? extends NameParameter> getParameters() {
       return myParameters;
-    }
-
-    public Expression getBody() {
-      return myBody;
     }
 
     @Override
