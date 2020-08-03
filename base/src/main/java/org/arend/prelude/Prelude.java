@@ -229,10 +229,6 @@ public class Prelude implements ArendPrelude {
     consumer.accept(MOD_PROPERTY);
   }
 
-  public static void fillInTypecheckerState() {
-    forEach(def -> def.getReferable().setTypechecked(def));
-  }
-
   public static void initialize(Scope scope) {
     for (Referable ref : scope.getElements()) {
       if (ref instanceof TCReferable && ((TCReferable) ref).getKind().isTypecheckable()) {
