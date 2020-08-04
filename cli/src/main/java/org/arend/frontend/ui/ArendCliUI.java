@@ -1,17 +1,15 @@
 package org.arend.frontend.ui;
 
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
-import org.arend.ext.prettyprinting.PrettyPrinterFlag;
 import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.ext.prettyprinting.doc.DocStringBuilder;
+import org.arend.ext.ui.ArendConsole;
 import org.arend.ext.ui.ArendSession;
 import org.arend.ext.ui.ArendUI;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.EnumSet;
-
-public class ArendCliUI implements ArendUI {
+public class ArendCliUI implements ArendUI, ArendConsole {
   @Override
   public @NotNull ArendSession newSession() {
     return new CliSession();
@@ -28,8 +26,8 @@ public class ArendCliUI implements ArendUI {
   }
 
   @Override
-  public @NotNull EnumSet<PrettyPrinterFlag> getPrettyPrinterFlags() {
-    return PrettyPrinterConfig.DEFAULT.getExpressionFlags();
+  public @NotNull ArendConsole getConsole(@Nullable Object marker) {
+    return this;
   }
 
   @Override
