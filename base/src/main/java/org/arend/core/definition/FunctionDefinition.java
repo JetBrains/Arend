@@ -36,7 +36,7 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
   private List<Boolean> myStrictParameters = Collections.emptyList();
 
   public FunctionDefinition(TCReferable referable) {
-    super(referable, TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
+    super(referable, TypeCheckingStatus.NEEDS_TYPE_CHECKING);
     myParameters = EmptyDependentLink.getInstance();
   }
 

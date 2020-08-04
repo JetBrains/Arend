@@ -15,7 +15,6 @@ import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.definition.CoreConstructor;
 import org.arend.core.elimtree.BranchKey;
-import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.naming.reference.TCReferable;
 import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
@@ -37,7 +36,7 @@ public class Constructor extends Definition implements Function, BranchKey, Core
   private List<Boolean> myStrictParameters = Collections.emptyList();
 
   public Constructor(TCReferable referable, DataDefinition dataType) {
-    super(referable, TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
+    super(referable, TypeCheckingStatus.NEEDS_TYPE_CHECKING);
     myDataType = dataType;
     myParameters = EmptyDependentLink.getInstance();
   }

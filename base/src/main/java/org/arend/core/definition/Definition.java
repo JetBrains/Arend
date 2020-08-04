@@ -141,14 +141,14 @@ public abstract class Definition implements CoreDefinition {
   }
 
   public enum TypeCheckingStatus {
-    HEADER_NEEDS_TYPE_CHECKING, BODY_NEEDS_TYPE_CHECKING, HAS_ERRORS, HAS_WARNINGS, DEP_PROBLEMS, NO_ERRORS;
+    HAS_ERRORS, HAS_WARNINGS, DEP_PROBLEMS, NO_ERRORS, TYPE_CHECKING, NEEDS_TYPE_CHECKING;
 
     public boolean isOK() {
       return this.ordinal() >= DEP_PROBLEMS.ordinal();
     }
 
     public boolean headerIsOK() {
-      return this != HEADER_NEEDS_TYPE_CHECKING;
+      return this != NEEDS_TYPE_CHECKING;
     }
 
     public boolean hasErrors() {
@@ -160,7 +160,7 @@ public abstract class Definition implements CoreDefinition {
     }
 
     public boolean needsTypeChecking() {
-      return this == HEADER_NEEDS_TYPE_CHECKING || this == BODY_NEEDS_TYPE_CHECKING;
+      return this == NEEDS_TYPE_CHECKING;
     }
 
     public boolean withoutErrors() {

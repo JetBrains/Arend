@@ -86,8 +86,13 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
     if (definition instanceof Concrete.BaseFunctionDefinition) {
       FunctionDefinition functionDef = typechecked != null ? (FunctionDefinition) typechecked : ((Concrete.BaseFunctionDefinition) definition).getKind() == FunctionKind.CONS ? new DConstructor(definition.getData()) : new FunctionDefinition(definition.getData());
+      boolean newDef = typechecked == null || typechecked.status().needsTypeChecking();
+      if (functionDef.getResultType() == null) {
+        functionDef.setResultType(new ErrorExpression());
+      }
+      functionDef.setStatus(Definition.TypeCheckingStatus.TYPE_CHECKING);
       try {
-        typecheckFunctionHeader(functionDef, (Concrete.BaseFunctionDefinition) definition, localInstancePool, typechecked == null || !typechecked.status().headerIsOK());
+        typecheckFunctionHeader(functionDef, (Concrete.BaseFunctionDefinition) definition, localInstancePool, newDef);
       } catch (IncorrectExpressionException e) {
         errorReporter.report(new TypecheckingError(e.getMessage(), definition));
       }
@@ -95,8 +100,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     } else
     if (definition instanceof Concrete.DataDefinition) {
       DataDefinition dataDef = typechecked != null ? (DataDefinition) typechecked : new DataDefinition(definition.getData());
+      boolean newDef = typechecked == null || typechecked.status().needsTypeChecking();
+      dataDef.setStatus(Definition.TypeCheckingStatus.TYPE_CHECKING);
       try {
-        typecheckDataHeader(dataDef, (Concrete.DataDefinition) definition, localInstancePool, typechecked == null || !typechecked.status().headerIsOK());
+        typecheckDataHeader(dataDef, (Concrete.DataDefinition) definition, localInstancePool, newDef);
       } catch (IncorrectExpressionException e) {
         errorReporter.report(new TypecheckingError(e.getMessage(), definition));
       }
@@ -143,8 +150,13 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     typechecker.setInstancePool(myInstancePool);
 
     FunctionDefinition definition = typechecked != null ? (FunctionDefinition) typechecked : def.getKind() == FunctionKind.CONS ? new DConstructor(def.getData()) : new FunctionDefinition(def.getData());
+    boolean newDef = typechecked == null || !typechecked.status().headerIsOK();
+    if (definition.getResultType() == null) {
+      definition.setResultType(new ErrorExpression());
+    }
+    definition.setStatus(Definition.TypeCheckingStatus.TYPE_CHECKING);
     try {
-      typecheckFunctionHeader(definition, def, localInstancePool, typechecked == null || !typechecked.status().headerIsOK());
+      typecheckFunctionHeader(definition, def, localInstancePool, newDef);
       return typecheckFunctionBody(definition, def, typechecked == null);
     } catch (IncorrectExpressionException e) {
       errorReporter.report(new TypecheckingError(e.getMessage(), def));
@@ -160,8 +172,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     typechecker.setInstancePool(myInstancePool);
 
     DataDefinition definition = typechecked != null ? (DataDefinition) typechecked : new DataDefinition(def.getData());
+    boolean newDef = typechecked == null || typechecked.status().needsTypeChecking();
+    definition.setStatus(Definition.TypeCheckingStatus.TYPE_CHECKING);
     try {
-      typecheckDataHeader(definition, def, localInstancePool, typechecked == null || !typechecked.status().headerIsOK());
+      typecheckDataHeader(definition, def, localInstancePool, newDef);
       if (definition.status().headerIsOK()) {
         typecheckDataBody(definition, def, true, Collections.singleton(definition), typechecked == null);
       }
@@ -185,6 +199,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     ClassDefinition definition = typechecked != null ? (ClassDefinition) typechecked : new ClassDefinition(def.getData());
+    boolean newDef = typechecked == null || typechecked.status().needsTypeChecking();
+    definition.setStatus(Definition.TypeCheckingStatus.TYPE_CHECKING);
     if (typechecked == null) {
       def.getData().setTypecheckedIfAbsent(definition);
     }
@@ -198,7 +214,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
     } else {
       try {
-        typecheckClass(def, definition, typechecked == null || !typechecked.status().headerIsOK());
+        typecheckClass(def, definition, newDef);
       } catch (IncorrectExpressionException e) {
         errorReporter.report(new TypecheckingError(e.getMessage(), def));
       }
@@ -659,6 +675,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
   @SuppressWarnings("UnusedReturnValue")
   private boolean typecheckFunctionHeader(FunctionDefinition typedDef, Concrete.BaseFunctionDefinition def, LocalInstancePool localInstancePool, boolean newDef) {
+    def.getData().setTypecheckedIfAbsent(typedDef);
     if (def.enclosingClass != null) {
       typedDef.setHasEnclosingClass(true);
     }
@@ -703,12 +720,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
       typedDef.setParameters(list.getFirst());
       typedDef.setResultType(expectedType);
-      typedDef.setStatus(Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING);
       typedDef.setKind(kind.isSFunc() ? (kind == FunctionKind.LEMMA ? CoreFunctionDefinition.Kind.LEMMA : CoreFunctionDefinition.Kind.SFUNC) : kind == FunctionKind.INSTANCE ? CoreFunctionDefinition.Kind.INSTANCE : CoreFunctionDefinition.Kind.FUNC);
-    }
 
-    if (newDef) {
-      def.getData().setTypecheckedIfAbsent(typedDef);
       calculateTypeClassParameters(def, typedDef);
       calculateParametersTypecheckingOrder(typedDef);
     }
@@ -1069,7 +1082,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             typedDef.setBody(termResult.expression);
           }
         }
-        if (termResult.expression instanceof FunCallExpression && ((FunCallExpression) termResult.expression).getDefinition().getActualBody() == null && ((FunCallExpression) termResult.expression).getDefinition().status() != Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING) {
+        if (termResult.expression instanceof FunCallExpression && ((FunCallExpression) termResult.expression).getDefinition().getActualBody() == null && ((FunCallExpression) termResult.expression).getDefinition().status() != Definition.TypeCheckingStatus.TYPE_CHECKING) {
           bodyIsOK = true;
           if (newDef) {
             typedDef.hideBody();
@@ -1313,13 +1326,14 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   }
 
   private void typecheckDataHeader(DataDefinition dataDefinition, Concrete.DataDefinition def, LocalInstancePool localInstancePool, boolean newDef) {
+    def.getData().setTypecheckedIfAbsent(dataDefinition);
     if (def.enclosingClass != null) {
       dataDefinition.setHasEnclosingClass(true);
     }
     LinkList list = new LinkList();
 
     Sort userSort = null;
-    boolean paramsOk = typecheckParameters(def, list, localInstancePool, null, newDef || dataDefinition == null ? null : dataDefinition.getParameters(), null) != null;
+    boolean paramsOk = typecheckParameters(def, list, localInstancePool, null, newDef ? null : dataDefinition.getParameters(), null) != null;
     checkNoStrictParameters(def.getParameters());
 
     if (def.getUniverse() != null) {
@@ -1338,7 +1352,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
     dataDefinition.setParameters(list.getFirst());
     dataDefinition.setSort(userSort);
-    def.getData().setTypecheckedIfAbsent(dataDefinition);
     calculateTypeClassParameters(def, dataDefinition);
     calculateParametersTypecheckingOrder(dataDefinition);
 
@@ -1349,8 +1362,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
       }
     }
-
-    dataDefinition.setStatus(Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING);
   }
 
   private boolean typecheckDataBody(DataDefinition dataDefinition, Concrete.DataDefinition def, boolean polyHLevel, Set<DataDefinition> dataDefinitions, boolean newDef) {
