@@ -1,10 +1,9 @@
 package org.arend.naming;
 
-import org.arend.ext.concrete.expr.ConcreteArgument;
 import org.arend.ext.concrete.expr.ConcreteExpression;
-import org.arend.ext.concrete.expr.ConcreteReferenceExpression;
 import org.arend.ext.reference.ExpressionResolver;
 import org.arend.ext.reference.Precedence;
+import org.arend.ext.typechecking.ContextData;
 import org.arend.ext.typechecking.MetaDefinition;
 import org.arend.ext.typechecking.MetaResolver;
 import org.arend.prelude.Prelude;
@@ -12,8 +11,6 @@ import org.arend.term.concrete.Concrete;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
-
-import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -23,19 +20,19 @@ public class MetaResolverTest extends NameResolverTestCase {
     int numberOfInvocations = 0;
 
     @Override
-    public @Nullable ConcreteExpression resolvePrefix(@NotNull ExpressionResolver resolver, @NotNull ConcreteReferenceExpression refExpr, @NotNull List<? extends ConcreteArgument> arguments) {
+    public @Nullable ConcreteExpression resolvePrefix(@NotNull ExpressionResolver resolver, @NotNull ContextData contextData) {
       fail();
       return null;
     }
 
     @Override
-    public @Nullable ConcreteExpression resolveInfix(@NotNull ExpressionResolver resolver, @NotNull ConcreteReferenceExpression refExpr, @Nullable ConcreteExpression leftArg, @Nullable ConcreteExpression rightArg) {
+    public @Nullable ConcreteExpression resolveInfix(@NotNull ExpressionResolver resolver, @NotNull ContextData contextData, @Nullable ConcreteExpression leftArg, @Nullable ConcreteExpression rightArg) {
       fail();
       return null;
     }
 
     @Override
-    public @Nullable ConcreteExpression resolvePostfix(@NotNull ExpressionResolver resolver, @NotNull ConcreteReferenceExpression refExpr, @Nullable ConcreteExpression leftArg, @NotNull List<? extends ConcreteArgument> rightArgs) {
+    public @Nullable ConcreteExpression resolvePostfix(@NotNull ExpressionResolver resolver, @NotNull ContextData contextData, @Nullable ConcreteExpression leftArg) {
       fail();
       return null;
     }
@@ -49,9 +46,9 @@ public class MetaResolverTest extends NameResolverTestCase {
     }
 
     @Override
-    public @Nullable ConcreteExpression resolvePrefix(@NotNull ExpressionResolver resolver, @NotNull ConcreteReferenceExpression refExpr, @NotNull List<? extends ConcreteArgument> arguments) {
+    public @Nullable ConcreteExpression resolvePrefix(@NotNull ExpressionResolver resolver, @NotNull ContextData contextData) {
       numberOfInvocations++;
-      assertEquals(numberOfArguments, arguments.size());
+      assertEquals(numberOfArguments, contextData.getArguments().size());
       return new Concrete.ReferenceExpression(null, Prelude.ZERO.getReferable());
     }
   }
