@@ -22,7 +22,7 @@ import java.util.*;
 public class DataDefinition extends Definition implements CoreDataDefinition {
   private final List<Constructor> myConstructors;
   private DependentLink myParameters;
-  private Sort mySort;
+  private Sort mySort = Sort.SET0;
   private int myTruncatedLevel = -2;
   private boolean mySquashed;
   private FunctionDefinition mySquasher;
@@ -36,7 +36,7 @@ public class DataDefinition extends Definition implements CoreDataDefinition {
   private boolean myHasEnclosingClass;
 
   public DataDefinition(TCReferable referable) {
-    super(referable, TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
+    super(referable, TypeCheckingStatus.NEEDS_TYPE_CHECKING);
     myConstructors = new ArrayList<>();
     myParameters = EmptyDependentLink.getInstance();
   }

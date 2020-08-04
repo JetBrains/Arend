@@ -7,6 +7,11 @@ public class ThreadCancellationIndicator implements CancellationIndicator {
 
   @Override
   public boolean isCanceled() {
-    return Thread.interrupted();
+    return Thread.currentThread().isInterrupted();
+  }
+
+  @Override
+  public void cancel() {
+    Thread.currentThread().interrupt();
   }
 }

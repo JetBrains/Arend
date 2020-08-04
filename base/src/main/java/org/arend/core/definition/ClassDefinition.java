@@ -33,7 +33,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
   private FunctionDefinition mySquasher;
 
   public ClassDefinition(TCReferable referable) {
-    super(referable, TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
+    super(referable, TypeCheckingStatus.NEEDS_TYPE_CHECKING);
   }
 
   @Override

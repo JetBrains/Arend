@@ -24,7 +24,7 @@ public class ClassField extends Definition implements CoreClassField {
   private boolean myCovariant;
 
   public ClassField(TCFieldReferable referable, ClassDefinition parentClass) {
-    super(referable, TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
+    super(referable, TypeCheckingStatus.NEEDS_TYPE_CHECKING);
     myParentClass = parentClass;
   }
 

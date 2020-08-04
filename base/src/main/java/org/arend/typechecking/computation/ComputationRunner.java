@@ -19,6 +19,10 @@ public class ComputationRunner<T> {
     CANCELLATION_INDICATOR = ThreadCancellationIndicator.INSTANCE;
   }
 
+  public static boolean isCancellationIndicatorSet() {
+    return CANCELLATION_INDICATOR != ThreadCancellationIndicator.INSTANCE;
+  }
+
   protected T computationInterrupted() {
     return null;
   }

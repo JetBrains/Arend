@@ -159,7 +159,6 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
     Definition typechecked;
     if (definition instanceof Concrete.DataDefinition) {
       typechecked = new DataDefinition(definition.getData());
-      ((DataDefinition) typechecked).setSort(Sort.SET0);
       for (Concrete.ConstructorClause constructorClause : ((Concrete.DataDefinition) definition).getConstructorClauses()) {
         for (Concrete.Constructor constructor : constructorClause.getConstructors()) {
           Constructor tcConstructor = new Constructor(constructor.getData(), (DataDefinition) typechecked);
@@ -185,7 +184,7 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
     } else {
       throw new IllegalStateException();
     }
-    typechecked.setStatus(Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
+    typechecked.setStatus(Definition.TypeCheckingStatus.NEEDS_TYPE_CHECKING);
     definition.getData().setTypecheckedIfAbsent(typechecked);
     return typechecked;
   }
@@ -271,10 +270,10 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
     visitor.setStatus(definition.getStatus().getTypecheckingStatus());
     DesugarVisitor.desugar(definition, visitor.getErrorReporter());
     Definition oldTypechecked = definition.getData().getTypechecked();
-    boolean isNew = oldTypechecked == null || !oldTypechecked.status().headerIsOK();
+    boolean isNew = oldTypechecked == null || oldTypechecked.status().needsTypeChecking();
     definition.setRecursive(true);
     Definition typechecked = new DefinitionTypechecker(visitor).typecheckHeader(oldTypechecked, new GlobalInstancePool(myInstanceProviderSet.get(definition.getData()), visitor), definition);
-    if (typechecked.status() == Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING) {
+    if (typechecked.status() == Definition.TypeCheckingStatus.TYPE_CHECKING) {
       mySuspensions.put(definition.getData(), new Pair<>(visitor, isNew));
     }
 
