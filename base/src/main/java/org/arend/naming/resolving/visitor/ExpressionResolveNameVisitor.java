@@ -8,6 +8,7 @@ import org.arend.ext.error.LocalError;
 import org.arend.ext.reference.ArendRef;
 import org.arend.ext.reference.ExpressionResolver;
 import org.arend.ext.typechecking.MetaResolver;
+import org.arend.extImpl.ContextDataImpl;
 import org.arend.naming.MetaBinOpParser;
 import org.arend.naming.error.DuplicateNameError;
 import org.arend.ext.error.NameResolverError;
@@ -201,7 +202,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
 
     MetaResolver metaDef = getMetaResolver(expr.getReferent());
     if (metaDef != null) {
-      return convertMetaResult(metaDef.resolvePrefix(this, expr, argument == null ? Collections.emptyList() : Collections.singletonList(new Concrete.Argument(argument, false))), expr, Collections.emptyList());
+      return convertMetaResult(metaDef.resolvePrefix(this, new ContextDataImpl(expr, argument == null ? Collections.emptyList() : Collections.singletonList(new Concrete.Argument(argument, false)), null, null)), expr, Collections.emptyList());
     }
 
     return argument == null ? expr : Concrete.AppExpression.make(expr.getData(), expr, argument, false);
@@ -234,7 +235,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
 
     MetaResolver metaDef = refExpr == null ? null : getMetaResolver(refExpr.getReferent());
     if (metaDef != null) {
-      return convertMetaResult(metaDef.resolvePrefix(this, refExpr, expr.getArguments()), refExpr, expr.getArguments());
+      return convertMetaResult(metaDef.resolvePrefix(this, new ContextDataImpl(refExpr, expr.getArguments(), null, null)), refExpr, expr.getArguments());
     }
 
     for (Concrete.Argument argument : expr.getArguments()) {

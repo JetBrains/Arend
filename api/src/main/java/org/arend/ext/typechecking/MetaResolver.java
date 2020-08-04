@@ -1,13 +1,9 @@
 package org.arend.ext.typechecking;
 
-import org.arend.ext.concrete.expr.ConcreteArgument;
 import org.arend.ext.concrete.expr.ConcreteExpression;
-import org.arend.ext.concrete.expr.ConcreteReferenceExpression;
 import org.arend.ext.reference.ExpressionResolver;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.List;
 
 public interface MetaResolver {
   /**
@@ -16,7 +12,7 @@ public interface MetaResolver {
    *
    * @return a resolved expression.
    */
-  default @Nullable ConcreteExpression resolvePrefix(@NotNull ExpressionResolver resolver, @NotNull ConcreteReferenceExpression refExpr, @NotNull List<? extends ConcreteArgument> arguments) {
+  default @Nullable ConcreteExpression resolvePrefix(@NotNull ExpressionResolver resolver, @NotNull ContextData contextData) {
     return null;
   }
 
@@ -26,7 +22,7 @@ public interface MetaResolver {
    *
    * @return a resolved expression.
    */
-  default @Nullable ConcreteExpression resolveInfix(@NotNull ExpressionResolver resolver, @NotNull ConcreteReferenceExpression refExpr, @Nullable ConcreteExpression leftArg, @Nullable ConcreteExpression rightArg) {
+  default @Nullable ConcreteExpression resolveInfix(@NotNull ExpressionResolver resolver, @NotNull ContextData contextData, @Nullable ConcreteExpression leftArg, @Nullable ConcreteExpression rightArg) {
     return null;
   }
 
@@ -36,7 +32,7 @@ public interface MetaResolver {
    *
    * @return a resolved expression.
    */
-  default @Nullable ConcreteExpression resolvePostfix(@NotNull ExpressionResolver resolver, @NotNull ConcreteReferenceExpression refExpr, @Nullable ConcreteExpression leftArg, @NotNull List<? extends ConcreteArgument> rightArgs) {
+  default @Nullable ConcreteExpression resolvePostfix(@NotNull ExpressionResolver resolver, @NotNull ContextData contextData, @Nullable ConcreteExpression leftArg) {
     return null;
   }
 }
