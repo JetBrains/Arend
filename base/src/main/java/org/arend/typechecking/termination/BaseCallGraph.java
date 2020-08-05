@@ -129,14 +129,7 @@ public abstract class BaseCallGraph<T> {
         return true;
       } else {
         set = map.get(cm.getCodomain());
-        boolean alreadyContainsEqual = false;
-
-        for (BaseCallMatrix<T> c : set) {
-          if (cm.equals(c)) {
-            alreadyContainsEqual = true;
-            break;
-          }
-        }
+        boolean alreadyContainsEqual = set.contains(cm);
 
         if (!(alreadyContainsEqual)) {
           set.add(cm);
