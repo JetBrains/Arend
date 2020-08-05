@@ -276,7 +276,7 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
     assert !callCategory.checkTermination();
   }
 
-  /* @Test
+  @Test
   public void performanceTest() {
     Set<BaseCallMatrix<TestVertex>> cms = new HashSet<>();
     TestVertex Cut = new TestVertex("a","T", "k", "n", "D", "I", "G", "M", "R", "p1", "p2");
@@ -320,6 +320,6 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
 
     var callCategory = TestCallGraph.calculateClosure(cms);
     assert callCategory.checkTermination();
-  } */
+  }
 
 }

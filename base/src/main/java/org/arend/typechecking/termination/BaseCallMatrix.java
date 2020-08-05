@@ -56,8 +56,6 @@ public abstract class BaseCallMatrix<T> {
     }
   }
 
-  /* private HashMap<Integer, BaseCallMatrix.CallMatrixEntry> myMatrixMap = new HashMap<>();
-  private BaseCallMatrix.R[][] fallbackMatrix = null; */
   private final HashMap<Integer, HashMap<Integer, BaseCallMatrix.R>> matrixMap = new HashMap<>();
 
   private final int myWidth;
@@ -69,14 +67,12 @@ public abstract class BaseCallMatrix<T> {
   }
 
   BaseCallMatrix(BaseCallMatrix<T> m1, BaseCallMatrix<T> m2) {
-    // multiplication constructor 
+    // multiplication constructor
     if (m1.myWidth != m2.myHeight) {
       throw new IllegalArgumentException();
     }
     myHeight = m1.myHeight;
     myWidth = m2.myWidth;
-
-    //TODO: Implement me
 
     for (Integer i : m1.matrixMap.keySet()) {
       HashMap<Integer, BaseCallMatrix.R> m1map = m1.matrixMap.get(i);
@@ -139,6 +135,24 @@ public abstract class BaseCallMatrix<T> {
     return false;
   }
 
+  public BaseCallMatrix.R compare(Object object) {
+    if (object instanceof BaseCallMatrix) {
+      BaseCallMatrix<?> cm = (BaseCallMatrix<?>) object;
+      if (this.equals(cm)) return R.Equal;
+      if (this.getDomain() != cm.getDomain() || this.getCodomain() != cm.getCodomain()) throw new IllegalArgumentException();
+      for (Integer i : matrixMap.keySet()) {
+        HashMap<Integer, R> map = matrixMap.get(i);
+        for (Integer j : map.keySet()) {
+          R my = map.get(j);
+          R theirs = cm.getValue(i, j);
+          if (!rleq(my, theirs)) return R.Unknown;
+        }
+      }
+      return R.LessThan;
+    }
+    return R.Unknown;
+  }
+
   @Override
   public final int hashCode() {
     int result = getCodomain().hashCode() * 31 + getDomain().hashCode();
@@ -188,6 +202,8 @@ public abstract class BaseCallMatrix<T> {
       }
     }
     max++;
+
+    result.append(" ".repeat(Math.max(0, max)));
 
     for (int j = 0; j < myWidth; j++) {
       result.append(columnLabels[j]).append(' ');

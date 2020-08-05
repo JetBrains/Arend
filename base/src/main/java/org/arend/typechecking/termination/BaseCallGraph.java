@@ -21,9 +21,9 @@ public abstract class BaseCallGraph<T> {
       newGraph = new HashMap<>();
 
       for (T vDom : oldGraph.keySet()) {
-        HashMap<T, HashSet<BaseCallMatrix<T>>> outboundEdges = oldGraph.get(vDom);
-        for (T vCodom : outboundEdges.keySet()) {
-          for (BaseCallMatrix<T> edge : outboundEdges.get(vCodom)) {
+        HashMap<T, HashSet<BaseCallMatrix<T>>> outboundArrows = oldGraph.get(vDom);
+        for (T vCodom : outboundArrows.keySet()) {
+          for (BaseCallMatrix<T> edge : outboundArrows.get(vCodom)) {
             append(edge, newGraph);
           }
         }
@@ -32,12 +32,12 @@ public abstract class BaseCallGraph<T> {
       for (T vDom : oldGraph.keySet()) {
         HashMap<T, HashSet<BaseCallMatrix<T>>> outboundEdges = oldGraph.get(vDom);
         for (T vCodom : outboundEdges.keySet()) {
-          for (BaseCallMatrix<T> edge : outboundEdges.get(vCodom)) {
-            HashMap<T, HashSet<BaseCallMatrix<T>>> outboundEdges2 = oldGraph.get(edge.getCodomain());
+          for (BaseCallMatrix<T> arrow : outboundEdges.get(vCodom)) {
+            HashMap<T, HashSet<BaseCallMatrix<T>>> outboundEdges2 = oldGraph.get(arrow.getCodomain());
             if (outboundEdges2 != null) {
-              for (HashSet<BaseCallMatrix<T>> edgesSheaf : outboundEdges2.values()) {
-                for (BaseCallMatrix<T> edge2 : edgesSheaf) {
-                  if (append(new CompositeCallMatrix<>(edge, edge2), newGraph)) {
+              for (HashSet<BaseCallMatrix<T>> homSet : outboundEdges2.values()) {
+                for (BaseCallMatrix<T> arrow2 : homSet) {
+                  if (append(new CompositeCallMatrix<>(arrow, arrow2), newGraph)) {
                     myNewEdges++;
                   }
                 }
@@ -129,13 +129,17 @@ public abstract class BaseCallGraph<T> {
         return true;
       } else {
         set = map.get(cm.getCodomain());
-        boolean alreadyContainsEqual = set.contains(cm);
+        boolean alreadyContainsSmaller = set.contains(cm);
 
-        if (!(alreadyContainsEqual)) {
-          set.add(cm);
-        }
+        if (!alreadyContainsSmaller) for (BaseCallMatrix<T> arrow : set)
+          if (arrow.compare(cm) != BaseCallMatrix.R.Unknown) {
+            alreadyContainsSmaller = true;
+            break;
+          }
 
-        return !alreadyContainsEqual;
+        if (!alreadyContainsSmaller) set.add(cm);
+
+        return !alreadyContainsSmaller;
       }
     }
   }
