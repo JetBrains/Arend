@@ -77,6 +77,39 @@ public abstract class BaseCallGraph<T> {
     return result.toString();
   }
 
+  public String toTestScenario(String edgeSetName) {
+    StringBuilder result = new StringBuilder();
+    for (T v : myGraph.keySet()) {
+      String label = getLabel(v);
+      String[] parameterLabels = null;
+      for (T v2 : myGraph.get(v).keySet()) for (BaseCallMatrix<T> cm : myGraph.get(v).get(v2)) {
+        parameterLabels = cm.getColumnLabels();
+        break;
+      }
+      if (parameterLabels == null) throw new IllegalArgumentException();
+      result.append("TestVertex ").append(label).append(" = new TestVertex(\"").append(label).append("\",");
+      for (int i = 0; i < parameterLabels.length; i++) {
+        result.append('"').append(parameterLabels[i]).append('"');
+        if (i < parameterLabels.length-1) result.append(", ");
+      }
+      result.append(");\n");
+    }
+
+    Integer counter = 0;
+    for (T v : myGraph.keySet()) {
+      String domLabel = getLabel(v);
+      for (T v2 : myGraph.get(v).keySet())
+        for (BaseCallMatrix<T> edge : myGraph.get(v).get(v2)) {
+          String codomLabel = getLabel(v2);
+          result.append(edgeSetName).append(".add(new TestCallMatrix(\"e").append(counter).append("\", ").append(domLabel).append(", ").append(codomLabel).append(", ");
+          result.append(edge.convertToTestCallMatrix());
+          result.append("));\n");
+          counter++;
+      }
+    }
+    return result.toString();
+  }
+
   private static <T> boolean append(BaseCallMatrix<T> cm, HashMap<T, HashMap<T, HashSet<BaseCallMatrix<T>>>> graph) {
     HashSet<BaseCallMatrix<T>> set;
     HashMap<T, HashSet<BaseCallMatrix<T>>> map;

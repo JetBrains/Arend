@@ -267,6 +267,33 @@ public abstract class BaseCallMatrix<T> {
     return result.toString();
   }
 
+  public String convertToTestCallMatrix() {
+    StringBuilder result = new StringBuilder();
+    for (int i = 0; i < myHeight; i++) {
+      boolean first = true;
+      boolean found = false;
+      for (int j = 0; j < myWidth; j++) {
+        BaseCallMatrix.R value = getValue(i, j);
+        if (value != R.Unknown) {
+          if (!first) {
+            result.append(", '-'");
+          }
+          if (result.length() > 0) result.append(", ");
+          if (value == R.Equal) result.append("'='"); else if (value == R.LessThan) result.append("'<'");
+          result.append(", ").append(j);
+          first = false;
+          found = true;
+        }
+      }
+
+      if (!found) {
+        if (result.length() > 0) result.append(", ");
+        result.append("'?'");
+      }
+    }
+    return result.toString();
+  }
+
   private static class CallMatrixEntry {
     final int myIndex;
     BaseCallMatrix.R myRel;
