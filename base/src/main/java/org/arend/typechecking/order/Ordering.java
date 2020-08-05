@@ -109,21 +109,22 @@ public class Ordering extends BellmanFord<Concrete.Definition> {
           });
         }
       }
-      if (definition.enclosingClass != null) {
-        visitor.addDependency(definition.enclosingClass);
-      }
-      if (definition instanceof Concrete.CoClauseFunctionDefinition) {
-        Referable ref = ((Concrete.CoClauseFunctionDefinition) definition).getImplementedField();
-        if (ref instanceof TCReferable) {
-          visitor.addDependency((TCReferable) ref);
-        }
-      }
-      if (definition instanceof Concrete.UseDefinition) {
-        visitor.addDependency(((Concrete.UseDefinition) definition).getUseParent());
-      }
       for (TCReferable usedDefinition : definition.getUsedDefinitions()) {
         visitor.addDependency(usedDefinition);
       }
+    }
+
+    if (definition.enclosingClass != null) {
+      visitor.addDependency(definition.enclosingClass);
+    }
+    if (definition instanceof Concrete.CoClauseFunctionDefinition) {
+      Referable ref = ((Concrete.CoClauseFunctionDefinition) definition).getImplementedField();
+      if (ref instanceof TCReferable) {
+        visitor.addDependency((TCReferable) ref);
+      }
+    }
+    if (definition instanceof Concrete.UseDefinition) {
+      visitor.addDependency(((Concrete.UseDefinition) definition).getUseParent());
     }
     definition.accept(visitor, null);
 
