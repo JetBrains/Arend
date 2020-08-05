@@ -153,7 +153,7 @@ public class SFuncTest extends TypeCheckingTestCase {
   public void caseNormTest() {
     typeCheckModule("\\func test : Nat => \\scase 0 \\with { | 0 => 0 | suc n => n }");
     Expression expr = (Expression) ((FunctionDefinition) getDefinition("test")).getBody();
-    assertSame(expr, expr.normalize(NormalizationMode.WHNF));
+    assertEquals(expr, expr.normalize(NormalizationMode.WHNF));
   }
 
   @Test

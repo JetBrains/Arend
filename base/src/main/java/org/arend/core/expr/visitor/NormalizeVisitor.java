@@ -36,12 +36,12 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
     if (lamExpr != null) {
       return AppExpression.make(lamExpr, expr.getArgument(), expr.isExplicit()).accept(this, mode);
     } else {
-      return AppExpression.make(function, mode == NormalizationMode.WHNF ? expr.getArgument() : expr.getArgument().accept(this, mode), expr.isExplicit());
+      return AppExpression.make(function, mode == NormalizationMode.WHNF || mode == NormalizationMode.ENF ? expr.getArgument() : expr.getArgument().accept(this, mode), expr.isExplicit());
     }
   }
 
   private Expression applyDefCall(DefCallExpression expr, NormalizationMode mode) {
-    if (mode == NormalizationMode.WHNF || expr.getDefCallArguments().isEmpty()) {
+    if (mode == NormalizationMode.WHNF || mode == NormalizationMode.ENF || expr.getDefCallArguments().isEmpty()) {
       return expr;
     }
 
@@ -765,16 +765,16 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
 
   @Override
   public Expression visitLam(LamExpression expr, NormalizationMode mode) {
-    if (mode == NormalizationMode.RNF || mode == NormalizationMode.RNF_EXP) {
-      ExprSubstitution substitution = new ExprSubstitution();
-      SingleDependentLink link = normalizeSingleParameters(expr.getParameters(), mode, substitution);
-      return new LamExpression(expr.getResultSort(), link, expr.getBody().subst(substitution).accept(this, mode));
-    }
-    if (mode == NormalizationMode.NF) {
-      return new LamExpression(expr.getResultSort(), expr.getParameters(), expr.getBody().accept(this, mode));
-    } else {
+    if (mode == NormalizationMode.WHNF) {
       return expr;
     }
+    if (mode != NormalizationMode.NF) {
+      return new LamExpression(expr.getResultSort(), expr.getParameters(), expr.getBody().accept(this, mode));
+    }
+
+    ExprSubstitution substitution = new ExprSubstitution();
+    SingleDependentLink link = normalizeSingleParameters(expr.getParameters(), mode, substitution);
+    return new LamExpression(expr.getResultSort(), link, expr.getBody().subst(substitution).accept(this, mode));
   }
 
   @Override
@@ -795,7 +795,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
 
   @Override
   public Expression visitError(ErrorExpression expr, NormalizationMode mode) {
-    return mode == NormalizationMode.WHNF || expr.getExpression() == null ? expr : expr.replaceExpression(expr.getExpression().accept(this, mode));
+    return mode == NormalizationMode.NF && expr.getExpression() != null ? expr.replaceExpression(expr.getExpression().accept(this, mode)) : expr;
   }
 
   @Override
@@ -871,24 +871,21 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
         return result.accept(this, mode);
       }
     }
-    if (mode == NormalizationMode.WHNF) {
-      return expr;
-    }
 
     List<Expression> args = new ArrayList<>(expr.getArguments().size());
     for (Expression arg : expr.getArguments()) {
       args.add(arg.accept(this, mode));
     }
     ExprSubstitution substitution = new ExprSubstitution();
-    DependentLink parameters = normalizeParameters(expr.getParameters(), mode, substitution);
-    return new CaseExpression(expr.isSCase(), parameters, expr.getResultType().subst(substitution).accept(this, mode), expr.getResultTypeLevel() == null ? null : expr.getResultTypeLevel().subst(substitution).accept(this, mode), normalizeElimBody(expr.getElimBody(), mode), args);
+    DependentLink parameters = mode == NormalizationMode.NF ? normalizeParameters(expr.getParameters(), mode, substitution) : expr.getParameters();
+    return new CaseExpression(expr.isSCase(), parameters, mode == NormalizationMode.NF ? expr.getResultType().subst(substitution).accept(this, mode) : expr.getResultType(), expr.getResultTypeLevel() != null && mode == NormalizationMode.NF ? expr.getResultTypeLevel().subst(substitution).accept(this, mode) : expr.getResultTypeLevel(), mode == NormalizationMode.WHNF ? expr.getElimBody() : normalizeElimBody(expr.getElimBody(), mode), args);
   }
 
   private ElimBody normalizeElimBody(ElimBody elimBody, NormalizationMode mode) {
     List<ElimClause<Pattern>> clauses = new ArrayList<>();
     for (ElimClause<Pattern> clause : elimBody.getClauses()) {
       ExprSubstitution substitution = new ExprSubstitution();
-      DependentLink parameters = normalizeParameters(clause.getParameters(), mode, substitution);
+      DependentLink parameters = mode == NormalizationMode.NF ? normalizeParameters(clause.getParameters(), mode, substitution) : clause.getParameters();
       clauses.add(new ElimClause<>(Pattern.replaceBindings(clause.getPatterns(), parameters), clause.getExpression() == null ? null : clause.getExpression().subst(substitution).accept(this, mode)));
     }
     return new ElimBody(clauses, elimBody.getElimTree());
