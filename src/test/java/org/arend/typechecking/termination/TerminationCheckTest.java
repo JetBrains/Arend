@@ -277,6 +277,26 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void compareTest() {
+    Set<BaseCallMatrix<TestVertex>> cms = new HashSet<>();
+    var v = new TestVertex("v");
+    var e1 = new TestCallMatrix("1", v, v,'<', 0);
+    var e2 = new TestCallMatrix("1", v, v,'=', 0);
+    var e3 = new TestCallMatrix("1", v, v,'<', 0, '=', 1);
+    var e4 = new TestCallMatrix("1", v, v,'=', 0, '<', 1);
+    var e5 = new TestCallMatrix("1", v, v,'<', 0, '<', 1);
+    var e6 = new TestCallMatrix("1", v, v,'?');
+    assert (e6.compare(e1) == BaseCallMatrix.R.LessThan && e6.compare(e2) == BaseCallMatrix.R.LessThan &&
+            e6.compare(e3) == BaseCallMatrix.R.LessThan && e6.compare(e4) == BaseCallMatrix.R.LessThan &&
+            e6.compare(e5) == BaseCallMatrix.R.LessThan);
+    assert (e2.compare(e1) == BaseCallMatrix.R.LessThan && e1.compare(e2) == BaseCallMatrix.R.Unknown);
+    assert (e1.compare(e3) == BaseCallMatrix.R.LessThan && e2.compare(e3) == BaseCallMatrix.R.LessThan &&
+            e3.compare(e1) == BaseCallMatrix.R.Unknown && e3.compare(e2) == BaseCallMatrix.R.Unknown);
+    assert (e3.compare(e4) == BaseCallMatrix.R.Unknown && e4.compare(e3) == BaseCallMatrix.R.Unknown);
+    assert (e3.compare(e5) == BaseCallMatrix.R.LessThan && e4.compare(e5) == BaseCallMatrix.R.LessThan);
+  }
+
+  @Test
   public void performanceTest() {
     Set<BaseCallMatrix<TestVertex>> cms = new HashSet<>();
     TestVertex Cut = new TestVertex("a","T", "k", "n", "D", "I", "G", "M", "R", "p1", "p2");
