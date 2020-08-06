@@ -12,6 +12,13 @@ public interface CoreDataCallExpression extends CoreDefCallExpression {
   @Override @NotNull CoreDataDefinition getDefinition();
 
   /**
+   * Computes the list of constructors matching this type.
+   *
+   * @return true if the list can be determined, false otherwise.
+   */
+  boolean computeMatchedConstructors(List<? super CoreConstructor> result);
+
+  /**
    * @return the list of constructors matching this type or {@code null} if it cannot be determined
    */
   @Nullable List<CoreConstructor> computeMatchedConstructors();
@@ -27,6 +34,13 @@ public interface CoreDataCallExpression extends CoreDefCallExpression {
   }
 
   /**
+   * Computes the list of constructors with data arguments matching this type.
+   *
+   * @return true if the list can be determined, false otherwise.
+   */
+  boolean computeMatchedConstructorsWithDataArguments(List<? super ConstructorWithDataArguments> result);
+
+  /**
    * @return the list of constructors with data arguments matching this type or {@code null} if it cannot be determined
    */
   @Nullable List<ConstructorWithDataArguments> computeMatchedConstructorsWithDataArguments();
@@ -39,6 +53,13 @@ public interface CoreDataCallExpression extends CoreDefCallExpression {
       this.parameters = parameters;
     }
   }
+
+  /**
+   * Computes the list of constructors with data arguments matching this type and their parameters with substituted arguments.
+   *
+   * @return true if the list can be determined, false otherwise.
+   */
+  boolean computeMatchedConstructorsWithParameters(List<? super ConstructorWithParameters> result);
 
   /**
    * @return the list of constructors with data arguments matching this type and their parameters with substituted arguments or {@code null} if it cannot be determined
