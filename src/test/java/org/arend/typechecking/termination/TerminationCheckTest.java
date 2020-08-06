@@ -278,7 +278,6 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
 
   @Test
   public void compareTest() {
-    Set<BaseCallMatrix<TestVertex>> cms = new HashSet<>();
     var v = new TestVertex("v");
     var e1 = new TestCallMatrix("1", v, v,'<', 0);
     var e2 = new TestCallMatrix("1", v, v,'=', 0);

@@ -137,7 +137,14 @@ public abstract class BaseCallGraph<T> {
             break;
           }
 
-        if (!alreadyContainsSmaller) set.add(cm);
+        if (!alreadyContainsSmaller) {
+          HashSet<BaseCallMatrix<T>> toRemove = new HashSet<>();
+          for (BaseCallMatrix<T> arrow : set)
+            if (cm.compare(arrow) == BaseCallMatrix.R.LessThan)
+              toRemove.add(arrow);
+          set.removeAll(toRemove);
+          set.add(cm);
+        }
 
         return !alreadyContainsSmaller;
       }
