@@ -54,6 +54,9 @@ public final class NormalizeCommand implements ReplCommand {
       case "NF":
         api.normalizationMode = NormalizationMode.NF;
         break;
+      case "ENF":
+        api.normalizationMode = NormalizationMode.ENF;
+        break;
       case "RNF":
         api.normalizationMode = NormalizationMode.RNF;
         break;

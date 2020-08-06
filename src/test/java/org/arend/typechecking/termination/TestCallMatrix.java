@@ -34,9 +34,10 @@ class TestCallMatrix extends BaseCallMatrix<TestVertex> {
           } else {
             throw new IllegalArgumentException();
           }
-        } else {
-          throw new IllegalArgumentException();
-        }
+        } else if (c == '-') {
+          i--;
+          pos++;
+        } else throw new IllegalArgumentException();
       } else {
         throw new IllegalArgumentException("There is a problem with argument #" + pos);
       }

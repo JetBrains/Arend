@@ -276,4 +276,69 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
     assert !callCategory.checkTermination();
   }
 
+  @Test
+  public void compareTest() {
+    var v = new TestVertex("v");
+    var e1 = new TestCallMatrix("1", v, v,'<', 0);
+    var e2 = new TestCallMatrix("1", v, v,'=', 0);
+    var e3 = new TestCallMatrix("1", v, v,'<', 0, '=', 1);
+    var e4 = new TestCallMatrix("1", v, v,'=', 0, '<', 1);
+    var e5 = new TestCallMatrix("1", v, v,'<', 0, '<', 1);
+    var e6 = new TestCallMatrix("1", v, v,'?');
+    assert (e6.compare(e1) == BaseCallMatrix.R.LessThan && e6.compare(e2) == BaseCallMatrix.R.LessThan &&
+            e6.compare(e3) == BaseCallMatrix.R.LessThan && e6.compare(e4) == BaseCallMatrix.R.LessThan &&
+            e6.compare(e5) == BaseCallMatrix.R.LessThan);
+    assert (e2.compare(e1) == BaseCallMatrix.R.LessThan && e1.compare(e2) == BaseCallMatrix.R.Unknown);
+    assert (e1.compare(e3) == BaseCallMatrix.R.LessThan && e2.compare(e3) == BaseCallMatrix.R.LessThan &&
+            e3.compare(e1) == BaseCallMatrix.R.Unknown && e3.compare(e2) == BaseCallMatrix.R.Unknown);
+    assert (e3.compare(e4) == BaseCallMatrix.R.Unknown && e4.compare(e3) == BaseCallMatrix.R.Unknown);
+    assert (e3.compare(e5) == BaseCallMatrix.R.LessThan && e4.compare(e5) == BaseCallMatrix.R.LessThan);
+  }
+
+  @Test
+  public void performanceTest() {
+    Set<BaseCallMatrix<TestVertex>> cms = new HashSet<>();
+    TestVertex Cut = new TestVertex("a","T", "k", "n", "D", "I", "G", "M", "R", "p1", "p2");
+    TestVertex CCut = new TestVertex("b","T", "k", "n", "D", "I", "G", "M", "R", "p1", "p2");
+
+    cms.add(new TestCallMatrix("ab", Cut, CCut, '=', 0, '<', 1, '?', '=', 3, '<', 4, '-', '<', 6, '=', 5, '=', 7, '<', 8, '?'));
+    cms.add(new TestCallMatrix("ba", CCut, Cut, '=', 0, '=', 1, '?', '=', 3, '=', 4, '=', 5, '?', '=', 6, '?', '?'));
+
+    cms.add(new TestCallMatrix("aa1", Cut, Cut, '=', 0, '=', 1, '=', 2, '=', 3, '=', 4, '=', 5, '?', '=', 7, '<', 8));
+    cms.add(new TestCallMatrix("aa2", Cut, Cut, '=', 0, '=', 1, '<', 2, '?', '=', 4, '=', 5, '=', 6, '?', '<', 8));
+    cms.add(new TestCallMatrix("aa3", Cut, Cut, '=', 0, '=', 1, '=', 2, '=', 3, '=', 4, '=', 5, '=', 6, '=', 7, '<', 8));
+    cms.add(new TestCallMatrix("aa4", Cut, Cut, '=', 0, '=', 1, '<', 2, '=', 3, '=', 4, '?', '<', 5, '-', '<', 6, '?', '?'));
+    cms.add(new TestCallMatrix("aa5", Cut, Cut, '=', 0, '?', '?', '=', 3, '<', 4, '=', 5, '=', 6, '?', '?'));
+    cms.add(new TestCallMatrix("aa6", Cut, Cut, '=', 0, '=', 1, '<', 2, '=', 3, '=', 4, '?', '=', 6, '?', '?'));
+    cms.add(new TestCallMatrix("aa7", Cut, Cut, '=', 0, '<', 1, '=', 2, '?', '=', 4, '=', 5, '=', 6, '<', 7, '?'));
+    cms.add(new TestCallMatrix("aa8", Cut, Cut, '=', 0, '=', 1, '=', 2, '=', 3, '=', 4, '=', 5, '=', 6, '<', 7, '=', 8));
+    cms.add(new TestCallMatrix("aa9", Cut, Cut, '=', 0, '=', 1, '<', 2, '=', 3, '=', 4, '=', 5, '?', '=', 7, '<', 8));
+    cms.add(new TestCallMatrix("aa10", Cut, Cut, '=', 0, '=', 1, '<', 2, '?', '=', 4, '=', 5, '=', 6, '?', '?'));
+    cms.add(new TestCallMatrix("aa11", Cut, Cut, '=', 0, '<', 1, '=', 2, '=', 3, '=', 4, '?', '=', 6, '<', 7, '?'));
+    cms.add(new TestCallMatrix("aa12", Cut, Cut, '=', 0, '<', 2, '?', '=', 3, '<', 4, '=', 5, '?', '<', 8, '?'));
+    cms.add(new TestCallMatrix("aa13", Cut, Cut, '=', 0, '<', 1, '=', 2, '=', 3, '=', 4, '=', 5, '=', 6, '<', 7, '=', 8));
+    cms.add(new TestCallMatrix("aa14", Cut, Cut, '=', 0, '=', 1, '<', 2, '=', 3, '=', 4, '=', 5, '=', 6, '=', 7, '<', 8));
+    cms.add(new TestCallMatrix("aa15", Cut, Cut, '=', 0, '=', 1, '=', 2, '=', 3, '=', 4, '=', 5, '<', 6, '=', 7, '<', 8));
+    cms.add(new TestCallMatrix("aa16", Cut, Cut, '=', 0, '=', 1, '<', 2, '=', 3, '=', 4, '=', 5, '?', '=', 7, '<', 6, '-', '<', 8));
+    cms.add(new TestCallMatrix("aa17", Cut, Cut, '=', 0, '=', 1, '<', 2, '=', 3, '=', 4, '=', 5, '?', '=', 7, '?'));
+
+    cms.add(new TestCallMatrix("bb1", CCut, CCut, '=', 0, '=', 1, '=', 2, '=', 3, '=', 4, '=', 5, '=', 6, '?', '=', 8, '<', 9));
+    cms.add(new TestCallMatrix("bb2", CCut, CCut, '=', 0, '=', 1, '<', 2, '=', 3, '=', 4, '=', 5, '=', 6, '?', '=', 8, '<', 7, '-', '<', 9));
+    cms.add(new TestCallMatrix("bb3", CCut, CCut, '=', 0, '=', 1, '<', 2, '=', 3, '=', 4, '?', '=', 6, '=', 7, '=', 8, '?'));
+    cms.add(new TestCallMatrix("bb4", CCut, CCut, '=', 0, '=', 1, '=', 2, '=', 3, '=', 4, '=', 5, '=', 6, '=', 7, '=', 8, '<', 9));
+    cms.add(new TestCallMatrix("bb5", CCut, CCut, '=', 0, '=', 1, '<', 2, '=', 3, '=', 4, '=', 5, '=', 6, '-', '=', 7, '?', '=', 8, '?'));
+    cms.add(new TestCallMatrix("bb6", CCut, CCut, '=', 0, '=', 1, '=', 2, '=', 3, '=', 4, '=', 5, '=', 6, '=', 7, '<', 8, '=', 9));
+    cms.add(new TestCallMatrix("bb7", CCut, CCut, '=', 0, '=', 1, '=', 2, '=', 3, '=', 4, '=', 5, '=', 6, '<', 7, '=', 8, '<', 9));
+    cms.add(new TestCallMatrix("bb8", CCut, CCut, '=', 0, '=', 1, '<', 2, '=', 3, '=', 4, '=', 5, '=', 6, '=', 7, '=', 8, '<', 9));
+    cms.add(new TestCallMatrix("bb9", CCut, CCut, '=', 0, '<', 1, '=', 2, '=', 3, '=', 4, '=', 5, '=', 6, '=', 7, '<', 8, '=', 9));
+    cms.add(new TestCallMatrix("bb10", CCut, CCut, '=', 0, '=', 1, '<', 2, '=', 3, '=', 4, '=', 5, '=', 6, '?', '=', 8, '<', 9));
+    cms.add(new TestCallMatrix("bb11", CCut, CCut, '=', 0, '=', 1, '<', 2, '=', 3, '=', 4, '?', '=', 6, '=', 7, '=', 8, '<', 9));
+    cms.add(new TestCallMatrix("bb12", CCut, CCut, '=', 0, '=', 1, '<', 2, '?', '=', 4, '=', 5, '=', 6, '=', 7, '?', '?'));
+    cms.add(new TestCallMatrix("bb13", CCut, CCut, '=', 0, '=', 1, '<', 2, '=', 3, '=', 4, '?', '=', 6, '<', 5, '-', '<', 7, '=', 8, '<', 9));
+    cms.add(new TestCallMatrix("bb14", CCut, CCut, '=', 0, '=', 1, '<', 2, '=', 3, '=', 4, '?', '=', 6, '<', 6, '-', '=', 7, '=', 8, '?'));
+
+    var callCategory = TestCallGraph.calculateClosure(cms);
+    assert callCategory.checkTermination();
+  }
+
 }
