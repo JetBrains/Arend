@@ -548,7 +548,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
         .map(r -> new Concrete.NameParameter(tokenPosition(r.getSymbol()), true, new LocalReferable(r.getText())))
         .collect(Collectors.toList());
       var metaDef = new DefinableMetaDefinition(params, visitExpr(body));
-      // reference.setDefinition(metaDef);
+      reference.setDefinition(metaDef);
     }
 
     var resultGroup = new StaticGroup(reference, staticSubgroups, namespaceCommands, parent);
