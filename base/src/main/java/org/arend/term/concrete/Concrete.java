@@ -1481,12 +1481,61 @@ public final class Concrete {
     }
   }
 
-  public static abstract class Definition implements ReferableDefinition {
-    private final TCReferable myReferable;
+  public static abstract class ResolvableDefinition implements ConcreteSourceNode {
     Stage stage = Stage.TYPE_CLASS_REFERENCES_RESOLVED;
-    public TCReferable enclosingClass;
     private Status myStatus = Status.NO_ERRORS;
     private boolean myRecursive = false;
+
+    public Status getStatus() {
+      return myStatus;
+    }
+
+    public void setStatus(Status status) {
+      myStatus = myStatus.max(status);
+    }
+
+    public void setStatus(GeneralError.Level level) {
+      if (level == GeneralError.Level.ERROR) {
+        myStatus = myStatus.max(Status.HAS_ERRORS);
+      } else if (level.ordinal() >= GeneralError.Level.WARNING_UNUSED.ordinal()) {
+        myStatus = myStatus.max(Status.HAS_WARNINGS);
+      }
+    }
+
+    public boolean isRecursive() {
+      return myRecursive;
+    }
+
+    public void setRecursive(boolean isRecursive) {
+      myRecursive = isRecursive;
+    }
+
+    public Stage getStage() {
+      return stage;
+    }
+
+    public void setResolved() {
+      stage = Stage.RESOLVED;
+    }
+
+    public void setDesugarized() {
+      stage = Stage.DESUGARIZED;
+    }
+
+    public void setTypechecked() {
+      stage = Stage.TYPECHECKED;
+    }
+
+    public void setTypeClassReferencesResolved() {
+      if (stage == Stage.NOT_RESOLVED) {
+        stage = Stage.TYPE_CLASS_REFERENCES_RESOLVED;
+      }
+    }
+  }
+
+  public static abstract class Definition extends ResolvableDefinition implements ReferableDefinition {
+    private final TCReferable myReferable;
+    public TCReferable enclosingClass;
 
     @Override
     public @NotNull TCReferable getData() {
@@ -1513,53 +1562,6 @@ public final class Concrete {
       myReferable = referable;
     }
 
-    public Status getStatus() {
-      return myStatus;
-    }
-
-    public void setStatus(Status status) {
-      myStatus = myStatus.max(status);
-    }
-
-    public void setStatus(GeneralError.Level level) {
-      if (level == GeneralError.Level.ERROR) {
-        myStatus = myStatus.max(Status.HAS_ERRORS);
-      } else if (level.ordinal() >= GeneralError.Level.WARNING_UNUSED.ordinal()) {
-        myStatus = myStatus.max(Status.HAS_WARNINGS);
-      }
-    }
-
-    public boolean isRecursive() {
-      return myRecursive;
-    }
-
-    public void setRecursive(boolean isRecursive) {
-      myRecursive = isRecursive;
-    }
-
-    @Override
-    public Stage getStage() {
-      return stage;
-    }
-
-    public void setResolved() {
-      stage = Stage.RESOLVED;
-    }
-
-    public void setDesugarized() {
-      stage = Stage.DESUGARIZED;
-    }
-
-    public void setTypechecked() {
-      stage = Stage.TYPECHECKED;
-    }
-
-    public void setTypeClassReferencesResolved() {
-      if (stage == Stage.NOT_RESOLVED) {
-        stage = Stage.TYPE_CLASS_REFERENCES_RESOLVED;
-      }
-    }
-
     @NotNull
     @Override
     public Definition getRelatedDefinition() {
@@ -1580,38 +1582,6 @@ public final class Concrete {
     @Override
     public <P, R> R accept(ConcreteReferableDefinitionVisitor<? super P, ? extends R> visitor, P params) {
       return accept((ConcreteDefinitionVisitor<? super P, ? extends R>) visitor, params);
-    }
-  }
-
-  /**
-   * User-defined meta in Arend, not Java extension meta.
-   */
-  public static class DefinableMetaDefinition implements ConcreteSourceNode {
-    public final List<NameParameter> myParameters;
-    private MetaReferable myReferable;
-    public Expression body;
-
-    public DefinableMetaDefinition(List<NameParameter> parameters, Expression body) {
-      myParameters = parameters;
-      this.body = body;
-    }
-
-    public void setReferable(@NotNull MetaReferable referable) {
-      myReferable = referable;
-    }
-
-    public List<? extends NameParameter> getParameters() {
-      return myParameters;
-    }
-
-    @Override
-    public void prettyPrint(StringBuilder builder, PrettyPrinterConfig ppConfig) {
-
-    }
-
-    @Override
-    public @NotNull MetaReferable getData() {
-      return myReferable;
     }
   }
 
@@ -2144,7 +2114,7 @@ public final class Concrete {
     }
   }
 
-  public static class Constructor implements ReferableDefinition {
+  public static class Constructor extends ReferableDefinitionBase {
     private final TCReferable myReferable;
     private final DataDefinition myDataType;
     private final List<TypeParameter> myParameters;
@@ -2163,27 +2133,6 @@ public final class Concrete {
     @Override
     public @NotNull TCReferable getData() {
       return myReferable;
-    }
-
-    @Override
-    public String toString() {
-      return myReferable.textRepresentation();
-    }
-
-    @Override
-    @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
-    public boolean equals(Object o) {
-      return equalsImpl(o);
-    }
-
-    @Override
-    public int hashCode() {
-      return hashCodeImpl();
-    }
-
-    @Override
-    public void prettyPrint(StringBuilder builder, PrettyPrinterConfig ppConfig) {
-      builder.append(myReferable); // TODO[pretty]: implement this properly
     }
 
     @NotNull

@@ -12,13 +12,10 @@ import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.term.Fixity;
 import org.arend.term.FunctionKind;
-import org.arend.term.concrete.Concrete;
+import org.arend.term.concrete.*;
 import org.arend.term.concrete.Concrete.BinOpSequenceElem;
 import org.arend.term.concrete.Concrete.Expression;
 import org.arend.term.concrete.Concrete.ReferenceExpression;
-import org.arend.term.concrete.ConcreteDefinitionVisitor;
-import org.arend.term.concrete.ConcreteExpressionVisitor;
-import org.arend.term.concrete.ConcreteLevelExpressionVisitor;
 import org.arend.util.StringEscapeUtils;
 
 import java.util.*;
@@ -1451,7 +1448,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     return null;
   }
 
-  public void visitMeta(Concrete.DefinableMetaDefinition def) {
+  public void visitMeta(DefinableMetaDefinition def) {
     myBuilder.append("\\meta ");
     prettyPrintNameWithPrecedence(def.getData());
     for (var parameter : def.myParameters) {

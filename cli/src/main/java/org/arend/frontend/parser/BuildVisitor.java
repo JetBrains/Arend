@@ -11,6 +11,7 @@ import org.arend.module.ModuleLocation;
 import org.arend.naming.reference.*;
 import org.arend.term.*;
 import org.arend.term.concrete.Concrete;
+import org.arend.term.concrete.DefinableMetaDefinition;
 import org.arend.term.group.*;
 import org.arend.util.Pair;
 import org.arend.util.StringEscapeUtils;
@@ -546,7 +547,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       var params = ctx.ID().stream()
         .map(r -> new Concrete.NameParameter(tokenPosition(r.getSymbol()), true, new LocalReferable(r.getText())))
         .collect(Collectors.toList());
-      var metaDef = new Concrete.DefinableMetaDefinition(params, visitExpr(body));
+      var metaDef = new DefinableMetaDefinition(params, visitExpr(body));
       // reference.setDefinition(metaDef);
     }
 
