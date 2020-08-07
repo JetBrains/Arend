@@ -1439,49 +1439,31 @@ public final class Concrete {
     return null;
   }
 
-  public static abstract class ReferableDefinition implements SourceNode {
-    private final TCReferable myReferable;
-
-    public ReferableDefinition(TCReferable referable) {
-      myReferable = referable;
-    }
-
+  public interface ReferableDefinition extends SourceNode {
     @NotNull
     @Override
-    public TCReferable getData() {
-      return myReferable;
-    }
+    TCReferable getData();
 
-    @NotNull
-    public abstract Definition getRelatedDefinition();
+    @NotNull Definition getRelatedDefinition();
 
-    public Stage getStage() {
+    default Stage getStage() {
       return getRelatedDefinition().getStage();
     }
 
     @Override
-    public void prettyPrint(StringBuilder builder, PrettyPrinterConfig ppConfig) {
-      builder.append(myReferable); // TODO[pretty]: implement this properly
-    }
+    void prettyPrint(StringBuilder builder, PrettyPrinterConfig ppConfig);
 
-    public abstract <P, R> R accept(ConcreteReferableDefinitionVisitor<? super P, ? extends R> visitor, P params);
+    <P, R> R accept(ConcreteReferableDefinitionVisitor<? super P, ? extends R> visitor, P params);
 
-    @Override
-    public String toString() {
-      return myReferable.textRepresentation();
-    }
-
-    @Override
-    public boolean equals(Object o) {
+    default boolean equalsImpl(Object o) {
       if (this == o) return true;
       if (o == null || getClass() != o.getClass()) return false;
       ReferableDefinition that = (ReferableDefinition) o;
-      return myReferable.equals(that.myReferable);
+      return getData().equals(that.getData());
     }
 
-    @Override
-    public int hashCode() {
-      return myReferable.hashCode();
+    default int hashCodeImpl() {
+      return getData().hashCode();
     }
   }
 
@@ -1499,14 +1481,36 @@ public final class Concrete {
     }
   }
 
-  public static abstract class Definition extends ReferableDefinition {
+  public static abstract class Definition implements ReferableDefinition {
+    private final TCReferable myReferable;
     Stage stage = Stage.TYPE_CLASS_REFERENCES_RESOLVED;
     public TCReferable enclosingClass;
     private Status myStatus = Status.NO_ERRORS;
     private boolean myRecursive = false;
 
+    @Override
+    public @NotNull TCReferable getData() {
+      return myReferable;
+    }
+
+    @Override
+    public String toString() {
+      return myReferable.textRepresentation();
+    }
+
+    @Override
+    @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
+    public boolean equals(Object o) {
+      return equalsImpl(o);
+    }
+
+    @Override
+    public int hashCode() {
+      return hashCodeImpl();
+    }
+
     public Definition(TCReferable referable) {
-      super(referable);
+      myReferable = referable;
     }
 
     public Status getStatus() {
@@ -1714,7 +1718,31 @@ public final class Concrete {
     void setResultTypeLevel(Expression resultTypeLevel);
   }
 
-  public static class ClassField extends ReferableDefinition implements BaseClassField {
+  public static abstract class ReferableDefinitionBase implements ReferableDefinition {
+    @Override
+    public String toString() {
+      return getData().textRepresentation();
+    }
+
+    @Override
+    @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
+    public boolean equals(Object o) {
+      return equalsImpl(o);
+    }
+
+    @Override
+    public int hashCode() {
+      return hashCodeImpl();
+    }
+
+    @Override
+    public void prettyPrint(StringBuilder builder, PrettyPrinterConfig ppConfig) {
+      builder.append(getData()); // TODO[pretty]: implement this properly
+    }
+  }
+
+  public static class ClassField extends ReferableDefinitionBase implements BaseClassField {
+    private final TCFieldReferable myReferable;
     private final ClassDefinition myParentClass;
     private final boolean myExplicit;
     private final ClassFieldKind myKind;
@@ -1723,7 +1751,7 @@ public final class Concrete {
     private Expression myResultTypeLevel;
 
     public ClassField(TCFieldReferable referable, ClassDefinition parentClass, boolean isExplicit, ClassFieldKind kind, List<TypeParameter> parameters, Expression resultType, Expression resultTypeLevel) {
-      super(referable);
+      myReferable = referable;
       myParentClass = parentClass;
       myExplicit = isExplicit;
       myKind = kind;
@@ -1735,7 +1763,7 @@ public final class Concrete {
     @NotNull
     @Override
     public TCFieldReferable getData() {
-      return (TCFieldReferable) super.getData();
+      return myReferable;
     }
 
     public boolean isExplicit() {
@@ -2116,7 +2144,8 @@ public final class Concrete {
     }
   }
 
-  public static class Constructor extends ReferableDefinition {
+  public static class Constructor implements ReferableDefinition {
+    private final TCReferable myReferable;
     private final DataDefinition myDataType;
     private final List<TypeParameter> myParameters;
     private final List<ReferenceExpression> myEliminatedReferences;
@@ -2124,11 +2153,37 @@ public final class Concrete {
     private Expression myResultType;
 
     public Constructor(TCReferable referable, DataDefinition dataType, List<TypeParameter> parameters, List<ReferenceExpression> eliminatedReferences, List<FunctionClause> clauses) {
-      super(referable);
+      myReferable = referable;
       myDataType = dataType;
       myParameters = parameters;
       myEliminatedReferences = eliminatedReferences;
       myClauses = clauses;
+    }
+
+    @Override
+    public @NotNull TCReferable getData() {
+      return myReferable;
+    }
+
+    @Override
+    public String toString() {
+      return myReferable.textRepresentation();
+    }
+
+    @Override
+    @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
+    public boolean equals(Object o) {
+      return equalsImpl(o);
+    }
+
+    @Override
+    public int hashCode() {
+      return hashCodeImpl();
+    }
+
+    @Override
+    public void prettyPrint(StringBuilder builder, PrettyPrinterConfig ppConfig) {
+      builder.append(myReferable); // TODO[pretty]: implement this properly
     }
 
     @NotNull
