@@ -16,7 +16,7 @@ import java.util.List;
  * User-defined meta in Arend, not Java extension meta.
  */
 public class DefinableMetaDefinition extends Concrete.ResolvableDefinition implements MetaDefinition {
-  public final List<Concrete.NameParameter> myParameters;
+  private final List<Concrete.NameParameter> myParameters;
   private MetaReferable myReferable;
   public Concrete.Expression body;
 
@@ -35,8 +35,10 @@ public class DefinableMetaDefinition extends Concrete.ResolvableDefinition imple
 
   @Override
   public boolean checkArguments(@NotNull List<? extends ConcreteArgument> arguments) {
-    // TODO[meta]: implement this
-    return false;
+    for (var argument : arguments) {
+      if (!argument.isExplicit()) return false;
+    }
+    return arguments.size() == myParameters.size();
   }
 
   @Override
@@ -57,7 +59,7 @@ public class DefinableMetaDefinition extends Concrete.ResolvableDefinition imple
   }
 
   @Override
-  <P, R> R accept(ConcreteResolvableDefinitionVisitor<? super P, ? extends R> visitor, P params) {
+  public <P, R> R accept(ConcreteResolvableDefinitionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitMeta(this, params);
   }
 }

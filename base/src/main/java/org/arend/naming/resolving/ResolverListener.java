@@ -5,6 +5,7 @@ import org.arend.naming.scope.Scope;
 import org.arend.term.NameRenaming;
 import org.arend.term.NamespaceCommand;
 import org.arend.term.concrete.Concrete;
+import org.arend.term.concrete.DefinableMetaDefinition;
 
 import java.util.List;
 
@@ -21,4 +22,6 @@ public interface ResolverListener {
 
   default void beforeDefinitionResolved(Concrete.Definition definition) {}
   default void definitionResolved(Concrete.Definition definition) {}
+  default void beforeDefinableMetaResolved(DefinableMetaDefinition definition) {}
+  default void definableMetaResolved(DefinableMetaDefinition definition) {}
 }

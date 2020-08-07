@@ -3,6 +3,7 @@ package org.arend.naming.resolving.visitor;
 import org.arend.core.context.Utils;
 import org.arend.error.DummyErrorReporter;
 import org.arend.error.ParsingError;
+import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.error.NameResolverError;
@@ -21,7 +22,8 @@ import org.arend.term.FunctionKind;
 import org.arend.term.NameRenaming;
 import org.arend.term.NamespaceCommand;
 import org.arend.term.concrete.Concrete;
-import org.arend.term.concrete.ConcreteDefinitionVisitor;
+import org.arend.term.concrete.ConcreteResolvableDefinitionVisitor;
+import org.arend.term.concrete.DefinableMetaDefinition;
 import org.arend.term.group.ChildGroup;
 import org.arend.term.group.Group;
 import org.arend.typechecking.error.local.LocalErrorReporter;
@@ -33,7 +35,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<Scope, Void> {
+public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitionVisitor<Scope, Void> {
   private boolean myResolveTypeClassReferences;
   private final ConcreteProvider myConcreteProvider;
   private final ReferableConverter myReferableConverter;
@@ -149,10 +151,45 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     return true;
   }
 
-  private class ConcreteProxyErrorReporter extends LocalErrorReporter {
-    private final Concrete.Definition definition;
+  @Override
+  public Void visitMeta(DefinableMetaDefinition def, Scope scope) {
+    if (def.getStage().ordinal() >= Concrete.Stage.RESOLVED.ordinal()) {
+      return null;
+    }
 
-    private ConcreteProxyErrorReporter(Concrete.Definition definition) {
+    if (myResolverListener != null) {
+      myResolverListener.beforeDefinableMetaResolved(def);
+    }
+
+    myLocalErrorReporter = new ConcreteProxyErrorReporter(def);
+    if (myResolveTypeClassReferences) {
+      if (def.getStage() == Concrete.Stage.NOT_RESOLVED)
+        resolveTypeClassReference(def.getParameters(), def.body, scope, false);
+      def.setTypeClassReferencesResolved();
+      return null;
+    }
+
+    checkNameAndPrecedence(def, def.getData());
+
+    List<Referable> context = new ArrayList<>();
+    var exprVisitor = new ExpressionResolveNameVisitor(myReferableConverter, scope, context, myLocalErrorReporter, myResolverListener);
+    exprVisitor.visitParameters(def.getParameters(), null);
+
+    def.body = def.body.accept(exprVisitor, null);
+
+    def.setResolved();
+    def.accept(new SyntacticDesugarVisitor(myLocalErrorReporter), null);
+    if (myResolverListener != null) {
+      myResolverListener.definableMetaResolved(def);
+    }
+
+    return null;
+  }
+
+  private class ConcreteProxyErrorReporter extends LocalErrorReporter {
+    private final Concrete.ResolvableDefinition definition;
+
+    private ConcreteProxyErrorReporter(Concrete.ResolvableDefinition definition) {
       super(definition.getData(), myErrorReporter);
       this.definition = definition;
     }
@@ -165,9 +202,13 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
   }
 
   private void checkNameAndPrecedence(Concrete.ReferableDefinition definition) {
-    ExpressionResolveNameVisitor.checkName(definition.getData(), myLocalErrorReporter);
+    checkNameAndPrecedence(definition, definition.getData());
+  }
 
-    Precedence prec = definition.getData().getPrecedence();
+  private void checkNameAndPrecedence(ConcreteSourceNode definition, LocatedReferable referable) {
+    ExpressionResolveNameVisitor.checkName(referable, myLocalErrorReporter);
+
+    Precedence prec = referable.getPrecedence();
     if (prec.priority < 0 || prec.priority > 10) {
       myLocalErrorReporter.report(new ParsingError(ParsingError.Kind.INVALID_PRIORITY, definition));
     }
@@ -583,8 +624,8 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       resolveSuperClasses((Concrete.ClassDefinition) def, new ExpressionResolveNameVisitor(myReferableConverter, scope, null, myErrorReporter, myResolverListener));
     }
     Scope convertedScope = CachingScope.make(scope);
-    if (def instanceof Concrete.Definition) {
-      ((Concrete.Definition) def).accept(this, convertedScope);
+    if (def instanceof Concrete.ResolvableDefinition) {
+      ((Concrete.ResolvableDefinition) def).accept(this, convertedScope);
     } else {
       myLocalErrorReporter = new LocalErrorReporter(groupRef, myErrorReporter);
     }

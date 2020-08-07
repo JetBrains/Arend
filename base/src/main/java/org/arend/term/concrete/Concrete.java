@@ -1483,6 +1483,9 @@ public final class Concrete {
     private Status myStatus = Status.NO_ERRORS;
     private boolean myRecursive = false;
 
+    @Override
+    public abstract @NotNull LocatedReferable getData();
+
     public Status getStatus() {
       return myStatus;
     }
@@ -1529,7 +1532,7 @@ public final class Concrete {
       }
     }
 
-    abstract <P, R> R accept(ConcreteResolvableDefinitionVisitor<? super P, ? extends R> visitor, P params);
+    public abstract <P, R> R accept(ConcreteResolvableDefinitionVisitor<? super P, ? extends R> visitor, P params);
 
     @Override
     public void prettyPrint(StringBuilder builder, PrettyPrinterConfig ppConfig) {

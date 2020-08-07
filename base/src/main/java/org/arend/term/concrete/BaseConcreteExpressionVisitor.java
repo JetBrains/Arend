@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisitor<P, Concrete.Expression>, ConcreteDefinitionVisitor<P, Void> {
+public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisitor<P, Concrete.Expression>, ConcreteResolvableDefinitionVisitor<P, Void> {
   @Override
   public Concrete.Expression visitApp(Concrete.AppExpression expr, P params) {
     // It is important that we process arguments first since setFunction modifies the list of arguments.
@@ -270,6 +270,13 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
     }
 
     visitFunctionBody(def.getBody(), params);
+    return null;
+  }
+
+  @Override
+  public Void visitMeta(DefinableMetaDefinition def, P params) {
+    visitParameters(def.getParameters(), params);
+    def.body = def.body.accept(this, params);
     return null;
   }
 
