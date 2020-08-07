@@ -20,7 +20,7 @@ import org.arend.util.StringEscapeUtils;
 
 import java.util.*;
 
-public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence, Void>, ConcreteLevelExpressionVisitor<Precedence, Void>, ConcreteDefinitionVisitor<Void, Void> {
+public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence, Void>, ConcreteLevelExpressionVisitor<Precedence, Void>, ConcreteResolvableDefinitionVisitor<Void, Void> {
   public static final int INDENT = 2;
   public static final int MAX_LEN = 120;
   public static final float SMALL_RATIO = (float) 0.1;
@@ -1448,7 +1448,8 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     return null;
   }
 
-  public void visitMeta(DefinableMetaDefinition def) {
+  @Override
+  public Void visitMeta(DefinableMetaDefinition def, Void params) {
     myBuilder.append("\\meta ");
     prettyPrintNameWithPrecedence(def.getData());
     for (var parameter : def.myParameters) {
@@ -1502,6 +1503,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     };
 
     r.doPrettyPrint(this, noIndent);
+    return null;
   }
 
   static public void printArguments(PrettyPrintVisitor pp, List<Concrete.Argument> args, boolean noIndent) {

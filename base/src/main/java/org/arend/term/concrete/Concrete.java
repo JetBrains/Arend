@@ -1450,9 +1450,6 @@ public final class Concrete {
       return getRelatedDefinition().getStage();
     }
 
-    @Override
-    void prettyPrint(StringBuilder builder, PrettyPrinterConfig ppConfig);
-
     <P, R> R accept(ConcreteReferableDefinitionVisitor<? super P, ? extends R> visitor, P params);
 
     default boolean equalsImpl(Object o) {
@@ -1531,6 +1528,13 @@ public final class Concrete {
         stage = Stage.TYPE_CLASS_REFERENCES_RESOLVED;
       }
     }
+
+    abstract <P, R> R accept(ConcreteResolvableDefinitionVisitor<? super P, ? extends R> visitor, P params);
+
+    @Override
+    public void prettyPrint(StringBuilder builder, PrettyPrinterConfig ppConfig) {
+      accept(new PrettyPrintVisitor(builder, 0, !ppConfig.isSingleLine()), null);
+    }
   }
 
   public static abstract class Definition extends ResolvableDefinition implements ReferableDefinition {
@@ -1572,15 +1576,15 @@ public final class Concrete {
       return Collections.emptyList();
     }
 
-    @Override
-    public void prettyPrint(StringBuilder builder, PrettyPrinterConfig ppConfig) {
-      accept(new PrettyPrintVisitor(builder, 0, !ppConfig.isSingleLine()), null);
-    }
-
     public abstract <P, R> R accept(ConcreteDefinitionVisitor<? super P, ? extends R> visitor, P params);
 
     @Override
     public <P, R> R accept(ConcreteReferableDefinitionVisitor<? super P, ? extends R> visitor, P params) {
+      return accept((ConcreteDefinitionVisitor<? super P, ? extends R>) visitor, params);
+    }
+
+    @Override
+    public <P, R> R accept(ConcreteResolvableDefinitionVisitor<? super P, ? extends R> visitor, P params) {
       return accept((ConcreteDefinitionVisitor<? super P, ? extends R>) visitor, params);
     }
   }

@@ -2,7 +2,6 @@ package org.arend.term.concrete;
 
 import org.arend.ext.concrete.expr.ConcreteArgument;
 import org.arend.ext.concrete.expr.ConcreteExpression;
-import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.typechecking.ContextData;
 import org.arend.ext.typechecking.ExpressionTypechecker;
 import org.arend.ext.typechecking.MetaDefinition;
@@ -35,11 +34,6 @@ public class DefinableMetaDefinition extends Concrete.ResolvableDefinition imple
   }
 
   @Override
-  public void prettyPrint(StringBuilder builder, PrettyPrinterConfig ppConfig) {
-
-  }
-
-  @Override
   public boolean checkArguments(@NotNull List<? extends ConcreteArgument> arguments) {
     // TODO[meta]: implement this
     return false;
@@ -60,5 +54,10 @@ public class DefinableMetaDefinition extends Concrete.ResolvableDefinition imple
   @Override
   public @NotNull MetaReferable getData() {
     return myReferable;
+  }
+
+  @Override
+  <P, R> R accept(ConcreteResolvableDefinitionVisitor<? super P, ? extends R> visitor, P params) {
+    return visitor.visitMeta(this, params);
   }
 }
