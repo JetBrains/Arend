@@ -1,7 +1,11 @@
 package org.arend.term.concrete;
 
+import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.concrete.expr.ConcreteArgument;
 import org.arend.ext.concrete.expr.ConcreteExpression;
+import org.arend.ext.error.ArgumentExplicitnessError;
+import org.arend.ext.error.ErrorReporter;
+import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.typechecking.ContextData;
 import org.arend.ext.typechecking.ExpressionTypechecker;
 import org.arend.ext.typechecking.MetaDefinition;
@@ -35,16 +39,34 @@ public class DefinableMetaDefinition extends Concrete.ResolvableDefinition imple
 
   @Override
   public boolean checkArguments(@NotNull List<? extends ConcreteArgument> arguments) {
+    return checkArguments(arguments, null, null);
+  }
+
+  private boolean checkArguments(@NotNull List<? extends ConcreteArgument> arguments, @Nullable ErrorReporter errorReporter, @Nullable ConcreteSourceNode marker) {
     for (var argument : arguments) {
-      if (!argument.isExplicit()) return false;
+      if (!argument.isExplicit()) {
+        if (errorReporter != null) {
+          errorReporter.report(new ArgumentExplicitnessError(false, argument.getExpression()));
+        }
+        return false;
+      }
     }
-    return arguments.size() == myParameters.size();
+    boolean ok = arguments.size() == myParameters.size();
+    if (!ok && errorReporter != null) {
+      errorReporter.report(new TypecheckingError("Expected " + myParameters.size() + " arguments, found " + arguments.size(), marker));
+    }
+    return ok;
   }
 
   @Override
+  public boolean checkContextData(@NotNull ContextData contextData, @NotNull ErrorReporter errorReporter) {
+    return checkArguments(contextData.getArguments(), errorReporter, contextData.getReferenceExpression());
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
   public @Nullable ConcreteExpression getConcreteRepresentation(@NotNull List<? extends ConcreteArgument> arguments) {
-    // TODO[meta]: implement this
-    return null;
+    return Concrete.AppExpression.make(null, new Concrete.ReferenceExpression(null, myReferable), (List<Concrete.Argument>) arguments);
   }
 
   @Override
