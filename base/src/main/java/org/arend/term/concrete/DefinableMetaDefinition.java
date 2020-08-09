@@ -22,16 +22,13 @@ import java.util.Objects;
  */
 public class DefinableMetaDefinition extends Concrete.ResolvableDefinition implements MetaDefinition {
   private final List<Concrete.NameParameter> myParameters;
-  private MetaReferable myReferable;
+  private final MetaReferable myReferable;
   public Concrete.Expression body;
 
-  public DefinableMetaDefinition(List<Concrete.NameParameter> parameters, Concrete.Expression body) {
+  public DefinableMetaDefinition(MetaReferable referable, List<Concrete.NameParameter> parameters, Concrete.Expression body) {
+    myReferable = referable;
     myParameters = parameters;
     this.body = body;
-  }
-
-  public void setReferable(@NotNull MetaReferable referable) {
-    myReferable = referable;
   }
 
   public List<? extends Concrete.NameParameter> getParameters() {

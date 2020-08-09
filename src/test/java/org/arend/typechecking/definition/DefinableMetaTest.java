@@ -22,4 +22,21 @@ public class DefinableMetaTest extends TypeCheckingTestCase {
     var body = (Expression) def.getBody();
     assertEquals(String.valueOf(114 + 514), body.normalize(NormalizationMode.WHNF).toString());
   }
+
+  @Test
+  public void tooManyArgSubst() {
+    typeCheckDef("\\func thaut => warm 114 514 \\where \\meta warm x => x", 1);
+  }
+
+  @Test
+  public void tooLittleArgSubst() {
+    typeCheckDef("\\func thaut => warm \\where \\meta warm x => x", 1);
+  }
+
+  @Test
+  public void biArgSubst() {
+    var def = (FunctionDefinition) typeCheckDef("\\func redy => red 114 514 \\where \\meta red x y => x Nat.+ y");
+    var body = (Expression) def.getBody();
+    assertEquals(String.valueOf(114 + 514), body.normalize(NormalizationMode.WHNF).toString());
+  }
 }
