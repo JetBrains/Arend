@@ -15,6 +15,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * User-defined meta in Arend, not Java extension meta.
@@ -71,8 +72,16 @@ public class DefinableMetaDefinition extends Concrete.ResolvableDefinition imple
 
   @Override
   public @Nullable TypedExpression invokeMeta(@NotNull ExpressionTypechecker typechecker, @NotNull ContextData contextData) {
-    // TODO[meta]: implement this
-    return null;
+    var arguments = contextData.getArguments();
+    assert myParameters.size() == arguments.size();
+    var subst = new ConcreteSubstitution();
+    for (int i = 0; i < myParameters.size(); i++) {
+      subst.bind(Objects.requireNonNull(myParameters.get(i).getReferable()),
+        (Concrete.Expression) arguments.get(i).getExpression());
+    }
+    // TODO[meta]: clone the expression
+    var substExpr = body.accept(subst, null);
+    return typechecker.typecheck(substExpr, contextData.getExpectedType());
   }
 
   @Override
