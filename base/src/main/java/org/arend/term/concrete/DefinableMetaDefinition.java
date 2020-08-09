@@ -11,8 +11,6 @@ import org.arend.ext.typechecking.ExpressionTypechecker;
 import org.arend.ext.typechecking.MetaDefinition;
 import org.arend.ext.typechecking.TypedExpression;
 import org.arend.naming.reference.MetaReferable;
-import org.arend.typechecking.visitor.DesugarVisitor;
-import org.arend.typechecking.visitor.SyntacticDesugarVisitor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -82,8 +80,7 @@ public class DefinableMetaDefinition extends Concrete.ResolvableDefinition imple
         (Concrete.Expression) arguments.get(i).getExpression());
     }
     // TODO[meta]: clone the expression
-    var substExpr = body.accept(subst, null)
-      .accept(new SyntacticDesugarVisitor(typechecker.getErrorReporter()), null);
+    var substExpr = body.accept(subst, null);
     return typechecker.typecheck(substExpr, contextData.getExpectedType());
   }
 

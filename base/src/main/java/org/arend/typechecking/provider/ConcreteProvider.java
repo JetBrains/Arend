@@ -6,6 +6,7 @@ import org.jetbrains.annotations.Nullable;
 
 public interface ConcreteProvider {
   @Nullable Concrete.ReferableDefinition getConcrete(GlobalReferable referable);
+  @Nullable Concrete.ResolvableDefinition getResolvable(GlobalReferable referable);
   @Nullable Concrete.FunctionDefinition getConcreteFunction(GlobalReferable referable);
   @Nullable Concrete.FunctionDefinition getConcreteInstance(GlobalReferable referable);
   @Nullable Concrete.ClassDefinition getConcreteClass(GlobalReferable referable);

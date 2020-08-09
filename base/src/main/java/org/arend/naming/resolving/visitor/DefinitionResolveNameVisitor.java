@@ -619,13 +619,13 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     Collection<? extends Group> subgroups = group.getSubgroups();
     Collection<? extends Group> dynamicSubgroups = group.getDynamicSubgroups();
 
-    Concrete.ReferableDefinition def = myConcreteProvider.getConcrete(groupRef);
+    var def = myConcreteProvider.getResolvable(groupRef);
     if (def instanceof Concrete.ClassDefinition && !((Concrete.ClassDefinition) def).getSuperClasses().isEmpty()) {
       resolveSuperClasses((Concrete.ClassDefinition) def, new ExpressionResolveNameVisitor(myReferableConverter, scope, null, myErrorReporter, myResolverListener));
     }
     Scope convertedScope = CachingScope.make(scope);
-    if (def instanceof Concrete.ResolvableDefinition) {
-      ((Concrete.ResolvableDefinition) def).accept(this, convertedScope);
+    if (def != null) {
+      def.accept(this, convertedScope);
     } else {
       myLocalErrorReporter = new LocalErrorReporter(groupRef, myErrorReporter);
     }

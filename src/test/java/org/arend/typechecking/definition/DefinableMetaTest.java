@@ -16,7 +16,7 @@ public class DefinableMetaTest extends TypeCheckingTestCase {
     assertEquals("114514", body.normalize(NormalizationMode.WHNF).toString());
   }
 
-  // @Test
+  @Test
   public void uniArgSubst() {
     var def = (FunctionDefinition) typeCheckDef("\\func redy => red 114 \\where \\meta red x => x Nat.+ 514");
     var body = (Expression) def.getBody();

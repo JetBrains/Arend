@@ -2,8 +2,10 @@ package org.arend.frontend;
 
 import org.arend.frontend.reference.ConcreteLocatedReferable;
 import org.arend.naming.reference.GlobalReferable;
+import org.arend.naming.reference.MetaReferable;
 import org.arend.term.FunctionKind;
 import org.arend.term.concrete.Concrete;
+import org.arend.term.concrete.DefinableMetaDefinition;
 import org.arend.typechecking.provider.ConcreteProvider;
 import org.jetbrains.annotations.Nullable;
 
@@ -15,6 +17,16 @@ public class ConcreteReferableProvider implements ConcreteProvider {
   @Override
   public Concrete.ReferableDefinition getConcrete(GlobalReferable referable) {
     return referable instanceof ConcreteLocatedReferable ? ((ConcreteLocatedReferable) referable).getDefinition() : null;
+  }
+
+  @Override
+  public @Nullable Concrete.ResolvableDefinition getResolvable(GlobalReferable referable) {
+    if (referable instanceof MetaReferable) {
+      var def = ((MetaReferable) referable).getDefinition();
+      if (def instanceof DefinableMetaDefinition) return (Concrete.ResolvableDefinition) def;
+    }
+    var concrete = getConcrete(referable);
+    return concrete instanceof Concrete.ResolvableDefinition ? (Concrete.ResolvableDefinition) concrete : null;
   }
 
   @Nullable
