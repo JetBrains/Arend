@@ -15,7 +15,7 @@ public class DefinableMetaTest extends NameResolverTestCase {
 
   @Test
   public void conflictDef() {
-    // resolveNamesModule("\\meta sepush a b c => a b c");
+    resolveNamesModule("\\meta sepush a b c => a b c");
   }
 
   @Test
