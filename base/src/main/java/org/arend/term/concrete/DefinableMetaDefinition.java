@@ -69,6 +69,7 @@ public class DefinableMetaDefinition extends Concrete.ResolvableDefinition imple
 
   @Override
   public @Nullable TypedExpression invokeMeta(@NotNull ExpressionTypechecker typechecker, @NotNull ContextData contextData) {
+    if (myParameters.isEmpty()) return typechecker.typecheck(body, contextData.getExpectedType());
     var arguments = contextData.getArguments();
     assert myParameters.size() == arguments.size();
     var subst = new ConcreteSubstitution();
