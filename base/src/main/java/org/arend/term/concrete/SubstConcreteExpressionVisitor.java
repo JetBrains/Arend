@@ -1,6 +1,7 @@
 package org.arend.term.concrete;
 
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -83,16 +84,16 @@ public class SubstConcreteExpressionVisitor<P> implements ConcreteExpressionVisi
     else return null;
   }
 
+  protected List<Concrete.Expression> listMap(List<? extends Concrete.Expression> exprs, P params) {
+    return exprs.stream().map(e -> e.accept(this, params)).collect(Collectors.toList());
+  }
+
   @Override
   public Concrete.Expression visitGoal(Concrete.GoalExpression expr, P params) {
-    Concrete.Expression expression = null;
-    if (expr.expression != null) {
-      expression = expr.expression.accept(this, params);
-    }
     return new Concrete.GoalExpression(
       expr.getData(),
       expr.getName(),
-      expression,
+      nullableMap(expr.expression, params),
       expr.goalSolver,
       expr.useGoalSolver,
       expr.errors
@@ -103,9 +104,7 @@ public class SubstConcreteExpressionVisitor<P> implements ConcreteExpressionVisi
   public Concrete.Expression visitTuple(Concrete.TupleExpression expr, P params) {
     return new Concrete.TupleExpression(
       expr.getData(),
-      expr.getFields().stream()
-        .map(field -> field.accept(this, params))
-        .collect(Collectors.toList())
+      listMap(expr.getFields(), params)
     );
   }
 
@@ -139,42 +138,40 @@ public class SubstConcreteExpressionVisitor<P> implements ConcreteExpressionVisi
         namePattern.getData(),
         namePattern.isExplicit(),
         namePattern.getReferable(),
-        namePattern.type
-      );
+        namePattern.type);
     } else if (Concrete.ConstructorPattern.class.equals(pattern.getClass())) {
       var conPattern = (Concrete.ConstructorPattern) pattern;
       return new Concrete.ConstructorPattern(
         conPattern.getData(),
         conPattern.isExplicit(),
         conPattern.getConstructor(),
-        conPattern.getPatterns().stream()
-          .map(pat -> visitPattern(pat, params))
-          .collect(Collectors.toList()),
-        conPattern.getAsReferables().stream()
-          .map(ref -> new Concrete.TypedReferable(
-            ref.getData(),
-            ref.referable,
-            ref.type.accept(this, params)))
-          .collect(Collectors.toList())
-      );
+        visitPatterns(conPattern.getPatterns(), params),
+        visitTypedReferables(conPattern.getAsReferables(), params));
     } else if (Concrete.TuplePattern.class.equals(pattern.getClass())) {
       var tuplePattern = (Concrete.TuplePattern) pattern;
       return new Concrete.TuplePattern(
         tuplePattern.getData(),
         tuplePattern.isExplicit(),
-        tuplePattern.getPatterns().stream()
-          .map(pat -> visitPattern(pat, params))
-          .collect(Collectors.toList()),
-        tuplePattern.getAsReferables().stream()
-          .map(ref -> new Concrete.TypedReferable(
-            ref.getData(),
-            ref.referable,
-            ref.type.accept(this, params)))
-          .collect(Collectors.toList())
-      );
+        visitPatterns(tuplePattern.getPatterns(), params),
+        visitTypedReferables(tuplePattern.getAsReferables(), params));
     } else {
       throw new IllegalArgumentException("Unhandled pattern: " + pattern.getClass());
     }
+  }
+
+  private List<Concrete.TypedReferable> visitTypedReferables(List<Concrete.TypedReferable> asReferables, P params) {
+    return asReferables.stream()
+      .map(ref -> new Concrete.TypedReferable(
+        ref.getData(),
+        ref.referable,
+        ref.type.accept(this, params)))
+      .collect(Collectors.toList());
+  }
+
+  private @NotNull List<Concrete.Pattern> visitPatterns(List<Concrete.Pattern> patterns, P params) {
+    return patterns.stream()
+      .map(pat -> visitPattern(pat, params))
+      .collect(Collectors.toList());
   }
 
   @SuppressWarnings("unchecked")
@@ -183,18 +180,14 @@ public class SubstConcreteExpressionVisitor<P> implements ConcreteExpressionVisi
       var conClause = (Concrete.ConstructorClause) clause;
       return (T) new Concrete.ConstructorClause(
         clause.getData(),
-        clause.getPatterns().stream()
-          .map(pat -> visitPattern(pat, params))
-          .collect(Collectors.toList()),
+        visitPatterns(clause.getPatterns(), params),
         new ArrayList<>(conClause.getConstructors())
       );
     } else if (Concrete.FunctionClause.class.equals(clause.getClass())) {
       var funcClause = (Concrete.FunctionClause) clause;
       return (T) new Concrete.FunctionClause(
         funcClause.getData(),
-        funcClause.getPatterns().stream()
-          .map(pat -> visitPattern(pat, params))
-          .collect(Collectors.toList()),
+        visitPatterns(funcClause.getPatterns(), params),
         funcClause.expression.accept(this, params)
       );
     } else {

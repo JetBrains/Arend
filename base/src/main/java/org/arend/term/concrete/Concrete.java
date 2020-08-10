@@ -855,19 +855,11 @@ public final class Concrete {
     }
 
     public LetClausePattern(Referable referable, Expression type) {
-      myData = referable;
-      myReferable = referable;
-      this.type = type;
-      myPatterns = Collections.emptyList();
-      myIgnored = referable == null;
+      this(referable, referable, type, Collections.emptyList(), referable == null);
     }
 
     public LetClausePattern(Object data, List<LetClausePattern> patterns) {
-      myData = data;
-      myReferable = null;
-      type = null;
-      myPatterns = patterns;
-      myIgnored = false;
+      this(data, null, null, patterns, false);
     }
 
     public LetClausePattern(Object data) {
@@ -923,17 +915,11 @@ public final class Concrete {
     }
 
     public LetClause(Referable referable, List<Parameter> parameters, Expression resultType, Expression term) {
-      myParameters = parameters;
-      this.resultType = resultType;
-      this.term = term;
-      myPattern = new LetClausePattern(referable, (Expression) null);
+      this(parameters, resultType, term, new LetClausePattern(referable, (Expression) null));
     }
 
     public LetClause(LetClausePattern pattern, Expression resultType, Expression term) {
-      myParameters = Collections.emptyList();
-      this.resultType = resultType;
-      this.term = term;
-      myPattern = pattern;
+      this(Collections.emptyList(), resultType, term, pattern);
     }
 
     @Nullable
