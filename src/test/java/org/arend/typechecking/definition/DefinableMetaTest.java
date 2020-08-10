@@ -32,6 +32,12 @@ public class DefinableMetaTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void appBody() {
+    var def = (FunctionDefinition) typeCheckDef("\\func alendia => matchy suc zero \\where \\meta matchy f x => f x");
+    assertEquals("1", ((Expression) def.getBody()).normalize(NormalizationMode.WHNF).toString());
+  }
+
+  @Test
   public void invokeTwice() {
     var def = (FunctionDefinition) typeCheckDef("\\func him => self 65 Nat.+ self 65 \\where \\meta self x => x");
     assertEquals(String.valueOf(65 + 65), ((Expression) def.getBody()).normalize(NormalizationMode.WHNF).toString());
