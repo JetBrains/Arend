@@ -5,6 +5,7 @@ import org.arend.error.DummyErrorReporter;
 import org.arend.error.ParsingError;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
+import org.arend.naming.error.ReferenceError;
 import org.arend.naming.reference.*;
 import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.term.ClassFieldKind;
@@ -88,7 +89,14 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
     Concrete.Expression body = null;
     var term = def.getTerm();
     if (term != null) body = term.accept(this, null);
-    return new DefinableMetaDefinition(def.getReferable(), parameters, body);
+    var referable = def.getMetaReferable();
+    var definition = new DefinableMetaDefinition(referable, parameters, body);
+    if (referable == null) {
+      myErrorReporter.report(new ReferenceError(GeneralError.Level.ERROR, GeneralError.Stage.PARSER, "No meta reference", def.getReferable()));
+    } else {
+      referable.setDefinition(definition);
+    }
+    return definition;
   }
 
   @Override
