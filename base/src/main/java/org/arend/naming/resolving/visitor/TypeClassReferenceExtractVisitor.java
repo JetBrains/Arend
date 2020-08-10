@@ -95,7 +95,7 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
           }
         }
         if (index == -1) {
-          expr = binOpSeq.get(0).expression;
+          expr = binOpSeq.get(0).getExpression();
           myArguments += binOpSeq.size() - 1;
         } else {
           if (index == 0 && myArguments == 0 && binOpSeq.get(index).isPostfixReference()) {
@@ -103,12 +103,12 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
           }
           myArguments++;
           for (int i = index + 1; i < binOpSeq.size(); i++) {
-            if (binOpSeq.get(i).isExplicit) {
+            if (binOpSeq.get(i) instanceof Concrete.ExplicitBinOpSequenceElem) {
               myArguments++;
               break;
             }
           }
-          expr = binOpSeq.get(index).expression;
+          expr = binOpSeq.get(index).getExpression();
         }
       } else if (expr instanceof Concrete.AppExpression) {
         for (Concrete.Argument argument : ((Concrete.AppExpression) expr).getArguments()) {

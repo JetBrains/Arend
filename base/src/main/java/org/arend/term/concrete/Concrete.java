@@ -11,6 +11,7 @@ import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.ext.prettyprinting.doc.DocFactory;
 import org.arend.ext.reference.ArendRef;
+import org.arend.ext.reference.DataContainer;
 import org.arend.ext.reference.Precedence;
 import org.arend.ext.typechecking.GoalSolver;
 import org.arend.naming.reference.*;
@@ -228,7 +229,7 @@ public final class Concrete {
     public abstract <P, R> R accept(ConcreteExpressionVisitor<? super P, ? extends R> visitor, P params);
 
     @Override
-    public @NotNull List<ConcreteArgument> getArgumentsSequence() {
+    public @Nullable List<ConcreteArgument> getArgumentsSequence() {
       return Collections.singletonList(new Argument(this, true));
     }
 
@@ -373,42 +374,71 @@ public final class Concrete {
     }
   }
 
-  public static class BinOpSequenceElem {
+  public interface BinOpSequenceElem extends DataContainer {
+    default @Nullable Expression getExpression() {
+      return null;
+    }
+
+    default boolean isExplicit() {
+      return true;
+    }
+
+    default @Nullable Argument toArgument() {
+      return null;
+    }
+
+    default @NotNull Fixity getFixity() {
+      return Fixity.NONFIX;
+    }
+
+    default boolean isInfixReference() {
+      return false;
+    }
+
+    default boolean isPostfixReference() {
+      return false;
+    }
+
+    default Precedence getReferencePrecedence() {
+      return Precedence.DEFAULT;
+    }
+  }
+
+  public static class ExplicitBinOpSequenceElem implements BinOpSequenceElem {
     public Expression expression;
     public final Fixity fixity;
-    public final boolean isExplicit;
 
-    public BinOpSequenceElem(@NotNull Expression expression, Fixity fixity, boolean isExplicit) {
+    public ExplicitBinOpSequenceElem(@NotNull Expression expression, Fixity fixity) {
       this.expression = expression;
       this.fixity = fixity != Fixity.UNKNOWN ? fixity
-        : !isExplicit ? Fixity.NONFIX
         : expression instanceof FixityReferenceExpression
           ? ((FixityReferenceExpression) expression).fixity
           : expression instanceof ReferenceExpression ? Fixity.UNKNOWN : Fixity.NONFIX;
-      if (isExplicit && fixity == Fixity.UNKNOWN && expression instanceof FixityReferenceExpression) {
+      if (fixity == Fixity.UNKNOWN && expression instanceof FixityReferenceExpression) {
         ((FixityReferenceExpression) expression).fixity = Fixity.NONFIX;
       }
-      this.isExplicit = isExplicit;
     }
 
     // Constructor for the first element in a BinOpSequence
-    public BinOpSequenceElem(@NotNull Expression expression) {
+    public ExplicitBinOpSequenceElem(@NotNull Expression expression) {
       this.expression = expression;
       this.fixity = expression instanceof FixityReferenceExpression ? ((FixityReferenceExpression) expression).fixity : Fixity.NONFIX;
       if (expression instanceof FixityReferenceExpression) {
         ((FixityReferenceExpression) expression).fixity = Fixity.NONFIX;
       }
-      this.isExplicit = true;
     }
 
+    @Override
     public boolean isInfixReference() {
-      return isExplicit && (fixity == Fixity.INFIX || fixity == Fixity.UNKNOWN && getReferencePrecedence().isInfix);
+      return fixity == Fixity.INFIX || fixity == Fixity.UNKNOWN && getReferencePrecedence().isInfix;
     }
 
+    @Override
     public boolean isPostfixReference() {
-      return isExplicit && fixity == Fixity.POSTFIX;
+      return fixity == Fixity.POSTFIX;
     }
 
+    @Override
     public Precedence getReferencePrecedence() {
       Expression expr = expression;
       // after the reference is resolved, it may become an application
@@ -416,6 +446,112 @@ public final class Concrete {
         expr = ((AppExpression) expression).getFunction();
       }
       return expr instanceof ReferenceExpression && ((ReferenceExpression) expr).getReferent() instanceof GlobalReferable ? ((GlobalReferable) ((ReferenceExpression) expr).getReferent()).getPrecedence() : Precedence.DEFAULT;
+    }
+
+    @Override
+    public Object getData() {
+      return expression.getData();
+    }
+
+    @Override
+    public @NotNull Expression getExpression() {
+      return expression;
+    }
+
+    @Override
+    public @NotNull Fixity getFixity() {
+      return fixity;
+    }
+
+    @Override
+    public @NotNull Argument toArgument() {
+      return new Argument(expression, true);
+    }
+  }
+
+  public static class ImplicitBinOpSequenceElem implements BinOpSequenceElem {
+    public Expression expression;
+
+    public ImplicitBinOpSequenceElem(Expression expression) {
+      this.expression = expression;
+    }
+
+    @Override
+    public @NotNull Expression getExpression() {
+      return expression;
+    }
+
+    @Override
+    public boolean isExplicit() {
+      return false;
+    }
+
+    @Override
+    public @NotNull Argument toArgument() {
+      return new Argument(expression, false);
+    }
+
+    @Override
+    public @Nullable Object getData() {
+      return expression.getData();
+    }
+  }
+
+  public static class NewBinOpSequenceElem implements BinOpSequenceElem {
+    private final Object myData;
+
+    public NewBinOpSequenceElem(Object data) {
+      myData = data;
+    }
+
+    @Override
+    public @Nullable Object getData() {
+      return myData;
+    }
+  }
+
+  public static class EvalBinOpSequenceElem implements BinOpSequenceElem {
+    private final Object myData;
+    public final boolean isPEval;
+
+    public EvalBinOpSequenceElem(Object data, boolean isPEval) {
+      myData = data;
+      this.isPEval = isPEval;
+    }
+
+    @Override
+    public @Nullable Object getData() {
+      return myData;
+    }
+  }
+
+  public static class ClausesBinOpSequenceElem implements BinOpSequenceElem {
+    private final Object myData;
+    public final List<FunctionClause> clauses;
+
+    public ClausesBinOpSequenceElem(Object data, List<FunctionClause> clauses) {
+      myData = data;
+      this.clauses = clauses;
+    }
+
+    @Override
+    public @Nullable Object getData() {
+      return myData;
+    }
+  }
+
+  public static class CoclausesBinOpSequenceElem implements BinOpSequenceElem {
+    private final Object myData;
+    public final List<ClassFieldImpl> coclauses;
+
+    public CoclausesBinOpSequenceElem(Object data, List<ClassFieldImpl> coclauses) {
+      myData = data;
+      this.coclauses = coclauses;
+    }
+
+    @Override
+    public @Nullable Object getData() {
+      return myData;
     }
   }
 
@@ -439,10 +575,14 @@ public final class Concrete {
     }
 
     @Override
-    public @NotNull List<ConcreteArgument> getArgumentsSequence() {
+    public @Nullable List<ConcreteArgument> getArgumentsSequence() {
       List<ConcreteArgument> result = new ArrayList<>(mySequence.size());
       for (BinOpSequenceElem elem : mySequence) {
-        result.add(new Argument(elem.expression, elem.isExplicit));
+        Argument arg = elem.toArgument();
+        if (arg == null) {
+          return null;
+        }
+        result.add(arg);
       }
       return result;
     }

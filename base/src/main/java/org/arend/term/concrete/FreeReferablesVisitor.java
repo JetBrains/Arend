@@ -151,7 +151,7 @@ public class FreeReferablesVisitor implements ConcreteExpressionVisitor<Void, TC
   @Override
   public TCReferable visitBinOpSequence(Concrete.BinOpSequenceExpression expr, Void params) {
     for (Concrete.BinOpSequenceElem elem : expr.getSequence()) {
-      TCReferable ref = elem.expression.accept(this, null);
+      TCReferable ref = elem.getExpression() == null ? null : elem.getExpression().accept(this, null);
       if (ref != null) {
         return ref;
       }

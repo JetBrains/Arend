@@ -31,18 +31,18 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     myErrorReporter = errorReporter;
   }
 
-  private String getVar(AtomFieldsAccContext ctx) {
+  private ParsedLocalReferable getVar(AtomFieldsAccContext ctx) {
     if (!ctx.NUMBER().isEmpty() || !(ctx.atom() instanceof AtomLiteralContext)) {
       return null;
     }
     LiteralContext literal = ((AtomLiteralContext) ctx.atom()).literal();
     if (literal instanceof UnknownContext) {
-      return "_";
+      return new ParsedLocalReferable(tokenPosition(ctx.start), null);
     }
     if (literal instanceof NameContext && ((NameContext) literal).longName() != null) {
       List<TerminalNode> ids = ((NameContext) literal).longName().ID();
       if (ids.size() == 1) {
-        return ids.get(0).getText();
+        return new ParsedLocalReferable(tokenPosition(ctx.start), ids.get(0).getText());
       }
     }
     return null;
@@ -52,35 +52,23 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     if (!(expr instanceof AppContext)) {
       return false;
     }
-    NewExprContext newExpr = ((AppContext) expr).newExpr();
-    if (!(newExpr.appExpr() instanceof AppArgumentContext && newExpr.appPrefix() == null && newExpr.implementStatements() == null)) {
+    AppContext appExpr = (AppContext) expr;
+    if (appExpr.appKeyword() != null || !appExpr.onlyLevelAtom().isEmpty()) {
       return false;
     }
-
-    ArgumentAppExprContext argCtx = ((AppArgumentContext) newExpr.appExpr()).argumentAppExpr();
-    if (!argCtx.onlyLevelAtom().isEmpty()) {
-      return false;
-    }
-    String var = getVar(argCtx.atomFieldsAcc());
+    ParsedLocalReferable var = getVar(appExpr.atomFieldsAcc());
     if (var == null) {
       return false;
     }
-    if (var.equals("_")) {
-      var = null;
-    }
-    vars.add(new ParsedLocalReferable(tokenPosition(argCtx.start), var));
+    vars.add(var);
 
-    for (ArgumentContext argument : argCtx.argument()) {
+    for (ArgumentContext argument : appExpr.argument()) {
       if (argument instanceof ArgumentExplicitContext) {
-        String arg = getVar(((ArgumentExplicitContext) argument).atomFieldsAcc());
+        ParsedLocalReferable arg = getVar(((ArgumentExplicitContext) argument).atomFieldsAcc());
         if (arg == null) {
           return false;
         }
-        if (arg.equals("_")) {
-          arg = null;
-        }
-
-        vars.add(new ParsedLocalReferable(tokenPosition(((ArgumentExplicitContext) argument).atomFieldsAcc().start), arg));
+        vars.add(arg);
       } else {
         return false;
       }
@@ -983,18 +971,9 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return new Concrete.LamExpression(tokenPosition(ctx.start), visitLamTeles(ctx.tele(), false), visitIncompleteExpression(ctx.expr(), ctx));
   }
 
-  private Concrete.Expression visitAppExpr(AppExprContext ctx) {
-    return (Concrete.Expression) visit(ctx);
-  }
-
-  @Override
-  public Concrete.Expression visitAppArgument(AppArgumentContext ctx) {
-    return visitArgumentAppExpr(ctx.argumentAppExpr());
-  }
-
   @SuppressWarnings("rawtypes")
   @Override
-  public Concrete.Expression visitArgumentAppExpr(ArgumentAppExprContext ctx) {
+  public Concrete.Expression visitApp(AppContext ctx) {
     Concrete.Expression expr = visitAtomFieldsAcc(ctx.atomFieldsAcc());
     List<OnlyLevelAtomContext> onlyLevelAtoms = ctx.onlyLevelAtom();
     if (!onlyLevelAtoms.isEmpty()) {
@@ -1027,7 +1006,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     }
 
     List<Concrete.BinOpSequenceElem> sequence = new ArrayList<>(argumentCtxs.size());
-    sequence.add(new Concrete.BinOpSequenceElem(expr));
+    sequence.add(new Concrete.ExplicitBinOpSequenceElem(expr));
     for (ArgumentContext argumentCtx : argumentCtxs) {
       sequence.add(visitArgument(argumentCtx));
     }
@@ -1042,7 +1021,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   @Override
   public Concrete.BinOpSequenceElem visitArgumentExplicit(ArgumentExplicitContext ctx) {
     AtomFieldsAccContext atomFieldsAcc = ctx.atomFieldsAcc();
-    return new Concrete.BinOpSequenceElem(visitAtomFieldsAcc(atomFieldsAcc), atomFieldsAcc.atom() instanceof AtomLiteralContext && isName(((AtomLiteralContext) atomFieldsAcc.atom()).literal()) && atomFieldsAcc.NUMBER().isEmpty() ? Fixity.UNKNOWN : Fixity.NONFIX, true);
+    return new Concrete.ExplicitBinOpSequenceElem(visitAtomFieldsAcc(atomFieldsAcc), atomFieldsAcc.atom() instanceof AtomLiteralContext && isName(((AtomLiteralContext) atomFieldsAcc.atom()).literal()) && atomFieldsAcc.NUMBER().isEmpty() ? Fixity.UNKNOWN : Fixity.NONFIX);
   }
 
   private boolean isName(LiteralContext ctx) {
@@ -1050,18 +1029,29 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   }
 
   @Override
-  public Concrete.BinOpSequenceElem visitArgumentNew(ArgumentNewContext ctx) {
-    return new Concrete.BinOpSequenceElem(visitNew(ctx.appPrefix(), ctx.appExpr(), ctx.implementStatements()), Fixity.NONFIX, true);
+  public Concrete.BinOpSequenceElem visitArgumentMod(ArgumentModContext ctx) {
+    AppKeywordContext kw = ctx.appKeyword();
+    return kw.NEW() != null ? new Concrete.NewBinOpSequenceElem(tokenPosition(kw.start)) : new Concrete.EvalBinOpSequenceElem(tokenPosition(kw.start), kw.PEVAL() != null);
   }
 
   @Override
   public Concrete.BinOpSequenceElem visitArgumentUniverse(ArgumentUniverseContext ctx) {
-    return new Concrete.BinOpSequenceElem(visitExpr(ctx.universeAtom()), Fixity.NONFIX, true);
+    return new Concrete.ExplicitBinOpSequenceElem(visitExpr(ctx.universeAtom()), Fixity.NONFIX);
   }
 
   @Override
   public Concrete.BinOpSequenceElem visitArgumentImplicit(ArgumentImplicitContext ctx) {
-    return new Concrete.BinOpSequenceElem(visitTupleExprs(ctx.tupleExpr(), ctx.COMMA(), ctx), Fixity.NONFIX, false);
+    return new Concrete.ImplicitBinOpSequenceElem(visitTupleExprs(ctx.tupleExpr(), ctx.COMMA(), ctx));
+  }
+
+  @Override
+  public Concrete.BinOpSequenceElem visitArgumentCoclauses(ArgumentCoclausesContext ctx) {
+    return new Concrete.CoclausesBinOpSequenceElem(tokenPosition(ctx.start), visitLocalCoClauses(ctx.localCoClause()));
+  }
+
+  @Override
+  public Concrete.BinOpSequenceElem visitArgumentClauses(ArgumentClausesContext ctx) {
+    return new Concrete.ClausesBinOpSequenceElem(tokenPosition(ctx.start), visitCaseBody(ctx.caseBody()));
   }
 
   private Concrete.CoClauseElement visitCoClause(CoClauseContext ctx, List<Group> subgroups, ChildGroup parentGroup, TCReferable enclosingClass, TCReferable enclosingDefinition) {
@@ -1096,7 +1086,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
         for (ClauseContext clauseCtx : withBody.clause()) {
           clauses.add(visitClause(clauseCtx));
         }
-        fBody = new Concrete.ElimFunctionBody(tokenPosition(withBody.elim().start), visitElim(withBody.elim()), clauses);
+        fBody = new Concrete.ElimFunctionBody(tokenPosition(withBody.start), visitElim(withBody.elim()), clauses);
       } else if (defBody instanceof CoClauseCowithContext) {
         List<CoClauseContext> coClauses = getCoClauses(((CoClauseCowithContext) defBody).coClauses());
         fBody = new Concrete.CoelimFunctionBody(tokenPosition(defBody.start), new ArrayList<>());
@@ -1484,53 +1474,6 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return new Concrete.PiExpression(tokenPosition(ctx.start), visitTeles(ctx.tele(), false), visitExpr(ctx.expr()));
   }
 
-  @Override
-  public Concrete.Expression visitApp(AppContext ctx) {
-    return visitNewExpr(ctx.newExpr());
-  }
-
-  @Override
-  public Concrete.Expression visitNewExpr(NewExprContext ctx) {
-    Concrete.Expression expr = visitNew(ctx.appPrefix(), ctx.appExpr(), ctx.implementStatements());
-    List<ArgumentContext> argumentCtxs = ctx.argument();
-    if (!argumentCtxs.isEmpty()) {
-      List<Concrete.BinOpSequenceElem> sequence = new ArrayList<>(argumentCtxs.size() + 1);
-      sequence.add(new Concrete.BinOpSequenceElem(expr));
-      for (ArgumentContext argCtx : argumentCtxs) {
-        sequence.add(visitArgument(argCtx));
-      }
-      expr = new Concrete.BinOpSequenceExpression(expr.getData(), sequence);
-    }
-    return expr;
-  }
-
-  private Concrete.Expression visitNew(AppPrefixContext prefixCtx, AppExprContext appCtx, ImplementStatementsContext implCtx) {
-    Concrete.Expression expr = visitAppExpr(appCtx);
-
-    if (implCtx != null) {
-      expr = Concrete.ClassExtExpression.make(tokenPosition(appCtx.start), expr, visitLocalCoClauses(implCtx.localCoClause()));
-    }
-
-    if (prefixCtx != null) {
-      TerminalNode peval = prefixCtx.PEVAL();
-      if (peval != null) {
-        expr = new Concrete.EvalExpression(tokenPosition(peval.getSymbol()), true, expr);
-      } else {
-        TerminalNode eval = prefixCtx.EVAL();
-        if (eval != null) {
-          expr = new Concrete.EvalExpression(tokenPosition(eval.getSymbol()), false, expr);
-        }
-      }
-
-      TerminalNode newNode = prefixCtx.NEW();
-      if (newNode != null) {
-        expr = new Concrete.NewExpression(tokenPosition(newNode.getSymbol()), expr);
-      }
-    }
-
-    return expr;
-  }
-
   private ArrayList<String> visitLongNamePath(LongNameContext ctx) {
     List<TerminalNode> ids = ctx.ID();
     ArrayList<String> result = new ArrayList<>(ids.size());
@@ -1593,6 +1536,15 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   }
 
   @Override
+  public List<Concrete.FunctionClause> visitCaseBody(CaseBodyContext ctx) {
+    List<Concrete.FunctionClause> clauses = new ArrayList<>();
+    for (ClauseContext clauseCtx : ctx.clause()) {
+      clauses.add(visitClause(clauseCtx));
+    }
+    return clauses;
+  }
+
+  @Override
   public Concrete.Expression visitCase(CaseContext ctx) {
     List<Concrete.CaseArgument> caseArgs = new ArrayList<>();
     for (CaseArgContext caseArgCtx : ctx.caseArg()) {
@@ -1618,13 +1570,9 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
         caseArgs.add(argument);
       }
     }
-    List<Concrete.FunctionClause> clauses = new ArrayList<>();
-    for (ClauseContext clauseCtx : ctx.clause()) {
-      clauses.add(visitClause(clauseCtx));
-    }
 
     Pair<Concrete.Expression,Concrete.Expression> returnPair = visitReturnExpr(ctx.returnExpr());
-    Concrete.Expression result = new Concrete.CaseExpression(tokenPosition(ctx.start), ctx.SCASE() != null, caseArgs, returnPair.proj1, returnPair.proj2, clauses);
+    Concrete.Expression result = new Concrete.CaseExpression(tokenPosition(ctx.start), ctx.SCASE() != null, caseArgs, returnPair.proj1, returnPair.proj2, visitCaseBody(ctx.caseBody()));
     boolean isPEval = ctx.PEVAL() != null;
     boolean isEval = !isPEval && ctx.EVAL() != null;
     return isPEval || isEval ? new Concrete.EvalExpression(result.getData(), isPEval, result) : result;

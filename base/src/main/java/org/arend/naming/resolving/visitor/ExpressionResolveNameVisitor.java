@@ -246,18 +246,18 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
 
   @Override
   public Concrete.Expression visitBinOpSequence(Concrete.BinOpSequenceExpression expr, Void params) {
-    if (expr.getSequence().isEmpty()) {
-      return expr;
+    if (expr.getSequence().size() == 1 && expr.getSequence().get(0) instanceof Concrete.ExplicitBinOpSequenceElem) {
+      return ((Concrete.ExplicitBinOpSequenceElem) expr.getSequence().get(0)).expression.accept(this, null);
     }
-    if (expr.getSequence().size() == 1) {
-      return expr.getSequence().get(0).expression.accept(this, null);
+    if (expr.getSequence().size() <= 1) {
+      return expr;
     }
 
     boolean hasMeta = false;
     List<MetaBinOpParser.ResolvedReference> resolvedRefs = new ArrayList<>();
     for (Concrete.BinOpSequenceElem elem : expr.getSequence()) {
-      if (elem.expression instanceof Concrete.ReferenceExpression) {
-        Concrete.ReferenceExpression refExpr = (Concrete.ReferenceExpression) elem.expression;
+      if (elem instanceof Concrete.ExplicitBinOpSequenceElem && elem.getExpression() instanceof Concrete.ReferenceExpression) {
+        Concrete.ReferenceExpression refExpr = (Concrete.ReferenceExpression) elem.getExpression();
         Referable ref = refExpr.getReferent();
         while (ref instanceof RedirectingReferable) {
           ref = ((RedirectingReferable) ref).getOriginalReferable();
@@ -267,7 +267,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
           Concrete.Expression argument = resolve(refExpr, myScope, false, resolvedList);
           convertExpr(refExpr);
           convertArgument(argument);
-          elem.expression = argument == null ? refExpr : Concrete.AppExpression.make(refExpr.getData(), refExpr, argument, false);
+          ((Concrete.ExplicitBinOpSequenceElem) elem).expression = argument == null ? refExpr : Concrete.AppExpression.make(refExpr.getData(), refExpr, argument, false);
           resolvedRefs.add(new MetaBinOpParser.ResolvedReference(refExpr, (UnresolvedReference) ref, resolvedList));
         } else {
           resolvedRefs.add(new MetaBinOpParser.ResolvedReference(refExpr, null, null));
@@ -292,8 +292,16 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   }
 
   public void finalizeReference(Concrete.BinOpSequenceElem elem, MetaBinOpParser.ResolvedReference resolvedReference) {
+    if (elem instanceof Concrete.ImplicitBinOpSequenceElem) {
+      ((Concrete.ImplicitBinOpSequenceElem) elem).expression = ((Concrete.ImplicitBinOpSequenceElem) elem).expression.accept(this, null);
+      return;
+    }
+    if (!(elem instanceof Concrete.ExplicitBinOpSequenceElem)) {
+      return;
+    }
+    Concrete.ExplicitBinOpSequenceElem expElem = (Concrete.ExplicitBinOpSequenceElem) elem;
     if (resolvedReference == null) {
-      elem.expression = elem.expression.accept(this, null);
+      expElem.expression = expElem.expression.accept(this, null);
       return;
     }
     if (resolvedReference.originalReference == null) {
@@ -304,7 +312,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       myErrorReporter.report(((ErrorReference) resolvedReference.refExpr.getReferent()).getError());
     }
     if (resolvedReference.resolvedList != null && myResolverListener != null) {
-      Concrete.Expression argument = elem.expression instanceof Concrete.AppExpression ? ((Concrete.AppExpression) elem.expression).getArguments().get(0).expression : null;
+      Concrete.Expression argument = expElem.expression instanceof Concrete.AppExpression ? ((Concrete.AppExpression) expElem.expression).getArguments().get(0).expression : null;
       myResolverListener.referenceResolved(argument, resolvedReference.originalReference, resolvedReference.refExpr, resolvedReference.resolvedList, myScope);
     }
   }

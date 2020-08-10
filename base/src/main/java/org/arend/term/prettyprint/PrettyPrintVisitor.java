@@ -629,93 +629,35 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     return null;
   }
 
-  private AbstractLayout createBinOpLayout(List<BinOpSequenceElem> elems) {
-    Concrete.Expression lhs = elems.get(0).expression;
-    if (lhs instanceof Concrete.AppExpression && elems.size() > 1) {
-      lhs = Concrete.AppExpression.make(lhs.getData(), ((Concrete.AppExpression) lhs).getFunction(), new ArrayList<>(((Concrete.AppExpression) lhs).getArguments()));
+  private void visitBinOpSequenceElem(Concrete.BinOpSequenceElem elem) {
+    if (elem instanceof Concrete.ExplicitBinOpSequenceElem) {
+      ((Concrete.ExplicitBinOpSequenceElem) elem).expression.accept(this, new Precedence((byte) (Concrete.AppExpression.PREC + 1)));
+    } else if (elem instanceof Concrete.ImplicitBinOpSequenceElem) {
+      myBuilder.append("{");
+      ((Concrete.ImplicitBinOpSequenceElem) elem).expression.accept(this, new Precedence(Concrete.Expression.PREC));
+      printClosingBrace();
+    } else if (elem instanceof Concrete.NewBinOpSequenceElem) {
+      myBuilder.append("\\new");
+    } else if (elem instanceof Concrete.EvalBinOpSequenceElem) {
+      myBuilder.append(((Concrete.EvalBinOpSequenceElem) elem).isPEval ? "\\peval" : "\\eval");
     }
-
-    int i = 1;
-    for (; i < elems.size(); i++) {
-      if (elems.get(i).isPostfixReference()) {
-        lhs = Concrete.AppExpression.make(elems.get(i).expression.getData(), elems.get(i).expression, lhs, true);
-      } else if (elems.get(i).isInfixReference()) {
-        break;
-      } else {
-        lhs = Concrete.AppExpression.make(lhs.getData(), lhs, elems.get(i).expression, elems.get(i).isExplicit);
-      }
-    }
-
-    if (i == elems.size()) {
-      if (lhs != null) {
-        final Expression finalLhs = lhs;
-        return (ppv_default, disabled) -> finalLhs.accept(ppv_default, new Precedence((byte) 10));
-      } else {
-        return new EmptyLayout();
-      }
-    }
-
-    // TODO[pretty]
-    List<BinOpSequenceElem> ops = new ArrayList<>();
-    for (; i < elems.size(); i++) {
-      if (!elems.get(i).isExplicit || elems.get(i).fixity == Fixity.INFIX || elems.get(i).fixity == Fixity.POSTFIX || elems.get(i).isInfixReference()) {
-        ops.add(elems.get(i));
-      } else {
-        break;
-      }
-    }
-
-    final AbstractLayout layout = i == elems.size() ? null : createBinOpLayout(elems.subList(i, elems.size()));
-    final Expression finalLhs = lhs;
-    return new BinOpLayout(){
-      @Override
-      void printLeft(PrettyPrintVisitor pp) {
-        if (finalLhs != null) finalLhs.accept(pp, new Precedence((byte) 10));
-      }
-
-      @Override
-      void printRight(PrettyPrintVisitor pp) {
-        if (layout != null) {
-          layout.doPrettyPrint(pp, noIndent);
-        }
-      }
-
-      @Override
-      String getOpText() {
-        StringBuilder builder = new StringBuilder();
-        for (BinOpSequenceElem elem : ops) {
-          if (elem.fixity == Fixity.INFIX || elem.fixity == Fixity.POSTFIX && elem.expression instanceof Concrete.ReferenceExpression) {
-            builder.append('`').append(((ReferenceExpression) elem.expression).getReferent().textRepresentation());
-            if (elem.fixity == Fixity.INFIX) {
-              builder.append('`');
-            }
-          } else {
-            if (!elem.isExplicit) {
-              builder.append(" {");
-            }
-            if (elem.expression instanceof Concrete.ReferenceExpression) {
-              builder.append(((ReferenceExpression) elem.expression).getReferent().textRepresentation());
-            } else {
-              elem.expression.accept(new PrettyPrintVisitor(builder, myIndent, !noIndent), new Precedence(Expression.PREC));
-            }
-            if (!elem.isExplicit) {
-              printClosingBrace();
-            }
-          }
-        }
-        return builder.toString();
-      }
-    };
   }
 
   @Override
   public Void visitBinOpSequence(Concrete.BinOpSequenceExpression expr, Precedence prec) {
-    if (expr.getSequence().size() == 1) {
-      expr.getSequence().get(0).expression.accept(this, prec);
+    if (expr.getSequence().size() == 1 && expr.getSequence().get(0) instanceof Concrete.ExplicitBinOpSequenceElem) {
+      ((Concrete.ExplicitBinOpSequenceElem) expr.getSequence().get(0)).expression.accept(this, prec);
       return null;
     }
+
     if (prec.priority > Concrete.BinOpSequenceExpression.PREC) myBuilder.append('(');
-    createBinOpLayout(expr.getSequence()).doPrettyPrint(this, noIndent);
+    for (int i = 0; i < expr.getSequence().size(); i++) {
+      if (i > 0) {
+        myBuilder.append(' ');
+      }
+
+      visitBinOpSequenceElem(expr.getSequence().get(i));
+    }
     if (prec.priority > Concrete.BinOpSequenceExpression.PREC) myBuilder.append(')');
     return null;
   }

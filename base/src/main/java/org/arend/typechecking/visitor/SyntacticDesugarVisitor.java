@@ -132,15 +132,25 @@ public class SyntacticDesugarVisitor extends BaseConcreteExpressionVisitor<Void>
   private void convertBinOpAppHoles(Concrete.BinOpSequenceExpression expr, List<Concrete.Parameter> parameters) {
     boolean isLastElemInfix = true;
     for (Concrete.BinOpSequenceElem elem : expr.getSequence()) {
-      if (elem.expression instanceof Concrete.ApplyHoleExpression)
-        elem.expression = createAppHoleRef(parameters, elem.expression.getData());
-      else if (isLastElemInfix) convertRecursively(elem.expression, parameters);
-      else if (elem.expression instanceof Concrete.BinOpSequenceExpression)
-        elem.expression = elem.expression.accept(this, null);
-      else if (elem.expression instanceof Concrete.SigmaExpression
-          || elem.expression instanceof Concrete.PiExpression
-          || elem.expression instanceof Concrete.CaseExpression
-      ) convertRecursively(elem.expression, parameters);
+      if (elem.getExpression() instanceof Concrete.ApplyHoleExpression) {
+        Concrete.Expression newExpr = createAppHoleRef(parameters, elem.getExpression().getData());
+        if (elem instanceof Concrete.ExplicitBinOpSequenceElem) {
+          ((Concrete.ExplicitBinOpSequenceElem) elem).expression = newExpr;
+        } else if (elem instanceof Concrete.ImplicitBinOpSequenceElem) {
+          ((Concrete.ImplicitBinOpSequenceElem) elem).expression = newExpr;
+        }
+      } else if (isLastElemInfix) convertRecursively(elem.getExpression(), parameters);
+      else if (elem.getExpression() instanceof Concrete.BinOpSequenceExpression) {
+        Concrete.Expression newExpr = elem.getExpression().accept(this, null);
+        if (elem instanceof Concrete.ExplicitBinOpSequenceElem) {
+          ((Concrete.ExplicitBinOpSequenceElem) elem).expression = newExpr;
+        } else if (elem instanceof Concrete.ImplicitBinOpSequenceElem) {
+          ((Concrete.ImplicitBinOpSequenceElem) elem).expression = newExpr;
+        }
+      } else if (elem.getExpression() instanceof Concrete.SigmaExpression
+          || elem.getExpression() instanceof Concrete.PiExpression
+          || elem.getExpression() instanceof Concrete.CaseExpression
+      ) convertRecursively(elem.getExpression(), parameters);
       isLastElemInfix = elem.isInfixReference();
     }
   }

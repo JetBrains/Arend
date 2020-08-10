@@ -122,38 +122,35 @@ associativity : '\\infix'               # nonAssocInfix
               | '\\fixr'                # rightAssoc
               ;
 
-expr  : newExpr                                                           # app
+expr  : appKeyword? atomFieldsAcc onlyLevelAtom* argument*                # app
       | <assoc=right> expr '->' expr                                      # arr
       | '\\Pi' tele+ '->' expr                                            # pi
       | '\\Sigma' tele*                                                   # sigma
       | '\\lam' tele+ ('=>' expr?)?                                       # lam
       | (LET | LETS) '|'? letClause ('|' letClause)* ('\\in' expr?)?      # let
       | (EVAL | PEVAL)? (CASE | SCASE) caseArg (',' caseArg)*
-          ('\\return' returnExpr)? '\\with' '{' clause? ('|' clause)* '}' # case
+          ('\\return' returnExpr)? caseBody                               # case
+      | TRUNCATED_UNIVERSE maybeLevelAtom?                                # truncatedUniverse
+      | UNIVERSE (maybeLevelAtom maybeLevelAtom?)?                        # universe
+      | SET maybeLevelAtom?                                               # setUniverse
       ;
 
-newExpr : appPrefix? appExpr (implementStatements argument*)?;
+caseBody : '\\with' '{' clause? ('|' clause)* '}';
 
-appPrefix : NEW EVAL? | EVAL | PEVAL;
+appKeyword : NEW EVAL | EVAL | PEVAL;
 
 caseArg : caseArgExprAs (':' expr)?;
 
-caseArgExprAs : '\\elim' (ID | APPLY_HOLE)   # caseArgElim
-              | expr (AS ID)? # caseArgExpr
+caseArgExprAs : '\\elim' (ID | APPLY_HOLE)  # caseArgElim
+              | expr (AS ID)?               # caseArgExpr
               ;
 
-appExpr : argumentAppExpr                             # appArgument
-        | TRUNCATED_UNIVERSE maybeLevelAtom?          # truncatedUniverse
-        | UNIVERSE (maybeLevelAtom maybeLevelAtom?)?  # universe
-        | SET maybeLevelAtom?                         # setUniverse
-        ;
-
-argumentAppExpr : atomFieldsAcc onlyLevelAtom* argument*;
-
 argument : atomFieldsAcc                            # argumentExplicit
-         | appPrefix appExpr implementStatements?   # argumentNew
+         | appKeyword                               # argumentMod
          | universeAtom                             # argumentUniverse
          | '{' tupleExpr (',' tupleExpr)* ','? '}'  # argumentImplicit
+         | '{' localCoClause* '}'                   # argumentCoclauses
+         | caseBody                                 # argumentClauses
          ;
 
 clauses : '{' clause? ('|' clause)* '}' # clausesWithBraces
@@ -228,8 +225,6 @@ atom  : literal                                     # atomLiteral
       ;
 
 atomFieldsAcc : atom ('.' NUMBER)*;
-
-implementStatements : '{' localCoClause* '}';
 
 longName : ID ('.' ID)*;
 

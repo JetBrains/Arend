@@ -2,6 +2,7 @@ package org.arend.ext.concrete.expr;
 
 import org.arend.ext.concrete.ConcreteSourceNode;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -15,5 +16,5 @@ public interface ConcreteExpression extends ConcreteSourceNode {
    * If this expression is of the form `f a_1 ... a_n`, returns the list `(f, a_1, ... a_n)`.
    * The result list is always non-empty and the first element is always an explicit argument.
    */
-  @NotNull List<ConcreteArgument> getArgumentsSequence();
+  @Nullable List<ConcreteArgument> getArgumentsSequence();
 }

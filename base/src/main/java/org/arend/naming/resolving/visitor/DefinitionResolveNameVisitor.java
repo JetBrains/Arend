@@ -108,8 +108,8 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     if (expr instanceof Concrete.BinOpSequenceExpression) {
       Concrete.BinOpSequenceExpression binOpExpr = (Concrete.BinOpSequenceExpression) expr;
       for (Concrete.BinOpSequenceElem elem : binOpExpr.getSequence()) {
-        if (elem.expression instanceof Concrete.ReferenceExpression) {
-          if (!tryResolve((Concrete.ReferenceExpression) elem.expression, exprVisitor)) {
+        if (elem instanceof Concrete.ExplicitBinOpSequenceElem && elem.getExpression() instanceof Concrete.ReferenceExpression) {
+          if (!tryResolve((Concrete.ReferenceExpression) elem.getExpression(), exprVisitor)) {
             return;
           }
         }
