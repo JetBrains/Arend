@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ConcreteSubstitution extends BaseConcreteExpressionVisitor<Void> {
+public class ConcreteSubstitution {
   private final Map<Referable, Concrete.Expression> mySubstitution;
 
   public ConcreteSubstitution(@NotNull Map<Referable, Concrete.Expression> substitution) {
@@ -28,11 +28,5 @@ public class ConcreteSubstitution extends BaseConcreteExpressionVisitor<Void> {
 
   public int size() {
     return mySubstitution.size();
-  }
-
-  @Override
-  public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Void params) {
-    var subst = mySubstitution.get(expr.getReferent());
-    return subst != null ? subst : super.visitReference(expr, params);
   }
 }

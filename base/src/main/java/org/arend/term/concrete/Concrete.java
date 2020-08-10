@@ -22,7 +22,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public final class Concrete {
   private Concrete() {}
@@ -841,6 +846,14 @@ public final class Concrete {
     private final List<LetClausePattern> myPatterns;
     private final boolean myIgnored;
 
+    private LetClausePattern(Object data, Referable referable, Expression type, List<LetClausePattern> patterns, boolean ignored) {
+      myData = data;
+      myReferable = referable;
+      this.type = type;
+      myPatterns = patterns;
+      myIgnored = ignored;
+    }
+
     public LetClausePattern(Referable referable, Expression type) {
       myData = referable;
       myReferable = referable;
@@ -885,6 +898,11 @@ public final class Concrete {
       return myPatterns;
     }
 
+    public @NotNull LetClausePattern copy(Function<@Nullable Expression, Expression> mapper) {
+      var subPats = myPatterns.stream().map(pat -> pat.copy(mapper)).collect(Collectors.toList());
+      return new LetClausePattern(myData, myReferable, mapper.apply(type), subPats, myIgnored);
+    }
+
     @Override
     public void prettyPrint(StringBuilder builder, PrettyPrinterConfig ppConfig) {
       new PrettyPrintVisitor(builder, 0, !ppConfig.isSingleLine()).prettyPrintLetClausePattern(this);
@@ -896,6 +914,13 @@ public final class Concrete {
     public Expression resultType;
     public Expression term;
     private final LetClausePattern myPattern;
+
+    private LetClause(List<Parameter> parameters, Expression resultType, Expression term, LetClausePattern pattern) {
+      myParameters = parameters;
+      this.resultType = resultType;
+      this.term = term;
+      myPattern = pattern;
+    }
 
     public LetClause(Referable referable, List<Parameter> parameters, Expression resultType, Expression term) {
       myParameters = parameters;
@@ -933,6 +958,15 @@ public final class Concrete {
 
     public Expression getResultType() {
       return resultType;
+    }
+
+    public @NotNull LetClause copy(Function<Parameter, Parameter> paramMapper, Function<@Nullable Expression, Expression> mapper) {
+      return new LetClause(
+        myParameters.stream().map(paramMapper).collect(Collectors.toList()),
+        mapper.apply(resultType),
+        mapper.apply(term),
+        myPattern.copy(mapper)
+      );
     }
 
     @Override
