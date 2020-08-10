@@ -1459,7 +1459,7 @@ public final class Concrete {
     return null;
   }
 
-  public interface ReferableDefinition extends SourceNode {
+  public interface ReferableDefinition extends GeneralDefinition {
     @NotNull
     @Override
     TCReferable getData();
@@ -1498,7 +1498,10 @@ public final class Concrete {
     }
   }
 
-  public static abstract class ResolvableDefinition implements ConcreteSourceNode {
+  public interface GeneralDefinition extends SourceNode {
+  }
+
+  public static abstract class ResolvableDefinition implements GeneralDefinition {
     Stage stage = Stage.TYPE_CLASS_REFERENCES_RESOLVED;
     private Status myStatus = Status.NO_ERRORS;
     private boolean myRecursive = false;
