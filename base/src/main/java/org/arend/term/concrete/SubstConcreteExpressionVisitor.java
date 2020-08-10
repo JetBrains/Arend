@@ -1,17 +1,42 @@
 package org.arend.term.concrete;
 
+import org.arend.naming.reference.Referable;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
  * @see org.arend.term.concrete.BaseConcreteExpressionVisitor
  */
 public class SubstConcreteExpressionVisitor<P> implements ConcreteExpressionVisitor<P, Concrete.Expression> {
+  private final Map<Referable, Concrete.Expression> mySubstitution;
+
+  public SubstConcreteExpressionVisitor(@NotNull Map<Referable, Concrete.Expression> substitution) {
+    mySubstitution = substitution;
+  }
+
+  public SubstConcreteExpressionVisitor() {
+    this(new HashMap<>());
+  }
+
+  public void bind(@NotNull Referable referable, @Nullable Concrete.Expression expression) {
+    mySubstitution.put(referable, expression);
+  }
+
+  public void unbind(@NotNull Referable referable) {
+    mySubstitution.remove(referable);
+  }
+
+  public int size() {
+    return mySubstitution.size();
+  }
+
   @Override
   public Concrete.Expression visitApp(Concrete.AppExpression expr, P params) {
     // It is important that we process arguments first since setFunction modifies the list of arguments.
@@ -40,9 +65,21 @@ public class SubstConcreteExpressionVisitor<P> implements ConcreteExpressionVisi
     return new Concrete.InferenceReferenceExpression(expr.getData(), expr.getVariable());
   }
 
+  @SuppressWarnings("unchecked")
   protected <T extends Concrete.Parameter> T visitParameter(T parameter, P params) {
-    // TODO
-    return parameter;
+    if (Concrete.NameParameter.class.equals(parameter.getClass())) {
+      return (T) new Concrete.NameParameter(parameter.getData(), parameter.isExplicit(), ((Concrete.NameParameter) parameter).getReferable());
+    } else if (Concrete.TypeParameter.class.equals(parameter.getClass())) {
+      return (T) new Concrete.TypeParameter(parameter.getData(), parameter.isExplicit(), nullableMap(parameter.getType(), params));
+    } else if (Concrete.DefinitionTypeParameter.class.equals(parameter.getClass())) {
+      return (T) new Concrete.DefinitionTypeParameter(parameter.getData(), parameter.isExplicit(), parameter.isStrict(), nullableMap(parameter.getType(), params));
+    } else if (Concrete.TelescopeParameter.class.equals(parameter.getClass())) {
+      return (T) new Concrete.TelescopeParameter(parameter.getData(), parameter.isExplicit(), new ArrayList<>(parameter.getReferableList()), nullableMap(parameter.getType(), params));
+    } else if (Concrete.DefinitionTelescopeParameter.class.equals(parameter.getClass())) {
+      return (T) new Concrete.DefinitionTelescopeParameter(parameter.getData(), parameter.isExplicit(), parameter.isStrict(), new ArrayList<>(parameter.getReferableList()), nullableMap(parameter.getType(), params));
+    } else {
+      throw new IllegalArgumentException("Unhandled parameter: " + parameter.getClass());
+    }
   }
 
   public <T extends Concrete.Parameter> List<T> visitParameters(List<T> parameters, P params) {

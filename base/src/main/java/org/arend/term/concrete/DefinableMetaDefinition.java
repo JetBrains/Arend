@@ -72,7 +72,7 @@ public class DefinableMetaDefinition extends Concrete.ResolvableDefinition imple
     if (myParameters.isEmpty()) return typechecker.typecheck(body, contextData.getExpectedType());
     var arguments = contextData.getArguments();
     assert myParameters.size() == arguments.size();
-    var subst = new ConcreteSubstitution();
+    var subst = new SubstConcreteExpressionVisitor<Void>();
     for (int i = 0; i < myParameters.size(); i++) {
       subst.bind(Objects.requireNonNull(myParameters.get(i).getReferable()),
         (Concrete.Expression) arguments.get(i).getExpression());
