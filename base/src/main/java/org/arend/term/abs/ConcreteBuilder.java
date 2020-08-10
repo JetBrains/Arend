@@ -11,15 +11,20 @@ import org.arend.term.ClassFieldKind;
 import org.arend.term.Fixity;
 import org.arend.term.FunctionKind;
 import org.arend.term.concrete.Concrete;
+import org.arend.term.concrete.DefinableMetaDefinition;
 import org.arend.typechecking.error.local.LocalErrorReporter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @SuppressWarnings("WeakerAccess")
-public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Definition>, AbstractExpressionVisitor<Void, Concrete.Expression>, AbstractLevelExpressionVisitor<Void, Concrete.LevelExpression> {
+public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.ResolvableDefinition>, AbstractExpressionVisitor<Void, Concrete.Expression>, AbstractLevelExpressionVisitor<Void, Concrete.LevelExpression> {
   private final ReferableConverter myReferableConverter;
   private final LocalErrorReporter myErrorReporter;
   private final TCReferable myDefinition;
@@ -39,9 +44,9 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     };
   }
 
-  public static @NotNull Concrete.Definition convert(ReferableConverter referableConverter, Abstract.Definition definition, ErrorReporter errorReporter) {
+  public static @NotNull Concrete.ResolvableDefinition convert(ReferableConverter referableConverter, Abstract.Definition definition, ErrorReporter errorReporter) {
     ConcreteBuilder builder = new ConcreteBuilder(referableConverter, errorReporter, referableConverter.toDataLocatedReferable(definition.getReferable()));
-    Concrete.Definition result = definition.accept(builder);
+    var result = definition.accept(builder);
     if (builder.myErrorLevel != null) {
       result.setStatus(builder.myErrorLevel);
     }
@@ -69,6 +74,21 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     if (!(definition instanceof Concrete.ClassDefinition)) {
       definition.enclosingClass = enclosingClass;
     }
+  }
+
+  @Override
+  public DefinableMetaDefinition visitMeta(Abstract.MetaDefinition def) {
+    var parameters = buildParameters(def.getParameters(), true).stream()
+      .map(parameter -> {
+        if (parameter instanceof Concrete.NameParameter)
+          return (Concrete.NameParameter) parameter;
+        myErrorReporter.report(new AbstractExpressionError(GeneralError.Level.ERROR, "Definable meta parameters can only be identifiers", parameter));
+        return null;
+      }).collect(Collectors.toList());
+    Concrete.Expression body = null;
+    var term = def.getTerm();
+    if (term != null) body = term.accept(this, null);
+    return new DefinableMetaDefinition(def.getReferable(), parameters, body);
   }
 
   @Override
