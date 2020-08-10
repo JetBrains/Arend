@@ -77,7 +77,6 @@ public class DefinableMetaDefinition extends Concrete.ResolvableDefinition imple
       subst.bind(Objects.requireNonNull(myParameters.get(i).getReferable()),
         (Concrete.Expression) arguments.get(i).getExpression());
     }
-    // TODO[meta]: clone the expression
     var substExpr = body.accept(subst, null);
     return typechecker.typecheck(substExpr, contextData.getExpectedType());
   }

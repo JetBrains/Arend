@@ -52,7 +52,8 @@ public class SubstConcreteExpressionVisitor<P> implements ConcreteExpressionVisi
 
   @Override
   public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, P params) {
-    return new Concrete.ReferenceExpression(expr.getData(), expr.getReferent(), expr.getPLevel(), expr.getHLevel());
+    var subst = mySubstitution.get(expr.getReferent());
+    return subst != null ? subst : new Concrete.ReferenceExpression(expr.getData(), expr.getReferent(), expr.getPLevel(), expr.getHLevel());
   }
 
   @Override
@@ -90,14 +91,12 @@ public class SubstConcreteExpressionVisitor<P> implements ConcreteExpressionVisi
 
   @Override
   public Concrete.Expression visitLam(Concrete.LamExpression expr, P params) {
-    var newParams = visitParameters(expr.getParameters(), params);
-    return new Concrete.LamExpression(expr.getData(), newParams, expr.body.accept(this, params));
+    return new Concrete.LamExpression(expr.getData(), visitParameters(expr.getParameters(), params), expr.body.accept(this, params));
   }
 
   @Override
   public Concrete.Expression visitPi(Concrete.PiExpression expr, P params) {
-    var newParams = visitParameters(expr.getParameters(), params);
-    return new Concrete.PiExpression(expr.getData(), newParams, expr.codomain.accept(this, params));
+    return new Concrete.PiExpression(expr.getData(), visitParameters(expr.getParameters(), params), expr.codomain.accept(this, params));
   }
 
   @Override
@@ -137,8 +136,7 @@ public class SubstConcreteExpressionVisitor<P> implements ConcreteExpressionVisi
 
   @Override
   public Concrete.Expression visitSigma(Concrete.SigmaExpression expr, P params) {
-    var newParams = visitParameters(expr.getParameters(), params);
-    return new Concrete.SigmaExpression(expr.getData(), newParams);
+    return new Concrete.SigmaExpression(expr.getData(), visitParameters(expr.getParameters(), params));
   }
 
   @Override
@@ -177,9 +175,7 @@ public class SubstConcreteExpressionVisitor<P> implements ConcreteExpressionVisi
   }
 
   private @NotNull List<Concrete.Pattern> visitPatterns(List<Concrete.Pattern> patterns, P params) {
-    return patterns.stream()
-      .map(pat -> visitPattern(pat, params))
-      .collect(Collectors.toList());
+    return patterns.stream().map(pat -> visitPattern(pat, params)).collect(Collectors.toList());
   }
 
   @SuppressWarnings("unchecked")
@@ -197,18 +193,13 @@ public class SubstConcreteExpressionVisitor<P> implements ConcreteExpressionVisi
 
   @Override
   public Concrete.Expression visitCase(Concrete.CaseExpression expr, P params) {
-    return new Concrete.CaseExpression(
-      expr.getData(),
-      expr.isSCase(),
-      expr.getArguments().stream()
-        .map(arg -> new Concrete.CaseArgument(arg.expression.accept(this, params), arg.referable, nullableMap(arg.type, params)))
-        .collect(Collectors.toList()),
-      nullableMap(expr.getResultType(), params),
-      nullableMap(expr.getResultTypeLevel(), params),
-      expr.getClauses().stream()
-        .map(clause -> visitClause(clause, params))
-        .collect(Collectors.toList())
-    );
+    var clauses = expr.getClauses().stream()
+      .map(clause -> visitClause(clause, params))
+      .collect(Collectors.toList());
+    var arguments = expr.getArguments().stream()
+      .map(arg -> new Concrete.CaseArgument(arg.expression.accept(this, params), arg.referable, nullableMap(arg.type, params)))
+      .collect(Collectors.toList());
+    return new Concrete.CaseExpression(expr.getData(), expr.isSCase(), arguments, nullableMap(expr.getResultType(), params), nullableMap(expr.getResultTypeLevel(), params), clauses);
   }
 
   @Override
