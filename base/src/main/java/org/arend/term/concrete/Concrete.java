@@ -1467,7 +1467,7 @@ public final class Concrete {
     @NotNull Definition getRelatedDefinition();
 
     @Override
-    default Stage getStage() {
+    default @NotNull Stage getStage() {
       return getRelatedDefinition().getStage();
     }
 
@@ -1476,7 +1476,7 @@ public final class Concrete {
     default boolean equalsImpl(Object o) {
       if (this == o) return true;
       if (o == null || getClass() != o.getClass()) return false;
-      ReferableDefinition that = (ReferableDefinition) o;
+      var that = (ReferableDefinition) o;
       return getData().equals(that.getData());
     }
 
@@ -1503,9 +1503,7 @@ public final class Concrete {
     @Override
     @NotNull LocatedReferable getData();
 
-    default Stage getStage() {
-      return Stage.TYPE_CLASS_REFERENCES_RESOLVED;
-    }
+    @NotNull Stage getStage();
   }
 
   public static abstract class ResolvableDefinition implements GeneralDefinition {
@@ -1538,7 +1536,7 @@ public final class Concrete {
     }
 
     @Override
-    public Stage getStage() {
+    public @NotNull Stage getStage() {
       return stage;
     }
 
