@@ -175,7 +175,9 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     var exprVisitor = new ExpressionResolveNameVisitor(myReferableConverter, scope, context, myLocalErrorReporter, myResolverListener);
     exprVisitor.visitParameters(def.getParameters(), null);
 
-    def.body = def.body.accept(exprVisitor, null);
+    if (def.body != null) {
+      def.body = def.body.accept(exprVisitor, null);
+    }
 
     def.setResolved();
     def.accept(new SyntacticDesugarVisitor(myLocalErrorReporter), null);
