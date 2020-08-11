@@ -467,10 +467,7 @@ public final class Concrete {
     }
 
     public ReferenceExpression(Object data, Referable referable) {
-      super(data);
-      myReferent = referable;
-      myPLevel = null;
-      myHLevel = null;
+      this(data, referable, null, null);
     }
 
     @NotNull
