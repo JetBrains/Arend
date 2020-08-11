@@ -142,7 +142,7 @@ public class Ordering extends BellmanFord<Concrete.Definition> {
       } else {
         myDependencyListener.dependsOn(definition.getData(), tcReferable);
         var dependency = myConcreteProvider.getConcrete(tcReferable);
-        if (dependency instanceof Concrete.Definition && ((Concrete.Definition) dependency).getStage() != Concrete.Stage.TYPECHECKED) {
+        if (dependency instanceof Concrete.Definition && dependency.getStage() != Concrete.Stage.TYPECHECKED) {
           Definition typechecked = tcReferable.getTypechecked();
           if (typechecked == null || typechecked.status().needsTypeChecking()) {
             consumer.accept((Concrete.Definition) dependency);

@@ -1466,6 +1466,7 @@ public final class Concrete {
 
     @NotNull Definition getRelatedDefinition();
 
+    @Override
     default Stage getStage() {
       return getRelatedDefinition().getStage();
     }
@@ -1501,6 +1502,10 @@ public final class Concrete {
   public interface GeneralDefinition extends SourceNode {
     @Override
     @NotNull LocatedReferable getData();
+
+    default Stage getStage() {
+      return Stage.TYPE_CLASS_REFERENCES_RESOLVED;
+    }
   }
 
   public static abstract class ResolvableDefinition implements GeneralDefinition {
@@ -1532,6 +1537,7 @@ public final class Concrete {
       myRecursive = isRecursive;
     }
 
+    @Override
     public Stage getStage() {
       return stage;
     }
