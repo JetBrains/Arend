@@ -1,13 +1,11 @@
 package org.arend.typechecking.visitor;
 
 import org.arend.naming.reference.TCReferable;
-import org.arend.term.concrete.Concrete;
-import org.arend.term.concrete.ConcreteDefinitionVisitor;
-import org.arend.term.concrete.ConcreteExpressionVisitor;
+import org.arend.term.concrete.*;
 
 import java.util.List;
 
-public class VoidConcreteVisitor<P, R> implements ConcreteExpressionVisitor<P,Void>, ConcreteDefinitionVisitor<P,R> {
+public class VoidConcreteVisitor<P, R> implements ConcreteExpressionVisitor<P,Void>, ConcreteResolvableDefinitionVisitor<P,R> {
   protected void visitFunctionHeader(Concrete.BaseFunctionDefinition def, P params) {
     visitParameters(def.getParameters(), params);
     if (def.getResultType() != null) {
@@ -32,6 +30,13 @@ public class VoidConcreteVisitor<P, R> implements ConcreteExpressionVisitor<P,Vo
   public R visitFunction(Concrete.BaseFunctionDefinition def, P params) {
     visitFunctionHeader(def, params);
     return visitFunctionBody(def, params);
+  }
+
+  @Override
+  public R visitMeta(DefinableMetaDefinition def, P params) {
+    visitParameters(def.getParameters(), params);
+    def.body.accept(this, params);
+    return null;
   }
 
   protected void visitDataHeader(Concrete.DataDefinition def, P params) {

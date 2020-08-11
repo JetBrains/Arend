@@ -1418,12 +1418,15 @@ public final class Concrete {
 
   // Definitions
 
-  public static Collection<? extends Parameter> getParameters(ReferableDefinition definition, boolean onlyThisDef) {
+  public static Collection<? extends Parameter> getParameters(GeneralDefinition definition, boolean onlyThisDef) {
     if (definition instanceof BaseFunctionDefinition) {
       return ((BaseFunctionDefinition) definition).getParameters();
     }
     if (definition instanceof DataDefinition) {
       return ((DataDefinition) definition).getParameters();
+    }
+    if (definition instanceof DefinableMetaDefinition) {
+      return ((DefinableMetaDefinition) definition).getParameters();
     }
     if (definition instanceof Constructor) {
       if (onlyThisDef) {
