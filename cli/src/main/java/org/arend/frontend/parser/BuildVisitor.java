@@ -1000,12 +1000,16 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       }
     }
 
+    AppKeywordContext kw = ctx.appKeyword();
     List<ArgumentContext> argumentCtxs = ctx.argument();
-    if (argumentCtxs.isEmpty()) {
+    if (kw == null && argumentCtxs.isEmpty()) {
       return expr;
     }
 
     List<Concrete.BinOpSequenceElem> sequence = new ArrayList<>(argumentCtxs.size());
+    if (kw != null) {
+      sequence.add(visitAppKeyword(kw));
+    }
     sequence.add(new Concrete.ExplicitBinOpSequenceElem(expr));
     for (ArgumentContext argumentCtx : argumentCtxs) {
       sequence.add(visitArgument(argumentCtx));
@@ -1029,9 +1033,13 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   }
 
   @Override
+  public Concrete.BinOpSequenceElem visitAppKeyword(AppKeywordContext ctx) {
+    return ctx.NEW() != null ? new Concrete.NewBinOpSequenceElem(tokenPosition(ctx.start)) : new Concrete.EvalBinOpSequenceElem(tokenPosition(ctx.start), ctx.PEVAL() != null);
+  }
+
+  @Override
   public Concrete.BinOpSequenceElem visitArgumentMod(ArgumentModContext ctx) {
-    AppKeywordContext kw = ctx.appKeyword();
-    return kw.NEW() != null ? new Concrete.NewBinOpSequenceElem(tokenPosition(kw.start)) : new Concrete.EvalBinOpSequenceElem(tokenPosition(kw.start), kw.PEVAL() != null);
+    return visitAppKeyword(ctx.appKeyword());
   }
 
   @Override

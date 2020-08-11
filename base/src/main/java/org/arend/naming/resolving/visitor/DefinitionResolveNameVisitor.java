@@ -137,9 +137,13 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       if (newRef == null) {
         return false;
       }
-      expr.setReferent(exprVisitor.convertReferable(newRef));
-      if (myResolverListener != null) {
-        myResolverListener.referenceResolved(null, ref, expr, resolvedRefs, exprVisitor.getScope());
+      if (newRef instanceof GlobalReferable) {
+        expr.setReferent(exprVisitor.convertReferable(newRef));
+        if (myResolverListener != null) {
+          myResolverListener.referenceResolved(null, ref, expr, resolvedRefs, exprVisitor.getScope());
+        }
+      } else {
+        ((UnresolvedReference) ref).reset();
       }
     }
 

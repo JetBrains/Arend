@@ -227,6 +227,7 @@ public class BinOpParser {
     while (myStack.size() > 1) {
       foldTop();
     }
+    myStack.get(0).foldModifiers();
     Concrete.Expression result = myStack.get(0).expression;
     myStack.clear();
     return result;

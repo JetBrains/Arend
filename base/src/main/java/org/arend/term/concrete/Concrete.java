@@ -338,6 +338,10 @@ public final class Concrete {
       return new AppExpression(data, function, arguments);
     }
 
+    public static Expression copy(Expression expr) {
+      return expr instanceof AppExpression ? new AppExpression(expr.getData(), ((AppExpression) expr).getFunction(), ((AppExpression) expr).getArguments()) : expr;
+    }
+
     @Override
     @NotNull
     public Expression getFunction() {

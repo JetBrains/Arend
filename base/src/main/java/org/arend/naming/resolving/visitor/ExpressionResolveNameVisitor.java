@@ -281,14 +281,55 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       }
     }
 
+    Concrete.Expression result;
     if (!hasMeta) {
       for (int i = 0; i < resolvedRefs.size(); i++) {
         finalizeReference(expr.getSequence().get(i), resolvedRefs.get(i));
       }
-      return expr;
+      result = expr;
+    } else {
+      result = new MetaBinOpParser(this, expr, resolvedRefs).parse();
     }
 
-    return new MetaBinOpParser(this, expr, resolvedRefs).parse();
+    Concrete.Expression body = result instanceof Concrete.LamExpression ? ((Concrete.LamExpression) result).getBody() : result;
+    if (!(body instanceof Concrete.BinOpSequenceExpression)) {
+      return result;
+    }
+
+    List<Concrete.BinOpSequenceElem> sequence = ((Concrete.BinOpSequenceExpression) body).getSequence();
+    for (int i = sequence.size() - 1; i >= 0; i--) {
+      if (!(sequence.get(i) instanceof Concrete.CoclausesBinOpSequenceElem)) {
+        continue;
+      }
+
+      int j = i - 1;
+      for (; j >= 0; j--) {
+        if (sequence.get(j).getExpression() == null || sequence.get(j).isInfixReference() || sequence.get(j).isPostfixReference()) {
+          break;
+        }
+      }
+
+      Concrete.Expression app;
+      if (j >= 0 && sequence.get(j).isPostfixReference()) {
+        app = Concrete.AppExpression.copy(sequence.get(j).getExpression());
+        assert app != null;
+        app = Concrete.AppExpression.make(app.getData(), app, new Concrete.HoleExpression(app.getData()), true);
+        j++;
+      } else if (j + 1 < i) {
+        app = Concrete.AppExpression.copy(sequence.get(j + 1).getExpression());
+        assert app != null;
+        j += 2;
+      } else {
+        continue;
+      }
+      for (; j < i; j++) {
+        app = Concrete.AppExpression.make(app.getData(), app, sequence.get(j).getExpression(), sequence.get(j).isExplicit());
+      }
+
+      visitClassExt(app, ((Concrete.CoclausesBinOpSequenceElem) sequence.get(i)).coclauses);
+    }
+
+    return result;
   }
 
   public void finalizeReference(Concrete.BinOpSequenceElem elem, MetaBinOpParser.ResolvedReference resolvedReference) {
@@ -567,15 +608,19 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   @Override
   public Concrete.Expression visitClassExt(Concrete.ClassExtExpression expr, Void params) {
     expr.setBaseClassExpression(expr.getBaseClassExpression().accept(this, null));
-    if (expr.getStatements().isEmpty()) {
-      return expr;
+    return visitClassExt(expr.getBaseClassExpression(), expr.getStatements()) ? expr : new Concrete.ErrorHoleExpression(expr.getData(), null);
+  }
+
+  private boolean visitClassExt(Concrete.Expression baseExpr, List<Concrete.ClassFieldImpl> coclauses) {
+    if (coclauses.isEmpty()) {
+      return true;
     }
 
-    Referable ref = new TypeClassReferenceExtractVisitor().getTypeReference(Collections.emptyList(), expr.getBaseClassExpression(), true);
+    Referable ref = new TypeClassReferenceExtractVisitor().getTypeReference(Collections.emptyList(), baseExpr, true);
     if (ref != null && !(ref instanceof ClassReferable || ref instanceof TypedReferable)) {
       ref = ref.getUnderlyingReferable();
       if (!(ref instanceof ClassReferable || ref instanceof TypedReferable)) {
-        ref = expr.getBaseClassExpression().getUnderlyingReferable();
+        ref = baseExpr.getUnderlyingReferable();
         if (!(ref instanceof ClassReferable || ref instanceof TypedReferable)) {
           ref = ref.getUnderlyingReferable();
         }
@@ -589,13 +634,13 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     }
 
     if (classRef != null) {
-      visitClassFieldImpls(expr.getStatements(), classRef);
+      visitClassFieldImpls(coclauses, classRef);
     } else {
-      LocalError error = new NameResolverError("Expected a class or a class instance", expr.getBaseClassExpression());
+      LocalError error = new NameResolverError("Expected a class or a class instance", baseExpr);
       myErrorReporter.report(error);
-      return new Concrete.ErrorHoleExpression(expr.getData(), error);
+      return false;
     }
-    return expr;
+    return true;
   }
 
   Referable visitClassFieldReference(Concrete.ClassElement element, Referable oldField, ClassReferable classDef) {
@@ -675,11 +720,26 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
 
         Concrete.LetClausePattern pattern = clause.getPattern();
         if (pattern.getReferable() != null) {
-          ClassReferable classRef = clause.resultType != null
-            ? new TypeClassReferenceExtractVisitor().getTypeClassReference(clause.getParameters(), clause.resultType)
-            : clause.term instanceof Concrete.NewExpression
-              ? new TypeClassReferenceExtractVisitor().getTypeClassReference(clause.getParameters(), ((Concrete.NewExpression) clause.term).expression)
-              : null;
+          ClassReferable classRef = null;
+          if (clause.resultType != null) {
+            classRef = new TypeClassReferenceExtractVisitor().getTypeClassReference(clause.getParameters(), clause.resultType);
+          } else if (clause.term instanceof Concrete.NewExpression) {
+            classRef = new TypeClassReferenceExtractVisitor().getTypeClassReference(clause.getParameters(), ((Concrete.NewExpression) clause.term).expression);
+          } else if (clause.term instanceof Concrete.BinOpSequenceExpression) {
+            List<Concrete.BinOpSequenceElem> sequence = ((Concrete.BinOpSequenceExpression) clause.term).getSequence();
+            if (sequence.size() > 1 && sequence.get(0) instanceof Concrete.NewBinOpSequenceElem) {
+              boolean ok = true;
+              for (int i = 1; i < sequence.size(); i++) {
+                if (sequence.get(i).isInfixReference() || sequence.get(i).isPostfixReference()) {
+                  ok = false;
+                  break;
+                }
+              }
+              if (ok) {
+                classRef = new TypeClassReferenceExtractVisitor().getTypeClassReference(clause.getParameters(), new Concrete.BinOpSequenceExpression(clause.term.getData(), sequence.subList(1, sequence.size())));
+              }
+            }
+          }
           addLocalRef(pattern.getReferable(), classRef);
         } else {
           visitLetClausePattern(pattern);

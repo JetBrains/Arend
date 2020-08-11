@@ -21,10 +21,9 @@ public class NewInstanceExtensionTest extends TypeCheckingTestCase {
 
   @Test
   public void withoutNew() {
-    // This test produces an error on resolving since the resolver preprocess bodies and types of functions and R is not resolved at this stage.
     resolveNamesModule(
       "\\record R (x y : Nat)\n" +
-      "\\func f (r : R) => r { | x => 2 }", 1);
+      "\\func f (r : R) => r { | x => 2 }");
   }
 
   @Test

@@ -129,15 +129,15 @@ expr  : appKeyword? atomFieldsAcc onlyLevelAtom* argument*                # app
       | '\\lam' tele+ ('=>' expr?)?                                       # lam
       | (LET | LETS) '|'? letClause ('|' letClause)* ('\\in' expr?)?      # let
       | (EVAL | PEVAL)? (CASE | SCASE) caseArg (',' caseArg)*
-          ('\\return' returnExpr)? caseBody                               # case
+          ('\\return' returnExpr)? '\\with' caseBody                      # case
       | TRUNCATED_UNIVERSE maybeLevelAtom?                                # truncatedUniverse
       | UNIVERSE (maybeLevelAtom maybeLevelAtom?)?                        # universe
       | SET maybeLevelAtom?                                               # setUniverse
       ;
 
-caseBody : '\\with' '{' clause? ('|' clause)* '}';
+caseBody : '{' clause? ('|' clause)* '}';
 
-appKeyword : NEW EVAL | EVAL | PEVAL;
+appKeyword : NEW | EVAL | PEVAL;
 
 caseArg : caseArgExprAs (':' expr)?;
 
@@ -150,7 +150,7 @@ argument : atomFieldsAcc                            # argumentExplicit
          | universeAtom                             # argumentUniverse
          | '{' tupleExpr (',' tupleExpr)* ','? '}'  # argumentImplicit
          | '{' localCoClause* '}'                   # argumentCoclauses
-         | caseBody                                 # argumentClauses
+         | USING caseBody                           # argumentClauses
          ;
 
 clauses : '{' clause? ('|' clause)* '}' # clausesWithBraces
