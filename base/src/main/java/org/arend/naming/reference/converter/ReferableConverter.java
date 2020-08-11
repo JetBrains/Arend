@@ -8,6 +8,10 @@ public interface ReferableConverter {
   TCReferable toDataLocatedReferable(LocatedReferable referable);
 
   default Referable convert(Referable referable) {
-    return referable instanceof LocatedReferable ? toDataLocatedReferable((LocatedReferable) referable) : referable;
+    if (referable instanceof LocatedReferable) {
+      var ref = toDataLocatedReferable((LocatedReferable) referable);
+      if (ref != null) return ref;
+    }
+    return referable;
   }
 }

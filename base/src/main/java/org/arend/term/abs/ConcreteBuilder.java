@@ -89,13 +89,9 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
     Concrete.Expression body = null;
     var term = def.getTerm();
     if (term != null) body = term.accept(this, null);
-    var referable = def.getMetaReferable();
+    var referable = def.getReferable();
     var definition = new DefinableMetaDefinition(referable, parameters, body);
-    if (referable == null) {
-      myErrorReporter.report(new ReferenceError(GeneralError.Level.ERROR, GeneralError.Stage.PARSER, "No meta reference", def.getReferable()));
-    } else {
-      referable.setDefinition(definition);
-    }
+    referable.setDefinition(definition);
     return definition;
   }
 

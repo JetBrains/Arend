@@ -211,7 +211,7 @@ public final class Abstract {
 
   public interface MetaDefinition extends Definition, ParametersHolder {
     @Nullable Expression getTerm();
-    @Nullable MetaReferable getMetaReferable();
+    @NotNull MetaReferable getReferable();
     @Override @NotNull List<? extends Parameter> getParameters();
   }
 
