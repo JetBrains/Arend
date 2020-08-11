@@ -346,7 +346,7 @@ public abstract class BaseCliFrontend {
 
         forcedDefs = new ArrayList<>();
         for (TCReferable ref : forcedRefs) {
-          Concrete.ReferableDefinition def = typechecking.getConcreteProvider().getConcrete(ref);
+          var def = typechecking.getConcreteProvider().getConcrete(ref);
           if (def instanceof Concrete.Definition) {
             forcedDefs.add((Concrete.Definition) def);
             Definition typechecked = ref.getTypechecked();

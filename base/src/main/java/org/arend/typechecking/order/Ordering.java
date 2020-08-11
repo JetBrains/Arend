@@ -68,7 +68,7 @@ public class Ordering extends BellmanFord<Concrete.Definition> {
     LocatedReferable referable = group.getReferable();
     TCReferable tcReferable = myReferableConverter.toDataLocatedReferable(referable);
     if (tcReferable == null || getTypechecked(tcReferable) == null) {
-      Concrete.ReferableDefinition def = myConcreteProvider.getConcrete(referable);
+      var def = myConcreteProvider.getConcrete(referable);
       if (def instanceof Concrete.Definition) {
         order((Concrete.Definition) def);
       }
@@ -141,8 +141,8 @@ public class Ordering extends BellmanFord<Concrete.Definition> {
         }
       } else {
         myDependencyListener.dependsOn(definition.getData(), tcReferable);
-        Concrete.ReferableDefinition dependency = myConcreteProvider.getConcrete(tcReferable);
-        if (dependency instanceof Concrete.Definition && dependency.getStage() != Concrete.Stage.TYPECHECKED) {
+        var dependency = myConcreteProvider.getConcrete(tcReferable);
+        if (dependency instanceof Concrete.Definition && ((Concrete.Definition) dependency).getStage() != Concrete.Stage.TYPECHECKED) {
           Definition typechecked = tcReferable.getTypechecked();
           if (typechecked == null || typechecked.status().needsTypeChecking()) {
             consumer.accept((Concrete.Definition) dependency);

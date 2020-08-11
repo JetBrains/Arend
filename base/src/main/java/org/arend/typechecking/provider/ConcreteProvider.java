@@ -5,8 +5,7 @@ import org.arend.term.concrete.Concrete;
 import org.jetbrains.annotations.Nullable;
 
 public interface ConcreteProvider {
-  @Nullable Concrete.ReferableDefinition getConcrete(GlobalReferable referable);
-  @Nullable Concrete.ResolvableDefinition getResolvable(GlobalReferable referable);
+  @Nullable Concrete.GeneralDefinition getConcrete(GlobalReferable referable);
   @Nullable Concrete.FunctionDefinition getConcreteFunction(GlobalReferable referable);
   @Nullable Concrete.FunctionDefinition getConcreteInstance(GlobalReferable referable);
   @Nullable Concrete.ClassDefinition getConcreteClass(GlobalReferable referable);
@@ -16,7 +15,7 @@ public interface ConcreteProvider {
     if (referable instanceof TCReferable) {
       return (TCReferable) referable;
     }
-    Concrete.ReferableDefinition def = getConcrete(referable);
-    return def == null ? null : def.getData();
+    var def = getConcrete(referable);
+    return def instanceof Concrete.ReferableDefinition ? ((Concrete.ReferableDefinition) def).getData() : null;
   }
 }

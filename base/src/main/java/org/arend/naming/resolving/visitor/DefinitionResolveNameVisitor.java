@@ -247,7 +247,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     if (def instanceof Concrete.CoClauseFunctionDefinition && ((Concrete.CoClauseFunctionDefinition) def).getImplementedField() instanceof UnresolvedReference) {
       Concrete.CoClauseFunctionDefinition function = (Concrete.CoClauseFunctionDefinition) def;
       TCReferable enclosingRef = function.getEnclosingDefinition();
-      Concrete.ReferableDefinition enclosingDef = myConcreteProvider.getConcrete(enclosingRef);
+      var enclosingDef = myConcreteProvider.getConcrete(enclosingRef);
       if (enclosingDef instanceof Concrete.BaseFunctionDefinition) {
         Concrete.BaseFunctionDefinition enclosingFunction = (Concrete.BaseFunctionDefinition) enclosingDef;
         if (enclosingFunction.getResultType() != null) {
@@ -299,7 +299,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
             } else if (element instanceof Concrete.CoClauseFunctionReference && element.getImplementedField() instanceof UnresolvedReference) {
               Referable resolved = exprVisitor.visitClassFieldReference(element, element.getImplementedField(), (ClassReferable) typeRef);
               if (resolved != element.getImplementedField()) {
-                Concrete.ReferableDefinition definition = myConcreteProvider.getConcrete(((Concrete.CoClauseFunctionReference) element).getFunctionReference());
+                var definition = myConcreteProvider.getConcrete(((Concrete.CoClauseFunctionReference) element).getFunctionReference());
                 if (definition instanceof Concrete.CoClauseFunctionDefinition) {
                   ((Concrete.CoClauseFunctionDefinition) definition).setImplementedField(resolved);
                 }
@@ -619,13 +619,13 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     Collection<? extends Group> subgroups = group.getSubgroups();
     Collection<? extends Group> dynamicSubgroups = group.getDynamicSubgroups();
 
-    var def = myConcreteProvider.getResolvable(groupRef);
+    var def = myConcreteProvider.getConcrete(groupRef);
     if (def instanceof Concrete.ClassDefinition && !((Concrete.ClassDefinition) def).getSuperClasses().isEmpty()) {
       resolveSuperClasses((Concrete.ClassDefinition) def, new ExpressionResolveNameVisitor(myReferableConverter, scope, null, myErrorReporter, myResolverListener));
     }
     Scope convertedScope = CachingScope.make(scope);
-    if (def != null) {
-      def.accept(this, convertedScope);
+    if (def instanceof Concrete.ResolvableDefinition) {
+      ((Concrete.ResolvableDefinition) def).accept(this, convertedScope);
     } else {
       myLocalErrorReporter = new LocalErrorReporter(groupRef, myErrorReporter);
     }

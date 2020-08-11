@@ -15,11 +15,6 @@ public class EmptyConcreteProvider implements ConcreteProvider {
     return null;
   }
 
-  @Override
-  public @Nullable Concrete.ResolvableDefinition getResolvable(GlobalReferable referable) {
-    return null;
-  }
-
   @Nullable
   @Override
   public Concrete.FunctionDefinition getConcreteFunction(GlobalReferable referable) {

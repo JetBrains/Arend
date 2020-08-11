@@ -1499,15 +1499,14 @@ public final class Concrete {
   }
 
   public interface GeneralDefinition extends SourceNode {
+    @Override
+    @NotNull LocatedReferable getData();
   }
 
   public static abstract class ResolvableDefinition implements GeneralDefinition {
     Stage stage = Stage.TYPE_CLASS_REFERENCES_RESOLVED;
     private Status myStatus = Status.NO_ERRORS;
     private boolean myRecursive = false;
-
-    @Override
-    public abstract @NotNull LocatedReferable getData();
 
     public Status getStatus() {
       return myStatus;

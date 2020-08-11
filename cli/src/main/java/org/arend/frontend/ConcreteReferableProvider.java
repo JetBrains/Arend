@@ -15,18 +15,12 @@ public class ConcreteReferableProvider implements ConcreteProvider {
   private ConcreteReferableProvider() {}
 
   @Override
-  public Concrete.ReferableDefinition getConcrete(GlobalReferable referable) {
-    return referable instanceof ConcreteLocatedReferable ? ((ConcreteLocatedReferable) referable).getDefinition() : null;
-  }
-
-  @Override
-  public @Nullable Concrete.ResolvableDefinition getResolvable(GlobalReferable referable) {
+  public Concrete.GeneralDefinition getConcrete(GlobalReferable referable) {
     if (referable instanceof MetaReferable) {
       var def = ((MetaReferable) referable).getDefinition();
       if (def instanceof DefinableMetaDefinition) return (Concrete.ResolvableDefinition) def;
     }
-    var concrete = getConcrete(referable);
-    return concrete instanceof Concrete.ResolvableDefinition ? (Concrete.ResolvableDefinition) concrete : null;
+    return referable instanceof ConcreteLocatedReferable ? ((ConcreteLocatedReferable) referable).getDefinition() : null;
   }
 
   @Nullable

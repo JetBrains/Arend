@@ -37,8 +37,11 @@ public class ArendDependencyProviderImpl extends Disableable implements ArendDep
     checkEnabled();
     Scope scope = myModuleScopeProvider.forModule(module);
     Referable ref = scope == null ? null : Scope.Utils.resolveName(scope, name.toList(), true);
-    Concrete.ReferableDefinition def = ref instanceof GlobalReferable ? myTypechecking.getConcreteProvider().getConcrete((GlobalReferable) ref) : null;
-    if (def == null) {
+    Concrete.ReferableDefinition def;
+    var generalDef = ref instanceof GlobalReferable ? myTypechecking.getConcreteProvider().getConcrete((GlobalReferable) ref) : null;
+    if (generalDef instanceof Concrete.ReferableDefinition) {
+      def = (Concrete.ReferableDefinition) generalDef;
+    } else {
       throw new IllegalArgumentException("Cannot find definition '" + name + "'");
     }
     myTypechecking.typecheckDefinitions(Collections.singletonList(def.getRelatedDefinition()), null);
