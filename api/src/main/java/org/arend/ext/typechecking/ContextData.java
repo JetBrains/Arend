@@ -1,5 +1,6 @@
 package org.arend.ext.typechecking;
 
+import org.arend.ext.concrete.expr.ConcreteCoclause;
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.concrete.expr.ConcreteArgument;
@@ -28,11 +29,18 @@ public interface ContextData {
   @NotNull ConcreteExpression getMarker();
 
   /**
-   * Returns the arguments passed to the meta definition.
+   * Returns the list of arguments passed to the meta definition.
    */
   @NotNull List<? extends ConcreteArgument> getArguments();
 
   void setArguments(@NotNull List<? extends ConcreteArgument> arguments);
+
+  /**
+   * Returns the list of coclauses passed to the meta definition.
+   */
+  @Nullable List<? extends ConcreteCoclause> getCoclauses();
+
+  void setCoclauses(@Nullable List<? extends ConcreteCoclause> coclauses);
 
   /**
    * Returns the expected type in the current context.

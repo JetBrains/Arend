@@ -665,7 +665,7 @@ public final class Concrete {
     }
   }
 
-  public static class ClassFieldImpl extends SourceNodeImpl implements CoClauseElement {
+  public static class ClassFieldImpl extends SourceNodeImpl implements CoClauseElement, ConcreteCoclause {
     private Referable myImplementedField;
     public Expression implementation;
     public TCReferable classRef; // the class of fields in subClassFieldImpls
@@ -686,6 +686,21 @@ public final class Concrete {
     @Override
     public void setImplementedField(Referable newImplementedField) {
       myImplementedField = newImplementedField;
+    }
+
+    @Override
+    public @NotNull Referable getImplementedRef() {
+      return myImplementedField;
+    }
+
+    @Override
+    public @Nullable Concrete.Expression getImplementation() {
+      return implementation;
+    }
+
+    @Override
+    public @NotNull List<ClassFieldImpl> getSubCoclauses() {
+      return subClassFieldImpls;
     }
   }
 
@@ -1124,6 +1139,26 @@ public final class Concrete {
       this.type = type;
       isElim = true;
     }
+
+    @Override
+    public @NotNull ConcreteExpression getExpression() {
+      return expression;
+    }
+
+    @Override
+    public @Nullable ArendRef getAsRef() {
+      return referable;
+    }
+
+    @Override
+    public @Nullable ConcreteExpression getType() {
+      return type;
+    }
+
+    @Override
+    public boolean isElim() {
+      return isElim;
+    }
   }
 
   public static class CaseExpression extends Expression implements ConcreteCaseExpression {
@@ -1220,7 +1255,7 @@ public final class Concrete {
     }
   }
 
-  public static class FunctionClause extends Clause {
+  public static class FunctionClause extends Clause implements ConcreteClause {
     public Expression expression;
 
     public FunctionClause(Object data, List<Pattern> patterns, Expression expression) {
@@ -2046,7 +2081,7 @@ public final class Concrete {
     }
   }
 
-  public static abstract class Clause extends SourceNodeImpl implements PatternHolder, ConcreteClause {
+  public static abstract class Clause extends SourceNodeImpl implements PatternHolder {
     private final List<Pattern> myPatterns;
 
     public Clause(Object data, List<Pattern> patterns) {
@@ -2055,7 +2090,7 @@ public final class Concrete {
     }
 
     @Override
-    public List<Pattern> getPatterns() {
+    public @NotNull List<Pattern> getPatterns() {
       return myPatterns;
     }
 
