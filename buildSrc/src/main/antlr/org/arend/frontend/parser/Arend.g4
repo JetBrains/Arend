@@ -30,16 +30,20 @@ classStat : classFieldOrImpl                            # classFieldOrImplStat
           | '\\override' longName tele* ':' returnExpr  # classOverrideStat
           ;
 
-definition  : funcKw defId tele* (':' returnExpr)? functionBody where?                                          # defFunction
-            | TRUNCATED? '\\data' defId tele* (':' expr)? dataBody where?                                       # defData
+definition  : funcKw defId tele* (':' returnExpr2)? functionBody where?                                         # defFunction
+            | TRUNCATED? '\\data' defId tele* (':' expr2)? dataBody where?                                      # defData
             | classKw defId NO_CLASSIFYING? fieldTele* ('\\extends' longName (',' longName)*)? classBody where? # defClass
             | '\\module' defId where?                                                                           # defModule
             | '\\meta' defId where?                                                                             # defMeta
-            | instanceKw defId tele* (':' returnExpr)? instanceBody where?                                      # defInstance
+            | instanceKw defId tele* (':' returnExpr2)? instanceBody where?                                     # defInstance
             ;
 
 returnExpr  : expr ('\\level' expr)?                # returnExprExpr
             | '\\level' atomFieldsAcc atomFieldsAcc # returnExprLevel
+            ;
+
+returnExpr2 : expr2 ('\\level' expr2)?              # returnExprExpr2
+            | '\\level' atomFieldsAcc atomFieldsAcc # returnExprLevel2
             ;
 
 funcKw      : '\\func'            # funcKwFunc
@@ -122,26 +126,34 @@ associativity : '\\infix'               # nonAssocInfix
               | '\\fixr'                # rightAssoc
               ;
 
-expr  : newExpr                                                           # app
+expr  : appPrefix? appExpr (implementStatements argument*)? withBody?     # app
       | <assoc=right> expr '->' expr                                      # arr
       | '\\Pi' tele+ '->' expr                                            # pi
       | '\\Sigma' tele*                                                   # sigma
       | '\\lam' tele+ ('=>' expr?)?                                       # lam
       | (LET | LETS) '|'? letClause ('|' letClause)* ('\\in' expr?)?      # let
-      | (EVAL | PEVAL)? (CASE | SCASE) caseArg (',' caseArg)*
-          ('\\return' returnExpr)? '\\with' withBody                      # case
+      | caseExpr                                                          # case
       ;
 
-withBody : '{' clause? ('|' clause)* '}';
+expr2 : appPrefix? appExpr (implementStatements argument*)?               # app2
+      | <assoc=right> expr2 '->' expr2                                    # arr2
+      | '\\Pi' tele+ '->' expr2                                           # pi2
+      | '\\Sigma' tele*                                                   # sigma2
+      | '\\lam' tele+ ('=>' expr2?)?                                      # lam2
+      | (LET | LETS) '|'? letClause ('|' letClause)* ('\\in' expr2?)?     # let2
+      | caseExpr                                                          # case2
+      ;
 
-newExpr : appPrefix? appExpr (implementStatements argument*)? (USING withBody)?;
+caseExpr : (EVAL | PEVAL)? (CASE | SCASE) caseArg (',' caseArg)* ('\\return' returnExpr2)? withBody;
+
+withBody : '\\with' '{' clause? ('|' clause)* '}';
 
 appPrefix : NEW EVAL? | EVAL | PEVAL;
 
-caseArg : caseArgExprAs (':' expr)?;
+caseArg : caseArgExprAs (':' expr2)?;
 
-caseArgExprAs : '\\elim' (ID | APPLY_HOLE)   # caseArgElim
-              | expr (AS ID)? # caseArgExpr
+caseArgExprAs : '\\elim' (ID | APPLY_HOLE)  # caseArgElim
+              | expr2 (AS ID)?              # caseArgExpr
               ;
 
 appExpr : argumentAppExpr                             # appArgument
@@ -168,7 +180,7 @@ coClauses : coClause*                         # coClausesWithoutBraces
 
 clause : pattern (',' pattern)* ('=>' expr)?;
 
-coClause : '|' (longName coClauseBody | precedence longName tele* (COLON returnExpr)? coClauseDefBody);
+coClause : '|' (longName coClauseBody | precedence longName tele* (COLON returnExpr2)? coClauseDefBody);
 
 coClauseBody : tele* '=>' expr          # coClauseImpl
              | '{' localCoClause* '}'   # coClauseRec
