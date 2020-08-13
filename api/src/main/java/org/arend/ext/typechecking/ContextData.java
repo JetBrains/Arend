@@ -1,5 +1,6 @@
 package org.arend.ext.typechecking;
 
+import org.arend.ext.concrete.ConcreteClause;
 import org.arend.ext.concrete.expr.ConcreteCoclause;
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.core.expr.CoreExpression;
@@ -41,6 +42,13 @@ public interface ContextData {
   @Nullable List<? extends ConcreteCoclause> getCoclauses();
 
   void setCoclauses(@Nullable List<? extends ConcreteCoclause> coclauses);
+
+  /**
+   * Returns the list of clauses passed to the meta definition.
+   */
+  @Nullable List<? extends ConcreteClause> getClauses();
+
+  void setClauses(@Nullable List<? extends ConcreteClause> clauses);
 
   /**
    * Returns the expected type in the current context.

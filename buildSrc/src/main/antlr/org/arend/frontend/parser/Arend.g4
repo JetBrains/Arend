@@ -129,10 +129,12 @@ expr  : newExpr                                                           # app
       | '\\lam' tele+ ('=>' expr?)?                                       # lam
       | (LET | LETS) '|'? letClause ('|' letClause)* ('\\in' expr?)?      # let
       | (EVAL | PEVAL)? (CASE | SCASE) caseArg (',' caseArg)*
-          ('\\return' returnExpr)? '\\with' '{' clause? ('|' clause)* '}' # case
+          ('\\return' returnExpr)? '\\with' withBody                      # case
       ;
 
-newExpr : appPrefix? appExpr (implementStatements argument*)?;
+withBody : '{' clause? ('|' clause)* '}';
+
+newExpr : appPrefix? appExpr (implementStatements argument*)? (USING withBody)?;
 
 appPrefix : NEW EVAL? | EVAL | PEVAL;
 

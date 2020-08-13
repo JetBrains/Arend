@@ -156,6 +156,14 @@ public class FreeReferablesVisitor implements ConcreteExpressionVisitor<Void, TC
         return ref;
       }
     }
+    if (expr.getClauses() != null) {
+      for (Concrete.FunctionClause clause : expr.getClauses()) {
+        TCReferable ref = visitClause(clause);
+        if (ref != null) {
+          return ref;
+        }
+      }
+    }
     return null;
   }
 

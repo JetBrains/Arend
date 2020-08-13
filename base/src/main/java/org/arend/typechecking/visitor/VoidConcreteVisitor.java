@@ -178,6 +178,9 @@ public class VoidConcreteVisitor<P, R> implements ConcreteExpressionVisitor<P,Vo
     for (Concrete.BinOpSequenceElem elem : expr.getSequence()) {
       elem.expression.accept(this, params);
     }
+    if (expr.getClauses() != null) {
+      visitClauses(expr.getClauses(), params);
+    }
     return null;
   }
 

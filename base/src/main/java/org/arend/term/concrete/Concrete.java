@@ -422,15 +422,21 @@ public final class Concrete {
   public static class BinOpSequenceExpression extends Expression {
     public static final byte PREC = 0;
     private final List<BinOpSequenceElem> mySequence;
+    private final List<FunctionClause> myClauses;
 
-    public BinOpSequenceExpression(Object data, List<BinOpSequenceElem> sequence) {
+    public BinOpSequenceExpression(Object data, List<BinOpSequenceElem> sequence, List<FunctionClause> clauses) {
       super(data);
       mySequence = sequence;
+      myClauses = clauses;
     }
 
     @NotNull
     public List<BinOpSequenceElem> getSequence() {
       return mySequence;
+    }
+
+    public List<FunctionClause> getClauses() {
+      return myClauses;
     }
 
     @Override
@@ -1264,6 +1270,11 @@ public final class Concrete {
     }
 
     @Override
+    public @NotNull List<Pattern> getPatterns() {
+      return super.getPatterns();
+    }
+
+    @Override
     @Nullable
     public Expression getExpression() {
       return expression;
@@ -2090,7 +2101,7 @@ public final class Concrete {
     }
 
     @Override
-    public @NotNull List<Pattern> getPatterns() {
+    public List<Pattern> getPatterns() {
       return myPatterns;
     }
 

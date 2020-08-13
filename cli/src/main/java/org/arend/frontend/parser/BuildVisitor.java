@@ -1032,7 +1032,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       sequence.add(visitArgument(argumentCtx));
     }
 
-    return new Concrete.BinOpSequenceExpression(expr.getData(), sequence);
+    return new Concrete.BinOpSequenceExpression(expr.getData(), sequence, null);
   }
 
   private Concrete.BinOpSequenceElem visitArgument(ArgumentContext ctx) {
@@ -1493,14 +1493,20 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   public Concrete.Expression visitNewExpr(NewExprContext ctx) {
     Concrete.Expression expr = visitNew(ctx.appPrefix(), ctx.appExpr(), ctx.implementStatements());
     List<ArgumentContext> argumentCtxs = ctx.argument();
-    if (!argumentCtxs.isEmpty()) {
+    WithBodyContext body = ctx.withBody();
+    if (!argumentCtxs.isEmpty() || body != null) {
+      if (expr instanceof Concrete.BinOpSequenceExpression && argumentCtxs.isEmpty()) {
+        return new Concrete.BinOpSequenceExpression(expr.getData(), ((Concrete.BinOpSequenceExpression) expr).getSequence(), visitWithBody(body));
+      }
+
       List<Concrete.BinOpSequenceElem> sequence = new ArrayList<>(argumentCtxs.size() + 1);
       sequence.add(new Concrete.BinOpSequenceElem(expr));
       for (ArgumentContext argCtx : argumentCtxs) {
         sequence.add(visitArgument(argCtx));
       }
-      expr = new Concrete.BinOpSequenceExpression(expr.getData(), sequence);
+      return new Concrete.BinOpSequenceExpression(expr.getData(), sequence, body == null ? null : visitWithBody(body));
     }
+
     return expr;
   }
 
@@ -1572,6 +1578,15 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   }
 
   @Override
+  public List<Concrete.FunctionClause> visitWithBody(WithBodyContext ctx) {
+    List<Concrete.FunctionClause> clauses = new ArrayList<>();
+    for (ClauseContext clauseCtx : ctx.clause()) {
+      clauses.add(visitClause(clauseCtx));
+    }
+    return clauses;
+  }
+
+  @Override
   public Concrete.FunctionClause visitClause(ClauseContext clauseCtx) {
     List<Concrete.Pattern> patterns = new ArrayList<>(clauseCtx.pattern().size());
     for (PatternContext patternCtx : clauseCtx.pattern()) {
@@ -1618,11 +1633,8 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
         caseArgs.add(argument);
       }
     }
-    List<Concrete.FunctionClause> clauses = new ArrayList<>();
-    for (ClauseContext clauseCtx : ctx.clause()) {
-      clauses.add(visitClause(clauseCtx));
-    }
 
+    List<Concrete.FunctionClause> clauses = visitWithBody(ctx.withBody());
     Pair<Concrete.Expression,Concrete.Expression> returnPair = visitReturnExpr(ctx.returnExpr());
     Concrete.Expression result = new Concrete.CaseExpression(tokenPosition(ctx.start), ctx.SCASE() != null, caseArgs, returnPair.proj1, returnPair.proj2, clauses);
     boolean isPEval = ctx.PEVAL() != null;

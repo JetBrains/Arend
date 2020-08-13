@@ -1,6 +1,7 @@
 package org.arend.extImpl;
 
 import org.arend.core.expr.Expression;
+import org.arend.ext.concrete.ConcreteClause;
 import org.arend.ext.concrete.expr.ConcreteArgument;
 import org.arend.ext.concrete.expr.ConcreteCoclause;
 import org.arend.ext.core.expr.CoreExpression;
@@ -15,13 +16,15 @@ public class ContextDataImpl implements ContextData {
   private final Concrete.Expression myExpression;
   private List<? extends ConcreteArgument> myArguments;
   private List<? extends ConcreteCoclause> myCoclauses;
+  private List<? extends ConcreteClause> myClauses;
   private Expression myExpectedType;
   private Object myUserData;
 
-  public ContextDataImpl(Concrete.Expression expression, List<? extends ConcreteArgument> arguments, List<? extends ConcreteCoclause> coclauses, Expression expectedType, Object userData) {
+  public ContextDataImpl(Concrete.Expression expression, List<? extends ConcreteArgument> arguments, List<? extends ConcreteCoclause> coclauses, List<? extends ConcreteClause> clauses, Expression expectedType, Object userData) {
     myExpression = expression;
     myArguments = arguments;
     myCoclauses = coclauses;
+    myClauses = clauses;
     myExpectedType = expectedType;
     myUserData = userData;
   }
@@ -56,6 +59,16 @@ public class ContextDataImpl implements ContextData {
   @Override
   public void setCoclauses(List<? extends ConcreteCoclause> coclauses) {
     myCoclauses = coclauses;
+  }
+
+  @Override
+  public @Nullable List<? extends ConcreteClause> getClauses() {
+    return myClauses;
+  }
+
+  @Override
+  public void setClauses(@Nullable List<? extends ConcreteClause> clauses) {
+    myClauses = clauses;
   }
 
   @Override

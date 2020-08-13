@@ -524,7 +524,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     return new Concrete.SigmaExpression(data, buildTypeParameters(parameters, false));
   }
 
-  private Concrete.Expression makeBinOpSequence(Object data, Concrete.Expression left, Collection<? extends Abstract.BinOpSequenceElem> sequence) {
+  private Concrete.Expression makeBinOpSequence(Object data, Concrete.Expression left, Collection<? extends Abstract.BinOpSequenceElem> sequence, Collection<? extends Abstract.FunctionClause> clauses) {
     if (sequence.isEmpty()) {
       return left;
     }
@@ -539,12 +539,12 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
       elems.add(new Concrete.BinOpSequenceElem(arg.accept(this, null), elem.isVariable() ? Fixity.UNKNOWN : Fixity.NONFIX, elem.isExplicit()));
     }
-    return new Concrete.BinOpSequenceExpression(data, elems);
+    return new Concrete.BinOpSequenceExpression(data, elems, clauses == null ? null : buildClauses(clauses));
   }
 
   @Override
   public Concrete.Expression visitBinOpSequence(@Nullable Object data, @NotNull Abstract.Expression left, @NotNull Collection<? extends Abstract.BinOpSequenceElem> sequence, Void params) {
-    return makeBinOpSequence(data, left.accept(this, null), sequence);
+    return makeBinOpSequence(data, left.accept(this, null), sequence, null);
   }
 
   @Override
@@ -600,7 +600,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   }
 
   @Override
-  public Concrete.Expression visitClassExt(@Nullable Object data, boolean isNew, @Nullable Abstract.EvalKind evalKind, @Nullable Abstract.Expression baseClass, @Nullable Collection<? extends Abstract.ClassFieldImpl> implementations, @NotNull Collection<? extends Abstract.BinOpSequenceElem> sequence, Void params) {
+  public Concrete.Expression visitClassExt(@Nullable Object data, boolean isNew, Abstract.@Nullable EvalKind evalKind, Abstract.@Nullable Expression baseClass, @Nullable Collection<? extends Abstract.ClassFieldImpl> implementations, @NotNull Collection<? extends Abstract.BinOpSequenceElem> sequence, @Nullable Collection<? extends Abstract.FunctionClause> clauses, Void params) {
     if (baseClass == null) {
       myErrorLevel = GeneralError.Level.ERROR;
       return new Concrete.ErrorHoleExpression(data, null);
@@ -617,7 +617,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       result = new Concrete.NewExpression(data, result);
     }
 
-    return makeBinOpSequence(data, result, sequence);
+    return makeBinOpSequence(data, result, sequence, clauses);
   }
 
   private Concrete.LetClausePattern visitLetClausePattern(Abstract.LetClausePattern pattern) {

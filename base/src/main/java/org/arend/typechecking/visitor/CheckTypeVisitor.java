@@ -1909,7 +1909,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     }
 
     Expression expectedType = (Expression) type;
-    ContextDataImpl contextDataImpl = new ContextDataImpl((Concrete.ReferenceExpression) refExpr, contextData.getArguments(), contextData.getCoclauses(), expectedType, contextData.getUserData());
+    ContextDataImpl contextDataImpl = new ContextDataImpl((Concrete.ReferenceExpression) refExpr, contextData.getArguments(), contextData.getCoclauses(), contextData.getClauses(), expectedType, contextData.getUserData());
     InferenceReferenceExpression inferenceExpr = new InferenceReferenceExpression(new MetaInferenceVariable(expectedType, meta, (Concrete.ReferenceExpression) refExpr, getAllBindings()));
     // (stage == Stage.BEFORE_SOLVER ? myDeferredMetasBeforeSolver : stage == Stage.BEFORE_LEVELS ? myDeferredMetasBeforeLevels : myDeferredMetasAfterLevels)
     myDeferredMetasBeforeSolver.add(new DeferredMeta(meta, new LinkedHashMap<>(context), contextDataImpl, inferenceExpr, errorReporter));
@@ -1948,7 +1948,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       errorReporter.report(new TypecheckingError("Meta '" + refExpr.getReferent().getRefName() + "' is empty", refExpr));
       return null;
     }
-    ContextData contextData = new ContextDataImpl(refExpr, arguments, coclauses, expectedType == null ? null : expectedType.accept(new StripVisitor(), null), null);
+    ContextData contextData = new ContextDataImpl(refExpr, arguments, coclauses, null, expectedType == null ? null : expectedType.accept(new StripVisitor(), null), null);
     if (!meta.checkContextData(contextData, errorReporter)) {
       return null;
     }
@@ -2177,7 +2177,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       var checker = myArendExtension.getLiteralTypechecker();
       if (checker != null) {
         int numberOfErrors = myErrorReporter.myErrorReporter.getErrorsNumber();
-        TypecheckingResult result = TypecheckingResult.fromChecked(checker.typecheckNumber(number, this, new ContextDataImpl(expr, Collections.emptyList(), null, expectedType, null)));
+        TypecheckingResult result = TypecheckingResult.fromChecked(checker.typecheckNumber(number, this, new ContextDataImpl(expr, Collections.emptyList(), null, null, expectedType, null)));
         if (result == null && myErrorReporter.myErrorReporter.getErrorsNumber() == numberOfErrors) {
           errorReporter.report(new TypecheckingError("Cannot check number", expr));
         }
@@ -2195,7 +2195,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       var checker = myArendExtension.getLiteralTypechecker();
       if (checker != null) {
         int numberOfErrors = myErrorReporter.myErrorReporter.getErrorsNumber();
-        TypecheckingResult result = TypecheckingResult.fromChecked(checker.typecheckString(string, this, new ContextDataImpl(expr, Collections.emptyList(), null, expectedType, null)));
+        TypecheckingResult result = TypecheckingResult.fromChecked(checker.typecheckString(string, this, new ContextDataImpl(expr, Collections.emptyList(), null, null, expectedType, null)));
         if (result == null && myErrorReporter.myErrorReporter.getErrorsNumber() == numberOfErrors) {
           errorReporter.report(new TypecheckingError("Cannot check string", expr));
         }

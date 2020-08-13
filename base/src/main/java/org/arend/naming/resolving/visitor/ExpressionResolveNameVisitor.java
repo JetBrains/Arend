@@ -202,7 +202,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
 
     MetaResolver metaDef = getMetaResolver(expr.getReferent());
     if (metaDef != null) {
-      return convertMetaResult(metaDef.resolvePrefix(this, new ContextDataImpl(expr, argument == null ? Collections.emptyList() : Collections.singletonList(new Concrete.Argument(argument, false)), null, null, null)), expr, Collections.emptyList());
+      return convertMetaResult(metaDef.resolvePrefix(this, new ContextDataImpl(expr, argument == null ? Collections.emptyList() : Collections.singletonList(new Concrete.Argument(argument, false)), null, null, null, null)), expr, Collections.emptyList());
     }
 
     return argument == null ? expr : Concrete.AppExpression.make(expr.getData(), expr, argument, false);
@@ -221,7 +221,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     return (Concrete.Expression) expr;
   }
 
-  public Concrete.Expression visitMeta(Concrete.Expression function, List<Concrete.Argument> arguments, List<Concrete.ClassFieldImpl> coclauses) {
+  private Concrete.Expression visitMeta(Concrete.Expression function, List<Concrete.Argument> arguments, List<Concrete.ClassFieldImpl> coclauses) {
     Concrete.ReferenceExpression refExpr;
     if (function instanceof Concrete.AppExpression && ((Concrete.AppExpression) function).getFunction() instanceof Concrete.ReferenceExpression) {
       refExpr = (Concrete.ReferenceExpression) ((Concrete.AppExpression) function).getFunction();
@@ -235,7 +235,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     }
 
     MetaResolver metaDef = refExpr == null ? null : getMetaResolver(refExpr.getReferent());
-    return metaDef == null ? null : convertMetaResult(metaDef.resolvePrefix(this, new ContextDataImpl(refExpr, arguments, coclauses, null, null)), refExpr, arguments);
+    return metaDef == null ? null : convertMetaResult(metaDef.resolvePrefix(this, new ContextDataImpl(refExpr, arguments, coclauses, null, null, null)), refExpr, arguments);
   }
 
   @Override
@@ -258,10 +258,10 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   }
 
   private Concrete.Expression visitBinOpSequence(Object data, Concrete.BinOpSequenceExpression expr, List<Concrete.ClassFieldImpl> coclauses) {
-    if (expr.getSequence().isEmpty()) {
+    if (expr.getSequence().isEmpty() && expr.getClauses() == null) {
       return visitClassExt(data, expr, coclauses);
     }
-    if (expr.getSequence().size() == 1) {
+    if (expr.getSequence().size() == 1 && expr.getClauses() == null) {
       return visitClassExt(data, expr.getSequence().get(0).expression.accept(this, null), coclauses);
     }
 
@@ -294,6 +294,9 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     }
 
     if (!hasMeta) {
+      if (expr.getClauses() != null) {
+        myErrorReporter.report(new NameResolverError("Unexpected list of clauses", expr));
+      }
       for (int i = 0; i < resolvedRefs.size(); i++) {
         finalizeReference(expr.getSequence().get(i), resolvedRefs.get(i));
       }
