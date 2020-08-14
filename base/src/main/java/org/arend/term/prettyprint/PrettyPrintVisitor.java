@@ -64,8 +64,16 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       visitClassFieldImpl((Concrete.ClassFieldImpl) node);
       return true;
     }
+    if (node instanceof Concrete.Coclauses) {
+      visitCoclauses((Concrete.Coclauses) node);
+      return true;
+    }
     if (node instanceof Concrete.FunctionClause) {
       prettyPrintFunctionClause((Concrete.FunctionClause) node);
+      return true;
+    }
+    if (node instanceof Concrete.FunctionClauses) {
+      prettyPrintFunctionClauses((Concrete.FunctionClauses) node);
       return true;
     }
     if (node instanceof Concrete.ConstructorClause) {
@@ -751,6 +759,18 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     }
   }
 
+  private void prettyPrintFunctionClauses(Concrete.FunctionClauses clauses) {
+    myBuilder.append("\\with {");
+    if (!clauses.getClauseList().isEmpty()) {
+      myIndent += INDENT;
+      for (Concrete.FunctionClause clause : clauses.getClauseList()) {
+        prettyPrintFunctionClause(clause);
+      }
+      myIndent -= INDENT;
+    }
+    myBuilder.append("}");
+  }
+
   public void prettyPrintFunctionClause(final Concrete.FunctionClause clause) {
     if (clause == null) return;
 
@@ -869,35 +889,35 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   public Void visitClassExt(Concrete.ClassExtExpression expr, Precedence prec) {
     if (prec.priority > Concrete.ClassExtExpression.PREC) myBuilder.append('(');
     expr.getBaseClassExpression().accept(this, new Precedence(Concrete.ClassExtExpression.PREC));
-    myBuilder.append(" {");
-    visitClassFieldImpls(expr.getStatements());
-    myBuilder.append("\n");
-    printIndent();
-    myBuilder.append("}");
+    myBuilder.append(" ");
+    visitCoclauses(expr.getCoclauses());
     if (prec.priority > Concrete.ClassExtExpression.PREC) myBuilder.append(')');
     return null;
   }
 
-  private void visitClassFieldImpls(Collection<? extends Concrete.ClassFieldImpl> classFieldImpls) {
-    myIndent += INDENT;
-    for (Concrete.ClassFieldImpl classFieldImpl : classFieldImpls) {
+  private void visitCoclauses(Concrete.Coclauses coclauses) {
+    myBuilder.append("{");
+    if (coclauses != null && !coclauses.getCoclauseList().isEmpty()) {
+      myIndent += INDENT;
+      for (Concrete.ClassFieldImpl classFieldImpl : coclauses.getCoclauseList()) {
+        myBuilder.append("\n");
+        printIndent();
+        myBuilder.append("| ");
+        visitClassFieldImpl(classFieldImpl);
+      }
+      myIndent -= INDENT;
       myBuilder.append("\n");
       printIndent();
-      myBuilder.append("| ");
-      visitClassFieldImpl(classFieldImpl);
     }
-    myIndent -= INDENT;
+    myBuilder.append("}");
   }
 
   private void visitClassFieldImpl(Concrete.ClassFieldImpl classFieldImpl) {
     String name = classFieldImpl.getImplementedField() == null ? "_" : classFieldImpl.getImplementedField().textRepresentation();
     myBuilder.append(name);
     if (classFieldImpl.implementation == null) {
-      myBuilder.append(" {");
-      visitClassFieldImpls(classFieldImpl.getSubCoclauseList());
-      myBuilder.append("\n");
-      printIndent();
-      myBuilder.append("}");
+      myBuilder.append(" ");
+      visitCoclauses(classFieldImpl.getSubCoclauses());
     } else {
       myBuilder.append(" => ");
       classFieldImpl.implementation.accept(this, new Precedence(Expression.PREC));

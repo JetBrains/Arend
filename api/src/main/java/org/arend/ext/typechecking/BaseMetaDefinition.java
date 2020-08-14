@@ -125,13 +125,13 @@ public abstract class BaseMetaDefinition implements MetaDefinition {
 
     if (contextData.getCoclauses() != null) {
       if (!(contextData.getCoclauses().getCoclauseList().isEmpty() && allowEmptyCoclauses() || !contextData.getCoclauses().getCoclauseList().isEmpty() && allowCoclauses())) {
-        errorReporter.report(new TypecheckingError("Coclauses are not allowed", contextData.getReferenceExpression()));
+        errorReporter.report(new TypecheckingError("Coclauses are not allowed here", contextData.getCoclauses()));
         ok = false;
       }
     }
 
-    if (contextData.getClauses() != null && !allowCoclauses()) {
-      errorReporter.report(new TypecheckingError("Clauses are not allowed", contextData.getReferenceExpression()));
+    if (contextData.getClauses() != null && !allowClauses()) {
+      errorReporter.report(new TypecheckingError("Clauses are not allowed here", contextData.getClauses()));
       ok = false;
     }
 

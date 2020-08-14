@@ -525,20 +525,24 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   }
 
   private Concrete.Expression makeBinOpSequence(Object data, Concrete.Expression left, Collection<? extends Abstract.BinOpSequenceElem> sequence, Abstract.FunctionClauses clauses) {
-    if (sequence.isEmpty()) {
+    if (sequence.isEmpty() && clauses == null) {
       return left;
     }
 
-    List<Concrete.BinOpSequenceElem> elems = new ArrayList<>(sequence.size());
-    elems.add(new Concrete.BinOpSequenceElem(left));
+    List<Concrete.BinOpSequenceElem> elems = new ArrayList<>();
+    if (left instanceof Concrete.BinOpSequenceExpression && ((Concrete.BinOpSequenceExpression) left).getClauses() == null) {
+      elems.addAll(((Concrete.BinOpSequenceExpression) left).getSequence());
+    } else {
+      elems.add(new Concrete.BinOpSequenceElem(left));
+    }
+
     for (Abstract.BinOpSequenceElem elem : sequence) {
       Abstract.Expression arg = elem.getExpression();
-      if (arg == null) {
-        continue;
+      if (arg != null) {
+        elems.add(new Concrete.BinOpSequenceElem(arg.accept(this, null), elem.isVariable() ? Fixity.UNKNOWN : Fixity.NONFIX, elem.isExplicit()));
       }
-
-      elems.add(new Concrete.BinOpSequenceElem(arg.accept(this, null), elem.isVariable() ? Fixity.UNKNOWN : Fixity.NONFIX, elem.isExplicit()));
     }
+
     return new Concrete.BinOpSequenceExpression(data, elems, clauses == null ? null : new Concrete.FunctionClauses(clauses.getData(), buildClauses(clauses.getClauseList())));
   }
 

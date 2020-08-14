@@ -152,6 +152,7 @@ public class MetaBinOpParser {
       List<Concrete.Argument> resultArgs = binOpSeqToArgs(sequence, start, minIndex);
       List<Concrete.Argument> args = binOpSeqToArgs(sequence, minIndex + 1, end);
       resultArgs.addAll(args);
+      myVisitor.getErrorReporter().resetErrorsNumber();
       if (sequence.get(minIndex).fixity == Fixity.POSTFIX) {
         metaResult = minMeta.resolvePostfix(myVisitor, new ContextDataImpl(refExpr, args, null, null, null, null), leftArg);
       } else {

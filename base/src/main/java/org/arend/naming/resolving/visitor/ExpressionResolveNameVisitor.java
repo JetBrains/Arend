@@ -1,6 +1,7 @@
 package org.arend.naming.resolving.visitor;
 
 import org.arend.core.context.Utils;
+import org.arend.error.CountingErrorReporter;
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
@@ -32,7 +33,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   private final Scope myParentScope;
   private final Scope myScope;
   private final List<Referable> myContext;
-  private final ErrorReporter myErrorReporter;
+  private final CountingErrorReporter myErrorReporter;
   private final ResolverListener myResolverListener;
 
   public ExpressionResolveNameVisitor(ReferableConverter referableConverter, Scope parentScope, Scope scope, List<Referable> context, ErrorReporter errorReporter, ResolverListener resolverListener) {
@@ -40,7 +41,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     myParentScope = parentScope;
     myScope = scope;
     myContext = context;
-    myErrorReporter = errorReporter;
+    myErrorReporter = new CountingErrorReporter(GeneralError.Level.ERROR, errorReporter);
     myResolverListener = resolverListener;
   }
 
@@ -49,7 +50,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   }
 
   @Override
-  public @NotNull ErrorReporter getErrorReporter() {
+  public @NotNull CountingErrorReporter getErrorReporter() {
     return myErrorReporter;
   }
 
@@ -169,8 +170,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     return ref instanceof MetaReferable ? ((MetaReferable) ref).getResolver() : null;
   }
 
-  @Override
-  public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Void params) {
+  private Concrete.Expression visitReference(Concrete.ReferenceExpression expr, boolean invokeMeta) {
     if (expr instanceof Concrete.FixityReferenceExpression) {
       Fixity fixity = ((Concrete.FixityReferenceExpression) expr).fixity;
       if (fixity == Fixity.INFIX || fixity == Fixity.POSTFIX) {
@@ -200,12 +200,20 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       argument = null;
     }
 
-    MetaResolver metaDef = getMetaResolver(expr.getReferent());
-    if (metaDef != null) {
-      return convertMetaResult(metaDef.resolvePrefix(this, new ContextDataImpl(expr, argument == null ? Collections.emptyList() : Collections.singletonList(new Concrete.Argument(argument, false)), null, null, null, null)), expr, Collections.emptyList());
+    if (invokeMeta) {
+      MetaResolver metaDef = getMetaResolver(expr.getReferent());
+      if (metaDef != null) {
+        myErrorReporter.resetErrorsNumber();
+        return convertMetaResult(metaDef.resolvePrefix(this, new ContextDataImpl(expr, argument == null ? Collections.emptyList() : Collections.singletonList(new Concrete.Argument(argument, false)), null, null, null, null)), expr, Collections.emptyList());
+      }
     }
 
     return argument == null ? expr : Concrete.AppExpression.make(expr.getData(), expr, argument, false);
+  }
+
+  @Override
+  public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Void params) {
+    return visitReference(expr, true);
   }
 
   public Concrete.Expression convertMetaResult(ConcreteExpression expr, Concrete.ReferenceExpression refExpr, List<Concrete.Argument> args) {
@@ -213,7 +221,9 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       throw new IllegalArgumentException();
     }
     if (expr == null) {
-      myErrorReporter.report(new NameResolverError("Meta '" + refExpr.getReferent().getRefName() + "' failed", refExpr));
+      if (myErrorReporter.getErrorsNumber() == 0) {
+        myErrorReporter.report(new NameResolverError("Meta '" + refExpr.getReferent().getRefName() + "' failed", refExpr));
+      }
       return new Concrete.ErrorHoleExpression(refExpr.getData(), null);
     }
     if (myResolverListener != null) {
@@ -236,12 +246,16 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     }
 
     MetaResolver metaDef = refExpr == null ? null : getMetaResolver(refExpr.getReferent());
-    return metaDef == null ? null : convertMetaResult(metaDef.resolvePrefix(this, new ContextDataImpl(refExpr, arguments, coclauses, null, null, null)), refExpr, arguments);
+    if (metaDef == null) {
+      return null;
+    }
+    myErrorReporter.resetErrorsNumber();
+    return convertMetaResult(metaDef.resolvePrefix(this, new ContextDataImpl(refExpr, arguments, coclauses, null, null, null)), refExpr, arguments);
   }
 
   @Override
   public Concrete.Expression visitApp(Concrete.AppExpression expr, Void params) {
-    Concrete.Expression function = expr.getFunction().accept(this, null);
+    Concrete.Expression function = expr.getFunction() instanceof Concrete.ReferenceExpression ? visitReference((Concrete.ReferenceExpression) expr.getFunction(), false) : expr.getFunction().accept(this, null);
     Concrete.Expression metaResult = visitMeta(function, expr.getArguments(), null);
     return metaResult != null ? metaResult : visitArguments(function, expr.getArguments());
   }
@@ -296,7 +310,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
 
     if (!hasMeta) {
       if (expr.getClauses() != null) {
-        myErrorReporter.report(new NameResolverError("Unexpected list of clauses", expr));
+        myErrorReporter.report(new NameResolverError("Clauses are not allowed here", expr.getClauses()));
       }
       for (int i = 0; i < resolvedRefs.size(); i++) {
         finalizeReference(expr.getSequence().get(i), resolvedRefs.get(i));
@@ -611,13 +625,14 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   public Concrete.Expression visitClassExt(Concrete.ClassExtExpression expr, Void params) {
     Concrete.Expression baseExpr = expr.getBaseClassExpression();
     if (baseExpr instanceof Concrete.ReferenceExpression) {
-      baseExpr = visitReference((Concrete.ReferenceExpression) baseExpr, null);
+      baseExpr = visitReference((Concrete.ReferenceExpression) baseExpr, false);
       Concrete.Expression metaResult = visitMeta(baseExpr, Collections.emptyList(), expr.getCoclauses());
       if (metaResult != null) {
         return metaResult;
       }
     } else if (baseExpr instanceof Concrete.AppExpression) {
-      Concrete.Expression function = ((Concrete.AppExpression) baseExpr).getFunction().accept(this, null);
+      Concrete.Expression function = ((Concrete.AppExpression) baseExpr).getFunction();
+      function = function instanceof Concrete.ReferenceExpression ? visitReference((Concrete.ReferenceExpression) function, false) : function.accept(this, null);
       Concrete.Expression metaResult = visitMeta(function, ((Concrete.AppExpression) baseExpr).getArguments(), expr.getCoclauses());
       if (metaResult != null) {
         return metaResult;
