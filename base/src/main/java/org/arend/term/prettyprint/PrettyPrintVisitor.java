@@ -894,7 +894,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     myBuilder.append(name);
     if (classFieldImpl.implementation == null) {
       myBuilder.append(" {");
-      visitClassFieldImpls(classFieldImpl.subClassFieldImpls);
+      visitClassFieldImpls(classFieldImpl.getSubCoclauseList());
       myBuilder.append("\n");
       printIndent();
       myBuilder.append("}");

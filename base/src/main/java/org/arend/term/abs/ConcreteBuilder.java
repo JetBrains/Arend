@@ -278,7 +278,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     return elimExpressions;
   }
 
-  private void buildImplementation(Object data, Abstract.ClassFieldImpl implementation, List<? super Concrete.ClassFieldImpl> implementations) {
+  private void buildImplementation(Object errorData, Abstract.ClassFieldImpl implementation, List<? super Concrete.ClassFieldImpl> implementations) {
     Object prec = implementation.getPrec();
     if (prec != null) {
       myErrorReporter.report(new ParsingError(ParsingError.Kind.PRECEDENCE_IGNORED, prec));
@@ -297,20 +297,20 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
         term = new Concrete.LamExpression(parameters.get(0).getData(), buildParameters(parameters, false), term);
       }
 
-      implementations.add(new Concrete.ClassFieldImpl(implementation.getData(), implementedField.getReferent(), term, Collections.emptyList()));
+      implementations.add(new Concrete.ClassFieldImpl(implementation.getData(), implementedField.getReferent(), term, null));
     } else {
       boolean hasImpl = implementation.hasImplementation();
       if (hasImpl) {
         myErrorLevel = GeneralError.Level.ERROR;
       }
-      implementations.add(new Concrete.ClassFieldImpl(implementation.getData(), implementedField.getReferent(), hasImpl ? new Concrete.ErrorHoleExpression(data, null) : null, buildImplementations(implementation.getData(), implementation.getCoClauseElements())));
+      implementations.add(new Concrete.ClassFieldImpl(implementation.getData(), implementedField.getReferent(), hasImpl ? new Concrete.ErrorHoleExpression(errorData, null) : null, new Concrete.Coclauses(implementation.getCoClauseData(), buildImplementations(implementation.getData(), implementation.getCoClauseElements()))));
     }
   }
 
-  private List<Concrete.ClassFieldImpl> buildImplementations(Object data, Collection<? extends Abstract.ClassFieldImpl> absImplementations) {
+  private List<Concrete.ClassFieldImpl> buildImplementations(Object errorData, Collection<? extends Abstract.ClassFieldImpl> absImplementations) {
     List<Concrete.ClassFieldImpl> implementations = new ArrayList<>();
     for (Abstract.ClassFieldImpl implementation : absImplementations) {
-      buildImplementation(data, implementation, implementations);
+      buildImplementation(errorData, implementation, implementations);
     }
     return implementations;
   }
@@ -524,7 +524,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     return new Concrete.SigmaExpression(data, buildTypeParameters(parameters, false));
   }
 
-  private Concrete.Expression makeBinOpSequence(Object data, Concrete.Expression left, Collection<? extends Abstract.BinOpSequenceElem> sequence, Collection<? extends Abstract.FunctionClause> clauses) {
+  private Concrete.Expression makeBinOpSequence(Object data, Concrete.Expression left, Collection<? extends Abstract.BinOpSequenceElem> sequence, Abstract.FunctionClauses clauses) {
     if (sequence.isEmpty()) {
       return left;
     }
@@ -539,7 +539,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
       elems.add(new Concrete.BinOpSequenceElem(arg.accept(this, null), elem.isVariable() ? Fixity.UNKNOWN : Fixity.NONFIX, elem.isExplicit()));
     }
-    return new Concrete.BinOpSequenceExpression(data, elems, clauses == null ? null : buildClauses(clauses));
+    return new Concrete.BinOpSequenceExpression(data, elems, clauses == null ? null : new Concrete.FunctionClauses(clauses.getData(), buildClauses(clauses.getClauseList())));
   }
 
   @Override
@@ -600,7 +600,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   }
 
   @Override
-  public Concrete.Expression visitClassExt(@Nullable Object data, boolean isNew, Abstract.@Nullable EvalKind evalKind, Abstract.@Nullable Expression baseClass, @Nullable Collection<? extends Abstract.ClassFieldImpl> implementations, @NotNull Collection<? extends Abstract.BinOpSequenceElem> sequence, @Nullable Collection<? extends Abstract.FunctionClause> clauses, Void params) {
+  public Concrete.Expression visitClassExt(@Nullable Object data, boolean isNew, Abstract.@Nullable EvalKind evalKind, Abstract.@Nullable Expression baseClass, @Nullable Object coclausesData, @Nullable Collection<? extends Abstract.ClassFieldImpl> implementations, @NotNull Collection<? extends Abstract.BinOpSequenceElem> sequence, @Nullable Abstract.FunctionClauses clauses, Void params) {
     if (baseClass == null) {
       myErrorLevel = GeneralError.Level.ERROR;
       return new Concrete.ErrorHoleExpression(data, null);
@@ -608,7 +608,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
     Concrete.Expression result = baseClass.accept(this, null);
     if (implementations != null) {
-      result = Concrete.ClassExtExpression.make(data, result, buildImplementations(data, implementations));
+      result = Concrete.ClassExtExpression.make(data, result, new Concrete.Coclauses(coclausesData, buildImplementations(data, implementations)));
     }
     if (evalKind != null) {
       result = new Concrete.EvalExpression(data, evalKind == Abstract.EvalKind.PEVAL, result);

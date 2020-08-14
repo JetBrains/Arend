@@ -596,7 +596,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       baseClassExpr = ((Concrete.AppExpression) baseClassExpr).getFunction();
     }
     if (baseClassExpr instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) baseClassExpr).getReferent() instanceof MetaReferable) {
-      return checkMeta((Concrete.ReferenceExpression) baseClassExpr, expr.getBaseClassExpression() instanceof Concrete.AppExpression ? ((Concrete.AppExpression) expr.getBaseClassExpression()).getArguments() : Collections.emptyList(), expr.getStatements(), expectedType);
+      return checkMeta((Concrete.ReferenceExpression) baseClassExpr, expr.getBaseClassExpression() instanceof Concrete.AppExpression ? ((Concrete.AppExpression) expr.getBaseClassExpression()).getArguments() : Collections.emptyList(), expr.getCoclauses(), expectedType);
     }
 
     baseClassExpr = desugarClassApp(expr.getBaseClassExpression(), false);
@@ -815,7 +815,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
         baseClassExpr = ((Concrete.AppExpression) baseClassExpr).getFunction();
       }
       if (baseClassExpr instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) baseClassExpr).getReferent() instanceof MetaReferable) {
-        return checkMeta((Concrete.ReferenceExpression) baseClassExpr, classExt.getBaseClassExpression() instanceof Concrete.AppExpression ? ((Concrete.AppExpression) classExt.getBaseClassExpression()).getArguments() : Collections.emptyList(), classExt.getStatements(), expectedType);
+        return checkMeta((Concrete.ReferenceExpression) baseClassExpr, classExt.getBaseClassExpression() instanceof Concrete.AppExpression ? ((Concrete.AppExpression) classExt.getBaseClassExpression()).getArguments() : Collections.emptyList(), classExt.getCoclauses(), expectedType);
       }
     }
 
@@ -1942,7 +1942,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     }
   }
 
-  private TypecheckingResult checkMeta(Concrete.ReferenceExpression refExpr, List<Concrete.Argument> arguments, List<Concrete.ClassFieldImpl> coclauses, Expression expectedType) {
+  private TypecheckingResult checkMeta(Concrete.ReferenceExpression refExpr, List<Concrete.Argument> arguments, Concrete.Coclauses coclauses, Expression expectedType) {
     MetaDefinition meta = ((MetaReferable) refExpr.getReferent()).getDefinition();
     if (meta == null) {
       errorReporter.report(new TypecheckingError("Meta '" + refExpr.getReferent().getRefName() + "' is empty", refExpr));
@@ -2026,9 +2026,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
 
       Concrete.Expression argument = arguments.get(i).expression;
       if (fieldExplicit == arguments.get(i).isExplicit()) {
-        classFieldImpls.add(new Concrete.ClassFieldImpl(argument.getData(), field.getReferable(), argument, Collections.emptyList()));
+        classFieldImpls.add(new Concrete.ClassFieldImpl(argument.getData(), field.getReferable(), argument, null));
       } else {
-        classFieldImpls.add(new Concrete.ClassFieldImpl(argument.getData(), field.getReferable(), new Concrete.HoleExpression(argument.getData()), Collections.emptyList()));
+        classFieldImpls.add(new Concrete.ClassFieldImpl(argument.getData(), field.getReferable(), new Concrete.HoleExpression(argument.getData()), null));
         i--;
       }
     }
@@ -2062,7 +2062,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
           break;
         }
 
-        classFieldImpls.add(new Concrete.ClassFieldImpl(data, field.getReferable(), new Concrete.HoleExpression(data), Collections.emptyList()));
+        classFieldImpls.add(new Concrete.ClassFieldImpl(data, field.getReferable(), new Concrete.HoleExpression(data), null));
       }
     }
 
@@ -2076,15 +2076,15 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
         }
         Referable argRef = new LocalReferable(field.getName());
         lamParams.add(new Concrete.NameParameter(fun.getData(), param.isExplicit(), argRef));
-        classFieldImpls.add(new Concrete.ClassFieldImpl(data, field.getReferable(), new Concrete.ReferenceExpression(data, argRef), Collections.emptyList()));
+        classFieldImpls.add(new Concrete.ClassFieldImpl(data, field.getReferable(), new Concrete.ReferenceExpression(data, argRef), null));
         j++;
       }
       if (lamParams != null) {
-        return new Concrete.LamExpression(expr.getData(), lamParams, Concrete.ClassExtExpression.make(expr.getData(), fun, classFieldImpls));
+        return new Concrete.LamExpression(expr.getData(), lamParams, Concrete.ClassExtExpression.make(expr.getData(), fun, new Concrete.Coclauses(expr.getData(), classFieldImpls)));
       }
     }
 
-    return classFieldImpls.isEmpty() ? fun : Concrete.ClassExtExpression.make(expr.getData(), fun, classFieldImpls);
+    return classFieldImpls.isEmpty() ? fun : Concrete.ClassExtExpression.make(expr.getData(), fun, new Concrete.Coclauses(expr.getData(), classFieldImpls));
   }
 
   @Override

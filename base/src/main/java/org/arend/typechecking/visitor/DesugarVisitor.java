@@ -56,7 +56,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
   }
 
   private Concrete.Expression makeThisClassCall(Object data, Referable classRef) {
-    return Concrete.ClassExtExpression.make(data, new Concrete.ReferenceExpression(data, classRef), Collections.emptyList());
+    return Concrete.ClassExtExpression.make(data, new Concrete.ReferenceExpression(data, classRef), new Concrete.Coclauses(data, Collections.emptyList()));
   }
 
   @Override
@@ -220,17 +220,19 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
     } else {
       boolean ok = true;
       if (classFieldImpl.getImplementedField() instanceof GlobalReferable && ((GlobalReferable) classFieldImpl.getImplementedField()).getKind() == GlobalReferable.Kind.CLASS) {
-        if (classFieldImpl.subClassFieldImpls.isEmpty()) {
+        if (classFieldImpl.getSubCoclauseList().isEmpty()) {
           myErrorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.REDUNDANT_COCLAUSE, classFieldImpl));
         }
-        for (Concrete.ClassFieldImpl subClassFieldImpl : classFieldImpl.subClassFieldImpls) {
+        for (Concrete.ClassFieldImpl subClassFieldImpl : classFieldImpl.getSubCoclauseList()) {
           visitClassFieldImpl(subClassFieldImpl, result);
         }
       } else if (classFieldImpl.classRef != null) {
-        visitClassElements(classFieldImpl.subClassFieldImpls, null);
+        visitClassElements(classFieldImpl.getSubCoclauseList(), null);
         Object data = classFieldImpl.getData();
-        classFieldImpl.implementation = new Concrete.NewExpression(data, Concrete.ClassExtExpression.make(data, new Concrete.ReferenceExpression(data, classFieldImpl.classRef), new ArrayList<>(classFieldImpl.subClassFieldImpls)));
-        classFieldImpl.subClassFieldImpls.clear();
+        classFieldImpl.implementation = new Concrete.NewExpression(data, Concrete.ClassExtExpression.make(data, new Concrete.ReferenceExpression(data, classFieldImpl.classRef), new Concrete.Coclauses(data, new ArrayList<>(classFieldImpl.getSubCoclauseList()))));
+        if (classFieldImpl.getSubCoclauses() != null) {
+          classFieldImpl.getSubCoclauseList().clear();
+        }
         result.add(classFieldImpl);
       } else {
         ok = classFieldImpl.getImplementedField() instanceof ErrorReference || classFieldImpl.getImplementedField() instanceof UnresolvedReference;

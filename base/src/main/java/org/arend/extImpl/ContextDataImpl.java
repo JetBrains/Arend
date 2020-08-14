@@ -3,7 +3,8 @@ package org.arend.extImpl;
 import org.arend.core.expr.Expression;
 import org.arend.ext.concrete.ConcreteClause;
 import org.arend.ext.concrete.expr.ConcreteArgument;
-import org.arend.ext.concrete.expr.ConcreteCoclause;
+import org.arend.ext.concrete.expr.ConcreteClauses;
+import org.arend.ext.concrete.expr.ConcreteCoclauses;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.typechecking.ContextData;
 import org.arend.term.concrete.Concrete;
@@ -15,12 +16,12 @@ import java.util.List;
 public class ContextDataImpl implements ContextData {
   private final Concrete.Expression myExpression;
   private List<? extends ConcreteArgument> myArguments;
-  private List<? extends ConcreteCoclause> myCoclauses;
-  private List<? extends ConcreteClause> myClauses;
+  private ConcreteCoclauses myCoclauses;
+  private ConcreteClauses myClauses;
   private Expression myExpectedType;
   private Object myUserData;
 
-  public ContextDataImpl(Concrete.Expression expression, List<? extends ConcreteArgument> arguments, List<? extends ConcreteCoclause> coclauses, List<? extends ConcreteClause> clauses, Expression expectedType, Object userData) {
+  public ContextDataImpl(Concrete.Expression expression, List<? extends ConcreteArgument> arguments, ConcreteCoclauses coclauses, ConcreteClauses clauses, Expression expectedType, Object userData) {
     myExpression = expression;
     myArguments = arguments;
     myCoclauses = coclauses;
@@ -52,22 +53,22 @@ public class ContextDataImpl implements ContextData {
   }
 
   @Override
-  public @Nullable List<? extends ConcreteCoclause> getCoclauses() {
+  public @Nullable ConcreteCoclauses getCoclauses() {
     return myCoclauses;
   }
 
   @Override
-  public void setCoclauses(List<? extends ConcreteCoclause> coclauses) {
+  public void setCoclauses(ConcreteCoclauses coclauses) {
     myCoclauses = coclauses;
   }
 
   @Override
-  public @Nullable List<? extends ConcreteClause> getClauses() {
+  public @Nullable ConcreteClauses getClauses() {
     return myClauses;
   }
 
   @Override
-  public void setClauses(@Nullable List<? extends ConcreteClause> clauses) {
+  public void setClauses(@Nullable ConcreteClauses clauses) {
     myClauses = clauses;
   }
 

@@ -51,6 +51,18 @@ public abstract class BaseMetaDefinition implements MetaDefinition {
     return !requireExpectedType();
   }
 
+  public boolean allowCoclauses() {
+    return false;
+  }
+
+  public boolean allowEmptyCoclauses() {
+    return false;
+  }
+
+  public boolean allowClauses() {
+    return false;
+  }
+
   private boolean checkArguments(@NotNull List<? extends ConcreteArgument> arguments, ErrorReporter errorReporter, ConcreteExpression marker) {
     boolean ok = true;
     boolean[] explicitness = argumentExplicitness();
@@ -110,6 +122,18 @@ public abstract class BaseMetaDefinition implements MetaDefinition {
     }
 
     boolean ok = checkArguments(contextData.getArguments(), errorReporter, contextData.getReferenceExpression());
+
+    if (contextData.getCoclauses() != null) {
+      if (!(contextData.getCoclauses().getCoclauseList().isEmpty() && allowEmptyCoclauses() || !contextData.getCoclauses().getCoclauseList().isEmpty() && allowCoclauses())) {
+        errorReporter.report(new TypecheckingError("Coclauses are not allowed", contextData.getReferenceExpression()));
+        ok = false;
+      }
+    }
+
+    if (contextData.getClauses() != null && !allowCoclauses()) {
+      errorReporter.report(new TypecheckingError("Clauses are not allowed", contextData.getReferenceExpression()));
+      ok = false;
+    }
 
     if (contextData.getExpectedType() == null && requireExpectedType()) {
       errorReporter.report(new TypecheckingError("Cannot infer the expected type", contextData.getReferenceExpression()));

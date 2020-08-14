@@ -103,7 +103,7 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
       elem.expression = elem.expression.accept(this, params);
     }
     if (expr.getClauses() != null) {
-      visitClauses(expr.getClauses(), params);
+      visitClauses(expr.getClauseList(), params);
     }
     return expr;
   }
@@ -189,7 +189,7 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
     if (classFieldImpl.implementation != null) {
       classFieldImpl.implementation = classFieldImpl.implementation.accept(this, params);
     }
-    visitClassElements(classFieldImpl.subClassFieldImpls, params);
+    visitClassElements(classFieldImpl.getSubCoclauseList(), params);
   }
 
   // except for fields

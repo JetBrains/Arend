@@ -1102,7 +1102,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     List<String> path = visitLongNamePath(ctx.longName());
     Position position = tokenPosition(ctx.start);
     Concrete.Expression term = null;
-    List<Concrete.ClassFieldImpl> subClassFieldImpls = Collections.emptyList();
+    List<Concrete.ClassFieldImpl> subClassFieldImpls = null;
     CoClauseBodyContext body = ctx.coClauseBody();
     CoClauseDefBodyContext defBody = ctx.coClauseDefBody();
 
@@ -1152,7 +1152,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       myErrorReporter.report(new ParserError(tokenPosition(ctx.precedence().start), "Precedence is ignored"));
     }
 
-    return new Concrete.ClassFieldImpl(position, LongUnresolvedReference.make(position, path), term, subClassFieldImpls);
+    return new Concrete.ClassFieldImpl(position, LongUnresolvedReference.make(position, path), term, subClassFieldImpls == null ? null : new Concrete.Coclauses(tokenPosition(body.start), subClassFieldImpls));
   }
 
   private List<Concrete.ClassFieldImpl> visitLocalCoClauses(List<LocalCoClauseContext> contexts) {
@@ -1170,7 +1170,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     List<TeleContext> teleCtxs = ctx.tele();
     List<Concrete.Parameter> parameters = visitLamTeles(teleCtxs, false);
     Concrete.Expression term = null;
-    List<Concrete.ClassFieldImpl> subClassFieldImpls = Collections.emptyList();
+    List<Concrete.ClassFieldImpl> subClassFieldImpls = null;
     ExprContext exprCtx = ctx.expr();
     if (exprCtx != null) {
       term = visitExpr(exprCtx);
@@ -1184,7 +1184,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       subClassFieldImpls = visitLocalCoClauses(ctx.localCoClause());
     }
 
-    return new Concrete.ClassFieldImpl(position, LongUnresolvedReference.make(position, path), term, subClassFieldImpls);
+    return new Concrete.ClassFieldImpl(position, LongUnresolvedReference.make(position, path), term, subClassFieldImpls == null ? null : new Concrete.Coclauses(tokenPosition(ctx.start), subClassFieldImpls));
   }
 
   private Concrete.LevelExpression parseTruncatedUniverse(TerminalNode terminal) {
@@ -1532,7 +1532,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     Concrete.Expression expr = visitNew(prefixCtx, appCtx, implCtx);
     if (!argumentCtxs.isEmpty() || body != null) {
       if (expr instanceof Concrete.BinOpSequenceExpression && argumentCtxs.isEmpty()) {
-        return new Concrete.BinOpSequenceExpression(expr.getData(), ((Concrete.BinOpSequenceExpression) expr).getSequence(), visitWithBody(body));
+        return new Concrete.BinOpSequenceExpression(expr.getData(), ((Concrete.BinOpSequenceExpression) expr).getSequence(), new Concrete.FunctionClauses(tokenPosition(body.start), visitWithBody(body)));
       }
 
       List<Concrete.BinOpSequenceElem> sequence = new ArrayList<>(argumentCtxs.size() + 1);
@@ -1540,7 +1540,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       for (ArgumentContext argCtx : argumentCtxs) {
         sequence.add(visitArgument(argCtx));
       }
-      return new Concrete.BinOpSequenceExpression(expr.getData(), sequence, body == null ? null : visitWithBody(body));
+      return new Concrete.BinOpSequenceExpression(expr.getData(), sequence, body == null ? null : new Concrete.FunctionClauses(tokenPosition(body.start), visitWithBody(body)));
     }
 
     return expr;
@@ -1560,7 +1560,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     Concrete.Expression expr = visitAppExpr(appCtx);
 
     if (implCtx != null) {
-      expr = Concrete.ClassExtExpression.make(tokenPosition(appCtx.start), expr, visitLocalCoClauses(implCtx.localCoClause()));
+      expr = Concrete.ClassExtExpression.make(tokenPosition(appCtx.start), expr, new Concrete.Coclauses(tokenPosition(implCtx.start), visitLocalCoClauses(implCtx.localCoClause())));
     }
 
     if (prefixCtx != null) {

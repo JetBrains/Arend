@@ -213,6 +213,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       throw new IllegalArgumentException();
     }
     if (expr == null) {
+      myErrorReporter.report(new NameResolverError("Meta '" + refExpr.getReferent().getRefName() + "' failed", refExpr));
       return new Concrete.ErrorHoleExpression(refExpr.getData(), null);
     }
     if (myResolverListener != null) {
@@ -221,7 +222,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     return (Concrete.Expression) expr;
   }
 
-  private Concrete.Expression visitMeta(Concrete.Expression function, List<Concrete.Argument> arguments, List<Concrete.ClassFieldImpl> coclauses) {
+  private Concrete.Expression visitMeta(Concrete.Expression function, List<Concrete.Argument> arguments, Concrete.Coclauses coclauses) {
     Concrete.ReferenceExpression refExpr;
     if (function instanceof Concrete.AppExpression && ((Concrete.AppExpression) function).getFunction() instanceof Concrete.ReferenceExpression) {
       refExpr = (Concrete.ReferenceExpression) ((Concrete.AppExpression) function).getFunction();
@@ -257,7 +258,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       return visitBinOpSequence(expr.getData(), expr, null);
   }
 
-  private Concrete.Expression visitBinOpSequence(Object data, Concrete.BinOpSequenceExpression expr, List<Concrete.ClassFieldImpl> coclauses) {
+  private Concrete.Expression visitBinOpSequence(Object data, Concrete.BinOpSequenceExpression expr, Concrete.Coclauses coclauses) {
     if (expr.getSequence().isEmpty() && expr.getClauses() == null) {
       return visitClassExt(data, expr, coclauses);
     }
@@ -571,11 +572,11 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     }
   }
 
-  public Concrete.Expression visitClassExt(Object data, Concrete.Expression baseExpr, List<Concrete.ClassFieldImpl> coclauses) {
+  public Concrete.Expression visitClassExt(Object data, Concrete.Expression baseExpr, Concrete.Coclauses coclauses) {
     if (coclauses == null) {
       return baseExpr;
     }
-    if (coclauses.isEmpty()) {
+    if (coclauses.getCoclauseList().isEmpty()) {
       return Concrete.ClassExtExpression.make(data, baseExpr, coclauses);
     }
 
@@ -597,7 +598,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     }
 
     if (classRef != null) {
-      visitClassFieldImpls(coclauses, classRef);
+      visitClassFieldImpls(coclauses.getCoclauseList(), classRef);
     } else {
       LocalError error = new NameResolverError("Expected a class or a class instance", baseExpr);
       myErrorReporter.report(error);
@@ -611,25 +612,25 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     Concrete.Expression baseExpr = expr.getBaseClassExpression();
     if (baseExpr instanceof Concrete.ReferenceExpression) {
       baseExpr = visitReference((Concrete.ReferenceExpression) baseExpr, null);
-      Concrete.Expression metaResult = visitMeta(baseExpr, Collections.emptyList(), expr.getStatements());
+      Concrete.Expression metaResult = visitMeta(baseExpr, Collections.emptyList(), expr.getCoclauses());
       if (metaResult != null) {
         return metaResult;
       }
     } else if (baseExpr instanceof Concrete.AppExpression) {
       Concrete.Expression function = ((Concrete.AppExpression) baseExpr).getFunction().accept(this, null);
-      Concrete.Expression metaResult = visitMeta(function, ((Concrete.AppExpression) baseExpr).getArguments(), expr.getStatements());
+      Concrete.Expression metaResult = visitMeta(function, ((Concrete.AppExpression) baseExpr).getArguments(), expr.getCoclauses());
       if (metaResult != null) {
         return metaResult;
       }
       baseExpr = visitArguments(function, ((Concrete.AppExpression) baseExpr).getArguments());
     } else if (baseExpr instanceof Concrete.BinOpSequenceExpression) {
-      return visitBinOpSequence(expr.getData(), (Concrete.BinOpSequenceExpression) baseExpr, expr.getStatements());
+      return visitBinOpSequence(expr.getData(), (Concrete.BinOpSequenceExpression) baseExpr, expr.getCoclauses());
     } else {
       baseExpr = expr.getBaseClassExpression().accept(this, null);
     }
 
     expr.setBaseClassExpression(baseExpr);
-    return visitClassExt(expr.getData(), baseExpr, expr.getStatements());
+    return visitClassExt(expr.getData(), baseExpr, expr.getCoclauses());
   }
 
   Referable visitClassFieldReference(Concrete.ClassElement element, Referable oldField, ClassReferable classDef) {
@@ -671,7 +672,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       }
       if (ref instanceof ClassReferable) {
         impl.classRef = myReferableConverter.toDataLocatedReferable((ClassReferable) ref);
-        visitClassFieldImpls(impl.subClassFieldImpls, (ClassReferable) ref);
+        visitClassFieldImpls(impl.getSubCoclauseList(), (ClassReferable) ref);
       }
     } else {
       impl.implementation = impl.implementation.accept(this, null);

@@ -1,11 +1,8 @@
 package org.arend.ext.typechecking;
 
 import org.arend.ext.concrete.ConcreteClause;
-import org.arend.ext.concrete.expr.ConcreteCoclause;
-import org.arend.ext.concrete.expr.ConcreteExpression;
+import org.arend.ext.concrete.expr.*;
 import org.arend.ext.core.expr.CoreExpression;
-import org.arend.ext.concrete.expr.ConcreteArgument;
-import org.arend.ext.concrete.expr.ConcreteReferenceExpression;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -39,16 +36,16 @@ public interface ContextData {
   /**
    * Returns the list of coclauses passed to the meta definition.
    */
-  @Nullable List<? extends ConcreteCoclause> getCoclauses();
+  @Nullable ConcreteCoclauses getCoclauses();
 
-  void setCoclauses(@Nullable List<? extends ConcreteCoclause> coclauses);
+  void setCoclauses(@Nullable ConcreteCoclauses coclauses);
 
   /**
    * Returns the list of clauses passed to the meta definition.
    */
-  @Nullable List<? extends ConcreteClause> getClauses();
+  @Nullable ConcreteClauses getClauses();
 
-  void setClauses(@Nullable List<? extends ConcreteClause> clauses);
+  void setClauses(@Nullable ConcreteClauses clauses);
 
   /**
    * Returns the expected type in the current context.

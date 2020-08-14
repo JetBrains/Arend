@@ -36,7 +36,7 @@ public class MetaBinOpParser {
   private Concrete.BinOpSequenceExpression myExpression;
   private final List<ResolvedReference> myResolvedReferences;
   private final List<Concrete.BinOpSequenceElem> myResult = new ArrayList<>();
-  private final List<Concrete.ClassFieldImpl> myCoclauses;
+  private final Concrete.Coclauses myCoclauses;
   private boolean myClausesHandled;
 
   // The sizes of myResolvedReferences and myExpression.getSequence() are the same.
@@ -44,7 +44,7 @@ public class MetaBinOpParser {
   // Non-null elements of myResolvedReferences are already resolved but not reported.
   // Thus, every such element must be either finalized by ExpressionResolveNameVisitor.finalizeReference or reset by resetReference and passed to a meta resolver.
 
-  public MetaBinOpParser(ExpressionResolveNameVisitor visitor, Concrete.BinOpSequenceExpression expr, List<ResolvedReference> resolvedReferences, List<Concrete.ClassFieldImpl> coclauses) {
+  public MetaBinOpParser(ExpressionResolveNameVisitor visitor, Concrete.BinOpSequenceExpression expr, List<ResolvedReference> resolvedReferences, Concrete.Coclauses coclauses) {
     this.myVisitor = visitor;
     this.myExpression = expr;
     this.myResolvedReferences = resolvedReferences;
