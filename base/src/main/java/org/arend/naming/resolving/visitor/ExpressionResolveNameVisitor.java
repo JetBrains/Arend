@@ -204,7 +204,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       MetaResolver metaDef = getMetaResolver(expr.getReferent());
       if (metaDef != null) {
         myErrorReporter.resetErrorsNumber();
-        return convertMetaResult(metaDef.resolvePrefix(this, new ContextDataImpl(expr, argument == null ? Collections.emptyList() : Collections.singletonList(new Concrete.Argument(argument, false)), null, null, null, null)), expr, Collections.emptyList());
+        return convertMetaResult(metaDef.resolvePrefix(this, new ContextDataImpl(expr, argument == null ? Collections.emptyList() : Collections.singletonList(new Concrete.Argument(argument, false)), null, null, null, null)), expr, Collections.emptyList(), null, null);
       }
     }
 
@@ -216,7 +216,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     return visitReference(expr, true);
   }
 
-  public Concrete.Expression convertMetaResult(ConcreteExpression expr, Concrete.ReferenceExpression refExpr, List<Concrete.Argument> args) {
+  public Concrete.Expression convertMetaResult(ConcreteExpression expr, Concrete.ReferenceExpression refExpr, List<Concrete.Argument> args, Concrete.Coclauses coclauses, Concrete.FunctionClauses clauses) {
     if (!(expr == null || expr instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }
@@ -227,7 +227,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       return new Concrete.ErrorHoleExpression(refExpr.getData(), null);
     }
     if (myResolverListener != null) {
-      myResolverListener.metaResolved(refExpr, args, (Concrete.Expression) expr);
+      myResolverListener.metaResolved(refExpr, args, (Concrete.Expression) expr, coclauses, clauses);
     }
     return (Concrete.Expression) expr;
   }
@@ -250,7 +250,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       return null;
     }
     myErrorReporter.resetErrorsNumber();
-    return convertMetaResult(metaDef.resolvePrefix(this, new ContextDataImpl(refExpr, arguments, coclauses, null, null, null)), refExpr, arguments);
+    return convertMetaResult(metaDef.resolvePrefix(this, new ContextDataImpl(refExpr, arguments, coclauses, null, null, null)), refExpr, arguments, coclauses, null);
   }
 
   @Override

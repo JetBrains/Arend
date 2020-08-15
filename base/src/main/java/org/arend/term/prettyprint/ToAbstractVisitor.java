@@ -660,20 +660,24 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     } else if (pattern == EmptyPattern.INSTANCE) {
       patterns.add(cEmptyPattern(isExplicit));
     } else {
-      List<Concrete.Pattern> subPatterns = new ArrayList<>();
       Definition def = pattern.getDefinition();
-      DependentLink param = def == null ? null : def.getParameters();
-      for (Pattern subPattern : pattern.getSubPatterns()) {
-        visitElimPattern(subPattern, param == null || param.isExplicit(), subPatterns);
-        if (param != null && param.hasNext()) {
-          param = param.getNext();
-        }
-      }
-
-      if (pattern.getDefinition() == null) {
-        patterns.add(cTuplePattern(isExplicit, subPatterns));
+      if (def == Prelude.ZERO) {
+        patterns.add(new Concrete.NumberPattern(null, 0, Collections.emptyList()));
       } else {
-        patterns.add(cConPattern(isExplicit, pattern.getDefinition().getReferable(), subPatterns));
+        List<Concrete.Pattern> subPatterns = new ArrayList<>();
+        DependentLink param = def == null ? null : def.getParameters();
+        for (Pattern subPattern : pattern.getSubPatterns()) {
+          visitElimPattern(subPattern, param == null || param.isExplicit(), subPatterns);
+          if (param != null && param.hasNext()) {
+            param = param.getNext();
+          }
+        }
+
+        if (pattern.getDefinition() == null) {
+          patterns.add(cTuplePattern(isExplicit, subPatterns));
+        } else {
+          patterns.add(cConPattern(isExplicit, pattern.getDefinition().getReferable(), subPatterns));
+        }
       }
     }
   }

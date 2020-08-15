@@ -123,7 +123,7 @@ public class MetaBinOpParser {
           args.add(new Concrete.Argument(sequence.get(i).expression, sequence.get(i).isExplicit));
         }
         myClausesHandled = true;
-        myResult.add(new Concrete.BinOpSequenceElem(myVisitor.convertMetaResult(meta.resolvePrefix(myVisitor, new ContextDataImpl(firstRef.refExpr, args, null, myExpression.getClauses(), null, null)), firstRef.refExpr, args)));
+        myResult.add(new Concrete.BinOpSequenceElem(myVisitor.convertMetaResult(meta.resolvePrefix(myVisitor, new ContextDataImpl(firstRef.refExpr, args, null, myExpression.getClauses(), null, null)), firstRef.refExpr, args, null, myExpression.getClauses())));
       } else {
         for (int i = start; i < end; i++) {
           myVisitor.finalizeReference(sequence.get(i), myResolvedReferences.get(i));
@@ -166,7 +166,7 @@ public class MetaBinOpParser {
         }
         metaResult = minMeta.resolveInfix(myVisitor, new ContextDataImpl(refExpr, implicitArgs, null, null, null, null), leftArg, minIndex + 1 == end ? null : new Concrete.BinOpSequenceExpression(myExpression.getData(), sequence.subList(i + 1, end), null));
       }
-      myResult.add(new Concrete.BinOpSequenceElem(myVisitor.convertMetaResult(metaResult, refExpr, resultArgs)));
+      myResult.add(new Concrete.BinOpSequenceElem(myVisitor.convertMetaResult(metaResult, refExpr, resultArgs, null, null)));
     } else {
       parse(start, minIndex);
       myVisitor.finalizeReference(sequence.get(minIndex), myResolvedReferences.get(minIndex));
