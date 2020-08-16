@@ -29,12 +29,8 @@ public class RecreateExpressionVisitor extends SubstVisitor {
   }
 
   @Override
-  public Expression visitConCall(ConCallExpression expr, Void params) {
-    Expression result = UncheckedExpressionImpl.extract(myMapper.map(expr));
-    if (result != null) {
-      return result;
-    }
-    return super.visitConCall(expr, params);
+  public Expression preVisitConCall(ConCallExpression expr, Void params) {
+    return UncheckedExpressionImpl.extract(myMapper.map(expr));
   }
 
   @Override
