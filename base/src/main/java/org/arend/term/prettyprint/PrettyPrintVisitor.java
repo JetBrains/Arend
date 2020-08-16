@@ -758,8 +758,10 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     if (!clauses.getClauseList().isEmpty()) {
       myIndent += INDENT;
       for (Concrete.FunctionClause clause : clauses.getClauseList()) {
+        myBuilder.append("\n");
         prettyPrintFunctionClause(clause);
       }
+      myBuilder.append("\n");
       myIndent -= INDENT;
     }
     myBuilder.append("}");
