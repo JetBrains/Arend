@@ -26,6 +26,11 @@ public class LevelEquationsWrapper implements Equations {
   }
 
   @Override
+  public boolean solve(InferenceVariable var, Expression expr) {
+    return false;
+  }
+
+  @Override
   public boolean addEquation(Level level1, Level level2, CMP cmp, Concrete.SourceNode sourceNode) {
     return myEquations.addEquation(level1, level2, cmp, sourceNode);
   }

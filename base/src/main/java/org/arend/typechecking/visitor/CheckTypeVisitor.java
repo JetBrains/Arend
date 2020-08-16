@@ -26,8 +26,10 @@ import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.concrete.expr.ConcreteReferenceExpression;
 import org.arend.ext.core.context.CoreBinding;
+import org.arend.ext.core.context.CoreInferenceVariable;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.expr.CoreExpression;
+import org.arend.ext.core.expr.CoreInferenceReferenceExpression;
 import org.arend.ext.core.expr.UncheckedExpression;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
@@ -2265,6 +2267,22 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
 
       return action.apply(this);
     }
+  }
+
+  @Override
+  public boolean solveInferenceVariable(@NotNull CoreInferenceVariable variable, @NotNull CoreExpression expression) {
+    if (!(variable instanceof InferenceVariable && expression instanceof Expression) || variable instanceof MetaInferenceVariable) {
+      throw new IllegalArgumentException();
+    }
+    return myEquations.solve((InferenceVariable) variable, (Expression) expression);
+  }
+
+  @Override
+  public @NotNull CoreInferenceReferenceExpression generateNewInferenceVariable(@NotNull String name, @NotNull CoreExpression type, @NotNull ConcreteSourceNode marker, boolean isSolvableFromEquations) {
+    if (!(type instanceof Expression && marker instanceof Concrete.SourceNode)) {
+      throw new IllegalArgumentException();
+    }
+    return new InferenceReferenceExpression(new UserInferenceVariable(name, (Expression) type, (Concrete.SourceNode) marker, getAllBindings(), isSolvableFromEquations));
   }
 
   @Override

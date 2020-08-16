@@ -148,7 +148,7 @@ public class TwoStageEquations implements Equations {
       if (cmp == CMP.EQ) {
         InferenceReferenceExpression infRef = cTypeExpr instanceof FieldCallExpression ? ((FieldCallExpression) cTypeExpr).getArgument().cast(InferenceReferenceExpression.class) : null;
         if (infRef == null || !(infRef.getVariable() instanceof TypeClassInferenceVariable)) {
-          if (solve(cInf, cType, false, cInf instanceof TypeClassInferenceVariable) != SolveResult.NOT_SOLVED) {
+          if (solve(cInf, cType, false, cInf instanceof TypeClassInferenceVariable, true) != SolveResult.NOT_SOLVED) {
             return true;
           }
         }
@@ -625,7 +625,7 @@ public class TwoStageEquations implements Equations {
     while (!myProps.isEmpty()) {
       InferenceVariable var = myProps.pop();
       if (!var.isSolved()) {
-        solve(var, new UniverseExpression(Sort.PROP), false, false);
+        solve(var, new UniverseExpression(Sort.PROP), false, false, true);
       }
     }
 
@@ -999,14 +999,22 @@ public class TwoStageEquations implements Equations {
     return sol;
   }
 
+  @Override
+  public boolean solve(InferenceVariable var, Expression expr) {
+    return solve(var, expr, false, false, false) == SolveResult.SOLVED;
+  }
+
   private enum SolveResult { SOLVED, NOT_SOLVED, ERROR }
 
   private SolveResult solve(InferenceVariable var, Expression expr, boolean isLowerBound) {
-    return solve(var, expr, isLowerBound, false);
+    return solve(var, expr, isLowerBound, false, true);
   }
 
-  private SolveResult solve(InferenceVariable var, Expression expr, boolean isLowerBound, boolean trySolve) {
-    assert var.isSolvableFromEquations();
+  private SolveResult solve(InferenceVariable var, Expression expr, boolean isLowerBound, boolean trySolve, boolean fromEquations) {
+    assert !fromEquations || var.isSolvableFromEquations();
+    if (var.isSolved()) {
+      return SolveResult.NOT_SOLVED;
+    }
 
     if (expr.getInferenceVariable() == var) {
       return SolveResult.SOLVED;
@@ -1017,7 +1025,7 @@ public class TwoStageEquations implements Equations {
       return SolveResult.ERROR;
     }
 
-    if (expr.findBinding(var)) {
+    if (fromEquations && expr.findBinding(var)) {
       return inferenceError(var, expr);
     }
 

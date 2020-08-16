@@ -28,6 +28,11 @@ public class DummyEquations implements Equations {
   }
 
   @Override
+  public boolean solve(InferenceVariable var, Expression expr) {
+    return false;
+  }
+
+  @Override
   public boolean addEquation(Level expr1, Level expr2, CMP cmp, Concrete.SourceNode sourceNode) {
     return false;
   }

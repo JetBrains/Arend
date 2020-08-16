@@ -2,8 +2,10 @@ package org.arend.ext.typechecking;
 
 import org.arend.ext.FreeBindingsModifier;
 import org.arend.ext.core.context.CoreBinding;
+import org.arend.ext.core.context.CoreInferenceVariable;
 import org.arend.ext.core.definition.CoreClassDefinition;
 import org.arend.ext.core.expr.CoreExpression;
+import org.arend.ext.core.expr.CoreInferenceReferenceExpression;
 import org.arend.ext.core.expr.UncheckedExpression;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.concrete.ConcreteSourceNode;
@@ -92,6 +94,27 @@ public interface ExpressionTypechecker {
    * Invokes the specified action with modified set of free bindings
    */
   <T> T withFreeBindings(@NotNull FreeBindingsModifier modifier, @NotNull Function<ExpressionTypechecker, T> action);
+
+  /**
+   * Solves an inference variable.
+   *
+   * @return true if the variable was successfully solved;
+   *         false is returned if the variable was solved before, if {@code expression} has a wrong type,
+   *         or if it has free variables that are not in the context of the variable.
+   */
+  boolean solveInferenceVariable(@NotNull CoreInferenceVariable variable, @NotNull CoreExpression expression);
+
+  /**
+   * Creates a new inference variable.
+   *
+   * @param name                      a name of the variable; used only for printing.
+   * @param type                      a type of the variable; when the variable is solved the type of the expression should match this type.
+   * @param marker                    a marked that is used to report errors related to this variable.
+   * @param isSolvableFromEquations   if true, then the variable can be solved by the equation solver;
+   *                                  otherwise, it must be explicitly solved by invoking {@link #solveInferenceVariable}
+   * @return a reference expression with a new inference variable.
+   */
+  @NotNull CoreInferenceReferenceExpression generateNewInferenceVariable(@NotNull String name, @NotNull CoreExpression type, @NotNull ConcreteSourceNode marker, boolean isSolvableFromEquations);
 
   /**
    * Searches for an instance of the specified class.
