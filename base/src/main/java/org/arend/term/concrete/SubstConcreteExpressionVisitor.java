@@ -144,12 +144,19 @@ public class SubstConcreteExpressionVisitor<P> implements ConcreteExpressionVisi
     if (expr.getSequence().size() == 1) {
       return expr.getSequence().get(0).expression.accept(this, params);
     }
+    var clauses = expr.getClauses();
 
+    var functionClauses = clauses == null ? null : new Concrete.FunctionClauses(
+      clauses.getData(),
+      clauses.getClauseList().stream()
+        .map(clause -> visitClause(clause, params))
+        .collect(Collectors.toList()));
     return new Concrete.BinOpSequenceExpression(
       expr.getData(),
       expr.getSequence().stream()
         .map(elem -> new Concrete.BinOpSequenceElem(elem.expression.accept(this, params), elem.fixity, elem.isExplicit))
-        .collect(Collectors.toList())
+        .collect(Collectors.toList()),
+      functionClauses
     );
   }
 
@@ -214,19 +221,24 @@ public class SubstConcreteExpressionVisitor<P> implements ConcreteExpressionVisi
 
   @Override
   public Concrete.Expression visitClassExt(Concrete.ClassExtExpression expr, P params) {
-    var statements = expr.getStatements().stream()
+    var coclauses = expr.getCoclauses();
+    var statements = coclauses.getCoclauseList().stream()
       .map(statement -> visitClassElement(statement, params))
       .collect(Collectors.toList());
-    return Concrete.ClassExtExpression.make(expr.getData(), expr.getBaseClassExpression().accept(this, params), statements);
+    var newCoclauses = new Concrete.Coclauses(coclauses.getData(), statements);
+    return Concrete.ClassExtExpression.make(expr.getData(), expr.getBaseClassExpression().accept(this, params), newCoclauses);
   }
 
   @SuppressWarnings("unchecked")
   protected <T extends Concrete.ClassElement> T visitClassElement(T element, P params) {
     if (Concrete.ClassFieldImpl.class.equals(element.getClass())) {
       var field = (Concrete.ClassFieldImpl) element;
-      var subClassFieldImpls = field.subClassFieldImpls.stream()
-        .map(classField -> visitClassElement(classField, params))
-        .collect(Collectors.toList());
+      var subCoclauses = field.getSubCoclauses();
+      var subClassFieldImpls = subCoclauses == null ? null : new Concrete.Coclauses(
+        subCoclauses.getData(),
+        subCoclauses.getCoclauseList().stream()
+          .map(classField -> visitClassElement(classField, params))
+          .collect(Collectors.toList()));
       return (T) new Concrete.ClassFieldImpl(element.getData(), field.getImplementedField(), field.implementation.accept(this, params), subClassFieldImpls);
     } else if (Concrete.ClassField.class.equals(element.getClass())) {
       var field = (Concrete.ClassField) element;
