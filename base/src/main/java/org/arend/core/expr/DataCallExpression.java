@@ -85,6 +85,16 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
   }
 
   @Override
+  public boolean computeMatchedConstructors(List<? super CoreConstructor> result) {
+    List<ConCallExpression> conCalls = new ArrayList<>();
+    boolean ok = getMatchedConstructors(conCalls);
+    for (ConCallExpression conCall : conCalls) {
+      result.add(conCall.getDefinition());
+    }
+    return ok;
+  }
+
+  @Override
   public @Nullable List<CoreConstructor> computeMatchedConstructors() {
     List<ConCallExpression> conCalls = getMatchedConstructors();
     if (conCalls == null) {
@@ -96,6 +106,16 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
       constructors.add(conCall.getDefinition());
     }
     return constructors;
+  }
+
+  @Override
+  public boolean computeMatchedConstructorsWithDataArguments(List<? super ConstructorWithDataArguments> result) {
+    List<ConCallExpression> conCalls = new ArrayList<>();
+    boolean ok = getMatchedConstructors(conCalls);
+    for (ConCallExpression conCall : conCalls) {
+      result.add(new ConstructorWithDataArguments(conCall.getDefinition(), conCall.getDataTypeArguments()));
+    }
+    return ok;
   }
 
   @Override
@@ -113,6 +133,16 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
   }
 
   @Override
+  public boolean computeMatchedConstructorsWithParameters(List<? super ConstructorWithParameters> result) {
+    List<ConCallExpression> conCalls = new ArrayList<>();
+    boolean ok = getMatchedConstructors(conCalls);
+    for (ConCallExpression conCall : conCalls) {
+      result.add(new ConstructorWithParameters(conCall.getDefinition(), conCall.getDataTypeArguments(), conCall.getDataTypeArguments().isEmpty() ? conCall.getDefinition().getParameters() : DependentLink.Helper.subst(conCall.getDefinition().getParameters(), new ExprSubstitution().add(getDefinition().getParameters(), conCall.getDataTypeArguments()))));
+    }
+    return ok;
+  }
+
+  @Override
   public @Nullable List<ConstructorWithParameters> computeMatchedConstructorsWithParameters() {
     List<ConCallExpression> conCalls = getMatchedConstructors();
     if (conCalls == null) {
@@ -124,6 +154,20 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
       constructors.add(new ConstructorWithParameters(conCall.getDefinition(), conCall.getDataTypeArguments(), conCall.getDataTypeArguments().isEmpty() ? conCall.getDefinition().getParameters() : DependentLink.Helper.subst(conCall.getDefinition().getParameters(), new ExprSubstitution().add(getDefinition().getParameters(), conCall.getDataTypeArguments()))));
     }
     return constructors;
+  }
+
+  public boolean getMatchedConstructors(List<ConCallExpression> result) {
+    if (getDefinition() == Prelude.PATH && getDefCallArguments().get(0).removeConstLam() != null && getDefCallArguments().get(1).areDisjointConstructors(getDefCallArguments().get(2))) {
+      return true;
+    }
+
+    boolean ok = true;
+    for (Constructor constructor : getDefinition().getConstructors()) {
+      if (!getMatchedConCall(constructor, result)) {
+        ok = false;
+      }
+    }
+    return ok;
   }
 
   public List<ConCallExpression> getMatchedConstructors() {

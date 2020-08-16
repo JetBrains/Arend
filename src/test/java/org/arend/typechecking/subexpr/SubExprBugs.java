@@ -79,7 +79,7 @@ public class SubExprBugs extends TypeCheckingTestCase {
     Concrete.FunctionDefinition concreteDef = (Concrete.FunctionDefinition) resolved.getDefinition();
     Concrete.ClassFieldImpl classField = (Concrete.ClassFieldImpl) concreteDef.getBody().getCoClauseElements().get(0);
     assertNotNull(classField);
-    Concrete.ClassFieldImpl implementation = classField.subClassFieldImpls.get(0);
+    Concrete.ClassFieldImpl implementation = classField.getSubCoclauseList().get(0);
     Pair<@NotNull Expression, Concrete.Expression> accept = concreteDef.accept(
         new CorrespondedSubDefVisitor(implementation.implementation), typeCheckDef(resolved));
     assertNotNull(accept);

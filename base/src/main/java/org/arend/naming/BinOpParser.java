@@ -44,7 +44,7 @@ public class BinOpParser {
       List<Concrete.BinOpSequenceElem> newSequence = new ArrayList<>(sequence.size() + 1);
       newSequence.add(new Concrete.BinOpSequenceElem(new Concrete.ReferenceExpression(expr.getData(), firstArg)));
       newSequence.addAll(sequence);
-      return new Concrete.LamExpression(expr.getData(), Collections.singletonList(new Concrete.NameParameter(expr.getData(), true, firstArg)), parse(new Concrete.BinOpSequenceExpression(expr.getData(), newSequence)));
+      return new Concrete.LamExpression(expr.getData(), Collections.singletonList(new Concrete.NameParameter(expr.getData(), true, firstArg)), parse(new Concrete.BinOpSequenceExpression(expr.getData(), newSequence, expr.getClauses())));
     }
 
     for (Concrete.BinOpSequenceElem elem : sequence) {

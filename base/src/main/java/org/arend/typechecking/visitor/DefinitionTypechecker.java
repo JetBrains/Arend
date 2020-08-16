@@ -737,7 +737,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         classFieldImpls.add((Concrete.ClassFieldImpl) element);
       } else if (element instanceof Concrete.CoClauseFunctionReference) {
         TCReferable ref = ((Concrete.CoClauseFunctionReference) element).getFunctionReference();
-        classFieldImpls.add(new Concrete.ClassFieldImpl(element.getData(), element.getImplementedField(), new Concrete.ReferenceExpression(ref.getData(), ref), Collections.emptyList()));
+        classFieldImpls.add(new Concrete.ClassFieldImpl(element.getData(), element.getImplementedField(), new Concrete.ReferenceExpression(ref.getData(), ref), null));
       } else {
         throw new IllegalStateException();
       }
@@ -760,7 +760,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
     } else {
       pseudoImplemented = Collections.emptySet();
-      result = typechecker.finalCheckExpr(Concrete.ClassExtExpression.make(def.getData(), typechecker.desugarClassApp(resultType, true), classFieldImpls), Type.OMEGA);
+      result = typechecker.finalCheckExpr(Concrete.ClassExtExpression.make(def.getData(), typechecker.desugarClassApp(resultType, true), new Concrete.Coclauses(def.getData(), classFieldImpls)), Type.OMEGA);
       if (result == null || !(result.expression instanceof ClassCallExpression)) {
         return null;
       }

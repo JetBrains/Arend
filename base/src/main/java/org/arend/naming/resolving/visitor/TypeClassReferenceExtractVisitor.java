@@ -73,7 +73,7 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
     }
 
     while (true) {
-      if (expr instanceof Concrete.BinOpSequenceExpression) {
+      if (expr instanceof Concrete.BinOpSequenceExpression && ((Concrete.BinOpSequenceExpression) expr).getClauses() == null) {
         List<Concrete.BinOpSequenceElem> binOpSeq = ((Concrete.BinOpSequenceExpression) expr).getSequence();
         Precedence minPrec = null;
         int index = -1;

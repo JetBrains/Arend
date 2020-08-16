@@ -469,7 +469,7 @@ public class CorrespondedSubExprVisitor implements
     else if (field instanceof NewExpression)
       return visitStatements(
           ((NewExpression) field).getClassCall().getImplementedHere(),
-          statement.subClassFieldImpls
+          statement.getSubCoclauseList()
       );
     else return nullWithError(new SubExprError(SubExprError.Kind.FieldNotFound));
   }

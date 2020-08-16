@@ -156,6 +156,12 @@ public class FreeReferablesVisitor implements ConcreteExpressionVisitor<Void, TC
         return ref;
       }
     }
+    for (Concrete.FunctionClause clause : expr.getClauseList()) {
+      TCReferable ref = visitClause(clause);
+      if (ref != null) {
+        return ref;
+      }
+    }
     return null;
   }
 
@@ -216,7 +222,7 @@ public class FreeReferablesVisitor implements ConcreteExpressionVisitor<Void, TC
     if (tcRef != null) {
       return tcRef;
     }
-    for (Concrete.ClassFieldImpl subFieldImpl : fieldImpl.subClassFieldImpls) {
+    for (Concrete.ClassFieldImpl subFieldImpl : fieldImpl.getSubCoclauseList()) {
       tcRef = visitClassFieldImpl(subFieldImpl);
       if (tcRef != null) {
         return tcRef;

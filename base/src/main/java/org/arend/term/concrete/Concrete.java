@@ -424,18 +424,43 @@ public final class Concrete {
     }
   }
 
+  public static class FunctionClauses extends SourceNodeImpl implements ConcreteClauses {
+    private final List<FunctionClause> myClauses;
+
+    public FunctionClauses(Object data, List<FunctionClause> clauses) {
+      super(data);
+      myClauses = clauses;
+    }
+
+    @NotNull
+    @Override
+    public List<FunctionClause> getClauseList() {
+      return myClauses;
+    }
+  }
+
   public static class BinOpSequenceExpression extends Expression {
     public static final byte PREC = 0;
     private final List<BinOpSequenceElem> mySequence;
+    private final FunctionClauses myClauses;
 
-    public BinOpSequenceExpression(Object data, List<BinOpSequenceElem> sequence) {
+    public BinOpSequenceExpression(Object data, List<BinOpSequenceElem> sequence, FunctionClauses clauses) {
       super(data);
       mySequence = sequence;
+      myClauses = clauses;
     }
 
     @NotNull
     public List<BinOpSequenceElem> getSequence() {
       return mySequence;
+    }
+
+    public FunctionClauses getClauses() {
+      return myClauses;
+    }
+
+    public List<FunctionClause> getClauseList() {
+      return myClauses == null ? Collections.emptyList() : myClauses.getClauseList();
     }
 
     @Override
@@ -585,23 +610,38 @@ public final class Concrete {
     }
   }
 
+  public static class Coclauses extends SourceNodeImpl implements ConcreteCoclauses {
+    private final List<ClassFieldImpl> myCoclauses;
+
+    public Coclauses(Object data, List<ClassFieldImpl> coclauses) {
+      super(data);
+      myCoclauses = coclauses;
+    }
+
+    @NotNull
+    @Override
+    public List<ClassFieldImpl> getCoclauseList() {
+      return myCoclauses;
+    }
+  }
+
   public static class ClassExtExpression extends Expression {
     public static final byte PREC = 11;
     private Expression myBaseClassExpression;
-    private final List<ClassFieldImpl> myDefinitions;
+    private final Coclauses myCoclauses;
 
-    private ClassExtExpression(Object data, Expression baseClassExpression, List<ClassFieldImpl> definitions) {
+    private ClassExtExpression(Object data, Expression baseClassExpression, Coclauses coclauses) {
       super(data);
       this.myBaseClassExpression = baseClassExpression;
-      myDefinitions = definitions;
+      myCoclauses = coclauses;
     }
 
-    public static ClassExtExpression make(Object data, Expression baseClassExpression, List<ClassFieldImpl> definitions) {
+    public static ClassExtExpression make(Object data, Expression baseClassExpression, Coclauses coclauses) {
       if (baseClassExpression instanceof ClassExtExpression) {
-        ((ClassExtExpression) baseClassExpression).getStatements().addAll(definitions);
+        ((ClassExtExpression) baseClassExpression).getStatements().addAll(coclauses.getCoclauseList());
         return (ClassExtExpression) baseClassExpression;
       } else {
-        return new ClassExtExpression(data, baseClassExpression, definitions);
+        return new ClassExtExpression(data, baseClassExpression, coclauses);
       }
     }
 
@@ -613,15 +653,19 @@ public final class Concrete {
     public void setBaseClassExpression(Expression baseClassExpression) {
       if (baseClassExpression instanceof ClassExtExpression) {
         myBaseClassExpression = ((ClassExtExpression) baseClassExpression).getBaseClassExpression();
-        myDefinitions.addAll(0, ((ClassExtExpression) baseClassExpression).myDefinitions);
+        myCoclauses.getCoclauseList().addAll(0, ((ClassExtExpression) baseClassExpression).myCoclauses.getCoclauseList());
       } else {
         myBaseClassExpression = baseClassExpression;
       }
     }
 
+    public Concrete.Coclauses getCoclauses() {
+      return myCoclauses;
+    }
+
     @NotNull
     public List<ClassFieldImpl> getStatements() {
-      return myDefinitions;
+      return myCoclauses.getCoclauseList();
     }
 
     @Override
@@ -667,17 +711,17 @@ public final class Concrete {
     }
   }
 
-  public static class ClassFieldImpl extends SourceNodeImpl implements CoClauseElement {
+  public static class ClassFieldImpl extends SourceNodeImpl implements CoClauseElement, ConcreteCoclause {
     private Referable myImplementedField;
     public Expression implementation;
     public TCReferable classRef; // the class of fields in subClassFieldImpls
-    public final List<ClassFieldImpl> subClassFieldImpls;
+    private final Coclauses mySubCoclauses;
 
-    public ClassFieldImpl(Object data, Referable implementedField, Expression implementation, List<ClassFieldImpl> subClassFieldImpls) {
+    public ClassFieldImpl(Object data, Referable implementedField, Expression implementation, Coclauses subCoclauses) {
       super(data);
       myImplementedField = implementedField;
       this.implementation = implementation;
-      this.subClassFieldImpls = subClassFieldImpls;
+      mySubCoclauses = subCoclauses;
     }
 
     @Override
@@ -688,6 +732,25 @@ public final class Concrete {
     @Override
     public void setImplementedField(Referable newImplementedField) {
       myImplementedField = newImplementedField;
+    }
+
+    @Override
+    public @NotNull Referable getImplementedRef() {
+      return myImplementedField;
+    }
+
+    @Override
+    public @Nullable Expression getImplementation() {
+      return implementation;
+    }
+
+    public List<ClassFieldImpl> getSubCoclauseList() {
+      return mySubCoclauses == null ? Collections.emptyList() : mySubCoclauses.getCoclauseList();
+    }
+
+    @Override
+    public @Nullable Coclauses getSubCoclauses() {
+      return mySubCoclauses;
     }
   }
 
@@ -1141,6 +1204,26 @@ public final class Concrete {
       this.type = type;
       isElim = true;
     }
+
+    @Override
+    public @NotNull ConcreteExpression getExpression() {
+      return expression;
+    }
+
+    @Override
+    public @Nullable ArendRef getAsRef() {
+      return referable;
+    }
+
+    @Override
+    public @Nullable ConcreteExpression getType() {
+      return type;
+    }
+
+    @Override
+    public boolean isElim() {
+      return isElim;
+    }
   }
 
   public static class CaseExpression extends Expression implements ConcreteCaseExpression {
@@ -1237,12 +1320,17 @@ public final class Concrete {
     }
   }
 
-  public static class FunctionClause extends Clause {
+  public static class FunctionClause extends Clause implements ConcreteClause {
     public Expression expression;
 
     public FunctionClause(Object data, List<Pattern> patterns, Expression expression) {
       super(data, patterns);
       this.expression = expression;
+    }
+
+    @Override
+    public @NotNull List<Pattern> getPatterns() {
+      return super.getPatterns();
     }
 
     @Override
@@ -2109,7 +2197,7 @@ public final class Concrete {
     }
   }
 
-  public static abstract class Clause extends SourceNodeImpl implements PatternHolder, ConcreteClause {
+  public static abstract class Clause extends SourceNodeImpl implements PatternHolder {
     private final List<Pattern> myPatterns;
 
     public Clause(Object data, List<Pattern> patterns) {

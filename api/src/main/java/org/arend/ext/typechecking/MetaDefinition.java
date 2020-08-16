@@ -35,7 +35,7 @@ public interface MetaDefinition {
   }
 
   /**
-   * Checks if this meta is applicable can be invoked on the given arguments.
+   * Checks if this meta is applicable to the given arguments.
    */
   default boolean checkArguments(@NotNull List<? extends ConcreteArgument> arguments) {
     return true;

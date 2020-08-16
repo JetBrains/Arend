@@ -95,12 +95,15 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
 
   @Override
   public Concrete.Expression visitBinOpSequence(Concrete.BinOpSequenceExpression expr, P params) {
-    if (expr.getSequence().size() == 1) {
+    if (expr.getSequence().size() == 1 && expr.getClauses() == null) {
       return expr.getSequence().get(0).expression.accept(this, params);
     }
 
     for (Concrete.BinOpSequenceElem elem : expr.getSequence()) {
       elem.expression = elem.expression.accept(this, params);
+    }
+    if (expr.getClauses() != null) {
+      visitClauses(expr.getClauseList(), params);
     }
     return expr;
   }
@@ -186,7 +189,7 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
     if (classFieldImpl.implementation != null) {
       classFieldImpl.implementation = classFieldImpl.implementation.accept(this, params);
     }
-    visitClassElements(classFieldImpl.subClassFieldImpls, params);
+    visitClassElements(classFieldImpl.getSubCoclauseList(), params);
   }
 
   // except for fields

@@ -59,6 +59,11 @@ public final class Abstract {
     @NotNull List<? extends Pattern> getPatterns();
   }
 
+  public interface FunctionClauses extends SourceNode {
+    @Nullable Object getData();
+    @NotNull List<? extends FunctionClause> getClauseList();
+  }
+
   public interface FunctionClause extends Clause {
     @Nullable Expression getExpression();
   }
@@ -162,6 +167,7 @@ public final class Abstract {
   }
 
   public interface ClassFieldImpl extends CoClauseElement, ParametersHolder, ClassReferenceHolder {
+    @Nullable Object getCoClauseData();
     @Override @NotNull Collection<? extends ClassFieldImpl> getCoClauseElements();
     @Nullable Object getData();
     @Nullable Object getPrec();

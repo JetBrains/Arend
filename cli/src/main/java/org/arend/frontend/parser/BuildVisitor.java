@@ -54,12 +54,12 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     if (!(expr instanceof AppContext)) {
       return false;
     }
-    NewExprContext newExpr = ((AppContext) expr).newExpr();
-    if (!(newExpr.appExpr() instanceof AppArgumentContext && newExpr.appPrefix() == null && newExpr.implementStatements() == null)) {
+    AppContext appExpr = (AppContext) expr;
+    if (!(appExpr.appExpr() instanceof AppArgumentContext && appExpr.appPrefix() == null && appExpr.implementStatements() == null)) {
       return false;
     }
 
-    ArgumentAppExprContext argCtx = ((AppArgumentContext) newExpr.appExpr()).argumentAppExpr();
+    ArgumentAppExprContext argCtx = ((AppArgumentContext) appExpr.appExpr()).argumentAppExpr();
     if (!argCtx.onlyLevelAtom().isEmpty()) {
       return false;
     }
@@ -108,6 +108,10 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   }
 
   public Concrete.Expression visitExpr(ExprContext expr) {
+    return (Concrete.Expression) visit(expr);
+  }
+
+  public Concrete.Expression visitExpr(Expr2Context expr) {
     return (Concrete.Expression) visit(expr);
   }
 
@@ -442,7 +446,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     DefIdContext defId = ctx.defId();
     Pair<String, Precedence> alias = visitAlias(defId.alias());
     ConcreteLocatedReferable reference = makeReferable(tokenPosition(defId.ID().getSymbol()), defId.ID().getText(), visitPrecedence(defId.precedence()), alias.proj1, alias.proj2, parent, isInstance ? LocatedReferableImpl.Kind.INSTANCE : GlobalReferable.Kind.DEFINED_CONSTRUCTOR);
-    Pair<Concrete.Expression,Concrete.Expression> returnPair = visitReturnExpr(ctx.returnExpr());
+    Pair<Concrete.Expression,Concrete.Expression> returnPair = visitReturnExpr(ctx.returnExpr2());
 
     List<Group> subgroups = new ArrayList<>();
     List<ChildNamespaceCommand> namespaceCommands = new ArrayList<>();
@@ -516,20 +520,38 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     }
   }
 
+  @Override
+  public Pair<Concrete.Expression,Concrete.Expression> visitReturnExprExpr(ReturnExprExprContext ctx) {
+    List<ExprContext> exprs = ctx.expr();
+    Concrete.Expression resultType = visitExpr(exprs.get(0));
+    return new Pair<>(resultType, exprs.size() > 1 ? visitExpr(exprs.get(1)) : null);
+  }
+
+  @Override
+  public Pair<Concrete.Expression,Concrete.Expression> visitReturnExprExpr2(ReturnExprExpr2Context ctx) {
+    List<Expr2Context> exprs = ctx.expr2();
+    Concrete.Expression resultType = visitExpr(exprs.get(0));
+    return new Pair<>(resultType, exprs.size() > 1 ? visitExpr(exprs.get(1)) : null);
+  }
+
+  @Override
+  public Pair<Concrete.Expression,Concrete.Expression> visitReturnExprLevel(ReturnExprLevelContext ctx) {
+    return new Pair<>(visitAtomFieldsAcc(ctx.atomFieldsAcc(0)), visitAtomFieldsAcc(ctx.atomFieldsAcc(1)));
+  }
+
+  @Override
+  public Pair<Concrete.Expression,Concrete.Expression> visitReturnExprLevel2(ReturnExprLevel2Context ctx) {
+    return new Pair<>(visitAtomFieldsAcc(ctx.atomFieldsAcc(0)), visitAtomFieldsAcc(ctx.atomFieldsAcc(1)));
+  }
+
   private Pair<Concrete.Expression,Concrete.Expression> visitReturnExpr(ReturnExprContext returnExprCtx) {
-    Concrete.Expression resultType = null;
-    Concrete.Expression resultTypeLevel = null;
-    if (returnExprCtx instanceof ReturnExprExprContext) {
-      List<ExprContext> exprs = ((ReturnExprExprContext) returnExprCtx).expr();
-      resultType = visitExpr(exprs.get(0));
-      if (exprs.size() > 1) {
-        resultTypeLevel = visitExpr(exprs.get(1));
-      }
-    } else if (returnExprCtx instanceof ReturnExprLevelContext) {
-      resultType = visitAtomFieldsAcc(((ReturnExprLevelContext) returnExprCtx).atomFieldsAcc(0));
-      resultTypeLevel = visitAtomFieldsAcc(((ReturnExprLevelContext) returnExprCtx).atomFieldsAcc(1));
-    }
-    return new Pair<>(resultType, resultTypeLevel);
+    //noinspection unchecked
+    return returnExprCtx == null ? new Pair<>(null, null) : (Pair<Concrete.Expression,Concrete.Expression>) visit(returnExprCtx);
+  }
+
+  private Pair<Concrete.Expression,Concrete.Expression> visitReturnExpr(ReturnExpr2Context returnExprCtx) {
+    //noinspection unchecked
+    return returnExprCtx == null ? new Pair<>(null, null) : (Pair<Concrete.Expression,Concrete.Expression>) visit(returnExprCtx);
   }
 
   private StaticGroup visitDefMeta(DefMetaContext ctx, ChildGroup parent, TCReferable enclosingClass) {
@@ -565,7 +587,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     List<Group> subgroups = new ArrayList<>();
     List<ChildNamespaceCommand> namespaceCommands = new ArrayList<>();
     StaticGroup resultGroup = new StaticGroup(referable, subgroups, namespaceCommands, parent);
-    Pair<Concrete.Expression,Concrete.Expression> returnPair = visitReturnExpr(ctx.returnExpr());
+    Pair<Concrete.Expression,Concrete.Expression> returnPair = visitReturnExpr(ctx.returnExpr2());
 
     List<CoClauseContext> coClauses = null;
     if (functionBodyCtx instanceof WithElimContext) {
@@ -611,7 +633,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
 
   private StaticGroup visitDefData(DefDataContext ctx, ChildGroup parent, TCReferable enclosingClass) {
     final Concrete.UniverseExpression universe;
-    ExprContext exprCtx = ctx.expr();
+    Expr2Context exprCtx = ctx.expr2();
     if (exprCtx != null) {
       Concrete.Expression expr = visitExpr(exprCtx);
       if (expr instanceof Concrete.UniverseExpression) {
@@ -898,13 +920,20 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return new Concrete.GoalExpression(tokenPosition(ctx.start), id == null ? null : id.getText(), exprCtx == null ? null : visitExpr(exprCtx));
   }
 
-  @Override
-  public Concrete.PiExpression visitArr(ArrContext ctx) {
-    Concrete.Expression domain = visitExpr(ctx.expr(0));
-    Concrete.Expression codomain = visitExpr(ctx.expr(1));
+  private Concrete.PiExpression visitArr(ParserRuleContext ctx, Concrete.Expression domain, Concrete.Expression codomain) {
     List<Concrete.TypeParameter> arguments = new ArrayList<>(1);
     arguments.add(new Concrete.TypeParameter(domain.getData(), true, domain));
     return new Concrete.PiExpression(tokenPosition(ctx.getToken(ARROW, 0).getSymbol()), arguments, codomain);
+  }
+
+  @Override
+  public Concrete.PiExpression visitArr(ArrContext ctx) {
+    return visitArr(ctx, visitExpr(ctx.expr(0)), visitExpr(ctx.expr(1)));
+  }
+
+  @Override
+  public Concrete.PiExpression visitArr2(Arr2Context ctx) {
+    return visitArr(ctx, visitExpr(ctx.expr2(0)), visitExpr(ctx.expr2(1)));
   }
 
   @Override
@@ -1003,6 +1032,11 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return new Concrete.LamExpression(tokenPosition(ctx.start), visitLamTeles(ctx.tele(), false), visitIncompleteExpression(ctx.expr(), ctx));
   }
 
+  @Override
+  public Concrete.LamExpression visitLam2(Lam2Context ctx) {
+    return new Concrete.LamExpression(tokenPosition(ctx.start), visitLamTeles(ctx.tele(), false), visitIncompleteExpression(ctx.expr2(), ctx));
+  }
+
   private Concrete.Expression visitAppExpr(AppExprContext ctx) {
     return (Concrete.Expression) visit(ctx);
   }
@@ -1052,7 +1086,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       sequence.add(visitArgument(argumentCtx));
     }
 
-    return new Concrete.BinOpSequenceExpression(expr.getData(), sequence);
+    return new Concrete.BinOpSequenceExpression(expr.getData(), sequence, null);
   }
 
   private Concrete.BinOpSequenceElem visitArgument(ArgumentContext ctx) {
@@ -1088,7 +1122,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     List<String> path = visitLongNamePath(ctx.longName());
     Position position = tokenPosition(ctx.start);
     Concrete.Expression term = null;
-    List<Concrete.ClassFieldImpl> subClassFieldImpls = Collections.emptyList();
+    List<Concrete.ClassFieldImpl> subClassFieldImpls = null;
     CoClauseBodyContext body = ctx.coClauseBody();
     CoClauseDefBodyContext defBody = ctx.coClauseDefBody();
 
@@ -1105,7 +1139,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       ConcreteLocatedReferable reference = makeReferable(position, path.get(path.size() - 1), visitPrecedence(ctx.precedence()), null, Precedence.DEFAULT, parentGroup, LocatedReferableImpl.Kind.FUNCTION);
       ChildGroup myGroup = new EmptyGroup(reference, parentGroup);
       subgroups.add(myGroup);
-      Pair<Concrete.Expression, Concrete.Expression> pair = visitReturnExpr(ctx.returnExpr());
+      Pair<Concrete.Expression, Concrete.Expression> pair = visitReturnExpr(ctx.returnExpr2());
       Referable fieldRef = LongUnresolvedReference.make(position, path);
       Concrete.FunctionBody fBody;
       if (defBody instanceof CoClauseExprContext) {
@@ -1138,7 +1172,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       myErrorReporter.report(new ParserError(tokenPosition(ctx.precedence().start), "Precedence is ignored"));
     }
 
-    return new Concrete.ClassFieldImpl(position, LongUnresolvedReference.make(position, path), term, subClassFieldImpls);
+    return new Concrete.ClassFieldImpl(position, LongUnresolvedReference.make(position, path), term, subClassFieldImpls == null ? null : new Concrete.Coclauses(tokenPosition(body.start), subClassFieldImpls));
   }
 
   private List<Concrete.ClassFieldImpl> visitLocalCoClauses(List<LocalCoClauseContext> contexts) {
@@ -1156,7 +1190,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     List<TeleContext> teleCtxs = ctx.tele();
     List<Concrete.Parameter> parameters = visitLamTeles(teleCtxs, false);
     Concrete.Expression term = null;
-    List<Concrete.ClassFieldImpl> subClassFieldImpls = Collections.emptyList();
+    List<Concrete.ClassFieldImpl> subClassFieldImpls = null;
     ExprContext exprCtx = ctx.expr();
     if (exprCtx != null) {
       term = visitExpr(exprCtx);
@@ -1170,7 +1204,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       subClassFieldImpls = visitLocalCoClauses(ctx.localCoClause());
     }
 
-    return new Concrete.ClassFieldImpl(position, LongUnresolvedReference.make(position, path), term, subClassFieldImpls);
+    return new Concrete.ClassFieldImpl(position, LongUnresolvedReference.make(position, path), term, subClassFieldImpls == null ? null : new Concrete.Coclauses(tokenPosition(ctx.start), subClassFieldImpls));
   }
 
   private Concrete.LevelExpression parseTruncatedUniverse(TerminalNode terminal) {
@@ -1500,35 +1534,53 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   }
 
   @Override
+  public Concrete.SigmaExpression visitSigma2(Sigma2Context ctx) {
+    return new Concrete.SigmaExpression(tokenPosition(ctx.start), visitTeles(ctx.tele(), false));
+  }
+
+  @Override
   public Concrete.PiExpression visitPi(PiContext ctx) {
     return new Concrete.PiExpression(tokenPosition(ctx.start), visitTeles(ctx.tele(), false), visitExpr(ctx.expr()));
   }
 
   @Override
-  public Concrete.Expression visitApp(AppContext ctx) {
-    return visitNewExpr(ctx.newExpr());
+  public Object visitPi2(Pi2Context ctx) {
+    return new Concrete.PiExpression(tokenPosition(ctx.start), visitTeles(ctx.tele(), false), visitExpr(ctx.expr2()));
   }
 
-  @Override
-  public Concrete.Expression visitNewExpr(NewExprContext ctx) {
-    Concrete.Expression expr = visitNew(ctx.appPrefix(), ctx.appExpr(), ctx.implementStatements());
-    List<ArgumentContext> argumentCtxs = ctx.argument();
-    if (!argumentCtxs.isEmpty()) {
+  private Concrete.Expression visitApp(AppPrefixContext prefixCtx, AppExprContext appCtx, ImplementStatementsContext implCtx, List<ArgumentContext> argumentCtxs, WithBodyContext body) {
+    Concrete.Expression expr = visitNew(prefixCtx, appCtx, implCtx);
+    if (!argumentCtxs.isEmpty() || body != null) {
+      if (expr instanceof Concrete.BinOpSequenceExpression && argumentCtxs.isEmpty()) {
+        return new Concrete.BinOpSequenceExpression(expr.getData(), ((Concrete.BinOpSequenceExpression) expr).getSequence(), new Concrete.FunctionClauses(tokenPosition(body.start), visitWithBody(body)));
+      }
+
       List<Concrete.BinOpSequenceElem> sequence = new ArrayList<>(argumentCtxs.size() + 1);
       sequence.add(new Concrete.BinOpSequenceElem(expr));
       for (ArgumentContext argCtx : argumentCtxs) {
         sequence.add(visitArgument(argCtx));
       }
-      expr = new Concrete.BinOpSequenceExpression(expr.getData(), sequence);
+      return new Concrete.BinOpSequenceExpression(expr.getData(), sequence, body == null ? null : new Concrete.FunctionClauses(tokenPosition(body.start), visitWithBody(body)));
     }
+
     return expr;
+  }
+
+  @Override
+  public Concrete.Expression visitApp(AppContext ctx) {
+    return visitApp(ctx.appPrefix(), ctx.appExpr(), ctx.implementStatements(), ctx.argument(), ctx.withBody());
+  }
+
+  @Override
+  public Concrete.Expression visitApp2(App2Context ctx) {
+    return visitApp(ctx.appPrefix(), ctx.appExpr(), ctx.implementStatements(), ctx.argument(), null);
   }
 
   private Concrete.Expression visitNew(AppPrefixContext prefixCtx, AppExprContext appCtx, ImplementStatementsContext implCtx) {
     Concrete.Expression expr = visitAppExpr(appCtx);
 
     if (implCtx != null) {
-      expr = Concrete.ClassExtExpression.make(tokenPosition(appCtx.start), expr, visitLocalCoClauses(implCtx.localCoClause()));
+      expr = Concrete.ClassExtExpression.make(tokenPosition(appCtx.start), expr, new Concrete.Coclauses(tokenPosition(implCtx.start), visitLocalCoClauses(implCtx.localCoClause())));
     }
 
     if (prefixCtx != null) {
@@ -1592,6 +1644,15 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   }
 
   @Override
+  public List<Concrete.FunctionClause> visitWithBody(WithBodyContext ctx) {
+    List<Concrete.FunctionClause> clauses = new ArrayList<>();
+    for (ClauseContext clauseCtx : ctx.clause()) {
+      clauses.add(visitClause(clauseCtx));
+    }
+    return clauses;
+  }
+
+  @Override
   public Concrete.FunctionClause visitClause(ClauseContext clauseCtx) {
     List<Concrete.Pattern> patterns = new ArrayList<>(clauseCtx.pattern().size());
     for (PatternContext patternCtx : clauseCtx.pattern()) {
@@ -1613,16 +1674,16 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   }
 
   @Override
-  public Concrete.Expression visitCase(CaseContext ctx) {
+  public Concrete.Expression visitCaseExpr(CaseExprContext ctx) {
     List<Concrete.CaseArgument> caseArgs = new ArrayList<>();
     for (CaseArgContext caseArgCtx : ctx.caseArg()) {
-      ExprContext typeCtx = caseArgCtx.expr();
+      Expr2Context typeCtx = caseArgCtx.expr2();
       Concrete.Expression type = typeCtx == null ? null : visitExpr(typeCtx);
       CaseArgExprAsContext caseArgExprAs = caseArgCtx.caseArgExprAs();
       if (caseArgExprAs instanceof CaseArgExprContext) {
         CaseArgExprContext caseArgExpr = (CaseArgExprContext) caseArgExprAs;
         TerminalNode id = caseArgExpr.ID();
-        caseArgs.add(new Concrete.CaseArgument(visitExpr(caseArgExpr.expr()), id == null ? null : new ParsedLocalReferable(tokenPosition(id.getSymbol()), id.getText()), type));
+        caseArgs.add(new Concrete.CaseArgument(visitExpr(caseArgExpr.expr2()), id == null ? null : new ParsedLocalReferable(tokenPosition(id.getSymbol()), id.getText()), type));
       } else if (caseArgExprAs instanceof CaseArgElimContext) {
         CaseArgElimContext caseArgElim = (CaseArgElimContext) caseArgExprAs;
         TerminalNode id = caseArgElim.ID();
@@ -1638,16 +1699,23 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
         caseArgs.add(argument);
       }
     }
-    List<Concrete.FunctionClause> clauses = new ArrayList<>();
-    for (ClauseContext clauseCtx : ctx.clause()) {
-      clauses.add(visitClause(clauseCtx));
-    }
 
-    Pair<Concrete.Expression,Concrete.Expression> returnPair = visitReturnExpr(ctx.returnExpr());
+    List<Concrete.FunctionClause> clauses = visitWithBody(ctx.withBody());
+    Pair<Concrete.Expression,Concrete.Expression> returnPair = visitReturnExpr(ctx.returnExpr2());
     Concrete.Expression result = new Concrete.CaseExpression(tokenPosition(ctx.start), ctx.SCASE() != null, caseArgs, returnPair.proj1, returnPair.proj2, clauses);
     boolean isPEval = ctx.PEVAL() != null;
     boolean isEval = !isPEval && ctx.EVAL() != null;
     return isPEval || isEval ? new Concrete.EvalExpression(result.getData(), isPEval, result) : result;
+  }
+
+  @Override
+  public Concrete.Expression visitCase(CaseContext ctx) {
+    return visitCaseExpr(ctx.caseExpr());
+  }
+
+  @Override
+  public Concrete.Expression visitCase2(Case2Context ctx) {
+    return visitCaseExpr(ctx.caseExpr());
   }
 
   private Concrete.LetClausePattern visitLetClausePattern(TuplePatternContext tuplePattern) {
@@ -1686,11 +1754,11 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return new Concrete.LetClause(visitLetClausePattern(tuplePattern), resultType, visitExpr(ctx.expr()));
   }
 
-  private Concrete.Expression visitIncompleteExpression(ExprContext exprCtx, ParserRuleContext parentCtx) {
+  private Concrete.Expression visitIncompleteExpression(ParserRuleContext exprCtx, ParserRuleContext parentCtx) {
     if (exprCtx == null) {
       return new Concrete.IncompleteExpression(new Position(myModule.getModulePath(), parentCtx.stop.getLine(), parentCtx.stop.getCharPositionInLine() + parentCtx.stop.getText().length()));
     } else {
-      return visitExpr(exprCtx);
+      return (Concrete.Expression) visit(exprCtx);
     }
   }
 
@@ -1702,6 +1770,15 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     }
 
     return new Concrete.LetExpression(tokenPosition(ctx.start), ctx.LETS() != null, clauses, visitIncompleteExpression(ctx.expr(), ctx));
+  }
+
+  @Override
+  public Object visitLet2(Let2Context ctx) {
+    List<Concrete.LetClause> clauses = new ArrayList<>();
+    for (LetClauseContext clauseCtx : ctx.letClause()) {
+      clauses.add(visitLetClause(clauseCtx));
+    }
+    return new Concrete.LetExpression(tokenPosition(ctx.start), ctx.LETS() != null, clauses, visitIncompleteExpression(ctx.expr2(), ctx));
   }
 
   private Position tokenPosition(Token token) {

@@ -22,6 +22,10 @@ public class CountingErrorReporter implements ErrorReporter {
     return myCounter;
   }
 
+  public void resetErrorsNumber() {
+    myCounter = 0;
+  }
+
   public ErrorReporter getErrorReporter() {
     return myErrorReporter;
   }

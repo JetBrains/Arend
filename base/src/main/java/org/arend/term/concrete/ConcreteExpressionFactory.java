@@ -41,11 +41,11 @@ public class ConcreteExpressionFactory {
   }
 
   public static Concrete.ClassExtExpression cClassExt(Concrete.Expression expr, List<Concrete.ClassFieldImpl> definitions) {
-    return Concrete.ClassExtExpression.make(null, expr, definitions);
+    return Concrete.ClassExtExpression.make(null, expr, new Concrete.Coclauses(null, definitions));
   }
 
   public static Concrete.ClassFieldImpl cImplStatement(Referable referable, Concrete.Expression expr) {
-    return new Concrete.ClassFieldImpl(null, referable, expr, Collections.emptyList());
+    return new Concrete.ClassFieldImpl(null, referable, expr, null);
   }
 
   public static Concrete.Expression cApps(Concrete.Expression expr, Concrete.Expression... exprs) {

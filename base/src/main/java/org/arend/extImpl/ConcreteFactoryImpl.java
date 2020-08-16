@@ -308,7 +308,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     if (!(expression instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }
-    return Concrete.ClassExtExpression.make(myData, (Concrete.Expression) expression, classFieldImpls(elements));
+    return Concrete.ClassExtExpression.make(myData, (Concrete.Expression) expression, new Concrete.Coclauses(myData, classFieldImpls(elements)));
   }
 
   @Override
@@ -316,7 +316,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     if (!(expression instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }
-    return Concrete.ClassExtExpression.make(myData, (Concrete.Expression) expression, classFieldImpls(elements));
+    return Concrete.ClassExtExpression.make(myData, (Concrete.Expression) expression, new Concrete.Coclauses(myData, classFieldImpls(elements)));
   }
 
   @NotNull
@@ -512,7 +512,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     if (!(field instanceof Referable && (expression == null || expression instanceof Concrete.Expression))) {
       throw new IllegalArgumentException();
     }
-    return new Concrete.ClassFieldImpl(myData, (Referable) field, (Concrete.Expression) expression, Collections.emptyList());
+    return new Concrete.ClassFieldImpl(myData, (Referable) field, (Concrete.Expression) expression, expression == null ? new Concrete.Coclauses(myData, Collections.emptyList()) : null);
   }
 
   @NotNull
@@ -521,7 +521,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     if (!(field instanceof Referable && (expression == null || expression instanceof Concrete.Expression) && classRef instanceof TCReferable)) {
       throw new IllegalArgumentException();
     }
-    Concrete.ClassFieldImpl classFieldImpl = new Concrete.ClassFieldImpl(myData, (Referable) field, (Concrete.Expression) expression, classFieldImpls(subclauses));
+    Concrete.ClassFieldImpl classFieldImpl = new Concrete.ClassFieldImpl(myData, (Referable) field, (Concrete.Expression) expression, new Concrete.Coclauses(myData, classFieldImpls(subclauses)));
     classFieldImpl.classRef = (TCReferable) classRef;
     return classFieldImpl;
   }
@@ -531,7 +531,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     if (!(field instanceof Referable && (expression == null || expression instanceof Concrete.Expression))) {
       throw new IllegalArgumentException();
     }
-    Concrete.ClassFieldImpl classFieldImpl = new Concrete.ClassFieldImpl(myData, (Referable) field, (Concrete.Expression) expression, classFieldImpls(subclauses));
+    Concrete.ClassFieldImpl classFieldImpl = new Concrete.ClassFieldImpl(myData, (Referable) field, (Concrete.Expression) expression, new Concrete.Coclauses(myData, classFieldImpls(subclauses)));
     classFieldImpl.classRef = (TCReferable) classRef;
     return classFieldImpl;
   }
