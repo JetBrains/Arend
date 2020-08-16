@@ -7,7 +7,6 @@ import org.arend.core.elimtree.ElimClause;
 import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.pattern.Pattern;
 import org.arend.ext.variable.Variable;
-import org.arend.core.context.binding.inference.BaseInferenceVariable;
 import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
@@ -483,7 +482,7 @@ public abstract class Expression implements Body, CoreExpression {
 
   public InferenceVariable getStuckInferenceVariable() {
     Expression stuck = getStuckExpression();
-    return stuck instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) stuck).getVariable() instanceof InferenceVariable ? (InferenceVariable) ((InferenceReferenceExpression) stuck).getVariable() : null;
+    return stuck instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) stuck).getVariable() != null ? ((InferenceReferenceExpression) stuck).getVariable() : null;
   }
 
   public InferenceVariable getInferenceVariable() {
@@ -493,9 +492,9 @@ public abstract class Expression implements Body, CoreExpression {
       if (expr == null) {
         return null;
       }
-      BaseInferenceVariable var = ((InferenceReferenceExpression) expr).getVariable();
-      if (var instanceof InferenceVariable) {
-        return (InferenceVariable) var;
+      InferenceVariable var = ((InferenceReferenceExpression) expr).getVariable();
+      if (var != null) {
+        return var;
       }
       expr = ((InferenceReferenceExpression) expr).getSubstExpression();
       if (expr == null) {

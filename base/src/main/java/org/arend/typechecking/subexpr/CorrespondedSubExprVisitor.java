@@ -87,11 +87,6 @@ public class CorrespondedSubExprVisitor implements
   }
 
   @Override
-  public Pair<Expression, Concrete.Expression> visitInferenceReference(Concrete.InferenceReferenceExpression expr, Expression coreExpr) {
-    return atomicExpr(expr, coreExpr);
-  }
-
-  @Override
   public Pair<Expression, Concrete.Expression> visitNumericLiteral(Concrete.NumericLiteral expr, Expression coreExpr) {
     return atomicExpr(expr, coreExpr);
   }

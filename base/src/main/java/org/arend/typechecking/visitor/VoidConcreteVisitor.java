@@ -112,11 +112,6 @@ public class VoidConcreteVisitor<P, R> implements ConcreteExpressionVisitor<P,Vo
     return null;
   }
 
-  @Override
-  public Void visitInferenceReference(Concrete.InferenceReferenceExpression expr, P params) {
-    return null;
-  }
-
   protected void visitParameters(List<? extends Concrete.Parameter> parameters, P params) {
     for (Concrete.Parameter parameter : parameters) {
       if (parameter.getType() != null) {

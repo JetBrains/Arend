@@ -25,11 +25,6 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
     return expr;
   }
 
-  @Override
-  public Concrete.Expression visitInferenceReference(Concrete.InferenceReferenceExpression expr, P params) {
-    return expr;
-  }
-
   protected void visitParameter(Concrete.Parameter parameter, P params) {
     if (parameter instanceof Concrete.TypeParameter) {
       ((Concrete.TypeParameter) parameter).type = ((Concrete.TypeParameter) parameter).type.accept(this, params);

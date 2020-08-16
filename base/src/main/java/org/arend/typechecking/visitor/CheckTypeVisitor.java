@@ -97,14 +97,14 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     final MetaDefinition meta;
     final Map<Referable, Binding> context;
     final ContextDataImpl contextData;
-    final InferenceReferenceExpression inferenceExpr;
+    final InferenceVariable inferenceVar;
     final ErrorReporter errorReporter;
 
-    private DeferredMeta(MetaDefinition meta, Map<Referable, Binding> context, ContextDataImpl contextData, InferenceReferenceExpression inferenceExpr, ErrorReporter errorReporter) {
+    private DeferredMeta(MetaDefinition meta, Map<Referable, Binding> context, ContextDataImpl contextData, InferenceVariable inferenceVar, ErrorReporter errorReporter) {
       this.meta = meta;
       this.context = context;
       this.contextData = contextData;
-      this.inferenceExpr = inferenceExpr;
+      this.inferenceVar = inferenceVar;
       this.errorReporter = errorReporter;
     }
   }
@@ -428,7 +428,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       if (result == null && checkTypeVisitor.myErrorReporter.myErrorReporter.getErrorsNumber() == numberOfErrors) {
         deferredMeta.errorReporter.report(new TypecheckingError("Meta '" + refExpr.getReferent().getRefName() + "' failed", refExpr));
       }
-      deferredMeta.inferenceExpr.setSubstExpression(result == null ? new ErrorExpression() : result.expression);
+      deferredMeta.inferenceVar.solve(myEquations, result == null ? new ErrorExpression() : result.expression);
     }
     deferredMetas.clear();
   }
@@ -715,8 +715,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
             ClassCallExpression classCall = type.cast(ClassCallExpression.class);
             if (classCall == null) {
               if (!type.isInstance(ErrorExpression.class)) {
-                BaseInferenceVariable var = type instanceof InferenceReferenceExpression ? ((InferenceReferenceExpression) type).getVariable() : null;
-                errorReporter.report(var instanceof InferenceVariable ? ((InferenceVariable) var).getErrorInfer() : new TypeMismatchError(DocFactory.text("a class"), type, pair.proj2.implementation));
+                InferenceVariable var = type instanceof InferenceReferenceExpression ? ((InferenceReferenceExpression) type).getVariable() : null;
+                errorReporter.report(var != null && !(var instanceof MetaInferenceVariable) ? var.getErrorInfer() : new TypeMismatchError(DocFactory.text("a class"), type, pair.proj2.implementation));
               }
             } else {
               if (!classCall.getDefinition().isSubClassOf((ClassDefinition) pair.proj1)) {
@@ -1132,11 +1132,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
   public TypecheckingResult visitThis(Concrete.ThisExpression expr, Expression expectedType) {
     errorReporter.report(new TypecheckingError("\\this expressions are allowed only in appropriate arguments of definitions and class extensions", expr));
     return null;
-  }
-
-  @Override
-  public TypecheckingResult visitInferenceReference(Concrete.InferenceReferenceExpression expr, Expression expectedType) {
-    return new TypecheckingResult(new InferenceReferenceExpression(expr.getVariable()), expr.getVariable().getType());
   }
 
   @Override
@@ -1910,10 +1905,10 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
 
     Expression expectedType = (Expression) type;
     ContextDataImpl contextDataImpl = new ContextDataImpl((Concrete.ReferenceExpression) refExpr, contextData.getArguments(), contextData.getCoclauses(), contextData.getClauses(), expectedType, contextData.getUserData());
-    InferenceReferenceExpression inferenceExpr = new InferenceReferenceExpression(new MetaInferenceVariable(expectedType, meta, (Concrete.ReferenceExpression) refExpr, getAllBindings()));
+    InferenceVariable inferenceVar = new MetaInferenceVariable(expectedType, (Concrete.ReferenceExpression) refExpr, getAllBindings());
     // (stage == Stage.BEFORE_SOLVER ? myDeferredMetasBeforeSolver : stage == Stage.BEFORE_LEVELS ? myDeferredMetasBeforeLevels : myDeferredMetasAfterLevels)
-    myDeferredMetasBeforeSolver.add(new DeferredMeta(meta, new LinkedHashMap<>(context), contextDataImpl, inferenceExpr, errorReporter));
-    return new TypecheckingResult(inferenceExpr, expectedType);
+    myDeferredMetasBeforeSolver.add(new DeferredMeta(meta, new LinkedHashMap<>(context), contextDataImpl, inferenceVar, errorReporter));
+    return new TypecheckingResult(new InferenceReferenceExpression(inferenceVar), expectedType);
   }
 
   private void fixCheckedExpression(TypecheckingResult result, Referable referable, Concrete.SourceNode sourceNode) {

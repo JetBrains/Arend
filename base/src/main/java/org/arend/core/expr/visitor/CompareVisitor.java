@@ -161,9 +161,9 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       return true;
     }
 
-    if (stuck1 instanceof InferenceReferenceExpression && stuck2 instanceof InferenceReferenceExpression && myAllowEquations && ((InferenceReferenceExpression) stuck1).getVariable() instanceof InferenceVariable && ((InferenceReferenceExpression) stuck2).getVariable() instanceof InferenceVariable) {
-      InferenceVariable var1 = (InferenceVariable) ((InferenceReferenceExpression) stuck1).getVariable();
-      InferenceVariable var2 = (InferenceVariable) ((InferenceReferenceExpression) stuck2).getVariable();
+    if (stuck1 instanceof InferenceReferenceExpression && stuck2 instanceof InferenceReferenceExpression && myAllowEquations && ((InferenceReferenceExpression) stuck1).getVariable() != null && ((InferenceReferenceExpression) stuck2).getVariable() != null) {
+      InferenceVariable var1 = ((InferenceReferenceExpression) stuck1).getVariable();
+      InferenceVariable var2 = ((InferenceReferenceExpression) stuck2).getVariable();
       return myEquations.addEquation(expr1, expr2.subst(getSubstitution()), type, myCMP, var1.getSourceNode(), var1, var2);
     }
 
@@ -281,11 +281,11 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     if (infRefExpr1 != null && infRefExpr2 != null && infRefExpr1.getVariable() == infRefExpr2.getVariable()) {
       return true;
     }
-    if (infRefExpr1 != null && infRefExpr1.getVariable() instanceof InferenceVariable) {
-      return myNormalCompare && myEquations.addEquation(infRefExpr1, expr2.subst(getSubstitution()).normalize(NormalizationMode.WHNF), type, myCMP, ((InferenceVariable) infRefExpr1.getVariable()).getSourceNode(), (InferenceVariable) infRefExpr1.getVariable(), expr2.getStuckInferenceVariable());
+    if (infRefExpr1 != null && infRefExpr1.getVariable() != null) {
+      return myNormalCompare && myEquations.addEquation(infRefExpr1, expr2.subst(getSubstitution()).normalize(NormalizationMode.WHNF), type, myCMP, infRefExpr1.getVariable().getSourceNode(), infRefExpr1.getVariable(), expr2.getStuckInferenceVariable());
     }
-    if (infRefExpr2 != null && infRefExpr2.getVariable() instanceof InferenceVariable) {
-      return myNormalCompare && myEquations.addEquation(expr1.normalize(NormalizationMode.WHNF), infRefExpr2, type, myCMP, ((InferenceVariable) infRefExpr2.getVariable()).getSourceNode(), expr1.getStuckInferenceVariable(), (InferenceVariable) infRefExpr2.getVariable());
+    if (infRefExpr2 != null && infRefExpr2.getVariable() != null) {
+      return myNormalCompare && myEquations.addEquation(expr1.normalize(NormalizationMode.WHNF), infRefExpr2, type, myCMP, infRefExpr2.getVariable().getSourceNode(), expr1.getStuckInferenceVariable(), infRefExpr2.getVariable());
     }
 
     InferenceVariable stuckVar1 = expr1.getStuckInferenceVariable();
@@ -474,8 +474,8 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
 
       // compare(it, expr2, null)
       InferenceReferenceExpression infRefExpr2 = expr2.cast(InferenceReferenceExpression.class);
-      if (infRefExpr2 != null && infRefExpr2.getVariable() instanceof InferenceVariable) {
-        return myNormalCompare && myEquations.addEquation(it, infRefExpr2, type, myCMP, ((InferenceVariable) infRefExpr2.getVariable()).getSourceNode(), it.getStuckInferenceVariable(), (InferenceVariable) infRefExpr2.getVariable()) || myOnlySolveVars;
+      if (infRefExpr2 != null && infRefExpr2.getVariable() != null) {
+        return myNormalCompare && myEquations.addEquation(it, infRefExpr2, type, myCMP, infRefExpr2.getVariable().getSourceNode(), it.getStuckInferenceVariable(), infRefExpr2.getVariable()) || myOnlySolveVars;
       }
       InferenceVariable stuckVar2 = expr2.getStuckInferenceVariable();
       if (stuckVar2 != null && (!myNormalCompare || myEquations == DummyEquations.getInstance())) {

@@ -1,6 +1,5 @@
 package org.arend.term.concrete;
 
-import org.arend.core.context.binding.inference.BaseInferenceVariable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.ext.concrete.*;
 import org.arend.ext.concrete.expr.*;
@@ -586,25 +585,6 @@ public final class Concrete {
     @Override
     public <P, R> R accept(ConcreteExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitApplyHole(this, params);
-    }
-  }
-
-  public static class InferenceReferenceExpression extends Expression {
-    private final BaseInferenceVariable myVariable;
-
-    public InferenceReferenceExpression(Object data, BaseInferenceVariable variable) {
-      super(data);
-      myVariable = variable;
-    }
-
-    @NotNull
-    public BaseInferenceVariable getVariable() {
-      return myVariable;
-    }
-
-    @Override
-    public <P, R> R accept(ConcreteExpressionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitInferenceReference(this, params);
     }
   }
 
