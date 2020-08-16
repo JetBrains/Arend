@@ -98,7 +98,7 @@ public class Ordering extends BellmanFord<Concrete.Definition> {
   @Override
   protected boolean forDependencies(Concrete.Definition definition, Consumer<Concrete.Definition> consumer) {
     Set<TCReferable> dependencies = new LinkedHashSet<>();
-    CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(dependencies, myStage.ordinal() < Stage.WITHOUT_BODIES.ordinal());
+    CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(dependencies, new ArrayList<>(), myStage.ordinal() < Stage.WITHOUT_BODIES.ordinal());
     if (myStage.ordinal() < Stage.WITHOUT_USE.ordinal()) {
       if (myStage.ordinal() < Stage.WITHOUT_INSTANCES.ordinal()) {
         InstanceProvider instanceProvider = myInstanceProviderSet.get(definition.getData());

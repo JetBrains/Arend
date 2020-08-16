@@ -15,6 +15,7 @@ import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.typechecking.DefinitionListener;
 import org.arend.library.Library;
 import org.arend.naming.reference.GlobalReferable;
+import org.arend.naming.reference.MetaReferable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.term.FunctionKind;
@@ -78,6 +79,10 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
 
   public ReferableConverter getReferableConverter() {
     return myReferableConverter;
+  }
+
+  public ErrorReporter getErrorReporter() {
+    return myErrorReporter;
   }
 
   @Override
@@ -195,13 +200,15 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
 
     if (recursive) {
       Set<TCReferable> dependencies = new HashSet<>();
-      definition.accept(new CollectDefCallsVisitor(dependencies, false), null);
+      Set<MetaReferable> metas = new HashSet<>();
+      definition.accept(new CollectDefCallsVisitor(dependencies, metas, false), null);
       if (dependencies.contains(definition.getData())) {
         typecheckingUnitStarted(definition.getData());
         myErrorReporter.report(new CycleError(Collections.singletonList(definition.getData())));
         typecheckingUnitFinished(definition.getData(), newDefinition(definition));
         return;
       }
+      metaFound(metas);
     }
 
     definition.setRecursive(recursive);
@@ -383,6 +390,10 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
     }
     UseTypechecking.typecheck(definitions, myErrorReporter);
     myCurrentDefinitions = Collections.emptyList();
+  }
+
+  @Override
+  public void metaFound(Collection<MetaReferable> metas) {
   }
 
   private void checkRecursiveFunctions(Map<FunctionDefinition,Concrete.Definition> definitions, Map<FunctionDefinition, List<ExtElimClause>> clauses) {

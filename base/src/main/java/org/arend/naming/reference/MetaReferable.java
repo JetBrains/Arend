@@ -5,6 +5,7 @@ import org.arend.ext.reference.Precedence;
 import org.arend.ext.typechecking.MetaDefinition;
 import org.arend.ext.typechecking.MetaResolver;
 import org.arend.module.ModuleLocation;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -46,6 +47,7 @@ public class MetaReferable implements LocatedReferable, MetaRef {
 
   @Nullable
   @Override
+  @Contract(pure = true)
   public MetaDefinition getDefinition() {
     return myDefinition;
   }
