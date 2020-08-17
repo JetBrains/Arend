@@ -1,17 +1,23 @@
 package org.arend.core.pattern;
 
 import org.arend.core.context.param.DependentLink;
+import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.definition.Constructor;
 import org.arend.core.definition.Definition;
+import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.*;
+import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.PrettyPrinterConfigImpl;
+import org.arend.ext.prettyprinting.PrettyPrinterFlag;
+import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.arend.prelude.Prelude;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+
+import static org.arend.ext.prettyprinting.doc.DocFactory.termLine;
 
 public abstract class ConstructorPattern<T> implements Pattern {
   protected final T data;
@@ -20,6 +26,29 @@ public abstract class ConstructorPattern<T> implements Pattern {
   protected ConstructorPattern(T data, List<? extends Pattern> subPatterns) {
     this.data = data;
     mySubPatterns = subPatterns;
+  }
+
+  private static Expression toExpression(Pattern pattern) {
+    if (pattern instanceof ExpressionPattern) {
+      return ((ExpressionPattern) pattern).toPatternExpression();
+    }
+
+    if (!(pattern instanceof ConstructorPattern)) {
+      throw new IllegalStateException();
+    }
+
+    ConstructorPattern<?> conPattern = (ConstructorPattern<?>) pattern;
+    List<Expression> args = new ArrayList<>();
+    for (Pattern subPattern : conPattern.getSubPatterns()) {
+      args.add(toExpression(subPattern));
+    }
+    if (conPattern.data instanceof Constructor) {
+      return ConCallExpression.make((Constructor) conPattern.data, Sort.STD, Collections.emptyList(), args);
+    }
+    if (conPattern.data instanceof FunctionDefinition) {
+      return FunCallExpression.make((FunctionDefinition) conPattern.data, Sort.STD, args);
+    }
+    return new TupleExpression(args, new SigmaExpression(Sort.PROP, EmptyDependentLink.getInstance()));
   }
 
   public static ConstructorPattern<Definition> make(Definition definition, List<? extends Pattern> subPatterns) {
@@ -37,6 +66,15 @@ public abstract class ConstructorPattern<T> implements Pattern {
           link = pattern.replaceBindings(link, subPatterns);
         }
         return link;
+      }
+
+      @Override
+      public LineDoc prettyPrint(PrettyPrinterConfig ppConfig) {
+        PrettyPrinterConfigImpl newConfig = new PrettyPrinterConfigImpl(ppConfig);
+        newConfig.expressionFlags.remove(PrettyPrinterFlag.SHOW_CON_PARAMS);
+        newConfig.expressionFlags.remove(PrettyPrinterFlag.SHOW_TUPLE_TYPE);
+        newConfig.expressionFlags.remove(PrettyPrinterFlag.SHOW_LEVELS);
+        return termLine(ConstructorPattern.toExpression(this), newConfig);
       }
     };
   }
