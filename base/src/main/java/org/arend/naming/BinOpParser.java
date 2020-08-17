@@ -69,7 +69,8 @@ public class BinOpParser {
       }
     }
 
-    return rollUp();
+    Concrete.Expression result = rollUp();
+    return result instanceof Concrete.AppExpression && result.getData() != expr.getData() ? Concrete.AppExpression.make(expr.getData(), ((Concrete.AppExpression) result).getFunction(), ((Concrete.AppExpression) result).getArguments()) : result;
   }
 
   public void push(Concrete.Expression expression, boolean isExplicit) {
