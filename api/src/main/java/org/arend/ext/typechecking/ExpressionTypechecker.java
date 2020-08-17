@@ -1,8 +1,12 @@
 package org.arend.ext.typechecking;
 
 import org.arend.ext.FreeBindingsModifier;
+import org.arend.ext.concrete.ConcreteParameter;
+import org.arend.ext.concrete.ConcretePattern;
+import org.arend.ext.core.body.CorePattern;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.context.CoreInferenceVariable;
+import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.core.definition.CoreClassDefinition;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.core.expr.CoreInferenceReferenceExpression;
@@ -18,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.math.BigInteger;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
 
@@ -53,10 +58,29 @@ public interface ExpressionTypechecker {
    * Checks the specified unchecked core expression.
    *
    * @param expression    a core expression that should be checked
-   * @param sourceNode    a marker that will be used for error reporting
+   * @param sourceNode    a marker for error reporting
    * @return              the typed core expression corresponding to the given unchecked expression
    */
   @Nullable TypedExpression check(@NotNull UncheckedExpression expression, @NotNull ConcreteSourceNode sourceNode);
+
+  /**
+   * Checks the specified concrete typed parameters.
+   *
+   * @param parameters  a list of parameters.
+   *                    All parameters in the list must by typed.
+   */
+  @Nullable CoreParameter typecheckParameters(@NotNull Collection<? extends ConcreteParameter> parameters);
+
+  /**
+   * Checks the specified concrete patterns.
+   *
+   * @param patterns    a list of concrete patterns that should be checked.
+   * @param parameters  parameters that specify the type of patterns.
+   *                    The number of parameters must be the same as the number of patterns.
+   * @param marker      a marker for error reporting.
+   * @return a list of core patterns or {@code null} if typechecking fails.
+   */
+  @Nullable List<CorePattern> typecheckPatterns(@NotNull Collection<? extends ConcretePattern> patterns, @NotNull CoreParameter parameters, @NotNull ConcreteSourceNode marker);
 
   /**
    * Defers the invocation of the given meta.

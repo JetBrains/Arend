@@ -22,11 +22,15 @@ import org.arend.core.subst.LevelSubstitution;
 import org.arend.error.*;
 import org.arend.ext.ArendExtension;
 import org.arend.ext.FreeBindingsModifier;
+import org.arend.ext.concrete.ConcreteParameter;
+import org.arend.ext.concrete.ConcretePattern;
 import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.concrete.expr.ConcreteReferenceExpression;
+import org.arend.ext.core.body.CorePattern;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.context.CoreInferenceVariable;
+import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.core.expr.CoreInferenceReferenceExpression;
@@ -355,6 +359,28 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       errorReporter.report(e.error);
       return null;
     }
+  }
+
+  @Override
+  public @Nullable DependentLink typecheckParameters(@NotNull Collection<? extends ConcreteParameter> parameters) {
+    return visitParameters(parameters, null, null);
+  }
+
+  @Override
+  public @Nullable List<CorePattern> typecheckPatterns(@NotNull Collection<? extends ConcretePattern> patterns, @NotNull CoreParameter parameters, @NotNull ConcreteSourceNode marker) {
+    if (!(parameters instanceof DependentLink)) {
+      throw new IllegalArgumentException();
+    }
+    List<Concrete.Pattern> patterns1 = new ArrayList<>(patterns.size());
+    for (ConcretePattern pattern : patterns) {
+      if (!(pattern instanceof Concrete.Pattern)) {
+        throw new IllegalArgumentException();
+      }
+      patterns1.add((Concrete.Pattern) pattern);
+    }
+    PatternTypechecking.Result result = new PatternTypechecking(myErrorReporter, PatternTypechecking.Mode.CASE, this, false).typecheckPatterns(patterns1, null, (DependentLink) parameters, new ExprSubstitution(), null, Collections.emptyList(), marker);
+    //noinspection unchecked
+    return result == null ? null : (List<CorePattern>) (List<?>) result.getPatterns();
   }
 
   public TypecheckingResult checkExpr(Concrete.Expression expr, Expression expectedType) {
@@ -1329,11 +1355,15 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
     }
   }
 
-  protected DependentLink visitParameters(List<? extends Concrete.TypeParameter> parameters, Expression expectedType, List<Sort> resultSorts) {
+  private DependentLink visitParameters(Collection<? extends ConcreteParameter> parameters, Expression expectedType, List<Sort> resultSorts) {
     LinkList list = new LinkList();
 
     try (var ignored = new Utils.SetContextSaver<>(context)) {
-      for (Concrete.TypeParameter arg : parameters) {
+      for (ConcreteParameter parameter : parameters) {
+        if (!(parameter instanceof Concrete.TypeParameter)) {
+          throw new IllegalArgumentException();
+        }
+        Concrete.TypeParameter arg = (Concrete.TypeParameter) parameter;
         Type result = checkType(arg.getType(), expectedType == null ? Type.OMEGA : expectedType);
         if (result == null) return null;
 
@@ -1349,15 +1379,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
           list.append(ExpressionFactory.parameter(arg.isExplicit(), (String) null, result));
         }
 
-        Sort resultSort = null;
-        if (expectedType != null) {
-          expectedType = expectedType.normalize(NormalizationMode.WHNF);
-          UniverseExpression universe = expectedType.cast(UniverseExpression.class);
-          if (universe != null && universe.getSort().isProp()) {
-            resultSort = Sort.PROP;
-          }
+        if (resultSorts != null) {
+          resultSorts.add(result.getSortOfType());
         }
-        resultSorts.add(resultSort == null ? result.getSortOfType() : resultSort);
       }
     }
 
