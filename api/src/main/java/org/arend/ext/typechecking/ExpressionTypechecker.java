@@ -18,6 +18,7 @@ import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.instance.InstanceSearchParameters;
 import org.arend.ext.instance.SubclassSearchParameters;
 import org.arend.ext.reference.ArendRef;
+import org.arend.ext.userData.UserDataHolder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,7 +30,7 @@ import java.util.function.Function;
 /**
  * A type-checker is used to check and transform {@link ConcreteExpression} and {@link UncheckedExpression} to {@link CoreExpression}.
  */
-public interface ExpressionTypechecker {
+public interface ExpressionTypechecker extends UserDataHolder {
   /**
    * Returns the list of bindings available in the given context.
    */

@@ -46,6 +46,7 @@ import org.arend.ext.typechecking.*;
 import org.arend.ext.variable.Variable;
 import org.arend.extImpl.ContextDataImpl;
 import org.arend.extImpl.UncheckedExpressionImpl;
+import org.arend.extImpl.userData.UserDataHolderImpl;
 import org.arend.naming.reference.*;
 import org.arend.naming.renamer.Renamer;
 import org.arend.prelude.Prelude;
@@ -84,7 +85,7 @@ import java.util.function.Function;
 
 import static org.arend.typechecking.error.local.inference.ArgInferenceError.expression;
 
-public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, TypecheckingResult>, ConcreteLevelExpressionVisitor<LevelVariable, Level>, ExpressionTypechecker {
+public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpressionVisitor<Expression, TypecheckingResult>, ConcreteLevelExpressionVisitor<LevelVariable, Level>, ExpressionTypechecker {
   private enum Stage { BEFORE_SOLVER, BEFORE_LEVELS, AFTER_LEVELS }
 
   private final Equations myEquations;
