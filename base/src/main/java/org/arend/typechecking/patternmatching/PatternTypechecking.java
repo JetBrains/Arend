@@ -107,7 +107,7 @@ public class PatternTypechecking {
       if (pattern instanceof BindingPattern) {
         assert myVisitor != null;
         myVisitor.addBinding(null, ((BindingPattern) pattern).getBinding());
-      } else if (pattern instanceof ConstructorExpressionPattern) {
+      } else {
         collectBindings(pattern.getSubPatterns());
       }
     }
@@ -205,26 +205,27 @@ public class PatternTypechecking {
     // Typecheck patterns
     Result result = doTypechecking(patterns, parameters, substitution, totalSubst, elimParams, sourceNode);
 
-    // Compute the context and the set of free bindings for CheckTypeVisitor
+    // Compute the context of free bindings for CheckTypeVisitor
     if (result != null && result.exprs != null && abstractParameters != null) {
-      int i = 0;
-      DependentLink link = parameters;
-      if (!elimParams.isEmpty()) {
-        for (Concrete.Parameter parameter : abstractParameters) {
-          for (Referable referable : parameter.getReferableList()) {
-            if (referable != null && !elimParams.contains(link)) {
-              addBinding(referable, ((BindingPattern) result.patterns.get(i)).getBinding());
-            }
-            link = link.getNext();
-            i++;
-          }
-        }
-      }
-
       if (myMode.isContextFree()) {
         myContext.entrySet().removeIf(entry -> entry.getKey() instanceof FakeLocalReferable);
       }
-      collectBindings(result.patterns);
+
+      int i = 0;
+      DependentLink link = parameters;
+      for (Concrete.Parameter parameter : abstractParameters) {
+        for (Referable referable : parameter.getReferableList()) {
+          if (result.patterns.get(i) instanceof BindingPattern) {
+            addBinding(referable, ((BindingPattern) result.patterns.get(i)).getBinding());
+          }
+          link = link.getNext();
+          i++;
+        }
+      }
+
+      for (ExpressionPattern pattern : result.patterns) {
+        collectBindings(pattern.getSubPatterns());
+      }
     }
 
     return result;
