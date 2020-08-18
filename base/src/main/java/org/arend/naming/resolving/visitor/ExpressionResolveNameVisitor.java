@@ -255,9 +255,13 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
 
   @Override
   public Concrete.Expression visitApp(Concrete.AppExpression expr, Void params) {
-    Concrete.Expression function = expr.getFunction() instanceof Concrete.ReferenceExpression ? visitReference((Concrete.ReferenceExpression) expr.getFunction(), false) : expr.getFunction().accept(this, null);
-    Concrete.Expression metaResult = visitMeta(function, expr.getArguments(), null);
-    return metaResult != null ? metaResult : visitArguments(function, expr.getArguments());
+    if (expr.getFunction() instanceof Concrete.ReferenceExpression) {
+      Concrete.Expression function = visitReference((Concrete.ReferenceExpression) expr.getFunction(), false);
+      Concrete.Expression metaResult = visitMeta(function, expr.getArguments(), null);
+      return metaResult != null ? metaResult : visitArguments(function, expr.getArguments());
+    } else {
+      return visitArguments(expr.getFunction().accept(this, null), expr.getArguments());
+    }
   }
 
   private Concrete.Expression visitArguments(Concrete.Expression function, List<Concrete.Argument> arguments) {
