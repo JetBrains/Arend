@@ -378,9 +378,11 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       }
       patterns1.add((Concrete.Pattern) pattern);
     }
-    PatternTypechecking.Result result = new PatternTypechecking(myErrorReporter, PatternTypechecking.Mode.CASE, this, false).typecheckPatterns(patterns1, null, (DependentLink) parameters, new ExprSubstitution(), null, Collections.emptyList(), marker);
-    //noinspection unchecked
-    return result == null ? null : (List<CorePattern>) (List<?>) result.getPatterns();
+    try (var ignored = new Utils.SetContextSaver<>(context)) {
+      PatternTypechecking.Result result = new PatternTypechecking(myErrorReporter, PatternTypechecking.Mode.CASE, this, false).typecheckPatterns(patterns1, null, (DependentLink) parameters, new ExprSubstitution(), null, Collections.emptyList(), marker);
+      //noinspection unchecked
+      return result == null ? null : (List<CorePattern>) (List<?>) result.getPatterns();
+    }
   }
 
   public TypecheckingResult checkExpr(Concrete.Expression expr, Expression expectedType) {
