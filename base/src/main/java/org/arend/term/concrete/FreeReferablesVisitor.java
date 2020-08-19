@@ -96,11 +96,6 @@ public class FreeReferablesVisitor implements ConcreteExpressionVisitor<Void, TC
   }
 
   @Override
-  public TCReferable visitInferenceReference(Concrete.InferenceReferenceExpression expr, Void params) {
-    return null;
-  }
-
-  @Override
   public TCReferable visitLam(Concrete.LamExpression expr, Void params) {
     TCReferable ref = visitParameters(expr.getParameters());
     return ref != null ? ref : expr.getBody().accept(this, null);

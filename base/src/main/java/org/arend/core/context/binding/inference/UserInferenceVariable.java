@@ -4,25 +4,27 @@ import org.arend.core.context.binding.Binding;
 import org.arend.core.expr.Expression;
 import org.arend.ext.error.LocalError;
 import org.arend.ext.error.TypeMismatchError;
-import org.arend.ext.error.TypecheckingError;
-import org.arend.ext.typechecking.MetaDefinition;
 import org.arend.term.concrete.Concrete;
+import org.arend.typechecking.error.local.inference.ArgInferenceError;
 
 import java.util.Set;
 
-public class MetaInferenceVariable extends InferenceVariable {
-  public MetaInferenceVariable(Expression type, Concrete.ReferenceExpression reference, Set<Binding> bounds) {
-    super(reference.getReferent().getRefName(), type, reference, bounds);
+public class UserInferenceVariable extends InferenceVariable {
+  private final boolean mySolvableFromEquations;
+
+  public UserInferenceVariable(String name, Expression type, Concrete.SourceNode sourceNode, Set<Binding> bounds, boolean isSolvableFromEquations) {
+    super(name, type, sourceNode, bounds);
+    mySolvableFromEquations = isSolvableFromEquations;
   }
 
   @Override
   public boolean isSolvableFromEquations() {
-    return false;
+    return mySolvableFromEquations;
   }
 
   @Override
   public LocalError getErrorInfer(Expression... candidates) {
-    return new TypecheckingError("Deferred meta '" + getName() + "' was not invoked yet", getSourceNode());
+    return new ArgInferenceError("Cannot infer variable '" + getName() + "'", getSourceNode(), candidates);
   }
 
   @Override

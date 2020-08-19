@@ -141,14 +141,12 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
     if (expr.getSubstExpression() == null) {
       if (myErrorReporter == null || expr.getVariable() instanceof MetaInferenceVariable) {
         return expr;
-      } else if (expr.getVariable() instanceof InferenceVariable) {
-        LocalError error = ((InferenceVariable) expr.getVariable()).getErrorInfer();
+      } else {
+        LocalError error = expr.getVariable().getErrorInfer();
         myErrorReporter.report(error);
         Expression result = new ErrorExpression(error);
         expr.setSubstExpression(result);
         return result;
-      } else {
-        throw new IllegalStateException("Unknown BaseInferenceVariable: " + expr.getVariable().getClass());
       }
     } else {
       return expr.getSubstExpression().accept(this, null);

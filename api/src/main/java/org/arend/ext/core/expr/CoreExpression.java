@@ -4,7 +4,6 @@ import org.arend.ext.core.body.CoreBody;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.core.ops.CMP;
-import org.arend.ext.core.ops.ExpressionMapper;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.prettyprinting.PrettyPrintable;
 import org.arend.ext.typechecking.TypedExpression;
@@ -12,7 +11,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 /**
  * A core expression is an internal representation of Arend expressions.
@@ -51,17 +51,11 @@ public interface CoreExpression extends CoreBody, UncheckedExpression, PrettyPri
   @NotNull CoreExpression getPiParameters(@Nullable List<? super CoreParameter> parameters);
 
   /**
-   * Constructs a new expression replacing some subexpressions according to the mapper.
-   * The mapper is invoked on every subexpression.
-   * If it returns {@code null}, the subexpression won't be changed.
-   * If it returns some expression, the subexpression will be replaced with it.
+   * Finds a subexpression of this expression satisfying {@code predicate}.
+   *
+   * @return true if this expression contains a subexpression satisfying {@code predicate}, false otherwise.
    */
-  @Override @Nullable UncheckedExpression replaceSubexpressions(@NotNull ExpressionMapper mapper);
-
-  /**
-   * Performs a substitution.
-   */
-  @Override @NotNull UncheckedExpression substitute(@NotNull Map<? extends CoreBinding, ? extends UncheckedExpression> map);
+  boolean findSubexpression(@NotNull Predicate<CoreExpression> predicate);
 
   /**
    * Compares this expression with another one.

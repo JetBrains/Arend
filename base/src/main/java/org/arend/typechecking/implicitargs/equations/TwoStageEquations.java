@@ -110,7 +110,7 @@ public class TwoStageEquations implements Equations {
     CMP origCmp = cmp;
 
     // expr1 == ?x && expr2 /= ?y || expr1 /= ?x && expr2 == ?y
-    if (inf1 != null && inf2 == null || inf2 != null && inf1 == null) {
+    if (inf1 == null && inf2 != null && inf2.isSolvableFromEquations() || inf2 == null && inf1 != null && inf1.isSolvableFromEquations()) {
       InferenceVariable cInf = inf1 != null ? inf1 : inf2;
       Expression cType = (inf1 != null ? expr2 : expr1).normalize(NormalizationMode.WHNF);
       Expression cTypeExpr = cType.getUnderlyingExpression();
@@ -148,7 +148,7 @@ public class TwoStageEquations implements Equations {
       if (cmp == CMP.EQ) {
         InferenceReferenceExpression infRef = cTypeExpr instanceof FieldCallExpression ? ((FieldCallExpression) cTypeExpr).getArgument().cast(InferenceReferenceExpression.class) : null;
         if (infRef == null || !(infRef.getVariable() instanceof TypeClassInferenceVariable)) {
-          if (solve(cInf, cType, false, cInf instanceof TypeClassInferenceVariable) != SolveResult.NOT_SOLVED) {
+          if (solve(cInf, cType, false, cInf instanceof TypeClassInferenceVariable, true) != SolveResult.NOT_SOLVED) {
             return true;
           }
         }
@@ -511,7 +511,7 @@ public class TwoStageEquations implements Equations {
   private boolean calculateUnBasedMap(InferenceLevelVariable variable, Map<InferenceLevelVariable,Boolean> unBasedMap) {
     if (variable.isUniverseLike()) {
       Boolean prev = unBasedMap.putIfAbsent(variable, false);
-      return prev == null ? false : prev;
+      return prev != null && prev;
     }
     Boolean val = unBasedMap.get(variable);
     if (val != null) {
@@ -625,7 +625,7 @@ public class TwoStageEquations implements Equations {
     while (!myProps.isEmpty()) {
       InferenceVariable var = myProps.pop();
       if (!var.isSolved()) {
-        solve(var, new UniverseExpression(Sort.PROP), false, false);
+        solve(var, new UniverseExpression(Sort.PROP), false, false, true);
       }
     }
 
@@ -707,7 +707,7 @@ public class TwoStageEquations implements Equations {
       if (equation.cmp == CMP.EQ) {
         InferenceVariable var1 = equation.expr1.getInferenceVariable();
         InferenceVariable var2 = equation.expr2.getInferenceVariable();
-        if (var1 != null && var2 == null || var2 != null && var1 == null) {
+        if (var1 == null && var2 != null && var2.isSolvableFromEquations() || var2 == null && var1 != null && var1.isSolvableFromEquations()) {
           iterator.remove();
           if (solved == null) {
             solved = new ArrayList<>();
@@ -751,7 +751,7 @@ public class TwoStageEquations implements Equations {
       if (equation.cmp == CMP.EQ) {
         InferenceVariable var1 = equation.expr1.getInferenceVariable();
         InferenceVariable var2 = equation.expr2.getInferenceVariable();
-        if (var1 != null && var2 != null) {
+        if (var1 != null && var2 != null && var1.isSolvableFromEquations() && var2.isSolvableFromEquations()) {
           bounds.computeIfAbsent(var1, k -> new LinkedHashSet<>()).add(new Wrapper(equation.expr2));
           bounds.computeIfAbsent(var2, k -> new LinkedHashSet<>()).add(new Wrapper(equation.expr1));
         }
@@ -760,9 +760,9 @@ public class TwoStageEquations implements Equations {
 
       InferenceVariable var = (cmp == CMP.LE ? upper : lower).getInferenceVariable();
       InferenceVariable otherVar = (cmp == CMP.LE ? lower : upper).getInferenceVariable();
-      if (var != null) {
+      if (var != null && var.isSolvableFromEquations()) {
         boolean isClassCall = (cmp == CMP.LE ? lowerClassCall : upperClassCall) != null;
-        if (isClassCall || otherVar != null) {
+        if (isClassCall || otherVar != null && otherVar.isSolvableFromEquations()) {
           bounds.computeIfAbsent(var, k -> new LinkedHashSet<>()).add(new Wrapper(cmp == CMP.LE ? lower : upper));
           if (isClassCall) {
             hasBound = true;
@@ -957,7 +957,7 @@ public class TwoStageEquations implements Equations {
         result.add(wrapper);
       } else {
         InferenceVariable var = wrapper.expression.getInferenceVariable();
-        if (var != null) {
+        if (var != null && var.isSolvableFromEquations()) {
           calculateBoundsOfVariable(var, result, bounds, visited);
         }
       }
@@ -999,13 +999,23 @@ public class TwoStageEquations implements Equations {
     return sol;
   }
 
+  @Override
+  public boolean solve(InferenceVariable var, Expression expr) {
+    return solve(var, expr, false, false, false) == SolveResult.SOLVED;
+  }
+
   private enum SolveResult { SOLVED, NOT_SOLVED, ERROR }
 
   private SolveResult solve(InferenceVariable var, Expression expr, boolean isLowerBound) {
-    return solve(var, expr, isLowerBound, false);
+    return solve(var, expr, isLowerBound, false, true);
   }
 
-  private SolveResult solve(InferenceVariable var, Expression expr, boolean isLowerBound, boolean trySolve) {
+  private SolveResult solve(InferenceVariable var, Expression expr, boolean isLowerBound, boolean trySolve, boolean fromEquations) {
+    assert !fromEquations || var.isSolvableFromEquations();
+    if (var.isSolved()) {
+      return SolveResult.NOT_SOLVED;
+    }
+
     if (expr.getInferenceVariable() == var) {
       return SolveResult.SOLVED;
     }
@@ -1015,7 +1025,7 @@ public class TwoStageEquations implements Equations {
       return SolveResult.ERROR;
     }
 
-    if (expr.findBinding(var)) {
+    if (fromEquations && expr.findBinding(var)) {
       return inferenceError(var, expr);
     }
 

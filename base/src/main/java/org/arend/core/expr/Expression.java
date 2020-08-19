@@ -7,7 +7,6 @@ import org.arend.core.elimtree.ElimClause;
 import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.pattern.Pattern;
 import org.arend.ext.variable.Variable;
-import org.arend.core.context.binding.inference.BaseInferenceVariable;
 import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
@@ -41,6 +40,7 @@ import org.arend.typechecking.error.local.TypeComputationError;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.typechecking.result.TypecheckingResult;
+import org.arend.typechecking.visitor.FindSubexpressionVisitor;
 import org.arend.util.Decision;
 import org.arend.util.GraphClosure;
 import org.jetbrains.annotations.NotNull;
@@ -49,6 +49,7 @@ import org.jetbrains.annotations.TestOnly;
 
 import java.math.BigInteger;
 import java.util.*;
+import java.util.function.Predicate;
 
 public abstract class Expression implements Body, CoreExpression {
   public abstract <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params);
@@ -219,6 +220,11 @@ public abstract class Expression implements Body, CoreExpression {
       substitution.add(entry.getKey(), UncheckedExpressionImpl.extract(entry.getValue()));
     }
     return new UncheckedExpressionImpl(accept(new SubstVisitor(substitution, LevelSubstitution.EMPTY), null));
+  }
+
+  @Override
+  public boolean findSubexpression(@NotNull Predicate<CoreExpression> predicate) {
+    return accept(new FindSubexpressionVisitor(predicate), null);
   }
 
   public static boolean compare(Expression expr1, Expression expr2, Expression type, CMP cmp) {
@@ -483,7 +489,7 @@ public abstract class Expression implements Body, CoreExpression {
 
   public InferenceVariable getStuckInferenceVariable() {
     Expression stuck = getStuckExpression();
-    return stuck instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) stuck).getVariable() instanceof InferenceVariable ? (InferenceVariable) ((InferenceReferenceExpression) stuck).getVariable() : null;
+    return stuck instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) stuck).getVariable() != null ? ((InferenceReferenceExpression) stuck).getVariable() : null;
   }
 
   public InferenceVariable getInferenceVariable() {
@@ -493,9 +499,9 @@ public abstract class Expression implements Body, CoreExpression {
       if (expr == null) {
         return null;
       }
-      BaseInferenceVariable var = ((InferenceReferenceExpression) expr).getVariable();
-      if (var instanceof InferenceVariable) {
-        return (InferenceVariable) var;
+      InferenceVariable var = ((InferenceReferenceExpression) expr).getVariable();
+      if (var != null) {
+        return var;
       }
       expr = ((InferenceReferenceExpression) expr).getSubstExpression();
       if (expr == null) {

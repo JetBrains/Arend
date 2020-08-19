@@ -5,6 +5,8 @@ import org.arend.core.expr.Expression;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.ext.error.ErrorReporter;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.arend.term.concrete.Concrete;
 import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
@@ -12,6 +14,8 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import static org.arend.ext.prettyprinting.doc.DocFactory.termLine;
 
 public interface ExpressionPattern extends Pattern {
   Expression toExpression();
@@ -24,6 +28,11 @@ public interface ExpressionPattern extends Pattern {
 
   default Expression toPatternExpression() {
     return toExpression();
+  }
+
+  @Override
+  default LineDoc prettyPrint(PrettyPrinterConfig ppConfig) {
+    return termLine(toPatternExpression(), ppConfig);
   }
 
   static List<Pattern> removeExpressions(List<? extends ExpressionPattern> patterns) {

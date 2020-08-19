@@ -155,4 +155,20 @@ public class DocFactory {
   public static HListDoc hEnd(LineDoc sep, LineDoc... docs) {
     return hEnd(sep, Arrays.asList(docs));
   }
+
+  public static LineDoc parens(LineDoc doc) {
+    return hList(text("("), doc, text(")"));
+  }
+
+  public static LineDoc parens(LineDoc doc, boolean needParens) {
+    return needParens ? parens(doc) : doc;
+  }
+
+  public static LineDoc braces(LineDoc doc) {
+    return hList(text("{"), doc, text("}"));
+  }
+
+  public static LineDoc braces(LineDoc doc, boolean needBraces) {
+    return needBraces ? braces(doc) : doc;
+  }
 }

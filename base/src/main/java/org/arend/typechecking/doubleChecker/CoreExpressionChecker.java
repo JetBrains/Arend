@@ -1,7 +1,7 @@
 package org.arend.typechecking.doubleChecker;
 
 import org.arend.core.context.binding.Binding;
-import org.arend.core.context.binding.inference.BaseInferenceVariable;
+import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.context.param.TypedDependentLink;
@@ -245,7 +245,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     if (expr.getSubstExpression() != null) {
       return expr.getSubstExpression().accept(this, expectedType);
     }
-    BaseInferenceVariable infVar = expr.getVariable();
+    InferenceVariable infVar = expr.getVariable();
     for (Binding bound : infVar.getBounds()) {
       if (!myContext.contains(bound)) {
         throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Variable '" + bound.getName() + "' is not bound", mySourceNode), expr));

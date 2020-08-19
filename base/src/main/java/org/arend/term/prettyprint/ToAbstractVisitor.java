@@ -363,7 +363,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   @Override
   public Concrete.Expression visitInferenceReference(InferenceReferenceExpression expr, Void params) {
-    return expr.getSubstExpression() != null ? expr.getSubstExpression().accept(this, null) : new Concrete.InferenceReferenceExpression(null, expr.getVariable());
+    return expr.getSubstExpression() != null ? expr.getSubstExpression().accept(this, null) : new Concrete.ReferenceExpression(null, new LocalReferable(expr.getVariable().toString()));
   }
 
   @Override

@@ -22,6 +22,7 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.ErrorReporter;
+import org.arend.ext.error.MissingClausesError;
 import org.arend.ext.error.TypecheckingError;
 import org.arend.naming.reference.Referable;
 import org.arend.prelude.Prelude;
@@ -186,10 +187,10 @@ public class ElimTypechecking {
 
   public ElimBody typecheckElim(List<? extends ElimClause<ExpressionPattern>> clauses, DependentLink parameters) {
     myAllowInterval = false;
-    return (ElimBody) typecheckElim(clauses, null, parameters, Collections.emptyList());
+    return (ElimBody) typecheckElim(clauses, parameters, Collections.emptyList());
   }
 
-  public Body typecheckElim(List<? extends ElimClause<ExpressionPattern>> clauses, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams) {
+  public Body typecheckElim(List<? extends ElimClause<ExpressionPattern>> clauses, DependentLink parameters, List<DependentLink> elimParams) {
     myOK = true;
     myUnusedClauses = new LinkedHashSet<>();
     for (int i = 0; i < clauses.size(); i++) {
@@ -287,8 +288,8 @@ public class ElimTypechecking {
       }
 
       if (emptyLink == null && myMode.checkCoverage()) {
-        if (!reportMissingClauses(null, abstractParameters, parameters, elimParams)) {
-          reportNoClauses(abstractParameters, parameters, elimParams);
+        if (!reportMissingClauses(null, parameters, elimParams)) {
+          reportNoClauses(parameters, elimParams);
         }
       }
 
@@ -305,7 +306,7 @@ public class ElimTypechecking {
       myContext = new Stack<>();
       elimTree = clausesToElimTree(nonIntervalClauses, 0, 0);
 
-      reportMissingClauses(elimTree, abstractParameters, parameters, elimParams);
+      reportMissingClauses(elimTree, parameters, elimParams);
 
       if (myOK) {
         for (Integer clauseIndex : myUnusedClauses) {
@@ -415,7 +416,7 @@ public class ElimTypechecking {
     return result;
   }
 
-  private void reportNoClauses(List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams) {
+  private void reportNoClauses(DependentLink parameters, List<DependentLink> elimParams) {
     if (parameters.hasNext() && !parameters.getNext().hasNext()) {
       DataCallExpression dataCall = parameters.getTypeExpr().cast(DataCallExpression.class);
       if (dataCall != null && dataCall.getDefinition() == Prelude.INTERVAL) {
@@ -479,10 +480,10 @@ public class ElimTypechecking {
       }
     }
 
-    myErrorReporter.report(new MissingClausesError(missingClauses, abstractParameters, parameters, elimParams, mySourceNode));
+    myErrorReporter.report(new MissingClausesError(missingClauses, parameters, elimParams, true, mySourceNode));
   }
 
-  private boolean reportMissingClauses(ElimTree elimTree, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams) {
+  private boolean reportMissingClauses(ElimTree elimTree, DependentLink parameters, List<DependentLink> elimParams) {
     if (myMissingClauses == null || myMissingClauses.isEmpty()) {
       return false;
     }
@@ -531,7 +532,7 @@ public class ElimTypechecking {
     }
 
     if (!missingClauses.isEmpty()) {
-      myErrorReporter.report(new MissingClausesError(missingClauses, abstractParameters, parameters, elimParams, mySourceNode));
+      myErrorReporter.report(new MissingClausesError(missingClauses, parameters, elimParams, true, mySourceNode));
       return true;
     }
 
@@ -791,12 +792,12 @@ public class ElimTypechecking {
           List<ExpressionPattern> oldPatterns = clause.getPatterns();
           ExprSubstitution newSubstitution;
           if (oldPatterns.get(index) instanceof ConstructorExpressionPattern) {
-            patterns.addAll(((ConstructorExpressionPattern) oldPatterns.get(index)).getSubPatterns());
+            patterns.addAll(oldPatterns.get(index).getSubPatterns());
             newSubstitution = conClauseList.get(i).substitution;
           } else {
             Expression substExpr;
             DependentLink conParameters;
-            List<Expression> arguments = new ArrayList<>(patterns.size());
+            List<Expression> arguments = new ArrayList<>();
             if (conCalls != null) {
               ConCallExpression conCall = null;
               for (ConCallExpression conCall1 : conCalls) {

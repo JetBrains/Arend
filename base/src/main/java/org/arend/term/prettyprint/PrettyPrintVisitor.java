@@ -319,12 +319,6 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     return null;
   }
 
-  @Override
-  public Void visitInferenceReference(Concrete.InferenceReferenceExpression expr, Precedence params) {
-    myBuilder.append("?").append(expr.getVariable().getName());
-    return null;
-  }
-
   public void prettyPrintParameters(List<? extends Concrete.Parameter> parameters) {
     if (parameters != null) {
       new ListLayout<Concrete.Parameter>(){
@@ -764,8 +758,10 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     if (!clauses.getClauseList().isEmpty()) {
       myIndent += INDENT;
       for (Concrete.FunctionClause clause : clauses.getClauseList()) {
+        myBuilder.append("\n");
         prettyPrintFunctionClause(clause);
       }
+      myBuilder.append("\n");
       myIndent -= INDENT;
     }
     myBuilder.append("}");

@@ -25,6 +25,7 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
+import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.ErrorReporter;
@@ -107,7 +108,7 @@ public class PatternTypechecking {
         assert myVisitor != null;
         myVisitor.addBinding(null, ((BindingPattern) pattern).getBinding());
       } else if (pattern instanceof ConstructorExpressionPattern) {
-        collectBindings(((ConstructorExpressionPattern) pattern).getSubPatterns());
+        collectBindings(pattern.getSubPatterns());
       }
     }
   }
@@ -194,7 +195,7 @@ public class PatternTypechecking {
     }
   }
 
-  public Result typecheckPatterns(List<Concrete.Pattern> patterns, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, ExprSubstitution substitution, ExprSubstitution totalSubst, List<DependentLink> elimParams, Concrete.SourceNode sourceNode) {
+  public Result typecheckPatterns(List<Concrete.Pattern> patterns, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, ExprSubstitution substitution, ExprSubstitution totalSubst, List<DependentLink> elimParams, ConcreteSourceNode sourceNode) {
     assert myVisitor != null;
     myContext = myVisitor.getContext();
     if (myMode.isContextFree()) {
@@ -274,7 +275,7 @@ public class PatternTypechecking {
     }
   }
 
-  private Result doTypechecking(List<Concrete.Pattern> patterns, DependentLink parameters, ExprSubstitution paramSubst, ExprSubstitution totalSubst, List<DependentLink> elimParams, Concrete.SourceNode sourceNode) {
+  private Result doTypechecking(List<Concrete.Pattern> patterns, DependentLink parameters, ExprSubstitution paramSubst, ExprSubstitution totalSubst, List<DependentLink> elimParams, ConcreteSourceNode sourceNode) {
     // Put patterns in the correct order
     // If some parameters are not eliminated (i.e. absent in elimParams), then we put null in corresponding patterns
     if (!elimParams.isEmpty()) {
@@ -329,7 +330,7 @@ public class PatternTypechecking {
     }
   }
 
-  private Result doTypechecking(List<Concrete.Pattern> patterns, DependentLink parameters, LinkList linkList, ExprSubstitution paramsSubst, ExprSubstitution totalSubst, Concrete.SourceNode sourceNode, boolean withElim) {
+  private Result doTypechecking(List<Concrete.Pattern> patterns, DependentLink parameters, LinkList linkList, ExprSubstitution paramsSubst, ExprSubstitution totalSubst, ConcreteSourceNode sourceNode, boolean withElim) {
     List<ExpressionPattern> result = new ArrayList<>();
     List<Expression> exprs = new ArrayList<>();
     ExprSubstitution varSubst = new ExprSubstitution();
@@ -788,7 +789,7 @@ public class PatternTypechecking {
   private static void getLeaves(List<? extends ExpressionPattern> patterns, List<DependentLink> leaves) {
     for (ExpressionPattern pattern : patterns) {
       if (pattern instanceof ConstructorExpressionPattern) {
-        getLeaves(((ConstructorExpressionPattern) pattern).getSubPatterns(), leaves);
+        getLeaves(pattern.getSubPatterns(), leaves);
       } else if (pattern instanceof BindingPattern) {
         leaves.add(((BindingPattern) pattern).getBinding());
       }
