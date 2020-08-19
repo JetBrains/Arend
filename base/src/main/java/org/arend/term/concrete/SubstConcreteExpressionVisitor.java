@@ -61,11 +61,6 @@ public class SubstConcreteExpressionVisitor<P> implements ConcreteExpressionVisi
     return new Concrete.ThisExpression(expr.getData(), expr.getReferent());
   }
 
-  @Override
-  public Concrete.Expression visitInferenceReference(Concrete.InferenceReferenceExpression expr, P params) {
-    return new Concrete.InferenceReferenceExpression(expr.getData(), expr.getVariable());
-  }
-
   @SuppressWarnings("unchecked")
   protected <T extends Concrete.Parameter> T visitParameter(T parameter, P params) {
     if (Concrete.NameParameter.class.equals(parameter.getClass())) {

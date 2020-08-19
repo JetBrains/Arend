@@ -5,7 +5,6 @@ import org.arend.error.DummyErrorReporter;
 import org.arend.error.ParsingError;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
-import org.arend.naming.error.ReferenceError;
 import org.arend.naming.reference.*;
 import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.term.ClassFieldKind;
