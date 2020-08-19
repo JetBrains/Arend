@@ -65,6 +65,13 @@ public interface ExpressionTypechecker extends UserDataHolder {
   @Nullable TypedExpression check(@NotNull UncheckedExpression expression, @NotNull ConcreteSourceNode sourceNode);
 
   /**
+   * Replaces the type in the given typed expression.
+   * The original type should be less than or equal to the new type.
+   * Otherwise, {@code null} is returned.
+   */
+  @Nullable TypedExpression replaceType(@NotNull TypedExpression typedExpression, @NotNull CoreExpression type, @Nullable ConcreteSourceNode marker);
+
+  /**
    * Checks the specified concrete typed parameters.
    *
    * @param parameters  a list of parameters.
