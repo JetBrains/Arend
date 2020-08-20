@@ -176,7 +176,7 @@ public abstract class ExpressionTransformer<P> extends BaseExpressionVisitor<P, 
     if (newArg == null) {
       return null;
     }
-    args.set(recursiveParam, it.accept(this, null));
+    args.set(recursiveParam, newArg);
     return result;
   }
 }
