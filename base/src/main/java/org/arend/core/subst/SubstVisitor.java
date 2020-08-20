@@ -56,7 +56,7 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
   }
 
   @Override
-  protected Expression makeConCall(Constructor constructor, Sort sortArgument, List<Expression> dataTypeArguments, List<Expression> arguments) {
+  protected ConCallExpression makeConCall(Constructor constructor, Sort sortArgument, List<Expression> dataTypeArguments, List<Expression> arguments) {
     return new ConCallExpression(constructor, sortArgument.subst(myLevelSubstitution), dataTypeArguments, arguments);
   }
 

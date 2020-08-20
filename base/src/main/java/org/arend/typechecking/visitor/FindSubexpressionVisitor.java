@@ -1,6 +1,5 @@
 package org.arend.typechecking.visitor;
 
-import org.arend.core.definition.ClassField;
 import org.arend.core.expr.*;
 import org.arend.ext.core.expr.CoreExpression;
 
@@ -14,28 +13,13 @@ public class FindSubexpressionVisitor extends SearchVisitor<Void> {
   }
 
   @Override
-  protected boolean processDefCall(DefCallExpression expression, Void param) {
-    return myPredicate.test(expression);
+  protected boolean preserveOrder() {
+    return true;
   }
 
   @Override
-  public Boolean visitClassCall(ClassCallExpression expression, Void param) {
-    if (processDefCall(expression, null)) {
-      return true;
-    }
-
-    if (expression.getImplementedHere().isEmpty()) {
-      return false;
-    }
-
-    for (ClassField field : expression.getDefinition().getFields()) {
-      Expression impl = expression.getAbsImplementationHere(field);
-      if (impl != null && impl.accept(this, null)) {
-        return true;
-      }
-    }
-
-    return false;
+  protected boolean processDefCall(DefCallExpression expression, Void param) {
+    return myPredicate.test(expression);
   }
 
   @Override
