@@ -33,27 +33,19 @@ import org.arend.util.Pair;
 import java.util.*;
 
 public class TwoStageEquations implements Equations {
-  private final List<Equation> myEquations;
-  private final LevelEquations<InferenceLevelVariable> myPLevelEquations;      // equations of the forms      c <= ?y and ?x <= max(?y + c', d)
-  private final LevelEquations<InferenceLevelVariable> myBasedPLevelEquations; // equations of the forms lp + c <= ?y and ?x <= max(?y + c', d)
-  private final LevelEquations<InferenceLevelVariable> myHLevelEquations;
-  private final LevelEquations<InferenceLevelVariable> myBasedHLevelEquations;
+  private final List<Equation> myEquations = new ArrayList<>();
+  private final LevelEquations<InferenceLevelVariable> myPLevelEquations = new LevelEquations<>();      // equations of the forms      c <= ?y and ?x <= max(?y + c', d)
+  private final LevelEquations<InferenceLevelVariable> myBasedPLevelEquations = new LevelEquations<>(); // equations of the forms lp + c <= ?y and ?x <= max(?y + c', d)
+  private final LevelEquations<InferenceLevelVariable> myHLevelEquations = new LevelEquations<>();
+  private final LevelEquations<InferenceLevelVariable> myBasedHLevelEquations = new LevelEquations<>();
   private final CheckTypeVisitor myVisitor;
-  private final Stack<InferenceVariable> myProps;
-  private final List<Pair<InferenceLevelVariable, InferenceLevelVariable>> myBoundVariables;
-  private final Map<InferenceLevelVariable, Set<LevelVariable>> myLowerBounds;
-  private final Map<InferenceLevelVariable, Level> myConstantUpperBounds;
+  private final Stack<InferenceVariable> myProps = new Stack<>();
+  private final List<Pair<InferenceLevelVariable, InferenceLevelVariable>> myBoundVariables = new ArrayList<>();
+  private final Map<InferenceLevelVariable, Set<LevelVariable>> myLowerBounds = new HashMap<>();
+  private final Map<InferenceLevelVariable, Level> myConstantUpperBounds = new HashMap<>();
+  private final Map<InferenceVariable, Expression> myNotSolvableFromEquationsVars = new HashMap<>();
 
   public TwoStageEquations(CheckTypeVisitor visitor) {
-    myEquations = new ArrayList<>();
-    myPLevelEquations = new LevelEquations<>();
-    myBasedPLevelEquations = new LevelEquations<>();
-    myHLevelEquations = new LevelEquations<>();
-    myBasedHLevelEquations = new LevelEquations<>();
-    myBoundVariables = new ArrayList<>();
-    myLowerBounds = new HashMap<>();
-    myConstantUpperBounds = new HashMap<>();
-    myProps = new Stack<>();
     myVisitor = visitor;
   }
 
@@ -188,6 +180,13 @@ public class TwoStageEquations implements Equations {
           }
         }
         return true;
+      }
+    }
+
+    if (cmp == CMP.EQ && (inf1 != null && inf2 == null || inf2 != null && inf1 == null)) {
+      Expression prev = myNotSolvableFromEquationsVars.putIfAbsent(inf1 != null ? inf1 : inf2, inf1 != null ? expr2 : expr1);
+      if (prev != null) {
+        return CompareVisitor.compare(this, CMP.EQ, prev, inf1 != null ? expr2 : expr1, type, sourceNode);
       }
     }
 
@@ -687,6 +686,7 @@ public class TwoStageEquations implements Equations {
     myEquations.clear();
     myConstantUpperBounds.clear();
     myProps.clear();
+    myNotSolvableFromEquationsVars.clear();
     return result;
   }
 
