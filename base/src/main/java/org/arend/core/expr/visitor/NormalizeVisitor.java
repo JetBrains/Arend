@@ -374,7 +374,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
           args.add(arg.subst(substitution, levelSubstitution));
         }
         Expression result = eval(caseExpr.getElimBody(), args, substitution, levelSubstitution, mode);
-        return result == null ? null : result.accept(this, mode);
+        return result == null ? caseExpr.subst(substitution, levelSubstitution) : result.accept(this, mode);
       } else {
         return ((Expression) body).subst(substitution, levelSubstitution).accept(this, mode);
       }
@@ -507,7 +507,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
             }
           } else if (resultExpr instanceof FunCallExpression && ((FunCallExpression) resultExpr).getDefinition().getBody() instanceof Expression) {
             FunCallExpression funCall = (FunCallExpression) resultExpr;
-            resultExpr = ((Expression) funCall.getDefinition().getBody()).subst(addArguments(new ExprSubstitution(), funCall.getDefCallArguments(), funCall.getDefinition()), funCall.getSortArgument().toLevelSubstitution());
+            resultExpr = Objects.requireNonNull((Expression) funCall.getDefinition().getBody()).subst(addArguments(new ExprSubstitution(), funCall.getDefCallArguments(), funCall.getDefinition()), funCall.getSortArgument().toLevelSubstitution());
           } else if (resultExpr instanceof ReferenceExpression && ((ReferenceExpression) resultExpr).getBinding() instanceof EvaluatingBinding) {
             resultExpr = ((EvaluatingBinding) ((ReferenceExpression) resultExpr).getBinding()).getExpression();
           } else if (resultExpr instanceof SubstExpression) {
@@ -536,6 +536,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
         if (resultExpr instanceof FunCallExpression && ((FunCallExpression) resultExpr).getDefinition().getBody() instanceof ElimBody && !isBlocked(((FunCallExpression) resultExpr).getDefinition()) || resultExpr instanceof CaseExpression && !((CaseExpression) resultExpr).isSCase()) {
           FunCallExpression funCall = resultExpr instanceof FunCallExpression ? (FunCallExpression) resultExpr : null;
           elimBody = funCall != null ? (ElimBody) funCall.getDefinition().getBody() : ((CaseExpression) resultExpr).getElimBody();
+          assert elimBody != null;
           elimTree = elimBody.getElimTree();
           argList.clear();
           stack.clear();
