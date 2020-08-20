@@ -691,8 +691,8 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
       return applyDefCall(expr, mode);
     }
 
-    Expression thisExpr = expr.getArgument().accept(this, NormalizationMode.WHNF);
-    if (!(thisExpr.getInferenceVariable() instanceof TypeClassInferenceVariable)) {
+    Expression thisExpr = expr.getArgument().accept(this, mode);
+    if (!(thisExpr.getInferenceVariable() instanceof TypeClassInferenceVariable) && (!(mode == NormalizationMode.RNF || mode == NormalizationMode.RNF_EXP) || thisExpr instanceof NewExpression)) {
       Expression type = thisExpr.getType();
       ClassCallExpression classCall = type == null ? null : type.accept(this, NormalizationMode.WHNF).cast(ClassCallExpression.class);
       if (classCall != null) {
@@ -834,7 +834,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
 
   @Override
   public Expression visitProj(ProjExpression expr, NormalizationMode mode) {
-    Expression newExpr = expr.getExpression().accept(this, NormalizationMode.WHNF);
+    Expression newExpr = expr.getExpression().accept(this, mode);
     TupleExpression exprNorm = newExpr.cast(TupleExpression.class);
     if (exprNorm != null) {
       return exprNorm.getFields().get(expr.getField()).accept(this, mode);
