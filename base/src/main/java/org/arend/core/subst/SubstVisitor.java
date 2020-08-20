@@ -201,11 +201,12 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
 
   @Override
   public Expression visitNew(NewExpression expr, Void params) {
+    Expression renewExpression = expr.getRenewExpression() == null ? null : expr.getRenewExpression().accept(this, null);
     Expression arg = visitClassCall(expr.getClassCall(), null);
     if (!(arg instanceof ClassCallExpression)) {
       throw new SubstException();
     }
-    return new NewExpression(expr.getRenewExpression() == null ? null : expr.getRenewExpression().accept(this, null), (ClassCallExpression) arg);
+    return new NewExpression(renewExpression, (ClassCallExpression) arg);
   }
 
   @Override

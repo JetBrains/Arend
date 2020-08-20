@@ -64,16 +64,13 @@ public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean>
 
   @Override
   public Boolean visitLet(LetExpression expression, P param) {
-    if (expression.getExpression().accept(this, param)) {
-      return true;
-    }
-
     for (LetClause lc : expression.getClauses()) {
       if (lc.getExpression().accept(this, param)) {
         return true;
       }
     }
-    return false;
+
+    return expression.getExpression().accept(this, param);
   }
 
   protected boolean visitElimBody(ElimBody elimBody, P param) {
@@ -87,7 +84,7 @@ public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean>
 
   @Override
   public Boolean visitCase(CaseExpression expr, P param) {
-    return visitElimBody(expr.getElimBody(), param) || visitDependentLink(expr.getParameters(), param) || expr.getResultType().accept(this, param) || expr.getResultTypeLevel() != null && expr.getResultTypeLevel().accept(this, param) || expr.getArguments().stream().anyMatch(arg -> arg.accept(this, param));
+    return expr.getArguments().stream().anyMatch(arg -> arg.accept(this, param)) || visitDependentLink(expr.getParameters(), param) || expr.getResultType().accept(this, param) || expr.getResultTypeLevel() != null && expr.getResultTypeLevel().accept(this, param) || visitElimBody(expr.getElimBody(), param);
   }
 
   @Override
@@ -132,7 +129,7 @@ public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean>
 
   @Override
   public Boolean visitNew(NewExpression expression, P param) {
-    return expression.getClassCall().accept(this, param) || expression.getRenewExpression() != null && expression.getRenewExpression().accept(this, param);
+    return expression.getRenewExpression() != null && expression.getRenewExpression().accept(this, param) || expression.getClassCall().accept(this, param);
   }
 
   @Override
