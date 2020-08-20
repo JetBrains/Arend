@@ -170,6 +170,18 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     return ref instanceof MetaReferable ? ((MetaReferable) ref).getResolver() : null;
   }
 
+  public Concrete.Expression invokeMetaWithoutArguments(Concrete.ReferenceExpression expr, Concrete.Expression argument, boolean invokeMeta) {
+    if (invokeMeta) {
+      MetaResolver metaDef = getMetaResolver(expr.getReferent());
+      if (metaDef != null) {
+        myErrorReporter.resetErrorsNumber();
+        return convertMetaResult(metaDef.resolvePrefix(this, new ContextDataImpl(expr, argument == null ? Collections.emptyList() : Collections.singletonList(new Concrete.Argument(argument, false)), null, null, null, null)), expr, Collections.emptyList(), null, null);
+      }
+    }
+
+    return argument == null ? expr : Concrete.AppExpression.make(expr.getData(), expr, argument, false);
+  }
+
   private Concrete.Expression visitReference(Concrete.ReferenceExpression expr, boolean invokeMeta) {
     if (expr instanceof Concrete.FixityReferenceExpression) {
       Fixity fixity = ((Concrete.FixityReferenceExpression) expr).fixity;
@@ -200,15 +212,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       argument = null;
     }
 
-    if (invokeMeta) {
-      MetaResolver metaDef = getMetaResolver(expr.getReferent());
-      if (metaDef != null) {
-        myErrorReporter.resetErrorsNumber();
-        return convertMetaResult(metaDef.resolvePrefix(this, new ContextDataImpl(expr, argument == null ? Collections.emptyList() : Collections.singletonList(new Concrete.Argument(argument, false)), null, null, null, null)), expr, Collections.emptyList(), null, null);
-      }
-    }
-
-    return argument == null ? expr : Concrete.AppExpression.make(expr.getData(), expr, argument, false);
+    return invokeMetaWithoutArguments(expr, argument, invokeMeta);
   }
 
   @Override
