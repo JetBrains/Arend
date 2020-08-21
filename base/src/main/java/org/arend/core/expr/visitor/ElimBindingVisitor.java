@@ -177,19 +177,30 @@ public class ElimBindingVisitor extends ExpressionTransformer<Void> {
 
   @Override
   public LamExpression visitLam(LamExpression expr, Void params) {
-    ExprSubstitution substitution = new ExprSubstitution();
-    SingleDependentLink parameters = DependentLink.Helper.subst(expr.getParameters(), substitution);
-    if (!visitDependentLink(parameters)) {
-      return null;
+    boolean isUnused = expr.getParameters() == UnusedIntervalDependentLink.INSTANCE;
+    SingleDependentLink oldParameters = isUnused ? expr.getParameters().getNext() : expr.getParameters();
+    Expression body;
+    if (oldParameters.hasNext()) {
+      ExprSubstitution substitution = new ExprSubstitution();
+      SingleDependentLink parameters = DependentLink.Helper.subst(oldParameters, substitution);
+      if (!visitDependentLink(parameters)) {
+        return null;
+      }
+      body = acceptSelf(expr.getBody().subst(substitution), true);
+      if (myKeepVisitor != null) {
+        myKeepVisitor.freeParameters(parameters);
+      }
+      if (body == null) {
+        return null;
+      }
+      body = new LamExpression(expr.getResultSort(), parameters, body);
+    } else {
+      body = acceptSelf(expr.getBody(), true);
+      if (body == null) {
+        return null;
+      }
     }
-    Expression body = acceptSelf(expr.getBody().subst(substitution), true);
-    if (myKeepVisitor != null) {
-      myKeepVisitor.freeParameters(parameters);
-    }
-    if (body == null) {
-      return null;
-    }
-    return new LamExpression(expr.getResultSort(), parameters, body);
+    return isUnused ? new LamExpression(expr.getResultSort(), UnusedIntervalDependentLink.INSTANCE, body) : (LamExpression) body;
   }
 
   @Override

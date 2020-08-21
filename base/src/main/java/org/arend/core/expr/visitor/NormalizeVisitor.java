@@ -374,7 +374,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
           args.add(arg.subst(substitution, levelSubstitution));
         }
         Expression result = eval(caseExpr.getElimBody(), args, substitution, levelSubstitution, mode);
-        return result == null ? null : result.accept(this, mode);
+        return result == null ? caseExpr.subst(substitution, levelSubstitution) : result.accept(this, mode);
       } else {
         return ((Expression) body).subst(substitution, levelSubstitution).accept(this, mode);
       }
@@ -507,7 +507,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
             }
           } else if (resultExpr instanceof FunCallExpression && ((FunCallExpression) resultExpr).getDefinition().getBody() instanceof Expression) {
             FunCallExpression funCall = (FunCallExpression) resultExpr;
-            resultExpr = ((Expression) funCall.getDefinition().getBody()).subst(addArguments(new ExprSubstitution(), funCall.getDefCallArguments(), funCall.getDefinition()), funCall.getSortArgument().toLevelSubstitution());
+            resultExpr = Objects.requireNonNull((Expression) funCall.getDefinition().getBody()).subst(addArguments(new ExprSubstitution(), funCall.getDefCallArguments(), funCall.getDefinition()), funCall.getSortArgument().toLevelSubstitution());
           } else if (resultExpr instanceof ReferenceExpression && ((ReferenceExpression) resultExpr).getBinding() instanceof EvaluatingBinding) {
             resultExpr = ((EvaluatingBinding) ((ReferenceExpression) resultExpr).getBinding()).getExpression();
           } else if (resultExpr instanceof SubstExpression) {
@@ -536,6 +536,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
         if (resultExpr instanceof FunCallExpression && ((FunCallExpression) resultExpr).getDefinition().getBody() instanceof ElimBody && !isBlocked(((FunCallExpression) resultExpr).getDefinition()) || resultExpr instanceof CaseExpression && !((CaseExpression) resultExpr).isSCase()) {
           FunCallExpression funCall = resultExpr instanceof FunCallExpression ? (FunCallExpression) resultExpr : null;
           elimBody = funCall != null ? (ElimBody) funCall.getDefinition().getBody() : ((CaseExpression) resultExpr).getElimBody();
+          assert elimBody != null;
           elimTree = elimBody.getElimTree();
           argList.clear();
           stack.clear();
@@ -690,8 +691,8 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
       return applyDefCall(expr, mode);
     }
 
-    Expression thisExpr = expr.getArgument().accept(this, NormalizationMode.WHNF);
-    if (!(thisExpr.getInferenceVariable() instanceof TypeClassInferenceVariable)) {
+    Expression thisExpr = expr.getArgument().accept(this, mode);
+    if (!(thisExpr.getInferenceVariable() instanceof TypeClassInferenceVariable) && (!(mode == NormalizationMode.RNF || mode == NormalizationMode.RNF_EXP) || thisExpr instanceof NewExpression)) {
       Expression type = thisExpr.getType();
       ClassCallExpression classCall = type == null ? null : type.accept(this, NormalizationMode.WHNF).cast(ClassCallExpression.class);
       if (classCall != null) {
@@ -833,7 +834,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
 
   @Override
   public Expression visitProj(ProjExpression expr, NormalizationMode mode) {
-    Expression newExpr = expr.getExpression().accept(this, NormalizationMode.WHNF);
+    Expression newExpr = expr.getExpression().accept(this, mode);
     TupleExpression exprNorm = newExpr.cast(TupleExpression.class);
     if (exprNorm != null) {
       return exprNorm.getFields().get(expr.getField()).accept(this, mode);

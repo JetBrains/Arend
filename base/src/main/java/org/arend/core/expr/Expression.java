@@ -6,6 +6,8 @@ import org.arend.core.elimtree.ElimBody;
 import org.arend.core.elimtree.ElimClause;
 import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.pattern.Pattern;
+import org.arend.core.subst.UnfoldVisitor;
+import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.variable.Variable;
 import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.context.param.DependentLink;
@@ -198,6 +200,11 @@ public abstract class Expression implements Body, CoreExpression {
   @Override
   public Expression normalize(@NotNull NormalizationMode mode) {
     return accept(NormalizeVisitor.INSTANCE, mode);
+  }
+
+  @Override
+  public @NotNull CoreExpression unfold(@NotNull Set<? extends CoreFunctionDefinition> functions, @Nullable Set<CoreFunctionDefinition> unfolded) {
+    return functions.isEmpty() ? this : accept(new UnfoldVisitor(functions, unfolded), null);
   }
 
   @Nullable

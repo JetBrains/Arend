@@ -14,13 +14,13 @@ import org.arend.core.sort.Sort;
 import java.util.*;
 
 public class Util {
-  interface ClauseElem {
+  public interface ClauseElem {
   }
 
   public static class PatternClauseElem implements ClauseElem {
     public final ExpressionPattern pattern;
 
-    PatternClauseElem(ExpressionPattern pattern) {
+    public PatternClauseElem(ExpressionPattern pattern) {
       this.pattern = pattern;
     }
   }
@@ -62,7 +62,7 @@ public class Util {
     final List<Expression> dataArguments;
     final Constructor constructor;
 
-    private ConstructorClauseElem(Constructor constructor) {
+    public ConstructorClauseElem(Constructor constructor) {
       this.dataArguments = constructor.getDataTypeExpression(Sort.STD).getDefCallArguments();
       this.constructor = constructor;
     }
@@ -78,7 +78,7 @@ public class Util {
     }
   }
 
-  public static List<ExpressionPattern> unflattenClauses(List<ClauseElem> clauseElems) {
+  public static void unflattenClauses(List<ClauseElem> clauseElems, List<? super ExpressionPattern> result) {
     for (int i = clauseElems.size() - 1; i >= 0; i--) {
       if (clauseElems.get(i) instanceof DataClauseElem) {
         DataClauseElem dataClauseElem = (DataClauseElem) clauseElems.get(i);
@@ -98,10 +98,14 @@ public class Util {
       }
     }
 
-    List<ExpressionPattern> result = new ArrayList<>(clauseElems.size());
     for (ClauseElem clauseElem : clauseElems) {
       result.add(((PatternClauseElem) clauseElem).pattern);
     }
+  }
+
+  public static List<ExpressionPattern> unflattenClauses(List<ClauseElem> clauseElems) {
+    List<ExpressionPattern> result = new ArrayList<>(clauseElems.size());
+    unflattenClauses(clauseElems, result);
     return result;
   }
 

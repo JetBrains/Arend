@@ -13,8 +13,13 @@ public class FindSubexpressionVisitor extends SearchVisitor<Void> {
   }
 
   @Override
+  protected boolean preserveOrder() {
+    return true;
+  }
+
+  @Override
   protected boolean processDefCall(DefCallExpression expression, Void param) {
-    return myPredicate.test(expression) || super.processDefCall(expression, param);
+    return myPredicate.test(expression);
   }
 
   @Override

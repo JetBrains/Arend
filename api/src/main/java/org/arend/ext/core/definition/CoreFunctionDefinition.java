@@ -11,5 +11,6 @@ public interface CoreFunctionDefinition extends CoreDefinition {
   @NotNull Kind getKind();
   CoreExpression getResultType();
   @Nullable CoreExpression getResultTypeLevel();
+  @Nullable CoreBody getBody();
   @Nullable CoreBody getActualBody();
 }

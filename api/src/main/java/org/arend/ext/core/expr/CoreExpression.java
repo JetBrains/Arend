@@ -3,6 +3,7 @@ package org.arend.ext.core.expr;
 import org.arend.ext.core.body.CoreBody;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.context.CoreParameter;
+import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.prettyprinting.PrettyPrintable;
@@ -11,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-import java.util.function.Consumer;
+import java.util.Set;
 import java.util.function.Predicate;
 
 /**
@@ -41,6 +42,14 @@ public interface CoreExpression extends CoreBody, UncheckedExpression, PrettyPri
    * Normalizes expression.
    */
   @Override @NotNull CoreExpression normalize(@NotNull NormalizationMode mode);
+
+  /**
+   * Unfolds all occurrences of given functions in this expression.
+   *
+   * @param functions   a set of functions to unfold.
+   * @param unfolded    functions that are actually unfolded will be added to this set.
+   */
+  @Override @NotNull CoreExpression unfold(@NotNull Set<? extends CoreFunctionDefinition> functions, @Nullable Set<CoreFunctionDefinition> unfolded);
 
   /**
    * Removes pi parameters and returns the codomain.

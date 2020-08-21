@@ -46,6 +46,7 @@ import org.arend.ext.typechecking.*;
 import org.arend.ext.variable.Variable;
 import org.arend.extImpl.ContextDataImpl;
 import org.arend.extImpl.UncheckedExpressionImpl;
+import org.arend.extImpl.userData.UserDataHolderImpl;
 import org.arend.naming.reference.*;
 import org.arend.naming.renamer.Renamer;
 import org.arend.prelude.Prelude;
@@ -84,7 +85,7 @@ import java.util.function.Function;
 
 import static org.arend.typechecking.error.local.inference.ArgInferenceError.expression;
 
-public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, TypecheckingResult>, ConcreteLevelExpressionVisitor<LevelVariable, Level>, ExpressionTypechecker {
+public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpressionVisitor<Expression, TypecheckingResult>, ConcreteLevelExpressionVisitor<LevelVariable, Level>, ExpressionTypechecker {
   private enum Stage { BEFORE_SOLVER, BEFORE_LEVELS, AFTER_LEVELS }
 
   private final Equations myEquations;
@@ -362,6 +363,15 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
   }
 
   @Override
+  public @Nullable TypecheckingResult replaceType(@NotNull TypedExpression typedExpression, @NotNull CoreExpression type, @Nullable ConcreteSourceNode marker) {
+    if (!(type instanceof Expression && marker instanceof Concrete.SourceNode)) {
+      throw new IllegalArgumentException();
+    }
+    TypecheckingResult result = TypecheckingResult.fromChecked(typedExpression);
+    return result.type.isError() ? result : CompareVisitor.compare(myEquations, CMP.LE, result.type, (Expression) type, Type.OMEGA, (Concrete.SourceNode) marker) ? new TypecheckingResult(result.expression, (Expression) type) : null;
+  }
+
+  @Override
   public @Nullable DependentLink typecheckParameters(@NotNull Collection<? extends ConcreteParameter> parameters) {
     return visitParameters(parameters, null, null);
   }
@@ -378,9 +388,11 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<Expression, T
       }
       patterns1.add((Concrete.Pattern) pattern);
     }
-    PatternTypechecking.Result result = new PatternTypechecking(myErrorReporter, PatternTypechecking.Mode.CASE, this, false).typecheckPatterns(patterns1, null, (DependentLink) parameters, new ExprSubstitution(), null, Collections.emptyList(), marker);
-    //noinspection unchecked
-    return result == null ? null : (List<CorePattern>) (List<?>) result.getPatterns();
+    try (var ignored = new Utils.SetContextSaver<>(context)) {
+      PatternTypechecking.Result result = new PatternTypechecking(myErrorReporter, PatternTypechecking.Mode.CASE, this, false).typecheckPatterns(patterns1, null, (DependentLink) parameters, new ExprSubstitution(), null, Collections.emptyList(), marker);
+      //noinspection unchecked
+      return result == null ? null : (List<CorePattern>) (List<?>) result.getPatterns();
+    }
   }
 
   public TypecheckingResult checkExpr(Concrete.Expression expr, Expression expectedType) {

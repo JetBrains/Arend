@@ -1,7 +1,9 @@
 package org.arend.extImpl;
 
 import org.arend.core.expr.Expression;
+import org.arend.core.subst.UnfoldVisitor;
 import org.arend.ext.core.context.CoreBinding;
+import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.expr.UncheckedExpression;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.ExpressionMapper;
@@ -46,6 +48,11 @@ public class UncheckedExpressionImpl implements UncheckedExpression {
   @Override
   public @NotNull UncheckedExpression normalize(@NotNull NormalizationMode mode) {
     return wrap(myExpression.normalize(mode));
+  }
+
+  @Override
+  public @NotNull UncheckedExpression unfold(@NotNull Set<? extends CoreFunctionDefinition> functions, @Nullable Set<CoreFunctionDefinition> unfolded) {
+    return functions.isEmpty() ? this : wrap(myExpression.accept(new UnfoldVisitor(functions, unfolded), null));
   }
 
   @Override

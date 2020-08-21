@@ -6,18 +6,16 @@ import org.arend.core.expr.ClassCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.sort.Sort;
 import org.arend.ext.core.definition.CoreDefinition;
-import org.arend.ext.userData.Key;
+import org.arend.extImpl.userData.UserDataHolderImpl;
 import org.arend.naming.reference.TCReferable;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-public abstract class Definition implements CoreDefinition {
+public abstract class Definition extends UserDataHolderImpl implements CoreDefinition {
   private final TCReferable myReferable;
   private TypeCheckingStatus myStatus;
   private UniverseKind myUniverseKind = UniverseKind.NO_UNIVERSES;
-  private Map<Key<?>, Object> myUserDataMap = null;
 
   public Definition(TCReferable referable, TypeCheckingStatus status) {
     myReferable = referable;
@@ -185,30 +183,6 @@ public abstract class Definition implements CoreDefinition {
   }
 
   public abstract void fill();
-
-  @Override
-  public <T> @Nullable T getUserData(@NotNull Key<T> key) {
-    //noinspection unchecked
-    return myUserDataMap == null ? null : (T) myUserDataMap.get(key);
-  }
-
-  @Override
-  public <T> void putUserData(@NotNull Key<T> key, @Nullable T value) {
-    if (value != null) {
-      if (myUserDataMap == null) {
-        myUserDataMap = new HashMap<>();
-      }
-      myUserDataMap.put(key, value);
-    } else {
-      if (myUserDataMap != null) {
-        myUserDataMap.remove(key);
-      }
-    }
-  }
-
-  public Map<Key<?>, Object> getUserDataMap() {
-    return myUserDataMap != null ? myUserDataMap : Collections.emptyMap();
-  }
 
   @Override
   public String toString() {

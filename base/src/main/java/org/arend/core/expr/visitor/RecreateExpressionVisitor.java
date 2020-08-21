@@ -14,6 +14,11 @@ import java.util.Map;
 public class RecreateExpressionVisitor extends SubstVisitor {
   private final ExpressionMapper myMapper;
 
+  @Override
+  protected boolean preserveOrder() {
+    return true;
+  }
+
   public RecreateExpressionVisitor(ExpressionMapper mapper) {
     super(new ExprSubstitution(), LevelSubstitution.EMPTY);
     myMapper = mapper;

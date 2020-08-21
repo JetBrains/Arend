@@ -1,10 +1,14 @@
 package org.arend.typechecking.visitor;
 
 import org.arend.core.context.param.DependentLink;
+import org.arend.core.definition.ClassField;
 import org.arend.core.elimtree.ElimBody;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.visitor.BaseExpressionVisitor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean> {
   protected boolean processDefCall(DefCallExpression expression, P param) {
@@ -16,12 +20,56 @@ public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean>
     return processDefCall(expression, param) || expression.getDefCallArguments().stream().anyMatch(arg -> arg.accept(this, param));
   }
 
+  protected boolean preserveOrder() {
+    return false;
+  }
+
   protected boolean visitConCallArgument(Expression arg, P param) {
     return arg.accept(this, param);
   }
 
   @Override
   public Boolean visitConCall(ConCallExpression expression, P param) {
+    if (preserveOrder() && expression.getDefinition().getRecursiveParameter() >= 0 && expression.getDefinition().getRecursiveParameter() < expression.getDefCallArguments().size() - 1) {
+      List<ConCallExpression> stack = new ArrayList<>();
+      while (true) {
+        for (Expression arg : expression.getDataTypeArguments()) {
+          if (visitConCallArgument(arg, param)) {
+            return true;
+          }
+        }
+
+        for (int i = 0; i < expression.getDefinition().getRecursiveParameter(); i++) {
+          if (visitConCallArgument(expression.getDefCallArguments().get(i), param)) {
+            return true;
+          }
+        }
+
+        stack.add(expression);
+
+        Expression rec = expression.getDefCallArguments().get(expression.getDefinition().getRecursiveParameter());
+        if (!(rec instanceof ConCallExpression)) {
+          if (visitConCallArgument(rec, param)) {
+            return true;
+          }
+          break;
+        }
+
+        expression = (ConCallExpression) rec;
+      }
+
+      for (int i = stack.size() - 1; i >= 0; i--) {
+        expression = stack.get(i);
+        for (int j = expression.getDefinition().getRecursiveParameter() + 1; j < expression.getDefCallArguments().size(); j++) {
+          if (visitConCallArgument(expression.getDefCallArguments().get(j), param)) {
+            return true;
+          }
+        }
+      }
+
+      return false;
+    }
+
     Expression it = expression;
     do {
       expression = (ConCallExpression) it;
@@ -64,16 +112,13 @@ public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean>
 
   @Override
   public Boolean visitLet(LetExpression expression, P param) {
-    if (expression.getExpression().accept(this, param)) {
-      return true;
-    }
-
     for (LetClause lc : expression.getClauses()) {
       if (lc.getExpression().accept(this, param)) {
         return true;
       }
     }
-    return false;
+
+    return expression.getExpression().accept(this, param);
   }
 
   protected boolean visitElimBody(ElimBody elimBody, P param) {
@@ -87,12 +132,34 @@ public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean>
 
   @Override
   public Boolean visitCase(CaseExpression expr, P param) {
-    return visitElimBody(expr.getElimBody(), param) || visitDependentLink(expr.getParameters(), param) || expr.getResultType().accept(this, param) || expr.getResultTypeLevel() != null && expr.getResultTypeLevel().accept(this, param) || expr.getArguments().stream().anyMatch(arg -> arg.accept(this, param));
+    return expr.getArguments().stream().anyMatch(arg -> arg.accept(this, param)) || visitDependentLink(expr.getParameters(), param) || expr.getResultType().accept(this, param) || expr.getResultTypeLevel() != null && expr.getResultTypeLevel().accept(this, param) || visitElimBody(expr.getElimBody(), param);
   }
 
   @Override
   public Boolean visitClassCall(ClassCallExpression expression, P param) {
-    return visitDefCall(expression, param) || expression.getImplementedHere().values().stream().anyMatch(expr -> expr.accept(this, param));
+    if (processDefCall(expression, param)) {
+      return true;
+    }
+
+    if (preserveOrder()) {
+      if (expression.getImplementedHere().isEmpty()) {
+        return false;
+      }
+      for (ClassField field : expression.getDefinition().getFields()) {
+        Expression impl = expression.getAbsImplementationHere(field);
+        if (impl != null && impl.accept(this, param)) {
+          return true;
+        }
+      }
+    } else {
+      for (Expression impl : expression.getImplementedHere().values()) {
+        if (impl.accept(this, param)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
   }
 
   protected boolean visitDependentLink(DependentLink link, P param) {
@@ -132,7 +199,7 @@ public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean>
 
   @Override
   public Boolean visitNew(NewExpression expression, P param) {
-    return expression.getClassCall().accept(this, param) || expression.getRenewExpression() != null && expression.getRenewExpression().accept(this, param);
+    return expression.getRenewExpression() != null && expression.getRenewExpression().accept(this, param) || expression.getClassCall().accept(this, param);
   }
 
   @Override
