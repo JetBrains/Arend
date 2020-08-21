@@ -1,6 +1,7 @@
 package org.arend.core.elimtree;
 
 import org.arend.core.constructor.SingleConstructor;
+import org.arend.core.definition.Constructor;
 import org.arend.core.expr.ConCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.IntegerExpression;
@@ -54,6 +55,27 @@ public class BranchElimTree extends ElimTree {
 
   private boolean isSingleConstructorTree() {
     return myChildren.size() == 1 && myChildren.keySet().iterator().next() instanceof SingleConstructor;
+  }
+
+  public Collection<? extends BranchKey> getKeys() {
+    for (BranchKey key : myChildren.keySet()) {
+      if (key instanceof Constructor) {
+        List<BranchKey> keys = new ArrayList<>();
+        for (Constructor constructor : ((Constructor) key).getDataType().getConstructors()) {
+          if (myChildren.containsKey(constructor)) {
+            keys.add(constructor);
+          }
+        }
+        for (BranchKey key2 : myChildren.keySet()) {
+          if (!(key2 instanceof Constructor) || ((Constructor) key2).getDataType() != ((Constructor) key).getDataType()) {
+            keys.add(key2);
+          }
+        }
+        return keys;
+      }
+    }
+
+    return myChildren.keySet();
   }
 
   private List<Expression> getNewArguments(List<? extends Expression> arguments, Expression argument, int index) {
