@@ -1,6 +1,7 @@
 package org.arend.typechecking.visitor;
 
 import org.arend.ext.error.ErrorReporter;
+import org.arend.naming.reference.MetaReferable;
 import org.arend.naming.reference.Parameter;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.Reference;
@@ -61,6 +62,17 @@ public class DumbTypechecker extends VoidConcreteVisitor<Void, Void> {
   public Void visitClass(Concrete.ClassDefinition def, Void params) {
     myDefinition = def;
     super.visitClass(def, null);
+    return null;
+  }
+
+  @Override
+  public Void visitApp(Concrete.AppExpression expr, Void params) {
+    expr.getFunction().accept(this, params);
+    if (!(expr.getFunction() instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) expr.getFunction()).getReferent() instanceof MetaReferable)) {
+      for (Concrete.Argument argument : expr.getArguments()) {
+        argument.getExpression().accept(this, params);
+      }
+    }
     return null;
   }
 
