@@ -2,6 +2,8 @@ package org.arend.core.pattern;
 
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
+import org.arend.core.definition.Constructor;
+import org.arend.core.definition.DConstructor;
 import org.arend.core.definition.Definition;
 import org.arend.core.expr.Expression;
 import org.arend.core.subst.ExprSubstitution;
@@ -22,6 +24,12 @@ public interface Pattern extends CorePattern {
   @Override @NotNull List<? extends Pattern> getSubPatterns();
   DependentLink replaceBindings(DependentLink link, List<Pattern> result);
   ExpressionPattern toExpressionPattern(Expression type);
+
+  @Override
+  default Definition getConstructor() {
+    Definition def = getDefinition();
+    return def instanceof Constructor || def instanceof DConstructor ? def : null;
+  }
 
   @Override
   @Nullable

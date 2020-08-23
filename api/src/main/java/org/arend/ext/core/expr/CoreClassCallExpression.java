@@ -1,6 +1,7 @@
 package org.arend.ext.core.expr;
 
 import org.arend.ext.core.context.CoreBinding;
+import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.core.definition.CoreClassDefinition;
 import org.arend.ext.core.definition.CoreClassField;
 import org.arend.ext.typechecking.TypedExpression;
@@ -23,4 +24,5 @@ public interface CoreClassCallExpression extends CoreDefCallExpression {
   @Nullable CoreExpression getClosedImplementation(@NotNull CoreClassField field);
   boolean isImplementedHere(@NotNull CoreClassField field);
   boolean isImplemented(@NotNull CoreClassField field);
+  @NotNull CoreParameter getClassFieldParameters();
 }

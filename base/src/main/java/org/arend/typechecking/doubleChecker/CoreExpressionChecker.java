@@ -526,7 +526,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       return true;
     }
 
-    if (pattern instanceof ConstructorPattern && pattern.getDefinition() == null) {
+    if (pattern instanceof ConstructorPattern && pattern.getConstructor() == null) {
       if (type instanceof SigmaExpression) {
         return checkElimPatterns(((SigmaExpression) type).getParameters(), pattern.getSubPatterns(), new ExprSubstitution(), firstBinding, idpSubst, types, errorExpr, null);
       } else if (type instanceof ClassCallExpression) {

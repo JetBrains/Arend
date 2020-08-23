@@ -12,9 +12,11 @@ import org.arend.core.pattern.ExpressionPattern;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.InPlaceLevelSubstVisitor;
+import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.core.definition.CoreConstructor;
 import org.arend.ext.core.expr.CoreDataCallExpression;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
+import org.arend.ext.core.level.CoreSort;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
 import org.arend.util.Decision;
@@ -108,12 +110,39 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
     return constructors;
   }
 
+  public static class ConstructorWithDataArgumentsImpl implements ConstructorWithDataArguments {
+    private final ConCallExpression myConCall;
+    private DependentLink myParameters;
+
+    public ConstructorWithDataArgumentsImpl(ConCallExpression conCall) {
+      myConCall = conCall;
+    }
+
+    @Override
+    public @NotNull Constructor getConstructor() {
+      return myConCall.getDefinition();
+    }
+
+    @Override
+    public @NotNull List<? extends Expression> getDataTypeArguments() {
+      return myConCall.getDataTypeArguments();
+    }
+
+    @Override
+    public @NotNull CoreParameter getParameters() {
+      if (myParameters == null) {
+        myParameters = myConCall.getDataTypeArguments().isEmpty() ? myConCall.getDefinition().getParameters() : DependentLink.Helper.subst(myConCall.getDefinition().getParameters(), new ExprSubstitution().add(myConCall.getDefinition().getDataType().getParameters(), myConCall.getDataTypeArguments()));
+      }
+      return myParameters;
+    }
+  }
+
   @Override
   public boolean computeMatchedConstructorsWithDataArguments(List<? super ConstructorWithDataArguments> result) {
     List<ConCallExpression> conCalls = new ArrayList<>();
     boolean ok = getMatchedConstructors(conCalls);
     for (ConCallExpression conCall : conCalls) {
-      result.add(new ConstructorWithDataArguments(conCall.getDefinition(), conCall.getDataTypeArguments()));
+      result.add(new ConstructorWithDataArgumentsImpl(conCall));
     }
     return ok;
   }
@@ -127,31 +156,7 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
 
     List<ConstructorWithDataArguments> constructors = new ArrayList<>();
     for (ConCallExpression conCall : conCalls) {
-      constructors.add(new ConstructorWithDataArguments(conCall.getDefinition(), conCall.getDataTypeArguments()));
-    }
-    return constructors;
-  }
-
-  @Override
-  public boolean computeMatchedConstructorsWithParameters(List<? super ConstructorWithParameters> result) {
-    List<ConCallExpression> conCalls = new ArrayList<>();
-    boolean ok = getMatchedConstructors(conCalls);
-    for (ConCallExpression conCall : conCalls) {
-      result.add(new ConstructorWithParameters(conCall.getDefinition(), conCall.getDataTypeArguments(), conCall.getDataTypeArguments().isEmpty() ? conCall.getDefinition().getParameters() : DependentLink.Helper.subst(conCall.getDefinition().getParameters(), new ExprSubstitution().add(getDefinition().getParameters(), conCall.getDataTypeArguments()))));
-    }
-    return ok;
-  }
-
-  @Override
-  public @Nullable List<ConstructorWithParameters> computeMatchedConstructorsWithParameters() {
-    List<ConCallExpression> conCalls = getMatchedConstructors();
-    if (conCalls == null) {
-      return null;
-    }
-
-    List<ConstructorWithParameters> constructors = new ArrayList<>();
-    for (ConCallExpression conCall : conCalls) {
-      constructors.add(new ConstructorWithParameters(conCall.getDefinition(), conCall.getDataTypeArguments(), conCall.getDataTypeArguments().isEmpty() ? conCall.getDefinition().getParameters() : DependentLink.Helper.subst(conCall.getDefinition().getParameters(), new ExprSubstitution().add(getDefinition().getParameters(), conCall.getDataTypeArguments()))));
+      constructors.add(new ConstructorWithDataArgumentsImpl(conCall));
     }
     return constructors;
   }
