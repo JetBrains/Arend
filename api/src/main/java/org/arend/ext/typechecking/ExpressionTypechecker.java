@@ -3,6 +3,7 @@ package org.arend.ext.typechecking;
 import org.arend.ext.FreeBindingsModifier;
 import org.arend.ext.concrete.ConcreteParameter;
 import org.arend.ext.concrete.ConcretePattern;
+import org.arend.ext.concrete.expr.ConcreteLamExpression;
 import org.arend.ext.core.body.CorePattern;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.context.CoreInferenceVariable;
@@ -89,6 +90,11 @@ public interface ExpressionTypechecker extends UserDataHolder {
    * @return a list of core patterns or {@code null} if typechecking fails.
    */
   @Nullable List<CorePattern> typecheckPatterns(@NotNull Collection<? extends ConcretePattern> patterns, @NotNull CoreParameter parameters, @NotNull ConcreteSourceNode marker);
+
+  /**
+   * Typechecks a lambda expression using {code parameters} as types of its parameters.
+   */
+  @Nullable TypedExpression typecheckLambda(@NotNull ConcreteLamExpression expr, @NotNull CoreParameter parameters);
 
   /**
    * Defers the invocation of the given meta.
