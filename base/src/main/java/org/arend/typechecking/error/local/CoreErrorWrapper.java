@@ -8,6 +8,7 @@ import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.ext.prettyprinting.doc.DocFactory;
 import org.arend.ext.prettyprinting.doc.LineDoc;
+import org.jetbrains.annotations.NotNull;
 
 public class CoreErrorWrapper extends LocalError {
   public final GeneralError error;
@@ -32,6 +33,11 @@ public class CoreErrorWrapper extends LocalError {
   public Object getCause() {
     Object cause = error.getCause();
     return cause != null ? cause : definition;
+  }
+
+  @Override
+  public @NotNull Stage getStage() {
+    return Stage.TYPECHECKER;
   }
 
   @Override

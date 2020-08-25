@@ -574,7 +574,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     boolean noEmpty = true;
     for (Pattern pattern : patterns) {
       if (!parameters.hasNext()) {
-        throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Too many patterns", mySourceNode), errorExpr));
+        throw new CoreException(CoreErrorWrapper.make(new CertainTypecheckingError(CertainTypecheckingError.Kind.TOO_MANY_PATTERNS, mySourceNode), errorExpr));
       }
       Expression type = parameters.getTypeExpr().subst(substitution).normalize(NormalizationMode.WHNF).getUnderlyingExpression();
       if (noEmpty) {
