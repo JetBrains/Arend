@@ -23,6 +23,7 @@ import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.MissingClausesError;
+import org.arend.ext.error.RedundantClauseError;
 import org.arend.ext.error.TypecheckingError;
 import org.arend.naming.reference.Referable;
 import org.arend.prelude.Prelude;
@@ -310,7 +311,7 @@ public class ElimTypechecking {
 
       if (myOK) {
         for (Integer clauseIndex : myUnusedClauses) {
-          myErrorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.REDUNDANT_CLAUSE, getClause(clauseIndex)));
+          myErrorReporter.report(new RedundantClauseError(getClause(clauseIndex)));
         }
       }
     }

@@ -8,6 +8,8 @@ import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.*;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
+import org.arend.ext.core.body.CorePattern;
+import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.PrettyPrinterConfigImpl;
 import org.arend.ext.prettyprinting.PrettyPrinterFlag;
@@ -134,5 +136,14 @@ public abstract class ConstructorPattern<T> implements Pattern {
   @Override
   public List<? extends Pattern> getSubPatterns() {
     return mySubPatterns;
+  }
+
+  @Override
+  public @NotNull Pattern subst(@NotNull Map<? extends CoreBinding, ? extends CorePattern> map) {
+    List<Pattern> subPatterns = new ArrayList<>();
+    for (Pattern subPattern : mySubPatterns) {
+      subPatterns.add(subPattern.subst(map));
+    }
+    return make(getConstructor(), subPatterns);
   }
 }

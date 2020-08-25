@@ -6,6 +6,7 @@ import org.arend.core.definition.Definition;
 import org.arend.ext.core.definition.CoreClassDefinition;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.LocalError;
+import org.arend.ext.error.RedundantCoclauseError;
 import org.arend.naming.reference.*;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
@@ -221,7 +222,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
       boolean ok = true;
       if (classFieldImpl.getImplementedField() instanceof GlobalReferable && ((GlobalReferable) classFieldImpl.getImplementedField()).getKind() == GlobalReferable.Kind.CLASS) {
         if (classFieldImpl.getSubCoclauseList().isEmpty()) {
-          myErrorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.REDUNDANT_COCLAUSE, classFieldImpl));
+          myErrorReporter.report(new RedundantCoclauseError(classFieldImpl));
         }
         for (Concrete.ClassFieldImpl subClassFieldImpl : classFieldImpl.getSubCoclauseList()) {
           visitClassFieldImpl(subClassFieldImpl, result);
