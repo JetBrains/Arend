@@ -9,6 +9,7 @@ import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.concrete.expr.ConcreteReferenceExpression;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.error.GeneralError;
+import org.arend.ext.error.LocalError;
 import org.arend.ext.reference.ArendRef;
 import org.arend.ext.reference.Precedence;
 import org.arend.ext.typechecking.GoalSolver;
@@ -136,6 +137,11 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
   @Override
   public ConcreteExpression hole() {
     return new Concrete.HoleExpression(myData);
+  }
+
+  @Override
+  public @NotNull ConcreteExpression error(@Nullable GeneralError error) {
+    return new Concrete.ErrorHoleExpression(myData, error instanceof LocalError ? (LocalError) error : null);
   }
 
   @NotNull

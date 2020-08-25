@@ -32,6 +32,7 @@ public interface ConcreteFactory {
   @NotNull ConcreteExpression pi(@NotNull Collection<? extends ConcreteParameter> parameters, @NotNull ConcreteExpression codomain);
   @NotNull ConcreteExpression universe(@Nullable ConcreteLevel pLevel, @Nullable ConcreteLevel hLevel);
   @NotNull ConcreteExpression hole();
+  @NotNull ConcreteExpression error(@Nullable GeneralError error);
   @NotNull ConcreteExpression goal();
   @NotNull ConcreteExpression goal(@Nullable String name, @Nullable ConcreteExpression expression);
   @NotNull ConcreteExpression goal(@Nullable String name, @Nullable ConcreteExpression expression, @Nullable GoalSolver goalSolver);
