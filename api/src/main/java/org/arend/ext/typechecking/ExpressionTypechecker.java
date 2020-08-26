@@ -97,6 +97,11 @@ public interface ExpressionTypechecker extends UserDataHolder {
   @Nullable TypedExpression typecheckLambda(@NotNull ConcreteLamExpression expr, @NotNull CoreParameter parameters);
 
   /**
+   * @return a list of explicit parameters with specified types, or {@code null} if one of the expressions in {@code types} is not a type.
+   */
+  @NotNull CoreParameter makeParameters(@NotNull List<? extends CoreExpression> types, @NotNull ConcreteExpression marker);
+
+  /**
    * Defers the invocation of the given meta.
    * This might be useful if the meta definition fails because some inference variable are not inferred at the given time.
    *

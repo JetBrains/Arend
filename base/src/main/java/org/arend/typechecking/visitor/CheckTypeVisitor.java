@@ -447,6 +447,23 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
   }
 
+  @Override
+  public @NotNull DependentLink makeParameters(@NotNull List<? extends CoreExpression> types, @NotNull ConcreteExpression marker) {
+    if (!(marker instanceof Concrete.SourceNode)) {
+      throw new IllegalArgumentException();
+    }
+
+    DependentLink result = EmptyDependentLink.getInstance();
+    for (int i = types.size() - 1; i >= 0; i--) {
+      if (!(types.get(i) instanceof Expression)) {
+        throw new IllegalArgumentException();
+      }
+      Expression typeExpr = (Expression) types.get(i);
+      result = new TypedDependentLink(true, null, typeExpr instanceof Type ? (Type) typeExpr : new TypeExpression(typeExpr, getSortOfType(typeExpr, (Concrete.SourceNode) marker)), result);
+    }
+    return result;
+  }
+
   public TypecheckingResult checkExpr(Concrete.Expression expr, Expression expectedType) {
     try {
       return expr.accept(this, expectedType);

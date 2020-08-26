@@ -3,10 +3,7 @@ package org.arend.extImpl;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.expr.ReferenceExpression;
 import org.arend.ext.concrete.*;
-import org.arend.ext.concrete.expr.ConcreteArgument;
-import org.arend.ext.concrete.expr.ConcreteCaseArgument;
-import org.arend.ext.concrete.expr.ConcreteExpression;
-import org.arend.ext.concrete.expr.ConcreteReferenceExpression;
+import org.arend.ext.concrete.expr.*;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.error.LocalError;
@@ -94,7 +91,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
 
   @NotNull
   @Override
-  public ConcreteExpression lam(@NotNull Collection<? extends ConcreteParameter> parameters, @NotNull ConcreteExpression body) {
+  public ConcreteLamExpression lam(@NotNull Collection<? extends ConcreteParameter> parameters, @NotNull ConcreteExpression body) {
     if (!(body instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }

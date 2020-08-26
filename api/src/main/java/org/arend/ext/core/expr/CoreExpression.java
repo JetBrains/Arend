@@ -1,5 +1,6 @@
 package org.arend.ext.core.expr;
 
+import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.core.body.CoreBody;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.context.CoreParameter;
@@ -58,6 +59,12 @@ public interface CoreExpression extends CoreBody, UncheckedExpression, PrettyPri
    * @return            the codomain of the pi-expression, or the expression itself if it is not a pi-expression.
    */
   @NotNull CoreExpression getPiParameters(@Nullable List<? super CoreParameter> parameters);
+
+  /**
+   * If {@code this} is \lam (x_1 : A_1) ... (x_n : A_n) => B, returns \Pi (x_1 : A_1) ... (x_n : A_n) -> B.
+   * If B is not a type, returns {@code null}.
+   */
+  @Nullable CoreExpression lambdaToPi();
 
   /**
    * Finds a subexpression of this expression satisfying {@code predicate}.

@@ -7,9 +7,6 @@ import org.arend.core.elimtree.ElimClause;
 import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.pattern.Pattern;
 import org.arend.core.subst.UnfoldVisitor;
-import org.arend.ext.core.body.CorePattern;
-import org.arend.ext.core.definition.CoreConstructor;
-import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.expr.*;
 import org.arend.ext.variable.Variable;
@@ -229,6 +226,17 @@ public abstract class Expression implements Body, CoreExpression {
       substitution.add(entry.getKey(), UncheckedExpressionImpl.extract(entry.getValue()));
     }
     return new UncheckedExpressionImpl(accept(new SubstVisitor(substitution, LevelSubstitution.EMPTY), null));
+  }
+
+  @Override
+  public @Nullable Expression lambdaToPi() {
+    Expression expr = getUnderlyingExpression();
+    if (expr instanceof LamExpression) {
+      Expression cod = ((LamExpression) expr).getBody().lambdaToPi();
+      return cod == null ? null : new PiExpression(((LamExpression) expr).getResultSort(), ((LamExpression) expr).getParameters(), cod);
+    } else {
+      return expr.getSortOfType() == null ? null : expr;
+    }
   }
 
   @Override
