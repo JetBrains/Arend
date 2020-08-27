@@ -34,6 +34,7 @@ import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.context.CoreInferenceVariable;
 import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
+import org.arend.ext.core.expr.AbstractedExpression;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.core.expr.CoreInferenceReferenceExpression;
 import org.arend.ext.core.expr.UncheckedExpression;
@@ -46,6 +47,7 @@ import org.arend.ext.prettyprinting.doc.DocFactory;
 import org.arend.ext.reference.ArendRef;
 import org.arend.ext.typechecking.*;
 import org.arend.ext.variable.Variable;
+import org.arend.extImpl.AbstractedExpressionImpl;
 import org.arend.extImpl.ContextDataImpl;
 import org.arend.extImpl.UncheckedExpressionImpl;
 import org.arend.extImpl.userData.UserDataHolderImpl;
@@ -448,7 +450,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   @Override
-  public @NotNull DependentLink makeParameters(@NotNull List<? extends CoreExpression> types, @NotNull ConcreteExpression marker) {
+  public @NotNull DependentLink makeParameters(@NotNull List<? extends CoreExpression> types, @NotNull ConcreteSourceNode marker) {
     if (!(marker instanceof Concrete.SourceNode)) {
       throw new IllegalArgumentException();
     }
@@ -462,6 +464,35 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       result = new TypedDependentLink(true, null, typeExpr instanceof Type ? (Type) typeExpr : new TypeExpression(typeExpr, getSortOfType(typeExpr, (Concrete.SourceNode) marker)), result);
     }
     return result;
+  }
+
+  @Override
+  public @Nullable AbstractedExpression substituteAbstractedExpression(@NotNull AbstractedExpression expression, @NotNull List<? extends ConcreteExpression> arguments) {
+    if (arguments.isEmpty()) {
+      return expression;
+    }
+
+    int i = 0;
+    ExprSubstitution substitution = new ExprSubstitution();
+    while (i < arguments.size()) {
+      if (!(expression instanceof AbstractedExpressionImpl)) {
+        throw new IllegalArgumentException();
+      }
+      AbstractedExpressionImpl abs = (AbstractedExpressionImpl) expression;
+      DependentLink link = abs.getParameters();
+      for (; i < arguments.size(); i++, link = link.getNext()) {
+        TypecheckingResult arg = typecheck(arguments.get(i), link.getTypeExpr());
+        if (arg == null || arg.expression.isError()) {
+          return null;
+        }
+        substitution.add(link, arg.expression);
+      }
+      if (link.hasNext()) {
+        return AbstractedExpressionImpl.subst(AbstractedExpressionImpl.make(link, abs.getExpression()), substitution);
+      }
+      expression = abs.getExpression();
+    }
+    return AbstractedExpressionImpl.subst(expression, substitution);
   }
 
   public TypecheckingResult checkExpr(Concrete.Expression expr, Expression expectedType) {

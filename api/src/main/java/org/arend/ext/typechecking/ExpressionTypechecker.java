@@ -9,6 +9,7 @@ import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.context.CoreInferenceVariable;
 import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.core.definition.CoreClassDefinition;
+import org.arend.ext.core.expr.AbstractedExpression;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.core.expr.CoreInferenceReferenceExpression;
 import org.arend.ext.core.expr.UncheckedExpression;
@@ -99,7 +100,13 @@ public interface ExpressionTypechecker extends UserDataHolder {
   /**
    * @return a list of explicit parameters with specified types, or {@code null} if one of the expressions in {@code types} is not a type.
    */
-  @NotNull CoreParameter makeParameters(@NotNull List<? extends CoreExpression> types, @NotNull ConcreteExpression marker);
+  @NotNull CoreParameter makeParameters(@NotNull List<? extends CoreExpression> types, @NotNull ConcreteSourceNode marker);
+
+  /**
+   * Typechecks {@code arguments} and substitute them into {@code expression}.
+   * The number of {@code arguments} should be less than or equal to the length of the context of {@code expression}.
+   */
+  @Nullable AbstractedExpression substituteAbstractedExpression(@NotNull AbstractedExpression expression, @NotNull List<? extends ConcreteExpression> arguments);
 
   /**
    * Defers the invocation of the given meta.
