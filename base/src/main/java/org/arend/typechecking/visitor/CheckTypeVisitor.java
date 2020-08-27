@@ -47,6 +47,7 @@ import org.arend.ext.prettyprinting.doc.DocFactory;
 import org.arend.ext.reference.ArendRef;
 import org.arend.ext.typechecking.*;
 import org.arend.ext.variable.Variable;
+import org.arend.extImpl.AbstractedDependentLinkType;
 import org.arend.extImpl.AbstractedExpressionImpl;
 import org.arend.extImpl.ContextDataImpl;
 import org.arend.extImpl.UncheckedExpressionImpl;
@@ -475,11 +476,20 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     int i = 0;
     ExprSubstitution substitution = new ExprSubstitution();
     while (i < arguments.size()) {
-      if (!(expression instanceof AbstractedExpressionImpl)) {
+      DependentLink link;
+      int drop = 0;
+      if (expression instanceof AbstractedExpressionImpl) {
+        link = ((AbstractedExpressionImpl) expression).getParameters();
+      } else if (expression instanceof AbstractedDependentLinkType) {
+        link = ((AbstractedDependentLinkType) expression).getParameters();
+        drop = arguments.size() - i;
+        if (drop > ((AbstractedDependentLinkType) expression).getSize()) {
+          throw new IllegalArgumentException();
+        }
+      } else {
         throw new IllegalArgumentException();
       }
-      AbstractedExpressionImpl abs = (AbstractedExpressionImpl) expression;
-      DependentLink link = abs.getParameters();
+
       for (; i < arguments.size(); i++, link = link.getNext()) {
         TypecheckingResult arg = typecheck(arguments.get(i), link.getTypeExpr());
         if (arg == null || arg.expression.isError()) {
@@ -487,6 +497,13 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         }
         substitution.add(link, arg.expression);
       }
+
+      if (expression instanceof AbstractedDependentLinkType) {
+        AbstractedDependentLinkType abs = (AbstractedDependentLinkType) expression;
+        return AbstractedExpressionImpl.subst(AbstractedDependentLinkType.make(DependentLink.Helper.get(abs.getParameters(), drop), abs.getSize() - drop), substitution);
+      }
+
+      AbstractedExpressionImpl abs = (AbstractedExpressionImpl) expression;
       if (link.hasNext()) {
         return AbstractedExpressionImpl.subst(AbstractedExpressionImpl.make(link, abs.getExpression()), substitution);
       }
