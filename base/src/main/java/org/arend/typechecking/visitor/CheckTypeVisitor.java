@@ -468,6 +468,30 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   @Override
+  public @NotNull CoreParameter mergeParameters(@NotNull List<? extends CoreParameter> parameters) {
+    if (parameters.isEmpty()) {
+      return EmptyDependentLink.getInstance();
+    }
+    CoreParameter param = parameters.get(parameters.size() - 1);
+    if (!(param instanceof DependentLink)) {
+      throw new IllegalArgumentException();
+    }
+
+    DependentLink link = (DependentLink) param;
+    for (int i = parameters.size() - 2; i >= 0; i--) {
+      if (!(parameters.get(i) instanceof DependentLink)) {
+        throw new IllegalArgumentException();
+      }
+      DependentLink link1 = DependentLink.Helper.copy((DependentLink) parameters.get(i));
+      if (link1.hasNext()) {
+        DependentLink.Helper.getLast(link1).setNext(link);
+      }
+      link = link1;
+    }
+    return link;
+  }
+
+  @Override
   public @Nullable AbstractedExpression substituteAbstractedExpression(@NotNull AbstractedExpression expression, @NotNull List<? extends ConcreteExpression> arguments) {
     if (arguments.isEmpty()) {
       return expression;

@@ -103,6 +103,11 @@ public interface ExpressionTypechecker extends UserDataHolder {
   @NotNull CoreParameter makeParameters(@NotNull List<? extends CoreExpression> types, @NotNull ConcreteSourceNode marker);
 
   /**
+   * Merges a list of parameters.
+   */
+  @NotNull CoreParameter mergeParameters(@NotNull List<? extends CoreParameter> parameters);
+
+  /**
    * Typechecks {@code arguments} and substitute them into {@code expression}.
    * The number of {@code arguments} should be less than or equal to the length of the context of {@code expression}.
    */
