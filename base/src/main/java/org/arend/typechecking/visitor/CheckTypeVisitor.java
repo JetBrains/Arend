@@ -1209,7 +1209,8 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   private TResult getLocalVar(Referable ref, Concrete.SourceNode sourceNode) {
     if (ref instanceof UnresolvedReference || ref instanceof RedirectingReferable) {
-      throw new IllegalStateException("Unresolved reference `" + ref.textRepresentation() + "`");
+      myErrorReporter.report(new TypecheckingError("Unresolved reference `" + ref.textRepresentation() + "`. This may be caused by a bug in a meta resolver.", sourceNode));
+      return null;
     }
     if (ref instanceof ErrorReference) {
       return null;
