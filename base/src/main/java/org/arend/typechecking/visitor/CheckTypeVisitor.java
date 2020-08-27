@@ -1535,6 +1535,8 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   };
 
   private static class ExpressionParametersProvider implements ParametersProvider {
+    private Sort sort = Sort.STD;
+    private SingleDependentLink parameter = EmptyDependentLink.getInstance();
     private Expression expression;
     private final ExprSubstitution substitution = new ExprSubstitution();
 
@@ -1544,23 +1546,27 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
     @Override
     public @Nullable SingleDependentLink nextParameter() {
-      expression = expression.subst(substitution).normalize(NormalizationMode.WHNF);
-      substitution.clear();
-      if (expression instanceof PiExpression) {
+      if (!parameter.hasNext()) {
+        expression = expression.subst(substitution).normalize(NormalizationMode.WHNF);
+        substitution.clear();
+        if (!(expression instanceof PiExpression)) {
+          return null;
+        }
+
         PiExpression piExpr = (PiExpression) expression;
-        SingleDependentLink result = piExpr.getParameters();
-        expression = result.getNext().hasNext() ? new PiExpression(piExpr.getResultSort(), result.getNext(), piExpr.getCodomain()) : piExpr.getCodomain();
-        return result;
-      } else {
-        return null;
+        sort = piExpr.getResultSort();
+        parameter = piExpr.getParameters();
+        expression = piExpr.getCodomain();
       }
+
+      SingleDependentLink result = parameter;
+      parameter = parameter.getNext();
+      return result;
     }
 
     @Override
     public @Nullable Expression getType() {
-      Expression result = expression.subst(substitution);
-      substitution.clear();
-      return result;
+      return (parameter.hasNext() ? new PiExpression(sort, parameter, expression) : expression).subst(substitution);
     }
 
     @Override
