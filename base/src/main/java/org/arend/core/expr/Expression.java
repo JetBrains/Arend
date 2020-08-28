@@ -8,6 +8,7 @@ import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.pattern.Pattern;
 import org.arend.core.subst.UnfoldVisitor;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
+import org.arend.ext.core.expr.*;
 import org.arend.ext.variable.Variable;
 import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.context.param.DependentLink;
@@ -23,8 +24,6 @@ import org.arend.core.subst.SubstVisitor;
 import org.arend.error.IncorrectExpressionException;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.context.CoreParameter;
-import org.arend.ext.core.expr.CoreExpression;
-import org.arend.ext.core.expr.UncheckedExpression;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.ExpressionMapper;
 import org.arend.ext.core.ops.NormalizationMode;
@@ -227,6 +226,17 @@ public abstract class Expression implements Body, CoreExpression {
       substitution.add(entry.getKey(), UncheckedExpressionImpl.extract(entry.getValue()));
     }
     return new UncheckedExpressionImpl(accept(new SubstVisitor(substitution, LevelSubstitution.EMPTY), null));
+  }
+
+  @Override
+  public @Nullable Expression lambdaToPi() {
+    Expression expr = getUnderlyingExpression();
+    if (expr instanceof LamExpression) {
+      Expression cod = ((LamExpression) expr).getBody().lambdaToPi();
+      return cod == null ? null : new PiExpression(((LamExpression) expr).getResultSort(), ((LamExpression) expr).getParameters(), cod);
+    } else {
+      return expr.getSortOfType() == null ? null : expr;
+    }
   }
 
   @Override

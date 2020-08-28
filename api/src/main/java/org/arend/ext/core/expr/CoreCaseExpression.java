@@ -5,7 +5,7 @@ import org.arend.ext.core.body.CoreElimBody;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collection;
+import java.util.List;
 
 public interface CoreCaseExpression {
   boolean isSCase();
@@ -13,5 +13,5 @@ public interface CoreCaseExpression {
   @NotNull CoreExpression getResultType();
   @Nullable CoreExpression getResultTypeLevel();
   @NotNull CoreElimBody getElimBody();
-  @NotNull Collection<? extends CoreExpression> getArguments();
+  @NotNull List<? extends CoreExpression> getArguments();
 }

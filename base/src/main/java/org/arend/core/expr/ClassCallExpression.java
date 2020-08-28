@@ -237,7 +237,8 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
     }
   }
 
-  public DependentLink getClassFieldParameters() {
+  @Override
+  public @NotNull DependentLink getClassFieldParameters() {
     Map<ClassField, Expression> implementations = new HashMap<>();
     NewExpression newExpr = new NewExpression(null, new ClassCallExpression(getDefinition(), getSortArgument(), implementations, Sort.PROP, UniverseKind.NO_UNIVERSES));
     newExpr.getClassCall().copyImplementationsFrom(this);

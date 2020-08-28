@@ -6,6 +6,8 @@ import org.arend.core.expr.Expression;
 import org.arend.core.expr.ReferenceExpression;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
+import org.arend.ext.core.body.CorePattern;
+import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.PatternUnificationError;
@@ -53,6 +55,18 @@ public class BindingPattern implements ExpressionPattern {
   @Override
   public List<? extends ExpressionPattern> getSubPatterns() {
     return Collections.emptyList();
+  }
+
+  @Override
+  public @NotNull Pattern subst(@NotNull Map<? extends CoreBinding, ? extends CorePattern> map) {
+    CorePattern pattern = map.get(myBinding);
+    if (pattern == null) {
+      return this;
+    }
+    if (!(pattern instanceof Pattern)) {
+      throw new IllegalArgumentException();
+    }
+    return (Pattern) pattern;
   }
 
   @Override

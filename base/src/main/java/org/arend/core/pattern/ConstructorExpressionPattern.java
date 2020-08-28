@@ -60,7 +60,7 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Expression>
 
   @Override
   public Concrete.Pattern toConcrete(Object data, boolean isExplicit, Map<DependentLink, Concrete.Pattern> subPatterns) {
-    Definition definition = getDefinition();
+    Definition definition = getConstructor();
     DependentLink param = definition != null ? definition.getParameters() : EmptyDependentLink.getInstance();
 
     List<Concrete.Pattern> patterns = new ArrayList<>();
@@ -71,7 +71,7 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Expression>
       }
     }
 
-    if (definition != null && !(definition instanceof ClassDefinition)) {
+    if (definition != null) {
       return new Concrete.ConstructorPattern(data, isExplicit, definition.getRef(), patterns, Collections.emptyList());
     } else {
       return new Concrete.TuplePattern(data, isExplicit, patterns, Collections.emptyList());
@@ -303,7 +303,6 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Expression>
 
   @Override
   public Pattern removeExpressions() {
-    Definition definition = getDefinition();
-    return ConstructorPattern.make(definition instanceof Constructor || definition instanceof DConstructor ? definition : null, ExpressionPattern.removeExpressions(getSubPatterns()));
+    return ConstructorPattern.make(getConstructor(), ExpressionPattern.removeExpressions(getSubPatterns()));
   }
 }

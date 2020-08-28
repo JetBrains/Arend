@@ -4,7 +4,10 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.expr.Expression;
 import org.arend.core.pattern.Pattern;
 import org.arend.ext.core.body.CoreElimClause;
+import org.arend.ext.core.expr.AbstractedExpression;
+import org.arend.extImpl.AbstractedExpressionImpl;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -34,5 +37,10 @@ public class ElimClause<P extends Pattern> implements CoreElimClause {
 
   public void setExpression(Expression expr) {
     myExpression = expr;
+  }
+
+  @Override
+  public @Nullable AbstractedExpression getAbstractedExpression() {
+    return myExpression == null ? null : AbstractedExpressionImpl.make(getParameters(), myExpression);
   }
 }

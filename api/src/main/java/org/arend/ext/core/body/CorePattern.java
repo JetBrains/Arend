@@ -1,6 +1,8 @@
 package org.arend.ext.core.body;
 
 import org.arend.ext.core.context.CoreBinding;
+import org.arend.ext.core.context.CoreParameter;
+import org.arend.ext.core.definition.CoreClassDefinition;
 import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.ext.prettyprinting.PrettyPrintable;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
@@ -11,6 +13,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
@@ -30,7 +33,7 @@ public interface CorePattern extends PrettyPrintable {
    *
    * @return the head constructor of the pattern or null.
    */
-  @Nullable CoreDefinition getDefinition();
+  @Nullable CoreDefinition getConstructor();
 
   /**
    * If the pattern is a constructor pattern or a tuple pattern, returns the list of subpatterns.
@@ -44,6 +47,13 @@ public interface CorePattern extends PrettyPrintable {
    * @return true if the pattern is the absurd pattern, false otherwise.
    */
   boolean isAbsurd();
+
+  /**
+   * @return all bindings in this pattern stitched into a single linked list.
+   */
+  @NotNull CoreParameter getAllBindings();
+
+  @NotNull CorePattern subst(@NotNull Map<? extends CoreBinding, ? extends CorePattern> map);
 
   @Override
   default void prettyPrint(StringBuilder builder, PrettyPrinterConfig ppConfig) {
@@ -60,13 +70,13 @@ public interface CorePattern extends PrettyPrintable {
       return text(binding.getName());
     }
 
-    CoreDefinition definition = getDefinition();
+    CoreDefinition definition = getConstructor();
     List<LineDoc> docs = new ArrayList<>();
     if (definition != null) {
       docs.add(refDoc(definition.getRef()));
     }
     for (CorePattern subPattern : getSubPatterns()) {
-      docs.add(parens(subPattern.prettyPrint(ppConfig), subPattern.getDefinition() != null));
+      docs.add(parens(subPattern.prettyPrint(ppConfig), subPattern.getConstructor() != null));
     }
     return parens(hSep(text(definition == null ? ", " : " "), docs), definition == null);
   }

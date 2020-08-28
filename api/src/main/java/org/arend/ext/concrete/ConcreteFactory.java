@@ -1,9 +1,6 @@
 package org.arend.ext.concrete;
 
-import org.arend.ext.concrete.expr.ConcreteArgument;
-import org.arend.ext.concrete.expr.ConcreteCaseArgument;
-import org.arend.ext.concrete.expr.ConcreteExpression;
-import org.arend.ext.concrete.expr.ConcreteReferenceExpression;
+import org.arend.ext.concrete.expr.*;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.reference.ArendRef;
@@ -28,10 +25,11 @@ public interface ConcreteFactory {
   @NotNull ConcreteExpression core(@Nullable String name, @NotNull TypedExpression expr);
   @NotNull ConcreteExpression meta(@NotNull String name, @NotNull MetaDefinition meta);
   @NotNull ConcreteExpression thisExpr();
-  @NotNull ConcreteExpression lam(@NotNull Collection<? extends ConcreteParameter> parameters, @NotNull ConcreteExpression body);
+  @NotNull ConcreteLamExpression lam(@NotNull Collection<? extends ConcreteParameter> parameters, @NotNull ConcreteExpression body);
   @NotNull ConcreteExpression pi(@NotNull Collection<? extends ConcreteParameter> parameters, @NotNull ConcreteExpression codomain);
   @NotNull ConcreteExpression universe(@Nullable ConcreteLevel pLevel, @Nullable ConcreteLevel hLevel);
   @NotNull ConcreteExpression hole();
+  @NotNull ConcreteExpression error(@Nullable GeneralError error);
   @NotNull ConcreteExpression goal();
   @NotNull ConcreteExpression goal(@Nullable String name, @Nullable ConcreteExpression expression);
   @NotNull ConcreteExpression goal(@Nullable String name, @Nullable ConcreteExpression expression, @Nullable GoalSolver goalSolver);

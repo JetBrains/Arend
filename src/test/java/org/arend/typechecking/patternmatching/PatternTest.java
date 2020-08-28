@@ -11,13 +11,13 @@ import org.arend.core.pattern.ConstructorExpressionPattern;
 import org.arend.core.pattern.EmptyPattern;
 import org.arend.core.pattern.ExpressionPattern;
 import org.arend.core.sort.Sort;
+import org.arend.ext.error.RedundantClauseError;
 import org.arend.frontend.reference.ConcreteLocatedReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.Group;
 import org.arend.typechecking.TypeCheckingTestCase;
-import org.arend.typechecking.error.local.CertainTypecheckingError;
 import org.arend.typechecking.error.local.LocalErrorReporter;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.arend.util.Pair;
@@ -98,8 +98,8 @@ public class PatternTest extends TypeCheckingTestCase {
         last = link;
       } else
       if (pattern instanceof ConstructorExpressionPattern) {
-        for (int i = ((ConstructorExpressionPattern) pattern).getSubPatterns().size() - 1; i >= 0; i--) {
-          patternStack.push(((ConstructorExpressionPattern) pattern).getSubPatterns().get(i));
+        for (int i = pattern.getSubPatterns().size() - 1; i >= 0; i--) {
+          patternStack.push(pattern.getSubPatterns().get(i));
         }
       } else
       if (pattern instanceof EmptyPattern) {
@@ -384,7 +384,7 @@ public class PatternTest extends TypeCheckingTestCase {
       "\\func f (n : Nat) : Nat\n" +
       "  | _ => 0\n" +
       "  | zero => 1", 1);
-    assertThatErrorsAre(typecheckingError(CertainTypecheckingError.Kind.REDUNDANT_CLAUSE));
+    assertThatErrorsAre(typecheckingError(RedundantClauseError.class));
   }
 
   @Test

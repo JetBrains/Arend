@@ -28,10 +28,7 @@ import org.arend.ext.ArendExtension;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
-import org.arend.ext.error.ArgumentExplicitnessError;
-import org.arend.ext.error.ErrorReporter;
-import org.arend.ext.error.GeneralError;
-import org.arend.ext.error.TypecheckingError;
+import org.arend.ext.error.*;
 import org.arend.ext.typechecking.LevelProver;
 import org.arend.naming.reference.*;
 import org.arend.prelude.Prelude;
@@ -1428,7 +1425,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
               typechecker.getInstancePool().setInstancePool(instancePool.subst(substitution));
             }
             if (result != null && result.hasEmptyPattern()) {
-              originalErrorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.REDUNDANT_CLAUSE, clause));
+              originalErrorReporter.report(new RedundantClauseError(clause));
               result = null;
             }
             if (result == null) {

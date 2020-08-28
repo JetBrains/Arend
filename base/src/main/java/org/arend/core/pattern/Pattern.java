@@ -2,11 +2,14 @@ package org.arend.core.pattern;
 
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
+import org.arend.core.definition.Constructor;
+import org.arend.core.definition.DConstructor;
 import org.arend.core.definition.Definition;
 import org.arend.core.expr.Expression;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.ext.core.body.CorePattern;
 import org.arend.ext.core.context.CoreBinding;
+import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -14,6 +17,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 public interface Pattern extends CorePattern {
   DependentLink getFirstBinding();
@@ -22,6 +26,18 @@ public interface Pattern extends CorePattern {
   @Override @NotNull List<? extends Pattern> getSubPatterns();
   DependentLink replaceBindings(DependentLink link, List<Pattern> result);
   ExpressionPattern toExpressionPattern(Expression type);
+  @Override @NotNull Pattern subst(@NotNull Map<? extends CoreBinding, ? extends CorePattern> map);
+
+  @Override
+  default Definition getConstructor() {
+    Definition def = getDefinition();
+    return def instanceof Constructor || def instanceof DConstructor ? def : null;
+  }
+
+  @Override
+  default @NotNull CoreParameter getAllBindings() {
+    return getFirstBinding();
+  }
 
   @Override
   @Nullable

@@ -19,6 +19,7 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.InPlaceLevelSubstVisitor;
 import org.arend.core.subst.LevelSubstitution;
+import org.arend.core.subst.SubstVisitor;
 import org.arend.error.*;
 import org.arend.ext.ArendExtension;
 import org.arend.ext.FreeBindingsModifier;
@@ -26,12 +27,14 @@ import org.arend.ext.concrete.ConcreteParameter;
 import org.arend.ext.concrete.ConcretePattern;
 import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.concrete.expr.ConcreteExpression;
+import org.arend.ext.concrete.expr.ConcreteLamExpression;
 import org.arend.ext.concrete.expr.ConcreteReferenceExpression;
 import org.arend.ext.core.body.CorePattern;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.context.CoreInferenceVariable;
 import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
+import org.arend.ext.core.expr.AbstractedExpression;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.core.expr.CoreInferenceReferenceExpression;
 import org.arend.ext.core.expr.UncheckedExpression;
@@ -44,6 +47,7 @@ import org.arend.ext.prettyprinting.doc.DocFactory;
 import org.arend.ext.reference.ArendRef;
 import org.arend.ext.typechecking.*;
 import org.arend.ext.variable.Variable;
+import org.arend.extImpl.AbstractedExpressionImpl;
 import org.arend.extImpl.ContextDataImpl;
 import org.arend.extImpl.UncheckedExpressionImpl;
 import org.arend.extImpl.userData.UserDataHolderImpl;
@@ -393,6 +397,102 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       //noinspection unchecked
       return result == null ? null : (List<CorePattern>) (List<?>) result.getPatterns();
     }
+  }
+
+  private static class ListParametersProvider implements ParametersProvider {
+    private DependentLink parameter;
+    private SingleDependentLink single = EmptyDependentLink.getInstance();
+    private final ExprSubstitution substitution = new ExprSubstitution();
+
+    ListParametersProvider(DependentLink parameter) {
+      this.parameter = parameter;
+    }
+
+    @Override
+    public @Nullable SingleDependentLink nextParameter() {
+      if (!single.hasNext()) {
+        if (!parameter.hasNext()) {
+          return null;
+        }
+
+        List<String> names = new ArrayList<>();
+        parameter = parameter.getNextTyped(names);
+        single = ExpressionFactory.singleParams(parameter.isExplicit(), names, parameter.getType().subst(new SubstVisitor(substitution, LevelSubstitution.EMPTY)));
+        parameter = parameter.getNext();
+      }
+
+      SingleDependentLink result = single;
+      single = single.getNext();
+      return result;
+    }
+
+    @Override
+    public @Nullable Expression getType() {
+      return null;
+    }
+
+    @Override
+    public void subst(DependentLink param, Expression expr) {
+      substitution.add(param, expr);
+    }
+  }
+
+  @Override
+  public @Nullable TypedExpression typecheckLambda(@NotNull ConcreteLamExpression expr, @NotNull CoreParameter parameters) {
+    if (!(parameters instanceof DependentLink && expr instanceof Concrete.LamExpression)) {
+      throw new IllegalArgumentException();
+    }
+
+    Concrete.LamExpression lamExpr = (Concrete.LamExpression) expr;
+    try (var ignored = new Utils.SetContextSaver<>(context)) {
+      return visitLam(lamExpr.getParameters(), lamExpr, new ListParametersProvider((DependentLink) parameters));
+    }
+  }
+
+  @Override
+  public @NotNull DependentLink makeParameters(@NotNull List<? extends CoreExpression> types, @NotNull ConcreteSourceNode marker) {
+    if (!(marker instanceof Concrete.SourceNode)) {
+      throw new IllegalArgumentException();
+    }
+
+    DependentLink result = EmptyDependentLink.getInstance();
+    for (int i = types.size() - 1; i >= 0; i--) {
+      if (!(types.get(i) instanceof Expression)) {
+        throw new IllegalArgumentException();
+      }
+      Expression typeExpr = (Expression) types.get(i);
+      result = new TypedDependentLink(true, null, typeExpr instanceof Type ? (Type) typeExpr : new TypeExpression(typeExpr, getSortOfType(typeExpr, (Concrete.SourceNode) marker)), result);
+    }
+    return result;
+  }
+
+  @Override
+  public @Nullable AbstractedExpression substituteAbstractedExpression(@NotNull AbstractedExpression expression, @NotNull List<? extends ConcreteExpression> arguments) {
+    if (arguments.isEmpty()) {
+      return expression;
+    }
+
+    int i = 0;
+    ExprSubstitution substitution = new ExprSubstitution();
+    while (i < arguments.size()) {
+      if (!(expression instanceof AbstractedExpressionImpl)) {
+        throw new IllegalArgumentException();
+      }
+      AbstractedExpressionImpl abs = (AbstractedExpressionImpl) expression;
+      DependentLink link = abs.getParameters();
+      for (; i < arguments.size(); i++, link = link.getNext()) {
+        TypecheckingResult arg = typecheck(arguments.get(i), link.getTypeExpr());
+        if (arg == null || arg.expression.isError()) {
+          return null;
+        }
+        substitution.add(link, arg.expression);
+      }
+      if (link.hasNext()) {
+        return AbstractedExpressionImpl.subst(AbstractedExpressionImpl.make(link, abs.getExpression()), substitution);
+      }
+      expression = abs.getExpression();
+    }
+    return AbstractedExpressionImpl.subst(expression, substitution);
   }
 
   public TypecheckingResult checkExpr(Concrete.Expression expr, Expression expectedType) {
@@ -1410,46 +1510,100 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     return new TypecheckingResult(new LamExpression(sort, params, bodyResult.expression), new PiExpression(sort, params, bodyResult.type));
   }
 
-  private TypecheckingResult visitLam(List<? extends Concrete.Parameter> parameters, Concrete.LamExpression expr, Expression expectedType) {
-    if (parameters.isEmpty()) {
-      return checkExpr(expr.getBody(), expectedType);
+  private interface ParametersProvider {
+    @Nullable SingleDependentLink nextParameter();
+    @Nullable Expression getType();
+    void subst(DependentLink param, Expression expr);
+  }
+
+  private static final ParametersProvider NULL_PARAMETERS_PROVIDER = new ParametersProvider() {
+    @Override
+    public @Nullable SingleDependentLink nextParameter() {
+      return null;
     }
 
-    Concrete.Parameter param = parameters.get(0);
-    if (expectedType != null) {
-      expectedType = expectedType.normalize(NormalizationMode.WHNF);
-      if (param.isExplicit()) {
-        PiExpression piExpectedType = expectedType.cast(PiExpression.class);
-        if (piExpectedType != null && !piExpectedType.getParameters().isExplicit()) {
-          SingleDependentLink piParams = piExpectedType.getParameters();
-          for (SingleDependentLink link = piParams; link.hasNext(); link = link.getNext()) {
-            addBinding(null, link);
-          }
-          return bodyToLam(piParams, visitLam(parameters, expr, piExpectedType.getCodomain()), expr);
-        }
+    @Override
+    public @Nullable Expression getType() {
+      return null;
+    }
+
+    @Override
+    public void subst(DependentLink param, Expression expr) {
+
+    }
+  };
+
+  private static class ExpressionParametersProvider implements ParametersProvider {
+    private Expression expression;
+    private final ExprSubstitution substitution = new ExprSubstitution();
+
+    public ExpressionParametersProvider(Expression expression) {
+      this.expression = expression;
+    }
+
+    @Override
+    public @Nullable SingleDependentLink nextParameter() {
+      expression = expression.subst(substitution).normalize(NormalizationMode.WHNF);
+      substitution.clear();
+      if (expression instanceof PiExpression) {
+        PiExpression piExpr = (PiExpression) expression;
+        SingleDependentLink result = piExpr.getParameters();
+        expression = result.getNext().hasNext() ? new PiExpression(piExpr.getResultSort(), result.getNext(), piExpr.getCodomain()) : piExpr.getCodomain();
+        return result;
+      } else {
+        return null;
       }
     }
 
+    @Override
+    public @Nullable Expression getType() {
+      Expression result = expression.subst(substitution);
+      substitution.clear();
+      return result;
+    }
+
+    @Override
+    public void subst(DependentLink param, Expression expr) {
+      substitution.add(param, expr);
+    }
+  }
+
+  private TypecheckingResult visitLam(List<? extends Concrete.Parameter> parameters, Concrete.LamExpression expr, ParametersProvider provider) {
+    if (parameters.isEmpty()) {
+      return checkExpr(expr.getBody(), provider.getType());
+    }
+
+    Concrete.Parameter param = parameters.get(0);
+    SingleDependentLink piParam = provider.nextParameter();
+    if (piParam != null && !piParam.isExplicit() && param.isExplicit()) {
+      for (SingleDependentLink link = piParam; link.hasNext(); link = link.getNext()) {
+        addBinding(null, link);
+        if (link instanceof UntypedSingleDependentLink) {
+          provider.nextParameter();
+        }
+      }
+      return bodyToLam(piParam, visitLam(parameters, expr, provider), expr);
+    }
+
     if (param instanceof Concrete.NameParameter) {
-      PiExpression piExpectedType = expectedType == null ? null : expectedType.cast(PiExpression.class);
-      if (piExpectedType == null) {
+      if (piParam == null) {
         TypedSingleDependentLink link = visitNameParameter((Concrete.NameParameter) param, expr);
-        TypecheckingResult bodyResult = visitLam(parameters.subList(1, parameters.size()), expr, null);
+        TypecheckingResult bodyResult = visitLam(parameters.subList(1, parameters.size()), expr, NULL_PARAMETERS_PROVIDER);
         if (bodyResult == null) return null;
         Sort sort = PiExpression.generateUpperBound(link.getType().getSortOfType(), getSortOfType(bodyResult.type, expr), myEquations, expr);
         TypecheckingResult result = new TypecheckingResult(new LamExpression(sort, link, bodyResult.expression), new PiExpression(sort, link, bodyResult.type));
+        Expression expectedType = provider.getType();
         if (expectedType != null && checkResult(expectedType, result, expr) == null) {
           return null;
         }
         return result;
       } else {
         Referable referable = ((Concrete.NameParameter) param).getReferable();
-        SingleDependentLink piParams = piExpectedType.getParameters();
-        if (piParams.isExplicit() && !param.isExplicit()) {
+        if (piParam.isExplicit() && !param.isExplicit()) {
           errorReporter.report(new ImplicitLambdaError(referable, -1, param));
         }
 
-        Type paramType = piParams.getType();
+        Type paramType = piParam.getType();
         DefCallExpression defCallParamType = paramType.getExpr().cast(DefCallExpression.class);
         if (defCallParamType != null && defCallParamType.getUniverseKind() == UniverseKind.NO_UNIVERSES) { // fixes test pLevelTest
           Definition definition = defCallParamType.getDefinition();
@@ -1490,86 +1644,54 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           }
         }
 
-        SingleDependentLink link = new TypedSingleDependentLink(piParams.isExplicit(), referable == null ? null : referable.textRepresentation(), paramType);
+        SingleDependentLink link = new TypedSingleDependentLink(piParam.isExplicit(), referable == null ? null : referable.textRepresentation(), paramType);
         addBinding(referable, link);
-        Expression codomain = piExpectedType.getCodomain().subst(piParams, new ReferenceExpression(link));
-        return bodyToLam(link, visitLam(parameters.subList(1, parameters.size()), expr, piParams.getNext().hasNext() ? new PiExpression(piExpectedType.getResultSort(), piParams.getNext(), codomain) : codomain), expr);
+        provider.subst(piParam, new ReferenceExpression(link));
+        return bodyToLam(link, visitLam(parameters.subList(1, parameters.size()), expr, provider), expr);
       }
     } else if (param instanceof Concrete.TypeParameter) {
-      PiExpression piExpectedType = expectedType == null ? null : expectedType.cast(PiExpression.class);
-      SingleDependentLink link = visitTypeParameter((Concrete.TypeParameter) param, null, piExpectedType == null || piExpectedType.getParameters().isExplicit() != param.isExplicit() ? null : piExpectedType.getParameters().getType());
+      SingleDependentLink link = visitTypeParameter((Concrete.TypeParameter) param, null, piParam == null || piParam.isExplicit() != param.isExplicit() ? null : piParam.getType());
       if (link == null) {
         return null;
       }
 
-      SingleDependentLink actualLink = null;
-      Expression expectedBodyType = null;
       int namesCount = param.getNumberOfParameters();
-      if (expectedType != null) {
-        Concrete.Expression paramType = param.getType();
+      SingleDependentLink actualLink = link;
+      if (piParam != null) {
         Expression argType = link.getTypeExpr();
-
-        SingleDependentLink lamLink = link;
-        ExprSubstitution substitution = new ExprSubstitution();
-        Expression argExpr = null;
-        int checked = 0;
-        while (true) {
-          piExpectedType = expectedType.cast(PiExpression.class);
-          if (piExpectedType == null) {
-            actualLink = link;
-            for (int i = 0; i < checked; i++) {
-              actualLink = actualLink.getNext();
-            }
-            expectedType = expectedType.subst(substitution);
+        for (int i = 0; i < namesCount; i++, actualLink = actualLink.getNext()) {
+          while (piParam instanceof UntypedDependentLink && i < namesCount - 1) {
+            provider.subst(piParam, new ReferenceExpression(actualLink));
+            piParam = provider.nextParameter();
+            actualLink = actualLink.getNext();
+            i++;
+          }
+          if (piParam == null) {
             break;
           }
-          if (argExpr == null) {
-            argExpr = argType;
+          if (piParam.isExplicit() && !param.isExplicit() && i < namesCount) {
+            errorReporter.report(new ImplicitLambdaError(param.getReferableList().get(i), namesCount > 1 ? i : -1, param));
           }
-
-          Expression argExpectedType = piExpectedType.getParameters().getTypeExpr().subst(substitution);
-          if (piExpectedType.getParameters().isExplicit() && !param.isExplicit()) {
-            errorReporter.report(new ImplicitLambdaError(param.getReferableList().get(checked), namesCount > 1 ? checked : -1, param));
-          }
-          if (!CompareVisitor.compare(myEquations, CMP.EQ, argExpr, argExpectedType, Type.OMEGA, paramType)) {
+          if (!CompareVisitor.compare(myEquations, CMP.EQ, argType, piParam.getTypeExpr(), Type.OMEGA, param.getType())) {
             if (!argType.isError()) {
-              errorReporter.report(new TypeMismatchError("Type mismatch in an argument of the lambda", argExpectedType, argType, paramType));
-            }
-            return null;
-          }
-
-          int parametersCount = 0;
-          for (DependentLink link1 = piExpectedType.getParameters(); link1.hasNext(); link1 = link1.getNext()) {
-            parametersCount++;
-            if (lamLink.hasNext()) {
-              substitution.add(link1, new ReferenceExpression(lamLink));
-              lamLink = lamLink.getNext();
+              errorReporter.report(new TypeMismatchError("Type mismatch in an argument of the lambda", piParam.getTypeExpr(), argType, param.getType()));
+              return null;
             }
           }
 
-          checked += parametersCount;
-          if (checked >= namesCount) {
-            if (checked == namesCount) {
-              expectedBodyType = piExpectedType.getCodomain().subst(substitution);
-            } else {
-              int skip = parametersCount - (checked - namesCount);
-              SingleDependentLink link1 = piExpectedType.getParameters();
-              for (int i = 0; i < skip; i++) {
-                link1 = link1.getNext();
-              }
-              expectedBodyType = new PiExpression(piExpectedType.getResultSort(), link1, piExpectedType.getCodomain()).subst(substitution);
-            }
-            break;
+          provider.subst(piParam, new ReferenceExpression(actualLink));
+          if (i < namesCount - 1) {
+            piParam = provider.nextParameter();
           }
-          expectedType = piExpectedType.getCodomain().normalize(NormalizationMode.WHNF);
         }
       }
 
-      TypecheckingResult bodyResult = visitLam(parameters.subList(1, parameters.size()), expr, expectedBodyType);
+      TypecheckingResult bodyResult = visitLam(parameters.subList(1, parameters.size()), expr, actualLink.hasNext() ? NULL_PARAMETERS_PROVIDER : provider);
       if (bodyResult == null) return null;
       Sort sort = PiExpression.generateUpperBound(link.getType().getSortOfType(), getSortOfType(bodyResult.type, expr), myEquations, expr);
-      if (actualLink != null) {
-        if (checkResult(expectedType, new TypecheckingResult(null, new PiExpression(sort, actualLink, bodyResult.type)), expr) == null) {
+      if (actualLink.hasNext()) {
+        Expression expectedType = provider.getType();
+        if (expectedType != null && checkResult(expectedType, new TypecheckingResult(null, new PiExpression(sort, actualLink, bodyResult.type)), expr) == null) {
           return null;
         }
       }
@@ -1583,7 +1705,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   @Override
   public TypecheckingResult visitLam(Concrete.LamExpression expr, Expression expectedType) {
     try (var ignored = new Utils.SetContextSaver<>(context)) {
-      return visitLam(expr.getParameters(), expr, expectedType);
+      return visitLam(expr.getParameters(), expr, expectedType == null ? NULL_PARAMETERS_PROVIDER : new ExpressionParametersProvider(expectedType));
     }
   }
 

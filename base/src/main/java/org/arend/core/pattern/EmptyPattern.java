@@ -9,6 +9,8 @@ import org.arend.core.expr.TupleExpression;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
+import org.arend.ext.core.body.CorePattern;
+import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.term.concrete.Concrete;
 import org.arend.util.Decision;
@@ -62,6 +64,11 @@ public class EmptyPattern implements ExpressionPattern {
   @Override
   public boolean isAbsurd() {
     return true;
+  }
+
+  @Override
+  public @NotNull Pattern subst(@NotNull Map<? extends CoreBinding, ? extends CorePattern> map) {
+    return this;
   }
 
   @Override

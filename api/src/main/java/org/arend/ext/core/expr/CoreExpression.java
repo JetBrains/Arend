@@ -18,7 +18,7 @@ import java.util.function.Predicate;
 /**
  * A core expression is an internal representation of Arend expressions.
  */
-public interface CoreExpression extends CoreBody, UncheckedExpression, PrettyPrintable {
+public interface CoreExpression extends CoreBody, UncheckedExpression, AbstractedExpression, PrettyPrintable {
   <P, R> R accept(@NotNull CoreExpressionVisitor<? super P, ? extends R> visitor, P params);
 
   /**
@@ -58,6 +58,12 @@ public interface CoreExpression extends CoreBody, UncheckedExpression, PrettyPri
    * @return            the codomain of the pi-expression, or the expression itself if it is not a pi-expression.
    */
   @NotNull CoreExpression getPiParameters(@Nullable List<? super CoreParameter> parameters);
+
+  /**
+   * If {@code this} is \lam (x_1 : A_1) ... (x_n : A_n) => B, returns \Pi (x_1 : A_1) ... (x_n : A_n) -> B.
+   * If B is not a type, returns {@code null}.
+   */
+  @Nullable CoreExpression lambdaToPi();
 
   /**
    * Finds a subexpression of this expression satisfying {@code predicate}.

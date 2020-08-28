@@ -660,7 +660,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     } else if (pattern == EmptyPattern.INSTANCE) {
       patterns.add(cEmptyPattern(isExplicit));
     } else {
-      Definition def = pattern.getDefinition();
+      Definition def = pattern.getConstructor();
       if (def == Prelude.ZERO) {
         patterns.add(new Concrete.NumberPattern(null, 0, Collections.emptyList()));
       } else {
@@ -673,10 +673,10 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
           }
         }
 
-        if (pattern.getDefinition() == null) {
+        if (def == null) {
           patterns.add(cTuplePattern(isExplicit, subPatterns));
         } else {
-          patterns.add(cConPattern(isExplicit, pattern.getDefinition().getReferable(), subPatterns));
+          patterns.add(cConPattern(isExplicit, def.getReferable(), subPatterns));
         }
       }
     }
