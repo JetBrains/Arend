@@ -536,6 +536,60 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     return AbstractedExpressionImpl.subst(expression, substitution);
   }
 
+  @Override
+  public @Nullable CoreParameter substituteParameters(@NotNull CoreParameter parameters, @NotNull List<? extends ConcreteExpression> arguments) {
+    boolean allNull = true;
+    for (ConcreteExpression argument : arguments) {
+      if (argument != null) {
+        allNull = false;
+        break;
+      }
+    }
+    if (allNull) {
+      return parameters;
+    }
+
+    if (!(parameters instanceof DependentLink)) {
+      throw new IllegalArgumentException();
+    }
+
+    List<DependentLink> links = DependentLink.Helper.toList((DependentLink) parameters);
+    if (arguments.size() > links.size()) {
+      throw new IllegalArgumentException();
+    }
+
+    ExprSubstitution substitution = new ExprSubstitution();
+    LinkList list = new LinkList();
+    for (int i = 0; i < links.size();) {
+      int typedIndex = i;
+      while (links.get(typedIndex) instanceof UntypedDependentLink) {
+        typedIndex++;
+      }
+      int last = typedIndex;
+      for (; last >= i; last--) {
+        if (last >= arguments.size() || arguments.get(last) == null) {
+          break;
+        }
+      }
+
+      Type type = links.get(typedIndex).getType().subst(new SubstVisitor(substitution, LevelSubstitution.EMPTY));
+      for (; i <= typedIndex; i++) {
+        if (i >= arguments.size() || arguments.get(i) == null) {
+          DependentLink link = i < last ? new UntypedDependentLink(links.get(i).getName()) : new TypedDependentLink(links.get(typedIndex).isExplicit(), links.get(i).getName(), type, links.get(typedIndex).isHidden(), EmptyDependentLink.getInstance());
+          substitution.add(links.get(i), new ReferenceExpression(link));
+          list.append(link);
+        } else {
+          TypecheckingResult result = typecheck(arguments.get(i), type.getExpr());
+          if (result == null) {
+            return null;
+          }
+          substitution.add(links.get(i), result.expression);
+        }
+      }
+    }
+    return list.getFirst();
+  }
+
   public TypecheckingResult checkExpr(Concrete.Expression expr, Expression expectedType) {
     try {
       return expr.accept(this, expectedType);

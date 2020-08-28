@@ -114,6 +114,14 @@ public interface ExpressionTypechecker extends UserDataHolder {
   @Nullable AbstractedExpression substituteAbstractedExpression(@NotNull AbstractedExpression expression, @NotNull List<? extends ConcreteExpression> arguments);
 
   /**
+   * Typechecks {@code arguments} and substitute them into {@code parameters}.
+   * Some elements of {@code arguments} may be {@code null}; the corresponding parameters will be added to the result.
+   * The size of {@code arguments} should be less than or equal to the size of {@code parameters}.
+   * The size of the result is the size of {@code parameters} minus the number of non-null elements of {@code arguments}.
+   */
+  @Nullable CoreParameter substituteParameters(@NotNull CoreParameter parameters, @NotNull List<? extends ConcreteExpression> arguments);
+
+  /**
    * Defers the invocation of the given meta.
    * This might be useful if the meta definition fails because some inference variable are not inferred at the given time.
    *
