@@ -1,6 +1,7 @@
 package org.arend.frontend.group;
 
 import org.arend.ext.error.SourceInfo;
+import org.arend.ext.reference.DataContainer;
 import org.arend.ext.reference.Precedence;
 import org.arend.frontend.parser.Position;
 import org.arend.naming.reference.Referable;
@@ -13,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collection;
 import java.util.List;
 
-public class SimpleNamespaceCommand implements ChildNamespaceCommand, SourceInfo {
+public class SimpleNamespaceCommand implements ChildNamespaceCommand, SourceInfo, DataContainer {
   private final Position myPosition;
   private final Kind myKind;
   private final List<String> myPath;
@@ -30,6 +31,11 @@ public class SimpleNamespaceCommand implements ChildNamespaceCommand, SourceInfo
     myOpenedReferences = openedReferences;
     myHiddenReferences = hiddenReferences;
     myParent = parent;
+  }
+
+  @Override
+  public @NotNull Position getData() {
+    return myPosition;
   }
 
   @NotNull

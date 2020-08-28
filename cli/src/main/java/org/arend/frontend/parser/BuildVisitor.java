@@ -188,7 +188,8 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
 
   private SimpleNamespaceCommand visitStatCmd(StatCmdContext ctx, ChildGroup parent) {
     NamespaceCommand.Kind kind = (NamespaceCommand.Kind) visit(ctx.nsCmd());
-    List<String> path = visitLongNamePath(ctx.longName());
+    var longName = ctx.longName();
+    List<String> path = visitLongNamePath(longName);
 
     List<SimpleNamespaceCommand.SimpleNameRenaming> openedReferences;
     NsUsingContext nsUsing = ctx.nsUsing();
@@ -210,7 +211,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       hiddenReferences.add(new NamedUnresolvedReference(tokenPosition(id.getSymbol()), id.getText()));
     }
 
-    return new SimpleNamespaceCommand(tokenPosition(ctx.start), kind, path, nsUsing == null || nsUsing.USING() != null, openedReferences, hiddenReferences, parent);
+    return new SimpleNamespaceCommand(tokenPosition(longName.start), kind, path, nsUsing == null || nsUsing.USING() != null, openedReferences, hiddenReferences, parent);
   }
 
   @Override
