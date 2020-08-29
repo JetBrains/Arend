@@ -59,6 +59,7 @@ import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteExpressionVisitor;
 import org.arend.term.concrete.ConcreteLevelExpressionVisitor;
 import org.arend.typechecking.FieldDFS;
+import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.TypecheckingContext;
 import org.arend.typechecking.computation.ComputationRunner;
 import org.arend.typechecking.doubleChecker.CoreException;
@@ -100,6 +101,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   private final List<DeferredMeta> myDeferredMetasBeforeLevels = new ArrayList<>();
   private final List<DeferredMeta> myDeferredMetasAfterLevels = new ArrayList<>();
   private final ArendExtension myArendExtension;
+  private TypecheckerState mySavedState;
 
   private static class DeferredMeta {
     final MetaDefinition meta;
@@ -117,7 +119,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
   }
 
-  private static class MyErrorReporter implements ErrorReporter {
+  public static class MyErrorReporter implements ErrorReporter {
     private final CountingErrorReporter myErrorReporter;
     private Definition.TypeCheckingStatus myStatus = Definition.TypeCheckingStatus.NO_ERRORS;
 
@@ -662,7 +664,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       if (result == null && checkTypeVisitor.getNumberOfErrors() == numberOfErrors) {
         deferredMeta.errorReporter.report(new TypecheckingError("Meta '" + refExpr.getReferent().getRefName() + "' failed", refExpr));
       }
-      deferredMeta.inferenceVar.solve(myEquations, result == null ? new ErrorExpression() : result.expression);
+      deferredMeta.inferenceVar.solve(this, result == null ? new ErrorExpression() : result.expression);
     }
     deferredMetas.clear();
   }
@@ -923,69 +925,72 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
       Referable thisRef = addBinding(null, resultClassCall.getThisBinding());
       myClassCallBindings.add(resultClassCall.getThisBinding());
-      for (Pair<Definition, Concrete.ClassFieldImpl> pair : implementations) {
-        if (pair.proj1 instanceof ClassField) {
-          ClassField field = (ClassField) pair.proj1;
-          TypecheckingResult implResult = typecheckImplementation(field, pair.proj2.implementation, resultClassCall);
-          if (implResult != null) {
-            Expression oldImpl = null;
-            if (!field.isProperty()) {
-              oldImpl = resultClassCall.getAbsImplementationHere(field);
-              if (oldImpl == null) {
-                AbsExpression absImpl = resultClassCall.getDefinition().getImplementation(field);
-                oldImpl = absImpl == null ? null : absImpl.getExpression();
+      try {
+        for (Pair<Definition, Concrete.ClassFieldImpl> pair : implementations) {
+          if (pair.proj1 instanceof ClassField) {
+            ClassField field = (ClassField) pair.proj1;
+            TypecheckingResult implResult = typecheckImplementation(field, pair.proj2.implementation, resultClassCall);
+            if (implResult != null) {
+              Expression oldImpl = null;
+              if (!field.isProperty()) {
+                oldImpl = resultClassCall.getAbsImplementationHere(field);
+                if (oldImpl == null) {
+                  AbsExpression absImpl = resultClassCall.getDefinition().getImplementation(field);
+                  oldImpl = absImpl == null ? null : absImpl.getExpression();
+                }
               }
-            }
-            if (oldImpl != null) {
-              if (!classCallExpr.isImplemented(field) || !CompareVisitor.compare(myEquations, CMP.EQ, implResult.expression, oldImpl, implResult.type, pair.proj2.implementation)) {
-                errorReporter.report(new FieldsImplementationError(true, baseClass.getReferable(), Collections.singletonList(field.getReferable()), pair.proj2));
+              if (oldImpl != null) {
+                if (!classCallExpr.isImplemented(field) || !CompareVisitor.compare(myEquations, CMP.EQ, implResult.expression, oldImpl, implResult.type, pair.proj2.implementation)) {
+                  errorReporter.report(new FieldsImplementationError(true, baseClass.getReferable(), Collections.singletonList(field.getReferable()), pair.proj2));
+                }
+              } else if (!resultClassCall.isImplemented(field)) {
+                checkImplementationCycle(dfs, field, implResult.expression, resultClassCall, pair.proj2.implementation);
               }
+            } else if (pseudoImplemented != null) {
+              pseudoImplemented.add(field);
             } else if (!resultClassCall.isImplemented(field)) {
-              checkImplementationCycle(dfs, field, implResult.expression, resultClassCall, pair.proj2.implementation);
+              fieldSet.put(field, new ErrorExpression());
             }
-          } else if (pseudoImplemented != null) {
-            pseudoImplemented.add(field);
-          } else if (!resultClassCall.isImplemented(field)) {
-            fieldSet.put(field, new ErrorExpression());
-          }
-        } else if (pair.proj1 instanceof ClassDefinition) {
-          TypecheckingResult result = checkExpr(pair.proj2.implementation, null);
-          if (result != null) {
-            Expression type = result.type.normalize(NormalizationMode.WHNF);
-            ClassCallExpression classCall = type.cast(ClassCallExpression.class);
-            if (classCall == null) {
-              if (!type.isInstance(ErrorExpression.class)) {
-                InferenceVariable var = type instanceof InferenceReferenceExpression ? ((InferenceReferenceExpression) type).getVariable() : null;
-                errorReporter.report(var != null && !(var instanceof MetaInferenceVariable) ? var.getErrorInfer() : new TypeMismatchError(DocFactory.text("a class"), type, pair.proj2.implementation));
-              }
-            } else {
-              if (!classCall.getDefinition().isSubClassOf((ClassDefinition) pair.proj1)) {
-                errorReporter.report(new TypeMismatchError(new ClassCallExpression((ClassDefinition) pair.proj1, Sort.PROP), type, pair.proj2.implementation));
+          } else if (pair.proj1 instanceof ClassDefinition) {
+            TypecheckingResult result = checkExpr(pair.proj2.implementation, null);
+            if (result != null) {
+              Expression type = result.type.normalize(NormalizationMode.WHNF);
+              ClassCallExpression classCall = type.cast(ClassCallExpression.class);
+              if (classCall == null) {
+                if (!type.isInstance(ErrorExpression.class)) {
+                  InferenceVariable var = type instanceof InferenceReferenceExpression ? ((InferenceReferenceExpression) type).getVariable() : null;
+                  errorReporter.report(var != null && !(var instanceof MetaInferenceVariable) ? var.getErrorInfer() : new TypeMismatchError(DocFactory.text("a class"), type, pair.proj2.implementation));
+                }
               } else {
-                if (!new CompareVisitor(myEquations, CMP.LE, pair.proj2.implementation).compareClassCallSortArguments(classCall, resultClassCall)) {
-                  errorReporter.report(new TypeMismatchError(new ClassCallExpression(classCall.getDefinition(), resultClassCall.getSortArgument()), classCall, pair.proj2.implementation));
-                  return null;
-                }
-                for (ClassField field : ((ClassDefinition) pair.proj1).getFields()) {
-                  Expression impl = FieldCallExpression.make(field, classCall.getSortArgument(), result.expression);
-                  Expression oldImpl = field.isProperty() ? null : resultClassCall.getImplementation(field, result.expression);
-                  if (oldImpl != null) {
-                    if (!CompareVisitor.compare(myEquations, CMP.EQ, impl, oldImpl, field.getType(classCall.getSortArgument()).applyExpression(result.expression), pair.proj2.implementation)) {
-                      errorReporter.report(new FieldsImplementationError(true, baseClass.getReferable(), Collections.singletonList(field.getReferable()), pair.proj2));
-                    }
-                  } else if (!resultClassCall.isImplemented(field)) {
-                    checkImplementationCycle(dfs, field, impl, resultClassCall, pair.proj2.implementation);
+                if (!classCall.getDefinition().isSubClassOf((ClassDefinition) pair.proj1)) {
+                  errorReporter.report(new TypeMismatchError(new ClassCallExpression((ClassDefinition) pair.proj1, Sort.PROP), type, pair.proj2.implementation));
+                } else {
+                  if (!new CompareVisitor(myEquations, CMP.LE, pair.proj2.implementation).compareClassCallSortArguments(classCall, resultClassCall)) {
+                    errorReporter.report(new TypeMismatchError(new ClassCallExpression(classCall.getDefinition(), resultClassCall.getSortArgument()), classCall, pair.proj2.implementation));
+                    return null;
                   }
+                  for (ClassField field : ((ClassDefinition) pair.proj1).getFields()) {
+                    Expression impl = FieldCallExpression.make(field, classCall.getSortArgument(), result.expression);
+                    Expression oldImpl = field.isProperty() ? null : resultClassCall.getImplementation(field, result.expression);
+                    if (oldImpl != null) {
+                      if (!CompareVisitor.compare(myEquations, CMP.EQ, impl, oldImpl, field.getType(classCall.getSortArgument()).applyExpression(result.expression), pair.proj2.implementation)) {
+                        errorReporter.report(new FieldsImplementationError(true, baseClass.getReferable(), Collections.singletonList(field.getReferable()), pair.proj2));
+                      }
+                    } else if (!resultClassCall.isImplemented(field)) {
+                      checkImplementationCycle(dfs, field, impl, resultClassCall, pair.proj2.implementation);
+                    }
+                  }
+                  resultClassCall.updateHasUniverses();
                 }
-                resultClassCall.updateHasUniverses();
               }
             }
+          } else {
+            errorReporter.report(new WrongReferable("Expected either a field or a class", pair.proj2.getImplementedField(), pair.proj2));
           }
-        } else {
-          errorReporter.report(new WrongReferable("Expected either a field or a class", pair.proj2.getImplementedField(), pair.proj2));
         }
+      } finally {
+        myClassCallBindings.remove(myClassCallBindings.size() - 1);
       }
-      myClassCallBindings.remove(myClassCallBindings.size() - 1);
       context.remove(thisRef);
     }
 
@@ -2532,6 +2537,81 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
       return action.apply(this);
     }
+  }
+
+  public void variableSolved(InferenceVariable variable) {
+    if (mySavedState != null) {
+      mySavedState.solvedVariables.add(variable);
+    }
+  }
+
+  private void saveState() {
+    TypecheckerState state = new TypecheckerState(errorReporter, myDeferredMetasBeforeSolver.size(), myDeferredMetasBeforeLevels.size(), myDeferredMetasAfterLevels.size(), mySavedState);
+    errorReporter = new MyErrorReporter(new ListErrorReporter());
+    myEquations.saveState(state);
+    mySavedState = state;
+  }
+
+  private void restoreState() {
+    if (!(errorReporter.myErrorReporter.getErrorReporter() instanceof ListErrorReporter)) {
+      throw new IllegalStateException();
+    }
+    ((ListErrorReporter) errorReporter.myErrorReporter.getErrorReporter()).reportTo(mySavedState.errorReporter);
+    errorReporter = mySavedState.errorReporter;
+    mySavedState = mySavedState.previousState;
+  }
+
+  @Override
+  public <T> T withCurrentState(@NotNull Function<ExpressionTypechecker, T> action) {
+    saveState();
+    try {
+      return action.apply(this);
+    } finally {
+      restoreState();
+    }
+  }
+
+  @Override
+  public void updateSavedState() {
+    if (mySavedState == null || !(errorReporter.myErrorReporter.getErrorReporter() instanceof ListErrorReporter)) {
+      throw new IllegalStateException();
+    }
+
+    ((ListErrorReporter) errorReporter.myErrorReporter.getErrorReporter()).reportTo(mySavedState.errorReporter);
+    TypecheckerState state = new TypecheckerState(mySavedState.errorReporter, myDeferredMetasBeforeSolver.size(), myDeferredMetasBeforeLevels.size(), myDeferredMetasAfterLevels.size(), mySavedState.previousState);
+    myEquations.saveState(state);
+    mySavedState = state;
+  }
+
+  private void loadState(TypecheckerState state) {
+    if (!(errorReporter.myErrorReporter.getErrorReporter() instanceof ListErrorReporter)) {
+      throw new IllegalStateException();
+    }
+    ((ListErrorReporter) errorReporter.myErrorReporter.getErrorReporter()).getErrorList().clear();
+    if (state.numberOfDeferredMetasBeforeSolver < myDeferredMetasBeforeSolver.size()) {
+      myDeferredMetasBeforeSolver.subList(state.numberOfDeferredMetasBeforeSolver, myDeferredMetasBeforeSolver.size()).clear();
+    }
+    if (state.numberOfDeferredMetasBeforeLevels < myDeferredMetasBeforeLevels.size()) {
+      myDeferredMetasBeforeLevels.subList(state.numberOfDeferredMetasBeforeLevels, myDeferredMetasBeforeLevels.size()).clear();
+    }
+    if (state.numberOfDeferredMetasAfterLevels < myDeferredMetasAfterLevels.size()) {
+      myDeferredMetasAfterLevels.subList(state.numberOfDeferredMetasAfterLevels, myDeferredMetasAfterLevels.size()).clear();
+    }
+
+    for (InferenceVariable var : state.solvedVariables) {
+      var.unsolve();
+    }
+    state.solvedVariables.clear();
+
+    myEquations.loadState(state);
+  }
+
+  @Override
+  public void loadSavedState() {
+    if (mySavedState == null) {
+      throw new IllegalStateException();
+    }
+    loadState(mySavedState);
   }
 
   @Override

@@ -159,6 +159,25 @@ public interface ExpressionTypechecker extends UserDataHolder {
   <T> T withFreeBindings(@NotNull FreeBindingsModifier modifier, @NotNull Function<ExpressionTypechecker, T> action);
 
   /**
+   * Saves the state of the typechecker and executes {@code action}.
+   */
+  <T> T withCurrentState(@NotNull Function<ExpressionTypechecker, T> action);
+
+  /**
+   * Sets the saved state to the current state.
+   * This function can be invoked only from within the action passed to {@link #withCurrentState}.
+   * It can be invoked multiple times.
+   */
+  void updateSavedState();
+
+  /**
+   * Loads the saved state.
+   * This function can be invoked only from within the action passed to {@link #withCurrentState}.
+   * It can be invoked multiple times.
+   */
+  void loadSavedState();
+
+  /**
    * Solves an inference variable.
    *
    * @return true if the variable was successfully solved;

@@ -21,6 +21,7 @@ import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.LocalError;
 import org.arend.term.concrete.Concrete;
+import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.error.local.SolveEquationError;
 import org.arend.typechecking.error.local.SolveEquationsError;
 import org.arend.typechecking.error.local.SolveLevelEquationsError;
@@ -31,11 +32,11 @@ import org.arend.util.Pair;
 import java.util.*;
 
 public class TwoStageEquations implements Equations {
-  private final List<Equation> myEquations = new ArrayList<>();
+  private List<Equation> myEquations = new ArrayList<>();
   private final List<LevelEquation<LevelVariable>> myLevelEquations = new ArrayList<>();
   private final List<InferenceLevelVariable> myLevelVariables = new ArrayList<>();
   private final CheckTypeVisitor myVisitor;
-  private final Stack<InferenceVariable> myProps = new Stack<>();
+  private final List<InferenceVariable> myProps = new ArrayList<>();
   private final List<Pair<InferenceLevelVariable, InferenceLevelVariable>> myBoundVariables = new ArrayList<>();
   private final Map<InferenceVariable, Expression> myNotSolvableFromEquationsVars = new HashMap<>();
 
@@ -112,7 +113,7 @@ public class TwoStageEquations implements Equations {
 
       if (cTypeExpr instanceof UniverseExpression && ((UniverseExpression) cTypeExpr).getSort().isProp()) {
         if (cmp == CMP.LE) {
-          myProps.push(cInf);
+          myProps.add(cInf);
           return true;
         } else {
           cmp = CMP.EQ;
@@ -331,7 +332,7 @@ public class TwoStageEquations implements Equations {
   @Override
   public void solveEquations() {
     while (!myProps.isEmpty()) {
-      InferenceVariable var = myProps.pop();
+      InferenceVariable var = myProps.remove(myProps.size() - 1);
       if (!var.isSolved()) {
         solve(var, new UniverseExpression(Sort.PROP), false, false, true);
       }
@@ -363,6 +364,34 @@ public class TwoStageEquations implements Equations {
   @Override
   public boolean supportsExpressions() {
     return true;
+  }
+
+  @Override
+  public void saveState(TypecheckerState state) {
+    state.equations = new ArrayList<>(myEquations);
+    state.numberOfLevelVariables = myLevelVariables.size();
+    state.numberOfLevelEquations = myLevelEquations.size();
+    state.numberOfProps = myProps.size();
+    state.numberOfBoundVars = myBoundVariables.size();
+    state.notSolvableFromEquationsVars = new HashSet<>(myNotSolvableFromEquationsVars.keySet());
+  }
+
+  @Override
+  public void loadState(TypecheckerState state) {
+    myEquations = state.equations;
+    if (myLevelVariables.size() > state.numberOfLevelVariables) {
+      myLevelVariables.subList(state.numberOfLevelVariables, myLevelVariables.size()).clear();
+    }
+    if (myLevelEquations.size() > state.numberOfLevelEquations) {
+      myLevelEquations.subList(state.numberOfLevelEquations, myLevelEquations.size()).clear();
+    }
+    if (myProps.size() > state.numberOfProps) {
+      myProps.subList(state.numberOfProps, myProps.size()).clear();
+    }
+    if (myBoundVariables.size() > state.numberOfBoundVars) {
+      myBoundVariables.subList(state.numberOfBoundVars, myBoundVariables.size()).clear();
+    }
+    myNotSolvableFromEquationsVars.keySet().retainAll(state.notSolvableFromEquationsVars);
   }
 
   private boolean solveClassCallsEq() {
@@ -709,7 +738,7 @@ public class TwoStageEquations implements Equations {
     }
 
     if (actualType.isLessOrEquals(expectedType, this, var.getSourceNode())) {
-      var.solve(this, OfTypeExpression.make(result, actualType, expectedType));
+      var.solve(myVisitor, OfTypeExpression.make(result, actualType, expectedType));
       return SolveResult.SOLVED;
     } else {
       if (trySolve) {
@@ -717,7 +746,7 @@ public class TwoStageEquations implements Equations {
       } else {
         LocalError error = var.getErrorMismatch(expectedType, actualType, expr);
         myVisitor.getErrorReporter().report(error);
-        var.solve(this, new ErrorExpression(result, error));
+        var.solve(myVisitor, new ErrorExpression(result, error));
         return SolveResult.ERROR;
       }
     }
@@ -726,7 +755,7 @@ public class TwoStageEquations implements Equations {
   private SolveResult inferenceError(InferenceVariable var, Expression expr) {
     LocalError error = var.getErrorInfer(expr);
     myVisitor.getErrorReporter().report(error);
-    var.solve(this, new ErrorExpression(error));
+    var.solve(myVisitor, new ErrorExpression(error));
     return SolveResult.ERROR;
   }
 }

@@ -7,6 +7,7 @@ import org.arend.core.sort.Level;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.ext.core.ops.CMP;
 import org.arend.term.concrete.Concrete;
+import org.arend.typechecking.TypecheckerState;
 
 public interface Equations {
   boolean addEquation(Expression expr1, Expression expr2, Expression type, CMP cmp, Concrete.SourceNode sourceNode, InferenceVariable stuckVar1, InferenceVariable stuckVar2);
@@ -21,4 +22,6 @@ public interface Equations {
   void finalizeEquations(LevelSubstitution levelSubstitution, Concrete.SourceNode sourceNode);
   boolean supportsLevels();
   boolean supportsExpressions();
+  void saveState(TypecheckerState state);
+  void loadState(TypecheckerState state);
 }
