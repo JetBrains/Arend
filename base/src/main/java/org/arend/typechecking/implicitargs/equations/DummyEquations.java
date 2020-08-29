@@ -38,11 +38,6 @@ public class DummyEquations implements Equations {
   }
 
   @Override
-  public boolean addPropEquationIfPossible(Level level) {
-    return false;
-  }
-
-  @Override
   public boolean addVariable(InferenceLevelVariable var) {
     return false;
   }
@@ -63,8 +58,13 @@ public class DummyEquations implements Equations {
   }
 
   @Override
-  public LevelSubstitution solveLevels(Concrete.SourceNode sourceNode) {
-    return LevelSubstitution.EMPTY;
+  public LevelEquationsSolver makeLevelEquationsSolver() {
+    return null;
+  }
+
+  @Override
+  public void finalizeEquations(LevelSubstitution levelSubstitution, Concrete.SourceNode sourceNode) {
+
   }
 
   @Override

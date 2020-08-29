@@ -13,12 +13,12 @@ public interface Equations {
   boolean solve(Expression expr1, Expression expr2, Expression type, CMP cmp, Concrete.SourceNode sourceNode);
   boolean solve(InferenceVariable var, Expression expr);
   boolean addEquation(Level level1, Level level2, CMP cmp, Concrete.SourceNode sourceNode);
-  boolean addPropEquationIfPossible(Level level);
   boolean addVariable(InferenceLevelVariable var);
   void bindVariables(InferenceLevelVariable pVar, InferenceLevelVariable hVar);
   boolean remove(Equation equation);
   void solveEquations();
-  LevelSubstitution solveLevels(Concrete.SourceNode sourceNode);
+  LevelEquationsSolver makeLevelEquationsSolver();
+  void finalizeEquations(LevelSubstitution levelSubstitution, Concrete.SourceNode sourceNode);
   boolean supportsLevels();
   boolean supportsExpressions();
 }

@@ -70,10 +70,7 @@ import org.arend.typechecking.error.local.inference.ArgInferenceError;
 import org.arend.typechecking.error.local.inference.InstanceInferenceError;
 import org.arend.typechecking.implicitargs.ImplicitArgsInference;
 import org.arend.typechecking.implicitargs.StdImplicitArgsInference;
-import org.arend.typechecking.implicitargs.equations.DummyEquations;
-import org.arend.typechecking.implicitargs.equations.Equations;
-import org.arend.typechecking.implicitargs.equations.LevelEquationsWrapper;
-import org.arend.typechecking.implicitargs.equations.TwoStageEquations;
+import org.arend.typechecking.implicitargs.equations.*;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.instance.pool.RecursiveInstanceHoleExpression;
 import org.arend.typechecking.patternmatching.*;
@@ -678,13 +675,16 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     invokeDeferredMetas(null, null, Stage.BEFORE_SOLVER);
     myEquations.solveEquations();
     invokeDeferredMetas(null, null, Stage.BEFORE_LEVELS);
+    LevelEquationsSolver levelSolver = myEquations.makeLevelEquationsSolver();
     if (propIfPossible) {
       Sort sort = result.type.getSortOfType();
       if (sort != null) {
-        myEquations.addPropEquationIfPossible(sort.getHLevel());
+        levelSolver.addPropEquationIfPossible(sort.getHLevel());
       }
     }
-    InPlaceLevelSubstVisitor substVisitor = new InPlaceLevelSubstVisitor(myEquations.solveLevels(sourceNode));
+    LevelSubstitution levelSubstitution = levelSolver.solveLevels();
+    myEquations.finalizeEquations(levelSubstitution, sourceNode);
+    InPlaceLevelSubstVisitor substVisitor = new InPlaceLevelSubstVisitor(levelSubstitution);
     if (!substVisitor.isEmpty()) {
       if (result.expression != null) {
         result.expression.accept(substVisitor, null);
@@ -764,13 +764,16 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     invokeDeferredMetas(null, null, Stage.BEFORE_SOLVER);
     myEquations.solveEquations();
     invokeDeferredMetas(null, null, Stage.BEFORE_LEVELS);
+    LevelEquationsSolver levelSolver = myEquations.makeLevelEquationsSolver();
     if (propIfPossible) {
       Sort sort = result.getSortOfType();
       if (sort != null) {
-        myEquations.addPropEquationIfPossible(sort.getHLevel());
+        levelSolver.addPropEquationIfPossible(sort.getHLevel());
       }
     }
-    InPlaceLevelSubstVisitor substVisitor = new InPlaceLevelSubstVisitor(myEquations.solveLevels(expr));
+    LevelSubstitution levelSubstitution = levelSolver.solveLevels();
+    myEquations.finalizeEquations(levelSubstitution, expr);
+    InPlaceLevelSubstVisitor substVisitor = new InPlaceLevelSubstVisitor(levelSubstitution);
     if (!substVisitor.isEmpty()) {
       result.subst(substVisitor);
     }

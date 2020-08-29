@@ -36,8 +36,13 @@ public class LevelEquationsWrapper implements Equations {
   }
 
   @Override
-  public boolean addPropEquationIfPossible(Level level) {
-    return myEquations.addPropEquationIfPossible(level);
+  public LevelEquationsSolver makeLevelEquationsSolver() {
+    return myEquations.makeLevelEquationsSolver();
+  }
+
+  @Override
+  public void finalizeEquations(LevelSubstitution levelSubstitution, Concrete.SourceNode sourceNode) {
+    myEquations.finalizeEquations(levelSubstitution, sourceNode);
   }
 
   @Override
@@ -58,11 +63,6 @@ public class LevelEquationsWrapper implements Equations {
   @Override
   public void solveEquations() {
     myEquations.solveEquations();
-  }
-
-  @Override
-  public LevelSubstitution solveLevels(Concrete.SourceNode sourceNode) {
-    return myEquations.solveLevels(sourceNode);
   }
 
   @Override
