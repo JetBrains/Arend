@@ -97,8 +97,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   private GlobalInstancePool myInstancePool;
   private final ImplicitArgsInference myArgsInference;
   protected Map<Referable, Binding> context;
-  protected ErrorReporter errorReporter;
-  private final MyErrorReporter myErrorReporter;
+  private MyErrorReporter errorReporter;
   private final List<ClassCallExpression.ClassCallBinding> myClassCallBindings = new ArrayList<>();
   private final List<DeferredMeta> myDeferredMetasBeforeSolver = new ArrayList<>();
   private final List<DeferredMeta> myDeferredMetasBeforeLevels = new ArrayList<>();
@@ -110,9 +109,9 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     final Map<Referable, Binding> context;
     final ContextDataImpl contextData;
     final InferenceVariable inferenceVar;
-    final ErrorReporter errorReporter;
+    final MyErrorReporter errorReporter;
 
-    private DeferredMeta(MetaDefinition meta, Map<Referable, Binding> context, ContextDataImpl contextData, InferenceVariable inferenceVar, ErrorReporter errorReporter) {
+    private DeferredMeta(MetaDefinition meta, Map<Referable, Binding> context, ContextDataImpl contextData, InferenceVariable inferenceVar, MyErrorReporter errorReporter) {
       this.meta = meta;
       this.context = context;
       this.contextData = contextData;
@@ -141,12 +140,11 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   public void setStatus(Definition.TypeCheckingStatus status) {
-    myErrorReporter.myStatus = myErrorReporter.myStatus.max(status);
+    errorReporter.myStatus = errorReporter.myStatus.max(status);
   }
 
   private CheckTypeVisitor(Map<Referable, Binding> localContext, ErrorReporter errorReporter, GlobalInstancePool pool, ArendExtension arendExtension) {
-    myErrorReporter = new MyErrorReporter(errorReporter);
-    this.errorReporter = myErrorReporter;
+    this.errorReporter = new MyErrorReporter(errorReporter);
     myEquations = new TwoStageEquations(this);
     myInstancePool = pool;
     myArgsInference = new StdImplicitArgsInference(this);
@@ -238,8 +236,12 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     return myEquations;
   }
 
+  public int getNumberOfErrors() {
+    return errorReporter.myErrorReporter.getErrorsNumber();
+  }
+
   public Definition.TypeCheckingStatus getStatus() {
-    return myErrorReporter.myStatus;
+    return errorReporter.myStatus;
   }
 
   @Override
@@ -394,7 +396,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       patterns1.add((Concrete.Pattern) pattern);
     }
     try (var ignored = new Utils.SetContextSaver<>(context)) {
-      PatternTypechecking.Result result = new PatternTypechecking(myErrorReporter, PatternTypechecking.Mode.CASE, this, false).typecheckPatterns(patterns1, null, (DependentLink) parameters, new ExprSubstitution(), null, Collections.emptyList(), marker);
+      PatternTypechecking.Result result = new PatternTypechecking(errorReporter, PatternTypechecking.Mode.CASE, this, false).typecheckPatterns(patterns1, null, (DependentLink) parameters, new ExprSubstitution(), null, Collections.emptyList(), marker);
       //noinspection unchecked
       return result == null ? null : (List<CorePattern>) (List<?>) result.getPatterns();
     }
@@ -637,7 +639,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       }
 
       CheckTypeVisitor checkTypeVisitor;
-      ErrorReporter originalErrorReporter = errorReporter;
+      MyErrorReporter originalErrorReporter = errorReporter;
       Map<Referable, Binding> originalContext = context;
       if (stage != Stage.AFTER_LEVELS) {
         checkTypeVisitor = this;
@@ -648,7 +650,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         checkTypeVisitor.setInstancePool(new GlobalInstancePool(myInstancePool.getInstanceProvider(), checkTypeVisitor, myInstancePool.getInstancePool()));
       }
 
-      int numberOfErrors = checkTypeVisitor.myErrorReporter.myErrorReporter.getErrorsNumber();
+      int numberOfErrors = checkTypeVisitor.getNumberOfErrors();
       Concrete.ReferenceExpression refExpr = deferredMeta.contextData.getReferenceExpression();
       TypecheckingResult result = checkTypeVisitor.invokeMeta(deferredMeta.meta, deferredMeta.contextData);
       fixCheckedExpression(result, refExpr.getReferent(), refExpr);
@@ -660,7 +662,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       }
       errorReporter = originalErrorReporter;
       context = originalContext;
-      if (result == null && checkTypeVisitor.myErrorReporter.myErrorReporter.getErrorsNumber() == numberOfErrors) {
+      if (result == null && checkTypeVisitor.getNumberOfErrors() == numberOfErrors) {
         deferredMeta.errorReporter.report(new TypecheckingError("Meta '" + refExpr.getReferent().getRefName() + "' failed", refExpr));
       }
       deferredMeta.inferenceVar.solve(myEquations, result == null ? new ErrorExpression() : result.expression);
@@ -1304,7 +1306,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   private TResult getLocalVar(Referable ref, Concrete.SourceNode sourceNode) {
     if (ref instanceof UnresolvedReference || ref instanceof RedirectingReferable) {
-      myErrorReporter.report(new TypecheckingError("Unresolved reference `" + ref.textRepresentation() + "`. This may be caused by a bug in a meta resolver.", sourceNode));
+      errorReporter.report(new TypecheckingError("Unresolved reference `" + ref.textRepresentation() + "`. This may be caused by a bug in a meta resolver.", sourceNode));
       return null;
     }
     if (ref instanceof ErrorReference) {
@@ -2210,13 +2212,13 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       return null;
     }
 
-    int numberOfErrors = myErrorReporter.myErrorReporter.getErrorsNumber();
+    int numberOfErrors = getNumberOfErrors();
     TypecheckingResult result = invokeMeta(meta, contextData);
     fixCheckedExpression(result, refExpr.getReferent(), refExpr);
     if (result != null) {
       return result.getType() == expectedType ? result : checkResult(expectedType, result, refExpr);
     }
-    if (myErrorReporter.myErrorReporter.getErrorsNumber() == numberOfErrors) {
+    if (getNumberOfErrors() == numberOfErrors) {
       errorReporter.report(new TypecheckingError("Meta '" + refExpr.getReferent().getRefName() + "' failed", refExpr));
     }
     return null;
@@ -2265,14 +2267,14 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     int j = 0;
     for (int i = 0; i < arguments.size(); i++, j++) {
       if (j >= notImplementedFields.size()) {
-        myErrorReporter.report(new TypecheckingError("Too many arguments. Class '" + ref.textRepresentation() + "' " + (notImplementedFields.isEmpty() ? "does not have fields" : "has only " + ArgInferenceError.number(notImplementedFields.size(), "field")), arguments.get(i).expression));
+        errorReporter.report(new TypecheckingError("Too many arguments. Class '" + ref.textRepresentation() + "' " + (notImplementedFields.isEmpty() ? "does not have fields" : "has only " + ArgInferenceError.number(notImplementedFields.size(), "field")), arguments.get(i).expression));
         break;
       }
 
       ClassField field = notImplementedFields.get(j);
       boolean fieldExplicit = field.getReferable().isExplicitField();
       if (fieldExplicit && !arguments.get(i).isExplicit()) {
-        myErrorReporter.report(new ArgumentExplicitnessError(true, arguments.get(i).expression));
+        errorReporter.report(new ArgumentExplicitnessError(true, arguments.get(i).expression));
         while (i < arguments.size() && !arguments.get(i).isExplicit()) {
           i++;
         }
@@ -2433,9 +2435,9 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     if (myArendExtension != null) {
       var checker = myArendExtension.getLiteralTypechecker();
       if (checker != null) {
-        int numberOfErrors = myErrorReporter.myErrorReporter.getErrorsNumber();
+        int numberOfErrors = getNumberOfErrors();
         TypecheckingResult result = TypecheckingResult.fromChecked(checker.typecheckNumber(number, this, new ContextDataImpl(expr, Collections.emptyList(), null, null, expectedType, null)));
-        if (result == null && myErrorReporter.myErrorReporter.getErrorsNumber() == numberOfErrors) {
+        if (result == null && getNumberOfErrors() == numberOfErrors) {
           errorReporter.report(new TypecheckingError("Cannot check number", expr));
         }
         return result;
@@ -2451,9 +2453,9 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     if (myArendExtension != null) {
       var checker = myArendExtension.getLiteralTypechecker();
       if (checker != null) {
-        int numberOfErrors = myErrorReporter.myErrorReporter.getErrorsNumber();
+        int numberOfErrors = getNumberOfErrors();
         TypecheckingResult result = TypecheckingResult.fromChecked(checker.typecheckString(string, this, new ContextDataImpl(expr, Collections.emptyList(), null, null, expectedType, null)));
-        if (result == null && myErrorReporter.myErrorReporter.getErrorsNumber() == numberOfErrors) {
+        if (result == null && getNumberOfErrors() == numberOfErrors) {
           errorReporter.report(new TypecheckingError("Cannot check string", expr));
         }
         return result;
@@ -2466,8 +2468,8 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   @Override
   public <T> T withErrorReporter(@NotNull ErrorReporter errorReporter, @NotNull Function<ExpressionTypechecker, T> action) {
-    ErrorReporter originalErrorReport = this.errorReporter;
-    this.errorReporter = errorReporter;
+    MyErrorReporter originalErrorReport = this.errorReporter;
+    this.errorReporter = new MyErrorReporter(errorReporter);
     try {
       return action.apply(this);
     } finally {
@@ -2699,7 +2701,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           foundVars.add(entry.getKey());
         }
       }
-      myErrorReporter.report(new ElimSubstError(foundVars, sourceNode));
+      errorReporter.report(new ElimSubstError(foundVars, sourceNode));
       return expr;
     }
 
