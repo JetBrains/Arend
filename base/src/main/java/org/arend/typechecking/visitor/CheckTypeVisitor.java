@@ -38,6 +38,7 @@ import org.arend.ext.core.expr.AbstractedExpression;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.core.expr.CoreInferenceReferenceExpression;
 import org.arend.ext.core.expr.UncheckedExpression;
+import org.arend.ext.core.level.CoreSort;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.*;
@@ -493,13 +494,17 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   @Override
-  public @Nullable AbstractedExpression substituteAbstractedExpression(@NotNull AbstractedExpression expression, @NotNull List<? extends ConcreteExpression> arguments) {
+  public @Nullable AbstractedExpression substituteAbstractedExpression(@NotNull AbstractedExpression expression, @Nullable CoreSort sort, @NotNull List<? extends ConcreteExpression> arguments) {
     if (arguments.isEmpty()) {
       return expression;
+    }
+    if (!(sort == null || sort instanceof Sort)) {
+      throw new IllegalArgumentException();
     }
 
     int i = 0;
     ExprSubstitution substitution = new ExprSubstitution();
+    SubstVisitor substVisitor = new SubstVisitor(substitution, sort == null ? LevelSubstitution.EMPTY : ((Sort) sort).toLevelSubstitution());
     while (i < arguments.size()) {
       DependentLink link;
       int drop = 0;
@@ -516,7 +521,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       }
 
       for (; i < arguments.size(); i++, link = link.getNext()) {
-        TypecheckingResult arg = typecheck(arguments.get(i), link.getTypeExpr());
+        TypecheckingResult arg = typecheck(arguments.get(i), link.getTypeExpr().accept(substVisitor, null));
         if (arg == null || arg.expression.isError()) {
           return null;
         }
@@ -525,20 +530,21 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
       if (expression instanceof AbstractedDependentLinkType) {
         AbstractedDependentLinkType abs = (AbstractedDependentLinkType) expression;
-        return AbstractedExpressionImpl.subst(AbstractedDependentLinkType.make(DependentLink.Helper.get(abs.getParameters(), drop), abs.getSize() - drop), substitution);
+        return AbstractedExpressionImpl.subst(AbstractedDependentLinkType.make(DependentLink.Helper.get(abs.getParameters(), drop), abs.getSize() - drop), substVisitor);
       }
 
       AbstractedExpressionImpl abs = (AbstractedExpressionImpl) expression;
       if (link.hasNext()) {
-        return AbstractedExpressionImpl.subst(AbstractedExpressionImpl.make(link, abs.getExpression()), substitution);
+        return AbstractedExpressionImpl.subst(AbstractedExpressionImpl.make(link, abs.getExpression()), substVisitor);
       }
       expression = abs.getExpression();
     }
-    return AbstractedExpressionImpl.subst(expression, substitution);
+    return AbstractedExpressionImpl.subst(expression, substVisitor);
   }
 
   @Override
-  public @Nullable CoreParameter substituteParameters(@NotNull CoreParameter parameters, @NotNull List<? extends ConcreteExpression> arguments) {
+  public @Nullable CoreParameter substituteParameters(@NotNull CoreParameter parameters, @Nullable CoreSort sort, @NotNull List<? extends ConcreteExpression> arguments) {
+
     boolean allNull = true;
     for (ConcreteExpression argument : arguments) {
       if (argument != null) {
@@ -550,7 +556,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       return parameters;
     }
 
-    if (!(parameters instanceof DependentLink)) {
+    if (!(parameters instanceof DependentLink && (sort == null || sort instanceof Sort))) {
       throw new IllegalArgumentException();
     }
 
@@ -560,6 +566,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
 
     ExprSubstitution substitution = new ExprSubstitution();
+    SubstVisitor substVisitor = new SubstVisitor(substitution, sort == null ? LevelSubstitution.EMPTY : ((Sort) sort).toLevelSubstitution());
     LinkList list = new LinkList();
     for (int i = 0; i < links.size();) {
       int typedIndex = i;
@@ -573,7 +580,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         }
       }
 
-      Type type = links.get(typedIndex).getType().subst(new SubstVisitor(substitution, LevelSubstitution.EMPTY));
+      Type type = links.get(typedIndex).getType().subst(substVisitor);
       for (; i <= typedIndex; i++) {
         if (i >= arguments.size() || arguments.get(i) == null) {
           DependentLink link = i < last ? new UntypedDependentLink(links.get(i).getName()) : new TypedDependentLink(links.get(typedIndex).isExplicit(), links.get(i).getName(), type, links.get(typedIndex).isHidden(), EmptyDependentLink.getInstance());
