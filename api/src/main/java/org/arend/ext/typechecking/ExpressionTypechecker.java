@@ -13,6 +13,7 @@ import org.arend.ext.core.expr.AbstractedExpression;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.core.expr.CoreInferenceReferenceExpression;
 import org.arend.ext.core.expr.UncheckedExpression;
+import org.arend.ext.core.level.CoreSort;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.concrete.expr.ConcreteExpression;
@@ -109,17 +110,19 @@ public interface ExpressionTypechecker extends UserDataHolder {
 
   /**
    * Typechecks {@code arguments} and substitute them into {@code expression}.
+   * Also, substitutes {@code sort} if it is not null.
    * The number of {@code arguments} should be less than or equal to the length of the context of {@code expression}.
    */
-  @Nullable AbstractedExpression substituteAbstractedExpression(@NotNull AbstractedExpression expression, @NotNull List<? extends ConcreteExpression> arguments);
+  @Nullable AbstractedExpression substituteAbstractedExpression(@NotNull AbstractedExpression expression, @Nullable CoreSort sort, @NotNull List<? extends ConcreteExpression> arguments);
 
   /**
    * Typechecks {@code arguments} and substitute them into {@code parameters}.
+   * Also, substitutes {@code sort} if it is not null.
    * Some elements of {@code arguments} may be {@code null}; the corresponding parameters will be added to the result.
    * The size of {@code arguments} should be less than or equal to the size of {@code parameters}.
    * The size of the result is the size of {@code parameters} minus the number of non-null elements of {@code arguments}.
    */
-  @Nullable CoreParameter substituteParameters(@NotNull CoreParameter parameters, @NotNull List<? extends ConcreteExpression> arguments);
+  @Nullable CoreParameter substituteParameters(@NotNull CoreParameter parameters, @Nullable CoreSort sort, @NotNull List<? extends ConcreteExpression> arguments);
 
   /**
    * Defers the invocation of the given meta.
