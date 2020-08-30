@@ -50,7 +50,7 @@ import org.jetbrains.annotations.TestOnly;
 
 import java.math.BigInteger;
 import java.util.*;
-import java.util.function.Predicate;
+import java.util.function.Function;
 
 public abstract class Expression implements Body, CoreExpression {
   public abstract <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params);
@@ -240,8 +240,8 @@ public abstract class Expression implements Body, CoreExpression {
   }
 
   @Override
-  public boolean findSubexpression(@NotNull Predicate<CoreExpression> predicate) {
-    return accept(new FindSubexpressionVisitor(predicate), null);
+  public boolean processSubexpression(@NotNull Function<CoreExpression, FindAction> function) {
+    return accept(new FindSubexpressionVisitor(function), null);
   }
 
   public static boolean compare(Expression expr1, Expression expr2, Expression type, CMP cmp) {
