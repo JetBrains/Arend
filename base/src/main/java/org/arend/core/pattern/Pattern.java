@@ -10,6 +10,7 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.ext.core.body.CorePattern;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.context.CoreParameter;
+import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -99,5 +100,34 @@ public interface Pattern extends CorePattern {
       link = link.getNext();
     }
     return result;
+  }
+
+  static Pattern fromCorePattern(CorePattern pattern) {
+    if (pattern instanceof Pattern) {
+      return (Pattern) pattern;
+    }
+
+    if (pattern.isAbsurd()) {
+      return EmptyPattern.INSTANCE;
+    }
+
+    CoreBinding binding = pattern.getBinding();
+    if (binding != null) {
+      if (!(binding instanceof DependentLink)) {
+        throw new IllegalArgumentException();
+      }
+      return new BindingPattern((DependentLink) binding);
+    }
+
+    CoreDefinition def = pattern.getConstructor();
+    if (!(def == null || def instanceof Definition)) {
+      throw new IllegalArgumentException();
+    }
+
+    List<Pattern> subPatterns = new ArrayList<>();
+    for (CorePattern subPattern : pattern.getSubPatterns()) {
+      subPatterns.add(fromCorePattern(subPattern));
+    }
+    return ConstructorPattern.make((Definition) def, subPatterns);
   }
 }
