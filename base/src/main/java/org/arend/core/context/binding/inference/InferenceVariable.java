@@ -8,8 +8,8 @@ import org.arend.ext.variable.Variable;
 import org.arend.naming.renamer.Renamer;
 import org.arend.term.concrete.Concrete;
 import org.arend.ext.error.LocalError;
-import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.typechecking.implicitargs.equations.InferenceVariableListener;
+import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -73,14 +73,19 @@ public abstract class InferenceVariable implements Variable, CoreInferenceVariab
     }
   }
 
-  public void solve(Equations equations, Expression solution) {
+  public void solve(CheckTypeVisitor checker, Expression solution) {
     if (isSolved()) {
       return;
     }
     myReference.setSubstExpression(solution);
+    checker.variableSolved(this);
     for (InferenceVariableListener listener : myListeners) {
-      listener.solved(equations, myReference);
+      listener.solved(checker.getEquations(), myReference);
     }
+  }
+
+  public void unsolve() {
+    myReference.setSubstExpression(null);
   }
 
   public boolean isSolved() {

@@ -39,6 +39,7 @@ import org.arend.naming.reference.TCReferable;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.*;
+import org.arend.typechecking.implicitargs.equations.LevelEquationsSolver;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.instance.pool.InstancePool;
 import org.arend.typechecking.result.TypecheckingResult;
@@ -615,7 +616,14 @@ public class PatternTypechecking {
             continue;
           }
           myVisitor.getEquations().solveEquations();
-          LevelSubstitution levelSolution = myFinal ? myVisitor.getEquations().solveLevels(conPattern) : LevelSubstitution.EMPTY;
+          LevelSubstitution levelSolution;
+          if (myFinal) {
+            LevelEquationsSolver levelSolver = myVisitor.getEquations().makeLevelEquationsSolver();
+            levelSolution = levelSolver.solveLevels();
+            myVisitor.getEquations().finalizeEquations(levelSolution, conPattern);
+          } else {
+            levelSolution = LevelSubstitution.EMPTY;
+          }
           substitution.subst(levelSolution);
 
           Result conResult = doTypechecking(conPattern.getPatterns(), DependentLink.Helper.subst(link, substitution, levelSolution), linkList, paramsSubst, totalSubst, conPattern, false);

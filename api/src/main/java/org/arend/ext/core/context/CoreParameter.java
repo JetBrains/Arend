@@ -1,5 +1,6 @@
 package org.arend.ext.core.context;
 
+import org.arend.ext.core.expr.AbstractedExpression;
 import org.arend.ext.core.expr.CoreExpression;
 import org.jetbrains.annotations.NotNull;
 
@@ -31,4 +32,11 @@ public interface CoreParameter {
    * Returns the next parameter; throws an exception if this parameter is the last one.
    */
   @NotNull CoreParameter getNext();
+
+  /**
+   * Abstracts the type of {@code size}-th parameter.
+   *
+   * @return the abstracted type in a context of length {@code size}.
+   */
+  @NotNull AbstractedExpression abstractType(int size);
 }

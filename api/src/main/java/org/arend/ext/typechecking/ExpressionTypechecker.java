@@ -103,10 +103,23 @@ public interface ExpressionTypechecker extends UserDataHolder {
   @NotNull CoreParameter makeParameters(@NotNull List<? extends CoreExpression> types, @NotNull ConcreteSourceNode marker);
 
   /**
+   * Merges a list of parameters.
+   */
+  @NotNull CoreParameter mergeParameters(@NotNull List<? extends CoreParameter> parameters);
+
+  /**
    * Typechecks {@code arguments} and substitute them into {@code expression}.
    * The number of {@code arguments} should be less than or equal to the length of the context of {@code expression}.
    */
   @Nullable AbstractedExpression substituteAbstractedExpression(@NotNull AbstractedExpression expression, @NotNull List<? extends ConcreteExpression> arguments);
+
+  /**
+   * Typechecks {@code arguments} and substitute them into {@code parameters}.
+   * Some elements of {@code arguments} may be {@code null}; the corresponding parameters will be added to the result.
+   * The size of {@code arguments} should be less than or equal to the size of {@code parameters}.
+   * The size of the result is the size of {@code parameters} minus the number of non-null elements of {@code arguments}.
+   */
+  @Nullable CoreParameter substituteParameters(@NotNull CoreParameter parameters, @NotNull List<? extends ConcreteExpression> arguments);
 
   /**
    * Defers the invocation of the given meta.
@@ -144,6 +157,25 @@ public interface ExpressionTypechecker extends UserDataHolder {
    * Invokes the specified action with modified set of free bindings
    */
   <T> T withFreeBindings(@NotNull FreeBindingsModifier modifier, @NotNull Function<ExpressionTypechecker, T> action);
+
+  /**
+   * Saves the state of the typechecker and executes {@code action}.
+   */
+  <T> T withCurrentState(@NotNull Function<ExpressionTypechecker, T> action);
+
+  /**
+   * Sets the saved state to the current state.
+   * This function can be invoked only from within the action passed to {@link #withCurrentState}.
+   * It can be invoked multiple times.
+   */
+  void updateSavedState();
+
+  /**
+   * Loads the saved state.
+   * This function can be invoked only from within the action passed to {@link #withCurrentState}.
+   * It can be invoked multiple times.
+   */
+  void loadSavedState();
 
   /**
    * Solves an inference variable.

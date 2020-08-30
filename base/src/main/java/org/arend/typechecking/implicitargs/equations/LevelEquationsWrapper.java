@@ -7,6 +7,7 @@ import org.arend.core.sort.Level;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.ext.core.ops.CMP;
 import org.arend.term.concrete.Concrete;
+import org.arend.typechecking.TypecheckerState;
 
 public class LevelEquationsWrapper implements Equations {
   private final Equations myEquations;
@@ -36,8 +37,13 @@ public class LevelEquationsWrapper implements Equations {
   }
 
   @Override
-  public boolean addPropEquationIfPossible(Level level) {
-    return myEquations.addPropEquationIfPossible(level);
+  public LevelEquationsSolver makeLevelEquationsSolver() {
+    return myEquations.makeLevelEquationsSolver();
+  }
+
+  @Override
+  public void finalizeEquations(LevelSubstitution levelSubstitution, Concrete.SourceNode sourceNode) {
+    myEquations.finalizeEquations(levelSubstitution, sourceNode);
   }
 
   @Override
@@ -61,11 +67,6 @@ public class LevelEquationsWrapper implements Equations {
   }
 
   @Override
-  public LevelSubstitution solveLevels(Concrete.SourceNode sourceNode) {
-    return myEquations.solveLevels(sourceNode);
-  }
-
-  @Override
   public boolean supportsLevels() {
     return true;
   }
@@ -73,5 +74,15 @@ public class LevelEquationsWrapper implements Equations {
   @Override
   public boolean supportsExpressions() {
     return false;
+  }
+
+  @Override
+  public void saveState(TypecheckerState state) {
+    myEquations.saveState(state);
+  }
+
+  @Override
+  public void loadState(TypecheckerState state) {
+    myEquations.loadState(state);
   }
 }

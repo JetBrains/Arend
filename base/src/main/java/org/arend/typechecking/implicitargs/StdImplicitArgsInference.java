@@ -212,7 +212,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
   private void typecheckDeferredArgument(Pair<InferenceVariable, Concrete.Expression> pair, TResult result) {
     TypecheckingResult argResult = myVisitor.checkArgument(pair.proj2, pair.proj1.getType(), result);
     Expression argResultExpr = argResult == null ? new ErrorExpression() : argResult.expression;
-    pair.proj1.solve(myVisitor.getEquations(), argResultExpr);
+    pair.proj1.solve(myVisitor, argResultExpr);
   }
 
   @Override

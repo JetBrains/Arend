@@ -8,6 +8,8 @@ import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.context.CoreParameter;
+import org.arend.ext.core.expr.AbstractedExpression;
+import org.arend.extImpl.AbstractedDependentLinkType;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -33,6 +35,14 @@ public interface DependentLink extends Binding, CoreParameter {
   @Override
   default Expression getTypeExpr() {
     return getType().getExpr();
+  }
+
+  @Override
+  default @NotNull AbstractedExpression abstractType(int size) {
+    if (size >= Helper.size(this)) {
+      throw new IllegalArgumentException();
+    }
+    return AbstractedDependentLinkType.make(this, size);
   }
 
   class Helper {

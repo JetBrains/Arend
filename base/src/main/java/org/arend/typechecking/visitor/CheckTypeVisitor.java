@@ -47,6 +47,7 @@ import org.arend.ext.prettyprinting.doc.DocFactory;
 import org.arend.ext.reference.ArendRef;
 import org.arend.ext.typechecking.*;
 import org.arend.ext.variable.Variable;
+import org.arend.extImpl.AbstractedDependentLinkType;
 import org.arend.extImpl.AbstractedExpressionImpl;
 import org.arend.extImpl.ContextDataImpl;
 import org.arend.extImpl.UncheckedExpressionImpl;
@@ -58,6 +59,7 @@ import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteExpressionVisitor;
 import org.arend.term.concrete.ConcreteLevelExpressionVisitor;
 import org.arend.typechecking.FieldDFS;
+import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.TypecheckingContext;
 import org.arend.typechecking.computation.ComputationRunner;
 import org.arend.typechecking.doubleChecker.CoreException;
@@ -69,10 +71,7 @@ import org.arend.typechecking.error.local.inference.ArgInferenceError;
 import org.arend.typechecking.error.local.inference.InstanceInferenceError;
 import org.arend.typechecking.implicitargs.ImplicitArgsInference;
 import org.arend.typechecking.implicitargs.StdImplicitArgsInference;
-import org.arend.typechecking.implicitargs.equations.DummyEquations;
-import org.arend.typechecking.implicitargs.equations.Equations;
-import org.arend.typechecking.implicitargs.equations.LevelEquationsWrapper;
-import org.arend.typechecking.implicitargs.equations.TwoStageEquations;
+import org.arend.typechecking.implicitargs.equations.*;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.instance.pool.RecursiveInstanceHoleExpression;
 import org.arend.typechecking.patternmatching.*;
@@ -96,22 +95,22 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   private GlobalInstancePool myInstancePool;
   private final ImplicitArgsInference myArgsInference;
   protected Map<Referable, Binding> context;
-  protected ErrorReporter errorReporter;
-  private final MyErrorReporter myErrorReporter;
+  private MyErrorReporter errorReporter;
   private final List<ClassCallExpression.ClassCallBinding> myClassCallBindings = new ArrayList<>();
   private final List<DeferredMeta> myDeferredMetasBeforeSolver = new ArrayList<>();
   private final List<DeferredMeta> myDeferredMetasBeforeLevels = new ArrayList<>();
   private final List<DeferredMeta> myDeferredMetasAfterLevels = new ArrayList<>();
   private final ArendExtension myArendExtension;
+  private TypecheckerState mySavedState;
 
   private static class DeferredMeta {
     final MetaDefinition meta;
     final Map<Referable, Binding> context;
     final ContextDataImpl contextData;
     final InferenceVariable inferenceVar;
-    final ErrorReporter errorReporter;
+    final MyErrorReporter errorReporter;
 
-    private DeferredMeta(MetaDefinition meta, Map<Referable, Binding> context, ContextDataImpl contextData, InferenceVariable inferenceVar, ErrorReporter errorReporter) {
+    private DeferredMeta(MetaDefinition meta, Map<Referable, Binding> context, ContextDataImpl contextData, InferenceVariable inferenceVar, MyErrorReporter errorReporter) {
       this.meta = meta;
       this.context = context;
       this.contextData = contextData;
@@ -120,7 +119,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
   }
 
-  private static class MyErrorReporter implements ErrorReporter {
+  public static class MyErrorReporter implements ErrorReporter {
     private final CountingErrorReporter myErrorReporter;
     private Definition.TypeCheckingStatus myStatus = Definition.TypeCheckingStatus.NO_ERRORS;
 
@@ -140,12 +139,11 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   public void setStatus(Definition.TypeCheckingStatus status) {
-    myErrorReporter.myStatus = myErrorReporter.myStatus.max(status);
+    errorReporter.myStatus = errorReporter.myStatus.max(status);
   }
 
   private CheckTypeVisitor(Map<Referable, Binding> localContext, ErrorReporter errorReporter, GlobalInstancePool pool, ArendExtension arendExtension) {
-    myErrorReporter = new MyErrorReporter(errorReporter);
-    this.errorReporter = myErrorReporter;
+    this.errorReporter = new MyErrorReporter(errorReporter);
     myEquations = new TwoStageEquations(this);
     myInstancePool = pool;
     myArgsInference = new StdImplicitArgsInference(this);
@@ -237,8 +235,12 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     return myEquations;
   }
 
+  public int getNumberOfErrors() {
+    return errorReporter.myErrorReporter.getErrorsNumber();
+  }
+
   public Definition.TypeCheckingStatus getStatus() {
-    return myErrorReporter.myStatus;
+    return errorReporter.myStatus;
   }
 
   @Override
@@ -393,7 +395,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       patterns1.add((Concrete.Pattern) pattern);
     }
     try (var ignored = new Utils.SetContextSaver<>(context)) {
-      PatternTypechecking.Result result = new PatternTypechecking(myErrorReporter, PatternTypechecking.Mode.CASE, this, false).typecheckPatterns(patterns1, null, (DependentLink) parameters, new ExprSubstitution(), null, Collections.emptyList(), marker);
+      PatternTypechecking.Result result = new PatternTypechecking(errorReporter, PatternTypechecking.Mode.CASE, this, false).typecheckPatterns(patterns1, null, (DependentLink) parameters, new ExprSubstitution(), null, Collections.emptyList(), marker);
       //noinspection unchecked
       return result == null ? null : (List<CorePattern>) (List<?>) result.getPatterns();
     }
@@ -467,6 +469,30 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   @Override
+  public @NotNull CoreParameter mergeParameters(@NotNull List<? extends CoreParameter> parameters) {
+    if (parameters.isEmpty()) {
+      return EmptyDependentLink.getInstance();
+    }
+    CoreParameter param = parameters.get(parameters.size() - 1);
+    if (!(param instanceof DependentLink)) {
+      throw new IllegalArgumentException();
+    }
+
+    DependentLink link = (DependentLink) param;
+    for (int i = parameters.size() - 2; i >= 0; i--) {
+      if (!(parameters.get(i) instanceof DependentLink)) {
+        throw new IllegalArgumentException();
+      }
+      DependentLink link1 = DependentLink.Helper.copy((DependentLink) parameters.get(i));
+      if (link1.hasNext()) {
+        DependentLink.Helper.getLast(link1).setNext(link);
+      }
+      link = link1;
+    }
+    return link;
+  }
+
+  @Override
   public @Nullable AbstractedExpression substituteAbstractedExpression(@NotNull AbstractedExpression expression, @NotNull List<? extends ConcreteExpression> arguments) {
     if (arguments.isEmpty()) {
       return expression;
@@ -475,11 +501,20 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     int i = 0;
     ExprSubstitution substitution = new ExprSubstitution();
     while (i < arguments.size()) {
-      if (!(expression instanceof AbstractedExpressionImpl)) {
+      DependentLink link;
+      int drop = 0;
+      if (expression instanceof AbstractedExpressionImpl) {
+        link = ((AbstractedExpressionImpl) expression).getParameters();
+      } else if (expression instanceof AbstractedDependentLinkType) {
+        link = ((AbstractedDependentLinkType) expression).getParameters();
+        drop = arguments.size() - i;
+        if (drop > ((AbstractedDependentLinkType) expression).getSize()) {
+          throw new IllegalArgumentException();
+        }
+      } else {
         throw new IllegalArgumentException();
       }
-      AbstractedExpressionImpl abs = (AbstractedExpressionImpl) expression;
-      DependentLink link = abs.getParameters();
+
       for (; i < arguments.size(); i++, link = link.getNext()) {
         TypecheckingResult arg = typecheck(arguments.get(i), link.getTypeExpr());
         if (arg == null || arg.expression.isError()) {
@@ -487,12 +522,73 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         }
         substitution.add(link, arg.expression);
       }
+
+      if (expression instanceof AbstractedDependentLinkType) {
+        AbstractedDependentLinkType abs = (AbstractedDependentLinkType) expression;
+        return AbstractedExpressionImpl.subst(AbstractedDependentLinkType.make(DependentLink.Helper.get(abs.getParameters(), drop), abs.getSize() - drop), substitution);
+      }
+
+      AbstractedExpressionImpl abs = (AbstractedExpressionImpl) expression;
       if (link.hasNext()) {
         return AbstractedExpressionImpl.subst(AbstractedExpressionImpl.make(link, abs.getExpression()), substitution);
       }
       expression = abs.getExpression();
     }
     return AbstractedExpressionImpl.subst(expression, substitution);
+  }
+
+  @Override
+  public @Nullable CoreParameter substituteParameters(@NotNull CoreParameter parameters, @NotNull List<? extends ConcreteExpression> arguments) {
+    boolean allNull = true;
+    for (ConcreteExpression argument : arguments) {
+      if (argument != null) {
+        allNull = false;
+        break;
+      }
+    }
+    if (allNull) {
+      return parameters;
+    }
+
+    if (!(parameters instanceof DependentLink)) {
+      throw new IllegalArgumentException();
+    }
+
+    List<DependentLink> links = DependentLink.Helper.toList((DependentLink) parameters);
+    if (arguments.size() > links.size()) {
+      throw new IllegalArgumentException();
+    }
+
+    ExprSubstitution substitution = new ExprSubstitution();
+    LinkList list = new LinkList();
+    for (int i = 0; i < links.size();) {
+      int typedIndex = i;
+      while (links.get(typedIndex) instanceof UntypedDependentLink) {
+        typedIndex++;
+      }
+      int last = typedIndex;
+      for (; last >= i; last--) {
+        if (last >= arguments.size() || arguments.get(last) == null) {
+          break;
+        }
+      }
+
+      Type type = links.get(typedIndex).getType().subst(new SubstVisitor(substitution, LevelSubstitution.EMPTY));
+      for (; i <= typedIndex; i++) {
+        if (i >= arguments.size() || arguments.get(i) == null) {
+          DependentLink link = i < last ? new UntypedDependentLink(links.get(i).getName()) : new TypedDependentLink(links.get(typedIndex).isExplicit(), links.get(i).getName(), type, links.get(typedIndex).isHidden(), EmptyDependentLink.getInstance());
+          substitution.add(links.get(i), new ReferenceExpression(link));
+          list.append(link);
+        } else {
+          TypecheckingResult result = typecheck(arguments.get(i), type.getExpr());
+          if (result == null) {
+            return null;
+          }
+          substitution.add(links.get(i), result.expression);
+        }
+      }
+    }
+    return list.getFirst();
   }
 
   public TypecheckingResult checkExpr(Concrete.Expression expr, Expression expectedType) {
@@ -542,7 +638,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       }
 
       CheckTypeVisitor checkTypeVisitor;
-      ErrorReporter originalErrorReporter = errorReporter;
+      MyErrorReporter originalErrorReporter = errorReporter;
       Map<Referable, Binding> originalContext = context;
       if (stage != Stage.AFTER_LEVELS) {
         checkTypeVisitor = this;
@@ -553,7 +649,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         checkTypeVisitor.setInstancePool(new GlobalInstancePool(myInstancePool.getInstanceProvider(), checkTypeVisitor, myInstancePool.getInstancePool()));
       }
 
-      int numberOfErrors = checkTypeVisitor.myErrorReporter.myErrorReporter.getErrorsNumber();
+      int numberOfErrors = checkTypeVisitor.getNumberOfErrors();
       Concrete.ReferenceExpression refExpr = deferredMeta.contextData.getReferenceExpression();
       TypecheckingResult result = checkTypeVisitor.invokeMeta(deferredMeta.meta, deferredMeta.contextData);
       fixCheckedExpression(result, refExpr.getReferent(), refExpr);
@@ -565,10 +661,10 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       }
       errorReporter = originalErrorReporter;
       context = originalContext;
-      if (result == null && checkTypeVisitor.myErrorReporter.myErrorReporter.getErrorsNumber() == numberOfErrors) {
+      if (result == null && checkTypeVisitor.getNumberOfErrors() == numberOfErrors) {
         deferredMeta.errorReporter.report(new TypecheckingError("Meta '" + refExpr.getReferent().getRefName() + "' failed", refExpr));
       }
-      deferredMeta.inferenceVar.solve(myEquations, result == null ? new ErrorExpression() : result.expression);
+      deferredMeta.inferenceVar.solve(this, result == null ? new ErrorExpression() : result.expression);
     }
     deferredMetas.clear();
   }
@@ -581,13 +677,16 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     invokeDeferredMetas(null, null, Stage.BEFORE_SOLVER);
     myEquations.solveEquations();
     invokeDeferredMetas(null, null, Stage.BEFORE_LEVELS);
+    LevelEquationsSolver levelSolver = myEquations.makeLevelEquationsSolver();
     if (propIfPossible) {
       Sort sort = result.type.getSortOfType();
       if (sort != null) {
-        myEquations.addPropEquationIfPossible(sort.getHLevel());
+        levelSolver.addPropEquationIfPossible(sort.getHLevel());
       }
     }
-    InPlaceLevelSubstVisitor substVisitor = new InPlaceLevelSubstVisitor(myEquations.solveLevels(sourceNode));
+    LevelSubstitution levelSubstitution = levelSolver.solveLevels();
+    myEquations.finalizeEquations(levelSubstitution, sourceNode);
+    InPlaceLevelSubstVisitor substVisitor = new InPlaceLevelSubstVisitor(levelSubstitution);
     if (!substVisitor.isEmpty()) {
       if (result.expression != null) {
         result.expression.accept(substVisitor, null);
@@ -667,13 +766,16 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     invokeDeferredMetas(null, null, Stage.BEFORE_SOLVER);
     myEquations.solveEquations();
     invokeDeferredMetas(null, null, Stage.BEFORE_LEVELS);
+    LevelEquationsSolver levelSolver = myEquations.makeLevelEquationsSolver();
     if (propIfPossible) {
       Sort sort = result.getSortOfType();
       if (sort != null) {
-        myEquations.addPropEquationIfPossible(sort.getHLevel());
+        levelSolver.addPropEquationIfPossible(sort.getHLevel());
       }
     }
-    InPlaceLevelSubstVisitor substVisitor = new InPlaceLevelSubstVisitor(myEquations.solveLevels(expr));
+    LevelSubstitution levelSubstitution = levelSolver.solveLevels();
+    myEquations.finalizeEquations(levelSubstitution, expr);
+    InPlaceLevelSubstVisitor substVisitor = new InPlaceLevelSubstVisitor(levelSubstitution);
     if (!substVisitor.isEmpty()) {
       result.subst(substVisitor);
     }
@@ -823,69 +925,72 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
       Referable thisRef = addBinding(null, resultClassCall.getThisBinding());
       myClassCallBindings.add(resultClassCall.getThisBinding());
-      for (Pair<Definition, Concrete.ClassFieldImpl> pair : implementations) {
-        if (pair.proj1 instanceof ClassField) {
-          ClassField field = (ClassField) pair.proj1;
-          TypecheckingResult implResult = typecheckImplementation(field, pair.proj2.implementation, resultClassCall);
-          if (implResult != null) {
-            Expression oldImpl = null;
-            if (!field.isProperty()) {
-              oldImpl = resultClassCall.getAbsImplementationHere(field);
-              if (oldImpl == null) {
-                AbsExpression absImpl = resultClassCall.getDefinition().getImplementation(field);
-                oldImpl = absImpl == null ? null : absImpl.getExpression();
+      try {
+        for (Pair<Definition, Concrete.ClassFieldImpl> pair : implementations) {
+          if (pair.proj1 instanceof ClassField) {
+            ClassField field = (ClassField) pair.proj1;
+            TypecheckingResult implResult = typecheckImplementation(field, pair.proj2.implementation, resultClassCall);
+            if (implResult != null) {
+              Expression oldImpl = null;
+              if (!field.isProperty()) {
+                oldImpl = resultClassCall.getAbsImplementationHere(field);
+                if (oldImpl == null) {
+                  AbsExpression absImpl = resultClassCall.getDefinition().getImplementation(field);
+                  oldImpl = absImpl == null ? null : absImpl.getExpression();
+                }
               }
-            }
-            if (oldImpl != null) {
-              if (!classCallExpr.isImplemented(field) || !CompareVisitor.compare(myEquations, CMP.EQ, implResult.expression, oldImpl, implResult.type, pair.proj2.implementation)) {
-                errorReporter.report(new FieldsImplementationError(true, baseClass.getReferable(), Collections.singletonList(field.getReferable()), pair.proj2));
+              if (oldImpl != null) {
+                if (!classCallExpr.isImplemented(field) || !CompareVisitor.compare(myEquations, CMP.EQ, implResult.expression, oldImpl, implResult.type, pair.proj2.implementation)) {
+                  errorReporter.report(new FieldsImplementationError(true, baseClass.getReferable(), Collections.singletonList(field.getReferable()), pair.proj2));
+                }
+              } else if (!resultClassCall.isImplemented(field)) {
+                checkImplementationCycle(dfs, field, implResult.expression, resultClassCall, pair.proj2.implementation);
               }
+            } else if (pseudoImplemented != null) {
+              pseudoImplemented.add(field);
             } else if (!resultClassCall.isImplemented(field)) {
-              checkImplementationCycle(dfs, field, implResult.expression, resultClassCall, pair.proj2.implementation);
+              fieldSet.put(field, new ErrorExpression());
             }
-          } else if (pseudoImplemented != null) {
-            pseudoImplemented.add(field);
-          } else if (!resultClassCall.isImplemented(field)) {
-            fieldSet.put(field, new ErrorExpression());
-          }
-        } else if (pair.proj1 instanceof ClassDefinition) {
-          TypecheckingResult result = checkExpr(pair.proj2.implementation, null);
-          if (result != null) {
-            Expression type = result.type.normalize(NormalizationMode.WHNF);
-            ClassCallExpression classCall = type.cast(ClassCallExpression.class);
-            if (classCall == null) {
-              if (!type.isInstance(ErrorExpression.class)) {
-                InferenceVariable var = type instanceof InferenceReferenceExpression ? ((InferenceReferenceExpression) type).getVariable() : null;
-                errorReporter.report(var != null && !(var instanceof MetaInferenceVariable) ? var.getErrorInfer() : new TypeMismatchError(DocFactory.text("a class"), type, pair.proj2.implementation));
-              }
-            } else {
-              if (!classCall.getDefinition().isSubClassOf((ClassDefinition) pair.proj1)) {
-                errorReporter.report(new TypeMismatchError(new ClassCallExpression((ClassDefinition) pair.proj1, Sort.PROP), type, pair.proj2.implementation));
+          } else if (pair.proj1 instanceof ClassDefinition) {
+            TypecheckingResult result = checkExpr(pair.proj2.implementation, null);
+            if (result != null) {
+              Expression type = result.type.normalize(NormalizationMode.WHNF);
+              ClassCallExpression classCall = type.cast(ClassCallExpression.class);
+              if (classCall == null) {
+                if (!type.isInstance(ErrorExpression.class)) {
+                  InferenceVariable var = type instanceof InferenceReferenceExpression ? ((InferenceReferenceExpression) type).getVariable() : null;
+                  errorReporter.report(var != null && !(var instanceof MetaInferenceVariable) ? var.getErrorInfer() : new TypeMismatchError(DocFactory.text("a class"), type, pair.proj2.implementation));
+                }
               } else {
-                if (!new CompareVisitor(myEquations, CMP.LE, pair.proj2.implementation).compareClassCallSortArguments(classCall, resultClassCall)) {
-                  errorReporter.report(new TypeMismatchError(new ClassCallExpression(classCall.getDefinition(), resultClassCall.getSortArgument()), classCall, pair.proj2.implementation));
-                  return null;
-                }
-                for (ClassField field : ((ClassDefinition) pair.proj1).getFields()) {
-                  Expression impl = FieldCallExpression.make(field, classCall.getSortArgument(), result.expression);
-                  Expression oldImpl = field.isProperty() ? null : resultClassCall.getImplementation(field, result.expression);
-                  if (oldImpl != null) {
-                    if (!CompareVisitor.compare(myEquations, CMP.EQ, impl, oldImpl, field.getType(classCall.getSortArgument()).applyExpression(result.expression), pair.proj2.implementation)) {
-                      errorReporter.report(new FieldsImplementationError(true, baseClass.getReferable(), Collections.singletonList(field.getReferable()), pair.proj2));
-                    }
-                  } else if (!resultClassCall.isImplemented(field)) {
-                    checkImplementationCycle(dfs, field, impl, resultClassCall, pair.proj2.implementation);
+                if (!classCall.getDefinition().isSubClassOf((ClassDefinition) pair.proj1)) {
+                  errorReporter.report(new TypeMismatchError(new ClassCallExpression((ClassDefinition) pair.proj1, Sort.PROP), type, pair.proj2.implementation));
+                } else {
+                  if (!new CompareVisitor(myEquations, CMP.LE, pair.proj2.implementation).compareClassCallSortArguments(classCall, resultClassCall)) {
+                    errorReporter.report(new TypeMismatchError(new ClassCallExpression(classCall.getDefinition(), resultClassCall.getSortArgument()), classCall, pair.proj2.implementation));
+                    return null;
                   }
+                  for (ClassField field : ((ClassDefinition) pair.proj1).getFields()) {
+                    Expression impl = FieldCallExpression.make(field, classCall.getSortArgument(), result.expression);
+                    Expression oldImpl = field.isProperty() ? null : resultClassCall.getImplementation(field, result.expression);
+                    if (oldImpl != null) {
+                      if (!CompareVisitor.compare(myEquations, CMP.EQ, impl, oldImpl, field.getType(classCall.getSortArgument()).applyExpression(result.expression), pair.proj2.implementation)) {
+                        errorReporter.report(new FieldsImplementationError(true, baseClass.getReferable(), Collections.singletonList(field.getReferable()), pair.proj2));
+                      }
+                    } else if (!resultClassCall.isImplemented(field)) {
+                      checkImplementationCycle(dfs, field, impl, resultClassCall, pair.proj2.implementation);
+                    }
+                  }
+                  resultClassCall.updateHasUniverses();
                 }
-                resultClassCall.updateHasUniverses();
               }
             }
+          } else {
+            errorReporter.report(new WrongReferable("Expected either a field or a class", pair.proj2.getImplementedField(), pair.proj2));
           }
-        } else {
-          errorReporter.report(new WrongReferable("Expected either a field or a class", pair.proj2.getImplementedField(), pair.proj2));
         }
+      } finally {
+        myClassCallBindings.remove(myClassCallBindings.size() - 1);
       }
-      myClassCallBindings.remove(myClassCallBindings.size() - 1);
       context.remove(thisRef);
     }
 
@@ -1209,7 +1314,8 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   private TResult getLocalVar(Referable ref, Concrete.SourceNode sourceNode) {
     if (ref instanceof UnresolvedReference || ref instanceof RedirectingReferable) {
-      throw new IllegalStateException("Unresolved reference `" + ref.textRepresentation() + "`");
+      errorReporter.report(new TypecheckingError("Unresolved reference `" + ref.textRepresentation() + "`. This may be caused by a bug in a meta resolver.", sourceNode));
+      return null;
     }
     if (ref instanceof ErrorReference) {
       return null;
@@ -1534,6 +1640,8 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   };
 
   private static class ExpressionParametersProvider implements ParametersProvider {
+    private Sort sort = Sort.STD;
+    private SingleDependentLink parameter = EmptyDependentLink.getInstance();
     private Expression expression;
     private final ExprSubstitution substitution = new ExprSubstitution();
 
@@ -1543,23 +1651,27 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
     @Override
     public @Nullable SingleDependentLink nextParameter() {
-      expression = expression.subst(substitution).normalize(NormalizationMode.WHNF);
-      substitution.clear();
-      if (expression instanceof PiExpression) {
+      if (!parameter.hasNext()) {
+        expression = expression.subst(substitution).normalize(NormalizationMode.WHNF);
+        substitution.clear();
+        if (!(expression instanceof PiExpression)) {
+          return null;
+        }
+
         PiExpression piExpr = (PiExpression) expression;
-        SingleDependentLink result = piExpr.getParameters();
-        expression = result.getNext().hasNext() ? new PiExpression(piExpr.getResultSort(), result.getNext(), piExpr.getCodomain()) : piExpr.getCodomain();
-        return result;
-      } else {
-        return null;
+        sort = piExpr.getResultSort();
+        parameter = piExpr.getParameters();
+        expression = piExpr.getCodomain();
       }
+
+      SingleDependentLink result = parameter;
+      parameter = parameter.getNext();
+      return result;
     }
 
     @Override
     public @Nullable Expression getType() {
-      Expression result = expression.subst(substitution);
-      substitution.clear();
-      return result;
+      return (parameter.hasNext() ? new PiExpression(sort, parameter, expression) : expression).subst(substitution);
     }
 
     @Override
@@ -2108,13 +2220,13 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       return null;
     }
 
-    int numberOfErrors = myErrorReporter.myErrorReporter.getErrorsNumber();
+    int numberOfErrors = getNumberOfErrors();
     TypecheckingResult result = invokeMeta(meta, contextData);
     fixCheckedExpression(result, refExpr.getReferent(), refExpr);
     if (result != null) {
       return result.getType() == expectedType ? result : checkResult(expectedType, result, refExpr);
     }
-    if (myErrorReporter.myErrorReporter.getErrorsNumber() == numberOfErrors) {
+    if (getNumberOfErrors() == numberOfErrors) {
       errorReporter.report(new TypecheckingError("Meta '" + refExpr.getReferent().getRefName() + "' failed", refExpr));
     }
     return null;
@@ -2163,14 +2275,14 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     int j = 0;
     for (int i = 0; i < arguments.size(); i++, j++) {
       if (j >= notImplementedFields.size()) {
-        myErrorReporter.report(new TypecheckingError("Too many arguments. Class '" + ref.textRepresentation() + "' " + (notImplementedFields.isEmpty() ? "does not have fields" : "has only " + ArgInferenceError.number(notImplementedFields.size(), "field")), arguments.get(i).expression));
+        errorReporter.report(new TypecheckingError("Too many arguments. Class '" + ref.textRepresentation() + "' " + (notImplementedFields.isEmpty() ? "does not have fields" : "has only " + ArgInferenceError.number(notImplementedFields.size(), "field")), arguments.get(i).expression));
         break;
       }
 
       ClassField field = notImplementedFields.get(j);
       boolean fieldExplicit = field.getReferable().isExplicitField();
       if (fieldExplicit && !arguments.get(i).isExplicit()) {
-        myErrorReporter.report(new ArgumentExplicitnessError(true, arguments.get(i).expression));
+        errorReporter.report(new ArgumentExplicitnessError(true, arguments.get(i).expression));
         while (i < arguments.size() && !arguments.get(i).isExplicit()) {
           i++;
         }
@@ -2331,9 +2443,9 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     if (myArendExtension != null) {
       var checker = myArendExtension.getLiteralTypechecker();
       if (checker != null) {
-        int numberOfErrors = myErrorReporter.myErrorReporter.getErrorsNumber();
+        int numberOfErrors = getNumberOfErrors();
         TypecheckingResult result = TypecheckingResult.fromChecked(checker.typecheckNumber(number, this, new ContextDataImpl(expr, Collections.emptyList(), null, null, expectedType, null)));
-        if (result == null && myErrorReporter.myErrorReporter.getErrorsNumber() == numberOfErrors) {
+        if (result == null && getNumberOfErrors() == numberOfErrors) {
           errorReporter.report(new TypecheckingError("Cannot check number", expr));
         }
         return result;
@@ -2349,9 +2461,9 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     if (myArendExtension != null) {
       var checker = myArendExtension.getLiteralTypechecker();
       if (checker != null) {
-        int numberOfErrors = myErrorReporter.myErrorReporter.getErrorsNumber();
+        int numberOfErrors = getNumberOfErrors();
         TypecheckingResult result = TypecheckingResult.fromChecked(checker.typecheckString(string, this, new ContextDataImpl(expr, Collections.emptyList(), null, null, expectedType, null)));
-        if (result == null && myErrorReporter.myErrorReporter.getErrorsNumber() == numberOfErrors) {
+        if (result == null && getNumberOfErrors() == numberOfErrors) {
           errorReporter.report(new TypecheckingError("Cannot check string", expr));
         }
         return result;
@@ -2364,8 +2476,8 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   @Override
   public <T> T withErrorReporter(@NotNull ErrorReporter errorReporter, @NotNull Function<ExpressionTypechecker, T> action) {
-    ErrorReporter originalErrorReport = this.errorReporter;
-    this.errorReporter = errorReporter;
+    MyErrorReporter originalErrorReport = this.errorReporter;
+    this.errorReporter = new MyErrorReporter(errorReporter);
     try {
       return action.apply(this);
     } finally {
@@ -2425,6 +2537,81 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
       return action.apply(this);
     }
+  }
+
+  public void variableSolved(InferenceVariable variable) {
+    if (mySavedState != null) {
+      mySavedState.solvedVariables.add(variable);
+    }
+  }
+
+  private void saveState() {
+    TypecheckerState state = new TypecheckerState(errorReporter, myDeferredMetasBeforeSolver.size(), myDeferredMetasBeforeLevels.size(), myDeferredMetasAfterLevels.size(), mySavedState);
+    errorReporter = new MyErrorReporter(new ListErrorReporter());
+    myEquations.saveState(state);
+    mySavedState = state;
+  }
+
+  private void restoreState() {
+    if (!(errorReporter.myErrorReporter.getErrorReporter() instanceof ListErrorReporter)) {
+      throw new IllegalStateException();
+    }
+    ((ListErrorReporter) errorReporter.myErrorReporter.getErrorReporter()).reportTo(mySavedState.errorReporter);
+    errorReporter = mySavedState.errorReporter;
+    mySavedState = mySavedState.previousState;
+  }
+
+  @Override
+  public <T> T withCurrentState(@NotNull Function<ExpressionTypechecker, T> action) {
+    saveState();
+    try {
+      return action.apply(this);
+    } finally {
+      restoreState();
+    }
+  }
+
+  @Override
+  public void updateSavedState() {
+    if (mySavedState == null || !(errorReporter.myErrorReporter.getErrorReporter() instanceof ListErrorReporter)) {
+      throw new IllegalStateException();
+    }
+
+    ((ListErrorReporter) errorReporter.myErrorReporter.getErrorReporter()).reportTo(mySavedState.errorReporter);
+    TypecheckerState state = new TypecheckerState(mySavedState.errorReporter, myDeferredMetasBeforeSolver.size(), myDeferredMetasBeforeLevels.size(), myDeferredMetasAfterLevels.size(), mySavedState.previousState);
+    myEquations.saveState(state);
+    mySavedState = state;
+  }
+
+  private void loadState(TypecheckerState state) {
+    if (!(errorReporter.myErrorReporter.getErrorReporter() instanceof ListErrorReporter)) {
+      throw new IllegalStateException();
+    }
+    ((ListErrorReporter) errorReporter.myErrorReporter.getErrorReporter()).getErrorList().clear();
+    if (state.numberOfDeferredMetasBeforeSolver < myDeferredMetasBeforeSolver.size()) {
+      myDeferredMetasBeforeSolver.subList(state.numberOfDeferredMetasBeforeSolver, myDeferredMetasBeforeSolver.size()).clear();
+    }
+    if (state.numberOfDeferredMetasBeforeLevels < myDeferredMetasBeforeLevels.size()) {
+      myDeferredMetasBeforeLevels.subList(state.numberOfDeferredMetasBeforeLevels, myDeferredMetasBeforeLevels.size()).clear();
+    }
+    if (state.numberOfDeferredMetasAfterLevels < myDeferredMetasAfterLevels.size()) {
+      myDeferredMetasAfterLevels.subList(state.numberOfDeferredMetasAfterLevels, myDeferredMetasAfterLevels.size()).clear();
+    }
+
+    for (InferenceVariable var : state.solvedVariables) {
+      var.unsolve();
+    }
+    state.solvedVariables.clear();
+
+    myEquations.loadState(state);
+  }
+
+  @Override
+  public void loadSavedState() {
+    if (mySavedState == null) {
+      throw new IllegalStateException();
+    }
+    loadState(mySavedState);
   }
 
   @Override
@@ -2597,7 +2784,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           foundVars.add(entry.getKey());
         }
       }
-      myErrorReporter.report(new ElimSubstError(foundVars, sourceNode));
+      errorReporter.report(new ElimSubstError(foundVars, sourceNode));
       return expr;
     }
 

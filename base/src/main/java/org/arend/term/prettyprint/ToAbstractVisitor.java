@@ -204,7 +204,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     }
 
     int skip = hasFlag(PrettyPrinterFlag.SHOW_CON_PARAMS) || !(expr.getDefinition() instanceof DConstructor) ? 0 : ((DConstructor) expr.getDefinition()).getNumberOfParameters();
-    return visitParameters(makeReference(expr), DependentLink.Helper.get(expr.getDefinition().getParameters(), skip), skip == 0 ? expr.getDefCallArguments() : expr.getDefCallArguments().subList(skip, expr.getDefCallArguments().size()));
+    return visitParameters(makeReference(expr), DependentLink.Helper.get(expr.getDefinition().getParameters(), skip), skip == 0 || DependentLink.Helper.size(expr.getDefinition().getParameters()) != expr.getDefCallArguments().size() ? expr.getDefCallArguments() : expr.getDefCallArguments().subList(skip, expr.getDefCallArguments().size()));
   }
 
   @Override
@@ -627,8 +627,19 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   @Override
   public Concrete.Expression visitCase(CaseExpression expr, Void params) {
     List<Concrete.CaseArgument> arguments = new ArrayList<>(expr.getArguments().size());
-    for (Expression argument : expr.getArguments()) {
-      arguments.add(new Concrete.CaseArgument(argument.accept(this, null), null, null));
+    if (hasFlag(PrettyPrinterFlag.SHOW_CASE_RESULT_TYPE)) {
+      List<Concrete.TypeParameter> parameters = new ArrayList<>();
+      visitDependentLink(expr.getParameters(), parameters, true);
+      int i = 0;
+      for (Concrete.TypeParameter parameter : parameters) {
+        for (Referable ref : parameter.getReferableList()) {
+          arguments.add(new Concrete.CaseArgument(expr.getArguments().get(i++).accept(this, null), ref, parameter.getType()));
+        }
+      }
+    } else {
+      for (Expression argument : expr.getArguments()) {
+        arguments.add(new Concrete.CaseArgument(argument.accept(this, null), null, null));
+      }
     }
 
     Concrete.Expression resultType = null;

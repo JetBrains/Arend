@@ -65,14 +65,14 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   private GlobalInstancePool myInstancePool;
 
   public DefinitionTypechecker(CheckTypeVisitor typechecker) {
-    super(typechecker == null ? null : typechecker.errorReporter);
+    super(typechecker == null ? null : typechecker.getErrorReporter());
     this.typechecker = typechecker;
     myInstancePool = typechecker == null ? null : typechecker.getInstancePool();
   }
 
   public void setTypechecker(CheckTypeVisitor typechecker) {
     this.typechecker = typechecker;
-    this.errorReporter = typechecker.errorReporter;
+    this.errorReporter = typechecker.getErrorReporter();
     myInstancePool = typechecker.getInstancePool();
   }
 
