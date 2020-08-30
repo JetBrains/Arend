@@ -1,7 +1,10 @@
 package org.arend.core.elimtree;
 
 import org.arend.core.constructor.IdpConstructor;
+import org.arend.core.context.LinkList;
 import org.arend.core.context.param.DependentLink;
+import org.arend.core.context.param.EmptyDependentLink;
+import org.arend.core.context.param.TypedDependentLink;
 import org.arend.core.definition.Constructor;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.visitor.CompareVisitor;
@@ -43,17 +46,24 @@ public class ElimBody implements Body, CoreElimBody {
       throw new IllegalArgumentException();
     }
     List<List<CorePattern>> result = new ArrayList<>();
-    computeRefinedPatterns(myElimTree, DependentLink.Helper.toList((DependentLink) parameters), new ArrayList<>(), result);
+    LinkList linkList = new LinkList();
+    computeRefinedPatterns(myElimTree, DependentLink.Helper.toList((DependentLink) parameters), new ArrayList<>(), result, linkList);
     return result;
   }
 
-  private static void computeRefinedPatterns(ElimTree elimTree, List<DependentLink> params, List<Util.ClauseElem> clauseElems, List<List<CorePattern>> result) {
+  private static DependentLink copyDependentLink(DependentLink link, LinkList linkList) {
+    TypedDependentLink result = new TypedDependentLink(link.isExplicit(), link.getName(), link.getType(), link.isHidden(), EmptyDependentLink.getInstance());
+    linkList.append(result);
+    return result;
+  }
+
+  private static void computeRefinedPatterns(ElimTree elimTree, List<DependentLink> params, List<Util.ClauseElem> clauseElems, List<List<CorePattern>> result, LinkList linkList) {
     if (elimTree.getSkip() - 1 >= params.size()) {
       throw new IllegalArgumentException();
     }
     int originalSize = clauseElems.size();
     for (int i = 0; i < elimTree.getSkip(); i++) {
-      clauseElems.add(new Util.PatternClauseElem(new BindingPattern(params.get(i))));
+      clauseElems.add(new Util.PatternClauseElem(new BindingPattern(copyDependentLink(params.get(i), linkList))));
     }
 
     if (elimTree instanceof LeafElimTree) {
@@ -75,10 +85,10 @@ public class ElimBody implements Body, CoreElimBody {
         } else if (key instanceof IdpConstructor) {
           clauseElems.add(new Util.PatternClauseElem(ConstructorPattern.make(Prelude.IDP, Collections.emptyList()).toExpressionPattern(params.get(elimTree.getSkip()).getTypeExpr().normalize(NormalizationMode.WHNF))));
         } else {
-          clauseElems.add(new Util.PatternClauseElem(new BindingPattern(params.get(elimTree.getSkip()))));
+          clauseElems.add(new Util.PatternClauseElem(new BindingPattern(copyDependentLink(params.get(elimTree.getSkip()), linkList))));
         }
         newParams.addAll(params.subList(elimTree.getSkip() + 1, params.size()));
-        computeRefinedPatterns(branchElimTree.getChild(key), newParams, clauseElems, result);
+        computeRefinedPatterns(branchElimTree.getChild(key), newParams, clauseElems, result, linkList);
         clauseElems.subList(originalSize1, clauseElems.size()).clear();
       }
     }
