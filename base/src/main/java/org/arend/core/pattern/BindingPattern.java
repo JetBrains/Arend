@@ -60,13 +60,7 @@ public class BindingPattern implements ExpressionPattern {
   @Override
   public @NotNull Pattern subst(@NotNull Map<? extends CoreBinding, ? extends CorePattern> map) {
     CorePattern pattern = map.get(myBinding);
-    if (pattern == null) {
-      return this;
-    }
-    if (!(pattern instanceof Pattern)) {
-      throw new IllegalArgumentException();
-    }
-    return (Pattern) pattern;
+    return pattern == null ? this : Pattern.fromCorePattern(pattern);
   }
 
   @Override
