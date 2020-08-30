@@ -13,7 +13,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Set;
-import java.util.function.Predicate;
+import java.util.function.Function;
 
 /**
  * A core expression is an internal representation of Arend expressions.
@@ -65,12 +65,20 @@ public interface CoreExpression extends CoreBody, UncheckedExpression, Abstracte
    */
   @Nullable CoreExpression lambdaToPi();
 
+  enum FindAction { CONTINUE, STOP, SKIP }
+
   /**
-   * Finds a subexpression of this expression satisfying {@code predicate}.
+   * Applies the given function to every subexpression of this expression.
+   * If the function returns
+   * <ul>
+   * <li>{@link FindAction#CONTINUE}, then the method proceeds processing other subexpressions.</li>
+   * <li>{@link FindAction#STOP}, then the method halts.</li>
+   * <li>{@link FindAction#SKIP}, then the method skips subexpressions of the current expressions.</li>
+   * </ul>
    *
-   * @return true if this expression contains a subexpression satisfying {@code predicate}, false otherwise.
+   * @return true if {@code function} returns {@link FindAction#STOP} on some subexpression.
    */
-  boolean findSubexpression(@NotNull Predicate<CoreExpression> predicate);
+  boolean processSubexpression(@NotNull Function<CoreExpression, FindAction> function);
 
   /**
    * Compares this expression with another one.
