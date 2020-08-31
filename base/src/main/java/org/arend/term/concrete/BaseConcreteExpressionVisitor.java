@@ -274,7 +274,9 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
   @Override
   public Void visitMeta(DefinableMetaDefinition def, P params) {
     visitParameters(def.getParameters(), params);
-    def.body = def.body.accept(this, params);
+    if (def.body != null) {
+      def.body = def.body.accept(this, params);
+    }
     return null;
   }
 

@@ -35,7 +35,9 @@ public class VoidConcreteVisitor<P, R> implements ConcreteExpressionVisitor<P,Vo
   @Override
   public R visitMeta(DefinableMetaDefinition def, P params) {
     visitParameters(def.getParameters(), params);
-    def.body.accept(this, params);
+    if (def.body != null) {
+      def.body.accept(this, params);
+    }
     return null;
   }
 

@@ -61,24 +61,26 @@ public class DefinableMetaDefinition extends Concrete.ResolvableDefinition imple
     return checkArguments(contextData.getArguments(), errorReporter, contextData.getReferenceExpression());
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public @Nullable ConcreteExpression getConcreteRepresentation(@NotNull List<? extends ConcreteArgument> arguments) {
-    return Concrete.AppExpression.make(null, new Concrete.ReferenceExpression(null, myReferable), (List<Concrete.Argument>) arguments);
-  }
-
-  @Override
-  public @Nullable TypedExpression invokeMeta(@NotNull ExpressionTypechecker typechecker, @NotNull ContextData contextData) {
-    if (myParameters.isEmpty()) return typechecker.typecheck(body, contextData.getExpectedType());
-    var arguments = contextData.getArguments();
+    if (myParameters.isEmpty()) return body;
     assert myParameters.size() == arguments.size();
     var subst = new SubstConcreteExpressionVisitor();
     for (int i = 0; i < myParameters.size(); i++) {
       subst.bind(Objects.requireNonNull(myParameters.get(i).getReferable()),
         (Concrete.Expression) arguments.get(i).getExpression());
     }
-    var substExpr = body.accept(subst, null);
-    return typechecker.typecheck(substExpr, contextData.getExpectedType());
+    return body.accept(subst, null);
+  }
+
+  @Override
+  public @Nullable TypedExpression invokeMeta(@NotNull ExpressionTypechecker typechecker, @NotNull ContextData contextData) {
+    ConcreteExpression result = getConcreteRepresentation(contextData.getArguments());
+    if (result == null) {
+      typechecker.getErrorReporter().report(new TypecheckingError("Meta '" + myReferable.getRefName() + "' is not defined", contextData.getMarker()));
+      return null;
+    }
+    return typechecker.typecheck(result, contextData.getExpectedType());
   }
 
   @Override

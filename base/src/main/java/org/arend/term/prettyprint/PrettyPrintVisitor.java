@@ -1472,6 +1472,9 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       myBuilder.append(" ").append(
         Objects.requireNonNull(parameter.getReferable()).textRepresentation());
     }
+    if (def.body == null) {
+      return null;
+    }
     myBuilder.append(" => ");
 
     final BinOpLayout l = new BinOpLayout(){
