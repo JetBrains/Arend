@@ -53,12 +53,12 @@ public class SubstConcreteExpressionVisitor implements ConcreteExpressionVisitor
   @Override
   public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Void ignored) {
     var subst = mySubstitution.get(expr.getReferent());
-    return subst != null ? subst : new Concrete.ReferenceExpression(expr.getData(), expr.getReferent(), expr.getPLevel(), expr.getHLevel());
+    return subst != null ? subst : expr;
   }
 
   @Override
   public Concrete.Expression visitThis(Concrete.ThisExpression expr, Void ignored) {
-    return new Concrete.ThisExpression(expr.getData(), expr.getReferent());
+    return expr;
   }
 
   @SuppressWarnings("unchecked")
@@ -79,9 +79,7 @@ public class SubstConcreteExpressionVisitor implements ConcreteExpressionVisitor
   }
 
   public <T extends Concrete.Parameter> List<T> visitParameters(List<T> parameters) {
-    return parameters.stream()
-      .map(this::visitParameter)
-      .collect(Collectors.toList());
+    return parameters.stream().map(this::visitParameter).collect(Collectors.toList());
   }
 
   @Override
@@ -96,17 +94,17 @@ public class SubstConcreteExpressionVisitor implements ConcreteExpressionVisitor
 
   @Override
   public Concrete.Expression visitUniverse(Concrete.UniverseExpression expr, Void ignored) {
-    return new Concrete.UniverseExpression(expr.getData(), expr.getPLevel(), expr.getHLevel());
+    return expr;
   }
 
   @Override
   public Concrete.Expression visitHole(Concrete.HoleExpression expr, Void ignored) {
-    return new Concrete.HoleExpression(expr.getData());
+    return expr;
   }
 
   @Override
   public Concrete.Expression visitApplyHole(Concrete.ApplyHoleExpression expr, Void ignored) {
-    return new Concrete.ApplyHoleExpression(expr.getData());
+    return expr;
   }
 
   @Contract(value = "null -> null; !null -> !null", pure = true)
@@ -143,9 +141,7 @@ public class SubstConcreteExpressionVisitor implements ConcreteExpressionVisitor
 
     var functionClauses = clauses == null ? null : new Concrete.FunctionClauses(
       clauses.getData(),
-      clauses.getClauseList().stream()
-        .map(this::visitClause)
-        .collect(Collectors.toList()));
+      clauses.getClauseList().stream().map(this::visitClause).collect(Collectors.toList()));
     return new Concrete.BinOpSequenceExpression(
       expr.getData(),
       expr.getSequence().stream()
@@ -195,9 +191,7 @@ public class SubstConcreteExpressionVisitor implements ConcreteExpressionVisitor
 
   @Override
   public Concrete.Expression visitCase(Concrete.CaseExpression expr, Void ignored) {
-    var clauses = expr.getClauses().stream()
-      .map(this::visitClause)
-      .collect(Collectors.toList());
+    var clauses = expr.getClauses().stream().map(this::visitClause).collect(Collectors.toList());
     var arguments = expr.getArguments().stream()
       .map(arg -> new Concrete.CaseArgument(arg.expression.accept(this, null), arg.referable, nullableMap(arg.type)))
       .collect(Collectors.toList());
@@ -217,9 +211,7 @@ public class SubstConcreteExpressionVisitor implements ConcreteExpressionVisitor
   @Override
   public Concrete.Expression visitClassExt(Concrete.ClassExtExpression expr, Void ignored) {
     var coclauses = expr.getCoclauses();
-    var statements = coclauses.getCoclauseList().stream()
-      .map(this::visitClassElement)
-      .collect(Collectors.toList());
+    var statements = coclauses.getCoclauseList().stream().map(this::visitClassElement).collect(Collectors.toList());
     var newCoclauses = new Concrete.Coclauses(coclauses.getData(), statements);
     return Concrete.ClassExtExpression.make(expr.getData(), expr.getBaseClassExpression().accept(this, null), newCoclauses);
   }
@@ -231,9 +223,7 @@ public class SubstConcreteExpressionVisitor implements ConcreteExpressionVisitor
       var subCoclauses = field.getSubCoclauses();
       var subClassFieldImpls = subCoclauses == null ? null : new Concrete.Coclauses(
         subCoclauses.getData(),
-        subCoclauses.getCoclauseList().stream()
-          .map(this::visitClassElement)
-          .collect(Collectors.toList()));
+        subCoclauses.getCoclauseList().stream().map(this::visitClassElement).collect(Collectors.toList()));
       return (T) new Concrete.ClassFieldImpl(element.getData(), field.getImplementedField(), field.implementation.accept(this, null), subClassFieldImpls);
     } else if (Concrete.ClassField.class.equals(element.getClass())) {
       var field = (Concrete.ClassField) element;
@@ -255,27 +245,23 @@ public class SubstConcreteExpressionVisitor implements ConcreteExpressionVisitor
   }
 
   private Concrete.LetClause visitLetClause(Concrete.LetClause clause) {
-    return clause.copy(
-      this::visitParameter,
-      this::nullableMap);
+    return clause.copy(this::visitParameter, this::nullableMap);
   }
 
   @Override
   public Concrete.Expression visitLet(Concrete.LetExpression expr, Void ignored) {
-    var clauses = expr.getClauses().stream()
-      .map(this::visitLetClause)
-      .collect(Collectors.toList());
+    var clauses = expr.getClauses().stream().map(this::visitLetClause).collect(Collectors.toList());
     return new Concrete.LetExpression(expr.getData(), expr.isStrict(), clauses, expr.expression.accept(this, null));
   }
 
   @Override
   public Concrete.Expression visitNumericLiteral(Concrete.NumericLiteral expr, Void ignored) {
-    return new Concrete.NumericLiteral(expr.getData(), expr.getNumber());
+    return expr;
   }
 
   @Override
   public Concrete.Expression visitStringLiteral(Concrete.StringLiteral expr, Void ignored) {
-    return new Concrete.StringLiteral(expr.getData(), expr.getUnescapedString());
+    return expr;
   }
 
   @Override
