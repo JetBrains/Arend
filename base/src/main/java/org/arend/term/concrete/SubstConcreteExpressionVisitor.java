@@ -119,6 +119,9 @@ public class SubstConcreteExpressionVisitor implements ConcreteExpressionVisitor
 
   @Override
   public Concrete.Expression visitGoal(Concrete.GoalExpression expr, Void ignored) {
+    if (expr instanceof Concrete.IncompleteExpression) {
+      return new Concrete.IncompleteExpression(expr.getData());
+    }
     return new Concrete.GoalExpression(expr.getData(), expr.getName(), nullableMap(expr.expression), expr.goalSolver, expr.useGoalSolver, expr.errors);
   }
 
