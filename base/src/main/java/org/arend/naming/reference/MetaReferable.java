@@ -19,8 +19,9 @@ public class MetaReferable implements LocatedReferable, MetaRef {
   private final String myAliasName;
   private final Precedence myAliasPrecedence;
   public GlobalReferable underlyingReferable;
+  private final LocatedReferable myParent;
 
-  public MetaReferable(Precedence precedence, String name, ModuleLocation location, Precedence aliasPrec, String aliasName, String description, MetaDefinition definition, MetaResolver resolver) {
+  public MetaReferable(Precedence precedence, String name, ModuleLocation location, Precedence aliasPrec, String aliasName, String description, MetaDefinition definition, MetaResolver resolver, LocatedReferable parent) {
     myPrecedence = precedence;
     myName = name;
     myLocation = location;
@@ -29,10 +30,11 @@ public class MetaReferable implements LocatedReferable, MetaRef {
     this.description = description;
     myDefinition = definition;
     myResolver = resolver;
+    myParent = parent;
   }
 
-  public MetaReferable(Precedence precedence, String name, ModuleLocation location, String description, MetaDefinition definition, MetaResolver resolver) {
-    this(precedence, name, location, null, null, description, definition, resolver);
+  public MetaReferable(Precedence precedence, String name, ModuleLocation location, String description, MetaDefinition definition, MetaResolver resolver, LocatedReferable parent) {
+    this(precedence, name, location, null, null, description, definition, resolver, parent);
   }
 
   @Override
@@ -41,8 +43,9 @@ public class MetaReferable implements LocatedReferable, MetaRef {
   }
 
   @Override
+  @Contract(pure = true)
   public @Nullable LocatedReferable getLocatedReferableParent() {
-    return null;
+    return myParent;
   }
 
   @Nullable

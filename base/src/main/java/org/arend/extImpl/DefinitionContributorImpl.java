@@ -74,7 +74,7 @@ public class DefinitionContributorImpl extends Disableable implements Definition
           return null;
         }
         var location = new ModuleLocation(myLibrary.getName(), ModuleLocation.LocationKind.GENERATED, module);
-        MetaReferable metaRef = new MetaReferable(precedence, name, location, aliasPrecedence, alias, description, meta, resolver);
+        MetaReferable metaRef = new MetaReferable(precedence, name, location, aliasPrecedence, alias, description, meta, resolver, null);
         scope.names.put(name, metaRef);
         if (alias != null) {
           scope.names.putIfAbsent(alias, new AliasReferable(metaRef));

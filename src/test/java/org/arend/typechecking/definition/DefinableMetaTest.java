@@ -50,6 +50,15 @@ public class DefinableMetaTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void hierarchy() {
+    var def = (FunctionDefinition) typeCheckDef("\\func zhang => ice \\where {\n" +
+      "  \\meta ice => alendia.tesla\n" +
+      "  \\func alendia => 1 \\where \\meta tesla => 1\n" +
+      "}");
+    assertEquals(String.valueOf(1), ((Expression) def.getBody()).normalize(NormalizationMode.WHNF).toString());
+  }
+
+  @Test
   public void biArgSubst() {
     var def = (FunctionDefinition) typeCheckDef("\\func redy => red 114 514 \\where \\meta red x y => x Nat.+ y");
     assertEquals(String.valueOf(114 + 514), ((Expression) def.getBody()).normalize(NormalizationMode.WHNF).toString());

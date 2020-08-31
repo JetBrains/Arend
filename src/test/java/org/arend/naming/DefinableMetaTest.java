@@ -23,4 +23,12 @@ public class DefinableMetaTest extends NameResolverTestCase {
     resolveNamesModule("\\meta sepush => 123" +
       "\\func qlbf => sepush");
   }
+
+  @Test
+  public void hierarchy() {
+    resolveNamesModule(
+      "\\func bread => qlbf.alendia\n" +
+        "\\func qlbf => 123\n" +
+        "  \\where \\meta alendia => 123");
+  }
 }

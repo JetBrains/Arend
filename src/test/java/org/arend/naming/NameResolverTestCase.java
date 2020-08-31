@@ -52,7 +52,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   }
 
   protected void addMeta(String name, Precedence prec, MetaDefinition meta) {
-    metaDefs.put(name, new MetaReferable(prec, name, MODULE_PATH, "", meta, meta instanceof MetaResolver ? (MetaResolver) meta : null));
+    metaDefs.put(name, new MetaReferable(prec, name, MODULE_PATH, "", meta, meta instanceof MetaResolver ? (MetaResolver) meta : null, null));
   }
 
   private Concrete.Expression resolveNamesExpr(Scope parentScope, List<Referable> context, String text, int errors) {
