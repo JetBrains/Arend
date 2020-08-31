@@ -158,7 +158,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     }
 
     if (myResolverListener != null) {
-      myResolverListener.beforeDefinableMetaResolved(def);
+      myResolverListener.beforeDefinitionResolved(def);
     }
 
     myLocalErrorReporter = new ConcreteProxyErrorReporter(def);
@@ -182,7 +182,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     def.setResolved();
     def.accept(new SyntacticDesugarVisitor(myLocalErrorReporter), null);
     if (myResolverListener != null) {
-      myResolverListener.definableMetaResolved(def);
+      myResolverListener.definitionResolved(def);
     }
 
     return null;
