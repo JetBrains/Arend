@@ -1,10 +1,8 @@
 package org.arend.typechecking.order.listener;
 
-import org.arend.naming.reference.MetaReferable;
 import org.arend.term.concrete.Concrete;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 public class CollectingOrderingListener implements OrderingListener {
@@ -55,10 +53,6 @@ public class CollectingOrderingListener implements OrderingListener {
   @Override
   public void useFound(List<Concrete.UseDefinition> definitions) {
     myList.add(new MyDefinitions(definitions, MyDefinitions.Kind.USE));
-  }
-
-  @Override
-  public void metaFound(Collection<MetaReferable> metas) {
   }
 
   @SuppressWarnings("unchecked")
