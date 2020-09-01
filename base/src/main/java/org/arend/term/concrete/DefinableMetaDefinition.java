@@ -66,7 +66,7 @@ public class DefinableMetaDefinition extends Concrete.ResolvableDefinition imple
     return getConcreteRepresentation(arguments, null);
   }
 
-  public @Nullable ConcreteExpression getConcreteRepresentation(@NotNull List<? extends ConcreteArgument> arguments, @Nullable Object data) {
+  private @Nullable ConcreteExpression getConcreteRepresentation(@NotNull List<? extends ConcreteArgument> arguments, @Nullable Object data) {
     if (body == null) return null;
     if (myParameters.isEmpty()) return body;
     assert myParameters.size() == arguments.size();
