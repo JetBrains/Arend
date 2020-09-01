@@ -63,10 +63,14 @@ public class DefinableMetaDefinition extends Concrete.ResolvableDefinition imple
 
   @Override
   public @Nullable ConcreteExpression getConcreteRepresentation(@NotNull List<? extends ConcreteArgument> arguments) {
+    return getConcreteRepresentation(arguments, null);
+  }
+
+  public @Nullable ConcreteExpression getConcreteRepresentation(@NotNull List<? extends ConcreteArgument> arguments, @Nullable Object data) {
     if (body == null) return null;
     if (myParameters.isEmpty()) return body;
     assert myParameters.size() == arguments.size();
-    var subst = new SubstConcreteExpressionVisitor();
+    var subst = new SubstConcreteExpressionVisitor(data);
     for (int i = 0; i < myParameters.size(); i++) {
       subst.bind(Objects.requireNonNull(myParameters.get(i).getReferable()),
         (Concrete.Expression) arguments.get(i).getExpression());
@@ -76,7 +80,7 @@ public class DefinableMetaDefinition extends Concrete.ResolvableDefinition imple
 
   @Override
   public @Nullable TypedExpression invokeMeta(@NotNull ExpressionTypechecker typechecker, @NotNull ContextData contextData) {
-    ConcreteExpression result = getConcreteRepresentation(contextData.getArguments());
+    ConcreteExpression result = getConcreteRepresentation(contextData.getArguments(), contextData.getMarker().getData());
     if (result == null) {
       typechecker.getErrorReporter().report(new TypecheckingError("Meta '" + myReferable.getRefName() + "' is not defined", contextData.getMarker()));
       return null;

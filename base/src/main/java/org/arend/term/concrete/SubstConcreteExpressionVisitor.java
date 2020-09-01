@@ -1,5 +1,6 @@
 package org.arend.term.concrete;
 
+import org.arend.ext.reference.DataContainer;
 import org.arend.naming.reference.Referable;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -14,15 +15,22 @@ import java.util.stream.Collectors;
 /**
  * @see org.arend.term.concrete.BaseConcreteExpressionVisitor
  */
-public class SubstConcreteExpressionVisitor implements ConcreteExpressionVisitor<Void, Concrete.Expression> {
+public class SubstConcreteExpressionVisitor implements DataContainer, ConcreteExpressionVisitor<Void, Concrete.Expression> {
   private final Map<Referable, Concrete.Expression> mySubstitution;
+  private final Object myData;
 
-  public SubstConcreteExpressionVisitor(@NotNull Map<Referable, Concrete.Expression> substitution) {
+  public SubstConcreteExpressionVisitor(@NotNull Map<Referable, Concrete.Expression> substitution, Object data) {
     mySubstitution = substitution;
+    myData = data;
   }
 
-  public SubstConcreteExpressionVisitor() {
-    this(new HashMap<>());
+  public SubstConcreteExpressionVisitor(@Nullable Object data) {
+    this(new HashMap<>(), data);
+  }
+
+  @Override
+  public @Nullable Object getData() {
+    return myData;
   }
 
   public void bind(@NotNull Referable referable, @Nullable Concrete.Expression expression) {
@@ -44,7 +52,7 @@ public class SubstConcreteExpressionVisitor implements ConcreteExpressionVisitor
       .map(argument -> new Concrete.Argument(argument.expression.accept(this, null), argument.isExplicit()))
       .collect(Collectors.toList());
     return Concrete.AppExpression.make(
-      expr.getData(),
+      myData != null ? myData : expr.getData(),
       expr.getFunction().accept(this, null),
       args
     );
@@ -63,16 +71,17 @@ public class SubstConcreteExpressionVisitor implements ConcreteExpressionVisitor
 
   @SuppressWarnings("unchecked")
   protected <T extends Concrete.Parameter> T visitParameter(T parameter) {
+    var data = myData != null ? myData : parameter.getData();
     if (Concrete.NameParameter.class.equals(parameter.getClass())) {
-      return (T) new Concrete.NameParameter(parameter.getData(), parameter.isExplicit(), ((Concrete.NameParameter) parameter).getReferable());
+      return (T) new Concrete.NameParameter(data, parameter.isExplicit(), ((Concrete.NameParameter) parameter).getReferable());
     } else if (Concrete.TypeParameter.class.equals(parameter.getClass())) {
-      return (T) new Concrete.TypeParameter(parameter.getData(), parameter.isExplicit(), nullableMap(parameter.getType()));
+      return (T) new Concrete.TypeParameter(data, parameter.isExplicit(), nullableMap(parameter.getType()));
     } else if (Concrete.DefinitionTypeParameter.class.equals(parameter.getClass())) {
-      return (T) new Concrete.DefinitionTypeParameter(parameter.getData(), parameter.isExplicit(), parameter.isStrict(), nullableMap(parameter.getType()));
+      return (T) new Concrete.DefinitionTypeParameter(data, parameter.isExplicit(), parameter.isStrict(), nullableMap(parameter.getType()));
     } else if (Concrete.TelescopeParameter.class.equals(parameter.getClass())) {
-      return (T) new Concrete.TelescopeParameter(parameter.getData(), parameter.isExplicit(), new ArrayList<>(parameter.getReferableList()), nullableMap(parameter.getType()));
+      return (T) new Concrete.TelescopeParameter(data, parameter.isExplicit(), new ArrayList<>(parameter.getReferableList()), nullableMap(parameter.getType()));
     } else if (Concrete.DefinitionTelescopeParameter.class.equals(parameter.getClass())) {
-      return (T) new Concrete.DefinitionTelescopeParameter(parameter.getData(), parameter.isExplicit(), parameter.isStrict(), new ArrayList<>(parameter.getReferableList()), nullableMap(parameter.getType()));
+      return (T) new Concrete.DefinitionTelescopeParameter(data, parameter.isExplicit(), parameter.isStrict(), new ArrayList<>(parameter.getReferableList()), nullableMap(parameter.getType()));
     } else {
       throw new IllegalArgumentException("Unhandled parameter: " + parameter.getClass());
     }
@@ -84,12 +93,12 @@ public class SubstConcreteExpressionVisitor implements ConcreteExpressionVisitor
 
   @Override
   public Concrete.Expression visitLam(Concrete.LamExpression expr, Void ignored) {
-    return new Concrete.LamExpression(expr.getData(), visitParameters(expr.getParameters()), expr.body.accept(this, null));
+    return new Concrete.LamExpression(myData != null ? myData : expr.getData(), visitParameters(expr.getParameters()), expr.body.accept(this, null));
   }
 
   @Override
   public Concrete.Expression visitPi(Concrete.PiExpression expr, Void ignored) {
-    return new Concrete.PiExpression(expr.getData(), visitParameters(expr.getParameters()), expr.codomain.accept(this, null));
+    return new Concrete.PiExpression(myData != null ? myData : expr.getData(), visitParameters(expr.getParameters()), expr.codomain.accept(this, null));
   }
 
   @Override
@@ -119,20 +128,21 @@ public class SubstConcreteExpressionVisitor implements ConcreteExpressionVisitor
 
   @Override
   public Concrete.Expression visitGoal(Concrete.GoalExpression expr, Void ignored) {
+    var data = myData != null ? myData : expr.getData();
     if (expr instanceof Concrete.IncompleteExpression) {
-      return new Concrete.IncompleteExpression(expr.getData());
+      return new Concrete.IncompleteExpression(data);
     }
-    return new Concrete.GoalExpression(expr.getData(), expr.getName(), nullableMap(expr.expression), expr.goalSolver, expr.useGoalSolver, expr.errors);
+    return new Concrete.GoalExpression(data, expr.getName(), nullableMap(expr.expression), expr.goalSolver, expr.useGoalSolver, expr.errors);
   }
 
   @Override
   public Concrete.Expression visitTuple(Concrete.TupleExpression expr, Void ignored) {
-    return new Concrete.TupleExpression(expr.getData(), listMap(expr.getFields()));
+    return new Concrete.TupleExpression(myData != null ? myData : expr.getData(), listMap(expr.getFields()));
   }
 
   @Override
   public Concrete.Expression visitSigma(Concrete.SigmaExpression expr, Void ignored) {
-    return new Concrete.SigmaExpression(expr.getData(), visitParameters(expr.getParameters()));
+    return new Concrete.SigmaExpression(myData != null ? myData : expr.getData(), visitParameters(expr.getParameters()));
   }
 
   @Override
@@ -143,10 +153,10 @@ public class SubstConcreteExpressionVisitor implements ConcreteExpressionVisitor
     var clauses = expr.getClauses();
 
     var functionClauses = clauses == null ? null : new Concrete.FunctionClauses(
-      clauses.getData(),
+      myData != null ? myData : clauses.getData(),
       clauses.getClauseList().stream().map(this::visitClause).collect(Collectors.toList()));
     return new Concrete.BinOpSequenceExpression(
-      expr.getData(),
+      myData != null ? myData : expr.getData(),
       expr.getSequence().stream()
         .map(elem -> new Concrete.BinOpSequenceElem(elem.expression.accept(this, null), elem.fixity, elem.isExplicit))
         .collect(Collectors.toList()),
@@ -155,15 +165,16 @@ public class SubstConcreteExpressionVisitor implements ConcreteExpressionVisitor
   }
 
   protected Concrete.Pattern visitPattern(Concrete.Pattern pattern) {
+    var data = myData != null ? myData : pattern.getData();
     if (Concrete.NamePattern.class.equals(pattern.getClass())) {
       var namePattern = (Concrete.NamePattern) pattern;
-      return new Concrete.NamePattern(namePattern.getData(), namePattern.isExplicit(), namePattern.getReferable(), namePattern.type);
+      return new Concrete.NamePattern(data, namePattern.isExplicit(), namePattern.getReferable(), namePattern.type);
     } else if (Concrete.ConstructorPattern.class.equals(pattern.getClass())) {
       var conPattern = (Concrete.ConstructorPattern) pattern;
-      return new Concrete.ConstructorPattern(conPattern.getData(), conPattern.isExplicit(), conPattern.getConstructor(), visitPatterns(conPattern.getPatterns()), visitTypedReferables(conPattern.getAsReferables()));
+      return new Concrete.ConstructorPattern(data, conPattern.isExplicit(), conPattern.getConstructor(), visitPatterns(conPattern.getPatterns()), visitTypedReferables(conPattern.getAsReferables()));
     } else if (Concrete.TuplePattern.class.equals(pattern.getClass())) {
       var tuplePattern = (Concrete.TuplePattern) pattern;
-      return new Concrete.TuplePattern(tuplePattern.getData(), tuplePattern.isExplicit(), visitPatterns(tuplePattern.getPatterns()), visitTypedReferables(tuplePattern.getAsReferables()));
+      return new Concrete.TuplePattern(data, tuplePattern.isExplicit(), visitPatterns(tuplePattern.getPatterns()), visitTypedReferables(tuplePattern.getAsReferables()));
     } else {
       throw new IllegalArgumentException("Unhandled pattern: " + pattern.getClass());
     }
@@ -171,7 +182,7 @@ public class SubstConcreteExpressionVisitor implements ConcreteExpressionVisitor
 
   private List<Concrete.TypedReferable> visitTypedReferables(List<Concrete.TypedReferable> asReferables) {
     return asReferables.stream()
-      .map(ref -> new Concrete.TypedReferable(ref.getData(), ref.referable, ref.type.accept(this, null)))
+      .map(ref -> new Concrete.TypedReferable(myData != null ? myData : ref.getData(), ref.referable, ref.type.accept(this, null)))
       .collect(Collectors.toList());
   }
 
@@ -183,10 +194,10 @@ public class SubstConcreteExpressionVisitor implements ConcreteExpressionVisitor
   protected <T extends Concrete.Clause> T visitClause(T clause) {
     if (Concrete.ConstructorClause.class.equals(clause.getClass())) {
       var conClause = (Concrete.ConstructorClause) clause;
-      return (T) new Concrete.ConstructorClause(clause.getData(), visitPatterns(clause.getPatterns()), new ArrayList<>(conClause.getConstructors()));
+      return (T) new Concrete.ConstructorClause(myData != null ? myData : clause.getData(), visitPatterns(clause.getPatterns()), new ArrayList<>(conClause.getConstructors()));
     } else if (Concrete.FunctionClause.class.equals(clause.getClass())) {
       var funcClause = (Concrete.FunctionClause) clause;
-      return (T) new Concrete.FunctionClause(funcClause.getData(), visitPatterns(funcClause.getPatterns()), funcClause.expression.accept(this, null));
+      return (T) new Concrete.FunctionClause(myData != null ? myData : funcClause.getData(), visitPatterns(funcClause.getPatterns()), funcClause.expression.accept(this, null));
     } else {
       throw new IllegalArgumentException("Unhandled clause: " + clause.getClass());
     }
@@ -198,25 +209,25 @@ public class SubstConcreteExpressionVisitor implements ConcreteExpressionVisitor
     var arguments = expr.getArguments().stream()
       .map(arg -> new Concrete.CaseArgument(arg.expression.accept(this, null), arg.referable, nullableMap(arg.type)))
       .collect(Collectors.toList());
-    return new Concrete.CaseExpression(expr.getData(), expr.isSCase(), arguments, nullableMap(expr.getResultType()), nullableMap(expr.getResultTypeLevel()), clauses);
+    return new Concrete.CaseExpression(myData != null ? myData : expr.getData(), expr.isSCase(), arguments, nullableMap(expr.getResultType()), nullableMap(expr.getResultTypeLevel()), clauses);
   }
 
   @Override
   public Concrete.Expression visitEval(Concrete.EvalExpression expr, Void ignored) {
-    return new Concrete.EvalExpression(expr.getData(), expr.isPEval(), expr.getExpression().accept(this, null));
+    return new Concrete.EvalExpression(myData != null ? myData : expr.getData(), expr.isPEval(), expr.getExpression().accept(this, null));
   }
 
   @Override
   public Concrete.Expression visitProj(Concrete.ProjExpression expr, Void ignored) {
-    return new Concrete.ProjExpression(expr.getData(), expr.expression.accept(this, null), expr.getField());
+    return new Concrete.ProjExpression(myData != null ? myData : expr.getData(), expr.expression.accept(this, null), expr.getField());
   }
 
   @Override
   public Concrete.Expression visitClassExt(Concrete.ClassExtExpression expr, Void ignored) {
     var coclauses = expr.getCoclauses();
     var statements = coclauses.getCoclauseList().stream().map(this::visitClassElement).collect(Collectors.toList());
-    var newCoclauses = new Concrete.Coclauses(coclauses.getData(), statements);
-    return Concrete.ClassExtExpression.make(expr.getData(), expr.getBaseClassExpression().accept(this, null), newCoclauses);
+    var newCoclauses = new Concrete.Coclauses(myData != null ? myData : coclauses.getData(), statements);
+    return Concrete.ClassExtExpression.make(myData != null ? myData : expr.getData(), expr.getBaseClassExpression().accept(this, null), newCoclauses);
   }
 
   @SuppressWarnings("unchecked")
@@ -225,18 +236,19 @@ public class SubstConcreteExpressionVisitor implements ConcreteExpressionVisitor
       var field = (Concrete.ClassFieldImpl) element;
       var subCoclauses = field.getSubCoclauses();
       var subClassFieldImpls = subCoclauses == null ? null : new Concrete.Coclauses(
-        subCoclauses.getData(),
+        myData != null ? myData : subCoclauses.getData(),
         subCoclauses.getCoclauseList().stream().map(this::visitClassElement).collect(Collectors.toList()));
-      return (T) new Concrete.ClassFieldImpl(element.getData(), field.getImplementedField(), field.implementation.accept(this, null), subClassFieldImpls);
+      return (T) new Concrete.ClassFieldImpl(myData != null ? myData : element.getData(), field.getImplementedField(), field.implementation.accept(this, null), subClassFieldImpls);
     } else if (Concrete.ClassField.class.equals(element.getClass())) {
       var field = (Concrete.ClassField) element;
+      // Ideally we should replace this `field.getData()` too
       return (T) new Concrete.ClassField(field.getData(), field.getRelatedDefinition(), field.isExplicit(), field.getKind(), visitParameters(field.getParameters()), nullableMap(field.getResultType()), nullableMap(field.getResultTypeLevel()));
     } else if (Concrete.OverriddenField.class.equals(element.getClass())) {
       var field = (Concrete.OverriddenField) element;
-      return (T) new Concrete.OverriddenField(field.getData(), field.getOverriddenField(), visitParameters(field.getParameters()), field.getResultType().accept(this, null), nullableMap(field.getResultTypeLevel()));
+      return (T) new Concrete.OverriddenField(myData != null ? myData : field.getData(), field.getOverriddenField(), visitParameters(field.getParameters()), field.getResultType().accept(this, null), nullableMap(field.getResultTypeLevel()));
     } else if (Concrete.CoClauseFunctionReference.class.equals(element.getClass())) {
       var field = (Concrete.CoClauseFunctionReference) element;
-      return (T) new Concrete.CoClauseFunctionReference(field.getData(), field.getImplementedField(), field.getFunctionReference());
+      return (T) new Concrete.CoClauseFunctionReference(myData != null ? myData : field.getData(), field.getImplementedField(), field.getFunctionReference());
     } else {
       throw new IllegalArgumentException("Unhandled field: " + element.getClass());
     }
@@ -244,7 +256,7 @@ public class SubstConcreteExpressionVisitor implements ConcreteExpressionVisitor
 
   @Override
   public Concrete.Expression visitNew(Concrete.NewExpression expr, Void ignored) {
-    return new Concrete.NewExpression(expr.getData(), expr.expression.accept(this, null));
+    return new Concrete.NewExpression(myData != null ? myData : expr.getData(), expr.expression.accept(this, null));
   }
 
   private Concrete.LetClause visitLetClause(Concrete.LetClause clause) {
@@ -254,7 +266,7 @@ public class SubstConcreteExpressionVisitor implements ConcreteExpressionVisitor
   @Override
   public Concrete.Expression visitLet(Concrete.LetExpression expr, Void ignored) {
     var clauses = expr.getClauses().stream().map(this::visitLetClause).collect(Collectors.toList());
-    return new Concrete.LetExpression(expr.getData(), expr.isStrict(), clauses, expr.expression.accept(this, null));
+    return new Concrete.LetExpression(myData != null ? myData : expr.getData(), expr.isStrict(), clauses, expr.expression.accept(this, null));
   }
 
   @Override
@@ -269,6 +281,6 @@ public class SubstConcreteExpressionVisitor implements ConcreteExpressionVisitor
 
   @Override
   public Concrete.Expression visitTyped(Concrete.TypedExpression expr, Void ignored) {
-    return new Concrete.TypedExpression(expr.getData(), expr.expression.accept(this, null), expr.type.accept(this, null));
+    return new Concrete.TypedExpression(myData != null ? myData : expr.getData(), expr.expression.accept(this, null), expr.type.accept(this, null));
   }
 }
