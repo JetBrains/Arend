@@ -68,7 +68,6 @@ public class DefinableMetaDefinition extends Concrete.ResolvableDefinition imple
 
   private @Nullable ConcreteExpression getConcreteRepresentation(@NotNull List<? extends ConcreteArgument> arguments, @Nullable Object data) {
     if (body == null) return null;
-    if (myParameters.isEmpty()) return body;
     assert myParameters.size() == arguments.size();
     var subst = new SubstConcreteExpressionVisitor(data);
     for (int i = 0; i < myParameters.size(); i++) {

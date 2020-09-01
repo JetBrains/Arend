@@ -90,7 +90,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
     if (term != null) body = term.accept(this, null);
     var referable = myReferableConverter.toDataLocatedReferable(def.getReferable());
     if (!(referable instanceof MetaReferable)) {
-      throw new IllegalStateException();
+      throw new IllegalStateException("Expected MetaReferable, got: " + referable.getClass());
     }
     var definition = new DefinableMetaDefinition((MetaReferable) referable, parameters, body);
     ((MetaReferable) referable).setDefinition(definition);
