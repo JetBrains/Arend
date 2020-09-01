@@ -2,6 +2,7 @@ package org.arend.term.concrete;
 
 import org.arend.ext.reference.DataContainer;
 import org.arend.naming.reference.Referable;
+import org.arend.typechecking.instance.pool.RecursiveInstanceHoleExpression;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -103,17 +104,20 @@ public class SubstConcreteExpressionVisitor implements DataContainer, ConcreteEx
 
   @Override
   public Concrete.Expression visitUniverse(Concrete.UniverseExpression expr, Void ignored) {
-    return expr;
+    return myData == null ? expr : new Concrete.UniverseExpression(myData, expr.getPLevel(), expr.getHLevel());
   }
 
   @Override
   public Concrete.Expression visitHole(Concrete.HoleExpression expr, Void ignored) {
-    return expr;
+    return myData == null ? expr :
+      expr instanceof Concrete.ErrorHoleExpression ? new Concrete.ErrorHoleExpression(myData, expr.getError()) :
+      expr instanceof RecursiveInstanceHoleExpression ? new RecursiveInstanceHoleExpression(myData, ((RecursiveInstanceHoleExpression) expr).recursiveData) :
+        new Concrete.HoleExpression(myData);
   }
 
   @Override
   public Concrete.Expression visitApplyHole(Concrete.ApplyHoleExpression expr, Void ignored) {
-    return expr;
+    return myData == null ? expr : new Concrete.ApplyHoleExpression(myData);
   }
 
   @Contract(value = "null -> null; !null -> !null", pure = true)
@@ -271,12 +275,12 @@ public class SubstConcreteExpressionVisitor implements DataContainer, ConcreteEx
 
   @Override
   public Concrete.Expression visitNumericLiteral(Concrete.NumericLiteral expr, Void ignored) {
-    return expr;
+    return myData == null ? expr : new Concrete.NumericLiteral(myData, expr.getNumber());
   }
 
   @Override
   public Concrete.Expression visitStringLiteral(Concrete.StringLiteral expr, Void ignored) {
-    return expr;
+    return myData == null ? expr : new Concrete.StringLiteral(myData, expr.getUnescapedString());
   }
 
   @Override
