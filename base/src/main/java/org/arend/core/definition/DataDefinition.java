@@ -13,7 +13,7 @@ import org.arend.core.subst.LevelSubstitution;
 import org.arend.ext.core.definition.CoreConstructor;
 import org.arend.ext.core.definition.CoreDataDefinition;
 import org.arend.naming.reference.GlobalReferable;
-import org.arend.naming.reference.TCReferable;
+import org.arend.naming.reference.TCDefReferable;
 import org.arend.prelude.Prelude;
 import org.jetbrains.annotations.NotNull;
 
@@ -35,7 +35,7 @@ public class DataDefinition extends Definition implements CoreDataDefinition {
   private Set<Definition> myRecursiveDefinitions = Collections.emptySet();
   private boolean myHasEnclosingClass;
 
-  public DataDefinition(TCReferable referable) {
+  public DataDefinition(TCDefReferable referable) {
     super(referable, TypeCheckingStatus.NEEDS_TYPE_CHECKING);
     myConstructors = new ArrayList<>();
     myParameters = EmptyDependentLink.getInstance();

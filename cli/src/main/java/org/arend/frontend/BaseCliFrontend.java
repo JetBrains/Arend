@@ -79,12 +79,12 @@ public abstract class BaseCliFrontend {
     }
 
     @Override
-    public void typecheckingBodyFinished(TCReferable referable, Definition definition) {
+    public void typecheckingBodyFinished(TCDefReferable referable, Definition definition) {
       update(definition);
     }
 
     @Override
-    public void typecheckingUnitFinished(TCReferable referable, Definition definition) {
+    public void typecheckingUnitFinished(TCDefReferable referable, Definition definition) {
       update(definition);
     }
 
@@ -311,7 +311,7 @@ public abstract class BaseCliFrontend {
 
       List<Concrete.Definition> forcedDefs;
       if (recompileModule != null) {
-        List<TCReferable> forcedRefs = new ArrayList<>();
+        List<TCDefReferable> forcedRefs = new ArrayList<>();
         if (recompileDef != null) {
           Scope scope = library.getModuleScopeProvider().forModule(recompileModule);
           if (scope == null && library.loadTests(myLibraryManager, Collections.singletonList(recompileModule))) {
@@ -321,10 +321,10 @@ public abstract class BaseCliFrontend {
             System.err.println("[ERROR] Cannot find module '" + recompileModule + "' in library '" + library.getName() + "'");
           } else {
             Referable ref = Scope.Utils.resolveName(scope, recompileDef.toList());
-            if (!(ref instanceof TCReferable)) {
+            if (!(ref instanceof TCDefReferable)) {
               System.err.println("[ERROR] Cannot find definition '" + recompileDef + "' in module '" + recompileModule + "' in library '" + library.getName() + "'");
             } else {
-              forcedRefs.add((TCReferable) ref);
+              forcedRefs.add((TCDefReferable) ref);
             }
           }
         } else {
@@ -337,15 +337,15 @@ public abstract class BaseCliFrontend {
           } else {
             group.traverseGroup(g -> {
               LocatedReferable ref = g.getReferable();
-              if (ref instanceof TCReferable) {
-                forcedRefs.add((TCReferable) ref);
+              if (ref instanceof TCDefReferable) {
+                forcedRefs.add((TCDefReferable) ref);
               }
             });
           }
         }
 
         forcedDefs = new ArrayList<>();
-        for (TCReferable ref : forcedRefs) {
+        for (TCDefReferable ref : forcedRefs) {
           var def = typechecking.getConcreteProvider().getConcrete(ref);
           if (def instanceof Concrete.Definition) {
             forcedDefs.add((Concrete.Definition) def);

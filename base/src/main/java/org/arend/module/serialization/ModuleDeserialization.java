@@ -70,7 +70,10 @@ public class ModuleDeserialization {
       if (referable == null) {
         throw new DeserializationException("Cannot resolve reference '" + callTargetTree.getName() + "' in " + module);
       }
-      Definition callTarget = referable.getTypechecked();
+      if (!(referable instanceof TCDefReferable)) {
+        throw new DeserializationException("Reference '" + callTargetTree.getName() + "' in " + module + " is not a definition");
+      }
+      Definition callTarget = ((TCDefReferable) referable).getTypechecked();
       if (callTarget == null) {
         throw new DeserializationException("Definition '" + callTargetTree.getName() + "' was not typechecked");
       }
@@ -101,9 +104,13 @@ public class ModuleDeserialization {
       if (tcReferable == null) {
         throw new DeserializationException("Cannot locate '" + referable + "'");
       }
+      if (!(tcReferable instanceof TCDefReferable)) {
+        throw new DeserializationException("'" + referable + "' is not a definition");
+      }
 
-      Definition def = readDefinition(groupProto.getDefinition(), tcReferable, false);
-      tcReferable.setTypecheckedIfAbsent(def);
+      TCDefReferable tcDefReferable = (TCDefReferable) tcReferable;
+      Definition def = readDefinition(groupProto.getDefinition(), tcDefReferable, false);
+      tcDefReferable.setTypecheckedIfAbsent(def);
       myCallTargetProvider.putCallTarget(groupProto.getReferable().getIndex(), def);
       myDefinitions.add(new Pair<>(groupProto.getDefinition(), def));
 
@@ -128,7 +135,7 @@ public class ModuleDeserialization {
           assert def instanceof ClassDefinition;
           ClassField res = new ClassField((TCFieldReferable) absField, (ClassDefinition) def);
           ((ClassDefinition) def).addPersonalField(res);
-          absField.setTypecheckedIfAbsent(res);
+          ((TCFieldReferable) absField).setTypecheckedIfAbsent(res);
           myCallTargetProvider.putCallTarget(fieldProto.getReferable().getIndex(), res);
         }
       }
@@ -147,11 +154,14 @@ public class ModuleDeserialization {
           if (constructorProto == null || absConstructor == null) {
             throw new DeserializationException("Cannot locate '" + constructorRef + "'");
           }
+          if (!(absConstructor instanceof TCDefReferable)) {
+            throw new DeserializationException("'" + constructorRef + "' is not a definition");
+          }
 
           assert def instanceof DataDefinition;
-          Constructor res = new Constructor(absConstructor, (DataDefinition) def);
+          Constructor res = new Constructor((TCDefReferable) absConstructor, (DataDefinition) def);
           ((DataDefinition) def).addConstructor(res);
-          absConstructor.setTypecheckedIfAbsent(res);
+          ((TCDefReferable) absConstructor).setTypecheckedIfAbsent(res);
           myCallTargetProvider.putCallTarget(constructorProto.getReferable().getIndex(), res);
         }
       }
@@ -221,9 +231,9 @@ public class ModuleDeserialization {
     }
 
     Definition def;
-    if (referable instanceof TCReferable && groupProto.hasDefinition()) {
-      def = readDefinition(groupProto.getDefinition(), (TCReferable) referable, true);
-      ((TCReferable) referable).setTypecheckedIfAbsent(def);
+    if (referable instanceof TCDefReferable && groupProto.hasDefinition()) {
+      def = readDefinition(groupProto.getDefinition(), (TCDefReferable) referable, true);
+      ((TCDefReferable) referable).setTypecheckedIfAbsent(def);
       myCallTargetProvider.putCallTarget(referableProto.getIndex(), def);
       myDefinitions.add(new Pair<>(groupProto.getDefinition(), def));
     } else {
@@ -276,7 +286,7 @@ public class ModuleDeserialization {
     return group;
   }
 
-  private Definition readDefinition(DefinitionProtos.Definition defProto, TCReferable referable, boolean fillInternalDefinitions) throws DeserializationException {
+  private Definition readDefinition(DefinitionProtos.Definition defProto, TCDefReferable referable, boolean fillInternalDefinitions) throws DeserializationException {
     final Definition def;
     switch (defProto.getDefinitionDataCase()) {
       case CLASS:
@@ -298,7 +308,7 @@ public class ModuleDeserialization {
         if (fillInternalDefinitions) {
           for (DefinitionProtos.Definition.DataData.Constructor constructor : defProto.getData().getConstructorList()) {
             DefinitionProtos.Referable conReferable = constructor.getReferable();
-            TCReferable absConstructor = new LocatedReferableImpl(readPrecedence(conReferable.getPrecedence()), conReferable.getName(), referable, LocatedReferableImpl.Kind.CONSTRUCTOR);
+            TCDefReferable absConstructor = new LocatedReferableImpl(readPrecedence(conReferable.getPrecedence()), conReferable.getName(), referable, LocatedReferableImpl.Kind.CONSTRUCTOR);
             Constructor res = new Constructor(absConstructor, dataDef);
             dataDef.addConstructor(res);
             absConstructor.setTypecheckedIfAbsent(res);

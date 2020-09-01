@@ -17,15 +17,15 @@ import java.util.Set;
 
 public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> {
   private Referable myThisParameter;
-  private final TCReferable myReferable;
-  private final TCReferable myClassReferable;
+  private final TCDefReferable myReferable;
+  private final TCDefReferable myClassReferable;
   private final Collection<CoreClassDefinition> mySuperClasses;
   private final Set<? extends LocatedReferable> myFields;
-  private final Set<TCReferable> myFutureFields;
+  private final Set<TCDefReferable> myFutureFields;
   private final ErrorReporter myErrorReporter;
   private int myClassCallNumber;
 
-  ClassFieldChecker(Referable thisParameter, TCReferable referable, TCReferable classReferable, Collection<CoreClassDefinition> superClasses, Set<? extends LocatedReferable> fields, Set<TCReferable> futureFields, ErrorReporter errorReporter) {
+  ClassFieldChecker(Referable thisParameter, TCDefReferable referable, TCDefReferable classReferable, Collection<CoreClassDefinition> superClasses, Set<? extends LocatedReferable> fields, Set<TCDefReferable> futureFields, ErrorReporter errorReporter) {
     myThisParameter = thisParameter;
     myReferable = referable;
     myClassReferable = classReferable;
@@ -48,7 +48,7 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> {
   @Override
   public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Void params) {
     Referable ref = expr.getReferent();
-    if (ref instanceof TCReferable) {
+    if (ref instanceof TCDefReferable) {
       if (myFields.contains(ref)) {
         if (myFutureFields != null && myFutureFields.contains(ref)) {
           return makeErrorExpression(expr);
@@ -63,7 +63,7 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> {
             enclosingClass = (ClassDefinition) def;
           }
         } else {
-          Definition def = ((TCReferable) ref).getTypechecked();
+          Definition def = ((TCDefReferable) ref).getTypechecked();
           if (def != null && !(def instanceof ClassField)) {
             enclosingClass = def.getEnclosingClass();
           }
@@ -104,8 +104,8 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> {
     if (expr.getFunction() instanceof Concrete.ReferenceExpression && !expr.getArguments().get(0).isExplicit()) {
       if (expr.getArguments().get(0).expression instanceof Concrete.HoleExpression) {
         Referable ref = ((Concrete.ReferenceExpression) expr.getFunction()).getReferent();
-        if (ref instanceof TCReferable) {
-          Definition def = ((TCReferable) ref).getTypechecked();
+        if (ref instanceof TCDefReferable) {
+          Definition def = ((TCDefReferable) ref).getTypechecked();
           if (def != null && def.getEnclosingClass() != null && def.getEnclosingClass().getReferable() == myClassReferable) {
             if (expr.getArguments().size() == 1) {
               return expr.getFunction().accept(this, null);

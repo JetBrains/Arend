@@ -3,7 +3,7 @@ package org.arend.frontend.reference;
 import org.arend.ext.reference.Precedence;
 import org.arend.frontend.parser.Position;
 import org.arend.naming.reference.TCFieldReferable;
-import org.arend.naming.reference.TCReferable;
+import org.arend.naming.reference.TCDefReferable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -11,7 +11,7 @@ public class ConcreteClassFieldReferable extends InternalConcreteLocatedReferabl
   private final boolean myExplicit;
   private final boolean myParameter;
 
-  public ConcreteClassFieldReferable(Position position, @NotNull String name, Precedence precedence, @Nullable String aliasName, Precedence aliasPrecedence, boolean isVisible, boolean isExplicit, boolean isParameter, TCReferable parent, Kind kind) {
+  public ConcreteClassFieldReferable(Position position, @NotNull String name, Precedence precedence, @Nullable String aliasName, Precedence aliasPrecedence, boolean isVisible, boolean isExplicit, boolean isParameter, TCDefReferable parent, Kind kind) {
     super(position, name, precedence, aliasName, aliasPrecedence, isVisible, parent, kind);
     myExplicit = isExplicit;
     myParameter = isParameter;

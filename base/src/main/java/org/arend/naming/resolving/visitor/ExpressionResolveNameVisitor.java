@@ -149,7 +149,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   }
 
   private void convertExpr(Concrete.ReferenceExpression expr) {
-    if (expr.getReferent() instanceof GlobalReferable && !(expr.getReferent() instanceof TCReferable)) {
+    if (expr.getReferent() instanceof GlobalReferable && !(expr.getReferent() instanceof TCDefReferable)) {
       expr.setReferent(convertReferable(expr.getReferent()));
     }
   }
@@ -669,7 +669,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       }
       if (field instanceof ErrorReference) {
         myErrorReporter.report(((ErrorReference) field).getError());
-      } else if (field instanceof GlobalReferable && !(field instanceof TCReferable)) {
+      } else if (field instanceof GlobalReferable && !(field instanceof TCDefReferable)) {
         field = myReferableConverter.convert(field);
       }
       if (element instanceof Concrete.CoClauseElement) {
@@ -694,7 +694,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
         ref = ((TypedReferable) ref).getTypeClassReference();
       }
       if (ref instanceof ClassReferable) {
-        impl.classRef = myReferableConverter.toDataLocatedReferable((ClassReferable) ref);
+        impl.classRef = (TCDefReferable) myReferableConverter.toDataLocatedReferable((ClassReferable) ref);
         visitClassFieldImpls(impl.getSubCoclauseList(), (ClassReferable) ref);
       }
     } else {

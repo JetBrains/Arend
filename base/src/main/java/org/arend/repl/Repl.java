@@ -46,7 +46,7 @@ public abstract class Repl {
 
   protected final List<Scope> myMergedScopes = new LinkedList<>();
   private final List<ReplHandler> myHandlers = new ArrayList<>();
-  private final TCReferable myModuleReferable;
+  private final TCDefReferable myModuleReferable;
   protected final ReplScope myReplScope = new ReplScope(null, myMergedScopes);
   protected @NotNull Scope myScope = myReplScope;
   protected @NotNull TypecheckingOrderingListener myTypechecking;
@@ -208,8 +208,8 @@ public abstract class Repl {
 
   private boolean removeScopeImpl(Scope scope) {
     for (Referable element : scope.getElements())
-      if (element instanceof TCReferable)
-        ((TCReferable) element).setTypechecked(null);
+      if (element instanceof TCDefReferable)
+        ((TCDefReferable) element).setTypechecked(null);
     return myMergedScopes.remove(scope);
   }
 

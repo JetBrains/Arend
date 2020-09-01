@@ -1,9 +1,9 @@
 package org.arend.typechecking.instance.provider;
 
-import org.arend.naming.reference.TCReferable;
+import org.arend.naming.reference.TCDefReferable;
 
 import java.util.function.Predicate;
 
 public interface InstanceProvider {
-  TCReferable findInstance(Predicate<TCReferable> pred);
+  TCDefReferable findInstance(Predicate<TCDefReferable> pred);
 }

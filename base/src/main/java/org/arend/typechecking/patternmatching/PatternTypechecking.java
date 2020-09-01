@@ -35,7 +35,7 @@ import org.arend.ext.prettyprinting.doc.DocFactory;
 import org.arend.naming.reference.FakeLocalReferable;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.Referable;
-import org.arend.naming.reference.TCReferable;
+import org.arend.naming.reference.TCDefReferable;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.*;
@@ -448,7 +448,7 @@ public class PatternTypechecking {
       // Defined constructor patterns
       if (pattern instanceof Concrete.ConstructorPattern) {
         Concrete.ConstructorPattern conPattern = (Concrete.ConstructorPattern) pattern;
-        Definition def = conPattern.getConstructor() instanceof TCReferable ? ((TCReferable) conPattern.getConstructor()).getTypechecked() : null;
+        Definition def = conPattern.getConstructor() instanceof TCDefReferable ? ((TCDefReferable) conPattern.getConstructor()).getTypechecked() : null;
         if (def instanceof DConstructor) {
           if (myVisitor == null || ((DConstructor) def).getPattern() == null) {
             return null;
@@ -716,7 +716,7 @@ public class PatternTypechecking {
       List<ConCallExpression> conCalls = new ArrayList<>(1);
       if (constructor == null || !dataCall.getMatchedConCall(constructor, conCalls) || conCalls.isEmpty()) {
         Referable conRef = conPattern.getConstructor();
-        if (constructor != null || conRef instanceof TCReferable && ((TCReferable) conRef).getKind() == GlobalReferable.Kind.CONSTRUCTOR) {
+        if (constructor != null || conRef instanceof TCDefReferable && ((TCDefReferable) conRef).getKind() == GlobalReferable.Kind.CONSTRUCTOR) {
           myErrorReporter.report(new ExpectedConstructorError((GlobalReferable) conRef, dataCall, conPattern));
         }
         return null;

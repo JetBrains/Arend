@@ -33,8 +33,8 @@ classStat : classFieldOrImpl                            # classFieldOrImplStat
 definition  : funcKw defId tele* (':' returnExpr2)? functionBody where?                                         # defFunction
             | TRUNCATED? '\\data' defId tele* (':' expr2)? dataBody where?                                      # defData
             | classKw defId NO_CLASSIFYING? fieldTele* ('\\extends' longName (',' longName)*)? classBody where? # defClass
-            | '\\module' defId where?                                                                           # defModule
-            | '\\meta' defId (ID* '=>' expr)? where?                                                                             # defMeta
+            | '\\module' ID where?                                                                              # defModule
+            | '\\meta' defId (ID* '=>' expr)? where?                                                            # defMeta
             | instanceKw defId tele* (':' returnExpr2)? instanceBody where?                                     # defInstance
             ;
 

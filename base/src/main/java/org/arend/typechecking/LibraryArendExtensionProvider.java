@@ -4,7 +4,7 @@ import org.arend.ext.ArendExtension;
 import org.arend.library.Library;
 import org.arend.library.LibraryManager;
 import org.arend.module.ModuleLocation;
-import org.arend.naming.reference.TCReferable;
+import org.arend.naming.reference.TCDefReferable;
 import org.jetbrains.annotations.Nullable;
 
 public class LibraryArendExtensionProvider implements ArendExtensionProvider {
@@ -30,7 +30,7 @@ public class LibraryArendExtensionProvider implements ArendExtensionProvider {
   }
 
   @Override
-  public @Nullable ArendExtension getArendExtension(TCReferable ref) {
+  public @Nullable ArendExtension getArendExtension(TCDefReferable ref) {
     if (myUniqueArendExtension != null) {
       return myUniqueArendExtension;
     }

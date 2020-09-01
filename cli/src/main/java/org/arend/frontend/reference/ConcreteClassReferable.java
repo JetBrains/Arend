@@ -27,7 +27,7 @@ public class ConcreteClassReferable extends ConcreteLocatedReferable implements 
   private final List<ClassReferable> mySuperClasses;
   private boolean myResolved = false;
 
-  public ConcreteClassReferable(Position position, @NotNull String name, Precedence precedence, @Nullable String aliasName, Precedence aliasPrecedence, Collection<? extends ConcreteClassFieldReferable> fields, List<? extends Reference> superClasses, TCReferable parent) {
+  public ConcreteClassReferable(Position position, @NotNull String name, Precedence precedence, @Nullable String aliasName, Precedence aliasPrecedence, Collection<? extends ConcreteClassFieldReferable> fields, List<? extends Reference> superClasses, TCDefReferable parent) {
     super(position, name, precedence, aliasName, aliasPrecedence, parent, Kind.CLASS);
     myFields = fields;
     myUnresolvedSuperClasses = superClasses;

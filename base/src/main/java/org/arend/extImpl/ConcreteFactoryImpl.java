@@ -521,11 +521,11 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
   @NotNull
   @Override
   public ConcreteClassElement implementation(@NotNull ArendRef field, @Nullable ConcreteExpression expression, @NotNull ArendRef classRef, @NotNull ConcreteClassElement... subclauses) {
-    if (!(field instanceof Referable && (expression == null || expression instanceof Concrete.Expression) && classRef instanceof TCReferable)) {
+    if (!(field instanceof Referable && (expression == null || expression instanceof Concrete.Expression) && classRef instanceof TCDefReferable)) {
       throw new IllegalArgumentException();
     }
     Concrete.ClassFieldImpl classFieldImpl = new Concrete.ClassFieldImpl(myData, (Referable) field, (Concrete.Expression) expression, new Concrete.Coclauses(myData, classFieldImpls(subclauses)));
-    classFieldImpl.classRef = (TCReferable) classRef;
+    classFieldImpl.classRef = (TCDefReferable) classRef;
     return classFieldImpl;
   }
 
@@ -535,7 +535,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
       throw new IllegalArgumentException();
     }
     Concrete.ClassFieldImpl classFieldImpl = new Concrete.ClassFieldImpl(myData, (Referable) field, (Concrete.Expression) expression, new Concrete.Coclauses(myData, classFieldImpls(subclauses)));
-    classFieldImpl.classRef = (TCReferable) classRef;
+    classFieldImpl.classRef = (TCDefReferable) classRef;
     return classFieldImpl;
   }
 

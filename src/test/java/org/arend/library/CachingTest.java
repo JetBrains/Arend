@@ -33,7 +33,7 @@ public class CachingTest extends LibraryTestCase {
     assertThat(errorList, hasSize(1));
     errorList.clear();
 
-    Definition.TypeCheckingStatus aStatus = get(aClass.getGroupScope(), "a").getTypechecked().status();
+    Definition.TypeCheckingStatus aStatus = getDef(aClass.getGroupScope(), "a").getTypechecked().status();
 
     libraryManager.unloadLibrary(library);
 
@@ -41,9 +41,9 @@ public class CachingTest extends LibraryTestCase {
     aClass = library.getModuleGroup(new ModulePath("A"));
     assertThat(aClass, is(notNullValue()));
 
-    assertThat(get(aClass.getGroupScope(), "a").getTypechecked().status(), is(equalTo(aStatus)));
-    assertThat(get(aClass.getGroupScope(), "b1").getTypechecked(), is(nullValue()));
-    assertThat(get(aClass.getGroupScope(), "b2").getTypechecked(), is(nullValue()));
+    assertThat(getDef(aClass.getGroupScope(), "a").getTypechecked().status(), is(equalTo(aStatus)));
+    assertThat(getDef(aClass.getGroupScope(), "b1").getTypechecked(), is(nullValue()));
+    assertThat(getDef(aClass.getGroupScope(), "b2").getTypechecked(), is(nullValue()));
   }
 
   @Test
@@ -72,16 +72,16 @@ public class CachingTest extends LibraryTestCase {
     errorList.clear();
 
     libraryManager.unloadLibrary(library);
-    assertThat(get(aGroup.getGroupScope(), "a").getTypechecked(), is(nullValue()));
-    assertThat(get(aGroup.getGroupScope(), "b").getTypechecked(), is(nullValue()));
+    assertThat(getDef(aGroup.getGroupScope(), "a").getTypechecked(), is(nullValue()));
+    assertThat(getDef(aGroup.getGroupScope(), "b").getTypechecked(), is(nullValue()));
 
     libraryManager.loadLibrary(library, null);
     typechecking.typecheckLibrary(library);
     library.persistUpdatedModules(errorReporter);
     ChildGroup aGroup2 = library.getModuleGroup(new ModulePath("A"));
     assertThat(aGroup2, is(notNullValue()));
-    assertThat(get(aGroup2.getGroupScope(), "a").getTypechecked(), is(notNullValue()));
-    assertThat(get(aGroup2.getGroupScope(), "b").getTypechecked(), is(notNullValue()));
+    assertThat(getDef(aGroup2.getGroupScope(), "a").getTypechecked(), is(notNullValue()));
+    assertThat(getDef(aGroup2.getGroupScope(), "b").getTypechecked(), is(notNullValue()));
   }
 
   @Test
@@ -100,17 +100,17 @@ public class CachingTest extends LibraryTestCase {
     errorList.clear();
 
     libraryManager.unloadLibrary(library);
-    assertThat(get(aGroup.getGroupScope(), "D").getTypechecked(), is(nullValue()));
-    assertThat(get(aGroup.getGroupScope(), "a").getTypechecked(), is(nullValue()));
-    assertThat(get(aGroup.getGroupScope(), "b").getTypechecked(), is(nullValue()));
+    assertThat(getDef(aGroup.getGroupScope(), "D").getTypechecked(), is(nullValue()));
+    assertThat(getDef(aGroup.getGroupScope(), "a").getTypechecked(), is(nullValue()));
+    assertThat(getDef(aGroup.getGroupScope(), "b").getTypechecked(), is(nullValue()));
 
     libraryManager.loadLibrary(library, null);
     aGroup = library.getModuleGroup(new ModulePath("A"));
     assertThat(aGroup, is(notNullValue()));
 
-    assertThat(get(aGroup.getGroupScope(), "D").getTypechecked(), is(notNullValue()));
-    assertThat(get(aGroup.getGroupScope(), "a").getTypechecked(), is(nullValue()));
-    assertThat(get(aGroup.getGroupScope(), "b").getTypechecked(), is(nullValue()));
+    assertThat(getDef(aGroup.getGroupScope(), "D").getTypechecked(), is(notNullValue()));
+    assertThat(getDef(aGroup.getGroupScope(), "a").getTypechecked(), is(nullValue()));
+    assertThat(getDef(aGroup.getGroupScope(), "b").getTypechecked(), is(nullValue()));
   }
 
   @Test
@@ -125,8 +125,8 @@ public class CachingTest extends LibraryTestCase {
     libraryManager.loadLibrary(library, null);
     typechecking.typecheckLibrary(library);
     library.persistUpdatedModules(errorReporter);
-    assertThat(get(library.getModuleScopeProvider().forModule(new ModulePath("a")), "f"), is(nullValue()));
-    assertThat(get(library.getModuleScopeProvider().forModule(new ModulePath("A")), "D"), is(nullValue()));
+    assertThat(getDef(library.getModuleScopeProvider().forModule(new ModulePath("a")), "f"), is(nullValue()));
+    assertThat(getDef(library.getModuleScopeProvider().forModule(new ModulePath("A")), "D"), is(nullValue()));
   }
 
   @Test
@@ -141,8 +141,8 @@ public class CachingTest extends LibraryTestCase {
     libraryManager.loadLibrary(library, null);
     typechecking.typecheckLibrary(library);
     library.persistUpdatedModules(errorReporter);
-    assertThat(get(library.getModuleScopeProvider().forModule(new ModulePath("a")), "D"), is(nullValue()));
-    assertThat(get(library.getModuleScopeProvider().forModule(new ModulePath("A")), "f").getTypechecked(), is(notNullValue()));
+    assertThat(getDef(library.getModuleScopeProvider().forModule(new ModulePath("a")), "D"), is(nullValue()));
+    assertThat(getDef(library.getModuleScopeProvider().forModule(new ModulePath("A")), "f").getTypechecked(), is(notNullValue()));
   }
 
   @Test
@@ -221,7 +221,7 @@ public class CachingTest extends LibraryTestCase {
 
     Scope aScope = library.getModuleScopeProvider().forModule(moduleName("A"));
     assertThat(errorList, hasSize(1));
-    assertThatErrorsAre(hasErrors(get(aScope, "a")));
+    assertThatErrorsAre(hasErrors(getDef(aScope, "a")));
   }
 
   @Test

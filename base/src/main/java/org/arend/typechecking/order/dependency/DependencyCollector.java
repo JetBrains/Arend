@@ -1,6 +1,7 @@
 package org.arend.typechecking.order.dependency;
 
 import org.arend.core.definition.*;
+import org.arend.naming.reference.TCDefReferable;
 import org.arend.naming.reference.TCReferable;
 
 import java.util.*;
@@ -17,7 +18,7 @@ public class DependencyCollector implements DependencyListener {
 
   @Override
   public Set<? extends TCReferable> update(TCReferable definition) {
-    if (definition.getTypechecked() == null) {
+    if (definition instanceof TCDefReferable && ((TCDefReferable) definition).getTypechecked() == null) {
       return Collections.emptySet();
     }
 
@@ -49,8 +50,11 @@ public class DependencyCollector implements DependencyListener {
 
     Set<TCReferable> additional = new HashSet<>();
     for (TCReferable updatedDef : updated) {
-      Definition def = updatedDef.getTypechecked();
-      updatedDef.setTypechecked(null);
+      if (!(updatedDef instanceof TCDefReferable)) {
+        continue;
+      }
+      Definition def = ((TCDefReferable) updatedDef).getTypechecked();
+      ((TCDefReferable) updatedDef).setTypechecked(null);
       if (def instanceof ClassDefinition) {
         for (ClassField field : ((ClassDefinition) def).getPersonalFields()) {
           field.getReferable().setTypechecked(null);

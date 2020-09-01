@@ -11,6 +11,7 @@ import org.arend.library.Library;
 import org.arend.library.LibraryManager;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.reference.Referable;
+import org.arend.naming.reference.TCDefReferable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.naming.scope.EmptyScope;
@@ -50,7 +51,7 @@ public abstract class ArendTestCase {
     preludeLibrary = new PreludeFileLibrary(null);
     moduleScopeProvider = preludeLibrary.getModuleScopeProvider();
     libraryManager.loadLibrary(preludeLibrary, null);
-    new Prelude.PreludeTypechecking(new InstanceProviderSet(), ConcreteReferableProvider.INSTANCE, PositionComparator.INSTANCE).typecheckLibrary(preludeLibrary);
+    new Prelude.PreludeTypechecking(new InstanceProviderSet(), ConcreteReferableProvider.INSTANCE, IdReferableConverter.INSTANCE, PositionComparator.INSTANCE).typecheckLibrary(preludeLibrary);
     errorList.clear();
   }
 
@@ -61,6 +62,11 @@ public abstract class ArendTestCase {
   public TCReferable get(Scope scope, String path) {
     Referable referable = Scope.Utils.resolveName(scope, Arrays.asList(path.split("\\.")));
     return referable instanceof TCReferable ? (TCReferable) referable : null;
+  }
+
+  public TCDefReferable getDef(Scope scope, String path) {
+    Referable referable = Scope.Utils.resolveName(scope, Arrays.asList(path.split("\\.")));
+    return referable instanceof TCDefReferable ? (TCDefReferable) referable : null;
   }
 
   @SafeVarargs

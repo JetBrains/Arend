@@ -11,7 +11,7 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
-import org.arend.naming.reference.TCReferable;
+import org.arend.naming.reference.TCDefReferable;
 import org.arend.prelude.Prelude;
 import org.jetbrains.annotations.NotNull;
 
@@ -35,7 +35,7 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
   private boolean myHasEnclosingClass;
   private List<Boolean> myStrictParameters = Collections.emptyList();
 
-  public FunctionDefinition(TCReferable referable) {
+  public FunctionDefinition(TCDefReferable referable) {
     super(referable, TypeCheckingStatus.NEEDS_TYPE_CHECKING);
     myParameters = EmptyDependentLink.getInstance();
   }

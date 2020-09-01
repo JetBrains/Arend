@@ -8,7 +8,7 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.instance.InstanceSearchParameters;
-import org.arend.naming.reference.TCReferable;
+import org.arend.naming.reference.TCDefReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.instance.provider.InstanceProvider;
 import org.arend.typechecking.result.TypecheckingResult;
@@ -130,11 +130,11 @@ public class GlobalInstancePool implements InstancePool {
     }
 
     Expression finalClassifyingExpression = normClassifyingExpression;
-    class MyPredicate implements Predicate<TCReferable> {
+    class MyPredicate implements Predicate<TCDefReferable> {
       private FunctionDefinition instanceDef = null;
 
       @Override
-      public boolean test(TCReferable instance) {
+      public boolean test(TCDefReferable instance) {
         instanceDef = (FunctionDefinition) instance.getTypechecked();
         if (!(instanceDef != null && instanceDef.status().headerIsOK() && instanceDef.getResultType() instanceof ClassCallExpression && parameters.testClass(((ClassCallExpression) instanceDef.getResultType()).getDefinition()) && parameters.testGlobalInstance(instanceDef))) {
           return false;
@@ -162,7 +162,7 @@ public class GlobalInstancePool implements InstancePool {
     }
 
     MyPredicate predicate = new MyPredicate();
-    TCReferable instance = myInstanceProvider.findInstance(predicate);
+    TCDefReferable instance = myInstanceProvider.findInstance(predicate);
     if (instance == null || predicate.instanceDef == null) {
       return null;
     }

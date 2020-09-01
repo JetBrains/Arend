@@ -5,7 +5,7 @@ import org.arend.ext.DefaultArendExtension;
 import org.arend.ext.module.ModulePath;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.reference.LocatedReferable;
-import org.arend.naming.reference.TCReferable;
+import org.arend.naming.reference.TCDefReferable;
 import org.arend.naming.scope.LexicalScope;
 import org.arend.term.group.Group;
 import org.arend.typechecking.order.Ordering;
@@ -67,8 +67,8 @@ public abstract class BaseLibrary implements Library {
   }
 
   public void resetDefinition(LocatedReferable referable) {
-    if (referable instanceof TCReferable) {
-      ((TCReferable) referable).setTypechecked(null);
+    if (referable instanceof TCDefReferable) {
+      ((TCDefReferable) referable).setTypechecked(null);
     }
   }
 

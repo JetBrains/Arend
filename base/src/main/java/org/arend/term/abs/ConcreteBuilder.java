@@ -70,7 +70,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
   // Definition
 
   private void setEnclosingClass(Concrete.Definition definition, Abstract.Definition abstractDef) {
-    TCReferable enclosingClass = myReferableConverter.toDataLocatedReferable(abstractDef.getEnclosingClass());
+    TCDefReferable enclosingClass = (TCDefReferable) myReferableConverter.toDataLocatedReferable(abstractDef.getEnclosingClass());
     if (!(definition instanceof Concrete.ClassDefinition)) {
       definition.enclosingClass = enclosingClass;
     }
@@ -88,9 +88,12 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
     Concrete.Expression body = null;
     var term = def.getTerm();
     if (term != null) body = term.accept(this, null);
-    var referable = def.getReferable();
-    var definition = new DefinableMetaDefinition(referable, parameters, body);
-    referable.setDefinition(definition);
+    var referable = myReferableConverter.toDataLocatedReferable(def.getReferable());
+    if (!(referable instanceof MetaReferable)) {
+      throw new IllegalStateException();
+    }
+    var definition = new DefinableMetaDefinition((MetaReferable) referable, parameters, body);
+    ((MetaReferable) referable).setDefinition(definition);
     return definition;
   }
 
@@ -114,7 +117,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
           if (functionRef != null) {
             Abstract.Reference implementedField = element.getImplementedField();
             if (implementedField != null) {
-              elements.add(new Concrete.CoClauseFunctionReference(implementedField.getReferent(), myReferableConverter.toDataLocatedReferable(functionRef)));
+              elements.add(new Concrete.CoClauseFunctionReference(implementedField.getReferent(), (TCDefReferable) myReferableConverter.toDataLocatedReferable(functionRef)));
             }
             continue;
           }
@@ -138,13 +141,13 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
 
     FunctionKind kind = def.getFunctionKind();
 
-    TCReferable parentRef = myReferableConverter.toDataLocatedReferable(def.getReferable().getLocatedReferableParent());
+    TCDefReferable parentRef = (TCDefReferable) myReferableConverter.toDataLocatedReferable(def.getReferable().getLocatedReferableParent());
     Concrete.BaseFunctionDefinition result;
     if (kind == FunctionKind.COCLAUSE_FUNC) {
       Abstract.Reference implementedField = def.getImplementedField();
-      result = new Concrete.CoClauseFunctionDefinition(myDefinition, parentRef, implementedField == null ? null : implementedField.getReferent(), parameters, type, typeLevel, body);
+      result = new Concrete.CoClauseFunctionDefinition((TCDefReferable) myDefinition, parentRef, implementedField == null ? null : implementedField.getReferent(), parameters, type, typeLevel, body);
     } else {
-      result = Concrete.UseDefinition.make(def.getFunctionKind(), myDefinition, parameters, type, typeLevel, body, parentRef);
+      result = Concrete.UseDefinition.make(def.getFunctionKind(), (TCDefReferable) myDefinition, parameters, type, typeLevel, body, parentRef);
     }
     setEnclosingClass(result, def);
     if (result instanceof Concrete.FunctionDefinition) {
@@ -165,7 +168,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
     Collection<? extends Abstract.ConstructorClause> absClauses = def.getClauses();
     List<Concrete.ConstructorClause> clauses = new ArrayList<>(absClauses.size());
     Collection<? extends Abstract.Reference> elimExpressions = def.getEliminatedExpressions();
-    Concrete.DataDefinition data = new Concrete.DataDefinition(myDefinition, typeParameters, elimExpressions == null ? null : buildReferences(elimExpressions), def.isTruncated(), universe instanceof Concrete.UniverseExpression ? (Concrete.UniverseExpression) universe : null, clauses);
+    Concrete.DataDefinition data = new Concrete.DataDefinition((TCDefReferable) myDefinition, typeParameters, elimExpressions == null ? null : buildReferences(elimExpressions), def.isTruncated(), universe instanceof Concrete.UniverseExpression ? (Concrete.UniverseExpression) universe : null, clauses);
     setEnclosingClass(data, def);
 
     for (Abstract.ConstructorClause clause : absClauses) {
@@ -177,7 +180,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
 
       List<Concrete.Constructor> constructors = new ArrayList<>(absConstructors.size());
       for (Abstract.Constructor constructor : absConstructors) {
-        TCReferable constructorRef = myReferableConverter.toDataLocatedReferable(constructor.getReferable());
+        TCDefReferable constructorRef = (TCDefReferable) myReferableConverter.toDataLocatedReferable(constructor.getReferable());
         if (constructorRef != null) {
           Concrete.Constructor cons = new Concrete.Constructor(constructorRef, data, buildTypeParameters(constructor.getParameters(), true), buildReferences(constructor.getEliminatedExpressions()), buildClauses(constructor.getClauses()));
           Abstract.Expression resultType = constructor.getResultType();
@@ -236,7 +239,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
   @Override
   public Concrete.Definition visitClass(Abstract.ClassDefinition def) {
     List<Concrete.ClassElement> elements = new ArrayList<>();
-    Concrete.ClassDefinition classDef = new Concrete.ClassDefinition(myDefinition, def.isRecord(), def.withoutClassifying(), buildReferences(def.getSuperClasses()), elements);
+    Concrete.ClassDefinition classDef = new Concrete.ClassDefinition((TCDefReferable) myDefinition, def.isRecord(), def.withoutClassifying(), buildReferences(def.getSuperClasses()), elements);
     buildClassParameters(def.getParameters(), classDef, elements);
 
     for (Abstract.ClassElement element : def.getClassElements()) {
@@ -277,11 +280,11 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
     return classDef;
   }
 
-  private List<TCReferable> visitUsedDefinitions(Collection<? extends LocatedReferable> usedDefinitions) {
+  private List<TCDefReferable> visitUsedDefinitions(Collection<? extends LocatedReferable> usedDefinitions) {
     if (!usedDefinitions.isEmpty()) {
-      List<TCReferable> tcUsedDefinitions = new ArrayList<>(usedDefinitions.size());
+      List<TCDefReferable> tcUsedDefinitions = new ArrayList<>(usedDefinitions.size());
       for (LocatedReferable coercingFunction : usedDefinitions) {
-        tcUsedDefinitions.add(myReferableConverter.toDataLocatedReferable(coercingFunction));
+        tcUsedDefinitions.add((TCDefReferable) myReferableConverter.toDataLocatedReferable(coercingFunction));
       }
       return tcUsedDefinitions;
     } else {

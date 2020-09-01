@@ -1,9 +1,6 @@
 package org.arend.typechecking.instance.provider;
 
-import org.arend.naming.reference.GlobalReferable;
-import org.arend.naming.reference.LocatedReferable;
-import org.arend.naming.reference.Referable;
-import org.arend.naming.reference.TCReferable;
+import org.arend.naming.reference.*;
 import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.naming.scope.CachingScope;
 import org.arend.naming.scope.LexicalScope;
@@ -17,18 +14,18 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 public class InstanceProviderSet {
-  private final Map<TCReferable, InstanceProvider> myProviders = new HashMap<>();
+  private final Map<TCDefReferable, InstanceProvider> myProviders = new HashMap<>();
   private final Set<Group> myCollected = new HashSet<>();
 
-  public void put(TCReferable referable, InstanceProvider provider) {
+  public void put(TCDefReferable referable, InstanceProvider provider) {
     myProviders.put(referable, provider);
   }
 
   public InstanceProvider get(TCReferable referable) {
-    return myProviders.get(referable);
+    return referable instanceof TCDefReferable ? myProviders.get(referable) : null;
   }
 
-  public InstanceProvider computeIfAbsent(TCReferable referable, Function<? super TCReferable, ? extends InstanceProvider> fun) {
+  public InstanceProvider computeIfAbsent(TCDefReferable referable, Function<? super TCDefReferable, ? extends InstanceProvider> fun) {
     return myProviders.computeIfAbsent(referable, fun);
   }
 
@@ -44,8 +41,8 @@ public class InstanceProviderSet {
 
     public LocatedReferable recordInstances(LocatedReferable ref) {
       TCReferable tcRef = referableConverter.toDataLocatedReferable(ref);
-      if (tcRef != null) {
-        myProviders.put(tcRef, instanceProvider);
+      if (tcRef instanceof TCDefReferable) {
+        myProviders.put((TCDefReferable) tcRef, instanceProvider);
       }
       return ref;
     }
@@ -54,12 +51,12 @@ public class InstanceProviderSet {
     public boolean test(Referable ref) {
       if (ref instanceof LocatedReferable) {
         TCReferable instance = referableConverter.toDataLocatedReferable((LocatedReferable) ref);
-        if (instance != null && instance.getKind() == GlobalReferable.Kind.INSTANCE) {
+        if (instance instanceof TCDefReferable && instance.getKind() == GlobalReferable.Kind.INSTANCE) {
           if (used) {
             instanceProvider = new SimpleInstanceProvider(instanceProvider);
             used = false;
           }
-          instanceProvider.put(instance);
+          instanceProvider.put((TCDefReferable) instance);
         }
       }
       return false;

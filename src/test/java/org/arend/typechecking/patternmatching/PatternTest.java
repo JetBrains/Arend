@@ -14,7 +14,7 @@ import org.arend.core.sort.Sort;
 import org.arend.ext.error.RedundantClauseError;
 import org.arend.frontend.reference.ConcreteLocatedReferable;
 import org.arend.naming.reference.Referable;
-import org.arend.naming.reference.TCReferable;
+import org.arend.naming.reference.TCDefReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.Group;
 import org.arend.typechecking.TypeCheckingTestCase;
@@ -150,7 +150,7 @@ public class PatternTest extends TypeCheckingTestCase {
       "\\func f (n : Nat) (d : D) (k : Nat) : Nat\n" +
       "  | suc n, zero, suc k => k");
     Iterator<? extends Group> it = module.getSubgroups().iterator();
-    TCReferable dataDef = (TCReferable) it.next().getReferable();
+    TCDefReferable dataDef = (TCDefReferable) it.next().getReferable();
     Concrete.FunctionDefinition funDef = (Concrete.FunctionDefinition) ((ConcreteLocatedReferable) it.next().getReferable()).getDefinition();
     DataDefinition data = new DataDefinition(dataDef);
     data.setParameters(EmptyDependentLink.getInstance());
@@ -205,7 +205,7 @@ public class PatternTest extends TypeCheckingTestCase {
       "\\func f (n : Nat) (d : D) (k : Nat) : Nat\n" +
       "  | suc n, (), k => k");
     Iterator<? extends Group> it = module.getSubgroups().iterator();
-    TCReferable dataDef = (TCReferable) it.next().getReferable();
+    TCDefReferable dataDef = (TCDefReferable) it.next().getReferable();
     Concrete.FunctionDefinition funDef = (Concrete.FunctionDefinition) ((ConcreteLocatedReferable) it.next().getReferable()).getDefinition();
     DataDefinition data = new DataDefinition(dataDef);
     data.setParameters(EmptyDependentLink.getInstance());
@@ -226,7 +226,7 @@ public class PatternTest extends TypeCheckingTestCase {
       "\\func f (n : Nat) (d : D) (k : Nat) : Nat\n" +
       "  | suc n, (), suc k => k");
     Iterator<? extends Group> it = module.getSubgroups().iterator();
-    TCReferable dataDef = (TCReferable) it.next().getReferable();
+    TCDefReferable dataDef = (TCDefReferable) it.next().getReferable();
     Concrete.FunctionDefinition funDef = (Concrete.FunctionDefinition) ((ConcreteLocatedReferable) it.next().getReferable()).getDefinition();
     DataDefinition data = new DataDefinition(dataDef);
     data.setParameters(EmptyDependentLink.getInstance());

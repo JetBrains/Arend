@@ -9,7 +9,9 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class MetaReferable implements LocatedReferable, MetaRef {
+import java.util.function.Supplier;
+
+public class MetaReferable implements TCReferable, MetaRef {
   private final Precedence myPrecedence;
   private final String myName;
   private MetaDefinition myDefinition;
@@ -18,7 +20,7 @@ public class MetaReferable implements LocatedReferable, MetaRef {
   public final String description;
   private final String myAliasName;
   private final Precedence myAliasPrecedence;
-  public GlobalReferable underlyingReferable;
+  public Supplier<GlobalReferable> underlyingReferable;
   private final LocatedReferable myParent;
 
   public MetaReferable(Precedence precedence, String name, ModuleLocation location, Precedence aliasPrec, String aliasName, String description, MetaDefinition definition, MetaResolver resolver, LocatedReferable parent) {
@@ -94,6 +96,16 @@ public class MetaReferable implements LocatedReferable, MetaRef {
 
   @Override
   public @NotNull GlobalReferable getUnderlyingReferable() {
-    return underlyingReferable == null ? this : underlyingReferable;
+    return underlyingReferable == null ? this : underlyingReferable.get();
+  }
+
+  @Override
+  public @Nullable Object getData() {
+    return getUnderlyingReferable();
+  }
+
+  @Override
+  public boolean isTypechecked() {
+    return myDefinition != null || myResolver != null;
   }
 }

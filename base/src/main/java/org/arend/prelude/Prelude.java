@@ -12,8 +12,8 @@ import org.arend.ext.ArendPrelude;
 import org.arend.ext.module.ModulePath;
 import org.arend.module.ModuleLocation;
 import org.arend.naming.reference.Referable;
-import org.arend.naming.reference.TCReferable;
-import org.arend.naming.reference.converter.IdReferableConverter;
+import org.arend.naming.reference.TCDefReferable;
+import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.naming.scope.Scope;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
 import org.arend.typechecking.order.PartialComparator;
@@ -123,6 +123,7 @@ public class Prelude implements ArendPrelude {
         PATH_INFIX = (FunctionDefinition) definition;
         PATH_INFIX.getParameters().setType(new UniverseExpression(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR, 1))));
         DataCallExpression dataCall = (DataCallExpression) PATH_INFIX.getBody();
+        assert dataCall != null;
         PATH_INFIX.setBody(new DataCallExpression(dataCall.getDefinition(), dataCall.getSortArgument(), Arrays.asList(new LamExpression(new Sort(new Level(0), Level.INFINITY), UnusedIntervalDependentLink.INSTANCE, ((LamExpression) dataCall.getDefCallArguments().get(0)).getBody()), dataCall.getDefCallArguments().get(1), dataCall.getDefCallArguments().get(2))));
         break;
       }
@@ -135,6 +136,7 @@ public class Prelude implements ArendPrelude {
         IDP.setNumberOfParameters(2);
         IDP.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         ConCallExpression conCall = (ConCallExpression) IDP.getBody();
+        assert conCall != null;
         IDP.setBody(ConCallExpression.make(conCall.getDefinition(), conCall.getSortArgument(), conCall.getDataTypeArguments(), new SingletonList<>(new LamExpression(new Sort(new Level(0), Level.INFINITY), UnusedIntervalDependentLink.INSTANCE, ((LamExpression) conCall.getDefCallArguments().get(0)).getBody()))));
         break;
       }
@@ -231,8 +233,8 @@ public class Prelude implements ArendPrelude {
 
   public static void initialize(Scope scope) {
     for (Referable ref : scope.getElements()) {
-      if (ref instanceof TCReferable && ((TCReferable) ref).getKind().isTypecheckable()) {
-        update(((TCReferable) ref).getTypechecked());
+      if (ref instanceof TCDefReferable && ((TCDefReferable) ref).getKind().isTypecheckable()) {
+        update(((TCDefReferable) ref).getTypechecked());
       }
     }
 
@@ -240,20 +242,20 @@ public class Prelude implements ArendPrelude {
       Scope childScope = scope.resolveNamespace(name, true);
       assert childScope != null;
       for (Referable ref : childScope.getElements()) {
-        if (ref instanceof TCReferable && ((TCReferable) ref).getKind().isTypecheckable()) {
-          update(((TCReferable) ref).getTypechecked());
+        if (ref instanceof TCDefReferable && ((TCDefReferable) ref).getKind().isTypecheckable()) {
+          update(((TCDefReferable) ref).getTypechecked());
         }
       }
     }
   }
 
   public static class PreludeTypechecking extends TypecheckingOrderingListener {
-    public PreludeTypechecking(InstanceProviderSet instanceProviderSet, ConcreteProvider concreteProvider, PartialComparator<TCReferable> comparator) {
-      super(instanceProviderSet, concreteProvider, IdReferableConverter.INSTANCE, DummyErrorReporter.INSTANCE, comparator, ref -> null);
+    public PreludeTypechecking(InstanceProviderSet instanceProviderSet, ConcreteProvider concreteProvider, ReferableConverter referableConverter, PartialComparator<TCDefReferable> comparator) {
+      super(instanceProviderSet, concreteProvider, referableConverter, DummyErrorReporter.INSTANCE, comparator, ref -> null);
     }
 
     @Override
-    public void typecheckingUnitFinished(TCReferable referable, Definition definition) {
+    public void typecheckingUnitFinished(TCDefReferable referable, Definition definition) {
       update(definition);
     }
   }

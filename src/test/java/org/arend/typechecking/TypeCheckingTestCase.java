@@ -9,6 +9,7 @@ import org.arend.frontend.PositionComparator;
 import org.arend.frontend.reference.ConcreteLocatedReferable;
 import org.arend.naming.NameResolverTestCase;
 import org.arend.naming.reference.Referable;
+import org.arend.naming.reference.TCDefReferable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.term.concrete.Concrete;
@@ -127,12 +128,12 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
   public Definition getDefinition(ChildGroup group, String path) {
     TCReferable ref = get(group.getGroupScope(), path);
-    return ref != null ? ref.getTypechecked() : null;
+    return ref instanceof TCDefReferable ? ((TCDefReferable) ref).getTypechecked() : null;
   }
 
   public Definition getDefinition(String path) {
     TCReferable ref = get(path);
-    return ref != null ? ref.getTypechecked() : null;
+    return ref instanceof TCDefReferable ? ((TCDefReferable) ref).getTypechecked() : null;
   }
 
   protected void typeCheckModule(ChildGroup group) {

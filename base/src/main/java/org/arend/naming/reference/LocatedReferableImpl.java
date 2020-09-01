@@ -6,7 +6,7 @@ import org.arend.module.ModuleLocation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class LocatedReferableImpl implements TCReferable {
+public class LocatedReferableImpl implements TCDefReferable {
   private final Precedence myPrecedence;
   private final String myName;
   private final LocatedReferable myParent;
@@ -14,7 +14,7 @@ public class LocatedReferableImpl implements TCReferable {
   private Definition myTypechecked;
 
   public LocatedReferableImpl(Precedence precedence, String name, @Nullable LocatedReferable parent, Kind kind) {
-    assert kind.isTypecheckable() || kind == Kind.OTHER || parent instanceof TCReferable;
+    assert kind.isTypecheckable() || kind == Kind.OTHER || parent instanceof TCDefReferable;
     myPrecedence = precedence;
     myName = name;
     myParent = parent;
@@ -41,8 +41,8 @@ public class LocatedReferableImpl implements TCReferable {
   }
 
   @Override
-  public @NotNull TCReferable getTypecheckable() {
-    return myKind.isTypecheckable() || myKind == Kind.OTHER ? this : (TCReferable) myParent;
+  public @NotNull TCDefReferable getTypecheckable() {
+    return myKind.isTypecheckable() || myKind == Kind.OTHER ? this : (TCDefReferable) myParent;
   }
 
   @Override

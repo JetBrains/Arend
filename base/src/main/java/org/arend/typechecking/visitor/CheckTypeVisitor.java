@@ -798,8 +798,8 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       thisExpr = (Concrete.ThisExpression) expr;
     } else if (expr instanceof Concrete.TypedExpression) {
       Concrete.TypedExpression typedExpr = (Concrete.TypedExpression) expr;
-      if (!myClassCallBindings.isEmpty() && typedExpr.expression instanceof Concrete.ThisExpression && ((Concrete.ThisExpression) typedExpr.expression).getReferent() == null && typedExpr.type instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) typedExpr.type).getReferent() instanceof TCReferable) {
-        Definition def = ((TCReferable) ((Concrete.ReferenceExpression) typedExpr.type).getReferent()).getTypechecked();
+      if (!myClassCallBindings.isEmpty() && typedExpr.expression instanceof Concrete.ThisExpression && ((Concrete.ThisExpression) typedExpr.expression).getReferent() == null && typedExpr.type instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) typedExpr.type).getReferent() instanceof TCDefReferable) {
+        Definition def = ((TCDefReferable) ((Concrete.ReferenceExpression) typedExpr.type).getReferent()).getTypechecked();
         if (def instanceof ClassDefinition) {
           for (int i = myClassCallBindings.size() - 1; i >= 0; i--) {
             if (myClassCallBindings.get(i).getTypeExpr().getDefinition() == def) {
@@ -1086,7 +1086,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         expectedType = expectedType.normalize(NormalizationMode.WHNF);
       }
       Concrete.Expression baseExpr = classExpr instanceof Concrete.ClassExtExpression ? ((Concrete.ClassExtExpression) classExpr).getBaseClassExpression() : classExpr;
-      Definition actualDef = expectedType instanceof ClassCallExpression && baseExpr instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) baseExpr).getReferent() instanceof TCReferable ? ((TCReferable) ((Concrete.ReferenceExpression) baseExpr).getReferent()).getTypechecked() : null;
+      Definition actualDef = expectedType instanceof ClassCallExpression && baseExpr instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) baseExpr).getReferent() instanceof TCDefReferable ? ((TCDefReferable) ((Concrete.ReferenceExpression) baseExpr).getReferent()).getTypechecked() : null;
       if (baseExpr instanceof Concrete.HoleExpression || actualDef instanceof ClassDefinition) {
         ClassCallExpression actualClassCall = null;
         if (baseExpr instanceof Concrete.HoleExpression && !(expectedType instanceof ClassCallExpression)) {
@@ -1213,7 +1213,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       return null;
     }
 
-    Definition definition = referable instanceof TCReferable ? ((TCReferable) referable).getTypechecked() : null;
+    Definition definition = referable instanceof TCDefReferable ? ((TCDefReferable) referable).getTypechecked() : null;
     if (definition == null && sourceNode != null) {
       errorReporter.report(new TypecheckingError("Internal error: definition '" + referable.textRepresentation() + "' was not typechecked", sourceNode));
     }
@@ -1239,7 +1239,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     return referableToDefinition(referable, ClassField.class, "Expected a class field", sourceNode);
   }
 
-  private Definition getTypeCheckedDefinition(TCReferable definition, Concrete.Expression expr) {
+  private Definition getTypeCheckedDefinition(TCDefReferable definition, Concrete.Expression expr) {
     Definition typeCheckedDefinition = definition.getTypechecked();
     if (typeCheckedDefinition == null) {
       errorReporter.report(new IncorrectReferenceError(definition, expr));
@@ -1256,7 +1256,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
   }
 
-  private TResult typeCheckDefCall(TCReferable resolvedDefinition, Concrete.ReferenceExpression expr) {
+  private TResult typeCheckDefCall(TCDefReferable resolvedDefinition, Concrete.ReferenceExpression expr) {
     Definition definition = getTypeCheckedDefinition(resolvedDefinition, expr);
     if (definition == null) {
       return null;
@@ -1353,7 +1353,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     if (!(ref instanceof GlobalReferable) && (expr.getPLevel() != null || expr.getHLevel() != null)) {
       errorReporter.report(new IgnoredLevelsError(expr.getPLevel(), expr.getHLevel()));
     }
-    return ref instanceof TCReferable ? typeCheckDefCall((TCReferable) ref, expr) : getLocalVar(expr.getReferent(), expr);
+    return ref instanceof TCDefReferable ? typeCheckDefCall((TCDefReferable) ref, expr) : getLocalVar(expr.getReferent(), expr);
   }
 
   @Override
@@ -1362,7 +1362,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       return checkMeta(expr, Collections.emptyList(), null, expectedType);
     }
 
-    if (expr.getReferent() instanceof TCReferable && ((TCReferable) expr.getReferent()).getTypechecked() instanceof ClassDefinition) {
+    if (expr.getReferent() instanceof TCDefReferable && ((TCDefReferable) expr.getReferent()).getTypechecked() instanceof ClassDefinition) {
       List<SingleDependentLink> parameters = expectedType == null ? null : new ArrayList<>();
       if (expectedType != null) {
         expectedType = expectedType.normalizePi(parameters);
@@ -2266,10 +2266,10 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   private Concrete.Expression desugarClassApp(Concrete.ReferenceExpression fun, List<Concrete.Argument> arguments, Concrete.Expression expr, List<SingleDependentLink> expectedParams, boolean inferTailImplicits) {
     Referable ref = fun.getReferent();
-    if (!(ref instanceof TCReferable)) {
+    if (!(ref instanceof TCDefReferable)) {
       return expr;
     }
-    Definition def = ((TCReferable) ref).getTypechecked();
+    Definition def = ((TCDefReferable) ref).getTypechecked();
     if (!(def instanceof ClassDefinition)) {
       return expr;
     }
@@ -2365,7 +2365,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   public TypecheckingResult visitApp(Concrete.AppExpression expr, Expression expectedType) {
     if (expr.getFunction() instanceof Concrete.ReferenceExpression) {
       Concrete.ReferenceExpression refExpr = (Concrete.ReferenceExpression) expr.getFunction();
-      if (refExpr.getReferent() instanceof TCReferable && ((TCReferable) refExpr.getReferent()).getTypechecked() instanceof ClassDefinition) {
+      if (refExpr.getReferent() instanceof TCDefReferable && ((TCDefReferable) refExpr.getReferent()).getTypechecked() instanceof ClassDefinition) {
         List<SingleDependentLink> params = expectedType == null ? null : new ArrayList<>();
         if (expectedType != null) {
           expectedType = expectedType.normalizePi(params);

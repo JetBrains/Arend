@@ -1,14 +1,14 @@
 package org.arend.typechecking.order;
 
-import org.arend.naming.reference.TCReferable;
+import org.arend.naming.reference.TCDefReferable;
 import org.arend.term.concrete.Concrete;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class DefinitionComparator implements PartialComparator<Concrete.Definition> {
-  private final PartialComparator<TCReferable> myComparator;
+  private final PartialComparator<TCDefReferable> myComparator;
 
-  DefinitionComparator(PartialComparator<TCReferable> comparator) {
+  DefinitionComparator(PartialComparator<TCDefReferable> comparator) {
     myComparator = comparator;
   }
 

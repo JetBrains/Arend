@@ -18,7 +18,7 @@ import org.arend.core.pattern.*;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.ext.serialization.DeserializationException;
-import org.arend.naming.reference.TCReferable;
+import org.arend.naming.reference.TCDefReferable;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.order.dependency.DependencyListener;
 
@@ -30,9 +30,9 @@ class ExpressionDeserialization {
   private final List<Binding> myBindings = new ArrayList<>();
 
   private final DependencyListener myDependencyListener;
-  private final TCReferable myDefinition;
+  private final TCDefReferable myDefinition;
 
-  ExpressionDeserialization(CallTargetProvider callTargetProvider, DependencyListener dependencyListener, TCReferable definition) {
+  ExpressionDeserialization(CallTargetProvider callTargetProvider, DependencyListener dependencyListener, TCDefReferable definition) {
     myCallTargetProvider = callTargetProvider;
     myDependencyListener = dependencyListener;
     myDefinition = definition;

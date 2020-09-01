@@ -1,13 +1,13 @@
 package org.arend.core.definition;
 
 import org.arend.core.pattern.ExpressionPattern;
-import org.arend.naming.reference.TCReferable;
+import org.arend.naming.reference.TCDefReferable;
 
 public class DConstructor extends FunctionDefinition {
   private int myNumberOfParameters;
   private ExpressionPattern myPattern;
 
-  public DConstructor(TCReferable referable) {
+  public DConstructor(TCDefReferable referable) {
     super(referable);
   }
 

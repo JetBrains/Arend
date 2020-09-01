@@ -1,6 +1,6 @@
 package org.arend.typechecking.instance.provider;
 
-import org.arend.naming.reference.TCReferable;
+import org.arend.naming.reference.TCDefReferable;
 
 import java.util.function.Predicate;
 
@@ -14,7 +14,7 @@ public class EmptyInstanceProvider implements InstanceProvider {
   }
 
   @Override
-  public TCReferable findInstance(Predicate<TCReferable> pred) {
+  public TCDefReferable findInstance(Predicate<TCDefReferable> pred) {
     return null;
   }
 }

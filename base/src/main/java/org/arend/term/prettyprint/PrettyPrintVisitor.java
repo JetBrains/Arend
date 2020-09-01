@@ -6,10 +6,7 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.Constructor;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.reference.Precedence;
-import org.arend.naming.reference.CoreReferable;
-import org.arend.naming.reference.GlobalReferable;
-import org.arend.naming.reference.Referable;
-import org.arend.naming.reference.TCReferable;
+import org.arend.naming.reference.*;
 import org.arend.term.Fixity;
 import org.arend.term.FunctionKind;
 import org.arend.term.concrete.*;
@@ -106,7 +103,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     Concrete.Expression it = expr;
     do {
       expr = (Concrete.AppExpression) it;
-      TCReferable tcRef = expr.getFunction() instanceof Concrete.ReferenceExpression && ((ReferenceExpression) expr.getFunction()).getReferent() instanceof TCReferable ? (TCReferable) ((ReferenceExpression) expr.getFunction()).getReferent() : null;
+      TCDefReferable tcRef = expr.getFunction() instanceof Concrete.ReferenceExpression && ((ReferenceExpression) expr.getFunction()).getReferent() instanceof TCDefReferable ? (TCDefReferable) ((ReferenceExpression) expr.getFunction()).getReferent() : null;
       Constructor constructor = tcRef == null ? null : tcRef.getTypechecked() instanceof Constructor ? (Constructor) tcRef.getTypechecked() : null;
       if (constructor == null || constructor.getRecursiveParameter() < 0) {
         break;

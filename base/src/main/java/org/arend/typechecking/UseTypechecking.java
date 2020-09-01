@@ -12,7 +12,7 @@ import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.TypecheckingError;
 import org.arend.naming.reference.Referable;
-import org.arend.naming.reference.TCReferable;
+import org.arend.naming.reference.TCDefReferable;
 import org.arend.term.FunctionKind;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.CertainTypecheckingError;
@@ -111,7 +111,7 @@ public class UseTypechecking {
     if ((useParent instanceof DataDefinition || useParent instanceof ClassDefinition) && !def.getParameters().isEmpty()) {
       Concrete.Expression type = def.getParameters().get(def.getParameters().size() - 1).getType();
       Referable paramRef = type == null ? null : type.getUnderlyingReferable();
-      Definition paramDef = paramRef instanceof TCReferable ? ((TCReferable) paramRef).getTypechecked() : null;
+      Definition paramDef = paramRef instanceof TCDefReferable ? ((TCDefReferable) paramRef).getTypechecked() : null;
       DefCallExpression resultDefCall = typedDef.getResultType() == null ? null : typedDef.getResultType().cast(DefCallExpression.class);
       Definition resultDef = resultDefCall == null ? null : resultDefCall.getDefinition();
 

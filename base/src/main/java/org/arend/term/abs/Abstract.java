@@ -2,7 +2,6 @@ package org.arend.term.abs;
 
 import org.arend.naming.reference.ClassReferable;
 import org.arend.naming.reference.LocatedReferable;
-import org.arend.naming.reference.MetaReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.term.ClassFieldKind;
 import org.arend.term.FunctionKind;
@@ -217,7 +216,6 @@ public final class Abstract {
 
   public interface MetaDefinition extends Definition, ParametersHolder {
     @Nullable Expression getTerm();
-    @NotNull MetaReferable getReferable();
     @Override @NotNull List<? extends Parameter> getParameters();
   }
 

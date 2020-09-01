@@ -17,7 +17,7 @@ public class ConcreteLocatedReferable extends LocatedReferableImpl implements So
   private final Precedence myAliasPrecedence;
   private Concrete.ReferableDefinition myDefinition;
 
-  public ConcreteLocatedReferable(Position position, @NotNull String name, Precedence precedence, @Nullable String aliasName, Precedence aliasPrecedence, TCReferable parent, Kind kind) {
+  public ConcreteLocatedReferable(Position position, @NotNull String name, Precedence precedence, @Nullable String aliasName, Precedence aliasPrecedence, TCDefReferable parent, Kind kind) {
     super(precedence, name, parent, kind);
     myPosition = position;
     myAliasName = aliasName;
@@ -52,7 +52,7 @@ public class ConcreteLocatedReferable extends LocatedReferableImpl implements So
   }
 
   @Override
-  public @NotNull TCReferable getTypecheckable() {
+  public @NotNull TCDefReferable getTypecheckable() {
     return myDefinition == null ? this : myDefinition.getRelatedDefinition().getData();
   }
 

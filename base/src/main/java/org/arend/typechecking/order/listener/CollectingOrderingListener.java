@@ -7,10 +7,10 @@ import java.util.List;
 
 public class CollectingOrderingListener implements OrderingListener {
   private static class MyUnit {
-    final Concrete.Definition definition;
+    final Concrete.ResolvableDefinition definition;
     final boolean withLoops;
 
-    MyUnit(Concrete.Definition definition, boolean withLoops) {
+    MyUnit(Concrete.ResolvableDefinition definition, boolean withLoops) {
       this.definition = definition;
       this.withLoops = withLoops;
     }
@@ -19,10 +19,10 @@ public class CollectingOrderingListener implements OrderingListener {
   private static class MyDefinitions {
     enum Kind { CYCLE, BODIES, USE }
 
-    final List<? extends Concrete.Definition> definitions;
+    final List<? extends Concrete.ResolvableDefinition> definitions;
     final Kind kind;
 
-    MyDefinitions(List<? extends Concrete.Definition> definitions, Kind kind) {
+    MyDefinitions(List<? extends Concrete.ResolvableDefinition> definitions, Kind kind) {
       this.definitions = definitions;
       this.kind = kind;
     }
@@ -31,12 +31,12 @@ public class CollectingOrderingListener implements OrderingListener {
   private final List<Object> myList = new ArrayList<>();
 
   @Override
-  public void unitFound(Concrete.Definition unit, boolean recursive) {
+  public void unitFound(Concrete.ResolvableDefinition unit, boolean recursive) {
     myList.add(new MyUnit(unit, recursive));
   }
 
   @Override
-  public void cycleFound(List<Concrete.Definition> definitions) {
+  public void cycleFound(List<Concrete.ResolvableDefinition> definitions) {
     myList.add(new MyDefinitions(definitions, MyDefinitions.Kind.CYCLE));
   }
 
@@ -68,7 +68,7 @@ public class CollectingOrderingListener implements OrderingListener {
         } else if (definitions.kind == MyDefinitions.Kind.BODIES) {
           listener.bodiesFound((List<Concrete.Definition>) definitions.definitions);
         } else {
-          listener.cycleFound((List<Concrete.Definition>) definitions.definitions);
+          listener.cycleFound((List<Concrete.ResolvableDefinition>) definitions.definitions);
         }
       } else {
         listener.headerFound((Concrete.Definition) o);

@@ -1,12 +1,12 @@
 package org.arend.typechecking.computation;
 
-import org.arend.naming.reference.TCReferable;
+import org.arend.naming.reference.TCDefReferable;
 
 public class DefinitionCancellationIndicator implements CancellationIndicator {
   private boolean myCancelled = false;
-  private final TCReferable myTarget;
+  private final TCDefReferable myTarget;
 
-  public DefinitionCancellationIndicator(TCReferable target) {
+  public DefinitionCancellationIndicator(TCDefReferable target) {
     myTarget = target;
   }
 
@@ -21,7 +21,7 @@ public class DefinitionCancellationIndicator implements CancellationIndicator {
   }
 
   @Override
-  public void cancel(TCReferable target) {
+  public void cancel(TCDefReferable target) {
     if (myTarget == target) {
       myCancelled = true;
     }

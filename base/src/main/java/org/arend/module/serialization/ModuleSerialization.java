@@ -6,10 +6,7 @@ import org.arend.core.definition.Definition;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.module.ModulePath;
 import org.arend.module.ModuleLocation;
-import org.arend.naming.reference.GlobalReferable;
-import org.arend.naming.reference.LocatedReferable;
-import org.arend.naming.reference.ModuleReferable;
-import org.arend.naming.reference.TCReferable;
+import org.arend.naming.reference.*;
 import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.source.error.LocationError;
 import org.arend.term.group.Group;
@@ -85,7 +82,7 @@ public class ModuleSerialization {
     refBuilder.setPrecedence(DefinitionSerialization.writePrecedence(referable.getPrecedence()));
 
     TCReferable tcReferable = referableConverter.toDataLocatedReferable(referable);
-    Definition typechecked = tcReferable == null ? null : tcReferable.getTypechecked();
+    Definition typechecked = tcReferable instanceof TCDefReferable ? ((TCDefReferable) tcReferable).getTypechecked() : null;
     if (typechecked != null && typechecked.status() == Definition.TypeCheckingStatus.NO_ERRORS && !(typechecked instanceof Constructor || typechecked instanceof ClassField)) {
       builder.setDefinition(myDefinitionSerialization.writeDefinition(typechecked));
       int index = myCallTargetIndexProvider.getDefIndex(typechecked);
@@ -106,7 +103,8 @@ public class ModuleSerialization {
     }
     for (Group.InternalReferable internalReferable : group.getInternalReferables()) {
       if (!internalReferable.isVisible()) {
-        Definition def = referableConverter.toDataLocatedReferable(internalReferable.getReferable()).getTypechecked();
+        TCReferable ref = referableConverter.toDataLocatedReferable(internalReferable.getReferable());
+        Definition def = ref instanceof TCDefReferable ? ((TCDefReferable) ref).getTypechecked() : null;
         if (def != null) {
           builder.addInvisibleInternalReferable(myCallTargetIndexProvider.getDefIndex(def));
         }

@@ -7,17 +7,17 @@ import org.arend.core.expr.Expression;
 import org.arend.core.sort.Sort;
 import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.extImpl.userData.UserDataHolderImpl;
-import org.arend.naming.reference.TCReferable;
+import org.arend.naming.reference.TCDefReferable;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
 public abstract class Definition extends UserDataHolderImpl implements CoreDefinition {
-  private final TCReferable myReferable;
+  private final TCDefReferable myReferable;
   private TypeCheckingStatus myStatus;
   private UniverseKind myUniverseKind = UniverseKind.NO_UNIVERSES;
 
-  public Definition(TCReferable referable, TypeCheckingStatus status) {
+  public Definition(TCDefReferable referable, TypeCheckingStatus status) {
     myReferable = referable;
     myStatus = status;
   }
@@ -30,11 +30,11 @@ public abstract class Definition extends UserDataHolderImpl implements CoreDefin
 
   @NotNull
   @Override
-  public TCReferable getRef() {
+  public TCDefReferable getRef() {
     return myReferable;
   }
 
-  public TCReferable getReferable() {
+  public TCDefReferable getReferable() {
     return myReferable;
   }
 

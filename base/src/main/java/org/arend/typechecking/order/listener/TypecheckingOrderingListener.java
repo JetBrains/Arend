@@ -14,7 +14,7 @@ import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.typechecking.DefinitionListener;
 import org.arend.library.Library;
-import org.arend.naming.reference.GlobalReferable;
+import org.arend.naming.reference.TCDefReferable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.term.FunctionKind;
@@ -44,17 +44,17 @@ import java.util.*;
 
 public class TypecheckingOrderingListener extends ComputationRunner<Boolean> implements OrderingListener {
   private final DependencyListener myDependencyListener;
-  private final Map<GlobalReferable, Pair<CheckTypeVisitor,Boolean>> mySuspensions = new HashMap<>();
+  private final Map<TCDefReferable, Pair<CheckTypeVisitor,Boolean>> mySuspensions = new HashMap<>();
   private final ErrorReporter myErrorReporter;
   private final InstanceProviderSet myInstanceProviderSet;
   private final ConcreteProvider myConcreteProvider;
   private final ReferableConverter myReferableConverter;
-  private final PartialComparator<TCReferable> myComparator;
+  private final PartialComparator<TCDefReferable> myComparator;
   private final ArendExtensionProvider myExtensionProvider;
-  private List<TCReferable> myCurrentDefinitions = Collections.emptyList();
+  private List<TCDefReferable> myCurrentDefinitions = Collections.emptyList();
   private boolean myHeadersAreOK = true;
 
-  public TypecheckingOrderingListener(InstanceProviderSet instanceProviderSet, ConcreteProvider concreteProvider, ReferableConverter referableConverter, ErrorReporter errorReporter, DependencyListener dependencyListener, PartialComparator<TCReferable> comparator, ArendExtensionProvider extensionProvider) {
+  public TypecheckingOrderingListener(InstanceProviderSet instanceProviderSet, ConcreteProvider concreteProvider, ReferableConverter referableConverter, ErrorReporter errorReporter, DependencyListener dependencyListener, PartialComparator<TCDefReferable> comparator, ArendExtensionProvider extensionProvider) {
     myErrorReporter = errorReporter;
     myDependencyListener = dependencyListener;
     myInstanceProviderSet = instanceProviderSet;
@@ -64,7 +64,7 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
     myExtensionProvider = extensionProvider;
   }
 
-  public TypecheckingOrderingListener(InstanceProviderSet instanceProviderSet, ConcreteProvider concreteProvider, ReferableConverter referableConverter, ErrorReporter errorReporter, PartialComparator<TCReferable> comparator, ArendExtensionProvider extensionProvider) {
+  public TypecheckingOrderingListener(InstanceProviderSet instanceProviderSet, ConcreteProvider concreteProvider, ReferableConverter referableConverter, ErrorReporter errorReporter, PartialComparator<TCDefReferable> comparator, ArendExtensionProvider extensionProvider) {
     this(instanceProviderSet, concreteProvider, referableConverter, errorReporter, DummyDependencyListener.INSTANCE, comparator, extensionProvider);
   }
 
@@ -82,7 +82,7 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
 
   @Override
   protected Boolean computationInterrupted() {
-    for (TCReferable currentDefinition : myCurrentDefinitions) {
+    for (TCDefReferable currentDefinition : myCurrentDefinitions) {
       Definition typechecked = currentDefinition.getTypechecked();
       currentDefinition.setTypechecked(null);
       typecheckingInterrupted(currentDefinition, typechecked);
@@ -127,31 +127,31 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
     });
   }
 
-  public void typecheckingHeaderStarted(TCReferable definition) {
+  public void typecheckingHeaderStarted(TCDefReferable definition) {
 
   }
 
-  public void typecheckingBodyStarted(TCReferable definition) {
+  public void typecheckingBodyStarted(TCDefReferable definition) {
 
   }
 
-  public void typecheckingUnitStarted(TCReferable definition) {
+  public void typecheckingUnitStarted(TCDefReferable definition) {
 
   }
 
-  public void typecheckingHeaderFinished(TCReferable referable, Definition definition) {
+  public void typecheckingHeaderFinished(TCDefReferable referable, Definition definition) {
 
   }
 
-  public void typecheckingBodyFinished(TCReferable referable, Definition definition) {
+  public void typecheckingBodyFinished(TCDefReferable referable, Definition definition) {
 
   }
 
-  public void typecheckingUnitFinished(TCReferable referable, Definition definition) {
+  public void typecheckingUnitFinished(TCDefReferable referable, Definition definition) {
 
   }
 
-  public void typecheckingInterrupted(TCReferable definition, @Nullable Definition typechecked) {
+  public void typecheckingInterrupted(TCDefReferable definition, @Nullable Definition typechecked) {
 
   }
 
@@ -190,9 +190,14 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
   }
 
   @Override
-  public void unitFound(Concrete.Definition definition, boolean recursive) {
+  public void unitFound(Concrete.ResolvableDefinition resolvableDefinition, boolean recursive) {
     myHeadersAreOK = true;
 
+    if (!(resolvableDefinition instanceof Concrete.Definition)) {
+      return;
+    }
+
+    Concrete.Definition definition = (Concrete.Definition) resolvableDefinition;
     if (recursive) {
       Set<TCReferable> dependencies = new HashSet<>();
       definition.accept(new CollectDefCallsVisitor(dependencies, false), null);
@@ -240,22 +245,24 @@ public class TypecheckingOrderingListener extends ComputationRunner<Boolean> imp
   }
 
   @Override
-  public void cycleFound(List<Concrete.Definition> definitions) {
+  public void cycleFound(List<Concrete.ResolvableDefinition> definitions) {
     List<TCReferable> cycle = new ArrayList<>();
-    for (Concrete.Definition definition : definitions) {
+    for (Concrete.ResolvableDefinition definition : definitions) {
       if (cycle.isEmpty() || cycle.get(cycle.size() - 1) != definition.getData()) {
         cycle.add(definition.getData());
       }
 
-      Definition typechecked = definition.getData().getTypechecked();
-      if (typechecked == null) {
-        typechecked = newDefinition(definition);
+      if (definition instanceof Concrete.Definition) {
+        Concrete.Definition def = (Concrete.Definition) definition;
+        Definition typechecked = def.getData().getTypechecked();
+        if (typechecked == null) {
+          typechecked = newDefinition(def);
+        }
+        typechecked.addStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
+        typecheckingUnitStarted(def.getData());
+        mySuspensions.remove(def.getData());
+        typecheckingUnitFinished(def.getData(), typechecked);
       }
-      typechecked.addStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
-
-      typecheckingUnitStarted(definition.getData());
-      mySuspensions.remove(definition.getData());
-      typecheckingUnitFinished(definition.getData(), typechecked);
     }
     myErrorReporter.report(new CycleError(cycle));
   }

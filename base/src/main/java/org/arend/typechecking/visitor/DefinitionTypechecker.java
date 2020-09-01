@@ -452,7 +452,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       return false;
     }
     Referable typeRef = expr.getUnderlyingReferable();
-    Definition typeDef = typeRef instanceof TCReferable ? ((TCReferable) typeRef).getTypechecked() : null;
+    Definition typeDef = typeRef instanceof TCDefReferable ? ((TCDefReferable) typeRef).getTypechecked() : null;
     return typeDef instanceof ClassDefinition && (allowRecord || !((ClassDefinition) typeDef).isRecord());
   }
 
@@ -893,8 +893,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     FunctionKind kind = def.getKind();
     if (def instanceof Concrete.CoClauseFunctionDefinition) {
       Referable ref = ((Concrete.CoClauseFunctionDefinition) def).getImplementedField();
-      if (ref instanceof TCReferable) {
-        Definition fieldDef = ((TCReferable) ref).getTypechecked();
+      if (ref instanceof TCDefReferable) {
+        Definition fieldDef = ((TCDefReferable) ref).getTypechecked();
         if (fieldDef instanceof ClassField && DependentLink.Helper.size(typedDef.getParameters()) != Concrete.getNumberOfParameters(def.getParameters())) {
           if (newDef) {
             typechecker.setStatus(def.getStatus().getTypecheckingStatus());

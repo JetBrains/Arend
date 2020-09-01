@@ -11,7 +11,6 @@ import org.arend.naming.reference.*;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
-import org.arend.typechecking.error.local.CertainTypecheckingError;
 import org.arend.typechecking.error.local.WrongReferable;
 
 import java.util.*;
@@ -32,7 +31,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
     return expression.accept(new DesugarVisitor(errorReporter), null);
   }
 
-  private void getFields(TCReferable ref, Set<TCReferable> result) {
+  private void getFields(TCDefReferable ref, Set<TCDefReferable> result) {
     Definition def = ref.getTypechecked();
     if (def instanceof ClassDefinition) {
       for (ClassField field : ((ClassDefinition) def).getFields()) {
@@ -43,7 +42,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
 
   private Referable checkDefinition(Concrete.Definition def) {
     if (def.enclosingClass != null) {
-      Set<TCReferable> fields = new HashSet<>();
+      Set<TCDefReferable> fields = new HashSet<>();
       getFields(def.enclosingClass, fields);
       Definition enclosingClass = def.enclosingClass.getTypechecked();
       List<CoreClassDefinition> superClasses = enclosingClass instanceof ClassDefinition ? Collections.singletonList((CoreClassDefinition) enclosingClass) : Collections.emptyList();
@@ -100,10 +99,10 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
 
   @Override
   public Void visitClass(Concrete.ClassDefinition def, Void params) {
-    Set<TCReferable> fields = new HashSet<>();
+    Set<TCDefReferable> fields = new HashSet<>();
     for (Concrete.ReferenceExpression superClass : def.getSuperClasses()) {
-      if (superClass.getReferent() instanceof TCReferable) {
-        getFields((TCReferable) superClass.getReferent(), fields);
+      if (superClass.getReferent() instanceof TCDefReferable) {
+        getFields((TCDefReferable) superClass.getReferent(), fields);
       }
     }
 
@@ -115,15 +114,15 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
       }
     }
 
-    Set<TCReferable> futureFields = new HashSet<>();
+    Set<TCDefReferable> futureFields = new HashSet<>();
     for (Concrete.ClassField field : classFields) {
       futureFields.add(field.getData());
     }
 
     List<CoreClassDefinition> superClasses = new ArrayList<>();
     for (Concrete.ReferenceExpression superClassRef : def.getSuperClasses()) {
-      if (superClassRef.getReferent() instanceof TCReferable) {
-        Definition superClass = ((TCReferable) superClassRef.getReferent()).getTypechecked();
+      if (superClassRef.getReferent() instanceof TCDefReferable) {
+        Definition superClass = ((TCDefReferable) superClassRef.getReferent()).getTypechecked();
         if (superClass instanceof ClassDefinition) {
           superClasses.add((ClassDefinition) superClass);
         }

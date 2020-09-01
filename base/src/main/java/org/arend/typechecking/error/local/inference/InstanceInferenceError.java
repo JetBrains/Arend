@@ -4,7 +4,7 @@ import org.arend.core.expr.Expression;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.ext.prettyprinting.doc.LineDoc;
-import org.arend.naming.reference.TCReferable;
+import org.arend.naming.reference.TCDefReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.instance.pool.RecursiveInstanceData;
 import org.arend.typechecking.instance.pool.RecursiveInstanceHoleExpression;
@@ -15,26 +15,26 @@ import java.util.List;
 import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public class InstanceInferenceError extends ArgInferenceError {
-  public final TCReferable classRef;
+  public final TCDefReferable classRef;
   public final Expression classifyingExpression;
   public final RecursiveInstanceHoleExpression holeExpression;
 
-  private InstanceInferenceError(TCReferable classRef, Expression expected, Expression actual, Expression classifyingExpression, Concrete.SourceNode cause, RecursiveInstanceHoleExpression holeExpr, Expression[] candidates) {
+  private InstanceInferenceError(TCDefReferable classRef, Expression expected, Expression actual, Expression classifyingExpression, Concrete.SourceNode cause, RecursiveInstanceHoleExpression holeExpr, Expression[] candidates) {
     super("Cannot infer an instance of class '" + classRef.textRepresentation() + "'", expected, actual, holeExpr != null && holeExpr.getData() instanceof Concrete.SourceNode ? (Concrete.SourceNode) holeExpr.getData() : cause, candidates);
     this.classRef = classRef;
     this.classifyingExpression = classifyingExpression;
     this.holeExpression = holeExpr;
   }
 
-  public InstanceInferenceError(TCReferable classRef, Concrete.SourceNode cause, RecursiveInstanceHoleExpression holeExpr, Expression[] candidates) {
+  public InstanceInferenceError(TCDefReferable classRef, Concrete.SourceNode cause, RecursiveInstanceHoleExpression holeExpr, Expression[] candidates) {
     this(classRef, null, null, null, cause, holeExpr, candidates);
   }
 
-  public InstanceInferenceError(TCReferable classRef, Expression classifyingExpression, Concrete.SourceNode cause, RecursiveInstanceHoleExpression holeExpr) {
+  public InstanceInferenceError(TCDefReferable classRef, Expression classifyingExpression, Concrete.SourceNode cause, RecursiveInstanceHoleExpression holeExpr) {
     this(classRef, null, null, classifyingExpression, cause, holeExpr, new Expression[0]);
   }
 
-  public InstanceInferenceError(TCReferable classRef, Expression expected, Expression actual, Concrete.SourceNode cause, Expression candidate, RecursiveInstanceHoleExpression holeExpr) {
+  public InstanceInferenceError(TCDefReferable classRef, Expression expected, Expression actual, Concrete.SourceNode cause, Expression candidate, RecursiveInstanceHoleExpression holeExpr) {
     this(classRef, expected, actual, null, cause, holeExpr, new Expression[1]);
     candidates[0] = candidate;
   }
