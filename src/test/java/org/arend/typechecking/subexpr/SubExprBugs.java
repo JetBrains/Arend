@@ -1,10 +1,7 @@
 package org.arend.typechecking.subexpr;
 
-import org.arend.core.expr.Expression;
-import org.arend.frontend.reference.ConcreteLocatedReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.TypeCheckingTestCase;
-import org.arend.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 
@@ -66,13 +63,13 @@ public class SubExprBugs extends TypeCheckingTestCase {
   @Test
   public void issue196() {
     var resolved = resolveNamesDef(
-        "\\func Dorothy : Alice \\cowith\n" +
-            " | rbq {\n" +
-            "   | level => 114514\n" +
-            " } \\where {\n" +
-            "    \\record Rbq | level : Nat\n" +
-            "    \\record Alice (rbq : Rbq)\n" +
-            "  }");
+      "\\func Dorothy : Alice \\cowith\n" +
+        " | rbq {\n" +
+        "   | level => 114514\n" +
+        " } \\where {\n" +
+        "    \\record Rbq | level : Nat\n" +
+        "    \\record Alice (rbq : Rbq)\n" +
+        "  }");
     var concreteDef = (Concrete.FunctionDefinition) resolved.getDefinition();
     var classField = (Concrete.ClassFieldImpl) concreteDef.getBody().getCoClauseElements().get(0);
     assertNotNull(classField);
