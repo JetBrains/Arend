@@ -1,12 +1,12 @@
 package org.arend.typechecking.subexpr;
 
+import org.arend.core.definition.Definition;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 /**
  * For GitHub issues
@@ -78,5 +78,45 @@ public class SubExprBugs extends TypeCheckingTestCase {
     assertNotNull(accept);
     assertEquals("114514", accept.proj1.toString());
     assertEquals("114514", accept.proj2.toString());
+  }
+
+  @Test
+  public void issue252() {
+    var record = resolveNamesDef(
+      "\\record Tony\n" +
+        "  | beta (lam : \\Set0) (b : \\Prop) (d : lam) (a : b) : b");
+    var concreteDef = (Concrete.ClassDefinition) record.getDefinition();
+    var def = typeCheckDef(record);
+    assertTrue(concreteDef.isRecord());
+    var field = (Concrete.ClassField) concreteDef.getElements().get(0);
+    var parameters = field.getParameters();
+    {
+      var parameter = parameters.get(1);
+      var accept = concreteDef.accept(new CorrespondedSubDefVisitor(parameter.type), def);
+      assertNotNull(accept);
+      assertEquals("\\Set0", accept.proj1.toString());
+      assertEquals("\\Set0", accept.proj2.toString());
+    }
+    {
+      var parameter = parameters.get(2);
+      var accept = concreteDef.accept(new CorrespondedSubDefVisitor(parameter.type), def);
+      assertNotNull(accept);
+      assertEquals("\\Prop", accept.proj1.toString());
+      assertEquals("\\Prop", accept.proj2.toString());
+    }
+    {
+      var parameter = parameters.get(3);
+      var accept = concreteDef.accept(new CorrespondedSubDefVisitor(parameter.type), def);
+      assertNotNull(accept);
+      assertEquals("lam", accept.proj1.toString());
+      assertEquals("lam", accept.proj2.toString());
+    }
+    {
+      var parameter = parameters.get(4);
+      var accept = concreteDef.accept(new CorrespondedSubDefVisitor(parameter.type), def);
+      assertNotNull(accept);
+      assertEquals("b", accept.proj1.toString());
+      assertEquals("b", accept.proj2.toString());
+    }
   }
 }
