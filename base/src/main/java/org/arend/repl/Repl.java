@@ -20,6 +20,7 @@ import org.arend.naming.resolving.visitor.ExpressionResolveNameVisitor;
 import org.arend.naming.scope.Scope;
 import org.arend.naming.scope.ScopeFactory;
 import org.arend.repl.action.*;
+import org.arend.term.NamespaceCommand;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.Group;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
@@ -34,10 +35,7 @@ import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.function.Supplier;
 
 public abstract class Repl {
@@ -129,10 +127,14 @@ public abstract class Repl {
 
   protected abstract @Nullable Concrete.Expression parseExpr(@NotNull String text);
 
+  protected void loadPotentialUnloadedModules(Collection<? extends NamespaceCommand> namespaceCommands) {
+  }
+
   public final void checkStatements(@NotNull String line) {
     var group = parseStatements(line);
     if (group == null) return;
     var moduleScopeProvider = getAvailableModuleScopeProvider();
+    loadPotentialUnloadedModules(group.getNamespaceCommands());
     var scope = ScopeFactory.forGroup(group, moduleScopeProvider);
     myReplScope.addScope(scope);
     new DefinitionResolveNameVisitor(myTypechecking.getConcreteProvider(), null, myErrorReporter)

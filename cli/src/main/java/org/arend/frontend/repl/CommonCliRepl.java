@@ -28,6 +28,7 @@ import org.arend.prelude.PreludeResourceLibrary;
 import org.arend.repl.Repl;
 import org.arend.repl.action.NormalizeCommand;
 import org.arend.repl.action.ReplCommand;
+import org.arend.term.NamespaceCommand;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.FileGroup;
 import org.arend.typechecking.LibraryArendExtensionProvider;
@@ -212,6 +213,22 @@ public abstract class CommonCliRepl extends Repl {
   }
 
   @Override
+  protected void loadPotentialUnloadedModules(Collection<? extends NamespaceCommand> namespaceCommands) {
+    var moduleScopeProvider = getAvailableModuleScopeProvider();
+    List<ModulePath> modules = new ArrayList<>();
+    for (var namespaceCommand : namespaceCommands) {
+      if (namespaceCommand.getKind() == NamespaceCommand.Kind.IMPORT) {
+        var module = new ModulePath(namespaceCommand.getPath());
+        var scope = moduleScopeProvider.forModule(module);
+        if (scope == null) {
+          modules.add(module);
+        }
+      }
+    }
+    loadModules(modules);
+  }
+
+  @Override
   protected final @Nullable FileGroup parseStatements(@NotNull String line) {
     var fileGroup = buildVisitor().visitStatements(parse(line).statements());
     if (fileGroup != null)
@@ -259,6 +276,13 @@ public abstract class CommonCliRepl extends Repl {
     myLibraryManager.loadLibrary(myReplLibrary, myTypechecking);
     typecheckLibrary(myReplLibrary);
     return getAvailableModuleScopeProvider().forModule(modulePath);
+  }
+
+  public final void loadModules(Collection<@NotNull ModulePath> modulePaths) {
+    if (myModules.addAll(modulePaths))
+      myLibraryManager.unloadLibrary(myReplLibrary);
+    myLibraryManager.loadLibrary(myReplLibrary, myTypechecking);
+    typecheckLibrary(myReplLibrary);
   }
 
   /**
