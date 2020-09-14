@@ -14,6 +14,7 @@ import org.arend.frontend.library.TimedLibraryManager;
 import org.arend.frontend.repl.PlainCliRepl;
 import org.arend.frontend.repl.jline.JLineCliRepl;
 import org.arend.library.*;
+import org.arend.library.classLoader.FileClassLoaderDelegate;
 import org.arend.library.error.LibraryError;
 import org.arend.module.ModuleLocation;
 import org.arend.naming.reference.*;
@@ -241,7 +242,7 @@ public abstract class BaseCliFrontend {
     // Collect modules and libraries for which typechecking was requested
     Collection<String> argFiles = cmdLine.getArgList();
     Set<ModulePath> requestedModules;
-    List<UnmodifiableSourceLibrary> requestedLibraries = new ArrayList<>();
+    List<SourceLibrary> requestedLibraries = new ArrayList<>();
     if (argFiles.isEmpty()) {
       if (sourceDirStr != null) {
         requestedModules = new LinkedHashSet<>();
@@ -255,7 +256,7 @@ public abstract class BaseCliFrontend {
         boolean isPath = fileName.contains(FileSystems.getDefault().getSeparator());
         Path path = Paths.get(fileName);
         if (fileName.endsWith(FileUtils.LIBRARY_CONFIG_FILE) || isPath && Files.isDirectory(path)) {
-          UnmodifiableSourceLibrary library = myLibraryResolver.registerLibrary(path.toAbsolutePath().normalize());
+          SourceLibrary library = myLibraryResolver.registerLibrary(path.toAbsolutePath().normalize());
           if (library != null) {
             requestedLibraries.add(library);
           }
@@ -281,13 +282,13 @@ public abstract class BaseCliFrontend {
         e.printStackTrace();
         outDir = null;
       }
-      requestedLibraries.add(new FileSourceLibrary("\\default", sourceDir, outDir, extDir, extMainClass, requestedModules, argFiles.isEmpty(), libraryDependencies, Range.unbound()));
+      requestedLibraries.add(new FileSourceLibrary("\\default", sourceDir, outDir, new LibraryHeader(requestedModules, libraryDependencies, Range.unbound(), new FileClassLoaderDelegate(extDir), extMainClass)));
     }
 
     if (requestedLibraries.isEmpty()) {
       Path path = Paths.get(FileUtils.LIBRARY_CONFIG_FILE);
       if (Files.isRegularFile(path)) {
-        UnmodifiableSourceLibrary library = myLibraryResolver.registerLibrary(path.toAbsolutePath().normalize());
+        SourceLibrary library = myLibraryResolver.registerLibrary(path.toAbsolutePath().normalize());
         if (library != null) {
           requestedLibraries.add(library);
         }
@@ -300,7 +301,7 @@ public abstract class BaseCliFrontend {
     // Load and typecheck libraries
     MyTypechecking typechecking = new MyTypechecking();
     boolean doubleCheck = cmdLine.hasOption("c");
-    for (UnmodifiableSourceLibrary library : requestedLibraries) {
+    for (SourceLibrary library : requestedLibraries) {
       myModuleResults.clear();
       if (recompile) {
         library.addFlag(SourceLibrary.Flag.RECOMPILE);
@@ -400,7 +401,6 @@ public abstract class BaseCliFrontend {
         // Persist updated modules
         if (library.supportsPersisting()) {
           library.persistUpdatedModules(mySystemErrErrorReporter);
-          library.clearUpdateModules();
         }
       }
 
@@ -425,7 +425,7 @@ public abstract class BaseCliFrontend {
 
     // Run tests
     if (cmdLine.hasOption("t")) {
-      for (UnmodifiableSourceLibrary library : requestedLibraries) {
+      for (SourceLibrary library : requestedLibraries) {
         Collection<? extends ModulePath> modules = library.getTestModules();
         if (modules.isEmpty()) {
           continue;

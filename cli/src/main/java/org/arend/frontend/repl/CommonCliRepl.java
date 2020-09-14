@@ -17,6 +17,7 @@ import org.arend.frontend.parser.BuildVisitor;
 import org.arend.frontend.parser.ReporterErrorListener;
 import org.arend.frontend.repl.action.*;
 import org.arend.library.Library;
+import org.arend.library.LibraryHeader;
 import org.arend.library.LibraryManager;
 import org.arend.library.SourceLibrary;
 import org.arend.module.ModuleLocation;
@@ -115,7 +116,7 @@ public abstract class CommonCliRepl extends Repl {
     myLibraryResolver = libraryResolver;
     myReplLibrary = Files.exists(pwd.resolve(FileUtils.LIBRARY_CONFIG_FILE))
         ? libraryResolver.registerLibrary(pwd)
-        : new FileSourceLibrary("Repl", pwd, null, null, null, modules, true, new ArrayList<>(), Range.unbound());
+        : new FileSourceLibrary("Repl", pwd, null, new LibraryHeader(modules, new ArrayList<>(), Range.unbound(), null, null));
     myModules = modules;
   }
   //endregion

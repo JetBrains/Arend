@@ -7,13 +7,11 @@ import org.arend.frontend.source.FileRawSource;
 import org.arend.frontend.ui.ArendCliUI;
 import org.arend.library.LibraryDependency;
 import org.arend.library.LibraryHeader;
-import org.arend.library.UnmodifiableSourceLibrary;
+import org.arend.library.PersistableSourceLibrary;
 import org.arend.source.BinarySource;
 import org.arend.source.FileBinarySource;
 import org.arend.source.GZIPStreamBinarySource;
 import org.arend.source.Source;
-import org.arend.util.Range;
-import org.arend.util.Version;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -21,42 +19,26 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
-public class FileSourceLibrary extends UnmodifiableSourceLibrary {
+public class FileSourceLibrary extends PersistableSourceLibrary {
   protected Path mySourceBasePath;
   protected Path myBinaryBasePath;
   protected Path myTestBasePath;
-  protected Path myExtBasePath;
-  protected String myExtMainClass;
-  protected Set<ModulePath> myModules;
+  protected LibraryHeader myLibraryHeader;
   protected List<ModulePath> myTestModules = Collections.emptyList();
-  protected List<LibraryDependency> myDependencies;
-  protected Range<Version> myLanguageVersion;
-  protected boolean myComplete;
 
   /**
    * Creates a new {@code UnmodifiableFileSourceLibrary}
    * @param name              the name of this library.
    * @param sourceBasePath    a path to the directory with raw source files.
    * @param binaryBasePath    a path to the directory with binary source files.
-   * @param extBasePath       a path to the directory with language extensions.
-   * @param extMainClass      the main class of the language extension.
-   * @param modules           the list of modules of this library.
-   * @param isComplete        true if {@code modules} contains all modules of this library, false otherwise.
-   * @param dependencies      the list of dependencies of this library.
-   * @param languageVersion   language versions appropriate for this library.
+   * @param libraryHeader     specifies parameters of the library.
    */
-  public FileSourceLibrary(String name, Path sourceBasePath, Path binaryBasePath, Path extBasePath, String extMainClass, Set<ModulePath> modules, boolean isComplete, List<LibraryDependency> dependencies, Range<Version> languageVersion) {
+  public FileSourceLibrary(String name, Path sourceBasePath, Path binaryBasePath, LibraryHeader libraryHeader) {
     super(name);
     mySourceBasePath = sourceBasePath;
     myBinaryBasePath = binaryBasePath;
-    myExtBasePath = extBasePath;
-    myExtMainClass = extMainClass;
-    myModules = modules;
-    myComplete = isComplete;
-    myLanguageVersion = languageVersion;
-    myDependencies = dependencies;
+    myLibraryHeader = libraryHeader;
   }
 
   public Path getSourceBasePath() {
@@ -101,7 +83,7 @@ public class FileSourceLibrary extends UnmodifiableSourceLibrary {
   @Nullable
   @Override
   protected LibraryHeader loadHeader(ErrorReporter errorReporter) {
-    return new LibraryHeader(myModules, myDependencies, myLanguageVersion, myExtBasePath, myExtMainClass);
+    return myLibraryHeader;
   }
 
   @Override
@@ -112,21 +94,11 @@ public class FileSourceLibrary extends UnmodifiableSourceLibrary {
   @NotNull
   @Override
   public List<? extends LibraryDependency> getDependencies() {
-    return myDependencies;
+    return myLibraryHeader == null ? Collections.emptyList() : myLibraryHeader.dependencies;
   }
 
   @Override
   public boolean containsModule(ModulePath modulePath) {
-    if (myComplete) {
-      return myModules.contains(modulePath);
-    }
-
-    Source source = getRawSource(modulePath);
-    if (source != null) {
-      return source.isAvailable();
-    }
-
-    source = getBinarySource(modulePath);
-    return source != null && source.isAvailable();
+    return myLibraryHeader != null && myLibraryHeader.modules.contains(modulePath);
   }
 }

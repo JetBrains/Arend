@@ -7,7 +7,6 @@ import org.arend.ext.module.ModulePath;
 import org.arend.ext.typechecking.DefinitionListener;
 import org.arend.ext.ui.ArendUI;
 import org.arend.extImpl.*;
-import org.arend.library.classLoader.FileClassLoaderDelegate;
 import org.arend.library.classLoader.MultiClassLoader;
 import org.arend.library.error.LibraryError;
 import org.arend.module.error.ExceptionError;
@@ -211,8 +210,8 @@ public abstract class SourceLibrary extends BaseLibrary {
     }
 
     MultiClassLoader<Library> classLoader = libraryManager.getClassLoader(isExternal());
-    if (header.extBasePath != null && header.extMainClass != null) {
-      classLoader.addDelegate(this, new FileClassLoaderDelegate(header.extBasePath));
+    if (header.classLoaderDelegate != null && header.extMainClass != null) {
+      classLoader.addDelegate(this, header.classLoaderDelegate);
     }
 
     Map<String, ArendExtension> dependenciesExtensions = new LinkedHashMap<>();
@@ -233,7 +232,7 @@ public abstract class SourceLibrary extends BaseLibrary {
 
     try {
       Class<?> extMainClass = null;
-      if (header.extBasePath != null && header.extMainClass != null) {
+      if (header.classLoaderDelegate != null && header.extMainClass != null) {
         extMainClass = classLoader.loadClass(header.extMainClass);
         if (!ArendExtension.class.isAssignableFrom(extMainClass)) {
           libraryManager.getLibraryErrorReporter().report(LibraryError.incorrectExtensionClass(getName()));
@@ -359,6 +358,16 @@ public abstract class SourceLibrary extends BaseLibrary {
     } else {
       return source.persist(this, referableConverter, errorReporter);
     }
+  }
+
+  public boolean persistUpdatedModules(ErrorReporter errorReporter) {
+    boolean ok = true;
+    for (ModulePath module : getUpdatedModules()) {
+      if (getModuleGroup(module, false) != null && !persistModule(module, IdReferableConverter.INSTANCE, errorReporter)) {
+        ok = false;
+      }
+    }
+    return ok;
   }
 
   public boolean deleteModule(ModulePath modulePath) {

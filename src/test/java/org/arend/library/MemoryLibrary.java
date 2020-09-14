@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-public class MemoryLibrary extends UnmodifiableSourceLibrary {
+public class MemoryLibrary extends PersistableSourceLibrary {
   private final Map<ModulePath, MemoryRawSource> myRawSources = new LinkedHashMap<>();
   private final Map<ModulePath, BinarySource> myBinarySources = new LinkedHashMap<>();
 
@@ -38,7 +38,7 @@ public class MemoryLibrary extends UnmodifiableSourceLibrary {
   @Nullable
   @Override
   protected LibraryHeader loadHeader(ErrorReporter errorReporter) {
-    return new LibraryHeader(new ArrayList<>(myRawSources.keySet()), Collections.emptyList(), Range.unbound(), null, null);
+    return new LibraryHeader(myRawSources.keySet(), Collections.emptyList(), Range.unbound(), null, null);
   }
 
   public void addModule(ModulePath module, String text) {

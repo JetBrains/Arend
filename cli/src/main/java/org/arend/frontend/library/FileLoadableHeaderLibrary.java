@@ -1,33 +1,30 @@
 package org.arend.frontend.library;
 
 import org.arend.ext.error.ErrorReporter;
-import org.arend.ext.module.ModulePath;
 import org.arend.library.LibraryConfig;
-import org.arend.library.LibraryDependency;
 import org.arend.library.LibraryHeader;
-import org.arend.library.error.LibraryIOError;
+import org.arend.library.classLoader.FileClassLoaderDelegate;
 import org.arend.util.FileUtils;
-import org.arend.util.Range;
-import org.arend.util.Version;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.Objects;
 
 public class FileLoadableHeaderLibrary extends FileSourceLibrary {
   private final LibraryConfig myConfig;
   private final Path myHeaderFile;
 
   public FileLoadableHeaderLibrary(LibraryConfig config, Path headerFile) {
-    super(config.getName(), null, null, null, null, Collections.emptySet(), config.getModules() != null, Collections.emptyList(), Range.unbound());
+    super(config.getName(), null, null, null);
     myConfig = config;
     myHeaderFile = headerFile;
   }
 
-  public Path getHeaderFile() {
-    return myHeaderFile;
+  @Override
+  public String getFullName() {
+    return myHeaderFile.toString();
   }
 
   @Nullable
@@ -45,25 +42,20 @@ public class FileLoadableHeaderLibrary extends FileSourceLibrary {
       myBinaryBasePath = myHeaderFile.getParent().resolve(myConfig.getBinariesDir());
     }
 
-    if (myConfig.getExtensionsDir() != null) {
-      myExtBasePath = myHeaderFile.getParent().resolve(myConfig.getExtensionsDir());
+    myLibraryHeader = LibraryHeader.fromConfig(myConfig, myHeaderFile.toString(), errorReporter);
+    if (myLibraryHeader == null) {
+      return null;
     }
-    myExtMainClass = myConfig.getExtensionMainClass();
 
-    myModules = new LinkedHashSet<>();
-    if (myConfig.getModules() != null) {
-      for (String module : myConfig.getModules()) {
-        ModulePath modulePath = FileUtils.modulePath(module);
-        if (modulePath != null) {
-          myModules.add(modulePath);
-        } else {
-          errorReporter.report(new LibraryIOError(myHeaderFile.toString(), "Illegal module name: " + module));
-        }
-      }
-    } else {
+    if (myLibraryHeader.modules == null) {
+      myLibraryHeader.modules = new LinkedHashSet<>();
       if (mySourceBasePath != null) {
-        FileUtils.getModules(mySourceBasePath, FileUtils.EXTENSION, myModules, errorReporter);
+        FileUtils.getModules(mySourceBasePath, FileUtils.EXTENSION, myLibraryHeader.modules, errorReporter);
       }
+    }
+
+    if (myConfig.getExtensionsDir() != null) {
+      myLibraryHeader.classLoaderDelegate = new FileClassLoaderDelegate(myHeaderFile.getParent().resolve(myConfig.getExtensionsDir()));
     }
 
     if (myTestBasePath != null) {
@@ -71,27 +63,19 @@ public class FileLoadableHeaderLibrary extends FileSourceLibrary {
       FileUtils.getModules(myTestBasePath, FileUtils.EXTENSION, myTestModules, errorReporter);
     }
 
-    if (myConfig.getDependencies() != null) {
-      myDependencies = new ArrayList<>();
-      for (String library : myConfig.getDependencies()) {
-        if (FileUtils.isLibraryName(library)) {
-          myDependencies.add(new LibraryDependency(library));
-        } else {
-          errorReporter.report(new LibraryIOError(myHeaderFile.toString(), "Illegal library name: " + library));
-        }
-      }
-    }
+    return myLibraryHeader;
+  }
 
-    if (myConfig.getLangVersion() != null) {
-      Range<Version> range = Range.parseVersionRange(myConfig.getLangVersion());
-      if (range != null) {
-        myLanguageVersion = range;
-      } else {
-        errorReporter.report(new LibraryIOError(myHeaderFile.toString(), "Cannot parse language version: " + myConfig.getLangVersion()));
-        return null;
-      }
-    }
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    FileLoadableHeaderLibrary that = (FileLoadableHeaderLibrary) o;
+    return myHeaderFile.equals(that.myHeaderFile);
+  }
 
-    return new LibraryHeader(myModules, myDependencies, myLanguageVersion, myExtBasePath, myExtMainClass);
+  @Override
+  public int hashCode() {
+    return Objects.hash(myHeaderFile);
   }
 }
