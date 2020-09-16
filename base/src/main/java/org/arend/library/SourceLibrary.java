@@ -282,10 +282,16 @@ public abstract class SourceLibrary extends BaseLibrary {
         sourceLoader.loadRawSources();
       }
 
-      if (!myFlags.contains(Flag.RECOMPILE)) {
+      if (!myFlags.contains(Flag.RECOMPILE) || isExternal()) {
         DefinitionListener definitionListener = myExtension.getDefinitionListener();
         for (ModulePath module : header.modules) {
-          sourceLoader.loadBinary(module, keyRegistry, definitionListener);
+          if (!sourceLoader.loadBinary(module, keyRegistry, definitionListener) && isExternal()) {
+            libraryManager.getLibraryErrorReporter().report(LibraryError.moduleLoading(module, getName()));
+            if (!mustBeLoaded()) {
+              libraryManager.afterLibraryLoading(this, false);
+              return false;
+            }
+          }
         }
       }
     } catch (Throwable e) {
