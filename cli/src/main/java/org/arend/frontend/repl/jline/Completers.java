@@ -1,6 +1,6 @@
 package org.arend.frontend.repl.jline;
 
-import org.arend.frontend.repl.CommonCliRepl;
+import org.arend.util.FileUtils;
 import org.jline.reader.Candidate;
 import org.jline.reader.Completer;
 import org.jline.reader.LineReader;
@@ -194,7 +194,7 @@ public class Completers {
     }
 
     protected Path getUserHome() {
-      return CommonCliRepl.USER_HOME;
+      return FileUtils.USER_HOME;
     }
 
     protected String getSeparator(boolean useForwardSlash) {

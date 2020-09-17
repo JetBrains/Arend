@@ -6,6 +6,7 @@ import org.arend.ext.module.LongName;
 import org.arend.ext.module.ModulePath;
 import org.arend.library.error.LibraryIOError;
 import org.arend.module.error.ExceptionError;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -21,6 +22,11 @@ public class FileUtils {
   public static final String LIBRARY_CONFIG_FILE = "arend.yaml";
   public static final String USER_CONFIG_DIR = ".arend";
   public static final String ZIP_EXTENSION = ".zip";
+  public static final @NotNull Path USER_HOME = Paths.get(System.getProperty("user.home")).toAbsolutePath().normalize();
+
+  public static Path defaultLibrariesRoot() {
+    return USER_HOME.resolve(USER_CONFIG_DIR).resolve("libs");
+  }
 
   private static Path baseFile(Path root, ModulePath modulePath) {
     return root.resolve(Paths.get("", modulePath.toArray()));

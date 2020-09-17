@@ -51,7 +51,6 @@ import java.util.function.Supplier;
 
 public abstract class CommonCliRepl extends Repl {
   private final Properties properties = new Properties();
-  public static final @NotNull Path USER_HOME = Paths.get(System.getProperty("user.home")).toAbsolutePath().normalize();
   public static final @NotNull String APP_NAME = "Arend REPL";
 
   public @NotNull Path pwd = Paths.get("").toAbsolutePath();
@@ -124,7 +123,7 @@ public abstract class CommonCliRepl extends Repl {
   public static final @NotNull String NORMALIZATION_KEY = "normalization";
   public static final @NotNull String PROMPT_KEY = "prompt";
   public static final @NotNull String REPL_CONFIG_FILE = "repl_config.properties";
-  private static final Path config = USER_HOME.resolve(FileUtils.USER_CONFIG_DIR).resolve(REPL_CONFIG_FILE);
+  private static final Path config = FileUtils.USER_HOME.resolve(FileUtils.USER_CONFIG_DIR).resolve(REPL_CONFIG_FILE);
 
   {
     try {

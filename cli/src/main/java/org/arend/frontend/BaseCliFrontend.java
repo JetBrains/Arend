@@ -158,7 +158,7 @@ public abstract class BaseCliFrontend {
     var replKind = cmdLine.getOptionValue("i", "jline");
     var libDirStrings = cmdLine.hasOption("L")
         ? cmdLine.getOptionValues("L")
-        : new String[0];
+        : new String[] { FileUtils.defaultLibrariesRoot().toString() };
 
     // Get library directories
     var libDirs = new ArrayList<Path>(libDirStrings.length);
