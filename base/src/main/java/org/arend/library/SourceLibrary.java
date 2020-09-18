@@ -203,7 +203,7 @@ public abstract class SourceLibrary extends BaseLibrary {
       return false;
     }
     if (!header.languageVersionRange.inRange(Prelude.VERSION)) {
-      libraryManager.getLibraryErrorReporter().report(LibraryError.incorrectVersion(header.languageVersionRange));
+      libraryManager.showIncorrectLanguageVersionError(getName(), header.languageVersionRange);
       if (!mustBeLoaded()) {
         return false;
       }

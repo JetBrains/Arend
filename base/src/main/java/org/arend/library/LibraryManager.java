@@ -12,6 +12,8 @@ import org.arend.naming.scope.Scope;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
+import org.arend.util.Range;
+import org.arend.util.Version;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -156,6 +158,14 @@ public class LibraryManager {
     return null;
   }
 
+  public void showLibraryNotFoundError(String libraryName) {
+    myLibraryErrorReporter.report(LibraryError.notFound(libraryName));
+  }
+
+  public void showIncorrectLanguageVersionError(String libraryName, Range<Version> range) {
+    myLibraryErrorReporter.report(LibraryError.incorrectVersion(libraryName, range));
+  }
+
   /**
    * Loads a dependency of a given library together with its dependencies and registers them in this library manager.
    *
@@ -168,7 +178,7 @@ public class LibraryManager {
   public Library loadDependency(Library library, String dependencyName, TypecheckingOrderingListener typechecking) {
     Library dependency = myLibraryResolver.resolve(library, dependencyName);
     if (dependency == null) {
-      myLibraryErrorReporter.report(LibraryError.notFound(dependencyName));
+      showLibraryNotFoundError(dependencyName);
       return null;
     }
 

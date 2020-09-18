@@ -58,8 +58,8 @@ public class LibraryError extends GeneralError {
     return new LibraryError(Level.INFO, "Library cannot be typechecked", Stream.of(libraryName));
   }
 
-  public static LibraryError incorrectVersion(Range<Version> range) {
-    return new LibraryError("Library supports language version " + range.checkRange(Prelude.VERSION) + ", but current language version is " + Prelude.VERSION, Stream.empty());
+  public static LibraryError incorrectVersion(String libraryName, Range<Version> range) {
+    return new LibraryError("Library supports language version " + range.checkRange(Prelude.VERSION) + ", but current language version is " + Prelude.VERSION, Stream.of(libraryName));
   }
 
   public static LibraryError incorrectExtensionClass(String libraryName) {
