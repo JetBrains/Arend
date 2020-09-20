@@ -50,12 +50,16 @@ public class LibraryError extends GeneralError {
     return new LibraryError("Module '" + modulePath + "' is not found in library", Stream.of(libraryName));
   }
 
+  public static LibraryError moduleLoading(ModulePath modulePath, String libraryName) {
+    return new LibraryError("Cannot load module '" + modulePath + "' in library", Stream.of(libraryName));
+  }
+
   public static LibraryError incorrectLibrary(String libraryName) {
     return new LibraryError(Level.INFO, "Library cannot be typechecked", Stream.of(libraryName));
   }
 
-  public static LibraryError incorrectVersion(Range<Version> range) {
-    return new LibraryError("Library supports language version " + range.checkRange(Prelude.VERSION) + ", but current language version is " + Prelude.VERSION, Stream.empty());
+  public static LibraryError incorrectVersion(String libraryName, Range<Version> range) {
+    return new LibraryError("Library supports language version " + range.checkRange(Prelude.VERSION) + ", but current language version is " + Prelude.VERSION, Stream.of(libraryName));
   }
 
   public static LibraryError incorrectExtensionClass(String libraryName) {

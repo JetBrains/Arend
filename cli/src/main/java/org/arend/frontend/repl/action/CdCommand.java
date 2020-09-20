@@ -2,12 +2,12 @@ package org.arend.frontend.repl.action;
 
 import org.arend.frontend.repl.CommonCliRepl;
 import org.arend.repl.action.DirectoryArgumentCommand;
+import org.arend.util.FileUtils;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.function.Supplier;
 
 public final class CdCommand implements CliReplCommand, DirectoryArgumentCommand {
@@ -19,7 +19,7 @@ public final class CdCommand implements CliReplCommand, DirectoryArgumentCommand
   @Override
   public void invoke(@NotNull String line, @NotNull CommonCliRepl api, @NotNull Supplier<@NotNull String> scanner) {
     if (line.isBlank()) {
-      api.pwd = CommonCliRepl.USER_HOME;
+      api.pwd = FileUtils.USER_HOME;
       return;
     }
     Path newPath = api.pwd.resolve(line).normalize();

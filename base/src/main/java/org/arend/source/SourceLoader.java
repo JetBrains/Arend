@@ -180,7 +180,7 @@ public final class SourceLoader {
     binarySource.setKeyRegistry(keyRegistry);
     binarySource.setDefinitionListener(definitionListener);
 
-    if (myLibrary.hasRawSources()) {
+    if (!myLibrary.isExternal() && myLibrary.hasRawSources()) {
       Source rawSource = myLibrary.getRawSource(modulePath);
       if (rawSource != null && rawSource.isAvailable() && binarySource.getTimeStamp() < rawSource.getTimeStamp()) {
         return false;

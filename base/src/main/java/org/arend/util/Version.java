@@ -49,6 +49,10 @@ public class Version implements Comparable<Version> {
     this.patch = patch;
   }
 
+  public String getLongString() {
+    return major + "." + minor + "." + patch;
+  }
+
   @Override
   public String toString() {
     return BigInteger.ZERO.equals(patch)

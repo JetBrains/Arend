@@ -82,17 +82,18 @@ public class CorrespondedSubDefVisitor implements
     if (params instanceof DataDefinition) coreDef = (DataDefinition) params;
     else return null;
     return def.getConstructorClauses()
-        .stream()
-        .flatMap(clause -> clause.getConstructors().stream())
-        .map(cons -> {
-          Constructor coreC = coreDef.getConstructor(cons.getData());
-          if (coreC == null) return null;
-          return visitor.visitSigmaParameters(cons.getParameters(), coreC.getParameters());
-        })
-        .filter(Objects::nonNull)
-        .findFirst()
-        .orElseGet(() -> visitor
-            .visitSigmaParameters(def.getParameters(), coreDef.getParameters()));
+      .stream()
+      .map(Concrete.ConstructorClause::getConstructors)
+      .flatMap(Collection::stream)
+      .map(cons -> {
+        Constructor coreC = coreDef.getConstructor(cons.getData());
+        if (coreC == null) return null;
+        return visitor.visitSigmaParameters(cons.getParameters(), coreC.getParameters());
+      })
+      .filter(Objects::nonNull)
+      .findFirst()
+      .orElseGet(() -> visitor
+        .visitSigmaParameters(def.getParameters(), coreDef.getParameters()));
   }
 
   @Override
@@ -102,25 +103,25 @@ public class CorrespondedSubDefVisitor implements
     else return null;
     for (Concrete.ClassElement concreteRaw : def.getElements())
       if (concreteRaw instanceof Concrete.ClassField) {
-        Concrete.ClassField concrete = (Concrete.ClassField) concreteRaw;
+        var concrete = (Concrete.ClassField) concreteRaw;
         TCFieldReferable referable = concrete.getData();
         Optional<Expression> field = coreDef.getFields()
-            .stream()
-            .filter(classField -> classField.getReferable() == referable)
-            .map(ClassField::getResultType)
-            .findFirst();
+          .stream()
+          .filter(classField -> classField.getReferable() == referable)
+          .map(ClassField::getResultType)
+          .findFirst();
         if (field.isEmpty()) continue;
         Expression fieldExpr = field.get();
-        List<Concrete.TypeParameter> concreteParameters = concrete.getParameters();
+        var parameters = concrete.getParameters();
         // Clone the list and remove the first "this" parameter
-        List<Concrete.TypeParameter> parameters = concreteParameters.isEmpty()
-            ? Collections.emptyList() : concreteParameters.subList(1, concreteParameters.size());
+        parameters = parameters.isEmpty()
+            ? Collections.emptyList() : parameters.subList(1, parameters.size());
         var accept = !parameters.isEmpty() && fieldExpr instanceof PiExpression
-            ? visitor.visitPiImpl(parameters, concrete.getResultType(), (PiExpression) fieldExpr)
-            : concrete.getResultType().accept(visitor, fieldExpr);
+          ? visitor.visitPiImpl(parameters, concrete.getResultType(), (PiExpression) fieldExpr)
+          : concrete.getResultType().accept(visitor, fieldExpr);
         if (accept != null) return accept;
       } else if (concreteRaw instanceof Concrete.ClassFieldImpl) {
-        Concrete.ClassFieldImpl concrete = (Concrete.ClassFieldImpl) concreteRaw;
+        var concrete = (Concrete.ClassFieldImpl) concreteRaw;
         Referable implementedField = concrete.getImplementedField();
         Optional<AbsExpression> field = coreDef.getFields()
             .stream()

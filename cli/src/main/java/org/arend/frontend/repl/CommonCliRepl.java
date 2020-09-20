@@ -17,6 +17,7 @@ import org.arend.frontend.parser.BuildVisitor;
 import org.arend.frontend.parser.ReporterErrorListener;
 import org.arend.frontend.repl.action.*;
 import org.arend.library.Library;
+import org.arend.library.LibraryHeader;
 import org.arend.library.LibraryManager;
 import org.arend.library.SourceLibrary;
 import org.arend.module.ModuleLocation;
@@ -28,6 +29,7 @@ import org.arend.prelude.PreludeResourceLibrary;
 import org.arend.repl.Repl;
 import org.arend.repl.action.NormalizeCommand;
 import org.arend.repl.action.ReplCommand;
+import org.arend.term.NamespaceCommand;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.FileGroup;
 import org.arend.typechecking.LibraryArendExtensionProvider;
@@ -49,7 +51,6 @@ import java.util.function.Supplier;
 
 public abstract class CommonCliRepl extends Repl {
   private final Properties properties = new Properties();
-  public static final @NotNull Path USER_HOME = Paths.get(System.getProperty("user.home")).toAbsolutePath().normalize();
   public static final @NotNull String APP_NAME = "Arend REPL";
 
   public @NotNull Path pwd = Paths.get("").toAbsolutePath();
@@ -114,7 +115,7 @@ public abstract class CommonCliRepl extends Repl {
     myLibraryResolver = libraryResolver;
     myReplLibrary = Files.exists(pwd.resolve(FileUtils.LIBRARY_CONFIG_FILE))
         ? libraryResolver.registerLibrary(pwd)
-        : new FileSourceLibrary("Repl", pwd, null, null, null, modules, true, new ArrayList<>(), Range.unbound());
+        : new FileSourceLibrary("Repl", pwd, null, new LibraryHeader(modules, new ArrayList<>(), Range.unbound(), null, null));
     myModules = modules;
   }
   //endregion
@@ -122,7 +123,7 @@ public abstract class CommonCliRepl extends Repl {
   public static final @NotNull String NORMALIZATION_KEY = "normalization";
   public static final @NotNull String PROMPT_KEY = "prompt";
   public static final @NotNull String REPL_CONFIG_FILE = "repl_config.properties";
-  private static final Path config = USER_HOME.resolve(FileUtils.USER_CONFIG_DIR).resolve(REPL_CONFIG_FILE);
+  private static final Path config = FileUtils.USER_HOME.resolve(FileUtils.USER_CONFIG_DIR).resolve(REPL_CONFIG_FILE);
 
   {
     try {
@@ -212,6 +213,22 @@ public abstract class CommonCliRepl extends Repl {
   }
 
   @Override
+  protected void loadPotentialUnloadedModules(Collection<? extends NamespaceCommand> namespaceCommands) {
+    var moduleScopeProvider = getAvailableModuleScopeProvider();
+    List<ModulePath> modules = new ArrayList<>();
+    for (var namespaceCommand : namespaceCommands) {
+      if (namespaceCommand.getKind() == NamespaceCommand.Kind.IMPORT) {
+        var module = new ModulePath(namespaceCommand.getPath());
+        var scope = moduleScopeProvider.forModule(module);
+        if (scope == null) {
+          modules.add(module);
+        }
+      }
+    }
+    loadModules(modules);
+  }
+
+  @Override
   protected final @Nullable FileGroup parseStatements(@NotNull String line) {
     var fileGroup = buildVisitor().visitStatements(parse(line).statements());
     if (fileGroup != null)
@@ -259,6 +276,13 @@ public abstract class CommonCliRepl extends Repl {
     myLibraryManager.loadLibrary(myReplLibrary, myTypechecking);
     typecheckLibrary(myReplLibrary);
     return getAvailableModuleScopeProvider().forModule(modulePath);
+  }
+
+  public final void loadModules(Collection<@NotNull ModulePath> modulePaths) {
+    if (myModules.addAll(modulePaths))
+      myLibraryManager.unloadLibrary(myReplLibrary);
+    myLibraryManager.loadLibrary(myReplLibrary, myTypechecking);
+    typecheckLibrary(myReplLibrary);
   }
 
   /**

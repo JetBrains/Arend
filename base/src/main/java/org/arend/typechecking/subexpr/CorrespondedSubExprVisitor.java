@@ -357,7 +357,7 @@ public class CorrespondedSubExprVisitor implements
   @Override
   public Pair<Expression, Concrete.Expression> visitSigma(Concrete.SigmaExpression expr, Expression coreExpr) {
     if (matchesSubExpr(expr)) return new Pair<>(coreExpr, expr);
-    SigmaExpression coreSigmaExpr = coreExpr.cast(SigmaExpression.class);
+    var coreSigmaExpr = coreExpr.cast(SigmaExpression.class);
     if (coreSigmaExpr == null)
       return nullWithError(SubExprError.mismatch(coreExpr));
     return visitSigmaParameters(expr.getParameters(), coreSigmaExpr.getParameters());

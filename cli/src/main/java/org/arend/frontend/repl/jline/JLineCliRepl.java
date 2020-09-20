@@ -63,7 +63,7 @@ public class JLineCliRepl extends CommonCliRepl {
   }
 
   public void runRepl() {
-    Path dir = USER_HOME.resolve(FileUtils.USER_CONFIG_DIR);
+    Path dir = FileUtils.USER_HOME.resolve(FileUtils.USER_CONFIG_DIR);
     Path history = dir.resolve("history");
     try {
       // Assuming user.home exists
