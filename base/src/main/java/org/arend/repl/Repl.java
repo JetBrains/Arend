@@ -137,6 +137,7 @@ public abstract class Repl {
     loadPotentialUnloadedModules(group.getNamespaceCommands());
     var scope = ScopeFactory.forGroup(group, moduleScopeProvider);
     myReplScope.addScope(scope);
+    myReplScope.setCurrentLineScope(null);
     new DefinitionResolveNameVisitor(myTypechecking.getConcreteProvider(), null, myErrorReporter)
         .resolveGroupWithTypes(group, myScope);
     if (checkErrors()) {
