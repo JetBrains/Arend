@@ -2,7 +2,6 @@ package org.arend.library;
 
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.module.ModulePath;
-import org.arend.source.BinarySource;
 import org.arend.source.Source;
 import org.arend.term.group.ChildGroup;
 import org.arend.util.Range;
@@ -13,7 +12,7 @@ import java.util.*;
 
 public class MemoryLibrary extends PersistableSourceLibrary {
   private final Map<ModulePath, MemoryRawSource> myRawSources = new LinkedHashMap<>();
-  private final Map<ModulePath, BinarySource> myBinarySources = new LinkedHashMap<>();
+  private final Map<ModulePath, MemoryBinarySource> myBinarySources = new LinkedHashMap<>();
 
   protected MemoryLibrary() {
     super("test_library");
@@ -31,7 +30,7 @@ public class MemoryLibrary extends PersistableSourceLibrary {
 
   @Nullable
   @Override
-  public BinarySource getBinarySource(ModulePath modulePath) {
+  public MemoryBinarySource getPersistableBinarySource(ModulePath modulePath) {
     return myBinarySources.get(modulePath);
   }
 

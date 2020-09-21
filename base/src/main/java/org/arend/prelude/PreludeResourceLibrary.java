@@ -3,8 +3,8 @@ package org.arend.prelude;
 import org.arend.ext.module.ModulePath;
 import org.arend.library.LibraryManager;
 import org.arend.naming.reference.converter.ReferableConverter;
-import org.arend.source.BinarySource;
 import org.arend.source.GZIPStreamBinarySource;
+import org.arend.source.PersistableBinarySource;
 import org.arend.source.Source;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.jetbrains.annotations.Nullable;
@@ -45,7 +45,7 @@ public class PreludeResourceLibrary extends PreludeLibrary {
 
   @Nullable
   @Override
-  public BinarySource getBinarySource(ModulePath modulePath) {
+  public PersistableBinarySource getPersistableBinarySource(ModulePath modulePath) {
     return new GZIPStreamBinarySource(new PreludeResourceSource());
   }
 

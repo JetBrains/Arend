@@ -8,10 +8,7 @@ import org.arend.library.*;
 import org.arend.library.classLoader.ZipClassLoaderDelegate;
 import org.arend.library.error.LibraryIOError;
 import org.arend.module.error.ExceptionError;
-import org.arend.source.BinarySource;
-import org.arend.source.GZIPStreamBinarySource;
-import org.arend.source.Source;
-import org.arend.source.ZipFileBinarySource;
+import org.arend.source.*;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.arend.util.FileUtils;
 import org.jetbrains.annotations.NotNull;
@@ -60,6 +57,11 @@ public class ZipSourceLibrary extends UnmodifiableSourceLibrary {
     }
     ZipEntry entry = myZipFile.getEntry(myBinariesDir + String.join("/", modulePath.toList()) + FileUtils.SERIALIZED_EXTENSION);
     return entry == null ? null : new GZIPStreamBinarySource(new ZipFileBinarySource(modulePath, myZipFile, entry));
+  }
+
+  @Override
+  public @Nullable PersistableBinarySource getPersistableBinarySource(ModulePath modulePath) {
+    return null;
   }
 
   @Override
