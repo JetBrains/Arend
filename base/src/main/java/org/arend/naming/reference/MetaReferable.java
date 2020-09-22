@@ -95,7 +95,8 @@ public class MetaReferable implements TCReferable, MetaRef {
 
   @Override
   public @NotNull GlobalReferable getUnderlyingReferable() {
-    return underlyingReferable == null ? this : underlyingReferable.get();
+    GlobalReferable result = underlyingReferable == null ? null : underlyingReferable.get();
+    return result == null ? this : result;
   }
 
   @Override

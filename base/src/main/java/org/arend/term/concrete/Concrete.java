@@ -483,14 +483,14 @@ public final class Concrete {
     private final LevelExpression myPLevel;
     private final LevelExpression myHLevel;
 
-    public ReferenceExpression(Object data, Referable referable, LevelExpression pLevel, LevelExpression hLevel) {
+    public ReferenceExpression(Object data, @NotNull Referable referable, LevelExpression pLevel, LevelExpression hLevel) {
       super(data);
       myReferent = referable;
       myPLevel = pLevel;
       myHLevel = hLevel;
     }
 
-    public ReferenceExpression(Object data, Referable referable) {
+    public ReferenceExpression(Object data, @NotNull Referable referable) {
       this(data, referable, null, null);
     }
 
