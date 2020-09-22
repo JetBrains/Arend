@@ -86,7 +86,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
         return null;
       }).collect(Collectors.toList());
     var term = def.getTerm();
-    Concrete.Expression body = term != null ? term.accept(this, null) : null;
+    var body = term != null ? term.accept(this, null) : null;
     var referable = myReferableConverter.toDataLocatedReferable(def.getReferable());
     if (!(referable instanceof MetaReferable)) {
       throw new IllegalStateException("Expected MetaReferable, got: " + referable.getClass());
