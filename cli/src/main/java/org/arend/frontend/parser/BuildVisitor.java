@@ -438,7 +438,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   private ConcreteLocatedReferable makeReferable(Position position, String name, Precedence precedence, String aliasName, Precedence aliasPrecedence, ChildGroup parent, GlobalReferable.Kind kind) {
     return parent instanceof FileGroup
       ? new ConcreteLocatedReferable(position, name, precedence, aliasName, aliasPrecedence, myModule, kind)
-      : new ConcreteLocatedReferable(position, name, precedence, aliasName, aliasPrecedence, (TCDefReferable) parent.getReferable(), kind);
+      : new ConcreteLocatedReferable(position, name, precedence, aliasName, aliasPrecedence, (TCReferable) parent.getReferable(), kind);
   }
 
   private StaticGroup visitDefInstance(DefInstanceContext ctx, ChildGroup parent, TCDefReferable enclosingClass) {
@@ -564,7 +564,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     String name = defId.ID().getText();
     var precedence = visitPrecedence(defId.precedence());
     var alias = visitAlias(defId.alias());
-    var reference = new MetaReferable(precedence, name, alias.proj2, alias.proj1, "", null, null, parent.getReferable());
+    var reference = new MetaReferable(precedence, name, alias.proj2, alias.proj1, "", null, null, (TCReferable) parent.getReferable());
     var body = ctx.expr();
     if (body != null) {
       var params = ctx.ID().stream()
@@ -679,7 +679,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
           if (usedDefinitions == null) {
             usedDefinitions = new ArrayList<>();
           }
-          usedDefinitions.add((TCDefReferable) subgroup.getReferable());
+          usedDefinitions.add((ConcreteLocatedReferable) subgroup.getReferable());
         }
       }
     }
@@ -853,7 +853,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     Pair<String, Precedence> alias = visitAlias(defId.alias());
     reference = parent instanceof FileGroup
       ? new ConcreteClassReferable(pos, name, prec, alias.proj1, alias.proj2, fieldReferables, superClasses, myModule)
-      : new ConcreteClassReferable(pos, name, prec, alias.proj1, alias.proj2, fieldReferables, superClasses, (TCDefReferable) parent.getReferable());
+      : new ConcreteClassReferable(pos, name, prec, alias.proj1, alias.proj2, fieldReferables, superClasses, (TCReferable) parent.getReferable());
     ClassGroup resultGroup = new ClassGroup(reference, fieldReferables, dynamicSubgroups, staticSubgroups, namespaceCommands, parent);
     reference.setGroup(resultGroup);
     boolean isRecord = ctx.classKw() instanceof ClassKwRecordContext;
