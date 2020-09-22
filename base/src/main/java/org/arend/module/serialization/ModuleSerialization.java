@@ -10,20 +10,22 @@ import org.arend.naming.reference.*;
 import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.source.error.LocationError;
 import org.arend.term.group.Group;
+import org.arend.typechecking.order.dependency.DependencyListener;
 
 import java.util.*;
 
 public class ModuleSerialization {
   private final ErrorReporter myErrorReporter;
   private final SimpleCallTargetIndexProvider myCallTargetIndexProvider = new SimpleCallTargetIndexProvider();
-  private final DefinitionSerialization myDefinitionSerialization = new DefinitionSerialization(myCallTargetIndexProvider);
+  private final DefinitionSerialization myDefinitionSerialization;
   private final Set<Integer> myCurrentDefinitions = new HashSet<>();
   private boolean myComplete;
 
   static final int VERSION = 5;
 
-  public ModuleSerialization(ErrorReporter errorReporter) {
+  public ModuleSerialization(ErrorReporter errorReporter, DependencyListener dependencyListener) {
     myErrorReporter = errorReporter;
+    myDefinitionSerialization = new DefinitionSerialization(myCallTargetIndexProvider, dependencyListener);
   }
 
   public ModuleProtos.Module writeModule(Group group, ModulePath modulePath, ReferableConverter referableConverter) {
@@ -37,12 +39,12 @@ public class ModuleSerialization {
 
     // Now write the call target tree
     Map<ModulePath, Map<String, CallTargetTree>> moduleCallTargets = new HashMap<>();
-    for (Map.Entry<Definition, Integer> entry : myCallTargetIndexProvider.getCallTargets()) {
+    for (Map.Entry<TCReferable, Integer> entry : myCallTargetIndexProvider.getCallTargets()) {
       if (myCurrentDefinitions.contains(entry.getValue())) {
         continue;
       }
 
-      TCReferable targetReferable = entry.getKey().getReferable();
+      TCReferable targetReferable = entry.getKey();
       List<String> longName = new ArrayList<>();
       ModuleLocation targetModuleLocation = LocatedReferable.Helper.getLocation(targetReferable, longName);
       if (targetModuleLocation == null || longName.isEmpty()) {

@@ -19,4 +19,9 @@ public class DummyDependencyListener implements DependencyListener {
   public Set<? extends TCReferable> update(TCReferable definition) {
     return Collections.emptySet();
   }
+
+  @Override
+  public Set<? extends TCReferable> getDependencies(TCReferable definition) {
+    return Collections.emptySet();
+  }
 }

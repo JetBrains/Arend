@@ -4,6 +4,7 @@ import org.arend.ext.error.ErrorReporter;
 import org.arend.library.LibraryConfig;
 import org.arend.library.LibraryHeader;
 import org.arend.library.classLoader.FileClassLoaderDelegate;
+import org.arend.typechecking.order.dependency.DependencyListener;
 import org.arend.util.FileUtils;
 import org.jetbrains.annotations.Nullable;
 
@@ -16,8 +17,8 @@ public class FileLoadableHeaderLibrary extends FileSourceLibrary {
   private final LibraryConfig myConfig;
   private final Path myHeaderFile;
 
-  public FileLoadableHeaderLibrary(LibraryConfig config, Path headerFile) {
-    super(config.getName(), null, null, null);
+  public FileLoadableHeaderLibrary(LibraryConfig config, Path headerFile, DependencyListener dependencyListener) {
+    super(config.getName(), null, null, null, dependencyListener);
     myConfig = config;
     myHeaderFile = headerFile;
   }

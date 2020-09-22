@@ -8,6 +8,7 @@ import org.arend.library.*;
 import org.arend.library.error.LibraryIOError;
 import org.arend.library.error.MultipleLibraries;
 import org.arend.library.resolver.LibraryResolver;
+import org.arend.typechecking.order.dependency.DependencyListener;
 import org.arend.util.FileUtils;
 import org.jetbrains.annotations.Nullable;
 
@@ -20,10 +21,12 @@ public class FileLibraryResolver implements LibraryResolver {
   private final List<Path> myLibDirs;
   private final ErrorReporter myErrorReporter;
   private final Map<String, UnmodifiableSourceLibrary> myLibraries = new HashMap<>();
+  private final DependencyListener myDependencyListener;
 
-  public FileLibraryResolver(List<Path> libDirs, ErrorReporter errorReporter) {
+  public FileLibraryResolver(List<Path> libDirs, ErrorReporter errorReporter, DependencyListener dependencyListener) {
     myLibDirs = libDirs;
     myErrorReporter = errorReporter;
+    myDependencyListener = dependencyListener;
   }
 
   private FileLoadableHeaderLibrary getLibrary(Path headerFile) {
@@ -41,7 +44,7 @@ public class FileLibraryResolver implements LibraryResolver {
       if (config.getSourcesDir() == null) {
         config.setSourcesDir(headerFile.getParent().toString());
       }
-      return new FileLoadableHeaderLibrary(config, headerFile);
+      return new FileLoadableHeaderLibrary(config, headerFile, myDependencyListener);
     } catch (IOException e) {
       myErrorReporter.report(new LibraryIOError(headerFile.toString(), "Failed to read header file", e.getLocalizedMessage()));
       return null;

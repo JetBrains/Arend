@@ -12,6 +12,7 @@ import org.arend.source.BinarySource;
 import org.arend.source.FileBinarySource;
 import org.arend.source.GZIPStreamBinarySource;
 import org.arend.source.Source;
+import org.arend.typechecking.order.dependency.DependencyListener;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -26,19 +27,21 @@ public class FileSourceLibrary extends PersistableSourceLibrary {
   protected Path myTestBasePath;
   protected LibraryHeader myLibraryHeader;
   protected List<ModulePath> myTestModules = Collections.emptyList();
+  private final DependencyListener myDependencyListener;
 
   /**
    * Creates a new {@code UnmodifiableFileSourceLibrary}
-   * @param name              the name of this library.
-   * @param sourceBasePath    a path to the directory with raw source files.
-   * @param binaryBasePath    a path to the directory with binary source files.
-   * @param libraryHeader     specifies parameters of the library.
+   * @param name                the name of this library.
+   * @param sourceBasePath      a path to the directory with raw source files.
+   * @param binaryBasePath      a path to the directory with binary source files.
+   * @param libraryHeader       specifies parameters of the library.
    */
-  public FileSourceLibrary(String name, Path sourceBasePath, Path binaryBasePath, LibraryHeader libraryHeader) {
+  public FileSourceLibrary(String name, Path sourceBasePath, Path binaryBasePath, LibraryHeader libraryHeader, DependencyListener dependencyListener) {
     super(name);
     mySourceBasePath = sourceBasePath;
     myBinaryBasePath = binaryBasePath;
     myLibraryHeader = libraryHeader;
+    myDependencyListener = dependencyListener;
   }
 
   public Path getSourceBasePath() {
@@ -89,6 +92,11 @@ public class FileSourceLibrary extends PersistableSourceLibrary {
   @Override
   public boolean supportsPersisting() {
     return myBinaryBasePath != null && !isExternal();
+  }
+
+  @Override
+  public @NotNull DependencyListener getDependencyListener() {
+    return myDependencyListener;
   }
 
   @NotNull

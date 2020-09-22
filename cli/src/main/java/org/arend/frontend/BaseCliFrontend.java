@@ -30,6 +30,8 @@ import org.arend.typechecking.LibraryArendExtensionProvider;
 import org.arend.typechecking.doubleChecker.CoreModuleChecker;
 import org.arend.typechecking.error.local.GoalError;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
+import org.arend.typechecking.order.dependency.DependencyListener;
+import org.arend.typechecking.order.dependency.MetaDependencyCollector;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.arend.util.FileUtils;
 import org.arend.util.Range;
@@ -48,6 +50,7 @@ public abstract class BaseCliFrontend {
   // Typechecking
   private final ListErrorReporter myErrorReporter = new ListErrorReporter();
   private final Map<ModulePath, GeneralError.Level> myModuleResults = new LinkedHashMap<>();
+  private final DependencyListener myDependencyCollector = new MetaDependencyCollector();
 
   // Status information
   private boolean myExitWithError = false;
@@ -57,7 +60,7 @@ public abstract class BaseCliFrontend {
   };
 
   // Libraries
-  private final FileLibraryResolver myLibraryResolver = new FileLibraryResolver(new ArrayList<>(), mySystemErrErrorReporter);
+  private final FileLibraryResolver myLibraryResolver = new FileLibraryResolver(new ArrayList<>(), mySystemErrErrorReporter, myDependencyCollector);
   private final LibraryManager myLibraryManager = new TimedLibraryManager(myLibraryResolver, new InstanceProviderSet(), myErrorReporter, mySystemErrErrorReporter, DefinitionRequester.INSTANCE) {
     @Override
     protected void afterLibraryLoading(@NotNull Library library, boolean successful) {
@@ -76,7 +79,7 @@ public abstract class BaseCliFrontend {
     private int failed;
 
     MyTypechecking() {
-      super(myLibraryManager.getInstanceProviderSet(), ConcreteReferableProvider.INSTANCE, IdReferableConverter.INSTANCE, myErrorReporter, PositionComparator.INSTANCE, new LibraryArendExtensionProvider(myLibraryManager));
+      super(myLibraryManager.getInstanceProviderSet(), ConcreteReferableProvider.INSTANCE, IdReferableConverter.INSTANCE, myErrorReporter, myDependencyCollector, PositionComparator.INSTANCE, new LibraryArendExtensionProvider(myLibraryManager));
     }
 
     @Override
@@ -282,7 +285,7 @@ public abstract class BaseCliFrontend {
         e.printStackTrace();
         outDir = null;
       }
-      requestedLibraries.add(new FileSourceLibrary("\\default", sourceDir, outDir, new LibraryHeader(requestedModules, libraryDependencies, Range.unbound(), new FileClassLoaderDelegate(extDir), extMainClass)));
+      requestedLibraries.add(new FileSourceLibrary("\\default", sourceDir, outDir, new LibraryHeader(requestedModules, libraryDependencies, Range.unbound(), new FileClassLoaderDelegate(extDir), extMainClass), myDependencyCollector));
     }
 
     if (requestedLibraries.isEmpty()) {

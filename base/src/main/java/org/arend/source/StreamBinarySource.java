@@ -165,7 +165,7 @@ public abstract class StreamBinarySource implements BinarySource {
         return false;
       }
 
-      ModuleProtos.Module module = new ModuleSerialization(errorReporter).writeModule(group, currentModulePath, referableConverter);
+      ModuleProtos.Module module = new ModuleSerialization(errorReporter, library.getDependencyListener()).writeModule(group, currentModulePath, referableConverter);
       if (module == null) {
         return false;
       }

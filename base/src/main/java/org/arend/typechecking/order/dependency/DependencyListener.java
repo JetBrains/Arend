@@ -7,4 +7,5 @@ import java.util.Set;
 public interface DependencyListener {
   void dependsOn(TCReferable def1, TCReferable def2);
   Set<? extends TCReferable> update(TCReferable definition);
+  Set<? extends TCReferable> getDependencies(TCReferable definition);
 }

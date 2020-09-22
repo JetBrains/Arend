@@ -70,14 +70,7 @@ public class ModuleDeserialization {
       if (referable == null) {
         throw new DeserializationException("Cannot resolve reference '" + callTargetTree.getName() + "' in " + module);
       }
-      if (!(referable instanceof TCDefReferable)) {
-        throw new DeserializationException("Reference '" + callTargetTree.getName() + "' in " + module + " is not a definition");
-      }
-      Definition callTarget = ((TCDefReferable) referable).getTypechecked();
-      if (callTarget == null) {
-        throw new DeserializationException("Definition '" + callTargetTree.getName() + "' was not typechecked");
-      }
-      myCallTargetProvider.putCallTarget(callTargetTree.getIndex(), callTarget);
+      myCallTargetProvider.putCallTarget(callTargetTree.getIndex(), referable);
     }
 
     List<ModuleProtos.CallTargetTree> subtreeList = callTargetTree.getSubtreeList();

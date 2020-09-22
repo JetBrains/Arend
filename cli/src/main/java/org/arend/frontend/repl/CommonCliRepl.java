@@ -34,6 +34,7 @@ import org.arend.term.concrete.Concrete;
 import org.arend.term.group.FileGroup;
 import org.arend.typechecking.LibraryArendExtensionProvider;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
+import org.arend.typechecking.order.dependency.DummyDependencyListener;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.arend.util.FileUtils;
 import org.arend.util.Range;
@@ -82,7 +83,7 @@ public abstract class CommonCliRepl extends Repl {
       @NotNull ListErrorReporter errorReporter) {
     this(
         modules,
-        new FileLibraryResolver(new ArrayList<>(), errorReporter),
+        new FileLibraryResolver(new ArrayList<>(), errorReporter, DummyDependencyListener.INSTANCE),
         new InstanceProviderSet(),
         errorReporter
     );
@@ -115,7 +116,7 @@ public abstract class CommonCliRepl extends Repl {
     myLibraryResolver = libraryResolver;
     myReplLibrary = Files.exists(pwd.resolve(FileUtils.LIBRARY_CONFIG_FILE))
         ? libraryResolver.registerLibrary(pwd)
-        : new FileSourceLibrary("Repl", pwd, null, new LibraryHeader(modules, new ArrayList<>(), Range.unbound(), null, null));
+        : new FileSourceLibrary("Repl", pwd, null, new LibraryHeader(modules, new ArrayList<>(), Range.unbound(), null, null), DummyDependencyListener.INSTANCE);
     myModules = modules;
   }
   //endregion

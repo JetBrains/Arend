@@ -17,6 +17,7 @@ message Definition {
     }
     UniverseKind universe_kind = 6;
     map<string, bytes> user_data = 7;
+    repeated int32 meta_ref = 8;
 
     message ClassifyingFields {
         repeated int32 field_ref = 1;

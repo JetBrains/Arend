@@ -20,6 +20,9 @@ import org.arend.ext.serialization.ArendSerializer;
 import org.arend.ext.userData.Key;
 import org.arend.ext.serialization.SerializableKey;
 import org.arend.naming.reference.GlobalReferable;
+import org.arend.naming.reference.MetaReferable;
+import org.arend.naming.reference.TCReferable;
+import org.arend.typechecking.order.dependency.DependencyListener;
 import org.arend.util.Pair;
 import org.jetbrains.annotations.NotNull;
 
@@ -27,9 +30,11 @@ import java.util.*;
 
 public class DefinitionSerialization implements ArendSerializer {
   private final CallTargetIndexProvider myCallTargetIndexProvider;
+  private final DependencyListener myDependencyListener;
 
-  public DefinitionSerialization(CallTargetIndexProvider callTargetIndexProvider) {
+  public DefinitionSerialization(CallTargetIndexProvider callTargetIndexProvider, DependencyListener dependencyListener) {
     myCallTargetIndexProvider = callTargetIndexProvider;
+    myDependencyListener = dependencyListener;
   }
 
   DefinitionProtos.Definition writeDefinition(Definition definition) {
@@ -38,6 +43,12 @@ public class DefinitionSerialization implements ArendSerializer {
     final DefinitionProtos.Definition.Builder out = DefinitionProtos.Definition.newBuilder();
     out.setUniverseKind(defSerializer.writeUniverseKind(definition.getUniverseKind()));
     out.putAllUserData(writeUserData(definition));
+
+    for (TCReferable dependency : myDependencyListener.getDependencies(definition.getRef())) {
+      if (dependency instanceof MetaReferable) {
+        out.addMetaRef(myCallTargetIndexProvider.getDefIndex(dependency));
+      }
+    }
 
     if (definition instanceof ClassDefinition) {
       // type cannot possibly have errors
