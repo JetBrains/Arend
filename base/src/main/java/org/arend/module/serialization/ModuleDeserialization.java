@@ -103,7 +103,7 @@ public class ModuleDeserialization {
 
       TCDefReferable tcDefReferable = (TCDefReferable) tcReferable;
       Definition def = readDefinition(groupProto.getDefinition(), tcDefReferable, false);
-      tcDefReferable.setTypecheckedIfAbsent(def);
+      tcDefReferable.setTypechecked(def);
       myCallTargetProvider.putCallTarget(groupProto.getReferable().getIndex(), def);
       myDefinitions.add(new Pair<>(groupProto.getDefinition(), def));
 
@@ -128,7 +128,7 @@ public class ModuleDeserialization {
           assert def instanceof ClassDefinition;
           ClassField res = new ClassField((TCFieldReferable) absField, (ClassDefinition) def);
           ((ClassDefinition) def).addPersonalField(res);
-          ((TCFieldReferable) absField).setTypecheckedIfAbsent(res);
+          ((TCFieldReferable) absField).setTypechecked(res);
           myCallTargetProvider.putCallTarget(fieldProto.getReferable().getIndex(), res);
         }
       }
@@ -154,7 +154,7 @@ public class ModuleDeserialization {
           assert def instanceof DataDefinition;
           Constructor res = new Constructor((TCDefReferable) absConstructor, (DataDefinition) def);
           ((DataDefinition) def).addConstructor(res);
-          ((TCDefReferable) absConstructor).setTypecheckedIfAbsent(res);
+          ((TCDefReferable) absConstructor).setTypechecked(res);
           myCallTargetProvider.putCallTarget(constructorProto.getReferable().getIndex(), res);
         }
       }
@@ -226,7 +226,7 @@ public class ModuleDeserialization {
     Definition def;
     if (referable instanceof TCDefReferable && groupProto.hasDefinition()) {
       def = readDefinition(groupProto.getDefinition(), (TCDefReferable) referable, true);
-      ((TCDefReferable) referable).setTypecheckedIfAbsent(def);
+      ((TCDefReferable) referable).setTypechecked(def);
       myCallTargetProvider.putCallTarget(referableProto.getIndex(), def);
       myDefinitions.add(new Pair<>(groupProto.getDefinition(), def));
     } else {
@@ -290,7 +290,7 @@ public class ModuleDeserialization {
             TCFieldReferable absField = new FieldReferableImpl(readPrecedence(fieldReferable.getPrecedence()), fieldReferable.getName(), fieldProto.getIsExplicit(), fieldProto.getIsParameter(), referable);
             ClassField res = new ClassField(absField, classDef);
             classDef.addPersonalField(res);
-            absField.setTypecheckedIfAbsent(res);
+            absField.setTypechecked(res);
             myCallTargetProvider.putCallTarget(fieldReferable.getIndex(), res);
           }
         }
@@ -304,7 +304,7 @@ public class ModuleDeserialization {
             TCDefReferable absConstructor = new LocatedReferableImpl(readPrecedence(conReferable.getPrecedence()), conReferable.getName(), referable, LocatedReferableImpl.Kind.CONSTRUCTOR);
             Constructor res = new Constructor(absConstructor, dataDef);
             dataDef.addConstructor(res);
-            absConstructor.setTypecheckedIfAbsent(res);
+            absConstructor.setTypechecked(res);
             myCallTargetProvider.putCallTarget(conReferable.getIndex(), res);
           }
         }
