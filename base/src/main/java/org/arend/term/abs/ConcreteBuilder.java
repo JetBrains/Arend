@@ -85,15 +85,16 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
         myErrorReporter.report(new AbstractExpressionError(GeneralError.Level.ERROR, "Definable meta parameters can only be identifiers", parameter));
         return null;
       }).collect(Collectors.toList());
-    Concrete.Expression body = null;
     var term = def.getTerm();
-    if (term != null) body = term.accept(this, null);
+    Concrete.Expression body = term != null ? term.accept(this, null) : null;
     var referable = myReferableConverter.toDataLocatedReferable(def.getReferable());
     if (!(referable instanceof MetaReferable)) {
       throw new IllegalStateException("Expected MetaReferable, got: " + referable.getClass());
     }
     var definition = new DefinableMetaDefinition((MetaReferable) referable, parameters, body);
-    ((MetaReferable) referable).setDefinition(definition);
+    if (term != null) { // if term == null, it may be a generated meta, in which case we shouldn't replace its definition
+      ((MetaReferable) referable).setDefinition(definition);
+    }
     return definition;
   }
 
