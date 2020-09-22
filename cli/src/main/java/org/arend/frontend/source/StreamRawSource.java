@@ -73,7 +73,7 @@ public abstract class StreamRawSource implements Source {
         return false;
       }
 
-      myGroup = new BuildVisitor(new ModuleLocation(library.getName(), myInTests ? ModuleLocation.LocationKind.TEST : ModuleLocation.LocationKind.SOURCE, modulePath), errorReporter).visitStatements(tree);
+      myGroup = new BuildVisitor(new ModuleLocation(library, myInTests ? ModuleLocation.LocationKind.TEST : ModuleLocation.LocationKind.SOURCE, modulePath), errorReporter).visitStatements(tree);
       library.groupLoaded(modulePath, myGroup, true, myInTests);
 
       for (NamespaceCommand command : myGroup.getNamespaceCommands()) {

@@ -19,7 +19,7 @@ import java.util.List;
 import static org.junit.Assert.assertThat;
 
 public abstract class ParserTestCase extends ArendTestCase {
-  protected static final ModuleLocation MODULE_PATH = new ModuleLocation(null, null, new ModulePath("$TestCase$"));
+  protected static final ModuleLocation MODULE_PATH = new ModuleLocation(null, false, null, new ModulePath("$TestCase$"));
 
   private ArendParser _parse(String text) {
     return CommonCliRepl.createParser(text, MODULE_PATH, errorReporter);

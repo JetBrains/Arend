@@ -1,6 +1,7 @@
 package org.arend.typechecking.order.dependency;
 
 import org.arend.core.definition.*;
+import org.arend.module.ModuleLocation;
 import org.arend.naming.reference.TCDefReferable;
 import org.arend.naming.reference.TCReferable;
 
@@ -12,6 +13,11 @@ public class DependencyCollector implements DependencyListener {
 
   @Override
   public void dependsOn(TCReferable def1, TCReferable def2) {
+    ModuleLocation location = def2.getLocation();
+    if (location != null && location.isExternalLibrary()) {
+      return;
+    }
+
     myDependencies.computeIfAbsent(def1, k -> new HashSet<>()).add(def2);
     myReverseDependencies.computeIfAbsent(def2, k -> new HashSet<>()).add(def1);
   }

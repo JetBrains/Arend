@@ -33,7 +33,7 @@ public class Prelude implements ArendPrelude {
 
   public static final String LIBRARY_NAME = "prelude";
   public static final ModulePath MODULE_PATH = new ModulePath("Prelude");
-  public static final ModuleLocation MODULE_LOCATION = new ModuleLocation(LIBRARY_NAME, ModuleLocation.LocationKind.GENERATED, MODULE_PATH);
+  public static final ModuleLocation MODULE_LOCATION = new ModuleLocation(LIBRARY_NAME, true, ModuleLocation.LocationKind.GENERATED, MODULE_PATH);
 
   public static DataDefinition INTERVAL;
   public static Constructor LEFT, RIGHT;

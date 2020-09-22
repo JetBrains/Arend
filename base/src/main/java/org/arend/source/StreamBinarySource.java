@@ -95,7 +95,7 @@ public abstract class StreamBinarySource implements BinarySource {
       myModuleDeserialization = new ModuleDeserialization(moduleProto, referableConverter, myKeyRegistry, myDefinitionListener);
 
       if (referableConverter == null) {
-        group = myModuleDeserialization.readGroup(new ModuleLocation(library.getName(), ModuleLocation.LocationKind.SOURCE, modulePath));
+        group = myModuleDeserialization.readGroup(new ModuleLocation(library, ModuleLocation.LocationKind.SOURCE, modulePath));
         library.groupLoaded(modulePath, group, false, false);
       } else {
         group = library.getModuleGroup(modulePath, false);

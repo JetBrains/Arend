@@ -61,7 +61,7 @@ public class DefinitionContributorImpl extends Disableable implements Definition
       myModuleScopeProvider.addModule(module, scope);
     }
 
-    LocatedReferable locationRef = new FullModuleReferable(new ModuleLocation(myLibrary.getName(), ModuleLocation.LocationKind.GENERATED, module));
+    LocatedReferable locationRef = new FullModuleReferable(new ModuleLocation(myLibrary, ModuleLocation.LocationKind.GENERATED, module));
     Referable prevRef = null;
     List<String> list = longName.toList();
     for (int i = 0; i < list.size(); i++) {

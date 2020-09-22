@@ -660,7 +660,7 @@ public class NameResolverTest extends NameResolverTestCase {
   public void importOrder() {
     setModuleScopeProvider(module ->
       module.equals(new ModulePath("Mod"))
-        ? new SingletonScope(new LocatedReferableImpl(Precedence.DEFAULT, "foo", new ModuleLocation(null, null, module), GlobalReferable.Kind.FUNCTION))
+        ? new SingletonScope(new LocatedReferableImpl(Precedence.DEFAULT, "foo", new ModuleLocation(null, false, null, module), GlobalReferable.Kind.FUNCTION))
         : EmptyScope.INSTANCE);
     /*
     resolveNamesModule(
