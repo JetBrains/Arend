@@ -564,7 +564,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     String name = defId.ID().getText();
     var precedence = visitPrecedence(defId.precedence());
     var alias = visitAlias(defId.alias());
-    var reference = new MetaReferable(precedence, name, alias.proj2, alias.proj1, "", null, null, (TCReferable) parent.getReferable());
+    var reference = new MetaReferable(precedence, name, alias.proj2, alias.proj1, "", null, null, parent.getReferable());
     var body = ctx.expr();
     if (body != null) {
       var params = ctx.ID().stream()
