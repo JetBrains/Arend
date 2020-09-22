@@ -15,7 +15,6 @@ public class MetaReferable implements TCReferable, MetaRef {
   private final Precedence myPrecedence;
   private final String myName;
   private MetaDefinition myDefinition;
-  private final ModuleLocation myLocation;
   private final MetaResolver myResolver;
   public final String description;
   private final String myAliasName;
@@ -23,10 +22,9 @@ public class MetaReferable implements TCReferable, MetaRef {
   public Supplier<GlobalReferable> underlyingReferable;
   private final LocatedReferable myParent;
 
-  public MetaReferable(Precedence precedence, String name, ModuleLocation location, Precedence aliasPrec, String aliasName, String description, MetaDefinition definition, MetaResolver resolver, LocatedReferable parent) {
+  public MetaReferable(Precedence precedence, String name, Precedence aliasPrec, String aliasName, String description, MetaDefinition definition, MetaResolver resolver, LocatedReferable parent) {
     myPrecedence = precedence;
     myName = name;
-    myLocation = location;
     myAliasName = aliasName;
     myAliasPrecedence = aliasPrec == null ? Precedence.DEFAULT : aliasPrec;
     this.description = description;
@@ -35,13 +33,13 @@ public class MetaReferable implements TCReferable, MetaRef {
     myParent = parent;
   }
 
-  public MetaReferable(Precedence precedence, String name, ModuleLocation location, String description, MetaDefinition definition, MetaResolver resolver, LocatedReferable parent) {
-    this(precedence, name, location, null, null, description, definition, resolver, parent);
+  public MetaReferable(Precedence precedence, String name, String description, MetaDefinition definition, MetaResolver resolver, LocatedReferable parent) {
+    this(precedence, name, null, null, description, definition, resolver, parent);
   }
 
   @Override
-  public @NotNull ModuleLocation getLocation() {
-    return myLocation;
+  public @Nullable ModuleLocation getLocation() {
+    return myParent == null ? null : myParent.getLocation();
   }
 
   @Override
