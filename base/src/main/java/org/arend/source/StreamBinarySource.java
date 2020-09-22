@@ -30,7 +30,7 @@ import java.io.OutputStream;
 /**
  * Represents a source that loads a binary module from an {@link InputStream} and persists it to an {@link OutputStream}.
  */
-public abstract class StreamBinarySource implements BinarySource {
+public abstract class StreamBinarySource implements PersistableBinarySource {
   private ModuleDeserialization myModuleDeserialization;
   private SerializableKeyRegistryImpl myKeyRegistry;
   private DefinitionListener myDefinitionListener;

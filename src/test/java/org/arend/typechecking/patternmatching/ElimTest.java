@@ -464,4 +464,11 @@ public class ElimTest extends TypeCheckingTestCase {
       "\\func f (b : Bool) (p : T (not b)) : Nat\n" +
       "  | false, tt => 0");
   }
+
+  @Test
+  public void doubleVarError() {
+    typeCheckModule(
+      "\\func f (n : Nat) : Nat \\elim n, n\n" +
+      "  | _, _ => 0", 1);
+  }
 }

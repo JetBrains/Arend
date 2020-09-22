@@ -142,6 +142,10 @@ public class ElimTypechecking {
       elimParams = new ArrayList<>(expressions.size());
       for (Concrete.ReferenceExpression expr : expressions) {
         DependentLink elimParam = (DependentLink) context.get(expr.getReferent());
+        if (!elimParams.isEmpty() && elimParam == link) {
+          errorReporter.report(new TypecheckingError("Duplicated eliminated parameter", expr));
+          return null;
+        }
         while (elimParam != link) {
           if (!link.hasNext()) {
             link = parameters;

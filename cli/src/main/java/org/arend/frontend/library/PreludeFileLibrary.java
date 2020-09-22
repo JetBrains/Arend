@@ -5,10 +5,7 @@ import org.arend.frontend.source.FileRawSource;
 import org.arend.prelude.Prelude;
 import org.arend.prelude.PreludeResourceSource;
 import org.arend.prelude.PreludeTypecheckingLibrary;
-import org.arend.source.BinarySource;
-import org.arend.source.FileBinarySource;
-import org.arend.source.GZIPStreamBinarySource;
-import org.arend.source.Source;
+import org.arend.source.*;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
@@ -44,7 +41,7 @@ public class PreludeFileLibrary extends PreludeTypecheckingLibrary {
 
   @Nullable
   @Override
-  public BinarySource getBinarySource(ModulePath modulePath) {
+  public PersistableBinarySource getPersistableBinarySource(ModulePath modulePath) {
     if (myBinaryPath == null || !modulePath.equals(Prelude.MODULE_PATH)) {
       return null;
     }

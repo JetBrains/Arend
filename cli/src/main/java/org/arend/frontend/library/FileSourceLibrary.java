@@ -8,10 +8,7 @@ import org.arend.frontend.ui.ArendCliUI;
 import org.arend.library.LibraryDependency;
 import org.arend.library.LibraryHeader;
 import org.arend.library.PersistableSourceLibrary;
-import org.arend.source.BinarySource;
-import org.arend.source.FileBinarySource;
-import org.arend.source.GZIPStreamBinarySource;
-import org.arend.source.Source;
+import org.arend.source.*;
 import org.arend.typechecking.order.dependency.DependencyListener;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -69,7 +66,7 @@ public class FileSourceLibrary extends PersistableSourceLibrary {
 
   @Nullable
   @Override
-  public BinarySource getBinarySource(ModulePath modulePath) {
+  public PersistableBinarySource getPersistableBinarySource(ModulePath modulePath) {
     return myBinaryBasePath == null ? null : new GZIPStreamBinarySource(new FileBinarySource(myBinaryBasePath, modulePath));
   }
 
