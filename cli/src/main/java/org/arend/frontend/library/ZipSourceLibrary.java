@@ -118,12 +118,16 @@ public class ZipSourceLibrary extends UnmodifiableSourceLibrary {
 
     String sourcesDir = config.getSourcesDir();
     if (sourcesDir != null) {
+      sourcesDir = sourcesDir.replace('\\', '/');
       mySourcesDir = sourcesDir.isEmpty() || sourcesDir.endsWith("/") ? sourcesDir : sourcesDir + "/";
     }
 
     myBinariesDir = config.getBinariesDir();
-    if (myBinariesDir != null && !myBinariesDir.isEmpty() && !myBinariesDir.endsWith("/")) {
-      myBinariesDir = myBinariesDir + "/";
+    if (myBinariesDir != null && !myBinariesDir.isEmpty()) {
+      myBinariesDir = myBinariesDir.replace('\\', '/');
+      if (!myBinariesDir.endsWith("/")) {
+        myBinariesDir = myBinariesDir + "/";
+      }
     }
 
     if (header.modules == null) {
