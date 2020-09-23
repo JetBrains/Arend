@@ -21,8 +21,8 @@ import org.arend.term.FunctionKind;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.Group;
 import org.arend.typechecking.*;
+import org.arend.typechecking.computation.BooleanComputationRunner;
 import org.arend.typechecking.computation.CancellationIndicator;
-import org.arend.typechecking.computation.ComputationRunner;
 import org.arend.typechecking.error.CycleError;
 import org.arend.typechecking.error.TerminationCheckError;
 import org.arend.typechecking.error.local.LocalErrorReporter;
@@ -42,7 +42,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-public class TypecheckingOrderingListener extends ComputationRunner<Boolean> implements OrderingListener {
+public class TypecheckingOrderingListener extends BooleanComputationRunner implements OrderingListener {
   private final DependencyListener myDependencyListener;
   private final Map<TCDefReferable, Pair<CheckTypeVisitor,Boolean>> mySuspensions = new HashMap<>();
   private final ErrorReporter myErrorReporter;
