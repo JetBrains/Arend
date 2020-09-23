@@ -152,7 +152,7 @@ public class Renamer implements VariableRenamer {
 
   private static String getPrefix(String name) {
     int i = name.length() - 1;
-    while (Character.isDigit(name.charAt(i))) {
+    while (i >= 0 && Character.isDigit(name.charAt(i))) {
       i--;
     }
     return name.substring(0, i + 1);
