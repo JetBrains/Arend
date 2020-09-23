@@ -62,7 +62,19 @@ public class SubstConcreteExpressionVisitor implements DataContainer, ConcreteEx
   @Override
   public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Void ignored) {
     var subst = mySubstitution.get(expr.getReferent());
-    return subst != null ? subst : expr;
+    if (subst != null) return subst;
+    var data = myData != null ? myData : expr.getData();
+    if (Concrete.LongReferenceExpression.class.equals(expr.getClass())) {
+      var longRef = (Concrete.LongReferenceExpression) expr;
+      return new Concrete.LongReferenceExpression(data, longRef.getLongName(), longRef.getReferent(), longRef.getPLevel(), longRef.getHLevel());
+    } else if (Concrete.FixityReferenceExpression.class.equals(expr.getClass())) {
+      var fixityRef = (Concrete.FixityReferenceExpression) expr;
+      return new Concrete.FixityReferenceExpression(data, fixityRef.getReferent(), fixityRef.fixity);
+    } else if (Concrete.ReferenceExpression.class.equals(expr.getClass())) {
+      return new Concrete.ReferenceExpression(data, expr.getReferent(), expr.getPLevel(), expr.getHLevel());
+    } else {
+      throw new IllegalArgumentException("Unhandled reference expr: " + expr.getClass());
+    }
   }
 
   @Override
