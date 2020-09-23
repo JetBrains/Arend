@@ -158,7 +158,7 @@ public abstract class Definition extends UserDataHolderImpl implements CoreDefin
     }
 
     public boolean needsTypeChecking() {
-      return this == NEEDS_TYPE_CHECKING;
+      return this == NEEDS_TYPE_CHECKING || this == TYPE_CHECKING;
     }
 
     public boolean withoutErrors() {
