@@ -1182,9 +1182,12 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   public boolean checkAllImplemented(ClassCallExpression classCall, Set<ClassField> pseudoImplemented, Concrete.SourceNode sourceNode) {
-    int notImplemented = classCall.getDefinition().getNumberOfNotImplementedFields() - classCall.getImplementedHere().size();
+    var expectedFields = classCall.getDefinition().getNumberOfNotImplementedFields();
+    int notImplemented = expectedFields - classCall.getImplementedHere().size();
     if (notImplemented == 0) {
       return true;
+    } else if (notImplemented < 0) {
+      throw new IllegalArgumentException("Too many implemented fields (expected " + expectedFields + "): " + classCall.getImplementedHere());
     } else {
       List<FieldReferable> fields = new ArrayList<>(notImplemented);
       for (ClassField field : classCall.getDefinition().getFields()) {
