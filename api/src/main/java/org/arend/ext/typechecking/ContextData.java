@@ -11,7 +11,7 @@ import java.util.List;
 /**
  * Represents the context information of the current position of a meta definition.
  */
-public interface ContextData {
+public interface ContextData extends BaseContextData {
   /**
    * If the definition was explicitly invoked from code,
    * returns the reference expression corresponding to this invocation.
@@ -21,9 +21,6 @@ public interface ContextData {
     return marker instanceof ConcreteReferenceExpression ? (ConcreteReferenceExpression) marker : null;
   }
 
-  /**
-   * A marker that can be used for error reporting.
-   */
   @NotNull ConcreteExpression getMarker();
 
   /**
@@ -46,15 +43,6 @@ public interface ContextData {
   @Nullable ConcreteClauses getClauses();
 
   void setClauses(@Nullable ConcreteClauses clauses);
-
-  /**
-   * Returns the expected type in the current context.
-   * The meta definition should return an expression of this type.
-   * It can be {@code null} if the expected type is unknown.
-   */
-  CoreExpression getExpectedType();
-
-  void setExpectedType(@Nullable CoreExpression expectedType);
 
   Object getUserData();
 

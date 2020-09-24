@@ -13,20 +13,19 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public class ContextDataImpl implements ContextData {
+public class ContextDataImpl extends BaseContextDataImpl implements ContextData {
   private final Concrete.Expression myExpression;
   private List<? extends ConcreteArgument> myArguments;
   private ConcreteCoclauses myCoclauses;
   private ConcreteClauses myClauses;
-  private Expression myExpectedType;
   private Object myUserData;
 
   public ContextDataImpl(Concrete.Expression expression, List<? extends ConcreteArgument> arguments, ConcreteCoclauses coclauses, ConcreteClauses clauses, Expression expectedType, Object userData) {
+    super(expectedType);
     myExpression = expression;
     myArguments = arguments;
     myCoclauses = coclauses;
     myClauses = clauses;
-    myExpectedType = expectedType;
     myUserData = userData;
   }
 
@@ -70,19 +69,6 @@ public class ContextDataImpl implements ContextData {
   @Override
   public void setClauses(@Nullable ConcreteClauses clauses) {
     myClauses = clauses;
-  }
-
-  @Override
-  public Expression getExpectedType() {
-    return myExpectedType;
-  }
-
-  @Override
-  public void setExpectedType(@Nullable CoreExpression expectedType) {
-    if (!(expectedType instanceof Expression)) {
-      throw new IllegalArgumentException();
-    }
-    myExpectedType = (Expression) expectedType;
   }
 
   @Override
