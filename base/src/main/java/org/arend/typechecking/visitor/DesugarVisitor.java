@@ -12,6 +12,7 @@ import org.arend.prelude.Prelude;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.WrongReferable;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -180,29 +181,30 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
   }
 
   private void visitPatterns(List<Concrete.Pattern> patterns) {
-    for (int i = 0; i < patterns.size(); i++) {
-      Concrete.Pattern pattern = patterns.get(i);
+    for (var pattern : patterns) {
       if (pattern instanceof Concrete.TuplePattern) {
         visitPatterns(((Concrete.TuplePattern) pattern).getPatterns());
       } else if (pattern instanceof Concrete.ConstructorPattern) {
         visitPatterns(((Concrete.ConstructorPattern) pattern).getPatterns());
-      } else if (pattern instanceof Concrete.NumberPattern) {
-        int n = ((Concrete.NumberPattern) pattern).getNumber();
-        Concrete.Pattern newPattern = new Concrete.ConstructorPattern(pattern.getData(), true, Prelude.ZERO.getReferable(), Collections.emptyList(), n == 0 ? pattern.getAsReferables() : Collections.emptyList());
-        boolean isNegative = n < 0;
-        n = BaseDefinitionTypechecker.checkNumberInPattern(n, myErrorReporter, pattern);
-        for (int j = 0; j < n; j++) {
-          newPattern = new Concrete.ConstructorPattern(pattern.getData(), true, Prelude.SUC.getReferable(), Collections.singletonList(newPattern), !isNegative && j == n - 1 ? pattern.getAsReferables() : Collections.emptyList());
-        }
-        if (isNegative) {
-          newPattern = new Concrete.ConstructorPattern(pattern.getData(), true, Prelude.NEG.getReferable(), Collections.singletonList(newPattern), pattern.getAsReferables());
-        }
-        if (!pattern.isExplicit()) {
-          newPattern.setExplicit(false);
-        }
-        patterns.set(i, newPattern);
       }
     }
+  }
+
+  public static @NotNull Concrete.Pattern desugarNumberPattern(@NotNull Concrete.NumberPattern pattern, @NotNull ErrorReporter errorReporter) {
+    int n = pattern.getNumber();
+    Concrete.Pattern newPattern = new Concrete.ConstructorPattern(pattern.getData(), true, Prelude.ZERO.getReferable(), Collections.emptyList(), n == 0 ? pattern.getAsReferables() : Collections.emptyList());
+    boolean isNegative = n < 0;
+    n = BaseDefinitionTypechecker.checkNumberInPattern(n, errorReporter, pattern);
+    for (int j = 0; j < n; j++) {
+      newPattern = new Concrete.ConstructorPattern(pattern.getData(), true, Prelude.SUC.getReferable(), Collections.singletonList(newPattern), !isNegative && j == n - 1 ? pattern.getAsReferables() : Collections.emptyList());
+    }
+    if (isNegative) {
+      newPattern = new Concrete.ConstructorPattern(pattern.getData(), true, Prelude.NEG.getReferable(), Collections.singletonList(newPattern), pattern.getAsReferables());
+    }
+    if (!pattern.isExplicit()) {
+      newPattern.setExplicit(false);
+    }
+    return newPattern;
   }
 
   @Override

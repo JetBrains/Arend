@@ -32,6 +32,8 @@ import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.TypeMismatchError;
 import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.prettyprinting.doc.DocFactory;
+import org.arend.extImpl.definitionRenamer.PatternContextDataImpl;
+import org.arend.naming.reference.FakeLocalReferable;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCDefReferable;
@@ -43,6 +45,7 @@ import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.instance.pool.InstancePool;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
+import org.arend.typechecking.visitor.DesugarVisitor;
 import org.arend.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -381,6 +384,23 @@ public class PatternTypechecking {
       }
 
       Expression expr = parameters.getTypeExpr().subst(paramsSubst).normalize(NormalizationMode.WHNF);
+
+      if (pattern instanceof Concrete.NumberPattern) {
+        var newPattern = translateNumberPatterns((Concrete.NumberPattern) pattern, expr);
+        if (newPattern == null) {
+          myErrorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.PATTERN_IGNORED, pattern));
+          var newParam = parameters.subst(new SubstVisitor(paramsSubst, LevelSubstitution.EMPTY), 1, false);
+          linkList.append(newParam);
+          result.add(new BindingPattern(newParam));
+          exprs.add(new ReferenceExpression(newParam));
+          addBinding(null, newParam);
+          parameters = parameters.getNext();
+          continue;
+        } else {
+          pattern = newPattern;
+        }
+      }
+
       if (pattern instanceof Concrete.TuplePattern) {
         List<Concrete.Pattern> patternArgs = ((Concrete.TuplePattern) pattern).getPatterns();
         // Either sigma or class patterns
@@ -761,6 +781,21 @@ public class PatternTypechecking {
     }
 
     return new Result(result, exprs, varSubst);
+  }
+
+  private Concrete.@Nullable Pattern translateNumberPatterns(Concrete.NumberPattern pattern, @NotNull Expression typeExpr) {
+    if (myVisitor == null) {
+      return DesugarVisitor.desugarNumberPattern(pattern, myErrorReporter);
+    }
+    var ext = myVisitor.getExtension();
+    if (ext == null) {
+      return DesugarVisitor.desugarNumberPattern(pattern, myErrorReporter);
+    }
+    var checker = ext.getLiteralTypechecker();
+    if (checker == null) {
+      return DesugarVisitor.desugarNumberPattern(pattern, myErrorReporter);
+    }
+    return (Concrete.Pattern) checker.desugarNumberPattern(pattern, myVisitor, new PatternContextDataImpl(typeExpr, pattern));
   }
 
   // Chains the bindings in the leaves of patterns

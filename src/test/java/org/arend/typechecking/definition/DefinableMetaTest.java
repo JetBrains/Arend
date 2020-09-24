@@ -6,6 +6,8 @@ import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
+import java.util.Objects;
+
 import static org.junit.Assert.assertEquals;
 
 public class DefinableMetaTest extends TypeCheckingTestCase {
@@ -46,7 +48,7 @@ public class DefinableMetaTest extends TypeCheckingTestCase {
   @Test
   public void invokeManyTimes() {
     var def = (FunctionDefinition) typeCheckDef("\\func him => self 65 Nat.+ self 65 Nat.+ self 65 Nat.+ self 65 \\where \\meta self x => x");
-    assertEquals(String.valueOf(65 + 65 + 65 + 65), ((Expression) def.getBody()).normalize(NormalizationMode.WHNF).toString());
+    assertEquals(String.valueOf(65 + 65 + 65 + 65), ((Expression) Objects.requireNonNull(def.getBody())).normalize(NormalizationMode.WHNF).toString());
   }
 
   @Test
@@ -55,12 +57,12 @@ public class DefinableMetaTest extends TypeCheckingTestCase {
       "  \\meta ice => alendia.tesla\n" +
       "  \\func alendia => 1 \\where \\meta tesla => 1\n" +
       "}");
-    assertEquals(String.valueOf(1), ((Expression) def.getBody()).normalize(NormalizationMode.WHNF).toString());
+    assertEquals(String.valueOf(1), ((Expression) Objects.requireNonNull(def.getBody())).normalize(NormalizationMode.WHNF).toString());
   }
 
   @Test
   public void biArgSubst() {
     var def = (FunctionDefinition) typeCheckDef("\\func redy => red 114 514 \\where \\meta red x y => x Nat.+ y");
-    assertEquals(String.valueOf(114 + 514), ((Expression) def.getBody()).normalize(NormalizationMode.WHNF).toString());
+    assertEquals(String.valueOf(114 + 514), ((Expression) Objects.requireNonNull(def.getBody())).normalize(NormalizationMode.WHNF).toString());
   }
 }

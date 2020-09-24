@@ -23,6 +23,7 @@ import org.arend.core.subst.SubstVisitor;
 import org.arend.error.*;
 import org.arend.ext.ArendExtension;
 import org.arend.ext.FreeBindingsModifier;
+import org.arend.ext.concrete.ConcreteNumberPattern;
 import org.arend.ext.concrete.ConcreteParameter;
 import org.arend.ext.concrete.ConcretePattern;
 import org.arend.ext.concrete.ConcreteSourceNode;
@@ -384,6 +385,11 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   @Override
   public @Nullable DependentLink typecheckParameters(@NotNull Collection<? extends ConcreteParameter> parameters) {
     return visitParameters(parameters, null, null);
+  }
+
+  @Override
+  public @NotNull Concrete.Pattern desugarNumberPattern(@NotNull ConcreteNumberPattern pattern) {
+    return DesugarVisitor.desugarNumberPattern((Concrete.NumberPattern) pattern, errorReporter);
   }
 
   @Override

@@ -2331,7 +2331,7 @@ public final class Concrete {
     }
   }
 
-  public static class NumberPattern extends Pattern {
+  public static class NumberPattern extends Pattern implements ConcreteNumberPattern {
     public final static int MAX_VALUE = 100;
     private final int myNumber;
 
@@ -2340,6 +2340,7 @@ public final class Concrete {
       myNumber = number;
     }
 
+    @Override
     public int getNumber() {
       return myNumber;
     }
