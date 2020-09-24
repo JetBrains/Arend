@@ -51,7 +51,7 @@ public class DocStringBuilder extends LineDocVisitor {
   @Override
   public Void visitReference(ReferenceDoc doc, Boolean newLine) {
     LongName longName = doc.getReference().isClassField() ? null : doc.getReference().getRefLongName();
-    builder.append(longName == null ? doc.getReference().getRefName() : longName.toString());
+    builder.append(longName == null || longName.toList().isEmpty() ? doc.getReference().getRefName() : longName.toString());
     if (newLine) {
       builder.append('\n');
     }
