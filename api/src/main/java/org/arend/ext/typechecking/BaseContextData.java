@@ -8,7 +8,6 @@ import org.jetbrains.annotations.Nullable;
 public interface BaseContextData {
   /**
    * Returns the expected type in the current context.
-   * The meta definition should return an expression of this type.
    * It can be {@code null} if the expected type is unknown.
    */
   CoreExpression getExpectedType();
