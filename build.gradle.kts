@@ -40,6 +40,8 @@ allprojects {
 
     tasks.withType<JavaCompile> {
         options.encoding = "UTF-8"
+        options.isDeprecation = true
+        options.compilerArgs.add("-Xlint:unchecked")
     }
 }
 
