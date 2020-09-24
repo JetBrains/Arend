@@ -1,5 +1,5 @@
 plugins {
-    id("com.google.protobuf") version "0.8.11"
+    id("com.google.protobuf") version "0.8.13"
 }
 
 val protobufVersion: String by rootProject.ext

@@ -9,8 +9,8 @@ var annotationsVersion: String by rootProject.ext
 var protobufVersion: String by rootProject.ext
 var antlrVersion: String by rootProject.ext
 
-annotationsVersion = "19.0.0"
-protobufVersion = "3.11.4"
+annotationsVersion = "20.1.0"
+protobufVersion = "3.13.0"
 antlrVersion = "4.8"
 
 allprojects {
