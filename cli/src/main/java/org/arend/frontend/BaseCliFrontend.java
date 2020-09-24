@@ -159,9 +159,10 @@ public abstract class BaseCliFrontend {
     }
 
     var replKind = cmdLine.getOptionValue("i", "jline");
+    var defaultLibrariesRoot = FileUtils.defaultLibrariesRoot();
     var libDirStrings = cmdLine.hasOption("L")
         ? cmdLine.getOptionValues("L")
-        : new String[] { FileUtils.defaultLibrariesRoot().toString() };
+        : new String[] { defaultLibrariesRoot.toString() };
 
     // Get library directories
     var libDirs = new ArrayList<Path>(libDirStrings.length);
@@ -169,7 +170,7 @@ public abstract class BaseCliFrontend {
       var libDir = Paths.get(libDirString);
       if (Files.isDirectory(libDir)) {
         libDirs.add(libDir);
-      } else {
+      } else if (!Objects.equals(defaultLibrariesRoot, libDir)) {
         myExitWithError = true;
         System.err.println("[ERROR] " + libDir + " is not a directory");
       }
