@@ -199,7 +199,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     boolean newDef = typechecked == null || typechecked.status().needsTypeChecking();
     definition.setStatus(Definition.TypeCheckingStatus.TYPE_CHECKING);
     if (typechecked == null) {
-      def.getData().setTypecheckedIfAbsent(definition);
+      def.getData().setTypecheckedIfNotCancelled(definition);
     }
     if (def.isRecursive()) {
       definition.setStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
@@ -672,7 +672,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
   @SuppressWarnings("UnusedReturnValue")
   private boolean typecheckFunctionHeader(FunctionDefinition typedDef, Concrete.BaseFunctionDefinition def, LocalInstancePool localInstancePool, boolean newDef) {
-    def.getData().setTypecheckedIfAbsent(typedDef);
+    def.getData().setTypecheckedIfNotCancelled(typedDef);
     if (def.enclosingClass != null) {
       typedDef.setHasEnclosingClass(true);
     }
@@ -1323,7 +1323,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   }
 
   private void typecheckDataHeader(DataDefinition dataDefinition, Concrete.DataDefinition def, LocalInstancePool localInstancePool, boolean newDef) {
-    def.getData().setTypecheckedIfAbsent(dataDefinition);
+    def.getData().setTypecheckedIfNotCancelled(dataDefinition);
     if (def.enclosingClass != null) {
       dataDefinition.setHasEnclosingClass(true);
     }
