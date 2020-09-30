@@ -5,7 +5,7 @@ import org.arend.util.ComputationInterruptedException;
 import java.util.function.Supplier;
 
 public class ComputationRunner<T> {
-  private static CancellationIndicator CANCELLATION_INDICATOR = ThreadCancellationIndicator.INSTANCE;
+  private static CancellationIndicator CANCELLATION_INDICATOR = UnstoppableCancellationIndicator.INSTANCE;
 
   public static void checkCanceled() throws ComputationInterruptedException {
     CANCELLATION_INDICATOR.checkCanceled();
@@ -16,11 +16,11 @@ public class ComputationRunner<T> {
   }
 
   public static void resetCancellationIndicator() {
-    CANCELLATION_INDICATOR = ThreadCancellationIndicator.INSTANCE;
+    CANCELLATION_INDICATOR = UnstoppableCancellationIndicator.INSTANCE;
   }
 
   public static boolean isCancellationIndicatorSet() {
-    return CANCELLATION_INDICATOR != ThreadCancellationIndicator.INSTANCE;
+    return CANCELLATION_INDICATOR != UnstoppableCancellationIndicator.INSTANCE;
   }
 
   protected T computationInterrupted() {
@@ -39,7 +39,7 @@ public class ComputationRunner<T> {
         return computationInterrupted();
       } finally {
         if (cancellationIndicator != null) {
-          CANCELLATION_INDICATOR = ThreadCancellationIndicator.INSTANCE;
+          CANCELLATION_INDICATOR = UnstoppableCancellationIndicator.INSTANCE;
         }
       }
     }
