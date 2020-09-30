@@ -22,7 +22,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
     myErrorReporter = errorReporter;
   }
 
-  public static void desugar(Concrete.Definition definition, ErrorReporter errorReporter) {
+  public static void desugar(Concrete.ResolvableDefinition definition, ErrorReporter errorReporter) {
     definition.accept(new DesugarVisitor(errorReporter), null);
     definition.setDesugarized();
   }

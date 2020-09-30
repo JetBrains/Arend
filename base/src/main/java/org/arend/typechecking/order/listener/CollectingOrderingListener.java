@@ -6,7 +6,36 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CollectingOrderingListener implements OrderingListener {
-  private static class MyUnit {
+  public interface Element {
+    void feedTo(OrderingListener listener);
+    void getDefinitions(List<Concrete.ResolvableDefinition> result);
+    Concrete.ResolvableDefinition getAnyDefinition();
+  }
+
+  private static class MyHeader implements Element {
+    final Concrete.Definition definition;
+
+    private MyHeader(Concrete.Definition definition) {
+      this.definition = definition;
+    }
+
+    @Override
+    public void feedTo(OrderingListener listener) {
+      listener.headerFound(definition);
+    }
+
+    @Override
+    public void getDefinitions(List<Concrete.ResolvableDefinition> result) {
+      result.add(definition);
+    }
+
+    @Override
+    public Concrete.ResolvableDefinition getAnyDefinition() {
+      return definition;
+    }
+  }
+
+  private static class MyUnit implements Element {
     final Concrete.ResolvableDefinition definition;
     final boolean withLoops;
 
@@ -14,9 +43,24 @@ public class CollectingOrderingListener implements OrderingListener {
       this.definition = definition;
       this.withLoops = withLoops;
     }
+
+    @Override
+    public void feedTo(OrderingListener listener) {
+      listener.unitFound(definition, withLoops);
+    }
+
+    @Override
+    public void getDefinitions(List<Concrete.ResolvableDefinition> result) {
+      result.add(definition);
+    }
+
+    @Override
+    public Concrete.ResolvableDefinition getAnyDefinition() {
+      return definition;
+    }
   }
 
-  private static class MyDefinitions {
+  private static class MyDefinitions implements Element {
     enum Kind { CYCLE, BODIES, USE }
 
     final List<? extends Concrete.ResolvableDefinition> definitions;
@@ -26,53 +70,76 @@ public class CollectingOrderingListener implements OrderingListener {
       this.definitions = definitions;
       this.kind = kind;
     }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public void feedTo(OrderingListener listener) {
+      if (kind == MyDefinitions.Kind.USE) {
+        listener.useFound((List<Concrete.UseDefinition>) definitions);
+      } else if (kind == MyDefinitions.Kind.BODIES) {
+        listener.bodiesFound((List<Concrete.Definition>) definitions);
+      } else {
+        listener.cycleFound((List<Concrete.ResolvableDefinition>) definitions);
+      }
+    }
+
+    @Override
+    public void getDefinitions(List<Concrete.ResolvableDefinition> result) {
+      result.addAll(definitions);
+    }
+
+    @Override
+    public Concrete.ResolvableDefinition getAnyDefinition() {
+      return definitions.get(0);
+    }
   }
 
-  private final List<Object> myList = new ArrayList<>();
+  private final List<Element> myElements = new ArrayList<>();
+
+  public boolean isEmpty() {
+    return myElements.isEmpty();
+  }
+
+  public List<Element> getElements() {
+    return myElements;
+  }
+
+  public List<Concrete.ResolvableDefinition> getAllDefinitions() {
+    List<Concrete.ResolvableDefinition> result = new ArrayList<>();
+    for (Element element : myElements) {
+      element.getDefinitions(result);
+    }
+    return result;
+  }
 
   @Override
   public void unitFound(Concrete.ResolvableDefinition unit, boolean recursive) {
-    myList.add(new MyUnit(unit, recursive));
+    myElements.add(new MyUnit(unit, recursive));
   }
 
   @Override
   public void cycleFound(List<Concrete.ResolvableDefinition> definitions) {
-    myList.add(new MyDefinitions(definitions, MyDefinitions.Kind.CYCLE));
+    myElements.add(new MyDefinitions(definitions, MyDefinitions.Kind.CYCLE));
   }
 
   @Override
   public void headerFound(Concrete.Definition definition) {
-    myList.add(definition);
+    myElements.add(new MyHeader(definition));
   }
 
   @Override
   public void bodiesFound(List<Concrete.Definition> bodies) {
-    myList.add(new MyDefinitions(bodies, MyDefinitions.Kind.BODIES));
+    myElements.add(new MyDefinitions(bodies, MyDefinitions.Kind.BODIES));
   }
 
   @Override
   public void useFound(List<Concrete.UseDefinition> definitions) {
-    myList.add(new MyDefinitions(definitions, MyDefinitions.Kind.USE));
+    myElements.add(new MyDefinitions(definitions, MyDefinitions.Kind.USE));
   }
 
-  @SuppressWarnings("unchecked")
   public void feed(OrderingListener listener) {
-    for (Object o : myList) {
-      if (o instanceof MyUnit) {
-        MyUnit unit = (MyUnit) o;
-        listener.unitFound(unit.definition, unit.withLoops);
-      } else if (o instanceof MyDefinitions) {
-        MyDefinitions definitions = (MyDefinitions) o;
-        if (definitions.kind == MyDefinitions.Kind.USE) {
-          listener.useFound((List<Concrete.UseDefinition>) definitions.definitions);
-        } else if (definitions.kind == MyDefinitions.Kind.BODIES) {
-          listener.bodiesFound((List<Concrete.Definition>) definitions.definitions);
-        } else {
-          listener.cycleFound((List<Concrete.ResolvableDefinition>) definitions.definitions);
-        }
-      } else {
-        listener.headerFound((Concrete.Definition) o);
-      }
+    for (Element element : myElements) {
+      element.feedTo(listener);
     }
   }
 }

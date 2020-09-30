@@ -23,7 +23,7 @@ import java.util.function.Consumer;
 public class Ordering extends BellmanFord<Concrete.ResolvableDefinition> {
   private final InstanceProviderSet myInstanceProviderSet;
   private final ConcreteProvider myConcreteProvider;
-  private final OrderingListener myOrderingListener;
+  private OrderingListener myOrderingListener;
   private final DependencyListener myDependencyListener;
   private final ReferableConverter myReferableConverter;
   private final PartialComparator<TCDefReferable> myComparator;
@@ -57,6 +57,14 @@ public class Ordering extends BellmanFord<Concrete.ResolvableDefinition> {
 
   public ReferableConverter getReferableConverter() {
     return myReferableConverter;
+  }
+
+  public OrderingListener getListener() {
+    return myOrderingListener;
+  }
+
+  public void setListener(OrderingListener listener) {
+    myOrderingListener = listener;
   }
 
   public void orderModules(Collection<? extends Group> modules) {
