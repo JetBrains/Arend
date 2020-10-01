@@ -40,7 +40,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
   private final ConcreteProvider myConcreteProvider;
   private final ReferableConverter myReferableConverter;
   private final ErrorReporter myErrorReporter;
-  private LocalErrorReporter myLocalErrorReporter;
+  private ErrorReporter myLocalErrorReporter;
   private final ResolverListener myResolverListener;
 
   public DefinitionResolveNameVisitor(ConcreteProvider concreteProvider, ReferableConverter referableConverter, ErrorReporter errorReporter) {
@@ -642,6 +642,8 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     if (myResolveTypeClassReferences) {
       return;
     }
+
+    myLocalErrorReporter = myErrorReporter;
 
     boolean isTopLevel = !(group instanceof ChildGroup) || ((ChildGroup) group).getParentGroup() == null;
     Collection<? extends NamespaceCommand> namespaceCommands = group.getNamespaceCommands();
