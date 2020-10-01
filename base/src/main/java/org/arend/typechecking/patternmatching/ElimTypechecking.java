@@ -682,7 +682,7 @@ public class ElimTypechecking {
           DataCallExpression dataCall = GetTypeVisitor.INSTANCE.visitConCall(((ConCallExpression) someConPattern.getDataExpression().subst(conClause.substitution)), null);
           conCalls = dataCall.getMatchedConstructors();
           if (conCalls == null) {
-            myErrorReporter.report(new ImpossibleEliminationError(dataCall, getClause(conClause.index)));
+            myErrorReporter.report(new ImpossibleEliminationError(dataCall, getClause(conClause.index), null));
             myOK = false;
             return null;
           }

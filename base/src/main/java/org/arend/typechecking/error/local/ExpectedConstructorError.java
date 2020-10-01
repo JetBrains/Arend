@@ -2,6 +2,7 @@ package org.arend.typechecking.error.local;
 
 import org.arend.core.definition.Constructor;
 import org.arend.core.expr.DataCallExpression;
+import org.arend.core.subst.ExprSubstitution;
 import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.LineDoc;
@@ -15,12 +16,14 @@ import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 public class ExpectedConstructorError extends TypecheckingError {
   public final GlobalReferable referable;
   public final DataCallExpression dataCall;
+  public final ExprSubstitution substitution;
   private final boolean myConstructorOfData;
 
-  public ExpectedConstructorError(GlobalReferable referable, @Nullable DataCallExpression dataCall, Concrete.SourceNode cause) {
+  public ExpectedConstructorError(GlobalReferable referable, @Nullable DataCallExpression dataCall, Concrete.SourceNode cause, @Nullable ExprSubstitution substitution) {
     super("", cause);
     this.referable = referable;
     this.dataCall = dataCall;
+    this.substitution = substitution;
 
     boolean constructorOfData = false;
     if (dataCall != null) {

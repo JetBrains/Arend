@@ -687,7 +687,7 @@ public class PatternTypechecking {
       if (pattern instanceof Concrete.TuplePattern) {
         List<ConCallExpression> conCalls = dataCall.getMatchedConstructors();
         if (conCalls == null) {
-          myErrorReporter.report(new ImpossibleEliminationError(dataCall, pattern));
+          myErrorReporter.report(new ImpossibleEliminationError(dataCall, pattern, paramsSubst));
           return null;
         }
         if (!conCalls.isEmpty()) {
@@ -717,7 +717,7 @@ public class PatternTypechecking {
       if (constructor == null || !dataCall.getMatchedConCall(constructor, conCalls) || conCalls.isEmpty()) {
         Referable conRef = conPattern.getConstructor();
         if (constructor != null || conRef instanceof TCDefReferable && ((TCDefReferable) conRef).getKind() == GlobalReferable.Kind.CONSTRUCTOR) {
-          myErrorReporter.report(new ExpectedConstructorError((GlobalReferable) conRef, dataCall, conPattern));
+          myErrorReporter.report(new ExpectedConstructorError((GlobalReferable) conRef, dataCall, conPattern, paramsSubst));
         }
         return null;
       }
