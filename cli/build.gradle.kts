@@ -2,11 +2,11 @@ dependencies {
     val antlrVersion: String by rootProject.ext
     implementation("commons-cli:commons-cli:1.4")
 
-    val jacksonVersion = "2.10.3"
+    val jacksonVersion = "2.11.2"
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:$jacksonVersion")
     implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
 
-    val jlineVersion = "3.15.0"
+    val jlineVersion = "3.16.0"
     implementation("org.jline:jline-terminal:$jlineVersion")
     implementation("org.jline:jline-terminal-jansi:$jlineVersion")
     implementation("org.jline:jline-reader:$jlineVersion")
