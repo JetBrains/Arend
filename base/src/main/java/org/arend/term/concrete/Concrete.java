@@ -500,7 +500,7 @@ public final class Concrete {
       return myReferent;
     }
 
-    public void setReferent(Referable referent) {
+    public void setReferent(@NotNull Referable referent) {
       myReferent = referent;
     }
 
