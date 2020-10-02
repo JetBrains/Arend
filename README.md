@@ -36,6 +36,11 @@ $ java -jar Arend.jar -i
 ```
 
 If you start the REPL at the root directory of a library, the REPL will load the library.
+For more information and usage about command line usage of Arend, please refer to `--help`:
+
+```bash
+$ java -jar Arend.jar -h
+```
 
 ### As a library
 
