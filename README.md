@@ -19,6 +19,26 @@ there's [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Usage
 
+### As a binary
+
+You can find release version of Arend binary (a jar file named "Arend.jar")
+in the [release](https://github.com/JetBrains/Arend/releases) page.
+The Arend jar can be used to typecheck a library:
+
+```bash
+$ java -jar Arend.jar [path-to-library]
+```
+
+You can also start a REPL:
+
+```bash
+$ java -jar Arend.jar -i
+```
+
+If you start the REPL at the root directory of a library, the REPL will load the library.
+
+### As a library
+
 Arend is under active development, so you may expect to depend your project on
 a development version of Arend,
 either a certain git revision or the SNAPSHOT version.
@@ -31,7 +51,7 @@ repositories {
 }
 dependencies {
     // The version of Arend -- can be a short revision, "[branch]-SNAPSHOT",
-    // "-SNAPSHOT", or a tag (or a release, like "v1.3.0").
+    // "-SNAPSHOT", or a tag (or a release, like "v1.4.0").
     String arendVersion = "master-SNAPSHOT"
     // Open API for writing Arend extensions
     implementation "com.github.JetBrains.Arend:api:$arendVersion"
