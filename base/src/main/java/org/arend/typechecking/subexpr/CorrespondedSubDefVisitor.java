@@ -113,9 +113,11 @@ public class CorrespondedSubDefVisitor implements
         if (field.isEmpty()) continue;
         Expression fieldExpr = field.get();
         var parameters = concrete.getParameters();
-        // Clone the list and remove the first "this" parameter
-        parameters = parameters.isEmpty()
+        if (def.getStage().ordinal() < Concrete.Stage.DESUGARIZED.ordinal()) {
+          // Clone the list and remove the first "this" parameter if already desugared
+          parameters = parameters.isEmpty()
             ? Collections.emptyList() : parameters.subList(1, parameters.size());
+        }
         var accept = !parameters.isEmpty() && fieldExpr instanceof PiExpression
           ? visitor.visitPiImpl(parameters, concrete.getResultType(), (PiExpression) fieldExpr)
           : concrete.getResultType().accept(visitor, fieldExpr);
