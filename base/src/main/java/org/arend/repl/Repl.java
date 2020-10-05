@@ -55,9 +55,9 @@ public abstract class Repl {
       return new CachingDefinitionRenamer(new ScopeDefinitionRenamer(myScope));
     }
 
+    @Contract(pure = true)
     @Override
     public @NotNull EnumSet<PrettyPrinterFlag> getExpressionFlags() {
-      if (prettyPrinterFlags == null) return DEFAULT.getExpressionFlags();
       return prettyPrinterFlags;
     }
 
@@ -117,6 +117,7 @@ public abstract class Repl {
     return myTypechecking.typecheckLibrary(library);
   }
 
+  @Contract(pure = true)
   public final @NotNull ModuleScopeProvider getAvailableModuleScopeProvider() {
     return module -> {
       for (Library registeredLibrary : myLibraryManager.getRegisteredLibraries()) {
@@ -158,7 +159,8 @@ public abstract class Repl {
     }
     if (!myTypechecking.typecheckModules(Collections.singletonList(group), null)) {
       checkErrors();
-      removeScope(scope);
+      var isRemoved = removeScope(scope);
+      assert isRemoved;
     }
     onScopeAdded(group);
   }
@@ -214,8 +216,9 @@ public abstract class Repl {
    * @return true if there is indeed a scope removed
    */
   public final boolean removeScope(@NotNull Scope scope) {
-    removeScopeImpl(scope.getGlobalSubscopeWithoutOpens());
-    return removeScopeImpl(scope);
+    var isRemoved = removeScopeImpl(scope.getGlobalSubscopeWithoutOpens());
+    var isRemoved2 = removeScopeImpl(scope);
+    return isRemoved || isRemoved2;
   }
 
   private boolean removeScopeImpl(Scope scope) {
@@ -258,6 +261,7 @@ public abstract class Repl {
    */
   public abstract void eprintln(Object anything);
 
+  @Contract("_, _ -> param1")
   public final @NotNull StringBuilder prettyExpr(@NotNull StringBuilder builder, @NotNull Expression expression) {
     var abs = ToAbstractVisitor.convert(expression, myPpConfig);
     abs.accept(new PrettyPrintVisitor(builder, 0), new Precedence(Concrete.Expression.PREC));
