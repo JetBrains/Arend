@@ -9,6 +9,7 @@ import java.util.function.Supplier;
 
 public final class NormalizeCommand implements ReplCommand {
   public static final @NotNull NormalizeCommand INSTANCE = new NormalizeCommand();
+  public static final @NotNull String @NotNull [] AVAILABLE_OPTIONS = new String[]{"WHNF", "NF", "RNF", "ENF", "NULL", "whnf", "nf", "rnf", "enf", "null"};
 
   private NormalizeCommand() {
   }

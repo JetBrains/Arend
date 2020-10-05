@@ -8,11 +8,19 @@ import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public class PrettyPrintFlagCommand implements CliReplCommand {
   public static final @NotNull PrettyPrintFlagCommand INSTANCE = new PrettyPrintFlagCommand();
+
+  public static final @NotNull List<@NotNull String> AVAILABLE_OPTIONS = Arrays
+    .stream(PrettyPrinterFlag.values())
+    .map(Enum::name)
+    .collect(Collectors.toList());
 
   @Contract(pure = true)
   private PrettyPrintFlagCommand() {
