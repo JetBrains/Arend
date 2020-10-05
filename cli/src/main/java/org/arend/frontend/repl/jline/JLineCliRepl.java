@@ -1,7 +1,7 @@
 package org.arend.frontend.repl.jline;
 
 import org.arend.frontend.repl.CommonCliRepl;
-import org.arend.frontend.repl.action.PrettyPrintFlagCommand;
+import org.arend.repl.action.PrettyPrintFlagCommand;
 import org.arend.library.SourceLibrary;
 import org.arend.repl.action.DirectoryArgumentCommand;
 import org.arend.repl.action.FileArgumentCommand;

@@ -28,6 +28,7 @@ import org.arend.prelude.GeneratedVersion;
 import org.arend.prelude.PreludeLibrary;
 import org.arend.prelude.PreludeResourceLibrary;
 import org.arend.repl.Repl;
+import org.arend.repl.action.PrettyPrintFlagCommand;
 import org.arend.repl.action.ReplCommand;
 import org.arend.term.NamespaceCommand;
 import org.arend.term.concrete.Concrete;

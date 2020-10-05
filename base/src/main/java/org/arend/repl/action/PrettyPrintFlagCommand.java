@@ -1,8 +1,7 @@
-package org.arend.frontend.repl.action;
+package org.arend.repl.action;
 
 import org.arend.ext.prettyprinting.PrettyPrinterFlag;
 import org.arend.repl.Repl;
-import org.arend.repl.action.ReplCommand;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
