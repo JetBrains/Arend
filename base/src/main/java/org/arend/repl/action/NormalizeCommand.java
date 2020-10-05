@@ -24,10 +24,11 @@ public final class NormalizeCommand implements ReplCommand {
     return "Modify the normalization level of printed expressions (currently " + api.normalizationMode + ").\n" +
         "Available options (case insensitive) are:\n" +
         " NULL (do not normalize)\n" +
-        " WHNF (Weak Head Normal Form)\n" +
-        " NF (Normal Form)\n" +
+        " WHNF (weak head normal form)\n" +
+        " NF (normal form)\n" +
+        " ENF (expression formal form)\n" +
         " RNF (the level best for pretty printing)." +
-        "If you did not pass a command argument, NULL will be chosen.";
+        "If you did not pass a command argument, the current option will be printed.";
   }
 
   @Override
