@@ -127,6 +127,15 @@ public class FieldsTest extends NameResolverTestCase {
   }
 
   @Test
+  public void testTwoFunctionsWithParameters() {
+    resolveNamesModule(
+      "\\record R (q : Nat)\n" +
+      "\\func S (n : Nat) => R\n" +
+      "\\func T (n : Nat) => S n\n" +
+      "\\func h (r : T 0) => r.q");
+  }
+
+  @Test
   public void letTest() {
     resolveNamesModule(
       "\\class A (f : Nat)\n" +

@@ -602,20 +602,19 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       return Concrete.ClassExtExpression.make(data, baseExpr, coclauses);
     }
 
-    Referable ref = new TypeClassReferenceExtractVisitor().getTypeReference(Collections.emptyList(), baseExpr, true);
-    if (ref != null && !(ref instanceof ClassReferable || ref instanceof TypedReferable)) {
+    TypeClassReferenceExtractVisitor visitor = new TypeClassReferenceExtractVisitor();
+    Referable ref = visitor.getTypeReference(Collections.emptyList(), baseExpr, true);
+    ClassReferable classRef = visitor.findClassReference(ref);
+    if (classRef == null && ref != null && !(ref instanceof TypedReferable)) {
       ref = ref.getUnderlyingReferable();
-      if (!(ref instanceof ClassReferable || ref instanceof TypedReferable)) {
+      if (!(ref instanceof TypedReferable)) {
         ref = baseExpr.getUnderlyingReferable();
-        if (ref != null && !(ref instanceof ClassReferable || ref instanceof TypedReferable)) {
+        if (ref != null && !(ref instanceof TypedReferable)) {
           ref = ref.getUnderlyingReferable();
         }
       }
     }
-    ClassReferable classRef = null;
-    if (ref instanceof ClassReferable) {
-      classRef = (ClassReferable) ref;
-    } else if (ref instanceof TypedReferable) {
+    if (classRef == null && ref instanceof TypedReferable) {
       classRef = ((TypedReferable) ref).getTypeClassReference();
     }
 

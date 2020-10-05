@@ -11,11 +11,13 @@ import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.arend.ExpressionFactory.Universe;
 import static org.arend.ExpressionFactory.fromPiParameters;
 import static org.arend.Matchers.cycle;
+import static org.arend.Matchers.fieldsImplementation;
 import static org.junit.Assert.assertEquals;
 
 public class ImplementTest extends TypeCheckingTestCase {
@@ -466,5 +468,155 @@ public class ImplementTest extends TypeCheckingTestCase {
       "  | TA => TC\n" +
       "  | TB => TC\n" +
       "  | c : f \\this tb");
+  }
+
+  @Test
+  public void functionNewTest() {
+    typeCheckModule(
+      "\\record R (n : Nat)\n" +
+      "\\func S => R 0\n" +
+      "\\func rrr => \\new S");
+  }
+
+  @Test
+  public void functionNewError() {
+    typeCheckModule(
+      "\\record R (n : Nat)\n" +
+      "\\func S => R\n" +
+      "\\func rrr => \\new S", 1);
+    assertThatErrorsAre(fieldsImplementation(false, Collections.singletonList(get("R.n"))));
+  }
+
+  @Test
+  public void functionNewAppTest() {
+    typeCheckModule(
+      "\\record R (n : Nat)\n" +
+      "\\func S (n : Nat) => R n\n" +
+      "\\func T (n : Nat) => S n\n" +
+      "\\func rrr => \\new T 0");
+  }
+
+  @Test
+  public void functionNewAppError() {
+    typeCheckModule(
+      "\\record R (n : Nat)\n" +
+      "\\func S (n : Nat) => R\n" +
+      "\\func T (n : Nat) => S n\n" +
+      "\\func rrr => \\new T 0", 1);
+    assertThatErrorsAre(fieldsImplementation(false, Collections.singletonList(get("R.n"))));
+  }
+
+  @Test
+  public void functionNewImplTest() {
+    typeCheckModule(
+      "\\record R (n q : Nat)\n" +
+      "\\func S (n : Nat) => R n\n" +
+      "\\func T => S 0\n" +
+      "\\func rrr => \\new T { | q => 1 }");
+  }
+
+  @Test
+  public void functionNewImplError() {
+    typeCheckModule(
+      "\\record R (n q : Nat)\n" +
+      "\\func S (n : Nat) => R\n" +
+      "\\func T => S 0\n" +
+      "\\func rrr => \\new T { | q => 1 }", 1);
+    assertThatErrorsAre(fieldsImplementation(false, Collections.singletonList(get("R.n"))));
+  }
+
+  @Test
+  public void functionNewImplAppTest() {
+    typeCheckModule(
+      "\\record R (n q : Nat)\n" +
+      "\\func S (n : Nat) => R n\n" +
+      "\\func T (n : Nat) => S n\n" +
+      "\\func rrr => \\new T 0 { | q => 1 }");
+  }
+
+  @Test
+  public void functionNewImplAppError() {
+    typeCheckModule(
+      "\\record R (n q : Nat)\n" +
+      "\\func S (n : Nat) => R\n" +
+      "\\func T (n : Nat) => S n\n" +
+      "\\func rrr => \\new T 0 { | q => 1 }", 1);
+    assertThatErrorsAre(fieldsImplementation(false, Collections.singletonList(get("R.n"))));
+  }
+
+  @Test
+  public void functionInstanceTest() {
+    typeCheckModule(
+      "\\record R (n : Nat)\n" +
+      "\\func S => R 0\n" +
+      "\\func rrr : S \\cowith");
+  }
+
+  @Test
+  public void functionInstanceError() {
+    typeCheckModule(
+      "\\record R (n : Nat)\n" +
+      "\\func S => R\n" +
+      "\\func rrr : S \\cowith", 1);
+    assertThatErrorsAre(fieldsImplementation(false, Collections.singletonList(get("R.n"))));
+  }
+
+  @Test
+  public void functionInstanceArgTest() {
+    typeCheckModule(
+      "\\record R (n : Nat)\n" +
+      "\\func S (n : Nat) => R n\n" +
+      "\\func rrr : S 0 \\cowith");
+  }
+
+  @Test
+  public void functionInstanceArgError() {
+    typeCheckModule(
+      "\\record R (n : Nat)\n" +
+      "\\func S (n : Nat) => R\n" +
+      "\\func rrr : S 0 \\cowith", 1);
+    assertThatErrorsAre(fieldsImplementation(false, Collections.singletonList(get("R.n"))));
+  }
+
+  @Test
+  public void functionInstanceImplTest() {
+    typeCheckModule(
+      "\\record R (n q : Nat)\n" +
+      "\\func S (n : Nat) => R n\n" +
+      "\\func T => S 0\n" +
+      "\\func rrr : T \\cowith\n" +
+      "  | q => 1");
+  }
+
+  @Test
+  public void functionInstanceImplError() {
+    typeCheckModule(
+      "\\record R (n q : Nat)\n" +
+      "\\func S (n : Nat) => R\n" +
+      "\\func T => S 0\n" +
+      "\\func rrr : T \\cowith\n" +
+      "  | q => 1", 1);
+    assertThatErrorsAre(fieldsImplementation(false, Collections.singletonList(get("R.n"))));
+  }
+
+  @Test
+  public void functionInstanceImplArgTest() {
+    typeCheckModule(
+      "\\record R (n q : Nat)\n" +
+      "\\func S (n : Nat) => R n\n" +
+      "\\func T (n : Nat) => S n\n" +
+      "\\func rrr : T 0 \\cowith\n" +
+      "  | q => 1");
+  }
+
+  @Test
+  public void functionInstanceImplArgError() {
+    typeCheckModule(
+      "\\record R (n q : Nat)\n" +
+      "\\func S (n : Nat) => R\n" +
+      "\\func T (n : Nat) => S n\n" +
+      "\\func rrr : T 0 \\cowith\n" +
+      "  | q => 1", 1);
+    assertThatErrorsAre(fieldsImplementation(false, Collections.singletonList(get("R.n"))));
   }
 }

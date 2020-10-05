@@ -286,20 +286,17 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       ((Concrete.TermFunctionBody) body).setTerm(((Concrete.TermFunctionBody) body).getTerm().accept(exprVisitor, null));
     }
     if (body instanceof Concrete.CoelimFunctionBody) {
-      Referable typeRef = def.getResultType() == null ? null : new TypeClassReferenceExtractVisitor().getTypeReference(Collections.emptyList(), def.getResultType(), true);
-      if (typeRef != null && !(typeRef instanceof ClassReferable)) {
-        typeRef = typeRef.getUnderlyingReferable();
-      }
-      if (typeRef instanceof ClassReferable) {
-        if (def.getKind() == FunctionKind.INSTANCE && ((ClassReferable) typeRef).isRecord()) {
+      ClassReferable typeRef = def.getResultType() == null ? null : new TypeClassReferenceExtractVisitor().getTypeClassReference(Collections.emptyList(), def.getResultType());
+      if (typeRef != null) {
+        if (def.getKind() == FunctionKind.INSTANCE && typeRef.isRecord()) {
           myLocalErrorReporter.report(new NameResolverError("Expected a class, got a record", def));
           body.getCoClauseElements().clear();
         } else {
           for (Concrete.CoClauseElement element : body.getCoClauseElements()) {
             if (element instanceof Concrete.ClassFieldImpl) {
-              exprVisitor.visitClassFieldImpl((Concrete.ClassFieldImpl) element, (ClassReferable) typeRef);
+              exprVisitor.visitClassFieldImpl((Concrete.ClassFieldImpl) element, typeRef);
             } else if (element instanceof Concrete.CoClauseFunctionReference && element.getImplementedField() instanceof UnresolvedReference) {
-              Referable resolved = exprVisitor.visitClassFieldReference(element, element.getImplementedField(), (ClassReferable) typeRef);
+              Referable resolved = exprVisitor.visitClassFieldReference(element, element.getImplementedField(), typeRef);
               if (resolved != element.getImplementedField()) {
                 var definition = myConcreteProvider.getConcrete(((Concrete.CoClauseFunctionReference) element).getFunctionReference());
                 if (definition instanceof Concrete.CoClauseFunctionDefinition) {
@@ -312,9 +309,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
           }
         }
       } else {
-        if (!(typeRef instanceof ErrorReference)) {
-          myLocalErrorReporter.report(def.getResultType() != null ? new NameResolverError("Expected a class", def.getResultType()) : new NameResolverError("The type of a function defined by copattern matching must be specified explicitly", def));
-        }
+        myLocalErrorReporter.report(def.getResultType() != null ? new NameResolverError("Expected a class", def.getResultType()) : new NameResolverError("The type of a function defined by copattern matching must be specified explicitly", def));
         body.getCoClauseElements().clear();
       }
     }

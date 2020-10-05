@@ -141,7 +141,7 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
     return myArguments >= 0;
   }
 
-  private ClassReferable findClassReference(Referable referent) {
+  public ClassReferable findClassReference(Referable referent) {
     Set<Referable> visited = null;
     while (true) {
       if (referent instanceof ClassReferable || referent == null) {

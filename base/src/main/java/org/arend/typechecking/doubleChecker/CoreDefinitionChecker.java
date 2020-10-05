@@ -134,7 +134,7 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
     } else if (body instanceof ElimBody) {
       elimBody = (ElimBody) body;
     } else if (body == null) {
-      ClassCallExpression classCall = definition.getResultType().cast(ClassCallExpression.class);
+      ClassCallExpression classCall = definition.getResultType().normalize(NormalizationMode.WHNF).cast(ClassCallExpression.class);
       if (classCall == null) {
         errorReporter.report(new TypeMismatchError(DocFactory.text("a classCall"), definition.getResultType(), null));
         return false;

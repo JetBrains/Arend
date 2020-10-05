@@ -29,6 +29,7 @@ import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.*;
+import org.arend.ext.prettyprinting.doc.DocFactory;
 import org.arend.ext.typechecking.LevelProver;
 import org.arend.naming.reference.*;
 import org.arend.prelude.Prelude;
@@ -433,7 +434,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     for (Concrete.Parameter parameter : Objects.requireNonNull(Concrete.getParameters(refDef, true))) {
-      boolean isTypeClass = isTypeClassRef(parameter.getType(), false);
+      boolean isTypeClass = isTypeClassRef(parameter.getType());
       for (int i = 0; i < parameter.getNumberOfParameters(); i++) {
         typeClassParameters.add(isTypeClass ? Definition.TypeClassParameterKind.YES : Definition.TypeClassParameterKind.NO);
       }
@@ -447,13 +448,13 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
   }
 
-  private boolean isTypeClassRef(Concrete.Expression expr, boolean allowRecord) {
+  private boolean isTypeClassRef(Concrete.Expression expr) {
     if (expr == null) {
       return false;
     }
     Referable typeRef = expr.getUnderlyingReferable();
     Definition typeDef = typeRef instanceof TCDefReferable ? ((TCDefReferable) typeRef).getTypechecked() : null;
-    return typeDef instanceof ClassDefinition && (allowRecord || !((ClassDefinition) typeDef).isRecord());
+    return typeDef instanceof ClassDefinition && !((ClassDefinition) typeDef).isRecord();
   }
 
   private Pair<Sort,Expression> typecheckParameters(Concrete.ReferableDefinition def, LinkList list, LocalInstancePool localInstancePool, Sort expectedSort, DependentLink oldParameters, PiExpression fieldType) {
@@ -752,20 +753,24 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       type = (ClassCallExpression) typeResult.expression;
       pseudoImplemented = new HashSet<>();
       result = typechecker.finalize(typechecker.typecheckClassExt(classFieldImpls, Type.OMEGA, type, pseudoImplemented, resultType), def, false);
-      if (result == null || !(result.expression instanceof ClassCallExpression)) {
-        return null;
-      }
     } else {
       pseudoImplemented = Collections.emptySet();
       result = typechecker.finalCheckExpr(Concrete.ClassExtExpression.make(def.getData(), typechecker.desugarClassApp(resultType, true), new Concrete.Coclauses(def.getData(), classFieldImpls)), Type.OMEGA);
-      if (result == null || !(result.expression instanceof ClassCallExpression)) {
-        return null;
-      }
-      type = (ClassCallExpression) result.expression;
+      type = null;
     }
 
-    typechecker.checkAllImplemented((ClassCallExpression) result.expression, pseudoImplemented, def);
-    return new Pair<>((ClassCallExpression) result.expression, type);
+    if (result == null) {
+      return null;
+    }
+
+    Expression resultExpr = result.expression.normalize(NormalizationMode.WHNF);
+    if (!(resultExpr instanceof ClassCallExpression)) {
+      errorReporter.report(new TypeMismatchError(DocFactory.text("a classCall"), resultExpr, def.getResultType()));
+      return null;
+    }
+
+    typechecker.checkAllImplemented((ClassCallExpression) resultExpr, pseudoImplemented, def);
+    return new Pair<>((ClassCallExpression) resultExpr, type == null ? (ClassCallExpression) resultExpr : type);
   }
 
   private ExpressionPattern checkDConstructor(Expression expr, Set<DependentLink> usedVars, Concrete.SourceNode sourceNode) {
@@ -1033,7 +1038,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
     } else if (body instanceof Concrete.CoelimFunctionBody) {
       if (def.getResultType() != null) {
-        if (isTypeClassRef(def.getResultType(), true)) {
+        if (def.getStatus() != Concrete.Status.HAS_ERRORS) {
           Pair<ClassCallExpression, ClassCallExpression> result = typecheckCoClauses(typedDef, def, kind, body.getCoClauseElements());
           if (result != null) {
             if (newDef && !def.isRecursive()) {
@@ -2262,7 +2267,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           if (resultType instanceof Concrete.PiExpression) {
             resultType = ((Concrete.PiExpression) resultType).getCodomain();
           }
-          if (isTypeClassRef(resultType, false)) {
+          if (isTypeClassRef(resultType)) {
             ClassField field = typechecker.referableToClassField(((Concrete.ClassField) element).getData(), null);
             if (field != null) {
               typeClassFields.add(field);
