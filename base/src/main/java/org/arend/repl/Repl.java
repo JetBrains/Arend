@@ -40,7 +40,7 @@ import java.util.function.Supplier;
 public abstract class Repl {
   public static final @NotNull ModuleLocation replModulePath = new ModuleLocation("Repl", true, ModuleLocation.LocationKind.SOURCE, ModulePath.fromString("Repl"));
   public @Nullable NormalizationMode normalizationMode = NormalizationMode.ENF;
-  public @Nullable EnumSet<PrettyPrinterFlag> prettyPrinterFlags;
+  public final @NotNull EnumSet<PrettyPrinterFlag> prettyPrinterFlags = EnumSet.of(PrettyPrinterFlag.SHOW_FIELD_INSTANCE);
 
   protected final List<Scope> myMergedScopes = new LinkedList<>();
   private final List<ReplHandler> myHandlers = new ArrayList<>();

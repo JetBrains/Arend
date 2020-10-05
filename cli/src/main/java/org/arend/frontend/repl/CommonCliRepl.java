@@ -5,6 +5,7 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.ListErrorReporter;
 import org.arend.ext.module.ModulePath;
+import org.arend.ext.prettyprinting.PrettyPrinterFlag;
 import org.arend.extImpl.DefinitionRequester;
 import org.arend.frontend.ConcreteReferableProvider;
 import org.arend.frontend.FileLibraryResolver;
@@ -125,6 +126,9 @@ public abstract class CommonCliRepl extends Repl {
   public static final @NotNull String PROMPT_KEY = "prompt";
   public static final @NotNull String REPL_CONFIG_FILE = "repl_config.properties";
   private static final Path config = FileUtils.USER_HOME.resolve(FileUtils.USER_CONFIG_DIR).resolve(REPL_CONFIG_FILE);
+  public static @NotNull String getPrettyPrintFlagKey(@NotNull PrettyPrinterFlag flag) {
+    return "pp_" + flag.name().toLowerCase(Locale.ROOT);
+  }
 
   {
     try {
@@ -134,6 +138,11 @@ public abstract class CommonCliRepl extends Repl {
         NormalizeCommand.INSTANCE.loadNormalize(normalization, this, false);
         var promptConfig = properties.get(PROMPT_KEY);
         if (promptConfig != null) prompt = String.valueOf(promptConfig);
+        prettyPrinterFlags.clear();
+        for (var flag : PrettyPrinterFlag.values()) {
+          var value = String.valueOf(properties.get(getPrettyPrintFlagKey(flag))).toLowerCase(Locale.ROOT);
+          if ("true".equals(value)) prettyPrinterFlags.add(flag);
+        }
       }
     } catch (IOException e) {
       eprintln("[ERROR] Failed to load repl config: " + e.getLocalizedMessage());
@@ -145,6 +154,9 @@ public abstract class CommonCliRepl extends Repl {
       if (Files.notExists(config)) Files.createFile(config);
       properties.setProperty(NORMALIZATION_KEY, String.valueOf(normalizationMode));
       properties.setProperty(PROMPT_KEY, prompt);
+      for (var flag : PrettyPrinterFlag.values()) {
+        properties.setProperty(getPrettyPrintFlagKey(flag), String.valueOf(prettyPrinterFlags.contains(flag)));
+      }
       try (var out = Files.newOutputStream(config)) {
         properties.store(out, "Created automatically by Arend REPL");
       }
