@@ -40,6 +40,7 @@ import java.util.function.Supplier;
 public abstract class Repl {
   public static final @NotNull ModuleLocation replModulePath = new ModuleLocation("Repl", true, ModuleLocation.LocationKind.SOURCE, ModulePath.fromString("Repl"));
   public @Nullable NormalizationMode normalizationMode = NormalizationMode.ENF;
+  public @Nullable EnumSet<PrettyPrinterFlag> prettyPrinterFlags;
 
   protected final List<Scope> myMergedScopes = new LinkedList<>();
   private final List<ReplHandler> myHandlers = new ArrayList<>();
@@ -47,7 +48,6 @@ public abstract class Repl {
   protected final ReplScope myReplScope = new ReplScope(null, myMergedScopes);
   protected @NotNull Scope myScope = myReplScope;
   protected @NotNull TypecheckingOrderingListener myTypechecking;
-  protected @Nullable EnumSet<PrettyPrinterFlag> myPpFlags;
   protected final @NotNull PrettyPrinterConfig myPpConfig = new PrettyPrinterConfig() {
     @Contract(" -> new")
     @Override
@@ -57,8 +57,8 @@ public abstract class Repl {
 
     @Override
     public @NotNull EnumSet<PrettyPrinterFlag> getExpressionFlags() {
-      if (myPpFlags == null) return DEFAULT.getExpressionFlags();
-      return myPpFlags;
+      if (prettyPrinterFlags == null) return DEFAULT.getExpressionFlags();
+      return prettyPrinterFlags;
     }
 
     @Contract(pure = true)
