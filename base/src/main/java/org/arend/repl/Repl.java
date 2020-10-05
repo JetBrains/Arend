@@ -7,6 +7,7 @@ import org.arend.ext.error.ListErrorReporter;
 import org.arend.ext.module.ModulePath;
 import org.arend.ext.prettyprinting.DefinitionRenamer;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.PrettyPrinterFlag;
 import org.arend.ext.reference.Precedence;
 import org.arend.extImpl.definitionRenamer.CachingDefinitionRenamer;
 import org.arend.extImpl.definitionRenamer.ScopeDefinitionRenamer;
@@ -31,10 +32,7 @@ import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.arend.typechecking.visitor.DesugarVisitor;
 import org.arend.typechecking.visitor.SyntacticDesugarVisitor;
-import org.jetbrains.annotations.MustBeInvokedByOverriders;
-import org.jetbrains.annotations.Nls;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 
 import java.util.*;
 import java.util.function.Supplier;
@@ -49,12 +47,21 @@ public abstract class Repl {
   protected final ReplScope myReplScope = new ReplScope(null, myMergedScopes);
   protected @NotNull Scope myScope = myReplScope;
   protected @NotNull TypecheckingOrderingListener myTypechecking;
+  protected @Nullable EnumSet<PrettyPrinterFlag> myPpFlags;
   protected final @NotNull PrettyPrinterConfig myPpConfig = new PrettyPrinterConfig() {
+    @Contract(" -> new")
     @Override
     public @NotNull DefinitionRenamer getDefinitionRenamer() {
       return new CachingDefinitionRenamer(new ScopeDefinitionRenamer(myScope));
     }
 
+    @Override
+    public @NotNull EnumSet<PrettyPrinterFlag> getExpressionFlags() {
+      if (myPpFlags == null) return DEFAULT.getExpressionFlags();
+      return myPpFlags;
+    }
+
+    @Contract(pure = true)
     @Override
     public @Nullable NormalizationMode getNormalizationMode() {
       return normalizationMode;
