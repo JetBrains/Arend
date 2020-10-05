@@ -202,6 +202,7 @@ public abstract class CommonCliRepl extends Repl {
     registerAction("lib", LoadLibraryCommand.INSTANCE);
     registerAction("pwd", new PwdCommand());
     registerAction("cd", new CdCommand());
+    registerAction("prettyprint", PrettyPrintFlagCommand.INSTANCE);
   }
 
   public @Nullable Library createLibrary(@NotNull String path) {
