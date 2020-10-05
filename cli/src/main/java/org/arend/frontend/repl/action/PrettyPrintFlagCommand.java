@@ -1,8 +1,8 @@
 package org.arend.frontend.repl.action;
 
 import org.arend.ext.prettyprinting.PrettyPrinterFlag;
-import org.arend.frontend.repl.CommonCliRepl;
-import org.arend.repl.QuitReplException;
+import org.arend.repl.Repl;
+import org.arend.repl.action.ReplCommand;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
@@ -10,11 +10,10 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-public class PrettyPrintFlagCommand implements CliReplCommand {
+public class PrettyPrintFlagCommand implements ReplCommand {
   public static final @NotNull PrettyPrintFlagCommand INSTANCE = new PrettyPrintFlagCommand();
 
   public static final @NotNull List<@NotNull String> AVAILABLE_OPTIONS = Arrays
@@ -32,7 +31,7 @@ public class PrettyPrintFlagCommand implements CliReplCommand {
   }
 
   @Override
-  public void invoke(@NotNull String line, @NotNull CommonCliRepl api, @NotNull Supplier<@NotNull String> scanner) {
+  public void invoke(@NotNull String line, @NotNull Repl api, @NotNull Supplier<@NotNull String> scanner) {
     if (line.isBlank()) {
       api.println("Flags: " + api.prettyPrinterFlags);
       return;
@@ -41,13 +40,13 @@ public class PrettyPrintFlagCommand implements CliReplCommand {
       var flag = PrettyPrinterFlag.valueOf(line.toUpperCase(Locale.ROOT));
       if (api.prettyPrinterFlags.contains(flag)) {
         api.prettyPrinterFlags.remove(flag);
-        api.println("Disabled " + flag + ".");
+        api.println("[INFO] Disabled " + flag + ".");
       } else {
         api.prettyPrinterFlags.add(flag);
-        api.println("Enabled " + flag + ".");
+        api.println("[INFO] Enabled " + flag + ".");
       }
     } catch (IllegalArgumentException e) {
-      api.eprintln("Invalid pretty-printing option " + line + ", available options: " + Arrays.toString(PrettyPrinterFlag.values()) + ".");
+      api.eprintln("[ERROR] Invalid pretty-printing option " + line + ", available options: " + Arrays.toString(PrettyPrinterFlag.values()) + ".");
     }
   }
 }

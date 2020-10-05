@@ -40,8 +40,7 @@ public final class LoadModuleCommand implements CliReplCommand {
       }
       loadModule(api, ModulePath.fromString(line));
     } catch (InvalidPathException e) {
-      api.eprintln("The path `" + line + "` is not good because:");
-      api.eprintln(e.getLocalizedMessage());
+      api.eprintln("[ERROR] The path `" + line + "` is not good because: " + e.getLocalizedMessage());
     }
   }
 
