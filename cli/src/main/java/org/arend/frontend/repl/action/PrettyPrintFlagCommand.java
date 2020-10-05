@@ -41,10 +41,10 @@ public class PrettyPrintFlagCommand implements CliReplCommand {
       var flag = PrettyPrinterFlag.valueOf(line.toUpperCase(Locale.ROOT));
       if (api.prettyPrinterFlags.contains(flag)) {
         api.prettyPrinterFlags.remove(flag);
-        api.println("Enabled " + flag + ".");
+        api.println("Disabled " + flag + ".");
       } else {
         api.prettyPrinterFlags.add(flag);
-        api.println("Disabled " + flag + ".");
+        api.println("Enabled " + flag + ".");
       }
     } catch (IllegalArgumentException e) {
       api.eprintln("Invalid pretty-printing option " + line + ", available options: " + Arrays.toString(PrettyPrinterFlag.values()) + ".");
