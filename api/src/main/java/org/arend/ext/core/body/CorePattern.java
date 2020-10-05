@@ -2,7 +2,6 @@ package org.arend.ext.core.body;
 
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.context.CoreParameter;
-import org.arend.ext.core.definition.CoreClassDefinition;
 import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.ext.prettyprinting.PrettyPrintable;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
@@ -55,29 +54,40 @@ public interface CorePattern extends PrettyPrintable {
 
   @NotNull CorePattern subst(@NotNull Map<? extends CoreBinding, ? extends CorePattern> map);
 
-  @Override
-  default void prettyPrint(StringBuilder builder, PrettyPrinterConfig ppConfig) {
-    DocStringBuilder.build(builder, prettyPrint(ppConfig));
+  default String getBindingName() {
+    CoreBinding binding = getBinding();
+    if (binding == null) return null;
+    String name = binding.getName();
+    return name == null ? "_x" : name;
   }
 
-  default LineDoc prettyPrint(PrettyPrinterConfig ppConfig) {
+  @Override
+  default void prettyPrint(StringBuilder builder, PrettyPrinterConfig ppConfig) {
     if (isAbsurd()) {
-      return text("()");
+      builder.append("()");
+      return;
     }
 
     CoreBinding binding = getBinding();
     if (binding != null) {
-      return text(binding.getName());
+      builder.append(getBindingName());
+      return;
     }
 
     CoreDefinition definition = getConstructor();
     List<LineDoc> docs = new ArrayList<>();
     if (definition != null) {
-      docs.add(refDoc(definition.getRef()));
+      docs.add(text(definition.getRef().getRefName()));
     }
     for (CorePattern subPattern : getSubPatterns()) {
-      docs.add(parens(subPattern.prettyPrint(ppConfig), subPattern.getConstructor() != null));
+      docs.add(parens(subPattern.prettyPrint(ppConfig), subPattern.getConstructor() != null && !subPattern.getSubPatterns().isEmpty()));
     }
-    return parens(hSep(text(definition == null ? ", " : " "), docs), definition == null);
+
+    DocStringBuilder.build(builder, parens(hSep(text(definition == null ? ", " : " "), docs), definition == null));
+  }
+
+  @Override
+  default LineDoc prettyPrint(PrettyPrinterConfig ppConfig) {
+    return pattern(this, ppConfig);
   }
 }

@@ -1,5 +1,6 @@
 package org.arend.core.pattern;
 
+import org.arend.core.context.binding.Binding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.definition.Constructor;
@@ -12,6 +13,7 @@ import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.naming.renamer.Renamer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -42,13 +44,21 @@ public interface Pattern extends CorePattern {
 
   @Override
   @Nullable
-  default CoreBinding getBinding() {
+  default Binding getBinding() {
     return null;
   }
 
   @Override
   default boolean isAbsurd() {
     return false;
+  }
+
+  @Override
+  default String getBindingName() {
+    Binding binding = getBinding();
+    if (binding == null) return null;
+    String name = binding.getName();
+    return name == null ? Renamer.getNameFromType(binding.getTypeExpr(), null) : name;
   }
 
   static DependentLink getFirstBinding(Collection<? extends Pattern> patterns) {

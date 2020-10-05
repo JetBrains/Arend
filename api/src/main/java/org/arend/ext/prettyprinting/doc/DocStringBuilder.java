@@ -49,6 +49,15 @@ public class DocStringBuilder extends LineDocVisitor {
   }
 
   @Override
+  public Void visitPattern(PatternDoc doc, Boolean newLine) {
+    builder.append(doc.getText());
+    if (newLine) {
+      builder.append('\n');
+    }
+    return null;
+  }
+
+  @Override
   public Void visitReference(ReferenceDoc doc, Boolean newLine) {
     LongName longName = doc.getReference().isClassField() ? null : doc.getReference().getRefLongName();
     builder.append(longName == null || longName.toList().isEmpty() ? doc.getReference().getRefName() : longName.toString());

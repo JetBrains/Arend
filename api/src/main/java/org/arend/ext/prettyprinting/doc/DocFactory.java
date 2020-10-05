@@ -1,5 +1,6 @@
 package org.arend.ext.prettyprinting.doc;
 
+import org.arend.ext.core.body.CorePattern;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.prettyprinting.PrettyPrintable;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
@@ -62,6 +63,10 @@ public class DocFactory {
 
   public static TermLineDoc termLine(CoreExpression expression, PrettyPrinterConfig ppConfig) {
     return new TermLineDoc(expression, ppConfig);
+  }
+
+  public static PatternDoc pattern(CorePattern pattern, PrettyPrinterConfig ppConfig) {
+    return new PatternDoc(pattern, ppConfig);
   }
 
   public static PPDoc ppDoc(PrettyPrintable prettyPrintable, PrettyPrinterConfig ppConfig) {
