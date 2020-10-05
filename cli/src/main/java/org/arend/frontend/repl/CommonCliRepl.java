@@ -1,11 +1,11 @@
 package org.arend.frontend.repl;
 
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.ListErrorReporter;
 import org.arend.ext.module.ModulePath;
-import org.arend.ext.prettyprinting.PrettyPrinterFlag;
 import org.arend.extImpl.DefinitionRequester;
 import org.arend.frontend.ConcreteReferableProvider;
 import org.arend.frontend.FileLibraryResolver;
@@ -52,7 +52,6 @@ import java.util.*;
 import java.util.function.Supplier;
 
 public abstract class CommonCliRepl extends Repl {
-  private final Properties properties = new Properties();
   public static final @NotNull String APP_NAME = "Arend REPL";
 
   public @NotNull Path pwd = Paths.get("").toAbsolutePath();
@@ -122,27 +121,18 @@ public abstract class CommonCliRepl extends Repl {
   }
   //endregion
 
-  public static final @NotNull String NORMALIZATION_KEY = "normalization";
-  public static final @NotNull String PROMPT_KEY = "prompt";
-  public static final @NotNull String REPL_CONFIG_FILE = "repl_config.properties";
+  public static final @NotNull String REPL_CONFIG_FILE = "repl-config.yaml";
   private static final Path config = FileUtils.USER_HOME.resolve(FileUtils.USER_CONFIG_DIR).resolve(REPL_CONFIG_FILE);
-  public static @NotNull String getPrettyPrintFlagKey(@NotNull PrettyPrinterFlag flag) {
-    return "pp_" + flag.name().toLowerCase(Locale.ROOT);
-  }
 
   {
     try {
       if (Files.exists(config)) {
-        properties.load(Files.newInputStream(config));
-        var normalization = String.valueOf(properties.get(NORMALIZATION_KEY));
+        var properties = new YAMLMapper().readValue(config.toFile(), ReplConfig.class);
+        var normalization = String.valueOf(properties.normalizationMode);
         NormalizeCommand.INSTANCE.loadNormalize(normalization, this, false);
-        var promptConfig = properties.get(PROMPT_KEY);
-        if (promptConfig != null) prompt = String.valueOf(promptConfig);
+        if (properties.prompt != null) prompt = properties.prompt;
         prettyPrinterFlags.clear();
-        for (var flag : PrettyPrinterFlag.values()) {
-          var value = String.valueOf(properties.get(getPrettyPrintFlagKey(flag))).toLowerCase(Locale.ROOT);
-          if ("true".equals(value)) prettyPrinterFlags.add(flag);
-        }
+        prettyPrinterFlags.addAll(properties.prettyPrinterFlags);
       }
     } catch (IOException e) {
       eprintln("[ERROR] Failed to load repl config: " + e.getLocalizedMessage());
@@ -151,14 +141,15 @@ public abstract class CommonCliRepl extends Repl {
 
   public final void saveUserConfig() {
     try {
-      if (Files.notExists(config)) Files.createFile(config);
-      properties.setProperty(NORMALIZATION_KEY, String.valueOf(normalizationMode));
-      properties.setProperty(PROMPT_KEY, prompt);
-      for (var flag : PrettyPrinterFlag.values()) {
-        properties.setProperty(getPrettyPrintFlagKey(flag), String.valueOf(prettyPrinterFlags.contains(flag)));
+      if (Files.notExists(config)) {
+        Files.createFile(config);
       }
+      var properties = new ReplConfig();
+      properties.normalizationMode = String.valueOf(normalizationMode);
+      properties.prompt = prompt;
+      properties.prettyPrinterFlags = new ArrayList<>(prettyPrinterFlags);
       try (var out = Files.newOutputStream(config)) {
-        properties.store(out, "Created automatically by Arend REPL");
+        new YAMLMapper().writeValue(out, properties);
       }
     } catch (IOException e) {
       eprintln("[ERROR] Failed to save repl config: " + e.getLocalizedMessage());
