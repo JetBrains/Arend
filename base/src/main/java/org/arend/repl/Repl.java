@@ -31,6 +31,7 @@ import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.arend.typechecking.visitor.DesugarVisitor;
 import org.arend.typechecking.visitor.SyntacticDesugarVisitor;
+import org.jetbrains.annotations.MustBeInvokedByOverriders;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -164,6 +165,7 @@ public abstract class Repl {
     );
   }
 
+  @MustBeInvokedByOverriders
   protected void loadCommands() {
     myHandlers.add(CodeParsingHandler.INSTANCE);
     myHandlers.add(CommandHandler.INSTANCE);

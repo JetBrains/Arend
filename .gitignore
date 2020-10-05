@@ -2,6 +2,5 @@ build/
 /.idea/
 /.gradle/
 *.iml
-src/gen
 cli-*-full.jar
 lib/Prelude.arc
