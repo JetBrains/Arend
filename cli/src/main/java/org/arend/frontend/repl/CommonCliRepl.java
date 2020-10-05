@@ -28,7 +28,6 @@ import org.arend.prelude.GeneratedVersion;
 import org.arend.prelude.PreludeLibrary;
 import org.arend.prelude.PreludeResourceLibrary;
 import org.arend.repl.Repl;
-import org.arend.repl.action.NormalizeCommand;
 import org.arend.repl.action.ReplCommand;
 import org.arend.term.NamespaceCommand;
 import org.arend.term.concrete.Concrete;
@@ -128,8 +127,7 @@ public abstract class CommonCliRepl extends Repl {
     try {
       if (Files.exists(config)) {
         var properties = new YAMLMapper().readValue(config.toFile(), ReplConfig.class);
-        var normalization = String.valueOf(properties.normalizationMode);
-        NormalizeCommand.INSTANCE.loadNormalize(normalization, this, false);
+        normalizationMode = properties.normalizationMode;
         if (properties.prompt != null) prompt = properties.prompt;
         prettyPrinterFlags.clear();
         prettyPrinterFlags.addAll(properties.prettyPrinterFlags);
@@ -145,7 +143,7 @@ public abstract class CommonCliRepl extends Repl {
         Files.createFile(config);
       }
       var properties = new ReplConfig();
-      properties.normalizationMode = String.valueOf(normalizationMode);
+      properties.normalizationMode = normalizationMode;
       properties.prompt = prompt;
       properties.prettyPrinterFlags = new ArrayList<>(prettyPrinterFlags);
       try (var out = Files.newOutputStream(config)) {

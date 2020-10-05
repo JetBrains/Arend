@@ -31,21 +31,15 @@ public final class NormalizeCommand implements ReplCommand {
 
   @Override
   public void invoke(@NotNull String line, @NotNull Repl api, @NotNull Supplier<@NotNull String> scanner) {
-    loadNormalize(line, api, true);
-  }
-
-  public void loadNormalize(@NotNull String line, @NotNull Repl api, boolean log) {
     switch (line.toUpperCase()) {
       default:
         api.eprintln("[ERROR] Unrecognized normalization level `" + line + "`, see `:? normalize`");
         break;
       case "":
-        if (log) {
-          api.println("Normalization mode: " + api.normalizationMode + " (:? normalize for further instruction)");
-          break;
-        }
+        api.println("Normalization mode: " + api.normalizationMode + " (:? normalize for further instruction)");
+        break;
       case "NULL":
-        if (log) api.println("[INFO] Unset normalization mode.");
+        api.println("[INFO] Unset normalization mode.");
         api.normalizationMode = null;
         break;
       case "WHNF":
