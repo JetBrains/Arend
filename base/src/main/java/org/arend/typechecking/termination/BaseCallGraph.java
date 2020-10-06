@@ -4,53 +4,9 @@ import org.arend.typechecking.computation.ComputationRunner;
 import java.util.*;
 
 public abstract class BaseCallGraph<T> {
-  private HashMap<T, HashMap<T, HashSet<BaseCallMatrix<T>>>> myGraph = new HashMap<>();
-  private boolean isCompositionClosed = false;
+  private final HashMap<T, HashMap<T, HashSet<BaseCallMatrix<T>>>> myGraph = new HashMap<>();
 
   BaseCallGraph() {
-  }
-
-  BaseCallGraph(BaseCallGraph<T> g) {
-    HashMap<T, HashMap<T, HashSet<BaseCallMatrix<T>>>> newGraph;
-    HashMap<T, HashMap<T, HashSet<BaseCallMatrix<T>>>> oldGraph = g.myGraph;
-    int myNewEdges;
-
-    do {
-      myNewEdges = 0;
-      newGraph = new HashMap<>();
-
-      for (T vDom : oldGraph.keySet()) {
-        HashMap<T, HashSet<BaseCallMatrix<T>>> outboundArrows = oldGraph.get(vDom);
-        for (T vCodom : outboundArrows.keySet()) {
-          for (BaseCallMatrix<T> edge : outboundArrows.get(vCodom)) {
-            append(edge, newGraph);
-          }
-        }
-      }
-
-      for (T vDom : oldGraph.keySet()) {
-        HashMap<T, HashSet<BaseCallMatrix<T>>> outboundEdges = oldGraph.get(vDom);
-        for (T vCodom : outboundEdges.keySet()) {
-          for (BaseCallMatrix<T> arrow : outboundEdges.get(vCodom)) {
-            HashMap<T, HashSet<BaseCallMatrix<T>>> outboundEdges2 = oldGraph.get(arrow.getCodomain());
-            if (outboundEdges2 != null) {
-              ComputationRunner.checkCanceled();
-              for (HashSet<BaseCallMatrix<T>> homSet : outboundEdges2.values()) {
-                for (BaseCallMatrix<T> arrow2 : homSet) {
-                  if (append(new CompositeCallMatrix<>(arrow, arrow2), newGraph)) {
-                    myNewEdges++;
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-      oldGraph = newGraph;
-    } while (myNewEdges > 0);
-
-    myGraph = newGraph;
-    isCompositionClosed = true;
   }
 
   public void add(Set<BaseCallMatrix<T>> set) {
@@ -152,19 +108,58 @@ public abstract class BaseCallGraph<T> {
   }
 
   public boolean checkTermination() {
+    HashMap<T, HashMap<T, HashSet<BaseCallMatrix<T>>>> newGraph;
+    HashMap<T, HashMap<T, HashSet<BaseCallMatrix<T>>>> oldGraph = myGraph;
+    int myNewEdges;
     boolean result = true;
-    for (T v : myGraph.keySet()) {
-      RecursiveBehaviors<T> rbs = new RecursiveBehaviors<>(this, v);
-      List<String> order = rbs.findTerminationOrderAnnotated();
-      if (order == null) {
-        result = false;
-        HashSet<RecursiveBehavior<T>> rbs2 = new HashSet<>();
-        if (rbs.myBestRbAttained != null) {
-          rbs2.addAll(rbs.myBestRbAttained.onlyMinimalElements());
+
+    do {
+      myNewEdges = 0;
+      newGraph = new HashMap<>();
+
+      for (T vDom : oldGraph.keySet()) {
+        HashMap<T, HashSet<BaseCallMatrix<T>>> outboundArrows = oldGraph.get(vDom);
+        for (T vCodom : outboundArrows.keySet()) {
+          for (BaseCallMatrix<T> edge : outboundArrows.get(vCodom)) {
+            append(edge, newGraph);
+          }
         }
-        formErrorMessage(v, rbs2);
       }
-    }
+
+      for (T vDom : oldGraph.keySet()) {
+        HashMap<T, HashSet<BaseCallMatrix<T>>> outboundEdges = oldGraph.get(vDom);
+        for (T vCodom : outboundEdges.keySet()) {
+          for (BaseCallMatrix<T> arrow : outboundEdges.get(vCodom)) {
+            HashMap<T, HashSet<BaseCallMatrix<T>>> outboundEdges2 = oldGraph.get(arrow.getCodomain());
+            if (outboundEdges2 != null) {
+              ComputationRunner.checkCanceled();
+              for (HashSet<BaseCallMatrix<T>> homSet : outboundEdges2.values()) {
+                for (BaseCallMatrix<T> arrow2 : homSet) {
+                  if (append(new CompositeCallMatrix<>(arrow, arrow2), newGraph)) {
+                    myNewEdges++;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      oldGraph = newGraph;
+
+      for (T v : newGraph.keySet()) {
+        RecursiveBehaviors<T> rbs = new RecursiveBehaviors<>(newGraph, v);
+        List<String> order = rbs.findTerminationOrderAnnotated();
+        if (order == null) {
+          HashSet<RecursiveBehavior<T>> rbs2 = new HashSet<>();
+          if (rbs.myBestRbAttained != null) {
+            rbs2.addAll(rbs.myBestRbAttained.onlyMinimalElements());
+          }
+          formErrorMessage(v, rbs2);
+          result = false;
+        }
+      }
+    } while (myNewEdges > 0 && result);
+
     return result;
   }
 
@@ -174,9 +169,8 @@ public abstract class BaseCallGraph<T> {
     private int myLength = -1;
     private RecursiveBehaviors<T> myBestRbAttained = null;
 
-    private RecursiveBehaviors(BaseCallGraph<T> graph, T v) {
-      this(graph.myGraph.get(v).get(v));
-      if (!graph.isCompositionClosed) throw new IllegalArgumentException();
+    private RecursiveBehaviors(HashMap<T, HashMap<T, HashSet<BaseCallMatrix<T>>>> graph, T v) {
+      this(graph.get(v).get(v));
       myBasepoint = v;
     }
 

@@ -24,10 +24,6 @@ public class DefinitionCallGraph extends BaseCallGraph<Definition> {
   public DefinitionCallGraph() {
   }
 
-  public DefinitionCallGraph(DefinitionCallGraph cg) {
-    super(cg);
-  }
-
   public void add(FunctionDefinition def, Collection<? extends ElimClause<ExpressionPattern>> clauses, Set<? extends Definition> cycle) {
     CollectCallVisitor visitor = new CollectCallVisitor(def, cycle);
     for (ElimClause<ExpressionPattern> clause : clauses) {

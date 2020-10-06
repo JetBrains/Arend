@@ -11,10 +11,6 @@ public class TestCallGraph extends BaseCallGraph<TestVertex> {
     add(graph);
   }
 
-  public TestCallGraph(TestCallGraph tcg) {
-    super(tcg);
-  }
-
   @Override
   protected String getLabel(TestVertex vertex) {
     return vertex.myName;
@@ -25,7 +21,7 @@ public class TestCallGraph extends BaseCallGraph<TestVertex> {
     myErrorInfo.put(vertex, behavior);
   }
 
-  public static TestCallGraph calculateClosure(Set<BaseCallMatrix<TestVertex>> g) {
-    return new TestCallGraph(new TestCallGraph(g));
+  public static Boolean testTermination(Set<BaseCallMatrix<TestVertex>> g) {
+    return new TestCallGraph(g).checkTermination();
   }
 }

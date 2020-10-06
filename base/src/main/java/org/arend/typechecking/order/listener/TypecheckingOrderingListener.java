@@ -407,13 +407,12 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
       }
     }
 
-    DefinitionCallGraph callCategory = new DefinitionCallGraph(definitionCallGraph);
-    if (!callCategory.checkTermination()) {
+    if (!definitionCallGraph.checkTermination()) {
       for (FunctionDefinition definition : definitions.keySet()) {
         definition.addStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
         definition.setBody(null);
       }
-      for (Map.Entry<Definition, Set<RecursiveBehavior<Definition>>> entry : callCategory.myErrorInfo.entrySet()) {
+      for (Map.Entry<Definition, Set<RecursiveBehavior<Definition>>> entry : definitionCallGraph.myErrorInfo.entrySet()) {
         myErrorReporter.report(new TerminationCheckError(entry.getKey(), entry.getValue()));
       }
     }
