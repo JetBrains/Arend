@@ -30,7 +30,7 @@ public class Util {
     ConstructorExpressionPattern getPattern(List<ExpressionPattern> subPatterns);
   }
 
-  static DataClauseElem makeDataClauseElem(BranchKey branchKey, ConstructorExpressionPattern pattern) {
+  public static DataClauseElem makeDataClauseElem(BranchKey branchKey, ConstructorExpressionPattern pattern) {
     if (branchKey instanceof SingleConstructor) {
       return new TupleClauseElem(pattern);
     } else if (branchKey instanceof Constructor) {
