@@ -143,17 +143,20 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     errorReporter.myStatus = errorReporter.myStatus.max(status);
   }
 
-  private CheckTypeVisitor(Map<Referable, Binding> localContext, ErrorReporter errorReporter, GlobalInstancePool pool, ArendExtension arendExtension) {
+  private CheckTypeVisitor(Map<Referable, Binding> localContext, ErrorReporter errorReporter, GlobalInstancePool pool, ArendExtension arendExtension, UserDataHolderImpl holder) {
     this.errorReporter = new MyErrorReporter(errorReporter);
     myEquations = new TwoStageEquations(this);
     myInstancePool = pool;
     myArgsInference = new StdImplicitArgsInference(this);
     context = localContext;
     myArendExtension = arendExtension;
+    if (holder != null) {
+      setUserData(holder);
+    }
   }
 
   public CheckTypeVisitor(ErrorReporter errorReporter, GlobalInstancePool pool, ArendExtension arendExtension) {
-    this(new LinkedHashMap<>(), errorReporter, pool, arendExtension);
+    this(new LinkedHashMap<>(), errorReporter, pool, arendExtension, null);
   }
 
   public ArendExtension getExtension() {
@@ -161,11 +164,11 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   public TypecheckingContext saveTypecheckingContext() {
-    return new TypecheckingContext(new LinkedHashMap<>(context), myInstancePool.getInstanceProvider(), myInstancePool.getInstancePool(), myArendExtension);
+    return new TypecheckingContext(new LinkedHashMap<>(context), myInstancePool.getInstanceProvider(), myInstancePool.getInstancePool(), myArendExtension, copyUserData());
   }
 
   public static CheckTypeVisitor loadTypecheckingContext(TypecheckingContext typecheckingContext, ErrorReporter errorReporter) {
-    CheckTypeVisitor visitor = new CheckTypeVisitor(typecheckingContext.localContext, errorReporter, null, typecheckingContext.arendExtension);
+    CheckTypeVisitor visitor = new CheckTypeVisitor(typecheckingContext.localContext, errorReporter, null, typecheckingContext.arendExtension, typecheckingContext.userDataHolder);
     visitor.setInstancePool(new GlobalInstancePool(typecheckingContext.instanceProvider, visitor, typecheckingContext.localInstancePool));
     return visitor;
   }
@@ -652,7 +655,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         errorReporter = deferredMeta.errorReporter;
         context = deferredMeta.context;
       } else {
-        checkTypeVisitor = new CheckTypeVisitor(deferredMeta.context, deferredMeta.errorReporter, null, myArendExtension);
+        checkTypeVisitor = new CheckTypeVisitor(deferredMeta.context, deferredMeta.errorReporter, null, myArendExtension, this);
         checkTypeVisitor.setInstancePool(new GlobalInstancePool(myInstancePool.getInstanceProvider(), checkTypeVisitor, myInstancePool.getInstancePool()));
       }
 
@@ -2556,7 +2559,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   private void saveState() {
-    TypecheckerState state = new TypecheckerState(errorReporter, myDeferredMetasBeforeSolver.size(), myDeferredMetasBeforeLevels.size(), myDeferredMetasAfterLevels.size(), mySavedState);
+    TypecheckerState state = new TypecheckerState(errorReporter, myDeferredMetasBeforeSolver.size(), myDeferredMetasBeforeLevels.size(), myDeferredMetasAfterLevels.size(), copyUserData(), mySavedState);
     errorReporter = new MyErrorReporter(new ListErrorReporter());
     myEquations.saveState(state);
     mySavedState = state;
@@ -2588,7 +2591,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
 
     ((ListErrorReporter) errorReporter.myErrorReporter.getErrorReporter()).reportTo(mySavedState.errorReporter);
-    TypecheckerState state = new TypecheckerState(mySavedState.errorReporter, myDeferredMetasBeforeSolver.size(), myDeferredMetasBeforeLevels.size(), myDeferredMetasAfterLevels.size(), mySavedState.previousState);
+    TypecheckerState state = new TypecheckerState(mySavedState.errorReporter, myDeferredMetasBeforeSolver.size(), myDeferredMetasBeforeLevels.size(), myDeferredMetasAfterLevels.size(), copyUserData(), mySavedState.previousState);
     myEquations.saveState(state);
     mySavedState = state;
   }
@@ -2607,6 +2610,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     if (state.numberOfDeferredMetasAfterLevels < myDeferredMetasAfterLevels.size()) {
       myDeferredMetasAfterLevels.subList(state.numberOfDeferredMetasAfterLevels, myDeferredMetasAfterLevels.size()).clear();
     }
+    setUserData(state.userDataHolder);
 
     for (InferenceVariable var : state.solvedVariables) {
       var.unsolve();

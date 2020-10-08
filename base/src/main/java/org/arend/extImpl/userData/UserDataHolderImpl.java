@@ -10,7 +10,30 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class UserDataHolderImpl implements UserDataHolder {
-  private Map<Key<?>, Object> myUserDataMap = null;
+  private Map<Key<?>, Object> myUserDataMap;
+
+  private UserDataHolderImpl(Map<Key<?>, Object> map) {
+    myUserDataMap = map;
+  }
+
+  public UserDataHolderImpl() {
+    myUserDataMap = null;
+  }
+
+  protected void setUserData(UserDataHolderImpl holder) {
+    myUserDataMap = holder.myUserDataMap;
+  }
+
+  public UserDataHolderImpl copyUserData() {
+    if (myUserDataMap == null || myUserDataMap.isEmpty()) return new UserDataHolderImpl();
+    Map<Key<?>, Object> map = new HashMap<>();
+    for (Map.Entry<Key<?>, Object> entry : myUserDataMap.entrySet()) {
+      //noinspection unchecked
+      Key<Object> key = (Key<Object>) entry.getKey();
+      map.put(key, key.copy(entry.getValue()));
+    }
+    return new UserDataHolderImpl(map);
+  }
 
   @Override
   public <T> @Nullable T getUserData(@NotNull Key<T> key) {

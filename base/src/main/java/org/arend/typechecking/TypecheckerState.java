@@ -1,6 +1,7 @@
 package org.arend.typechecking;
 
 import org.arend.core.context.binding.inference.InferenceVariable;
+import org.arend.extImpl.userData.UserDataHolderImpl;
 import org.arend.typechecking.implicitargs.equations.Equation;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 
@@ -21,12 +22,14 @@ public class TypecheckerState {
   public int numberOfProps;
   public int numberOfBoundVars;
   public Set<InferenceVariable> notSolvableFromEquationsVars;
+  public UserDataHolderImpl userDataHolder;
 
-  public TypecheckerState(CheckTypeVisitor.MyErrorReporter errorReporter, int numberOfDeferredMetasBeforeSolver, int numberOfDeferredMetasBeforeLevels, int numberOfDeferredMetasAfterLevels, TypecheckerState previousState) {
+  public TypecheckerState(CheckTypeVisitor.MyErrorReporter errorReporter, int numberOfDeferredMetasBeforeSolver, int numberOfDeferredMetasBeforeLevels, int numberOfDeferredMetasAfterLevels, UserDataHolderImpl userDataHolder, TypecheckerState previousState) {
     this.errorReporter = errorReporter;
     this.numberOfDeferredMetasBeforeSolver = numberOfDeferredMetasBeforeSolver;
     this.numberOfDeferredMetasBeforeLevels = numberOfDeferredMetasBeforeLevels;
     this.numberOfDeferredMetasAfterLevels = numberOfDeferredMetasAfterLevels;
+    this.userDataHolder = userDataHolder;
     this.previousState = previousState;
   }
 }

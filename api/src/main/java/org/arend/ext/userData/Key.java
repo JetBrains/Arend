@@ -1,6 +1,5 @@
 package org.arend.ext.userData;
 
-@SuppressWarnings("unused")
 public class Key<T> {
   protected final String name;
 
@@ -10,6 +9,10 @@ public class Key<T> {
 
   public Key() {
     this.name = null;
+  }
+
+  public T copy(T value) {
+    return value;
   }
 
   @Override
