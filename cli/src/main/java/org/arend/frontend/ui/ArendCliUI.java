@@ -1,5 +1,6 @@
 package org.arend.frontend.ui;
 
+import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.ext.prettyprinting.doc.DocStringBuilder;
@@ -32,7 +33,12 @@ public class ArendCliUI implements ArendUI, ArendConsole {
 
   @Override
   public @NotNull PrettyPrinterConfig getPrettyPrinterConfig() {
-    return PrettyPrinterConfig.DEFAULT;
+    return new PrettyPrinterConfig() {
+      @Override
+      public NormalizationMode getNormalizationMode() {
+        return NormalizationMode.ENF;
+      }
+    };
   }
 
   @Override
