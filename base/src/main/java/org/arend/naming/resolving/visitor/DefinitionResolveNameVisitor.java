@@ -142,7 +142,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       if (newRef == null) {
         return false;
       }
-      expr.setReferent(exprVisitor.convertReferable(newRef));
+      expr.setReferent(exprVisitor.convertReferable(newRef, expr.getData()));
       if (myResolverListener != null) {
         myResolverListener.referenceResolved(null, ref, expr, resolvedRefs, exprVisitor.getScope());
       }
