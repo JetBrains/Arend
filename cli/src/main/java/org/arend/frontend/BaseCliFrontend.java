@@ -237,7 +237,7 @@ public abstract class BaseCliFrontend {
     Path sourceDir = sourceDirStr == null ? FileUtils.getCurrentDirectory() : Paths.get(sourceDirStr);
 
     String binaryDirStr = cmdLine.getOptionValue("b");
-    Path outDir = binaryDirStr != null ? Paths.get(binaryDirStr) : sourceDir.resolve(".bin");
+    Path outDir = binaryDirStr != null ? Paths.get(binaryDirStr) : sourceDir.resolve(FileUtils.DEFAULT_BINARIES_DIR);
 
     String extDirStr = cmdLine.getOptionValue("e");
     Path extDir = extDirStr != null ? Paths.get(extDirStr) : null;

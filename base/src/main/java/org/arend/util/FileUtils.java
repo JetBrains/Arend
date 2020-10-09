@@ -22,6 +22,8 @@ public class FileUtils {
   public static final String LIBRARY_CONFIG_FILE = "arend.yaml";
   public static final String USER_CONFIG_DIR = ".arend";
   public static final String ZIP_EXTENSION = ".zip";
+  public static final String DEFAULT_SOURCES_DIR = "src";
+  public static final String DEFAULT_BINARIES_DIR = "bin";
   public static final @NotNull Path USER_HOME = Paths.get(System.getProperty("user.home")).toAbsolutePath().normalize();
 
   public static Path defaultLibrariesRoot() {
