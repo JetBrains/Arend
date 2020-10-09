@@ -593,7 +593,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       if (referable instanceof ErrorReference) {
         myErrorReporter.report(((ErrorReference) referable).getError());
       } else if (referable instanceof GlobalReferable && !((GlobalReferable) referable).getKind().isConstructor()) {
-        myErrorReporter.report(new ExpectedConstructorError((GlobalReferable) referable, null, pattern, null));
+        myErrorReporter.report(new ExpectedConstructorError((GlobalReferable) referable, null, pattern, null, null, null));
       }
 
       ((Concrete.ConstructorPattern) pattern).setConstructor(referable);

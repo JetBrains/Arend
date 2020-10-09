@@ -399,7 +399,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       patterns1.add((Concrete.Pattern) pattern);
     }
     try (var ignored = new Utils.SetContextSaver<>(context)) {
-      PatternTypechecking.Result result = new PatternTypechecking(errorReporter, PatternTypechecking.Mode.CASE, this, false).typecheckPatterns(patterns1, null, (DependentLink) parameters, new ExprSubstitution(), null, Collections.emptyList(), marker);
+      PatternTypechecking.Result result = new PatternTypechecking(errorReporter, PatternTypechecking.Mode.CASE, this, false, null, null).typecheckPatterns(patterns1, null, (DependentLink) parameters, new ExprSubstitution(), new ExprSubstitution(), marker);
       //noinspection unchecked
       return result == null ? null : (List<CorePattern>) (List<?>) result.getPatterns();
     }
@@ -2917,7 +2917,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
     List<ExtElimClause> clauses;
     try {
-      PatternTypechecking patternTypechecking = new PatternTypechecking(errorReporter, PatternTypechecking.Mode.CASE, this, false);
+      PatternTypechecking patternTypechecking = new PatternTypechecking(errorReporter, PatternTypechecking.Mode.CASE, this, false, expressions, null);
       clauses = patternTypechecking.typecheckClauses(expr.getClauses(), list.getFirst(), resultExpr);
     } finally {
       for (Referable ref : addedRefs) {

@@ -1020,7 +1020,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     } else if (body instanceof Concrete.ElimFunctionBody) {
       Concrete.ElimFunctionBody elimBody = (Concrete.ElimFunctionBody) body;
       List<DependentLink> elimParams = ElimTypechecking.getEliminatedParameters(elimBody.getEliminatedReferences(), elimBody.getClauses(), typedDef.getParameters(), typechecker);
-      PatternTypechecking patternTypechecking = new PatternTypechecking(errorReporter, PatternTypechecking.Mode.FUNCTION, typechecker, true);
+      PatternTypechecking patternTypechecking = new PatternTypechecking(errorReporter, PatternTypechecking.Mode.FUNCTION, typechecker, true, null, elimParams);
       clauses = elimParams == null ? null : patternTypechecking.typecheckClauses(elimBody.getClauses(), def.getParameters(), typedDef.getParameters(), elimParams, expectedType);
       Sort sort = expectedType.getSortOfType();
       Body typedBody = clauses == null ? null : new ElimTypechecking(errorReporter, typechecker.getEquations(), expectedType, PatternTypechecking.Mode.FUNCTION, typeLevel, sort != null ? sort.getHLevel() : Level.INFINITY, kind.isSFunc(), elimBody.getClauses(), def).typecheckElim(clauses, typedDef.getParameters(), elimParams);
@@ -1402,7 +1402,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
     if (!def.getConstructorClauses().isEmpty()) {
       Map<Referable, Binding> context = typechecker.getContext();
-      PatternTypechecking dataPatternTypechecking = new PatternTypechecking(errorReporter, PatternTypechecking.Mode.DATA, typechecker, true);
+      PatternTypechecking dataPatternTypechecking = new PatternTypechecking(errorReporter, PatternTypechecking.Mode.DATA, typechecker, true, null, elimParams);
 
       Set<TCReferable> notAllowedConstructors = new HashSet<>();
       for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
@@ -1425,7 +1425,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           }
           if (elimParams != null) {
             ExprSubstitution substitution = new ExprSubstitution();
-            result = dataPatternTypechecking.typecheckPatterns(clause.getPatterns(), def.getParameters(), dataDefinition.getParameters(), substitution, null, elimParams, def);
+            result = dataPatternTypechecking.typecheckPatterns(clause.getPatterns(), def.getParameters(), dataDefinition.getParameters(), substitution, null, def);
             if (instancePool != null && result != null && result.hasEmptyPattern()) {
               typechecker.getInstancePool().setInstancePool(instancePool.subst(substitution));
             }
@@ -1803,7 +1803,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     if (elimParams != null) {
       try (var ignored = new Utils.SetContextSaver<>(typechecker.getContext())) {
         Expression expectedType = oldConstructor.getDataTypeExpression(Sort.STD);
-        PatternTypechecking patternTypechecking = new PatternTypechecking(errorReporter, PatternTypechecking.Mode.CONSTRUCTOR, typechecker, true);
+        PatternTypechecking patternTypechecking = new PatternTypechecking(errorReporter, PatternTypechecking.Mode.CONSTRUCTOR, typechecker, true, null, elimParams);
         List<ExtElimClause> clauses = patternTypechecking.typecheckClauses(def.getClauses(), def.getParameters(), oldConstructor.getParameters(), elimParams, expectedType);
         if (clauses != null) {
           for (int i = 0; i < clauses.size(); i++) {
