@@ -28,7 +28,7 @@ public class ExpectedConstructorError extends TypecheckingError {
   public ExpectedConstructorError(GlobalReferable referable, @Nullable DataCallExpression dataCall, Concrete.SourceNode cause,
                                   @Nullable ExprSubstitution substitution,
                                   @Nullable List<Expression> caseExpressions,
-                                  @Nullable List<DependentLink> elimParams) {
+                                  @NotNull List<DependentLink> elimParams) {
     super("", cause);
     this.referable = referable;
     this.dataCall = dataCall;

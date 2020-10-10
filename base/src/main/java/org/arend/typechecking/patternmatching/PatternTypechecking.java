@@ -45,6 +45,7 @@ import org.arend.typechecking.instance.pool.InstancePool;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.arend.util.Pair;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
@@ -56,7 +57,7 @@ public class PatternTypechecking {
   private final CheckTypeVisitor myVisitor;
   private Map<Referable, Binding> myContext;
   private final boolean myFinal;
-  private final List<Expression> myCaseExpresions;
+  private final List<Expression> myCaseArguments;
   private final List<DependentLink> myElimParams;
 
   public enum Mode {
@@ -84,12 +85,12 @@ public class PatternTypechecking {
     public boolean isContextFree() { return true; }
   }
 
-  public PatternTypechecking(ErrorReporter errorReporter, Mode mode, CheckTypeVisitor visitor, boolean isFinal, @Nullable List<Expression> caseExpressions, @Nullable List<DependentLink> elimParams) {
+  public PatternTypechecking(ErrorReporter errorReporter, Mode mode, CheckTypeVisitor visitor, boolean isFinal, @Nullable List<Expression> caseArguments, @NotNull List<DependentLink> elimParams) {
     myErrorReporter = errorReporter;
     myMode = mode;
     myVisitor = visitor;
     myFinal = isFinal;
-    myCaseExpresions = caseExpressions;
+    myCaseArguments = caseArguments;
     myElimParams = elimParams;
   }
 
@@ -98,8 +99,8 @@ public class PatternTypechecking {
     myMode = mode;
     myVisitor = null;
     myFinal = true;
-    myCaseExpresions = null;
-    myElimParams = null;
+    myCaseArguments = null;
+    myElimParams = Collections.emptyList();
   }
 
   private void addBinding(Referable referable, Binding binding) {
@@ -122,14 +123,14 @@ public class PatternTypechecking {
   }
 
   public List<ExtElimClause> typecheckClauses(List<Concrete.FunctionClause> clauses, DependentLink parameters, Expression expectedType) {
-    return typecheckClauses(clauses, null, parameters, Collections.emptyList(), expectedType);
+    return typecheckClauses(clauses, null, parameters, expectedType);
   }
 
-  public List<ExtElimClause> typecheckClauses(List<Concrete.FunctionClause> clauses, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, Expression expectedType) {
+  public List<ExtElimClause> typecheckClauses(List<Concrete.FunctionClause> clauses, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, Expression expectedType) {
     List<ExtElimClause> result = new ArrayList<>(clauses.size());
     boolean ok = true;
     for (Concrete.FunctionClause clause : clauses) {
-      ExtElimClause elimClause = typecheckClause(clause, abstractParameters, parameters, elimParams, expectedType);
+      ExtElimClause elimClause = typecheckClause(clause, abstractParameters, parameters, expectedType);
       if (elimClause == null) {
         ok = false;
       } else {
@@ -139,7 +140,7 @@ public class PatternTypechecking {
     return ok ? result : null;
   }
 
-  private ExtElimClause typecheckClause(Concrete.FunctionClause clause, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, Expression expectedType) {
+  private ExtElimClause typecheckClause(Concrete.FunctionClause clause, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, Expression expectedType) {
     assert myVisitor != null;
     try (var ignored = new Utils.SetContextSaver<>(myVisitor.getContext())) {
       // Typecheck patterns
@@ -287,7 +288,7 @@ public class PatternTypechecking {
   private Result doTypechecking(List<Concrete.Pattern> patterns, DependentLink parameters, ExprSubstitution paramSubst, ExprSubstitution totalSubst, ConcreteSourceNode sourceNode) {
     // Put patterns in the correct order
     // If some parameters are not eliminated (i.e. absent in elimParams), then we put null in corresponding patterns
-    if (myElimParams != null && !myElimParams.isEmpty()) {
+    if (!myElimParams.isEmpty()) {
       List<Concrete.Pattern> patterns1 = new ArrayList<>();
       for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
         int index = myElimParams.indexOf(link);
@@ -296,7 +297,7 @@ public class PatternTypechecking {
       patterns = patterns1;
     }
 
-    Result result = doTypechecking(patterns, parameters, new LinkList(), paramSubst, totalSubst, sourceNode, myElimParams != null && !myElimParams.isEmpty());
+    Result result = doTypechecking(patterns, parameters, new LinkList(), paramSubst, totalSubst, sourceNode, !myElimParams.isEmpty());
     if (result == null) {
       return null;
     }
@@ -724,7 +725,7 @@ public class PatternTypechecking {
       if (constructor == null || !dataCall.getMatchedConCall(constructor, conCalls) || conCalls.isEmpty()) {
         Referable conRef = conPattern.getConstructor();
         if (constructor != null || conRef instanceof TCDefReferable && ((TCDefReferable) conRef).getKind() == GlobalReferable.Kind.CONSTRUCTOR) {
-          myErrorReporter.report(new ExpectedConstructorError((GlobalReferable) conRef, dataCall, conPattern, paramsSubst, myCaseExpresions, myElimParams));
+          myErrorReporter.report(new ExpectedConstructorError((GlobalReferable) conRef, dataCall, conPattern, paramsSubst, myCaseArguments, myElimParams));
         }
         return null;
       }
