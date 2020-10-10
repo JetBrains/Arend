@@ -10,10 +10,11 @@ import org.arend.term.concrete.DefinableMetaDefinition;
 import org.arend.typechecking.visitor.CollectDefCallsVisitor;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class DependencyCollector implements DependencyListener {
-  private final Map<TCReferable, Set<TCReferable>> myDependencies = new HashMap<>();
-  private final Map<TCReferable, Set<TCReferable>> myReverseDependencies = new HashMap<>();
+  private final Map<TCReferable, Set<TCReferable>> myDependencies = new ConcurrentHashMap<>();
+  private final Map<TCReferable, Set<TCReferable>> myReverseDependencies = new ConcurrentHashMap<>();
 
   @Override
   public void dependsOn(TCReferable def1, TCReferable def2) {
@@ -23,9 +24,9 @@ public class DependencyCollector implements DependencyListener {
     }
 
     if (!(def1 instanceof MetaDefinition)) {
-      myDependencies.computeIfAbsent(def1, k -> new HashSet<>()).add(def2);
+      myDependencies.computeIfAbsent(def1, k -> ConcurrentHashMap.newKeySet()).add(def2);
     }
-    myReverseDependencies.computeIfAbsent(def2, k -> new HashSet<>()).add(def1);
+    myReverseDependencies.computeIfAbsent(def2, k -> ConcurrentHashMap.newKeySet()).add(def1);
   }
 
   @Override
