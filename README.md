@@ -11,11 +11,7 @@ Visit [arend-lang.github.io](https://arend-lang.github.io/) for more information
 For instructions on building Arend locally, general description of the codebase,
 there's [ARCHITECTURE.md](ARCHITECTURE.md).
 
-## Community
-
-- [Google](https://groups.google.com/forum/#!forum/arend-lang)
-- [Telegram](https://t.me/joinchat/GPwwsREtctsqEVs6gPeLLg)
-- [Gitter](https://gitter.im/arend-lang/community)
+For community forums, checkout [this link](https://arend-lang.github.io/documentation/#forum).
 
 ## Usage
 
