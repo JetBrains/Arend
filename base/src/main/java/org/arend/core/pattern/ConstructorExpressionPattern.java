@@ -14,6 +14,7 @@ import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -296,6 +297,34 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Expression>
     }
 
     return false;
+  }
+
+  @Override
+  public @Nullable ExpressionPattern intersect(ExpressionPattern other) {
+    if (!(other instanceof ConstructorExpressionPattern)) {
+      return null;
+    }
+
+    ConstructorExpressionPattern conPattern = (ConstructorExpressionPattern) other;
+    if (data instanceof SigmaExpression && conPattern.data instanceof SigmaExpression ||
+        data instanceof SmallIntegerExpression && conPattern.data instanceof SmallIntegerExpression ||
+        data instanceof DefCallExpression && conPattern.data instanceof DefCallExpression &&
+          ((DefCallExpression) data).getDefinition() == ((DefCallExpression) conPattern.data).getDefinition()) {
+
+      List<ExpressionPattern> resultSubPatterns = new ArrayList<>();
+      List<? extends ExpressionPattern> subPatterns1 = getSubPatterns();
+      List<? extends ExpressionPattern> subPatterns2 = conPattern.getSubPatterns();
+      for (int i = 0; i < subPatterns1.size(); i++) {
+        ExpressionPattern pattern = subPatterns1.get(i).intersect(subPatterns2.get(i));
+        if (pattern == null) {
+          return null;
+        }
+        resultSubPatterns.add(pattern);
+      }
+      return new ConstructorExpressionPattern(data, resultSubPatterns);
+    } else {
+      return null;
+    }
   }
 
   @Override

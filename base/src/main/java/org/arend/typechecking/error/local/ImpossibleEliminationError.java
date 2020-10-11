@@ -23,7 +23,7 @@ public class ImpossibleEliminationError extends TypecheckingError {
 
   @Override
   public Doc getBodyDoc(PrettyPrinterConfig ppConfig) {
-    return hList(text("for data "), termLine(dataCall, ppConfig));
+    return hList(text("for data type "), termLine(dataCall, ppConfig));
   }
 
   @Override

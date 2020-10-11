@@ -1,5 +1,6 @@
 package org.arend.typechecking.patternmatching;
 
+import org.arend.Matchers;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.context.param.DependentLink;
@@ -16,6 +17,7 @@ import org.arend.core.sort.Sort;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.TypeCheckingTestCase;
+import org.arend.typechecking.error.local.ImpossibleEliminationError;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -470,5 +472,14 @@ public class ElimTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\func f (n : Nat) : Nat \\elim n, n\n" +
       "  | _, _ => 0", 1);
+  }
+
+  @Test
+  public void elimNoClauses() {
+    typeCheckModule(
+      "\\data D (n : Nat) \\with\n" +
+      "  | 0 => con\n" +
+      "\\func f (n : Nat) (d : D n) : Nat \\elim d", 1);
+    assertThatErrorsAre(Matchers.typecheckingError(ImpossibleEliminationError.class));
   }
 }

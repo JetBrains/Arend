@@ -13,6 +13,7 @@ import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.PatternUnificationError;
 import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
@@ -109,6 +110,11 @@ public class BindingPattern implements ExpressionPattern {
       substitution1.add(myBinding, other.toExpression());
     }
     return true;
+  }
+
+  @Override
+  public @Nullable ExpressionPattern intersect(ExpressionPattern other) {
+    return other;
   }
 
   @Override

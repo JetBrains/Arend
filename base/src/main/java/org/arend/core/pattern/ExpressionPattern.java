@@ -10,6 +10,7 @@ import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.arend.term.concrete.Concrete;
 import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +22,7 @@ public interface ExpressionPattern extends Pattern {
   Expression toExpression();
   Decision match(Expression expression, List<Expression> result);
   boolean unify(ExprSubstitution idpSubst, ExpressionPattern other, ExprSubstitution substitution1, ExprSubstitution substitution2, ErrorReporter errorReporter, Concrete.SourceNode sourceNode);
+  @Nullable ExpressionPattern intersect(ExpressionPattern other);
   ExpressionPattern subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, Map<DependentLink, ExpressionPattern> patternSubst);
   Pattern removeExpressions();
   @Override @NotNull List<? extends ExpressionPattern> getSubPatterns();

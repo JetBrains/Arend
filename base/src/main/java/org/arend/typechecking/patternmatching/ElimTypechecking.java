@@ -39,8 +39,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.arend.core.expr.ExpressionFactory.Left;
-import static org.arend.core.expr.ExpressionFactory.Right;
+import static org.arend.core.expr.ExpressionFactory.*;
 
 public class ElimTypechecking {
   private final ErrorReporter myErrorReporter;
@@ -333,21 +332,50 @@ public class ElimTypechecking {
     return dataCall == null ? null : dataCall.getMatchedConstructors();
   }
 
-  private static List<List<ExpressionPattern>> generateMissingClauses(List<DependentLink> eliminatedParameters, int i, ExprSubstitution substitution) {
-    if (i == eliminatedParameters.size()) {
+  private static List<List<ExpressionPattern>> generateMissingClauses(List<DependentLink> elimParams, int i, ExprSubstitution substitution, Map<DependentLink, List<Pair<ExpressionPattern, Map<DependentLink, Constructor>>>> paramSpec, Map<DependentLink, List<ConCallExpression>> paramSpec2) {
+    if (i == elimParams.size()) {
       List<List<ExpressionPattern>> result = new ArrayList<>();
       result.add(new ArrayList<>());
       return result;
     }
 
-    DependentLink link = eliminatedParameters.get(i);
-    List<ConCallExpression> conCalls = getMatchedConstructors(link.getTypeExpr().subst(substitution));
+    DependentLink link = elimParams.get(i);
+    var spec = paramSpec.get(link);
+    if (spec != null) {
+      List<List<ExpressionPattern>> totalResult = new ArrayList<>();
+      for (Pair<ExpressionPattern, Map<DependentLink, Constructor>> pair : spec) {
+        substitution.add(link, pair.proj1.toExpression());
+        List<List<ExpressionPattern>> result = generateMissingClauses(elimParams, i + 1, substitution, paramSpec, paramSpec2);
+        for (List<ExpressionPattern> row : result) {
+          boolean ok = true;
+          for (int j = 0; j < row.size(); j++) {
+            Constructor constructor = pair.proj2.get(elimParams.get(elimParams.size() - 1 - j));
+            if (!(constructor == null || row.get(j).getDefinition() == constructor)) {
+              ok = false;
+              break;
+            }
+          }
+          if (ok) {
+            List<ExpressionPattern> newRow = new ArrayList<>(row);
+            newRow.add(pair.proj1);
+            totalResult.add(newRow);
+          }
+        }
+      }
+      return totalResult;
+    }
+
+    List<ConCallExpression> conCalls = paramSpec2.get(link);
+    if (conCalls == null) {
+      conCalls = getMatchedConstructors(link.getTypeExpr().subst(substitution));
+    }
+
     if (conCalls != null) {
       List<List<ExpressionPattern>> totalResult = new ArrayList<>();
       if (conCalls.isEmpty()) {
         List<ExpressionPattern> patterns = new ArrayList<>();
-        for (int j = eliminatedParameters.size() - 1; j > i; j--) {
-          patterns.add(new BindingPattern(eliminatedParameters.get(j)));
+        for (int j = elimParams.size() - 1; j > i; j--) {
+          patterns.add(new BindingPattern(elimParams.get(j)));
         }
         patterns.add(EmptyPattern.INSTANCE);
         totalResult.add(patterns);
@@ -361,7 +389,7 @@ public class ElimTypechecking {
             subPatterns.add(new BindingPattern(link1));
           }
           substitution.add(link, ConCallExpression.make(conCall.getDefinition(), conCall.getSortArgument(), conCall.getDataTypeArguments(), arguments));
-          List<List<ExpressionPattern>> result = generateMissingClauses(eliminatedParameters, i + 1, substitution);
+          List<List<ExpressionPattern>> result = generateMissingClauses(elimParams, i + 1, substitution, paramSpec, paramSpec2);
 
           boolean hasEmpty = false;
           if (result.size() == 1) {
@@ -399,7 +427,7 @@ public class ElimTypechecking {
       }
       return totalResult;
     } else {
-      List<List<ExpressionPattern>> result = generateMissingClauses(eliminatedParameters, i + 1, substitution);
+      List<List<ExpressionPattern>> result = generateMissingClauses(elimParams, i + 1, substitution, paramSpec, paramSpec2);
       for (List<ExpressionPattern> patterns : result) {
         patterns.add(new BindingPattern(link));
       }
@@ -421,6 +449,43 @@ public class ElimTypechecking {
     return result;
   }
 
+  private Map<DependentLink, List<Pair<ExpressionPattern, Map<DependentLink, Constructor>>>> computeParamSpec(DependentLink param, DataCallExpression dataCall, List<DependentLink> elimParams, Map<DependentLink, List<ConCallExpression>> paramSpec2) {
+    Map<DependentLink, List<Pair<ExpressionPattern, Map<DependentLink, Constructor>>>> paramSpec = new HashMap<>();
+
+    for (Constructor constructor : dataCall.getDefinition().getConstructors()) {
+      Map<Binding, ExpressionPattern> result = new HashMap<>();
+      ConCallExpression conCall = ExpressionMatcher.computeMatchingPatterns(dataCall, constructor, null, result);
+      if (result.isEmpty()) {
+        continue;
+      }
+      if (conCall != null) {
+        paramSpec2.computeIfAbsent(param, k -> new ArrayList<>()).add(conCall);
+
+        Map<DependentLink, List<ExpressionPattern>> map = new HashMap<>();
+        for (Map.Entry<Binding, ExpressionPattern> entry : result.entrySet()) {
+          if (entry.getKey() instanceof DependentLink) {
+            DependentLink key = (DependentLink) entry.getKey();
+            if (!elimParams.isEmpty() && !elimParams.contains(key)) {
+              myErrorReporter.report(new ImpossibleEliminationError(dataCall, mySourceNode, null));
+              return null;
+            }
+            map.computeIfAbsent(key, k -> new ArrayList<>()).add(entry.getValue());
+          }
+        }
+
+        for (Map.Entry<DependentLink, List<ExpressionPattern>> entry : map.entrySet()) {
+          var list = paramSpec.computeIfAbsent(entry.getKey(), k -> new ArrayList<>());
+          Map<DependentLink, Constructor> single = Collections.singletonMap(param, constructor);
+          for (ExpressionPattern pattern : entry.getValue()) {
+            list.add(new Pair<>(pattern, new HashMap<>(single)));
+          }
+        }
+      }
+    }
+
+    return paramSpec;
+  }
+
   private void reportNoClauses(DependentLink parameters, List<DependentLink> elimParams) {
     if (parameters.hasNext() && !parameters.getNext().hasNext()) {
       DataCallExpression dataCall = parameters.getTypeExpr().cast(DataCallExpression.class);
@@ -430,7 +495,41 @@ public class ElimTypechecking {
       }
     }
 
-    List<List<ExpressionPattern>> missingClauses = generateMissingClauses(elimParams.isEmpty() ? DependentLink.Helper.toList(parameters) : elimParams, 0, new ExprSubstitution());
+    // If paramSpec[p] is non-null, then it gives a specification for parameter p.
+    // We should generate the list of patterns corresponding to the first projection of elements of paramSpec[p].
+    // Moreover, for every index i and every parameter p' such that paramSpec[p][i].proj2[p'] is non-null and is equal to con,
+    // then this spec applies only if the pattern generated for parameter p is of the form (con p_1 ... p_k).
+    Map<DependentLink, List<Pair<ExpressionPattern, Map<DependentLink, Constructor>>>> paramSpec = new HashMap<>();
+    Map<DependentLink, List<ConCallExpression>> paramSpec2 = new HashMap<>();
+    for (DependentLink param = parameters; param.hasNext(); param = param.getNext()) {
+      DataCallExpression dataCall = param.getTypeExpr().normalize(NormalizationMode.WHNF).cast(DataCallExpression.class);
+      if (dataCall != null) {
+        Map<DependentLink, List<Pair<ExpressionPattern, Map<DependentLink, Constructor>>>> newParamSpec = computeParamSpec(param, dataCall, elimParams, paramSpec2);
+        if (newParamSpec == null) {
+          return;
+        }
+        for (Map.Entry<DependentLink, List<Pair<ExpressionPattern, Map<DependentLink, Constructor>>>> entry : newParamSpec.entrySet()) {
+          paramSpec.compute(entry.getKey(), (k,list) -> {
+            if (list == null) {
+              return entry.getValue();
+            }
+            List<Pair<ExpressionPattern, Map<DependentLink, Constructor>>> result = new ArrayList<>();
+            for (Pair<ExpressionPattern, Map<DependentLink, Constructor>> pair1 : list) {
+              for (Pair<ExpressionPattern, Map<DependentLink, Constructor>> pair2 : entry.getValue()) {
+                ExpressionPattern pattern = pair1.proj1.intersect(pair2.proj1);
+                if (pattern != null) {
+                  pair1.proj2.putAll(pair2.proj2);
+                  result.add(new Pair<>(pattern, pair1.proj2));
+                }
+              }
+            }
+            return result;
+          });
+        }
+      }
+    }
+
+    List<List<ExpressionPattern>> missingClauses = generateMissingClauses(elimParams.isEmpty() ? DependentLink.Helper.toList(parameters) : elimParams, 0, new ExprSubstitution(), paramSpec, paramSpec2);
 
     if (myLevel != null) {
       missingClauses.removeIf(clause -> numberOfIntervals(clause) > myLevel);
@@ -461,8 +560,9 @@ public class ElimTypechecking {
 
     if (!elimParams.isEmpty()) {
       for (List<ExpressionPattern> patterns : missingClauses) {
-        for (int i = 0; i < patterns.size(); i++) {
-          if (patterns.get(i) instanceof BindingPattern) {
+        DependentLink param = parameters;
+        for (int i = 0; i < patterns.size(); i++, param = param.getNext()) {
+          if (patterns.get(i) instanceof BindingPattern && !paramSpec.containsKey(param)) {
             ConstructorExpressionPattern newPattern;
             List<ExpressionPattern> subPatterns;
             Expression type = ((BindingPattern) patterns.get(i)).getBinding().getTypeExpr().getUnderlyingExpression();

@@ -15,6 +15,7 @@ import org.arend.ext.error.ErrorReporter;
 import org.arend.term.concrete.Concrete;
 import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
@@ -90,6 +91,11 @@ public class EmptyPattern implements ExpressionPattern {
   @Override
   public boolean unify(ExprSubstitution idpSubst, ExpressionPattern other, ExprSubstitution substitution1, ExprSubstitution substitution2, ErrorReporter errorReporter, Concrete.SourceNode sourceNode) {
     return other instanceof EmptyPattern || other instanceof BindingPattern;
+  }
+
+  @Override
+  public @Nullable ExpressionPattern intersect(ExpressionPattern other) {
+    return other instanceof EmptyPattern || other instanceof BindingPattern ? this : null;
   }
 
   @Override

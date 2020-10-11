@@ -65,7 +65,7 @@ public class CoverageTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\data Fin Nat \\with | _ => fzero | suc n => fsuc (Fin n)\n" +
       "\\func unsuc {n : Nat} (x : Fin n) : Fin n", 1);
-    assertThatErrorsAre(missingClauses(3));
+    assertThatErrorsAre(missingClauses(2));
   }
 
   @Test
@@ -94,5 +94,87 @@ public class CoverageTest extends TypeCheckingTestCase {
       "\\data S1 | base | loop I \\with { | left => base | right => base }\n" +
       "\\func test (x : S1) : \\Sigma", 1);
     assertThatErrorsAre(missingClauses(1));
+  }
+
+  @Test
+  public void matchingDataTest() {
+    typeCheckModule(
+      "\\data D (n : Nat) \\with\n" +
+      "  | 0 => con1\n" +
+      "  | suc n => con2\n" +
+      "\\func test (n : Nat) (x : D n) : Nat", 1);
+    assertThatErrorsAre(missingClauses(2));
+  }
+
+  @Test
+  public void matchingDataTest1() {
+    typeCheckModule(
+      "\\data D (n : Nat) \\with\n" +
+      "  | 0 => { con1 | con1' }\n" +
+      "  | suc n => con2\n" +
+      "\\func test (n : Nat) (x : D n) : Nat", 1);
+    assertThatErrorsAre(missingClauses(3));
+  }
+
+  @Test
+  public void matchingDataTest2() {
+    typeCheckModule(
+      "\\data D (n : Nat) \\with\n" +
+      "  | 0 => con1\n" +
+      "  | suc n => con2\n" +
+      "\\func test (n : Nat) (x : D (suc n)) : Nat", 1);
+    assertThatErrorsAre(missingClauses(1));
+  }
+
+  @Test
+  public void matchingDataTest3() {
+    typeCheckModule(
+      "\\data D (n : Nat) \\with\n" +
+      "  | 0 => con1\n" +
+      "  | suc n => con2\n" +
+      "\\func test (n : Nat) (x : D (suc (suc n))) : Nat", 1);
+    assertThatErrorsAre(missingClauses(2));
+  }
+
+  @Test
+  public void matchingDataTest4() {
+    typeCheckModule(
+      "\\data D (n : Nat) \\with\n" +
+      "  | 0 => con1\n" +
+      "  | suc n => con2\n" +
+      "\\func test (n : Nat) (x y : D n) : Nat", 1);
+    assertThatErrorsAre(missingClauses(2));
+  }
+
+  @Test
+  public void matchingDataTest5() {
+    typeCheckModule(
+      "\\data D (n : Nat) \\with\n" +
+      "  | 0 => con1\n" +
+      "  | suc n => con2\n" +
+      "\\func test (n : Nat) (x : D (n Nat.+ n)) : Nat", 1);
+    assertThatErrorsAre(missingClauses(2));
+  }
+
+  @Test
+  public void matchingDataTest6() {
+    typeCheckModule(
+      "\\data D (n : Nat) \\with\n" +
+      "  | 0 => con1\n" +
+      "  | suc n => con2\n" +
+      "\\func test (n : Nat) (x : D (suc (suc n))) : Nat \\elim x", 1);
+    assertThatErrorsAre(missingClauses(1));
+  }
+
+  @Test
+  public void matchingDataTest7() {
+    typeCheckModule(
+      "\\data D (n m : Nat) \\with\n" +
+      "  | 0, 0 => con1\n" +
+      "  | suc _, suc _ => con2\n" +
+      "  | suc (suc _), suc (suc _) => con3\n" +
+      "  | _, _ => con4\n" +
+      "\\func foo (n m : Nat) (d : D n m) : Nat", 1);
+    assertThatErrorsAre(missingClauses(4));
   }
 }
