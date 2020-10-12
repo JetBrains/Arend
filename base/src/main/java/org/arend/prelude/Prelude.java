@@ -9,6 +9,9 @@ import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.error.DummyErrorReporter;
 import org.arend.ext.ArendPrelude;
+import org.arend.ext.core.definition.CoreConstructor;
+import org.arend.ext.core.definition.CoreDataDefinition;
+import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.module.ModulePath;
 import org.arend.module.ModuleLocation;
 import org.arend.naming.reference.Referable;
@@ -42,6 +45,10 @@ public class Prelude implements ArendPrelude {
   public static DataDefinition NAT;
   public static Constructor ZERO, SUC;
   public static FunctionDefinition PLUS, MUL, MINUS;
+
+  public static DataDefinition FIN;
+  public static Constructor FZERO, FSUC;
+  public static FunctionDefinition UNFINITE, WEAKEN;
 
   public static DataDefinition INT;
   public static Constructor POS, NEG;
@@ -83,6 +90,11 @@ public class Prelude implements ArendPrelude {
         ZERO = NAT.getConstructor("zero");
         SUC = NAT.getConstructor("suc");
         DIV_MOD_TYPE = new SigmaExpression(Sort.SET0, parameter(true, Arrays.asList(null, null), Nat()));
+        break;
+      case "Fin":
+        FIN = (DataDefinition) definition;
+        FZERO = FIN.getConstructor("fzero");
+        FSUC = FIN.getConstructor("fsuc");
         break;
       case "+":
         PLUS = (FunctionDefinition) definition;
@@ -162,6 +174,14 @@ public class Prelude implements ArendPrelude {
         FROM_NAT = (FunctionDefinition) definition;
         FROM_NAT.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         break;
+      case "unfinite":
+        UNFINITE = (FunctionDefinition) definition;
+        UNFINITE.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+        break;
+      case "weaken":
+        WEAKEN = (FunctionDefinition) definition;
+        WEAKEN.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+        break;
       case "inProp":
         IN_PROP = (FunctionDefinition) definition;
         IN_PROP.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
@@ -203,6 +223,11 @@ public class Prelude implements ArendPrelude {
     consumer.accept(MUL);
     consumer.accept(ZERO);
     consumer.accept(SUC);
+    consumer.accept(FIN);
+    consumer.accept(FZERO);
+    consumer.accept(FSUC);
+    consumer.accept(WEAKEN);
+    consumer.accept(UNFINITE);
     consumer.accept(INT);
     consumer.accept(POS);
     consumer.accept(NEG);
@@ -238,7 +263,7 @@ public class Prelude implements ArendPrelude {
       }
     }
 
-    for (String name : new String[] {"Nat", "Int", "Path", "I"}) {
+    for (String name : new String[] {"Nat", "Int", "Fin", "Path", "I"}) {
       Scope childScope = scope.resolveNamespace(name, true);
       assert childScope != null;
       for (Referable ref : childScope.getElements()) {
@@ -298,6 +323,31 @@ public class Prelude implements ArendPrelude {
   @Override
   public Constructor getSuc() {
     return SUC;
+  }
+
+  @Override
+  public CoreConstructor getFsuc() {
+    return FSUC;
+  }
+
+  @Override
+  public CoreConstructor getFzero() {
+    return FZERO;
+  }
+
+  @Override
+  public CoreDataDefinition getFin() {
+    return FIN;
+  }
+
+  @Override
+  public CoreFunctionDefinition getUnfinite() {
+    return UNFINITE;
+  }
+
+  @Override
+  public CoreFunctionDefinition getWeaken() {
+    return WEAKEN;
   }
 
   @Override

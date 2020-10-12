@@ -65,6 +65,19 @@
     \lemma modProp (n : Nat) {m : Nat} (p : 1 <= m) : suc (mod n m) <= m
   }
 
+\data Fin (n : Nat) \elim n
+  | suc n => fzero
+  | suc n => fsuc (Fin n)
+  \where {
+    \use \coerce weaken {n : Nat} (m : Fin n) : Fin (suc n)
+      | {suc _}, fzero => fzero
+      | {suc _}, fsuc m => fsuc (weaken m)
+
+    \use \coerce unfinite {n : Nat} (m : Fin n) : Nat
+      | {suc _}, fzero => zero
+      | {suc _}, fsuc m => suc (unfinite m)
+  }
+
 \data Int
   | pos Nat
   | neg Nat \with { zero => pos zero }
