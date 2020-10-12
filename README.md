@@ -5,13 +5,18 @@
 [![Gitter](https://badges.gitter.im/arend-lang/community.svg)](https://gitter.im/arend-lang/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 [![](https://jitpack.io/v/JetBrains/Arend.svg)](https://jitpack.io/#JetBrains/Arend)
 
-Arend is a theorem prover based on [Homotopy Type Theory](https://ncatlab.org/nlab/show/homotopy+type+theory).
-Visit [arend-lang.github.io](https://arend-lang.github.io/) for more information about the Arend language.
+Arend is a theorem prover and a programming language based on [Homotopy Type Theory](https://ncatlab.org/nlab/show/homotopy+type+theory).
 
-For instructions on building Arend locally, general description of the codebase,
-there's [ARCHITECTURE.md](ARCHITECTURE.md).
-
-For community forums, checkout [this link](https://arend-lang.github.io/documentation/#forum).
++ For more information about the Arend language,
+  visit [arend-lang.github.io](https://arend-lang.github.io/)
+  or the [documentation](https://arend-lang.github.io/documentation/).
++ For instructions on building Arend locally, general description of the codebase,
+  there's [ARCHITECTURE.md](ARCHITECTURE.md).
++ For community forums, checkout [this link](https://arend-lang.github.io/documentation/#forums).
++ For editing Arend code, we suggest [IntelliJ Arend](https://plugins.jetbrains.com/plugin/11162-arend)
+  ([instructions](https://arend-lang.github.io/documentation/getting-started#intellij-arend)).
++ The standard library of Arend is [here](https://github.com/JetBrains/arend-lib).
+  It serves as a math library.
 
 ## Usage
 
