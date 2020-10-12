@@ -1,10 +1,43 @@
 package org.arend.typechecking;
 
+import org.arend.core.definition.Definition;
+import org.arend.ext.ArendPrelude;
+import org.arend.prelude.Prelude;
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.stream.Collectors;
+
 import static org.arend.Matchers.typeMismatchError;
+import static org.junit.Assert.fail;
 
 public class PreludeTest extends TypeCheckingTestCase {
+  @Test
+  public void testForEach() {
+    var obj = new Prelude();
+    var fields = Arrays.stream(ArendPrelude.class.getDeclaredMethods())
+      .map(it -> {
+        try {
+          return it.invoke(obj);
+        } catch (Exception e) {
+          throw new RuntimeException(e);
+        }
+      })
+      .filter(it -> it instanceof Definition)
+      .map(it -> (Definition) it)
+      .collect(Collectors.toList());
+    Prelude.forEach(it -> {
+      if (!fields.remove(it)) {
+        fail(it.getName() + " is traversed but is not a prelude definition!");
+      }
+    });
+    if (!fields.isEmpty()) {
+      fail(fields.stream()
+        .map(Definition::getName)
+        .collect(Collectors.joining(", ", "prelude definitions ", " are not traversed!")));
+    }
+  }
+
   @Test
   public void testCoe2Sigma() {
     typeCheckModule("\\func foo (A : \\Type) (i j : I) (a : A) : coe2 (\\lam _ => A) i a j = a => idp");

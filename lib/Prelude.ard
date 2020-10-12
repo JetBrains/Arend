@@ -73,6 +73,10 @@
       | {suc _}, fzero => fzero
       | {suc _}, fsuc m => fsuc (weaken m)
 
+    \use \coerce exact (n : Nat) : Fin (suc n)
+      | zero => fzero
+      | suc n => fsuc (exact n)
+
     \use \coerce unfinite {n : Nat} (m : Fin n) : Nat
       | {suc _}, fzero => zero
       | {suc _}, fsuc m => suc (unfinite m)

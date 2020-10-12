@@ -24,6 +24,7 @@ public interface ArendPrelude {
   CoreConstructor getFsuc();
   CoreFunctionDefinition getWeaken();
   CoreFunctionDefinition getUnfinite();
+  CoreFunctionDefinition getExact();
   CoreDataDefinition getInt();
   CoreConstructor getPos();
   CoreConstructor getNeg();

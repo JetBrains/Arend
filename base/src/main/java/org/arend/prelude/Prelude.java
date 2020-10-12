@@ -48,7 +48,7 @@ public class Prelude implements ArendPrelude {
 
   public static DataDefinition FIN;
   public static Constructor FZERO, FSUC;
-  public static FunctionDefinition UNFINITE, WEAKEN;
+  public static FunctionDefinition UNFINITE, WEAKEN, EXACT;
 
   public static DataDefinition INT;
   public static Constructor POS, NEG;
@@ -182,6 +182,10 @@ public class Prelude implements ArendPrelude {
         WEAKEN = (FunctionDefinition) definition;
         WEAKEN.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         break;
+      case "exact":
+        EXACT = (FunctionDefinition) definition;
+        EXACT.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+        break;
       case "inProp":
         IN_PROP = (FunctionDefinition) definition;
         IN_PROP.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
@@ -228,6 +232,7 @@ public class Prelude implements ArendPrelude {
     consumer.accept(FSUC);
     consumer.accept(WEAKEN);
     consumer.accept(UNFINITE);
+    consumer.accept(EXACT);
     consumer.accept(INT);
     consumer.accept(POS);
     consumer.accept(NEG);
@@ -348,6 +353,11 @@ public class Prelude implements ArendPrelude {
   @Override
   public CoreFunctionDefinition getWeaken() {
     return WEAKEN;
+  }
+
+  @Override
+  public CoreFunctionDefinition getExact() {
+    return EXACT;
   }
 
   @Override
