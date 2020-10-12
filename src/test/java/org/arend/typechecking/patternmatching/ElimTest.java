@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.arend.ExpressionFactory.*;
+import static org.arend.Matchers.goal;
 import static org.arend.core.expr.ExpressionFactory.*;
 import static org.junit.Assert.assertEquals;
 
@@ -481,5 +482,32 @@ public class ElimTest extends TypeCheckingTestCase {
       "  | 0 => con\n" +
       "\\func f (n : Nat) (d : D n) : Nat \\elim d", 1);
     assertThatErrorsAre(Matchers.typecheckingError(ImpossibleEliminationError.class));
+  }
+
+  @Test
+  public void contextTest() {
+    typeCheckModule(
+      "\\func f (n : Nat) : Nat \\elim n\n" +
+        "  | 0 => 0\n" +
+        "  | suc n => {?}", 1);
+    assertThatErrorsAre(goal(1));
+  }
+
+  @Test
+  public void contextTest2() {
+    typeCheckModule(
+      "\\func f (n m : Nat) : Nat\n" +
+        "  | _, 0 => 0\n" +
+        "  | _, suc m => {?}", 1);
+    assertThatErrorsAre(goal(1));
+  }
+
+  @Test
+  public void contextTest3() {
+    typeCheckModule(
+      "\\func f (n m k l : Nat) : Nat \\elim n, m, l\n" +
+        "  | _, suc m, suc _ => {?}\n" +
+        "  | _, _, _ => 0", 1);
+    assertThatErrorsAre(goal(2));
   }
 }

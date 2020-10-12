@@ -32,7 +32,6 @@ import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.TypeMismatchError;
 import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.prettyprinting.doc.DocFactory;
-import org.arend.naming.reference.FakeLocalReferable;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCDefReferable;
@@ -108,17 +107,6 @@ public class PatternTypechecking {
       myVisitor.addBinding(referable, binding);
     } else if (myContext != null && referable != null) {
       myContext.put(referable, binding);
-    }
-  }
-
-  private void collectBindings(List<? extends ExpressionPattern> patterns) {
-    for (ExpressionPattern pattern : patterns) {
-      if (pattern instanceof BindingPattern) {
-        assert myVisitor != null;
-        myVisitor.addBinding(null, ((BindingPattern) pattern).getBinding());
-      } else {
-        collectBindings(pattern.getSubPatterns());
-      }
     }
   }
 
@@ -204,40 +192,14 @@ public class PatternTypechecking {
     }
   }
 
-  public Result typecheckPatterns(List<Concrete.Pattern> patterns, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, ExprSubstitution substitution, ExprSubstitution totalSubst, ConcreteSourceNode sourceNode) {
+  public Result typecheckPatterns(List<Concrete.Pattern> patterns, List<? extends Concrete.Parameter> concreteParams, DependentLink parameters, ExprSubstitution substitution, ExprSubstitution totalSubst, ConcreteSourceNode sourceNode) {
     assert myVisitor != null;
     myContext = myVisitor.getContext();
     if (myMode.isContextFree()) {
       myContext.clear();
     }
 
-    // Typecheck patterns
-    Result result = doTypechecking(patterns, parameters, substitution, totalSubst, sourceNode);
-
-    // Compute the context of free bindings for CheckTypeVisitor
-    if (result != null && result.exprs != null && abstractParameters != null) {
-      if (myMode.isContextFree()) {
-        myContext.entrySet().removeIf(entry -> entry.getKey() instanceof FakeLocalReferable);
-      }
-
-      int i = 0;
-      DependentLink link = parameters;
-      for (Concrete.Parameter parameter : abstractParameters) {
-        for (Referable referable : parameter.getReferableList()) {
-          if (result.patterns.get(i) instanceof BindingPattern) {
-            addBinding(referable, ((BindingPattern) result.patterns.get(i)).getBinding());
-          }
-          link = link.getNext();
-          i++;
-        }
-      }
-
-      for (ExpressionPattern pattern : result.patterns) {
-        collectBindings(pattern.getSubPatterns());
-      }
-    }
-
-    return result;
+    return doTypechecking(patterns, concreteParams, parameters, substitution, totalSubst, sourceNode);
   }
 
   @TestOnly
@@ -285,14 +247,26 @@ public class PatternTypechecking {
     }
   }
 
-  private Result doTypechecking(List<Concrete.Pattern> patterns, DependentLink parameters, ExprSubstitution paramSubst, ExprSubstitution totalSubst, ConcreteSourceNode sourceNode) {
+  private Result doTypechecking(List<Concrete.Pattern> patterns, List<? extends Concrete.Parameter> concreteParams, DependentLink parameters, ExprSubstitution paramSubst, ExprSubstitution totalSubst, ConcreteSourceNode sourceNode) {
     // Put patterns in the correct order
     // If some parameters are not eliminated (i.e. absent in elimParams), then we put null in corresponding patterns
     if (!myElimParams.isEmpty()) {
+      List<Pair<Object, Referable>> params;
+      if (concreteParams != null) {
+        params = new ArrayList<>();
+        for (Concrete.Parameter param : concreteParams) {
+          for (Referable ref : param.getReferableList()) {
+            params.add(new Pair<>(param.getData(), ref));
+          }
+        }
+      } else {
+        params = Collections.emptyList();
+      }
       List<Concrete.Pattern> patterns1 = new ArrayList<>();
-      for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
+      int i = 0;
+      for (DependentLink link = parameters; link.hasNext(); link = link.getNext(), i++) {
         int index = myElimParams.indexOf(link);
-        patterns1.add(index < 0 || index >= patterns.size() ? null : patterns.get(index));
+        patterns1.add(index < 0 || index >= patterns.size() ? (i < params.size() ? new Concrete.NamePattern(params.get(i).proj1, true, params.get(i).proj2, null) : null) : patterns.get(index));
       }
       patterns = patterns1;
     }
