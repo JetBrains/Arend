@@ -22,4 +22,10 @@ public class FinTest extends TypeCheckingTestCase {
     typeCheckDef("\\func dalao : 0 = {Nat} (\\let | x : Fin 1 => 0 \\in x) => idp");
     typeCheckDef("\\func julao : 0 = {Fin 1} (\\let | x : Fin 1 => 0 \\in x) => idp");
   }
+
+  @Test
+  public void weakenFin() {
+    typeCheckDef("\\func julao : Fin 2 => 0");
+    typeCheckDef("\\func juruo : Fin 514 => 114");
+  }
 }

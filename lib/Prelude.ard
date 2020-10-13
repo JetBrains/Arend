@@ -54,33 +54,16 @@
     {- | divMod n m returns the pair (q,r) such that n = m * q + r and r < m if 0 < m.
      -   If m == 0, then divMod n m returns (n,n).
      -}
-    \func divMod (n m : Nat) : \Sigma Nat Nat
+    \func divMod (n m : Nat) : \Sigma Nat (Fin m)
 
     \func div (n m : Nat) => (divMod n m).1
 
     \func mod (n m : Nat) => (divMod n m).2
 
     \lemma divModProp (n m : Nat) : m * div n m + mod n m = n
-
-    \lemma modProp (n : Nat) {m : Nat} (p : 1 <= m) : suc (mod n m) <= m
   }
 
-\data Fin (n : Nat) \elim n
-  | suc n => fzero
-  | suc n => fsuc (Fin n)
-  \where {
-    \use \coerce weaken {n : Nat} (m : Fin n) : Fin (suc n)
-      | {suc _}, fzero => fzero
-      | {suc _}, fsuc m => fsuc (weaken m)
-
-    \use \coerce exact (n : Nat) : Fin (suc n)
-      | zero => fzero
-      | suc n => fsuc (exact n)
-
-    \use \coerce unfinite {n : Nat} (m : Fin n) : Nat
-      | {suc _}, fzero => zero
-      | {suc _}, fsuc m => suc (unfinite m)
-  }
+\data Fin (n : Nat)
 
 \data Int
   | pos Nat
