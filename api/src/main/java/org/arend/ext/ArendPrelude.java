@@ -20,11 +20,6 @@ public interface ArendPrelude {
   CoreFunctionDefinition getMul();
   CoreFunctionDefinition getMinus();
   CoreDataDefinition getFin();
-  CoreConstructor getFzero();
-  CoreConstructor getFsuc();
-  CoreFunctionDefinition getWeaken();
-  CoreFunctionDefinition getUnfinite();
-  CoreFunctionDefinition getExact();
   CoreDataDefinition getInt();
   CoreConstructor getPos();
   CoreConstructor getNeg();
