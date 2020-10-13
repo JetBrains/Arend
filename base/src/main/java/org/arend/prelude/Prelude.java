@@ -89,8 +89,8 @@ public class Prelude implements ArendPrelude {
         break;
       case "Fin":
         FIN = (DataDefinition) definition;
-        FIN.addConstructor(ZERO);
-        FIN.addConstructor(SUC);
+        // FIN.addConstructor(ZERO);
+        // FIN.addConstructor(SUC);
         break;
       case "+":
         PLUS = (FunctionDefinition) definition;

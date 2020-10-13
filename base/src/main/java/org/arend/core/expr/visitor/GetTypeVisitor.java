@@ -11,7 +11,7 @@ import org.arend.prelude.Prelude;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.arend.core.expr.ExpressionFactory.Nat;
+import static org.arend.core.expr.ExpressionFactory.Fin;
 
 public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
   public final static GetTypeVisitor INSTANCE = new GetTypeVisitor(true);
@@ -198,7 +198,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitInteger(IntegerExpression expr, Void params) {
-    return Nat();
+    return Fin(expr.suc());
   }
 
   @Override

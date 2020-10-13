@@ -6,8 +6,23 @@ import org.junit.Test;
 public class FinTest extends TypeCheckingTestCase {
   @Test
   public void emptySet() {
-    typeCheckDef("\\func xy (_ : Fin 0) : Empty" +
+    typeCheckDef("\\func xy (_ : Fin 0) : Empty | ()" +
       "\\where \\data Empty");
+  }
+
+  @Test
+  public void zeroAsBoundary() {
+    typeCheckDef("\\func meow : Fin 0 => 0", 1);
+  }
+
+  @Test
+  public void zeroDontAllowOne() {
+    typeCheckDef("\\func nyan : Fin 0 => 1", 1);
+  }
+
+  @Test
+  public void oneDontAllowOne() {
+    typeCheckDef("\\func sekai : Fin 1 => 1", 1);
   }
 
   @Test
