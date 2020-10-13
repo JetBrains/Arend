@@ -5,6 +5,8 @@ import org.arend.core.definition.Constructor;
 import org.arend.core.elimtree.ElimBody;
 import org.arend.core.elimtree.ElimClause;
 import org.arend.core.elimtree.IntervalElim;
+import org.arend.core.pattern.ConstructorPattern;
+import org.arend.core.pattern.ExpressionPattern;
 import org.arend.core.pattern.Pattern;
 import org.arend.core.subst.UnfoldVisitor;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
@@ -40,6 +42,7 @@ import org.arend.term.prettyprint.ToAbstractVisitor;
 import org.arend.typechecking.error.local.TypeComputationError;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.implicitargs.equations.Equations;
+import org.arend.typechecking.patternmatching.ExpressionMatcher;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.FindSubexpressionVisitor;
 import org.arend.util.Decision;
@@ -338,50 +341,98 @@ public abstract class Expression implements Body, CoreExpression {
       return false;
     }
 
-    if (con1 == con2) {
-      for (int i = 0; i < conCall1.getDefCallArguments().size(); i++) {
-        if (conCall1.getDefCallArguments().get(i).areDisjointConstructors(conCall2.getDefCallArguments().get(i))) {
-          return true;
+    if (con1.getDataType().isHIT()) {
+      GraphClosure<Constructor> closure = new GraphClosure<>();
+      for (Constructor constructor : con1.getDataType().getConstructors()) {
+        Body body = constructor.getBody();
+        if (body instanceof IntervalElim) {
+          for (IntervalElim.CasePair pair : ((IntervalElim) body).getCases()) {
+            if (!addConstructor(pair.proj1, constructor, closure) || !addConstructor(pair.proj2, constructor, closure)) {
+              return false;
+            }
+          }
+          body = ((IntervalElim) body).getOtherwise();
+        }
+        if (body instanceof ElimBody) {
+          for (ElimClause<Pattern> clause : ((ElimBody) body).getClauses()) {
+            if (!addConstructor(clause.getExpression(), constructor, closure)) {
+              return false;
+            }
+          }
+        } else if (body != null) {
+          throw new IllegalStateException();
         }
       }
-      return false;
-    }
 
-    if (con1.getBody() == null && con2.getBody() == null && !con1.getDataType().isHIT()) {
+      return !closure.areEquivalent(con1, con2);
+    } else {
+      List<ConCallExpression> conCalls1 = new ArrayList<>();
+      conCalls1.add(conCall1);
+      List<ConCallExpression> conCalls2 = new ArrayList<>();
+      conCalls2.add(conCall2);
+      if (!computeClosure(conCalls1) || !computeClosure(conCalls2)) {
+        return false;
+      }
+      for (ConCallExpression cc1 : conCalls1) {
+        for (ConCallExpression cc2 : conCalls2) {
+          if (cc1.getDefinition() == cc2.getDefinition()) {
+            boolean ok = false;
+            for (int i = 0; i < cc1.getDefCallArguments().size(); i++) {
+              if (cc1.getDefCallArguments().get(i).areDisjointConstructors(cc2.getDefCallArguments().get(i))) {
+                ok = true;
+                break;
+              }
+            }
+            if (!ok) {
+              return false;
+            }
+          }
+        }
+      }
       return true;
     }
+  }
 
-    GraphClosure<Constructor> closure = new GraphClosure<>();
-    for (Constructor constructor : con1.getDataType().getConstructors()) {
-      Body body = constructor.getBody();
-      if (body == null) {
+  private boolean computeClosure(List<ConCallExpression> conCalls) {
+    for (int i = 0; i < conCalls.size(); i++) {
+      ConCallExpression conCall = conCalls.get(i);
+      Body body = conCall.getDefinition().getBody();
+      List<Expression> rhsList;
+      if (body instanceof Expression) {
+        rhsList = Collections.singletonList(((Expression) body).subst(new ExprSubstitution().add(conCall.getDefinition().getParameters(), conCall.getDefCallArguments())).normalize(NormalizationMode.WHNF));
+      } else if (body instanceof ElimBody) {
+        rhsList = new ArrayList<>();
+        loop:
+        for (ElimClause<Pattern> clause : ((ElimBody) body).getClauses()) {
+          if (clause.getExpression() == null) continue;
+          List<ExpressionMatcher.MatchResult> matchResults = new ArrayList<>();
+          if (ExpressionMatcher.matchExpressions(conCall.getDefCallArguments(), clause.getPatterns(), false, matchResults) != null) {
+            ExprSubstitution substitution = new ExprSubstitution();
+            for (ExpressionMatcher.MatchResult matchResult : matchResults) {
+              if (matchResult.expression instanceof ConCallExpression && matchResult.pattern.getDefinition() != null && ((ConCallExpression) matchResult.expression).getDefinition() != matchResult.pattern.getDefinition()) {
+                continue loop;
+              }
+              if (matchResult.expression instanceof IntegerExpression && (matchResult.pattern.getDefinition() == Prelude.ZERO) != ((IntegerExpression) matchResult.expression).isZero()) {
+                continue loop;
+              }
+              substitution.add(matchResult.binding, matchResult.expression);
+            }
+            rhsList.add(clause.getExpression().subst(substitution).normalize(NormalizationMode.WHNF));
+          }
+        }
+      } else {
         continue;
       }
 
-      if (body instanceof Expression) {
-        if (!addConstructor((Expression) body, constructor, closure)) {
+      for (Expression rhs : rhsList) {
+        if (!(rhs instanceof ConCallExpression)) {
           return false;
         }
-      } else if (body instanceof IntervalElim) {
-        for (IntervalElim.CasePair pair : ((IntervalElim) body).getCases()) {
-          if (!addConstructor(pair.proj1, constructor, closure) || !addConstructor(pair.proj2, constructor, closure)) {
-            return false;
-          }
-        }
-        body = ((IntervalElim) body).getOtherwise();
-      }
-      if (body instanceof ElimBody) {
-        for (ElimClause<Pattern> clause : ((ElimBody) body).getClauses()) {
-          if (!addConstructor(clause.getExpression(), constructor, closure)) {
-            return false;
-          }
-        }
-      } else if (body != null) {
-        throw new IllegalStateException();
+        conCalls.add((ConCallExpression) rhs);
       }
     }
 
-    return !closure.areEquivalent(con1, con2);
+    return true;
   }
 
   public Expression dropPiParameter(int n) {

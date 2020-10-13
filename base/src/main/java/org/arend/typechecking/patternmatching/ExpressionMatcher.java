@@ -6,9 +6,7 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
 import org.arend.core.expr.*;
-import org.arend.core.pattern.ConstructorExpressionPattern;
-import org.arend.core.pattern.ExpressionPattern;
-import org.arend.core.pattern.Pattern;
+import org.arend.core.pattern.*;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.naming.renamer.Renamer;
@@ -53,22 +51,39 @@ public class ExpressionMatcher {
     return new NewExpression(null, new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), newImpls, classCall.getSort(), classCall.getUniverseKind()));
   }
 
-  private static Expression matchExpression(Expression expr, ExpressionPattern pattern, boolean computeData, List<MatchResult> result) {
+  /**
+   * If {@code computeData} is true, then {@code pattern} must be {@link ExpressionPattern}.
+   */
+  public static Expression matchExpression(Expression expr, Pattern pattern, boolean computeData, List<MatchResult> result) {
+    if (computeData && !(pattern instanceof ExpressionPattern)) {
+      throw new IllegalArgumentException();
+    }
     if (pattern.isAbsurd()) {
       return null;
     }
 
-    if (pattern.getBinding() != null) {
+    if (pattern instanceof BindingPattern) {
       result.add(new MatchResult(expr, pattern, pattern.getBinding()));
       return computeData ? new ReferenceExpression(pattern.getBinding()) : expr;
     }
 
-    if (!(pattern instanceof ConstructorExpressionPattern)) {
+    if (!(pattern instanceof ConstructorPattern)) {
       return null;
     }
 
-    ConstructorExpressionPattern conPattern = (ConstructorExpressionPattern) pattern;
     expr = expr.normalize(NormalizationMode.WHNF);
+    if (!(pattern instanceof ConstructorExpressionPattern)) {
+      if (expr instanceof TupleExpression) {
+        return matchExpressions(((TupleExpression) expr).getFields(), pattern.getSubPatterns(), false, result) != null ? expr : null;
+      }
+      if (expr instanceof ConCallExpression && pattern.getDefinition() == ((ConCallExpression) expr).getDefinition()) {
+        return matchExpressions(((ConCallExpression) expr).getDefCallArguments(), pattern.getSubPatterns(), false, result) != null ? expr : null;
+      }
+      result.add(new MatchResult(expr, pattern, new TypedBinding(Renamer.UNNAMED, expr.computeType())));
+      return expr;
+    }
+
+    ConstructorExpressionPattern conPattern = (ConstructorExpressionPattern) pattern;
     List<? extends Expression> args = conPattern.getMatchingExpressionArguments(expr, true);
     if (args == null) {
       Binding binding = new TypedBinding(Renamer.UNNAMED, expr.computeType());
@@ -79,25 +94,32 @@ public class ExpressionMatcher {
       return expr;
     }
 
-    assert args.size() == pattern.getSubPatterns().size();
-    List<Expression> newArgs = computeData ? new ArrayList<>() : null;
-    for (int i = 0; i < args.size(); i++) {
-      Expression arg = matchExpression(args.get(i), pattern.getSubPatterns().get(i), computeData, result);
-      if (arg == null) {
+    List<Expression> newArgs = matchExpressions(args, pattern.getSubPatterns(), computeData, result);
+    return computeData ? replaceMatchingExpressionArguments(conPattern, expr, newArgs) : expr;
+  }
+
+  /**
+   * If {@code computeData} is true, then {@code patterns} must consist of {@link ExpressionPattern}.
+   */
+  public static List<Expression> matchExpressions(List<? extends Expression> exprs, List<? extends Pattern> patterns, boolean computeData, List<MatchResult> result) {
+    assert exprs.size() == patterns.size();
+    List<Expression> newExprs = computeData ? new ArrayList<>() : Collections.emptyList();
+    for (int i = 0; i < exprs.size(); i++) {
+      Expression newExpr = matchExpression(exprs.get(i), patterns.get(i), computeData, result);
+      if (newExpr == null) {
         return null;
       }
-      if (computeData) newArgs.add(arg);
+      if (computeData) newExprs.add(newExpr);
     }
-
-    return computeData ? replaceMatchingExpressionArguments(conPattern, expr, newArgs) : expr;
+    return newExprs;
   }
 
   public static class MatchResult {
     public final Expression expression;
-    public final ExpressionPattern pattern;
+    public final Pattern pattern;
     public final Binding binding;
 
-    public MatchResult(Expression expression, ExpressionPattern pattern, Binding binding) {
+    public MatchResult(Expression expression, Pattern pattern, Binding binding) {
       this.expression = expression;
       this.pattern = pattern;
       this.binding = binding;
@@ -121,16 +143,7 @@ public class ExpressionMatcher {
       return null;
     }
 
-    assert constructor.getPatterns().size() == dataCall.getDefCallArguments().size();
-    List<Expression> newArgs = computeData ? new ArrayList<>() : null;
-    for (int i = 0; i < constructor.getPatterns().size(); i++) {
-      Expression arg = matchExpression(dataCall.getDefCallArguments().get(i), constructor.getPatterns().get(i), computeData, matchResults);
-      if (arg == null) {
-        return null;
-      }
-      if (computeData) newArgs.add(arg);
-    }
-
+    List<Expression> newArgs = matchExpressions(dataCall.getDefCallArguments(), constructor.getPatterns(), computeData, matchResults);
     return computeData ? new DataCallExpression(dataCall.getDefinition(), dataCall.getSortArgument(), newArgs) : dataCall;
   }
 
@@ -160,7 +173,7 @@ public class ExpressionMatcher {
       if (subst != null) {
         binding = ((ReferenceExpression) subst).getBinding();
       }
-      result.put(binding, matchResult.pattern);
+      result.put(binding, (ExpressionPattern) matchResult.pattern);
     }
 
     List<Expression> args = new ArrayList<>();
