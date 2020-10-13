@@ -3,6 +3,7 @@ package org.arend.ext.core.expr;
 import org.arend.ext.core.body.CoreBody;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.context.CoreParameter;
+import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
@@ -44,12 +45,12 @@ public interface CoreExpression extends CoreBody, UncheckedExpression, Abstracte
   @Override @NotNull CoreExpression normalize(@NotNull NormalizationMode mode);
 
   /**
-   * Unfolds all occurrences of given functions in this expression.
+   * Unfolds all occurrences of given functions and fields in this expression.
    *
-   * @param functions   a set of functions to unfold.
-   * @param unfolded    functions that are actually unfolded will be added to this set.
+   * @param definitions a set of functions and fields to unfold.
+   * @param unfolded    definitions that are actually unfolded will be added to this set.
    */
-  @Override @NotNull CoreExpression unfold(@NotNull Set<? extends CoreFunctionDefinition> functions, @Nullable Set<CoreFunctionDefinition> unfolded);
+  @Override @NotNull CoreExpression unfold(@NotNull Set<? extends CoreDefinition> definitions, @Nullable Set<CoreDefinition> unfolded);
 
   /**
    * Removes pi parameters and returns the codomain.
