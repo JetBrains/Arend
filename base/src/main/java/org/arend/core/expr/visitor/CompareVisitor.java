@@ -19,6 +19,7 @@ import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.implicitargs.equations.Equations;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.TestOnly;
 
 import java.util.*;
@@ -504,7 +505,41 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
 
   @Override
   public Boolean visitDataCall(DataCallExpression expr1, Expression expr2, Expression type) {
+    var defCall2 = expr2.cast(DataCallExpression.class);
+    if (defCall2 != null && checkBuiltinSubtyping(expr1, defCall2)) {
+      return true;
+    }
     return visitDefCall(expr1, expr2);
+  }
+
+  @Contract(pure = true)
+  private boolean checkBuiltinSubtyping(DataCallExpression expr1, DataCallExpression expr2) {
+    switch (myCMP) {
+      case LE:
+        break;
+      case EQ:
+        return false;
+      case GE:
+        myCMP = CMP.LE;
+        var ret = checkBuiltinSubtyping(expr2, expr1);
+        myCMP = CMP.GE;
+        return ret;
+    }
+    var data1 = expr1.getDefinition();
+    var data2 = expr2.getDefinition();
+    if (data1 == Prelude.FIN) {
+      if (data2 == Prelude.NAT) {
+        return true;
+      }
+      if (data2 == Prelude.FIN) {
+        var index1 = expr1.getDefCallArguments().get(0);
+        var index2 = expr2.getDefCallArguments().get(0);
+        if (index1 instanceof IntegerExpression && index2 instanceof IntegerExpression) {
+          return ((IntegerExpression) index1).compare((IntegerExpression) index2) < 0;
+        }
+      }
+    }
+    return false;
   }
 
   private Boolean checkDefCallAndApp(Expression expr1, Expression expr2, boolean correctOrder) {

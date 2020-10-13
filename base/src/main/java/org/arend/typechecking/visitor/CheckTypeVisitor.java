@@ -2440,7 +2440,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
 
     boolean isNegative = number.signum() < 0;
-    Expression resultExpr;
+    IntegerExpression resultExpr;
     try {
       int value = number.intValueExact();
       resultExpr = new SmallIntegerExpression(isNegative ? -value : value);
@@ -2452,7 +2452,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     if (isNegative) {
       result = new TypecheckingResult(ExpressionFactory.Neg(resultExpr), ExpressionFactory.Int());
     } else {
-      result = new TypecheckingResult(resultExpr, ExpressionFactory.Nat());
+      result = new TypecheckingResult(resultExpr, ExpressionFactory.Fin(resultExpr.suc()));
     }
     return checkResult((Expression) expectedType, result, (Concrete.Expression) marker);
   }

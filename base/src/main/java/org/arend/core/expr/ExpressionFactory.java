@@ -55,6 +55,10 @@ public class ExpressionFactory {
     return new DataCallExpression(Prelude.NAT, Sort.PROP, Collections.emptyList());
   }
 
+  public static DataCallExpression Fin(Expression cardinality) {
+    return new DataCallExpression(Prelude.FIN, Sort.PROP, List.of(cardinality));
+  }
+
   public static DataCallExpression Int() {
     return new DataCallExpression(Prelude.INT, Sort.PROP, Collections.emptyList());
   }

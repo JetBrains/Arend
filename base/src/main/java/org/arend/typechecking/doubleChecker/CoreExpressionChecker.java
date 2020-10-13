@@ -727,6 +727,6 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   @Override
   public Expression visitInteger(IntegerExpression expr, Expression expectedType) {
-    return check(expectedType, new DataCallExpression(Prelude.NAT, Sort.PROP, Collections.emptyList()), expr);
+    return check(expectedType, ExpressionFactory.Fin(expr.suc()), expr);
   }
 }
