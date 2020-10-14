@@ -4,12 +4,11 @@ import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.param.UnusedIntervalDependentLink;
 import org.arend.core.definition.*;
 import org.arend.core.expr.*;
-import org.arend.core.pattern.*;
+import org.arend.core.pattern.ConstructorExpressionPattern;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.error.DummyErrorReporter;
 import org.arend.ext.ArendPrelude;
-import org.arend.ext.core.definition.CoreDataDefinition;
 import org.arend.ext.module.ModulePath;
 import org.arend.module.ModuleLocation;
 import org.arend.naming.reference.Referable;
@@ -23,7 +22,10 @@ import org.arend.typechecking.provider.ConcreteProvider;
 import org.arend.util.SingletonList;
 import org.arend.util.Version;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.Consumer;
 
 import static org.arend.core.expr.ExpressionFactory.Nat;
@@ -45,10 +47,11 @@ public class Prelude implements ArendPrelude {
   public static FunctionDefinition PLUS, MUL, MINUS;
 
   public static DataDefinition FIN;
+  private static FunctionDefinition FIN_FROM_NAT;
 
   public static DataDefinition INT;
   public static Constructor POS, NEG;
-  private static FunctionDefinition FROM_NAT;
+  private static FunctionDefinition INT_FROM_NAT;
 
   public static FunctionDefinition COERCE, COERCE2;
 
@@ -166,10 +169,23 @@ public class Prelude implements ArendPrelude {
         ISO.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         break;
       }
-      case "fromNat":
-        FROM_NAT = (FunctionDefinition) definition;
-        FROM_NAT.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+      case "fromNat": {
+        var parent = definition.getReferable().getLocatedReferableParent();
+        assert parent != null;
+        switch (parent.getRefName()) {
+          default:
+            throw new IllegalArgumentException(parent.getRefName() + " shouldn't have member fromNat");
+          case "Int":
+            INT_FROM_NAT = (FunctionDefinition) definition;
+            INT_FROM_NAT.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+            break;
+          case "Fin":
+            FIN_FROM_NAT = (FunctionDefinition) definition;
+            FIN_FROM_NAT.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+            break;
+        }
         break;
+      }
       case "inProp":
         IN_PROP = (FunctionDefinition) definition;
         IN_PROP.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
@@ -215,7 +231,7 @@ public class Prelude implements ArendPrelude {
     consumer.accept(INT);
     consumer.accept(POS);
     consumer.accept(NEG);
-    consumer.accept(FROM_NAT);
+    consumer.accept(INT_FROM_NAT);
     consumer.accept(INTERVAL);
     consumer.accept(LEFT);
     consumer.accept(RIGHT);
@@ -310,8 +326,13 @@ public class Prelude implements ArendPrelude {
   }
 
   @Override
-  public CoreDataDefinition getFin() {
+  public DataDefinition getFin() {
     return FIN;
+  }
+
+  @Override
+  public FunctionDefinition getFinFromNat() {
+    return FIN_FROM_NAT;
   }
 
   @Override
@@ -345,8 +366,8 @@ public class Prelude implements ArendPrelude {
   }
 
   @Override
-  public FunctionDefinition getFromNat() {
-    return FROM_NAT;
+  public FunctionDefinition getIntFromNat() {
+    return INT_FROM_NAT;
   }
 
   @Override
