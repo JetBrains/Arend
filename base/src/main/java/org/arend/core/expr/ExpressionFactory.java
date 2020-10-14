@@ -56,6 +56,10 @@ public class ExpressionFactory {
     return new DataCallExpression(Prelude.NAT, Sort.PROP, Collections.emptyList());
   }
 
+  public static DataCallExpression Fin(int cardinality) {
+    return Fin(new SmallIntegerExpression(cardinality));
+  }
+
   public static DataCallExpression Fin(Expression cardinality) {
     // because we need a mutable (though fixed-size) list, so both `Collections.singletonList`
     // and `List.of` won't fit this use case.
