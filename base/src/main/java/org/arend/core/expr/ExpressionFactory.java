@@ -7,6 +7,7 @@ import org.arend.core.sort.Sort;
 import org.arend.prelude.Prelude;
 import org.arend.util.SingletonList;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -56,7 +57,10 @@ public class ExpressionFactory {
   }
 
   public static DataCallExpression Fin(Expression cardinality) {
-    return new DataCallExpression(Prelude.FIN, Sort.PROP, List.of(cardinality));
+    // because we need a mutable (though fixed-size) list, so both `Collections.singletonList`
+    // and `List.of` won't fit this use case.
+    //noinspection ArraysAsListWithZeroOrOneArgument
+    return new DataCallExpression(Prelude.FIN, Sort.PROP, Arrays.asList(cardinality));
   }
 
   public static DataCallExpression Int() {
