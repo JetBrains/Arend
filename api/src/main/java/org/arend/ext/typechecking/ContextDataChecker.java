@@ -22,7 +22,7 @@ public class ContextDataChecker {
   /**
    * @return  an array representing the expected number of arguments and their explicitness; returns {@code null} if the definition can accept any number of arguments without restrictions
    */
-  public @Nullable boolean[] argumentExplicitness() {
+  public boolean @Nullable [] argumentExplicitness() {
     return null;
   }
 
