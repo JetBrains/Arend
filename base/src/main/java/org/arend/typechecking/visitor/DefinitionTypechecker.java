@@ -2122,7 +2122,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           LocalInstancePool localInstancePool = new LocalInstancePool(typechecker);
           addLocalInstances(localInstances, thisBinding, !typedDef.isRecord() && typedDef.getClassifyingField() == null ? typedDef : null, localInstancePool);
           myInstancePool.setInstancePool(localInstancePool);
-          CheckTypeVisitor.setCaseLevel(lamImpl.body);
+          if (field.isProperty()) {
+            CheckTypeVisitor.setCaseLevel(lamImpl.body);
+          }
           result = typechecker.finalCheckExpr(lamImpl.body, fieldType.getCodomain().subst(fieldType.getParameters(), new ReferenceExpression(thisBinding)));
           myInstancePool.setInstancePool(null);
         } else {
