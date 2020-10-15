@@ -27,6 +27,7 @@ allprojects {
     }
 
     java {
+        // toolchain.languageVersion.set(JavaLanguageVersion.of(11))
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
@@ -38,9 +39,10 @@ allprojects {
         }
     }
 
-    tasks.withType<JavaCompile> {
+    tasks.compileJava {
         options.encoding = "UTF-8"
         options.isDeprecation = true
+        options.release.set(11)
         // options.compilerArgs.add("-Xlint:unchecked")
     }
 }
@@ -79,7 +81,7 @@ subprojects {
 }
 
 tasks.withType<Wrapper> {
-    gradleVersion = "6.5"
+    gradleVersion = "6.7"
 }
 
 dependencies {

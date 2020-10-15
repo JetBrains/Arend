@@ -7,7 +7,7 @@ dependencies {
 }
 
 val genDir = file("src/main/gen")
-val generateVersion = task<org.arend.gradle.GenerateVersionTask>("generateVersion") {
+val generateVersion = tasks.register<org.arend.gradle.GenerateVersionTask>("generateVersion") {
     basePackage = project.group.toString()
     outputDir = genDir.resolve("org/arend/prelude")
 }
@@ -26,6 +26,6 @@ sourceSets {
     }
 }
 
-tasks.withType<JavaCompile> {
+tasks.compileJava {
     dependsOn(generateVersion)
 }

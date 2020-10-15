@@ -19,31 +19,33 @@ dependencies {
 
 // Prelude stuff
 
-val buildPrelude = task<org.arend.gradle.BuildPreludeTask>("buildPrelude") {
+val buildPrelude = tasks.register<org.arend.gradle.BuildPreludeTask>("buildPrelude") {
     classpath = sourceSets["main"].runtimeClasspath
     workingDir(rootProject.rootDir)
 }
 
-val copyPrelude = task<Copy>("copyPrelude") {
+val copyPrelude = tasks.register<Copy>("copyPrelude") {
     dependsOn(buildPrelude)
     from(rootProject.file("lib"))
     into(buildDir.resolve("classes/java/main/lib"))
 }
 
-val jarDep = task<Jar>("jarDep") {
+val jarDep = tasks.register<Jar>("jarDep") {
     group = "build"
     manifest.attributes["Main-Class"] = "${project.group}.frontend.ConsoleMain"
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
-    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it as Any else zipTree(it) })
-    from(sourceSets["main"].output)
+    dependsOn(configurations.runtimeClasspath)
+    from({ configurations.runtimeClasspath.get().filter { it.name.endsWith("jar") }.map { zipTree(it) } })
+    from(sourceSets.main.get().output)
     archiveClassifier.set("full")
 }
 
-val copyJarDep = task<Copy>("copyJarDep") {
+val copyJarDep = tasks.register<Copy>("copyJarDep") {
+    val jarDep = jarDep.get()
     dependsOn(jarDep)
     from(jarDep.archiveFile.get().asFile)
     into(System.getProperty("user.dir"))
     outputs.upToDateWhen { false }
 }
 
-tasks.withType<Jar> { dependsOn(copyPrelude) }
+tasks.withType<Jar>().configureEach { dependsOn(copyPrelude) }
