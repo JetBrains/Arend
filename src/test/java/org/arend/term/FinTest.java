@@ -34,8 +34,8 @@ public class FinTest extends TypeCheckingTestCase {
 
   @Test
   public void unfiniteFin() {
-    typeCheckDef("\\func dalao : 0 = {Nat} (\\let | x : Fin 1 => 0 \\in x) => idp");
-    typeCheckDef("\\func julao : 0 = {Fin 1} (\\let | x : Fin 1 => 0 \\in x) => idp");
+    typeCheckDef("\\func dalao : 0 = {Nat} (\\let | x : Fin 1 => 0 \\in x) => idp {Nat} {0}");
+    typeCheckDef("\\func julao : 0 = {Fin 1} (\\let | x : Fin 1 => 0 \\in x) => idp {Fin 1} {0}");
   }
 
   @Test

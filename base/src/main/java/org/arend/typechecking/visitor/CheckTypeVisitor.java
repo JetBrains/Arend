@@ -2452,7 +2452,13 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     if (isNegative) {
       result = new TypecheckingResult(ExpressionFactory.Neg(resultExpr), ExpressionFactory.Int());
     } else {
-      result = new TypecheckingResult(resultExpr, ExpressionFactory.Fin(resultExpr.suc()));
+      Expression ty;
+      if (expectedType instanceof DataCallExpression && ((DataCallExpression) expectedType).getDefinition() == Prelude.FIN) {
+        ty = ExpressionFactory.Fin(resultExpr.suc());
+      } else {
+        ty = ExpressionFactory.Nat();
+      }
+      result = new TypecheckingResult(resultExpr, ty);
     }
     return checkResult((Expression) expectedType, result, (Concrete.Expression) marker);
   }

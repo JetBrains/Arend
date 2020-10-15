@@ -32,7 +32,7 @@ public class GetTypeTest extends TypeCheckingTestCase {
   @Test
   public void constructorTest() {
     typeCheckModule("\\data List (A : \\1-Type0) | nil | cons A (List A) \\func test => cons 0 nil");
-    testType(DataCall((DataDefinition) getDefinition("List"), Sort.STD, Fin(1)));
+    testType(DataCall((DataDefinition) getDefinition("List"), Sort.STD, Nat()));
   }
 
   @Test

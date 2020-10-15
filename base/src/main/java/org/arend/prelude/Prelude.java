@@ -74,7 +74,6 @@ public class Prelude implements ArendPrelude {
   public static FunctionDefinition MOD;
 
   public static FunctionDefinition DIV_MOD_PROPERTY;
-  public static FunctionDefinition MOD_PROPERTY;
 
   public static SigmaExpression DIV_MOD_TYPE;
 
@@ -211,10 +210,6 @@ public class Prelude implements ArendPrelude {
         DIV_MOD_PROPERTY = (FunctionDefinition) definition;
         DIV_MOD_PROPERTY.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         break;
-      case "modProp":
-        MOD_PROPERTY = (FunctionDefinition) definition;
-        MOD_PROPERTY.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-        break;
       default:
         throw new IllegalStateException();
     }
@@ -228,6 +223,7 @@ public class Prelude implements ArendPrelude {
     consumer.accept(ZERO);
     consumer.accept(SUC);
     consumer.accept(FIN);
+    consumer.accept(FIN_FROM_NAT);
     consumer.accept(INT);
     consumer.accept(POS);
     consumer.accept(NEG);
@@ -253,7 +249,6 @@ public class Prelude implements ArendPrelude {
     consumer.accept(DIV);
     consumer.accept(MOD);
     consumer.accept(DIV_MOD_PROPERTY);
-    consumer.accept(MOD_PROPERTY);
   }
 
   public static void initialize(Scope scope) {
@@ -448,10 +443,5 @@ public class Prelude implements ArendPrelude {
   @Override
   public FunctionDefinition getDivModProp() {
     return DIV_MOD_PROPERTY;
-  }
-
-  @Override
-  public FunctionDefinition getModProp() {
-    return MOD_PROPERTY;
   }
 }

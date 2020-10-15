@@ -34,7 +34,7 @@ public class PreludeTest extends TypeCheckingTestCase {
     if (!fields.isEmpty()) {
       fail(fields.stream()
         .map(Definition::getName)
-        .collect(Collectors.joining(", ", "prelude definitions ", " are not traversed!")));
+        .collect(Collectors.joining(", ", "prelude definition(s) ", " not traversed!")));
     }
   }
 

@@ -41,5 +41,4 @@ public interface ArendPrelude {
   CoreFunctionDefinition getDiv();
   CoreFunctionDefinition getMod();
   CoreFunctionDefinition getDivModProp();
-  CoreFunctionDefinition getModProp();
 }
