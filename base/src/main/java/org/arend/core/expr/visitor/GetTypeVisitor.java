@@ -1,6 +1,8 @@
 package org.arend.core.expr.visitor;
 
 import org.arend.core.context.param.DependentLink;
+import org.arend.core.context.param.TypedSingleDependentLink;
+import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.*;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
@@ -11,6 +13,7 @@ import org.arend.prelude.Prelude;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.arend.core.expr.ExpressionFactory.Fin;
 import static org.arend.core.expr.ExpressionFactory.Nat;
 
 public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
@@ -35,9 +38,35 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
   @Override
   public Expression visitFunCall(FunCallExpression expr, Void params) {
     List<DependentLink> defParams = new ArrayList<>();
-    Expression type = expr.getDefinition().getTypeWithParams(defParams, expr.getSortArgument());
-    assert expr.getDefCallArguments().size() == defParams.size();
-    return type.subst(DependentLink.Helper.toSubstitution(defParams, expr.getDefCallArguments()));
+    FunctionDefinition definition = expr.getDefinition();
+    Expression type = definition.getTypeWithParams(defParams, expr.getSortArgument());
+    List<? extends Expression> arguments = expr.getDefCallArguments();
+    assert arguments.size() == defParams.size();
+    if (definition == Prelude.DIV_MOD || definition == Prelude.MOD) {
+      var arg2 = arguments.get(1);
+      var integer = arg2.cast(IntegerExpression.class);
+      if (!integer.isZero()) {
+        type = modifyModType(definition, type, integer.pred());
+      }
+      var conCall = arg2.cast(ConCallExpression.class);
+      if (conCall != null && conCall.getDefinition() == Prelude.SUC) {
+        type = modifyModType(definition, type, conCall.getConCallArguments().get(0));
+      }
+    }
+    return type.subst(DependentLink.Helper.toSubstitution(defParams, arguments));
+  }
+
+  private Expression modifyModType(FunctionDefinition definition, Expression original, Expression cardinality) {
+    var fin = Fin(cardinality);
+    if (definition == Prelude.MOD) {
+      return fin;
+    } else if (definition == Prelude.DIV_MOD) {
+      original.cast(SigmaExpression.class).getParameters()
+        .setNext(new TypedSingleDependentLink(true, "_", fin));
+    } else {
+      throw new IllegalArgumentException(definition.toString() + " should be mod or divMod.");
+    }
+    return original;
   }
 
   @Override

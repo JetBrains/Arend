@@ -47,7 +47,7 @@ public class Prelude implements ArendPrelude {
   public static FunctionDefinition PLUS, MUL, MINUS;
 
   public static DataDefinition FIN;
-  private static FunctionDefinition FIN_FROM_NAT;
+  public static FunctionDefinition FIN_FROM_NAT;
 
   public static DataDefinition INT;
   public static Constructor POS, NEG;

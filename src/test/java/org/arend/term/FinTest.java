@@ -32,9 +32,14 @@ public class FinTest extends TypeCheckingTestCase {
     typeCheckDef("\\func xyren : Fin 101 => 100");
   }
 
+  @Test(timeout = 5000)
+  public void fromNatCoercion() {
+    typeCheckDef("\\func darkflames => Fin.fromNat 1919810");
+  }
+
   @Test
   public void unfiniteFin() {
-    typeCheckDef("\\func dalao : 0 = {Nat} (\\let | x : Fin 1 => 0 \\in x) => idp {Nat} {0}");
+    typeCheckDef("\\func dalao : 0 = {Nat} (\\let | x : Fin 1 => 0 \\in x) => idp {Nat}");
     typeCheckDef("\\func julao : 0 = {Fin 1} (\\let | x : Fin 1 => 0 \\in x) => idp {Fin 1} {0}");
   }
 
