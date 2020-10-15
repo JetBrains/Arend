@@ -39,7 +39,7 @@ allprojects {
         }
     }
 
-    tasks.compileJava {
+    tasks.withType<JavaCompile>().configureEach {
         options.encoding = "UTF-8"
         options.isDeprecation = true
         options.release.set(11)
