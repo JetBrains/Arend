@@ -741,36 +741,30 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
     }
 
-    ClassCallExpression type;
-    TypecheckingResult result;
-    Set<ClassField> pseudoImplemented;
     Concrete.Expression resultType = def.getResultType();
     if (typedDef.isSFunc() || kind == FunctionKind.CONS) {
       TypecheckingResult typeResult = typechecker.finalCheckExpr(resultType, Type.OMEGA);
       if (typeResult == null || !(typeResult.expression instanceof ClassCallExpression)) {
         return null;
       }
-      type = (ClassCallExpression) typeResult.expression;
-      pseudoImplemented = new HashSet<>();
-      result = typechecker.finalize(typechecker.typecheckClassExt(classFieldImpls, Type.OMEGA, type, pseudoImplemented, resultType), def, false);
+      ClassCallExpression type = (ClassCallExpression) typeResult.expression;
+      Set<ClassField> pseudoImplemented = new HashSet<>();
+      TypecheckingResult result = typechecker.finalize(typechecker.typecheckClassExt(classFieldImpls, Type.OMEGA, type, pseudoImplemented, resultType, true), def, false);
+      if (result == null) return null;
+
+      Expression resultExpr = result.expression.normalize(NormalizationMode.WHNF);
+      if (!(resultExpr instanceof ClassCallExpression)) {
+        errorReporter.report(new TypeMismatchError(DocFactory.text("a classCall"), resultExpr, def.getResultType()));
+        return null;
+      }
+      typechecker.checkAllImplemented((ClassCallExpression) resultExpr, pseudoImplemented, def);
+      return new Pair<>((ClassCallExpression) resultExpr, type);
     } else {
-      pseudoImplemented = Collections.emptySet();
-      result = typechecker.finalCheckExpr(Concrete.ClassExtExpression.make(def.getData(), typechecker.desugarClassApp(resultType, true), new Concrete.Coclauses(def.getData(), classFieldImpls)), Type.OMEGA);
-      type = null;
+      TypecheckingResult result = typechecker.finalCheckExpr(new Concrete.NewExpression(def.getData(), Concrete.ClassExtExpression.make(def.getData(), typechecker.desugarClassApp(resultType, true), new Concrete.Coclauses(def.getData(), classFieldImpls))), null);
+      if (result == null || !(result.expression instanceof NewExpression)) return null;
+      ClassCallExpression resultClassCall = ((NewExpression) result.expression).getType();
+      return new Pair<>(resultClassCall, resultClassCall);
     }
-
-    if (result == null) {
-      return null;
-    }
-
-    Expression resultExpr = result.expression.normalize(NormalizationMode.WHNF);
-    if (!(resultExpr instanceof ClassCallExpression)) {
-      errorReporter.report(new TypeMismatchError(DocFactory.text("a classCall"), resultExpr, def.getResultType()));
-      return null;
-    }
-
-    typechecker.checkAllImplemented((ClassCallExpression) resultExpr, pseudoImplemented, def);
-    return new Pair<>((ClassCallExpression) resultExpr, type == null ? (ClassCallExpression) resultExpr : type);
   }
 
   private ExpressionPattern checkDConstructor(Expression expr, Set<DependentLink> usedVars, Concrete.SourceNode sourceNode) {
@@ -2082,30 +2076,33 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           classOk = false;
           continue;
         }
-        boolean isFieldAlreadyImplemented;
-        if (newDef) {
-          isFieldAlreadyImplemented = typedDef.isImplemented(field);
-        } else if (implementedHere.contains(field)) {
-          isFieldAlreadyImplemented = true;
-        } else {
-          isFieldAlreadyImplemented = false;
-          for (ClassDefinition superClass : typedDef.getSuperClasses()) {
-            if (superClass.isImplemented(field)) {
-              isFieldAlreadyImplemented = true;
-              break;
+
+        if (!classFieldImpl.isDefault()) {
+          boolean isFieldAlreadyImplemented;
+          if (newDef) {
+            isFieldAlreadyImplemented = typedDef.isImplemented(field);
+          } else if (implementedHere.contains(field)) {
+            isFieldAlreadyImplemented = true;
+          } else {
+            isFieldAlreadyImplemented = false;
+            for (ClassDefinition superClass : typedDef.getSuperClasses()) {
+              if (superClass.isImplemented(field)) {
+                isFieldAlreadyImplemented = true;
+                break;
+              }
             }
           }
-        }
-        if (isFieldAlreadyImplemented) {
-          classOk = false;
-          alreadyImplementFields.add(field.getReferable());
-          alreadyImplementedSourceNode = classFieldImpl;
-        } else {
-          implementedHere.add(field);
-        }
+          if (isFieldAlreadyImplemented) {
+            classOk = false;
+            alreadyImplementFields.add(field.getReferable());
+            alreadyImplementedSourceNode = classFieldImpl;
+          } else {
+            implementedHere.add(field);
+          }
 
-        if (isFieldAlreadyImplemented || !checkImplementations) {
-          continue;
+          if (isFieldAlreadyImplemented || !checkImplementations) {
+            continue;
+          }
         }
 
         typedDef.updateSort();
@@ -2136,7 +2133,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
         typechecker.getContext().clear();
 
-        if (result != null) {
+        if (result != null && !classFieldImpl.isDefault()) {
           List<ClassField> cycle = dfs.checkDependencies(field, FieldsCollector.getFields(result.expression, thisBinding, typedDef.getFields()));
           if (cycle != null) {
             errorReporter.report(CycleError.fromTypechecked(cycle, def));
@@ -2145,7 +2142,12 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
 
         if (newDef) {
-          typedDef.implementField(field, new AbsExpression(thisBinding, checkImplementations && result != null ? result.expression : new ErrorExpression()));
+          AbsExpression abs = new AbsExpression(thisBinding, checkImplementations && result != null ? result.expression : new ErrorExpression());
+          if (classFieldImpl.isDefault()) {
+            typedDef.addDefault(field, abs);
+          } else {
+            typedDef.implementField(field, abs);
+          }
         }
       } else if (element instanceof Concrete.OverriddenField) {
         ClassField field = typecheckClassField((Concrete.OverriddenField) element, typedDef, localInstances, newDef, hasClassifyingField);
@@ -2154,6 +2156,12 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
       } else {
         throw new IllegalStateException();
+      }
+    }
+
+    for (ClassDefinition superClass : typedDef.getSuperClasses()) {
+      for (Map.Entry<ClassField, AbsExpression> entry : superClass.getDefaults()) {
+        typedDef.addDefault(entry.getKey(), entry.getValue());
       }
     }
 

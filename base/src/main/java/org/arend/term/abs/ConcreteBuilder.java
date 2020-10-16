@@ -324,13 +324,13 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
         term = new Concrete.LamExpression(parameters.get(0).getData(), buildParameters(parameters, false), term);
       }
 
-      implementations.add(new Concrete.ClassFieldImpl(implementation.getData(), implementedField.getReferent(), term, null));
+      implementations.add(new Concrete.ClassFieldImpl(implementation.getData(), implementedField.getReferent(), term, null, implementation.isDefault()));
     } else {
       boolean hasImpl = implementation.hasImplementation();
       if (hasImpl) {
         myErrorLevel = GeneralError.Level.ERROR;
       }
-      implementations.add(new Concrete.ClassFieldImpl(implementation.getData(), implementedField.getReferent(), hasImpl ? new Concrete.ErrorHoleExpression(errorData, null) : null, new Concrete.Coclauses(implementation.getCoClauseData(), buildImplementations(implementation.getData(), implementation.getCoClauseElements()))));
+      implementations.add(new Concrete.ClassFieldImpl(implementation.getData(), implementedField.getReferent(), hasImpl ? new Concrete.ErrorHoleExpression(errorData, null) : null, new Concrete.Coclauses(implementation.getCoClauseData(), buildImplementations(implementation.getData(), implementation.getCoClauseElements())), implementation.isDefault()));
     }
   }
 

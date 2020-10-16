@@ -254,7 +254,7 @@ public class SubstConcreteExpressionVisitor implements DataContainer, ConcreteEx
       var subClassFieldImpls = subCoclauses == null ? null : new Concrete.Coclauses(
         myData != null ? myData : subCoclauses.getData(),
         subCoclauses.getCoclauseList().stream().map(this::visitClassElement).collect(Collectors.toList()));
-      return (T) new Concrete.ClassFieldImpl(myData != null ? myData : element.getData(), field.getImplementedField(), field.implementation.accept(this, null), subClassFieldImpls);
+      return (T) new Concrete.ClassFieldImpl(myData != null ? myData : element.getData(), field.getImplementedField(), field.implementation.accept(this, null), subClassFieldImpls, field.isDefault());
     } else if (Concrete.ClassField.class.equals(element.getClass())) {
       var field = (Concrete.ClassField) element;
       // Ideally we should replace this `field.getData()` too

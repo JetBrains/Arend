@@ -812,6 +812,8 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
           LongNameContext longName = overrideCtx.longName();
           Pair<Concrete.Expression, Concrete.Expression> pair = visitReturnExpr(overrideCtx.returnExpr());
           elements.add(new Concrete.OverriddenField(tokenPosition(overrideCtx.start), LongUnresolvedReference.make(tokenPosition(longName.start), visitLongNamePath(longName)), visitTeles(overrideCtx.tele(), false), pair.proj1, pair.proj2));
+        } else if (statementCtx instanceof ClassDefaultStatContext) {
+          elements.add(visitLocalCoClause(((ClassDefaultStatContext) statementCtx).localCoClause(), true));
         } else {
           throw new IllegalStateException();
         }
@@ -1185,6 +1187,10 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
 
   @Override
   public Concrete.ClassFieldImpl visitLocalCoClause(LocalCoClauseContext ctx) {
+    return visitLocalCoClause(ctx, false);
+  }
+
+  private Concrete.ClassFieldImpl visitLocalCoClause(LocalCoClauseContext ctx, boolean isDefault) {
     List<String> path = visitLongNamePath(ctx.longName());
     Position position = tokenPosition(ctx.start);
     List<TeleContext> teleCtxs = ctx.tele();
@@ -1204,7 +1210,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       subClassFieldImpls = visitLocalCoClauses(ctx.localCoClause());
     }
 
-    return new Concrete.ClassFieldImpl(position, LongUnresolvedReference.make(position, path), term, subClassFieldImpls == null ? null : new Concrete.Coclauses(tokenPosition(ctx.start), subClassFieldImpls));
+    return new Concrete.ClassFieldImpl(position, LongUnresolvedReference.make(position, path), term, subClassFieldImpls == null ? null : new Concrete.Coclauses(tokenPosition(ctx.start), subClassFieldImpls), isDefault);
   }
 
   private Concrete.LevelExpression parseTruncatedUniverse(TerminalNode terminal) {

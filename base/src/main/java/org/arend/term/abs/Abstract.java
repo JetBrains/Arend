@@ -172,6 +172,7 @@ public final class Abstract {
     @Nullable Object getPrec();
     /* @NotNull */ @Nullable Expression getImplementation();
     boolean hasImplementation();
+    boolean isDefault();
   }
 
   public interface CoClauseFunctionReference extends ClassFieldImpl {

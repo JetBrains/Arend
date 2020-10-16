@@ -27,6 +27,7 @@ message Definition {
         repeated Field personal_field = 2;
         repeated int32 field_ref = 3;
         map<int32, Expression.Abs> implementations = 4;
+        map<int32, Expression.Abs> defaults = 14;
         int32 coercing_field_ref = 5;
         Sort sort = 6;
         bool is_record = 7;

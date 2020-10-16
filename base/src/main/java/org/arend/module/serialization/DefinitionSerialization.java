@@ -105,6 +105,9 @@ public class DefinitionSerialization implements ArendSerializer {
     for (Map.Entry<ClassField, AbsExpression> impl : definition.getImplemented()) {
       builder.putImplementations(myCallTargetIndexProvider.getDefIndex(impl.getKey()), defSerializer.writeAbsExpr(impl.getValue()));
     }
+    for (Map.Entry<ClassField, AbsExpression> defaultImpl : definition.getDefaults()) {
+      builder.putDefaults(myCallTargetIndexProvider.getDefIndex(defaultImpl.getKey()), defSerializer.writeAbsExpr(defaultImpl.getValue()));
+    }
     for (Map.Entry<ClassField, PiExpression> entry : definition.getOverriddenFields()) {
       builder.putOverriddenField(myCallTargetIndexProvider.getDefIndex(entry.getKey()), defSerializer.visitPi(entry.getValue()));
     }

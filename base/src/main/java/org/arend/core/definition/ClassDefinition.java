@@ -22,6 +22,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
   private final LinkedHashSet<ClassField> myFields = new LinkedHashSet<>();
   private final List<ClassField> myPersonalFields = new ArrayList<>();
   private final Map<ClassField, AbsExpression> myImplemented = new HashMap<>();
+  private final Map<ClassField, AbsExpression> myDefaults = new HashMap<>();
   private final Map<ClassField, PiExpression> myOverridden = new HashMap<>();
   private ClassField myCoercingField;
   private Sort mySort = Sort.PROP;
@@ -267,6 +268,18 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
 
   public AbsExpression implementField(ClassField field, AbsExpression impl) {
     return myImplemented.putIfAbsent(field, impl);
+  }
+
+  public Set<Map.Entry<ClassField, AbsExpression>> getDefaults() {
+    return myDefaults.entrySet();
+  }
+
+  public AbsExpression getDefault(@NotNull CoreClassField field) {
+    return field instanceof ClassField ? myDefaults.get(field) : null;
+  }
+
+  public AbsExpression addDefault(ClassField field, AbsExpression impl) {
+    return myDefaults.putIfAbsent(field, impl);
   }
 
   @NotNull

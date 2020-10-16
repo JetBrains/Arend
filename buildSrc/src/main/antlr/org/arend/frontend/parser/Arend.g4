@@ -16,18 +16,19 @@ nsId : ID (AS precedence ID)?;
 
 classFieldDef : defId tele* ':' returnExpr;
 
-classFieldOrImpl : '|' classFieldDef    # classField
-                 | localCoClause        # classImpl
+classFieldOrImpl : classFieldDef    # classField
+                 | localCoClause    # classImpl
                  ;
 
 fieldMod  : '\\field'     # fieldField
           | '\\property'  # fieldProperty
           ;
 
-classStat : classFieldOrImpl                            # classFieldOrImplStat
+classStat : '|' classFieldOrImpl                        # classFieldOrImplStat
           | definition                                  # classDefinitionStat
           | fieldMod classFieldDef                      # classFieldStat
           | '\\override' longName tele* ':' returnExpr  # classOverrideStat
+          | '\\default' localCoClause                   # classDefaultStat
           ;
 
 definition  : funcKw defId tele* (':' returnExpr2)? functionBody where?                                         # defFunction
@@ -65,7 +66,7 @@ classKw   : '\\class'   # classKwClass
           ;
 
 classBody : '{' classStat* '}'                                      # classBodyStats
-          | classFieldOrImpl*                                       # classBodyFieldOrImpl
+          | ('|' classFieldOrImpl)*                                 # classBodyFieldOrImpl
           ;
 
 functionBody  : '=>' expr             # withoutElim
@@ -182,8 +183,8 @@ clause : pattern (',' pattern)* ('=>' expr)?;
 
 coClause : '|' (longName coClauseBody | precedence longName tele* (COLON returnExpr2)? coClauseDefBody);
 
-coClauseBody : tele* '=>' expr          # coClauseImpl
-             | '{' localCoClause* '}'   # coClauseRec
+coClauseBody : tele* '=>' expr              # coClauseImpl
+             | '{' ('|' localCoClause)* '}' # coClauseRec
              ;
 
 coClauseDefBody : '=>' expr                                 # coClauseExpr
@@ -191,7 +192,7 @@ coClauseDefBody : '=>' expr                                 # coClauseExpr
                 | elim? ('{' clause? ('|' clause)* '}')?    # coClauseWith
                 ;
 
-localCoClause : '|' longName tele* ('=>' expr | '{' localCoClause* '}');
+localCoClause : longName tele* ('=>' expr | '{' ('|' localCoClause)* '}');
 
 letClause : (ID tele* typeAnnotation? | tuplePattern) '=>' expr;
 
@@ -243,7 +244,7 @@ atom  : literal                                     # atomLiteral
 
 atomFieldsAcc : atom ('.' NUMBER)*;
 
-implementStatements : '{' localCoClause* '}';
+implementStatements : '{' ('|' localCoClause)* '}';
 
 longName : ID ('.' ID)*;
 

@@ -123,6 +123,9 @@ public class DefinitionDeserialization implements ArendDeserializer {
     for (Map.Entry<Integer, ExpressionProtos.Expression.Abs> entry : classProto.getImplementationsMap().entrySet()) {
       classDef.implementField(myCallTargetProvider.getCallTarget(entry.getKey(), ClassField.class), defDeserializer.readAbsExpr(entry.getValue()));
     }
+    for (Map.Entry<Integer, ExpressionProtos.Expression.Abs> entry : classProto.getDefaultsMap().entrySet()) {
+      classDef.addDefault(myCallTargetProvider.getCallTarget(entry.getKey(), ClassField.class), defDeserializer.readAbsExpr(entry.getValue()));
+    }
     for (Map.Entry<Integer, ExpressionProtos.Expression.Pi> entry : classProto.getOverriddenFieldMap().entrySet()) {
       classDef.overrideField(myCallTargetProvider.getCallTarget(entry.getKey(), ClassField.class), checkFieldType(defDeserializer.readPi(entry.getValue()), classDef));
     }
@@ -142,6 +145,9 @@ public class DefinitionDeserialization implements ArendDeserializer {
 
       for (Map.Entry<ClassField, AbsExpression> entry : superClass.getImplemented()) {
         classDef.implementField(entry.getKey(), entry.getValue());
+      }
+      for (Map.Entry<ClassField, AbsExpression> entry : superClass.getDefaults()) {
+        classDef.addDefault(entry.getKey(), entry.getValue());
       }
     }
 

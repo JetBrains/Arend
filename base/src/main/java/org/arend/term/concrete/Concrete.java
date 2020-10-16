@@ -696,12 +696,18 @@ public final class Concrete {
     public Expression implementation;
     public TCDefReferable classRef; // the class of fields in subClassFieldImpls
     private final Coclauses mySubCoclauses;
+    private final boolean myDefault;
 
-    public ClassFieldImpl(Object data, Referable implementedField, Expression implementation, Coclauses subCoclauses) {
+    public ClassFieldImpl(Object data, Referable implementedField, Expression implementation, Coclauses subCoclauses, boolean isDefault) {
       super(data);
       myImplementedField = implementedField;
       this.implementation = implementation;
       mySubCoclauses = subCoclauses;
+      myDefault = isDefault;
+    }
+
+    public ClassFieldImpl(Object data, Referable implementedField, Expression implementation, Coclauses subCoclauses) {
+      this(data, implementedField, implementation, subCoclauses, false);
     }
 
     @Override
@@ -731,6 +737,10 @@ public final class Concrete {
     @Override
     public @Nullable Coclauses getSubCoclauses() {
       return mySubCoclauses;
+    }
+
+    public boolean isDefault() {
+      return myDefault;
     }
   }
 
