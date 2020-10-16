@@ -7,7 +7,9 @@ import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.Expression;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
+import org.arend.ext.error.RedundantCoclauseError;
 import org.arend.typechecking.TypeCheckingTestCase;
+import org.arend.typechecking.error.local.FieldsImplementationError;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -16,8 +18,7 @@ import java.util.List;
 
 import static org.arend.ExpressionFactory.Universe;
 import static org.arend.ExpressionFactory.fromPiParameters;
-import static org.arend.Matchers.cycle;
-import static org.arend.Matchers.fieldsImplementation;
+import static org.arend.Matchers.*;
 import static org.junit.Assert.assertEquals;
 
 public class ImplementTest extends TypeCheckingTestCase {
@@ -618,5 +619,47 @@ public class ImplementTest extends TypeCheckingTestCase {
       "\\func rrr : T 0 \\cowith\n" +
       "  | q => 1", 1);
     assertThatErrorsAre(fieldsImplementation(false, Collections.singletonList(get("R.n"))));
+  }
+
+  @Test
+  public void repeatedImpl() {
+    typeCheckModule(
+      "\\class C\n" +
+      "  | nn : Nat\n" +
+      "\\func f : C \\cowith\n" +
+      "  | nn => 0\n" +
+      "  | nn => 0", 1);
+    assertThatErrorsAre(fieldsImplementation(true, Collections.singletonList(get("C.nn"))));
+  }
+
+  @Test
+  public void implicitArgumentTest() {
+    typeCheckModule(
+      "\\class C | nn : Nat\n" +
+      "\\instance I : C 0\n" +
+      "\\class D {c : C}\n" +
+      "\\func f : D \\cowith");
+  }
+
+  @Test
+  public void implicitArgumentTest2() {
+    typeCheckModule(
+      "\\class C\n" +
+      "  | nn : Nat\n" +
+      "\\instance I : C 0\n" +
+      "\\class D {c : C}\n" +
+      "\\func f : D \\cowith\n" +
+      "  | c => \\new C 0");
+  }
+
+  @Test
+  public void implicitArgumentError() {
+    typeCheckModule(
+      "\\class C\n" +
+      "  | nn : Nat\n" +
+      "\\instance I : C 0\n" +
+      "\\class D {c : C}\n" +
+      "\\func f : D \\cowith\n" +
+      "  | c => \\new C 1", 1);
   }
 }
