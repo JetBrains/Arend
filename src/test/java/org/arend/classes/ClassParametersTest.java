@@ -86,17 +86,6 @@ public class ClassParametersTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void doNotCoerceExtendsMultipleWithParameter() {
-    typeCheckModule(
-      "\\class C1 (n : Nat)\n" +
-      "\\class C2 (B : \\Set0)\n" +
-      "\\class D \\extends C2, C1\n" +
-      "\\func d => \\new D { | n => 0 | B => \\Prop }\n" +
-      "\\func test3 : 0 = d => idp", 1);
-    assertThatErrorsAre(typeMismatchError());
-  }
-
-  @Test
   public void coerceExtendsMultipleWithParameter() {
     typeCheckModule(
       "\\class C1 (n : Nat)\n" +
@@ -109,6 +98,16 @@ public class ClassParametersTest extends TypeCheckingTestCase {
       "\\func test1 : g d = 1 => idp\n" +
       "\\func test2 : h d = 0 => idp\n" +
       "\\func test3 : 1 = d => idp\n");
+  }
+
+  @Test
+  public void coerceExtendsMultipleWithParameter2() {
+    typeCheckModule(
+      "\\class C1 (n : Nat)\n" +
+      "\\class C2 (B : \\Set0)\n" +
+      "\\class D \\extends C2, C1\n" +
+      "\\func d => \\new D { | n => 0 | B => \\Prop }\n" +
+      "\\func test3 : 0 = d => idp");
   }
 
 

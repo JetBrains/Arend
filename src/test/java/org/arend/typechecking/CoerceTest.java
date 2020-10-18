@@ -219,6 +219,14 @@ public class CoerceTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void coerceSubclass() {
+    typeCheckModule(
+      "\\record R (\\coerce f : Nat)\n" +
+      "\\record S \\extends R" +
+      "\\func foo (s : S) : Nat => s");
+  }
+
+  @Test
   public void coerceConstructor() {
     typeCheckModule(
       "\\data D\n" +
