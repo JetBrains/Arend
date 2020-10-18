@@ -17,6 +17,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import static org.arend.ExpressionFactory.*;
 import static org.arend.core.expr.ExpressionFactory.*;
@@ -26,7 +27,7 @@ import static org.junit.Assert.assertNotNull;
 public class GetTypeTest extends TypeCheckingTestCase {
   private void testType(Expression expected) {
     assertEquals(expected, ((FunctionDefinition) getDefinition("test")).getResultType());
-    assertEquals(expected, ((Expression) ((FunctionDefinition) getDefinition("test")).getBody()).getType());
+    assertEquals(expected, ((Expression) Objects.requireNonNull(((FunctionDefinition) getDefinition("test")).getBody())).getType());
   }
 
   @Test
@@ -89,7 +90,7 @@ public class GetTypeTest extends TypeCheckingTestCase {
     SingleDependentLink F = singleParam("F", Pi(Nat(), Universe(new Level(0), new Level(LevelVariable.HVAR))));
     SingleDependentLink x = singleParam("x", Nat());
     SingleDependentLink f = singleParam("f", Pi(x, Apps(Ref(F), Ref(x))));
-    Expression type = ((Expression) ((FunctionDefinition) def).getBody()).getType();
+    Expression type = ((Expression) Objects.requireNonNull(((FunctionDefinition) def).getBody())).getType();
     assertNotNull(type);
     assertEquals(Pi(F, Pi(f, Apps(Ref(F), Zero()))), type.normalize(NormalizationMode.NF));
   }
@@ -165,13 +166,13 @@ public class GetTypeTest extends TypeCheckingTestCase {
     DataDefinition c = (DataDefinition) getDefinition("C");
     DependentLink A = c.getConstructor("c").getDataTypeParameters();
     List<DependentLink> cParams = new ArrayList<>();
-    Expression cType = c.getConstructor("c").getTypeWithParams(cParams, Sort.SET0);
+    Expression cType = c.getConstructor("c").getTypeWithParams(cParams, Sort.STD);
     List<DependentLink> expectedParams = DependentLink.Helper.toList(c.getConstructor("c").getDataTypeParameters());
     for (DependentLink param : expectedParams) {
       param.setExplicit(false);
     }
     assertEquals(
-        fromPiParameters(Pi(Ref(A), DataCall(c, Sort.SET0, ConCall(d.getConstructor("d"), Sort.SET0, Collections.emptyList(), Ref(A)))), expectedParams),
+        fromPiParameters(Pi(Ref(A), DataCall(c, Sort.STD, ConCall(d.getConstructor("d"), Sort.STD, Collections.emptyList(), Ref(A)))), expectedParams),
         fromPiParameters(cType, cParams)
     );
   }

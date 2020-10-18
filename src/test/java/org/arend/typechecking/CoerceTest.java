@@ -244,4 +244,73 @@ public class CoerceTest extends TypeCheckingTestCase {
       "\\func foo (n : Nat) : D => n\n" +
       "\\func bar (x : Int) : D => x");
   }
+
+  @Test
+  public void coerceFromPi() {
+    typeCheckModule(
+      "\\data D | con (Nat -> Nat)\n" +
+      "  \\where \\use \\coerce fromPi (f : Nat -> Nat) => con f\n" +
+      "\\func f (f : Nat -> Nat) : D => f");
+  }
+
+  @Test
+  public void coerceToPi() {
+    typeCheckModule(
+      "\\data D | con (Nat -> Nat)\n" +
+      "  \\where \\use \\coerce toPi (d : D) : Nat -> Nat\n" +
+      "    | con f => f\n" +
+      "\\func f (d : D) : Nat -> Nat => d");
+  }
+
+  @Test
+  public void coerceToPiArg() {
+    typeCheckModule(
+      "\\data D | con (Nat -> Nat)\n" +
+      "  \\where \\use \\coerce toPi (d : D) : Nat -> Nat\n" +
+      "    | con f => f\n" +
+      "\\func f (d : D) => d 0");
+  }
+
+  @Test
+  public void coerceFromSigma() {
+    typeCheckModule(
+      "\\data D | con (\\Sigma Nat Nat)\n" +
+      "  \\where \\use \\coerce fromSigma (p : \\Sigma Nat Nat) => con p\n" +
+      "\\func f (p : \\Sigma Nat Nat) : D => p");
+  }
+
+  @Test
+  public void coerceToSigma() {
+    typeCheckModule(
+      "\\data D | con (\\Sigma Nat Nat)\n" +
+      "  \\where \\use \\coerce toSigma (d : D) : \\Sigma Nat Nat\n" +
+      "    | con p => p\n" +
+      "\\func f (d : D) : \\Sigma Nat Nat => d");
+  }
+
+  @Test
+  public void coerceToSigmaProj() {
+    typeCheckModule(
+      "\\data D | con (\\Sigma Nat Nat)\n" +
+      "  \\where \\use \\coerce toSigma (d : D) : \\Sigma Nat Nat\n" +
+      "    | con p => p\n" +
+      "\\func f (d : D) => d.1");
+  }
+
+  @Test
+  public void coerceFromUniverse() {
+    typeCheckModule(
+      "\\data D | con \\Type\n" +
+      "  \\where \\use \\coerce fromUniverse (X : \\Type) => con X\n" +
+      "\\func f (X : \\Type) : D => X");
+  }
+
+  @Test
+  public void coerceToUniverse() {
+    typeCheckModule(
+      "\\data D | con \\Type\n" +
+      "  \\where \\use \\coerce toUniverse (d : D) : \\Type\n" +
+      "    | con X => X\n" +
+      "\\func f (d : D) : \\Type => d");
+  }
 }
