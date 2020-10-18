@@ -241,23 +241,22 @@ public class DefinitionSerialization implements ArendSerializer {
 
   private DefinitionProtos.Definition.CoerceData writeCoerceData(CoerceData coerceData) {
     DefinitionProtos.Definition.CoerceData.Builder builder = DefinitionProtos.Definition.CoerceData.newBuilder();
-    for (Map.Entry<Definition, List<FunctionDefinition>> entry : coerceData.getMapFrom()) {
-      DefinitionProtos.Definition.CoerceData.Element.Builder elementBuilder = DefinitionProtos.Definition.CoerceData.Element.newBuilder();
-      elementBuilder.setClassifyingDef(entry.getKey() == null ? 0 : myCallTargetIndexProvider.getDefIndex(entry.getKey()) + 1);
-      for (FunctionDefinition def : entry.getValue()) {
-        elementBuilder.addCoercingDef(myCallTargetIndexProvider.getDefIndex(def));
-      }
-      builder.addCoerceFrom(elementBuilder.build());
+    for (Map.Entry<Definition, List<Definition>> entry : coerceData.getMapFrom()) {
+      builder.addCoerceFrom(writeCoerceDataElement(entry));
     }
     for (Map.Entry<Definition, List<Definition>> entry : coerceData.getMapTo()) {
-      DefinitionProtos.Definition.CoerceData.Element.Builder elementBuilder = DefinitionProtos.Definition.CoerceData.Element.newBuilder();
-      elementBuilder.setClassifyingDef(entry.getKey() == null ? 0 : myCallTargetIndexProvider.getDefIndex(entry.getKey()) + 1);
-      for (Definition def : entry.getValue()) {
-        elementBuilder.addCoercingDef(myCallTargetIndexProvider.getDefIndex(def));
-      }
-      builder.addCoerceTo(elementBuilder.build());
+      builder.addCoerceTo(writeCoerceDataElement(entry));
     }
     return builder.build();
+  }
+
+  private DefinitionProtos.Definition.CoerceData.Element writeCoerceDataElement(Map.Entry<Definition, List<Definition>> entry) {
+    DefinitionProtos.Definition.CoerceData.Element.Builder elementBuilder = DefinitionProtos.Definition.CoerceData.Element.newBuilder();
+    elementBuilder.setClassifyingDef(entry.getKey() == null ? 0 : myCallTargetIndexProvider.getDefIndex(entry.getKey()) + 1);
+    for (Definition def : entry.getValue()) {
+      elementBuilder.addCoercingDef(myCallTargetIndexProvider.getDefIndex(def));
+    }
+    return elementBuilder.build();
   }
 
   private DefinitionProtos.Definition.ParametersLevel writeParametersLevel(ExpressionSerialization defSerializer, ParametersLevel parametersLevel) {

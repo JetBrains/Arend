@@ -397,6 +397,9 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
         if (oldRef != null) {
           myLocalErrorReporter.report(new DuplicateNameError(GeneralError.Level.ERROR, ref, oldRef));
         }
+        if (constructor.isCoerce() && constructor.getParameters().isEmpty()) {
+          myLocalErrorReporter.report(new ParsingError(ParsingError.Kind.COERCE_WITHOUT_PARAMETERS, constructor));
+        }
       }
     }
 
@@ -578,9 +581,9 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       }
     }
 
-    if ((def.isRecord() || def.withoutClassifying()) && def.isForcedCoercingField()) {
+    if ((def.isRecord() || def.withoutClassifying()) && def.isForcedClassifyingField()) {
       myLocalErrorReporter.report(new ParsingError(def.isRecord() ? ParsingError.Kind.CLASSIFYING_FIELD_IN_RECORD : ParsingError.Kind.CLASSIFYING_IGNORED, def));
-      def.setCoercingField(def.getCoercingField(), false);
+      def.setClassifyingField(def.getClassifyingField(), false);
     }
 
     def.setResolved();

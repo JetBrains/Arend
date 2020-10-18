@@ -308,9 +308,9 @@ public class DefinitionDeserialization implements ArendDeserializer {
 
   private void readCoerceData(DefinitionProtos.Definition.CoerceData coerceDataProto, CoerceData coerceData) throws DeserializationException {
     for (DefinitionProtos.Definition.CoerceData.Element elementProto : coerceDataProto.getCoerceFromList()) {
-      List<FunctionDefinition> coercingDefs = new ArrayList<>();
+      List<Definition> coercingDefs = new ArrayList<>();
       for (Integer defIndex : elementProto.getCoercingDefList()) {
-        coercingDefs.add(myCallTargetProvider.getCallTarget(defIndex, FunctionDefinition.class));
+        coercingDefs.add(myCallTargetProvider.getCallTarget(defIndex));
       }
       int classifyingDefIndex = elementProto.getClassifyingDef();
       coerceData.putCoerceFrom(classifyingDefIndex == 0 ? null : myCallTargetProvider.getCallTarget(classifyingDefIndex - 1), coercingDefs);

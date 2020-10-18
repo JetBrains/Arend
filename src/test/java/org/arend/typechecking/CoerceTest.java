@@ -1,8 +1,10 @@
 package org.arend.typechecking;
 
+import org.arend.typechecking.error.local.CoerceClashError;
 import org.junit.Test;
 
 import static org.arend.Matchers.typeMismatchError;
+import static org.arend.Matchers.typecheckingError;
 
 public class CoerceTest extends TypeCheckingTestCase {
   @Test
@@ -190,5 +192,56 @@ public class CoerceTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\class Class (X : \\Type) (x : X)\n" +
       "\\func f (C : Class) => (\\Sigma (c : C) (c = c)) = (\\Sigma)");
+  }
+
+  @Test
+  public void coerceField() {
+    typeCheckModule(
+      "\\record R (\\coerce f : Nat)\n" +
+      "\\func foo (r : R) : Nat => r");
+  }
+
+  @Test
+  public void coerceFieldClash() {
+    typeCheckModule(
+      "\\record R (\\coerce f : Nat)\n" +
+      "  | \\coerce g : Nat", 1);
+    assertThatErrorsAre(typecheckingError(CoerceClashError.class));
+  }
+
+  @Test
+  public void twoCoerceFields() {
+    typeCheckModule(
+      "\\record R (\\coerce f : Nat)\n" +
+      "  | \\coerce g : Int\n" +
+      "\\func foo (r : R) : Nat => r\n" +
+      "\\func bar (r : R) : Int => r");
+  }
+
+  @Test
+  public void coerceConstructor() {
+    typeCheckModule(
+      "\\data D\n" +
+      "  | \\coerce con Nat\n" +
+      "\\func foo (n : Nat) : D => n");
+  }
+
+  @Test
+  public void coerceConstructorClash() {
+    typeCheckModule(
+      "\\data D\n" +
+      "  | \\coerce con1 Nat\n" +
+      "  | \\coerce con2 Nat", 1);
+    assertThatErrorsAre(typecheckingError(CoerceClashError.class));
+  }
+
+  @Test
+  public void twoCoerceConstructor() {
+    typeCheckModule(
+      "\\data D\n" +
+      "  | \\coerce con1 Nat\n" +
+      "  | \\coerce con2 Int\n" +
+      "\\func foo (n : Nat) : D => n\n" +
+      "\\func bar (x : Int) : D => x");
   }
 }

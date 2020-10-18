@@ -1710,8 +1710,8 @@ public final class Concrete {
     private final boolean myWithoutClassifying;
     private final List<ReferenceExpression> mySuperClasses;
     private final List<ClassElement> myElements;
-    private TCFieldReferable myCoercingField;
-    private boolean myForcedCoercingField;
+    private TCFieldReferable myClassifyingField;
+    private boolean myForcedClassifyingField;
     private List<TCDefReferable> myUsedDefinitions = Collections.emptyList();
 
     public ClassDefinition(TCDefReferable referable, boolean isRecord, boolean withoutClassifying, List<ReferenceExpression> superClasses, List<ClassElement> elements) {
@@ -1732,17 +1732,17 @@ public final class Concrete {
     }
 
     @Nullable
-    public TCFieldReferable getCoercingField() {
-      return myCoercingField;
+    public TCFieldReferable getClassifyingField() {
+      return myClassifyingField;
     }
 
-    public boolean isForcedCoercingField() {
-      return myForcedCoercingField;
+    public boolean isForcedClassifyingField() {
+      return myForcedClassifyingField;
     }
 
-    public void setCoercingField(TCFieldReferable coercingField, boolean isForced) {
-      myCoercingField = coercingField;
-      myForcedCoercingField = isForced;
+    public void setClassifyingField(TCFieldReferable classifyingField, boolean isForced) {
+      myClassifyingField = classifyingField;
+      myForcedClassifyingField = isForced;
     }
 
     @NotNull
@@ -1839,8 +1839,9 @@ public final class Concrete {
     private final List<TypeParameter> myParameters;
     private Expression myResultType;
     private Expression myResultTypeLevel;
+    private final boolean myCoerce;
 
-    public ClassField(TCFieldReferable referable, ClassDefinition parentClass, boolean isExplicit, ClassFieldKind kind, List<TypeParameter> parameters, Expression resultType, Expression resultTypeLevel) {
+    public ClassField(TCFieldReferable referable, ClassDefinition parentClass, boolean isExplicit, ClassFieldKind kind, List<TypeParameter> parameters, Expression resultType, Expression resultTypeLevel, boolean isCoerce) {
       myReferable = referable;
       myParentClass = parentClass;
       myExplicit = isExplicit;
@@ -1848,6 +1849,7 @@ public final class Concrete {
       myParameters = parameters;
       myResultType = resultType;
       myResultTypeLevel = resultTypeLevel;
+      myCoerce = isCoerce;
     }
 
     @NotNull
@@ -1896,6 +1898,10 @@ public final class Concrete {
     @Override
     public ClassDefinition getRelatedDefinition() {
       return myParentClass;
+    }
+
+    public boolean isCoerce() {
+      return myCoerce;
     }
 
     @Override
@@ -2240,14 +2246,16 @@ public final class Concrete {
     private final List<TypeParameter> myParameters;
     private final List<ReferenceExpression> myEliminatedReferences;
     private final List<FunctionClause> myClauses;
+    private final boolean myCoerce;
     private Expression myResultType;
 
-    public Constructor(TCDefReferable referable, DataDefinition dataType, List<TypeParameter> parameters, List<ReferenceExpression> eliminatedReferences, List<FunctionClause> clauses) {
+    public Constructor(TCDefReferable referable, DataDefinition dataType, List<TypeParameter> parameters, List<ReferenceExpression> eliminatedReferences, List<FunctionClause> clauses, boolean isCoerce) {
       myReferable = referable;
       myDataType = dataType;
       myParameters = parameters;
       myEliminatedReferences = eliminatedReferences;
       myClauses = clauses;
+      myCoerce = isCoerce;
     }
 
     @Override
@@ -2282,6 +2290,10 @@ public final class Concrete {
 
     public void setResultType(Expression resultType) {
       myResultType = resultType;
+    }
+
+    public boolean isCoerce() {
+      return myCoerce;
     }
 
     @Override

@@ -45,7 +45,6 @@ public class Prelude implements ArendPrelude {
 
   public static DataDefinition INT;
   public static Constructor POS, NEG;
-  private static FunctionDefinition FROM_NAT;
 
   public static FunctionDefinition COERCE, COERCE2;
 
@@ -158,10 +157,6 @@ public class Prelude implements ArendPrelude {
         ISO.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         break;
       }
-      case "fromNat":
-        FROM_NAT = (FunctionDefinition) definition;
-        FROM_NAT.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-        break;
       case "inProp":
         IN_PROP = (FunctionDefinition) definition;
         IN_PROP.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
@@ -206,7 +201,6 @@ public class Prelude implements ArendPrelude {
     consumer.accept(INT);
     consumer.accept(POS);
     consumer.accept(NEG);
-    consumer.accept(FROM_NAT);
     consumer.accept(INTERVAL);
     consumer.accept(LEFT);
     consumer.accept(RIGHT);
@@ -328,11 +322,6 @@ public class Prelude implements ArendPrelude {
   @Override
   public Constructor getNeg() {
     return NEG;
-  }
-
-  @Override
-  public FunctionDefinition getFromNat() {
-    return FROM_NAT;
   }
 
   @Override

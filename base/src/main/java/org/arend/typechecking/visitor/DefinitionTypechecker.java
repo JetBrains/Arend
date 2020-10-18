@@ -1793,6 +1793,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
     }
 
+    if (constructor != null && def.isCoerce()) {
+      dataDefinition.getCoerceData().addCoercingConstructor(constructor, errorReporter, def);
+    }
+
     if (elimParams != null) {
       try (var ignored = new Utils.SetContextSaver<>(typechecker.getContext())) {
         Expression expectedType = oldConstructor.getDataTypeExpression(Sort.STD);
@@ -1967,7 +1971,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
     boolean hasClassifyingField = false;
     if (!def.isRecord() && !def.withoutClassifying()) {
-      if (def.getCoercingField() != null) {
+      if (def.getClassifyingField() != null) {
         hasClassifyingField = true;
       } else {
         for (ClassDefinition superClass : typedDef.getSuperClasses()) {
@@ -2068,6 +2072,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
               }
             }
           }
+        }
+        if (field.isCoerce()) {
+          typedDef.getCoerceData().addCoercingField((ClassField) field.getData().getTypechecked(), errorReporter, field);
         }
       } else if (element instanceof Concrete.ClassFieldImpl) {
         Concrete.ClassFieldImpl classFieldImpl = (Concrete.ClassFieldImpl) element;
@@ -2181,7 +2188,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     // Process classifying field
     if (!def.isRecord()) {
       ClassField classifyingField = null;
-      if (!def.isForcedCoercingField() && !typedDef.getSuperClasses().isEmpty()) {
+      if (!def.isForcedClassifyingField() && !typedDef.getSuperClasses().isEmpty()) {
         Set<ClassDefinition> visited = new HashSet<>();
         for (ClassDefinition superClass : typedDef.getSuperClasses()) {
           classifyingField = findClassifyingField(superClass, typedDef, visited);
@@ -2190,8 +2197,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           }
         }
       }
-      if (classifyingField == null && def.getCoercingField() != null) {
-        Definition definition = def.getCoercingField().getTypechecked();
+      if (classifyingField == null && def.getClassifyingField() != null) {
+        Definition definition = def.getClassifyingField().getTypechecked();
         if (definition instanceof ClassField && ((ClassField) definition).getParentClass().equals(typedDef)) {
           classifyingField = (ClassField) definition;
         } else {
@@ -2212,7 +2219,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             classifyingField.setHideable(true);
             classifyingField.setType(classifyingField.getType(Sort.STD).normalize(NormalizationMode.WHNF));
           }
-          typedDef.getCoerceData().addCoercingField(classifyingField);
+          typedDef.getCoerceData().addCoercingField(classifyingField, null, null);
         }
       }
     } else {

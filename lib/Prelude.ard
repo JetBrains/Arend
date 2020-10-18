@@ -66,11 +66,8 @@
   }
 
 \data Int
-  | pos Nat
+  | \coerce pos Nat
   | neg Nat \with { zero => pos zero }
-  \where {
-    \use \coerce fromNat (n : Nat) => pos n
-  }
 
 \func coe (A : I -> \Type) (a : A left) (i : I) : A i \elim i
   | left => a

@@ -183,7 +183,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
       for (Abstract.Constructor constructor : absConstructors) {
         TCDefReferable constructorRef = (TCDefReferable) myReferableConverter.toDataLocatedReferable(constructor.getReferable());
         if (constructorRef != null) {
-          Concrete.Constructor cons = new Concrete.Constructor(constructorRef, data, buildTypeParameters(constructor.getParameters(), true), buildReferences(constructor.getEliminatedExpressions()), buildClauses(constructor.getClauses()));
+          Concrete.Constructor cons = new Concrete.Constructor(constructorRef, data, buildTypeParameters(constructor.getParameters(), true), buildReferences(constructor.getEliminatedExpressions()), buildClauses(constructor.getClauses()), constructor.isCoerce());
           Abstract.Expression resultType = constructor.getResultType();
           if (resultType != null) {
             cons.setResultType(resultType.accept(this, null));
@@ -203,26 +203,17 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
   }
 
   public void buildClassParameters(Collection<? extends Abstract.FieldParameter> absParameters, Concrete.ClassDefinition classDef, List<Concrete.ClassElement> elements) {
-    TCFieldReferable coercingField = null;
-    boolean isForced = false;
-
     for (Abstract.FieldParameter absParameter : absParameters) {
-      boolean forced = absParameter.isClassifying();
       Concrete.Parameter parameter = buildParameter(absParameter, false, false);
       if (parameter.getType() != null) {
+        boolean forced = absParameter.isClassifying();
+        boolean explicit = parameter.isExplicit();
         for (Referable referable : parameter.getReferableList()) {
           if (referable instanceof TCFieldReferable) {
-            if (forced) {
-              if (isForced) {
-                myErrorReporter.report(new AbstractExpressionError(GeneralError.Level.ERROR, "Class can have at most one classifying field", parameter));
-              } else {
-                coercingField = (TCFieldReferable) referable;
-                isForced = true;
-              }
-            } else if (coercingField == null && parameter.isExplicit()) {
-              coercingField = (TCFieldReferable) referable;
+            if (forced || explicit) {
+              setClassifyingField(classDef, (TCFieldReferable) referable, parameter, forced);
             }
-            elements.add(new Concrete.ClassField((TCFieldReferable) referable, classDef, parameter.isExplicit(), ClassFieldKind.ANY, new ArrayList<>(), parameter.getType(), null));
+            elements.add(new Concrete.ClassField((TCFieldReferable) referable, classDef, explicit, ClassFieldKind.ANY, new ArrayList<>(), parameter.getType(), null, absParameter.isCoerce()));
           } else {
             myErrorReporter.report(new AbstractExpressionError(GeneralError.Level.ERROR, "Incorrect field parameter", referable));
           }
@@ -231,9 +222,13 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
         myErrorReporter.report(new AbstractExpressionError(GeneralError.Level.ERROR, "Expected a typed parameter", parameter.getData()));
       }
     }
+  }
 
-    if (coercingField != null) {
-      classDef.setCoercingField(coercingField, isForced);
+  private void setClassifyingField(Concrete.ClassDefinition classDef, TCFieldReferable field, Object cause, boolean isForced) {
+    if (isForced && classDef.isForcedClassifyingField()) {
+      myErrorReporter.report(new AbstractExpressionError(GeneralError.Level.ERROR, "Class can have at most one classifying field", cause));
+    } else if (isForced && !classDef.isForcedClassifyingField() || classDef.getClassifyingField() == null) {
+      classDef.setClassifyingField(field, isForced);
     }
   }
 
@@ -259,7 +254,10 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
           Concrete.Expression type = resultType.accept(this, null);
           Abstract.Expression resultTypeLevel = field.getResultTypeLevel();
           Concrete.Expression typeLevel = resultTypeLevel == null ? null : resultTypeLevel.accept(this, null);
-          elements.add(new Concrete.ClassField((TCFieldReferable) fieldRef, classDef, true, field.getClassFieldKind(), buildTypeParameters(parameters, false), type, typeLevel));
+          elements.add(new Concrete.ClassField((TCFieldReferable) fieldRef, classDef, true, field.getClassFieldKind(), buildTypeParameters(parameters, false), type, typeLevel, field.isCoerce()));
+          if (field.isClassifying()) {
+            setClassifyingField(classDef, (TCFieldReferable) fieldRef, field, true);
+          }
         }
       } else if (element instanceof Abstract.ClassFieldImpl) {
         buildImplementation(def, (Abstract.ClassFieldImpl) element, elements);

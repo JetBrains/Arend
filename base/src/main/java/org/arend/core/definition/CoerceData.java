@@ -7,22 +7,26 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.ext.error.ErrorReporter;
 import org.arend.term.concrete.Concrete;
+import org.arend.typechecking.error.local.CoerceClashError;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
 public class CoerceData {
-  private Map<Definition, List<FunctionDefinition>> myMapFrom = new HashMap<>();
-  private Map<Definition, List<Definition>> myMapTo = new HashMap<>();
+  private final Map<Definition, List<Definition>> myMapFrom = new HashMap<>();
+  private final Map<Definition, List<Definition>> myMapTo = new HashMap<>();
   private final Definition myDefinition;
 
   public CoerceData(Definition definition) {
     myDefinition = definition;
   }
 
-  public Set<Map.Entry<Definition, List<FunctionDefinition>>> getMapFrom() {
+  public Set<Map.Entry<Definition, List<Definition>>> getMapFrom() {
     return myMapFrom.entrySet();
   }
 
@@ -34,7 +38,7 @@ public class CoerceData {
     return myMapFrom.isEmpty() && myMapTo.isEmpty();
   }
 
-  public void putCoerceFrom(Definition classifyingDefinition, List<FunctionDefinition> coercingDefinitions) {
+  public void putCoerceFrom(Definition classifyingDefinition, List<Definition> coercingDefinitions) {
     myMapFrom.put(classifyingDefinition, coercingDefinitions);
   }
 
@@ -62,7 +66,7 @@ public class CoerceData {
 
     // Coerce from a definition
     if (expectedCoerceData != null && actualDefCall != null && isClassifyingDefCall(actualDefCall)) {
-      List<FunctionDefinition> defs = expectedCoerceData.myMapFrom.get(actualDefCall.getDefinition());
+      List<Definition> defs = expectedCoerceData.myMapFrom.get(actualDefCall.getDefinition());
       if (defs != null) {
         return coerceResult(result, defs, expectedType, sourceNode, visitor, false, false);
       }
@@ -83,7 +87,7 @@ public class CoerceData {
 
     // Coerce from an arbitrary type
     if (expectedCoerceData != null) {
-      List<FunctionDefinition> defs = expectedCoerceData.myMapFrom.get(null);
+      List<Definition> defs = expectedCoerceData.myMapFrom.get(null);
       if (defs != null) {
         return coerceResult(result, defs, expectedType, sourceNode, visitor, true, false);
       }
@@ -113,11 +117,23 @@ public class CoerceData {
         ClassCallExpression classCall = result.type.cast(ClassCallExpression.class);
         Sort sort = classCall == null ? Sort.generateInferVars(visitor.getEquations(), field.getParentClass().getUniverseKind(), sourceNode) : classCall.getSortArgument();
         result = new TypecheckingResult(FieldCallExpression.make(field, sort, result.expression), field.getType(sort).applyExpression(result.expression).normalize(NormalizationMode.WHNF));
-      } else {
+      } else if (def instanceof FunctionDefinition || def instanceof Constructor) {
         List<Expression> arguments = new ArrayList<>();
         DependentLink link = def.getParameters();
         ExprSubstitution substitution = new ExprSubstitution();
         int index = 0;
+
+        List<Expression> dataArgs;
+        if (def instanceof Constructor) {
+          dataArgs = new ArrayList<>();
+          for (DependentLink dataParams = ((Constructor) def).getDataTypeParameters(); dataParams.hasNext(); dataParams = dataParams.getNext(), index++) {
+            Expression arg = new InferenceReferenceExpression(new FunctionInferenceVariable(def, link, index + 1, link.getTypeExpr(), sourceNode, visitor.getAllBindings()), visitor.getEquations());
+            substitution.add(dataParams, arg);
+            dataArgs.add(arg);
+            index++;
+          }
+        } else dataArgs = Collections.emptyList();
+
         while (true) {
           DependentLink next = link.getNext();
           if (next.hasNext()) {
@@ -142,7 +158,14 @@ public class CoerceData {
         }
 
         substitution.add(link, result.expression);
-        result = new TypecheckingResult(FunCallExpression.make((FunctionDefinition) def, sortArg, arguments), ((FunctionDefinition) def).getResultType().subst(substitution, levelSubst).normalize(NormalizationMode.WHNF));
+        if (def instanceof FunctionDefinition) {
+          result = new TypecheckingResult(FunCallExpression.make((FunctionDefinition) def, sortArg, arguments), ((FunctionDefinition) def).getResultType().subst(substitution, levelSubst).normalize(NormalizationMode.WHNF));
+        } else {
+          Expression resultExpr = ConCallExpression.make((Constructor) def, sortArg, dataArgs, arguments);
+          result = new TypecheckingResult(resultExpr, resultExpr.computeType().normalize(NormalizationMode.WHNF));
+        }
+      } else {
+        throw new IllegalStateException();
       }
     }
 
@@ -155,23 +178,23 @@ public class CoerceData {
     return result;
   }
 
-  public FunctionDefinition addCoerceFrom(Definition classifyingDefinition, FunctionDefinition coercingDefinition) {
+  public Definition addCoerceFrom(Definition classifyingDefinition, FunctionDefinition coercingDefinition) {
     if (!(classifyingDefinition instanceof DataDefinition || classifyingDefinition instanceof ClassDefinition)) {
       classifyingDefinition = null;
     }
 
-    List<FunctionDefinition> newList = myMapFrom.compute(classifyingDefinition, (k, oldList) -> oldList != null && oldList.size() == 1 ? oldList : Collections.singletonList(coercingDefinition));
-    FunctionDefinition oldDef = newList.size() == 1 && newList.get(0) != coercingDefinition ? newList.get(0) : null;
+    List<Definition> newList = myMapFrom.compute(classifyingDefinition, (k, oldList) -> oldList != null && oldList.size() == 1 ? oldList : Collections.singletonList(coercingDefinition));
+    Definition oldDef = newList.size() == 1 && newList.get(0) != coercingDefinition ? newList.get(0) : null;
     if (oldDef != null) {
       return oldDef;
     }
 
     CoerceData coerceData = classifyingDefinition != null ? classifyingDefinition.getCoerceData() : null;
     if (coerceData != null) {
-      for (Map.Entry<Definition, List<FunctionDefinition>> entry : coerceData.myMapFrom.entrySet()) {
+      for (Map.Entry<Definition, List<Definition>> entry : coerceData.myMapFrom.entrySet()) {
         if (entry.getKey() != null && entry.getKey() != classifyingDefinition && entry.getKey() != myDefinition) {
           myMapFrom.computeIfAbsent(entry.getKey(), k -> {
-            List<FunctionDefinition> list = new ArrayList<>(entry.getValue().size() + 1);
+            List<Definition> list = new ArrayList<>(entry.getValue().size() + 1);
             list.addAll(entry.getValue());
             list.add(coercingDefinition);
             return list;
@@ -211,13 +234,28 @@ public class CoerceData {
     return null;
   }
 
-  public void addCoercingField(ClassField coercingField) {
-    DefCallExpression defCall = coercingField.getType(Sort.STD).getCodomain().cast(DefCallExpression.class);
+  private Definition getClassifyingDefinition(Expression type) {
+    DefCallExpression defCall = type.cast(DefCallExpression.class);
     Definition classifyingDefinition = defCall == null ? null : defCall.getDefinition();
-    if (!(classifyingDefinition instanceof DataDefinition || classifyingDefinition instanceof ClassDefinition || classifyingDefinition instanceof Constructor)) {
-      classifyingDefinition = null;
+    return classifyingDefinition instanceof DataDefinition || classifyingDefinition instanceof ClassDefinition || classifyingDefinition instanceof Constructor ? classifyingDefinition : null;
+  }
+
+  public void addCoercingField(ClassField coercingField, @Nullable ErrorReporter errorReporter, @Nullable Concrete.SourceNode cause) {
+    Definition classifyingDefinition = getClassifyingDefinition(coercingField.getType(Sort.STD).getCodomain());
+    if (myMapTo.putIfAbsent(classifyingDefinition, Collections.singletonList(coercingField)) != null && errorReporter != null) {
+      errorReporter.report(new CoerceClashError(classifyingDefinition, cause));
+    }
+  }
+
+  public void addCoercingConstructor(Constructor constructor, @Nullable ErrorReporter errorReporter, @Nullable Concrete.SourceNode cause) {
+    DependentLink param = DependentLink.Helper.getLast(constructor.getParameters());
+    if (!param.hasNext()) {
+      return;
     }
 
-    myMapTo.put(classifyingDefinition, Collections.singletonList(coercingField));
+    Definition classifyingDefinition = getClassifyingDefinition(param.getTypeExpr());
+    if (myMapFrom.putIfAbsent(classifyingDefinition, Collections.singletonList(constructor)) != null && errorReporter != null) {
+      errorReporter.report(new CoerceClashError(classifyingDefinition, cause));
+    }
   }
 }
