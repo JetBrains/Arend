@@ -2074,7 +2074,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           }
         }
         if (field.isCoerce()) {
-          typedDef.getCoerceData().addCoercingField((ClassField) field.getData().getTypechecked(), errorReporter, field);
+          ClassField classField = (ClassField) field.getData().getTypechecked();
+          classField.setHideable(true);
+          typedDef.getCoerceData().addCoercingField(classField, errorReporter, field);
         }
       } else if (element instanceof Concrete.ClassFieldImpl) {
         Concrete.ClassFieldImpl classFieldImpl = (Concrete.ClassFieldImpl) element;
