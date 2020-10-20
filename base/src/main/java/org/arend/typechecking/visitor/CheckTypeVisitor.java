@@ -1276,7 +1276,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
 
     Sort sortArgument;
-    boolean isMin = definition instanceof DataDefinition && !definition.getParameters().hasNext();
+    boolean isMin = definition instanceof DataDefinition && !definition.getParameters().hasNext() && definition.getUniverseKind() == UniverseKind.NO_UNIVERSES;
     if (expr.getPLevel() == null && expr.getHLevel() == null) {
       sortArgument = isMin ? Sort.PROP : Sort.generateInferVars(getEquations(), definition.getUniverseKind(), expr);
       Level hLevel = null;
@@ -1935,6 +1935,12 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     if (exprResult == null) return null;
 
     exprResult.type = exprResult.type.normalize(NormalizationMode.WHNF);
+    if (!(exprResult.type instanceof SigmaExpression)) {
+      TypecheckingResult coercedResult = CoerceData.coerceToKey(exprResult, new CoerceData.SigmaKey(), expr1, this);
+      if (coercedResult != null) {
+        exprResult = coercedResult;
+      }
+    }
     SigmaExpression sigmaExpr = exprResult.type.cast(SigmaExpression.class);
     if (sigmaExpr == null) {
       Expression stuck = exprResult.type.getStuckExpression();

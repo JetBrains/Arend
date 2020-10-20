@@ -306,14 +306,33 @@ public class DefinitionDeserialization implements ArendDeserializer {
     readCoerceData(dataProto.getCoerceData(), dataDef.getCoerceData());
   }
 
+  private CoerceData.Key readCoerceDataKey(DefinitionProtos.Definition.CoerceData.Element element) throws DeserializationException {
+    switch (element.getKeyCase()) {
+      case DEFINITION_KEY:
+        return new CoerceData.DefinitionKey(myCallTargetProvider.getCallTarget(element.getDefinitionKey().getClassifyingDef()));
+      case CONSTANT_KEY:
+        switch (element.getConstantKey()) {
+          case PI:
+            return new CoerceData.PiKey();
+          case SIGMA:
+            return new CoerceData.SigmaKey();
+          case UNIVERSE:
+            return new CoerceData.UniverseKey();
+          default:
+            return new CoerceData.AnyKey();
+        }
+      default:
+        return new CoerceData.AnyKey();
+    }
+  }
+
   private void readCoerceData(DefinitionProtos.Definition.CoerceData coerceDataProto, CoerceData coerceData) throws DeserializationException {
     for (DefinitionProtos.Definition.CoerceData.Element elementProto : coerceDataProto.getCoerceFromList()) {
-      List<FunctionDefinition> coercingDefs = new ArrayList<>();
+      List<Definition> coercingDefs = new ArrayList<>();
       for (Integer defIndex : elementProto.getCoercingDefList()) {
-        coercingDefs.add(myCallTargetProvider.getCallTarget(defIndex, FunctionDefinition.class));
+        coercingDefs.add(myCallTargetProvider.getCallTarget(defIndex));
       }
-      int classifyingDefIndex = elementProto.getClassifyingDef();
-      coerceData.putCoerceFrom(classifyingDefIndex == 0 ? null : myCallTargetProvider.getCallTarget(classifyingDefIndex - 1), coercingDefs);
+      coerceData.putCoerceFrom(readCoerceDataKey(elementProto), coercingDefs);
     }
 
     for (DefinitionProtos.Definition.CoerceData.Element elementProto : coerceDataProto.getCoerceToList()) {
@@ -321,8 +340,7 @@ public class DefinitionDeserialization implements ArendDeserializer {
       for (Integer defIndex : elementProto.getCoercingDefList()) {
         coercingDefs.add(myCallTargetProvider.getCallTarget(defIndex));
       }
-      int classifyingDefIndex = elementProto.getClassifyingDef();
-      coerceData.putCoerceTo(classifyingDefIndex == 0 ? null : myCallTargetProvider.getCallTarget(classifyingDefIndex - 1), coercingDefs);
+      coerceData.putCoerceTo(readCoerceDataKey(elementProto), coercingDefs);
     }
   }
 

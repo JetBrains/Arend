@@ -14,7 +14,7 @@ nsUsing : USING? '(' nsId? (',' nsId)* ')';
 
 nsId : ID (AS precedence ID)?;
 
-classFieldDef : defId tele* ':' returnExpr;
+classFieldDef : (CLASSIFYING | COERCE)? defId tele* ':' returnExpr;
 
 classFieldOrImpl : classFieldDef    # classField
                  | localCoClause    # classImpl
@@ -57,7 +57,7 @@ instanceKw  : '\\instance'        # funcKwInstance
             | '\\cons'            # funcKwCons
             ;
 
-useMod    : '\\coerce'          # useCoerce
+useMod    : COERCE              # useCoerce
           | '\\level'           # useLevel
           ;
 
@@ -109,7 +109,7 @@ atomPatternOrID : atomPattern     # patternOrIDAtom
                 | longName        # patternID
                 ;
 
-constructor : defId tele* /* TODO[hits] (':' expr)? */ (elim? '{' clause? ('|' clause)* '}')?;
+constructor : COERCE? defId tele* /* TODO[hits] (':' expr)? */ (elim? '{' clause? ('|' clause)* '}')?;
 
 defId : precedence ID alias?;
 
@@ -269,8 +269,8 @@ tele : literal                          # teleLiteral
 
 typedExpr : STRICT? expr (':' expr)? ;
 
-fieldTele : '(' CLASSIFYING? ID+ ':' expr ')'        # explicitFieldTele
-          | '{' CLASSIFYING? ID+ ':' expr '}'        # implicitFieldTele
+fieldTele : '(' (CLASSIFYING | COERCE)? ID+ ':' expr ')'        # explicitFieldTele
+          | '{' (CLASSIFYING | COERCE)? ID+ ':' expr '}'        # implicitFieldTele
           ;
 
 LET : '\\let';
@@ -287,6 +287,7 @@ TRUNCATED : '\\truncated';
 CLASSIFYING : '\\classifying';
 NO_CLASSIFYING : '\\noclassifying';
 NEW : '\\new';
+COERCE : '\\coerce';
 NUMBER : [0-9]+;
 NEGATIVE_NUMBER : '-' [0-9]+;
 UNIVERSE : '\\Type' [0-9]*;

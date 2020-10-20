@@ -2,7 +2,6 @@ package org.arend.typechecking.covariance;
 
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
-import org.arend.core.definition.Definition;
 import org.arend.core.expr.*;
 import org.arend.core.sort.Sort;
 import org.arend.prelude.Prelude;
@@ -20,7 +19,7 @@ public abstract class CovarianceChecker {
     return checkNonCovariant(expr);
   }
 
-  protected boolean checkSort(Sort sort, Definition definition) {
+  protected boolean checkSort(Sort sort, DefCallExpression defCall) {
     return false;
   }
 
@@ -99,7 +98,7 @@ public abstract class CovarianceChecker {
 
     if (expr instanceof DataCallExpression && (allowData() || ((DataCallExpression) expr).getDefinition() == Prelude.PATH)) {
       DataCallExpression dataCall = (DataCallExpression) expr;
-      if (checkSort(dataCall.getSortArgument(), dataCall.getDefinition())) {
+      if (checkSort(dataCall.getSortArgument(), dataCall)) {
         return true;
       }
       int i = 0;
@@ -120,7 +119,7 @@ public abstract class CovarianceChecker {
 
     if (expr instanceof ClassCallExpression) {
       ClassCallExpression classCall = (ClassCallExpression) expr;
-      if (checkSort(classCall.getSortArgument(), classCall.getDefinition())) {
+      if (checkSort(classCall.getSortArgument(), classCall)) {
         return true;
       }
       for (Map.Entry<ClassField, Expression> entry : classCall.getImplementedHere().entrySet()) {
@@ -139,7 +138,7 @@ public abstract class CovarianceChecker {
 
     if (expr instanceof FunCallExpression && ((FunCallExpression) expr).getDefinition() == Prelude.PATH_INFIX) {
       FunCallExpression funCall = (FunCallExpression) expr;
-      if (checkSort(funCall.getSortArgument(), funCall.getDefinition())) {
+      if (checkSort(funCall.getSortArgument(), funCall)) {
         return true;
       }
       if (check(funCall.getDefCallArguments().get(0))) {

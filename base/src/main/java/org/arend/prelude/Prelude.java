@@ -51,7 +51,6 @@ public class Prelude implements ArendPrelude {
 
   public static DataDefinition INT;
   public static Constructor POS, NEG;
-  private static FunctionDefinition INT_FROM_NAT;
 
   public static FunctionDefinition COERCE, COERCE2;
 
@@ -168,23 +167,10 @@ public class Prelude implements ArendPrelude {
         ISO.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         break;
       }
-      case "fromNat": {
-        var parent = definition.getReferable().getLocatedReferableParent();
-        assert parent != null;
-        switch (parent.getRefName()) {
-          default:
-            throw new IllegalArgumentException(parent.getRefName() + " shouldn't have member fromNat");
-          case "Int":
-            INT_FROM_NAT = (FunctionDefinition) definition;
-            INT_FROM_NAT.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-            break;
-          case "Fin":
-            FIN_FROM_NAT = (FunctionDefinition) definition;
-            FIN_FROM_NAT.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-            break;
-        }
+      case "fromNat":
+        FIN_FROM_NAT = (FunctionDefinition) definition;
+        FIN_FROM_NAT.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         break;
-      }
       case "inProp":
         IN_PROP = (FunctionDefinition) definition;
         IN_PROP.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
@@ -227,7 +213,6 @@ public class Prelude implements ArendPrelude {
     consumer.accept(INT);
     consumer.accept(POS);
     consumer.accept(NEG);
-    consumer.accept(INT_FROM_NAT);
     consumer.accept(INTERVAL);
     consumer.accept(LEFT);
     consumer.accept(RIGHT);
@@ -358,11 +343,6 @@ public class Prelude implements ArendPrelude {
   @Override
   public Constructor getNeg() {
     return NEG;
-  }
-
-  @Override
-  public FunctionDefinition getIntFromNat() {
-    return INT_FROM_NAT;
   }
 
   @Override

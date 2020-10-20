@@ -146,8 +146,20 @@ message Definition {
     }
 
     message CoerceData {
-        message Element {
+        message DefinitionKey {
             int32 classifying_def = 1;
+        }
+        enum ConstantKey {
+            PI = 0;
+            SIGMA = 1;
+            UNIVERSE = 2;
+            ANY = 3;
+        }
+        message Element {
+            oneof key {
+                DefinitionKey definition_key = 3;
+                ConstantKey constant_key = 4;
+            }
             repeated int32 coercing_def = 2;
         }
         repeated Element coerce_from = 1;
