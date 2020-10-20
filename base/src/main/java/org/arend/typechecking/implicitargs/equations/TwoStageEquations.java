@@ -378,7 +378,7 @@ public class TwoStageEquations implements Equations {
 
   @Override
   public void loadState(TypecheckerState state) {
-    myEquations = state.equations;
+    myEquations = new ArrayList<>(state.equations);
     if (myLevelVariables.size() > state.numberOfLevelVariables) {
       myLevelVariables.subList(state.numberOfLevelVariables, myLevelVariables.size()).clear();
     }
