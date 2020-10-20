@@ -32,6 +32,22 @@ public class FinTest extends TypeCheckingTestCase {
     typeCheckDef("\\func xyren : Fin 101 => 100");
   }
 
+  @Test
+  public void getTypeModFailing() {
+    typeCheckDef("\\func kiva : Fin 8 => Nat.mod 8 0", 1);
+  }
+
+  @Test
+  public void getTypeMod() {
+    typeCheckDef("\\func kiva : Fin 8 => Nat.mod 10 8");
+    typeCheckDef("\\func kiwa : Nat.mod 10 8 = {Fin 8} 7 => idp");
+  }
+
+  @Test
+  public void getTypeDivMod() {
+    typeCheckDef("\\func emmmer (a : Nat) : \\Sigma Nat (Fin a) => Nat.divMod 10 (suc a)");
+  }
+
   @Test(timeout = 5000)
   public void fromNatCoercion() {
     typeCheckDef("\\func darkflames => Fin.fromNat 1919810");

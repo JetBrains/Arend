@@ -2399,6 +2399,41 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       return null;
     }
 
+    if (Prelude.DIV_MOD != null && result instanceof TypecheckingResult) {
+      var tcResult = (TypecheckingResult) result;
+      if (expr.getUnderlyingReferable() == Prelude.DIV_MOD.getReferable()) {
+        var appExpr = tcResult.expression.cast(FunCallExpression.class);
+        var tupleExpr = tcResult.expression.cast(TupleExpression.class);
+        if (appExpr != null) {
+          var arguments = appExpr.getDefCallArguments();
+          if (arguments.size() >= 2) {
+            var arg2 = arguments.get(1);
+            Expression type = result.getType();
+            var integer = arg2.cast(IntegerExpression.class);
+            if (integer != null && !integer.isZero()) {
+              type = GetTypeVisitor.modifyModType(Prelude.DIV_MOD, type, integer.pred());
+            }
+            var conCall = arg2.cast(ConCallExpression.class);
+            if (conCall != null && conCall.getDefinition() == Prelude.SUC) {
+              type = GetTypeVisitor.modifyModType(Prelude.DIV_MOD, type, conCall.getConCallArguments().get(0));
+            }
+            result.setType(type);
+          }
+        } else if (tupleExpr != null) {
+          var fields = tupleExpr.getFields();
+          if (fields.size() >= 2) {
+            var field2 = fields.get(1);
+            Expression type = result.getType();
+            var integer = field2.cast(IntegerExpression.class);
+            if (integer != null && !integer.isZero()) {
+              type = GetTypeVisitor.modifyModType(Prelude.DIV_MOD, type, integer.pred());
+            }
+            result.setType(type);
+          }
+        }
+      }
+    }
+
     return tResultToResult(expectedType, result, expr);
   }
 

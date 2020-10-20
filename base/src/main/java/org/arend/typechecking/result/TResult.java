@@ -5,6 +5,7 @@ import org.arend.core.expr.Expression;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
@@ -14,4 +15,5 @@ public interface TResult {
   TResult applyExpression(Expression expression, boolean isExplicit, ErrorReporter errorReporter, Concrete.SourceNode sourceNode);
   List<? extends DependentLink> getImplicitParameters();
   Expression getType();
+  void setType(@NotNull Expression newType);
 }

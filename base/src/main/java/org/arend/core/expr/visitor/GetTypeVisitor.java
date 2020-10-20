@@ -56,17 +56,17 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
     return type.subst(DependentLink.Helper.toSubstitution(defParams, arguments));
   }
 
-  private Expression modifyModType(FunctionDefinition definition, Expression original, Expression cardinality) {
+  public static Expression modifyModType(FunctionDefinition definition, Expression original, Expression cardinality) {
     var fin = Fin(cardinality);
     if (definition == Prelude.MOD) {
       return fin;
     } else if (definition == Prelude.DIV_MOD) {
       original.cast(SigmaExpression.class).getParameters()
         .setNext(new TypedSingleDependentLink(true, "_", fin));
+      return original;
     } else {
       throw new IllegalArgumentException(definition.toString() + " should be mod or divMod.");
     }
-    return original;
   }
 
   @Override

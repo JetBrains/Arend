@@ -14,10 +14,7 @@ import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.type.Type;
-import org.arend.core.expr.visitor.CompareVisitor;
-import org.arend.core.expr.visitor.ElimBindingVisitor;
-import org.arend.core.expr.visitor.ExpressionVisitor;
-import org.arend.core.expr.visitor.FreeVariablesCollector;
+import org.arend.core.expr.visitor.*;
 import org.arend.core.pattern.*;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
@@ -88,7 +85,21 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       parameters = parameters.getNext();
     }
     checkList(args, parameters, substitution, levelSubst);
-    return check(expectedType, expr.getDefinition().getResultType().subst(substitution, levelSubst), expr);
+    var resultType = expr.getDefinition().getResultType().subst(substitution, levelSubst);
+    if (expr.getDefinition() == Prelude.DIV_MOD) {
+      if (args.size() >= 2) {
+        var arg2 = args.get(1);
+        var integer = arg2.cast(IntegerExpression.class);
+        if (integer != null && !integer.isZero()) {
+          resultType = GetTypeVisitor.modifyModType(Prelude.DIV_MOD, resultType, integer.pred());
+        }
+        var conCall = arg2.cast(ConCallExpression.class);
+        if (conCall != null && conCall.getDefinition() == Prelude.SUC) {
+          resultType = GetTypeVisitor.modifyModType(Prelude.DIV_MOD, resultType, conCall.getConCallArguments().get(0));
+        }
+      }
+    }
+    return check(expectedType, resultType, expr);
   }
 
   @Override
