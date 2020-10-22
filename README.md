@@ -1,6 +1,8 @@
 # Arend proof assistant
 
-[![JetBrains incubator project](https://jb.gg/badges/official.svg)](https://confluence.jetbrains.com/display/ALL/JetBrains+on+GitHub)
+![](https://arend-lang.github.io/assets/images/Logo_byJB.svg)
+
+[![JetBrains offical project](https://jb.gg/badges/official.svg)](https://confluence.jetbrains.com/display/ALL/JetBrains+on+GitHub)
 [![Actions Status](https://github.com/JetBrains/Arend/workflows/gradle/badge.svg)](https://github.com/JetBrains/Arend/actions)
 [![Gitter](https://badges.gitter.im/arend-lang/community.svg)](https://gitter.im/arend-lang/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 [![](https://jitpack.io/v/JetBrains/Arend.svg)](https://jitpack.io/#JetBrains/Arend)
