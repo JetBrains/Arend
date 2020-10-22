@@ -214,7 +214,7 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
     return expr;
   }
 
-  private void visitLetClause(Concrete.LetClause clause, P params) {
+  protected void visitLetClause(Concrete.LetClause clause, P params) {
     visitParameters(clause.getParameters(), params);
     if (clause.resultType != null) {
       clause.resultType = clause.resultType.accept(this, params);
