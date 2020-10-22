@@ -98,6 +98,18 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
           resultType = GetTypeVisitor.modifyModType(Prelude.DIV_MOD, resultType, conCall.getConCallArguments().get(0));
         }
       }
+    } else if (expr.getDefinition() == Prelude.MOD) {
+      if (args.size() >= 2) {
+        var arg2 = args.get(1);
+        var integer = arg2.cast(IntegerExpression.class);
+        if (integer != null && !integer.isZero()) {
+          resultType = GetTypeVisitor.modifyModType(Prelude.MOD, resultType, integer.pred());
+        }
+        var conCall = arg2.cast(ConCallExpression.class);
+        if (conCall != null && conCall.getDefinition() == Prelude.SUC) {
+          resultType = GetTypeVisitor.modifyModType(Prelude.MOD, resultType, conCall.getConCallArguments().get(0));
+        }
+      }
     }
     return check(expectedType, resultType, expr);
   }

@@ -40,7 +40,8 @@ public class FinTest extends TypeCheckingTestCase {
   @Test
   public void getTypeMod() {
     typeCheckDef("\\func kiva : Fin 8 => Nat.mod 10 8");
-    typeCheckDef("\\func kiwa : Nat.mod 10 8 = {Fin 8} 7 => idp");
+    typeCheckDef("\\func oyama (a : Nat) : Fin a => Nat.mod 114514 (suc a)");
+    typeCheckDef("\\func kiwa : Nat.mod 10 8 = {Fin 8} 2 => idp {Fin 8} {2}");
   }
 
   @Test

@@ -2405,9 +2405,10 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       return null;
     }
 
-    if (Prelude.DIV_MOD != null && result instanceof TypecheckingResult) {
+    if (Prelude.DIV_MOD != null && Prelude.MOD != null && result instanceof TypecheckingResult) {
       var tcResult = (TypecheckingResult) result;
-      if (expr.getUnderlyingReferable() == Prelude.DIV_MOD.getReferable()) {
+      var underlyingReferable = expr.getUnderlyingReferable();
+      if (underlyingReferable == Prelude.DIV_MOD.getReferable()) {
         var appExpr = tcResult.expression.cast(FunCallExpression.class);
         var tupleExpr = tcResult.expression.cast(TupleExpression.class);
         if (appExpr != null) {
@@ -2436,6 +2437,32 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
             }
             result.setType(type);
           }
+        }
+      } else if (underlyingReferable == Prelude.MOD.getReferable()) {
+        var appExpr = tcResult.expression.cast(FunCallExpression.class);
+        var intExpr = tcResult.expression.cast(IntegerExpression.class);
+        var sucExpr = tcResult.expression.cast(ConCallExpression.class);
+        if (appExpr != null) {
+          var arguments = appExpr.getDefCallArguments();
+          if (arguments.size() >= 2) {
+            var arg2 = arguments.get(1);
+            Expression type = result.getType();
+            var integer = arg2.cast(IntegerExpression.class);
+            if (integer != null && !integer.isZero()) {
+              type = GetTypeVisitor.modifyModType(Prelude.MOD, type, integer.pred());
+            }
+            var conCall = arg2.cast(ConCallExpression.class);
+            if (conCall != null && conCall.getDefinition() == Prelude.SUC) {
+              type = GetTypeVisitor.modifyModType(Prelude.MOD, type, conCall.getConCallArguments().get(0));
+            }
+            result.setType(type);
+          }
+        } else if (intExpr != null && !intExpr.isZero()) {
+          result.setType(GetTypeVisitor
+            .modifyModType(Prelude.MOD, result.getType(), intExpr.pred()));
+        } else if (sucExpr != null && sucExpr.getDefinition() == Prelude.SUC) {
+          result.setType(GetTypeVisitor
+            .modifyModType(Prelude.MOD, result.getType(), sucExpr.getConCallArguments().get(0)));
         }
       }
     }
