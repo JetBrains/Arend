@@ -25,6 +25,7 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
+import org.arend.ext.concrete.ConcretePattern;
 import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
@@ -33,7 +34,6 @@ import org.arend.ext.error.TypeMismatchError;
 import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.prettyprinting.doc.DocFactory;
 import org.arend.extImpl.definitionRenamer.PatternContextDataImpl;
-import org.arend.naming.reference.FakeLocalReferable;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCDefReferable;
@@ -388,13 +388,11 @@ public class PatternTypechecking {
       if (pattern instanceof Concrete.NumberPattern) {
         var newPattern = translateNumberPatterns((Concrete.NumberPattern) pattern, expr);
         if (newPattern == null) {
-          myErrorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.PATTERN_IGNORED, pattern));
-          var newParam = parameters.subst(new SubstVisitor(paramsSubst, LevelSubstitution.EMPTY), 1, false);
-          linkList.append(newParam);
-          result.add(new BindingPattern(newParam));
-          exprs.add(new ReferenceExpression(newParam));
-          addBinding(null, newParam);
-          parameters = parameters.getNext();
+          return null;
+        }
+        newPattern.setExplicit(pattern.isExplicit());
+        if (newPattern instanceof Concrete.NamePattern) {
+          patterns.set(k--, newPattern);
           continue;
         } else {
           pattern = newPattern;
@@ -795,7 +793,19 @@ public class PatternTypechecking {
     if (checker == null) {
       return DesugarVisitor.desugarNumberPattern(pattern, myErrorReporter);
     }
-    return (Concrete.Pattern) checker.desugarNumberPattern(pattern, myVisitor, new PatternContextDataImpl(typeExpr, pattern));
+
+    int numberOfErrors = myVisitor.getNumberOfErrors();
+    ConcretePattern result = checker.desugarNumberPattern(pattern, myVisitor, new PatternContextDataImpl(typeExpr, pattern));
+    if (result == null && myVisitor.getNumberOfErrors() == numberOfErrors) {
+      myErrorReporter.report(new TypecheckingError("Cannot typecheck pattern", pattern));
+    }
+    if (result != null && !(result instanceof Concrete.Pattern)) {
+      throw new IllegalStateException("ConcretePattern must be created with ConcreteFactory");
+    }
+    if (result instanceof Concrete.NumberPattern) {
+      throw new IllegalStateException("desugarNumberPattern should not return ConcreteNumberPattern");
+    }
+    return (Concrete.Pattern) result;
   }
 
   // Chains the bindings in the leaves of patterns

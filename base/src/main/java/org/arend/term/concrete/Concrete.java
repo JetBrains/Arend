@@ -2324,7 +2324,7 @@ public final class Concrete {
   public static abstract class Pattern extends SourceNodeImpl implements ConcretePattern {
     public static final byte PREC = 11;
     private boolean myExplicit;
-    private final List<TypedReferable> myAsReferables;
+    private List<TypedReferable> myAsReferables;
 
     public Pattern(Object data, List<TypedReferable> asReferables) {
       super(data);
@@ -2355,6 +2355,9 @@ public final class Concrete {
       if (!(ref instanceof Referable && type instanceof Expression)) {
         throw new IllegalArgumentException();
       }
+      if (myAsReferables.isEmpty()) {
+        myAsReferables = new ArrayList<>();
+      }
       myAsReferables.add(new TypedReferable(null, (Referable) ref, (Expression) type));
       return this;
     }
@@ -2362,6 +2365,10 @@ public final class Concrete {
     @NotNull
     public List<TypedReferable> getAsReferables() {
       return myAsReferables;
+    }
+
+    public void setAsReferables(List<TypedReferable> asReferables) {
+      myAsReferables = asReferables;
     }
   }
 

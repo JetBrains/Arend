@@ -389,6 +389,9 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   @Override
   public @NotNull Concrete.Pattern desugarNumberPattern(@NotNull ConcreteNumberPattern pattern) {
+    if (!(pattern instanceof Concrete.NumberPattern)) {
+      throw new IllegalArgumentException();
+    }
     return DesugarVisitor.desugarNumberPattern((Concrete.NumberPattern) pattern, errorReporter);
   }
 
