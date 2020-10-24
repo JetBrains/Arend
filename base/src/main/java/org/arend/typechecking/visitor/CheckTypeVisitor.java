@@ -344,7 +344,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     if (!(expression instanceof Concrete.Expression && (expectedType == null || expectedType instanceof Expression))) {
       throw new IllegalArgumentException();
     }
-    Concrete.Expression expr = DesugarVisitor.desugar(((Concrete.Expression) expression).accept(new ReplaceVarConcreteVisitor(), null), errorReporter);
+    Concrete.Expression expr = DesugarVisitor.desugar(((Concrete.Expression) expression).accept(new ReplaceVarConcreteVisitor(context.keySet()), null), errorReporter);
     Expression type = expectedType == null ? null : (Expression) expectedType;
     TypecheckingResult result = checkExpr(expr, type);
     if (result == null || result.expression.isError()) {

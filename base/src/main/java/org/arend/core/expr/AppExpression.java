@@ -45,6 +45,7 @@ public class AppExpression extends Expression implements CoreAppExpression {
     return myArgument;
   }
 
+  @Override
   public boolean isExplicit() {
     return myExplicit;
   }

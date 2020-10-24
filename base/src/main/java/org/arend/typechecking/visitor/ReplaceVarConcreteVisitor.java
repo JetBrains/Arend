@@ -8,9 +8,15 @@ import org.arend.term.concrete.Concrete;
 import java.util.*;
 
 public class ReplaceVarConcreteVisitor extends BaseConcreteExpressionVisitor<Void> {
-  private final Set<Referable> myVars = new HashSet<>();
+  private final Set<Referable> myVars;
+  private final Set<Referable> myGlobalVars;
   private final Map<Referable, List<Referable>> myMap = new HashMap<>();
   private final Map<Referable, Referable> myOriginalRefs = new HashMap<>();
+
+  public ReplaceVarConcreteVisitor(Set<Referable> globalVars) {
+    myGlobalVars = globalVars;
+    myVars = new HashSet<>(myGlobalVars);
+  }
 
   @Override
   public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Void params) {
@@ -54,7 +60,7 @@ public class ReplaceVarConcreteVisitor extends BaseConcreteExpressionVisitor<Voi
           return null;
         }
       });
-    } else {
+    } else if (!myGlobalVars.contains(ref)) {
       myVars.remove(ref);
     }
   }
