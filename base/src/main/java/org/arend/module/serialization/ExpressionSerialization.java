@@ -295,6 +295,7 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
     while (true) {
       ExpressionProtos.Expression.ConCall.Builder builder = ExpressionProtos.Expression.ConCall.newBuilder();
       builder.setConstructorRef(myCallTargetIndexProvider.getDefIndex(expr.getDefinition()));
+      builder.setRecursiveParam(expr.getDefinition().getRecursiveParameter());
       builder.setPLevel(writeLevel(expr.getSortArgument().getPLevel()));
       builder.setHLevel(writeLevel(expr.getSortArgument().getHLevel()));
       for (Expression arg : expr.getDataTypeArguments()) {

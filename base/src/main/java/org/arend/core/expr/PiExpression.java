@@ -14,12 +14,10 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.InPlaceLevelSubstVisitor;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.ext.core.context.CoreParameter;
-import org.arend.ext.core.expr.CoreAbsExpression;
-import org.arend.ext.core.expr.CoreExpression;
-import org.arend.ext.core.expr.CoreExpressionVisitor;
-import org.arend.ext.core.expr.CorePiExpression;
+import org.arend.ext.core.expr.*;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.extImpl.AbstractedExpressionImpl;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.util.Decision;
@@ -71,6 +69,11 @@ public class PiExpression extends Expression implements Type, CorePiExpression, 
   @Override
   public Expression getCodomain() {
     return myCodomain;
+  }
+
+  @Override
+  public @NotNull AbstractedExpression getAbstractedCodomain() {
+    return AbstractedExpressionImpl.make(myLink, myCodomain);
   }
 
   @Override

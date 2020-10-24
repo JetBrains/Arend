@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public interface CoreCaseExpression {
+public interface CoreCaseExpression extends CoreExpression {
   boolean isSCase();
   @NotNull CoreParameter getParameters();
   @NotNull CoreExpression getResultType();

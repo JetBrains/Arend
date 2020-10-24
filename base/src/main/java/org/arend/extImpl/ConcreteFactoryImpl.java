@@ -672,6 +672,6 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
   @NotNull
   @Override
   public ConcreteFactory withData(@Nullable Object data) {
-    return new ConcreteFactoryImpl(data);
+    return new ConcreteFactoryImpl(data instanceof ConcreteSourceNode ? ((ConcreteSourceNode) data).getData() : data);
   }
 }

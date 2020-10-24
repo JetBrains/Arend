@@ -13,6 +13,7 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
+import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.core.definition.CoreConstructor;
 import org.arend.core.elimtree.BranchKey;
 import org.arend.naming.reference.TCDefReferable;
@@ -93,8 +94,25 @@ public class Constructor extends Definition implements Function, BranchKey, Core
     return myDataType;
   }
 
+  @NotNull
+  @Override
   public DependentLink getDataTypeParameters() {
     return myDataType.status().headerIsOK() ? (myPatterns == null ? myDataType.getParameters() : Pattern.getFirstBinding(myPatterns)) : EmptyDependentLink.getInstance();
+  }
+
+  @Override
+  public @NotNull DependentLink getAllParameters() {
+    DependentLink dataTypeParams = getDataTypeParameters();
+    if (!dataTypeParams.hasNext()) {
+      return myParameters;
+    }
+    if (!myParameters.hasNext()) {
+      return dataTypeParams;
+    }
+
+    dataTypeParams = DependentLink.Helper.copy(dataTypeParams);
+    DependentLink.Helper.getLast(dataTypeParams).setNext(myParameters);
+    return dataTypeParams;
   }
 
   public List<Expression> matchDataTypeArguments(List<Expression> arguments) {

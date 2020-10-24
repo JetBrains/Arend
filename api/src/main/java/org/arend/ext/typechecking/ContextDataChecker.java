@@ -2,10 +2,7 @@ package org.arend.ext.typechecking;
 
 import org.arend.ext.concrete.expr.*;
 import org.arend.ext.core.expr.CoreExpression;
-import org.arend.ext.error.ArgumentExplicitnessError;
-import org.arend.ext.error.ErrorReporter;
-import org.arend.ext.error.IgnoredLevelsError;
-import org.arend.ext.error.TypecheckingError;
+import org.arend.ext.error.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -95,7 +92,7 @@ public class ContextDataChecker {
         int diff = sum - numberOfOptionalExplicitArguments();
         if (diff > 0) {
           if (errorReporter != null) {
-            errorReporter.report(new TypecheckingError("Required " + diff + " more explicit argument" + (diff == 1 ? "" : "s"), marker));
+            errorReporter.report(new MissingArgumentsError(diff, marker));
           }
           ok = false;
         }

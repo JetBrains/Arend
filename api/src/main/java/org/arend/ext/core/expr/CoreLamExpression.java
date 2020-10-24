@@ -6,4 +6,5 @@ import org.jetbrains.annotations.NotNull;
 public interface CoreLamExpression extends CoreExpression {
   @NotNull CoreParameter getParameters();
   @NotNull CoreExpression getBody();
+  @NotNull AbstractedExpression getAbstractedBody();
 }

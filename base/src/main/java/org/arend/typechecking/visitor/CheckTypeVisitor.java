@@ -344,7 +344,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     if (!(expression instanceof Concrete.Expression && (expectedType == null || expectedType instanceof Expression))) {
       throw new IllegalArgumentException();
     }
-    Concrete.Expression expr = DesugarVisitor.desugar((Concrete.Expression) expression, errorReporter);
+    Concrete.Expression expr = DesugarVisitor.desugar(((Concrete.Expression) expression).accept(new ReplaceVarConcreteVisitor(context.keySet()), null), errorReporter);
     Expression type = expectedType == null ? null : (Expression) expectedType;
     TypecheckingResult result = checkExpr(expr, type);
     if (result == null || result.expression.isError()) {
@@ -2723,6 +2723,14 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       throw new IllegalArgumentException();
     }
     return new InferenceReferenceExpression(new UserInferenceVariable(name, (Expression) type, (Concrete.SourceNode) marker, getAllBindings(), isSolvableFromEquations));
+  }
+
+  @Override
+  public @NotNull CoreSort generateSort(@NotNull ConcreteSourceNode marker) {
+    if (!(marker instanceof Concrete.SourceNode)) {
+      throw new IllegalArgumentException();
+    }
+    return Sort.generateInferVars(myEquations, true, (Concrete.SourceNode) marker);
   }
 
   @Override

@@ -105,7 +105,7 @@ public final class Concrete {
   }
 
   public static class NameParameter extends Parameter {
-    private final Referable myReferable;
+    private Referable myReferable;
 
     public NameParameter(Object data, boolean explicit, Referable referable) {
       super(data, explicit);
@@ -115,6 +115,10 @@ public final class Concrete {
     @Nullable
     public Referable getReferable() {
       return myReferable;
+    }
+
+    public void setReferable(Referable ref) {
+      myReferable = ref;
     }
 
     @Override
@@ -160,7 +164,7 @@ public final class Concrete {
   }
 
   public static class TelescopeParameter extends TypeParameter {
-    private final List<? extends Referable> myReferableList;
+    private List<? extends Referable> myReferableList;
 
     public TelescopeParameter(Object data, boolean explicit, List<? extends Referable> referableList, Expression type) {
       super(data, explicit, type);
@@ -171,6 +175,10 @@ public final class Concrete {
     @NotNull
     public List<? extends Referable> getReferableList() {
       return myReferableList;
+    }
+
+    public void setReferableList(List<? extends Referable> refs) {
+      myReferableList = refs;
     }
 
     @Override
@@ -891,7 +899,7 @@ public final class Concrete {
 
   public static class LetClausePattern implements SourceNode, ConcreteSinglePattern {
     private final Object myData;
-    private final Referable myReferable;
+    private Referable myReferable;
     public Expression type;
     private final List<LetClausePattern> myPatterns;
     private final boolean myIgnored;
@@ -933,6 +941,10 @@ public final class Concrete {
     @Nullable
     public Referable getReferable() {
       return myReferable;
+    }
+
+    public void setReferable(Referable ref) {
+      myReferable = ref;
     }
 
     @NotNull
@@ -1170,7 +1182,7 @@ public final class Concrete {
 
   public static class CaseArgument implements ConcreteCaseArgument {
     public @NotNull Expression expression;
-    public final @Nullable Referable referable;
+    public @Nullable Referable referable;
     public @Nullable Expression type;
     public final boolean isElim;
 
@@ -2375,7 +2387,7 @@ public final class Concrete {
   }
 
   public static class NamePattern extends Pattern {
-    private final @Nullable Referable myReferable;
+    private @Nullable Referable myReferable;
     public @Nullable Expression type;
 
     public NamePattern(Object data, boolean isExplicit, @Nullable Referable referable, @Nullable Expression type) {
@@ -2388,6 +2400,10 @@ public final class Concrete {
     @Nullable
     public Referable getReferable() {
       return myReferable;
+    }
+
+    public void setReferable(Referable ref) {
+      myReferable = ref;
     }
 
     @Override
@@ -2403,7 +2419,7 @@ public final class Concrete {
   }
 
   public static class TypedReferable extends SourceNodeImpl {
-    public final Referable referable;
+    public Referable referable;
     public Expression type;
 
     public TypedReferable(Object data, Referable referable, Expression type) {
