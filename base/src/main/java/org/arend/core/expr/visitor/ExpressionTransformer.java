@@ -38,15 +38,24 @@ public abstract class ExpressionTransformer<P> extends BaseExpressionVisitor<P, 
     Expression it = expr;
     if (expr.getDefinition() == Prelude.SUC) {
       int n = 0;
+      Expression result;
       do {
+        result = preVisitConCall((ConCallExpression) it, params);
+        if (result != null) {
+          it = result;
+          break;
+        }
         n++;
         it = (((ConCallExpression) it).getDefCallArguments()).get(0);
       } while (it instanceof ConCallExpression && ((ConCallExpression) it).getDefinition() == Prelude.SUC);
 
-      it = visit(it, params);
-      if (it == null) {
-        return null;
+      if (result == null) {
+        it = visit(it, params);
+        if (it == null) {
+          return null;
+        }
       }
+
       if (it instanceof IntegerExpression) {
         return ((IntegerExpression) it).plus(n);
       }

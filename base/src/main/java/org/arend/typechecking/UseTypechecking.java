@@ -11,8 +11,6 @@ import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.TypecheckingError;
-import org.arend.naming.reference.Referable;
-import org.arend.naming.reference.TCDefReferable;
 import org.arend.term.FunctionKind;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.CertainTypecheckingError;
@@ -27,8 +25,8 @@ import java.util.function.Consumer;
 
 public class UseTypechecking {
   public static void typecheck(List<Concrete.UseDefinition> definitions, ErrorReporter errorReporter) {
-    Map<Definition, List<Pair<Definition,FunctionDefinition>>> fromMap = new HashMap<>();
-    Map<Definition, List<Pair<Definition,FunctionDefinition>>> toMap = new HashMap<>();
+    Map<Definition, List<Pair<Expression,FunctionDefinition>>> fromMap = new HashMap<>();
+    Map<Definition, List<Pair<Expression,FunctionDefinition>>> toMap = new HashMap<>();
 
     for (Concrete.UseDefinition definition : definitions) {
       Definition typedDefinition = definition.getData().getTypechecked();
@@ -52,7 +50,7 @@ public class UseTypechecking {
     registerCoerce(toMap, false, errorReporter, definitions);
   }
 
-  private static void registerCoerce(Map<Definition, List<Pair<Definition,FunctionDefinition>>> depMap, boolean isFrom, ErrorReporter errorReporter, List<Concrete.UseDefinition> definitions) {
+  private static void registerCoerce(Map<Definition, List<Pair<Expression,FunctionDefinition>>> depMap, boolean isFrom, ErrorReporter errorReporter, List<Concrete.UseDefinition> definitions) {
     if (depMap.isEmpty()) {
       return;
     }
@@ -62,11 +60,12 @@ public class UseTypechecking {
       DFS<Definition> dfs = new DFS<>() {
         @Override
         protected void forDependencies(Definition unit, Consumer<Definition> consumer) {
-          List<Pair<Definition, FunctionDefinition>> deps = depMap.get(unit);
+          List<Pair<Expression, FunctionDefinition>> deps = depMap.get(unit);
           if (deps != null) {
-            for (Pair<Definition, FunctionDefinition> dep : deps) {
-              if (dep.proj1 != null) {
-                consumer.accept(dep.proj1);
+            for (Pair<Expression, FunctionDefinition> dep : deps) {
+              DefCallExpression defCall = dep.proj1 != null ? dep.proj1.cast(DefCallExpression.class) : null;
+              if (defCall != null) {
+                consumer.accept(defCall.getDefinition());
               }
             }
           }
@@ -92,10 +91,10 @@ public class UseTypechecking {
     }
 
     for (Definition definition : order) {
-      List<Pair<Definition, FunctionDefinition>> deps = depMap.get(definition);
+      List<Pair<Expression, FunctionDefinition>> deps = depMap.get(definition);
       if (deps != null) {
         CoerceData coerceData = definition.getCoerceData();
-        for (Pair<Definition, FunctionDefinition> dep : deps) {
+        for (Pair<Expression, FunctionDefinition> dep : deps) {
           if (isFrom) {
             coerceData.addCoerceFrom(dep.proj1, dep.proj2);
           } else {
@@ -106,12 +105,13 @@ public class UseTypechecking {
     }
   }
 
-  private static void typecheckCoerce(Concrete.UseDefinition def, FunctionDefinition typedDef, ErrorReporter errorReporter, Map<Definition, List<Pair<Definition,FunctionDefinition>>> fromMap, Map<Definition, List<Pair<Definition,FunctionDefinition>>> toMap) {
+  private static void typecheckCoerce(Concrete.UseDefinition def, FunctionDefinition typedDef, ErrorReporter errorReporter, Map<Definition, List<Pair<Expression,FunctionDefinition>>> fromMap, Map<Definition, List<Pair<Expression,FunctionDefinition>>> toMap) {
     Definition useParent = def.getUseParent().getTypechecked();
     if ((useParent instanceof DataDefinition || useParent instanceof ClassDefinition) && !def.getParameters().isEmpty()) {
-      Concrete.Expression type = def.getParameters().get(def.getParameters().size() - 1).getType();
-      Referable paramRef = type == null ? null : type.getUnderlyingReferable();
-      Definition paramDef = paramRef instanceof TCDefReferable ? ((TCDefReferable) paramRef).getTypechecked() : null;
+      DependentLink lastParam = DependentLink.Helper.getLast(typedDef.getParameters());
+      Expression paramType = lastParam.hasNext() ? lastParam.getTypeExpr() : null;
+      DefCallExpression paramDefCall = paramType == null ? null : paramType.cast(DefCallExpression.class);
+      Definition paramDef = paramDefCall == null ? null : paramDefCall.getDefinition();
       DefCallExpression resultDefCall = typedDef.getResultType() == null ? null : typedDef.getResultType().cast(DefCallExpression.class);
       Definition resultDef = resultDefCall == null ? null : resultDefCall.getDefinition();
 
@@ -122,9 +122,9 @@ public class UseTypechecking {
       } else {
         typedDef.setVisibleParameter(DependentLink.Helper.size(typedDef.getParameters()) - 1);
         if (resultDef == useParent) {
-          fromMap.computeIfAbsent(useParent, k -> new ArrayList<>()).add(new Pair<>(paramDef, typedDef));
+          fromMap.computeIfAbsent(useParent, k -> new ArrayList<>()).add(new Pair<>(paramType, typedDef));
         } else {
-          toMap.computeIfAbsent(useParent, k -> new ArrayList<>()).add(new Pair<>(resultDef, typedDef));
+          toMap.computeIfAbsent(useParent, k -> new ArrayList<>()).add(new Pair<>(typedDef.getResultType(), typedDef));
         }
       }
     }

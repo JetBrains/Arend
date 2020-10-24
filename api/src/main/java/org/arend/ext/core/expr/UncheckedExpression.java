@@ -1,7 +1,7 @@
 package org.arend.ext.core.expr;
 
 import org.arend.ext.core.context.CoreBinding;
-import org.arend.ext.core.definition.CoreFunctionDefinition;
+import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.ExpressionMapper;
 import org.arend.ext.core.ops.NormalizationMode;
@@ -36,10 +36,10 @@ public interface UncheckedExpression {
   /**
    * Unfolds all occurrences of given functions in this expression.
    *
-   * @param functions   a set of functions to unfold.
-   * @param unfolded    functions that are actually unfolded will be added to this set.
+   * @param definitions a set of functions and fields to unfold.
+   * @param unfolded    definitions that are actually unfolded will be added to this set.
    */
-  @NotNull UncheckedExpression unfold(@NotNull Set<? extends CoreFunctionDefinition> functions, @Nullable Set<CoreFunctionDefinition> unfolded);
+  @NotNull UncheckedExpression unfold(@NotNull Set<? extends CoreDefinition> definitions, @Nullable Set<CoreDefinition> unfolded);
 
   /**
    * Constructs a new expression replacing some subexpressions according to the mapper.

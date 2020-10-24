@@ -203,12 +203,19 @@ public interface ExpressionTypechecker extends UserDataHolder {
    *
    * @param name                      a name of the variable; used only for printing.
    * @param type                      a type of the variable; when the variable is solved the type of the expression should match this type.
-   * @param marker                    a marked that is used to report errors related to this variable.
+   * @param marker                    a marker that is used to report errors related to this variable.
    * @param isSolvableFromEquations   if true, then the variable can be solved by the equation solver;
    *                                  otherwise, it must be explicitly solved by invoking {@link #solveInferenceVariable}
    * @return a reference expression with a new inference variable.
    */
   @NotNull CoreInferenceReferenceExpression generateNewInferenceVariable(@NotNull String name, @NotNull CoreExpression type, @NotNull ConcreteSourceNode marker, boolean isSolvableFromEquations);
+
+  /**
+   * Creates a sort from a pair of fresh level inference variables.
+   *
+   * @param marker                    a marker that is used to report errors related to generated variables.
+   */
+  @NotNull CoreSort generateSort(@NotNull ConcreteSourceNode marker);
 
   /**
    * Searches for an instance of the specified class.

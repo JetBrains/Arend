@@ -3,6 +3,7 @@ package org.arend.typechecking.covariance;
 import org.arend.core.definition.Definition;
 import org.arend.core.definition.UniverseKind;
 import org.arend.core.elimtree.*;
+import org.arend.core.expr.DefCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.sort.Sort;
 import org.arend.typechecking.visitor.CheckForUniversesVisitor;
@@ -56,12 +57,12 @@ public class UniverseKindChecker extends CovarianceChecker {
   }
 
   @Override
-  protected boolean checkSort(Sort sort, Definition definition) {
+  protected boolean checkSort(Sort sort, DefCallExpression defCall) {
     if (!CheckForUniversesVisitor.visitSort(sort)) {
       return false;
     }
 
-    myResult = myResult.max(definition == null ? UniverseKind.ONLY_COVARIANT : definition.getUniverseKind());
+    myResult = myResult.max(defCall == null ? UniverseKind.ONLY_COVARIANT : defCall.getUniverseKind());
     return myResult == UniverseKind.WITH_UNIVERSES;
   }
 }

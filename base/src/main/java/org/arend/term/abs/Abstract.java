@@ -46,6 +46,7 @@ public final class Abstract {
 
   public interface FieldParameter extends Parameter {
     boolean isClassifying();
+    boolean isCoerce();
 
     @Override
     default boolean isLocal() {
@@ -172,6 +173,7 @@ public final class Abstract {
     @Nullable Object getPrec();
     /* @NotNull */ @Nullable Expression getImplementation();
     boolean hasImplementation();
+    boolean isDefault();
   }
 
   public interface CoClauseFunctionReference extends ClassFieldImpl {
@@ -255,12 +257,15 @@ public final class Abstract {
     @Override @NotNull Collection<? extends Reference> getEliminatedExpressions();
     @NotNull Collection<? extends FunctionClause> getClauses();
     @Nullable Expression getResultType();
+    boolean isCoerce();
   }
 
   public interface ClassField extends ClassElement, ReferableDefinition, ParametersHolder {
     ClassFieldKind getClassFieldKind();
     /* @NotNull */ @Nullable Expression getResultType();
     @Nullable Expression getResultTypeLevel();
+    boolean isClassifying();
+    boolean isCoerce();
   }
 
   public interface OverriddenField extends ClassElement, ParametersHolder {

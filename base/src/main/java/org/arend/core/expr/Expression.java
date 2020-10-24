@@ -5,11 +5,9 @@ import org.arend.core.definition.Constructor;
 import org.arend.core.elimtree.ElimBody;
 import org.arend.core.elimtree.ElimClause;
 import org.arend.core.elimtree.IntervalElim;
-import org.arend.core.pattern.ConstructorPattern;
-import org.arend.core.pattern.ExpressionPattern;
 import org.arend.core.pattern.Pattern;
 import org.arend.core.subst.UnfoldVisitor;
-import org.arend.ext.core.definition.CoreFunctionDefinition;
+import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.ext.core.expr.*;
 import org.arend.ext.variable.Variable;
 import org.arend.core.context.binding.inference.InferenceVariable;
@@ -205,7 +203,7 @@ public abstract class Expression implements Body, CoreExpression {
   }
 
   @Override
-  public @NotNull CoreExpression unfold(@NotNull Set<? extends CoreFunctionDefinition> functions, @Nullable Set<CoreFunctionDefinition> unfolded) {
+  public @NotNull CoreExpression unfold(@NotNull Set<? extends CoreDefinition> functions, @Nullable Set<CoreDefinition> unfolded) {
     return functions.isEmpty() ? this : accept(new UnfoldVisitor(functions, unfolded), null);
   }
 

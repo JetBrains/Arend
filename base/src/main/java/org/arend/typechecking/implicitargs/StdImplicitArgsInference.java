@@ -170,6 +170,13 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
     }
 
     DependentLink param = result.getParameter();
+    if (!param.hasNext() && result instanceof TypecheckingResult) {
+      TypecheckingResult coercedResult = CoerceData.coerceToKey(((TypecheckingResult) result), new CoerceData.PiKey(), fun, myVisitor);
+      if (coercedResult != null) {
+        result = coercedResult;
+        param = result.getParameter();
+      }
+    }
     if (arg instanceof Concrete.HoleExpression && param.hasNext()) {
       return fixImplicitArgs(result, Collections.singletonList(param), fun, false, arg instanceof RecursiveInstanceHoleExpression ? (RecursiveInstanceHoleExpression) arg : null);
     }

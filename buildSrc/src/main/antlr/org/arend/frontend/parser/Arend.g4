@@ -14,20 +14,21 @@ nsUsing : USING? '(' nsId? (',' nsId)* ')';
 
 nsId : ID (AS precedence ID)?;
 
-classFieldDef : defId tele* ':' returnExpr;
+classFieldDef : (CLASSIFYING | COERCE)? defId tele* ':' returnExpr;
 
-classFieldOrImpl : '|' classFieldDef    # classField
-                 | localCoClause        # classImpl
+classFieldOrImpl : classFieldDef    # classField
+                 | localCoClause    # classImpl
                  ;
 
 fieldMod  : '\\field'     # fieldField
           | '\\property'  # fieldProperty
           ;
 
-classStat : classFieldOrImpl                            # classFieldOrImplStat
+classStat : '|' classFieldOrImpl                        # classFieldOrImplStat
           | definition                                  # classDefinitionStat
           | fieldMod classFieldDef                      # classFieldStat
           | '\\override' longName tele* ':' returnExpr  # classOverrideStat
+          | '\\default' localCoClause                   # classDefaultStat
           ;
 
 definition  : funcKw defId tele* (':' returnExpr2)? functionBody where?                                         # defFunction
@@ -56,7 +57,7 @@ instanceKw  : '\\instance'        # funcKwInstance
             | '\\cons'            # funcKwCons
             ;
 
-useMod    : '\\coerce'          # useCoerce
+useMod    : COERCE              # useCoerce
           | '\\level'           # useLevel
           ;
 
@@ -65,7 +66,7 @@ classKw   : '\\class'   # classKwClass
           ;
 
 classBody : '{' classStat* '}'                                      # classBodyStats
-          | classFieldOrImpl*                                       # classBodyFieldOrImpl
+          | ('|' classFieldOrImpl)*                                 # classBodyFieldOrImpl
           ;
 
 functionBody  : '=>' expr             # withoutElim
@@ -108,7 +109,7 @@ atomPatternOrID : atomPattern     # patternOrIDAtom
                 | longName        # patternID
                 ;
 
-constructor : defId tele* /* TODO[hits] (':' expr)? */ (elim? '{' clause? ('|' clause)* '}')?;
+constructor : COERCE? defId tele* /* TODO[hits] (':' expr)? */ (elim? '{' clause? ('|' clause)* '}')?;
 
 defId : precedence ID alias?;
 
@@ -182,8 +183,8 @@ clause : pattern (',' pattern)* ('=>' expr)?;
 
 coClause : '|' (longName coClauseBody | precedence longName tele* (COLON returnExpr2)? coClauseDefBody);
 
-coClauseBody : tele* '=>' expr          # coClauseImpl
-             | '{' localCoClause* '}'   # coClauseRec
+coClauseBody : tele* '=>' expr              # coClauseImpl
+             | '{' ('|' localCoClause)* '}' # coClauseRec
              ;
 
 coClauseDefBody : '=>' expr                                 # coClauseExpr
@@ -191,7 +192,7 @@ coClauseDefBody : '=>' expr                                 # coClauseExpr
                 | elim? ('{' clause? ('|' clause)* '}')?    # coClauseWith
                 ;
 
-localCoClause : '|' longName tele* ('=>' expr | '{' localCoClause* '}');
+localCoClause : longName tele* ('=>' expr | '{' ('|' localCoClause)* '}');
 
 letClause : (ID tele* typeAnnotation? | tuplePattern) '=>' expr;
 
@@ -243,7 +244,7 @@ atom  : literal                                     # atomLiteral
 
 atomFieldsAcc : atom ('.' NUMBER)*;
 
-implementStatements : '{' localCoClause* '}';
+implementStatements : '{' ('|' localCoClause)* '}';
 
 longName : ID ('.' ID)*;
 
@@ -268,8 +269,8 @@ tele : literal                          # teleLiteral
 
 typedExpr : STRICT? expr (':' expr)? ;
 
-fieldTele : '(' CLASSIFYING? ID+ ':' expr ')'        # explicitFieldTele
-          | '{' CLASSIFYING? ID+ ':' expr '}'        # implicitFieldTele
+fieldTele : '(' (CLASSIFYING | COERCE)? ID+ ':' expr ')'        # explicitFieldTele
+          | '{' (CLASSIFYING | COERCE)? ID+ ':' expr '}'        # implicitFieldTele
           ;
 
 LET : '\\let';
@@ -286,6 +287,7 @@ TRUNCATED : '\\truncated';
 CLASSIFYING : '\\classifying';
 NO_CLASSIFYING : '\\noclassifying';
 NEW : '\\new';
+COERCE : '\\coerce';
 NUMBER : [0-9]+;
 NEGATIVE_NUMBER : '-' [0-9]+;
 UNIVERSE : '\\Type' [0-9]*;

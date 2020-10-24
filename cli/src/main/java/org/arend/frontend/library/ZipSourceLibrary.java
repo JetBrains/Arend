@@ -26,6 +26,7 @@ public class ZipSourceLibrary extends UnmodifiableSourceLibrary {
   private String mySourcesDir = "";
   private String myBinariesDir;
   private ZipFile myZipFile;
+  private ZipClassLoaderDelegate myClassLoaderDelegate;
   private List<LibraryDependency> myDependencies = Collections.emptyList();
   private Set<ModulePath> myModules = Collections.emptySet();
 
@@ -78,6 +79,9 @@ public class ZipSourceLibrary extends UnmodifiableSourceLibrary {
       return false;
     } finally {
       myZipFile = null;
+      if (myClassLoaderDelegate != null) {
+        myClassLoaderDelegate.zipFile = null;
+      }
     }
   }
 
@@ -143,7 +147,8 @@ public class ZipSourceLibrary extends UnmodifiableSourceLibrary {
     }
 
     if (config.getExtensionsDir() != null) {
-      header.classLoaderDelegate = new ZipClassLoaderDelegate(myZipFile, config.getExtensionsDir());
+      myClassLoaderDelegate = new ZipClassLoaderDelegate(myFile, myZipFile, config.getExtensionsDir());
+      header.classLoaderDelegate = myClassLoaderDelegate;
     }
 
     myDependencies = header.dependencies;

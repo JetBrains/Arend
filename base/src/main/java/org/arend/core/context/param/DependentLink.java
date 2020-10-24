@@ -2,6 +2,7 @@ package org.arend.core.context.param;
 
 import org.arend.core.context.binding.Binding;
 import org.arend.core.expr.Expression;
+import org.arend.core.expr.UniverseExpression;
 import org.arend.core.expr.type.Type;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
@@ -9,7 +10,9 @@ import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.core.expr.AbstractedExpression;
+import org.arend.ext.typechecking.TypedExpression;
 import org.arend.extImpl.AbstractedDependentLinkType;
+import org.arend.typechecking.result.TypecheckingResult;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -24,6 +27,13 @@ public interface DependentLink extends Binding, CoreParameter {
   DependentLink subst(SubstVisitor substVisitor, int size, boolean updateSubst);
   TypedDependentLink getNextTyped(List<String> names);
   Type getType();
+
+  @NotNull
+  @Override
+  default TypecheckingResult getTypedType() {
+    Type type = getType();
+    return new TypecheckingResult(type.getExpr(), new UniverseExpression(type.getSortOfType()));
+  }
 
   @NotNull
   @Override

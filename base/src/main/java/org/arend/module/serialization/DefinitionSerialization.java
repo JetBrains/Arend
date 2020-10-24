@@ -105,6 +105,9 @@ public class DefinitionSerialization implements ArendSerializer {
     for (Map.Entry<ClassField, AbsExpression> impl : definition.getImplemented()) {
       builder.putImplementations(myCallTargetIndexProvider.getDefIndex(impl.getKey()), defSerializer.writeAbsExpr(impl.getValue()));
     }
+    for (Map.Entry<ClassField, AbsExpression> defaultImpl : definition.getDefaults()) {
+      builder.putDefaults(myCallTargetIndexProvider.getDefIndex(defaultImpl.getKey()), defSerializer.writeAbsExpr(defaultImpl.getValue()));
+    }
     for (Map.Entry<ClassField, PiExpression> entry : definition.getOverriddenFields()) {
       builder.putOverriddenField(myCallTargetIndexProvider.getDefIndex(entry.getKey()), defSerializer.visitPi(entry.getValue()));
     }
@@ -238,23 +241,34 @@ public class DefinitionSerialization implements ArendSerializer {
 
   private DefinitionProtos.Definition.CoerceData writeCoerceData(CoerceData coerceData) {
     DefinitionProtos.Definition.CoerceData.Builder builder = DefinitionProtos.Definition.CoerceData.newBuilder();
-    for (Map.Entry<Definition, List<FunctionDefinition>> entry : coerceData.getMapFrom()) {
-      DefinitionProtos.Definition.CoerceData.Element.Builder elementBuilder = DefinitionProtos.Definition.CoerceData.Element.newBuilder();
-      elementBuilder.setClassifyingDef(entry.getKey() == null ? 0 : myCallTargetIndexProvider.getDefIndex(entry.getKey()) + 1);
-      for (FunctionDefinition def : entry.getValue()) {
-        elementBuilder.addCoercingDef(myCallTargetIndexProvider.getDefIndex(def));
-      }
-      builder.addCoerceFrom(elementBuilder.build());
+    for (Map.Entry<CoerceData.Key, List<Definition>> entry : coerceData.getMapFrom()) {
+      builder.addCoerceFrom(writeCoerceDataElement(entry));
     }
-    for (Map.Entry<Definition, List<Definition>> entry : coerceData.getMapTo()) {
-      DefinitionProtos.Definition.CoerceData.Element.Builder elementBuilder = DefinitionProtos.Definition.CoerceData.Element.newBuilder();
-      elementBuilder.setClassifyingDef(entry.getKey() == null ? 0 : myCallTargetIndexProvider.getDefIndex(entry.getKey()) + 1);
-      for (Definition def : entry.getValue()) {
-        elementBuilder.addCoercingDef(myCallTargetIndexProvider.getDefIndex(def));
-      }
-      builder.addCoerceTo(elementBuilder.build());
+    for (Map.Entry<CoerceData.Key, List<Definition>> entry : coerceData.getMapTo()) {
+      builder.addCoerceTo(writeCoerceDataElement(entry));
     }
     return builder.build();
+  }
+
+  private DefinitionProtos.Definition.CoerceData.Element writeCoerceDataElement(Map.Entry<CoerceData.Key, List<Definition>> entry) {
+    DefinitionProtos.Definition.CoerceData.Element.Builder elementBuilder = DefinitionProtos.Definition.CoerceData.Element.newBuilder();
+    if (entry.getKey() instanceof CoerceData.DefinitionKey) {
+      elementBuilder.setDefinitionKey(DefinitionProtos.Definition.CoerceData.DefinitionKey.newBuilder().setClassifyingDef(myCallTargetIndexProvider.getDefIndex(((CoerceData.DefinitionKey) entry.getKey()).definition)));
+    } else if (entry.getKey() instanceof CoerceData.PiKey) {
+      elementBuilder.setConstantKey(DefinitionProtos.Definition.CoerceData.ConstantKey.PI);
+    } else if (entry.getKey() instanceof CoerceData.SigmaKey) {
+      elementBuilder.setConstantKey(DefinitionProtos.Definition.CoerceData.ConstantKey.SIGMA);
+    } else if (entry.getKey() instanceof CoerceData.UniverseKey) {
+      elementBuilder.setConstantKey(DefinitionProtos.Definition.CoerceData.ConstantKey.UNIVERSE);
+    } else if (entry.getKey() instanceof CoerceData.AnyKey) {
+      elementBuilder.setConstantKey(DefinitionProtos.Definition.CoerceData.ConstantKey.ANY);
+    } else {
+      throw new IllegalStateException();
+    }
+    for (Definition def : entry.getValue()) {
+      elementBuilder.addCoercingDef(myCallTargetIndexProvider.getDefIndex(def));
+    }
+    return elementBuilder.build();
   }
 
   private DefinitionProtos.Definition.ParametersLevel writeParametersLevel(ExpressionSerialization defSerializer, ParametersLevel parametersLevel) {

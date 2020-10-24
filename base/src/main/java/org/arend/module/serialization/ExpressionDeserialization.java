@@ -340,7 +340,7 @@ class ExpressionDeserialization {
     ConCallExpression expr = result;
     for (int i = 1; i < conCalls.size(); i++) {
       ConCallExpression arg = readConCall(conCalls.get(i), i == conCalls.size() - 1);
-      expr.getDefCallArguments().set(expr.getDefinition().getRecursiveParameter(), arg);
+      expr.getDefCallArguments().set(conCalls.get(i - 1).getRecursiveParam(), arg);
       expr = arg;
     }
 
@@ -351,7 +351,8 @@ class ExpressionDeserialization {
     Constructor constructor = myCallTargetProvider.getCallTarget(proto.getConstructorRef(), Constructor.class);
     myDependencyListener.dependsOn(myDefinition, constructor.getDataType().getReferable());
 
-    if (!last && constructor.getRecursiveParameter() < 0) {
+    int recursiveParam = proto.getRecursiveParam();
+    if (!last && recursiveParam < 0) {
       throw new DeserializationException("Incorrect sequence of constructors");
     }
 
@@ -359,7 +360,7 @@ class ExpressionDeserialization {
     List<Expression> args = new ArrayList<>(protos.size());
     ConCallExpression result = ConCallExpression.makeConCall(constructor, new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readExprList(proto.getDatatypeArgumentList()), args);
     for (int i = 0; i < protos.size(); i++) {
-      if (!last && i == constructor.getRecursiveParameter()) {
+      if (!last && i == recursiveParam) {
         args.add(null);
         last = true;
         i--;
@@ -367,7 +368,7 @@ class ExpressionDeserialization {
         args.add(readExpr(protos.get(i)));
       }
     }
-    if (!last && protos.size() == constructor.getRecursiveParameter()) {
+    if (!last && protos.size() == recursiveParam) {
       args.add(null);
     }
     return result;

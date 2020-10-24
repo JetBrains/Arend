@@ -57,6 +57,7 @@ message Expression {
         Level hLevel = 3;
         repeated Expression datatype_argument = 4;
         repeated Expression argument = 5;
+        int32 recursive_param = 6;
     }
     message DataCall {
         int32 data_ref = 1;

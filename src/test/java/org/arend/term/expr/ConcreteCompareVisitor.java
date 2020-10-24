@@ -567,7 +567,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
         return false;
       }
     }
-    return Objects.equals(def.getCoercingField(), class2.getCoercingField());
+    return Objects.equals(def.getClassifyingField(), class2.getClassifyingField());
   }
 
   private boolean compareOverriddenField(Concrete.OverriddenField field1, Concrete.OverriddenField field2) {

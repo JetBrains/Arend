@@ -730,7 +730,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
         DefIdContext defId = conCtx.defId();
         Pair<String, Precedence> alias = visitAlias(defId.alias());
         InternalConcreteLocatedReferable reference = new InternalConcreteLocatedReferable(tokenPosition(defId.ID().getSymbol()), defId.ID().getText(), visitPrecedence(defId.precedence()), alias.proj1, alias.proj2, true, def.getData(), LocatedReferableImpl.Kind.CONSTRUCTOR);
-        Concrete.Constructor constructor = new Concrete.Constructor(reference, def, visitTeles(conCtx.tele(), true), visitElim(elimCtx), clauses);
+        Concrete.Constructor constructor = new Concrete.Constructor(reference, def, visitTeles(conCtx.tele(), true), visitElim(elimCtx), clauses, conCtx.COERCE() != null);
         reference.setDefinition(constructor);
         /* TODO[hits]
         ExprContext type = conCtx.expr();
@@ -768,8 +768,11 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     DefIdContext defId = ctx.defId();
     Pair<String, Precedence> alias = visitAlias(defId.alias());
     ConcreteClassFieldReferable reference = new ConcreteClassFieldReferable(tokenPosition(defId.ID().getSymbol()), defId.ID().getText(), visitPrecedence(defId.precedence()), alias.proj1, alias.proj2, true, true, false, parentClass.getData(), LocatedReferableImpl.Kind.FIELD);
-    Concrete.ClassField field = new Concrete.ClassField(reference, parentClass, true, kind, parameters, returnPair.proj1, returnPair.proj2);
+    Concrete.ClassField field = new Concrete.ClassField(reference, parentClass, true, kind, parameters, returnPair.proj1, returnPair.proj2, ctx.COERCE() != null);
     reference.setDefinition(field);
+    if (ctx.CLASSIFYING() != null) {
+      setClassifyingField(parentClass, reference, true);
+    }
     return field;
   }
 
@@ -812,6 +815,8 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
           LongNameContext longName = overrideCtx.longName();
           Pair<Concrete.Expression, Concrete.Expression> pair = visitReturnExpr(overrideCtx.returnExpr());
           elements.add(new Concrete.OverriddenField(tokenPosition(overrideCtx.start), LongUnresolvedReference.make(tokenPosition(longName.start), visitLongNamePath(longName)), visitTeles(overrideCtx.tele(), false), pair.proj1, pair.proj2));
+        } else if (statementCtx instanceof ClassDefaultStatContext) {
+          elements.add(visitLocalCoClause(((ClassDefaultStatContext) statementCtx).localCoClause(), true));
         } else {
           throw new IllegalStateException();
         }
@@ -1185,6 +1190,10 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
 
   @Override
   public Concrete.ClassFieldImpl visitLocalCoClause(LocalCoClauseContext ctx) {
+    return visitLocalCoClause(ctx, false);
+  }
+
+  private Concrete.ClassFieldImpl visitLocalCoClause(LocalCoClauseContext ctx, boolean isDefault) {
     List<String> path = visitLongNamePath(ctx.longName());
     Position position = tokenPosition(ctx.start);
     List<TeleContext> teleCtxs = ctx.tele();
@@ -1204,7 +1213,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       subClassFieldImpls = visitLocalCoClauses(ctx.localCoClause());
     }
 
-    return new Concrete.ClassFieldImpl(position, LongUnresolvedReference.make(position, path), term, subClassFieldImpls == null ? null : new Concrete.Coclauses(tokenPosition(ctx.start), subClassFieldImpls));
+    return new Concrete.ClassFieldImpl(position, LongUnresolvedReference.make(position, path), term, subClassFieldImpls == null ? null : new Concrete.Coclauses(tokenPosition(ctx.start), subClassFieldImpls), isDefault);
   }
 
   private Concrete.LevelExpression parseTruncatedUniverse(TerminalNode terminal) {
@@ -1450,24 +1459,24 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   }
 
   private void visitFieldTeles(List<FieldTeleContext> teles, Concrete.ClassDefinition classDef, List<Concrete.ClassElement> fields) {
-    TCFieldReferable coercingField = null;
-    boolean isForced = false;
-
     for (FieldTeleContext tele : teles) {
       boolean explicit;
       List<TerminalNode> vars;
       ExprContext exprCtx;
       boolean forced;
+      boolean coerced;
       if (tele instanceof ExplicitFieldTeleContext) {
         explicit = true;
         vars = ((ExplicitFieldTeleContext) tele).ID();
         exprCtx = ((ExplicitFieldTeleContext) tele).expr();
         forced = ((ExplicitFieldTeleContext) tele).CLASSIFYING() != null;
+        coerced = ((ExplicitFieldTeleContext) tele).COERCE() != null;
       } else if (tele instanceof ImplicitFieldTeleContext) {
         explicit = false;
         vars = ((ImplicitFieldTeleContext) tele).ID();
         exprCtx = ((ImplicitFieldTeleContext) tele).expr();
         forced = ((ImplicitFieldTeleContext) tele).CLASSIFYING() != null;
+        coerced = ((ImplicitFieldTeleContext) tele).COERCE() != null;
       } else {
         throw new IllegalStateException();
       }
@@ -1475,25 +1484,21 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       Concrete.Expression type = visitExpr(exprCtx);
       for (TerminalNode var : vars) {
         ConcreteClassFieldReferable fieldRef = new ConcreteClassFieldReferable(tokenPosition(var.getSymbol()), var.getText(), Precedence.DEFAULT, null, Precedence.DEFAULT, false, explicit, true, classDef.getData(), LocatedReferableImpl.Kind.FIELD);
-        Concrete.ClassField field = new Concrete.ClassField(fieldRef, classDef, explicit, ClassFieldKind.ANY, new ArrayList<>(), type, null);
+        Concrete.ClassField field = new Concrete.ClassField(fieldRef, classDef, explicit, ClassFieldKind.ANY, new ArrayList<>(), type, null, coerced);
         fieldRef.setDefinition(field);
         fields.add(field);
-
-        if (forced) {
-          if (isForced) {
-            myErrorReporter.report(new ParserError(tokenPosition(var.getSymbol()), "Class can have at most one classifying field"));
-          } else {
-            coercingField = fieldRef;
-            isForced = true;
-          }
-        } else if (coercingField == null && explicit) {
-          coercingField = fieldRef;
+        if (forced || explicit) {
+          setClassifyingField(classDef, fieldRef, forced);
         }
       }
     }
+  }
 
-    if (coercingField != null) {
-      classDef.setCoercingField(coercingField, isForced);
+  private void setClassifyingField(Concrete.ClassDefinition classDef, ConcreteClassFieldReferable field, boolean isForced) {
+    if (isForced && classDef.isForcedClassifyingField()) {
+      myErrorReporter.report(new ParserError(field.getData(), "Class can have at most one classifying field"));
+    } else if (isForced && !classDef.isForcedClassifyingField() || classDef.getClassifyingField() == null) {
+      classDef.setClassifyingField(field, isForced);
     }
   }
 

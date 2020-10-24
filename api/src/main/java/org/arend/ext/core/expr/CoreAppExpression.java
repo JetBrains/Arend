@@ -5,4 +5,5 @@ import org.jetbrains.annotations.NotNull;
 public interface CoreAppExpression extends CoreExpression {
   @NotNull CoreExpression getFunction();
   @NotNull CoreExpression getArgument();
+  boolean isExplicit();
 }

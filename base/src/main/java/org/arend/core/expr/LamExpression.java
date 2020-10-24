@@ -5,8 +5,10 @@ import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.LevelSubstitution;
+import org.arend.ext.core.expr.AbstractedExpression;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CoreLamExpression;
+import org.arend.extImpl.AbstractedExpressionImpl;
 import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
 
@@ -39,6 +41,11 @@ public class LamExpression extends Expression implements CoreLamExpression {
   @Override
   public Expression getBody() {
     return myBody;
+  }
+
+  @Override
+  public @NotNull AbstractedExpression getAbstractedBody() {
+    return AbstractedExpressionImpl.make(myLink, myBody);
   }
 
   @Override

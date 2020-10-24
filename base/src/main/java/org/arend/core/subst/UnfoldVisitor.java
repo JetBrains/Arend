@@ -1,25 +1,28 @@
 package org.arend.core.subst;
 
 import org.arend.core.context.param.DependentLink;
+import org.arend.core.expr.ClassCallExpression;
 import org.arend.core.expr.Expression;
+import org.arend.core.expr.FieldCallExpression;
 import org.arend.core.expr.FunCallExpression;
-import org.arend.ext.core.definition.CoreFunctionDefinition;
+import org.arend.ext.core.definition.CoreDefinition;
+import org.arend.ext.core.ops.NormalizationMode;
 
 import java.util.Set;
 
 public class UnfoldVisitor extends SubstVisitor {
-  private final Set<? extends CoreFunctionDefinition> myFunctions;
-  private final Set<CoreFunctionDefinition> myUnfolded;
+  private final Set<? extends CoreDefinition> myDefinitions;
+  private final Set<CoreDefinition> myUnfolded;
 
-  public UnfoldVisitor(Set<? extends CoreFunctionDefinition> functions, Set<CoreFunctionDefinition> unfolded) {
+  public UnfoldVisitor(Set<? extends CoreDefinition> definitions, Set<CoreDefinition> unfolded) {
     super(new ExprSubstitution(), LevelSubstitution.EMPTY);
-    myFunctions = functions;
+    myDefinitions = definitions;
     myUnfolded = unfolded;
   }
 
   @Override
   public Expression visitFunCall(FunCallExpression expr, Void params) {
-    if (expr.getDefinition().getBody() instanceof Expression && myFunctions.contains(expr.getDefinition())) {
+    if (expr.getDefinition().getBody() instanceof Expression && myDefinitions.contains(expr.getDefinition())) {
       if (myUnfolded != null) {
         myUnfolded.add(expr.getDefinition());
       }
@@ -35,5 +38,23 @@ public class UnfoldVisitor extends SubstVisitor {
     } else {
       return super.visitFunCall(expr, params);
     }
+  }
+
+  @Override
+  public Expression visitFieldCall(FieldCallExpression expr, Void params) {
+    if (!expr.getDefinition().isProperty() && myDefinitions.contains(expr.getDefinition())) {
+      Expression type = expr.getArgument().getType();
+      ClassCallExpression classCall = type == null ? null : type.normalize(NormalizationMode.WHNF).cast(ClassCallExpression.class);
+      if (classCall != null) {
+        Expression impl = classCall.getImplementation(expr.getDefinition(), expr.getArgument());
+        if (impl != null) {
+          if (myUnfolded != null) {
+            myUnfolded.add(expr.getDefinition());
+          }
+          return impl;
+        }
+      }
+    }
+    return super.visitFieldCall(expr, params);
   }
 }
