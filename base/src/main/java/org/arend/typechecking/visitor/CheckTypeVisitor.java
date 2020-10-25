@@ -91,8 +91,6 @@ import java.util.function.Function;
 import static org.arend.typechecking.error.local.inference.ArgInferenceError.expression;
 
 public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpressionVisitor<Expression, TypecheckingResult>, ConcreteLevelExpressionVisitor<LevelVariable, Level>, ExpressionTypechecker {
-  private enum Stage { BEFORE_SOLVER, BEFORE_LEVELS, AFTER_LEVELS }
-
   private final Equations myEquations;
   private GlobalInstancePool myInstancePool;
   private final ImplicitArgsInference myArgsInference;
@@ -2201,7 +2199,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   @Nullable
   @Override
-  public TypedExpression defer(@NotNull MetaDefinition meta, @NotNull ContextData contextData, @NotNull CoreExpression type) {
+  public TypedExpression defer(@NotNull MetaDefinition meta, @NotNull ContextData contextData, @NotNull CoreExpression type, @NotNull Stage stage) {
     if (!meta.checkContextData(contextData, errorReporter)) {
       return null;
     }
@@ -2213,8 +2211,8 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     Expression expectedType = (Expression) type;
     ContextDataImpl contextDataImpl = new ContextDataImpl((Concrete.ReferenceExpression) refExpr, contextData.getArguments(), contextData.getCoclauses(), contextData.getClauses(), expectedType, contextData.getUserData());
     InferenceVariable inferenceVar = new MetaInferenceVariable(expectedType, (Concrete.ReferenceExpression) refExpr, getAllBindings());
-    // (stage == Stage.BEFORE_SOLVER ? myDeferredMetasBeforeSolver : stage == Stage.BEFORE_LEVELS ? myDeferredMetasBeforeLevels : myDeferredMetasAfterLevels)
-    myDeferredMetasBeforeSolver.add(new DeferredMeta(meta, new LinkedHashMap<>(context), contextDataImpl, inferenceVar, errorReporter));
+    (stage == Stage.BEFORE_SOLVER ? myDeferredMetasBeforeSolver : stage == Stage.BEFORE_LEVELS ? myDeferredMetasBeforeLevels : myDeferredMetasAfterLevels)
+      .add(new DeferredMeta(meta, new LinkedHashMap<>(context), contextDataImpl, inferenceVar, errorReporter));
     return new TypecheckingResult(new InferenceReferenceExpression(inferenceVar), expectedType);
   }
 
