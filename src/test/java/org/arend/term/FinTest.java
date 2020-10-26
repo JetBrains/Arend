@@ -34,7 +34,7 @@ public class FinTest extends TypeCheckingTestCase {
 
   @Test
   public void getTypeModFailing() {
-    typeCheckDef("\\func kiva : Fin 8 => Nat.mod 8 0", 1);
+    typeCheckDef("\\func kiva (a : Nat) : Fin 8 => Nat.mod a 0", 1);
   }
 
   @Test
