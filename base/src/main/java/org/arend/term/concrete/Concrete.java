@@ -21,10 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -86,6 +83,11 @@ public final class Concrete {
     @Override
     @NotNull
     public abstract List<? extends Referable> getReferableList();
+
+    @Override
+    public @NotNull List<? extends Referable> getRefList() {
+      return getReferableList();
+    }
 
     public abstract int getNumberOfParameters();
 
@@ -258,6 +260,18 @@ public final class Concrete {
     public Referable getUnderlyingReferable() {
       ReferenceExpression expr = getUnderlyingReferenceExpression();
       return expr == null ? null : expr.getReferent();
+    }
+
+    @Override
+    public @NotNull ConcreteExpression substitute(@NotNull Map<ArendRef, ConcreteExpression> substitution) {
+      Map<Referable, Expression> map = new HashMap<>();
+      for (Map.Entry<ArendRef, ConcreteExpression> entry : substitution.entrySet()) {
+        if (!(entry.getKey() instanceof Referable && entry.getValue() instanceof Expression)) {
+          throw new IllegalArgumentException();
+        }
+        map.put((Referable) entry.getKey(), (Expression) entry.getValue());
+      }
+      return accept(new SubstConcreteExpressionVisitor(map, null), null);
     }
 
     @Override
@@ -2324,7 +2338,7 @@ public final class Concrete {
   public static abstract class Pattern extends SourceNodeImpl implements ConcretePattern {
     public static final byte PREC = 11;
     private boolean myExplicit;
-    private final List<TypedReferable> myAsReferables;
+    private List<TypedReferable> myAsReferables;
 
     public Pattern(Object data, List<TypedReferable> asReferables) {
       super(data);
@@ -2355,6 +2369,9 @@ public final class Concrete {
       if (!(ref instanceof Referable && type instanceof Expression)) {
         throw new IllegalArgumentException();
       }
+      if (myAsReferables.isEmpty()) {
+        myAsReferables = new ArrayList<>();
+      }
       myAsReferables.add(new TypedReferable(null, (Referable) ref, (Expression) type));
       return this;
     }
@@ -2363,9 +2380,13 @@ public final class Concrete {
     public List<TypedReferable> getAsReferables() {
       return myAsReferables;
     }
+
+    public void setAsReferables(List<TypedReferable> asReferables) {
+      myAsReferables = asReferables;
+    }
   }
 
-  public static class NumberPattern extends Pattern {
+  public static class NumberPattern extends Pattern implements ConcreteNumberPattern {
     public final static int MAX_VALUE = 100;
     private final int myNumber;
 
@@ -2374,6 +2395,7 @@ public final class Concrete {
       myNumber = number;
     }
 
+    @Override
     public int getNumber() {
       return myNumber;
     }

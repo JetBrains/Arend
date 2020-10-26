@@ -25,6 +25,7 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
+import org.arend.ext.concrete.ConcretePattern;
 import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
@@ -32,6 +33,7 @@ import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.TypeMismatchError;
 import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.prettyprinting.doc.DocFactory;
+import org.arend.extImpl.definitionRenamer.PatternContextDataImpl;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCDefReferable;
@@ -43,6 +45,7 @@ import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.instance.pool.InstancePool;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
+import org.arend.typechecking.visitor.DesugarVisitor;
 import org.arend.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -381,6 +384,21 @@ public class PatternTypechecking {
       }
 
       Expression expr = parameters.getTypeExpr().subst(paramsSubst).normalize(NormalizationMode.WHNF);
+
+      if (pattern instanceof Concrete.NumberPattern) {
+        var newPattern = translateNumberPatterns((Concrete.NumberPattern) pattern, expr);
+        if (newPattern == null) {
+          return null;
+        }
+        newPattern.setExplicit(pattern.isExplicit());
+        if (newPattern instanceof Concrete.NamePattern) {
+          patterns.set(k--, newPattern);
+          continue;
+        } else {
+          pattern = newPattern;
+        }
+      }
+
       if (pattern instanceof Concrete.TuplePattern) {
         List<Concrete.Pattern> patternArgs = ((Concrete.TuplePattern) pattern).getPatterns();
         // Either sigma or class patterns
@@ -761,6 +779,33 @@ public class PatternTypechecking {
     }
 
     return new Result(result, exprs, varSubst);
+  }
+
+  private Concrete.@Nullable Pattern translateNumberPatterns(Concrete.NumberPattern pattern, @NotNull Expression typeExpr) {
+    if (myVisitor == null) {
+      return DesugarVisitor.desugarNumberPattern(pattern, myErrorReporter);
+    }
+    var ext = myVisitor.getExtension();
+    if (ext == null) {
+      return DesugarVisitor.desugarNumberPattern(pattern, myErrorReporter);
+    }
+    var checker = ext.getLiteralTypechecker();
+    if (checker == null) {
+      return DesugarVisitor.desugarNumberPattern(pattern, myErrorReporter);
+    }
+
+    int numberOfErrors = myVisitor.getNumberOfErrors();
+    ConcretePattern result = checker.desugarNumberPattern(pattern, myVisitor, new PatternContextDataImpl(typeExpr, pattern));
+    if (result == null && myVisitor.getNumberOfErrors() == numberOfErrors) {
+      myErrorReporter.report(new TypecheckingError("Cannot typecheck pattern", pattern));
+    }
+    if (result != null && !(result instanceof Concrete.Pattern)) {
+      throw new IllegalStateException("ConcretePattern must be created with ConcreteFactory");
+    }
+    if (result instanceof Concrete.NumberPattern) {
+      throw new IllegalStateException("desugarNumberPattern should not return ConcreteNumberPattern");
+    }
+    return (Concrete.Pattern) result;
   }
 
   // Chains the bindings in the leaves of patterns

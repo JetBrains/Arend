@@ -1,9 +1,11 @@
 package org.arend.ext.concrete.expr;
 
 import org.arend.ext.concrete.ConcreteSourceNode;
+import org.arend.ext.reference.ArendRef;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Represents a concrete expression.
@@ -16,4 +18,9 @@ public interface ConcreteExpression extends ConcreteSourceNode {
    * The result list is always non-empty and the first element is always an explicit argument.
    */
   @NotNull List<ConcreteArgument> getArgumentsSequence();
+
+  /**
+   * Performs a substitution.
+   */
+  @NotNull ConcreteExpression substitute(@NotNull Map<ArendRef, ConcreteExpression> substitution);
 }

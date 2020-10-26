@@ -1,9 +1,14 @@
 package org.arend.ext;
 
+import org.arend.ext.concrete.ConcreteNumberPattern;
+import org.arend.ext.concrete.ConcretePattern;
 import org.arend.ext.concrete.expr.ConcreteExpression;
+import org.arend.ext.concrete.expr.ConcreteNumberExpression;
+import org.arend.ext.core.body.CorePattern;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.typechecking.ContextData;
 import org.arend.ext.typechecking.ExpressionTypechecker;
+import org.arend.ext.typechecking.PatternContextData;
 import org.arend.ext.typechecking.TypedExpression;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -25,5 +30,14 @@ public interface LiteralTypechecker {
    */
   default @Nullable TypedExpression typecheckNumber(@NotNull BigInteger number, @NotNull ExpressionTypechecker typechecker, @NotNull ContextData contextData) {
     return typechecker.checkNumber(number, contextData.getExpectedType(), contextData.getMarker());
+  }
+
+  /**
+   * @param pattern the number pattern
+   * @return null if check failed
+   * Do <strong>not</strong> return a number pattern.
+   */
+  default @Nullable ConcretePattern desugarNumberPattern(@NotNull ConcreteNumberPattern pattern, @NotNull ExpressionTypechecker typechecker, @NotNull PatternContextData contextData) {
+    return typechecker.desugarNumberPattern(pattern);
   }
 }

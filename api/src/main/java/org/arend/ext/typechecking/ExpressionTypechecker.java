@@ -1,8 +1,11 @@
 package org.arend.ext.typechecking;
 
 import org.arend.ext.FreeBindingsModifier;
+import org.arend.ext.concrete.ConcreteNumberPattern;
 import org.arend.ext.concrete.ConcreteParameter;
 import org.arend.ext.concrete.ConcretePattern;
+import org.arend.ext.concrete.ConcreteSourceNode;
+import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.concrete.expr.ConcreteLamExpression;
 import org.arend.ext.core.body.CorePattern;
 import org.arend.ext.core.context.CoreBinding;
@@ -15,8 +18,6 @@ import org.arend.ext.core.expr.CoreInferenceReferenceExpression;
 import org.arend.ext.core.expr.UncheckedExpression;
 import org.arend.ext.core.level.CoreSort;
 import org.arend.ext.core.ops.CMP;
-import org.arend.ext.concrete.ConcreteSourceNode;
-import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.instance.InstanceSearchParameters;
 import org.arend.ext.instance.SubclassSearchParameters;
@@ -94,6 +95,14 @@ public interface ExpressionTypechecker extends UserDataHolder {
   @Nullable List<CorePattern> typecheckPatterns(@NotNull Collection<? extends ConcretePattern> patterns, @NotNull CoreParameter parameters, @NotNull ConcreteSourceNode marker);
 
   /**
+   * Translate a concrete number pattern into combination of <code>zero</code> and <code>suc</code> patterns.
+   *
+   * @param pattern a concrete number pattern.
+   * @return a translated pattern.
+   */
+  @NotNull ConcretePattern desugarNumberPattern(@NotNull ConcreteNumberPattern pattern);
+
+  /**
    * Typechecks a lambda expression using {code parameters} as types of its parameters.
    */
   @Nullable TypedExpression typecheckLambda(@NotNull ConcreteLamExpression expr, @NotNull CoreParameter parameters);
@@ -124,6 +133,8 @@ public interface ExpressionTypechecker extends UserDataHolder {
    */
   @Nullable CoreParameter substituteParameters(@NotNull CoreParameter parameters, @Nullable CoreSort sort, @NotNull List<? extends ConcreteExpression> arguments);
 
+  enum Stage { BEFORE_SOLVER, BEFORE_LEVELS, AFTER_LEVELS }
+
   /**
    * Defers the invocation of the given meta.
    * This might be useful if the meta definition fails because some inference variable are not inferred at the given time.
@@ -133,7 +144,7 @@ public interface ExpressionTypechecker extends UserDataHolder {
    * @param type          the type of the returned expression
    * @return              a typed expression which represents the deferred meta with {@code type} as its type
    */
-  @Nullable TypedExpression defer(@NotNull MetaDefinition meta, @NotNull ContextData contextData, @NotNull CoreExpression type);
+  @Nullable TypedExpression defer(@NotNull MetaDefinition meta, @NotNull ContextData contextData, @NotNull CoreExpression type, @NotNull Stage stage);
 
   /**
    * Compares two expressions.

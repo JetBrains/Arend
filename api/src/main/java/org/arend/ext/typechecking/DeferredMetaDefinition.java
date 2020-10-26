@@ -9,16 +9,21 @@ import org.jetbrains.annotations.Nullable;
  */
 public class DeferredMetaDefinition extends BaseMetaDefinition {
   private final boolean allowNotDeferred;
+  private final ExpressionTypechecker.Stage stage;
   public final MetaDefinition deferredMeta;
 
-  public DeferredMetaDefinition(MetaDefinition deferredMeta, boolean allowNotDeferred) {
+  public DeferredMetaDefinition(MetaDefinition deferredMeta, boolean allowNotDeferred, ExpressionTypechecker.Stage stage) {
     this.deferredMeta = deferredMeta;
     this.allowNotDeferred = allowNotDeferred;
+    this.stage = stage;
+  }
+
+  public DeferredMetaDefinition(MetaDefinition deferredMeta, boolean allowNotDeferred) {
+    this(deferredMeta, allowNotDeferred, ExpressionTypechecker.Stage.BEFORE_SOLVER);
   }
 
   public DeferredMetaDefinition(MetaDefinition deferredMeta) {
-    this.deferredMeta = deferredMeta;
-    this.allowNotDeferred = false;
+    this(deferredMeta, false);
   }
 
   @Override
@@ -34,6 +39,6 @@ public class DeferredMetaDefinition extends BaseMetaDefinition {
   @Override
   public @Nullable TypedExpression invokeMeta(@NotNull ExpressionTypechecker typechecker, @NotNull ContextData contextData) {
     CoreExpression expectedType = contextData.getExpectedType();
-    return expectedType == null ? deferredMeta.checkAndInvokeMeta(typechecker, contextData) : typechecker.defer(deferredMeta, contextData, expectedType);
+    return expectedType == null ? deferredMeta.checkAndInvokeMeta(typechecker, contextData) : typechecker.defer(deferredMeta, contextData, expectedType, stage);
   }
 }
