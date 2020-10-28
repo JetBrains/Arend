@@ -121,6 +121,14 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     return new Concrete.PiExpression(myData, typeParameters(parameters), (Concrete.Expression) codomain);
   }
 
+  @Override
+  public @NotNull ConcreteExpression arr(@NotNull ConcreteExpression domain, @NotNull ConcreteExpression codomain) {
+    if (!(domain instanceof Concrete.Expression && codomain instanceof Concrete.Expression)) {
+      throw new IllegalArgumentException();
+    }
+    return new Concrete.PiExpression(myData, Collections.singletonList(new Concrete.TypeParameter(myData, true, (Concrete.Expression) domain)), (Concrete.Expression) codomain);
+  }
+
   @NotNull
   @Override
   public ConcreteExpression universe(@Nullable ConcreteLevel pLevel, @Nullable ConcreteLevel hLevel) {
@@ -455,6 +463,14 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
       cRefs.add(makeLocalRef(ref));
     }
     return new Concrete.TelescopeParameter(myData, explicit, cRefs, (Concrete.Expression) type);
+  }
+
+  @Override
+  public @NotNull ConcreteParameter param(boolean explicit, @NotNull ConcreteExpression type) {
+    if (!(type instanceof Concrete.Expression)) {
+      throw new IllegalArgumentException();
+    }
+    return new Concrete.TypeParameter(myData, explicit, (Concrete.Expression) type);
   }
 
   @NotNull
