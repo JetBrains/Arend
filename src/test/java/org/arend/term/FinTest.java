@@ -67,6 +67,12 @@ public class FinTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void matchOne() {
+    typeCheckDef("\\func wsl (a : Nat) (_ : Fin 1) : Nat" +
+      "  | x, zero => x");
+  }
+
+  @Test
   public void matchTwo() {
     typeCheckDef("\\func sdl (_ : Fin 2) : Nat" +
       "  | zero => 123" +

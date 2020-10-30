@@ -186,11 +186,23 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
     var isFin = definition == Prelude.FIN;
     if (isFin) {
       var arg = getDefCallArguments().get(0);
-      if (arg instanceof IntegerExpression && ((IntegerExpression) arg).isZero()) {
-        return Collections.emptyList();
+      if (arg instanceof IntegerExpression) {
+        if (((IntegerExpression) arg).isZero()) {
+          return List.of();
+        }
+        if (((IntegerExpression) arg).isOne()) {
+          return List.of(new ConCallExpression(Prelude.ZERO, getSortArgument(), myArguments, List.of()));
+        }
       }
-      if (arg instanceof ConCallExpression && ((ConCallExpression) arg).getDefinition() == Prelude.ZERO) {
-        return Collections.emptyList();
+      if (arg instanceof ConCallExpression) {
+        var conCall = (ConCallExpression) arg;
+        if (conCall.getDefinition() == Prelude.ZERO) {
+          return List.of();
+        }
+        if (conCall.getDefinition() == Prelude.SUC) {
+          var index = conCall.getConCallArguments().get(0).cast(IntegerExpression.class);
+          if (index != null && index.isZero()) return List.of(new ConCallExpression(Prelude.ZERO, getSortArgument(), myArguments, List.of()));
+        }
       }
     }
 
