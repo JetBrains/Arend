@@ -16,14 +16,15 @@ import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.core.definition.CoreConstructor;
 import org.arend.ext.core.expr.CoreDataCallExpression;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
-import org.arend.ext.core.level.CoreSort;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
 import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class DataCallExpression extends DefCallExpression implements Type, CoreDataCallExpression {
   private final List<Expression> myArguments;
@@ -176,12 +177,25 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
   }
 
   public List<ConCallExpression> getMatchedConstructors() {
-    if (getDefinition() == Prelude.PATH && getDefCallArguments().get(0).removeConstLam() != null && getDefCallArguments().get(1).areDisjointConstructors(getDefCallArguments().get(2))) {
+    DataDefinition definition = getDefinition();
+    if (definition == Prelude.PATH && getDefCallArguments().get(0).removeConstLam() != null && getDefCallArguments().get(1).areDisjointConstructors(getDefCallArguments().get(2))) {
       return Collections.emptyList();
     }
 
+    // Optimize for empty fin pattern
+    var isFin = definition == Prelude.FIN;
+    if (isFin) {
+      var arg = getDefCallArguments().get(0);
+      if (arg instanceof IntegerExpression && ((IntegerExpression) arg).isZero()) {
+        return Collections.emptyList();
+      }
+      if (arg instanceof ConCallExpression && ((ConCallExpression) arg).getDefinition() == Prelude.ZERO) {
+        return Collections.emptyList();
+      }
+    }
+
     List<ConCallExpression> result = new ArrayList<>();
-    for (Constructor constructor : getDefinition().getConstructors()) {
+    for (Constructor constructor : (isFin ? Prelude.NAT : definition).getConstructors()) {
       if (!getMatchedConCall(constructor, result)) {
         return null;
       }

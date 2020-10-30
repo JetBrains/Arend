@@ -65,4 +65,11 @@ public class FinTest extends TypeCheckingTestCase {
     typeCheckDef("\\func julao : Fin 2 => 0");
     typeCheckDef("\\func juruo : Fin 514 => 114");
   }
+
+  @Test
+  public void matchTwo() {
+    typeCheckDef("\\func sdl (_ : Fin 2) : Nat" +
+      "  | zero => 123" +
+      "  | suc n => 666");
+  }
 }

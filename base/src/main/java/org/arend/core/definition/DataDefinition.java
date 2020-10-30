@@ -141,7 +141,8 @@ public class DataDefinition extends Definition implements CoreDataDefinition {
   }
 
   public Constructor getConstructor(GlobalReferable referable) {
-    for (Constructor constructor : myConstructors) {
+    var constructors = this == Prelude.FIN ? Prelude.NAT.getConstructors() : myConstructors;
+    for (Constructor constructor : constructors) {
       if (constructor.getReferable().equals(referable)) {
         return constructor;
       }
