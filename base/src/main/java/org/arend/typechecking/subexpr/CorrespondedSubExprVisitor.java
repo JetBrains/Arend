@@ -267,8 +267,7 @@ public class CorrespondedSubExprVisitor implements
   public Pair<Expression, Concrete.Expression> visitApp(Concrete.AppExpression expr, Expression coreExpr) {
     if (matchesSubExpr(expr) || matchesSubExpr(expr.getFunction())) return new Pair<>(coreExpr, expr);
     Concrete.Expression function = expr.getFunction();
-    Concrete.ReferenceExpression refExpr = function.getUnderlyingReferenceExpression();
-    Referable ref = refExpr.getReferent();
+    Referable ref = function.getUnderlyingReferable();
     if (ref instanceof MetaReferable) {
       MetaDefinition meta = ((MetaReferable) ref).getDefinition();
       if (meta != null) {

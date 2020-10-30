@@ -27,6 +27,7 @@ public interface ConcreteFactory {
   @NotNull ConcreteExpression thisExpr();
   @NotNull ConcreteLamExpression lam(@NotNull Collection<? extends ConcreteParameter> parameters, @NotNull ConcreteExpression body);
   @NotNull ConcreteExpression pi(@NotNull Collection<? extends ConcreteParameter> parameters, @NotNull ConcreteExpression codomain);
+  @NotNull ConcreteExpression arr(@NotNull ConcreteExpression domain, @NotNull ConcreteExpression codomain);
   @NotNull ConcreteExpression universe(@Nullable ConcreteLevel pLevel, @Nullable ConcreteLevel hLevel);
   @NotNull ConcreteExpression hole();
   @NotNull ConcreteExpression error(@Nullable GeneralError error);
@@ -58,6 +59,7 @@ public interface ConcreteFactory {
   @NotNull ArendRef local(@NotNull String name);
   @NotNull ConcreteParameter param(boolean explicit, @Nullable ArendRef ref);
   @NotNull ConcreteParameter param(boolean explicit, @NotNull Collection<? extends ArendRef> refs, @NotNull ConcreteExpression type);
+  @NotNull ConcreteParameter param(boolean explicit, @NotNull ConcreteExpression type);
 
   default @NotNull ConcreteParameter param(@Nullable ArendRef ref) {
     return param(true, ref);
