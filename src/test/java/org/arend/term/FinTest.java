@@ -1,5 +1,6 @@
 package org.arend.term;
 
+import org.arend.Matchers;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
@@ -70,6 +71,12 @@ public class FinTest extends TypeCheckingTestCase {
   public void matchOne() {
     typeCheckDef("\\func wsl (a : Nat) (_ : Fin 1) : Nat" +
       "  | x, zero => x");
+  }
+
+  @Test
+  public void matchStuck() {
+    typeCheckDef("\\func wsl (a : Nat) (_ : Fin a) : Nat" +
+      "  | x, zero => x", 1);
   }
 
   @Test

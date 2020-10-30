@@ -193,8 +193,7 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
         if (((IntegerExpression) arg).isOne()) {
           return List.of(new ConCallExpression(Prelude.ZERO, getSortArgument(), myArguments, List.of()));
         }
-      }
-      if (arg instanceof ConCallExpression) {
+      } else if (arg instanceof ConCallExpression) {
         var conCall = (ConCallExpression) arg;
         if (conCall.getDefinition() == Prelude.ZERO) {
           return List.of();
@@ -203,7 +202,7 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
           var index = conCall.getConCallArguments().get(0).cast(IntegerExpression.class);
           if (index != null && index.isZero()) return List.of(new ConCallExpression(Prelude.ZERO, getSortArgument(), myArguments, List.of()));
         }
-      }
+      } else return null;
     }
 
     List<ConCallExpression> result = new ArrayList<>();
