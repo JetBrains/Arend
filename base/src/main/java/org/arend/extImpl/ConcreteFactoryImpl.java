@@ -91,11 +91,11 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
 
   @NotNull
   @Override
-  public ConcreteLamExpression lam(@NotNull Collection<? extends ConcreteParameter> parameters, @NotNull ConcreteExpression body) {
+  public ConcreteExpression lam(@NotNull Collection<? extends ConcreteParameter> parameters, @NotNull ConcreteExpression body) {
     if (!(body instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }
-    return new Concrete.LamExpression(myData, parameters(parameters), (Concrete.Expression) body);
+    return parameters.isEmpty() ? body : new Concrete.LamExpression(myData, parameters(parameters), (Concrete.Expression) body);
   }
 
   private List<Concrete.TypeParameter> typeParameters(Collection<? extends ConcreteParameter> parameters) {
@@ -118,7 +118,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     if (!(codomain instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }
-    return new Concrete.PiExpression(myData, typeParameters(parameters), (Concrete.Expression) codomain);
+    return parameters.isEmpty() ? codomain : new Concrete.PiExpression(myData, typeParameters(parameters), (Concrete.Expression) codomain);
   }
 
   @Override

@@ -516,14 +516,9 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       substVars.add(pair.binding);
     }
 
-    Set<Binding> freeBindings = new HashSet<>();
-    ((Expression) expression).accept(new VoidExpressionVisitor<Void>() {
-      @Override
-      public Void visitReference(ReferenceExpression expression, Void param) {
-        if (!substVars.contains(expression.getBinding())) freeBindings.add(expression.getBinding());
-        return null;
-      }
-    }, null);
+    Set<Binding> freeBindings = FreeVariablesCollector.getFreeVariables((Expression) expression);
+    //noinspection SuspiciousMethodCalls
+    freeBindings.removeAll(substVars);
     for (Binding binding : freeBindings) {
       if (binding.getTypeExpr().findFreeBindings(substVars) != null) {
         throw new IllegalArgumentException("Invalid substitution");

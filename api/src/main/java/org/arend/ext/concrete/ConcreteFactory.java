@@ -25,7 +25,7 @@ public interface ConcreteFactory {
   @NotNull ConcreteExpression core(@Nullable String name, @NotNull TypedExpression expr);
   @NotNull ConcreteExpression meta(@NotNull String name, @NotNull MetaDefinition meta);
   @NotNull ConcreteExpression thisExpr();
-  @NotNull ConcreteLamExpression lam(@NotNull Collection<? extends ConcreteParameter> parameters, @NotNull ConcreteExpression body);
+  @NotNull ConcreteExpression lam(@NotNull Collection<? extends ConcreteParameter> parameters, @NotNull ConcreteExpression body);
   @NotNull ConcreteExpression pi(@NotNull Collection<? extends ConcreteParameter> parameters, @NotNull ConcreteExpression codomain);
   @NotNull ConcreteExpression arr(@NotNull ConcreteExpression domain, @NotNull ConcreteExpression codomain);
   @NotNull ConcreteExpression universe(@Nullable ConcreteLevel pLevel, @Nullable ConcreteLevel hLevel);

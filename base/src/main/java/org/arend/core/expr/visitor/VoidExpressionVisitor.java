@@ -173,7 +173,7 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> {
   protected void visitElimTree(ElimTree elimTree, P params) {
   }
 
-  private void visitElimBody(ElimBody elimBody, P params) {
+  protected void visitElimBody(ElimBody elimBody, P params) {
     for (var clause : elimBody.getClauses()) {
       visitParameters(clause.getParameters(), params);
       if (clause.getExpression() != null) {
