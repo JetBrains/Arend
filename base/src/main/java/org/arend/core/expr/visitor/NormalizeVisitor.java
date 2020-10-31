@@ -761,7 +761,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
 
   @Override
   public Expression visitSubst(SubstExpression expr, NormalizationMode mode) {
-    return expr.eval().accept(this, mode);
+    return expr.getExpression() instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) expr.getExpression()).getSubstExpression() == null ? expr : expr.eval().accept(this, mode);
   }
 
   @Override
