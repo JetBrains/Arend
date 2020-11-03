@@ -535,13 +535,13 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     ExprSubstitution substitution = new ExprSubstitution();
     SubstVisitor substVisitor = new SubstVisitor(substitution, sort == null ? LevelSubstitution.EMPTY : ((Sort) sort).toLevelSubstitution());
     for (SubstitutionPair pair : substPairs) {
-      CoreExpression type = pair.binding.getTypeExpr();
-      if (!(type instanceof Expression)) {
+      if (!(pair.binding instanceof Binding)) {
         throw new IllegalArgumentException();
       }
-      TypecheckingResult result = typecheck(pair.expression, substVisitor.isEmpty() ? type : ((Expression) type).accept(substVisitor, null));
+      Expression type = ((Binding) pair.binding).getTypeExpr();
+      TypecheckingResult result = typecheck(pair.expression, substVisitor.isEmpty() ? type : type.accept(substVisitor, null));
       if (result == null) return null;
-      substitution.add(pair.binding, result.expression);
+      substitution.add((Binding) pair.binding, result.expression);
     }
 
     return ((Expression) expression).accept(substVisitor, null);

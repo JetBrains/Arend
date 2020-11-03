@@ -172,7 +172,11 @@ public class ElimBindingVisitor extends ExpressionTransformer<Void> {
 
   @Override
   public Expression visitSubst(SubstExpression expr, Void params) {
-    return expr.getSubstExpression().accept(this, null);
+    ExprSubstitution substitution = new ExprSubstitution();
+    for (Map.Entry<Binding, Expression> entry : expr.getSubstitution().getEntries()) {
+      substitution.add(entry.getKey(), entry.getValue().accept(this, null));
+    }
+    return SubstExpression.make(expr.getExpression().accept(this, null), substitution, expr.getLevelSubstitution());
   }
 
   @Override

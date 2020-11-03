@@ -1,6 +1,6 @@
 package org.arend.core.expr.visitor;
 
-import org.arend.ext.variable.Variable;
+import org.arend.core.context.binding.Binding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.elimtree.*;
@@ -85,7 +85,7 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> {
   @Override
   public Void visitSubst(SubstExpression expr, P params) {
     expr.getExpression().accept(this, params);
-    for (Map.Entry<Variable, Expression> entry : expr.getSubstitution().getEntries()) {
+    for (Map.Entry<Binding, Expression> entry : expr.getSubstitution().getEntries()) {
       entry.getValue().accept(this, params);
     }
     return null;

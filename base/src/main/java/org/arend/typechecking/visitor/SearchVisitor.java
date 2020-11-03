@@ -1,5 +1,6 @@
 package org.arend.typechecking.visitor;
 
+import org.arend.core.context.binding.Binding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.elimtree.ElimBody;
@@ -9,6 +10,7 @@ import org.arend.core.expr.visitor.BaseExpressionVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean> {
   protected boolean processDefCall(DefCallExpression expression, P param) {
@@ -229,7 +231,19 @@ public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean>
 
   @Override
   public Boolean visitSubst(SubstExpression expr, P param) {
-    return expr.getSubstExpression().accept(this, param);
+    if (expr.isInferenceVariable()) {
+      if (expr.getExpression().accept(this, param)) {
+        return true;
+      }
+      for (Map.Entry<Binding, Expression> entry : expr.getSubstitution().getEntries()) {
+        if (entry.getValue().accept(this, param)) {
+          return true;
+        }
+      }
+      return false;
+    } else {
+      return expr.getSubstExpression().accept(this, param);
+    }
   }
 
   @Override

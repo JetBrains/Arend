@@ -169,7 +169,7 @@ public abstract class Expression implements Body, CoreExpression {
     return accept(new SubstVisitor(new ExprSubstitution(), LevelSubstitution.EMPTY), null);
   }
 
-  public final Expression subst(Variable binding, Expression substExpr) {
+  public final Expression subst(Binding binding, Expression substExpr) {
     if (substExpr instanceof ReferenceExpression && ((ReferenceExpression) substExpr).getBinding() == binding) {
       return this;
     }
@@ -229,7 +229,10 @@ public abstract class Expression implements Body, CoreExpression {
     }
     ExprSubstitution substitution = new ExprSubstitution();
     for (Map.Entry<? extends CoreBinding, ? extends UncheckedExpression> entry : map.entrySet()) {
-      substitution.add(entry.getKey(), UncheckedExpressionImpl.extract(entry.getValue()));
+      if (!(entry.getKey() instanceof Binding)) {
+        throw new IllegalArgumentException();
+      }
+      substitution.add((Binding) entry.getKey(), UncheckedExpressionImpl.extract(entry.getValue()));
     }
     return new UncheckedExpressionImpl(accept(new SubstVisitor(substitution, LevelSubstitution.EMPTY), null));
   }
