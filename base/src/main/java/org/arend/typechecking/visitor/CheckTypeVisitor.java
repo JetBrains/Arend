@@ -42,6 +42,7 @@ import org.arend.ext.core.expr.UncheckedExpression;
 import org.arend.ext.core.level.CoreSort;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.ext.core.ops.SubstitutionPair;
 import org.arend.ext.error.*;
 import org.arend.ext.instance.InstanceSearchParameters;
 import org.arend.ext.instance.SubclassSearchParameters;
@@ -91,8 +92,6 @@ import java.util.function.Function;
 import static org.arend.typechecking.error.local.inference.ArgInferenceError.expression;
 
 public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpressionVisitor<Expression, TypecheckingResult>, ConcreteLevelExpressionVisitor<LevelVariable, Level>, ExpressionTypechecker {
-  private enum Stage { BEFORE_SOLVER, BEFORE_LEVELS, AFTER_LEVELS }
-
   private final Equations myEquations;
   private GlobalInstancePool myInstancePool;
   private final ImplicitArgsInference myArgsInference;
@@ -503,6 +502,49 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       link = link1;
     }
     return link;
+  }
+
+  @Override
+  public @Nullable Expression substitute(@NotNull CoreExpression expression, @Nullable CoreSort sort, @NotNull List<SubstitutionPair> substPairs) {
+    if (!(expression instanceof Expression && (sort == null || sort instanceof Sort))) throw new IllegalArgumentException();
+    if (substPairs.isEmpty()) {
+      return sort == null ? (Expression) expression : ((Expression) expression).subst(((Sort) sort).toLevelSubstitution());
+    }
+
+    Set<CoreBinding> substVars = new HashSet<>();
+    for (SubstitutionPair pair : substPairs) {
+      substVars.add(pair.binding);
+    }
+
+    Set<Binding> freeBindings = FreeVariablesCollector.getFreeVariables((Expression) expression);
+    //noinspection SuspiciousMethodCalls
+    freeBindings.removeAll(substVars);
+    for (Binding binding : freeBindings) {
+      if (binding.getTypeExpr().findFreeBindings(substVars) != null) {
+        throw new IllegalArgumentException("Invalid substitution");
+      }
+    }
+
+    for (SubstitutionPair pair : substPairs) {
+      substVars.remove(pair.binding);
+      if (pair.binding.getTypeExpr().findFreeBindings(substVars) != null) {
+        throw new IllegalArgumentException("Invalid substitution");
+      }
+    }
+
+    ExprSubstitution substitution = new ExprSubstitution();
+    SubstVisitor substVisitor = new SubstVisitor(substitution, sort == null ? LevelSubstitution.EMPTY : ((Sort) sort).toLevelSubstitution());
+    for (SubstitutionPair pair : substPairs) {
+      CoreExpression type = pair.binding.getTypeExpr();
+      if (!(type instanceof Expression)) {
+        throw new IllegalArgumentException();
+      }
+      TypecheckingResult result = typecheck(pair.expression, substVisitor.isEmpty() ? type : ((Expression) type).accept(substVisitor, null));
+      if (result == null) return null;
+      substitution.add(pair.binding, result.expression);
+    }
+
+    return ((Expression) expression).accept(substVisitor, null);
   }
 
   @Override
@@ -2201,7 +2243,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   @Nullable
   @Override
-  public TypedExpression defer(@NotNull MetaDefinition meta, @NotNull ContextData contextData, @NotNull CoreExpression type) {
+  public TypedExpression defer(@NotNull MetaDefinition meta, @NotNull ContextData contextData, @NotNull CoreExpression type, @NotNull Stage stage) {
     if (!meta.checkContextData(contextData, errorReporter)) {
       return null;
     }
@@ -2213,8 +2255,8 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     Expression expectedType = (Expression) type;
     ContextDataImpl contextDataImpl = new ContextDataImpl((Concrete.ReferenceExpression) refExpr, contextData.getArguments(), contextData.getCoclauses(), contextData.getClauses(), expectedType, contextData.getUserData());
     InferenceVariable inferenceVar = new MetaInferenceVariable(expectedType, (Concrete.ReferenceExpression) refExpr, getAllBindings());
-    // (stage == Stage.BEFORE_SOLVER ? myDeferredMetasBeforeSolver : stage == Stage.BEFORE_LEVELS ? myDeferredMetasBeforeLevels : myDeferredMetasAfterLevels)
-    myDeferredMetasBeforeSolver.add(new DeferredMeta(meta, new LinkedHashMap<>(context), contextDataImpl, inferenceVar, errorReporter));
+    (stage == Stage.BEFORE_SOLVER ? myDeferredMetasBeforeSolver : stage == Stage.BEFORE_LEVELS ? myDeferredMetasBeforeLevels : myDeferredMetasAfterLevels)
+      .add(new DeferredMeta(meta, new LinkedHashMap<>(context), contextDataImpl, inferenceVar, errorReporter));
     return new TypecheckingResult(new InferenceReferenceExpression(inferenceVar), expectedType);
   }
 

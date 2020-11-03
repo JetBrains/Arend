@@ -160,6 +160,11 @@ public abstract class Expression implements Body, CoreExpression {
     return accept(visitor, null) ? (CoreBinding) visitor.getResult() : null;
   }
 
+  @Override
+  public @NotNull Set<? extends CoreBinding> findFreeBindings() {
+    return FreeVariablesCollector.getFreeVariables(this);
+  }
+
   public Expression copy() {
     return accept(new SubstVisitor(new ExprSubstitution(), LevelSubstitution.EMPTY), null);
   }

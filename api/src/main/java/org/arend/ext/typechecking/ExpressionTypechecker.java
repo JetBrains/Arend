@@ -18,6 +18,7 @@ import org.arend.ext.core.expr.CoreInferenceReferenceExpression;
 import org.arend.ext.core.expr.UncheckedExpression;
 import org.arend.ext.core.level.CoreSort;
 import org.arend.ext.core.ops.CMP;
+import org.arend.ext.core.ops.SubstitutionPair;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.instance.InstanceSearchParameters;
 import org.arend.ext.instance.SubclassSearchParameters;
@@ -29,6 +30,7 @@ import org.jetbrains.annotations.Nullable;
 import java.math.BigInteger;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 /**
@@ -118,20 +120,29 @@ public interface ExpressionTypechecker extends UserDataHolder {
   @NotNull CoreParameter mergeParameters(@NotNull List<? extends CoreParameter> parameters);
 
   /**
-   * Typechecks {@code arguments} and substitute them into {@code expression}.
+   * Typechecks expressions in {@code substitution} and substitutes them into {@code expression}.
+   * Also, substitutes {@code sort} if it is not null.
+   * Bindings in {@code substitution} must be listed in the same order they are defined.
+   */
+  @Nullable CoreExpression substitute(@NotNull CoreExpression expression, @Nullable CoreSort sort, @NotNull List<SubstitutionPair> substitution);
+
+  /**
+   * Typechecks {@code arguments} and substitutes them into {@code expression}.
    * Also, substitutes {@code sort} if it is not null.
    * The number of {@code arguments} should be less than or equal to the length of the context of {@code expression}.
    */
   @Nullable AbstractedExpression substituteAbstractedExpression(@NotNull AbstractedExpression expression, @Nullable CoreSort sort, @NotNull List<? extends ConcreteExpression> arguments);
 
   /**
-   * Typechecks {@code arguments} and substitute them into {@code parameters}.
+   * Typechecks {@code arguments} and substitutes them into {@code parameters}.
    * Also, substitutes {@code sort} if it is not null.
    * Some elements of {@code arguments} may be {@code null}; the corresponding parameters will be added to the result.
    * The size of {@code arguments} should be less than or equal to the size of {@code parameters}.
    * The size of the result is the size of {@code parameters} minus the number of non-null elements of {@code arguments}.
    */
   @Nullable CoreParameter substituteParameters(@NotNull CoreParameter parameters, @Nullable CoreSort sort, @NotNull List<? extends ConcreteExpression> arguments);
+
+  enum Stage { BEFORE_SOLVER, BEFORE_LEVELS, AFTER_LEVELS }
 
   /**
    * Defers the invocation of the given meta.
@@ -142,7 +153,7 @@ public interface ExpressionTypechecker extends UserDataHolder {
    * @param type          the type of the returned expression
    * @return              a typed expression which represents the deferred meta with {@code type} as its type
    */
-  @Nullable TypedExpression defer(@NotNull MetaDefinition meta, @NotNull ContextData contextData, @NotNull CoreExpression type);
+  @Nullable TypedExpression defer(@NotNull MetaDefinition meta, @NotNull ContextData contextData, @NotNull CoreExpression type, @NotNull Stage stage);
 
   /**
    * Compares two expressions.

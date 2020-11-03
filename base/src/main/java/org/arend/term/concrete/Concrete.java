@@ -21,10 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -86,6 +83,11 @@ public final class Concrete {
     @Override
     @NotNull
     public abstract List<? extends Referable> getReferableList();
+
+    @Override
+    public @NotNull List<? extends Referable> getRefList() {
+      return getReferableList();
+    }
 
     public abstract int getNumberOfParameters();
 
@@ -258,6 +260,18 @@ public final class Concrete {
     public Referable getUnderlyingReferable() {
       ReferenceExpression expr = getUnderlyingReferenceExpression();
       return expr == null ? null : expr.getReferent();
+    }
+
+    @Override
+    public @NotNull ConcreteExpression substitute(@NotNull Map<ArendRef, ConcreteExpression> substitution) {
+      Map<Referable, Expression> map = new HashMap<>();
+      for (Map.Entry<ArendRef, ConcreteExpression> entry : substitution.entrySet()) {
+        if (!(entry.getKey() instanceof Referable && entry.getValue() instanceof Expression)) {
+          throw new IllegalArgumentException();
+        }
+        map.put((Referable) entry.getKey(), (Expression) entry.getValue());
+      }
+      return accept(new SubstConcreteExpressionVisitor(map, null), null);
     }
 
     @Override

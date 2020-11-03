@@ -91,11 +91,11 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
 
   @NotNull
   @Override
-  public ConcreteLamExpression lam(@NotNull Collection<? extends ConcreteParameter> parameters, @NotNull ConcreteExpression body) {
+  public ConcreteExpression lam(@NotNull Collection<? extends ConcreteParameter> parameters, @NotNull ConcreteExpression body) {
     if (!(body instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }
-    return new Concrete.LamExpression(myData, parameters(parameters), (Concrete.Expression) body);
+    return parameters.isEmpty() ? body : new Concrete.LamExpression(myData, parameters(parameters), (Concrete.Expression) body);
   }
 
   private List<Concrete.TypeParameter> typeParameters(Collection<? extends ConcreteParameter> parameters) {
@@ -118,7 +118,15 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     if (!(codomain instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }
-    return new Concrete.PiExpression(myData, typeParameters(parameters), (Concrete.Expression) codomain);
+    return parameters.isEmpty() ? codomain : new Concrete.PiExpression(myData, typeParameters(parameters), (Concrete.Expression) codomain);
+  }
+
+  @Override
+  public @NotNull ConcreteExpression arr(@NotNull ConcreteExpression domain, @NotNull ConcreteExpression codomain) {
+    if (!(domain instanceof Concrete.Expression && codomain instanceof Concrete.Expression)) {
+      throw new IllegalArgumentException();
+    }
+    return new Concrete.PiExpression(myData, Collections.singletonList(new Concrete.TypeParameter(myData, true, (Concrete.Expression) domain)), (Concrete.Expression) codomain);
   }
 
   @NotNull
@@ -455,6 +463,14 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
       cRefs.add(makeLocalRef(ref));
     }
     return new Concrete.TelescopeParameter(myData, explicit, cRefs, (Concrete.Expression) type);
+  }
+
+  @Override
+  public @NotNull ConcreteParameter param(boolean explicit, @NotNull ConcreteExpression type) {
+    if (!(type instanceof Concrete.Expression)) {
+      throw new IllegalArgumentException();
+    }
+    return new Concrete.TypeParameter(myData, explicit, (Concrete.Expression) type);
   }
 
   @NotNull
