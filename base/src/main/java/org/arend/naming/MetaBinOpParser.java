@@ -66,7 +66,8 @@ public class MetaBinOpParser {
 
     myClausesHandled = false;
     parse(0, sequence.size());
-    return myVisitor.visitClassExt(data, myResult.size() == 1 ? myResult.get(0).expression : new Concrete.BinOpSequenceExpression(myExpression.getData(), myResult, myClausesHandled ? null : myExpression.getClauses()), myCoclauses);
+    Concrete.Expression result = myResult.size() == 1 ? myResult.get(0).expression : new Concrete.BinOpSequenceExpression(myExpression.getData(), myResult, myClausesHandled ? null : myExpression.getClauses());
+    return myClausesHandled ? result : myVisitor.visitClassExt(data, result, myCoclauses);
   }
 
   private void parse(int start, int end) {
@@ -123,7 +124,7 @@ public class MetaBinOpParser {
           args.add(new Concrete.Argument(sequence.get(i).expression, sequence.get(i).isExplicit));
         }
         myClausesHandled = true;
-        myResult.add(new Concrete.BinOpSequenceElem(myVisitor.convertMetaResult(meta.resolvePrefix(myVisitor, new ContextDataImpl(firstRef.refExpr, args, null, myExpression.getClauses(), null, null)), firstRef.refExpr, args, null, myExpression.getClauses())));
+        myResult.add(new Concrete.BinOpSequenceElem(myVisitor.convertMetaResult(meta.resolvePrefix(myVisitor, new ContextDataImpl(firstRef.refExpr, args, myCoclauses, myExpression.getClauses(), null, null)), firstRef.refExpr, args, null, myExpression.getClauses())));
       } else {
         for (int i = start; i < end; i++) {
           boolean isRef = sequence.get(i).expression instanceof Concrete.ReferenceExpression;

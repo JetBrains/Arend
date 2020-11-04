@@ -6,6 +6,7 @@ import org.arend.ext.module.LongName;
 import org.arend.ext.module.ModulePath;
 import org.arend.ext.reference.MetaRef;
 import org.arend.ext.reference.Precedence;
+import org.arend.ext.typechecking.DeferredMetaDefinition;
 import org.arend.ext.typechecking.MetaDefinition;
 import org.arend.ext.typechecking.MetaResolver;
 import org.arend.library.Library;
@@ -38,7 +39,7 @@ public class DefinitionContributorImpl extends Disableable implements Definition
 
   @Override
   public MetaRef declare(@NotNull ModulePath module, @NotNull LongName longName, @NotNull String description, @NotNull Precedence precedence, @Nullable String alias, @Nullable Precedence aliasPrecedence, @Nullable MetaDefinition meta) {
-    return declare(module, longName, description, precedence, alias, aliasPrecedence, meta, meta instanceof MetaResolver ? (MetaResolver) meta : null);
+    return declare(module, longName, description, precedence, alias, aliasPrecedence, meta, meta instanceof MetaResolver ? (MetaResolver) meta : meta instanceof DeferredMetaDefinition && ((DeferredMetaDefinition) meta).deferredMeta instanceof MetaResolver ? (MetaResolver) ((DeferredMetaDefinition) meta).deferredMeta : null);
   }
 
   @Override
