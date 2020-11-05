@@ -103,6 +103,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   private final List<DeferredMeta> myDeferredMetasAfterLevels = new ArrayList<>();
   private final ArendExtension myArendExtension;
   private TypecheckerState mySavedState;
+  private Stage myCurrentStage;
 
   private static class DeferredMeta {
     final MetaDefinition meta;
@@ -143,7 +144,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     errorReporter.myStatus = errorReporter.myStatus.max(status);
   }
 
-  private CheckTypeVisitor(Map<Referable, Binding> localContext, ErrorReporter errorReporter, GlobalInstancePool pool, ArendExtension arendExtension, UserDataHolderImpl holder) {
+  private CheckTypeVisitor(Map<Referable, Binding> localContext, ErrorReporter errorReporter, GlobalInstancePool pool, ArendExtension arendExtension, UserDataHolderImpl holder, Stage currentStage) {
     this.errorReporter = new MyErrorReporter(errorReporter);
     myEquations = new TwoStageEquations(this);
     myInstancePool = pool;
@@ -153,10 +154,11 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     if (holder != null) {
       setUserData(holder);
     }
+    myCurrentStage = currentStage;
   }
 
   public CheckTypeVisitor(ErrorReporter errorReporter, GlobalInstancePool pool, ArendExtension arendExtension) {
-    this(new LinkedHashMap<>(), errorReporter, pool, arendExtension, null);
+    this(new LinkedHashMap<>(), errorReporter, pool, arendExtension, null, null);
   }
 
   public ArendExtension getExtension() {
@@ -164,11 +166,11 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   public TypecheckingContext saveTypecheckingContext() {
-    return new TypecheckingContext(new LinkedHashMap<>(context), myInstancePool.getInstanceProvider(), myInstancePool.getInstancePool(), myArendExtension, copyUserData());
+    return new TypecheckingContext(new LinkedHashMap<>(context), myInstancePool.getInstanceProvider(), myInstancePool.getInstancePool(), myArendExtension, copyUserData(), myCurrentStage);
   }
 
   public static CheckTypeVisitor loadTypecheckingContext(TypecheckingContext typecheckingContext, ErrorReporter errorReporter) {
-    CheckTypeVisitor visitor = new CheckTypeVisitor(typecheckingContext.localContext, errorReporter, null, typecheckingContext.arendExtension, typecheckingContext.userDataHolder);
+    CheckTypeVisitor visitor = new CheckTypeVisitor(typecheckingContext.localContext, errorReporter, null, typecheckingContext.arendExtension, typecheckingContext.userDataHolder, typecheckingContext.currentStage);
     visitor.setInstancePool(new GlobalInstancePool(typecheckingContext.instanceProvider, visitor, typecheckingContext.localInstancePool));
     return visitor;
   }
@@ -666,6 +668,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   private void invokeDeferredMetas(InPlaceLevelSubstVisitor substVisitor, StripVisitor stripVisitor, Stage stage) {
+    myCurrentStage = stage;
     List<DeferredMeta> deferredMetas = stage == Stage.BEFORE_SOLVER ? myDeferredMetasBeforeSolver : stage == Stage.BEFORE_LEVELS ? myDeferredMetasBeforeLevels : myDeferredMetasAfterLevels;
     // Indexed loop is required since deferredMetas can be modified during the loop
     //noinspection ForLoopReplaceableByForEach
@@ -706,7 +709,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         errorReporter = deferredMeta.errorReporter;
         context = deferredMeta.context;
       } else {
-        checkTypeVisitor = new CheckTypeVisitor(deferredMeta.context, deferredMeta.errorReporter, null, myArendExtension, this);
+        checkTypeVisitor = new CheckTypeVisitor(deferredMeta.context, deferredMeta.errorReporter, null, myArendExtension, this, myCurrentStage);
         checkTypeVisitor.setInstancePool(new GlobalInstancePool(myInstancePool.getInstanceProvider(), checkTypeVisitor, myInstancePool.getInstancePool()));
       }
 
@@ -728,6 +731,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       deferredMeta.inferenceVar.solve(this, result == null ? new ErrorExpression() : result.expression);
     }
     deferredMetas.clear();
+    myCurrentStage = null;
   }
 
   public TypecheckingResult finalize(TypecheckingResult result, Concrete.SourceNode sourceNode, boolean propIfPossible) {
@@ -2244,6 +2248,13 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   @Nullable
   @Override
   public TypedExpression defer(@NotNull MetaDefinition meta, @NotNull ContextData contextData, @NotNull CoreExpression type, @NotNull Stage stage) {
+    if (myCurrentStage != null && myCurrentStage.ordinal() >= stage.ordinal()) {
+      if (stage.ordinal() > Stage.BEFORE_SOLVER.ordinal()) {
+        myEquations.solveEquations();
+      }
+      return meta.checkAndInvokeMeta(this, contextData);
+    }
+
     if (!meta.checkContextData(contextData, errorReporter)) {
       return null;
     }
