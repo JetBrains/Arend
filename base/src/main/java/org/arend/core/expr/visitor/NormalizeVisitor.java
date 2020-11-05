@@ -685,6 +685,23 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
     }
   }
 
+  public Expression evalFieldCall(ClassField field, Expression arg) {
+    if (arg instanceof FunCallExpression && ((FunCallExpression) arg).getDefinition().getResultType() instanceof ClassCallExpression) {
+      FunCallExpression funCall = (FunCallExpression) arg;
+      Expression impl = ((ClassCallExpression) funCall.getDefinition().getResultType()).getImplementation(field, arg);
+      if (impl != null) {
+        ExprSubstitution substitution = new ExprSubstitution().add(funCall.getDefinition().getParameters(), funCall.getDefCallArguments());
+        return impl.subst(substitution, funCall.getSortArgument().toLevelSubstitution());
+      } else if (funCall.getDefinition().getBody() == null) {
+        return null;
+      }
+    }
+
+    Expression type = arg.getType();
+    Expression normType = type == null ? null : type.accept(this, NormalizationMode.WHNF);
+    return normType instanceof ClassCallExpression ? ((ClassCallExpression) normType).getImplementation(field, arg) : null;
+  }
+
   @Override
   public Expression visitFieldCall(FieldCallExpression expr, NormalizationMode mode) {
     if (expr.getDefinition().isProperty()) {
@@ -693,13 +710,9 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
 
     Expression thisExpr = expr.getArgument().accept(this, mode);
     if (!(thisExpr.getInferenceVariable() instanceof TypeClassInferenceVariable) && (!(mode == NormalizationMode.RNF || mode == NormalizationMode.RNF_EXP) || thisExpr instanceof NewExpression)) {
-      Expression type = thisExpr.getType();
-      ClassCallExpression classCall = type == null ? null : type.accept(this, NormalizationMode.WHNF).cast(ClassCallExpression.class);
-      if (classCall != null) {
-        Expression impl = classCall.getImplementation(expr.getDefinition(), thisExpr);
-        if (impl != null) {
-          return impl.accept(this, mode);
-        }
+      Expression impl = evalFieldCall(expr.getDefinition(), thisExpr);
+      if (impl != null) {
+        return impl.accept(this, mode);
       }
     }
 
