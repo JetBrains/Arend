@@ -15,6 +15,11 @@ public class LinkList {
     return myLast;
   }
 
+  public void clear() {
+    myFirst = EmptyDependentLink.getInstance();
+    myLast = EmptyDependentLink.getInstance();
+  }
+
   public void append(DependentLink link) {
     if (!link.hasNext()) {
       return;
