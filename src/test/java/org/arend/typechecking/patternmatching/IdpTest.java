@@ -266,4 +266,22 @@ public class IdpTest extends TypeCheckingTestCase {
       "  | idp => 1\n" +
       "\\func test (t : 0 = 0) : f 0 0 (path (\\lam i => t @ i)) = 1 => idp", 1);
   }
+
+  @Test
+  public void patternType() {
+    typeCheckModule(
+      "\\record R (n : Nat)\n" +
+      "\\func f (x y : Nat) (r : R y) (p : x = r.n) : Nat \\elim p\n" +
+      "  | idp => 0");
+  }
+
+  @Test
+  public void patternTypeCase() {
+    typeCheckModule(
+      "\\record R (n : Nat)\n" +
+      "\\func f (x y : Nat) (r : R y) (p : x = r.n) : Nat\n" +
+      "  => \\case \\elim y, \\elim r, p \\with {\n" +
+      "       | y, r, idp => 0\n" +
+      "     }");
+  }
 }
