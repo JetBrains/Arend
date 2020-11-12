@@ -132,15 +132,14 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
     Expression actualType = null;
     ClassCallExpression argClassCall = argType.normalize(NormalizationMode.WHNF).cast(ClassCallExpression.class);
-    if (argClassCall != null && !(expr.getArgument() instanceof FieldCallExpression)) {
-      Expression impl = argClassCall.getImplementation(expr.getDefinition(), expr.getArgument());
-      if (impl != null) {
-        actualType = impl.getType();
+    if (argClassCall != null) {
+      PiExpression overriddenType = argClassCall.getDefinition().getOverriddenType(expr.getDefinition(), expr.getSortArgument());
+      if (overriddenType != null) {
+        actualType = overriddenType.applyExpression(expr.getArgument());
       }
     }
     if (actualType == null) {
-      PiExpression overriddenType = argClassCall == null ? null : argClassCall.getDefinition().getOverriddenType(expr.getDefinition(), expr.getSortArgument());
-      actualType = (overriddenType == null ? type : overriddenType).applyExpression(expr.getArgument());
+      actualType = type.applyExpression(expr.getArgument());
     }
     return check(expectedType, actualType, expr);
   }
@@ -292,6 +291,13 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       type = checkCase((CaseExpression) expr.getBody(), null, level);
     } else {
       type = expr.getBody().accept(this, null);
+    }
+    Sort sort = type.normalize(NormalizationMode.WHNF).getSortOfType();
+    if (sort == null) {
+      throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Cannot infer sort", mySourceNode), expr));
+    }
+    if (!Sort.compare(sort, expr.getResultSort(), CMP.LE, myEquations, mySourceNode)) {
+      throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError("Sort mismatch", new UniverseExpression(expr.getResultSort()), new UniverseExpression(sort), mySourceNode), expr));
     }
     freeDependentLink(expr.getParameters());
     return check(expectedType, new PiExpression(expr.getResultSort(), expr.getParameters(), type), expr);

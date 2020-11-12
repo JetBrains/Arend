@@ -2017,7 +2017,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   // Let
 
-  private TypecheckingResult typecheckLetClause(List<? extends Concrete.Parameter> parameters, Concrete.LetClause letClause) {
+  private TypecheckingResult typecheckLetClause(List<? extends Concrete.Parameter> parameters, Concrete.LetClause letClause, boolean useSpecifiedType) {
     if (parameters.isEmpty()) {
       Concrete.Expression letResult = letClause.getResultType();
       if (letResult != null) {
@@ -2034,7 +2034,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         if (errorExpr != null) {
           result.expression = errorExpr.replaceExpression(type.getExpr());
         }
-        return new TypecheckingResult(result.expression, type.getExpr());
+        return useSpecifiedType ? new TypecheckingResult(result.expression, type.getExpr()) : result;
       } else {
         return checkExpr(letClause.getTerm(), null);
       }
@@ -2042,10 +2042,10 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
     Concrete.Parameter param = parameters.get(0);
     if (param instanceof Concrete.NameParameter) {
-      return bodyToLam(visitNameParameter((Concrete.NameParameter) param, letClause), typecheckLetClause(parameters.subList(1, parameters.size()), letClause), letClause);
+      return bodyToLam(visitNameParameter((Concrete.NameParameter) param, letClause), typecheckLetClause(parameters.subList(1, parameters.size()), letClause, false), letClause);
     } else if (param instanceof Concrete.TypeParameter) {
       SingleDependentLink link = visitTypeParameter((Concrete.TypeParameter) param, null, null);
-      return link == null ? null : bodyToLam(link, typecheckLetClause(parameters.subList(1, parameters.size()), letClause), letClause);
+      return link == null ? null : bodyToLam(link, typecheckLetClause(parameters.subList(1, parameters.size()), letClause, false), letClause);
     } else {
       throw new IllegalStateException();
     }
@@ -2069,7 +2069,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   private Pair<LetClause,Expression> typecheckLetClause(Concrete.LetClause clause) {
     try (var ignore = new Utils.SetContextSaver<>(context)) {
-      TypecheckingResult result = typecheckLetClause(clause.getParameters(), clause);
+      TypecheckingResult result = typecheckLetClause(clause.getParameters(), clause, true);
       if (result == null) {
         return null;
       }

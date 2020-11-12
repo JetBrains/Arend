@@ -45,41 +45,12 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
     return new UniverseExpression(expr.getDefinition().getSort().subst(expr.getSortArgument().toLevelSubstitution()));
   }
 
-  private Expression normalizeFieldCall(FieldCallExpression expr) {
-    Expression arg = expr.getArgument();
-    Expression type;
-    if (arg instanceof FieldCallExpression) {
-      arg = normalizeFieldCall((FieldCallExpression) arg);
-      return arg instanceof NewExpression ? ((NewExpression) arg).getImplementation(expr.getDefinition()) : null;
-    } else {
-      type = arg.accept(this, null);
-      if (type == null) {
-        return null;
-      }
-      ClassCallExpression classCall = type.cast(ClassCallExpression.class);
-      return classCall == null ? null : classCall.getImplementation(expr.getDefinition(), arg);
-    }
-  }
-
   @Override
   public Expression visitFieldCall(FieldCallExpression expr, Void params) {
-    if (expr.getArgument() instanceof FieldCallExpression) {
-      Expression norm = normalizeFieldCall(expr);
-      if (norm != null) {
-        return norm.accept(this, null);
-      }
-    }
-
     Expression type = expr.getArgument().accept(this, null);
     if (type != null) {
       ClassCallExpression classCall = type.cast(ClassCallExpression.class);
       if (classCall != null) {
-        if (!(expr.getArgument() instanceof FieldCallExpression)) {
-          Expression impl = classCall.getImplementation(expr.getDefinition(), expr.getArgument());
-          if (impl != null) {
-            return impl.accept(this, null);
-          }
-        }
         PiExpression fieldType = classCall.getDefinition().getOverriddenType(expr.getDefinition(), expr.getSortArgument());
         if (fieldType != null) {
           return fieldType.applyExpression(expr.getArgument());
