@@ -2939,7 +2939,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           elimSubst.add(origBinding, new ReferenceExpression(link));
         }
         addBinding(asRef, link);
-        expressions.add(exprResult.expression);
+        expressions.add(exprResult.expression.subst(substitution));
         substitution.add(link, exprResult.expression);
       }
 

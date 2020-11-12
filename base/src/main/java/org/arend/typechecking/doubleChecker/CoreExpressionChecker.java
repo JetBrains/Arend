@@ -700,8 +700,8 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   Expression checkCase(CaseExpression expr, Expression expectedType, Integer level) {
     ExprSubstitution substitution = new ExprSubstitution();
-    checkDependentLink(expr.getParameters(), Type.OMEGA, expr);
     checkList(expr.getArguments(), expr.getParameters(), substitution, LevelSubstitution.EMPTY);
+    checkDependentLink(expr.getParameters(), Type.OMEGA, expr);
     expr.getResultType().accept(this, Type.OMEGA);
 
     Integer level2 = expr.getResultTypeLevel() == null ? null : checkLevelProof(expr.getResultTypeLevel(), expr.getResultType());
