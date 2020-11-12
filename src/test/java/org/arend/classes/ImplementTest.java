@@ -7,9 +7,7 @@ import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.Expression;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
-import org.arend.ext.error.RedundantCoclauseError;
 import org.arend.typechecking.TypeCheckingTestCase;
-import org.arend.typechecking.error.local.FieldsImplementationError;
 import org.junit.Test;
 
 import java.util.ArrayList;

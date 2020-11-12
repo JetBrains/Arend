@@ -180,6 +180,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
   @NotNull
   @Override
   public ConcreteExpression tuple(@NotNull ConcreteExpression... expressions) {
+    if (expressions.length == 1) return expressions[0];
     List<Concrete.Expression> fields = new ArrayList<>(expressions.length);
     for (ConcreteExpression expression : expressions) {
       if (!(expression instanceof Concrete.Expression)) {
@@ -192,6 +193,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
 
   @Override
   public @NotNull ConcreteExpression tuple(@NotNull Collection<? extends ConcreteExpression> expressions) {
+    if (expressions.size() == 1) return expressions.iterator().next();
     List<Concrete.Expression> fields = new ArrayList<>(expressions.size());
     for (ConcreteExpression expression : expressions) {
       if (!(expression instanceof Concrete.Expression)) {

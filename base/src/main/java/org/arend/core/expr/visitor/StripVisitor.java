@@ -2,7 +2,6 @@ package org.arend.core.expr.visitor;
 
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.EvaluatingBinding;
-import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.context.binding.inference.MetaInferenceVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
@@ -155,7 +154,14 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitSubst(SubstExpression expr, Void params) {
-    return expr.getSubstExpression().accept(this, null);
+    if (expr.isMetaInferenceVariable()) {
+      for (Map.Entry<Binding, Expression> entry : expr.getSubstitution().getEntries()) {
+        entry.setValue(entry.getValue().accept(this, null));
+      }
+      return expr;
+    } else {
+      return expr.getSubstExpression().accept(this, null);
+    }
   }
 
   private void visitParameters(DependentLink link) {

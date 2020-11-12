@@ -1,6 +1,6 @@
 package org.arend.typechecking.patternmatching;
 
-import org.arend.ext.variable.Variable;
+import org.arend.core.context.binding.Binding;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.visitor.CompareVisitor;
 import org.arend.core.subst.ExprSubstitution;
@@ -57,7 +57,7 @@ public class Condition extends SubstitutionData {
     }
 
     if (substitution != null) {
-      for (Map.Entry<Variable, Expression> entry : substitution.getEntries()) {
+      for (Map.Entry<Binding, Expression> entry : substitution.getEntries()) {
         Expression value = condition.substitution.get(entry.getKey());
         if (value == null || !visitor.normalizedCompare(entry.getValue(), value, null)) {
           return false;

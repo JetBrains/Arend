@@ -1,5 +1,7 @@
 package org.arend.core.expr;
 
+import org.arend.core.context.binding.Binding;
+import org.arend.core.context.binding.inference.MetaInferenceVariable;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
@@ -8,6 +10,8 @@ import org.arend.core.subst.LevelSubstitution;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Map;
 
 public class SubstExpression extends Expression {
   private final Expression myExpression;
@@ -24,10 +28,26 @@ public class SubstExpression extends Expression {
     if (substitution.isEmpty() && levelSubstitution.isEmpty()) {
       return expression;
     }
+
     if (expression instanceof ReferenceExpression && !substitution.isEmpty()) {
       Expression result = substitution.get(((ReferenceExpression) expression).getBinding());
       return result != null ? result : expression;
     }
+
+    if (expression instanceof SubstExpression && ((SubstExpression) expression).isMetaInferenceVariable()) {
+      ExprSubstitution newSubst = new ExprSubstitution();
+      for (Map.Entry<Binding, Expression> entry : ((SubstExpression) expression).getSubstitution().getEntries()) {
+        newSubst.add(entry.getKey(), entry.getValue().subst(substitution, levelSubstitution));
+      }
+      InferenceReferenceExpression infRefExpr = (InferenceReferenceExpression) ((SubstExpression) expression).getExpression();
+      for (Map.Entry<Binding, Expression> entry : substitution.getEntries()) {
+        if (infRefExpr.getVariable().getBounds().contains(entry.getKey())) {
+          newSubst.addIfAbsent(entry.getKey(), entry.getValue());
+        }
+      }
+      return new SubstExpression(infRefExpr, newSubst, ((SubstExpression) expression).getLevelSubstitution().subst(levelSubstitution));
+    }
+
     return new SubstExpression(expression, substitution, levelSubstitution);
   }
 
@@ -43,9 +63,17 @@ public class SubstExpression extends Expression {
     return levelSubstitution;
   }
 
+  public boolean isInferenceVariable() {
+    return myExpression instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) myExpression).getSubstExpression() == null;
+  }
+
+  public boolean isMetaInferenceVariable() {
+    return myExpression instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) myExpression).getVariable() instanceof MetaInferenceVariable;
+  }
+
   public Expression getSubstExpression() {
     Expression expr = myExpression instanceof SubstExpression ? ((SubstExpression) myExpression).getSubstExpression() : myExpression;
-    return expr instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) expr).getSubstExpression() == null ? expr : expr.subst(mySubstitution, levelSubstitution);
+    return expr instanceof SubstExpression && expr == myExpression ? this : expr instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) expr).getSubstExpression() == null ? expr : expr.subst(mySubstitution, levelSubstitution);
   }
 
   public Expression eval() {
@@ -92,12 +120,12 @@ public class SubstExpression extends Expression {
 
   @Override
   public <T extends Expression> boolean isInstance(Class<T> clazz) {
-    return getSubstExpression().isInstance(clazz);
+    return clazz.isInstance(this) || getSubstExpression().isInstance(clazz);
   }
 
   @Override
   public <T extends Expression> T cast(Class<T> clazz) {
-    return getSubstExpression().cast(clazz);
+    return clazz.isInstance(this) ? clazz.cast(this) : isInferenceVariable() ? null : getSubstExpression().cast(clazz);
   }
 
   @Override

@@ -8,7 +8,6 @@ import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.pattern.Pattern;
-import org.arend.ext.variable.Variable;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -46,10 +45,9 @@ public class FreeVariablesCollector extends VoidExpressionVisitor<Void> {
   @Override
   public Void visitSubst(SubstExpression expr, Void params) {
     expr.getExpression().accept(this, params);
-    //noinspection SuspiciousMethodCalls
     myResult.removeAll(expr.getSubstitution().getKeys());
 
-    for (Map.Entry<Variable, Expression> entry : expr.getSubstitution().getEntries()) {
+    for (Map.Entry<Binding, Expression> entry : expr.getSubstitution().getEntries()) {
       entry.getValue().accept(this, params);
     }
     return null;

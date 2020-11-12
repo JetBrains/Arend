@@ -111,10 +111,6 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
     if (expr.getSubstExpression() != null) {
       return expr.getSubstExpression().accept(this, null);
     }
-    Expression result = myExprSubstitution.get(expr.getVariable());
-    if (result != null) {
-      return result;
-    }
 
     if (expr.getVariable() instanceof MetaInferenceVariable) {
       if (myLevelSubstitution.isEmpty() && Collections.disjoint(expr.getVariable().getBounds(), myExprSubstitution.getKeys())) {
@@ -131,7 +127,6 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
       return SubstExpression.make(expr, newSubst, myLevelSubstitution);
     }
 
-    //noinspection SuspiciousMethodCalls
     expr.getVariable().getBounds().removeAll(myExprSubstitution.getKeys());
     return expr;
   }

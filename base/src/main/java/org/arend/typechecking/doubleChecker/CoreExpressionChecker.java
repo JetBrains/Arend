@@ -1,6 +1,7 @@
 package org.arend.typechecking.doubleChecker;
 
 import org.arend.core.context.binding.Binding;
+import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
@@ -26,10 +27,7 @@ import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.StdLevelSubstitution;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
-import org.arend.ext.error.ErrorReporter;
-import org.arend.ext.error.GeneralError;
-import org.arend.ext.error.TypeMismatchError;
-import org.arend.ext.error.TypecheckingError;
+import org.arend.ext.error.*;
 import org.arend.ext.prettyprinting.doc.DocFactory;
 import org.arend.naming.reference.FieldReferable;
 import org.arend.prelude.Prelude;
@@ -40,7 +38,6 @@ import org.arend.typechecking.patternmatching.ConditionsChecking;
 import org.arend.typechecking.patternmatching.ElimTypechecking;
 import org.arend.typechecking.patternmatching.ExtElimClause;
 import org.arend.typechecking.patternmatching.PatternTypechecking;
-import org.arend.util.Pair;
 
 import java.util.*;
 
@@ -463,13 +460,16 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     return params.size() / 2 - 2;
   }
 
-  private boolean checkElimPattern(Expression type, Pattern pattern, DependentLink firstBinding, ExprSubstitution idpSubst, List<Pair<Expression,Expression>> types, Expression errorExpr) {
+  private boolean checkElimPattern(Expression type, Pattern pattern, List<Binding> newBindings, ExprSubstitution idpSubst, ExprSubstitution patternSubst, ExprSubstitution reversePatternSubst, Expression errorExpr) {
     if (pattern instanceof BindingPattern) {
       Expression actualType = pattern.getFirstBinding().getTypeExpr();
       if (pattern.getFirstBinding() instanceof TypedDependentLink) {
         actualType.accept(this, Type.OMEGA);
       }
-      types.add(new Pair<>(actualType, type));
+      Binding newBinding = new TypedBinding(pattern.getFirstBinding().getName(), type);
+      newBindings.add(newBinding);
+      patternSubst.add(pattern.getFirstBinding(), new ReferenceExpression(newBinding));
+      reversePatternSubst.add(newBinding, new ReferenceExpression(pattern.getFirstBinding()));
       addBinding(pattern.getFirstBinding(), errorExpr);
       return true;
     }
@@ -479,8 +479,8 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       if (equality == null || !(type instanceof DataCallExpression)) {
         throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(type, DocFactory.text("_ = _"), mySourceNode), errorExpr));
       }
-      Expression left = equality.getDefCallArguments().get(1).normalize(NormalizationMode.WHNF);
-      Expression right = equality.getDefCallArguments().get(2).normalize(NormalizationMode.WHNF);
+      Expression left = equality.getDefCallArguments().get(1).subst(patternSubst).normalize(NormalizationMode.WHNF).subst(patternSubst);
+      Expression right = equality.getDefCallArguments().get(2).subst(patternSubst).normalize(NormalizationMode.WHNF).subst(patternSubst);
       ReferenceExpression refExprLeft = left.cast(ReferenceExpression.class);
       ReferenceExpression refExprRight = right.cast(ReferenceExpression.class);
       Binding refLeft = refExprLeft == null ? null : refExprLeft.getBinding();
@@ -490,11 +490,11 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       }
 
       Binding var = null;
-      for (DependentLink link = firstBinding; link.hasNext(); link = link.getNext()) {
-        if (link == refLeft) {
-          var = link;
-        } else if (link == refRight) {
-          var = link;
+      for (Binding binding : newBindings) {
+        if (binding == refLeft) {
+          var = binding;
+        } else if (binding == refRight) {
+          var = binding;
         }
       }
       if (var == null) {
@@ -507,30 +507,30 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
       Set<Binding> freeVars = FreeVariablesCollector.getFreeVariables(otherExpr);
       Binding banVar = null;
-      List<DependentLink> params = DependentLink.Helper.toList(firstBinding);
-      for (int i = params.size() - 1; i >= 0; i--) {
-        DependentLink paramLink = params.get(i);
-        if (paramLink == var) {
+      for (int i = newBindings.size() - 1; i >= 0; i--) {
+        Binding binding = newBindings.get(i);
+        if (binding == var) {
           break;
         }
-        if (freeVars.contains(paramLink)) {
-          banVar = paramLink;
+        if (freeVars.contains(binding)) {
+          banVar = binding;
         }
-        if (paramLink instanceof TypedDependentLink && banVar != null && paramLink.getTypeExpr().findBinding(var)) {
-          throw new CoreException(CoreErrorWrapper.make(new IdpPatternError(IdpPatternError.subst(var.getName(), paramLink.getName(), banVar.getName()), null, mySourceNode), errorExpr));
+        if (banVar != null && binding.getTypeExpr().findBinding(var)) {
+          throw new CoreException(CoreErrorWrapper.make(new IdpPatternError(IdpPatternError.subst(var.getName(), binding.getName(), banVar.getName()), null, mySourceNode), errorExpr));
         }
       }
 
+      var = ((ReferenceExpression) reversePatternSubst.get(var)).getBinding();
       myContext.remove(var);
-      idpSubst.add(var, otherExpr);
+      idpSubst.add(var, otherExpr.subst(reversePatternSubst));
       return true;
     }
 
     if (pattern instanceof ConstructorPattern && pattern.getConstructor() == null) {
       if (type instanceof SigmaExpression) {
-        return checkElimPatterns(((SigmaExpression) type).getParameters(), pattern.getSubPatterns(), new ExprSubstitution(), firstBinding, idpSubst, types, errorExpr, null);
+        return checkElimPatterns(((SigmaExpression) type).getParameters(), pattern.getSubPatterns(), new ExprSubstitution(), newBindings, idpSubst, patternSubst, reversePatternSubst, errorExpr, null);
       } else if (type instanceof ClassCallExpression) {
-        return checkElimPatterns(((ClassCallExpression) type).getClassFieldParameters(), pattern.getSubPatterns(), new ExprSubstitution(), firstBinding, idpSubst, types, errorExpr, null);
+        return checkElimPatterns(((ClassCallExpression) type).getClassFieldParameters(), pattern.getSubPatterns(), new ExprSubstitution(), newBindings, idpSubst, patternSubst, reversePatternSubst, errorExpr, null);
       } else {
         throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(DocFactory.text("a sigma type or a class call"), type, mySourceNode), errorExpr));
       }
@@ -567,10 +567,10 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     }
 
     ConCallExpression conCall = conCalls.get(0);
-    return checkElimPatterns(DependentLink.Helper.subst(conCall.getDefinition().getParameters(), new ExprSubstitution().add(conCall.getDefinition().getDataTypeParameters(), conCall.getDataTypeArguments())), pattern.getSubPatterns(), new ExprSubstitution(), firstBinding, idpSubst, types, errorExpr, null);
+    return checkElimPatterns(DependentLink.Helper.subst(conCall.getDefinition().getParameters(), new ExprSubstitution().add(conCall.getDefinition().getDataTypeParameters(), conCall.getDataTypeArguments())), pattern.getSubPatterns(), new ExprSubstitution(), newBindings, idpSubst, patternSubst, reversePatternSubst, errorExpr, null);
   }
 
-  private boolean checkElimPatterns(DependentLink parameters, List<? extends Pattern> patterns, ExprSubstitution substitution, DependentLink firstBinding, ExprSubstitution idpSubst, List<Pair<Expression,Expression>> types, Expression errorExpr, List<ExpressionPattern> exprPatterns) {
+  private boolean checkElimPatterns(DependentLink parameters, List<? extends Pattern> patterns, ExprSubstitution substitution, List<Binding> newBindings, ExprSubstitution idpSubst, ExprSubstitution patternSubst, ExprSubstitution reversePatternSubst, Expression errorExpr, List<ExpressionPattern> exprPatterns) {
     boolean noEmpty = true;
     for (Pattern pattern : patterns) {
       if (!parameters.hasNext()) {
@@ -579,7 +579,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       Expression type = parameters.getTypeExpr().subst(substitution).normalize(NormalizationMode.WHNF).getUnderlyingExpression();
       if (noEmpty) {
         ExprSubstitution varSubst = new ExprSubstitution();
-        if (!checkElimPattern(type, pattern, firstBinding, varSubst, types, errorExpr)) {
+        if (!checkElimPattern(type, pattern, newBindings, varSubst, patternSubst, reversePatternSubst, errorExpr)) {
           if (exprPatterns == null) {
             return false;
           }
@@ -633,14 +633,15 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
       ExprSubstitution substitution = new ExprSubstitution();
       ExprSubstitution idpSubst = new ExprSubstitution();
-      List<Pair<Expression,Expression>> types = new ArrayList<>();
+      ExprSubstitution patternSubst = new ExprSubstitution();
       List<ExpressionPattern> exprPatterns = new ArrayList<>();
       exprClauses.add(new ExtElimClause(exprPatterns, clause.getExpression(), idpSubst));
-      boolean noEmpty = checkElimPatterns(parameters, clause.getPatterns(), substitution, firstBinding, idpSubst, types, errorExpr, exprPatterns);
-      for (Pair<Expression,Expression> pair : types) {
-        Expression expectedType = pair.proj2.subst(idpSubst);
-        if (!new CompareVisitor(myEquations, CMP.EQ, mySourceNode).normalizedCompare(expectedType, pair.proj1.normalize(NormalizationMode.WHNF), Type.OMEGA)) {
-          throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(expectedType, pair.proj1, mySourceNode), errorExpr));
+      boolean noEmpty = checkElimPatterns(parameters, clause.getPatterns(), substitution, new ArrayList<>(), idpSubst, patternSubst, new ExprSubstitution(), errorExpr, exprPatterns);
+      for (Map.Entry<Binding, Expression> entry : patternSubst.getEntries()) {
+        Expression actualType = entry.getKey().getTypeExpr();
+        Expression expectedType = entry.getValue().getType().subst(idpSubst);
+        if (!new CompareVisitor(myEquations, CMP.EQ, mySourceNode).normalizedCompare(expectedType, actualType.normalize(NormalizationMode.WHNF), Type.OMEGA)) {
+          throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(expectedType, actualType, mySourceNode), errorExpr));
         }
       }
       if (noEmpty) {
@@ -703,8 +704,8 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   Expression checkCase(CaseExpression expr, Expression expectedType, Integer level) {
     ExprSubstitution substitution = new ExprSubstitution();
-    checkDependentLink(expr.getParameters(), Type.OMEGA, expr);
     checkList(expr.getArguments(), expr.getParameters(), substitution, LevelSubstitution.EMPTY);
+    checkDependentLink(expr.getParameters(), Type.OMEGA, expr);
     expr.getResultType().accept(this, Type.OMEGA);
 
     Integer level2 = expr.getResultTypeLevel() == null ? null : checkLevelProof(expr.getResultTypeLevel(), expr.getResultType());
