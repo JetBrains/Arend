@@ -1343,7 +1343,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           hLevel = universe.getSort().getHLevel();
         }
       }
-      if (hLevel != null && hLevel.getMaxAddedConstant() == -1 && hLevel.getVar() == LevelVariable.HVAR) {
+      if (hLevel != null && hLevel.getMaxConstant() == -1 && hLevel.getVar() == LevelVariable.HVAR) {
         getEquations().bindVariables((InferenceLevelVariable) sortArgument.getPLevel().getVar(), (InferenceLevelVariable) sortArgument.getHLevel().getVar());
       }
     } else {

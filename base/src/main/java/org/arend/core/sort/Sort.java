@@ -107,7 +107,7 @@ public class Sort implements CoreSort {
     if (sort.isProp()) {
       return true;
     }
-    if (!(sort.getHLevel().getVar() instanceof InferenceLevelVariable) || sort.getHLevel().getMaxAddedConstant() > -1) {
+    if (!(sort.getHLevel().getVar() instanceof InferenceLevelVariable) || sort.getHLevel().getMaxConstant() > -1) {
       return false;
     }
     if (equations == null) {

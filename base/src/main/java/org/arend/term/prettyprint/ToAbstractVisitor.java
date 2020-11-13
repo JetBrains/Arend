@@ -554,12 +554,12 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       throw new IllegalStateException();
     }
 
-    if (level.getMaxConstant() > 0 || level.getMaxConstant() == 0 && level.getVar() == LevelVariable.HVAR) {
-      result = new Concrete.MaxLevelExpression(null, result, visitLevel(new Level(level.getMaxConstant())));
-    }
-
     for (int i = 0; i < level.getConstant(); i++) {
       result = new Concrete.SucLevelExpression(null, result);
+    }
+
+    if (level.getMaxConstant() > 0 || level.getMaxConstant() == 0 && level.getVar() == LevelVariable.HVAR) {
+      result = new Concrete.MaxLevelExpression(null, result, visitLevel(new Level(level.getMaxConstant())));
     }
 
     return result;
