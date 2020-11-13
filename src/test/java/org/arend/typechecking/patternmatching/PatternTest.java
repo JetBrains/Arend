@@ -462,4 +462,12 @@ public class PatternTest extends TypeCheckingTestCase {
       "  | con p => idp\n" +
       "}");
   }
+
+  @Test
+  public void implicitPatternTest() {
+    typeCheckModule(
+      "\\func test {n : Nat} {x : Nat} : x = x\n" +
+      "  | {0} => idp\n" +
+      "  | {suc n} => idp");
+  }
 }

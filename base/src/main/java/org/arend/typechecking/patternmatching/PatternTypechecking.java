@@ -314,15 +314,18 @@ public class PatternTypechecking {
     List<Expression> exprs = new ArrayList<>();
     ExprSubstitution varSubst = new ExprSubstitution();
 
-    for (int k = 0; k < patterns.size(); k++) {
-      Concrete.Pattern pattern = patterns.get(k);
+    for (int k = 0; k <= patterns.size(); k++) {
+      Concrete.Pattern pattern = k < patterns.size() ? patterns.get(k) : null;
       if (!parameters.hasNext()) {
-        myErrorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.TOO_MANY_PATTERNS, pattern));
+        if (k == patterns.size()) {
+          break;
+        }
+        myErrorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.TOO_MANY_PATTERNS, pattern == null ? sourceNode : pattern));
         return null;
       }
 
-      if (!withElim && pattern != null) {
-        if (pattern.isExplicit()) {
+      if (!withElim && (pattern != null || k == patterns.size())) {
+        if (k == patterns.size() || pattern.isExplicit()) {
           while (!parameters.isExplicit()) {
             DependentLink newParam = parameters.subst(new SubstVisitor(paramsSubst, LevelSubstitution.EMPTY), 1, false);
             myLinkList.append(newParam);
@@ -333,9 +336,15 @@ public class PatternTypechecking {
             addBinding(null, newParam);
             parameters = parameters.getNext();
             if (!parameters.hasNext()) {
-              myErrorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.TOO_MANY_PATTERNS, pattern));
+              if (k == patterns.size()) {
+                break;
+              }
+              myErrorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.TOO_MANY_PATTERNS, pattern == null ? sourceNode : pattern));
               return null;
             }
+          }
+          if (k == patterns.size()) {
+            break;
           }
         } else {
           if (parameters.isExplicit()) {
