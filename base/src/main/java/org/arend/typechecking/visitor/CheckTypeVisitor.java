@@ -1334,17 +1334,12 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     boolean isMin = definition instanceof DataDefinition && !definition.getParameters().hasNext() && definition.getUniverseKind() == UniverseKind.NO_UNIVERSES;
     if (expr.getPLevel() == null && expr.getHLevel() == null) {
       sortArgument = isMin ? Sort.PROP : Sort.generateInferVars(getEquations(), definition.getUniverseKind(), expr);
-      Level hLevel = null;
-      if (definition instanceof DataDefinition && !sortArgument.isProp()) {
-        hLevel = ((DataDefinition) definition).getSort().getHLevel();
-      } else if (definition instanceof FunctionDefinition && !sortArgument.isProp()) {
-        UniverseExpression universe = ((FunctionDefinition) definition).getResultType().getPiParameters(null, false).cast(UniverseExpression.class);
-        if (universe != null) {
-          hLevel = universe.getSort().getHLevel();
-        }
-      }
-      if (hLevel != null && hLevel.getMaxConstant() == -1 && hLevel.getVar() == LevelVariable.HVAR) {
-        getEquations().bindVariables((InferenceLevelVariable) sortArgument.getPLevel().getVar(), (InferenceLevelVariable) sortArgument.getHLevel().getVar());
+      if (definition == Prelude.PATH || definition == Prelude.PATH_INFIX) {
+        InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, definition.getUniverseKind() != UniverseKind.NO_UNIVERSES, expr);
+        myEquations.addVariable(pl);
+        myEquations.addEquation(new Level(sortArgument.getPLevel().getVar()), new Level(pl), CMP.LE, expr);
+        getEquations().bindVariables(pl, (InferenceLevelVariable) sortArgument.getHLevel().getVar());
+        return DefCallResult.makePathType(expr, definition == Prelude.PATH_INFIX, sortArgument, new Sort(new Level(pl), new Level(sortArgument.getHLevel().getVar(), -1, -1)));
       }
     } else {
       Level pLevel = null;
@@ -1373,12 +1368,6 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           getEquations().addVariable(hl);
           hLevel = new Level(hl);
         }
-      }
-
-      if ((definition == Prelude.PATH_INFIX || definition == Prelude.PATH) && hLevel.isProp()) {
-        InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, definition.getUniverseKind() != UniverseKind.NO_UNIVERSES, expr);
-        getEquations().addVariable(pl);
-        pLevel = new Level(pl);
       }
 
       sortArgument = new Sort(pLevel, hLevel);

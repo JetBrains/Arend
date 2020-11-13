@@ -24,7 +24,6 @@ import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
-import org.arend.core.subst.StdLevelSubstitution;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.*;
@@ -75,16 +74,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
   public Expression visitFunCall(FunCallExpression expr, Expression expectedType) {
     LevelSubstitution levelSubst = expr.getSortArgument().toLevelSubstitution();
     ExprSubstitution substitution = new ExprSubstitution();
-    List<? extends Expression> args = expr.getDefCallArguments();
-    DependentLink parameters = expr.getDefinition().getParameters();
-    // If the sort argument is \\Prop, the first argument can be a set of any level
-    if (expr.getDefinition() == Prelude.PATH_INFIX && expr.getSortArgument().isProp()) {
-      args.get(0).accept(this, new UniverseExpression(new Sort(Level.INFINITY, new Level(0))));
-      substitution.add(parameters, args.get(0));
-      args = args.subList(1, args.size());
-      parameters = parameters.getNext();
-    }
-    checkList(args, parameters, substitution, levelSubst);
+    checkList(expr.getDefCallArguments(), expr.getDefinition().getParameters(), substitution, levelSubst);
     return check(expectedType, expr.getDefinition().getResultType().subst(substitution, levelSubst), expr);
   }
 
@@ -131,17 +121,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
   @Override
   public Expression visitDataCall(DataCallExpression expr, Expression expectedType) {
     LevelSubstitution levelSubst = expr.getSortArgument().toLevelSubstitution();
-    ExprSubstitution substitution = new ExprSubstitution();
-    List<? extends Expression> args = expr.getDefCallArguments();
-    DependentLink parameters = expr.getDefinition().getParameters();
-    // If the sort argument is \\Prop, the first argument can be a set of any level
-    if (expr.getDefinition() == Prelude.PATH && expr.getSortArgument().isProp()) {
-      args.get(0).accept(this, parameters.getTypeExpr().subst(new StdLevelSubstitution(Level.INFINITY, new Level(-1))));
-      substitution.add(parameters, args.get(0));
-      args = args.subList(1, args.size());
-      parameters = parameters.getNext();
-    }
-    checkList(args, parameters, substitution, levelSubst);
+    checkList(expr.getDefCallArguments(), expr.getDefinition().getParameters(), new ExprSubstitution(), levelSubst);
     return check(expectedType, new UniverseExpression(expr.getDefinition().getSort().subst(levelSubst)), expr);
   }
 
@@ -325,7 +305,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
   @Override
   public Expression visitPi(PiExpression expr, Expression expectedType) {
     UniverseExpression type = new UniverseExpression(expr.getResultSort());
-    checkDependentLink(expr.getParameters(), new UniverseExpression(new Sort(expr.getResultSort().getPLevel(), Level.INFINITY)), expr);
+    checkDependentLink(expr.getParameters(), expr.getResultSort().isProp() ? null : new UniverseExpression(new Sort(expr.getResultSort().getPLevel(), Level.INFINITY)), expr);
     expr.getCodomain().accept(this, type);
     freeDependentLink(expr.getParameters());
     return check(expectedType, type, expr);

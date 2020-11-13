@@ -26,12 +26,12 @@ public class Level implements CoreLevel {
 
   // max(var + constant, maxConstant)
   public Level(LevelVariable var, int constant, int maxConstant) {
-    assert constant >= 0 || var == null && constant == -1;
+    assert constant >= (var == null ? -1 : var.getMinValue());
     myVar = var;
     myConstant = constant;
     myMaxConstant = var == null
       ? (constant == -1 ? -1 : 0)
-      : maxConstant > constant || maxConstant == constant && var.getType() == LevelVariable.LvlType.HLVL
+      : maxConstant > constant + var.getMinValue()
         ? maxConstant
         : var.getMinValue();
   }
@@ -84,6 +84,7 @@ public class Level implements CoreLevel {
   }
 
   public Level add(int constant) {
+    assert constant >= 0;
     return constant == 0 || isInfinity() ? this : new Level(myVar, myConstant + constant, myMaxConstant + constant);
   }
 
@@ -106,7 +107,7 @@ public class Level implements CoreLevel {
 
     int constant = myVar == null ? myConstant : level.myConstant;
     Level lvl = myVar == null ? level : this;
-    return constant <= lvl.myMaxConstant ? lvl : new Level(lvl.myVar, lvl.myConstant, constant);
+    return new Level(lvl.myVar, lvl.myConstant, Math.max(constant, lvl.myMaxConstant));
   }
 
   public Level subst(LevelSubstitution subst) {
@@ -121,10 +122,11 @@ public class Level implements CoreLevel {
       return level;
     }
 
+    int constant = myConstant == -1 && level.myConstant == -1 ? -1 : level.myConstant + myConstant;
     if (level.myVar != null) {
-      return new Level(level.myVar, level.myConstant + myConstant, Math.max(level.myMaxConstant + myConstant, myMaxConstant));
+      return new Level(level.myVar, constant, Math.max(level.myMaxConstant + myConstant, myMaxConstant));
     } else {
-      return new Level(Math.max(level.myConstant, myMaxConstant) + myConstant);
+      return new Level(Math.max(constant, myMaxConstant));
     }
   }
 

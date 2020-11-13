@@ -34,7 +34,7 @@ public class StrictPropTest extends TypeCheckingTestCase {
 
   @Test
   public void setPiError() {
-    typeCheckDef("\\func f {A : \\Set} (x y : A) : \\Pi (p q : = \\levels \\Prop x y) -> p = q => \\lam p q => idp", 1);
+    typeCheckDef("\\func f {A : \\Set} (x y : A) : \\Pi (p q : = \\levels \\lp 0 x y) -> p = q => \\lam p q => idp", 1);
     assertThatErrorsAre(typeMismatchError());
   }
 

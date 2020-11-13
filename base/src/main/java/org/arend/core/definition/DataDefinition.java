@@ -2,11 +2,8 @@ package org.arend.core.definition;
 
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
-import org.arend.core.context.param.TypedDependentLink;
-import org.arend.core.context.param.TypedSingleDependentLink;
 import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.*;
-import org.arend.core.expr.type.TypeExpression;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
@@ -14,7 +11,6 @@ import org.arend.ext.core.definition.CoreConstructor;
 import org.arend.ext.core.definition.CoreDataDefinition;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.TCDefReferable;
-import org.arend.prelude.Prelude;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -216,22 +212,8 @@ public class DataDefinition extends Definition implements CoreDataDefinition {
       return null;
     }
 
-    ExprSubstitution subst = new ExprSubstitution();
-    if (this == Prelude.PATH && sortArgument.isProp()) {
-      Sort sort = Sort.SetOfLevel(sortArgument.getPLevel());
-      TypedDependentLink param = new TypedDependentLink(true, myParameters.getName(), new PiExpression(sort.succ(), new TypedSingleDependentLink(true, null, ExpressionFactory.Interval()), new UniverseExpression(sort)), EmptyDependentLink.getInstance());
-      TypedDependentLink param3 = new TypedDependentLink(true, myParameters.getNext().getNext().getName(), new TypeExpression(AppExpression.make(new ReferenceExpression(param), ExpressionFactory.Right(), true), sort), EmptyDependentLink.getInstance());
-      TypedDependentLink param2 = new TypedDependentLink(true, myParameters.getNext().getName(), new TypeExpression(AppExpression.make(new ReferenceExpression(param), ExpressionFactory.Left(), true), sort), param3);
-      param.setNext(param2);
-
-      params.add(param);
-      params.add(param2);
-      params.add(param3);
-      return new UniverseExpression(Sort.PROP);
-    }
-
     LevelSubstitution polySubst = sortArgument.toLevelSubstitution();
-    params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myParameters, subst, polySubst)));
+    params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myParameters, new ExprSubstitution(), polySubst)));
     return new UniverseExpression(mySort.subst(polySubst));
   }
 

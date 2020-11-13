@@ -107,13 +107,13 @@ public class Sort implements CoreSort {
     if (sort.isProp()) {
       return true;
     }
-    if (!(sort.getHLevel().getVar() instanceof InferenceLevelVariable) || sort.getHLevel().getMaxConstant() > -1) {
+    if (!(sort.getHLevel().getVar() instanceof InferenceLevelVariable) || sort.getHLevel().getMaxConstant() > -1 || sort.getHLevel().getConstant() > 0) {
       return false;
     }
     if (equations == null) {
       return true;
     }
-    return equations.addEquation(new Level(sort.getHLevel().getVar()), new Level(-1), CMP.LE, sourceNode);
+    return equations.addEquation(new Level(sort.getHLevel().getVar()), new Level(sort.getHLevel().getConstant() == 0 ? -1 : 0), CMP.LE, sourceNode);
   }
 
   public static boolean compare(Sort sort1, Sort sort2, CMP cmp, Equations equations, Concrete.SourceNode sourceNode) {

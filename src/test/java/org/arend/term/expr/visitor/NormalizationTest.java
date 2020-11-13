@@ -21,6 +21,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static org.arend.ExpressionFactory.*;
 import static org.arend.core.expr.ExpressionFactory.*;
@@ -330,26 +331,27 @@ public class NormalizationTest extends TypeCheckingTestCase {
   public void testCoeIsoFreeVar() {
     SingleDependentLink k = singleParam("k", Interval());
     SingleDependentLink i = singleParam("i", Interval());
-    DataCallExpression A = DataCall(Prelude.PATH, Sort.SET0, Lam(i, Interval()), Ref(k), Ref(k));
+    Sort sort = Sort.TypeOfLevel(0);
+    DataCallExpression A = DataCall(Prelude.PATH, sort, Lam(i, Interval()), Ref(k), Ref(k));
     DependentLink B = param("B", Universe(Sort.SET0));
     DependentLink f = param("f", Pi(A, Ref(B)));
     DependentLink g = param("g", Pi(Ref(B), A));
     SingleDependentLink a = singleParam("a", A);
     SingleDependentLink b = singleParam("b", Ref(B));
-    Expression linvType = FunCall(Prelude.PATH_INFIX, Sort.SET0,
+    Expression linvType = FunCall(Prelude.PATH_INFIX, sort,
         A,
         Apps(Ref(g), Apps(Ref(f), Ref(a))),
         Ref(a));
     DependentLink linv = param("linv", Pi(a, linvType));
-    Expression rinvType = FunCall(Prelude.PATH_INFIX, Sort.SET0,
+    Expression rinvType = FunCall(Prelude.PATH_INFIX, sort,
         Ref(B),
         Apps(Ref(f), Apps(Ref(g), Ref(b))),
         Ref(b));
     DependentLink rinv = param("rinv", Pi(b, rinvType));
     DependentLink aleft = paramExpr("aleft", A.subst(k, Right()));
-    Expression expr = FunCall(Prelude.COERCE, Sort.SET0,
-        Lam(k, FunCall(Prelude.ISO, Sort.SET0,
-            DataCall(Prelude.PATH, Sort.SET0,
+    Expression expr = FunCall(Prelude.COERCE, sort,
+        Lam(k, FunCall(Prelude.ISO, sort,
+            DataCall(Prelude.PATH, sort,
                 Lam(i, Interval()),
                 Ref(k),
                 Ref(k)),
@@ -380,7 +382,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
         "  | suc n => fsuc (Fin n)\n" +
         "\\func f (n : Nat) (x : Fin n) => fsuc $ x");
     FunctionDefinition f = (FunctionDefinition) getDefinition("f");
-    Expression term = ((Expression) f.getBody()).normalize(NormalizationMode.NF);
+    Expression term = ((Expression) Objects.requireNonNull(f.getBody())).normalize(NormalizationMode.NF);
     ConCallExpression conCall = term.cast(ConCallExpression.class);
     assertEquals(getDefinition("fsuc"), conCall.getDefinition());
     assertEquals(1, conCall.getDefCallArguments().size());

@@ -150,9 +150,8 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
         DefCallResult defCallResult = (DefCallResult) result;
         if (defCallResult.getDefinition() == Prelude.PATH_CON && defCallResult.getArguments().isEmpty()) {
           SingleDependentLink lamParam = new TypedSingleDependentLink(true, "i", Interval());
-          UniverseExpression type = new UniverseExpression(new Sort(defCallResult.getSortArgument().getPLevel(), defCallResult.getSortArgument().getHLevel().add(1)));
-          Expression binding = new InferenceReferenceExpression(new FunctionInferenceVariable(Prelude.PATH_CON, Prelude.PATH_CON.getDataTypeParameters(), 1, type, fun, myVisitor.getAllBindings()), myVisitor.getEquations());
-          Sort sort = type.getSort().succ();
+          Expression binding = new InferenceReferenceExpression(new FunctionInferenceVariable(Prelude.PATH_CON, Prelude.PATH_CON.getDataTypeParameters(), 1, new UniverseExpression(defCallResult.getSortArgument()), fun, myVisitor.getAllBindings()), myVisitor.getEquations());
+          Sort sort = defCallResult.getSortArgument().succ();
           result = result.applyExpression(new LamExpression(sort, lamParam, binding), true, myVisitor.getErrorReporter(), fun);
 
           TypecheckingResult argResult = myVisitor.checkArgument(arg, new PiExpression(sort, lamParam, binding), result);

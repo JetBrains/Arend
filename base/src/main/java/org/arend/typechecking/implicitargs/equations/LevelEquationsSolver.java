@@ -135,17 +135,18 @@ public class LevelEquationsSolver {
   }
 
   public boolean addPropEquationIfPossible(Level level) {
-    if (!(level.getVar() instanceof InferenceLevelVariable && level.isVarOnly())) {
+    if (!(level.getVar() instanceof InferenceLevelVariable && !level.withMaxConstant() && level.getConstant() <= 0)) {
       return false;
     }
     InferenceLevelVariable var = (InferenceLevelVariable) level.getVar();
     Level oldLevel = myConstantUpperBounds.get(var);
-    if (oldLevel != null && oldLevel.isProp()) {
+    if (oldLevel != null && (oldLevel.isProp() || level.getConstant() < 0 && oldLevel.isClosed() && oldLevel.getConstant() == 0)) {
       return true;
     }
 
-    if (trySolveProp(var)) {
-      myConstantUpperBounds.put(var, new Level(-1));
+    Integer sol = trySolveProp(var);
+    if (sol != null && (sol == 0 || level.getConstant() < 0 && sol == -1)) {
+      myConstantUpperBounds.put(var, new Level(sol == 0 ? -1 : 0));
       return true;
     } else {
       return false;
@@ -153,7 +154,7 @@ public class LevelEquationsSolver {
   }
 
   // needed for lemmas and properties
-  private boolean trySolveProp(InferenceLevelVariable var) {
+  private Integer trySolveProp(InferenceLevelVariable var) {
     Set<InferenceLevelVariable> visited = new HashSet<>();
     Deque<InferenceLevelVariable> toVisit = new ArrayDeque<>();
     toVisit.add(var);
@@ -170,18 +171,18 @@ public class LevelEquationsSolver {
 
       for (LevelVariable lowerBound : lowerBounds) {
         if (!(lowerBound instanceof InferenceLevelVariable)) {
-          return false;
+          return null;
         }
         toVisit.add((InferenceLevelVariable) lowerBound);
       }
     }
 
     if (myHLevelEquations.isEmpty()) {
-      return true;
+      return 0;
     }
 
     Map<InferenceLevelVariable, Integer> solution = new HashMap<>();
-    return myHLevelEquations.solve(solution) == null && solution.get(var) == 0;
+    return myHLevelEquations.solve(solution) == null ? solution.get(var) : null;
   }
 
   public LevelSubstitution solveLevels() {
@@ -211,7 +212,8 @@ public class LevelEquationsSolver {
     if (!unBased.isEmpty()) {
       for (Pair<InferenceLevelVariable, InferenceLevelVariable> vars : myBoundVariables) {
         if (unBased.contains(vars.proj2)) {
-          if (solution.get(vars.proj2) == 1) {
+          Integer sol = solution.get(vars.proj2);
+          if (sol == 0 || sol == 1) {
             myPLevelEquations.getEquations().removeIf(equation -> !equation.isInfinity() && (equation.getVariable1() == vars.proj1 || equation.getVariable2() == vars.proj1));
             myBasedPLevelEquations.getEquations().removeIf(equation -> !equation.isInfinity() && (equation.getVariable1() == vars.proj1 || equation.getVariable2() == vars.proj1));
             myConstantUpperBounds.remove(vars.proj1);
