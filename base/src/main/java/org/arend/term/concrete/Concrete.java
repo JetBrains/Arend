@@ -502,8 +502,8 @@ public final class Concrete {
   public static class ReferenceExpression extends Expression implements Reference, ConcreteReferenceExpression {
     public static final byte PREC = 12;
     private Referable myReferent;
-    private final LevelExpression myPLevel;
-    private final LevelExpression myHLevel;
+    private LevelExpression myPLevel;
+    private LevelExpression myHLevel;
 
     public ReferenceExpression(Object data, @NotNull Referable referable, LevelExpression pLevel, LevelExpression hLevel) {
       super(data);
@@ -534,6 +534,14 @@ public final class Concrete {
     @Override
     public LevelExpression getHLevel() {
       return myHLevel;
+    }
+
+    public void setPLevel(LevelExpression pLevel) {
+      myPLevel = pLevel;
+    }
+
+    public void setHLevel(LevelExpression hLevel) {
+      myHLevel = hLevel;
     }
 
     @Override

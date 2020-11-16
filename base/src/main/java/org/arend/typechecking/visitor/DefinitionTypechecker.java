@@ -889,6 +889,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   }
 
   private List<ExtElimClause> typecheckFunctionBody(FunctionDefinition typedDef, Concrete.BaseFunctionDefinition def, boolean newDef) {
+    if (newDef) {
+      typedDef.setUniverseKind(UniverseKind.NO_UNIVERSES);
+    }
+
     FunctionKind kind = def.getKind();
     if (def instanceof Concrete.CoClauseFunctionDefinition) {
       Referable ref = ((Concrete.CoClauseFunctionDefinition) def).getImplementedField();
@@ -1361,6 +1365,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
   private boolean typecheckDataBody(DataDefinition dataDefinition, Concrete.DataDefinition def, boolean polyHLevel, Set<DataDefinition> dataDefinitions, boolean newDef) {
     if (newDef) {
+      dataDefinition.setUniverseKind(UniverseKind.WITH_UNIVERSES);
       dataDefinition.getConstructors().clear();
     }
     GoodThisParametersVisitor goodThisParametersVisitor = new GoodThisParametersVisitor(dataDefinition.getParameters());
@@ -1574,6 +1579,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         dataDefinition.setUniverseKind(UniverseKind.WITH_UNIVERSES);
       } else {
         UniverseKind kind = UniverseKind.NO_UNIVERSES;
+        dataDefinition.setUniverseKind(UniverseKind.NO_UNIVERSES);
         loop:
         for (Constructor constructor : dataDefinition.getConstructors()) {
           for (DependentLink link = constructor.getParameters(); link.hasNext(); link = link.getNext()) {

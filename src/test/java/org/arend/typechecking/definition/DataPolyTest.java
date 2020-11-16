@@ -1,7 +1,9 @@
 package org.arend.typechecking.definition;
 
 import org.arend.core.context.binding.LevelVariable;
+import org.arend.core.definition.Constructor;
 import org.arend.core.definition.DataDefinition;
+import org.arend.core.expr.DataCallExpression;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.typechecking.TypeCheckingTestCase;
@@ -100,5 +102,16 @@ public class DataPolyTest extends TypeCheckingTestCase {
   public void dataOmegaSetExplicitMax() {
     DataDefinition dataDefinition = (DataDefinition) typeCheckDef("\\data D (A : \\Type) (n : Nat) : \\Type \\lp (\\max \\lh 0) | con1 (n = n) | con2 A | con3 Nat");
     assertEquals(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR, 0, 0)), dataDefinition.getSort());
+  }
+
+  @Test
+  public void recursiveData() {
+    Constructor constructor = ((DataDefinition) typeCheckDef("\\data D | con D")).getConstructors().get(0);
+    assertEquals(Sort.STD, ((DataCallExpression) constructor.getParameters().getTypeExpr()).getSortArgument());
+  }
+
+  @Test
+  public void recursiveDataError() {
+    typeCheckDef("\\data D | con (D \\levels 0 \\lh)");
   }
 }
