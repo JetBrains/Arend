@@ -401,7 +401,10 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
         }
         if (i < expr.getArguments().size()) {
           result = fixImplicitArgs(result, result.getImplicitParameters(), fun, false, null);
-          new CompareVisitor(myVisitor.getEquations(), CMP.LE, fun).compare(dropPiParameters(result.getType(), expr.getArguments(), i), expectedType, Type.OMEGA);
+          Expression actualType = dropPiParameters(result.getType(), expr.getArguments(), i);
+          if (actualType != null) {
+            new CompareVisitor(myVisitor.getEquations(), CMP.LE, fun).compare(actualType, expectedType, Type.OMEGA);
+          }
         }
       }
 
@@ -516,6 +519,9 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
 
   private Expression dropPiParameters(Expression type, List<? extends ConcreteArgument> arguments, int i) {
     while (i < arguments.size()) {
+      if (!(type instanceof PiExpression)) {
+        return null;
+      }
       PiExpression pi = (PiExpression) type;
       type = pi.getCodomain();
       SingleDependentLink param = pi.getParameters();
