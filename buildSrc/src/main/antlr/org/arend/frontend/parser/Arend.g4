@@ -127,12 +127,14 @@ associativity : '\\infix'               # nonAssocInfix
               | '\\fixr'                # rightAssoc
               ;
 
+letKw : HAVE | LET | HAVES | LETS;
+
 expr  : appPrefix? appExpr (implementStatements argument*)? withBody?     # app
       | <assoc=right> expr '->' expr                                      # arr
       | '\\Pi' tele+ '->' expr                                            # pi
       | '\\Sigma' tele*                                                   # sigma
       | '\\lam' tele+ ('=>' expr?)?                                       # lam
-      | (LET | LETS) '|'? letClause ('|' letClause)* ('\\in' expr?)?      # let
+      | letKw '|'? letClause ('|' letClause)* ('\\in' expr?)?             # let
       | caseExpr                                                          # case
       ;
 
@@ -141,7 +143,7 @@ expr2 : appPrefix? appExpr (implementStatements argument*)?               # app2
       | '\\Pi' tele+ '->' expr2                                           # pi2
       | '\\Sigma' tele*                                                   # sigma2
       | '\\lam' tele+ ('=>' expr2?)?                                      # lam2
-      | (LET | LETS) '|'? letClause ('|' letClause)* ('\\in' expr2?)?     # let2
+      | letKw '|'? letClause ('|' letClause)* ('\\in' expr2?)?            # let2
       | caseExpr                                                          # case2
       ;
 
@@ -275,6 +277,8 @@ fieldTele : '(' (CLASSIFYING | COERCE)? ID+ ':' expr ')'        # explicitFieldT
 
 LET : '\\let';
 LETS : '\\let!';
+HAVE : '\\have';
+HAVES : '\\have!';
 STRICT : '\\strict';
 EVAL : '\\eval';
 PEVAL : '\\peval';

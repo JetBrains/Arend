@@ -94,6 +94,7 @@ message Expression {
         Expression expression = 4;
 
         message Clause {
+            bool is_let = 4;
             string name = 1;
             Pattern pattern = 2;
             Expression expression = 3;

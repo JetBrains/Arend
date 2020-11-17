@@ -453,9 +453,9 @@ class ExpressionDeserialization {
   }
 
   private LetExpression readLet(ExpressionProtos.Expression.Let proto) throws DeserializationException {
-    List<LetClause> clauses = new ArrayList<>();
+    List<HaveClause> clauses = new ArrayList<>();
     for (ExpressionProtos.Expression.Let.Clause cProto : proto.getClauseList()) {
-      LetClause clause = new LetClause(validName(cProto.getName()), readLetClausePattern(cProto.getPattern()), readExpr(cProto.getExpression()));
+      HaveClause clause = LetClause.make(cProto.getIsLet(), validName(cProto.getName()), readLetClausePattern(cProto.getPattern()), readExpr(cProto.getExpression()));
       registerBinding(clause);
       clauses.add(clause);
     }

@@ -47,7 +47,7 @@ public interface ConcreteFactory {
   @NotNull ConcreteExpression classExt(@NotNull ConcreteExpression expression, @NotNull ConcreteClassElement... elements);
   @NotNull ConcreteExpression classExt(@NotNull ConcreteExpression expression, @NotNull Collection<? extends ConcreteClassElement> elements);
   @NotNull ConcreteExpression newExpr(@NotNull ConcreteExpression expression);
-  @NotNull ConcreteExpression letExpr(boolean isStrict, @NotNull Collection<? extends ConcreteLetClause> clauses, @NotNull ConcreteExpression expression);
+  @NotNull ConcreteExpression letExpr(boolean isHave, boolean isStrict, @NotNull Collection<? extends ConcreteLetClause> clauses, @NotNull ConcreteExpression expression);
   @NotNull ConcreteExpression number(@NotNull BigInteger number);
   @NotNull ConcreteExpression number(int number);
   @NotNull ConcreteExpression typed(@NotNull ConcreteExpression expression, @NotNull ConcreteExpression type);

@@ -11,6 +11,7 @@ import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
 import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
+import org.arend.core.expr.let.HaveClause;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.visitor.ExpressionTransformer;
 import org.arend.core.pattern.Pattern;
@@ -211,9 +212,9 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
 
   @Override
   public Expression visitLet(LetExpression letExpression, Void params) {
-    List<LetClause> clauses = new ArrayList<>(letExpression.getClauses().size());
-    for (LetClause clause : letExpression.getClauses()) {
-      LetClause newClause = new LetClause(clause.getName(), clause.getPattern(), clause.getExpression().accept(this, null));
+    List<HaveClause> clauses = new ArrayList<>(letExpression.getClauses().size());
+    for (HaveClause clause : letExpression.getClauses()) {
+      HaveClause newClause = LetClause.make(clause instanceof LetClause, clause.getName(), clause.getPattern(), clause.getExpression().accept(this, null));
       clauses.add(newClause);
       myExprSubstitution.add(clause, new ReferenceExpression(newClause));
     }

@@ -667,7 +667,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
   }
 
   @Override
-  public Concrete.Expression visitLet(@Nullable Object data, boolean isStrict, @NotNull Collection<? extends Abstract.LetClause> absClauses, @Nullable Abstract.Expression expression, Void params) {
+  public Concrete.Expression visitLet(@Nullable Object data, boolean isHave, boolean isStrict, @NotNull Collection<? extends Abstract.LetClause> absClauses, @Nullable Abstract.Expression expression, Void params) {
     if (absClauses.isEmpty()) {
       myErrorLevel = GeneralError.Level.ERROR;
       return expression != null ? expression.accept(this, null) : new Concrete.ErrorHoleExpression(data, null);
@@ -695,7 +695,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
       }
     }
 
-    return new Concrete.LetExpression(data, isStrict, clauses, expression != null ? expression.accept(this, null) : ok ? new Concrete.IncompleteExpression(data) : new Concrete.ErrorHoleExpression(data, null));
+    return new Concrete.LetExpression(data, isHave, isStrict, clauses, expression != null ? expression.accept(this, null) : ok ? new Concrete.IncompleteExpression(data) : new Concrete.ErrorHoleExpression(data, null));
   }
 
   @Override

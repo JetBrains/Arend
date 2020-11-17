@@ -7,6 +7,7 @@ import org.arend.core.definition.Constructor;
 import org.arend.core.definition.DataDefinition;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.*;
+import org.arend.core.expr.let.HaveClause;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.let.NameLetClausePattern;
 import org.arend.core.expr.type.Type;
@@ -64,15 +65,15 @@ public class ExpressionFactory {
     return new LamExpression(getMaxSort(link.getTypeExpr(), body.getType()), link, body);
   }
 
-  public static List<LetClause> lets(LetClause... letClauses) {
+  public static List<HaveClause> lets(HaveClause... letClauses) {
     return Arrays.asList(letClauses);
   }
 
   public static LetClause let(String name, Expression expression) {
-    return new LetClause(name, new NameLetClausePattern(name), expression);
+    return (LetClause) LetClause.make(true, name, new NameLetClausePattern(name), expression);
   }
 
-  public static LetExpression let(List<LetClause> clauses, Expression expression) {
+  public static LetExpression let(List<HaveClause> clauses, Expression expression) {
     return new LetExpression(false, clauses, expression);
   }
 

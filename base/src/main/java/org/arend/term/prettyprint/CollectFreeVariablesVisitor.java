@@ -1,12 +1,12 @@
 package org.arend.term.prettyprint;
 
 import org.arend.core.context.binding.Binding;
+import org.arend.core.expr.let.HaveClause;
 import org.arend.core.expr.visitor.VoidExpressionVisitor;
 import org.arend.ext.variable.Variable;
 import org.arend.ext.variable.VariableImpl;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.expr.*;
-import org.arend.core.expr.let.LetClause;
 import org.arend.ext.module.LongName;
 import org.arend.ext.prettyprinting.DefinitionRenamer;
 
@@ -91,7 +91,7 @@ public class CollectFreeVariablesVisitor extends VoidExpressionVisitor<Set<Varia
 
     Set<Variable> newSet = new HashSet<>();
     visitLetClauses(index + 1, expr, newSet);
-    LetClause clause = expr.getClauses().get(index);
+    HaveClause clause = expr.getClauses().get(index);
     addFreeVariables(clause, newSet);
     newSet.remove(clause);
     variables.addAll(newSet);

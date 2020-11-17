@@ -6,7 +6,7 @@ import org.arend.core.definition.ClassField;
 import org.arend.core.elimtree.ElimBody;
 import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.*;
-import org.arend.core.expr.let.LetClause;
+import org.arend.core.expr.let.HaveClause;
 import org.arend.core.pattern.Pattern;
 
 import java.util.HashSet;
@@ -83,7 +83,7 @@ public class FreeVariablesCollector extends VoidExpressionVisitor<Void> {
   @Override
   public Void visitLet(LetExpression expr, Void params) {
     super.visitLet(expr, null);
-    for (LetClause clause : expr.getClauses()) {
+    for (HaveClause clause : expr.getClauses()) {
       myResult.remove(clause);
     }
     return null;

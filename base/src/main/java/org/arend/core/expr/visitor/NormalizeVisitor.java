@@ -10,6 +10,7 @@ import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.definition.*;
 import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
+import org.arend.core.expr.let.HaveClause;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.pattern.Pattern;
 import org.arend.core.subst.ExprSubstitution;
@@ -458,12 +459,14 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
           if (mode != NormalizationMode.RNF && mode != NormalizationMode.RNF_EXP && resultExpr instanceof LetExpression) {
             LetExpression let = (LetExpression) resultExpr;
             if (let.isStrict()) {
-              for (LetClause letClause : let.getClauses()) {
+              for (HaveClause letClause : let.getClauses()) {
                 substitution.add(letClause, LetExpression.normalizeClauseExpression(letClause.getPattern(), letClause.getExpression().subst(substitution, levelSubstitution)));
               }
             } else {
-              for (LetClause letClause : let.getClauses()) {
-                substitution.add(letClause, new ReferenceExpression(new LetClause(letClause.getName(), letClause.getPattern(), letClause.getExpression().subst(substitution, levelSubstitution))));
+              for (HaveClause letClause : let.getClauses()) {
+                substitution.add(letClause, letClause instanceof LetClause
+                  ? new ReferenceExpression(LetClause.make(true, letClause.getName(), letClause.getPattern(), letClause.getExpression().subst(substitution, levelSubstitution)))
+                  : LetExpression.normalizeClauseExpression(letClause.getPattern(), letClause.getExpression().subst(substitution, levelSubstitution)));
               }
             }
             resultExpr = let.getExpression();
@@ -865,9 +868,9 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
   public Expression visitLet(LetExpression let, NormalizationMode mode) {
     if (mode == NormalizationMode.RNF || mode == NormalizationMode.RNF_EXP) {
       ExprSubstitution substitution = new ExprSubstitution();
-      List<LetClause> newClauses = new ArrayList<>(let.getClauses().size());
-      for (LetClause clause : let.getClauses()) {
-        LetClause newClause = new LetClause(clause.getName(), clause.getPattern(), clause.getExpression().accept(this, mode).subst(substitution));
+      List<HaveClause> newClauses = new ArrayList<>(let.getClauses().size());
+      for (HaveClause clause : let.getClauses()) {
+        HaveClause newClause = LetClause.make(clause instanceof LetClause, clause.getName(), clause.getPattern(), clause.getExpression().accept(this, mode).subst(substitution));
         substitution.add(clause, new ReferenceExpression(newClause));
         newClauses.add(newClause);
       }

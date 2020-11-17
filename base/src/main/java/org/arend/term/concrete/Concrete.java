@@ -1050,15 +1050,22 @@ public final class Concrete {
 
   public static class LetExpression extends Expression implements ConcreteLetExpression {
     public static final byte PREC = -9;
+    private final boolean myHave;
     private final boolean myStrict;
     private final List<LetClause> myClauses;
     public Expression expression;
 
-    public LetExpression(Object data, boolean isStrict, List<LetClause> clauses, Expression expression) {
+    public LetExpression(Object data, boolean isHave, boolean isStrict, List<LetClause> clauses, Expression expression) {
       super(data);
+      myHave = isHave;
       myStrict = isStrict;
       myClauses = clauses;
       this.expression = expression;
+    }
+
+    @Override
+    public boolean isHave() {
+      return myHave;
     }
 
     @Override

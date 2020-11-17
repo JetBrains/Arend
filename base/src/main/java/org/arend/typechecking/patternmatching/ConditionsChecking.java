@@ -10,6 +10,8 @@ import org.arend.core.definition.Function;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
+import org.arend.core.expr.let.HaveClause;
+import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.visitor.CompareVisitor;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.pattern.*;
@@ -231,7 +233,17 @@ public class ConditionsChecking {
       expr = expr.getUnderlyingExpression();
     }
     while (expr instanceof LetExpression || expr instanceof LamExpression) {
-      expr = (expr instanceof LetExpression ? ((LetExpression) expr).getExpression() : ((LamExpression) expr).getBody());
+      if (expr instanceof LetExpression) {
+        ExprSubstitution substitution = new ExprSubstitution();
+        for (HaveClause letClause : ((LetExpression) expr).getClauses()) {
+          if (!(letClause instanceof LetClause)) {
+            substitution.add(letClause, letClause.getExpression());
+          }
+        }
+        expr = ((LetExpression) expr).getExpression().subst(substitution);
+      } else {
+        expr = ((LamExpression) expr).getBody();
+      }
       if (!(expr instanceof GoalErrorExpression)) {
         expr = expr.getUnderlyingExpression();
       }

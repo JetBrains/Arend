@@ -3,7 +3,7 @@ package org.arend.typechecking.visitor;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.expr.*;
-import org.arend.core.expr.let.LetClause;
+import org.arend.core.expr.let.HaveClause;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.prelude.Prelude;
 
@@ -197,7 +197,7 @@ public class FreeVariablesClassifier implements ExpressionVisitor<Boolean, FreeV
       return result;
     }
 
-    for (LetClause clause : expr.getClauses()) {
+    for (HaveClause clause : expr.getClauses()) {
       result = result.add(clause.getExpression().accept(this, false));
       if (result == Result.BOTH || result == Result.BAD) {
         return result;

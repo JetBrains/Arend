@@ -5,7 +5,7 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
-import org.arend.core.expr.let.LetClause;
+import org.arend.core.expr.let.HaveClause;
 import org.arend.util.Pair;
 
 import java.util.Map;
@@ -163,7 +163,7 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> {
 
   @Override
   public Void visitLet(LetExpression expr, P params) {
-    for (LetClause clause : expr.getClauses()) {
+    for (HaveClause clause : expr.getClauses()) {
       clause.getExpression().accept(this, params);
     }
     expr.getExpression().accept(this, params);

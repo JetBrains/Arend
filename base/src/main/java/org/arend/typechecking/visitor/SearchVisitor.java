@@ -5,7 +5,7 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.elimtree.ElimBody;
 import org.arend.core.expr.*;
-import org.arend.core.expr.let.LetClause;
+import org.arend.core.expr.let.HaveClause;
 import org.arend.core.expr.visitor.BaseExpressionVisitor;
 
 import java.util.ArrayList;
@@ -114,7 +114,7 @@ public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean>
 
   @Override
   public Boolean visitLet(LetExpression expression, P param) {
-    for (LetClause lc : expression.getClauses()) {
+    for (HaveClause lc : expression.getClauses()) {
       if (lc.getExpression().accept(this, param)) {
         return true;
       }

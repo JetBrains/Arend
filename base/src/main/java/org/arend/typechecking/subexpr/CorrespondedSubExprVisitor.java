@@ -5,7 +5,7 @@ import org.arend.core.definition.ClassDefinition;
 import org.arend.core.definition.ClassField;
 import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.*;
-import org.arend.core.expr.let.LetClause;
+import org.arend.core.expr.let.HaveClause;
 import org.arend.core.pattern.Pattern;
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.typechecking.MetaDefinition;
@@ -147,7 +147,7 @@ public class CorrespondedSubExprVisitor implements
     var coreLetExpr = coreExpr.cast(LetExpression.class);
     if (coreLetExpr == null) return nullWithError(SubExprError.mismatch(coreExpr));
     List<Concrete.LetClause> exprClauses = expr.getClauses();
-    List<LetClause> coreClauses = coreLetExpr.getClauses();
+    List<HaveClause> coreClauses = coreLetExpr.getClauses();
     for (int i = 0; i < exprClauses.size(); i++) {
       var accepted = visitLetClause(coreClauses.get(i), exprClauses.get(i));
       if (accepted != null) return accepted;
@@ -156,7 +156,7 @@ public class CorrespondedSubExprVisitor implements
   }
 
   private @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>
-  visitLetClause(@NotNull LetClause coreLetClause, @NotNull Concrete.LetClause exprLetClause) {
+  visitLetClause(@NotNull HaveClause coreLetClause, @NotNull Concrete.LetClause exprLetClause) {
     var accepted = exprLetClause.getTerm().accept(this, coreLetClause.getExpression());
     if (accepted != null) return accepted;
 

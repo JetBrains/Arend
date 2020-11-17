@@ -13,7 +13,7 @@ import org.arend.core.definition.Definition;
 import org.arend.core.elimtree.ElimBody;
 import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.*;
-import org.arend.core.expr.let.LetClause;
+import org.arend.core.expr.let.HaveClause;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.visitor.CompareVisitor;
 import org.arend.core.expr.visitor.ElimBindingVisitor;
@@ -413,7 +413,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   @Override
   public Expression visitLet(LetExpression expr, Expression expectedType) {
-    for (LetClause clause : expr.getClauses()) {
+    for (HaveClause clause : expr.getClauses()) {
       addBinding(clause, expr);
       clause.getExpression().accept(this, null);
     }

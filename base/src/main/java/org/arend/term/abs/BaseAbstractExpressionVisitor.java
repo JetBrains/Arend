@@ -91,7 +91,7 @@ public class BaseAbstractExpressionVisitor<P, R> implements AbstractExpressionVi
   }
 
   @Override
-  public R visitLet(@Nullable Object data, boolean isStrict, @NotNull Collection<? extends Abstract.LetClause> clauses, @Nullable Abstract.Expression expression, P params) {
+  public R visitLet(@Nullable Object data, boolean isHave, boolean isStrict, @NotNull Collection<? extends Abstract.LetClause> clauses, @Nullable Abstract.Expression expression, P params) {
     return defaultValue;
   }
 

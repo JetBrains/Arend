@@ -343,7 +343,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
 
   @NotNull
   @Override
-  public ConcreteExpression letExpr(boolean isStrict, @NotNull Collection<? extends ConcreteLetClause> clauses, @NotNull ConcreteExpression expression) {
+  public ConcreteExpression letExpr(boolean isHave, boolean isStrict, @NotNull Collection<? extends ConcreteLetClause> clauses, @NotNull ConcreteExpression expression) {
     if (!(expression instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }
@@ -354,7 +354,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
       }
       cClauses.add((Concrete.LetClause) clause);
     }
-    return new Concrete.LetExpression(myData, isStrict, cClauses, (Concrete.Expression) expression);
+    return new Concrete.LetExpression(myData, isHave, isStrict, cClauses, (Concrete.Expression) expression);
   }
 
   @NotNull

@@ -2,6 +2,8 @@ package org.arend.core.expr.visitor;
 
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.expr.*;
+import org.arend.core.expr.let.HaveClause;
+import org.arend.core.expr.let.LetClause;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.error.IncorrectExpressionException;
@@ -154,7 +156,14 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitLet(LetExpression expr, Void params) {
-    return expr.getExpression().accept(this, null);
+    List<HaveClause> clauses = new ArrayList<>(expr.getClauses().size());
+    for (HaveClause clause : expr.getClauses()) {
+      if (!(clause instanceof LetClause)) {
+        clauses.add(clause);
+      }
+    }
+    Expression result = expr.getExpression().accept(this, null);
+    return clauses.isEmpty() ? result : new LetExpression(expr.isStrict(), clauses, result);
   }
 
   @Override

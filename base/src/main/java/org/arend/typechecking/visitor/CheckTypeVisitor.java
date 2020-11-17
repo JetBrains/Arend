@@ -2067,7 +2067,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
   }
 
-  private Pair<LetClause,Expression> typecheckLetClause(Concrete.LetClause clause) {
+  private Pair<HaveClause,Expression> typecheckLetClause(Concrete.LetClause clause, boolean isHave) {
     try (var ignore = new Utils.SetContextSaver<>(context)) {
       TypecheckingResult result = typecheckLetClause(clause.getParameters(), clause, true);
       if (result == null) {
@@ -2085,7 +2085,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       if (result.expression.isInstance(ErrorExpression.class)) {
         result.expression = new OfTypeExpression(result.expression, result.type);
       }
-      return new Pair<>(new LetClause(name, null, result.expression), result.type);
+      return new Pair<>(LetClause.make(!isHave, name, null, result.expression), result.type);
     }
   }
 
@@ -2150,9 +2150,9 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     try (var ignored = new Utils.SetContextSaver<>(context)) {
       try (var ignored1 = new Utils.ContextSaver(myInstancePool == null ? Collections.emptyList() : myInstancePool.getLocalInstances())) {
         List<? extends Concrete.LetClause> abstractClauses = expr.getClauses();
-        List<LetClause> clauses = new ArrayList<>(abstractClauses.size());
+        List<HaveClause> clauses = new ArrayList<>(abstractClauses.size());
         for (Concrete.LetClause clause : abstractClauses) {
-          Pair<LetClause, Expression> pair = typecheckLetClause(clause);
+          Pair<HaveClause, Expression> pair = typecheckLetClause(clause, expr.isHave());
           if (pair == null) {
             return null;
           }
@@ -2185,7 +2185,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         }
 
         ExprSubstitution substitution = new ExprSubstitution();
-        for (LetClause clause : clauses) {
+        for (HaveClause clause : clauses) {
           substitution.add(clause, clause.getExpression().subst(substitution));
         }
         return new TypecheckingResult(new LetExpression(expr.isStrict(), clauses, result.expression), result.type.subst(substitution));

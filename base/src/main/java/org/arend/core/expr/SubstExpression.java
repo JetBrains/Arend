@@ -2,6 +2,7 @@ package org.arend.core.expr;
 
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.inference.MetaInferenceVariable;
+import org.arend.core.expr.let.HaveClause;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
@@ -81,12 +82,14 @@ public class SubstExpression extends Expression {
       ExprSubstitution substitution = new ExprSubstitution(mySubstitution);
       LetExpression let = (LetExpression) myExpression;
       if (let.isStrict()) {
-        for (LetClause letClause : let.getClauses()) {
+        for (HaveClause letClause : let.getClauses()) {
           substitution.add(letClause, LetExpression.normalizeClauseExpression(letClause.getPattern(), letClause.getExpression().subst(substitution, levelSubstitution)));
         }
       } else {
-        for (LetClause letClause : let.getClauses()) {
-          substitution.add(letClause, new ReferenceExpression(new LetClause(letClause.getName(), letClause.getPattern(), make(letClause.getExpression(), substitution, levelSubstitution))));
+        for (HaveClause letClause : let.getClauses()) {
+          substitution.add(letClause, letClause instanceof LetClause
+            ? new ReferenceExpression(LetClause.make(true, letClause.getName(), letClause.getPattern(), make(letClause.getExpression(), substitution, levelSubstitution)))
+            : LetExpression.normalizeClauseExpression(letClause.getPattern(), letClause.getExpression().subst(substitution, levelSubstitution)));
         }
       }
       return make(let.getExpression(), substitution, levelSubstitution);

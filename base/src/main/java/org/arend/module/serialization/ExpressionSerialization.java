@@ -14,6 +14,7 @@ import org.arend.core.definition.Constructor;
 import org.arend.core.definition.UniverseKind;
 import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
+import org.arend.core.expr.let.HaveClause;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.let.LetClausePattern;
 import org.arend.core.expr.type.Type;
@@ -478,8 +479,9 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
   public ExpressionProtos.Expression visitLet(LetExpression letExpression, Void params) {
     ExpressionProtos.Expression.Let.Builder builder = ExpressionProtos.Expression.Let.newBuilder();
     builder.setIsStrict(letExpression.isStrict());
-    for (LetClause letClause : letExpression.getClauses()) {
+    for (HaveClause letClause : letExpression.getClauses()) {
       ExpressionProtos.Expression.Let.Clause.Builder letBuilder = ExpressionProtos.Expression.Let.Clause.newBuilder()
+        .setIsLet(letClause instanceof LetClause)
         .setPattern(writeLetClausePattern(letClause.getPattern()))
         .setExpression(writeExpr(letClause.getExpression()));
       if (letClause.getName() != null) {
