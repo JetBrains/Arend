@@ -3,8 +3,19 @@ package org.arend.core.context.binding;
 import org.arend.ext.variable.Variable;
 
 public interface LevelVariable extends Variable {
-  enum LvlType { PLVL, HLVL }
+  enum LvlType {
+    PLVL,
+    HLVL { @Override public int getMinValue() { return -1; } };
+
+    public int getMinValue() {
+      return 0;
+    }
+  }
   LvlType getType();
+
+  default int getMinValue() {
+    return getType().getMinValue();
+  }
 
   @Override
   default String getName() {

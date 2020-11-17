@@ -1,6 +1,6 @@
 package org.arend.typechecking.patternmatching;
 
-import org.arend.ext.variable.Variable;
+import org.arend.core.context.binding.Binding;
 import org.arend.core.expr.Expression;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
@@ -31,7 +31,7 @@ public class SubstitutionData {
 
     if (substitution != null && !substitution.isEmpty()) {
       List<LineDoc> substDocs = new ArrayList<>(substitution.getEntries().size());
-      for (Map.Entry<Variable, Expression> entry : substitution.getEntries()) {
+      for (Map.Entry<Binding, Expression> entry : substitution.getEntries()) {
         String name = entry.getKey().getName() ;
         substDocs.add(hList(text((name == null ? "_" : name) + " = "), termLine(entry.getValue(), ppConfig)));
       }

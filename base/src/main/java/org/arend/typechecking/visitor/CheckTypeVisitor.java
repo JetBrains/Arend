@@ -103,6 +103,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   private final List<DeferredMeta> myDeferredMetasAfterLevels = new ArrayList<>();
   private final ArendExtension myArendExtension;
   private TypecheckerState mySavedState;
+  private Stage myCurrentStage;
 
   private static class DeferredMeta {
     final MetaDefinition meta;
@@ -143,7 +144,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     errorReporter.myStatus = errorReporter.myStatus.max(status);
   }
 
-  private CheckTypeVisitor(Map<Referable, Binding> localContext, ErrorReporter errorReporter, GlobalInstancePool pool, ArendExtension arendExtension, UserDataHolderImpl holder) {
+  private CheckTypeVisitor(Map<Referable, Binding> localContext, ErrorReporter errorReporter, GlobalInstancePool pool, ArendExtension arendExtension, UserDataHolderImpl holder, Stage currentStage) {
     this.errorReporter = new MyErrorReporter(errorReporter);
     myEquations = new TwoStageEquations(this);
     myInstancePool = pool;
@@ -153,10 +154,11 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     if (holder != null) {
       setUserData(holder);
     }
+    myCurrentStage = currentStage;
   }
 
   public CheckTypeVisitor(ErrorReporter errorReporter, GlobalInstancePool pool, ArendExtension arendExtension) {
-    this(new LinkedHashMap<>(), errorReporter, pool, arendExtension, null);
+    this(new LinkedHashMap<>(), errorReporter, pool, arendExtension, null, null);
   }
 
   public ArendExtension getExtension() {
@@ -164,11 +166,11 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   public TypecheckingContext saveTypecheckingContext() {
-    return new TypecheckingContext(new LinkedHashMap<>(context), myInstancePool.getInstanceProvider(), myInstancePool.getInstancePool(), myArendExtension, copyUserData());
+    return new TypecheckingContext(new LinkedHashMap<>(context), myInstancePool.getInstanceProvider(), myInstancePool.getInstancePool(), myArendExtension, copyUserData(), myCurrentStage);
   }
 
   public static CheckTypeVisitor loadTypecheckingContext(TypecheckingContext typecheckingContext, ErrorReporter errorReporter) {
-    CheckTypeVisitor visitor = new CheckTypeVisitor(typecheckingContext.localContext, errorReporter, null, typecheckingContext.arendExtension, typecheckingContext.userDataHolder);
+    CheckTypeVisitor visitor = new CheckTypeVisitor(typecheckingContext.localContext, errorReporter, null, typecheckingContext.arendExtension, typecheckingContext.userDataHolder, typecheckingContext.currentStage);
     visitor.setInstancePool(new GlobalInstancePool(typecheckingContext.instanceProvider, visitor, typecheckingContext.localInstancePool));
     return visitor;
   }
@@ -535,13 +537,13 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     ExprSubstitution substitution = new ExprSubstitution();
     SubstVisitor substVisitor = new SubstVisitor(substitution, sort == null ? LevelSubstitution.EMPTY : ((Sort) sort).toLevelSubstitution());
     for (SubstitutionPair pair : substPairs) {
-      CoreExpression type = pair.binding.getTypeExpr();
-      if (!(type instanceof Expression)) {
+      if (!(pair.binding instanceof Binding)) {
         throw new IllegalArgumentException();
       }
-      TypecheckingResult result = typecheck(pair.expression, substVisitor.isEmpty() ? type : ((Expression) type).accept(substVisitor, null));
+      Expression type = ((Binding) pair.binding).getTypeExpr();
+      TypecheckingResult result = typecheck(pair.expression, substVisitor.isEmpty() ? type : type.accept(substVisitor, null));
       if (result == null) return null;
-      substitution.add(pair.binding, result.expression);
+      substitution.add((Binding) pair.binding, result.expression);
     }
 
     return ((Expression) expression).accept(substVisitor, null);
@@ -666,6 +668,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   private void invokeDeferredMetas(InPlaceLevelSubstVisitor substVisitor, StripVisitor stripVisitor, Stage stage) {
+    myCurrentStage = stage;
     List<DeferredMeta> deferredMetas = stage == Stage.BEFORE_SOLVER ? myDeferredMetasBeforeSolver : stage == Stage.BEFORE_LEVELS ? myDeferredMetasBeforeLevels : myDeferredMetasAfterLevels;
     // Indexed loop is required since deferredMetas can be modified during the loop
     //noinspection ForLoopReplaceableByForEach
@@ -706,7 +709,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         errorReporter = deferredMeta.errorReporter;
         context = deferredMeta.context;
       } else {
-        checkTypeVisitor = new CheckTypeVisitor(deferredMeta.context, deferredMeta.errorReporter, null, myArendExtension, this);
+        checkTypeVisitor = new CheckTypeVisitor(deferredMeta.context, deferredMeta.errorReporter, null, myArendExtension, this, myCurrentStage);
         checkTypeVisitor.setInstancePool(new GlobalInstancePool(myInstancePool.getInstanceProvider(), checkTypeVisitor, myInstancePool.getInstancePool()));
       }
 
@@ -728,6 +731,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       deferredMeta.inferenceVar.solve(this, result == null ? new ErrorExpression() : result.expression);
     }
     deferredMetas.clear();
+    myCurrentStage = null;
   }
 
   public TypecheckingResult finalize(TypecheckingResult result, Concrete.SourceNode sourceNode, boolean propIfPossible) {
@@ -1330,17 +1334,12 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     boolean isMin = definition instanceof DataDefinition && !definition.getParameters().hasNext() && definition.getUniverseKind() == UniverseKind.NO_UNIVERSES;
     if (expr.getPLevel() == null && expr.getHLevel() == null) {
       sortArgument = isMin ? Sort.PROP : Sort.generateInferVars(getEquations(), definition.getUniverseKind(), expr);
-      Level hLevel = null;
-      if (definition instanceof DataDefinition && !sortArgument.isProp()) {
-        hLevel = ((DataDefinition) definition).getSort().getHLevel();
-      } else if (definition instanceof FunctionDefinition && !sortArgument.isProp()) {
-        UniverseExpression universe = ((FunctionDefinition) definition).getResultType().getPiParameters(null, false).cast(UniverseExpression.class);
-        if (universe != null) {
-          hLevel = universe.getSort().getHLevel();
-        }
-      }
-      if (hLevel != null && hLevel.getMaxAddedConstant() == -1 && hLevel.getVar() == LevelVariable.HVAR) {
-        getEquations().bindVariables((InferenceLevelVariable) sortArgument.getPLevel().getVar(), (InferenceLevelVariable) sortArgument.getHLevel().getVar());
+      if (definition == Prelude.PATH || definition == Prelude.PATH_INFIX) {
+        InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, definition.getUniverseKind() != UniverseKind.NO_UNIVERSES, expr);
+        myEquations.addVariable(pl);
+        myEquations.addEquation(new Level(sortArgument.getPLevel().getVar()), new Level(pl), CMP.LE, expr);
+        getEquations().bindVariables(pl, (InferenceLevelVariable) sortArgument.getHLevel().getVar());
+        return DefCallResult.makePathType(expr, definition == Prelude.PATH_INFIX, sortArgument, new Sort(new Level(pl), new Level(sortArgument.getHLevel().getVar(), -1, -1)));
       }
     } else {
       Level pLevel = null;
@@ -1369,12 +1368,6 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           getEquations().addVariable(hl);
           hLevel = new Level(hl);
         }
-      }
-
-      if ((definition == Prelude.PATH_INFIX || definition == Prelude.PATH) && hLevel.isProp()) {
-        InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, definition.getUniverseKind() != UniverseKind.NO_UNIVERSES, expr);
-        getEquations().addVariable(pl);
-        pLevel = new Level(pl);
       }
 
       sortArgument = new Sort(pLevel, hLevel);
@@ -2024,7 +2017,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   // Let
 
-  private TypecheckingResult typecheckLetClause(List<? extends Concrete.Parameter> parameters, Concrete.LetClause letClause) {
+  private TypecheckingResult typecheckLetClause(List<? extends Concrete.Parameter> parameters, Concrete.LetClause letClause, boolean useSpecifiedType) {
     if (parameters.isEmpty()) {
       Concrete.Expression letResult = letClause.getResultType();
       if (letResult != null) {
@@ -2041,7 +2034,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         if (errorExpr != null) {
           result.expression = errorExpr.replaceExpression(type.getExpr());
         }
-        return new TypecheckingResult(result.expression, type.getExpr());
+        return useSpecifiedType ? new TypecheckingResult(result.expression, type.getExpr()) : result;
       } else {
         return checkExpr(letClause.getTerm(), null);
       }
@@ -2049,10 +2042,10 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
     Concrete.Parameter param = parameters.get(0);
     if (param instanceof Concrete.NameParameter) {
-      return bodyToLam(visitNameParameter((Concrete.NameParameter) param, letClause), typecheckLetClause(parameters.subList(1, parameters.size()), letClause), letClause);
+      return bodyToLam(visitNameParameter((Concrete.NameParameter) param, letClause), typecheckLetClause(parameters.subList(1, parameters.size()), letClause, false), letClause);
     } else if (param instanceof Concrete.TypeParameter) {
       SingleDependentLink link = visitTypeParameter((Concrete.TypeParameter) param, null, null);
-      return link == null ? null : bodyToLam(link, typecheckLetClause(parameters.subList(1, parameters.size()), letClause), letClause);
+      return link == null ? null : bodyToLam(link, typecheckLetClause(parameters.subList(1, parameters.size()), letClause, false), letClause);
     } else {
       throw new IllegalStateException();
     }
@@ -2076,7 +2069,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   private Pair<LetClause,Expression> typecheckLetClause(Concrete.LetClause clause) {
     try (var ignore = new Utils.SetContextSaver<>(context)) {
-      TypecheckingResult result = typecheckLetClause(clause.getParameters(), clause);
+      TypecheckingResult result = typecheckLetClause(clause.getParameters(), clause, true);
       if (result == null) {
         return null;
       }
@@ -2244,6 +2237,13 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   @Nullable
   @Override
   public TypedExpression defer(@NotNull MetaDefinition meta, @NotNull ContextData contextData, @NotNull CoreExpression type, @NotNull Stage stage) {
+    if (myCurrentStage != null && myCurrentStage.ordinal() >= stage.ordinal()) {
+      if (stage.ordinal() > Stage.BEFORE_SOLVER.ordinal()) {
+        myEquations.solveEquations();
+      }
+      return meta.checkAndInvokeMeta(this, contextData);
+    }
+
     if (!meta.checkContextData(contextData, errorReporter)) {
       return null;
     }
@@ -2928,7 +2928,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           elimSubst.add(origBinding, new ReferenceExpression(link));
         }
         addBinding(asRef, link);
-        expressions.add(exprResult.expression);
+        expressions.add(exprResult.expression.subst(substitution));
         substitution.add(link, exprResult.expression);
       }
 

@@ -1,13 +1,13 @@
 package org.arend.core.subst;
 
-import org.arend.ext.variable.Variable;
+import org.arend.core.context.binding.Binding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.expr.Expression;
 
 import java.util.*;
 
 public class ExprSubstitution {
-  private Map<Variable, Expression> mySubstExprs;
+  private Map<Binding, Expression> mySubstExprs;
 
   public ExprSubstitution() {
     mySubstExprs = Collections.emptyMap();
@@ -17,16 +17,16 @@ public class ExprSubstitution {
     mySubstExprs = substitution.mySubstExprs.isEmpty() ? Collections.emptyMap() : new HashMap<>(substitution.mySubstExprs);
   }
 
-  public ExprSubstitution(Variable from, Expression to) {
+  public ExprSubstitution(Binding from, Expression to) {
     mySubstExprs = new HashMap<>();
     add(from, to);
   }
 
-  public Set<Variable> getKeys() {
+  public Set<Binding> getKeys() {
     return mySubstExprs.keySet();
   }
 
-  public Set<Map.Entry<Variable, Expression>> getEntries() {
+  public Set<Map.Entry<Binding, Expression>> getEntries() {
     return mySubstExprs.entrySet();
   }
 
@@ -38,7 +38,7 @@ public class ExprSubstitution {
     return mySubstExprs.size();
   }
 
-  public Expression get(Variable binding)  {
+  public Expression get(Binding binding)  {
     return mySubstExprs.get(binding);
   }
 
@@ -48,24 +48,31 @@ public class ExprSubstitution {
     }
   }
 
-  public void remove(Variable variable) {
+  public void remove(Binding variable) {
     if (!mySubstExprs.isEmpty()) {
       mySubstExprs.remove(variable);
     }
   }
 
-  public void add(Variable binding, Expression expression) {
+  public void add(Binding binding, Expression expression) {
     if (mySubstExprs.isEmpty()) {
       mySubstExprs = new HashMap<>();
     }
     mySubstExprs.put(binding, expression);
   }
 
-  public void addSubst(Variable binding, Expression expression) {
+  public void addIfAbsent(Binding binding, Expression expression) {
+    if (mySubstExprs.isEmpty()) {
+      mySubstExprs = new HashMap<>();
+    }
+    mySubstExprs.putIfAbsent(binding, expression);
+  }
+
+  public void addSubst(Binding binding, Expression expression) {
     if (mySubstExprs.isEmpty()) {
       mySubstExprs = new HashMap<>();
     } else {
-      for (Map.Entry<Variable, Expression> entry : mySubstExprs.entrySet()) {
+      for (Map.Entry<Binding, Expression> entry : mySubstExprs.entrySet()) {
         entry.setValue(entry.getValue().subst(binding, expression));
       }
     }
@@ -110,7 +117,7 @@ public class ExprSubstitution {
     if (subst.isEmpty()) {
       return;
     }
-    for (Map.Entry<Variable, Expression> entry : mySubstExprs.entrySet()) {
+    for (Map.Entry<Binding, Expression> entry : mySubstExprs.entrySet()) {
       entry.setValue(entry.getValue().subst(subst));
     }
   }
@@ -119,7 +126,7 @@ public class ExprSubstitution {
     if (subst.isEmpty()) {
       return;
     }
-    for (Map.Entry<Variable, Expression> entry : mySubstExprs.entrySet()) {
+    for (Map.Entry<Binding, Expression> entry : mySubstExprs.entrySet()) {
       entry.setValue(entry.getValue().subst(subst));
     }
   }

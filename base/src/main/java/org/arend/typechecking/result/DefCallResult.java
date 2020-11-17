@@ -10,6 +10,7 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.error.ErrorReporter;
+import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 
@@ -43,6 +44,13 @@ public class DefCallResult implements TResult {
     } else {
       return new DefCallResult(defCall, definition, sortArgument, new ArrayList<>(), parameters, resultType);
     }
+  }
+
+  public static TResult makePathType(Concrete.ReferenceExpression defCall, boolean isInfix, Sort sortArgument, Sort resultSort) {
+    Definition definition = isInfix ? Prelude.PATH_INFIX : Prelude.PATH;
+    List<DependentLink> parameters = new ArrayList<>();
+    definition.getTypeWithParams(parameters, sortArgument);
+    return new DefCallResult(defCall, definition, sortArgument, new ArrayList<>(), parameters, new UniverseExpression(resultSort));
   }
 
   @Override

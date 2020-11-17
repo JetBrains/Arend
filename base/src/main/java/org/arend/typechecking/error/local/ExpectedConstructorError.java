@@ -24,6 +24,7 @@ public class ExpectedConstructorError extends TypecheckingError {
   public final ExprSubstitution substitution;
   public final List<Expression> caseExpressions;
   public final List<DependentLink> elimParams;
+  public final DependentLink patternParameters;
   private final boolean myConstructorOfData;
 
   public ExpectedConstructorError(GlobalReferable referable,
@@ -32,7 +33,8 @@ public class ExpectedConstructorError extends TypecheckingError {
                                   Concrete.SourceNode cause,
                                   @Nullable ExprSubstitution substitution,
                                   @Nullable List<Expression> caseExpressions,
-                                  @NotNull List<DependentLink> elimParams) {
+                                  @NotNull List<DependentLink> elimParams,
+                                  DependentLink patternParameters) {
     super("", cause);
     this.referable = referable;
     this.dataCall = dataCall;
@@ -40,6 +42,7 @@ public class ExpectedConstructorError extends TypecheckingError {
     this.substitution = substitution;
     this.caseExpressions = caseExpressions;
     this.elimParams = elimParams;
+    this.patternParameters = patternParameters;
 
     boolean constructorOfData = false;
     if (dataCall != null) {

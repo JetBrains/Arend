@@ -24,32 +24,28 @@ public class Level implements CoreLevel {
     myMaxConstant = 0;
   }
 
-  // max(var, maxConstant) + constant
+  // max(var + constant, maxConstant)
   public Level(LevelVariable var, int constant, int maxConstant) {
-    assert maxConstant + constant >= -1 && (var == null || constant >= 0 && (var.getType() != LevelVariable.LvlType.PLVL || maxConstant + constant >= 0));
+    assert constant >= (var == null ? -1 : var.getMinValue());
     myVar = var;
-    myConstant = var == null ? constant + maxConstant : constant;
-    myMaxConstant = var == null ? 0 : maxConstant;
+    myConstant = constant;
+    myMaxConstant = var == null
+      ? (constant == -1 ? -1 : 0)
+      : maxConstant > constant + var.getMinValue()
+        ? maxConstant
+        : var.getMinValue();
   }
 
   public Level(LevelVariable var, int constant) {
-    assert constant >= 0 || var == null && constant == -1;
-    myConstant = constant;
-    myVar = var;
-    myMaxConstant = var != null && var.getType() == LevelVariable.LvlType.HLVL ? -1 : 0;
+    this(var, constant, -1);
   }
 
   public Level(LevelVariable var) {
-    myConstant = 0;
-    myVar = var;
-    myMaxConstant = var != null && var.getType() == LevelVariable.LvlType.HLVL ? -1 : 0;
+    this(var, 0);
   }
 
   public Level(int constant) {
-    assert constant >= -1;
-    myConstant = constant;
-    myVar = null;
-    myMaxConstant = 0;
+    this(null, constant);
   }
 
   public LevelVariable getVar() {
@@ -61,13 +57,8 @@ public class Level implements CoreLevel {
     return myConstant;
   }
 
-  @Override
   public int getMaxConstant() {
     return myMaxConstant;
-  }
-
-  public int getMaxAddedConstant() {
-    return myConstant + myMaxConstant;
   }
 
   @Override
@@ -85,7 +76,7 @@ public class Level implements CoreLevel {
   }
 
   public boolean withMaxConstant() {
-    return myVar != null && (myMaxConstant > 0 || myVar.getType() == LevelVariable.LvlType.HLVL && myMaxConstant == 0);
+    return myVar != null && myMaxConstant > myVar.getMinValue();
   }
 
   public boolean isVarOnly() {
@@ -93,7 +84,8 @@ public class Level implements CoreLevel {
   }
 
   public Level add(int constant) {
-    return constant == 0 || isInfinity() ? this : new Level(myVar, myConstant + constant, myMaxConstant);
+    assert constant >= 0;
+    return constant == 0 || isInfinity() ? this : new Level(myVar, myConstant + constant, myMaxConstant + constant);
   }
 
   public Level max(Level level) {
@@ -103,8 +95,7 @@ public class Level implements CoreLevel {
 
     if (myVar != null && level.myVar != null) {
       if (myVar == level.myVar) {
-        int constant = Math.max(myConstant, level.myConstant);
-        return new Level(myVar, constant, Math.max(myConstant + myMaxConstant, level.myConstant + level.myMaxConstant) - constant);
+        return new Level(myVar, Math.max(myConstant, level.myConstant), Math.max(myMaxConstant, level.myMaxConstant));
       } else {
         return null;
       }
@@ -116,7 +107,7 @@ public class Level implements CoreLevel {
 
     int constant = myVar == null ? myConstant : level.myConstant;
     Level lvl = myVar == null ? level : this;
-    return constant <= lvl.getMaxAddedConstant() ? lvl : new Level(lvl.myVar, lvl.myConstant, Math.max(lvl.myMaxConstant, constant - lvl.myConstant));
+    return new Level(lvl.myVar, lvl.myConstant, Math.max(constant, lvl.myMaxConstant));
   }
 
   public Level subst(LevelSubstitution subst) {
@@ -131,10 +122,11 @@ public class Level implements CoreLevel {
       return level;
     }
 
+    int constant = myConstant == -1 && level.myConstant == -1 ? -1 : level.myConstant + myConstant;
     if (level.myVar != null) {
-      return new Level(level.myVar, level.myConstant + myConstant, Math.max(level.myMaxConstant, myMaxConstant - level.myConstant));
+      return new Level(level.myVar, constant, Math.max(level.myMaxConstant + myConstant, myMaxConstant));
     } else {
-      return new Level(Math.max(level.myConstant, myMaxConstant) + myConstant);
+      return new Level(Math.max(constant, myMaxConstant));
     }
   }
 
@@ -157,28 +149,44 @@ public class Level implements CoreLevel {
       return cmp == CMP.LE || !level1.isClosed() && (equations == null || equations.addEquation(INFINITY, level1, CMP.LE, sourceNode));
     }
 
-    if (level2.getVar() == null && level1.getVar() != null && !(level1.getVar() instanceof InferenceLevelVariable)) {
+    if (level2.myVar == null && level1.myVar != null && !(level1.myVar instanceof InferenceLevelVariable)) {
       return false;
     }
 
-    if (level1.getVar() == null && cmp == CMP.LE) {
-      if (level1.myConstant <= level2.myConstant + level2.myMaxConstant) {
-        return true;
+    if (level1.myVar == null) {
+      if (level2.myVar == null) {
+        return cmp == CMP.LE ? level1.myConstant <= level2.myConstant : level1.myConstant == level2.myConstant;
+      }
+      if (cmp == CMP.EQ) {
+        // c == max(l + c', m') can be true only if l is an inference var and c >= m' and c >= c' + l.minValue
+        if (!(level2.myVar instanceof InferenceLevelVariable) || level1.myConstant < level2.myMaxConstant || level1.myConstant < level2.myConstant + level2.myVar.getMinValue()) {
+          return false;
+        }
+      } else {
+        // c <= max(l + c', m') always can be true if l is an inference var
+        if (!(level2.myVar instanceof InferenceLevelVariable)) {
+          // If l is not an inference var, then c <= max(l + c', m') is true if and only if either c <= m' or c <= c' + l.minValue
+          return level1.myConstant <= level2.myMaxConstant || level1.myConstant <= level2.myConstant + level2.myVar.getMinValue();
+        }
       }
     }
 
-    if (level1.getVar() == level2.getVar()) {
-      if (cmp == CMP.LE) {
-        return level1.myConstant <= level2.myConstant && level1.getMaxAddedConstant() <= level2.getMaxAddedConstant();
-      } else {
-        return level1.myConstant == level2.myConstant && level1.getMaxConstant() == level2.getMaxConstant();
+    if (level1.myVar == level2.myVar) {
+      if (cmp == CMP.EQ && level1.myConstant != level2.myConstant || cmp == CMP.LE && level1.myConstant > level2.myConstant) {
+        return false;
       }
+      if (level1.myMaxConstant == level2.myMaxConstant || cmp == CMP.LE && (level1.myMaxConstant <= level2.myMaxConstant || level1.myMaxConstant <= level2.myConstant + level2.myVar.getMinValue())) {
+        return true;
+      }
+      if (!(level1.myVar instanceof InferenceLevelVariable)) {
+        return false;
+      }
+    }
+
+    if (equations == null) {
+      return level1.myVar instanceof InferenceLevelVariable || level2.myVar instanceof InferenceLevelVariable;
     } else {
-      if (equations == null) {
-        return level1.getVar() instanceof InferenceLevelVariable || level2.getVar() instanceof InferenceLevelVariable;
-      } else {
-        return equations.addEquation(level1, level2, cmp, sourceNode);
-      }
+      return equations.addEquation(level1, level2, cmp, sourceNode);
     }
   }
 }

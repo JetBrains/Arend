@@ -627,7 +627,7 @@ public final class Concrete {
     }
   }
 
-  public static class ClassExtExpression extends Expression {
+  public static class ClassExtExpression extends Expression implements ConcreteClassExtExpression {
     public static final byte PREC = 11;
     private Expression myBaseClassExpression;
     private final Coclauses myCoclauses;
@@ -648,6 +648,7 @@ public final class Concrete {
     }
 
     @NotNull
+    @Override
     public Expression getBaseClassExpression() {
       return myBaseClassExpression;
     }
@@ -661,6 +662,8 @@ public final class Concrete {
       }
     }
 
+    @NotNull
+    @Override
     public Concrete.Coclauses getCoclauses() {
       return myCoclauses;
     }

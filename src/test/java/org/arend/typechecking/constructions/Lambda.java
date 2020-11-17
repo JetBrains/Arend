@@ -98,7 +98,7 @@ public class Lambda extends TypeCheckingTestCase {
   @Test
   public void lambda2() {
     SingleDependentLink param = singleParams(true, vars("x", "y"), Nat());
-    TypecheckingResult result = typeCheckExpr("\\lam (x y z w : Nat) => path (\\lam _ => y)", Pi(Nat(), Pi(param, Pi(Nat(), FunCall(Prelude.PATH_INFIX, Sort.PROP, Nat(), Ref(param), Ref(param))))));
+    TypecheckingResult result = typeCheckExpr("\\lam (x y z w : Nat) => path (\\lam _ => y)", Pi(Nat(), Pi(param, Pi(Nat(), FunCall(Prelude.PATH_INFIX, Sort.SET0, Nat(), Ref(param), Ref(param))))));
     assertNotNull(result);
   }
 
