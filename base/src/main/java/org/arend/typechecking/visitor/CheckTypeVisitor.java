@@ -2089,7 +2089,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
   }
 
-  private LetClausePattern typecheckLetClausePattern(Concrete.LetClausePattern pattern, Expression expression, Expression type) {
+  private LetClausePattern typecheckLetClausePattern(Concrete.LetClausePattern pattern, Expression expression, Expression type, Set<Binding> bindings) {
     Referable referable = pattern.getReferable();
     if (referable != null || pattern.isIgnored()) {
       if (pattern.type != null) {
@@ -2101,7 +2101,9 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
       String name = referable == null ? null : referable.textRepresentation();
       if (referable != null) {
-        addBinding(referable, new TypedEvaluatingBinding(name, expression, type));
+        Binding binding = new TypedEvaluatingBinding(name, expression, type);
+        bindings.add(binding);
+        addBinding(referable, binding);
       }
       return new NameLetClausePattern(name);
     }
@@ -2132,7 +2134,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       } else {
         newType = notImplementedFields.get(i).getType(classCall.getSortArgument()).applyExpression(expression);
       }
-      LetClausePattern letClausePattern = typecheckLetClausePattern(subPattern, link != null ? ProjExpression.make(expression, i) : FieldCallExpression.make(notImplementedFields.get(i), classCall.getSortArgument(), expression), newType);
+      LetClausePattern letClausePattern = typecheckLetClausePattern(subPattern, link != null ? ProjExpression.make(expression, i) : FieldCallExpression.make(notImplementedFields.get(i), classCall.getSortArgument(), expression), newType, bindings);
       if (letClausePattern == null) {
         return null;
       }
@@ -2151,6 +2153,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       try (var ignored1 = new Utils.ContextSaver(myInstancePool == null ? Collections.emptyList() : myInstancePool.getLocalInstances())) {
         List<? extends Concrete.LetClause> abstractClauses = expr.getClauses();
         List<HaveClause> clauses = new ArrayList<>(abstractClauses.size());
+        Set<Binding> definedBindings = new HashSet<>();
         for (Concrete.LetClause clause : abstractClauses) {
           Pair<HaveClause, Expression> pair = typecheckLetClause(clause, expr.isHave());
           if (pair == null) {
@@ -2164,7 +2167,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
             }
           } else {
             addBinding(null, pair.proj1);
-            LetClausePattern pattern = typecheckLetClausePattern(clause.getPattern(), new ReferenceExpression(pair.proj1), pair.proj2);
+            LetClausePattern pattern = typecheckLetClausePattern(clause.getPattern(), new ReferenceExpression(pair.proj1), pair.proj2, definedBindings);
             if (pattern == null) {
               return null;
             }
@@ -2184,11 +2187,27 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           return null;
         }
 
-        ExprSubstitution substitution = new ExprSubstitution();
-        for (HaveClause clause : clauses) {
-          substitution.add(clause, clause.getExpression().subst(substitution));
+        Expression resultType;
+        if (expr.isHave()) {
+          if (expectedType == null) {
+            definedBindings.addAll(clauses);
+            CoreBinding binding = result.type.findFreeBindings(definedBindings);
+            if (binding != null) {
+              errorReporter.report(new TypecheckingError("\\have bindings occur freely in the result type", expr));
+              return null;
+            }
+            resultType = result.type;
+          } else {
+            resultType = expectedType;
+          }
+        } else {
+          ExprSubstitution substitution = new ExprSubstitution();
+          for (HaveClause clause : clauses) {
+            substitution.add(clause, clause.getExpression().subst(substitution));
+          }
+          resultType = result.type.subst(substitution);
         }
-        return new TypecheckingResult(new LetExpression(expr.isStrict(), clauses, result.expression), result.type.subst(substitution));
+        return new TypecheckingResult(new LetExpression(expr.isStrict(), clauses, result.expression), resultType);
       }
     }
   }

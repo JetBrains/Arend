@@ -414,8 +414,8 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
   @Override
   public Expression visitLet(LetExpression expr, Expression expectedType) {
     for (HaveClause clause : expr.getClauses()) {
-      addBinding(clause, expr);
       clause.getExpression().accept(this, null);
+      addBinding(clause, expr);
     }
     Expression type = expr.getExpression().accept(this, expectedType);
     myContext.removeAll(expr.getClauses());
