@@ -177,4 +177,16 @@ public class CoverageTest extends TypeCheckingTestCase {
       "\\func foo (n m : Nat) (d : D n m) : Nat", 1);
     assertThatErrorsAre(missingClauses(4));
   }
+
+  @Test
+  public void matchingDataTest8() {
+    typeCheckModule(
+      "\\data D {A : \\Type} (n m : Nat) \\with\n" +
+      "  | 0, 0 => con1\n" +
+      "  | suc _, suc _ => con2\n" +
+      "  | suc (suc _), suc (suc _) => con3\n" +
+      "  | _, _ => con4\n" +
+      "\\func foo {A : \\Type} {n m : Nat} (d : D {A} n m) : Nat \\elim n, m, d", 1);
+    assertThatErrorsAre(missingClauses(4));
+  }
 }

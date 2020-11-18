@@ -465,7 +465,7 @@ public class ElimTypechecking {
         for (Map.Entry<Binding, ExpressionPattern> entry : result.entrySet()) {
           if (entry.getKey() instanceof DependentLink) {
             DependentLink key = (DependentLink) entry.getKey();
-            if (!elimParams.isEmpty() && !elimParams.contains(key)) {
+            if (!(entry.getValue() instanceof BindingPattern) && !elimParams.isEmpty() && !elimParams.contains(key)) {
               myErrorReporter.report(new ImpossibleEliminationError(dataCall, mySourceNode, null));
               return null;
             }
