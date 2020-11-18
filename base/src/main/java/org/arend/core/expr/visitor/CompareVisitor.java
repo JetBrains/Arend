@@ -717,7 +717,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
         }
         CMP origCmp = myCMP;
         myCMP = CMP.LE;
-        ok = compare(type, entry.getKey().getType(classCall2.getSortArgument()).applyExpression(thisExpr), Type.OMEGA);
+        ok = compare(type, classCall1.getDefinition().getFieldType(entry.getKey(), classCall2.getSortArgument(), thisExpr), Type.OMEGA);
         myCMP = origCmp;
         if (!ok) {
           return false;
@@ -734,7 +734,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
           }
           CMP origCmp = myCMP;
           myCMP = CMP.LE;
-          ok = compare(type, entry.getKey().getType(classCall2.getSortArgument()).applyExpression(thisExpr), Type.OMEGA);
+          ok = compare(type, classCall1.getDefinition().getFieldType(entry.getKey(), classCall2.getSortArgument(), thisExpr), Type.OMEGA);
           myCMP = origCmp;
           if (!ok) {
             return false;

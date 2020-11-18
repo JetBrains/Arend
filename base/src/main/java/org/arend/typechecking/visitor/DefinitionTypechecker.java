@@ -2127,17 +2127,13 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         TypecheckingResult result;
         if (lamImpl != null) {
           typechecker.addBinding(lamImpl.getParameters().get(0).getReferableList().get(0), thisBinding);
-          PiExpression fieldType = typedDef.getOverriddenType(field, Sort.STD);
-          if (fieldType == null) {
-            fieldType = field.getType(Sort.STD);
-          }
           LocalInstancePool localInstancePool = new LocalInstancePool(typechecker);
           addLocalInstances(localInstances, thisBinding, !typedDef.isRecord() && typedDef.getClassifyingField() == null ? typedDef : null, localInstancePool);
           myInstancePool.setInstancePool(localInstancePool);
           if (field.isProperty()) {
             CheckTypeVisitor.setCaseLevel(lamImpl.body);
           }
-          result = typechecker.finalCheckExpr(lamImpl.body, fieldType.getCodomain().subst(fieldType.getParameters(), new ReferenceExpression(thisBinding)));
+          result = typechecker.finalCheckExpr(lamImpl.body, typedDef.getFieldType(field, Sort.STD, new ReferenceExpression(thisBinding)));
           myInstancePool.setInstancePool(null);
         } else {
           result = null;

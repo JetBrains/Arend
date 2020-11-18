@@ -293,6 +293,19 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
     return type == null || sortArg.equals(Sort.STD) ? type : (PiExpression) new SubstVisitor(new ExprSubstitution(), sortArg.toLevelSubstitution()).visitPi(type, null);
   }
 
+  public PiExpression getFieldType(ClassField field, Sort sortArg) {
+    PiExpression type = myOverridden.get(field);
+    return type == null ? field.getType(sortArg) : sortArg.equals(Sort.STD) ? type : (PiExpression) new SubstVisitor(new ExprSubstitution(), sortArg.toLevelSubstitution()).visitPi(type, null);
+  }
+
+  public Expression getFieldType(ClassField field, Sort sortArg, Expression thisExpr) {
+    PiExpression type = myOverridden.get(field);
+    if (type == null) {
+      type = field.getType(Sort.STD);
+    }
+    return type.getCodomain().subst(new ExprSubstitution(type.getParameters(), thisExpr), sortArg.toLevelSubstitution());
+  }
+
   @Nullable
   @Override
   public PiExpression getOverriddenType(@NotNull CoreClassField field) {

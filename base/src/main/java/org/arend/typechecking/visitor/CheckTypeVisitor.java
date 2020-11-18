@@ -1083,11 +1083,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   private TypecheckingResult typecheckImplementation(ClassField field, Concrete.Expression implBody, ClassCallExpression fieldSetClass) {
-    PiExpression piType = fieldSetClass.getDefinition().getOverriddenType(field, Sort.STD);
-    if (piType == null) {
-      piType = field.getType(Sort.STD);
-    }
-    Expression type = piType.getCodomain().subst(new ExprSubstitution(piType.getParameters(), new ReferenceExpression(fieldSetClass.getThisBinding())), fieldSetClass.getSortArgument().toLevelSubstitution());
+    Expression type = fieldSetClass.getDefinition().getFieldType(field, fieldSetClass.getSortArgument(), new ReferenceExpression(fieldSetClass.getThisBinding()));
 
     // Expression type = FieldCallExpression.make(field, fieldSetClass.getSortArgument(), new ReferenceExpression(fieldSetClass.getThisBinding())).getType();
     if (implBody instanceof Concrete.HoleExpression && field.getReferable().isParameterField() && !field.getReferable().isExplicitField() && field.isTypeClass() && type instanceof ClassCallExpression && !((ClassCallExpression) type).getDefinition().isRecord()) {
@@ -1781,14 +1777,14 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
         Type paramType = piParam.getType();
         DefCallExpression defCallParamType = paramType.getExpr().cast(DefCallExpression.class);
-        if (defCallParamType != null && defCallParamType.getUniverseKind() == UniverseKind.NO_UNIVERSES) { // fixes test pLevelTest
+        if (defCallParamType != null && defCallParamType.getDefinition().getUniverseKind() == UniverseKind.NO_UNIVERSES) { // fixes test pLevelTest
           Definition definition = defCallParamType.getDefinition();
           Sort sortArg = definition instanceof DataDefinition || definition instanceof FunctionDefinition || definition instanceof ClassDefinition ? Sort.generateInferVars(myEquations, false, param) : null;
           if (definition instanceof ClassDefinition) {
             ClassCallExpression classCall = (ClassCallExpression) defCallParamType;
             for (Map.Entry<ClassField, Expression> entry : classCall.getImplementedHere().entrySet()) {
               Expression type = entry.getValue().getType();
-              if (type == null || !CompareVisitor.compare(myEquations, CMP.LE, type, entry.getKey().getType(sortArg).applyExpression(new ReferenceExpression(classCall.getThisBinding())), Type.OMEGA, param)) {
+              if (type == null || !CompareVisitor.compare(myEquations, CMP.LE, type, classCall.getDefinition().getFieldType(entry.getKey(), sortArg, new ReferenceExpression(classCall.getThisBinding())), Type.OMEGA, param)) {
                 sortArg = null;
                 break;
               }
