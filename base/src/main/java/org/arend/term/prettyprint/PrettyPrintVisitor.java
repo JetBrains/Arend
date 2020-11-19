@@ -988,7 +988,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     myBuilder.append("\n");
     myIndent += INDENT;
     printIndent();
-    String let = expr.isStrict() ? "\\let! " : "\\let ";
+    String let = expr.isHave() ? (expr.isStrict() ? "\\have! " : "\\have ") : (expr.isStrict() ? "\\let! " : "\\let ");
     myBuilder.append(let);
 
     final int INDENT0 = let.length();
