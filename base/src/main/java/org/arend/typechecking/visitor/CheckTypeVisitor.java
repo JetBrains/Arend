@@ -2307,7 +2307,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       errorReporter.report(new TypecheckingError("Meta '" + refExpr.getReferent().getRefName() + "' is empty", refExpr));
       return null;
     }
-    ContextData contextData = new ContextDataImpl(refExpr, arguments, coclauses, null, expectedType == null ? null : expectedType.accept(new StripVisitor(), null), null);
+    ContextData contextData = new ContextDataImpl(refExpr, arguments, coclauses, null, expectedType, null);
     if (!meta.checkContextData(contextData, errorReporter)) {
       return null;
     }
