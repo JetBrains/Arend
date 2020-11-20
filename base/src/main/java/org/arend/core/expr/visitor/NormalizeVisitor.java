@@ -10,6 +10,7 @@ import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.definition.*;
 import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
+import org.arend.core.expr.let.HaveClause;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.pattern.Pattern;
 import org.arend.core.subst.ExprSubstitution;
@@ -467,12 +468,14 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
           if (mode != NormalizationMode.RNF && mode != NormalizationMode.RNF_EXP && resultExpr instanceof LetExpression) {
             LetExpression let = (LetExpression) resultExpr;
             if (let.isStrict()) {
-              for (LetClause letClause : let.getClauses()) {
+              for (HaveClause letClause : let.getClauses()) {
                 substitution.add(letClause, LetExpression.normalizeClauseExpression(letClause.getPattern(), letClause.getExpression().subst(substitution, levelSubstitution)));
               }
             } else {
-              for (LetClause letClause : let.getClauses()) {
-                substitution.add(letClause, new ReferenceExpression(new LetClause(letClause.getName(), letClause.getPattern(), letClause.getExpression().subst(substitution, levelSubstitution))));
+              for (HaveClause letClause : let.getClauses()) {
+                substitution.add(letClause, letClause instanceof LetClause
+                  ? new ReferenceExpression(LetClause.make(true, letClause.getName(), letClause.getPattern(), letClause.getExpression().subst(substitution, levelSubstitution)))
+                  : LetExpression.normalizeClauseExpression(letClause.getPattern(), letClause.getExpression().subst(substitution, levelSubstitution)));
               }
             }
             resultExpr = let.getExpression();
@@ -694,6 +697,23 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
     }
   }
 
+  public Expression evalFieldCall(ClassField field, Expression arg) {
+    if (arg instanceof FunCallExpression && ((FunCallExpression) arg).getDefinition().getResultType() instanceof ClassCallExpression) {
+      FunCallExpression funCall = (FunCallExpression) arg;
+      Expression impl = ((ClassCallExpression) funCall.getDefinition().getResultType()).getImplementation(field, arg);
+      if (impl != null) {
+        ExprSubstitution substitution = new ExprSubstitution().add(funCall.getDefinition().getParameters(), funCall.getDefCallArguments());
+        return impl.subst(substitution, funCall.getSortArgument().toLevelSubstitution());
+      } else if (funCall.getDefinition().getBody() == null) {
+        return null;
+      }
+    }
+
+    Expression type = arg.getType();
+    Expression normType = type == null ? null : type.accept(this, NormalizationMode.WHNF);
+    return normType instanceof ClassCallExpression ? ((ClassCallExpression) normType).getImplementation(field, arg) : null;
+  }
+
   @Override
   public Expression visitFieldCall(FieldCallExpression expr, NormalizationMode mode) {
     if (expr.getDefinition().isProperty()) {
@@ -702,13 +722,9 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
 
     Expression thisExpr = expr.getArgument().accept(this, mode);
     if (!(thisExpr.getInferenceVariable() instanceof TypeClassInferenceVariable) && (!(mode == NormalizationMode.RNF || mode == NormalizationMode.RNF_EXP) || thisExpr instanceof NewExpression)) {
-      Expression type = thisExpr.getType();
-      ClassCallExpression classCall = type == null ? null : type.accept(this, NormalizationMode.WHNF).cast(ClassCallExpression.class);
-      if (classCall != null) {
-        Expression impl = classCall.getImplementation(expr.getDefinition(), thisExpr);
-        if (impl != null) {
-          return impl.accept(this, mode);
-        }
+      Expression impl = evalFieldCall(expr.getDefinition(), thisExpr);
+      if (impl != null) {
+        return impl.accept(this, mode);
       }
     }
 
@@ -770,7 +786,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
 
   @Override
   public Expression visitSubst(SubstExpression expr, NormalizationMode mode) {
-    return expr.eval().accept(this, mode);
+    return expr.getExpression() instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) expr.getExpression()).getSubstExpression() == null ? expr : expr.eval().accept(this, mode);
   }
 
   @Override
@@ -861,9 +877,9 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
   public Expression visitLet(LetExpression let, NormalizationMode mode) {
     if (mode == NormalizationMode.RNF || mode == NormalizationMode.RNF_EXP) {
       ExprSubstitution substitution = new ExprSubstitution();
-      List<LetClause> newClauses = new ArrayList<>(let.getClauses().size());
-      for (LetClause clause : let.getClauses()) {
-        LetClause newClause = new LetClause(clause.getName(), clause.getPattern(), clause.getExpression().accept(this, mode).subst(substitution));
+      List<HaveClause> newClauses = new ArrayList<>(let.getClauses().size());
+      for (HaveClause clause : let.getClauses()) {
+        HaveClause newClause = LetClause.make(clause instanceof LetClause, clause.getName(), clause.getPattern(), clause.getExpression().accept(this, mode).subst(substitution));
         substitution.add(clause, new ReferenceExpression(newClause));
         newClauses.add(newClause);
       }

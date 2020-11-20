@@ -6,6 +6,8 @@ import org.arend.core.sort.Sort;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
+import java.util.Objects;
+
 import static org.arend.Matchers.typeMismatchError;
 import static org.junit.Assert.assertEquals;
 
@@ -292,7 +294,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
 
   @Test
   public void funTest() {
-    Sort sort = ((ConCallExpression) ((FunctionDefinition) typeCheckDef("\\func pmap {A B : \\Type} (f : A -> B) {a a' : A} (p : a = a') : f a = f a' => path (\\lam i => f (p @ i))")).getBody()).getSortArgument();
+    Sort sort = ((ConCallExpression) Objects.requireNonNull(((FunctionDefinition) typeCheckDef("\\func pmap {A B : \\Type} (f : A -> B) {a a' : A} (p : a = a') : f a = f a' => path (\\lam i => f (p @ i))")).getBody())).getSortArgument();
     assertEquals(Sort.STD, sort);
   }
 
@@ -337,5 +339,29 @@ public class InferLevelTest extends TypeCheckingTestCase {
       "  | false => \\Sigma\n" +
       "\\func test (b : Bool) : \\Prop => T b", 1);
     assertThatErrorsAre(typeMismatchError());
+  }
+
+  @Test
+  public void pathTest() {
+    typeCheckModule(
+      "\\func eq {A : \\Type} (x y : A) => x = y\n" +
+      "\\func id {A : \\Prop} (a : A) => a\n" +
+      "\\func test {A : \\Set} {x y : A} (p : eq x y) => id p");
+  }
+
+  @Test
+  public void pathTest2() {
+    typeCheckModule(
+      "\\data Test {A : \\Type} (x y : A)\n" +
+      "  | con (x = y)\n" +
+      "\\func test {A : \\Set} {x y : A} (t s : Test x y) : t = s \\elim t, s\n" +
+      "  | con p, con q => path (\\lam i => con (Path.inProp p q @ i))");
+  }
+
+  @Test
+  public void pathPropTest() {
+    typeCheckModule(
+      "\\lemma test {A B : \\Prop} (f : A -> B) (g : B -> A) : A = B" +
+      "  => path (iso f g (\\lam _ => Path.inProp _ _) (\\lam _ => Path.inProp _ _))");
   }
 }

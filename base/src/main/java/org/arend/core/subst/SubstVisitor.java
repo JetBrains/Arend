@@ -11,6 +11,7 @@ import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
 import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
+import org.arend.core.expr.let.HaveClause;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.visitor.ExpressionTransformer;
 import org.arend.core.pattern.Pattern;
@@ -101,7 +102,8 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
       return result;
     }
     if (expr.getBinding() instanceof EvaluatingBinding) {
-      return ((EvaluatingBinding) expr.getBinding()).subst(this);
+      Expression e = ((EvaluatingBinding) expr.getBinding()).getExpression();
+      return e.findFreeBindings(myExprSubstitution.getKeys()) == null ? expr : e.accept(this, null);
     }
     return expr;
   }
@@ -110,10 +112,6 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
   public Expression visitInferenceReference(InferenceReferenceExpression expr, Void params) {
     if (expr.getSubstExpression() != null) {
       return expr.getSubstExpression().accept(this, null);
-    }
-    Expression result = myExprSubstitution.get(expr.getVariable());
-    if (result != null) {
-      return result;
     }
 
     if (expr.getVariable() instanceof MetaInferenceVariable) {
@@ -131,7 +129,6 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
       return SubstExpression.make(expr, newSubst, myLevelSubstitution);
     }
 
-    //noinspection SuspiciousMethodCalls
     expr.getVariable().getBounds().removeAll(myExprSubstitution.getKeys());
     return expr;
   }
@@ -216,9 +213,9 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
 
   @Override
   public Expression visitLet(LetExpression letExpression, Void params) {
-    List<LetClause> clauses = new ArrayList<>(letExpression.getClauses().size());
-    for (LetClause clause : letExpression.getClauses()) {
-      LetClause newClause = new LetClause(clause.getName(), clause.getPattern(), clause.getExpression().accept(this, null));
+    List<HaveClause> clauses = new ArrayList<>(letExpression.getClauses().size());
+    for (HaveClause clause : letExpression.getClauses()) {
+      HaveClause newClause = LetClause.make(clause instanceof LetClause, clause.getName(), clause.getPattern(), clause.getExpression().accept(this, null));
       clauses.add(newClause);
       myExprSubstitution.add(clause, new ReferenceExpression(newClause));
     }

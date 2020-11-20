@@ -91,6 +91,11 @@ public class UncheckedExpressionImpl implements UncheckedExpression {
   }
 
   @Override
+  public @NotNull Set<? extends CoreBinding> findFreeBindings() {
+    return myExpression.findFreeBindings();
+  }
+
+  @Override
   public boolean areDisjointConstructors(@NotNull UncheckedExpression expression) {
     return myExpression.areDisjointConstructors(expression);
   }

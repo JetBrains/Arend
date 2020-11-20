@@ -1,6 +1,7 @@
 package org.arend.core.subst;
 
 import org.arend.core.constructor.ClassConstructor;
+import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.EvaluatingBinding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.elimtree.BranchElimTree;
@@ -8,7 +9,6 @@ import org.arend.core.elimtree.BranchKey;
 import org.arend.core.elimtree.ElimTree;
 import org.arend.core.expr.*;
 import org.arend.core.expr.visitor.VoidExpressionVisitor;
-import org.arend.ext.variable.Variable;
 
 import java.util.Map;
 
@@ -94,7 +94,7 @@ public class InPlaceLevelSubstVisitor extends VoidExpressionVisitor<Void> {
   @Override
   public Void visitSubst(SubstExpression expr, Void params) {
     expr.getExpression().accept(this, params);
-    for (Map.Entry<Variable, Expression> entry : expr.getSubstitution().getEntries()) {
+    for (Map.Entry<Binding, Expression> entry : expr.getSubstitution().getEntries()) {
       entry.getValue().accept(this, params);
     }
     expr.levelSubstitution = expr.levelSubstitution.subst(mySubstitution);

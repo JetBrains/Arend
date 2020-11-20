@@ -173,7 +173,7 @@ public class RecordsTest extends TypeCheckingTestCase {
         "\\class Point { | x : \\Type3 | y : \\Type1 }\n" +
         "\\func C => Point { | x => Nat }");
     Assert.assertEquals(new Sort(new Level(4), new Level(LevelVariable.HVAR, 1)), ((ClassDefinition) getDefinition("Point")).getSort());
-    assertEquals(Universe(new Sort(new Level(2), new Level(LevelVariable.HVAR, 1, 0))), getDefinition("C").getTypeWithParams(new ArrayList<>(), Sort.STD));
+    assertEquals(Universe(new Sort(new Level(2), new Level(LevelVariable.HVAR, 1, 1))), getDefinition("C").getTypeWithParams(new ArrayList<>(), Sort.STD));
   }
 
   @Test

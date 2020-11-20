@@ -1,5 +1,6 @@
 package org.arend.core.expr.visitor;
 
+import org.arend.core.context.binding.Binding;
 import org.arend.ext.variable.Variable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
@@ -75,7 +76,16 @@ public class NormalizingFindBindingVisitor extends SearchVisitor<Void> {
 
   @Override
   public Boolean visitSubst(SubstExpression expr, Void params) {
-    return expr.getSubstExpression().accept(this, null);
+    if (expr.isInferenceVariable()) {
+      for (Map.Entry<Binding, Expression> entry : expr.getSubstitution().getEntries()) {
+        if (findBinding(entry.getValue(), true)) {
+          return true;
+        }
+      }
+      return false;
+    } else {
+      return expr.getSubstExpression().accept(this, null);
+    }
   }
 
   @Override

@@ -4,7 +4,7 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.*;
-import org.arend.core.expr.let.LetClause;
+import org.arend.core.expr.let.HaveClause;
 import org.arend.core.pattern.BindingPattern;
 import org.arend.core.pattern.Pattern;
 import org.arend.naming.reference.Referable;
@@ -154,10 +154,10 @@ public class FindBinding {
   private static <T> @Nullable T visitLet(
       Concrete.LetExpression expr,
       LetExpression let,
-      BiFunction<LetClause, Concrete.LetClause, @Nullable T> function
+      BiFunction<HaveClause, Concrete.LetClause, @Nullable T> function
   ) {
     List<Concrete.LetClause> exprClauses = expr.getClauses();
-    List<LetClause> coreClauses = let.getClauses();
+    List<HaveClause> coreClauses = let.getClauses();
     for (int i = 0; i < exprClauses.size(); i++) {
       T apply = function.apply(coreClauses.get(i), exprClauses.get(i));
       if (apply != null) return apply;

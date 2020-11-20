@@ -1,6 +1,7 @@
 package org.arend.naming.resolving.visitor;
 
 import org.arend.core.context.Utils;
+import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.error.CountingErrorReporter;
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.error.ErrorReporter;
@@ -593,7 +594,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       if (referable instanceof ErrorReference) {
         myErrorReporter.report(((ErrorReference) referable).getError());
       } else if (referable instanceof GlobalReferable && !((GlobalReferable) referable).getKind().isConstructor()) {
-        myErrorReporter.report(new ExpectedConstructorError((GlobalReferable) referable, null, pattern, null, null, Collections.emptyList()));
+        myErrorReporter.report(new ExpectedConstructorError((GlobalReferable) referable, null, null, pattern, null, null, Collections.emptyList(), EmptyDependentLink.getInstance()));
       }
 
       ((Concrete.ConstructorPattern) pattern).setConstructor(referable);

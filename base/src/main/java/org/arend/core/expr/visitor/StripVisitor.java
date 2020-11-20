@@ -2,12 +2,12 @@ package org.arend.core.expr.visitor;
 
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.EvaluatingBinding;
-import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.context.binding.inference.MetaInferenceVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.*;
+import org.arend.core.expr.let.HaveClause;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.pattern.Pattern;
 import org.arend.ext.error.ErrorReporter;
@@ -155,7 +155,14 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitSubst(SubstExpression expr, Void params) {
-    return expr.getSubstExpression().accept(this, null);
+    if (expr.isMetaInferenceVariable()) {
+      for (Map.Entry<Binding, Expression> entry : expr.getSubstitution().getEntries()) {
+        entry.setValue(entry.getValue().accept(this, null));
+      }
+      return expr;
+    } else {
+      return expr.getSubstExpression().accept(this, null);
+    }
   }
 
   private void visitParameters(DependentLink link) {
@@ -221,13 +228,19 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public LetExpression visitLet(LetExpression expr, Void params) {
-    for (LetClause clause : expr.getClauses()) {
+    for (HaveClause clause : expr.getClauses()) {
       clause.setExpression(clause.getExpression().accept(this, null));
-      myBoundEvaluatingBindings.add(clause);
+      if (clause instanceof LetClause) {
+        myBoundEvaluatingBindings.add((LetClause) clause);
+      }
     }
 
     LetExpression result = new LetExpression(expr.isStrict(), expr.getClauses(), expr.getExpression().accept(this, null));
-    myBoundEvaluatingBindings.removeAll(expr.getClauses());
+    for (HaveClause clause : expr.getClauses()) {
+      if (clause instanceof LetClause) {
+        myBoundEvaluatingBindings.remove(clause);
+      }
+    }
     return result;
   }
 

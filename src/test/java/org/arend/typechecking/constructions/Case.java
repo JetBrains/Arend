@@ -185,4 +185,9 @@ public class Case extends TypeCheckingTestCase {
       "\\record R | field {A : \\Set} (p : \\Pi (a a' : A) -> a = a') (t : Trunc A) : \\level A p\n" +
       "\\record S \\extends R | field _ t => \\case t \\with { | in a => a }");
   }
+
+  @Test
+  public void varSubstTest() {
+    typeCheckModule("\\func test (n : Nat) => \\case n \\as n', idp {_} {n'} \\return \\Sigma (x : Nat) (n' = x) \\with { | n, p => (n,p) }");
+  }
 }

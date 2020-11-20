@@ -31,7 +31,7 @@ public class SquashedDataError extends TypecheckingError {
     }
 
     if (myLevel.getConstant() >= myLevelSub) {
-      myLevel = new org.arend.core.sort.Level(myLevel.getVar(), myLevel.getConstant() - myLevelSub, myLevel.getMaxConstant());
+      myLevel = new org.arend.core.sort.Level(myLevel.getVar(), myLevel.getConstant() - myLevelSub, myLevel.getMaxConstant() - myLevelSub);
       myLevelSub = 0;
     }
 

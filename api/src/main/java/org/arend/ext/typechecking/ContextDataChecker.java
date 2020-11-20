@@ -49,7 +49,7 @@ public class ContextDataChecker {
   }
 
   public boolean allowEmptyCoclauses() {
-    return false;
+    return allowCoclauses();
   }
 
   public boolean allowClauses() {

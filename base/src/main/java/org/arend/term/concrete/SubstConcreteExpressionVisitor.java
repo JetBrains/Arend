@@ -282,7 +282,7 @@ public class SubstConcreteExpressionVisitor implements DataContainer, ConcreteEx
   @Override
   public Concrete.Expression visitLet(Concrete.LetExpression expr, Void ignored) {
     var clauses = expr.getClauses().stream().map(this::visitLetClause).collect(Collectors.toList());
-    return new Concrete.LetExpression(myData != null ? myData : expr.getData(), expr.isStrict(), clauses, expr.expression.accept(this, null));
+    return new Concrete.LetExpression(myData != null ? myData : expr.getData(), expr.isHave(), expr.isStrict(), clauses, expr.expression.accept(this, null));
   }
 
   @Override

@@ -752,7 +752,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
         }
         CMP origCmp = myCMP;
         myCMP = CMP.LE;
-        ok = compare(type, entry.getKey().getType(classCall2.getSortArgument()).applyExpression(thisExpr), Type.OMEGA);
+        ok = compare(type, classCall1.getDefinition().getFieldType(entry.getKey(), classCall2.getSortArgument(), thisExpr), Type.OMEGA);
         myCMP = origCmp;
         if (!ok) {
           return false;
@@ -769,7 +769,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
           }
           CMP origCmp = myCMP;
           myCMP = CMP.LE;
-          ok = compare(type, entry.getKey().getType(classCall2.getSortArgument()).applyExpression(thisExpr), Type.OMEGA);
+          ok = compare(type, classCall1.getDefinition().getFieldType(entry.getKey(), classCall2.getSortArgument(), thisExpr), Type.OMEGA);
           myCMP = origCmp;
           if (!ok) {
             return false;
@@ -857,7 +857,11 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
 
   @Override
   public Boolean visitSubst(SubstExpression expr, Expression expr2, Expression type) {
-    return expr.getSubstExpression().accept(this, expr2, type);
+    if (expr.getExpression() instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) expr.getExpression()).getVariable() != null) {
+      return myEquations.addEquation(expr, expr2, type, myCMP, mySourceNode, ((InferenceReferenceExpression) expr.getExpression()).getVariable(), expr2.getStuckInferenceVariable());
+    } else {
+      return expr.getSubstExpression().accept(this, expr2, type);
+    }
   }
 
   private Boolean visitLam(LamExpression expr1, Expression expr2, Expression type, boolean correctOrder) {

@@ -889,6 +889,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   }
 
   private List<ExtElimClause> typecheckFunctionBody(FunctionDefinition typedDef, Concrete.BaseFunctionDefinition def, boolean newDef) {
+    if (newDef) {
+      typedDef.setUniverseKind(UniverseKind.NO_UNIVERSES);
+    }
+
     FunctionKind kind = def.getKind();
     if (def instanceof Concrete.CoClauseFunctionDefinition) {
       Referable ref = ((Concrete.CoClauseFunctionDefinition) def).getImplementedField();
@@ -1361,6 +1365,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
   private boolean typecheckDataBody(DataDefinition dataDefinition, Concrete.DataDefinition def, boolean polyHLevel, Set<DataDefinition> dataDefinitions, boolean newDef) {
     if (newDef) {
+      dataDefinition.setUniverseKind(UniverseKind.WITH_UNIVERSES);
       dataDefinition.getConstructors().clear();
     }
     GoodThisParametersVisitor goodThisParametersVisitor = new GoodThisParametersVisitor(dataDefinition.getParameters());
@@ -1574,6 +1579,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         dataDefinition.setUniverseKind(UniverseKind.WITH_UNIVERSES);
       } else {
         UniverseKind kind = UniverseKind.NO_UNIVERSES;
+        dataDefinition.setUniverseKind(UniverseKind.NO_UNIVERSES);
         loop:
         for (Constructor constructor : dataDefinition.getConstructors()) {
           for (DependentLink link = constructor.getParameters(); link.hasNext(); link = link.getNext()) {
@@ -2121,17 +2127,13 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         TypecheckingResult result;
         if (lamImpl != null) {
           typechecker.addBinding(lamImpl.getParameters().get(0).getReferableList().get(0), thisBinding);
-          PiExpression fieldType = typedDef.getOverriddenType(field, Sort.STD);
-          if (fieldType == null) {
-            fieldType = field.getType(Sort.STD);
-          }
           LocalInstancePool localInstancePool = new LocalInstancePool(typechecker);
           addLocalInstances(localInstances, thisBinding, !typedDef.isRecord() && typedDef.getClassifyingField() == null ? typedDef : null, localInstancePool);
           myInstancePool.setInstancePool(localInstancePool);
           if (field.isProperty()) {
             CheckTypeVisitor.setCaseLevel(lamImpl.body);
           }
-          result = typechecker.finalCheckExpr(lamImpl.body, fieldType.getCodomain().subst(fieldType.getParameters(), new ReferenceExpression(thisBinding)));
+          result = typechecker.finalCheckExpr(lamImpl.body, typedDef.getFieldType(field, Sort.STD, new ReferenceExpression(thisBinding)));
           myInstancePool.setInstancePool(null);
         } else {
           result = null;

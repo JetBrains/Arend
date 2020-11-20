@@ -2,6 +2,8 @@ package org.arend.term.prettyprint;
 
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.LevelVariable;
+import org.arend.core.expr.let.HaveClause;
+import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.visitor.BaseExpressionVisitor;
 import org.arend.extImpl.definitionRenamer.ConflictDefinitionRenamer;
 import org.arend.ext.variable.Variable;
@@ -15,7 +17,6 @@ import org.arend.core.definition.DConstructor;
 import org.arend.core.definition.Definition;
 import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.*;
-import org.arend.core.expr.let.LetClause;
 import org.arend.core.pattern.*;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
@@ -554,12 +555,12 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       throw new IllegalStateException();
     }
 
-    if (level.getMaxConstant() > 0 || level.getMaxConstant() == 0 && level.getVar() == LevelVariable.HVAR) {
-      result = new Concrete.MaxLevelExpression(null, result, visitLevel(new Level(level.getMaxConstant())));
-    }
-
     for (int i = 0; i < level.getConstant(); i++) {
       result = new Concrete.SucLevelExpression(null, result);
+    }
+
+    if (level.getMaxConstant() > 0 || level.getMaxConstant() == 0 && level.getVar() == LevelVariable.HVAR) {
+      result = new Concrete.MaxLevelExpression(null, result, visitLevel(new Level(level.getMaxConstant())));
     }
 
     return result;
@@ -611,8 +612,12 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   @Override
   public Concrete.Expression visitLet(LetExpression letExpression, Void params) {
+    boolean isHave = true;
     List<Concrete.LetClause> clauses = new ArrayList<>(letExpression.getClauses().size());
-    for (LetClause clause : letExpression.getClauses()) {
+    for (HaveClause clause : letExpression.getClauses()) {
+      if (clause instanceof LetClause) {
+        isHave = false;
+      }
       Concrete.Expression term = clause.getExpression().accept(this, null);
       Referable referable = makeLocalReference(clause, myFreeVariablesCollector.getFreeVariables(clause), false);
       if (referable != null) {
@@ -621,7 +626,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     }
 
     Concrete.Expression expr = letExpression.getExpression().accept(this, null);
-    return clauses.isEmpty() ? expr : new Concrete.LetExpression(null, letExpression.isStrict(), clauses, expr);
+    return clauses.isEmpty() ? expr : new Concrete.LetExpression(null, isHave, letExpression.isStrict(), clauses, expr);
   }
 
   @Override

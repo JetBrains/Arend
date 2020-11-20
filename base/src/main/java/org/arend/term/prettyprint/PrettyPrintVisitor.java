@@ -287,7 +287,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     printReferenceName(expr, prec);
 
     if (expr.getPLevel() != null || expr.getHLevel() != null) {
-      myBuilder.append(" \\level ");
+      myBuilder.append(" \\levels ");
       if (expr.getHLevel() instanceof Concrete.NumberLevelExpression && ((Concrete.NumberLevelExpression) expr.getHLevel()).getNumber() == -1) {
         myBuilder.append("\\Prop");
       } else {
@@ -988,7 +988,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     myBuilder.append("\n");
     myIndent += INDENT;
     printIndent();
-    String let = expr.isStrict() ? "\\let! " : "\\let ";
+    String let = expr.isHave() ? (expr.isStrict() ? "\\have! " : "\\have ") : (expr.isStrict() ? "\\let! " : "\\let ");
     myBuilder.append(let);
 
     final int INDENT0 = let.length();

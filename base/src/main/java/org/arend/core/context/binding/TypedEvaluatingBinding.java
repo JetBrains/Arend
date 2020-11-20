@@ -3,7 +3,6 @@ package org.arend.core.context.binding;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.subst.InPlaceLevelSubstVisitor;
-import org.arend.core.subst.SubstVisitor;
 import org.jetbrains.annotations.NotNull;
 
 public class TypedEvaluatingBinding extends TypedBinding implements EvaluatingBinding {
@@ -24,11 +23,6 @@ public class TypedEvaluatingBinding extends TypedBinding implements EvaluatingBi
   public void strip(StripVisitor stripVisitor) {
     super.strip(stripVisitor);
     myExpression = myExpression.accept(stripVisitor, null);
-  }
-
-  @Override
-  public Expression subst(SubstVisitor visitor) {
-    return myExpression.accept(visitor, null);
   }
 
   @Override

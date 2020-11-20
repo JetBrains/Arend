@@ -3,7 +3,7 @@ package org.arend.core.expr.visitor;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.elimtree.ElimBody;
-import org.arend.core.expr.let.LetClause;
+import org.arend.core.expr.let.HaveClause;
 import org.arend.ext.variable.Variable;
 import org.arend.core.expr.*;
 import org.arend.typechecking.visitor.SearchVisitor;
@@ -95,7 +95,7 @@ public class FindMissingBindingVisitor extends SearchVisitor<Void> {
 
   @Override
   public Boolean visitLet(LetExpression letExpression, Void params) {
-    for (LetClause clause : letExpression.getClauses()) {
+    for (HaveClause clause : letExpression.getClauses()) {
       if (clause.getExpression().accept(this, null)) {
         return true;
       }

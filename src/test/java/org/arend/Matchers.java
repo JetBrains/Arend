@@ -2,10 +2,7 @@ package org.arend;
 
 import org.arend.core.context.binding.Binding;
 import org.arend.core.expr.Expression;
-import org.arend.ext.error.GeneralError;
-import org.arend.ext.error.LocalError;
-import org.arend.ext.error.MissingClausesError;
-import org.arend.ext.error.TypeMismatchError;
+import org.arend.ext.error.*;
 import org.arend.naming.error.DuplicateNameError;
 import org.arend.naming.error.NotInScopeError;
 import org.arend.naming.reference.GlobalReferable;

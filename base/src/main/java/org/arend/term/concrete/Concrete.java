@@ -502,8 +502,8 @@ public final class Concrete {
   public static class ReferenceExpression extends Expression implements Reference, ConcreteReferenceExpression {
     public static final byte PREC = 12;
     private Referable myReferent;
-    private final LevelExpression myPLevel;
-    private final LevelExpression myHLevel;
+    private LevelExpression myPLevel;
+    private LevelExpression myHLevel;
 
     public ReferenceExpression(Object data, @NotNull Referable referable, LevelExpression pLevel, LevelExpression hLevel) {
       super(data);
@@ -534,6 +534,14 @@ public final class Concrete {
     @Override
     public LevelExpression getHLevel() {
       return myHLevel;
+    }
+
+    public void setPLevel(LevelExpression pLevel) {
+      myPLevel = pLevel;
+    }
+
+    public void setHLevel(LevelExpression hLevel) {
+      myHLevel = hLevel;
     }
 
     @Override
@@ -627,7 +635,7 @@ public final class Concrete {
     }
   }
 
-  public static class ClassExtExpression extends Expression {
+  public static class ClassExtExpression extends Expression implements ConcreteClassExtExpression {
     public static final byte PREC = 11;
     private Expression myBaseClassExpression;
     private final Coclauses myCoclauses;
@@ -648,6 +656,7 @@ public final class Concrete {
     }
 
     @NotNull
+    @Override
     public Expression getBaseClassExpression() {
       return myBaseClassExpression;
     }
@@ -661,6 +670,8 @@ public final class Concrete {
       }
     }
 
+    @NotNull
+    @Override
     public Concrete.Coclauses getCoclauses() {
       return myCoclauses;
     }
@@ -1039,15 +1050,22 @@ public final class Concrete {
 
   public static class LetExpression extends Expression implements ConcreteLetExpression {
     public static final byte PREC = -9;
+    private final boolean myHave;
     private final boolean myStrict;
     private final List<LetClause> myClauses;
     public Expression expression;
 
-    public LetExpression(Object data, boolean isStrict, List<LetClause> clauses, Expression expression) {
+    public LetExpression(Object data, boolean isHave, boolean isStrict, List<LetClause> clauses, Expression expression) {
       super(data);
+      myHave = isHave;
       myStrict = isStrict;
       myClauses = clauses;
       this.expression = expression;
+    }
+
+    @Override
+    public boolean isHave() {
+      return myHave;
     }
 
     @Override

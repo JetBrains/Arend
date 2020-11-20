@@ -74,6 +74,8 @@ public interface ArendExtension {
    * This method is invoked last and can be used to initialize the extension.
    * It should store all the definition that will be used in the extension.
    *
+   * This method can be invoked multiple times if one of the definitions is updated.
+   *
    * @param dependencyProvider  provides the access to definitions defined in the library; can be used only inside this method.
    */
   default void load(@NotNull ArendDependencyProvider dependencyProvider) {

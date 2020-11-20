@@ -2,6 +2,7 @@ package org.arend.core.expr;
 
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.UniverseKind;
+import org.arend.core.expr.let.HaveClause;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.let.LetClausePattern;
 import org.arend.core.expr.visitor.ExpressionVisitor;
@@ -21,10 +22,10 @@ import java.util.Map;
 
 public class LetExpression extends Expression implements CoreLetExpression {
   private final boolean myStrict;
-  private final List<LetClause> myClauses;
+  private final List<HaveClause> myClauses;
   private final Expression myExpression;
 
-  public LetExpression(boolean isStrict, List<LetClause> clauses, Expression expression) {
+  public LetExpression(boolean isStrict, List<HaveClause> clauses, Expression expression) {
     myStrict = isStrict;
     myClauses = clauses;
     myExpression = expression;
@@ -36,7 +37,7 @@ public class LetExpression extends Expression implements CoreLetExpression {
 
   @NotNull
   @Override
-  public List<LetClause> getClauses() {
+  public List<HaveClause> getClauses() {
     return myClauses;
   }
 
@@ -84,11 +85,17 @@ public class LetExpression extends Expression implements CoreLetExpression {
 
   public Expression getResult() {
     if (!myStrict) {
-      return myExpression;
+      ExprSubstitution substitution = new ExprSubstitution();
+      for (HaveClause clause : myClauses) {
+        if (!(clause instanceof LetClause)) {
+          substitution.add(clause, normalizeClauseExpression(clause.getPattern(), clause.getExpression().subst(substitution)));
+        }
+      }
+      return myExpression.subst(substitution);
     }
 
     ExprSubstitution substitution = new ExprSubstitution();
-    for (LetClause clause : myClauses) {
+    for (HaveClause clause : myClauses) {
       substitution.add(clause, normalizeClauseExpression(clause.getPattern(), clause.getExpression().subst(substitution)));
     }
     return myExpression.subst(substitution);

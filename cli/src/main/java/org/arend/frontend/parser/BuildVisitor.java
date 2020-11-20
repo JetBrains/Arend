@@ -1774,7 +1774,8 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       clauses.add(visitLetClause(clauseCtx));
     }
 
-    return new Concrete.LetExpression(tokenPosition(ctx.start), ctx.LETS() != null, clauses, visitIncompleteExpression(ctx.expr(), ctx));
+    LetKwContext letKw = ctx.letKw();
+    return new Concrete.LetExpression(tokenPosition(ctx.start), letKw.HAVE() != null || letKw.HAVES() != null, letKw.LETS() != null || letKw.HAVES() != null, clauses, visitIncompleteExpression(ctx.expr(), ctx));
   }
 
   @Override
@@ -1783,7 +1784,9 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     for (LetClauseContext clauseCtx : ctx.letClause()) {
       clauses.add(visitLetClause(clauseCtx));
     }
-    return new Concrete.LetExpression(tokenPosition(ctx.start), ctx.LETS() != null, clauses, visitIncompleteExpression(ctx.expr2(), ctx));
+
+    LetKwContext letKw = ctx.letKw();
+    return new Concrete.LetExpression(tokenPosition(ctx.start), letKw.HAVE() != null || letKw.HAVES() != null, letKw.LETS() != null || letKw.HAVES() != null, clauses, visitIncompleteExpression(ctx.expr2(), ctx));
   }
 
   private Position tokenPosition(Token token) {

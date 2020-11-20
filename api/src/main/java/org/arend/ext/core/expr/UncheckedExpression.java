@@ -90,6 +90,11 @@ public interface UncheckedExpression {
   @Nullable CoreBinding findFreeBindings(@NotNull Set<? extends CoreBinding> bindings);
 
   /**
+   * @return the set of free variables of this expression.
+   */
+  @NotNull Set<? extends CoreBinding> findFreeBindings();
+
+  /**
    * Checks if this expression and {@param expression} are disjoint constructors of the same data type.
    */
   boolean areDisjointConstructors(@NotNull UncheckedExpression expression);

@@ -1,11 +1,11 @@
 package org.arend.core.expr.visitor;
 
-import org.arend.ext.variable.Variable;
+import org.arend.core.context.binding.Binding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
-import org.arend.core.expr.let.LetClause;
+import org.arend.core.expr.let.HaveClause;
 import org.arend.util.Pair;
 
 import java.util.Map;
@@ -85,7 +85,7 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> {
   @Override
   public Void visitSubst(SubstExpression expr, P params) {
     expr.getExpression().accept(this, params);
-    for (Map.Entry<Variable, Expression> entry : expr.getSubstitution().getEntries()) {
+    for (Map.Entry<Binding, Expression> entry : expr.getSubstitution().getEntries()) {
       entry.getValue().accept(this, params);
     }
     return null;
@@ -163,7 +163,7 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> {
 
   @Override
   public Void visitLet(LetExpression expr, P params) {
-    for (LetClause clause : expr.getClauses()) {
+    for (HaveClause clause : expr.getClauses()) {
       clause.getExpression().accept(this, params);
     }
     expr.getExpression().accept(this, params);
@@ -173,7 +173,7 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> {
   protected void visitElimTree(ElimTree elimTree, P params) {
   }
 
-  private void visitElimBody(ElimBody elimBody, P params) {
+  protected void visitElimBody(ElimBody elimBody, P params) {
     for (var clause : elimBody.getClauses()) {
       visitParameters(clause.getParameters(), params);
       if (clause.getExpression() != null) {

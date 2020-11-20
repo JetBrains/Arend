@@ -280,6 +280,7 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
     boolean isNew = oldTypechecked == null || oldTypechecked.status().needsTypeChecking();
     definition.setRecursive(true);
     Definition typechecked = new DefinitionTypechecker(visitor).typecheckHeader(oldTypechecked, new GlobalInstancePool(myInstanceProviderSet.get(definition.getData()), visitor), definition);
+    typechecked.setUniverseKind(UniverseKind.WITH_UNIVERSES);
     if (typechecked.status() == Definition.TypeCheckingStatus.TYPE_CHECKING) {
       mySuspensions.put(definition.getData(), new Pair<>(visitor, isNew));
     }

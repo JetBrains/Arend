@@ -20,21 +20,29 @@ import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 public class ExpectedConstructorError extends TypecheckingError {
   public final GlobalReferable referable;
   public final DataCallExpression dataCall;
+  public final DependentLink parameter;
   public final ExprSubstitution substitution;
   public final List<Expression> caseExpressions;
   public final List<DependentLink> elimParams;
+  public final DependentLink patternParameters;
   private final boolean myConstructorOfData;
 
-  public ExpectedConstructorError(GlobalReferable referable, @Nullable DataCallExpression dataCall, Concrete.SourceNode cause,
+  public ExpectedConstructorError(GlobalReferable referable,
+                                  @Nullable DataCallExpression dataCall,
+                                  @Nullable DependentLink parameter,
+                                  Concrete.SourceNode cause,
                                   @Nullable ExprSubstitution substitution,
                                   @Nullable List<Expression> caseExpressions,
-                                  @NotNull List<DependentLink> elimParams) {
+                                  @NotNull List<DependentLink> elimParams,
+                                  DependentLink patternParameters) {
     super("", cause);
     this.referable = referable;
     this.dataCall = dataCall;
+    this.parameter = parameter;
     this.substitution = substitution;
     this.caseExpressions = caseExpressions;
     this.elimParams = elimParams;
+    this.patternParameters = patternParameters;
 
     boolean constructorOfData = false;
     if (dataCall != null) {

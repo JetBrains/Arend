@@ -91,11 +91,11 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
 
   @NotNull
   @Override
-  public ConcreteLamExpression lam(@NotNull Collection<? extends ConcreteParameter> parameters, @NotNull ConcreteExpression body) {
+  public ConcreteExpression lam(@NotNull Collection<? extends ConcreteParameter> parameters, @NotNull ConcreteExpression body) {
     if (!(body instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }
-    return new Concrete.LamExpression(myData, parameters(parameters), (Concrete.Expression) body);
+    return parameters.isEmpty() ? body : new Concrete.LamExpression(myData, parameters(parameters), (Concrete.Expression) body);
   }
 
   private List<Concrete.TypeParameter> typeParameters(Collection<? extends ConcreteParameter> parameters) {
@@ -118,7 +118,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     if (!(codomain instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }
-    return new Concrete.PiExpression(myData, typeParameters(parameters), (Concrete.Expression) codomain);
+    return parameters.isEmpty() ? codomain : new Concrete.PiExpression(myData, typeParameters(parameters), (Concrete.Expression) codomain);
   }
 
   @Override
@@ -180,6 +180,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
   @NotNull
   @Override
   public ConcreteExpression tuple(@NotNull ConcreteExpression... expressions) {
+    if (expressions.length == 1) return expressions[0];
     List<Concrete.Expression> fields = new ArrayList<>(expressions.length);
     for (ConcreteExpression expression : expressions) {
       if (!(expression instanceof Concrete.Expression)) {
@@ -192,6 +193,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
 
   @Override
   public @NotNull ConcreteExpression tuple(@NotNull Collection<? extends ConcreteExpression> expressions) {
+    if (expressions.size() == 1) return expressions.iterator().next();
     List<Concrete.Expression> fields = new ArrayList<>(expressions.size());
     for (ConcreteExpression expression : expressions) {
       if (!(expression instanceof Concrete.Expression)) {
@@ -341,7 +343,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
 
   @NotNull
   @Override
-  public ConcreteExpression letExpr(boolean isStrict, @NotNull Collection<? extends ConcreteLetClause> clauses, @NotNull ConcreteExpression expression) {
+  public ConcreteExpression letExpr(boolean isHave, boolean isStrict, @NotNull Collection<? extends ConcreteLetClause> clauses, @NotNull ConcreteExpression expression) {
     if (!(expression instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }
@@ -352,7 +354,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
       }
       cClauses.add((Concrete.LetClause) clause);
     }
-    return new Concrete.LetExpression(myData, isStrict, cClauses, (Concrete.Expression) expression);
+    return new Concrete.LetExpression(myData, isHave, isStrict, cClauses, (Concrete.Expression) expression);
   }
 
   @NotNull
