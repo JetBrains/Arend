@@ -64,12 +64,13 @@ public class ElimBindingVisitor extends ExpressionTransformer<Void> {
     return expression.accept(visitor, null);
   }
 
-  private Expression acceptSelf(Expression expression, boolean normalize) {
+  private boolean findVars(Expression expression) {
     myFoundVariable = expression.accept(myKeepVisitor != null ? myKeepVisitor : myElimVisitor, null) ? (myKeepVisitor != null ? myKeepVisitor.getResult() : myElimVisitor.getResult()) : null;
-    if (myFoundVariable == null) {
-      return expression;
-    }
-    return (normalize ? expression.normalize(NormalizationMode.WHNF) : expression).accept(this, null);
+    return myFoundVariable != null;
+  }
+
+  private Expression acceptSelf(Expression expression, boolean normalize) {
+    return !findVars(expression) ? expression : (normalize ? expression.normalize(NormalizationMode.WHNF) : expression).accept(this, null);
   }
 
   @Override
@@ -156,7 +157,8 @@ public class ElimBindingVisitor extends ExpressionTransformer<Void> {
   public Expression visitReference(ReferenceExpression expr, Void params) {
     if (myKeepVisitor != null ? !myKeepVisitor.getBindings().contains(expr.getBinding()) : myElimVisitor.getBindings().contains(expr.getBinding())) {
       if (expr.getBinding() instanceof EvaluatingBinding) {
-        return ((EvaluatingBinding) expr.getBinding()).getExpression().accept(this, null);
+        Expression e = ((EvaluatingBinding) expr.getBinding()).getExpression();
+        return findVars(e) ? e.accept(this, null) : expr;
       }
       myFoundVariable = expr.getBinding();
       return null;
