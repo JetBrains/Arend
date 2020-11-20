@@ -102,7 +102,8 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
       return result;
     }
     if (expr.getBinding() instanceof EvaluatingBinding) {
-      return ((EvaluatingBinding) expr.getBinding()).subst(this);
+      Expression e = ((EvaluatingBinding) expr.getBinding()).getExpression();
+      return e.findFreeBindings(myExprSubstitution.getKeys()) == null ? expr : e.accept(this, null);
     }
     return expr;
   }
