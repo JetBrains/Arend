@@ -2466,71 +2466,35 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       return checkMeta((Concrete.ReferenceExpression) expr.getFunction(), expr.getArguments(), null, expectedType);
     }
 
+    if (Prelude.DIV_MOD != null && Prelude.MOD != null) {
+      Referable referable = expr.getFunction() instanceof Concrete.ReferenceExpression ? ((Concrete.ReferenceExpression) expr.getFunction()).getReferent() : null;
+      if ((referable == Prelude.MOD.getReferable() || referable == Prelude.DIV_MOD.getReferable()) && expr.getArguments().size() == 2 && expr.getArguments().get(0).isExplicit() && expr.getArguments().get(1).isExplicit()) {
+        TypecheckingResult arg1 = checkExpr(expr.getArguments().get(0).getExpression(), ExpressionFactory.Nat());
+        TypecheckingResult arg2 = checkExpr(expr.getArguments().get(1).getExpression(), ExpressionFactory.Nat());
+        if (arg1 == null || arg2 == null) {
+          return null;
+        }
+
+        Type type;
+        IntegerExpression intExpr = arg2.expression.cast(IntegerExpression.class);
+        ConCallExpression conCall = arg2.expression.cast(ConCallExpression.class);
+        if (intExpr != null && !intExpr.isZero() || conCall != null && conCall.getDefinition() == Prelude.SUC) {
+          type = ExpressionFactory.Fin(arg2.expression);
+        } else {
+          type = ExpressionFactory.Nat();
+        }
+
+        boolean isMod = referable == Prelude.MOD.getReferable();
+        if (!isMod) {
+          type = ExpressionFactory.divModType(type);
+        }
+        return checkResult(expectedType, new TypecheckingResult(FunCallExpression.make(isMod ? Prelude.MOD : Prelude.DIV_MOD, Sort.PROP, Arrays.asList(arg1.expression, arg2.expression)), type.getExpr()), expr);
+      }
+    }
+
     TResult result = myArgsInference.infer(expr, expectedType);
     if (result == null || !checkPath(result, expr)) {
       return null;
-    }
-
-    if (Prelude.DIV_MOD != null && Prelude.MOD != null && result instanceof TypecheckingResult) {
-      var tcResult = (TypecheckingResult) result;
-      var underlyingReferable = expr.getUnderlyingReferable();
-      if (underlyingReferable == Prelude.DIV_MOD.getReferable()) {
-        var appExpr = tcResult.expression.cast(FunCallExpression.class);
-        var tupleExpr = tcResult.expression.cast(TupleExpression.class);
-        if (appExpr != null) {
-          var arguments = appExpr.getDefCallArguments();
-          if (arguments.size() >= 2) {
-            var arg2 = arguments.get(1);
-            Expression type = result.getType();
-            var integer = arg2.cast(IntegerExpression.class);
-            if (integer != null && !integer.isZero()) {
-              type = GetTypeVisitor.modifyModType(Prelude.DIV_MOD, type, integer.pred());
-            }
-            var conCall = arg2.cast(ConCallExpression.class);
-            if (conCall != null && conCall.getDefinition() == Prelude.SUC) {
-              type = GetTypeVisitor.modifyModType(Prelude.DIV_MOD, type, conCall.getConCallArguments().get(0));
-            }
-            result.setType(type);
-          }
-        } else if (tupleExpr != null) {
-          var fields = tupleExpr.getFields();
-          if (fields.size() >= 2) {
-            var field2 = fields.get(1);
-            Expression type = result.getType();
-            var integer = field2.cast(IntegerExpression.class);
-            if (integer != null && !integer.isZero()) {
-              type = GetTypeVisitor.modifyModType(Prelude.DIV_MOD, type, integer.pred());
-            }
-            result.setType(type);
-          }
-        }
-      } else if (underlyingReferable == Prelude.MOD.getReferable()) {
-        var appExpr = tcResult.expression.cast(FunCallExpression.class);
-        var intExpr = tcResult.expression.cast(IntegerExpression.class);
-        var sucExpr = tcResult.expression.cast(ConCallExpression.class);
-        if (appExpr != null) {
-          var arguments = appExpr.getDefCallArguments();
-          if (arguments.size() >= 2) {
-            var arg2 = arguments.get(1);
-            Expression type = result.getType();
-            var integer = arg2.cast(IntegerExpression.class);
-            if (integer != null && !integer.isZero()) {
-              type = GetTypeVisitor.modifyModType(Prelude.MOD, type, integer.pred());
-            }
-            var conCall = arg2.cast(ConCallExpression.class);
-            if (conCall != null && conCall.getDefinition() == Prelude.SUC) {
-              type = GetTypeVisitor.modifyModType(Prelude.MOD, type, conCall.getConCallArguments().get(0));
-            }
-            result.setType(type);
-          }
-        } else if (intExpr != null && !intExpr.isZero()) {
-          result.setType(GetTypeVisitor
-            .modifyModType(Prelude.MOD, result.getType(), intExpr.pred()));
-        } else if (sucExpr != null && sucExpr.getDefinition() == Prelude.SUC) {
-          result.setType(GetTypeVisitor
-            .modifyModType(Prelude.MOD, result.getType(), sucExpr.getConCallArguments().get(0)));
-        }
-      }
     }
 
     return tResultToResult(expectedType, result, expr);

@@ -65,9 +65,8 @@
 
 \data Fin (n : Nat)
   \where {
-    \use \coerce fromNat (n : Nat) : Fin (suc n)
-      | zero => zero
-      | suc n => suc (fromNat n)
+    \use \coerce fromNat {k : Nat} (n : Nat) : Fin (suc k)
+      => n Nat.`mod` suc k
   }
 
 \data Int

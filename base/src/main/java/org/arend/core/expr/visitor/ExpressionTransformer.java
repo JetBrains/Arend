@@ -3,14 +3,13 @@ package org.arend.core.expr.visitor;
 import org.arend.core.definition.Constructor;
 import org.arend.core.expr.ConCallExpression;
 import org.arend.core.expr.Expression;
+import org.arend.core.expr.ExpressionFactory;
 import org.arend.core.expr.IntegerExpression;
 import org.arend.core.sort.Sort;
 import org.arend.prelude.Prelude;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.arend.core.expr.ExpressionFactory.Suc;
 
 public abstract class ExpressionTransformer<P> extends BaseExpressionVisitor<P, Expression> {
   protected boolean preserveOrder() {
@@ -60,10 +59,7 @@ public abstract class ExpressionTransformer<P> extends BaseExpressionVisitor<P, 
         return ((IntegerExpression) it).plus(n);
       }
 
-      for (int i = 0; i < n; i++) {
-        it = Suc(it);
-      }
-      return it;
+      return ExpressionFactory.add(it, n);
     }
 
     int recursiveParam = expr.getDefinition().getRecursiveParameter();

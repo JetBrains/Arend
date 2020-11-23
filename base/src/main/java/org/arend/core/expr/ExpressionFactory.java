@@ -7,7 +7,6 @@ import org.arend.core.sort.Sort;
 import org.arend.prelude.Prelude;
 import org.arend.util.SingletonList;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -61,10 +60,15 @@ public class ExpressionFactory {
   }
 
   public static DataCallExpression Fin(Expression cardinality) {
-    // because we need a mutable (though fixed-size) list, so both `Collections.singletonList`
-    // and `List.of` won't fit this use case.
-    //noinspection ArraysAsListWithZeroOrOneArgument
-    return new DataCallExpression(Prelude.FIN, Sort.PROP, Arrays.asList(cardinality));
+    return new DataCallExpression(Prelude.FIN, Sort.PROP, new SingletonList<>(cardinality));
+  }
+
+  public static SigmaExpression divModType(Type type) {
+    return new SigmaExpression(Sort.SET0, new TypedDependentLink(true, null, Nat(), new TypedDependentLink(true, null, type, EmptyDependentLink.getInstance())));
+  }
+
+  public static SigmaExpression finDivModType(Expression expr) {
+    return divModType(Fin(expr));
   }
 
   public static DataCallExpression Int() {
@@ -77,6 +81,13 @@ public class ExpressionFactory {
 
   public static Expression Suc(Expression expr) {
     return ConCallExpression.make(Prelude.SUC, Sort.PROP, Collections.emptyList(), new SingletonList<>(expr));
+  }
+
+  public static Expression add(Expression expr, int n) {
+    for (int i = 0; i < n; i++) {
+      expr = Suc(expr);
+    }
+    return expr;
   }
 
   public static ConCallExpression Pos(Expression expr) {

@@ -155,6 +155,7 @@ public class SmallIntegerExpression extends IntegerExpression {
     if (expr.isZero()) {
       fields.add(this);
       fields.add(this);
+      return new TupleExpression(fields, Prelude.DIV_MOD_TYPE);
     } else {
       if (expr instanceof SmallIntegerExpression) {
         int other = ((SmallIntegerExpression) expr).getInteger();
@@ -165,7 +166,7 @@ public class SmallIntegerExpression extends IntegerExpression {
         fields.add(new BigIntegerExpression(divMod[0]));
         fields.add(new BigIntegerExpression(divMod[1]));
       }
+      return new TupleExpression(fields, ExpressionFactory.finDivModType(expr));
     }
-    return new TupleExpression(fields, Prelude.DIV_MOD_TYPE);
   }
 }

@@ -19,7 +19,7 @@ import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.implicitargs.equations.Equations;
-import org.jetbrains.annotations.Contract;
+import org.arend.util.Pair;
 import org.jetbrains.annotations.TestOnly;
 
 import java.util.*;
@@ -505,41 +505,81 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
 
   @Override
   public Boolean visitDataCall(DataCallExpression expr1, Expression expr2, Expression type) {
-    var defCall2 = expr2.cast(DataCallExpression.class);
-    if (defCall2 != null && checkBuiltinSubtyping(expr1, defCall2)) {
-      return true;
+    if (expr1.getDefinition() == Prelude.FIN || expr1.getDefinition() == Prelude.NAT) {
+      DataCallExpression dataCall2 = expr2.cast(DataCallExpression.class);
+      return dataCall2 != null && (dataCall2.getDefinition() == Prelude.FIN || dataCall2.getDefinition() == Prelude.NAT) && checkFin(myCMP == CMP.GE ? dataCall2 : expr1, myCMP == CMP.GE ? expr1 : dataCall2, myCMP != CMP.GE);
     }
     return visitDefCall(expr1, expr2);
   }
 
-  @Contract(pure = true)
-  private boolean checkBuiltinSubtyping(DataCallExpression expr1, DataCallExpression expr2) {
-    switch (myCMP) {
-      case LE:
-        break;
-      case EQ:
+  private Pair<Expression, Integer> getSucs(Expression expr) {
+    int sucs = 0;
+    while (true) {
+      if (!(expr instanceof ConCallExpression && ((ConCallExpression) expr).getDefinition() == Prelude.SUC)) {
+        return new Pair<>(expr, sucs);
+      }
+      expr = ((ConCallExpression) expr).getDefCallArguments().get(0);
+      if (myNormalize) {
+        expr = expr.normalize(NormalizationMode.WHNF);
+      }
+      sucs++;
+    }
+  }
+
+  private boolean checkFin(DataCallExpression expr1, DataCallExpression expr2, boolean correctOrder) {
+    if (expr1.getDefinition() == Prelude.NAT) {
+      return expr2.getDefinition() == Prelude.NAT;
+    }
+    if (expr2.getDefinition() == Prelude.NAT) {
+      return myCMP != CMP.EQ;
+    }
+
+    Expression arg1 = expr1.getDefCallArguments().get(0);
+    Expression arg2 = expr2.getDefCallArguments().get(0);
+    if (myCMP == CMP.EQ) {
+      return compare(correctOrder ? arg1 : arg2, correctOrder ? arg2 : arg1, ExpressionFactory.Nat());
+    }
+
+    if (myNormalize) {
+      arg1 = arg1.normalize(NormalizationMode.WHNF);
+      arg2 = arg2.normalize(NormalizationMode.WHNF);
+    }
+    if (arg1 instanceof IntegerExpression && arg2 instanceof IntegerExpression) {
+      return ((IntegerExpression) arg1).compare((IntegerExpression) arg2) <= 0;
+    }
+
+    var pair1 = getSucs(arg1);
+    var pair2 = getSucs(arg2);
+    InferenceVariable stuckVar1 = pair1.proj1.getStuckInferenceVariable();
+    InferenceVariable stuckVar2 = pair2.proj1.getStuckInferenceVariable();
+    if (stuckVar2 == null && (!(pair2.proj1 instanceof IntegerExpression) && pair1.proj2 > pair2.proj2 || pair2.proj1 instanceof IntegerExpression && ((IntegerExpression) pair2.proj1).compare(pair1.proj2) < 0)) {
+      return false;
+    }
+    if (stuckVar1 != null || stuckVar2 != null) {
+      if (!myNormalCompare || myEquations == DummyEquations.getInstance()) {
         return false;
-      case GE:
-        myCMP = CMP.LE;
-        var ret = checkBuiltinSubtyping(expr2, expr1);
-        myCMP = CMP.GE;
-        return ret;
-    }
-    var data1 = expr1.getDefinition();
-    var data2 = expr2.getDefinition();
-    if (data1 == Prelude.FIN) {
-      if (data2 == Prelude.NAT) {
-        return true;
       }
-      if (data2 == Prelude.FIN) {
-        var index1 = expr1.getDefCallArguments().get(0);
-        var index2 = expr2.getDefCallArguments().get(0);
-        if (index1 instanceof IntegerExpression && index2 instanceof IntegerExpression) {
-          return ((IntegerExpression) index1).compare((IntegerExpression) index2) < 0;
-        }
+      if (pair1.proj1 instanceof InferenceReferenceExpression && stuckVar2 == null) {
+        return myEquations.addEquation(pair1.proj1, pair2.proj1 instanceof IntegerExpression ? ((IntegerExpression) pair2.proj1).minus(pair1.proj2) : ExpressionFactory.add(pair2.proj1, pair2.proj2 - pair1.proj2), ExpressionFactory.Nat(), CMP.EQ, stuckVar1.getSourceNode(), stuckVar1, null);
       }
+      if (pair2.proj1 instanceof InferenceReferenceExpression && stuckVar1 == null) {
+        return myEquations.addEquation(
+          pair1.proj1 instanceof IntegerExpression
+            ? (((IntegerExpression) pair1.proj1).compare(pair2.proj2) <= 0 ? new SmallIntegerExpression(0) : ((IntegerExpression) pair1.proj1).minus(pair2.proj2))
+            : (pair1.proj2 <= pair2.proj2 ? pair1.proj1 : ExpressionFactory.add(pair1.proj1, pair1.proj2 - pair2.proj2)),
+          pair2.proj1, ExpressionFactory.Nat(), CMP.EQ, stuckVar2.getSourceNode(), null, stuckVar2);
+      }
+      if (!myAllowEquations) {
+        return false;
+      }
+      if (myNormalize) {
+        expr1 = ExpressionFactory.Fin(ExpressionFactory.add(pair1.proj1, pair1.proj2));
+        expr2 = ExpressionFactory.Fin(ExpressionFactory.add(pair2.proj1, pair2.proj2));
+      }
+      return myEquations.addEquation((correctOrder ? expr1 : expr2), (correctOrder ? expr2 : expr1).subst(getSubstitution()), Type.OMEGA, myCMP, (stuckVar1 != null ? stuckVar1 : stuckVar2).getSourceNode(), stuckVar1, stuckVar2);
+    } else {
+      return normalizedCompare((correctOrder ? pair1 : pair2).proj1, (correctOrder ? pair2 : pair1).proj1, ExpressionFactory.Nat());
     }
-    return false;
   }
 
   private Boolean checkDefCallAndApp(Expression expr1, Expression expr2, boolean correctOrder) {

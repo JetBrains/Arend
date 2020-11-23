@@ -84,11 +84,6 @@ public class TypecheckingResult implements TResult, TypedExpression {
   }
 
   @Override
-  public void setType(@NotNull Expression type) {
-    this.type = type;
-  }
-
-  @Override
   public @NotNull CoreEvaluatingBinding makeEvaluatingBinding(@Nullable String name) {
     return new TypedEvaluatingBinding(name, expression, type);
   }

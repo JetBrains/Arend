@@ -15,8 +15,7 @@ import org.arend.prelude.Prelude;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.arend.core.expr.ExpressionFactory.Fin;
-import static org.arend.core.expr.ExpressionFactory.Nat;
+import static org.arend.core.expr.ExpressionFactory.*;
 
 public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
   public final static GetTypeVisitor INSTANCE = new GetTypeVisitor(true);
@@ -39,22 +38,22 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitFunCall(FunCallExpression expr, Void params) {
-    List<DependentLink> defParams = new ArrayList<>();
     FunctionDefinition definition = expr.getDefinition();
-    Expression type = definition.getTypeWithParams(defParams, expr.getSortArgument());
     List<? extends Expression> arguments = expr.getDefCallArguments();
-    assert arguments.size() == defParams.size();
     if (definition == Prelude.DIV_MOD || definition == Prelude.MOD) {
-      var arg2 = arguments.get(1);
-      var integer = arg2.cast(IntegerExpression.class);
-      if (!integer.isZero()) {
-        type = modifyModType(definition, type, integer.pred());
-      }
-      var conCall = arg2.cast(ConCallExpression.class);
-      if (conCall != null && conCall.getDefinition() == Prelude.SUC) {
-        type = modifyModType(definition, type, conCall.getConCallArguments().get(0));
+      Expression arg2 = arguments.get(1);
+      IntegerExpression integer = arg2.cast(IntegerExpression.class);
+      ConCallExpression conCall = arg2.cast(ConCallExpression.class);
+      if (integer != null && !integer.isZero() || conCall != null && conCall.getDefinition() == Prelude.SUC) {
+        return definition == Prelude.MOD ? Fin(arg2) : finDivModType(arg2);
+      } else {
+        return definition == Prelude.MOD ? Nat() : Prelude.DIV_MOD_TYPE;
       }
     }
+
+    List<DependentLink> defParams = new ArrayList<>();
+    Expression type = definition.getTypeWithParams(defParams, expr.getSortArgument());
+    assert arguments.size() == defParams.size();
     return type.subst(DependentLink.Helper.toSubstitution(defParams, arguments));
   }
 

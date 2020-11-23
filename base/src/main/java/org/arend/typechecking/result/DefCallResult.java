@@ -13,7 +13,6 @@ import org.arend.ext.error.ErrorReporter;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -142,11 +141,6 @@ public class DefCallResult implements TResult {
   @Override
   public Expression getType() {
     return myResultType;
-  }
-
-  @Override
-  public void setType(@NotNull Expression newType) {
-    myResultType = newType;
   }
 
   public Concrete.ReferenceExpression getDefCall() {

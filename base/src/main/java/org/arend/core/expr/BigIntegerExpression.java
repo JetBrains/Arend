@@ -105,11 +105,12 @@ public class BigIntegerExpression extends IntegerExpression {
     if (expr.isZero()) {
       fields.add(this);
       fields.add(this);
+      return new TupleExpression(fields, Prelude.DIV_MOD_TYPE);
     } else {
       BigInteger[] divMod = myInteger.divideAndRemainder(expr.getBigInteger());
       fields.add(new BigIntegerExpression(divMod[0]));
       fields.add(new BigIntegerExpression(divMod[1]));
+      return new TupleExpression(fields, ExpressionFactory.finDivModType(new BigIntegerExpression(divMod[1].add(BigInteger.ONE))));
     }
-    return new TupleExpression(fields, Prelude.DIV_MOD_TYPE);
   }
 }
