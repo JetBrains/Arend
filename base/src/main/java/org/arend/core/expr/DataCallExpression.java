@@ -182,31 +182,8 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
       return Collections.emptyList();
     }
 
-    // Optimize for empty fin pattern
-    var isFin = definition == Prelude.FIN;
-    if (isFin) {
-      var arg = getDefCallArguments().get(0);
-      if (arg instanceof IntegerExpression) {
-        if (((IntegerExpression) arg).isZero()) {
-          return List.of();
-        }
-        if (((IntegerExpression) arg).isOne()) {
-          return List.of(new ConCallExpression(Prelude.ZERO, getSortArgument(), myArguments, List.of()));
-        }
-      } else if (arg instanceof ConCallExpression) {
-        var conCall = (ConCallExpression) arg;
-        if (conCall.getDefinition() == Prelude.ZERO) {
-          return List.of();
-        }
-        if (conCall.getDefinition() == Prelude.SUC) {
-          var index = conCall.getConCallArguments().get(0).cast(IntegerExpression.class);
-          if (index != null && index.isZero()) return List.of(new ConCallExpression(Prelude.ZERO, getSortArgument(), myArguments, List.of()));
-        }
-      } else return null;
-    }
-
     List<ConCallExpression> result = new ArrayList<>();
-    for (Constructor constructor : (isFin ? Prelude.NAT : definition).getConstructors()) {
+    for (Constructor constructor : definition.getConstructors()) {
       if (!getMatchedConCall(constructor, result)) {
         return null;
       }
@@ -221,8 +198,16 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
 
     List<Expression> matchedParameters;
     if (constructor.getPatterns() != null) {
+      List<Expression> arguments = myArguments;
+      if (constructor == Prelude.FIN_SUC) {
+        Expression arg = arguments.get(0).normalize(NormalizationMode.WHNF);
+        if (arg instanceof IntegerExpression && ((IntegerExpression) arg).isOne()) {
+          return true;
+        }
+        arguments = Collections.singletonList(arg);
+      }
       matchedParameters = new ArrayList<>();
-      Decision matchResult = ExpressionPattern.match(constructor.getPatterns(), myArguments, matchedParameters);
+      Decision matchResult = ExpressionPattern.match(constructor.getPatterns(), arguments, matchedParameters);
       if (matchResult == Decision.MAYBE) {
         return false;
       }

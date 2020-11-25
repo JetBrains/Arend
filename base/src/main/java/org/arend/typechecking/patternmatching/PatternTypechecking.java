@@ -713,7 +713,12 @@ public class PatternTypechecking {
         conPattern = new Concrete.ConstructorPattern(conPattern.getData(), isExplicit, Prelude.POS.getReferable(), Collections.singletonList(conPattern), conPattern.getAsReferables());
       }
 
-      Constructor constructor = conPattern.getConstructor() instanceof GlobalReferable ? dataCall.getDefinition().getConstructor((GlobalReferable) conPattern.getConstructor()) : null;
+      Constructor constructor;
+      if (dataCall.getDefinition() == Prelude.FIN) {
+        constructor = conPattern.getConstructor() == Prelude.ZERO.getRef() ? Prelude.FIN_ZERO : conPattern.getConstructor() == Prelude.SUC.getRef() ? Prelude.FIN_SUC : null;
+      } else {
+        constructor = conPattern.getConstructor() instanceof GlobalReferable ? dataCall.getDefinition().getConstructor((GlobalReferable) conPattern.getConstructor()) : null;
+      }
       List<ConCallExpression> conCalls = new ArrayList<>(1);
       if (constructor == null || !dataCall.getMatchedConCall(constructor, conCalls) || conCalls.isEmpty()) {
         Referable conRef = conPattern.getConstructor();

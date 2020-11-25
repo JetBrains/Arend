@@ -100,7 +100,7 @@ public class ElimBody implements Body, CoreElimBody {
             }
             continue;
           }
-          clauseElems.add(new Util.ConstructorClauseElem(constructor));
+          clauseElems.add(new Util.ConstructorClauseElem(constructor, ((DataCallExpression) type).getDefCallArguments()));
           newParams.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(constructor.getParameters(), new ExprSubstitution().add(constructor.getDataTypeParameters(), conCalls.get(0).getDataTypeArguments()), conCalls.get(0).getSortArgument().toLevelSubstitution())));
         } else if (key instanceof IdpConstructor) {
           clauseElems.add(new Util.PatternClauseElem(ConstructorPattern.make(Prelude.IDP, Collections.emptyList()).toExpressionPattern(type)));

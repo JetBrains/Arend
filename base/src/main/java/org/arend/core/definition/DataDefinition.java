@@ -11,7 +11,6 @@ import org.arend.ext.core.definition.CoreConstructor;
 import org.arend.ext.core.definition.CoreDataDefinition;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.TCDefReferable;
-import org.arend.prelude.Prelude;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -138,8 +137,7 @@ public class DataDefinition extends Definition implements CoreDataDefinition {
   }
 
   public Constructor getConstructor(GlobalReferable referable) {
-    var constructors = this == Prelude.FIN ? Prelude.NAT.getConstructors() : myConstructors;
-    for (Constructor constructor : constructors) {
+    for (Constructor constructor : myConstructors) {
       if (constructor.getReferable().equals(referable)) {
         return constructor;
       }

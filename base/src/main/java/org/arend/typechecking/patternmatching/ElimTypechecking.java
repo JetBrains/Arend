@@ -974,7 +974,7 @@ public class ElimTypechecking {
         if (elimTree == null) {
           myOK = false;
         } else {
-          branchElimTree.addChild(branchKey, elimTree);
+          branchElimTree.addChild(branchKey == Prelude.FIN_ZERO ? Prelude.ZERO : branchKey == Prelude.FIN_SUC ? Prelude.SUC : branchKey, elimTree);
         }
 
         myContext.pop();

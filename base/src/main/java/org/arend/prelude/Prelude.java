@@ -1,16 +1,25 @@
 package org.arend.prelude;
 
 import org.arend.core.context.binding.LevelVariable;
+import org.arend.core.context.param.DependentLink;
+import org.arend.core.context.param.EmptyDependentLink;
+import org.arend.core.context.param.TypedDependentLink;
 import org.arend.core.context.param.UnusedIntervalDependentLink;
 import org.arend.core.definition.*;
 import org.arend.core.expr.*;
+import org.arend.core.expr.type.Type;
+import org.arend.core.pattern.BindingPattern;
 import org.arend.core.pattern.ConstructorExpressionPattern;
+import org.arend.core.pattern.ExpressionPattern;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.error.DummyErrorReporter;
 import org.arend.ext.ArendPrelude;
 import org.arend.ext.module.ModulePath;
+import org.arend.ext.reference.Precedence;
 import org.arend.module.ModuleLocation;
+import org.arend.naming.reference.GlobalReferable;
+import org.arend.naming.reference.LocatedReferableImpl;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCDefReferable;
 import org.arend.naming.reference.converter.ReferableConverter;
@@ -47,6 +56,8 @@ public class Prelude implements ArendPrelude {
   public static FunctionDefinition PLUS, MUL, MINUS;
 
   public static DataDefinition FIN;
+  public static Constructor FIN_ZERO;
+  public static Constructor FIN_SUC;
   public static FunctionDefinition FIN_FROM_NAT;
 
   public static DataDefinition INT;
@@ -88,11 +99,22 @@ public class Prelude implements ArendPrelude {
         SUC = NAT.getConstructor("suc");
         DIV_MOD_TYPE = new SigmaExpression(Sort.SET0, parameter(true, Arrays.asList(null, null), Nat()));
         break;
-      case "Fin":
+      case "Fin": {
         FIN = (DataDefinition) definition;
-        // FIN.addConstructor(ZERO);
-        // FIN.addConstructor(SUC);
+        FIN_ZERO = new Constructor(new LocatedReferableImpl(Precedence.DEFAULT, "zero", FIN.getRef(), GlobalReferable.Kind.CONSTRUCTOR), FIN);
+        DependentLink binding = new TypedDependentLink(true, "n", ExpressionFactory.Nat(), EmptyDependentLink.getInstance());
+        List<ExpressionPattern> patterns = Collections.singletonList(new ConstructorExpressionPattern(new ConCallExpression(SUC, Sort.STD, Collections.emptyList(), Collections.emptyList()), Collections.singletonList(new BindingPattern(binding))));
+        FIN_ZERO.setPatterns(patterns);
+        FIN_ZERO.setParameters(EmptyDependentLink.getInstance());
+        FIN_ZERO.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+        FIN.addConstructor(FIN_ZERO);
+        FIN_SUC = new Constructor(new LocatedReferableImpl(Precedence.DEFAULT, "suc", FIN.getRef(), GlobalReferable.Kind.CONSTRUCTOR), FIN);
+        FIN_SUC.setPatterns(patterns);
+        FIN_SUC.setParameters(new TypedDependentLink(true, null, new DataCallExpression(FIN, Sort.STD, new SingletonList<>(new ReferenceExpression(binding))), EmptyDependentLink.getInstance()));
+        FIN_SUC.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+        FIN.addConstructor(FIN_SUC);
         break;
+      }
       case "+":
         PLUS = (FunctionDefinition) definition;
         break;

@@ -5,6 +5,7 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.Constructor;
 import org.arend.core.elimtree.BranchKey;
 import org.arend.core.expr.ConCallExpression;
+import org.arend.core.expr.DataCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.pattern.BindingPattern;
 import org.arend.core.pattern.ConstructorExpressionPattern;
@@ -34,7 +35,7 @@ public class Util {
     if (branchKey instanceof SingleConstructor) {
       return new TupleClauseElem(pattern);
     } else if (branchKey instanceof Constructor) {
-      return new ConstructorClauseElem((Constructor) branchKey);
+      return new ConstructorClauseElem((Constructor) branchKey, pattern.getDataTypeArguments());
     } else {
       throw new IllegalStateException();
     }
@@ -62,8 +63,8 @@ public class Util {
     final List<Expression> dataArguments;
     final Constructor constructor;
 
-    public ConstructorClauseElem(Constructor constructor) {
-      this.dataArguments = constructor.getDataTypeExpression(Sort.STD).getDefCallArguments();
+    public ConstructorClauseElem(Constructor constructor, List<? extends Expression> dataArguments) {
+      this.dataArguments = new ArrayList<>(dataArguments);
       this.constructor = constructor;
     }
 

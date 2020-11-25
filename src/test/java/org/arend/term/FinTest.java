@@ -91,6 +91,11 @@ public class FinTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void matchZero() {
+    typeCheckDef("\\func wsl (a : Nat) (_ : Fin 0) : Nat");
+  }
+
+  @Test
   public void matchOne() {
     typeCheckDef("\\func wsl (a : Nat) (_ : Fin 1) : Nat" +
       "  | x, zero => x");
@@ -104,9 +109,33 @@ public class FinTest extends TypeCheckingTestCase {
 
   @Test
   public void matchTwo() {
-    typeCheckDef("\\func sdl (_ : Fin 2) : Nat" +
-      "  | zero => 123" +
-      "  | suc n => 666");
+    typeCheckModule(
+      "\\func sdl (_ : Fin 2) : Nat\n" +
+      "  | zero => 123\n" +
+      "  | suc n => 666\n" +
+      "\\func test1 : sdl 0 = 123 => idp\n" +
+      "\\func test2 : sdl 1 = 666 => idp");
+  }
+
+  @Test
+  public void matchThree() {
+    typeCheckModule(
+      "\\func test (x : Fin 3) : Nat\n" +
+      "  | 0 => 7\n" +
+      "  | 1 => 13\n" +
+      "  | 2 => 25\n" +
+      "\\func test1 : test 0 = 7 => idp\n" +
+      "\\func test2 : test 1 = 13 => idp\n" +
+      "\\func test3 : test 2 = 25 => idp");
+  }
+
+  @Test
+  public void matchTwoError() {
+    typeCheckDef(
+      "\\func test (x : Fin 2) : Nat\n" +
+      "  | 0 => 0\n" +
+      "  | 1 => 1\n" +
+      "  | 2 => 2", 1);
   }
 
   @Test

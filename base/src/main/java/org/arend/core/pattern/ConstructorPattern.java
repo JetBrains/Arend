@@ -86,13 +86,14 @@ public abstract class ConstructorPattern<T> implements Pattern {
     if (type instanceof DataCallExpression && getDefinition() instanceof Constructor) {
       Constructor constructor = (Constructor) getDefinition();
       DataCallExpression dataCall = (DataCallExpression) type;
-      List<ExpressionPattern> subPatterns = Pattern.toExpressionPatterns(mySubPatterns, DependentLink.Helper.subst(constructor.getParameters(), new ExprSubstitution().add(constructor.getDataTypeParameters(), dataCall.getDefCallArguments())));
-      if (subPatterns == null) {
-        return null;
-      }
 
       List<Expression> args = constructor.matchDataTypeArguments(dataCall.getDefCallArguments());
       if (args == null) {
+        return null;
+      }
+
+      List<ExpressionPattern> subPatterns = Pattern.toExpressionPatterns(mySubPatterns, DependentLink.Helper.subst(constructor.getParameters(), new ExprSubstitution().add(constructor.getDataTypeParameters(), args)));
+      if (subPatterns == null) {
         return null;
       }
 

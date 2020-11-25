@@ -1,7 +1,6 @@
 package org.arend.core.expr.visitor;
 
 import org.arend.core.context.param.DependentLink;
-import org.arend.core.context.param.TypedSingleDependentLink;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.HaveClause;
@@ -55,19 +54,6 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
     Expression type = definition.getTypeWithParams(defParams, expr.getSortArgument());
     assert arguments.size() == defParams.size();
     return type.subst(DependentLink.Helper.toSubstitution(defParams, arguments));
-  }
-
-  public static Expression modifyModType(FunctionDefinition definition, Expression original, Expression cardinality) {
-    var fin = Fin(cardinality);
-    if (definition == Prelude.MOD) {
-      return fin;
-    } else if (definition == Prelude.DIV_MOD) {
-      original.cast(SigmaExpression.class).getParameters()
-        .setNext(new TypedSingleDependentLink(true, "_", fin));
-      return original;
-    } else {
-      throw new IllegalArgumentException(definition.toString() + " should be mod or divMod.");
-    }
   }
 
   @Override
