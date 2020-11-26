@@ -597,36 +597,40 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     } else if (functionBodyCtx instanceof CowithElimContext) {
       coClauses = getCoClauses(((CowithElimContext) functionBodyCtx).coClauses());
       body = new Concrete.CoelimFunctionBody(tokenPosition(functionBodyCtx.start), new ArrayList<>());
-    } else {
+    } else if (functionBodyCtx instanceof WithoutElimContext) {
       body = new Concrete.TermFunctionBody(tokenPosition(ctx.start), visitExpr(((WithoutElimContext) functionBodyCtx).expr()));
+    } else {
+      body = null;
     }
 
-    FuncKwContext funcKw = ctx.funcKw();
-    boolean isUse = funcKw instanceof FuncKwUseContext;
-    Concrete.FunctionDefinition funDef = Concrete.UseDefinition.make(
-      isUse ? (((FuncKwUseContext) funcKw).useMod() instanceof UseCoerceContext
-              ? FunctionKind.COERCE
-              : FunctionKind.LEVEL)
-            : funcKw instanceof FuncKwLemmaContext
-              ? FunctionKind.LEMMA
-              : funcKw instanceof FuncKwSFuncContext
-                ? FunctionKind.SFUNC
-                : FunctionKind.FUNC,
-      referable, visitLamTeles(ctx.tele(), true), returnPair.proj1, returnPair.proj2, body, parent.getReferable());
-    if (coClauses != null) {
-      visitCoClauses(coClauses, subgroups, resultGroup, referable, body.getCoClauseElements());
-    }
-    if (isUse && !funDef.getKind().isUse()) {
-      myErrorReporter.report(new ParserError(tokenPosition(ctx.funcKw().start), "\\use is not allowed on the top level"));
-    }
+    if (body != null) {
+      FuncKwContext funcKw = ctx.funcKw();
+      boolean isUse = funcKw instanceof FuncKwUseContext;
+      Concrete.FunctionDefinition funDef = Concrete.UseDefinition.make(
+        isUse ? (((FuncKwUseContext) funcKw).useMod() instanceof UseCoerceContext
+          ? FunctionKind.COERCE
+          : FunctionKind.LEVEL)
+          : funcKw instanceof FuncKwLemmaContext
+          ? FunctionKind.LEMMA
+          : funcKw instanceof FuncKwSFuncContext
+          ? FunctionKind.SFUNC
+          : FunctionKind.FUNC,
+        referable, visitLamTeles(ctx.tele(), true), returnPair.proj1, returnPair.proj2, body, parent.getReferable());
+      if (coClauses != null) {
+        visitCoClauses(coClauses, subgroups, resultGroup, referable, body.getCoClauseElements());
+      }
+      if (isUse && !funDef.getKind().isUse()) {
+        myErrorReporter.report(new ParserError(tokenPosition(ctx.funcKw().start), "\\use is not allowed on the top level"));
+      }
 
-    funDef.enclosingClass = enclosingClass;
-    referable.setDefinition(funDef);
-    visitWhere(ctx.where(), subgroups, namespaceCommands, resultGroup, enclosingClass);
+      funDef.enclosingClass = enclosingClass;
+      referable.setDefinition(funDef);
+      visitWhere(ctx.where(), subgroups, namespaceCommands, resultGroup, enclosingClass);
 
-    List<TCDefReferable> usedDefinitions = collectUsedDefinitions(subgroups, null);
-    if (usedDefinitions != null) {
-      funDef.setUsedDefinitions(usedDefinitions);
+      List<TCDefReferable> usedDefinitions = collectUsedDefinitions(subgroups, null);
+      if (usedDefinitions != null) {
+        funDef.setUsedDefinitions(usedDefinitions);
+      }
     }
 
     return resultGroup;
