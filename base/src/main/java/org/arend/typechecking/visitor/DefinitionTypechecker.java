@@ -1138,7 +1138,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
       typedDef.setGoodThisParameters(goodThisParametersVisitor.getGoodParameters());
 
-      if (checkForUniverses(typedDef.getParameters()) || new UniverseInParametersChecker().check(typedDef.getResultType())) {
+      if (checkForUniverses(typedDef.getParameters()) || new UniverseKindChecker().check(typedDef.getResultType())) {
         typedDef.setUniverseKind(UniverseKind.WITH_UNIVERSES);
       } else {
         typedDef.setUniverseKind(new UniverseKindChecker().getUniverseKind(typedDef.getBody()));

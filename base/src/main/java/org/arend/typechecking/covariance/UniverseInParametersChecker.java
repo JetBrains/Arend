@@ -1,8 +1,9 @@
 package org.arend.typechecking.covariance;
 
+import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.definition.UniverseKind;
-import org.arend.core.expr.DefCallExpression;
-import org.arend.core.expr.Expression;
+import org.arend.core.expr.*;
+import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.typechecking.visitor.CheckForUniversesVisitor;
 

@@ -1,6 +1,5 @@
 package org.arend.typechecking.covariance;
 
-import org.arend.core.definition.Definition;
 import org.arend.core.definition.UniverseKind;
 import org.arend.core.elimtree.*;
 import org.arend.core.expr.DefCallExpression;
@@ -9,8 +8,7 @@ import org.arend.core.sort.Sort;
 import org.arend.typechecking.visitor.CheckForUniversesVisitor;
 import org.arend.util.Pair;
 
-public class UniverseKindChecker extends CovarianceChecker {
-  private final CheckForUniversesVisitor myVisitor = new CheckForUniversesVisitor();
+public class UniverseKindChecker extends UniverseInParametersChecker {
   private UniverseKind myResult = UniverseKind.NO_UNIVERSES;
 
   public UniverseKind getUniverseKind(Expression expression) {
@@ -47,8 +45,13 @@ public class UniverseKindChecker extends CovarianceChecker {
   }
 
   @Override
+  protected boolean allowData() {
+    return true;
+  }
+
+  @Override
   protected boolean checkNonCovariant(Expression expr) {
-    if (expr.accept(myVisitor, null)) {
+    if (super.checkNonCovariant(expr)) {
       myResult = UniverseKind.WITH_UNIVERSES;
       return true;
     } else {

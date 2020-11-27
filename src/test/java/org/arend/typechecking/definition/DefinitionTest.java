@@ -3,6 +3,7 @@ package org.arend.typechecking.definition;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.Definition;
 import org.arend.core.definition.FunctionDefinition;
+import org.arend.core.definition.UniverseKind;
 import org.arend.core.expr.Expression;
 import org.arend.core.sort.Sort;
 import org.arend.typechecking.TypeCheckingTestCase;
@@ -185,5 +186,14 @@ public class DefinitionTest extends TypeCheckingTestCase {
         "\\func f (x : Nat -> Nat) => x 0\n" +
         "\\data Test (A : \\Set0) \\with\n" +
         "  | suc n => foo (f n)", 1);
+  }
+
+  @Test
+  public void fieldsEvaluation() {
+    typeCheckModule(
+      "\\class C (X : \\Type) | x0 : X | x1 : \\Type -> X | x2 (A : \\Type) : x1 A = x0 -> Nat\n" +
+      "\\instance NatC : C Nat 0 (\\lam _ => 0) (\\lam _ _ => 0)\n" +
+      "\\func test : Nat => x0");
+    assertEquals(UniverseKind.NO_UNIVERSES, getDefinition("test").getUniverseKind());
   }
 }
