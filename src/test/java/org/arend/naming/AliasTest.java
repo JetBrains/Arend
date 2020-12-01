@@ -3,12 +3,13 @@ package org.arend.naming;
 import org.arend.Matchers;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.expr.ConcreteCompareVisitor;
+import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public class AliasTest extends NameResolverTestCase {
+public class AliasTest extends TypeCheckingTestCase {
   @Test
   public void aliasTest() {
     resolveNamesModule(
@@ -524,5 +525,12 @@ public class AliasTest extends NameResolverTestCase {
       "}\n" +
       "\\open M \\using (bar \\as bar')\n" +
       "\\func test => bar'.baz");
+  }
+
+  @Test
+  public void extendsTest() {
+    typeCheckModule(
+      "\\class A \\alias X\n" +
+      "\\class B \\extends X");
   }
 }

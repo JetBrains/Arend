@@ -473,6 +473,8 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
           myLocalErrorReporter.report(new NameResolverError("Expected a class", superClass));
         }
         def.getSuperClasses().remove(i--);
+      } else {
+        superClass.setReferent(ref);
       }
     }
   }
