@@ -234,7 +234,41 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
     TResult result;
     Concrete.Expression fun = expr.getFunction();
     if (fun instanceof Concrete.ReferenceExpression) {
-      result = myVisitor.visitReference((Concrete.ReferenceExpression) fun);
+      Concrete.ReferenceExpression refExpr = (Concrete.ReferenceExpression) fun;
+      if (!expr.getArguments().get(0).isExplicit() && (refExpr.getReferent() == Prelude.ZERO.getRef() || refExpr.getReferent() == Prelude.SUC.getRef())) {
+        TypecheckingResult argResult = myVisitor.checkExpr(expr.getArguments().get(0).getExpression(), Nat());
+        if (argResult == null) {
+          return null;
+        }
+
+        if (refExpr.getReferent() == Prelude.ZERO.getRef()) {
+          result = new TypecheckingResult(new SmallIntegerExpression(0), Fin(Suc(argResult.expression)));
+          if (expr.getArguments().size() > 1) {
+            myVisitor.getErrorReporter().report(new NotPiType(argResult.expression, result.getType(), fun));
+            return null;
+          }
+          return result;
+        }
+
+        if (expr.getArguments().size() == 1) {
+          SingleDependentLink param = new TypedSingleDependentLink(true, "x", Fin(argResult.expression));
+          return new TypecheckingResult(new LamExpression(Sort.PROP, param, Suc(new ReferenceExpression(param))), new PiExpression(Sort.PROP, param, Fin(Suc(argResult.expression))));
+        }
+
+        TypecheckingResult arg2Result = myVisitor.checkExpr(expr.getArguments().get(1).getExpression(), Fin(argResult.expression));
+        if (arg2Result == null) {
+          return null;
+        }
+
+        result = new TypecheckingResult(Suc(arg2Result.expression), Fin(Suc(argResult.expression)));
+        if (expr.getArguments().size() > 2) {
+          myVisitor.getErrorReporter().report(new NotPiType(arg2Result.expression, result.getType(), fun));
+          return null;
+        }
+        return result;
+      }
+
+      result = myVisitor.visitReference(refExpr);
     } else {
       result = myVisitor.checkExpr(fun, null);
     }

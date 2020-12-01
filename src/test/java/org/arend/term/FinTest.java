@@ -224,4 +224,34 @@ public class FinTest extends TypeCheckingTestCase {
     assertEquals(fun1.getResultType(), fun2.getResultType());
     assertEquals(fun1.getBody(), ((Expression) Objects.requireNonNull(fun2.getBody())).subst(fun2.getParameters(), new ReferenceExpression(fun1.getParameters())));
   }
+
+  @Test
+  public void zeroImplicitTest() {
+    typeCheckModule(
+      "\\func test1 (n : Nat) : Fin (suc n) => zero\n" +
+      "\\func test2 (n : Nat) => zero {n}");
+    FunctionDefinition fun1 = (FunctionDefinition) getDefinition("test1");
+    FunctionDefinition fun2 = (FunctionDefinition) getDefinition("test2");
+    assertEquals(fun1.getResultType(), fun2.getResultType().subst(fun2.getParameters(), new ReferenceExpression(fun1.getParameters())));
+    assertEquals(fun1.getBody(), ((Expression) Objects.requireNonNull(fun2.getBody())).subst(fun2.getParameters(), new ReferenceExpression(fun1.getParameters())));
+  }
+
+  @Test
+  public void sucImplicitTest() {
+    typeCheckModule(
+      "\\func test1 (n : Nat) (x : Fin n) : Fin (suc n) => suc x\n" +
+      "\\func test2 (n : Nat) (x : Fin n) => suc {n} x");
+    FunctionDefinition fun1 = (FunctionDefinition) getDefinition("test1");
+    FunctionDefinition fun2 = (FunctionDefinition) getDefinition("test2");
+    assertEquals(fun1.getResultType(), fun2.getResultType().subst(fun2.getParameters(), new ReferenceExpression(fun1.getParameters())));
+    assertEquals(fun1.getBody(), ((Expression) Objects.requireNonNull(fun2.getBody())).subst(new ExprSubstitution().add(fun2.getParameters(), Arrays.asList(new ReferenceExpression(fun1.getParameters()), new ReferenceExpression(fun1.getParameters().getNext())))));
+  }
+
+  @Test
+  public void sucImplicitTest2() {
+    typeCheckModule(
+      "\\func f1 (n : Nat) (x : Fin n) : Fin (suc n) => suc x\n" +
+      "\\func f2 (n : Nat) => suc {n}\n" +
+      "\\func test (n : Nat) : f1 n = {Fin n -> Fin (suc n)} f2 n => idp");
+  }
 }
