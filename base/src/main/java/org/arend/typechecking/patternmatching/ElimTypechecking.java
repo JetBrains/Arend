@@ -518,8 +518,10 @@ public class ElimTypechecking {
               for (Pair<ExpressionPattern, Map<DependentLink, Constructor>> pair2 : entry.getValue()) {
                 ExpressionPattern pattern = pair1.proj1.intersect(pair2.proj1);
                 if (pattern != null) {
-                  pair1.proj2.putAll(pair2.proj2);
-                  result.add(new Pair<>(pattern, pair1.proj2));
+                  Map<DependentLink, Constructor> newMap = new HashMap<>();
+                  newMap.putAll(pair1.proj2);
+                  newMap.putAll(pair2.proj2);
+                  result.add(new Pair<>(pattern, newMap));
                 }
               }
             }
