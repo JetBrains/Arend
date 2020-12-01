@@ -33,6 +33,7 @@ import org.arend.typechecking.result.TResult;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.arend.util.Pair;
+import org.arend.util.SingletonList;
 
 import java.util.*;
 
@@ -210,6 +211,13 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
         piType = field.getType(defCallResult.getSortArgument());
       }
       return new TypecheckingResult(FieldCallExpression.make(field, defCallResult.getSortArgument(), argResult.expression), piType.applyExpression(argResult.expression));
+    }
+
+    if (result instanceof DefCallResult && ((DefCallResult) result).getDefinition() == Prelude.SUC) {
+      Expression type = argResult.type.normalize(NormalizationMode.WHNF);
+      if (type instanceof DataCallExpression && ((DataCallExpression) type).getDefinition() == Prelude.FIN) {
+        return new TypecheckingResult(Suc(argResult.expression), new DataCallExpression(Prelude.FIN, ((DataCallExpression) type).getSortArgument(), new SingletonList<>(Suc(((DataCallExpression) type).getDefCallArguments().get(0)))));
+      }
     }
 
     return result.applyExpression(argResult.expression, isExplicit, myVisitor.getErrorReporter(), fun);

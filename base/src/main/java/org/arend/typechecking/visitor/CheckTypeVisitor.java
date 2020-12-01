@@ -82,6 +82,7 @@ import org.arend.typechecking.result.DefCallResult;
 import org.arend.typechecking.result.TResult;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.util.Pair;
+import org.arend.util.SingletonList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -1426,6 +1427,13 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       }
     }
 
+    if (Prelude.ZERO != null && expr.getReferent() == Prelude.ZERO.getRef() && expectedType != null) {
+      expectedType = expectedType.normalize(NormalizationMode.WHNF);
+      if (expectedType instanceof DataCallExpression && ((DataCallExpression) expectedType).getDefinition() == Prelude.FIN) {
+        return checkResult(expectedType, new TypecheckingResult(new SmallIntegerExpression(0), new DataCallExpression(Prelude.FIN, Sort.PROP, new SingletonList<>(new SmallIntegerExpression(1)))), expr);
+      }
+    }
+
     TResult result = visitReference(expr);
     if (result == null || !checkPath(result, expr)) {
       return null;
@@ -2551,6 +2559,9 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       result = new TypecheckingResult(ExpressionFactory.Neg(resultExpr), ExpressionFactory.Int());
     } else {
       Expression ty;
+      if (expectedType != null) {
+        expectedType = expectedType.normalize(NormalizationMode.WHNF);
+      }
       if (expectedType instanceof DataCallExpression && ((DataCallExpression) expectedType).getDefinition() == Prelude.FIN) {
         ty = ExpressionFactory.Fin(resultExpr.suc());
       } else {

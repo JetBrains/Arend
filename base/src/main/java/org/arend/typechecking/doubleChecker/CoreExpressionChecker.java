@@ -34,8 +34,12 @@ import org.arend.typechecking.patternmatching.ConditionsChecking;
 import org.arend.typechecking.patternmatching.ElimTypechecking;
 import org.arend.typechecking.patternmatching.ExtElimClause;
 import org.arend.typechecking.patternmatching.PatternTypechecking;
+import org.arend.util.SingletonList;
 
 import java.util.*;
+
+import static org.arend.core.expr.ExpressionFactory.Nat;
+import static org.arend.core.expr.ExpressionFactory.Suc;
 
 public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expression> {
   private final Set<Binding> myContext;
@@ -87,6 +91,24 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   @Override
   public Expression visitConCall(ConCallExpression expr, Expression expectedType) {
+    if (expr.getDefinition() == Prelude.SUC) {
+      int sucs = 1;
+      Expression expression = expr.getDefCallArguments().get(0);
+      while (expression instanceof ConCallExpression && ((ConCallExpression) expression).getDefinition() == Prelude.SUC) {
+        sucs++;
+        expression = ((ConCallExpression) expression).getDefCallArguments().get(0);
+      }
+      DataCallExpression dataCall = expression.accept(this, null).cast(DataCallExpression.class);
+      if (dataCall != null && dataCall.getDefinition() == Prelude.FIN) {
+        Expression arg = dataCall.getDefCallArguments().get(0);
+        for (int i = 0; i < sucs; i++) {
+          arg = Suc(arg);
+        }
+        return check(expectedType, new DataCallExpression(dataCall.getDefinition(), dataCall.getSortArgument(), new SingletonList<>(arg)), expr);
+      }
+      return check(expectedType, Nat(), expr);
+    }
+
     Expression result = null;
     Expression it = expr;
     do {

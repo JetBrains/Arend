@@ -555,6 +555,9 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     if (stuckVar2 == null && (!(pair2.proj1 instanceof IntegerExpression) && pair1.proj2 > pair2.proj2 || pair2.proj1 instanceof IntegerExpression && ((IntegerExpression) pair2.proj1).compare(pair1.proj2) < 0)) {
       return false;
     }
+    if (pair1.proj1 instanceof IntegerExpression && ((IntegerExpression) pair1.proj1).compare(pair2.proj2) <= 0) {
+      return true;
+    }
     if (stuckVar1 != null || stuckVar2 != null) {
       if (!myNormalCompare || myEquations == DummyEquations.getInstance()) {
         return false;

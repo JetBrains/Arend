@@ -10,6 +10,7 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.error.IncorrectExpressionException;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
+import org.arend.util.SingletonList;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -78,6 +79,26 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public DataCallExpression visitConCall(ConCallExpression expr, Void params) {
+    if (expr.getDefinition() == Prelude.SUC) {
+      int sucs = 1;
+      Expression expression = expr.getDefCallArguments().get(0);
+      while (expression instanceof ConCallExpression && ((ConCallExpression) expression).getDefinition() == Prelude.SUC) {
+        sucs++;
+        expression = ((ConCallExpression) expression).getDefCallArguments().get(0);
+      }
+      Expression argType = expression.accept(this, null);
+      if (argType != null) {
+        DataCallExpression dataCall = argType.cast(DataCallExpression.class);
+        if (dataCall != null && dataCall.getDefinition() == Prelude.FIN) {
+          Expression arg = dataCall.getDefCallArguments().get(0);
+          for (int i = 0; i < sucs; i++) {
+            arg = Suc(arg);
+          }
+          return new DataCallExpression(dataCall.getDefinition(), dataCall.getSortArgument(), new SingletonList<>(arg));
+        }
+      }
+      return Nat();
+    }
     return expr.getDefinition().getDataTypeExpression(expr.getSortArgument(), expr.getDataTypeArguments());
   }
 

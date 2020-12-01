@@ -3,14 +3,20 @@ package org.arend.term;
 import org.arend.Matchers;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.TypedBinding;
+import org.arend.core.definition.FunctionDefinition;
+import org.arend.core.expr.Expression;
 import org.arend.core.expr.ReferenceExpression;
+import org.arend.core.expr.SmallIntegerExpression;
 import org.arend.core.expr.type.Type;
+import org.arend.core.subst.ExprSubstitution;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import static org.arend.core.expr.ExpressionFactory.*;
 import static org.junit.Assert.assertEquals;
@@ -172,6 +178,11 @@ public class FinTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void finSubtype2() {
+    typeCheckDef("\\func test (n : Nat) (x : Fin 1) : Fin (n Nat.+ 1) => x");
+  }
+
+  @Test
   public void finSubtypeError() {
     typeCheckDef("\\func test (n : Nat) (x : Fin (n Nat.+ 3)) : Fin (n Nat.+ 2) => x", 1);
     assertThatErrorsAre(Matchers.typeMismatchError());
@@ -181,5 +192,36 @@ public class FinTest extends TypeCheckingTestCase {
   public void finSubtypeError2() {
     typeCheckDef("\\func test (n m : Nat) (x : Fin (n Nat.+ 2)) : Fin (m Nat.+ 3) => x", 1);
     assertThatErrorsAre(Matchers.typeMismatchError());
+  }
+
+  @Test
+  public void zeroTest() {
+    typeCheckModule(
+      "\\func test1 (n : Nat) : Fin (suc n) => zero\n" +
+      "\\func test2 : Fin 1 => zero");
+    assertEquals(new SmallIntegerExpression(0), ((FunctionDefinition) getDefinition("test1")).getBody());
+    assertEquals(new SmallIntegerExpression(0), ((FunctionDefinition) getDefinition("test2")).getBody());
+  }
+
+  @Test
+  public void sucTest() {
+    typeCheckModule(
+      "\\func test1 (n : Nat) (x : Fin n) : Fin (suc n) => suc x\n" +
+      "\\func test2 (n : Nat) (x : Fin n) => suc x");
+    FunctionDefinition fun1 = (FunctionDefinition) getDefinition("test1");
+    FunctionDefinition fun2 = (FunctionDefinition) getDefinition("test2");
+    assertEquals(fun1.getResultType(), fun2.getResultType().subst(fun2.getParameters(), new ReferenceExpression(fun1.getParameters())));
+    assertEquals(fun1.getBody(), ((Expression) Objects.requireNonNull(fun2.getBody())).subst(new ExprSubstitution().add(fun2.getParameters(), Arrays.asList(new ReferenceExpression(fun1.getParameters()), new ReferenceExpression(fun1.getParameters().getNext())))));
+  }
+
+  @Test
+  public void sucTest2() {
+    typeCheckModule(
+      "\\func test1 (x : Fin 2) : Fin 3 => suc x\n" +
+      "\\func test2 (x : Fin 2) => suc x");
+    FunctionDefinition fun1 = (FunctionDefinition) getDefinition("test1");
+    FunctionDefinition fun2 = (FunctionDefinition) getDefinition("test2");
+    assertEquals(fun1.getResultType(), fun2.getResultType());
+    assertEquals(fun1.getBody(), ((Expression) Objects.requireNonNull(fun2.getBody())).subst(fun2.getParameters(), new ReferenceExpression(fun1.getParameters())));
   }
 }
