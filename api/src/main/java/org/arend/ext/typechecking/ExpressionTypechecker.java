@@ -30,7 +30,6 @@ import org.jetbrains.annotations.Nullable;
 import java.math.BigInteger;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
 
 /**
@@ -132,6 +131,13 @@ public interface ExpressionTypechecker extends UserDataHolder {
    * The number of {@code arguments} should be less than or equal to the length of the context of {@code expression}.
    */
   @Nullable AbstractedExpression substituteAbstractedExpression(@NotNull AbstractedExpression expression, @Nullable CoreSort sort, @NotNull List<? extends ConcreteExpression> arguments);
+
+  /**
+   * Typechecks {@code arguments} and substitutes them into {@code expression}.
+   * Also, substitutes {@code sort} if it is not null.
+   * The number of {@code arguments} should be less than or equal to the length of the context of {@code expression}.
+   */
+  @NotNull CoreExpression makeLambda(@NotNull List<? extends CoreParameter> parameters, @NotNull CoreExpression body, @NotNull ConcreteSourceNode marker);
 
   /**
    * Typechecks {@code arguments} and substitutes them into {@code parameters}.

@@ -507,6 +507,26 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     return link;
   }
 
+  private void checkSubstExpr(Expression expr, Collection<? extends CoreBinding> bindings) {
+    Set<CoreBinding> bindingsSet = new HashSet<>(bindings);
+
+    Set<Binding> freeBindings = FreeVariablesCollector.getFreeVariables(expr);
+    //noinspection SuspiciousMethodCalls
+    freeBindings.removeAll(bindings);
+    for (Binding binding : freeBindings) {
+      if (binding.getTypeExpr().findFreeBindings(bindingsSet) != null) {
+        throw new IllegalArgumentException("Invalid substitution");
+      }
+    }
+
+    for (CoreBinding binding : bindings) {
+      bindingsSet.remove(binding);
+      if (binding.getTypeExpr().findFreeBindings(bindingsSet) != null) {
+        throw new IllegalArgumentException("Invalid substitution");
+      }
+    }
+  }
+
   @Override
   public @Nullable Expression substitute(@NotNull CoreExpression expression, @Nullable CoreSort sort, @NotNull List<SubstitutionPair> substPairs) {
     if (!(expression instanceof Expression && (sort == null || sort instanceof Sort))) throw new IllegalArgumentException();
@@ -514,26 +534,11 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       return sort == null ? (Expression) expression : ((Expression) expression).subst(((Sort) sort).toLevelSubstitution());
     }
 
-    Set<CoreBinding> substVars = new HashSet<>();
+    List<CoreBinding> substVars = new ArrayList<>(substPairs.size());
     for (SubstitutionPair pair : substPairs) {
       substVars.add(pair.binding);
     }
-
-    Set<Binding> freeBindings = FreeVariablesCollector.getFreeVariables((Expression) expression);
-    //noinspection SuspiciousMethodCalls
-    freeBindings.removeAll(substVars);
-    for (Binding binding : freeBindings) {
-      if (binding.getTypeExpr().findFreeBindings(substVars) != null) {
-        throw new IllegalArgumentException("Invalid substitution");
-      }
-    }
-
-    for (SubstitutionPair pair : substPairs) {
-      substVars.remove(pair.binding);
-      if (pair.binding.getTypeExpr().findFreeBindings(substVars) != null) {
-        throw new IllegalArgumentException("Invalid substitution");
-      }
-    }
+    checkSubstExpr((Expression) expression, substVars);
 
     ExprSubstitution substitution = new ExprSubstitution();
     SubstVisitor substVisitor = new SubstVisitor(substitution, sort == null ? LevelSubstitution.EMPTY : ((Sort) sort).toLevelSubstitution());
@@ -597,6 +602,39 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       expression = abs.getExpression();
     }
     return AbstractedExpressionImpl.subst(expression, substVisitor);
+  }
+
+  @Override
+  public @NotNull CoreExpression makeLambda(@NotNull List<? extends CoreParameter> parameters, @NotNull CoreExpression body, @NotNull ConcreteSourceNode marker) {
+    if (parameters.size() == 0) return body;
+    if (!(body instanceof Expression && marker instanceof Concrete.SourceNode)) {
+      throw new IllegalArgumentException();
+    }
+    for (CoreParameter parameter : parameters) {
+      if (!(parameter instanceof DependentLink)) throw new IllegalArgumentException();
+    }
+    //noinspection unchecked
+    checkSubstExpr((Expression) body, (Collection<? extends CoreBinding>) parameters);
+
+    Sort sort = getSortOfType(((Expression) body).computeType(), (Concrete.SourceNode) marker);
+    if (parameters.size() == 1 && parameters.get(0) instanceof SingleDependentLink) {
+      SingleDependentLink param = (SingleDependentLink) parameters.get(0);
+      return new LamExpression(PiExpression.generateUpperBound(param.getType().getSortOfType(), sort, myEquations, (Concrete.SourceNode) marker), param, (Expression) body);
+    }
+
+    List<Pair<SingleDependentLink,Sort>> params = new ArrayList<>();
+    ExprSubstitution substitution = new ExprSubstitution();
+    for (CoreParameter parameter : parameters) {
+      DependentLink param = (DependentLink) parameter;
+      sort = PiExpression.generateUpperBound(param.getType().getSortOfType(), sort, myEquations, (Concrete.SourceNode) marker);
+      params.add(new Pair<>(new TypedSingleDependentLink(param.isExplicit(), param.getName(), param.getType()), sort));
+    }
+
+    Expression result = ((Expression) body).subst(substitution);
+    for (int i = params.size() - 1; i >= 0; i--) {
+      result = new LamExpression(params.get(i).proj2, params.get(i).proj1, result);
+    }
+    return result;
   }
 
   @Override
