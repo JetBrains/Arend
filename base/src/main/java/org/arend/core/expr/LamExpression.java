@@ -49,6 +49,18 @@ public class LamExpression extends Expression implements CoreLamExpression {
   }
 
   @Override
+  public @NotNull CoreLamExpression dropParameters(int n) {
+    SingleDependentLink link = myLink;
+    for (int i = 0; i < n; i++) {
+      link = link.getNext();
+      if (!link.hasNext()) {
+        throw new IllegalArgumentException();
+      }
+    }
+    return new LamExpression(myResultSort, link, myBody);
+  }
+
+  @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitLam(this, params);
   }

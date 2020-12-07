@@ -77,6 +77,18 @@ public class PiExpression extends Expression implements Type, CorePiExpression, 
   }
 
   @Override
+  public @NotNull CorePiExpression dropParameters(int n) {
+    SingleDependentLink link = myLink;
+    for (int i = 0; i < n; i++) {
+      link = link.getNext();
+      if (!link.hasNext()) {
+        throw new IllegalArgumentException();
+      }
+    }
+    return new PiExpression(myResultSort, link, myCodomain);
+  }
+
+  @Override
   public Expression applyExpression(Expression expression) {
     SingleDependentLink link = myLink;
     ExprSubstitution subst = new ExprSubstitution(link, expression);
