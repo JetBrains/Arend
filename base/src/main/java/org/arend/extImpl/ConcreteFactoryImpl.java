@@ -440,7 +440,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
   @NotNull
   @Override
   public ArendRef local(@NotNull String name) {
-    return new LocalReferable(name);
+    return new GeneratedLocalReferable(name);
   }
 
   private static Referable makeLocalRef(ArendRef ref) {

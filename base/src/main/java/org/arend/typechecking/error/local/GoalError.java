@@ -1,12 +1,15 @@
 package org.arend.typechecking.error.local;
 
 import org.arend.core.context.binding.Binding;
+import org.arend.core.context.binding.EvaluatingBinding;
 import org.arend.core.expr.Expression;
+import org.arend.core.subst.ExprSubstitution;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.ext.typechecking.GoalSolver;
+import org.arend.naming.reference.GeneratedLocalReferable;
 import org.arend.naming.reference.LocalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
@@ -23,15 +26,26 @@ public class GoalError extends TypecheckingError {
   public final Concrete.Expression result;
   public final List<GeneralError> errors;
   public final GoalSolver goalSolver;
+  private final ExprSubstitution substitution;
   private List<Condition> myConditions = Collections.emptyList();
 
   public GoalError(TypecheckingContext typecheckingContext, Expression expectedType, Concrete.Expression result, List<GeneralError> errors, GoalSolver goalSolver, Concrete.GoalExpression expression) {
     super(Level.GOAL, "Goal" + (expression.getName() == null ? "" : " " + expression.getName()), expression);
     this.typecheckingContext = typecheckingContext;
-    this.expectedType = expectedType;
     this.result = result;
     this.errors = errors;
     this.goalSolver = goalSolver;
+
+    substitution = new ExprSubstitution();
+    for (Iterator<Map.Entry<Referable, Binding>> iterator = typecheckingContext.localContext.entrySet().iterator(); iterator.hasNext(); ) {
+      Map.Entry<Referable, Binding> entry = iterator.next();
+      if (entry.getKey() instanceof GeneratedLocalReferable && entry.getValue() instanceof EvaluatingBinding) {
+        substitution.add(entry.getValue(), ((EvaluatingBinding) entry.getValue()).getExpression());
+        iterator.remove();
+      }
+    }
+
+    this.expectedType = expectedType == null ? null : expectedType.subst(substitution);
   }
 
   @Override
@@ -50,6 +64,7 @@ public class GoalError extends TypecheckingError {
       for (Map.Entry<Referable, Binding> entry : context.entrySet()) {
         if (!entry.getValue().isHidden() && (!(entry.getKey() instanceof LocalReferable) || !((LocalReferable) entry.getKey()).isHidden())) {
           Expression type = entry.getValue().getTypeExpr();
+          if (type != null) type = type.subst(substitution);
           contextDocs.add(hang(hList(entry.getKey() == null ? text("_") : refDoc(entry.getKey()), text(" :")), type == null ? text("{?}") : termDoc(type, ppConfig)));
         }
       }
