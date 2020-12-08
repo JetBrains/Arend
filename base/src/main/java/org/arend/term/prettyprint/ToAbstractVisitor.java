@@ -224,7 +224,8 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
     if (hasFlag(PrettyPrinterFlag.SHOW_FIELD_INSTANCE) && expr.getArgument() instanceof ReferenceExpression) {
       GlobalReferable ref = expr.getDefinition().getReferable();
-      return cVar(new LongName(((ReferenceExpression) expr.getArgument()).getBinding().getName(), ref.getRepresentableName()), ref);
+      String name = ((ReferenceExpression) expr.getArgument()).getBinding().getName();
+      return cVar(new LongName(name == null ? "_" : name, ref.getRepresentableName()), ref);
     }
 
     Concrete.ReferenceExpression result = makeReference(expr);

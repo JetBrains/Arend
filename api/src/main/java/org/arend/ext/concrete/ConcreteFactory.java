@@ -38,7 +38,7 @@ public interface ConcreteFactory {
   @NotNull ConcreteExpression tuple(@NotNull ConcreteExpression... expressions);
   @NotNull ConcreteExpression tuple(@NotNull Collection<? extends ConcreteExpression> expressions);
   @NotNull ConcreteExpression sigma(@NotNull ConcreteParameter... parameters);
-  @NotNull ConcreteExpression sigma(@NotNull Collection<? extends ConcreteParameter> parameters);
+  @NotNull ConcreteExpression sigma(@NotNull List<? extends ConcreteParameter> parameters);
   @NotNull ConcreteExpression caseExpr(boolean isSCase, Collection<? extends ConcreteCaseArgument> arguments, @Nullable ConcreteExpression resultType, @Nullable ConcreteExpression resultTypeLevel, @NotNull ConcreteClause... clauses);
   @NotNull ConcreteExpression caseExpr(boolean isSCase, Collection<? extends ConcreteCaseArgument> arguments, @Nullable ConcreteExpression resultType, @Nullable ConcreteExpression resultTypeLevel, @NotNull Collection<? extends ConcreteClause> clauses);
   @NotNull ConcreteExpression eval(@NotNull ConcreteExpression expression);

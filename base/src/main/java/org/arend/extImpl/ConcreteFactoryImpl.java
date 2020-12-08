@@ -207,11 +207,16 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
   @NotNull
   @Override
   public ConcreteExpression sigma(@NotNull ConcreteParameter... parameters) {
-    return new Concrete.SigmaExpression(myData, typeParameters(Arrays.asList(parameters)));
+    return sigma(Arrays.asList(parameters));
   }
 
   @Override
-  public @NotNull ConcreteExpression sigma(@NotNull Collection<? extends ConcreteParameter> parameters) {
+  public @NotNull ConcreteExpression sigma(@NotNull List<? extends ConcreteParameter> parameters) {
+    if (parameters.size() == 1) {
+      ConcreteExpression type = parameters.get(0).getType();
+      if (type == null) throw new IllegalArgumentException();
+      return type;
+    }
     return new Concrete.SigmaExpression(myData, typeParameters(new ArrayList<>(parameters)));
   }
 
