@@ -197,7 +197,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     if (level == null || level != -1) {
       for (ClassField field : expr.getDefinition().getFields()) {
         if (!expr.isImplemented(field)) {
-          Sort sort = field.getType(expr.getSortArgument()).applyExpression(thisExpr).getSortOfType();
+          Sort sort = field.getType(expr.getSortArgument()).applyExpression(thisExpr).normalize(NormalizationMode.WHNF).getSortOfType();
           if (sort == null) {
             throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Cannot infer the type of field '" + field.getName() + "'", mySourceNode), expr));
           }
