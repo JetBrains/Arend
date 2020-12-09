@@ -51,7 +51,7 @@ public class UnfoldVisitor extends SubstVisitor {
           if (myUnfolded != null) {
             myUnfolded.add(expr.getDefinition());
           }
-          return impl;
+          return impl.accept(this, null);
         }
       }
     }
