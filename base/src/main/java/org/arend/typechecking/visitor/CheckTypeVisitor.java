@@ -1025,7 +1025,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         if (!defined.contains(field) && !resultClassCall.isImplemented(field)) {
           AbsExpression defaultImpl = baseClass.getDefault(field);
           if (defaultImpl != null) {
-            resultClassCall.getImplementedHere().put(field, defaultImpl.apply(new ReferenceExpression(resultClassCall.getThisBinding())));
+            resultClassCall.getImplementedHere().put(field, defaultImpl.apply(new ReferenceExpression(resultClassCall.getThisBinding()), resultClassCall.getSortArgument()));
           }
         }
       }
@@ -1047,7 +1047,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
                 oldImpl = resultClassCall.getAbsImplementationHere(field);
                 if (oldImpl == null) {
                   AbsExpression absImpl = resultClassCall.getDefinition().getImplementation(field);
-                  oldImpl = absImpl == null ? null : absImpl.getExpression();
+                  oldImpl = absImpl == null ? null : absImpl.getExpression().subst(resultClassCall.getSortArgument().toLevelSubstitution());
                 }
               }
               if (oldImpl != null) {

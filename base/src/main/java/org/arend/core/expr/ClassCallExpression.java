@@ -138,7 +138,7 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
       return expr.subst(myThisBinding, (Expression) thisExpr);
     }
     AbsExpression impl = getDefinition().getImplementation(field);
-    return impl == null ? null : impl.apply((Expression) thisExpr);
+    return impl == null ? null : impl.apply((Expression) thisExpr, getSortArgument());
   }
 
   private static void checkImplementation(CoreClassField field, Expression type) {
@@ -182,7 +182,7 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
       return null;
     }
     checkImplementation(field, result.type);
-    return impl.apply(result.expression);
+    return impl.apply(result.expression, getSortArgument());
   }
 
   @Override
@@ -195,7 +195,8 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
       return expr.removeUnusedBinding(myThisBinding);
     }
     AbsExpression impl = getDefinition().getImplementation(field);
-    return impl == null ? null : impl.getBinding() == null ? impl.getExpression() : impl.getExpression().removeUnusedBinding(impl.getBinding());
+    Expression result = impl == null ? null : impl.getBinding() == null ? impl.getExpression() : impl.getExpression().removeUnusedBinding(impl.getBinding());
+    return result == null ? null : result.subst(getSortArgument().toLevelSubstitution());
   }
 
   @Override

@@ -1,6 +1,7 @@
 package org.arend.core.expr;
 
 import org.arend.core.context.binding.Binding;
+import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.ext.core.expr.CoreAbsExpression;
 import org.jetbrains.annotations.NotNull;
@@ -27,7 +28,7 @@ public class AbsExpression implements CoreAbsExpression {
     return myExpression;
   }
 
-  public Expression apply(Expression argument) {
-    return myBinding == null ? myExpression : myExpression.subst(new ExprSubstitution(myBinding, argument));
+  public Expression apply(Expression argument, Sort sortArgument) {
+    return myBinding == null ? myExpression : myExpression.subst(new ExprSubstitution(myBinding, argument), sortArgument.toLevelSubstitution());
   }
 }

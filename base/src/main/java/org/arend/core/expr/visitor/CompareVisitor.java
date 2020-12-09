@@ -762,7 +762,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       if (impl1 == null) {
         AbsExpression absImpl1 = classCall1.getDefinition().getImplementation(field);
         if (absImpl1 != null) {
-          impl1 = absImpl1.getExpression();
+          impl1 = absImpl1.getExpression().subst(classCall1.getSortArgument().toLevelSubstitution());
           binding = absImpl1.getBinding();
         }
       }
@@ -788,7 +788,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     boolean ok = true;
     for (Map.Entry<ClassField, AbsExpression> entry : classCall1.getDefinition().getImplemented()) {
       if (entry.getKey().getUniverseKind() != UniverseKind.NO_UNIVERSES && classCall2.getDefinition().getFields().contains(entry.getKey()) && !classCall2.isImplemented(entry.getKey())) {
-        Expression type = entry.getValue().apply(thisExpr).getType();
+        Expression type = entry.getValue().apply(thisExpr, classCall1.getSortArgument()).getType();
         if (type == null) {
           ok = false;
           break;
