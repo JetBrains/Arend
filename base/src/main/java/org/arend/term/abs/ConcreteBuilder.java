@@ -67,6 +67,10 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
     return convertExpression(expression, DummyErrorReporter.INSTANCE);
   }
 
+  public static @NotNull Concrete.Pattern convertPattern(Abstract.Pattern clause, ReferableConverter referableConverter, ErrorReporter errorReporter, TCReferable definition ) {
+    return (new ConcreteBuilder(referableConverter, errorReporter, definition)).buildPattern(clause);
+  }
+
   // Definition
 
   private void setEnclosingClass(Concrete.Definition definition, Abstract.Definition abstractDef) {

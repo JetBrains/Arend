@@ -556,7 +556,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     return null;
   }
 
-  void visitPatterns(List<Concrete.Pattern> patterns, Map<String, Referable> usedNames, boolean resolvePatterns) {
+  public void visitPatterns(List<Concrete.Pattern> patterns, Map<String, Referable> usedNames, boolean resolvePatterns) {
     for (int i = 0; i < patterns.size(); i++) {
       Concrete.Pattern pattern = patterns.get(i);
       Referable ref = pattern instanceof Concrete.NamePattern ? ((Concrete.NamePattern) pattern).getReferable() : null;
@@ -576,7 +576,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     }
   }
 
-  private void resolvePattern(Concrete.Pattern pattern) {
+  public void resolvePattern(Concrete.Pattern pattern) {
     if (pattern instanceof Concrete.TuplePattern) {
       for (Concrete.Pattern patternArg : ((Concrete.TuplePattern) pattern).getPatterns()) {
         resolvePattern(patternArg);
@@ -594,7 +594,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       if (referable instanceof ErrorReference) {
         myErrorReporter.report(((ErrorReference) referable).getError());
       } else if (referable instanceof GlobalReferable && !((GlobalReferable) referable).getKind().isConstructor()) {
-        myErrorReporter.report(new ExpectedConstructorError((GlobalReferable) referable, null, null, pattern, null, null, Collections.emptyList(), EmptyDependentLink.getInstance()));
+        myErrorReporter.report(new ExpectedConstructorError((GlobalReferable) referable, null, null, pattern, null, EmptyDependentLink.getInstance()));
       }
 
       ((Concrete.ConstructorPattern) pattern).setConstructor(referable);

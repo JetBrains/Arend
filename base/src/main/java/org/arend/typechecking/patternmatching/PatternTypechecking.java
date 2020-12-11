@@ -723,7 +723,7 @@ public class PatternTypechecking {
       if (constructor == null || !dataCall.getMatchedConCall(constructor, conCalls) || conCalls.isEmpty()) {
         Referable conRef = conPattern.getConstructor();
         if (constructor != null || conRef instanceof TCDefReferable && ((TCDefReferable) conRef).getKind() == GlobalReferable.Kind.CONSTRUCTOR) {
-          myErrorReporter.report(new ExpectedConstructorError((GlobalReferable) conRef, dataCall, parameters, conPattern, paramsSubst, myCaseArguments, myElimParams, myLinkList.getFirst()));
+          myErrorReporter.report(new ExpectedConstructorError((GlobalReferable) conRef, dataCall, parameters, conPattern, myCaseArguments, myLinkList.getFirst()));
         }
         return null;
       }
