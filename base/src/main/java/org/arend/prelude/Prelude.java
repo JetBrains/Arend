@@ -99,22 +99,26 @@ public class Prelude implements ArendPrelude {
         SUC = NAT.getConstructor("suc");
         DIV_MOD_TYPE = new SigmaExpression(Sort.SET0, parameter(true, Arrays.asList(null, null), Nat()));
         break;
-      case "Fin": {
+      case "Fin":
         FIN = (DataDefinition) definition;
-        FIN_ZERO = new Constructor(new LocatedReferableImpl(Precedence.DEFAULT, "zero", FIN.getRef(), GlobalReferable.Kind.CONSTRUCTOR), FIN);
-        DependentLink binding = new TypedDependentLink(true, "n", ExpressionFactory.Nat(), EmptyDependentLink.getInstance());
-        List<ExpressionPattern> patterns = Collections.singletonList(new ConstructorExpressionPattern(new ConCallExpression(SUC, Sort.STD, Collections.emptyList(), Collections.emptyList()), Collections.singletonList(new BindingPattern(binding))));
-        FIN_ZERO.setPatterns(patterns);
-        FIN_ZERO.setParameters(EmptyDependentLink.getInstance());
-        FIN_ZERO.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-        FIN.addConstructor(FIN_ZERO);
-        FIN_SUC = new Constructor(new LocatedReferableImpl(Precedence.DEFAULT, "suc", FIN.getRef(), GlobalReferable.Kind.CONSTRUCTOR), FIN);
-        FIN_SUC.setPatterns(patterns);
-        FIN_SUC.setParameters(new TypedDependentLink(true, null, new DataCallExpression(FIN, Sort.STD, new SingletonList<>(new ReferenceExpression(binding))), EmptyDependentLink.getInstance()));
-        FIN_SUC.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-        FIN.addConstructor(FIN_SUC);
+        if (FIN.getConstructors().isEmpty()) {
+          FIN_ZERO = new Constructor(new LocatedReferableImpl(Precedence.DEFAULT, "zero", FIN.getRef(), GlobalReferable.Kind.CONSTRUCTOR), FIN);
+          DependentLink binding = new TypedDependentLink(true, "n", ExpressionFactory.Nat(), EmptyDependentLink.getInstance());
+          List<ExpressionPattern> patterns = Collections.singletonList(new ConstructorExpressionPattern(new ConCallExpression(SUC, Sort.STD, Collections.emptyList(), Collections.emptyList()), Collections.singletonList(new BindingPattern(binding))));
+          FIN_ZERO.setPatterns(patterns);
+          FIN_ZERO.setParameters(EmptyDependentLink.getInstance());
+          FIN_ZERO.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+          FIN.addConstructor(FIN_ZERO);
+          FIN_SUC = new Constructor(new LocatedReferableImpl(Precedence.DEFAULT, "suc", FIN.getRef(), GlobalReferable.Kind.CONSTRUCTOR), FIN);
+          FIN_SUC.setPatterns(patterns);
+          FIN_SUC.setParameters(new TypedDependentLink(true, null, new DataCallExpression(FIN, Sort.STD, new SingletonList<>(new ReferenceExpression(binding))), EmptyDependentLink.getInstance()));
+          FIN_SUC.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+          FIN.addConstructor(FIN_SUC);
+        } else {
+          FIN_ZERO = FIN.getConstructor("zero");
+          FIN_SUC = FIN.getConstructor("suc");
+        }
         break;
-      }
       case "+":
         PLUS = (FunctionDefinition) definition;
         break;
