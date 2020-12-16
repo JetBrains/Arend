@@ -106,7 +106,11 @@ public class GoodThisParametersVisitor extends VoidExpressionVisitor<Void> {
   private void visitArgument(Expression arg, Boolean goodParameter) {
     if (arg instanceof FieldCallExpression && goodParameter) {
       visitDefCall((FieldCallExpression) arg, null);
-    } else if (!(arg instanceof ReferenceExpression && goodParameter)) {
+    } else if (goodParameter && (arg instanceof ReferenceExpression || arg instanceof NewExpression && ((NewExpression) arg).getRenewExpression() instanceof ReferenceExpression)) {
+      if (arg instanceof NewExpression) {
+        visitClassCall(((NewExpression) arg).getClassCall(), null);
+      }
+    } else {
       arg.accept(this, null);
     }
   }
@@ -159,7 +163,11 @@ public class GoodThisParametersVisitor extends VoidExpressionVisitor<Void> {
     for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
       if (entry.getValue() instanceof FieldCallExpression && expr.getDefinition().isGoodField(entry.getKey())) {
         visitDefCall((FieldCallExpression) entry.getValue(), null);
-      } else if (!(entry.getValue() instanceof ReferenceExpression && expr.getDefinition().isGoodField(entry.getKey()))) {
+      } else if ((entry.getValue() instanceof ReferenceExpression || entry.getValue() instanceof NewExpression && ((NewExpression) entry.getValue()).getRenewExpression() instanceof ReferenceExpression) && expr.getDefinition().isGoodField(entry.getKey())) {
+        if (entry.getValue() instanceof NewExpression) {
+          visitClassCall(((NewExpression) entry.getValue()).getClassCall(), null);
+        }
+      } else {
         entry.getValue().accept(this, null);
       }
     }
