@@ -321,4 +321,14 @@ public class CoerceTest extends TypeCheckingTestCase {
       "    | con X => X\n" +
       "\\func f (d : D) : \\Type => d");
   }
+
+  @Test
+  public void coerceOverriddenField() {
+    typeCheckModule(
+      "\\record R (\\coerce f : \\hType)\n" +
+      "\\record S \\extends R {\n" +
+      "  \\override f : \\Set" +
+      "}\n" +
+      "\\func test (s : S) : \\Set => s");
+  }
 }

@@ -160,7 +160,8 @@ public class CoerceData {
         ClassField field = (ClassField) def;
         ClassCallExpression classCall = result.type.cast(ClassCallExpression.class);
         Sort sort = classCall == null ? Sort.generateInferVars(visitor.getEquations(), field.getParentClass().getUniverseKind(), sourceNode) : classCall.getSortArgument();
-        result = new TypecheckingResult(FieldCallExpression.make(field, sort, result.expression), field.getType(sort).applyExpression(result.expression).normalize(NormalizationMode.WHNF));
+        Expression resultExpr = FieldCallExpression.make(field, sort, result.expression);
+        result = new TypecheckingResult(resultExpr, resultExpr.getType());
       } else if (def instanceof FunctionDefinition || def instanceof Constructor) {
         List<Expression> arguments = new ArrayList<>();
         DependentLink link = def.getParameters();
