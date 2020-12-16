@@ -1243,7 +1243,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
               ClassField paramClassifyingField = classCall.getDefinition().getClassifyingField();
               ReferenceExpression refExpr = new ReferenceExpression(link);
               Expression classifyingImpl = paramClassifyingField == null ? null : classCall.getImplementation(paramClassifyingField, refExpr);
-              Expression classifyingExprType = paramClassifyingField == null ? null : paramClassifyingField.getType(classCall.getSortArgument()).applyExpression(refExpr);
+              Expression classifyingExprType = paramClassifyingField == null ? null : classCall.getDefinition().getFieldType(paramClassifyingField, classCall.getSortArgument(), refExpr);
               if (classifyingImpl == null && paramClassifyingField != null) {
                 classifyingImpl = FieldCallExpression.make(paramClassifyingField, classCall.getSortArgument(), refExpr);
               }

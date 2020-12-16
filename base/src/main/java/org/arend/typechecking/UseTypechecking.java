@@ -206,7 +206,7 @@ public class UseTypechecking {
               break;
             }
             levelFields.add(classField);
-            Expression fieldType = classField.getType(Sort.STD).applyExpression(thisExpr);
+            Expression fieldType = classCall.getDefinition().getFieldType(classField, classCall.getSortArgument(), thisExpr);
             Expression paramType = link.getTypeExpr();
             if (!Expression.compare(fieldType, paramType, Type.OMEGA, CMP.EQ)) {
               if (parameters == null) {

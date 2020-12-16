@@ -149,7 +149,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
         continue;
       }
 
-      PiExpression fieldType = field.getType(sortArgument);
+      PiExpression fieldType = getFieldType(field, sortArgument);
       if (fieldType.getCodomain().isInstance(ErrorExpression.class)) {
         continue;
       }

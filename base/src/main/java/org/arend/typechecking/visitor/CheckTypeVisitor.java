@@ -1084,7 +1084,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
                     Expression impl = FieldCallExpression.make(field, classCall.getSortArgument(), result.expression);
                     Expression oldImpl = field.isProperty() ? null : resultClassCall.getImplementation(field, result.expression);
                     if (oldImpl != null) {
-                      if (!CompareVisitor.compare(myEquations, CMP.EQ, impl, oldImpl, field.getType(classCall.getSortArgument()).applyExpression(result.expression), pair.proj2.implementation)) {
+                      if (!CompareVisitor.compare(myEquations, CMP.EQ, impl, oldImpl, classCall.getDefinition().getFieldType(field, classCall.getSortArgument(), result.expression), pair.proj2.implementation)) {
                         errorReporter.report(new FieldsImplementationError(true, baseClass.getReferable(), Collections.singletonList(field.getReferable()), pair.proj2));
                       }
                     } else if (!resultClassCall.isImplemented(field)) {
@@ -1622,10 +1622,9 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     List<Sort> sorts = hLevel != null && hLevel == -1 ? null : new ArrayList<>();
     for (ClassField field : classCall.getDefinition().getFields()) {
       if (classCall.isImplemented(field)) continue;
-      PiExpression fieldType = field.getType(classCall.getSortArgument());
-      if (fieldType.getCodomain().isInstance(ErrorExpression.class)) continue;
-      if (sorts != null) {
-        sorts.add(getSortOfType(fieldType.applyExpression(thisExpr).normalize(NormalizationMode.WHNF), sourceNode));
+      Expression fieldType = classCall.getDefinition().getFieldType(field, classCall.getSortArgument(), thisExpr).normalize(NormalizationMode.WHNF);
+      if (sorts != null && !fieldType.isInstance(ErrorExpression.class)) {
+        sorts.add(getSortOfType(fieldType, sourceNode));
       }
     }
 
@@ -2174,7 +2173,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         }
         newType = link.getTypeExpr().subst(substitution);
       } else {
-        newType = notImplementedFields.get(i).getType(classCall.getSortArgument()).applyExpression(expression);
+        newType = classCall.getDefinition().getFieldType(notImplementedFields.get(i), classCall.getSortArgument(), expression);
       }
       LetClausePattern letClausePattern = typecheckLetClausePattern(subPattern, link != null ? ProjExpression.make(expression, i) : FieldCallExpression.make(notImplementedFields.get(i), classCall.getSortArgument(), expression), newType, bindings);
       if (letClausePattern == null) {

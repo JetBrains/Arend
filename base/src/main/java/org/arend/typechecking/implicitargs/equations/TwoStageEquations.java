@@ -528,7 +528,7 @@ public class TwoStageEquations implements Equations {
           for (Iterator<Map.Entry<ClassField, Expression>> iterator = implementations.entrySet().iterator(); iterator.hasNext(); ) {
             Map.Entry<ClassField, Expression> entry = iterator.next();
             Expression other = bound.getAbsImplementationHere(entry.getKey());
-            if (other == null || !CompareVisitor.compare(wrapper, CMP.EQ, entry.getValue(), other, entry.getKey().getType(solution.getSortArgument()).applyExpression(thisExpr), pair.proj1.getSourceNode())) {
+            if (other == null || !CompareVisitor.compare(wrapper, CMP.EQ, entry.getValue(), other, solution.getDefinition().getFieldType(entry.getKey(), solution.getSortArgument(), thisExpr), pair.proj1.getSourceNode())) {
               iterator.remove();
             }
           }
@@ -563,7 +563,7 @@ public class TwoStageEquations implements Equations {
 
           for (Map.Entry<ClassField, Expression> entry : map.entrySet()) {
             Expression other = otherMap.get(entry.getKey());
-            if (other == null || !CompareVisitor.compare(this, CMP.EQ, entry.getValue(), other, entry.getKey().getType(solution.getSortArgument()).applyExpression(thisExpr), pair.proj1.getSourceNode())) {
+            if (other == null || !CompareVisitor.compare(this, CMP.EQ, entry.getValue(), other, solution.getDefinition().getFieldType(entry.getKey(), solution.getSortArgument(), thisExpr), pair.proj1.getSourceNode())) {
               reportBoundsError(pair.proj1, pair.proj2, CMP.LE);
               allOK = false;
               continue loop;

@@ -272,7 +272,7 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
         return false;
       }
 
-      PiExpression fieldType = field.getType(Sort.STD);
+      PiExpression fieldType = definition.getFieldType(field, Sort.STD);
       myChecker.addBinding(fieldType.getParameters(), fieldType.getCodomain());
       Expression typeType = fieldType.getCodomain().accept(myChecker, Type.OMEGA);
       myChecker.removeBinding(fieldType.getParameters());

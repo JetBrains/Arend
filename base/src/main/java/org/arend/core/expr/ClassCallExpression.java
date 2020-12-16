@@ -255,7 +255,7 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
         continue;
       }
 
-      PiExpression piExpr = field.getType(getSortArgument());
+      PiExpression piExpr = getDefinition().getFieldType(field, getSortArgument());
       Expression type = piExpr.applyExpression(newExpr);
       DependentLink link = new TypedDependentLink(true, Renamer.getNameFromType(type, field.getName()), type instanceof Type ? (Type) type : new TypeExpression(type, piExpr.getResultSort()), EmptyDependentLink.getInstance());
       implementations.put(field, new ReferenceExpression(link));
