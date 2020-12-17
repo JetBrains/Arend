@@ -173,4 +173,24 @@ public class OverrideTest extends TypeCheckingTestCase {
       "  | foo => \\new R", 1);
     assertThatErrorsAre(typeMismatchError());
   }
+
+  @Test
+  public void derivedOverridePi() {
+    typeCheckModule(
+      "\\record R (X : \\Set (\\suc \\lp)) (f : X -> X)\n" +
+      "\\record S \\extends R {\n" +
+      "  \\override X : \\Set \\lp\n" +
+      "}\n" +
+      "\\func test (A : \\Set \\lp) : \\Set \\lp => S \\lp A");
+  }
+
+  @Test
+  public void derivedOverrideSigma() {
+    typeCheckModule(
+      "\\record R (X : \\Set (\\suc \\lp)) (f : \\Sigma X X)\n" +
+      "\\record S \\extends R {\n" +
+      "  \\override X : \\Set \\lp\n" +
+      "}\n" +
+      "\\func test (A : \\Set \\lp) : \\Set \\lp => S \\lp A");
+  }
 }

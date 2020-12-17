@@ -2245,6 +2245,24 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     if (newDef) {
+      if (!typedDef.getOverriddenFields().isEmpty()) {
+        Set<ClassField> superFields = new LinkedHashSet<>();
+        for (ClassDefinition superClass : typedDef.getSuperClasses()) {
+          superFields.addAll(superClass.getFields());
+        }
+        for (ClassField field : superFields) {
+          if (field.isProperty() || typedDef.isImplemented(field) || typedDef.isOverridden(field)) {
+            continue;
+          }
+          TypedSingleDependentLink thisParam = new TypedSingleDependentLink(false, "this", new ClassCallExpression(typedDef, Sort.STD), true);
+          Expression type = field.getType(Sort.STD).applyExpression(new ReferenceExpression(thisParam));
+          Type newType = type.accept(new MinimizeLevelVisitor(), null);
+          if (newType != null && newType != type) {
+            typedDef.overrideField(field, new PiExpression(thisParam.getType().getSortOfType().max(newType.getSortOfType()), thisParam, newType.getExpr()));
+          }
+        }
+      }
+
       typedDef.setStatus(!classOk ? Definition.TypeCheckingStatus.HAS_ERRORS : typechecker.getStatus());
       typedDef.updateSort();
 
