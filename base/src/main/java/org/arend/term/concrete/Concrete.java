@@ -695,32 +695,17 @@ public final class Concrete {
     void setImplementedField(Referable newImplementedField);
   }
 
-  public static class CoClauseFunctionReference extends SourceNodeImpl implements CoClauseElement {
-    private Referable myImplementedField;
-    private final TCDefReferable myFunctionReference;
-
+  public static class CoClauseFunctionReference extends ClassFieldImpl {
     public CoClauseFunctionReference(Object data, Referable implementedField, TCDefReferable functionReference) {
-      super(data);
-      myImplementedField = implementedField;
-      myFunctionReference = functionReference;
+      super(data, implementedField, new ReferenceExpression(data, functionReference), null);
     }
 
     public CoClauseFunctionReference(Referable implementedField, TCDefReferable functionReference) {
       this(functionReference.getData(), implementedField, functionReference);
     }
 
-    @Override
-    public Referable getImplementedField() {
-      return myImplementedField;
-    }
-
-    @Override
-    public void setImplementedField(Referable newImplementedField) {
-      myImplementedField = newImplementedField;
-    }
-
     public TCDefReferable getFunctionReference() {
-      return myFunctionReference;
+      return (TCDefReferable) ((ReferenceExpression) Objects.requireNonNull(getImplementation())).getReferent();
     }
   }
 

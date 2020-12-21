@@ -272,9 +272,6 @@ public class VoidConcreteVisitor<P, R> implements ConcreteExpressionVisitor<P,Vo
         if (field.getResultTypeLevel() != null) {
           field.getResultTypeLevel().accept(this, params);
         }
-      } else if (element instanceof Concrete.CoClauseFunctionReference) {
-        TCReferable ref = ((Concrete.CoClauseFunctionReference) element).getFunctionReference();
-        visitReference(new Concrete.ReferenceExpression(ref.getData(), ref), params);
       } else {
         throw new IllegalStateException();
       }

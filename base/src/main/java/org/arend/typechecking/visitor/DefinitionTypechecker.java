@@ -733,9 +733,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     for (Concrete.CoClauseElement element : elements) {
       if (element instanceof Concrete.ClassFieldImpl) {
         classFieldImpls.add((Concrete.ClassFieldImpl) element);
-      } else if (element instanceof Concrete.CoClauseFunctionReference) {
-        TCReferable ref = ((Concrete.CoClauseFunctionReference) element).getFunctionReference();
-        classFieldImpls.add(new Concrete.ClassFieldImpl(element.getData(), element.getImplementedField(), new Concrete.ReferenceExpression(ref.getData(), ref), null));
       } else {
         throw new IllegalStateException();
       }

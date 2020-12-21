@@ -295,16 +295,6 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
           for (Concrete.CoClauseElement element : body.getCoClauseElements()) {
             if (element instanceof Concrete.ClassFieldImpl) {
               exprVisitor.visitClassFieldImpl((Concrete.ClassFieldImpl) element, typeRef);
-            } else if (element instanceof Concrete.CoClauseFunctionReference && element.getImplementedField() instanceof UnresolvedReference) {
-              Referable resolved = exprVisitor.visitClassFieldReference(element, element.getImplementedField(), typeRef);
-              if (resolved != element.getImplementedField()) {
-                var definition = myConcreteProvider.getConcrete(((Concrete.CoClauseFunctionReference) element).getFunctionReference());
-                if (definition instanceof Concrete.CoClauseFunctionDefinition) {
-                  ((Concrete.CoClauseFunctionDefinition) definition).setImplementedField(resolved);
-                }
-              }
-            } else {
-              throw new IllegalStateException();
             }
           }
         }
