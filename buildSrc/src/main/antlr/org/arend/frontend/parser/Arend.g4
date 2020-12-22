@@ -28,7 +28,7 @@ classStat : '|' classFieldOrImpl                        # classFieldOrImplStat
           | definition                                  # classDefinitionStat
           | fieldMod classFieldDef                      # classFieldStat
           | '\\override' longName tele* ':' returnExpr  # classOverrideStat
-          | '\\default' localCoClause                   # classDefaultStat
+          | '\\default' coClause                        # classDefaultStat
           ;
 
 definition  : funcKw defId tele* (':' returnExpr2)? functionBody where?                                         # defFunction
@@ -77,7 +77,7 @@ functionBody  : '=>' expr             # withoutElim
 instanceBody  : '=>' expr             # instanceWithoutElim
               | elim clauses          # instanceWithElim
               | '\\cowith' coClauses  # instanceCowithElim
-              | coClause*             # instanceCoclauses
+              | ('|' coClause)*       # instanceCoclauses
               ;
 
 dataBody : elim constructorClauses                      # dataClauses
@@ -177,13 +177,13 @@ clauses : '{' clause? ('|' clause)* '}' # clausesWithBraces
         | ('|' clause)*                 # clausesWithoutBraces
         ;
 
-coClauses : coClause*                         # coClausesWithoutBraces
-          | '{' coClause* '}'                 # coClausesWithBraces
+coClauses : ('|' coClause)*                   # coClausesWithoutBraces
+          | '{' ('|' coClause)* '}'           # coClausesWithBraces
           ;
 
 clause : pattern (',' pattern)* ('=>' expr)?;
 
-coClause : '|' (longName coClauseBody | precedence longName tele* (COLON returnExpr2)? coClauseDefBody);
+coClause : (longName coClauseBody | precedence longName tele* (COLON returnExpr2)? coClauseDefBody);
 
 coClauseBody : tele* '=>' expr              # coClauseImpl
              | '{' ('|' localCoClause)* '}' # coClauseRec

@@ -74,6 +74,9 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
   // Definition
 
   private void setEnclosingClass(Concrete.Definition definition, Abstract.Definition abstractDef) {
+    if (definition.enclosingClass != null) {
+      return;
+    }
     TCDefReferable enclosingClass = (TCDefReferable) myReferableConverter.toDataLocatedReferable(abstractDef.getEnclosingClass());
     if (!(definition instanceof Concrete.ClassDefinition)) {
       definition.enclosingClass = enclosingClass;
@@ -117,16 +120,6 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
     } else if (def.isCowith()) {
       List<Concrete.CoClauseElement> elements = new ArrayList<>();
       for (Abstract.CoClauseElement element : def.getCoClauseElements()) {
-        if (element instanceof Abstract.CoClauseFunctionReference) {
-          LocatedReferable functionRef = ((Abstract.CoClauseFunctionReference) element).getFunctionReference();
-          if (functionRef != null) {
-            Abstract.Reference implementedField = element.getImplementedField();
-            if (implementedField != null) {
-              elements.add(new Concrete.CoClauseFunctionReference(implementedField.getReferent(), (TCDefReferable) myReferableConverter.toDataLocatedReferable(functionRef)));
-            }
-            continue;
-          }
-        }
         if (element instanceof Abstract.ClassFieldImpl) {
           buildImplementation(def, (Abstract.ClassFieldImpl) element, elements);
         } else {
@@ -147,17 +140,18 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
     FunctionKind kind = def.getFunctionKind();
 
     TCDefReferable parentRef = (TCDefReferable) myReferableConverter.toDataLocatedReferable(def.getReferable().getLocatedReferableParent());
-    Concrete.BaseFunctionDefinition result;
-    if (kind == FunctionKind.COCLAUSE_FUNC) {
+    Concrete.FunctionDefinition result;
+    if (kind.isCoclause()) {
       Abstract.Reference implementedField = def.getImplementedField();
-      result = new Concrete.CoClauseFunctionDefinition((TCDefReferable) myDefinition, parentRef, implementedField == null ? null : implementedField.getReferent(), parameters, type, typeLevel, body);
+      result = new Concrete.CoClauseFunctionDefinition(kind, (TCDefReferable) myDefinition, parentRef, implementedField == null ? null : implementedField.getReferent(), parameters, type, typeLevel, body);
+      if (kind == FunctionKind.CLASS_COCLAUSE) {
+        result.enclosingClass = parentRef;
+      }
     } else {
       result = Concrete.UseDefinition.make(def.getFunctionKind(), (TCDefReferable) myDefinition, parameters, type, typeLevel, body, parentRef);
     }
     setEnclosingClass(result, def);
-    if (result instanceof Concrete.FunctionDefinition) {
-      ((Concrete.FunctionDefinition) result).setUsedDefinitions(visitUsedDefinitions(def.getUsedDefinitions()));
-    }
+    result.setUsedDefinitions(visitUsedDefinitions(def.getUsedDefinitions()));
     return result;
   }
 
@@ -279,7 +273,17 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
       }
     }
 
-    classDef.setUsedDefinitions(visitUsedDefinitions(def.getUsedDefinitions()));
+    List<TCDefReferable> usedDefinitions = visitUsedDefinitions(def.getUsedDefinitions());
+    for (Concrete.ClassElement element : elements) {
+      if (element instanceof Concrete.CoClauseFunctionReference) {
+        if (usedDefinitions.isEmpty()) {
+          usedDefinitions = new ArrayList<>();
+        }
+        usedDefinitions.add(((Concrete.CoClauseFunctionReference) element).getFunctionReference());
+      }
+    }
+
+    classDef.setUsedDefinitions(usedDefinitions);
     return classDef;
   }
 
@@ -308,6 +312,17 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
   }
 
   private void buildImplementation(Object errorData, Abstract.ClassFieldImpl implementation, List<? super Concrete.ClassFieldImpl> implementations) {
+    if (implementation instanceof Abstract.CoClauseFunctionReference) {
+      LocatedReferable functionRef = ((Abstract.CoClauseFunctionReference) implementation).getFunctionReference();
+      if (functionRef != null) {
+        Abstract.Reference implementedField = implementation.getImplementedField();
+        if (implementedField != null) {
+          implementations.add(new Concrete.CoClauseFunctionReference(implementedField.getReferent(), (TCDefReferable) myReferableConverter.toDataLocatedReferable(functionRef), implementation.isDefault()));
+        }
+        return;
+      }
+    }
+
     Object prec = implementation.getPrec();
     if (prec != null) {
       myErrorReporter.report(new ParsingError(ParsingError.Kind.PRECEDENCE_IGNORED, prec));

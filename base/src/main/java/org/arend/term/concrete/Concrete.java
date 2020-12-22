@@ -696,16 +696,18 @@ public final class Concrete {
   }
 
   public static class CoClauseFunctionReference extends ClassFieldImpl {
-    public CoClauseFunctionReference(Object data, Referable implementedField, TCDefReferable functionReference) {
-      super(data, implementedField, new ReferenceExpression(data, functionReference), null);
+    public CoClauseFunctionReference(Object data, Referable implementedField, TCDefReferable functionReference, boolean isDefault) {
+      super(data, implementedField, new ReferenceExpression(data, functionReference), null, isDefault);
     }
 
-    public CoClauseFunctionReference(Referable implementedField, TCDefReferable functionReference) {
-      this(functionReference.getData(), implementedField, functionReference);
+    public CoClauseFunctionReference(Referable implementedField, TCDefReferable functionReference, boolean isDefault) {
+      this(functionReference.getData(), implementedField, functionReference, isDefault);
     }
 
     public TCDefReferable getFunctionReference() {
-      return (TCDefReferable) ((ReferenceExpression) Objects.requireNonNull(getImplementation())).getReferent();
+      Expression impl = getImplementation();
+      assert impl instanceof ReferenceExpression || impl instanceof AppExpression;
+      return (TCDefReferable) ((ReferenceExpression) (impl instanceof ReferenceExpression ? impl : ((AppExpression) impl).getFunction())).getReferent();
     }
   }
 
@@ -1799,25 +1801,12 @@ public final class Concrete {
     }
   }
 
-  public static class CoClauseFunctionDefinition extends BaseFunctionDefinition {
-    private final TCDefReferable myEnclosingDefinition;
+  public static class CoClauseFunctionDefinition extends UseDefinition {
     private Referable myImplementedField;
 
-    public CoClauseFunctionDefinition(TCDefReferable referable, TCDefReferable enclosingDefinition, Referable implementedField, List<Parameter> parameters, Expression resultType, Expression resultTypeLevel, FunctionBody body) {
-      super(referable, parameters, resultType, resultTypeLevel, body);
-      myEnclosingDefinition = enclosingDefinition;
+    public CoClauseFunctionDefinition(FunctionKind kind, TCDefReferable referable, TCDefReferable enclosingDefinition, Referable implementedField, List<Parameter> parameters, Expression resultType, Expression resultTypeLevel, FunctionBody body) {
+      super(kind, referable, parameters, resultType, resultTypeLevel, body, enclosingDefinition);
       myImplementedField = implementedField;
-    }
-
-    @NotNull
-    @Override
-    public FunctionKind getKind() {
-      return FunctionKind.COCLAUSE_FUNC;
-    }
-
-    @NotNull
-    public TCDefReferable getEnclosingDefinition() {
-      return myEnclosingDefinition;
     }
 
     public Referable getImplementedField() {
@@ -1826,6 +1815,10 @@ public final class Concrete {
 
     public void setImplementedField(Referable newImplementedField) {
       myImplementedField = newImplementedField;
+    }
+
+    public static String makeName(String name, boolean isDefault) {
+      return isDefault ? name + "\\impl" : name;
     }
   }
 
@@ -2159,11 +2152,11 @@ public final class Concrete {
   }
 
   public static class UseDefinition extends FunctionDefinition {
-    private final TCDefReferable myCoerceParent;
+    private final TCDefReferable myUseParent;
 
-    private UseDefinition(FunctionKind kind, TCDefReferable referable, List<Parameter> parameters, Expression resultType, Expression resultTypeLevel, FunctionBody body, TCDefReferable coerceParent) {
+    private UseDefinition(FunctionKind kind, TCDefReferable referable, List<Parameter> parameters, Expression resultType, Expression resultTypeLevel, FunctionBody body, TCDefReferable useParent) {
       super(kind, referable, parameters, resultType, resultTypeLevel, body);
-      myCoerceParent = coerceParent;
+      myUseParent = useParent;
     }
 
     public static FunctionDefinition make(FunctionKind kind, TCDefReferable referable, List<Parameter> parameters, Expression resultType, Expression resultTypeLevel, FunctionBody body, LocatedReferable coerceParent) {
@@ -2171,7 +2164,7 @@ public final class Concrete {
     }
 
     public TCDefReferable getUseParent() {
-      return myCoerceParent;
+      return myUseParent;
     }
   }
 

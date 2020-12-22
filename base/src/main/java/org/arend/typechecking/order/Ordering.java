@@ -132,7 +132,7 @@ public class Ordering extends BellmanFord<Concrete.ResolvableDefinition> {
         visitor.addDependency((TCReferable) ref);
       }
     }
-    if (definition instanceof Concrete.UseDefinition) {
+    if (definition instanceof Concrete.UseDefinition && (!(definition instanceof Concrete.CoClauseFunctionDefinition) || ((Concrete.CoClauseFunctionDefinition) definition).getKind() == FunctionKind.CLASS_COCLAUSE)) {
       visitor.addDependency(((Concrete.UseDefinition) definition).getUseParent());
     }
     definition.accept(visitor, null);
@@ -199,7 +199,7 @@ public class Ordering extends BellmanFord<Concrete.ResolvableDefinition> {
         hasInstances = true;
         break;
       }
-      if (definition instanceof Concrete.UseDefinition) {
+      if (definition instanceof Concrete.UseDefinition && ((Concrete.UseDefinition) definition).getKind() != FunctionKind.FUNC_COCLAUSE) {
         if (myStage.ordinal() >= Stage.WITHOUT_USE.ordinal()) {
           myOrderingListener.cycleFound(scc);
           return;

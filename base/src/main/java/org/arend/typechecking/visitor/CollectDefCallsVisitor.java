@@ -61,6 +61,14 @@ public class CollectDefCallsVisitor extends VoidConcreteVisitor<Void, Void> {
   }
 
   @Override
+  protected void visitClassFieldImpl(Concrete.ClassFieldImpl classFieldImpl, Void params) {
+    if (classFieldImpl.implementation != null && !(classFieldImpl instanceof Concrete.CoClauseFunctionReference && classFieldImpl.isDefault())) {
+      classFieldImpl.implementation.accept(this, params);
+    }
+    visitElements(classFieldImpl.getSubCoclauseList(), params);
+  }
+
+  @Override
   protected void visitPattern(Concrete.Pattern pattern, Void params) {
     if (pattern instanceof Concrete.ConstructorPattern) {
       Referable constructor = ((Concrete.ConstructorPattern) pattern).getConstructor();

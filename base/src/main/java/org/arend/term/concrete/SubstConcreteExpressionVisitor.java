@@ -248,7 +248,10 @@ public class SubstConcreteExpressionVisitor implements DataContainer, ConcreteEx
 
   @SuppressWarnings("unchecked")
   protected <T extends Concrete.ClassElement> T visitClassElement(T element) {
-    if (Concrete.ClassFieldImpl.class.equals(element.getClass())) {
+    if (Concrete.CoClauseFunctionReference.class.equals(element.getClass())) {
+      var field = (Concrete.CoClauseFunctionReference) element;
+      return (T) new Concrete.CoClauseFunctionReference(myData != null ? myData : field.getData(), field.getImplementedField(), field.getFunctionReference(), field.isDefault());
+    } else if (Concrete.ClassFieldImpl.class.equals(element.getClass())) {
       var field = (Concrete.ClassFieldImpl) element;
       var subCoclauses = field.getSubCoclauses();
       var subClassFieldImpls = subCoclauses == null ? null : new Concrete.Coclauses(
@@ -262,9 +265,6 @@ public class SubstConcreteExpressionVisitor implements DataContainer, ConcreteEx
     } else if (Concrete.OverriddenField.class.equals(element.getClass())) {
       var field = (Concrete.OverriddenField) element;
       return (T) new Concrete.OverriddenField(myData != null ? myData : field.getData(), field.getOverriddenField(), visitParameters(field.getParameters()), field.getResultType().accept(this, null), nullableMap(field.getResultTypeLevel()));
-    } else if (Concrete.CoClauseFunctionReference.class.equals(element.getClass())) {
-      var field = (Concrete.CoClauseFunctionReference) element;
-      return (T) new Concrete.CoClauseFunctionReference(myData != null ? myData : field.getData(), field.getImplementedField(), field.getFunctionReference());
     } else {
       throw new IllegalArgumentException("Unhandled field: " + element.getClass());
     }

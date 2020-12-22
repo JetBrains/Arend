@@ -54,6 +54,7 @@ import org.arend.typechecking.patternmatching.ConditionsChecking;
 import org.arend.typechecking.patternmatching.ElimTypechecking;
 import org.arend.typechecking.patternmatching.ExtElimClause;
 import org.arend.typechecking.patternmatching.PatternTypechecking;
+import org.arend.typechecking.result.DefCallResult;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.util.Pair;
 
@@ -677,7 +678,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     if (def.enclosingClass != null) {
       typedDef.setHasEnclosingClass(true);
     }
-    ClassField implementedField = def instanceof Concrete.CoClauseFunctionDefinition ? typechecker.referableToClassField(((Concrete.CoClauseFunctionDefinition) def).getImplementedField(), def) : null;
+    ClassField implementedField = def instanceof Concrete.CoClauseFunctionDefinition && def.getKind() == FunctionKind.FUNC_COCLAUSE ? typechecker.referableToClassField(((Concrete.CoClauseFunctionDefinition) def).getImplementedField(), def) : null;
     FunctionKind kind = implementedField == null ? def.getKind() : implementedField.isProperty() && implementedField.getTypeLevel() == null ? FunctionKind.LEMMA : FunctionKind.FUNC;
     checkFunctionLevel(def, kind);
 
@@ -1251,6 +1252,14 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           }
           index++;
         }
+      }
+    } else if (newDef && def instanceof Concrete.CoClauseFunctionDefinition && def.getKind() == FunctionKind.CLASS_COCLAUSE) {
+      Referable fieldRef = ((Concrete.CoClauseFunctionDefinition) def).getImplementedField();
+      Definition fieldDef = fieldRef instanceof TCDefReferable ? ((TCDefReferable) fieldRef).getTypechecked() : null;
+      Definition classDef = def.getUseParent().getTypechecked();
+      if (fieldDef instanceof ClassField && classDef instanceof ClassDefinition) {
+        TypedSingleDependentLink thisBinding = new TypedSingleDependentLink(false, "this", new ClassCallExpression((ClassDefinition) classDef, Sort.STD), true);
+        ((ClassDefinition) classDef).addDefault((ClassField) fieldDef, new AbsExpression(thisBinding, DefCallResult.makeTResult(new Concrete.ReferenceExpression(def.getData().getData(), def.getData()), typedDef, Sort.STD).applyExpression(new ReferenceExpression(thisBinding), false, errorReporter, def).toResult(typechecker).expression));
       }
     }
 
@@ -2048,6 +2057,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     List<LocalInstance> localInstances = new ArrayList<>();
     Set<ClassField> implementedHere = new HashSet<>();
     for (Concrete.ClassElement element : def.getElements()) {
+      if (element instanceof Concrete.CoClauseFunctionReference) {
+        continue;
+      }
       if (element instanceof Concrete.ClassField) {
         Concrete.ClassField field = (Concrete.ClassField) element;
         if (previousType == field.getResultType()) {

@@ -66,4 +66,19 @@ public class DefaultImplTest extends TypeCheckingTestCase {
       "}", 1);
     assertThatErrorsAre(Matchers.typeMismatchError());
   }
+
+  @Test
+  public void defaultFunction() {
+    typeCheckModule(
+      "\\record C (k : Nat)\n" +
+      "  | f (n : Nat) : n = k -> Nat\n" +
+      "\\record D \\extends C {\n" +
+      "  \\default f (n : Nat) (p : n = k) : Nat \\elim n {\n" +
+      "    | 0 => 0\n" +
+      "    | suc n => n\n" +
+      "  }\n" +
+      "}\n" +
+      "\\func d : D 3 \\cowith\n" +
+      "\\func test : d.f 3 idp = 2 => idp");
+  }
 }

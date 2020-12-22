@@ -159,7 +159,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
 
     // Check implementations
     for (Concrete.ClassElement element : def.getElements()) {
-      if (element instanceof Concrete.ClassFieldImpl) {
+      if (element instanceof Concrete.ClassFieldImpl && !(element instanceof Concrete.CoClauseFunctionReference)) {
         Concrete.Expression impl = ((Concrete.ClassFieldImpl) element).implementation;
         Referable thisParameter = new HiddenLocalReferable("this");
         classFieldChecker.setThisParameter(thisParameter);
