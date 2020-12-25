@@ -258,7 +258,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
           if (enclosingFunction.getStage().ordinal() < Concrete.Stage.RESOLVED.ordinal()) {
             enclosingFunction.setResultType(enclosingFunction.getResultType().accept(exprVisitor, null));
           }
-          classRef = enclosingFunction.getResultType().getUnderlyingReferable();
+          classRef = new TypeClassReferenceExtractVisitor().getTypeClassReference(Collections.emptyList(), enclosingFunction.getResultType());
           elements = enclosingFunction.getBody().getCoClauseElements();
         }
       } else if (enclosingDef instanceof Concrete.ClassDefinition) {
@@ -550,7 +550,9 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
         }
       }
     }
-    for (Concrete.ClassElement element : def.getElements()) {
+
+    List<Concrete.ClassElement> elements = def.getElements();
+    for (Concrete.ClassElement element : elements) {
       if (element instanceof Concrete.ClassFieldImpl) {
         Referable ref = def.getData();
         if (!(ref instanceof ClassReferable)) {
@@ -575,6 +577,26 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
             field.setResultTypeLevel(field.getResultTypeLevel().accept(exprVisitor, null));
           }
         }
+      }
+    }
+
+    for (int i = 0; i < elements.size(); i++) {
+      Concrete.ClassElement element = elements.get(i);
+      if (element instanceof Concrete.ClassField) {
+        classFields.add((Concrete.ClassField) element);
+      } else if (element instanceof Concrete.ClassFieldImpl && ((Concrete.ClassFieldImpl) element).isDefault() && !(element instanceof Concrete.CoClauseFunctionReference)) {
+        Concrete.ClassFieldImpl impl = (Concrete.ClassFieldImpl) element;
+        LocalFunctionReferable funcRef = new LocalFunctionReferable(Concrete.CoClauseFunctionDefinition.makeName(impl.getImplementedField().getRefName(), true), def.getData());
+        Concrete.CoClauseFunctionDefinition funcDef = new Concrete.CoClauseFunctionDefinition(FunctionKind.CLASS_COCLAUSE, funcRef, def.getData(), impl.getImplementedField(), new ArrayList<>(), null, null, new Concrete.TermFunctionBody(impl.getData(), impl.implementation));
+        funcRef.setConcrete(funcDef);
+        funcDef.enclosingClass = def.getData();
+        if (def.getUsedDefinitions().isEmpty()) {
+          def.setUsedDefinitions(new ArrayList<>());
+        }
+        def.getUsedDefinitions().add(funcRef);
+        funcDef.setResolved();
+        funcDef.accept(new SyntacticDesugarVisitor(myLocalErrorReporter), null);
+        elements.set(i, new Concrete.CoClauseFunctionReference(impl.getImplementedField(), funcRef, true));
       }
     }
 

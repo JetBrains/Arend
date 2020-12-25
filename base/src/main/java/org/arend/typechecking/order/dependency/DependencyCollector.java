@@ -18,6 +18,9 @@ public class DependencyCollector implements DependencyListener {
 
   @Override
   public void dependsOn(TCReferable def1, TCReferable def2) {
+    if (def1.isLocal() || def2.isLocal()) {
+      return;
+    }
     ModuleLocation location = def2.getLocation();
     if (location != null && location.isExternalLibrary()) {
       return;

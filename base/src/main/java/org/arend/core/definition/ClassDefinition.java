@@ -279,6 +279,10 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
   }
 
   public AbsExpression addDefault(ClassField field, AbsExpression impl) {
+    return myDefaults.put(field, impl);
+  }
+
+  public AbsExpression addDefaultIfAbsent(ClassField field, AbsExpression impl) {
     return myDefaults.putIfAbsent(field, impl);
   }
 

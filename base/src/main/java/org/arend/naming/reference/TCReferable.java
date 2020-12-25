@@ -13,4 +13,8 @@ public interface TCReferable extends LocatedReferable, DataContainer {
   }
 
   boolean isTypechecked();
+
+  default boolean isLocal() {
+    return false;
+  }
 }

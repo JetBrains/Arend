@@ -466,8 +466,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       fieldType = null;
     }
 
-    DependentLink thisRef = fieldType == null ? null : fieldType.getParameters();
-    Expression resultType = fieldType == null ? null : fieldType.getCodomain();
+    boolean isClassCoclause = def instanceof Concrete.CoClauseFunctionDefinition && ((Concrete.CoClauseFunctionDefinition) def).getKind() == FunctionKind.CLASS_COCLAUSE;
+    DependentLink thisRef = fieldType == null || isClassCoclause ? null : fieldType.getParameters();
+    Expression resultType = fieldType == null ? null : isClassCoclause ? fieldType : fieldType.getCodomain();
     ExprSubstitution substitution = fieldType == null ? null : new ExprSubstitution();
 
     boolean first = true;
@@ -487,7 +488,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             break;
           }
           Type paramType = param.getType();
-          if (paramType.getExpr().findBinding(thisRef)) {
+          if (thisRef != null && paramType.getExpr().findBinding(thisRef)) {
             errorReporter.report(new TypeFromFieldError(TypeFromFieldError.parameter(), paramType.getExpr(), parameter));
           } else {
             paramResult = paramType.subst(new SubstVisitor(substitution, LevelSubstitution.EMPTY));
@@ -678,7 +679,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     if (def.enclosingClass != null) {
       typedDef.setHasEnclosingClass(true);
     }
-    ClassField implementedField = def instanceof Concrete.CoClauseFunctionDefinition && def.getKind() == FunctionKind.FUNC_COCLAUSE ? typechecker.referableToClassField(((Concrete.CoClauseFunctionDefinition) def).getImplementedField(), def) : null;
+    ClassField implementedField = def instanceof Concrete.CoClauseFunctionDefinition ? typechecker.referableToClassField(((Concrete.CoClauseFunctionDefinition) def).getImplementedField(), def) : null;
     FunctionKind kind = implementedField == null ? def.getKind() : implementedField.isProperty() && implementedField.getTypeLevel() == null ? FunctionKind.LEMMA : FunctionKind.FUNC;
     checkFunctionLevel(def, kind);
 
@@ -2181,7 +2182,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
     for (ClassDefinition superClass : typedDef.getSuperClasses()) {
       for (Map.Entry<ClassField, AbsExpression> entry : superClass.getDefaults()) {
-        typedDef.addDefault(entry.getKey(), entry.getValue());
+        typedDef.addDefaultIfAbsent(entry.getKey(), entry.getValue());
       }
     }
 
