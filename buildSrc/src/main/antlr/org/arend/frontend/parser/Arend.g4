@@ -183,10 +183,10 @@ coClauses : ('|' coClause)*                   # coClausesWithoutBraces
 
 clause : pattern (',' pattern)* ('=>' expr)?;
 
-coClause : (longName coClauseBody | precedence longName tele* (COLON returnExpr2)? coClauseDefBody);
+coClause : longName (AS precedence ID)? coClauseBody;
 
-coClauseBody : tele* '=>' expr              # coClauseImpl
-             | '{' ('|' localCoClause)* '}' # coClauseRec
+coClauseBody : '{' ('|' localCoClause)* '}'                 # coClauseRec
+             | tele* (COLON returnExpr2)? coClauseDefBody   # coClauseDef
              ;
 
 coClauseDefBody : '=>' expr                                 # coClauseExpr

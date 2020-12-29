@@ -1816,16 +1816,6 @@ public final class Concrete {
     public void setImplementedField(Referable newImplementedField) {
       myImplementedField = newImplementedField;
     }
-
-    private static final String SUFFIX = "\\impl";
-
-    public static String makeName(String name, boolean isDefault) {
-      return isDefault ? name + SUFFIX : name;
-    }
-
-    public static String simplifyName(String name) {
-      return name.endsWith(SUFFIX) ? name.substring(0, name.length() - SUFFIX.length()) : name;
-    }
   }
 
   public interface BaseClassField extends ClassElement {

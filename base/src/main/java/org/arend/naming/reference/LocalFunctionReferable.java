@@ -9,19 +9,21 @@ import org.jetbrains.annotations.Nullable;
 
 public class LocalFunctionReferable implements TCDefReferable {
   private final String myName;
+  private final Precedence myPrecedence;
   private final LocatedReferable myParent;
   private Definition myTypechecked;
   private Concrete.Definition myConcrete;
 
-  public LocalFunctionReferable(String name, LocatedReferable parent) {
+  public LocalFunctionReferable(String name, Precedence precedence, LocatedReferable parent) {
     myName = name;
+    myPrecedence = precedence;
     myParent = parent;
   }
 
   @NotNull
   @Override
   public Precedence getPrecedence() {
-    return Precedence.DEFAULT;
+    return myPrecedence;
   }
 
   @NotNull

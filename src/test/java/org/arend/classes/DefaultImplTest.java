@@ -81,4 +81,37 @@ public class DefaultImplTest extends TypeCheckingTestCase {
       "\\func d : D 3 \\cowith\n" +
       "\\func test : d.f 3 idp = 2 => idp");
   }
+
+  @Test
+  public void renameDefault() {
+    typeCheckModule(
+      "\\record C {\n" +
+      "  | f : Nat\n" +
+      "  \\default f \\as f' => 0\n" +
+      "}\n" +
+      "\\func c : C \\cowith\n" +
+      "\\func test (c' : C) : c.f = C.f' {c'} => idp");
+  }
+
+  @Test
+  public void renameDefaultError() {
+    resolveNamesModule(
+      "\\record C {\n" +
+      "  | f : Nat -> Nat\n" +
+      "  \\default f n \\with {\n" +
+      "    | 0 => 0\n" +
+      "    | suc n => n\n" +
+      "  }\n" +
+      "}", 1);
+  }
+
+  @Test
+  public void sameName() {
+    typeCheckModule(
+      "\\record C {\n" +
+      "  | f : Nat\n" +
+      "  \\default f => 0\n" +
+      "}\n" +
+      "\\func g : C \\cowith");
+  }
 }

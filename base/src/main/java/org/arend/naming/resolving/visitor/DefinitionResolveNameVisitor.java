@@ -586,8 +586,9 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
         classFields.add((Concrete.ClassField) element);
       } else if (element instanceof Concrete.ClassFieldImpl && ((Concrete.ClassFieldImpl) element).isDefault() && !(element instanceof Concrete.CoClauseFunctionReference)) {
         Concrete.ClassFieldImpl impl = (Concrete.ClassFieldImpl) element;
-        LocalFunctionReferable funcRef = new LocalFunctionReferable(Concrete.CoClauseFunctionDefinition.makeName(impl.getImplementedField().getRefName(), true), def.getData());
-        Concrete.CoClauseFunctionDefinition funcDef = new Concrete.CoClauseFunctionDefinition(FunctionKind.CLASS_COCLAUSE, funcRef, def.getData(), impl.getImplementedField(), new ArrayList<>(), null, null, new Concrete.TermFunctionBody(impl.getData(), impl.implementation));
+        Referable implField = impl.getImplementedField();
+        LocalFunctionReferable funcRef = new LocalFunctionReferable(implField.getRefName(), implField instanceof GlobalReferable ? ((GlobalReferable) implField).getPrecedence() : Precedence.DEFAULT, def.getData());
+        Concrete.CoClauseFunctionDefinition funcDef = new Concrete.CoClauseFunctionDefinition(FunctionKind.CLASS_COCLAUSE, funcRef, def.getData(), implField, new ArrayList<>(), null, null, new Concrete.TermFunctionBody(impl.getData(), impl.implementation));
         funcRef.setConcrete(funcDef);
         funcDef.enclosingClass = def.getData();
         if (def.getUsedDefinitions().isEmpty()) {

@@ -274,7 +274,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       if (!name.isEmpty() && name.charAt(0) == '-' && myBuilder.length() != 0 && myBuilder.charAt(myBuilder.length() - 1) == '{') {
         myBuilder.append(' ');
       }
-      myBuilder.append(Concrete.CoClauseFunctionDefinition.simplifyName(name));
+      myBuilder.append(name);
     }
   }
 

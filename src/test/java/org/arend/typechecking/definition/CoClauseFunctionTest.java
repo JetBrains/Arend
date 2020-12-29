@@ -199,7 +199,7 @@ public class CoClauseFunctionTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\class D | \\infix 3 func (x y : Nat) : Nat\n" +
       "\\instance D-inst : D\n" +
-      "  | \\infix 3 func (x y : Nat) : Nat => x");
+      "  | func \\as \\infix 3 func (x y : Nat) : Nat => x");
   }
 
   @Test
@@ -207,7 +207,7 @@ public class CoClauseFunctionTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\class D | \\infix 3 func (x y : Nat) : Nat\n" +
       "\\instance D-inst : D\n" +
-      "  | \\infix 3 func (x y : Nat) => x");
+      "  | func \\as \\infix 3 func (x y : Nat) => x");
   }
 
   @Test
@@ -230,7 +230,7 @@ public class CoClauseFunctionTest extends TypeCheckingTestCase {
   public void implicitParameterError() {
     typeCheckModule(
       "\\record R | field {A : \\Type} : A -> A\n" +
-      "\\func test : R \\cowith | \\fix 5 field t => {?}", 1);
+      "\\func test : R \\cowith | field \\as \\fix 5 field t => {?}", 1);
     assertThatErrorsAre(typecheckingError(ArgumentExplicitnessError.class));
   }
 }
