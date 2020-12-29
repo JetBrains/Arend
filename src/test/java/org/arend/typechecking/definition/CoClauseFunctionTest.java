@@ -233,4 +233,14 @@ public class CoClauseFunctionTest extends TypeCheckingTestCase {
       "\\func test : R \\cowith | field \\as \\fix 5 field t => {?}", 1);
     assertThatErrorsAre(typecheckingError(ArgumentExplicitnessError.class));
   }
+
+  @Test
+  public void infixTest() {
+    typeCheckModule(
+      "\\record R | \\infixl 5 % : Nat -> Nat -> Nat\n" +
+      "\\func test : R \\cowith | % n m \\elim n {\n" +
+      "  | 0 => m\n" +
+      "  | suc n => suc (n % m)\n" +
+      "}");
+  }
 }

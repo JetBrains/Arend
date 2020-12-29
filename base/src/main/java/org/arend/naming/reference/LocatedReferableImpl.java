@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class LocatedReferableImpl implements TCDefReferable {
-  private final Precedence myPrecedence;
+  private Precedence myPrecedence;
   private final String myName;
   private final LocatedReferable myParent;
   private final Kind myKind;
@@ -28,10 +28,18 @@ public class LocatedReferableImpl implements TCDefReferable {
     myKind = kind;
   }
 
+  public boolean isPrecedenceSet() {
+    return myPrecedence != null;
+  }
+
   @NotNull
   @Override
   public Precedence getPrecedence() {
-    return myPrecedence;
+    return myPrecedence == null ? Precedence.DEFAULT : myPrecedence;
+  }
+
+  public void setPrecedence(Precedence precedence) {
+    myPrecedence = precedence;
   }
 
   @NotNull
