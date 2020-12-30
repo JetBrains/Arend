@@ -77,6 +77,7 @@ import org.arend.typechecking.implicitargs.StdImplicitArgsInference;
 import org.arend.typechecking.implicitargs.equations.*;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.instance.pool.RecursiveInstanceHoleExpression;
+import org.arend.typechecking.order.MapDFS;
 import org.arend.typechecking.patternmatching.*;
 import org.arend.typechecking.result.DefCallResult;
 import org.arend.typechecking.result.TResult;
@@ -1021,10 +1022,14 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         }
       }
     } else if (useDefaults && !baseClass.getDefaults().isEmpty()) {
+      MapDFS<ClassField> dfs = new MapDFS<>(baseClass.getDefaultDependencies());
+      dfs.visit(defined);
+      dfs.visit(resultClassCall.getImplementedHere().keySet());
+      Set<ClassField> notDefault = dfs.getVisited();
       for (ClassField field : baseClass.getFields()) {
         if (!defined.contains(field) && !resultClassCall.isImplemented(field)) {
           AbsExpression defaultImpl = baseClass.getDefault(field);
-          if (defaultImpl != null) {
+          if (defaultImpl != null && !notDefault.contains(field)) {
             resultClassCall.getImplementedHere().put(field, defaultImpl.apply(new ReferenceExpression(resultClassCall.getThisBinding()), resultClassCall.getSortArgument()));
           }
         }

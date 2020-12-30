@@ -1135,9 +1135,10 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     CoClauseBodyContext body = ctx.coClauseBody();
 
     if (body instanceof CoClauseDefContext) {
+      ReturnExpr2Context returnCtx = ((CoClauseDefContext) body).returnExpr2();
       CoClauseDefBodyContext defBody = ((CoClauseDefContext) body).coClauseDefBody();
       PrecedenceContext precCtx = ctx.precedence();
-      if (defBody instanceof CoClauseExprContext && precCtx == null) {
+      if (defBody instanceof CoClauseExprContext && precCtx == null && returnCtx == null) {
         List<TeleContext> teleCtxs = ((CoClauseDefContext) body).tele();
         List<Concrete.Parameter> parameters = visitLamTeles(teleCtxs, false);
         term = visitExpr(((CoClauseExprContext) defBody).expr());
@@ -1149,7 +1150,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
         ConcreteLocatedReferable reference = makeReferable(position, id != null ? id.getText() : path.get(path.size() - 1), precCtx == null ? null : visitPrecedence(precCtx), null, Precedence.DEFAULT, parentGroup, LocatedReferableImpl.Kind.FUNCTION);
         ChildGroup myGroup = new EmptyGroup(reference, parentGroup);
         subgroups.add(myGroup);
-        Pair<Concrete.Expression, Concrete.Expression> pair = visitReturnExpr(((CoClauseDefContext) body).returnExpr2());
+        Pair<Concrete.Expression, Concrete.Expression> pair = visitReturnExpr(returnCtx);
         Referable fieldRef = LongUnresolvedReference.make(position, path);
         Concrete.FunctionBody fBody;
         if (defBody instanceof CoClauseExprContext) {

@@ -3,7 +3,10 @@ package org.arend.typechecking.visitor;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
+import org.arend.core.definition.FunctionDefinition;
+import org.arend.core.elimtree.Body;
 import org.arend.core.elimtree.ElimBody;
+import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.HaveClause;
 import org.arend.core.expr.visitor.BaseExpressionVisitor;
@@ -254,5 +257,29 @@ public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean>
   @Override
   public Boolean visitInteger(IntegerExpression expr, P params) {
     return false;
+  }
+
+  public boolean visitBody(Body body, P param) {
+    if (body instanceof Expression) {
+      return ((Expression) body).accept(this, param);
+    } else if (body instanceof ElimBody) {
+      return visitElimBody((ElimBody) body, param);
+    } else if (body instanceof IntervalElim) {
+      IntervalElim elim = (IntervalElim) body;
+      for (IntervalElim.CasePair pair : elim.getCases()) {
+        if (pair.proj1.accept(this, param) || pair.proj2.accept(this, param)) {
+          return true;
+        }
+      }
+      return elim.getOtherwise() != null && visitElimBody(elim.getOtherwise(), param);
+    } if (body == null) {
+      return false;
+    } else {
+      throw new IllegalStateException();
+    }
+  }
+
+  public boolean visitFunction(FunctionDefinition definition, P params) {
+    return visitDependentLink(definition.getParameters(), params) || definition.getResultType().accept(this, params) || definition.getResultTypeLevel() != null && definition.getResultTypeLevel().accept(this, params) || visitBody(definition.getBody(), params);
   }
 }

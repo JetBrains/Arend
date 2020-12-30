@@ -348,7 +348,7 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
       Iterator<Map.Entry<FunctionDefinition, Concrete.Definition>> it = functionDefinitions.entrySet().iterator();
       while (it.hasNext()) {
         Map.Entry<FunctionDefinition, Concrete.Definition> entry = it.next();
-        visitor.findDefinition(entry.getKey().getBody());
+        visitor.visitBody(entry.getKey().getBody(), null);
         Definition found = visitor.getFoundDefinition();
         if (found != null) {
           entry.getKey().setBody(null);

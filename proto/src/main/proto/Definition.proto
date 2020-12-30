@@ -19,8 +19,8 @@ message Definition {
     map<string, bytes> user_data = 7;
     repeated int32 meta_ref = 8;
 
-    message ClassifyingFields {
-        repeated int32 field_ref = 1;
+    message RefList {
+        repeated int32 ref = 1;
     }
     message ClassData {
         repeated int32 super_class_ref = 1;
@@ -28,6 +28,7 @@ message Definition {
         repeated int32 field_ref = 3;
         map<int32, Expression.Abs> implementations = 4;
         map<int32, Expression.Abs> defaults = 14;
+        map<int32, RefList> default_dependencies = 15;
         int32 coercing_field_ref = 5;
         Sort sort = 6;
         bool is_record = 7;

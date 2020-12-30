@@ -4,7 +4,6 @@ import org.arend.core.definition.Definition;
 import org.arend.core.elimtree.*;
 import org.arend.core.expr.DefCallExpression;
 import org.arend.core.expr.Expression;
-import org.arend.util.Pair;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -43,29 +42,6 @@ public class FindDefCallVisitor<T extends Definition> extends SearchVisitor<Void
     FindDefCallVisitor<T> visitor = new FindDefCallVisitor<>(definitions, true);
     expression.accept(visitor, null);
     return visitor.myFoundDefinitions;
-  }
-
-  public void findDefinition(Body body) {
-    if (body instanceof Expression) {
-      ((Expression) body).accept(this, null);
-    } else if (body instanceof IntervalElim) {
-      for (Pair<Expression, Expression> pair : ((IntervalElim) body).getCases()) {
-        if (pair.proj2.accept(this, null) && !myFindAll) {
-          return;
-        }
-        if (pair.proj1.accept(this, null) && !myFindAll) {
-          return;
-        }
-      }
-      ElimBody elimBody = ((IntervalElim) body).getOtherwise();
-      if (elimBody != null) {
-        visitElimBody(elimBody, null);
-      }
-    } else if (body instanceof ElimBody) {
-      visitElimBody((ElimBody) body, null);
-    } else if (body != null) {
-      throw new IllegalStateException();
-    }
   }
 
   @Override

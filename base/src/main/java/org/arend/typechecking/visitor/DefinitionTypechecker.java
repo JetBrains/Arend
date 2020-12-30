@@ -50,6 +50,7 @@ import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.instance.pool.InstancePool;
 import org.arend.typechecking.instance.pool.LocalInstancePool;
+import org.arend.typechecking.order.MapDFS;
 import org.arend.typechecking.patternmatching.ConditionsChecking;
 import org.arend.typechecking.patternmatching.ElimTypechecking;
 import org.arend.typechecking.patternmatching.ExtElimClause;
@@ -2184,6 +2185,15 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       for (Map.Entry<ClassField, AbsExpression> entry : superClass.getDefaults()) {
         typedDef.addDefaultIfAbsent(entry.getKey(), entry.getValue());
       }
+      for (Map.Entry<ClassField, List<ClassField>> entry : superClass.getDefaultDependencies().entrySet()) {
+        typedDef.setDefaultDependencies(entry.getKey(), entry.getValue());
+      }
+    }
+
+    MapDFS<ClassField> fieldDFS = new MapDFS<>(typedDef.getDefaultDependencies());
+    fieldDFS.visit(implementedHere);
+    for (ClassField field : fieldDFS.getVisited()) {
+      typedDef.removeDefault(field);
     }
 
     // Set fields covariance
@@ -2554,6 +2564,42 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       return false;
     } else {
       return true;
+    }
+  }
+
+  public static void setDefaultDependencies(Concrete.ClassDefinition concreteDef) {
+    Definition classDef = concreteDef.getData().getTypechecked();
+    if (!(classDef instanceof ClassDefinition)) return;
+    Map<FunctionDefinition, ClassField> funcMap = new HashMap<>();
+    for (Concrete.ClassElement element : concreteDef.getElements()) {
+      if (element instanceof Concrete.CoClauseFunctionReference) {
+        Definition def = ((Concrete.CoClauseFunctionReference) element).getFunctionReference().getTypechecked();
+        Referable ref = ((Concrete.CoClauseFunctionReference) element).getImplementedRef();
+        Definition field = ref instanceof TCDefReferable ? ((TCDefReferable) ref).getTypechecked() : null;
+        if (def instanceof FunctionDefinition && field instanceof ClassField) {
+          funcMap.put((FunctionDefinition) def, (ClassField) field);
+        }
+      }
+    }
+
+    for (Concrete.ClassElement element : concreteDef.getElements()) {
+      if (element instanceof Concrete.CoClauseFunctionReference) {
+        Definition def = ((Concrete.CoClauseFunctionReference) element).getFunctionReference().getTypechecked();
+        Referable ref = ((Concrete.CoClauseFunctionReference) element).getImplementedRef();
+        Definition field = ref instanceof TCDefReferable ? ((TCDefReferable) ref).getTypechecked() : null;
+        if (def instanceof FunctionDefinition && field instanceof ClassField) {
+          FindDefCallVisitor<FunctionDefinition> visitor = new FindDefCallVisitor<>(funcMap.keySet(), true);
+          visitor.visitFunction((FunctionDefinition) def, null);
+          if (!visitor.getFoundDefinitions().isEmpty()) {
+            for (FunctionDefinition func : visitor.getFoundDefinitions()) {
+              ClassField field2 = funcMap.get(func);
+              if (field2 != null) {
+                ((ClassDefinition) classDef).addDefaultDependency(field2, (ClassField) field);
+              }
+            }
+          }
+        }
+      }
     }
   }
 

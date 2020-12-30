@@ -4,6 +4,8 @@ import org.arend.Matchers;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
+import java.util.Collections;
+
 public class DefaultImplTest extends TypeCheckingTestCase {
   @Test
   public void defaultTest() {
@@ -113,5 +115,70 @@ public class DefaultImplTest extends TypeCheckingTestCase {
       "  \\default f => 0\n" +
       "}\n" +
       "\\func g : C \\cowith");
+  }
+
+  @Test
+  public void defaultDependency() {
+    typeCheckModule(
+      "\\record C {\n" +
+      "  | f : Nat -> Nat\n" +
+      "  | g (n : Nat) : f (suc n) = n\n" +
+      "  \\default f \\as f' (n : Nat) : Nat \\elim n {\n" +
+      "    | 0 => 0\n" +
+      "    | suc n => n\n" +
+      "  }\n" +
+      "  \\default g \\as g' n : f' (suc n) = n => idp\n" +
+      "}\n" +
+      "\\func test : C \\cowith");
+  }
+
+  @Test
+  public void defaultDependencyError() {
+    typeCheckModule(
+      "\\record C {\n" +
+      "  | f : Nat -> Nat\n" +
+      "  | g (n : Nat) : f (suc n) = n\n" +
+      "  \\default f \\as f' (n : Nat) : Nat \\elim n {\n" +
+      "    | 0 => 0\n" +
+      "    | suc n => n\n" +
+      "  }\n" +
+      "  \\default g \\as g' n => idp\n" +
+      "}", 1);
+    assertThatErrorsAre(Matchers.typeMismatchError());
+  }
+
+  @Test
+  public void defaultDependencyError2() {
+    typeCheckModule(
+      "\\record C {\n" +
+      "  | f : Nat -> Nat\n" +
+      "  | g (n : Nat) : f (suc n) = n\n" +
+      "  \\default f \\as f' (n : Nat) : Nat \\elim n {\n" +
+      "    | 0 => 0\n" +
+      "    | suc n => n\n" +
+      "  }\n" +
+      "  \\default g \\as g' n : f' (suc n) = n => idp\n" +
+      "}\n" +
+      "\\func test : C \\cowith\n" +
+      "  | f n => n", 1);
+    assertThatErrorsAre(Matchers.fieldsImplementation(false, Collections.singletonList(get("C.g"))));
+  }
+
+  @Test
+  public void defaultDependencyError3() {
+    typeCheckModule(
+      "\\record C {\n" +
+      "  | f : Nat -> Nat\n" +
+      "  | g (n : Nat) : f (suc n) = n\n" +
+      "  \\default f \\as f' (n : Nat) : Nat \\elim n {\n" +
+      "    | 0 => 0\n" +
+      "    | suc n => n\n" +
+      "  }\n" +
+      "  \\default g \\as g' n : f' (suc n) = n => idp\n" +
+      "}\n" +
+      "\\record D \\extends C\n" +
+      "  | f n => n\n" +
+      "\\func test : D \\cowith", 1);
+    assertThatErrorsAre(Matchers.fieldsImplementation(false, Collections.singletonList(get("C.g"))));
   }
 }

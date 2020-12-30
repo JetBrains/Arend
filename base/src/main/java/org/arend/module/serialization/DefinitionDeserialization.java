@@ -126,6 +126,9 @@ public class DefinitionDeserialization implements ArendDeserializer {
     for (Map.Entry<Integer, ExpressionProtos.Expression.Abs> entry : classProto.getDefaultsMap().entrySet()) {
       classDef.addDefault(myCallTargetProvider.getCallTarget(entry.getKey(), ClassField.class), defDeserializer.readAbsExpr(entry.getValue()));
     }
+    for (Map.Entry<Integer, DefinitionProtos.Definition.RefList> entry : classProto.getDefaultDependenciesMap().entrySet()) {
+      classDef.setDefaultDependencies(myCallTargetProvider.getCallTarget(entry.getKey(), ClassField.class), readDefinitions(entry.getValue(), ClassField.class));
+    }
     for (Map.Entry<Integer, ExpressionProtos.Expression.Pi> entry : classProto.getOverriddenFieldMap().entrySet()) {
       classDef.overrideField(myCallTargetProvider.getCallTarget(entry.getKey(), ClassField.class), checkFieldType(defDeserializer.readPi(entry.getValue()), classDef));
     }
@@ -145,9 +148,6 @@ public class DefinitionDeserialization implements ArendDeserializer {
 
       for (Map.Entry<ClassField, AbsExpression> entry : superClass.getImplemented()) {
         classDef.implementField(entry.getKey(), entry.getValue());
-      }
-      for (Map.Entry<ClassField, AbsExpression> entry : superClass.getDefaults()) {
-        classDef.addDefault(entry.getKey(), entry.getValue());
       }
     }
 
@@ -208,6 +208,14 @@ public class DefinitionDeserialization implements ArendDeserializer {
       }
       classDef.setTypeClassFields(typeClassFields);
     }
+  }
+
+  private <T extends Definition> List<T> readDefinitions(DefinitionProtos.Definition.RefList proto, Class<T> clazz) throws DeserializationException {
+    List<T> result = new ArrayList<>();
+    for (Integer index : proto.getRefList()) {
+      result.add(getDefFromIndex(index, clazz));
+    }
+    return result;
   }
 
   private List<Definition.TypeClassParameterKind> readTypeClassParametersKind(List<DefinitionProtos.Definition.TypeClassParameterKind> kinds) {

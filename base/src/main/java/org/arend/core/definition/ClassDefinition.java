@@ -23,6 +23,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
   private final List<ClassField> myPersonalFields = new ArrayList<>();
   private final Map<ClassField, AbsExpression> myImplemented = new HashMap<>();
   private final Map<ClassField, AbsExpression> myDefaults = new HashMap<>();
+  private final Map<ClassField, List<ClassField>> myDefaultDependencies = new HashMap<>();
   private final Map<ClassField, PiExpression> myOverridden = new HashMap<>();
   private ClassField myCoercingField;
   private Sort mySort = Sort.PROP;
@@ -284,6 +285,23 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
 
   public AbsExpression addDefaultIfAbsent(ClassField field, AbsExpression impl) {
     return myDefaults.putIfAbsent(field, impl);
+  }
+
+  public Map<ClassField, List<ClassField>> getDefaultDependencies() {
+    return myDefaultDependencies;
+  }
+
+  public void setDefaultDependencies(ClassField field, List<ClassField> dependencies) {
+    myDefaultDependencies.put(field, dependencies);
+  }
+
+  public void addDefaultDependency(ClassField field, ClassField dependency) {
+    myDefaultDependencies.computeIfAbsent(field, k -> new ArrayList<>()).add(dependency);
+  }
+
+  public void removeDefault(ClassField field) {
+    myDefaults.remove(field);
+    myDefaultDependencies.remove(field);
   }
 
   @NotNull

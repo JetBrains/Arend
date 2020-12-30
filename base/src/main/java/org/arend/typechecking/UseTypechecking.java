@@ -59,6 +59,11 @@ public class UseTypechecking {
     try {
       DFS<Definition> dfs = new DFS<>() {
         @Override
+        protected boolean allowCycles() {
+          return false;
+        }
+
+        @Override
         protected void forDependencies(Definition unit, Consumer<Definition> consumer) {
           List<Pair<Expression, FunctionDefinition>> deps = depMap.get(unit);
           if (deps != null) {
