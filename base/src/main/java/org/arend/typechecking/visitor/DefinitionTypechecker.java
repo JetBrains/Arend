@@ -471,17 +471,18 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     DependentLink thisRef = fieldType == null || isClassCoclause ? null : fieldType.getParameters();
     Expression resultType = fieldType == null ? null : isClassCoclause ? fieldType : fieldType.getCodomain();
     ExprSubstitution substitution = fieldType == null ? null : new ExprSubstitution();
+    int skip = def instanceof Concrete.CoClauseFunctionDefinition ? ((Concrete.CoClauseFunctionDefinition) def).getNumberOfExternalParameters() : 0;
 
     boolean first = true;
     for (Concrete.Parameter parameter : Objects.requireNonNull(Concrete.getParameters(def, true))) {
-      if (resultType != null && !(resultType instanceof ErrorExpression)) {
+      if (skip == 0 && resultType != null && !(resultType instanceof ErrorExpression)) {
         resultType = resultType.normalize(NormalizationMode.WHNF).getUnderlyingExpression();
       }
 
       Type paramResult = null;
       if (parameter.getType() != null) {
         paramResult = typechecker.finalCheckType(parameter.getType(), expectedSort == null ? Type.OMEGA : new UniverseExpression(expectedSort), false);
-      } else {
+      } else if (skip == 0) {
         if (resultType instanceof PiExpression) {
           SingleDependentLink param = ((PiExpression) resultType).getParameters();
           if (param.isExplicit() != parameter.isExplicit()) {
@@ -563,21 +564,23 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         return null;
       }
 
-      for (DependentLink link = param; link.hasNext(); link = link.getNext()) {
-        if (!(resultType instanceof PiExpression)) {
-          if (resultType != null && !resultType.isError()) {
-            errorReporter.report(new FieldTypeParameterError(fieldType, parameter));
-            resultType = new ErrorExpression();
+      if (resultType != null && skip == 0) {
+        for (DependentLink link = param; link.hasNext(); link = link.getNext()) {
+          if (!(resultType instanceof PiExpression)) {
+            if (!resultType.isError()) {
+              errorReporter.report(new FieldTypeParameterError(fieldType, parameter));
+              resultType = new ErrorExpression();
+            }
+            break;
           }
-          break;
-        }
 
-        PiExpression piExpr = (PiExpression) resultType;
-        substitution.add(piExpr.getParameters(), new ReferenceExpression(param));
-        if (piExpr.getParameters().getNext().hasNext()) {
-          resultType = new PiExpression(piExpr.getResultSort(), piExpr.getParameters().getNext(), piExpr.getCodomain());
-        } else {
-          resultType = piExpr.getCodomain().normalize(NormalizationMode.WHNF).getUnderlyingExpression();
+          PiExpression piExpr = (PiExpression) resultType;
+          substitution.add(piExpr.getParameters(), new ReferenceExpression(param));
+          if (piExpr.getParameters().getNext().hasNext()) {
+            resultType = new PiExpression(piExpr.getResultSort(), piExpr.getParameters().getNext(), piExpr.getCodomain());
+          } else {
+            resultType = piExpr.getCodomain().normalize(NormalizationMode.WHNF).getUnderlyingExpression();
+          }
         }
       }
 
@@ -606,6 +609,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
 
       first = false;
+      if (skip > 0) skip--;
     }
 
     return new Pair<>(sort, resultType == null ? null : resultType.subst(substitution));
@@ -732,12 +736,23 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
   // Returns a pair consisting of classCalls corresponding to the body and the type (so, the first one is an extension of the second).
   private Pair<ClassCallExpression,ClassCallExpression> typecheckCoClauses(FunctionDefinition typedDef, Concrete.BaseFunctionDefinition def, FunctionKind kind, List<Concrete.CoClauseElement> elements) {
+    List<Concrete.Argument> arguments = new ArrayList<>();
+    for (Concrete.Parameter parameter : def.getParameters()) {
+      for (Referable referable : parameter.getReferableList()) {
+        arguments.add(new Concrete.Argument(new Concrete.ReferenceExpression(def.getData(), referable), parameter.isExplicit()));
+      }
+    }
+
     List<Concrete.ClassFieldImpl> classFieldImpls = new ArrayList<>(elements.size());
     for (Concrete.CoClauseElement element : elements) {
       if (element instanceof Concrete.ClassFieldImpl) {
         classFieldImpls.add((Concrete.ClassFieldImpl) element);
       } else {
         throw new IllegalStateException();
+      }
+      if (element instanceof Concrete.CoClauseFunctionReference && !def.getParameters().isEmpty()) {
+        Concrete.Expression oldImpl = ((Concrete.CoClauseFunctionReference) element).implementation;
+        ((Concrete.CoClauseFunctionReference) element).implementation = Concrete.AppExpression.make(oldImpl.getData(), oldImpl, arguments);
       }
     }
 

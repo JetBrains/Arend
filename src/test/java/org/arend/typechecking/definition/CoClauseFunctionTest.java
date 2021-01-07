@@ -243,4 +243,16 @@ public class CoClauseFunctionTest extends TypeCheckingTestCase {
       "  | suc n => suc (n % m)\n" +
       "}");
   }
+
+  @Test
+  public void parametersTest() {
+    typeCheckModule(
+      "\\record C (A : \\Type) (f : Nat -> A -> A)\n" +
+      "\\func g (B : \\Type) (b' : B) : C B \\cowith\n" +
+      "  | f n (b : B) : B \\elim n {\n" +
+      "    | 0 => b\n" +
+      "    | suc n => b'\n" +
+      "  }\n" +
+      "\\func test (X : \\Type) (x : X) : C.f {g X x} = g.f X x => idp");
+  }
 }

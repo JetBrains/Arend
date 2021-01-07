@@ -24,6 +24,7 @@ import org.arend.term.NamespaceCommand;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteResolvableDefinitionVisitor;
 import org.arend.term.concrete.DefinableMetaDefinition;
+import org.arend.term.concrete.SubstConcreteExpressionVisitor;
 import org.arend.term.group.ChildGroup;
 import org.arend.term.group.Group;
 import org.arend.typechecking.error.local.LocalErrorReporter;
@@ -242,9 +243,14 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
 
     if (def instanceof Concrete.CoClauseFunctionDefinition && ((Concrete.CoClauseFunctionDefinition) def).getImplementedField() instanceof UnresolvedReference) {
       Concrete.CoClauseFunctionDefinition function = (Concrete.CoClauseFunctionDefinition) def;
+      TCReferable enclosingRef = function.getUseParent();
+      Concrete.GeneralDefinition enclosingDef = myConcreteProvider.getConcrete(enclosingRef);
+      if (enclosingDef instanceof Concrete.BaseFunctionDefinition) {
+        List<Concrete.Parameter> parameters = new SubstConcreteExpressionVisitor(def.getData()).visitParameters(((Concrete.BaseFunctionDefinition) enclosingDef).getParameters());
+        def.getParameters().addAll(0, parameters);
+        ((Concrete.CoClauseFunctionDefinition) def).setNumberOfExternalParameters(parameters.size());
+      }
       if (function.getImplementedField() instanceof UnresolvedReference || function.getData() instanceof LocatedReferableImpl && !((LocatedReferableImpl) function.getData()).isPrecedenceSet()) {
-        TCReferable enclosingRef = function.getUseParent();
-        var enclosingDef = myConcreteProvider.getConcrete(enclosingRef);
         Referable classRef = null;
         List<? extends Concrete.ClassElement> elements = Collections.emptyList();
         if (enclosingDef instanceof Concrete.BaseFunctionDefinition) {

@@ -1803,6 +1803,7 @@ public final class Concrete {
 
   public static class CoClauseFunctionDefinition extends UseDefinition {
     private Referable myImplementedField;
+    private int myNumberOfExternalParameters;
 
     public CoClauseFunctionDefinition(FunctionKind kind, TCDefReferable referable, TCDefReferable enclosingDefinition, Referable implementedField, List<Parameter> parameters, Expression resultType, Expression resultTypeLevel, FunctionBody body) {
       super(kind, referable, parameters, resultType, resultTypeLevel, body, enclosingDefinition);
@@ -1815,6 +1816,14 @@ public final class Concrete {
 
     public void setImplementedField(Referable newImplementedField) {
       myImplementedField = newImplementedField;
+    }
+
+    public int getNumberOfExternalParameters() {
+      return myNumberOfExternalParameters;
+    }
+
+    public void setNumberOfExternalParameters(int n) {
+      myNumberOfExternalParameters = n;
     }
   }
 
