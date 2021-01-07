@@ -556,8 +556,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       }
     }
 
-    List<Concrete.ClassElement> elements = def.getElements();
-    for (Concrete.ClassElement element : elements) {
+    for (Concrete.ClassElement element : def.getElements()) {
       if (element instanceof Concrete.ClassFieldImpl) {
         Referable ref = def.getData();
         if (!(ref instanceof ClassReferable)) {
@@ -582,27 +581,6 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
             field.setResultTypeLevel(field.getResultTypeLevel().accept(exprVisitor, null));
           }
         }
-      }
-    }
-
-    for (int i = 0; i < elements.size(); i++) {
-      Concrete.ClassElement element = elements.get(i);
-      if (element instanceof Concrete.ClassField) {
-        classFields.add((Concrete.ClassField) element);
-      } else if (element instanceof Concrete.ClassFieldImpl && ((Concrete.ClassFieldImpl) element).isDefault() && !(element instanceof Concrete.CoClauseFunctionReference)) {
-        Concrete.ClassFieldImpl impl = (Concrete.ClassFieldImpl) element;
-        Referable implField = impl.getImplementedField();
-        LocalFunctionReferable funcRef = new LocalFunctionReferable(implField.getRefName(), implField instanceof GlobalReferable ? ((GlobalReferable) implField).getPrecedence() : Precedence.DEFAULT, def.getData());
-        Concrete.CoClauseFunctionDefinition funcDef = new Concrete.CoClauseFunctionDefinition(FunctionKind.CLASS_COCLAUSE, funcRef, def.getData(), implField, new ArrayList<>(), null, null, new Concrete.TermFunctionBody(impl.getData(), impl.implementation));
-        funcRef.setConcrete(funcDef);
-        funcDef.enclosingClass = def.getData();
-        if (def.getUsedDefinitions().isEmpty()) {
-          def.setUsedDefinitions(new ArrayList<>());
-        }
-        def.getUsedDefinitions().add(funcRef);
-        funcDef.setResolved();
-        funcDef.accept(new SyntacticDesugarVisitor(myLocalErrorReporter), null);
-        elements.set(i, new Concrete.CoClauseFunctionReference(impl.getImplementedField(), funcRef, true));
       }
     }
 
