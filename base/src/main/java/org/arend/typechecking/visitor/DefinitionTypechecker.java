@@ -1258,10 +1258,25 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     } else if (newDef && def instanceof Concrete.CoClauseFunctionDefinition && def.getKind() == FunctionKind.CLASS_COCLAUSE) {
       Referable fieldRef = ((Concrete.CoClauseFunctionDefinition) def).getImplementedField();
       Definition fieldDef = fieldRef instanceof TCDefReferable ? ((TCDefReferable) fieldRef).getTypechecked() : null;
-      Definition classDef = def.getUseParent().getTypechecked();
-      if (fieldDef instanceof ClassField && classDef instanceof ClassDefinition) {
-        TypedSingleDependentLink thisBinding = new TypedSingleDependentLink(false, "this", new ClassCallExpression((ClassDefinition) classDef, Sort.STD), true);
-        ((ClassDefinition) classDef).addDefault((ClassField) fieldDef, new AbsExpression(thisBinding, DefCallResult.makeTResult(new Concrete.ReferenceExpression(def.getData().getData(), def.getData()), typedDef, Sort.STD).applyExpression(new ReferenceExpression(thisBinding), false, errorReporter, def).toResult(typechecker).expression));
+      Definition useParent = def.getUseParent().getTypechecked();
+      if (fieldDef instanceof ClassField && useParent instanceof ClassDefinition) {
+        Map<ClassField, Expression> defaultImpl = new HashMap<>();
+        ClassDefinition classDef = (ClassDefinition) useParent;
+        ClassCallExpression thisType = new ClassCallExpression(classDef, Sort.STD, defaultImpl, classDef.getSort(), classDef.getUniverseKind());
+        for (Map.Entry<ClassField, AbsExpression> entry : classDef.getDefaults()) {
+          defaultImpl.put(entry.getKey(), entry.getValue().apply(new ReferenceExpression(thisType.getThisBinding()), Sort.STD));
+        }
+        TypedSingleDependentLink thisBinding = new TypedSingleDependentLink(false, "this", thisType, true);
+        thisType.setSort(classDef.computeSort(Sort.STD, defaultImpl, thisBinding));
+        thisType.updateHasUniverses();
+        Expression result = DefCallResult.makeTResult(new Concrete.ReferenceExpression(def.getData().getData(), def.getData()), typedDef, Sort.STD).applyExpression(new ReferenceExpression(thisBinding), false, errorReporter, def).toResult(typechecker).expression;
+        Expression actualType = result.getType();
+        Expression fieldType = ((ClassField) fieldDef).getType(Sort.STD).applyExpression(new ReferenceExpression(thisBinding));
+        if (actualType.isLessOrEquals(fieldType, DummyEquations.getInstance(), def)) {
+          classDef.addDefault((ClassField) fieldDef, new AbsExpression(thisBinding, result));
+        } else {
+          errorReporter.report(new TypeMismatchError(fieldType, actualType, def));
+        }
       }
     }
 

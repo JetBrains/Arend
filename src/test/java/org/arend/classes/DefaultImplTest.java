@@ -181,4 +181,18 @@ public class DefaultImplTest extends TypeCheckingTestCase {
       "\\func test : D \\cowith", 1);
     assertThatErrorsAre(Matchers.fieldsImplementation(false, Collections.singletonList(get("C.g"))));
   }
+
+  @Test
+  public void fieldTypeMismatch() {
+    typeCheckModule(
+      "\\record C\n" +
+      "  | f : Int -> Int\n" +
+      "\\record D \\extends C {\n" +
+      "  \\default f (x : Nat) : Int \\with {\n" +
+      "    | 0 => pos 0\n\n" +
+      "    | suc n => pos n\n\n" +
+      "  }\n" +
+      "}", 1);
+    assertThatErrorsAre(Matchers.typeMismatchError());
+  }
 }
