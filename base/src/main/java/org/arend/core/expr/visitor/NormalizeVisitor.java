@@ -120,7 +120,9 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
     IntegerExpression intExpr1 = arg1.cast(IntegerExpression.class);
     if (intExpr1 != null) {
       if (intExpr1.isZero()) {
-        return Neg(arg2.accept(this, mode));
+        Expression result = arg2.accept(this, mode);
+        IntegerExpression intResult = result.cast(IntegerExpression.class);
+        return intResult != null && intResult.isZero() ? Pos(intResult) : Neg(result);
       }
       arg2 = arg2.accept(this, NormalizationMode.WHNF);
       IntegerExpression intExpr2 = arg2.cast(IntegerExpression.class);
