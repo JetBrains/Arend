@@ -739,7 +739,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     List<Concrete.Argument> arguments = new ArrayList<>();
     for (Concrete.Parameter parameter : def.getParameters()) {
       for (Referable referable : parameter.getReferableList()) {
-        arguments.add(new Concrete.Argument(new Concrete.ReferenceExpression(def.getData(), referable), parameter.isExplicit()));
+        arguments.add(new Concrete.Argument(new Concrete.ReferenceExpression(def.getData(), referable), false));
       }
     }
 

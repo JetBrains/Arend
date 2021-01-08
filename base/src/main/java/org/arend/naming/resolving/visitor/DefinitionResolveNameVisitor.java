@@ -247,6 +247,9 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       Concrete.GeneralDefinition enclosingDef = myConcreteProvider.getConcrete(enclosingRef);
       if (enclosingDef instanceof Concrete.BaseFunctionDefinition) {
         List<Concrete.Parameter> parameters = new SubstConcreteExpressionVisitor(def.getData()).visitParameters(((Concrete.BaseFunctionDefinition) enclosingDef).getParameters());
+        for (Concrete.Parameter parameter : parameters) {
+          parameter.setExplicit(false);
+        }
         def.getParameters().addAll(0, parameters);
         ((Concrete.CoClauseFunctionDefinition) def).setNumberOfExternalParameters(parameters.size());
       }
