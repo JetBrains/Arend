@@ -74,7 +74,9 @@ class CallMatrix extends BaseCallMatrix<Definition> {
               this.set(ii, jj, R.Unknown);
         break;
       case LessThan:
-        throw new IllegalStateException();
+        if (lenI == 1) {
+          for (int jj = rangeJ.proj1; jj <= rangeJ.proj2; jj++) this.set(rangeI.proj1, jj, R.LessThan);
+        } else throw new IllegalStateException();
     }
   }
 
