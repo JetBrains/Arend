@@ -2685,6 +2685,34 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       return cmp;
     }
 
+    if (expr2 instanceof SigmaExpression) {
+      int cmp = 0;
+      if (expr1 instanceof SigmaExpression && DependentLink.Helper.size(((SigmaExpression) expr1).getParameters()) == DependentLink.Helper.size(((SigmaExpression) expr2).getParameters())) {
+        for (DependentLink param1 = ((SigmaExpression) expr1).getParameters(), param2 = ((SigmaExpression) expr2).getParameters(); param1.hasNext(); param1 = param1.getNext(), param2 = param2.getNext()) {
+          int argCmp = compareExpressions(param1.getTypeExpr(), param2.getTypeExpr(), Type.OMEGA);
+          if (argCmp == 1) {
+            cmp = 1;
+            break;
+          }
+          if (argCmp == -1) {
+            cmp = -1;
+          }
+        }
+        if (cmp == -1) {
+          return -1;
+        }
+      }
+
+      for (DependentLink param = ((SigmaExpression) expr2).getParameters(); param.hasNext(); param = param.getNext()) {
+        param = param.getNextTyped(null);
+        if (compareExpressions(expr1, param.getTypeExpr(), null) != 1) {
+          return -1;
+        }
+      }
+
+      return cmp;
+    }
+
     if (expr2 instanceof ClassCallExpression) {
       int cmp = 0;
       if (expr1 instanceof ClassCallExpression && ((ClassCallExpression) expr1).getDefinition() == ((ClassCallExpression) expr2).getDefinition() && ((ClassCallExpression) expr1).getImplementedHere().size() == ((ClassCallExpression) expr2).getImplementedHere().size()) {

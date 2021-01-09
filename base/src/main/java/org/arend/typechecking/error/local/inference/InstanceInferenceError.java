@@ -20,7 +20,7 @@ public class InstanceInferenceError extends ArgInferenceError {
   public final RecursiveInstanceHoleExpression holeExpression;
 
   private InstanceInferenceError(TCDefReferable classRef, Expression expected, Expression actual, Expression classifyingExpression, Concrete.SourceNode cause, RecursiveInstanceHoleExpression holeExpr, Expression[] candidates) {
-    super("Cannot infer an instance of class '" + classRef.textRepresentation() + "'", expected, actual, holeExpr != null && holeExpr.getData() instanceof Concrete.SourceNode ? (Concrete.SourceNode) holeExpr.getData() : cause, candidates);
+    super("", expected, actual, holeExpr != null && holeExpr.getData() instanceof Concrete.SourceNode ? (Concrete.SourceNode) holeExpr.getData() : cause, candidates);
     this.classRef = classRef;
     this.classifyingExpression = classifyingExpression;
     this.holeExpression = holeExpr;
@@ -37,6 +37,11 @@ public class InstanceInferenceError extends ArgInferenceError {
   public InstanceInferenceError(TCDefReferable classRef, Expression expected, Expression actual, Concrete.SourceNode cause, Expression candidate, RecursiveInstanceHoleExpression holeExpr) {
     this(classRef, expected, actual, null, cause, holeExpr, new Expression[1]);
     candidates[0] = candidate;
+  }
+
+  @Override
+  public LineDoc getShortHeaderDoc(PrettyPrinterConfig ppConfig) {
+    return hList(text("Cannot infer an instance of class '"), refDoc(classRef), text("'"));
   }
 
   @Override
