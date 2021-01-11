@@ -61,6 +61,8 @@ public class PatternTypechecking {
   private final List<DependentLink> myElimParams;
   private final LinkList myLinkList = new LinkList();
 
+  private DependentLink clausesParameters = null;
+
   public enum Mode {
     DATA {
       @Override public boolean allowIdp() { return false; }
@@ -117,6 +119,8 @@ public class PatternTypechecking {
   }
 
   public List<ExtElimClause> typecheckClauses(List<Concrete.FunctionClause> clauses, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, Expression expectedType) {
+    this.clausesParameters = parameters;
+
     List<ExtElimClause> result = new ArrayList<>(clauses.size());
     boolean ok = true;
     for (Concrete.FunctionClause clause : clauses) {
@@ -723,7 +727,7 @@ public class PatternTypechecking {
       if (constructor == null || !dataCall.getMatchedConCall(constructor, conCalls) || conCalls.isEmpty()) {
         Referable conRef = conPattern.getConstructor();
         if (constructor != null || conRef instanceof TCDefReferable && ((TCDefReferable) conRef).getKind() == GlobalReferable.Kind.CONSTRUCTOR) {
-          myErrorReporter.report(new ExpectedConstructorError((GlobalReferable) conRef, dataCall, parameters, conPattern, myCaseArguments, myLinkList.getFirst()));
+          myErrorReporter.report(new ExpectedConstructorError((GlobalReferable) conRef, dataCall, parameters, conPattern, myCaseArguments, myLinkList.getFirst(), clausesParameters));
         }
         return null;
       }
