@@ -4,7 +4,6 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.Constructor;
 import org.arend.core.expr.DataCallExpression;
 import org.arend.core.expr.Expression;
-import org.arend.core.subst.ExprSubstitution;
 import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.LineDoc;
@@ -23,6 +22,7 @@ public class ExpectedConstructorError extends TypecheckingError {
   public final DependentLink parameter;
   public final List<Expression> caseExpressions;
   public final DependentLink patternParameters;
+  public final DependentLink clauseParameters;
   private final boolean myConstructorOfData;
 
   public ExpectedConstructorError(GlobalReferable referable,
@@ -30,13 +30,15 @@ public class ExpectedConstructorError extends TypecheckingError {
                                   @Nullable DependentLink parameter,
                                   Concrete.SourceNode cause,
                                   @Nullable List<Expression> caseExpressions,
-                                  DependentLink patternParameters) {
+                                  DependentLink patternParameters,
+                                  @Nullable DependentLink clauseParameters) {
     super("", cause);
     this.referable = referable;
     this.dataCall = dataCall;
     this.parameter = parameter;
     this.caseExpressions = caseExpressions;
     this.patternParameters = patternParameters;
+    this.clauseParameters = clauseParameters;
 
     boolean constructorOfData = false;
     if (dataCall != null) {
