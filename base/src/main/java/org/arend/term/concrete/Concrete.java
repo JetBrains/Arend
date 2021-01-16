@@ -1146,7 +1146,7 @@ public final class Concrete {
     }
   }
 
-  public static class UniverseExpression extends Expression {
+  public static class UniverseExpression extends Expression implements ConcreteUniverseExpression {
     public static final byte PREC = 12;
     private final LevelExpression myPLevel;
     private final LevelExpression myHLevel;
@@ -1157,11 +1157,13 @@ public final class Concrete {
       myHLevel = hLevel;
     }
 
+    @Override
     @Nullable
     public LevelExpression getPLevel() {
       return myPLevel;
     }
 
+    @Override
     @Nullable
     public LevelExpression getHLevel() {
       return myHLevel;
