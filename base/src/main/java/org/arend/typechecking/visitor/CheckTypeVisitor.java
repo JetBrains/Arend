@@ -499,11 +499,11 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       if (!(parameters.get(i) instanceof DependentLink)) {
         throw new IllegalArgumentException();
       }
-      DependentLink link1 = DependentLink.Helper.copy((DependentLink) parameters.get(i));
-      if (link1.hasNext()) {
+      if (parameters.get(i).hasNext()) {
+        DependentLink link1 = DependentLink.Helper.copy((DependentLink) parameters.get(i));
         DependentLink.Helper.getLast(link1).setNext(link);
+        link = link1;
       }
-      link = link1;
     }
     return link;
   }
