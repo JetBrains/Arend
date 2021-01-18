@@ -178,6 +178,9 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
       }
     }
     if (arg instanceof Concrete.HoleExpression && param.hasNext()) {
+      if (!isExplicit && param.isExplicit()) {
+        myVisitor.getErrorReporter().report(new ArgumentExplicitnessError(true, arg));
+      }
       return fixImplicitArgs(result, Collections.singletonList(param), fun, false, arg instanceof RecursiveInstanceHoleExpression ? (RecursiveInstanceHoleExpression) arg : null);
     }
 

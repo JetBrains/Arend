@@ -24,4 +24,11 @@ public class Application extends TypeCheckingTestCase {
     TypecheckingResult result = typeCheckExpr("\\lam (X : Nat -> \\Type0) (Y : \\Pi (x : Nat) -> X x -> \\Type0) (f : \\Pi (a : Nat) (b : X a) -> Y a b) x y => f x y", null);
     assertNotNull(result);
   }
+
+  @Test
+  public void implicitArgument() {
+    typeCheckModule(
+      "\\func f (A : \\Type) (a : A) => a\n" +
+      "\\func g => f {_} 0", 1);
+  }
 }
