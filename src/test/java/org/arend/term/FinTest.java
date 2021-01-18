@@ -9,8 +9,10 @@ import org.arend.core.expr.ReferenceExpression;
 import org.arend.core.expr.SmallIntegerExpression;
 import org.arend.core.expr.type.Type;
 import org.arend.core.subst.ExprSubstitution;
+import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.TypeCheckingTestCase;
+import org.arend.typechecking.result.TypecheckingResult;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -253,5 +255,21 @@ public class FinTest extends TypeCheckingTestCase {
       "\\func f1 (n : Nat) (x : Fin n) : Fin (suc n) => suc x\n" +
       "\\func f2 (n : Nat) => suc {n}\n" +
       "\\func test (n : Nat) : f1 n = {Fin n -> Fin (suc n)} f2 n => idp");
+  }
+
+  @Test
+  public void listTest() {
+    typeCheckModule(
+      "\\data List (A : \\Type) | nil | \\infixr 5 :: A (List A)\n" +
+      "\\func length {A : \\Type} (list : List A) : Nat \\elim list\n" +
+      "  | nil => 0\n" +
+      "  | :: a list => suc (length list)\n" +
+      "\\func \\infix 7 !! {A : \\Set} (v : List A) (index : Fin (length v)) : A \\elim v, index\n" +
+      "  | :: a v, suc index => v !! index\n" +
+      "  | :: a v, 0 => a\n" +
+      "\\data Term (A : \\Set) (context : List A) (termSort : A) : \\Set | term (index : Fin (length context)) (termSort = context !! index) | foo\n" +
+      "\\func enlarge-substitution {A : \\Set} (list : List A) (index : Fin (length list)) : Term A list (list !! index) \\elim list, index\n" +
+      "  | :: a list, 0 => term 0 idp\n" +
+      "  | _, _ => foo");
   }
 }
