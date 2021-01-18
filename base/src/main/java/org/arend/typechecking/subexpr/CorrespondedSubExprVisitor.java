@@ -338,6 +338,9 @@ public class CorrespondedSubExprVisitor implements
   @Nullable Pair<@NotNull Expression, Concrete.@NotNull Expression>
   visitSigmaParameters(List<? extends Concrete.Parameter> parameters, DependentLink sig) {
     for (Concrete.Parameter parameter : parameters) {
+      if (!sig.hasNext()) {
+        return null;
+      }
       var expression = visitParameter(parameter, sig);
       if (expression != null) return expression;
       sig = sig.getNextTyped(null).getNext();
