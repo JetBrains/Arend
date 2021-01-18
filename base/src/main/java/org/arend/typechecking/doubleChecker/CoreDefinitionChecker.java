@@ -318,7 +318,7 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
         return false;
       }
 
-      if (!checkDefinitionSort(definition.getSquasher() != null, field, sort, definition.getSort())) {
+      if (!definition.isImplemented(field) && !checkDefinitionSort(definition.getSquasher() != null, field, sort, definition.getSort())) {
         return false;
       }
 

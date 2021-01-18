@@ -193,4 +193,100 @@ public class OverrideTest extends TypeCheckingTestCase {
       "}\n" +
       "\\func test (A : \\Set \\lp) : \\Set \\lp => S \\lp A");
   }
+
+  @Test
+  public void overrideImplementedError() {
+    typeCheckModule(
+      "\\record M (x : Nat)\n" +
+      "\\record R (y : Nat) \\extends M\n" +
+      "\\record C\n" +
+      "  | m : M\n" +
+      "  | m => \\new M 0\n" +
+      "\\record D \\extends C {\n" +
+      "  \\override m : R\n" +
+      "}", 1);
+  }
+
+  @Test
+  public void overrideImplementedError2() {
+    typeCheckModule(
+      "\\record M (x : Nat)\n" +
+      "\\record R (y : Nat) \\extends M\n" +
+      "\\record C\n" +
+      "  | m : M\n" +
+      "\\record D \\extends C {\n" +
+      "  | m => \\new M 0\n" +
+      "  \\override m : R\n" +
+      "}", 1);
+  }
+
+  @Test
+  public void overrideImplementedError3() {
+    typeCheckModule(
+      "\\record M (x : Nat)\n" +
+      "\\record R (y : Nat) \\extends M\n" +
+      "\\record C\n" +
+      "  | m : M\n" +
+      "\\record D \\extends C {\n" +
+      "  \\override m : R\n" +
+      "  | m => \\new M 0\n" +
+      "}", 1);
+  }
+
+  @Test
+  public void overrideImplementedError4() {
+    typeCheckModule(
+      "\\record M (x : Nat)\n" +
+      "\\record R (y : Nat) \\extends M\n" +
+      "\\record C\n" +
+      "  | m : M\n" +
+      "\\record D \\extends C {\n" +
+      "  \\override m : R\n" +
+      "}\n" +
+      "\\record E \\extends D\n" +
+      "  | m => \\new M 0", 1);
+  }
+
+  @Test
+  public void overrideImplementedError5() {
+    typeCheckModule(
+      "\\record M (x : Nat)\n" +
+      "\\record R (y : Nat) \\extends M\n" +
+      "\\record C\n" +
+      "  | m : M\n" +
+      "\\record D \\extends C\n" +
+      "  | m => \\new M 0\n" +
+      "\\record E \\extends C {\n" +
+      "  \\override m : R\n" +
+      "}\n" +
+      "\\record F \\extends D, E", 1);
+  }
+
+  @Test
+  public void overrideImplementedError6() {
+    typeCheckModule(
+      "\\record M (x : Nat)\n" +
+      "\\record R (y : Nat) \\extends M\n" +
+      "\\record C\n" +
+      "  | m : M\n" +
+      "\\record D \\extends C\n" +
+      "  | m => \\new M 0\n" +
+      "\\record E \\extends C {\n" +
+      "  \\override m : R\n" +
+      "}\n" +
+      "\\record F \\extends E, D", 1);
+  }
+
+  @Test
+  public void overrideImplemented() {
+    typeCheckModule(
+      "\\record M (x : Nat)\n" +
+      "\\record R (y : Nat) \\extends M\n" +
+      "\\record C\n" +
+      "  | m : R\n" +
+      "  | m => \\new R 0 1\n" +
+      "\\record D \\extends C {\n" +
+      "  \\override m : R\n" +
+      "}");
+  }
 }

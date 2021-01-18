@@ -2078,7 +2078,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           }
         }
         if (newDef && type != null) {
-          typedDef.overrideField(field, type);
+          overrideField(field, type, typedDef, def);
         }
       }
     }
@@ -2539,7 +2539,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
       }
       if (newDef) {
-        parentClass.overrideField(typedDef, ok ? piType : new PiExpression(piType.getResultSort(), piType.getParameters(), new ErrorExpression()));
+        overrideField(typedDef, ok ? piType : new PiExpression(piType.getResultSort(), piType.getParameters(), new ErrorExpression()), parentClass, def);
       }
       if (!ok) {
         return null;
@@ -2595,6 +2595,18 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     } else {
       return true;
     }
+  }
+
+  private void overrideField(ClassField field, PiExpression type, ClassDefinition classDef, Concrete.SourceNode sourceNode) {
+    AbsExpression impl = classDef.getImplementation(field);
+    if (impl != null) {
+      Expression implType = impl.apply(new ReferenceExpression(type.getParameters()), Sort.STD).computeType();
+      if (!implType.isLessOrEquals(type.getCodomain(), DummyEquations.getInstance(), sourceNode)) {
+        errorReporter.report(new TypeMismatchError("Cannot override field '" + field.getName() + "'", type.getCodomain(), implType, sourceNode));
+        return;
+      }
+    }
+    classDef.overrideField(field, type);
   }
 
   public static void setDefaultDependencies(Concrete.ClassDefinition concreteDef) {
