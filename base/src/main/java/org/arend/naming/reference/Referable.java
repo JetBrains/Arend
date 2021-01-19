@@ -20,4 +20,9 @@ public interface Referable extends ArendRef {
   static Referable getUnderlyingReferable(Referable ref) {
     return ref == null ? null : ref.getUnderlyingReferable();
   }
+
+  @Override
+  default boolean isLocalRef() {
+    return true;
+  }
 }

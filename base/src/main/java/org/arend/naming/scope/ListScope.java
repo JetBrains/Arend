@@ -1,18 +1,18 @@
 package org.arend.naming.scope;
 
+import org.arend.ext.reference.ArendRef;
 import org.arend.naming.reference.Referable;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
 
 public class ListScope implements Scope {
-  private final List<Referable> myContext;
+  private final List<? extends ArendRef> myContext;
 
-  public ListScope(List<Referable> context) {
+  public ListScope(List<? extends ArendRef> context) {
     myContext = context;
   }
 
@@ -23,16 +23,20 @@ public class ListScope implements Scope {
   @NotNull
   @Override
   public List<Referable> getElements() {
-    List<Referable> elements = new ArrayList<>(myContext);
-    Collections.reverse(elements);
+    List<Referable> elements = new ArrayList<>(myContext.size());
+    for (int i = myContext.size() - 1; i >= 0; i--) {
+      if (myContext.get(i) instanceof Referable) {
+        elements.add((Referable) myContext.get(i));
+      }
+    }
     return elements;
   }
 
   @Override
   public Referable find(Predicate<Referable> pred) {
     for (int i = myContext.size() - 1; i >= 0; i--) {
-      if (pred.test(myContext.get(i))) {
-        return myContext.get(i);
+      if (myContext.get(i) instanceof Referable && pred.test((Referable) myContext.get(i))) {
+        return (Referable) myContext.get(i);
       }
     }
     return null;

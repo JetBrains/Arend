@@ -32,4 +32,9 @@ public class ErrorReference implements Referable {
   public String textRepresentation() {
     return myText;
   }
+
+  @Override
+  public boolean isLocalRef() {
+    return false;
+  }
 }

@@ -53,4 +53,9 @@ public interface GlobalReferable extends Referable {
   default Concrete.ResolvableDefinition getDefaultConcrete() {
     return null;
   }
+
+  @Override
+  default boolean isLocalRef() {
+    return false;
+  }
 }

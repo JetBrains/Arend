@@ -4,6 +4,7 @@ import org.arend.ext.concrete.expr.*;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.reference.ArendRef;
+import org.arend.ext.reference.Precedence;
 import org.arend.ext.typechecking.GoalSolver;
 import org.arend.ext.typechecking.TypedExpression;
 import org.arend.ext.typechecking.MetaDefinition;
@@ -57,6 +58,8 @@ public interface ConcreteFactory {
   @NotNull ConcreteAppBuilder appBuilder(@NotNull ConcreteExpression function);
 
   @NotNull ArendRef local(@NotNull String name);
+  @NotNull ArendRef localDeclaration(@NotNull ArendRef ref);
+  @NotNull ArendRef global(@NotNull String name, @NotNull Precedence precedence);
   @NotNull ConcreteParameter param(boolean explicit, @Nullable ArendRef ref);
   @NotNull ConcreteParameter param(boolean explicit, @NotNull Collection<? extends ArendRef> refs, @NotNull ConcreteExpression type);
   @NotNull ConcreteParameter param(boolean explicit, @NotNull ConcreteExpression type);

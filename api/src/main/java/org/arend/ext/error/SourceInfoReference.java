@@ -53,4 +53,9 @@ public class SourceInfoReference implements SourceInfo, ArendRef, DataContainer 
       return position.isEmpty() ? module : module + ":" + position;
     }
   }
+
+  @Override
+  public boolean isLocalRef() {
+    return false;
+  }
 }

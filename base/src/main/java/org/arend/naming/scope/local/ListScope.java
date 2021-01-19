@@ -1,5 +1,6 @@
 package org.arend.naming.scope.local;
 
+import org.arend.ext.reference.ArendRef;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.scope.ImportedScope;
 import org.arend.naming.scope.Scope;
@@ -11,18 +12,18 @@ import java.util.function.Predicate;
 
 public class ListScope implements Scope {
   private final Scope myParent;
-  private final List<? extends Referable> myReferables;
+  private final List<? extends ArendRef> myReferables;
 
-  public ListScope(Scope parent, List<? extends Referable> referables) {
+  public ListScope(Scope parent, List<? extends ArendRef> referables) {
     myParent = parent;
     myReferables = referables;
   }
 
   private Referable findHere(Predicate<Referable> pred) {
     for (int i = myReferables.size() - 1; i >= 0; i--) {
-      Referable referable = myReferables.get(i);
-      if (referable != null && pred.test(referable)) {
-        return referable;
+      ArendRef referable = myReferables.get(i);
+      if (referable instanceof Referable && pred.test((Referable) referable)) {
+        return (Referable) referable;
       }
     }
     return null;

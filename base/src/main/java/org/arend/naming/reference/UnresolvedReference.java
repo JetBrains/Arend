@@ -13,4 +13,9 @@ public interface UnresolvedReference extends Referable, DataContainer {
   @Nullable Referable tryResolve(Scope scope, List<Referable> resolvedRefs);
   @Nullable Concrete.Expression resolveArgument(Scope scope, List<Referable> resolvedRefs);
   void reset();
+
+  @Override
+  default boolean isLocalRef() {
+    return false;
+  }
 }

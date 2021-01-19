@@ -81,7 +81,7 @@ public class LocalFunctionReferable implements TCDefReferable {
   }
 
   @Override
-  public boolean isLocal() {
+  public boolean isLocalFunction() {
     return true;
   }
 }

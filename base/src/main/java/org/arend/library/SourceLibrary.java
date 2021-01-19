@@ -257,27 +257,25 @@ public abstract class SourceLibrary extends BaseLibrary {
     SerializableKeyRegistryImpl keyRegistry = new SerializableKeyRegistryImpl();
     if (myExtension == null) {
       myExtension = new DefaultArendExtension();
-    } else {
-      DefinitionContributorImpl contributor = new DefinitionContributorImpl(this, libraryManager.getLibraryErrorReporter(), myAdditionalModuleScopeProvider);
-      try {
-        myExtension.declareDefinitions(contributor);
-      } finally {
-        contributor.disable();
-      }
-      loadGeneratedModules();
     }
 
-    if (myExtension != null) {
-      myExtension.registerKeys(keyRegistry);
-      myExtension.setDependencies(dependenciesExtensions);
-      myExtension.setPrelude(new Prelude());
-      myExtension.setConcreteFactory(new ConcreteFactoryImpl(null));
-      myExtension.setVariableRenamerFactory(VariableRenamerFactoryImpl.INSTANCE);
-      ArendUI ui = getUI();
-      if (ui != null) {
-        myExtension.setUI(ui);
-      }
+    myExtension.registerKeys(keyRegistry);
+    myExtension.setDependencies(dependenciesExtensions);
+    myExtension.setPrelude(new Prelude());
+    myExtension.setConcreteFactory(new ConcreteFactoryImpl(null));
+    myExtension.setVariableRenamerFactory(VariableRenamerFactoryImpl.INSTANCE);
+    ArendUI ui = getUI();
+    if (ui != null) {
+      myExtension.setUI(ui);
     }
+
+    DefinitionContributorImpl contributor = new DefinitionContributorImpl(this, libraryManager.getLibraryErrorReporter(), myAdditionalModuleScopeProvider);
+    try {
+      myExtension.declareDefinitions(contributor);
+    } finally {
+      contributor.disable();
+    }
+    loadGeneratedModules();
 
     try {
       SourceLoader sourceLoader = new SourceLoader(this, libraryManager);

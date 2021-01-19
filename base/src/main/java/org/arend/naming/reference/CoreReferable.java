@@ -22,4 +22,9 @@ public class CoreReferable implements Referable {
   public String textRepresentation() {
     return myName == null ? Renamer.UNNAMED : myName;
   }
+
+  @Override
+  public boolean isLocalRef() {
+    return false;
+  }
 }

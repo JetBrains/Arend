@@ -20,4 +20,6 @@ public interface ArendRef {
   default boolean isClassField() {
     return false;
   }
+
+  boolean isLocalRef();
 }

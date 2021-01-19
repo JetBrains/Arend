@@ -443,6 +443,16 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     return new GeneratedLocalReferable(name);
   }
 
+  @Override
+  public @NotNull Referable localDeclaration(@NotNull ArendRef ref) {
+    return makeLocalRef(ref);
+  }
+
+  @Override
+  public @NotNull ArendRef global(@NotNull String name, @NotNull Precedence precedence) {
+    return new GlobalReferableImpl(name, precedence);
+  }
+
   private static Referable makeLocalRef(ArendRef ref) {
     if (!(ref == null || ref instanceof Referable) || ref instanceof LongUnresolvedReference) {
       throw new IllegalArgumentException();

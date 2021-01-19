@@ -3,6 +3,7 @@ package org.arend.naming.resolving.visitor;
 import org.arend.core.context.Utils;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.error.CountingErrorReporter;
+import org.arend.ext.concrete.expr.ConcreteArgument;
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
@@ -25,9 +26,9 @@ import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.ExpectedConstructorError;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.function.Function;
 
 public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<Void> implements ExpressionResolver {
   private final ReferableConverter myReferableConverter;
@@ -64,8 +65,52 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   }
 
   @Override
-  public <T> T hidingRefs(@NotNull Set<? extends ArendRef> refs, @NotNull Function<ExpressionResolver, T> action) {
-    return action.apply(new ExpressionResolveNameVisitor(myReferableConverter, myParentScope, new ElimScope(myScope, refs), myContext, myErrorReporter, myResolverListener));
+  public @NotNull ConcreteExpression resolve(@Nullable Object data, @NotNull List<? extends ConcreteArgument> arguments) {
+    if (arguments.isEmpty()) {
+      throw new IllegalArgumentException();
+    }
+    if (arguments.size() == 1) {
+      if (!(arguments.get(0).getExpression() instanceof Concrete.Expression)) {
+        throw new IllegalArgumentException();
+      }
+      return ((Concrete.Expression) arguments.get(0).getExpression()).accept(this, null);
+    }
+
+    List<Concrete.BinOpSequenceElem> elems = new ArrayList<>(arguments.size());
+    boolean first = true;
+    for (ConcreteArgument argument : arguments) {
+      if (!(argument instanceof Concrete.Argument)) {
+        throw new IllegalArgumentException();
+      }
+      if (first) {
+        elems.add(new Concrete.BinOpSequenceElem(((Concrete.Argument) argument).expression));
+        first = false;
+      } else {
+        elems.add(new Concrete.BinOpSequenceElem(((Concrete.Argument) argument).expression, Fixity.NONFIX, argument.isExplicit()));
+      }
+    }
+
+    return visitBinOpSequence(new Concrete.BinOpSequenceExpression(data, elems, null), null);
+  }
+
+  @Override
+  public @NotNull ExpressionResolver hideRefs(@NotNull Set<? extends ArendRef> refs) {
+    return new ExpressionResolveNameVisitor(myReferableConverter, myParentScope, new ElimScope(myScope, refs), myContext, myErrorReporter, myResolverListener);
+  }
+
+  @Override
+  public @NotNull ExpressionResolver useRefs(@NotNull List<? extends ArendRef> refs, boolean allowContext) {
+    return new ExpressionResolveNameVisitor(myReferableConverter, myParentScope, allowContext ? new org.arend.naming.scope.local.ListScope(myScope, refs) : new ListScope(refs), myContext, myErrorReporter, myResolverListener);
+  }
+
+  @Override
+  public void registerDeclaration(@NotNull ArendRef ref) {
+    if (!(ref instanceof Referable)) {
+      throw new IllegalArgumentException();
+    }
+    if (myResolverListener != null) {
+      myResolverListener.bindingResolved((Referable) ref);
+    }
   }
 
   @Override
