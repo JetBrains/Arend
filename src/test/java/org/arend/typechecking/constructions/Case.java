@@ -1,9 +1,15 @@
 package org.arend.typechecking.constructions;
 
 import org.arend.Matchers;
+import org.arend.core.context.binding.TypedBinding;
+import org.arend.core.expr.*;
+import org.arend.core.sort.Sort;
+import org.arend.prelude.Prelude;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.arend.typechecking.error.local.TruncatedDataError;
 import org.junit.Test;
+
+import java.util.Arrays;
 
 import static org.arend.Matchers.*;
 
@@ -189,5 +195,27 @@ public class Case extends TypeCheckingTestCase {
   @Test
   public void varSubstTest() {
     typeCheckModule("\\func test (n : Nat) => \\case n \\as n', idp {_} {n'} \\return \\Sigma (x : Nat) (n' = x) \\with { | n, p => (n,p) }");
+  }
+
+  @Test
+  public void elimTypeTest() {
+    TypedBinding n = new TypedBinding("n", ExpressionFactory.Nat());
+    Expression type = FunCallExpression.make(Prelude.PATH_INFIX, Sort.SET0, Arrays.asList(ExpressionFactory.Nat(), new ReferenceExpression(n), new SmallIntegerExpression(0)));
+    typeCheckExpr(Arrays.asList(n, new TypedBinding("p", type)),
+      "\\case \\elim n, p \\with {\n" +
+      "  | 0, _ => idp\n" +
+      "  | suc _, p => p\n" +
+      "}", type);
+  }
+
+  @Test
+  public void elimTypeTest2() {
+    TypedBinding n = new TypedBinding("n", ExpressionFactory.Nat());
+    Expression type = FunCallExpression.make(Prelude.PATH_INFIX, Sort.SET0, Arrays.asList(ExpressionFactory.Nat(), new ReferenceExpression(n), new SmallIntegerExpression(0)));
+    typeCheckExpr(Arrays.asList(n, new TypedBinding("p", type)),
+      "\\case \\elim n, p \\return n = 0 \\with {\n" +
+      "  | 0, _ => idp\n" +
+      "  | suc _, p => p\n" +
+      "}", null);
   }
 }
