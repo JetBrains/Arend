@@ -3006,7 +3006,8 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           argType = checkType(caseArg.type, Type.OMEGA);
         }
 
-        TypecheckingResult exprResult = checkExpr(caseArg.expression, argType == null ? null : argType.getExpr().subst(substitution));
+        Expression argTypeExpr = argType == null ? null : argType.getExpr().subst(substitution);
+        TypecheckingResult exprResult = checkExpr(caseArg.expression, argTypeExpr);
         if (exprResult == null) return null;
         if (caseArg.isElim && !(exprResult.expression instanceof ReferenceExpression)) {
           errorReporter.report(new TypecheckingError("Expected a variable", caseArg.expression));
@@ -3019,9 +3020,12 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         DependentLink link = ExpressionFactory.parameter(asRef == null ? null : asRef.textRepresentation(), argType != null ? argType : exprResult.type instanceof Type ? (Type) exprResult.type : new TypeExpression(exprResult.type, getSortOfType(exprResult.type, expr)));
         list.append(link);
         if (caseArg.isElim) {
-          if (argType != null && !CompareVisitor.compare(myEquations, CMP.EQ, exprResult.type, argType.getExpr(), Type.OMEGA, caseArg.type)) {
-            errorReporter.report(new TypeMismatchError(exprResult.type, argType.getExpr(), caseArg.expression));
-            return null;
+          if (argTypeExpr != null) {
+            Expression actualArgType = exprResult.type.subst(substitution);
+            if (!CompareVisitor.compare(myEquations, CMP.EQ, actualArgType, argTypeExpr, Type.OMEGA, caseArg.type)) {
+              errorReporter.report(new TypeMismatchError(actualArgType, argTypeExpr, caseArg.expression));
+              return null;
+            }
           }
           Binding origBinding = ((ReferenceExpression) exprResult.expression).getBinding();
           origElimBindings.put(asRef, origBinding);

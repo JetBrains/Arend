@@ -218,4 +218,23 @@ public class Case extends TypeCheckingTestCase {
       "  | suc _, p => p\n" +
       "}", null);
   }
+
+  @Test
+  public void elimArgTypeTest() {
+    typeCheckModule(
+      "\\lemma test (f : Nat -> Nat) (p : f 0 = 0) : f 0 = 0 =>\n" +
+      "  \\case f 0 \\as x, \\elim p : x = 0 \\return x = 0 \\with {\n" +
+      "    | _, p => p\n" +
+      "  }");
+  }
+
+  @Test
+  public void argTypeTest() {
+    typeCheckModule(
+      "\\func test (f : Nat -> Nat) (p : f 0 = 0) : Nat =>\n" +
+      "  \\case p : Nat \\with {\n" +
+      "    | p => 0\n" +
+      "  }", 1);
+    assertThatErrorsAre(typeMismatchError());
+  }
 }
