@@ -173,7 +173,16 @@ public class ExpressionMatcher {
       if (subst != null) {
         binding = ((ReferenceExpression) subst).getBinding();
       }
-      result.put(binding, (ExpressionPattern) matchResult.pattern);
+
+      ExpressionPattern prevPattern = result.get(binding);
+      ExpressionPattern newPattern = (ExpressionPattern) matchResult.pattern;
+      if (prevPattern != null) {
+        newPattern = prevPattern.intersect(newPattern);
+        if (newPattern == null) {
+          return null;
+        }
+      }
+      result.put(binding, newPattern);
     }
 
     List<Expression> args = new ArrayList<>();

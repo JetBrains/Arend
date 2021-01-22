@@ -189,4 +189,24 @@ public class CoverageTest extends TypeCheckingTestCase {
       "\\func foo {A : \\Type} {n m : Nat} (d : D {A} n m) : Nat \\elim n, m, d", 1);
     assertThatErrorsAre(missingClauses(4));
   }
+
+  @Test
+  public void repeatedVarTest() {
+    typeCheckModule(
+      "\\data Bool | true | false\n" +
+      "\\data \\infix 4 < (x y : Bool) \\with\n" +
+      "  | false, true => false<true\n" +
+      "\\func test {A : \\Type} (b : Bool) (p : b < b) : A \\elim b, p\n" +
+      "  | true, ()");
+  }
+
+  @Test
+  public void repeatedVarError() {
+    typeCheckModule(
+      "\\data Bool | true | false\n" +
+      "\\data \\infix 4 < (x y : Bool) \\with\n" +
+      "  | true, true => true<true\n" +
+      "\\func test {A : \\Type} (b : Bool) (p : b < b) : A \\elim b, p", 1);
+    assertThatErrorsAre(missingClauses(1));
+  }
 }
