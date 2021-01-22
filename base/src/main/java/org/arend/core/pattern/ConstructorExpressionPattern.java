@@ -301,6 +301,9 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Expression>
 
   @Override
   public @Nullable ExpressionPattern intersect(ExpressionPattern other) {
+    if (other instanceof BindingPattern) {
+      return this;
+    }
     if (!(other instanceof ConstructorExpressionPattern)) {
       return null;
     }

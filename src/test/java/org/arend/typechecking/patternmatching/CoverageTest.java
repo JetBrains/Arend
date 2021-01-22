@@ -209,4 +209,15 @@ public class CoverageTest extends TypeCheckingTestCase {
       "\\func test {A : \\Type} (b : Bool) (p : b < b) : A \\elim b, p", 1);
     assertThatErrorsAre(missingClauses(1));
   }
+
+  @Test
+  public void someTest() {
+    typeCheckModule(
+      "\\data Bool | true | false\n" +
+      "\\data \\infix 4 <= (x y : Bool) \\with\n" +
+      "  | false, _ => false<=_\n" +
+      "  | true, true => true<=true\n" +
+      "\\func test (x y : Bool) (p : x <= y) (q : y <= x) : x = y", 1);
+    assertThatErrorsAre(missingClauses(2));
+  }
 }
