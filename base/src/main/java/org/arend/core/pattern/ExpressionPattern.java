@@ -4,6 +4,7 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.expr.Expression;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
+import org.arend.ext.core.body.CoreExpressionPattern;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.LineDoc;
@@ -18,8 +19,8 @@ import java.util.Map;
 
 import static org.arend.ext.prettyprinting.doc.DocFactory.termLine;
 
-public interface ExpressionPattern extends Pattern {
-  Expression toExpression();
+public interface ExpressionPattern extends Pattern, CoreExpressionPattern {
+  @Override Expression toExpression();
   Decision match(Expression expression, List<Expression> result);
   boolean unify(ExprSubstitution idpSubst, ExpressionPattern other, ExprSubstitution substitution1, ExprSubstitution substitution2, ErrorReporter errorReporter, Concrete.SourceNode sourceNode);
   @Nullable ExpressionPattern intersect(ExpressionPattern other);

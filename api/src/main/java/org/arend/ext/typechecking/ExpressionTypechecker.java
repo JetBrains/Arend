@@ -7,7 +7,7 @@ import org.arend.ext.concrete.ConcretePattern;
 import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.concrete.expr.ConcreteLamExpression;
-import org.arend.ext.core.body.CorePattern;
+import org.arend.ext.core.body.CoreExpressionPattern;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.context.CoreInferenceVariable;
 import org.arend.ext.core.context.CoreParameter;
@@ -93,7 +93,7 @@ public interface ExpressionTypechecker extends UserDataHolder {
    * @param marker      a marker for error reporting.
    * @return a list of core patterns or {@code null} if typechecking fails.
    */
-  @Nullable List<CorePattern> typecheckPatterns(@NotNull Collection<? extends ConcretePattern> patterns, @NotNull CoreParameter parameters, @NotNull ConcreteSourceNode marker);
+  @Nullable List<CoreExpressionPattern> typecheckPatterns(@NotNull Collection<? extends ConcretePattern> patterns, @NotNull CoreParameter parameters, @NotNull ConcreteSourceNode marker);
 
   /**
    * Translate a concrete number pattern into combination of <code>zero</code> and <code>suc</code> patterns.

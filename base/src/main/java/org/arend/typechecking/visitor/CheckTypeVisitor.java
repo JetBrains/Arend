@@ -30,7 +30,7 @@ import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.concrete.expr.ConcreteLamExpression;
 import org.arend.ext.concrete.expr.ConcreteReferenceExpression;
-import org.arend.ext.core.body.CorePattern;
+import org.arend.ext.core.body.CoreExpressionPattern;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.context.CoreInferenceVariable;
 import org.arend.ext.core.context.CoreParameter;
@@ -399,7 +399,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   @Override
-  public @Nullable List<CorePattern> typecheckPatterns(@NotNull Collection<? extends ConcretePattern> patterns, @NotNull CoreParameter parameters, @NotNull ConcreteSourceNode marker) {
+  public @Nullable List<CoreExpressionPattern> typecheckPatterns(@NotNull Collection<? extends ConcretePattern> patterns, @NotNull CoreParameter parameters, @NotNull ConcreteSourceNode marker) {
     if (!(parameters instanceof DependentLink)) {
       throw new IllegalArgumentException();
     }
@@ -413,7 +413,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     try (var ignored = new Utils.SetContextSaver<>(context)) {
       PatternTypechecking.Result result = new PatternTypechecking(errorReporter, PatternTypechecking.Mode.CASE, this, false, null, Collections.emptyList()).typecheckPatterns(patterns1, null, (DependentLink) parameters, new ExprSubstitution(), new ExprSubstitution(), marker);
       //noinspection unchecked
-      return result == null ? null : (List<CorePattern>) (List<?>) result.getPatterns();
+      return result == null ? null : (List<CoreExpressionPattern>) (List<?>) result.getPatterns();
     }
   }
 
