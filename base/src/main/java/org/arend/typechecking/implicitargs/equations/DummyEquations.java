@@ -2,7 +2,9 @@ package org.arend.typechecking.implicitargs.equations;
 
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.core.context.binding.inference.InferenceVariable;
+import org.arend.core.context.binding.inference.TypeClassInferenceVariable;
 import org.arend.core.expr.Expression;
+import org.arend.core.expr.FieldCallExpression;
 import org.arend.core.sort.Level;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.ext.core.ops.CMP;
@@ -51,6 +53,11 @@ public class DummyEquations implements Equations {
   @Override
   public boolean remove(Equation equation) {
     return false;
+  }
+
+  @Override
+  public Boolean solveInstance(TypeClassInferenceVariable variable, FieldCallExpression fieldCall, Expression expr) {
+    return null;
   }
 
   @Override

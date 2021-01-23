@@ -742,6 +742,21 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       return false;
     }
 
+    InferenceVariable var = fieldCall1.getArgument().getInferenceVariable();
+    if (var instanceof TypeClassInferenceVariable) {
+      Boolean result = myEquations.solveInstance((TypeClassInferenceVariable) var, fieldCall1, fieldCall2);
+      if (result != null) {
+        return result || compare(fieldCall1, fieldCall2, type);
+      }
+    }
+    var = fieldCall2.getArgument().getInferenceVariable();
+    if (var instanceof TypeClassInferenceVariable) {
+      Boolean result = myEquations.solveInstance((TypeClassInferenceVariable) var, fieldCall2, fieldCall1);
+      if (result != null) {
+        return result || compare(fieldCall1, fieldCall2, type);
+      }
+    }
+
     return compare(fieldCall1.getArgument(), fieldCall2.getArgument(), null);
   }
 

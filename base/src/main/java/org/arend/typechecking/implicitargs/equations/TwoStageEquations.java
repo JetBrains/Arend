@@ -44,15 +44,15 @@ public class TwoStageEquations implements Equations {
     myVisitor = visitor;
   }
 
-  private Expression getInstance(InferenceVariable variable, FieldCallExpression fieldCall, Expression expr) {
-    if (variable instanceof TypeClassInferenceVariable) {
-      ClassDefinition classDef = ((TypeClassInferenceVariable) variable).getClassDefinition();
-      if (classDef == null) {
-        return null;
-      }
-      if (classDef.getClassifyingField() == fieldCall.getDefinition() && expr.getStuckInferenceVariable() == null) {
-        return ((TypeClassInferenceVariable) variable).getInstance(myVisitor.getInstancePool(), expr, null, variable.getSourceNode());
-      }
+  @Override
+  public Boolean solveInstance(TypeClassInferenceVariable variable, FieldCallExpression fieldCall, Expression expr) {
+    ClassDefinition classDef = variable.getClassDefinition();
+    if (classDef == null) {
+      return null;
+    }
+    if (classDef.getClassifyingField() == fieldCall.getDefinition() && expr.getStuckInferenceVariable() == null) {
+      Expression result = variable.getInstance(myVisitor.getInstancePool(), expr, null, variable.getSourceNode());
+      return result == null ? null : solve(variable, result.normalize(NormalizationMode.WHNF), false) != SolveResult.SOLVED;
     }
     return null;
   }
@@ -68,29 +68,28 @@ public class TwoStageEquations implements Equations {
     }
 
     if (inf1 == null && inf2 == null) {
-      Expression result = null;
-
       // expr1 == field call
       FieldCallExpression fieldCall1 = expr1.getFunction().cast(FieldCallExpression.class);
       InferenceVariable variable = fieldCall1 == null ? null : fieldCall1.getArgument().getInferenceVariable();
-      if (variable != null) {
+      if (variable instanceof TypeClassInferenceVariable) {
         // expr1 == class field call
-        result = getInstance(variable, fieldCall1, expr2);
+        Boolean result = solveInstance((TypeClassInferenceVariable) variable, fieldCall1, expr2);
+        if (result != null) {
+          return result || CompareVisitor.compare(this, cmp, expr1, expr2, type, sourceNode);
+        }
       }
 
       // expr2 == field call
       if (variable == null) {
         FieldCallExpression fieldCall2 = expr2.getFunction().cast(FieldCallExpression.class);
         variable = fieldCall2 == null ? null : fieldCall2.getArgument().getInferenceVariable();
-        if (variable != null) {
+        if (variable instanceof TypeClassInferenceVariable) {
           // expr2 == class field call
-          result = getInstance(variable, fieldCall2, expr1);
+          Boolean result = solveInstance((TypeClassInferenceVariable) variable, fieldCall2, expr1);
+          if (result != null) {
+            return result || CompareVisitor.compare(this, cmp, expr1, expr2, type, sourceNode);
+          }
         }
-      }
-
-      if (result != null) {
-        SolveResult solveResult = solve(variable, result.normalize(NormalizationMode.WHNF), false);
-        return solveResult != SolveResult.SOLVED || CompareVisitor.compare(this, cmp, expr1, expr2, type, sourceNode);
       }
     }
 

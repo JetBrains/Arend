@@ -3,7 +3,6 @@ package org.arend.typechecking.instance.pool;
 import org.arend.core.definition.ClassDefinition;
 import org.arend.core.expr.ErrorExpression;
 import org.arend.core.expr.Expression;
-import org.arend.core.expr.ReferenceExpression;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.visitor.CompareVisitor;
 import org.arend.core.subst.ExprSubstitution;
@@ -78,9 +77,7 @@ public class LocalInstancePool implements InstancePool {
   public LocalInstancePool subst(ExprSubstitution substitution) {
     LocalInstancePool result = new LocalInstancePool(myTypechecker);
     for (InstanceData data : myPool) {
-      Expression newValue = data.value instanceof ReferenceExpression ? substitution.get(((ReferenceExpression) data.value).getBinding()) : null;
-      newValue = newValue == null ? null : newValue.cast(ReferenceExpression.class);
-      result.myPool.add(new InstanceData(data.key == null ? null : data.key.subst(substitution), data.classDef, newValue == null ? data.value : newValue));
+      result.myPool.add(new InstanceData(data.key == null ? null : data.key.subst(substitution), data.classDef, data.value.subst(substitution)));
     }
     return result;
   }

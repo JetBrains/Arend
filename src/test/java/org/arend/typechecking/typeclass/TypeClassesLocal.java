@@ -284,4 +284,39 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
       "  \\func g : Nat => a\n" +
       "}");
   }
+
+  @Test
+  public void twoInstances() {
+    typeCheckModule(
+      "\\class B (A : \\Set)\n" +
+      "\\class C \\extends B\n" +
+      "  | c : A\n" +
+      "\\class D \\extends B\n" +
+      "  | d : A\n" +
+      "\\func f {d : D} (x : d) => x\n" +
+      "\\func test (X : C) (Y : D X) (y : Y) => f y");
+  }
+
+  @Test
+  public void twoInstances2() {
+    typeCheckModule(
+      "\\class C (A : \\Set)\n" +
+      "  | c : A\n" +
+      "\\class D (A' : \\Set)\n" +
+      "  | d : A'\n" +
+      "\\func f {d : D} (x : d) => x\n" +
+      "\\func test (X : C) (Y : D X) (y : Y) => f y");
+  }
+
+  @Test
+  public void twoInstances3() {
+    typeCheckModule(
+      "\\class B (A : \\Set)\n" +
+      "\\class C \\extends B\n" +
+      "  | c : A\n" +
+      "\\class D \\extends B\n" +
+      "  | d : A\n" +
+      "\\func f {d : D} (x : d) => x\n" +
+      "\\func test {A : \\Set} (X : C A) (Y : D A) (y : Y) => f y");
+  }
 }
