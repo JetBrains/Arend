@@ -2110,7 +2110,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             previousField.setNumberOfParameters(Concrete.getNumberOfParameters(field.getParameters()));
           }
 
-          if (field.getData().isParameterField() && !field.getData().isExplicitField()) {
+          if (field.getData().isParameterField()) {
             ClassField typecheckedField = previousField != null ? previousField : (ClassField) field.getData().getTypechecked();
             if (typecheckedField.getResultType() instanceof ClassCallExpression) {
               ClassCallExpression classCall = (ClassCallExpression) typecheckedField.getResultType();

@@ -4,6 +4,7 @@ import org.arend.Matchers;
 import org.arend.core.definition.DataDefinition;
 import org.arend.core.sort.Sort;
 import org.arend.typechecking.TypeCheckingTestCase;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.arend.ExpressionFactory.DataCall;
@@ -257,6 +258,30 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
       "\\class C | foo : Nat\n" +
       "\\class D (c : C) {\n" +
       "  \\func test => foo\n" +
+      "}");
+  }
+
+  @Test
+  public void fieldInstance() {
+    typeCheckModule(
+      "\\class C (A : \\Set)\n" +
+      "  | a : A\n" +
+      "\\record R (c : C Nat) {\n" +
+      "  | f : suc a = 0\n" +
+      "  \\func g : Nat => a\n" +
+      "}");
+  }
+
+  @Ignore
+  @Test
+  public void superFieldInstance() {
+    typeCheckModule(
+      "\\class C (A : \\Set)\n" +
+      "  | a : A\n" +
+      "\\record R (c : C Nat)\n" +
+      "\\record S \\extends R {\n" +
+      "  | f : suc a = 0\n" +
+      "  \\func g : Nat => a\n" +
       "}");
   }
 }
