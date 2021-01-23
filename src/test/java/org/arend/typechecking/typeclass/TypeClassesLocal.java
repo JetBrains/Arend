@@ -272,7 +272,6 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
       "}");
   }
 
-  @Ignore
   @Test
   public void superFieldInstance() {
     typeCheckModule(

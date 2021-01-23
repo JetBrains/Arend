@@ -651,6 +651,15 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     return def.getBody() instanceof Concrete.TermFunctionBody && !def.isRecursive() && def.getKind() != FunctionKind.LEVEL && (!(def.getBody().getTerm() instanceof Concrete.CaseExpression) || ((Concrete.CaseExpression) def.getBody().getTerm()).getResultType() != null);
   }
 
+  private static void addFieldInstance(ClassField field, List<LocalInstance> instances) {
+    if (field.getResultType() instanceof ClassCallExpression) {
+      ClassCallExpression classCall = (ClassCallExpression) field.getResultType();
+      if (!classCall.getDefinition().isRecord()) {
+        instances.add(new LocalInstance(classCall, field));
+      }
+    }
+  }
+
   private void addEnclosingClassInstances(Concrete.Definition def, Binding thisParam, LocalInstancePool localInstancePool) {
     Definition classDef = def.enclosingClass.getTypechecked();
     if (!(classDef instanceof ClassDefinition)) {
@@ -658,13 +667,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     List<LocalInstance> instances = new ArrayList<>();
-    for (ClassField field : ((ClassDefinition) classDef).getPersonalFields()) {
-      if (field.getReferable().isParameterField() && field.getResultType() instanceof ClassCallExpression) {
-        ClassCallExpression classCall = (ClassCallExpression) field.getResultType();
-        if (!classCall.getDefinition().isRecord()) {
-          instances.add(new LocalInstance(classCall, field));
-        }
-      }
+    for (ClassField field : ((ClassDefinition) classDef).getFields()) {
+      addFieldInstance(field, instances);
     }
 
     addLocalInstances(instances, thisParam, null, localInstancePool);
@@ -2083,10 +2087,14 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
     }
 
+    List<LocalInstance> localInstances = new ArrayList<>();
+    for (ClassField field : typedDef.getFields()) {
+      addFieldInstance(field, localInstances);
+    }
+
     // Process fields and implementations
     Concrete.Expression previousType = null;
     ClassField previousField = null;
-    List<LocalInstance> localInstances = new ArrayList<>();
     Set<ClassField> implementedHere = new HashSet<>();
     for (Concrete.ClassElement element : def.getElements()) {
       if (element instanceof Concrete.CoClauseFunctionReference) {
@@ -2110,15 +2118,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             previousField.setNumberOfParameters(Concrete.getNumberOfParameters(field.getParameters()));
           }
 
-          if (field.getData().isParameterField()) {
-            ClassField typecheckedField = previousField != null ? previousField : (ClassField) field.getData().getTypechecked();
-            if (typecheckedField.getResultType() instanceof ClassCallExpression) {
-              ClassCallExpression classCall = (ClassCallExpression) typecheckedField.getResultType();
-              if (!classCall.getDefinition().isRecord()) {
-                localInstances.add(new LocalInstance(classCall, typecheckedField));
-              }
-            }
-          }
+          addFieldInstance(previousField != null ? previousField : (ClassField) field.getData().getTypechecked(), localInstances);
         }
         if (field.isCoerce()) {
           ClassField classField = (ClassField) field.getData().getTypechecked();

@@ -10,7 +10,6 @@ import org.arend.ext.core.ops.CMP;
 import org.arend.ext.error.TypeMismatchError;
 import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.instance.InstanceSearchParameters;
-import org.arend.ext.instance.SubclassSearchParameters;
 import org.arend.naming.reference.CoreReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.result.TypecheckingResult;
@@ -102,13 +101,8 @@ public class LocalInstancePool implements InstancePool {
 
   @Override
   public Expression addLocalInstance(Expression classifyingExpression, ClassDefinition classDef, Expression instance) {
-    Expression oldInstance = getInstance(classifyingExpression, new SubclassSearchParameters(classDef));
-    if (oldInstance != null) {
-      return oldInstance;
-    } else {
-      myPool.add(new InstanceData(classifyingExpression, classDef, instance));
-      return null;
-    }
+    myPool.add(new InstanceData(classifyingExpression, classDef, instance));
+    return null;
   }
 
   @Override
