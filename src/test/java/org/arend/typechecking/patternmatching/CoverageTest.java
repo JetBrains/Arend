@@ -220,4 +220,13 @@ public class CoverageTest extends TypeCheckingTestCase {
       "\\func test (x y : Bool) (p : x <= y) (q : y <= x) : x = y", 1);
     assertThatErrorsAre(missingClauses(2));
   }
+
+  @Test
+  public void anotherTest() {
+    typeCheckModule(
+      "\\data Bool | true | false\n" +
+      "\\data \\infix 4 < (x y : Bool) \\with\n" +
+      "  | false, true => false<true\n" +
+      "\\func test (x y z : Bool) (p : x < y) (q : y < z) : x < z");
+  }
 }

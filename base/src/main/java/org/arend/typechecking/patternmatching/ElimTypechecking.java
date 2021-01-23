@@ -293,7 +293,7 @@ public class ElimTypechecking {
 
       if (emptyLink == null && myMode.checkCoverage()) {
         if (!reportMissingClauses(null, parameters, elimParams)) {
-          reportNoClauses(parameters, elimParams);
+          emptyLink = reportNoClauses(parameters, elimParams);
         }
       }
 
@@ -486,12 +486,12 @@ public class ElimTypechecking {
     return paramSpec;
   }
 
-  private void reportNoClauses(DependentLink parameters, List<DependentLink> elimParams) {
+  private DependentLink reportNoClauses(DependentLink parameters, List<DependentLink> elimParams) {
     if (parameters.hasNext() && !parameters.getNext().hasNext()) {
       DataCallExpression dataCall = parameters.getTypeExpr().cast(DataCallExpression.class);
       if (dataCall != null && dataCall.getDefinition() == Prelude.INTERVAL) {
         myErrorReporter.report(new TypecheckingError("Pattern matching on the interval is not allowed here", mySourceNode));
-        return;
+        return null;
       }
     }
 
@@ -501,12 +501,16 @@ public class ElimTypechecking {
     // then this spec applies only if the pattern generated for parameter p is of the form (con p_1 ... p_k).
     Map<DependentLink, List<Pair<ExpressionPattern, Map<DependentLink, Constructor>>>> paramSpec = new HashMap<>();
     Map<DependentLink, List<ConCallExpression>> paramSpec2 = new HashMap<>();
+    DependentLink emptyLink = null;
     for (DependentLink param = parameters; param.hasNext(); param = param.getNext()) {
       DataCallExpression dataCall = param.getTypeExpr().normalize(NormalizationMode.WHNF).cast(DataCallExpression.class);
       if (dataCall != null) {
         Map<DependentLink, List<Pair<ExpressionPattern, Map<DependentLink, Constructor>>>> newParamSpec = computeParamSpec(param, dataCall, elimParams, paramSpec2);
         if (newParamSpec == null) {
-          return;
+          return null;
+        }
+        if (!newParamSpec.isEmpty()) {
+          emptyLink = param;
         }
         for (Map.Entry<DependentLink, List<Pair<ExpressionPattern, Map<DependentLink, Constructor>>>> entry : newParamSpec.entrySet()) {
           paramSpec.compute(entry.getKey(), (k,list) -> {
@@ -538,7 +542,7 @@ public class ElimTypechecking {
     }
 
     if (missingClauses.isEmpty()) {
-      return;
+      return emptyLink;
     }
 
     if (missingClauses.size() == 1 && elimParams.isEmpty()) {
@@ -552,7 +556,7 @@ public class ElimTypechecking {
 
       if (allVars) {
         myErrorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.BODY_REQUIRED, mySourceNode));
-        return;
+        return null;
       }
     }
 
@@ -588,6 +592,7 @@ public class ElimTypechecking {
     }
 
     myErrorReporter.report(new MissingClausesError(missingClauses, parameters, elimParams, true, mySourceNode));
+    return null;
   }
 
   private boolean reportMissingClauses(ElimTree elimTree, DependentLink parameters, List<DependentLink> elimParams) {
