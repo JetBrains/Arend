@@ -124,6 +124,8 @@ public abstract class Repl {
       for (Library registeredLibrary : myLibraryManager.getRegisteredLibraries()) {
         Scope scope = registeredLibrary.getModuleScopeProvider().forModule(module);
         if (scope != null) return scope;
+        scope = registeredLibrary.getTestsModuleScopeProvider().forModule(module);
+        if (scope != null) return scope;
       }
       return null;
     };
