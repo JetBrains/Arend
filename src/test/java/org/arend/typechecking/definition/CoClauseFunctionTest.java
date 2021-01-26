@@ -266,4 +266,24 @@ public class CoClauseFunctionTest extends TypeCheckingTestCase {
       "    | suc n => f {B} n b\n" +
       "  }");
   }
+
+  @Test
+  public void withParametersTest() {
+    typeCheckModule(
+      "\\record C (A : \\Type) (f : Nat -> A -> A)\n" +
+      "\\func g (B : \\Type) : C B \\cowith\n" +
+      "  | f n (b : B) : B \\with {\n" +
+      "    | 0, b => b\n" +
+      "    | suc n, b => f {B} n b\n" +
+      "  }");
+  }
+
+  @Test
+  public void missingClausesTest() {
+    typeCheckModule(
+      "\\record C (f : Nat -> Nat)\n" +
+      "\\func g (m : Nat) : C \\cowith\n" +
+      "  | f n \\with", 1);
+    assertThatErrorsAre(missingClauses(2));
+  }
 }

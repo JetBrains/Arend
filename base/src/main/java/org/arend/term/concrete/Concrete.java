@@ -2052,7 +2052,7 @@ public final class Concrete {
     }
 
     @NotNull
-    public List<? extends ReferenceExpression> getEliminatedReferences() {
+    public List<ReferenceExpression> getEliminatedReferences() {
       return myExpressions;
     }
 

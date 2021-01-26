@@ -506,7 +506,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   @Override
   public List<Concrete.ReferenceExpression> visitElim(ElimContext ctx) {
     if (ctx == null) {
-      return Collections.emptyList();
+      return new ArrayList<>();
     }
     List<TerminalNode> ids = ctx.ID();
     if (ids != null && !ids.isEmpty()) {
@@ -517,7 +517,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       }
       return checkElimExpressions(expressions);
     } else {
-      return Collections.emptyList();
+      return new ArrayList<>();
     }
   }
 

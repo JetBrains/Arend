@@ -330,6 +330,13 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       }
       visitEliminatedReferences(exprVisitor, body.getEliminatedReferences());
       context.clear();
+      if (def instanceof Concrete.CoClauseFunctionDefinition && body.getEliminatedReferences().isEmpty()) {
+        for (int i = ((Concrete.CoClauseFunctionDefinition) def).getNumberOfExternalParameters(); i < def.getParameters().size(); i++) {
+          for (Referable referable : def.getParameters().get(i).getReferableList()) {
+            ((Concrete.ElimFunctionBody) body).getEliminatedReferences().add(new Concrete.ReferenceExpression(def.getData(), referable));
+          }
+        }
+      }
       addNotEliminatedParameters(def.getParameters(), body.getEliminatedReferences(), context);
       exprVisitor.visitClauses(body.getClauses(), null);
     }
