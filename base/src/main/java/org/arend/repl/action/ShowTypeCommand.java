@@ -22,10 +22,11 @@ public final class ShowTypeCommand implements ReplCommand, ExpressionArgumentCom
   public void invoke(@NotNull String line, @NotNull Repl api, @NotNull Supplier<@NotNull String> scanner) {
     var expr = api.preprocessExpr(line);
     if (api.checkErrors() || expr == null) return;
-    var result = api.checkExpr(expr, null);
-    if (result == null) return;
-    Expression type = result.expression.getType();
-    if (type != null) api.println(api.prettyExpr(new StringBuilder(), type));
-    else api.eprintln("[ERROR] Unable to synthesize a type, sorry.");
+    api.checkExpr(expr, null, result -> {
+      if (result == null) return;
+      Expression type = result.expression.getType();
+      if (type != null) api.println(api.prettyExpr(new StringBuilder(), api.normalize(type)));
+      else api.eprintln("[ERROR] Unable to synthesize a type, sorry.");
+    });
   }
 }

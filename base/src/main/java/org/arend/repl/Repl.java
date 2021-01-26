@@ -35,6 +35,7 @@ import org.arend.typechecking.visitor.SyntacticDesugarVisitor;
 import org.jetbrains.annotations.*;
 
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public abstract class Repl {
@@ -64,7 +65,7 @@ public abstract class Repl {
     @Contract(pure = true)
     @Override
     public @Nullable NormalizationMode getNormalizationMode() {
-      return normalizationMode;
+      return null;
     }
   };
   protected final @NotNull ListErrorReporter myErrorReporter;
@@ -151,12 +152,12 @@ public abstract class Repl {
         .resolveGroupWithTypes(group, myScope);
     if (checkErrors()) {
       myMergedScopes.remove(scope);
-      return;
+    } else {
+      typecheckStatements(group, scope);
     }
-    if (checkErrors()) {
-      myMergedScopes.remove(scope);
-      return;
-    }
+  }
+
+  protected void typecheckStatements(@NotNull Group group, @NotNull Scope scope) {
     if (!myTypechecking.typecheckModules(Collections.singletonList(group), null)) {
       checkErrors();
       var isRemoved = removeScope(scope);
@@ -261,8 +262,12 @@ public abstract class Repl {
    */
   public abstract void eprintln(Object anything);
 
+  public Expression normalize(Expression expr) {
+    return normalizationMode == null ? expr : expr.normalize(normalizationMode);
+  }
+
   @Contract("_, _ -> param1")
-  public final @NotNull StringBuilder prettyExpr(@NotNull StringBuilder builder, @NotNull Expression expression) {
+  public @NotNull StringBuilder prettyExpr(@NotNull StringBuilder builder, @NotNull Expression expression) {
     var abs = ToAbstractVisitor.convert(expression, myPpConfig);
     abs.accept(new PrettyPrintVisitor(builder, 0), new Precedence(Concrete.Expression.PREC));
     return builder;
@@ -272,17 +277,21 @@ public abstract class Repl {
    * @param expr input concrete expression.
    * @see Repl#preprocessExpr(String)
    */
-  public final @Nullable TypecheckingResult checkExpr(@NotNull Concrete.Expression expr, @Nullable Expression expectedType) {
+  public void checkExpr(@NotNull Concrete.Expression expr, @Nullable Expression expectedType, @NotNull Consumer<TypecheckingResult> continuation) {
+    expr = DesugarVisitor.desugar(expr, myErrorReporter);
+    if (checkErrors()) return;
     var typechecker = new CheckTypeVisitor(myErrorReporter, null, null);
     var instanceProvider = myTypechecking.getInstanceProviderSet().get(myModuleReferable);
     var instancePool = new GlobalInstancePool(instanceProvider, typechecker);
     typechecker.setInstancePool(instancePool);
     var result = typechecker.finalCheckExpr(expr, expectedType);
-    return checkErrors() ? null : result;
+    if (!checkErrors()) {
+      continuation.accept(result);
+    }
   }
 
   /**
-   * @see Repl#checkExpr(Concrete.Expression, Expression)
+   * @see Repl#checkExpr
    */
   public final @Nullable Concrete.Expression preprocessExpr(@NotNull String text) {
     var expr = parseExpr(text);
@@ -291,8 +300,6 @@ public abstract class Repl {
         .accept(new ExpressionResolveNameVisitor(myTypechecking.getReferableConverter(),
             myScope, new ArrayList<>(), myErrorReporter, null), null)
         .accept(new SyntacticDesugarVisitor(myErrorReporter), null);
-    if (checkErrors()) return null;
-    expr = DesugarVisitor.desugar(expr, myErrorReporter);
     if (checkErrors()) return null;
     return expr;
   }

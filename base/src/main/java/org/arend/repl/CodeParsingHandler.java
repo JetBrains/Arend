@@ -33,8 +33,8 @@ public final class CodeParsingHandler implements ReplHandler {
 
     var expr = api.preprocessExpr(line);
     if (api.checkErrors() || expr == null) return;
-    var result = api.checkExpr(expr, null);
-    if (result == null) return;
-    api.println(api.prettyExpr(new StringBuilder(), result.expression));
+    api.checkExpr(expr, null, result -> {
+      if (result != null) api.println(api.prettyExpr(new StringBuilder(), api.normalize(result.expression)));
+    });
   }
 }
