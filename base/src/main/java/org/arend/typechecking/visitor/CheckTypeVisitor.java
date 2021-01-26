@@ -1966,6 +1966,10 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     if (expr.getParameters().isEmpty()) {
       return checkResult(expectedType, new TypecheckingResult(new SigmaExpression(Sort.PROP, EmptyDependentLink.getInstance()), new UniverseExpression(Sort.PROP)), expr);
     }
+    if (expr.getParameters().size() == 1 && expr.getParameters().get(0).getReferableList().size() == 1) {
+      errorReporter.report(new TypecheckingError("\\Sigma type cannot have exactly one parameter", expr));
+      return expr.getParameters().get(0).getType().accept(this, expectedType);
+    }
 
     List<Sort> sorts = new ArrayList<>(expr.getParameters().size());
     DependentLink args = visitParameters(expr.getParameters(), expectedType, sorts);

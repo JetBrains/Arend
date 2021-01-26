@@ -56,4 +56,9 @@ public class Sigma extends TypeCheckingTestCase {
     TypecheckingResult result = typeCheckExpr(context, "\\Sigma A B", null);
     assertEquals(Universe(2, 6), result.type);
   }
+
+  @Test
+  public void oneParameter() {
+    typeCheckExpr("\\Sigma Nat", null, 1);
+  }
 }

@@ -120,7 +120,7 @@ public class AppHoleTest extends TypeCheckingTestCase {
   public void inProj() {
     typeCheckDef("\\func test : (\\Sigma Nat Nat) -> Nat => __.1");
     typeCheckDef("\\func test : (\\Sigma Nat Nat) -> Nat => __.2");
-    typeCheckDef("\\func test : (\\Sigma Nat) -> Nat => __.1");
+    typeCheckDef("\\func test : (\\Sigma Nat Nat Nat) -> Nat => __.3");
   }
 
   @Test
