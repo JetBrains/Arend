@@ -21,33 +21,35 @@ public class LexicalScope implements Scope {
   private final Group myGroup;
   private final ModulePath myModule;
   private final Kind myKind;
-  private final boolean myOnlyExternal;
+  private final Extent myExtent;
 
   private enum Kind { INSIDE, OPENED, OPENED_INTERNAL }
 
-  private LexicalScope(Scope parent, Group group, ModulePath module, Kind kind, boolean onlyExternal) {
+  public enum Extent { EVERYTHING, EXTERNAL_AND_FIELDS, ONLY_EXTERNAL }
+
+  private LexicalScope(Scope parent, Group group, ModulePath module, Kind kind, Extent extent) {
     myParent = parent;
     myGroup = group;
     myModule = module;
     myKind = kind;
-    myOnlyExternal = onlyExternal;
+    myExtent = extent;
   }
 
   private boolean ignoreOpens() {
     return myKind == Kind.OPENED || myKind == Kind.OPENED_INTERNAL;
   }
 
-  public static LexicalScope insideOf(Group group, Scope parent, boolean onlyExternal) {
+  public static LexicalScope insideOf(Group group, Scope parent, Extent extent) {
     ModuleLocation moduleLocation = group.getReferable().getLocation();
-    return new LexicalScope(parent, group, moduleLocation == null ? null : moduleLocation.getModulePath(), Kind.INSIDE, onlyExternal);
+    return new LexicalScope(parent, group, moduleLocation == null ? null : moduleLocation.getModulePath(), Kind.INSIDE, extent);
   }
 
   public static LexicalScope insideOf(Group group, Scope parent) {
-    return insideOf(group, parent, false);
+    return insideOf(group, parent, Extent.EVERYTHING);
   }
 
   private static LexicalScope opened(Group group, boolean onlyInternal) {
-    return new LexicalScope(EmptyScope.INSTANCE, group, null, onlyInternal ? Kind.OPENED_INTERNAL : Kind.OPENED, false);
+    return new LexicalScope(EmptyScope.INSTANCE, group, null, onlyInternal ? Kind.OPENED_INTERNAL : Kind.OPENED, Extent.EVERYTHING);
   }
 
   public static LexicalScope opened(Group group) {
@@ -82,7 +84,13 @@ public class LexicalScope implements Scope {
   @Override
   public List<Referable> getElements() {
     List<Referable> elements = new ArrayList<>();
-    if (!myOnlyExternal) {
+
+    addSubgroups(myGroup.getSubgroups(), elements);
+    if (myExtent == Extent.EVERYTHING) {
+      addSubgroups(myGroup.getDynamicSubgroups(), elements);
+    }
+
+    if (myExtent != Extent.ONLY_EXTERNAL) {
       for (Group.InternalReferable constructor : myGroup.getConstructors()) {
         addReferable(constructor.getReferable(), elements);
       }
@@ -94,11 +102,6 @@ public class LexicalScope implements Scope {
           addReferable(field.getReferable(), elements);
         }
       }
-    }
-
-    addSubgroups(myGroup.getSubgroups(), elements);
-    if (!myOnlyExternal) {
-      addSubgroups(myGroup.getDynamicSubgroups(), elements);
     }
 
     Scope cachingScope = null;
@@ -115,7 +118,7 @@ public class LexicalScope implements Scope {
         scope = getImportedSubscope();
       } else {
         if (cachingScope == null) {
-          cachingScope = CachingScope.make(new LexicalScope(myParent, myGroup, null, Kind.OPENED, myOnlyExternal));
+          cachingScope = CachingScope.make(new LexicalScope(myParent, myGroup, null, Kind.OPENED, myExtent));
         }
         scope = cachingScope;
       }
@@ -191,25 +194,25 @@ public class LexicalScope implements Scope {
       return null;
     }
 
-    if (resolveType == ResolveType.REF && !myOnlyExternal) {
-      Object result = resolveInternal(myGroup, name, myKind == Kind.OPENED_INTERNAL);
-      if (result != null) {
-        return result;
-      }
-    }
-
     for (Group subgroup : myGroup.getSubgroups()) {
       Object result = resolveSubgroup(subgroup, name, resolveType);
       if (result != null) {
         return result;
       }
     }
-    if (!myOnlyExternal) {
+    if (myExtent == Extent.EVERYTHING) {
       for (Group subgroup : myGroup.getDynamicSubgroups()) {
         Object result = resolveSubgroup(subgroup, name, resolveType);
         if (result != null) {
           return result;
         }
+      }
+    }
+
+    if (resolveType == ResolveType.REF && myExtent != Extent.ONLY_EXTERNAL) {
+      Object result = resolveInternal(myGroup, name, myKind == Kind.OPENED_INTERNAL);
+      if (result != null) {
+        return result;
       }
     }
 
@@ -227,7 +230,7 @@ public class LexicalScope implements Scope {
         scope = getImportedSubscope();
       } else {
         if (cachingScope == null) {
-          cachingScope = CachingScope.make(new LexicalScope(myParent, myGroup, null, Kind.OPENED, myOnlyExternal));
+          cachingScope = CachingScope.make(new LexicalScope(myParent, myGroup, null, Kind.OPENED, myExtent));
         }
         scope = cachingScope;
       }
@@ -259,7 +262,7 @@ public class LexicalScope implements Scope {
   @NotNull
   @Override
   public Scope getGlobalSubscopeWithoutOpens() {
-    return ignoreOpens() ? this : new LexicalScope(myParent, myGroup, null, Kind.OPENED, myOnlyExternal);
+    return ignoreOpens() ? this : new LexicalScope(myParent, myGroup, null, Kind.OPENED, myExtent);
   }
 
   @Nullable

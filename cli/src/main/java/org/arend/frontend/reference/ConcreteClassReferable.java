@@ -64,7 +64,7 @@ public class ConcreteClassReferable extends ConcreteLocatedReferable implements 
   protected void resolve() {
     if (!myResolved) {
       ChildGroup parent = myGroup.getParentGroup();
-      resolve(CachingScope.make(parent == null ? ScopeFactory.forGroup(myGroup, EmptyModuleScopeProvider.INSTANCE) : LexicalScope.insideOf(myGroup, parent.getGroupScope(), true)));
+      resolve(CachingScope.make(parent == null ? ScopeFactory.forGroup(myGroup, EmptyModuleScopeProvider.INSTANCE) : LexicalScope.insideOf(myGroup, parent.getGroupScope(), LexicalScope.Extent.ONLY_EXTERNAL)));
       myResolved = true;
     }
   }

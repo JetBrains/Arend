@@ -207,4 +207,29 @@ public class DefaultImplTest extends TypeCheckingTestCase {
       "  \\default f x y : x #Impl y = x => idp\n" +
       "}");
   }
+
+  @Test
+  public void resolveTest() {
+    typeCheckModule(
+      "\\record C\n" +
+      "  | \\infix 4 # : Nat -> Nat -> Nat\n" +
+      "  | f (x y : Nat) : x # y = x\n" +
+      "\\record D \\extends C {\n" +
+      "  \\default # \\as # x y => x\n" +
+      "  \\default f x y : x # y = x => idp\n" +
+      "}");
+  }
+
+  @Test
+  public void resolveTest2() {
+    typeCheckModule(
+      "\\record C\n" +
+      "  | \\infix 4 # : Nat -> Nat -> Nat\n" +
+      "  | f (x y : Nat) : x # y = x\n" +
+      "\\record D \\extends C {\n" +
+      "  | g (x y : Nat) : x # y = x\n" +
+      "  \\default # x y : Nat => x\n" +
+      "  \\default f x y : x # y = x => idp\n" +
+      "}");
+  }
 }

@@ -641,15 +641,15 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     resolveGroup(group, scope);
   }
 
-  private static Scope makeScope(Group group, Scope parentScope) {
+  private static Scope makeScope(Group group, Scope parentScope, LexicalScope.Extent extent) {
     if (parentScope == null) {
       return null;
     }
 
     if (group.getNamespaceCommands().isEmpty()) {
-      return new MergeScope(LexicalScope.insideOf(group, EmptyScope.INSTANCE), parentScope);
+      return new MergeScope(LexicalScope.insideOf(group, EmptyScope.INSTANCE, extent), parentScope);
     } else {
-      return LexicalScope.insideOf(group, parentScope);
+      return LexicalScope.insideOf(group, parentScope, extent);
     }
   }
 
@@ -659,21 +659,24 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     Collection<? extends Group> dynamicSubgroups = group.getDynamicSubgroups();
 
     var def = myConcreteProvider.getConcrete(groupRef);
+    Scope cachedScope = CachingScope.make(makeScope(group, scope, def instanceof Concrete.ClassDefinition ? LexicalScope.Extent.EXTERNAL_AND_FIELDS : LexicalScope.Extent.EVERYTHING));
     if (def instanceof Concrete.ClassDefinition && !((Concrete.ClassDefinition) def).getSuperClasses().isEmpty()) {
-      resolveSuperClasses((Concrete.ClassDefinition) def, new ExpressionResolveNameVisitor(myReferableConverter, scope, null, myErrorReporter, myResolverListener));
+      resolveSuperClasses((Concrete.ClassDefinition) def, new ExpressionResolveNameVisitor(myReferableConverter, cachedScope, null, myErrorReporter, myResolverListener));
     }
-    Scope convertedScope = CachingScope.make(scope);
     if (def instanceof Concrete.ResolvableDefinition) {
-      ((Concrete.ResolvableDefinition) def).accept(this, convertedScope);
+      ((Concrete.ResolvableDefinition) def).accept(this, cachedScope);
     } else {
       myLocalErrorReporter = new LocalErrorReporter(groupRef, myErrorReporter);
     }
 
+    if (def instanceof Concrete.ClassDefinition && (!subgroups.isEmpty() || !dynamicSubgroups.isEmpty())) {
+      cachedScope = CachingScope.make(makeScope(group, scope, LexicalScope.Extent.EVERYTHING));
+    }
     for (Group subgroup : subgroups) {
-      resolveGroup(subgroup, makeScope(subgroup, scope));
+      resolveGroup(subgroup, cachedScope);
     }
     for (Group subgroup : dynamicSubgroups) {
-      resolveGroup(subgroup, makeScope(subgroup, scope));
+      resolveGroup(subgroup, cachedScope);
     }
 
     if (myResolveTypeClassReferences) {
@@ -692,7 +695,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       }
 
       LongUnresolvedReference reference = new LongUnresolvedReference(namespaceCommand, path);
-      Scope importedScope = kind == NamespaceCommand.Kind.IMPORT ? convertedScope.getImportedSubscope() : convertedScope;
+      Scope importedScope = kind == NamespaceCommand.Kind.IMPORT ? cachedScope.getImportedSubscope() : cachedScope;
       List<Referable> resolvedRefs = myResolverListener == null ? null : new ArrayList<>();
       reference.resolve(importedScope, resolvedRefs);
       if (myResolverListener != null) {
@@ -800,7 +803,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
 
     List<Pair<NamespaceCommand, Map<String, Referable>>> namespaces = new ArrayList<>(namespaceCommands.size());
     for (NamespaceCommand cmd : namespaceCommands) {
-      Collection<? extends Referable> elements = NamespaceCommandNamespace.resolveNamespace(cmd.getKind() == NamespaceCommand.Kind.IMPORT ? convertedScope.getImportedSubscope() : convertedScope, cmd).getElements();
+      Collection<? extends Referable> elements = NamespaceCommandNamespace.resolveNamespace(cmd.getKind() == NamespaceCommand.Kind.IMPORT ? cachedScope.getImportedSubscope() : cachedScope, cmd).getElements();
       if (!elements.isEmpty()) {
         Map<String, Referable> map = new LinkedHashMap<>();
         for (Referable element : elements) {

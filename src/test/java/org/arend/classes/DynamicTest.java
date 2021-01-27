@@ -70,7 +70,7 @@ public class DynamicTest extends TypeCheckingTestCase {
 
   @Test
   public void dynamicCallFromField() {
-    typeCheckModule(
+    resolveNamesModule(
       "\\class A {\n" +
       "  | x : 0 = f\n" +
       "  \\func f => 0\n" +
