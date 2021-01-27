@@ -286,4 +286,26 @@ public class CoClauseFunctionTest extends TypeCheckingTestCase {
       "  | f n \\with", 1);
     assertThatErrorsAre(missingClauses(2));
   }
+
+  @Test
+  public void withImplicitParametersTest() {
+    typeCheckModule(
+      "\\record C (A : \\Type) (f : \\Pi {n : Nat} -> A -> A)\n" +
+      "\\func g (B : \\Type) : C B \\cowith\n" +
+      "  | f {n} (b : B) : B \\with {\n" +
+      "    | {0}, b => b\n" +
+      "    | {suc n}, b => f {B} {n} b\n" +
+      "  }");
+  }
+
+  @Test
+  public void withImplicitParametersTest2() {
+    typeCheckModule(
+      "\\record C (A : \\Type) (f : \\Pi {m : Nat} -> Nat -> A -> A)\n" +
+      "\\func g (B : \\Type) : C B \\cowith\n" +
+      "  | f {m} n (b : B) : B \\with {\n" +
+      "    | 0, b => b\n" +
+      "    | suc n, b => f {B} {0} n b\n" +
+      "  }");
+  }
 }

@@ -330,10 +330,30 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       }
       visitEliminatedReferences(exprVisitor, body.getEliminatedReferences());
       context.clear();
-      if (def instanceof Concrete.CoClauseFunctionDefinition && body.getEliminatedReferences().isEmpty()) {
+      if (def instanceof Concrete.CoClauseFunctionDefinition && body.getEliminatedReferences().isEmpty() && ((Concrete.CoClauseFunctionDefinition) def).getNumberOfExternalParameters() > 0) {
+        List<Boolean> explicitness = new ArrayList<>();
         for (int i = ((Concrete.CoClauseFunctionDefinition) def).getNumberOfExternalParameters(); i < def.getParameters().size(); i++) {
           for (Referable referable : def.getParameters().get(i).getReferableList()) {
             ((Concrete.ElimFunctionBody) body).getEliminatedReferences().add(new Concrete.ReferenceExpression(def.getData(), referable));
+            explicitness.add(def.getParameters().get(i).isExplicit());
+          }
+        }
+        for (Concrete.FunctionClause clause : body.getClauses()) {
+          int i = 0;
+          for (int j = 0; j < clause.getPatterns().size(); j++) {
+            Concrete.Pattern pattern = clause.getPatterns().get(j);
+            if (i >= explicitness.size()) break;
+            if (explicitness.get(i) && !pattern.isExplicit()) {
+              myLocalErrorReporter.report(new NameResolverError("Expected an explicit pattern", pattern));
+            } else {
+              if (!explicitness.get(i) && pattern.isExplicit()) {
+                clause.getPatterns().add(j, new Concrete.NamePattern(pattern.getData(), true, null, null));
+              }
+              if (!pattern.isExplicit()) {
+                pattern.setExplicit(true);
+              }
+              i++;
+            }
           }
         }
       }
