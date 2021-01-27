@@ -1147,7 +1147,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
         }
       } else {
         TerminalNode id = ctx.ID();
-        ConcreteLocatedReferable reference = makeReferable(position, id != null ? id.getText() : path.get(path.size() - 1), precCtx == null ? null : visitPrecedence(precCtx), null, Precedence.DEFAULT, parentGroup, LocatedReferableImpl.Kind.FUNCTION);
+        ConcreteLocatedReferable reference = makeReferable(position, id != null ? id.getText() : path.get(path.size() - 1), precCtx == null || precCtx instanceof NoPrecedenceContext ? null : visitPrecedence(precCtx), null, Precedence.DEFAULT, parentGroup, LocatedReferableImpl.Kind.FUNCTION);
         ChildGroup myGroup = new EmptyGroup(reference, parentGroup);
         subgroups.add(myGroup);
         Pair<Concrete.Expression, Concrete.Expression> pair = visitReturnExpr(returnCtx);

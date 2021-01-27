@@ -195,4 +195,16 @@ public class DefaultImplTest extends TypeCheckingTestCase {
       "}", 1);
     assertThatErrorsAre(Matchers.typeMismatchError());
   }
+
+  @Test
+  public void infixTest() {
+    typeCheckModule(
+      "\\record C\n" +
+      "  | \\infix 4 # : Nat -> Nat -> Nat\n" +
+      "  | f (x y : Nat) : x # y = x\n" +
+      "\\record D \\extends C {\n" +
+      "  \\default # \\as #Impl x y => x\n" +
+      "  \\default f x y : x #Impl y = x => idp\n" +
+      "}");
+  }
 }
