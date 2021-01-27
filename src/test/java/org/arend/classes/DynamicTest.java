@@ -48,27 +48,6 @@ public class DynamicTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void dynamicCallError() {
-    resolveNamesModule(
-      "\\class A {\n" +
-      "  \\func f => 0\n" +
-      "}\n" +
-      "\\func h (a : A) => a.f", 1);
-    assertThatErrorsAre(notInScope("f"));
-  }
-
-  @Test
-  public void dynamicInheritance() {
-    resolveNamesModule(
-      "\\class X {\n" +
-      "  \\class A\n" +
-      "}\n" +
-      "\\func x : X => \\new X\n" +
-      "\\class B \\extends x.A", 1);
-    assertThatErrorsAre(notInScope("A"));
-  }
-
-  @Test
   public void dynamicCallFromField() {
     resolveNamesModule(
       "\\class A {\n" +
@@ -786,5 +765,24 @@ public class DynamicTest extends TypeCheckingTestCase {
       "  \\func f => x\n" +
       "  \\func g : Nat => f {\\new A Nat 0}\n" +
       "}");
+  }
+
+  @Test
+  public void dynamicDotCall() {
+    typeCheckModule(
+      "\\record R {\n" +
+      "  \\func f => 0\n" +
+      "}\n" +
+      "\\func g (r : R) => r.f");
+  }
+
+  @Test
+  public void dynamicInheritance() {
+    typeCheckModule(
+      "\\class X {\n" +
+      "  \\class A\n" +
+      "}\n" +
+      "\\func x : X => \\new X\n" +
+      "\\class B \\extends x.A");
   }
 }

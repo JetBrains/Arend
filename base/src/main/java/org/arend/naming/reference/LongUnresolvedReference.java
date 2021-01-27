@@ -216,7 +216,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
     Object data = getData();
     Concrete.Expression result = new Concrete.ReferenceExpression(data, getReferable());
     for (i++; i < myPath.size(); i++) {
-      resolved = new ClassFieldImplScope(classRef, false).resolveName(myPath.get(i));
+      resolved = new ClassFieldImplScope(classRef, ClassFieldImplScope.Extent.WITH_DYNAMIC).resolveName(myPath.get(i));
       if (resolved == null) {
         resolved = new ErrorReference(data, classRef, i, myPath.get(i));
         if (resolvedRefs != null) {
@@ -278,14 +278,14 @@ public class LongUnresolvedReference implements UnresolvedReference {
     }
 
     for (i++; i < myPath.size(); i++) {
-      ref = new ClassFieldImplScope(classRef, false).resolveName(myPath.get(i));
+      ref = new ClassFieldImplScope(classRef, ClassFieldImplScope.Extent.WITH_DYNAMIC).resolveName(myPath.get(i));
       classRef = ref instanceof TypedReferable ? ((TypedReferable) ref).getTypeClassReference() : null;
       if (classRef == null) {
         return EmptyScope.INSTANCE;
       }
     }
 
-    return new ClassFieldImplScope(classRef, false);
+    return new ClassFieldImplScope(classRef, ClassFieldImplScope.Extent.WITH_DYNAMIC);
   }
 
   public Scope resolveNamespaceWithArgument(Scope scope) {
@@ -303,7 +303,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
     if (ref instanceof TypedReferable) {
       ClassReferable classRef = ((TypedReferable) ref).getTypeClassReference();
       if (classRef != null) {
-        scope = new MergeScope(scope, new ClassFieldImplScope(classRef, false));
+        scope = new MergeScope(scope, new ClassFieldImplScope(classRef, ClassFieldImplScope.Extent.WITH_DYNAMIC));
       }
     }
 

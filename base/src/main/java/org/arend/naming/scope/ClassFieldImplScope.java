@@ -9,19 +9,26 @@ import java.util.function.Predicate;
 
 public class ClassFieldImplScope implements Scope {
   private final ClassReferable myReferable;
-  private final boolean myWithSuperClasses;
+  private final Extent myExtent;
+
+  public enum Extent { WITH_SUPER_CLASSES, WITH_DYNAMIC, ONLY_FIELDS }
 
   public ClassReferable getClassReference() {
     return myReferable;
   }
 
   public boolean withSuperClasses() {
-    return myWithSuperClasses;
+    return myExtent == Extent.WITH_SUPER_CLASSES;
+  }
+
+  public ClassFieldImplScope(ClassReferable referable, Extent extent) {
+    myReferable = referable;
+    myExtent = extent;
   }
 
   public ClassFieldImplScope(ClassReferable referable, boolean withSuperClasses) {
     myReferable = referable;
-    myWithSuperClasses = withSuperClasses;
+    myExtent = withSuperClasses ? Extent.WITH_SUPER_CLASSES : Extent.ONLY_FIELDS;
   }
 
   @Nullable
@@ -49,8 +56,22 @@ public class ClassFieldImplScope implements Scope {
         }
       }
 
+      if (myExtent == Extent.WITH_DYNAMIC) {
+        for (GlobalReferable referable : classRef.getDynamicReferables()) {
+          if (pred.test(referable)) {
+            return referable;
+          }
+          if (referable.hasAlias()) {
+            AliasReferable aliasRef = new AliasReferable(referable);
+            if (pred.test(aliasRef)) {
+              return aliasRef;
+            }
+          }
+        }
+      }
+
       List<? extends ClassReferable> superClasses = classRef.getSuperClassReferences();
-      if (myWithSuperClasses) {
+      if (myExtent == Extent.WITH_SUPER_CLASSES) {
         for (ClassReferable superClass : superClasses) {
           if (pred.test(superClass)) {
             return superClass;
@@ -76,13 +97,13 @@ public class ClassFieldImplScope implements Scope {
   @Override
   public Scope resolveNamespace(String name, boolean onlyInternal) {
     Referable referable = resolveName(name);
-    if (myWithSuperClasses && referable instanceof ClassReferable) {
-      return new ClassFieldImplScope((ClassReferable) referable, true);
+    if (myExtent == Extent.WITH_SUPER_CLASSES && referable instanceof ClassReferable) {
+      return new ClassFieldImplScope((ClassReferable) referable, Extent.WITH_SUPER_CLASSES);
     }
     if (referable instanceof TypedReferable) {
       ClassReferable classRef = ((TypedReferable) referable).getTypeClassReference();
       if (classRef != null) {
-        return new ClassFieldImplScope(classRef, false);
+        return new ClassFieldImplScope(classRef, onlyInternal ? Extent.ONLY_FIELDS : Extent.WITH_DYNAMIC);
       }
     }
     return null;

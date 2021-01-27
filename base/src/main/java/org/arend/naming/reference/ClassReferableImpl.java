@@ -12,12 +12,14 @@ public class ClassReferableImpl extends LocatedReferableImpl implements ClassRef
   private final boolean myRecord;
   private final List<ClassReferable> mySuperClassReferences;
   private final List<? extends TCFieldReferable> myFieldReferables;
+  private final List<GlobalReferable> myDynamicReferables;
 
-  public ClassReferableImpl(Precedence precedence, String name, boolean isRecord, List<ClassReferable> superClassReferences, List<? extends TCFieldReferable> fieldReferables, ModuleLocation parent) {
+  public ClassReferableImpl(Precedence precedence, String name, boolean isRecord, List<ClassReferable> superClassReferences, List<? extends TCFieldReferable> fieldReferables, List<GlobalReferable> dynamicReferables, ModuleLocation parent) {
     super(precedence, name, parent, Kind.CLASS);
     myRecord = isRecord;
     mySuperClassReferences = superClassReferences;
     myFieldReferables = fieldReferables;
+    myDynamicReferables = dynamicReferables;
   }
 
   @NotNull
@@ -36,6 +38,11 @@ public class ClassReferableImpl extends LocatedReferableImpl implements ClassRef
   @Override
   public Collection<? extends Referable> getImplementedFields() {
     return Collections.emptyList();
+  }
+
+  @Override
+  public @NotNull Collection<? extends GlobalReferable> getDynamicReferables() {
+    return myDynamicReferables;
   }
 
   @Override

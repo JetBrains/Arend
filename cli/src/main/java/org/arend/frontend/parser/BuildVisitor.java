@@ -862,7 +862,6 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       ? new ConcreteClassReferable(pos, name, prec, alias.proj1, alias.proj2, fieldReferables, superClasses, myModule)
       : new ConcreteClassReferable(pos, name, prec, alias.proj1, alias.proj2, fieldReferables, superClasses, (TCReferable) parent.getReferable());
     ClassGroup resultGroup = new ClassGroup(reference, fieldReferables, dynamicSubgroups, staticSubgroups, namespaceCommands, parent);
-    reference.setGroup(resultGroup);
     boolean isRecord = ctx.classKw() instanceof ClassKwRecordContext;
     ClassBodyContext classBodyCtx = ctx.classBody();
     List<ClassStatContext> classStatCtxs = classBodyCtx instanceof ClassBodyStatsContext ? ((ClassBodyStatsContext) classBodyCtx).classStat() : Collections.emptyList();
@@ -879,6 +878,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       collectUsedDefinitions(dynamicSubgroups, usedDefinitions);
     }
     visitInstanceStatements(classFieldOrImplCtxs, elements, classDefinition, dynamicSubgroups, resultGroup);
+    reference.setGroup(resultGroup);
 
     for (Concrete.ClassElement element : elements) {
       if (element instanceof Concrete.ClassField) {

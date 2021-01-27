@@ -12,6 +12,7 @@ import org.arend.naming.scope.Scope;
 import org.arend.naming.scope.ScopeFactory;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.ChildGroup;
+import org.arend.term.group.Group;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -22,6 +23,7 @@ import java.util.List;
 
 public class ConcreteClassReferable extends ConcreteLocatedReferable implements ClassReferable {
   private ChildGroup myGroup;
+  private List<GlobalReferable> myDynamicReferables = Collections.emptyList();
   private final Collection<? extends ConcreteClassFieldReferable> myFields;
   private final List<? extends Reference> myUnresolvedSuperClasses;
   private final List<ClassReferable> mySuperClasses;
@@ -43,6 +45,13 @@ public class ConcreteClassReferable extends ConcreteLocatedReferable implements 
 
   public void setGroup(ChildGroup group) {
     myGroup = group;
+    Collection<? extends Group> subgroups = group.getDynamicSubgroups();
+    if (!subgroups.isEmpty()) {
+      myDynamicReferables = new ArrayList<>();
+      for (Group subgroup : subgroups) {
+        myDynamicReferables.add(subgroup.getReferable());
+      }
+    }
   }
 
   @Override
@@ -95,6 +104,11 @@ public class ConcreteClassReferable extends ConcreteLocatedReferable implements 
       }
     }
     return result;
+  }
+
+  @Override
+  public @NotNull Collection<? extends GlobalReferable> getDynamicReferables() {
+    return myDynamicReferables;
   }
 
   @Override

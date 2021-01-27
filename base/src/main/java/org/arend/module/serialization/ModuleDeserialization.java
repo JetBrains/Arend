@@ -211,10 +211,13 @@ public class ModuleDeserialization {
     List<TCFieldReferable> fieldReferables;
     LocatedReferable referable;
     GlobalReferable.Kind kind = getDefinitionKind(groupProto.getDefinition());
+    List<GlobalReferable> dynamicReferables;
     if (groupProto.hasDefinition() && kind == GlobalReferable.Kind.CLASS) {
+      dynamicReferables = new ArrayList<>();
       fieldReferables = new ArrayList<>();
-      referable = new ClassReferableImpl(readPrecedence(referableProto.getPrecedence()), referableProto.getName(), groupProto.getDefinition().getClass_().getIsRecord(), new ArrayList<>(), fieldReferables, modulePath);
+      referable = new ClassReferableImpl(readPrecedence(referableProto.getPrecedence()), referableProto.getName(), groupProto.getDefinition().getClass_().getIsRecord(), new ArrayList<>(), fieldReferables, dynamicReferables, modulePath);
     } else {
+      dynamicReferables = null;
       fieldReferables = new ArrayList<>(0);
       if (parent == null) {
         referable = new FullModuleReferable(modulePath);
@@ -265,8 +268,10 @@ public class ModuleDeserialization {
 
       List<Group> dynamicGroups = new ArrayList<>(groupProto.getDynamicSubgroupCount());
       group = new ClassGroup((ClassReferable) referable, internalReferables, dynamicGroups, subgroups, Collections.emptyList(), parent);
-      for (ModuleProtos.Group subgroup : groupProto.getDynamicSubgroupList()) {
-        dynamicGroups.add(readGroup(subgroup, group, modulePath));
+      for (ModuleProtos.Group subgroupProto : groupProto.getDynamicSubgroupList()) {
+        Group subgroup = readGroup(subgroupProto, group, modulePath);
+        dynamicGroups.add(subgroup);
+        dynamicReferables.add(subgroup.getReferable());
       }
     } else {
       throw new IllegalStateException();

@@ -9,6 +9,7 @@ public interface ClassReferable extends LocatedReferable {
   @NotNull List<? extends ClassReferable> getSuperClassReferences();
   @NotNull Collection<? extends FieldReferable> getFieldReferables();
   @NotNull Collection<? extends Referable> getImplementedFields();
+  @NotNull Collection<? extends GlobalReferable> getDynamicReferables();
 
   default boolean isSubClassOf(ClassReferable classRef) {
     if (this == classRef) {
