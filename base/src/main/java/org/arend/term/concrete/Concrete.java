@@ -2387,6 +2387,10 @@ public final class Concrete {
     public void setAsReferables(List<TypedReferable> asReferables) {
       myAsReferables = asReferables;
     }
+
+    public List<? extends Pattern> getPatterns() {
+      return Collections.emptyList();
+    }
   }
 
   public static class NumberPattern extends Pattern implements ConcreteNumberPattern {
@@ -2516,6 +2520,7 @@ public final class Concrete {
       myPatterns = patterns;
     }
 
+    @Override
     public List<Pattern> getPatterns() {
       return myPatterns;
     }

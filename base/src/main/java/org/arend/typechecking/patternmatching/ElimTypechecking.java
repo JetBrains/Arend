@@ -56,6 +56,7 @@ public class ElimTypechecking {
   private final List<? extends Concrete.FunctionClause> myClauses;
   private final Concrete.SourceNode mySourceNode;
   private boolean myAllowInterval = true;
+  private List<ExtElimClause> myCoreClauses;
 
   private static Integer getMinPlus1(Integer level1, Level l2, int sub) {
     Integer level2 = !l2.isInfinity() && l2.isClosed() ? l2.getConstant() : null;
@@ -227,11 +228,11 @@ public class ElimTypechecking {
         if (hasNonIntervals || intervals == 0) {
           nonIntervalClauses.add(new ExtElimClause(clause.getPatterns(), clause.getExpression(), i));
           if (!intervalClauses.isEmpty() && errorClause == null) {
-            errorClause = getClause(i);
+            errorClause = getClause(i, null);
           }
         } else {
           if (intervals > 1) {
-            myErrorReporter.report(new TypecheckingError("Only a single interval pattern per row is allowed", getClause(i)));
+            myErrorReporter.report(new TypecheckingError("Only a single interval pattern per row is allowed", getClause(i, null)));
             myUnusedClauses.remove(i);
           } else {
             intervalClauses.add(clause);
@@ -262,7 +263,7 @@ public class ElimTypechecking {
       for (int k = 0; k < nonIntervalClauses.size(); k++) {
         for (int j = i; j < nonIntervalClauses.get(k).getPatterns().size(); j++) {
           if (!(nonIntervalClauses.get(k).getPatterns().get(j) instanceof BindingPattern)) {
-            myErrorReporter.report(new TypecheckingError("A pattern matching on a data type is allowed only before the pattern matching on the interval", getClause(k)));
+            myErrorReporter.report(new TypecheckingError("A pattern matching on a data type is allowed only before the pattern matching on the interval", getClause(k, null)));
             myOK = false;
           }
         }
@@ -308,13 +309,14 @@ public class ElimTypechecking {
       }
     } else {
       myContext = new Stack<>();
+      myCoreClauses = nonIntervalClauses;
       elimTree = clausesToElimTree(nonIntervalClauses, 0, 0);
 
       reportMissingClauses(elimTree, parameters, elimParams);
 
       if (myOK) {
         for (Integer clauseIndex : myUnusedClauses) {
-          myErrorReporter.report(new RedundantClauseError(getClause(clauseIndex)));
+          myErrorReporter.report(new RedundantClauseError(getClause(clauseIndex, null)));
         }
       }
     }
@@ -323,8 +325,24 @@ public class ElimTypechecking {
     return cases == null ? elimBody : new IntervalElim(DependentLink.Helper.size(parameters), cases, elimBody);
   }
 
-  private Concrete.SourceNode getClause(int index) {
-    return myClauses == null ? mySourceNode : myClauses.get(index);
+  private static Concrete.Pattern findConcretePattern(List<? extends Pattern> patterns, List<? extends Concrete.Pattern> cPatterns, Pattern pattern) {
+    for (int i = 0; i < patterns.size() && i < cPatterns.size(); i++) {
+      if (patterns.get(i) == pattern) {
+        return cPatterns.get(i);
+      }
+      Concrete.Pattern cPattern = findConcretePattern(patterns.get(i).getSubPatterns(), cPatterns.get(i).getPatterns(), pattern);
+      if (cPattern != null) {
+        return cPattern;
+      }
+    }
+    return null;
+  }
+
+  private Concrete.SourceNode getClause(int clauseIndex, Pattern pattern) {
+    if (myClauses == null) return mySourceNode;
+    Concrete.FunctionClause clause = myClauses.get(clauseIndex);
+    Concrete.Pattern cPattern = myCoreClauses != null && clauseIndex < myCoreClauses.size() ? findConcretePattern(myCoreClauses.get(clauseIndex).getPatterns(), clause.getPatterns(), pattern) : null;
+    return cPattern != null ? cPattern : clause;
   }
 
   private static List<ConCallExpression> getMatchedConstructors(Expression expr) {
@@ -789,7 +807,7 @@ public class ElimTypechecking {
           DataCallExpression dataCall = GetTypeVisitor.INSTANCE.visitConCall(((ConCallExpression) someConPattern.getDataExpression().subst(conClause.substitution)), null);
           conCalls = dataCall.getMatchedConstructors();
           if (conCalls == null) {
-            myErrorReporter.report(new ImpossibleEliminationError(dataCall, getClause(conClause.index), null));
+            myErrorReporter.report(new ImpossibleEliminationError(dataCall, getClause(conClause.index, someConPattern), null));
             myOK = false;
             return null;
           }
@@ -814,14 +832,14 @@ public class ElimTypechecking {
       }
 
       if (dataType == Prelude.INTERVAL) {
-        myErrorReporter.report(new TypecheckingError("Pattern matching on the interval is not allowed here", getClause(conClause.index)));
+        myErrorReporter.report(new TypecheckingError("Pattern matching on the interval is not allowed here", getClause(conClause.index, someConPattern)));
         myOK = false;
         return null;
       }
 
       if (dataType != null && dataType.isSquashed()) {
-        if (myActualLevel != null && !Level.compare(myActualLevel, dataType.getSort().getHLevel().add(myActualLevelSub), CMP.LE, myEquations, getClause(conClause.index))) {
-          myErrorReporter.report(new SquashedDataError(dataType, myActualLevel, myActualLevelSub, getClause(conClause.index)));
+        if (myActualLevel != null && !Level.compare(myActualLevel, dataType.getSort().getHLevel().add(myActualLevelSub), CMP.LE, myEquations, getClause(conClause.index, someConPattern))) {
+          myErrorReporter.report(new SquashedDataError(dataType, myActualLevel, myActualLevelSub, getClause(conClause.index, someConPattern)));
         }
 
         boolean ok = !dataType.isTruncated() || myLevel != null && myLevel <= dataType.getTruncatedLevel() + 1;
@@ -831,16 +849,16 @@ public class ElimTypechecking {
             type = type.normalize(NormalizationMode.WHNF);
             UniverseExpression universe = type.cast(UniverseExpression.class);
             if (universe != null) {
-              ok = Level.compare(universe.getSort().getHLevel(), dataType.getSort().getHLevel(), CMP.LE, myEquations, getClause(conClause.index));
+              ok = Level.compare(universe.getSort().getHLevel(), dataType.getSort().getHLevel(), CMP.LE, myEquations, getClause(conClause.index, someConPattern));
             } else {
-              InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, false, getClause(conClause.index));
+              InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, false, getClause(conClause.index, someConPattern));
               myEquations.addVariable(pl);
-              ok = type.isLessOrEquals(new UniverseExpression(new Sort(new Level(pl), dataType.getSort().getHLevel())), myEquations, getClause(conClause.index));
+              ok = type.isLessOrEquals(new UniverseExpression(new Sort(new Level(pl), dataType.getSort().getHLevel())), myEquations, getClause(conClause.index, someConPattern));
             }
           }
         }
         if (!ok) {
-          myErrorReporter.report(new TruncatedDataError(dataType, myExpectedType, getClause(conClause.index)));
+          myErrorReporter.report(new TruncatedDataError(dataType, myExpectedType, getClause(conClause.index, someConPattern)));
           myOK = false;
         }
       }
