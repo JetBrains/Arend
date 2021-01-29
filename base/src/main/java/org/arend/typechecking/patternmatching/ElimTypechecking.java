@@ -467,7 +467,7 @@ public class ElimTypechecking {
     return result;
   }
 
-  private Map<DependentLink, List<Pair<ExpressionPattern, Map<DependentLink, Constructor>>>> computeParamSpec(DependentLink param, DataCallExpression dataCall, List<DependentLink> elimParams, Map<DependentLink, List<ConCallExpression>> paramSpec2) {
+  private Map<DependentLink, List<Pair<ExpressionPattern, Map<DependentLink, Constructor>>>> computeParamSpec(DependentLink param, DataCallExpression dataCall, List<DependentLink> elimParams, Map<DependentLink, List<ConCallExpression>> paramSpec2, DependentLink parameters) {
     Map<DependentLink, List<Pair<ExpressionPattern, Map<DependentLink, Constructor>>>> paramSpec = new HashMap<>();
 
     for (Constructor constructor : dataCall.getDefinition().getConstructors()) {
@@ -484,7 +484,7 @@ public class ElimTypechecking {
           if (entry.getKey() instanceof DependentLink) {
             DependentLink key = (DependentLink) entry.getKey();
             if (!(entry.getValue() instanceof BindingPattern) && !elimParams.isEmpty() && !elimParams.contains(key)) {
-              myErrorReporter.report(new ImpossibleEliminationError(dataCall, mySourceNode, null));
+              myErrorReporter.report(new ImpossibleEliminationError(dataCall, mySourceNode, null, parameters, param, elimParams, null));
               return null;
             }
             map.computeIfAbsent(key, k -> new ArrayList<>()).add(entry.getValue());
@@ -523,7 +523,7 @@ public class ElimTypechecking {
     for (DependentLink param = parameters; param.hasNext(); param = param.getNext()) {
       DataCallExpression dataCall = param.getTypeExpr().normalize(NormalizationMode.WHNF).cast(DataCallExpression.class);
       if (dataCall != null) {
-        Map<DependentLink, List<Pair<ExpressionPattern, Map<DependentLink, Constructor>>>> newParamSpec = computeParamSpec(param, dataCall, elimParams, paramSpec2);
+        Map<DependentLink, List<Pair<ExpressionPattern, Map<DependentLink, Constructor>>>> newParamSpec = computeParamSpec(param, dataCall, elimParams, paramSpec2, parameters);
         if (newParamSpec == null) {
           return null;
         }
@@ -807,7 +807,7 @@ public class ElimTypechecking {
           DataCallExpression dataCall = GetTypeVisitor.INSTANCE.visitConCall(((ConCallExpression) someConPattern.getDataExpression().subst(conClause.substitution)), null);
           conCalls = dataCall.getMatchedConstructors();
           if (conCalls == null) {
-            myErrorReporter.report(new ImpossibleEliminationError(dataCall, getClause(conClause.index, someConPattern), null));
+            myErrorReporter.report(new ImpossibleEliminationError(dataCall, getClause(conClause.index, someConPattern), null, null, null, null, null));
             myOK = false;
             return null;
           }

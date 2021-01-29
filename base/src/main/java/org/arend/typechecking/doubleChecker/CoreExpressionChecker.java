@@ -559,7 +559,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     if (pattern == EmptyPattern.INSTANCE) {
       List<ConCallExpression> conCalls = dataCall.getMatchedConstructors();
       if (conCalls == null) {
-        throw new CoreException(CoreErrorWrapper.make(new ImpossibleEliminationError(dataCall, mySourceNode, null), errorExpr));
+        throw new CoreException(CoreErrorWrapper.make(new ImpossibleEliminationError(dataCall, mySourceNode, null, null, null, null, null), errorExpr));
       }
       if (!conCalls.isEmpty()) {
         throw new CoreException(CoreErrorWrapper.make(new DataTypeNotEmptyError(dataCall, DataTypeNotEmptyError.getConstructors(conCalls), mySourceNode), errorExpr));
@@ -575,7 +575,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
     List<ConCallExpression> conCalls = new ArrayList<>(1);
     if (!dataCall.getMatchedConCall((Constructor) conPattern.getDefinition(), conCalls)) {
-      throw new CoreException(CoreErrorWrapper.make(new ImpossibleEliminationError(dataCall, mySourceNode, null), errorExpr));
+      throw new CoreException(CoreErrorWrapper.make(new ImpossibleEliminationError(dataCall, mySourceNode, null, null, null, null, null), errorExpr));
     }
     if (conCalls.isEmpty()) {
       throw new CoreException(CoreErrorWrapper.make(new DataTypeNotEmptyError(dataCall, DataTypeNotEmptyError.getConstructors(conCalls), mySourceNode), errorExpr));

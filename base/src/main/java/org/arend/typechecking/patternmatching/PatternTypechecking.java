@@ -692,8 +692,9 @@ public class PatternTypechecking {
       if (pattern instanceof Concrete.TuplePattern) {
         List<ConCallExpression> conCalls = dataCall.getMatchedConstructors();
         if (conCalls == null) {
-          myErrorReporter.report(new ImpossibleEliminationError(dataCall, pattern, paramsSubst));
+          myErrorReporter.report(new ImpossibleEliminationError(dataCall, pattern, paramsSubst, clausesParameters, parameters, myElimParams, myCaseArguments));
           return null;
+
         }
         if (!conCalls.isEmpty()) {
           myErrorReporter.report(new DataTypeNotEmptyError(dataCall, DataTypeNotEmptyError.getConstructors(conCalls), pattern));
