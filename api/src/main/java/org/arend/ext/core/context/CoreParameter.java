@@ -5,6 +5,8 @@ import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.typechecking.TypedExpression;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Map;
+
 /**
  * Represents an element of a linked list of parameters of a definition, lambda, pi, etc.
  */
@@ -46,4 +48,11 @@ public interface CoreParameter {
    * @return the abstracted type in a context of length {@code size}.
    */
   @NotNull AbstractedExpression abstractType(int size);
+
+  /**
+   * Inserts {@code map.get(p)} after {@code p} in this list of parameters.
+   *
+   * @return the resulting list of parameters.
+   */
+  @NotNull CoreParameter insertParameters(@NotNull Map<CoreParameter, CoreParameter> map);
 }

@@ -1,7 +1,9 @@
 package org.arend.core.context.param;
 
+import org.arend.core.context.LinkList;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.expr.Expression;
+import org.arend.core.expr.ReferenceExpression;
 import org.arend.core.expr.UniverseExpression;
 import org.arend.core.expr.type.Type;
 import org.arend.core.subst.ExprSubstitution;
@@ -10,13 +12,13 @@ import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.core.expr.AbstractedExpression;
-import org.arend.ext.typechecking.TypedExpression;
 import org.arend.extImpl.AbstractedDependentLinkType;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public interface DependentLink extends Binding, CoreParameter {
   void setExplicit(boolean isExplicit);
@@ -53,6 +55,29 @@ public interface DependentLink extends Binding, CoreParameter {
       throw new IllegalArgumentException();
     }
     return AbstractedDependentLinkType.make(this, size);
+  }
+
+  @Override
+  default @NotNull CoreParameter insertParameters(@NotNull Map<CoreParameter, CoreParameter> map) {
+    if (map.isEmpty()) return this;
+    LinkList list = new LinkList();
+    ExprSubstitution substitution = new ExprSubstitution();
+    SubstVisitor visitor = new SubstVisitor(substitution, LevelSubstitution.EMPTY);
+    for (DependentLink param = this; param.hasNext(); param = param.getNext()) {
+      DependentLink newParam = param.subst(visitor, 1, false);
+      list.append(newParam);
+      substitution.add(param, new ReferenceExpression(newParam));
+      CoreParameter param1 = map.get(param);
+      if (param1 != null) {
+        if (!(param1 instanceof DependentLink)) {
+          throw new IllegalArgumentException();
+        }
+        DependentLink param2 = Helper.subst((DependentLink) param1, visitor);
+        list.append(param2);
+        substitution.add((DependentLink) param1, new ReferenceExpression(param2));
+      }
+    }
+    return list.getFirst();
   }
 
   class Helper {

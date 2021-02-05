@@ -422,6 +422,16 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
   }
 
   @Override
+  public @NotNull ConcreteExpression app(@NotNull ConcreteExpression function, ConcreteArgument... arguments) {
+    return app(function, Arrays.asList(arguments));
+  }
+
+  @Override
+  public @NotNull ConcreteExpression app(@NotNull ConcreteExpression function, boolean isExplicit, ConcreteExpression... arguments) {
+    return app(function, isExplicit, Arrays.asList(arguments));
+  }
+
+  @Override
   public @NotNull ConcreteArgument arg(@NotNull ConcreteExpression expression, boolean isExplicit) {
     if (!(expression instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();

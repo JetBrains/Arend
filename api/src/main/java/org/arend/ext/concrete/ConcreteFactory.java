@@ -54,6 +54,8 @@ public interface ConcreteFactory {
   @NotNull ConcreteExpression typed(@NotNull ConcreteExpression expression, @NotNull ConcreteExpression type);
   @NotNull ConcreteExpression app(@NotNull ConcreteExpression function, @NotNull Collection<? extends ConcreteArgument> arguments);
   @NotNull ConcreteExpression app(@NotNull ConcreteExpression function, boolean isExplicit, @NotNull Collection<? extends ConcreteExpression> arguments);
+  @NotNull ConcreteExpression app(@NotNull ConcreteExpression function, ConcreteArgument... arguments);
+  @NotNull ConcreteExpression app(@NotNull ConcreteExpression function, boolean isExplicit, ConcreteExpression... arguments);
   @NotNull ConcreteArgument arg(@NotNull ConcreteExpression expression, boolean isExplicit);
   @NotNull ConcreteAppBuilder appBuilder(@NotNull ConcreteExpression function);
 
