@@ -212,7 +212,6 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
     definition.setRecursive(recursive);
 
     List<ExtElimClause> clauses;
-    Definition typechecked;
     ArendExtension extension = myExtensionProvider.getArendExtension(definition.getData());
     CheckTypeVisitor checkTypeVisitor = new CheckTypeVisitor(new LocalErrorReporter(definition.getData(), myErrorReporter), null, extension);
     checkTypeVisitor.setInstancePool(new GlobalInstancePool(myInstanceProviderSet.get(definition.getData()), checkTypeVisitor));
@@ -220,7 +219,10 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
     myCurrentDefinitions = Collections.singletonList(definition.getData());
     typecheckingUnitStarted(definition.getData());
     clauses = definition.accept(new DefinitionTypechecker(checkTypeVisitor), null);
-    typechecked = definition.getData().getTypechecked();
+    Definition typechecked = definition.getData().getTypechecked();
+    if (typechecked == null) {
+      typechecked = newDefinition(definition);
+    }
 
     if (recursive && typechecked instanceof FunctionDefinition) {
       ((FunctionDefinition) typechecked).setRecursiveDefinitions(Collections.singleton(typechecked));
