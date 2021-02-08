@@ -1138,7 +1138,8 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       ReturnExpr2Context returnCtx = ((CoClauseDefContext) body).returnExpr2();
       CoClauseDefBodyContext defBody = ((CoClauseDefContext) body).coClauseDefBody();
       PrecedenceContext precCtx = ctx.precedence();
-      if (defBody instanceof CoClauseExprContext && precCtx == null && returnCtx == null) {
+      TerminalNode id = ctx.ID();
+      if (defBody instanceof CoClauseExprContext && precCtx == null && id == null && returnCtx == null) {
         List<TeleContext> teleCtxs = ((CoClauseDefContext) body).tele();
         List<Concrete.Parameter> parameters = visitLamTeles(teleCtxs, false);
         term = visitExpr(((CoClauseExprContext) defBody).expr());
@@ -1146,7 +1147,6 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
           term = new Concrete.LamExpression(tokenPosition(teleCtxs.get(0).start), parameters, term);
         }
       } else {
-        TerminalNode id = ctx.ID();
         ConcreteLocatedReferable reference = makeReferable(position, id != null ? id.getText() : path.get(path.size() - 1), precCtx == null || precCtx instanceof NoPrecedenceContext ? null : visitPrecedence(precCtx), null, Precedence.DEFAULT, parentGroup, LocatedReferableImpl.Kind.FUNCTION);
         ChildGroup myGroup = new EmptyGroup(reference, parentGroup);
         subgroups.add(myGroup);
