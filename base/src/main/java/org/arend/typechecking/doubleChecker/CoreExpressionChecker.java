@@ -91,6 +91,10 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   @Override
   public Expression visitConCall(ConCallExpression expr, Expression expectedType) {
+    if (expr.getDefinition() == Prelude.FIN_ZERO || expr.getDefinition() == Prelude.FIN_SUC) {
+      throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("'Fin." + expr.getDefinition().getName() + "' is not allowed", mySourceNode), expr));
+    }
+
     if (expr.getDefinition() == Prelude.SUC) {
       int sucs = 1;
       Expression expression = expr.getDefCallArguments().get(0);

@@ -11,6 +11,7 @@ import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.reference.*;
 import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.naming.scope.Scope;
+import org.arend.prelude.Prelude;
 import org.arend.term.group.*;
 import org.arend.typechecking.order.dependency.DependencyListener;
 import org.arend.util.Pair;
@@ -50,7 +51,7 @@ public class ModuleDeserialization {
       }
 
       for (ModuleProtos.CallTargetTree callTargetTree : moduleCallTargets.getCallTargetTreeList()) {
-        fillInCallTargetTree(callTargetTree, scope, module);
+        fillInCallTargetTree(null, callTargetTree, scope, module);
       }
     }
 
@@ -61,12 +62,19 @@ public class ModuleDeserialization {
     myDefinitions.clear();
   }
 
-  private void fillInCallTargetTree(ModuleProtos.CallTargetTree callTargetTree, Scope scope, ModulePath module) throws DeserializationException {
+  private void fillInCallTargetTree(String parentName, ModuleProtos.CallTargetTree callTargetTree, Scope scope, ModulePath module) throws DeserializationException {
     if (callTargetTree.getIndex() > 0) {
       Referable referable1 = scope.resolveName(callTargetTree.getName());
       TCReferable referable = myReferableConverter == null
         ? (referable1 instanceof TCReferable ? (TCReferable) referable1 : null)
         : (referable1 instanceof LocatedReferable ? myReferableConverter.toDataLocatedReferable((LocatedReferable) referable1) : null);
+      if (referable == null && module.equals(Prelude.MODULE_PATH) && "Fin".equals(parentName)) {
+        if (callTargetTree.getName().equals("zero")) {
+          referable = Prelude.FIN_ZERO.getReferable();
+        } else if (callTargetTree.getName().equals("suc")) {
+          referable = Prelude.FIN_SUC.getReferable();
+        }
+      }
       if (referable == null) {
         throw new DeserializationException("Cannot resolve reference '" + callTargetTree.getName() + "' in " + module);
       }
@@ -81,7 +89,7 @@ public class ModuleDeserialization {
       }
 
       for (ModuleProtos.CallTargetTree tree : subtreeList) {
-        fillInCallTargetTree(tree, subscope, module);
+        fillInCallTargetTree(callTargetTree.getName(), tree, subscope, module);
       }
     }
   }

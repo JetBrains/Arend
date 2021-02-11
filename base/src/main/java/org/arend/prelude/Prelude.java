@@ -108,11 +108,13 @@ public class Prelude implements ArendPrelude {
           FIN_ZERO.setPatterns(patterns);
           FIN_ZERO.setParameters(EmptyDependentLink.getInstance());
           FIN_ZERO.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+          FIN_ZERO.getReferable().setTypechecked(FIN_ZERO);
           FIN.addConstructor(FIN_ZERO);
           FIN_SUC = new Constructor(new LocatedReferableImpl(Precedence.DEFAULT, "suc", FIN.getRef(), GlobalReferable.Kind.CONSTRUCTOR), FIN);
           FIN_SUC.setPatterns(patterns);
           FIN_SUC.setParameters(new TypedDependentLink(true, null, new DataCallExpression(FIN, Sort.STD, new SingletonList<>(new ReferenceExpression(binding))), EmptyDependentLink.getInstance()));
           FIN_SUC.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+          FIN_SUC.getReferable().setTypechecked(FIN_SUC);
           FIN.addConstructor(FIN_SUC);
         } else {
           FIN_ZERO = FIN.getConstructor("zero");
