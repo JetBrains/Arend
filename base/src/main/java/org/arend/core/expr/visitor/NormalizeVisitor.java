@@ -683,7 +683,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
 
   @Override
   public Expression visitDefCall(DefCallExpression expr, NormalizationMode mode) {
-    if (expr.getDefinition() instanceof FunctionDefinition && ((FunctionDefinition) expr.getDefinition()).isSFunc() || !(expr.getDefinition() instanceof Function) || ((Function) expr.getDefinition()).getBody() == null) {
+    if (expr.getDefinition() instanceof FunctionDefinition && ((FunctionDefinition) expr.getDefinition()).isSFunc() || !(expr.getDefinition() instanceof Function) || ((Function) expr.getDefinition()).getBody() == null && expr.getDefinition() != Prelude.DIV_MOD) {
       return applyDefCall(expr, mode);
     } else {
       return visitFunctionDefCall(expr, mode);
