@@ -9,10 +9,8 @@ import org.arend.core.expr.ReferenceExpression;
 import org.arend.core.expr.SmallIntegerExpression;
 import org.arend.core.expr.type.Type;
 import org.arend.core.subst.ExprSubstitution;
-import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.TypeCheckingTestCase;
-import org.arend.typechecking.result.TypecheckingResult;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -271,5 +269,13 @@ public class FinTest extends TypeCheckingTestCase {
       "\\func enlarge-substitution {A : \\Set} (list : List A) (index : Fin (length list)) : Term A list (list !! index) \\elim list, index\n" +
       "  | :: a list, 0 => term 0 idp\n" +
       "  | _, _ => foo");
+  }
+
+  @Test
+  public void sucMatchTest() {
+    typeCheckModule(
+      "\\lemma test {n : Nat} (x : Fin n) : suc x Nat.<= n \\elim n, x\n" +
+      "  | suc n, zero => Nat.suc<=suc Nat.zero<=_\n" +
+      "  | suc n, suc x => Nat.suc<=suc (test x)");
   }
 }

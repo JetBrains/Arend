@@ -27,7 +27,10 @@ public class ConCallExpression extends DefCallExpression implements CoreConCallE
     if (constructor == Prelude.ZERO || constructor == Prelude.FIN_ZERO) {
       return new SmallIntegerExpression(0);
     }
-    if ((constructor == Prelude.SUC || constructor == Prelude.FIN_SUC) && !arguments.isEmpty()) {
+    if (constructor == Prelude.FIN_SUC) {
+      constructor = Prelude.SUC;
+    }
+    if (constructor == Prelude.SUC && !arguments.isEmpty()) {
       IntegerExpression intExpr = arguments.get(0).cast(IntegerExpression.class);
       if (intExpr != null) {
         return intExpr.suc();
