@@ -179,4 +179,10 @@ public class DisjointConstructorsTest extends TypeCheckingTestCase {
       "\\func f (n m : Nat) (p : con2 n = con3 m) : Nat", 1);
     assertThatErrorsAre(Matchers.missingClauses(2));
   }
+
+  @Test
+  public void intervalTest() {
+    typeCheckDef("\\func f (p : left = right) : Nat", 1);
+    assertThatErrorsAre(Matchers.missingClauses(1));
+  }
 }

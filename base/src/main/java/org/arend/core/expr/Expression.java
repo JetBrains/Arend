@@ -343,7 +343,7 @@ public abstract class Expression implements Body, CoreExpression {
     ConCallExpression conCall2 = (ConCallExpression) expr2;
     Constructor con1 = conCall1.getDefinition();
     Constructor con2 = conCall2.getDefinition();
-    if (con1.getDataType() != con2.getDataType()) {
+    if (con1.getDataType() != con2.getDataType() || con1.getDataType() == Prelude.INTERVAL) {
       return false;
     }
 
