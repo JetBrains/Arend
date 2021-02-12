@@ -188,7 +188,7 @@ public class CorrespondedSubExprVisitor implements
       Expression function = coreExpr;
       AppExpression coreAppExpr;
       do {
-        assert function instanceof AppExpression;
+        if (!(function instanceof AppExpression)) return null;
         coreAppExpr = (AppExpression) function;
         function = coreAppExpr.getFunction();
       } while (coreAppExpr.isExplicit() != lastArgument.isExplicit());
