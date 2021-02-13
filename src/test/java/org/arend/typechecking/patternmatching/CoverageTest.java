@@ -229,4 +229,10 @@ public class CoverageTest extends TypeCheckingTestCase {
       "  | false, true => false<true\n" +
       "\\func test (x y z : Bool) (p : x < y) (q : y < z) : x < z");
   }
+
+  @Test
+  public void yetAnotherTest() {
+    typeCheckDef("\\func test (x y z : Nat) (p : y Nat.<= z) : Nat \\elim x", 1);
+    assertThatErrorsAre(missingClauses(2));
+  }
 }

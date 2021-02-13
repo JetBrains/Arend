@@ -521,6 +521,9 @@ public class ElimTypechecking {
     Map<DependentLink, List<ConCallExpression>> paramSpec2 = new HashMap<>();
     DependentLink emptyLink = null;
     for (DependentLink param = parameters; param.hasNext(); param = param.getNext()) {
+      if (!elimParams.isEmpty() && !elimParams.contains(param)) {
+        continue;
+      }
       DataCallExpression dataCall = param.getTypeExpr().normalize(NormalizationMode.WHNF).cast(DataCallExpression.class);
       if (dataCall != null) {
         Map<DependentLink, List<Pair<ExpressionPattern, Map<DependentLink, Constructor>>>> newParamSpec = computeParamSpec(param, dataCall, elimParams, paramSpec2, parameters);
