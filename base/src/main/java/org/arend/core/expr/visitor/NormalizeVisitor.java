@@ -76,23 +76,22 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
 
   private Expression normalizePlus(DefCallExpression expr, NormalizationMode mode) {
     List<? extends Expression> defCallArgs = expr.getDefCallArguments();
-    Expression arg1 = defCallArgs.get(0);
-    Expression arg2 = defCallArgs.get(1).accept(this, NormalizationMode.WHNF);
+    Expression arg1 = defCallArgs.get(0).accept(this, mode);
+    Expression arg2 = defCallArgs.get(1).accept(this, mode);
 
-    IntegerExpression intExpr2 = arg2.cast(IntegerExpression.class);
-    if (intExpr2 != null) {
-      if (intExpr2.isZero()) {
-        return arg1.accept(this, mode);
+    if (arg1 instanceof IntegerExpression) {
+      IntegerExpression intExpr1 = (IntegerExpression) arg1;
+      if (arg2 instanceof IntegerExpression) {
+        return intExpr1.plus((IntegerExpression) arg2);
       }
-      arg1 = arg1.accept(this, NormalizationMode.WHNF);
-      IntegerExpression intExpr1 = arg1.cast(IntegerExpression.class);
-      if (intExpr1 != null) {
-        return intExpr1.plus(intExpr2);
+      for (int i = 0; intExpr1.compare(i) > 0; i++) {
+        arg2 = Suc(arg2);
       }
+      return arg2;
+    }
 
-      if (mode != NormalizationMode.WHNF) {
-        arg1 = arg1.accept(this, mode);
-      }
+    if (arg2 instanceof IntegerExpression) {
+      IntegerExpression intExpr2 = (IntegerExpression) arg2;
       for (int i = 0; intExpr2.compare(i) > 0; i++) {
         arg1 = Suc(arg1);
       }
@@ -100,15 +99,20 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
     }
 
     List<Expression> newDefCallArgs = new ArrayList<>(2);
-    newDefCallArgs.add(arg1.accept(this, mode));
     Expression result = FunCallExpression.make(Prelude.PLUS, expr.getSortArgument(), newDefCallArgs);
-    ConCallExpression conCall2 = arg2.cast(ConCallExpression.class);
-    while (conCall2 != null && conCall2.getDefinition() == Prelude.SUC) {
+    result = addSucs(arg1, newDefCallArgs, result);
+    result = addSucs(arg2, newDefCallArgs, result);
+    return result;
+  }
+
+  private Expression addSucs(Expression arg1, List<Expression> defCallArgs, Expression result) {
+    ConCallExpression conCall1 = arg1.cast(ConCallExpression.class);
+    while (conCall1 != null && conCall1.getDefinition() == Prelude.SUC) {
       result = Suc(result);
-      arg2 = conCall2.getDefCallArguments().get(0).accept(this, NormalizationMode.WHNF);
-      conCall2 = arg2.cast(ConCallExpression.class);
+      arg1 = conCall1.getDefCallArguments().get(0).accept(this, NormalizationMode.WHNF);
+      conCall1 = arg1.cast(ConCallExpression.class);
     }
-    newDefCallArgs.add(mode == NormalizationMode.WHNF ? arg2 : arg2.accept(this, mode));
+    defCallArgs.add(arg1);
     return result;
   }
 
@@ -147,6 +151,11 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
       return FunCallExpression.make(Prelude.MINUS, expr.getSortArgument(), newDefCallArgs);
     }
 
+    arg2 = arg2.accept(this, NormalizationMode.WHNF);
+    if (arg2 instanceof IntegerExpression && ((IntegerExpression) arg2).isZero()) {
+      return Pos(arg1);
+    }
+
     ConCallExpression conCall1 = arg1.cast(ConCallExpression.class);
     if (conCall1 == null || conCall1.getDefinition() != Prelude.SUC) {
       List<Expression> newDefCallArgs = new ArrayList<>(2);
@@ -155,7 +164,6 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
       return FunCallExpression.make(Prelude.MINUS, expr.getSortArgument(), newDefCallArgs);
     }
 
-    arg2 = arg2.accept(this, NormalizationMode.WHNF);
     IntegerExpression intExpr2 = arg2.cast(IntegerExpression.class);
     if (intExpr2 != null) {
       while (!intExpr2.isZero() && conCall1 != null && conCall1.getDefinition() == Prelude.SUC) {

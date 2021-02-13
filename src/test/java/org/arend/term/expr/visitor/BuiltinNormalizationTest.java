@@ -153,4 +153,23 @@ public class BuiltinNormalizationTest extends TypeCheckingTestCase {
     // mod 1000000000000 98765 = 29340
     assertEquals(new BigIntegerExpression(new BigInteger("29340")), funCall(Prelude.MOD, new BigIntegerExpression(new BigInteger("1000000000000")), val(98765)).normalize(NormalizationMode.WHNF));
   }
+
+  @Test
+  public void testMinus0() {
+    ReferenceExpression x = new ReferenceExpression(new TypedBinding("x", Nat()));
+    assertEquals(Pos(x), minus(x, Zero()).normalize(NormalizationMode.WHNF));
+  }
+
+  @Test
+  public void testPlus0() {
+    ReferenceExpression x = new ReferenceExpression(new TypedBinding("x", Nat()));
+    assertEquals(x, plus(Zero(), x).normalize(NormalizationMode.WHNF));
+  }
+
+  @Test
+  public void testPlusSuc() {
+    ReferenceExpression x = new ReferenceExpression(new TypedBinding("x", Nat()));
+    ReferenceExpression y = new ReferenceExpression(new TypedBinding("y", Nat()));
+    assertEquals(Suc(plus(x, y)), plus(Suc(x), y).normalize(NormalizationMode.WHNF));
+  }
 }

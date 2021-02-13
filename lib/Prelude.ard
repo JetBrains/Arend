@@ -35,16 +35,16 @@
   | suc Nat
   \where {
     \func \infixl 6 + (x y : Nat) : Nat \elim y
-      | zero => x
+      | 0 => x
       | suc y => suc (x + y)
 
     \func \infixl 7 * (x y : Nat) : Nat \elim y
-      | zero => zero
+      | 0 => 0
       | suc y => x * y + x
 
     \func \infixl 6 - (n m : Nat) : Int
       | 0, m => neg m
-      | suc n, 0 => pos (suc n)
+      | n, 0 => pos n
       | suc n, suc m => n - m
 
     \data \infix 4 <= (n m : Nat) \with
