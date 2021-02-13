@@ -115,7 +115,7 @@ public class BinOpParser {
       }
 
       if (!(nextElem.precedence.priority > precedence.priority || nextElem.precedence.associativity == Precedence.Associativity.LEFT_ASSOC && (isPostfix || precedence.associativity == Precedence.Associativity.LEFT_ASSOC))) {
-        myErrorReporter.report(new PrecedenceError(getOperator(nextElem.expression), (GlobalReferable) reference.getReferent(), reference));
+        myErrorReporter.report(new PrecedenceError(getOperator(nextElem.expression), reference.getReferent(), reference));
       }
 
       foldTop();
