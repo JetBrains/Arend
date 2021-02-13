@@ -213,7 +213,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitInteger(IntegerExpression expr, Void params) {
-    return Nat();
+    return Fin(expr.suc());
   }
 
   @Override

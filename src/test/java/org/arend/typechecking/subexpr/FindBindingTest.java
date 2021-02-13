@@ -6,6 +6,7 @@ import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
+import static org.arend.core.expr.ExpressionFactory.Fin;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -57,7 +58,7 @@ public class FindBindingTest extends TypeCheckingTestCase {
         xyx.getClauses().get(0).getPattern().getData(),
         xyx, c(typeCheckExpr(xyx, null).expression));
     assertNotNull(let);
-    assertEquals("Nat", let.toString());
+    assertEquals(Fin(114515), let);
   }
 
   @Test

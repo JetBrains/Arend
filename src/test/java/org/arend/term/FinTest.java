@@ -278,4 +278,9 @@ public class FinTest extends TypeCheckingTestCase {
       "  | suc n, zero => Nat.suc<=suc Nat.zero<=_\n" +
       "  | suc n, suc x => Nat.suc<=suc (test x)");
   }
+
+  @Test
+  public void idpTest() {
+    typeCheckDef("\\func test : 0 = {Fin 1} 0 => idp");
+  }
 }
