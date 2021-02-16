@@ -1,10 +1,7 @@
 package org.arend.core.subst;
 
 import org.arend.core.context.param.DependentLink;
-import org.arend.core.expr.ClassCallExpression;
-import org.arend.core.expr.Expression;
-import org.arend.core.expr.FieldCallExpression;
-import org.arend.core.expr.FunCallExpression;
+import org.arend.core.expr.*;
 import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.ext.core.ops.NormalizationMode;
 
@@ -13,11 +10,13 @@ import java.util.Set;
 public class UnfoldVisitor extends SubstVisitor {
   private final Set<? extends CoreDefinition> myDefinitions;
   private final Set<CoreDefinition> myUnfolded;
+  private final boolean myUnfoldLet;
 
-  public UnfoldVisitor(Set<? extends CoreDefinition> definitions, Set<CoreDefinition> unfolded) {
+  public UnfoldVisitor(Set<? extends CoreDefinition> definitions, Set<CoreDefinition> unfolded, boolean unfoldLet) {
     super(new ExprSubstitution(), LevelSubstitution.EMPTY);
     myDefinitions = definitions;
     myUnfolded = unfolded;
+    myUnfoldLet = unfoldLet;
   }
 
   @Override
@@ -56,5 +55,10 @@ public class UnfoldVisitor extends SubstVisitor {
       }
     }
     return super.visitFieldCall(expr, params);
+  }
+
+  @Override
+  public Expression visitLet(LetExpression letExpression, Void params) {
+    return myUnfoldLet ? letExpression.getResult().accept(this, null) : super.visitLet(letExpression, params);
   }
 }

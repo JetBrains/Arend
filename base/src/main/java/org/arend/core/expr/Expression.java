@@ -208,8 +208,8 @@ public abstract class Expression implements Body, CoreExpression {
   }
 
   @Override
-  public @NotNull CoreExpression unfold(@NotNull Set<? extends CoreDefinition> functions, @Nullable Set<CoreDefinition> unfolded) {
-    return functions.isEmpty() ? this : accept(new UnfoldVisitor(functions, unfolded), null);
+  public @NotNull CoreExpression unfold(@NotNull Set<? extends CoreDefinition> functions, @Nullable Set<CoreDefinition> unfolded, boolean unfoldLet) {
+    return functions.isEmpty() ? this : accept(new UnfoldVisitor(functions, unfolded, unfoldLet), null);
   }
 
   @Nullable

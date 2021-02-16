@@ -49,8 +49,9 @@ public interface CoreExpression extends CoreBody, UncheckedExpression, Abstracte
    *
    * @param definitions a set of functions and fields to unfold.
    * @param unfolded    definitions that are actually unfolded will be added to this set.
+   * @param unfoldLet   unfolds \\let expressions if {@code true}.
    */
-  @Override @NotNull CoreExpression unfold(@NotNull Set<? extends CoreDefinition> definitions, @Nullable Set<CoreDefinition> unfolded);
+  @Override @NotNull CoreExpression unfold(@NotNull Set<? extends CoreDefinition> definitions, @Nullable Set<CoreDefinition> unfolded, boolean unfoldLet);
 
   /**
    * Removes pi parameters and returns the codomain.
