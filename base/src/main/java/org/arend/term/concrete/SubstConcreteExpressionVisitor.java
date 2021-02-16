@@ -275,8 +275,12 @@ public class SubstConcreteExpressionVisitor implements DataContainer, ConcreteEx
     return new Concrete.NewExpression(myData != null ? myData : expr.getData(), expr.expression.accept(this, null));
   }
 
+  private Concrete.LetClausePattern visitLetClausePattern(Concrete.LetClausePattern pattern) {
+    return new Concrete.LetClausePattern(myData != null ? myData : pattern.getData(), pattern.getReferable(), nullableMap(pattern.type), pattern.getPatterns().stream().map(this::visitLetClausePattern).collect(Collectors.toList()), pattern.isIgnored());
+  }
+
   private Concrete.LetClause visitLetClause(Concrete.LetClause clause) {
-    return clause.copy(this::visitParameter, this::nullableMap);
+    return new Concrete.LetClause(clause.getParameters().stream().map(this::visitParameter).collect(Collectors.toList()), nullableMap(clause.getResultType()), nullableMap(clause.getTerm()), visitLetClausePattern(clause.getPattern()));
   }
 
   @Override
