@@ -2,6 +2,7 @@ package org.arend.core.subst;
 
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.expr.*;
+import org.arend.core.expr.let.HaveClause;
 import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.ext.core.ops.NormalizationMode;
 
@@ -58,7 +59,14 @@ public class UnfoldVisitor extends SubstVisitor {
   }
 
   @Override
-  public Expression visitLet(LetExpression letExpression, Void params) {
-    return myUnfoldLet ? letExpression.getResult().accept(this, null) : super.visitLet(letExpression, params);
+  public Expression visitLet(LetExpression let, Void params) {
+    if (myUnfoldLet) {
+      ExprSubstitution substitution = new ExprSubstitution();
+      for (HaveClause clause : let.getClauses()) {
+        substitution.add(clause, clause.getExpression());
+      }
+      return let.getExpression().subst(substitution);
+    }
+    return super.visitLet(let, null);
   }
 }
