@@ -777,8 +777,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       if (impl1 == null) {
         AbsExpression absImpl1 = classCall1.getDefinition().getImplementation(field);
         if (absImpl1 != null) {
-          impl1 = absImpl1.getExpression().subst(classCall1.getSortArgument().toLevelSubstitution());
-          binding = absImpl1.getBinding();
+          impl1 = absImpl1.apply(new ReferenceExpression(binding), classCall1.getSortArgument());
         }
       }
       if (impl1 == null) {
