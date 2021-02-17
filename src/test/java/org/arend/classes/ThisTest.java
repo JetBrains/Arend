@@ -78,6 +78,19 @@ public class ThisTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void mutualRecursion() {
+    typeCheckModule(
+      "\\record R {\n" +
+      "  \\func f (n : Nat) : Nat\n" +
+      "    | 0 => 0\n" +
+      "    | suc n => g n\n" +
+      "  \\func g (n : Nat) : Nat\n" +
+      "    | 0 => 0\n" +
+      "    | suc n => f n\n" +
+      "}");
+  }
+
+  @Test
   public void thisRecursiveDataArgument() {
     typeCheckModule(
       "\\record R (X : \\Type)\n" +

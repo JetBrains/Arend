@@ -49,7 +49,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
       List<CoreClassDefinition> superClasses = enclosingClass instanceof ClassDefinition ? Collections.singletonList((CoreClassDefinition) enclosingClass) : Collections.emptyList();
 
       Referable thisParameter = new HiddenLocalReferable("this");
-      def.accept(new ClassFieldChecker(thisParameter, def.getData(), def.enclosingClass, superClasses, fields, null, myErrorReporter), null);
+      def.accept(new ClassFieldChecker(thisParameter, def.getRecursiveDefinitions(), def.enclosingClass, superClasses, fields, null, myErrorReporter), null);
       return thisParameter;
     } else {
       return null;
@@ -131,7 +131,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
     }
 
     // Check fields
-    ClassFieldChecker classFieldChecker = new ClassFieldChecker(null, def.getData(), def.getData(), superClasses, fields, futureFields, myErrorReporter);
+    ClassFieldChecker classFieldChecker = new ClassFieldChecker(null, def.getRecursiveDefinitions(), def.getData(), superClasses, fields, futureFields, myErrorReporter);
     Concrete.Expression previousType = null;
     for (int i = 0; i < classFields.size(); i++) {
       Concrete.ClassField classField = classFields.get(i);

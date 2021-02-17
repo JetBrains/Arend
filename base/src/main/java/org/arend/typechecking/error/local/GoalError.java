@@ -37,11 +37,13 @@ public class GoalError extends TypecheckingError {
     this.goalSolver = goalSolver;
 
     substitution = new ExprSubstitution();
-    for (Iterator<Map.Entry<Referable, Binding>> iterator = typecheckingContext.localContext.entrySet().iterator(); iterator.hasNext(); ) {
-      Map.Entry<Referable, Binding> entry = iterator.next();
-      if (entry.getKey() instanceof GeneratedLocalReferable && entry.getValue() instanceof EvaluatingBinding) {
-        substitution.add(entry.getValue(), ((EvaluatingBinding) entry.getValue()).getExpression());
-        iterator.remove();
+    if (typecheckingContext != null) {
+      for (Iterator<Map.Entry<Referable, Binding>> iterator = typecheckingContext.localContext.entrySet().iterator(); iterator.hasNext(); ) {
+        Map.Entry<Referable, Binding> entry = iterator.next();
+        if (entry.getKey() instanceof GeneratedLocalReferable && entry.getValue() instanceof EvaluatingBinding) {
+          substitution.add(entry.getValue(), ((EvaluatingBinding) entry.getValue()).getExpression());
+          iterator.remove();
+        }
       }
     }
 

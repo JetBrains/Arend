@@ -735,6 +735,16 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       calculateParametersTypecheckingOrder(typedDef);
     }
 
+    if (newDef) {
+      GoodThisParametersVisitor goodThisParametersVisitor;
+      goodThisParametersVisitor = new GoodThisParametersVisitor(typedDef.getParameters());
+      expectedType.accept(goodThisParametersVisitor, null);
+      if (typedDef.getResultTypeLevel() != null) {
+        typedDef.getResultTypeLevel().accept(goodThisParametersVisitor, null);
+      }
+      typedDef.setGoodThisParameters(goodThisParametersVisitor.getGoodParameters());
+    }
+
     return pair != null;
   }
 
@@ -952,18 +962,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
     Expression expectedType = typedDef.getResultType();
 
-    GoodThisParametersVisitor goodThisParametersVisitor;
-    if (newDef) {
-      goodThisParametersVisitor = new GoodThisParametersVisitor(typedDef.getParameters());
-      expectedType.accept(goodThisParametersVisitor, null);
-      if (typedDef.getResultTypeLevel() != null) {
-        typedDef.getResultTypeLevel().accept(goodThisParametersVisitor, null);
-      }
-      typedDef.setGoodThisParameters(goodThisParametersVisitor.getGoodParameters());
-    } else {
-      goodThisParametersVisitor = null;
-    }
-
     List<ExtElimClause> clauses = null;
     Concrete.FunctionBody body = def.getBody();
     boolean checkLevelNow = (body instanceof Concrete.ElimFunctionBody || body.getTerm() instanceof Concrete.CaseExpression && def.getKind() != FunctionKind.LEVEL) && !checkResultTypeLater(def);
@@ -1132,9 +1130,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
       }
 
-      if (expectedType.isError() && typedDef.getResultType() != null) {
-        typedDef.getResultType().accept(goodThisParametersVisitor, null);
-      }
       if (typedDef.getResultType() == null) {
         typedDef.setResultType(new ErrorExpression());
       }
@@ -1148,11 +1143,11 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         elimBody = null;
       }
 
+      GoodThisParametersVisitor goodThisParametersVisitor;
       if (elimBody != null) {
-        goodThisParametersVisitor = new GoodThisParametersVisitor(elimBody, DependentLink.Helper.size(typedDef.getParameters()));
-      } else if (typedDef.getActualBody() instanceof Expression) {
-        goodThisParametersVisitor = new GoodThisParametersVisitor((Expression) typedDef.getActualBody(), typedDef.getParameters());
+        goodThisParametersVisitor = new GoodThisParametersVisitor(typedDef.getGoodThisParameters(), elimBody, DependentLink.Helper.size(typedDef.getParameters()));
       } else {
+        goodThisParametersVisitor = new GoodThisParametersVisitor(typedDef.getGoodThisParameters(), typedDef.getParameters());
         goodThisParametersVisitor.visitBody(typedDef.getActualBody(), null);
       }
       typedDef.setGoodThisParameters(goodThisParametersVisitor.getGoodParameters());

@@ -15,6 +15,17 @@ public class GoodThisParametersVisitor extends VoidExpressionVisitor<Void> {
   private final Map<DependentLink, Integer> myIndexMap;
   private final Set<ClassField> myGoodFields;
 
+  public GoodThisParametersVisitor(List<Boolean> goodParameters, DependentLink parameters) {
+    myGoodFields = Collections.emptySet();
+    myGoodParameters = new ArrayList<>();
+    myIndexMap = new HashMap<>();
+    int i = 0;
+    for (DependentLink link = parameters; link.hasNext(); link = link.getNext(), i++) {
+      myGoodParameters.add(i < goodParameters.size() ? goodParameters.get(i) : true);
+      myIndexMap.put(link, i);
+    }
+  }
+
   public GoodThisParametersVisitor(DependentLink parameters) {
     myGoodFields = Collections.emptySet();
     if (!parameters.hasNext()) {
@@ -33,11 +44,11 @@ public class GoodThisParametersVisitor extends VoidExpressionVisitor<Void> {
     visitParameters(parameters, null);
   }
 
-  public GoodThisParametersVisitor(ElimBody elimBody, int numberOfParameters) {
+  public GoodThisParametersVisitor(List<Boolean> goodParameters, ElimBody elimBody, int numberOfParameters) {
     myGoodFields = Collections.emptySet();
     myGoodParameters = new ArrayList<>();
     for (int i = 0; i < numberOfParameters; i++) {
-      myGoodParameters.add(true);
+      myGoodParameters.add(i < goodParameters.size() ? goodParameters.get(i) : true);
     }
     myIndexMap = new HashMap<>();
 
@@ -55,21 +66,6 @@ public class GoodThisParametersVisitor extends VoidExpressionVisitor<Void> {
       }
       myIndexMap.clear();
     }
-  }
-
-  public GoodThisParametersVisitor(Expression expression, DependentLink parameters) {
-    myGoodFields = Collections.emptySet();
-    myGoodParameters = new ArrayList<>();
-    myIndexMap = new HashMap<>();
-
-    int index = 0;
-    for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
-      myGoodParameters.add(true);
-      myIndexMap.put(link, index);
-      index++;
-    }
-
-    expression.accept(this, null);
   }
 
   public GoodThisParametersVisitor(Set<ClassField> fields) {
@@ -104,6 +100,7 @@ public class GoodThisParametersVisitor extends VoidExpressionVisitor<Void> {
   }
 
   private void visitArgument(Expression arg, Boolean goodParameter) {
+    arg = arg.getUnderlyingExpression();
     if (arg instanceof FieldCallExpression && goodParameter) {
       visitDefCall((FieldCallExpression) arg, null);
     } else if (goodParameter && (arg instanceof ReferenceExpression || arg instanceof NewExpression && ((NewExpression) arg).getRenewExpression() instanceof ReferenceExpression)) {
@@ -161,14 +158,15 @@ public class GoodThisParametersVisitor extends VoidExpressionVisitor<Void> {
   @Override
   public Void visitClassCall(ClassCallExpression expr, Void params) {
     for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
-      if (entry.getValue() instanceof FieldCallExpression && expr.getDefinition().isGoodField(entry.getKey())) {
-        visitDefCall((FieldCallExpression) entry.getValue(), null);
-      } else if ((entry.getValue() instanceof ReferenceExpression || entry.getValue() instanceof NewExpression && ((NewExpression) entry.getValue()).getRenewExpression() instanceof ReferenceExpression) && expr.getDefinition().isGoodField(entry.getKey())) {
-        if (entry.getValue() instanceof NewExpression) {
-          visitClassCall(((NewExpression) entry.getValue()).getClassCall(), null);
+      Expression arg = entry.getValue().getUnderlyingExpression();
+      if (arg instanceof FieldCallExpression && expr.getDefinition().isGoodField(entry.getKey())) {
+        visitDefCall((FieldCallExpression) arg, null);
+      } else if ((arg instanceof ReferenceExpression || arg instanceof NewExpression && ((NewExpression) arg).getRenewExpression() instanceof ReferenceExpression) && expr.getDefinition().isGoodField(entry.getKey())) {
+        if (arg instanceof NewExpression) {
+          visitClassCall(((NewExpression) arg).getClassCall(), null);
         }
       } else {
-        entry.getValue().accept(this, null);
+        arg.accept(this, null);
       }
     }
     return null;

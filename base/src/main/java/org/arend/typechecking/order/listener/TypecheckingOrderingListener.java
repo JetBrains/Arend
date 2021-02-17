@@ -207,9 +207,8 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
         typecheckingUnitFinished(definition.getData(), newDefinition(definition));
         return;
       }
+      definition.setRecursiveDefinitions(Collections.singleton(definition.getData()));
     }
-
-    definition.setRecursive(recursive);
 
     List<ExtElimClause> clauses;
     ArendExtension extension = myExtensionProvider.getArendExtension(definition.getData());
@@ -280,7 +279,6 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
     DesugarVisitor.desugar(definition, visitor.getErrorReporter());
     Definition oldTypechecked = definition.getData().getTypechecked();
     boolean isNew = oldTypechecked == null || oldTypechecked.status().needsTypeChecking();
-    definition.setRecursive(true);
     Definition typechecked = new DefinitionTypechecker(visitor).typecheckHeader(oldTypechecked, new GlobalInstancePool(myInstanceProviderSet.get(definition.getData()), visitor), definition);
     typechecked.setUniverseKind(UniverseKind.WITH_UNIVERSES);
     if (typechecked.status() == Definition.TypeCheckingStatus.TYPE_CHECKING) {

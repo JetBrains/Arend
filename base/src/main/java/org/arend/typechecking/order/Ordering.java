@@ -251,15 +251,19 @@ public class Ordering extends BellmanFord<Concrete.ResolvableDefinition> {
       }
     }
 
+    Set<TCDefReferable> defSet = new HashSet<>();
+    List<Concrete.Definition> defs = new ArrayList<>(scc.size());
+    for (Concrete.ResolvableDefinition def : scc) {
+      defs.add((Concrete.Definition) def);
+      defSet.add(((Concrete.Definition) def).getData());
+      ((Concrete.Definition) def).setRecursiveDefinitions(defSet);
+    }
+
     Ordering ordering = new Ordering(this, dependencies, Stage.WITHOUT_BODIES);
     for (Concrete.ResolvableDefinition definition : scc) {
       ordering.order(definition);
     }
 
-    List<Concrete.Definition> defs = new ArrayList<>(scc.size());
-    for (Concrete.ResolvableDefinition def : scc) {
-      defs.add((Concrete.Definition) def);
-    }
     new DefinitionComparator(myComparator).sort(defs);
     myOrderingListener.bodiesFound(defs);
   }

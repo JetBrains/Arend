@@ -17,7 +17,7 @@ import java.util.Set;
 
 public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> {
   private Referable myThisParameter;
-  private final TCDefReferable myReferable;
+  private final Set<TCDefReferable> myRecursiveDefs;
   private final TCDefReferable myClassReferable;
   private final Collection<CoreClassDefinition> mySuperClasses;
   private final Set<? extends LocatedReferable> myFields;
@@ -25,9 +25,9 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> {
   private final ErrorReporter myErrorReporter;
   private int myClassCallNumber;
 
-  ClassFieldChecker(Referable thisParameter, TCDefReferable referable, TCDefReferable classReferable, Collection<CoreClassDefinition> superClasses, Set<? extends LocatedReferable> fields, Set<TCDefReferable> futureFields, ErrorReporter errorReporter) {
+  ClassFieldChecker(Referable thisParameter, Set<TCDefReferable> recursiveDefs, TCDefReferable classReferable, Collection<CoreClassDefinition> superClasses, Set<? extends LocatedReferable> fields, Set<TCDefReferable> futureFields, ErrorReporter errorReporter) {
     myThisParameter = thisParameter;
-    myReferable = referable;
+    myRecursiveDefs = recursiveDefs;
     myClassReferable = classReferable;
     mySuperClasses = superClasses;
     myFields = fields;
@@ -57,7 +57,7 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> {
         }
       } else {
         ClassDefinition enclosingClass = null;
-        if (ref == myReferable) {
+        if (myRecursiveDefs.contains(ref)) {
           Definition def = myClassReferable.getTypechecked();
           if (def instanceof ClassDefinition) {
             enclosingClass = (ClassDefinition) def;

@@ -1663,7 +1663,7 @@ public final class Concrete {
   public static abstract class Definition extends ResolvableDefinition implements ReferableDefinition {
     private final TCDefReferable myReferable;
     public TCDefReferable enclosingClass;
-    private boolean myRecursive = false;
+    private Set<TCDefReferable> myRecursiveDefinitions = Collections.emptySet();
 
     @Override
     public @NotNull TCDefReferable getData() {
@@ -1676,11 +1676,15 @@ public final class Concrete {
     }
 
     public boolean isRecursive() {
-      return myRecursive;
+      return !myRecursiveDefinitions.isEmpty();
     }
 
-    public void setRecursive(boolean isRecursive) {
-      myRecursive = isRecursive;
+    public Set<TCDefReferable> getRecursiveDefinitions() {
+      return myRecursiveDefinitions;
+    }
+
+    public void setRecursiveDefinitions(Set<TCDefReferable> recursiveDefinitions) {
+      myRecursiveDefinitions = recursiveDefinitions;
     }
 
     @Override

@@ -7,6 +7,7 @@ import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.Reference;
 import org.arend.term.abs.Abstract;
 import org.arend.term.concrete.Concrete;
+import org.arend.typechecking.TypecheckingContext;
 import org.arend.typechecking.error.local.CertainTypecheckingError;
 import org.arend.typechecking.error.local.GoalError;
 import org.arend.typechecking.error.local.NotEnoughPatternsError;
@@ -79,7 +80,7 @@ public class DumbTypechecker extends VoidConcreteVisitor<Void, Void> {
   @Override
   public Void visitReference(Concrete.ReferenceExpression expr, Void params) {
     if (expr.getReferent().equals(myDefinition.getData())) {
-      myDefinition.setRecursive(true);
+      myDefinition.setRecursiveDefinitions(Collections.singleton(myDefinition.getData()));
     }
 
     super.visitReference(expr, null);
