@@ -911,27 +911,27 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
 
     if (thisExpr != null && (result == null || result instanceof DefCallResult && ((DefCallResult) result).getDefinition().isGoodParameter(((DefCallResult) result).getArguments().size()))) {
-      boolean ok = true;
-      TResult tResult;
-      if (thisExpr.getReferent() != null) {
-         tResult = getLocalVar(thisExpr.getReferent(), expr);
-      } else {
-        if (myClassCallBindings.isEmpty()) {
-          ok = false;
-          tResult = null;
-        } else {
-          if (binding == null) {
-            binding = myClassCallBindings.get(myClassCallBindings.size() - 1);
-          }
-          tResult = new TypecheckingResult(new ReferenceExpression(binding), binding.getTypeExpr());
-        }
-      }
-      if (ok) {
-        return tResultToResult(expectedType, tResult, expr);
-      }
+      return checkThisExpression(thisExpr, binding, expectedType, expr, 0);
     }
 
     return checkExpr(expr, expectedType);
+  }
+
+  private TypecheckingResult checkThisExpression(Concrete.ThisExpression thisExpr, Binding binding, Expression expectedType, Concrete.Expression expr, int skipLastClassCallBindings) {
+    TResult tResult;
+    if (thisExpr.getReferent() != null) {
+      tResult = getLocalVar(thisExpr.getReferent(), thisExpr);
+    } else {
+      if (myClassCallBindings.size() <= skipLastClassCallBindings) {
+        return checkExpr(expr, expectedType);
+      } else {
+        if (binding == null) {
+          binding = myClassCallBindings.get(myClassCallBindings.size() - 1 - skipLastClassCallBindings);
+        }
+        tResult = new TypecheckingResult(new ReferenceExpression(binding), binding.getTypeExpr());
+      }
+    }
+    return tResultToResult(expectedType, tResult, expr);
   }
 
   // Classes
@@ -1068,7 +1068,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
               fieldSet.put(field, new ErrorExpression());
             }
           } else if (pair.proj1 instanceof ClassDefinition) {
-            TypecheckingResult result = checkExpr(pair.proj2.implementation, null);
+            TypecheckingResult result = pair.proj2.implementation instanceof Concrete.ThisExpression ? checkThisExpression((Concrete.ThisExpression) pair.proj2.implementation, null, null, pair.proj2.implementation, 1) : checkExpr(pair.proj2.implementation, null);
             if (result != null) {
               Expression type = result.type.normalize(NormalizationMode.WHNF);
               ClassCallExpression classCall = type.cast(ClassCallExpression.class);

@@ -163,4 +163,13 @@ public class ThisTest extends TypeCheckingTestCase {
       "\\record G \\extends F\n" +
       "\\record S \\extends R | t : X | g : G \\this", 1);
   }
+
+  @Test
+  public void superClassExt() {
+    typeCheckModule(
+      "\\record R (x : Nat)\n" +
+      "\\record S (y : Nat) \\extends R\n" +
+      "\\record T \\extends R\n" +
+      "  | field : S { | R => \\this }");
+  }
 }
