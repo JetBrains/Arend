@@ -259,7 +259,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
             List<Expression> list = new ArrayList<>(2);
             list.add(result);
             list.add(result);
-            return new TupleExpression(list, Prelude.DIV_MOD_TYPE);
+            return new TupleExpression(list, finDivModType(Suc(result)));
           } else {
             return defCallArgs.get(0).accept(this, mode);
           }
@@ -303,8 +303,22 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
         newDefCallArgs.add(arg2);
         defCallArgs = newDefCallArgs;
       } else {
+        Expression arg1 = defCallArgs.get(0);
+        if (definition == Prelude.DIV_MOD || definition == Prelude.DIV || definition == Prelude.MOD) {
+          arg1 = arg1.accept(this, mode);
+          if (arg1 instanceof IntegerExpression && ((IntegerExpression) arg1).isZero()) {
+            if (definition == Prelude.DIV_MOD) {
+              List<Expression> list = new ArrayList<>(2);
+              list.add(arg1);
+              list.add(arg1);
+              return new TupleExpression(list, finDivModType(new SmallIntegerExpression(1)));
+            } else {
+              return arg1;
+            }
+          }
+        }
         List<Expression> newDefCallArgs = new ArrayList<>(2);
-        newDefCallArgs.add(defCallArgs.get(0));
+        newDefCallArgs.add(arg1);
         newDefCallArgs.add(arg2);
         defCallArgs = newDefCallArgs;
       }

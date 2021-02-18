@@ -172,4 +172,12 @@ public class BuiltinNormalizationTest extends TypeCheckingTestCase {
     ReferenceExpression y = new ReferenceExpression(new TypedBinding("y", Nat()));
     assertEquals(Suc(plus(x, y)), plus(Suc(x), y).normalize(NormalizationMode.WHNF));
   }
+
+  @Test
+  public void testDivMod0() {
+    ReferenceExpression x = new ReferenceExpression(new TypedBinding("x", Nat()));
+    assertEquals(Zero(), funCall(Prelude.DIV, Zero(), x).normalize(NormalizationMode.WHNF));
+    assertEquals(Zero(), funCall(Prelude.MOD, Zero(), x).normalize(NormalizationMode.WHNF));
+    assertEquals(new TupleExpression(Arrays.asList(Zero(), Zero()), finDivModType(val(1))), funCall(Prelude.DIV_MOD, Zero(), x).normalize(NormalizationMode.WHNF));
+  }
 }
