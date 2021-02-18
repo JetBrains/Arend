@@ -101,6 +101,7 @@ public class Prelude implements ArendPrelude {
         break;
       case "Fin":
         FIN = (DataDefinition) definition;
+        FIN.setSort(Sort.SET0);
         if (FIN.getConstructors().isEmpty()) {
           FIN_ZERO = new Constructor(new LocatedReferableImpl(Precedence.DEFAULT, "zero", FIN.getRef(), GlobalReferable.Kind.CONSTRUCTOR), FIN);
           DependentLink binding = new TypedDependentLink(true, "n", ExpressionFactory.Nat(), EmptyDependentLink.getInstance());

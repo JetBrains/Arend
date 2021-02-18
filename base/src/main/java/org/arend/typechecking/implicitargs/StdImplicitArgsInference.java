@@ -255,7 +255,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
 
         if (expr.getArguments().size() == 1) {
           SingleDependentLink param = new TypedSingleDependentLink(true, "x", Fin(argResult.expression));
-          return new TypecheckingResult(new LamExpression(Sort.PROP, param, Suc(new ReferenceExpression(param))), new PiExpression(Sort.PROP, param, Fin(Suc(argResult.expression))));
+          return new TypecheckingResult(new LamExpression(Sort.SET0, param, Suc(new ReferenceExpression(param))), new PiExpression(Sort.SET0, param, Fin(Suc(argResult.expression))));
         }
 
         TypecheckingResult arg2Result = myVisitor.checkExpr(expr.getArguments().get(1).getExpression(), Fin(argResult.expression));

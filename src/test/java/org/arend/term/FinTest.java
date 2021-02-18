@@ -8,6 +8,7 @@ import org.arend.core.expr.Expression;
 import org.arend.core.expr.ReferenceExpression;
 import org.arend.core.expr.SmallIntegerExpression;
 import org.arend.core.expr.type.Type;
+import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.TypeCheckingTestCase;
@@ -282,5 +283,10 @@ public class FinTest extends TypeCheckingTestCase {
   @Test
   public void idpTest() {
     typeCheckDef("\\func test : 0 = {Fin 1} 0 => idp");
+  }
+
+  @Test
+  public void finSort() {
+    assertEquals(Sort.SET0, Prelude.FIN.getSort());
   }
 }
