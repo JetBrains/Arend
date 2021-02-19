@@ -641,7 +641,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
         } else return null;
         List<? extends LetClausePattern> patterns = pattern.getPatterns();
         if (patterns == null || index < 0 || index >= patterns.size()) return null;
-        pattern = patterns.get(i);
+        pattern = patterns.get(index);
       }
       if (pattern.getName() != null) {
         return new Concrete.ReferenceExpression(null, new LocalReferable(pattern.getName()));
