@@ -56,11 +56,11 @@
      -}
     \func divMod (n m : Nat) : \Sigma Nat Nat
 
-    \func div (n m : Nat) => (divMod n m).1
+    \func \infixl 8 div (n m : Nat) => (divMod n m).1
 
-    \func mod (n m : Nat) => (divMod n m).2
+    \func \infixl 8 mod (n m : Nat) => (divMod n m).2
 
-    \lemma divModProp (n m : Nat) : m * div n m + mod n m = n
+    \lemma divModProp (n m : Nat) : m * n div m + n mod m = n
   }
 
 \data Fin (n : Nat)

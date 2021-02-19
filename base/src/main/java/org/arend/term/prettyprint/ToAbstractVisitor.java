@@ -594,6 +594,12 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   @Override
   public Concrete.Expression visitProj(ProjExpression expr, Void params) {
+    if (expr.getField() == 0 || expr.getField() == 1) {
+      FunCallExpression funCall = expr.getExpression().cast(FunCallExpression.class);
+      if (funCall != null && funCall.getDefinition() == Prelude.DIV_MOD) {
+        return FunCallExpression.make(expr.getField() == 0 ? Prelude.DIV : Prelude.MOD, funCall.getSortArgument(), new ArrayList<>(funCall.getDefCallArguments())).accept(this, null);
+      }
+    }
     return cProj(expr.getExpression().accept(this, null), expr.getField());
   }
 
