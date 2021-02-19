@@ -4,6 +4,7 @@ import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.expr.let.HaveClause;
 import org.arend.core.expr.let.LetClause;
+import org.arend.core.expr.let.LetClausePattern;
 import org.arend.core.expr.visitor.BaseExpressionVisitor;
 import org.arend.extImpl.definitionRenamer.ConflictDefinitionRenamer;
 import org.arend.ext.variable.Variable;
@@ -210,6 +211,9 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   @Override
   public Concrete.Expression visitFieldCall(FieldCallExpression expr, Void params) {
+    Concrete.Expression letResult = simplifyLetClause(expr);
+    if (letResult != null) return letResult;
+
     if (expr.getArgument() instanceof ReferenceExpression) {
       ReferenceExpression arg = (ReferenceExpression) expr.getArgument();
       if (arg.getBinding().isHidden()) {
@@ -592,8 +596,49 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     return cSigma(parameters);
   }
 
+  private Concrete.Expression simplifyLetClause(Expression expr) {
+    List<Object> list = new ArrayList<>();
+    while (true) {
+      expr = expr.getUnderlyingExpression();
+      if (expr instanceof ProjExpression) {
+        list.add(((ProjExpression) expr).getField());
+        expr = ((ProjExpression) expr).getExpression();
+      } else if (expr instanceof FieldCallExpression) {
+        list.add(((FieldCallExpression) expr).getDefinition());
+        expr = ((FieldCallExpression) expr).getArgument();
+      } else {
+        break;
+      }
+    }
+
+    if (expr instanceof ReferenceExpression && ((ReferenceExpression) expr).getBinding() instanceof HaveClause) {
+      LetClausePattern pattern = ((HaveClause) ((ReferenceExpression) expr).getBinding()).getPattern();
+      if (pattern == null) return null;
+      for (int i = list.size() - 1; i >= 0; i--) {
+        int index;
+        if (list.get(i) instanceof Integer) {
+          index = (int) list.get(i);
+        } else if (list.get(i) instanceof ClassField) {
+          ClassField field = (ClassField) list.get(i);
+          index = pattern.getFields().indexOf(field);
+        } else return null;
+        List<? extends LetClausePattern> patterns = pattern.getPatterns();
+        if (patterns == null || index < 0 || index >= patterns.size()) return null;
+        pattern = patterns.get(i);
+      }
+      if (pattern.getName() != null) {
+        return new Concrete.ReferenceExpression(null, new LocalReferable(pattern.getName()));
+      }
+    }
+
+    return null;
+  }
+
   @Override
   public Concrete.Expression visitProj(ProjExpression expr, Void params) {
+    Concrete.Expression result = simplifyLetClause(expr);
+    if (result != null) return result;
+
     if (expr.getField() == 0 || expr.getField() == 1) {
       FunCallExpression funCall = expr.getExpression().cast(FunCallExpression.class);
       if (funCall != null && funCall.getDefinition() == Prelude.DIV_MOD) {
