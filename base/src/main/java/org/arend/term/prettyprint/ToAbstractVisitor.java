@@ -226,10 +226,27 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       return expr.getArgument().accept(this, null);
     }
 
-    if (hasFlag(PrettyPrinterFlag.SHOW_FIELD_INSTANCE) && expr.getArgument() instanceof ReferenceExpression) {
-      GlobalReferable ref = expr.getDefinition().getReferable();
-      String name = ((ReferenceExpression) expr.getArgument()).getBinding().getName();
-      return cVar(new LongName(name == null ? "_" : name, ref.getRepresentableName()), ref);
+    if (hasFlag(PrettyPrinterFlag.SHOW_FIELD_INSTANCE)) {
+      String name = null;
+      boolean ok = false;
+      if (expr.getArgument() instanceof ReferenceExpression) {
+        ok = true;
+        name = ((ReferenceExpression) expr.getArgument()).getBinding().getName();
+      } else if (expr.getArgument() instanceof FunCallExpression) {
+        ok = true;
+        for (DependentLink param = ((FunCallExpression) expr.getArgument()).getDefinition().getParameters(); param.hasNext(); param = param.getNext()) {
+          param = param.getNextTyped(null);
+          if (param.isExplicit()) {
+            ok = false;
+            break;
+          }
+        }
+        name = ((FunCallExpression) expr.getArgument()).getDefinition().getName();
+      }
+      if (ok) {
+        GlobalReferable ref = expr.getDefinition().getReferable();
+        return cVar(new LongName(name == null ? "_" : name, ref.getRepresentableName()), ref);
+      }
     }
 
     Concrete.ReferenceExpression result = makeReference(expr);
