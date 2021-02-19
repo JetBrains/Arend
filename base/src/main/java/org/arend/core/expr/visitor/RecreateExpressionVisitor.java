@@ -15,6 +15,11 @@ public class RecreateExpressionVisitor extends SubstVisitor {
   private final ExpressionMapper myMapper;
 
   @Override
+  public boolean isEmpty() {
+    return false;
+  }
+
+  @Override
   protected boolean preserveOrder() {
     return true;
   }

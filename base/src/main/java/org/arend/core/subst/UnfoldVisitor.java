@@ -21,6 +21,11 @@ public class UnfoldVisitor extends SubstVisitor {
   }
 
   @Override
+  public boolean isEmpty() {
+    return !myUnfoldLet && myDefinitions.isEmpty() && super.isEmpty();
+  }
+
+  @Override
   public Expression visitFunCall(FunCallExpression expr, Void params) {
     if (expr.getDefinition().getBody() instanceof Expression && myDefinitions.contains(expr.getDefinition())) {
       if (myUnfolded != null) {
