@@ -680,6 +680,22 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     return cEval(true, expr.getExpression().accept(this, null));
   }
 
+  private Concrete.LetClausePattern makeLetClausePattern(LetClausePattern pattern) {
+    if (pattern == null) return null;
+    if (pattern.getName() != null) {
+      return new Concrete.LetClausePattern(new LocalReferable(pattern.getName()), (Concrete.Expression) null);
+    }
+    List<? extends LetClausePattern> patterns = pattern.getPatterns();
+    if (patterns == null) return null;
+    List<Concrete.LetClausePattern> cPatterns = new ArrayList<>(patterns.size());
+    for (LetClausePattern subpattern : patterns) {
+      Concrete.LetClausePattern cSubpattern = makeLetClausePattern(subpattern);
+      if (cSubpattern == null) return null;
+      cPatterns.add(cSubpattern);
+    }
+    return new Concrete.LetClausePattern(null, cPatterns);
+  }
+
   @Override
   public Concrete.Expression visitLet(LetExpression letExpression, Void params) {
     boolean isHave = true;
@@ -688,10 +704,14 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       if (clause instanceof LetClause) {
         isHave = false;
       }
-      Concrete.Expression term = clause.getExpression().accept(this, null);
-      Referable referable = makeLocalReference(clause, myFreeVariablesCollector.getFreeVariables(clause), false);
-      if (referable != null) {
-        clauses.add(clet(referable, Collections.emptyList(), null, term));
+      Concrete.LetClausePattern pattern = makeLetClausePattern(clause.getPattern());
+      if (pattern == null) {
+        Referable referable = makeLocalReference(clause, myFreeVariablesCollector.getFreeVariables(clause), false);
+        if (referable != null) {
+          clauses.add(new Concrete.LetClause(referable, Collections.emptyList(), null, clause.getExpression().accept(this, null)));
+        }
+      } else {
+        clauses.add(new Concrete.LetClause(pattern, null, clause.getExpression().accept(this, null)));
       }
     }
 
