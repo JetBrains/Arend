@@ -630,13 +630,14 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
     if (expr instanceof ReferenceExpression && ((ReferenceExpression) expr).getBinding() instanceof HaveClause) {
       LetClausePattern pattern = ((HaveClause) ((ReferenceExpression) expr).getBinding()).getPattern();
-      if (pattern == null) return null;
       for (int i = list.size() - 1; i >= 0; i--) {
+        if (pattern == null) return null;
         int index;
         if (list.get(i) instanceof Integer) {
           index = (int) list.get(i);
         } else if (list.get(i) instanceof ClassField) {
           ClassField field = (ClassField) list.get(i);
+          if (pattern.getFields() == null) return null;
           index = pattern.getFields().indexOf(field);
         } else return null;
         List<? extends LetClausePattern> patterns = pattern.getPatterns();
