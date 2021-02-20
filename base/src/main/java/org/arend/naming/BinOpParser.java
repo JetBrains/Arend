@@ -115,18 +115,18 @@ public class BinOpParser {
       }
 
       if (!(nextElem.precedence.priority > precedence.priority || nextElem.precedence.associativity == Precedence.Associativity.LEFT_ASSOC && (isPostfix || precedence.associativity == Precedence.Associativity.LEFT_ASSOC))) {
-        myErrorReporter.report(new PrecedenceError(getOperator(nextElem.expression), reference.getReferent(), reference));
+        myErrorReporter.report(new PrecedenceError(getOperator(nextElem.expression), nextElem.precedence, reference.getReferent(), precedence, reference));
       }
 
       foldTop();
     }
   }
 
-  private GlobalReferable getOperator(Concrete.Expression expr) {
+  private Referable getOperator(Concrete.Expression expr) {
     if (expr instanceof Concrete.AppExpression) {
       expr = ((Concrete.AppExpression) expr).getFunction();
     }
-    return (GlobalReferable) ((Concrete.ReferenceExpression) expr).getReferent();
+    return ((Concrete.ReferenceExpression) expr).getReferent();
   }
 
   private void foldTop() {

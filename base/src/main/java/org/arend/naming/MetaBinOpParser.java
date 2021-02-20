@@ -144,7 +144,7 @@ public class MetaBinOpParser {
 
     MetaResolver minMeta = ExpressionResolveNameVisitor.getMetaResolver(myResolvedReferences.get(minIndex).refExpr.getReferent());
     if (conflictIndex != -1 && (minMeta != null || ExpressionResolveNameVisitor.getMetaResolver(myResolvedReferences.get(conflictIndex).refExpr.getReferent()) != null)) {
-      myVisitor.getErrorReporter().report(new PrecedenceError((GlobalReferable) myResolvedReferences.get(conflictIndex).refExpr.getReferent(), (GlobalReferable) myResolvedReferences.get(minIndex).refExpr.getReferent(), myResolvedReferences.get(minMeta != null ? minIndex : conflictIndex).refExpr));
+      myVisitor.getErrorReporter().report(new PrecedenceError(myResolvedReferences.get(conflictIndex).refExpr.getReferent(), null, myResolvedReferences.get(minIndex).refExpr.getReferent(), null, myResolvedReferences.get(minMeta != null ? minIndex : conflictIndex).refExpr));
     }
 
     if (minMeta != null) {
