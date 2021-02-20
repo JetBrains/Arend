@@ -6,6 +6,7 @@ import org.arend.core.definition.Definition;
 import org.arend.ext.core.definition.CoreClassDefinition;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.NameResolverError;
+import org.arend.ext.typechecking.MetaDefinition;
 import org.arend.naming.reference.*;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
@@ -13,6 +14,7 @@ import org.arend.ext.error.LocalError;
 
 import java.util.ArrayDeque;
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
 public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> {
@@ -101,7 +103,20 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> {
 
   @Override
   public Concrete.Expression visitApp(Concrete.AppExpression expr, Void params) {
-    if (expr.getFunction() instanceof Concrete.ReferenceExpression && !expr.getArguments().get(0).isExplicit()) {
+    if (expr.getFunction() instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) expr.getFunction()).getReferent() instanceof MetaReferable) {
+      MetaDefinition meta = ((MetaReferable) ((Concrete.ReferenceExpression) expr.getFunction()).getReferent()).getDefinition();
+      if (meta != null) {
+        int[] indices = meta.desugarArguments(expr.getArguments());
+        if (indices != null) {
+          List<Concrete.Argument> arguments = expr.getArguments();
+          for (int index : indices) {
+            Concrete.Argument arg = arguments.get(index);
+            arg.expression = arg.expression.accept(this, params);
+          }
+          return expr;
+        }
+      }
+    } else if (expr.getFunction() instanceof Concrete.ReferenceExpression && !expr.getArguments().get(0).isExplicit()) {
       if (expr.getArguments().get(0).expression instanceof Concrete.HoleExpression) {
         Referable ref = ((Concrete.ReferenceExpression) expr.getFunction()).getReferent();
         if (ref instanceof TCDefReferable) {
@@ -120,9 +135,9 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> {
         argument.expression = argument.expression.accept(this, params);
       }
       return expr;
-    } else {
-      return super.visitApp(expr, params);
     }
+
+    return super.visitApp(expr, params);
   }
 
   @Override

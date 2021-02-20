@@ -1,8 +1,11 @@
 package org.arend.ext.typechecking;
 
+import org.arend.ext.concrete.expr.ConcreteArgument;
 import org.arend.ext.core.expr.CoreExpression;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
 
 /**
  * A deferred meta definition is invoked after inference variables are solved.
@@ -34,6 +37,11 @@ public class DeferredMetaDefinition extends BaseMetaDefinition {
   @Override
   public boolean requireExpectedType() {
     return !allowNotDeferred;
+  }
+
+  @Override
+  public int @Nullable [] desugarArguments(@NotNull List<? extends ConcreteArgument> arguments) {
+    return deferredMeta.desugarArguments(arguments);
   }
 
   @Override

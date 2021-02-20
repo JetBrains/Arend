@@ -70,4 +70,11 @@ public interface MetaDefinition {
   default @Nullable ConcreteExpression checkAndGetConcreteRepresentation(@NotNull List<? extends ConcreteArgument> arguments) {
     return checkArguments(arguments) ? getConcreteRepresentation(arguments) : null;
   }
+
+  /**
+   * @return the list of indices of arguments that should be desugared, or {@code null} if all arguments should be desugared.
+   */
+  default int @Nullable [] desugarArguments(@NotNull List<? extends ConcreteArgument> arguments) {
+    return null;
+  }
 }
