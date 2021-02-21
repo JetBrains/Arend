@@ -12,17 +12,19 @@ public class UnfoldVisitor extends SubstVisitor {
   private final Set<? extends CoreDefinition> myDefinitions;
   private final Set<CoreDefinition> myUnfolded;
   private final boolean myUnfoldLet;
+  private final boolean myUnfoldFields;
 
-  public UnfoldVisitor(Set<? extends CoreDefinition> definitions, Set<CoreDefinition> unfolded, boolean unfoldLet) {
+  public UnfoldVisitor(Set<? extends CoreDefinition> definitions, Set<CoreDefinition> unfolded, boolean unfoldLet, boolean unfoldFields) {
     super(new ExprSubstitution(), LevelSubstitution.EMPTY);
     myDefinitions = definitions;
     myUnfolded = unfolded;
     myUnfoldLet = unfoldLet;
+    myUnfoldFields = unfoldFields;
   }
 
   @Override
   public boolean isEmpty() {
-    return !myUnfoldLet && myDefinitions.isEmpty() && super.isEmpty();
+    return !myUnfoldLet && !myUnfoldFields && myDefinitions.isEmpty() && super.isEmpty();
   }
 
   @Override
@@ -47,7 +49,7 @@ public class UnfoldVisitor extends SubstVisitor {
 
   @Override
   public Expression visitFieldCall(FieldCallExpression expr, Void params) {
-    if (!expr.getDefinition().isProperty() && myDefinitions.contains(expr.getDefinition())) {
+    if (!expr.getDefinition().isProperty() && (myUnfoldFields || myDefinitions.contains(expr.getDefinition()))) {
       Expression type = expr.getArgument().getType();
       ClassCallExpression classCall = type == null ? null : type.normalize(NormalizationMode.WHNF).cast(ClassCallExpression.class);
       if (classCall != null) {

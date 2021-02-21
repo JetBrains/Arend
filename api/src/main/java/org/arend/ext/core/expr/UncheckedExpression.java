@@ -39,8 +39,9 @@ public interface UncheckedExpression {
    * @param definitions a set of functions and fields to unfold.
    * @param unfolded    definitions that are actually unfolded will be added to this set.
    * @param unfoldLet   unfolds \\let expressions if {@code true}.
+   * @param unfoldFields  unfolds all fields if {@code true}.
    */
-  @NotNull UncheckedExpression unfold(@NotNull Set<? extends CoreDefinition> definitions, @Nullable Set<CoreDefinition> unfolded, boolean unfoldLet);
+  @NotNull UncheckedExpression unfold(@NotNull Set<? extends CoreDefinition> definitions, @Nullable Set<CoreDefinition> unfolded, boolean unfoldLet, boolean unfoldFields);
 
   /**
    * Constructs a new expression replacing some subexpressions according to the mapper.

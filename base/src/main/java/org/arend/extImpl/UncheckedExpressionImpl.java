@@ -51,8 +51,8 @@ public class UncheckedExpressionImpl implements UncheckedExpression {
   }
 
   @Override
-  public @NotNull UncheckedExpression unfold(@NotNull Set<? extends CoreDefinition> functions, @Nullable Set<CoreDefinition> unfolded, boolean unfoldLet) {
-    return functions.isEmpty() && !unfoldLet ? this : wrap(myExpression.accept(new UnfoldVisitor(functions, unfolded, unfoldLet), null));
+  public @NotNull UncheckedExpression unfold(@NotNull Set<? extends CoreDefinition> functions, @Nullable Set<CoreDefinition> unfolded, boolean unfoldLet, boolean unfoldFields) {
+    return functions.isEmpty() && !unfoldLet && !unfoldFields ? this : wrap(myExpression.accept(new UnfoldVisitor(functions, unfolded, unfoldLet, unfoldFields), null));
   }
 
   @Override
