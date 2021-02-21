@@ -22,6 +22,7 @@ import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public class GoalError extends TypecheckingError {
   public final TypecheckingContext typecheckingContext;
+  public final Map<Binding, Expression> bindingTypes;
   public final Expression expectedType;
   public final Concrete.Expression result;
   public final List<GeneralError> errors;
@@ -29,9 +30,10 @@ public class GoalError extends TypecheckingError {
   private final ExprSubstitution substitution;
   private List<Condition> myConditions = Collections.emptyList();
 
-  public GoalError(TypecheckingContext typecheckingContext, Expression expectedType, Concrete.Expression result, List<GeneralError> errors, GoalSolver goalSolver, Concrete.GoalExpression expression) {
+  public GoalError(TypecheckingContext typecheckingContext, Map<Binding, Expression> bindingTypes, Expression expectedType, Concrete.Expression result, List<GeneralError> errors, GoalSolver goalSolver, Concrete.GoalExpression expression) {
     super(Level.GOAL, "Goal" + (expression.getName() == null ? "" : " " + expression.getName()), expression);
     this.typecheckingContext = typecheckingContext;
+    this.bindingTypes = bindingTypes;
     this.result = result;
     this.errors = errors;
     this.goalSolver = goalSolver;
@@ -65,7 +67,8 @@ public class GoalError extends TypecheckingError {
       List<Doc> contextDocs = new ArrayList<>(context.size());
       for (Map.Entry<Referable, Binding> entry : context.entrySet()) {
         if (!entry.getValue().isHidden() && (!(entry.getKey() instanceof LocalReferable) || !((LocalReferable) entry.getKey()).isHidden())) {
-          Expression type = entry.getValue().getTypeExpr();
+          Expression type = bindingTypes.get(entry.getValue());
+          if (type == null) type = entry.getValue().getTypeExpr();
           if (type != null) type = type.subst(substitution);
           contextDocs.add(hang(hList(entry.getKey() == null ? text("_") : refDoc(entry.getKey()), text(" :")), type == null ? text("{?}") : termDoc(type, ppConfig)));
         }

@@ -2135,7 +2135,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       if (result.expression.isInstance(ErrorExpression.class)) {
         result.expression = new OfTypeExpression(result.expression, result.type);
       }
-      return new Pair<>(LetClause.make(!isHave, name, null, result.expression), result.type);
+      return new Pair<>(TypedLetClause.make(!isHave, name, null, result.expression, result.type), result.type);
     }
   }
 
@@ -2861,10 +2861,20 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       throw new IllegalArgumentException();
     }
 
-    GoalError error = new GoalError(saveTypecheckingContext(), expectedType, goalResult == null ? null : (Concrete.Expression) goalResult.concreteExpression, errors, solver, expr);
+    GoalError error = new GoalError(saveTypecheckingContext(), getBindingTypes(), expectedType, goalResult == null ? null : (Concrete.Expression) goalResult.concreteExpression, errors, solver, expr);
     errorReporter.report(error);
     Expression result = new GoalErrorExpression(goalResult == null || goalResult.typedExpression == null ? null : (Expression) goalResult.typedExpression.getExpression(), error);
     return new TypecheckingResult(result, expectedType != null && !(expectedType instanceof Type && ((Type) expectedType).isOmega()) ? expectedType : result);
+  }
+
+  private Map<Binding, Expression> getBindingTypes() {
+    Map<Binding, Expression> result = new HashMap<>();
+    for (Binding binding : context.values()) {
+      if (binding instanceof TypedHaveClause || binding instanceof TypedLetClause) {
+        result.put(binding, binding instanceof TypedHaveClause ? ((TypedHaveClause) binding).type : ((TypedLetClause) binding).type);
+      }
+    }
+    return result;
   }
 
   @Override

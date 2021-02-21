@@ -10,7 +10,7 @@ public class HaveClause extends NamedBinding {
   private LetClausePattern myPattern;
   private Expression myExpression;
 
-  public HaveClause(String name, LetClausePattern pattern, Expression expression) {
+  protected HaveClause(String name, LetClausePattern pattern, Expression expression) {
     super(name);
     myPattern = pattern;
     myExpression = expression;

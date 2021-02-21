@@ -4,7 +4,7 @@ import org.arend.core.context.binding.EvaluatingBinding;
 import org.arend.core.expr.Expression;
 
 public class LetClause extends HaveClause implements EvaluatingBinding {
-  private LetClause(String name, LetClausePattern pattern, Expression expression) {
+  protected LetClause(String name, LetClausePattern pattern, Expression expression) {
     super(name, pattern, expression);
   }
 
