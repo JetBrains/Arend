@@ -19,4 +19,6 @@ public abstract class ElimTree {
   public abstract Decision isWHNF(List<? extends Expression> arguments);
 
   public abstract Expression getStuckExpression(List<? extends Expression> arguments, Expression expression);
+
+  public abstract List<Expression> normalizeArguments(List<? extends Expression> arguments);
 }

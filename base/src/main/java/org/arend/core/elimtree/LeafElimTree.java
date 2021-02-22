@@ -3,6 +3,7 @@ package org.arend.core.elimtree;
 import org.arend.core.expr.Expression;
 import org.arend.util.Decision;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class LeafElimTree extends ElimTree {
@@ -35,5 +36,10 @@ public class LeafElimTree extends ElimTree {
   @Override
   public Expression getStuckExpression(List<? extends Expression> arguments, Expression expression) {
     return null;
+  }
+
+  @Override
+  public List<Expression> normalizeArguments(List<? extends Expression> arguments) {
+    return new ArrayList<>(arguments);
   }
 }
