@@ -162,7 +162,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       return true;
     }
 
-    if (stuck1 instanceof InferenceReferenceExpression && stuck2 instanceof InferenceReferenceExpression && myAllowEquations && ((InferenceReferenceExpression) stuck1).getVariable() != null && ((InferenceReferenceExpression) stuck2).getVariable() != null) {
+    if (stuck1 instanceof InferenceReferenceExpression && stuck2 instanceof InferenceReferenceExpression && myAllowEquations && ((InferenceReferenceExpression) stuck1).getVariable() != null && ((InferenceReferenceExpression) stuck2).getVariable() != null && !(expr1 instanceof DefCallExpression && !(expr1 instanceof FieldCallExpression) && expr2 instanceof DefCallExpression && ((DefCallExpression) expr1).getDefinition() == ((DefCallExpression) expr2).getDefinition())) {
       InferenceVariable var1 = ((InferenceReferenceExpression) stuck1).getVariable();
       InferenceVariable var2 = ((InferenceReferenceExpression) stuck2).getVariable();
       return myEquations.addEquation(expr1, expr2.subst(getSubstitution()), type, myCMP, var1.getSourceNode(), var1, var2);
