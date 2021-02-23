@@ -20,6 +20,7 @@ import org.arend.core.subst.LevelSubstitution;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.LocalError;
+import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.error.local.SolveEquationError;
@@ -30,6 +31,8 @@ import org.arend.typechecking.visitor.SearchVisitor;
 import org.arend.util.Pair;
 
 import java.util.*;
+
+import static org.arend.core.expr.ExpressionFactory.Nat;
 
 public class TwoStageEquations implements Equations {
   private List<Equation> myEquations = new ArrayList<>();
@@ -330,6 +333,18 @@ public class TwoStageEquations implements Equations {
     for (Equation equation : myEquations) {
       equation.expr1 = equation.expr1.normalize(NormalizationMode.WHNF);
       equation.expr2 = equation.expr2.normalize(NormalizationMode.WHNF);
+    }
+
+    for (Iterator<Equation> iterator = myEquations.iterator(); iterator.hasNext(); ) {
+      Equation equation = iterator.next();
+      if (equation.expr1 instanceof DataCallExpression && equation.expr2 instanceof DataCallExpression && ((DataCallExpression) equation.expr1).getDefinition() == Prelude.FIN && ((DataCallExpression) equation.expr2).getDefinition() == Prelude.FIN) {
+        iterator.remove();
+        Expression arg1 = ((DataCallExpression) equation.expr1).getDefCallArguments().get(0);
+        Expression arg2 = ((DataCallExpression) equation.expr2).getDefCallArguments().get(0);
+        if (!CompareVisitor.compare(this, CMP.EQ, arg1, arg2, Nat(), equation.sourceNode)) {
+          myVisitor.getErrorReporter().report(new SolveEquationsError(Collections.singletonList(new Equation(arg1, arg2, Nat(), CMP.EQ, equation.sourceNode)), equation.sourceNode));
+        }
+      }
     }
 
     while (!myEquations.isEmpty()) {
