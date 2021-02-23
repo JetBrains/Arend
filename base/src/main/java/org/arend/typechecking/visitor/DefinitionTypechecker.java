@@ -2210,13 +2210,13 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       for (Map.Entry<ClassField, AbsExpression> entry : superClass.getDefaults()) {
         typedDef.addDefaultIfAbsent(entry.getKey(), entry.getValue());
       }
-      for (Map.Entry<ClassField, List<ClassField>> entry : superClass.getDefaultDependencies().entrySet()) {
+      for (Map.Entry<ClassField, Set<ClassField>> entry : superClass.getDefaultDependencies().entrySet()) {
         typedDef.setDefaultDependencies(entry.getKey(), entry.getValue());
       }
     }
 
     MapDFS<ClassField> fieldDFS = new MapDFS<>(typedDef.getDefaultDependencies());
-    fieldDFS.visit(implementedHere);
+    fieldDFS.visit(typedDef.getImplementedFields());
     for (ClassField field : fieldDFS.getVisited()) {
       typedDef.removeDefault(field);
     }

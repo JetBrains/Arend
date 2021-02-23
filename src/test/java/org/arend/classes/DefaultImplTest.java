@@ -183,6 +183,40 @@ public class DefaultImplTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void defaultDependency4() {
+    typeCheckModule(
+      "\\record C\n" +
+      "  | const : Nat\n" +
+      "  | path : const = 0\n" +
+      "\\record D \\extends C {\n" +
+      "  \\default const \\as const' => 0\n" +
+      "  \\default path : const' = 0 => idp\n" +
+      "}\n" +
+      "\\record E \\extends C\n" +
+      "  | const => 1\n" +
+      "\\record F \\extends D, E\n" +
+      "\\func test : F \\cowith", 1);
+    assertThatErrorsAre(Matchers.fieldsImplementation(false, Collections.singletonList(get("C.path"))));
+  }
+
+  @Test
+  public void defaultDependency5() {
+    typeCheckModule(
+      "\\record C\n" +
+      "  | const : Nat\n" +
+      "  | path : const = 0\n" +
+      "\\record D \\extends C {\n" +
+      "  \\default const \\as const' => 0\n" +
+      "  \\default path : const' = 0 => idp\n" +
+      "}\n" +
+      "\\record E \\extends C\n" +
+      "  | const => 1\n" +
+      "\\record F \\extends E, D\n" +
+      "\\func test : F \\cowith", 1);
+    assertThatErrorsAre(Matchers.fieldsImplementation(false, Collections.singletonList(get("C.path"))));
+  }
+
+  @Test
   public void fieldTypeMismatch() {
     typeCheckModule(
       "\\record C\n" +

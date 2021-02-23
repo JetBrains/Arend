@@ -210,8 +210,8 @@ public class DefinitionDeserialization implements ArendDeserializer {
     }
   }
 
-  private <T extends Definition> List<T> readDefinitions(DefinitionProtos.Definition.RefList proto, Class<T> clazz) throws DeserializationException {
-    List<T> result = new ArrayList<>();
+  private <T extends Definition> Set<T> readDefinitions(DefinitionProtos.Definition.RefList proto, Class<T> clazz) throws DeserializationException {
+    Set<T> result = new HashSet<>();
     for (Integer index : proto.getRefList()) {
       result.add(getDefFromIndex(index, clazz));
     }
