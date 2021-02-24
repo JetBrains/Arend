@@ -969,16 +969,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     if (typeLevel != null && typedDef.isSFunc()) {
       if (body instanceof Concrete.ElimFunctionBody) {
         for (Concrete.FunctionClause clause : body.getClauses()) {
-          if (clause.getExpression() instanceof Concrete.CaseExpression) {
-            Concrete.CaseExpression caseExpr = (Concrete.CaseExpression) clause.getExpression();
-            caseExpr.level = typeLevel;
-            caseExpr.setSCase(true);
-          }
+          CheckTypeVisitor.setCaseLevel(clause.getExpression(), typeLevel);
         }
       } else {
-        Concrete.CaseExpression caseExpr = (Concrete.CaseExpression) body.getTerm();
-        caseExpr.level = typeLevel;
-        caseExpr.setSCase(true);
+        CheckTypeVisitor.setCaseLevel(body.getTerm(), typeLevel);
       }
     }
 
@@ -2167,7 +2161,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           addLocalInstances(localInstances, thisBinding, !typedDef.isRecord() && typedDef.getClassifyingField() == null ? typedDef : null, localInstancePool);
           myInstancePool.setInstancePool(localInstancePool);
           if (field.isProperty()) {
-            CheckTypeVisitor.setCaseLevel(lamImpl.body);
+            CheckTypeVisitor.setCaseLevel(lamImpl.body, -1);
           }
           result = typechecker.finalCheckExpr(lamImpl.body, typedDef.getFieldType(field, Sort.STD, new ReferenceExpression(thisBinding)));
           myInstancePool.setInstancePool(null);
