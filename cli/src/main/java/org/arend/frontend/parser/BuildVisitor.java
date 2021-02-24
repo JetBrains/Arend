@@ -1656,8 +1656,10 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   @Override
   public List<Concrete.FunctionClause> visitWithBody(WithBodyContext ctx) {
     List<Concrete.FunctionClause> clauses = new ArrayList<>();
-    for (ClauseContext clauseCtx : ctx.clause()) {
-      clauses.add(visitClause(clauseCtx));
+    if (ctx != null) {
+      for (ClauseContext clauseCtx : ctx.clause()) {
+        clauses.add(visitClause(clauseCtx));
+      }
     }
     return clauses;
   }

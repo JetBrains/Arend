@@ -147,7 +147,7 @@ expr2 : appPrefix? appExpr (implementStatements argument*)?               # app2
       | caseExpr                                                          # case2
       ;
 
-caseExpr : (EVAL | PEVAL)? (CASE | SCASE) caseArg (',' caseArg)* ('\\return' returnExpr2)? withBody;
+caseExpr : (EVAL | PEVAL)? (CASE | SCASE) caseArg (',' caseArg)* ('\\return' returnExpr2)? withBody?;
 
 withBody : '\\with' '{' clause? ('|' clause)* '}';
 
