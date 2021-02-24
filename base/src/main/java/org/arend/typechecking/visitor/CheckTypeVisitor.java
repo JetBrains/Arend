@@ -319,9 +319,15 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     return null;
   }
 
-  public boolean checkNormalizedResult(Expression expectedType, TypecheckingResult result, Concrete.Expression expr, boolean strict) {
+  public boolean checkCoerceResult(Expression expectedType, TypecheckingResult result, Concrete.Expression expr, boolean strict) {
     boolean isOmega = expectedType instanceof Type && ((Type) expectedType).isOmega();
-    if (isOmega && result.type.isInstance(UniverseExpression.class) || expectedType != null && !isOmega && new CompareVisitor(strict ? new LevelEquationsWrapper(myEquations) : myEquations, CMP.LE, expr).normalizedCompare(result.type, expectedType, Type.OMEGA)) {
+    boolean ok = isOmega && result.type.isInstance(UniverseExpression.class);
+    if (!ok && expectedType != null && !isOmega) {
+      CompareVisitor visitor = new CompareVisitor(strict ? new LevelEquationsWrapper(myEquations) : myEquations, CMP.LE, expr);
+      DefCallExpression actualType = result.type.cast(DefCallExpression.class);
+      ok = visitor.normalizedCompare(actualType != null && expectedType instanceof DefCallExpression && actualType.getDefinition() == ((DefCallExpression) expectedType).getDefinition() ? result.type : result.type.normalize(NormalizationMode.WHNF), expectedType, Type.OMEGA);
+    }
+    if (ok) {
       if (!strict && !isOmega) {
         result.expression = OfTypeExpression.make(result.expression, result.type, expectedType);
       }

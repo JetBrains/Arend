@@ -130,8 +130,11 @@ public class CoerceData {
     }
 
     // Can't coerce neither from nor to a definition
-    if (expectedCoerceData != null && !(actualKey instanceof AnyKey) || actualCoerceData != null && !(expectedKey instanceof AnyKey)) {
-      return null;
+    if (expectedCoerceData != null && !(actualKey instanceof AnyKey)) {
+      actualKey = new AnyKey();
+    }
+    if (actualCoerceData != null && !(expectedKey instanceof AnyKey)) {
+      expectedKey = new AnyKey();
     }
 
     // Coerce from an arbitrary type
@@ -195,7 +198,7 @@ public class CoerceData {
 
         Sort sortArg = Sort.generateInferVars(visitor.getEquations(), def.getUniverseKind(), sourceNode);
         LevelSubstitution levelSubst = sortArg.toLevelSubstitution();
-        if (!visitor.checkNormalizedResult(link.getTypeExpr().subst(substitution, levelSubst), result, sourceNode, argStrict)) {
+        if (!visitor.checkCoerceResult(link.getTypeExpr().subst(substitution, levelSubst), result, sourceNode, argStrict)) {
           if (argStrict) {
             return null;
           }
@@ -214,7 +217,7 @@ public class CoerceData {
       }
     }
 
-    if (expectedType != null && !visitor.checkNormalizedResult(expectedType, result, sourceNode, resultStrict)) {
+    if (expectedType != null && !visitor.checkCoerceResult(expectedType, result, sourceNode, resultStrict)) {
       if (resultStrict) {
         return null;
       }
