@@ -1559,7 +1559,9 @@ public final class Concrete {
     @Override
     TCDefReferable getData();
 
-    @NotNull Definition getRelatedDefinition();
+    @NotNull
+    @Override
+    Definition getRelatedDefinition();
 
     @Override
     default @NotNull Stage getStage() {
@@ -1599,6 +1601,8 @@ public final class Concrete {
     @NotNull TCReferable getData();
 
     @NotNull Stage getStage();
+
+    @NotNull ResolvableDefinition getRelatedDefinition();
   }
 
   public static abstract class ResolvableDefinition implements GeneralDefinition {

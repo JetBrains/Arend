@@ -93,6 +93,11 @@ public class DefinableMetaDefinition extends Concrete.ResolvableDefinition imple
   }
 
   @Override
+  public @NotNull Concrete.ResolvableDefinition getRelatedDefinition() {
+    return this;
+  }
+
+  @Override
   public <P, R> R accept(ConcreteResolvableDefinitionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitMeta(this, params);
   }
