@@ -317,11 +317,13 @@ public abstract class Repl {
    *
    * @return true if there is error(s).
    */
-  public final boolean checkErrors() {
+  public boolean checkErrors() {
     var errorList = myErrorReporter.getErrorList();
-    for (GeneralError error : errorList)
+    boolean hasErrors = false;
+    for (GeneralError error : errorList) {
       printlnOpt(error.getDoc(myPpConfig), ERROR_LEVELS.contains(error.level));
-    boolean hasErrors = !errorList.isEmpty();
+      if (error.level == GeneralError.Level.ERROR) hasErrors = true;
+    }
     errorList.clear();
     return hasErrors;
   }
