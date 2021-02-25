@@ -659,7 +659,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       for (Map.Entry<Binding, Expression> entry : patternSubst.getEntries()) {
         Expression actualType = entry.getKey().getTypeExpr();
         Expression expectedType = entry.getValue().getType().subst(idpSubst);
-        if (!new CompareVisitor(myEquations, CMP.EQ, mySourceNode).normalizedCompare(expectedType, actualType.normalize(NormalizationMode.WHNF), Type.OMEGA)) {
+        if (!new CompareVisitor(myEquations, CMP.EQ, mySourceNode).normalizedCompare(expectedType, actualType.normalize(NormalizationMode.WHNF), Type.OMEGA, false)) {
           throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(expectedType, actualType, mySourceNode), errorExpr));
         }
       }

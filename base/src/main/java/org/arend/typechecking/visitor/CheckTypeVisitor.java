@@ -260,7 +260,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     if (!normalize) {
       visitor.doNotNormalize();
     }
-    return visitor.compare(UncheckedExpressionImpl.extract(expr1), UncheckedExpressionImpl.extract(expr2), null);
+    return visitor.compare(UncheckedExpressionImpl.extract(expr1), UncheckedExpressionImpl.extract(expr2), null, true);
   }
 
   public TypecheckingResult checkResult(Expression expectedType, TypecheckingResult result, Concrete.Expression expr) {
@@ -308,7 +308,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   private TypecheckingResult checkResultExpr(Expression expectedType, TypecheckingResult result, Concrete.Expression expr) {
-    if (new CompareVisitor(myEquations, CMP.LE, expr).normalizedCompare(result.type, expectedType, Type.OMEGA)) {
+    if (new CompareVisitor(myEquations, CMP.LE, expr).normalizedCompare(result.type, expectedType, Type.OMEGA, false)) {
       result.expression = OfTypeExpression.make(result.expression, result.type, expectedType);
       return result;
     }
@@ -325,7 +325,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     if (!ok && expectedType != null && !isOmega) {
       CompareVisitor visitor = new CompareVisitor(strict ? new LevelEquationsWrapper(myEquations) : myEquations, CMP.LE, expr);
       DefCallExpression actualType = result.type.cast(DefCallExpression.class);
-      ok = visitor.normalizedCompare(actualType != null && expectedType instanceof DefCallExpression && actualType.getDefinition() == ((DefCallExpression) expectedType).getDefinition() ? result.type : result.type.normalize(NormalizationMode.WHNF), expectedType, Type.OMEGA);
+      ok = visitor.normalizedCompare(actualType != null && expectedType instanceof DefCallExpression && actualType.getDefinition() == ((DefCallExpression) expectedType).getDefinition() ? result.type : result.type.normalize(NormalizationMode.WHNF), expectedType, Type.OMEGA, false);
     }
     if (ok) {
       if (!strict && !isOmega) {

@@ -354,7 +354,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
         if (i == -1) {
           Expression expectedType1 = dropPiParameters(definition, expr.getArguments(), expectedType);
           if (expectedType1 != null) {
-            new CompareVisitor(myVisitor.getEquations(), CMP.LE, expr).compare(result.getType(), expectedType1, Type.OMEGA);
+            new CompareVisitor(myVisitor.getEquations(), CMP.LE, expr).compare(result.getType(), expectedType1, Type.OMEGA, false);
           }
           continue;
         }
@@ -448,7 +448,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
           result = fixImplicitArgs(result, result.getImplicitParameters(), fun, false, null);
           Expression actualType = dropPiParameters(result.getType(), expr.getArguments(), i);
           if (actualType != null) {
-            new CompareVisitor(myVisitor.getEquations(), CMP.LE, fun).compare(actualType, expectedType, Type.OMEGA);
+            new CompareVisitor(myVisitor.getEquations(), CMP.LE, fun).compare(actualType, expectedType, Type.OMEGA, false);
           }
         }
       }

@@ -49,17 +49,17 @@ public class Condition extends SubstitutionData {
     if (!(substitution == null && condition.substitution == null || substitution != null && condition.substitution != null && substitution.size() == condition.substitution.size())) {
       return false;
     }
-    if (!(result == null && condition.result == null || result != null && condition.result != null && visitor.normalizedCompare(result, condition.result, null))) {
+    if (!(result == null && condition.result == null || result != null && condition.result != null && visitor.normalizedCompare(result, condition.result, null, true))) {
       return false;
     }
-    if (!(expression == condition.expression || expression != null && condition.expression != null && visitor.normalizedCompare(expression, condition.expression, null))) {
+    if (!(expression == condition.expression || expression != null && condition.expression != null && visitor.normalizedCompare(expression, condition.expression, null, true))) {
       return false;
     }
 
     if (substitution != null) {
       for (Map.Entry<Binding, Expression> entry : substitution.getEntries()) {
         Expression value = condition.substitution.get(entry.getKey());
-        if (value == null || !visitor.normalizedCompare(entry.getValue(), value, null)) {
+        if (value == null || !visitor.normalizedCompare(entry.getValue(), value, null, true)) {
           return false;
         }
       }
