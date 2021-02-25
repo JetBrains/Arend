@@ -666,7 +666,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       if (noEmpty) {
         if (clause.getExpression() != null) {
           substitution.addSubst(idpSubst);
-          if (clause.getExpression() instanceof CaseExpression && mode == PatternTypechecking.Mode.FUNCTION) {
+          if (clause.getExpression() instanceof CaseExpression) {
             checkCase((CaseExpression) clause.getExpression(), type.subst(substitution), level);
           } else {
             clause.getExpression().accept(this, type.subst(substitution));
