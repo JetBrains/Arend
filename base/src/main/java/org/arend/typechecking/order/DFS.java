@@ -4,29 +4,27 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Consumer;
 
-public abstract class DFS<T> {
+public abstract class DFS<T,R> {
   public static class CycleException extends RuntimeException {
 
   }
 
   private final Map<T, Boolean> myVisited = new HashMap<>();
 
-  public void visit(T unit) {
+  public R visit(T unit) {
     Boolean prev = myVisited.putIfAbsent(unit, false);
     if (prev != null) {
       if (prev || allowCycles()) {
-        return;
+        return getVisitedValue(unit, !prev);
       } else {
         throw new CycleException();
       }
     }
 
-    onEnter(unit);
-    forDependencies(unit, this::visit);
-    onExit(unit);
+    R result = forDependencies(unit);
     myVisited.put(unit, true);
+    return result;
   }
 
   public void visit(Collection<? extends T> units) {
@@ -35,19 +33,17 @@ public abstract class DFS<T> {
     }
   }
 
-  protected abstract boolean allowCycles();
+  protected boolean allowCycles() {
+    return true;
+  }
 
-  protected abstract void forDependencies(T unit, Consumer<T> consumer);
+  protected R getVisitedValue(T unit, boolean cycle) {
+    return null;
+  }
+
+  protected abstract R forDependencies(T unit);
 
   public Set<T> getVisited() {
     return myVisited.keySet();
-  }
-
-  protected void onEnter(T unit) {
-
-  }
-
-  protected void onExit(T unit) {
-
   }
 }

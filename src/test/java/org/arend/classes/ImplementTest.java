@@ -8,6 +8,7 @@ import org.arend.core.expr.Expression;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.typechecking.TypeCheckingTestCase;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -659,5 +660,13 @@ public class ImplementTest extends TypeCheckingTestCase {
       "\\class D {c : C}\n" +
       "\\func f : D \\cowith\n" +
       "  | c => \\new C 1", 1);
+  }
+
+  @Ignore
+  @Test
+  public void propertyImpl() {
+    typeCheckModule(
+      "\\record C (y x : Nat) (p : x = 0)\n" +
+      "\\func test : (C { | x => 0 | p => idp }) = (C { | x => 0 }) => idp");
   }
 }

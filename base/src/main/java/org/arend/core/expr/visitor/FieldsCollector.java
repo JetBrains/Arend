@@ -3,6 +3,9 @@ package org.arend.core.expr.visitor;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
+import org.arend.core.elimtree.Body;
+import org.arend.core.elimtree.ElimBody;
+import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.*;
 import org.arend.core.sort.Sort;
 import org.arend.ext.core.ops.NormalizationMode;
@@ -28,14 +31,28 @@ public class FieldsCollector extends VoidExpressionVisitor<Void> {
   }
 
   public static void getFields(Expression expr, Binding thisBinding, Set<? extends ClassField> fields, Set<ClassField> result) {
-    if (!fields.isEmpty()) {
+    if (expr != null && !fields.isEmpty()) {
       expr.accept(new FieldsCollector(thisBinding, fields, result), null);
     }
   }
 
-  public static Set<ClassField> getFields(Expression expr, Binding thisBinding, Set<? extends ClassField> fields) {
+  public static Set<ClassField> getFields(Body body, Binding thisBinding, Set<? extends ClassField> fields) {
     Set<ClassField> result = new HashSet<>();
-    getFields(expr, thisBinding, fields, result);
+    if (!fields.isEmpty()) {
+      FieldsCollector collector = new FieldsCollector(thisBinding, fields, result);
+      if (body instanceof IntervalElim) {
+        for (IntervalElim.CasePair pair : ((IntervalElim) body).getCases()) {
+          pair.proj1.accept(collector, null);
+          pair.proj2.accept(collector, null);
+        }
+        body = ((IntervalElim) body).getOtherwise();
+      }
+      if (body instanceof Expression) {
+        ((Expression) body).accept(collector, null);
+      } else if (body instanceof ElimBody) {
+        collector.visitElimBody((ElimBody) body, null);
+      }
+    }
     return result;
   }
 

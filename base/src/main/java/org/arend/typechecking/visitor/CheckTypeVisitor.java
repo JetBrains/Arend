@@ -77,6 +77,7 @@ import org.arend.typechecking.implicitargs.StdImplicitArgsInference;
 import org.arend.typechecking.implicitargs.equations.*;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.instance.pool.RecursiveInstanceHoleExpression;
+import org.arend.typechecking.order.DFS;
 import org.arend.typechecking.order.MapDFS;
 import org.arend.typechecking.patternmatching.*;
 import org.arend.typechecking.result.DefCallResult;
@@ -1032,12 +1033,35 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       dfs.visit(defined);
       dfs.visit(resultClassCall.getImplementedHere().keySet());
       Set<ClassField> notDefault = dfs.getVisited();
-      for (ClassField field : baseClass.getFields()) {
-        if (!defined.contains(field) && !resultClassCall.isImplemented(field)) {
-          AbsExpression defaultImpl = baseClass.getDefault(field);
-          if (defaultImpl != null && !notDefault.contains(field)) {
-            resultClassCall.getImplementedHere().put(field, defaultImpl.apply(new ReferenceExpression(resultClassCall.getThisBinding()), resultClassCall.getSortArgument()));
+
+      Map<ClassField, AbsExpression> defaults = new HashMap<>();
+      DFS<ClassField, Boolean> implDfs = new DFS<>() {
+        @Override
+        protected Boolean forDependencies(ClassField field) {
+          if (defined.contains(field) || resultClassCall.isImplemented(field)) return true;
+          AbsExpression impl = baseClass.getDefault(field);
+          if (impl == null || notDefault.contains(field)) return false;
+          Set<ClassField> dependencies = baseClass.getDefaultImplDependencies().get(field);
+          if (dependencies == null) return true;
+          for (ClassField dependency : dependencies) {
+            Boolean ok = visit(dependency);
+            if (ok == null || !ok) return false;
           }
+          defaults.put(field, impl);
+          return true;
+        }
+
+        @Override
+        protected Boolean getVisitedValue(ClassField field, boolean cycle) {
+          return !cycle && (defined.contains(field) || resultClassCall.isImplemented(field) || defaults.containsKey(field));
+        }
+      };
+
+      for (ClassField field : baseClass.getFields()) {
+        implDfs.visit(field);
+        AbsExpression defaultImpl = defaults.get(field);
+        if (defaultImpl != null && !notDefault.contains(field)) {
+          resultClassCall.getImplementedHere().put(field, defaultImpl.apply(new ReferenceExpression(resultClassCall.getThisBinding()), resultClassCall.getSortArgument()));
         }
       }
     }

@@ -21,7 +21,6 @@ import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.arend.util.Pair;
 
 import java.util.*;
-import java.util.function.Consumer;
 
 public class UseTypechecking {
   public static void typecheck(List<Concrete.UseDefinition> definitions, ErrorReporter errorReporter) {
@@ -57,28 +56,25 @@ public class UseTypechecking {
 
     List<Definition> order = new ArrayList<>();
     try {
-      DFS<Definition> dfs = new DFS<>() {
+      DFS<Definition,Void> dfs = new DFS<>() {
         @Override
         protected boolean allowCycles() {
           return false;
         }
 
         @Override
-        protected void forDependencies(Definition unit, Consumer<Definition> consumer) {
+        protected Void forDependencies(Definition unit) {
           List<Pair<Expression, FunctionDefinition>> deps = depMap.get(unit);
           if (deps != null) {
             for (Pair<Expression, FunctionDefinition> dep : deps) {
               DefCallExpression defCall = dep.proj1 != null ? dep.proj1.cast(DefCallExpression.class) : null;
               if (defCall != null) {
-                consumer.accept(defCall.getDefinition());
+                visit(defCall.getDefinition());
               }
             }
           }
-        }
-
-        @Override
-        protected void onExit(Definition unit) {
           order.add(unit);
+          return null;
         }
       };
       for (Definition definition : depMap.keySet()) {

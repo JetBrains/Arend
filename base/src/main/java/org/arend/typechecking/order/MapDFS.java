@@ -2,9 +2,8 @@ package org.arend.typechecking.order;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.function.Consumer;
 
-public class MapDFS<T> extends DFS<T> {
+public class MapDFS<T> extends DFS<T,Void> {
   private final Map<T, ? extends Collection<? extends T>> myMap;
 
   public MapDFS(Map<T, ? extends Collection<? extends T>> map) {
@@ -12,17 +11,13 @@ public class MapDFS<T> extends DFS<T> {
   }
 
   @Override
-  protected boolean allowCycles() {
-    return true;
-  }
-
-  @Override
-  protected void forDependencies(T unit, Consumer<T> consumer) {
+  protected Void forDependencies(T unit) {
     Collection<? extends T> list = myMap.get(unit);
     if (list != null) {
       for (T t : list) {
-        consumer.accept(t);
+        visit(t);
       }
     }
+    return null;
   }
 }

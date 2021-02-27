@@ -24,6 +24,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
   private final Map<ClassField, AbsExpression> myImplemented = new HashMap<>();
   private final Map<ClassField, AbsExpression> myDefaults = new HashMap<>();
   private final Map<ClassField, Set<ClassField>> myDefaultDependencies = new HashMap<>();
+  private final Map<ClassField, Set<ClassField>> myDefaultImplDependencies = new HashMap<>();
   private final Map<ClassField, PiExpression> myOverridden = new HashMap<>();
   private ClassField myCoercingField;
   private Sort mySort = Sort.PROP;
@@ -291,12 +292,24 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
     return myDefaultDependencies;
   }
 
-  public void setDefaultDependencies(ClassField field, Set<ClassField> dependencies) {
+  public void addDefaultDependencies(ClassField field, Set<ClassField> dependencies) {
     myDefaultDependencies.computeIfAbsent(field, k -> new HashSet<>()).addAll(dependencies);
   }
 
   public void addDefaultDependency(ClassField field, ClassField dependency) {
     myDefaultDependencies.computeIfAbsent(field, k -> new HashSet<>()).add(dependency);
+  }
+
+  public Map<ClassField, Set<ClassField>> getDefaultImplDependencies() {
+    return myDefaultImplDependencies;
+  }
+
+  public void addDefaultImplDependencies(ClassField field, Set<ClassField> dependencies) {
+    myDefaultImplDependencies.computeIfAbsent(field, k -> new HashSet<>()).addAll(dependencies);
+  }
+
+  public void addDefaultImplDependency(ClassField field, ClassField dependency) {
+    myDefaultImplDependencies.computeIfAbsent(field, k -> new HashSet<>()).add(dependency);
   }
 
   public void removeDefault(ClassField field) {

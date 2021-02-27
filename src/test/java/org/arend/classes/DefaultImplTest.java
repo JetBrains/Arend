@@ -4,6 +4,7 @@ import org.arend.Matchers;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.Collections;
 
 public class DefaultImplTest extends TypeCheckingTestCase {
@@ -265,5 +266,50 @@ public class DefaultImplTest extends TypeCheckingTestCase {
       "  \\default # x y : Nat => x\n" +
       "  \\default f x y : x # y = x => idp\n" +
       "}");
+  }
+
+  @Test
+  public void mutualRecursion() {
+    typeCheckModule(
+      "\\record C\n" +
+      "  | x : Nat\n" +
+      "  | y : Nat\n" +
+      "\\record D \\extends C {\n" +
+      "  \\default x => y\n" +
+      "  \\default y => x\n" +
+      "}\n" +
+      "\\func d1 : D \\cowith\n" +
+      "  | x => 0\n" +
+      "\\func d2 : D \\cowith\n" +
+      "  | y => 0\n" +
+      "\\func test : \\Sigma (d1.y = 0) (d2.x = 0) => (idp, idp)");
+  }
+
+  @Test
+  public void mutualRecursionError() {
+    typeCheckModule(
+      "\\record C\n" +
+      "  | x : Nat\n" +
+      "  | y : Nat\n" +
+      "\\record D \\extends C {\n" +
+      "  \\default x => y\n" +
+      "  \\default y => x\n" +
+      "}\n" +
+      "\\func test : D \\cowith", 1);
+    assertThatErrorsAre(Matchers.fieldsImplementation(false, Arrays.asList(get("C.x"), get("C.y"))));
+  }
+
+  @Test
+  public void mutualRecursionError2() {
+    typeCheckModule(
+      "\\record C\n" +
+      "  | x : Nat\n" +
+      "  | y : Nat\n" +
+      "\\record D \\extends C {\n" +
+      "  \\default x \\as xImpl => y\n" +
+      "  \\default y \\as yImpl => x\n" +
+      "}\n" +
+      "\\func test : D \\cowith", 1);
+    assertThatErrorsAre(Matchers.fieldsImplementation(false, Arrays.asList(get("C.x"), get("C.y"))));
   }
 }

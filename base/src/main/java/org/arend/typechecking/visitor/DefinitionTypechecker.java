@@ -2182,6 +2182,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           }
         }
 
+        if (result != null && classFieldImpl.isDefault()) {
+          typedDef.addDefaultImplDependencies(field, FieldsCollector.getFields(result.expression, thisBinding, typedDef.getFields()));
+        }
+
         if (newDef) {
           AbsExpression abs = new AbsExpression(thisBinding, checkImplementations && result != null ? result.expression : new ErrorExpression());
           if (classFieldImpl.isDefault()) {
@@ -2205,7 +2209,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         typedDef.addDefaultIfAbsent(entry.getKey(), entry.getValue());
       }
       for (Map.Entry<ClassField, Set<ClassField>> entry : superClass.getDefaultDependencies().entrySet()) {
-        typedDef.setDefaultDependencies(entry.getKey(), entry.getValue());
+        typedDef.addDefaultDependencies(entry.getKey(), entry.getValue());
+      }
+      for (Map.Entry<ClassField, Set<ClassField>> entry : superClass.getDefaultImplDependencies().entrySet()) {
+        typedDef.addDefaultImplDependencies(entry.getKey(), entry.getValue());
       }
     }
 
@@ -2629,6 +2636,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
               }
             }
           }
+
+          ((ClassDefinition) classDef).addDefaultImplDependencies((ClassField) field, FieldsCollector.getFields(((FunctionDefinition) def).getBody(), def.getParameters(), ((ClassDefinition) classDef).getFields()));
         }
       }
     }
