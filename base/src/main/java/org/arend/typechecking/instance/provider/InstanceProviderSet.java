@@ -40,11 +40,12 @@ public class InstanceProviderSet {
     }
 
     public LocatedReferable recordInstances(LocatedReferable ref) {
+      if (instanceProvider.isEmpty()) return ref;
       TCReferable tcRef = referableConverter.toDataLocatedReferable(ref);
       if (tcRef instanceof TCDefReferable) {
         myProviders.put((TCDefReferable) tcRef, instanceProvider);
       }
-      return ref;
+      return tcRef;
     }
 
     @Override
@@ -97,9 +98,24 @@ public class InstanceProviderSet {
 
   private void processSubgroups(Scope parentScope, MyPredicate predicate, Collection<? extends Group> subgroups) {
     for (Group subgroup : subgroups) {
+      LocatedReferable groupRef = subgroup.getReferable();
+      if (groupRef.getKind() == GlobalReferable.Kind.COCLAUSE_FUNCTION) continue;
       SimpleInstanceProvider instanceProvider = predicate.instanceProvider;
       processGroup(subgroup, parentScope, predicate);
-      LocatedReferable ref = predicate.recordInstances(subgroup.getReferable());
+
+      if (!predicate.instanceProvider.isEmpty()) {
+        for (Group subSubgroup : subgroup.getSubgroups()) {
+          LocatedReferable subRef = subSubgroup.getReferable();
+          if (subRef.getKind() == GlobalReferable.Kind.COCLAUSE_FUNCTION) {
+            subRef = predicate.referableConverter.toDataLocatedReferable(subRef);
+            if (subRef instanceof TCDefReferable) {
+              myProviders.put((TCDefReferable) subRef, predicate.instanceProvider);
+            }
+          }
+        }
+      }
+
+      LocatedReferable ref = predicate.recordInstances(groupRef);
       predicate.used = true;
       predicate.instanceProvider = instanceProvider;
       predicate.test(ref);

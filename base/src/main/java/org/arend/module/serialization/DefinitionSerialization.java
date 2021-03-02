@@ -307,7 +307,6 @@ public class DefinitionSerialization implements ArendSerializer {
     DefinitionProtos.Definition.FunctionData.Builder builder = DefinitionProtos.Definition.FunctionData.newBuilder();
 
     builder.addAllStrictParameters(definition.getStrictParameters());
-    builder.setIsInstance(definition.getReferable().getKind() == GlobalReferable.Kind.INSTANCE);
     builder.setHasEnclosingClass(definition.getEnclosingClass() != null);
     builder.addAllParam(defSerializer.writeParameters(definition.getParameters()));
     if (definition.getParametersTypecheckingOrder() != null) {
@@ -331,7 +330,7 @@ public class DefinitionSerialization implements ArendSerializer {
     DefinitionProtos.Definition.FunctionKind kind;
     switch (definition.getKind()) {
       case LEMMA:
-        kind = DefinitionProtos.Definition.FunctionKind.LEMMA;
+        kind = definition.getReferable().getKind() == GlobalReferable.Kind.COCLAUSE_FUNCTION ? DefinitionProtos.Definition.FunctionKind.COCLAUSE_LEMMA : DefinitionProtos.Definition.FunctionKind.LEMMA;
         break;
       case SFUNC:
         kind = DefinitionProtos.Definition.FunctionKind.SFUNC;
@@ -340,7 +339,7 @@ public class DefinitionSerialization implements ArendSerializer {
         kind = DefinitionProtos.Definition.FunctionKind.INSTANCE;
         break;
       default:
-        kind = DefinitionProtos.Definition.FunctionKind.FUNC;
+        kind = definition.getReferable().getKind() == GlobalReferable.Kind.COCLAUSE_FUNCTION ? DefinitionProtos.Definition.FunctionKind.COCLAUSE : DefinitionProtos.Definition.FunctionKind.FUNC;
     }
     builder.setKind(kind);
     builder.setVisibleParameter(definition.getVisibleParameter());

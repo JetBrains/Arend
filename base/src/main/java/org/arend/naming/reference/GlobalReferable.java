@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 
 public interface GlobalReferable extends Referable {
   enum Kind {
-    DATA, CLASS, FUNCTION, INSTANCE,
+    DATA, CLASS, FUNCTION, COCLAUSE_FUNCTION, INSTANCE,
     DEFINED_CONSTRUCTOR { @Override public boolean isConstructor() { return true; } },
     CONSTRUCTOR {
       @Override public boolean isTypecheckable() { return false; }

@@ -113,7 +113,6 @@ message Definition {
         repeated ParametersLevel parameters_levels = 10;
         bool body_is_hidden = 11;
         bool has_enclosing_class = 13;
-        bool is_instance = 14;
         repeated bool strict_parameters = 15;
     }
     message DConstructorData {
@@ -139,6 +138,8 @@ message Definition {
         SFUNC = 1;
         LEMMA = 2;
         INSTANCE = 3;
+        COCLAUSE = 4;
+        COCLAUSE_LEMMA = 5;
     }
 
     enum TypeClassParameterKind {

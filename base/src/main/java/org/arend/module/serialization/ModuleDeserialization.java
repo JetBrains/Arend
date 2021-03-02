@@ -207,7 +207,10 @@ public class ModuleDeserialization {
     switch (kind) {
       case CLASS: return GlobalReferable.Kind.CLASS;
       case DATA: return GlobalReferable.Kind.DATA;
-      case FUNCTION: return defProto.getFunction().getIsInstance() ? GlobalReferable.Kind.INSTANCE : GlobalReferable.Kind.FUNCTION;
+      case FUNCTION: {
+        var fKind = defProto.getFunction().getKind();
+        return fKind == DefinitionProtos.Definition.FunctionKind.INSTANCE ? GlobalReferable.Kind.INSTANCE : fKind == DefinitionProtos.Definition.FunctionKind.COCLAUSE || fKind == DefinitionProtos.Definition.FunctionKind.COCLAUSE_LEMMA ? GlobalReferable.Kind.COCLAUSE_FUNCTION : GlobalReferable.Kind.FUNCTION;
+      }
       case CONSTRUCTOR: return GlobalReferable.Kind.DEFINED_CONSTRUCTOR;
       default: return GlobalReferable.Kind.OTHER;
     }

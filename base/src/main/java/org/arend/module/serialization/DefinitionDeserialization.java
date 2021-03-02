@@ -420,7 +420,7 @@ public class DefinitionDeserialization implements ArendDeserializer {
     }
     FunctionDefinition.Kind kind;
     switch (functionProto.getKind()) {
-      case LEMMA:
+      case LEMMA: case COCLAUSE_LEMMA:
         kind = CoreFunctionDefinition.Kind.LEMMA;
         break;
       case SFUNC:

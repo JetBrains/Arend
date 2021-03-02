@@ -402,4 +402,17 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
     ClassField fieldA = (ClassField) getDefinition("E.A");
     assertEquals(classE.getClassifyingField(), fieldA);
   }
+
+  @Test
+  public void coClauseTest() {
+    typeCheckModule(
+      "\\class C (X : \\Type) | x : X\n" +
+      "\\record R | f : Nat -> Nat\n" +
+      "\\func test : R \\cowith\n" +
+      "  | f (n : Nat) : Nat \\with {\n" +
+      "    | 0 => x\n" +
+      "    | suc n => n\n" +
+      "}\n" +
+      "  \\where \\instance inst => \\new C Nat 0");
+  }
 }

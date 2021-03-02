@@ -21,6 +21,10 @@ public class SimpleInstanceProvider implements InstanceProvider {
     myInstances.add(instance);
   }
 
+  public boolean isEmpty() {
+    return myInstances.isEmpty();
+  }
+
   @Override
   public TCDefReferable findInstance(Predicate<TCDefReferable> pred) {
     for (TCDefReferable instance : myInstances) {
