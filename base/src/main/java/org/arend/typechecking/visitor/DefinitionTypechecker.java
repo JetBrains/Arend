@@ -1175,7 +1175,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             classifyingExpr = classifyingExpr.normalize(NormalizationMode.WHNF);
           }
 
-          boolean ok = classifyingExpr == null || classifyingExpr instanceof ErrorExpression || classifyingExpr instanceof DataCallExpression || classifyingExpr instanceof ConCallExpression || classifyingExpr instanceof ClassCallExpression || classifyingExpr instanceof UniverseExpression && params.isEmpty() || classifyingExpr instanceof SigmaExpression && params.isEmpty() || classifyingExpr instanceof IntegerExpression && params.isEmpty();
+          boolean ok = classifyingExpr == null || classifyingExpr instanceof ErrorExpression || classifyingExpr instanceof DataCallExpression || classifyingExpr instanceof ConCallExpression || classifyingExpr instanceof ClassCallExpression || params.isEmpty() && (classifyingExpr instanceof UniverseExpression || classifyingExpr instanceof SigmaExpression || classifyingExpr instanceof PiExpression || classifyingExpr instanceof IntegerExpression);
           if (classifyingExpr instanceof ClassCallExpression) {
             Map<ClassField, Expression> implemented = ((ClassCallExpression) classifyingExpr).getImplementedHere();
             if (implemented.size() < params.size()) {
@@ -2695,29 +2695,40 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       return cmp;
     }
 
-    if (expr2 instanceof SigmaExpression) {
+    if (expr2 instanceof SigmaExpression || expr2 instanceof PiExpression) {
       int cmp = 0;
-      if (expr1 instanceof SigmaExpression && DependentLink.Helper.size(((SigmaExpression) expr1).getParameters()) == DependentLink.Helper.size(((SigmaExpression) expr2).getParameters())) {
-        for (DependentLink param1 = ((SigmaExpression) expr1).getParameters(), param2 = ((SigmaExpression) expr2).getParameters(); param1.hasNext(); param1 = param1.getNext(), param2 = param2.getNext()) {
-          int argCmp = compareExpressions(param1.getTypeExpr(), param2.getTypeExpr(), Type.OMEGA);
-          if (argCmp == 1) {
-            cmp = 1;
-            break;
+      if (expr1 instanceof SigmaExpression && expr2 instanceof SigmaExpression || expr1 instanceof PiExpression && expr2 instanceof PiExpression) {
+        DependentLink param1 = getExprParameters(expr1);
+        DependentLink param2 = getExprParameters(expr2);
+        if (DependentLink.Helper.size(param1) == DependentLink.Helper.size(param2)) {
+          for (; param1.hasNext(); param1 = param1.getNext(), param2 = param2.getNext()) {
+            int argCmp = compareExpressions(param1.getTypeExpr(), param2.getTypeExpr(), Type.OMEGA);
+            if (argCmp == 1) {
+              cmp = 1;
+              break;
+            }
+            if (argCmp == -1) {
+              cmp = -1;
+            }
           }
-          if (argCmp == -1) {
-            cmp = -1;
+          if (cmp != 1 && expr1 instanceof PiExpression) {
+            int codCmp = compareExpressions(((PiExpression) expr1).getCodomain(), ((PiExpression) expr2).getCodomain(), Type.OMEGA);
+            if (codCmp != 0) cmp = codCmp;
           }
-        }
-        if (cmp == -1) {
-          return -1;
+          if (cmp == -1) {
+            return -1;
+          }
         }
       }
 
-      for (DependentLink param = ((SigmaExpression) expr2).getParameters(); param.hasNext(); param = param.getNext()) {
+      for (DependentLink param = getExprParameters(expr2); param.hasNext(); param = param.getNext()) {
         param = param.getNextTyped(null);
-        if (compareExpressions(expr1, param.getTypeExpr(), null) != 1) {
+        if (compareExpressions(expr1, param.getTypeExpr(), Type.OMEGA) != 1) {
           return -1;
         }
+      }
+      if (expr2 instanceof PiExpression && compareExpressions(expr1, ((PiExpression) expr2).getCodomain(), Type.OMEGA) != 1) {
+        return -1;
       }
 
       return cmp;
@@ -2757,5 +2768,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     return Expression.compare(expr1, expr2, type, CMP.EQ) ? 0 : 1;
+  }
+
+  private static DependentLink getExprParameters(Expression expr) {
+    return expr instanceof SigmaExpression ? ((SigmaExpression) expr).getParameters() : expr instanceof PiExpression ? ((PiExpression) expr).getParameters() : null;
   }
 }
