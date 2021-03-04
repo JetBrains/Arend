@@ -23,6 +23,10 @@ public class InferenceReferenceExpression extends Expression implements CoreInfe
     }
 
     binding.setReference(this);
+    if (!binding.resetClassCall()) {
+      return;
+    }
+
     Expression type = binding.getType().normalize(NormalizationMode.WHNF);
     ClassCallExpression classCall = type.cast(ClassCallExpression.class);
     if (classCall != null && !classCall.getDefinition().getFields().isEmpty()) {

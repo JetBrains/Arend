@@ -14,6 +14,11 @@ public class ExpressionInferenceVariable extends InferenceVariable {
   }
 
   @Override
+  public boolean resetClassCall() {
+    return false;
+  }
+
+  @Override
   public LocalError getErrorInfer(Expression... candidates) {
     return new ArgInferenceError(ArgInferenceError.expression(), getSourceNode(), candidates);
   }

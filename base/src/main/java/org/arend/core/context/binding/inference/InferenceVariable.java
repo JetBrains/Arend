@@ -39,6 +39,10 @@ public abstract class InferenceVariable implements Variable, CoreInferenceVariab
     return myName;
   }
 
+  public boolean resetClassCall() {
+    return true;
+  }
+
   public Expression getType() {
     return myType;
   }
