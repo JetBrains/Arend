@@ -132,7 +132,7 @@ public class CorrespondedSubDefVisitor implements
             .map(coreDef::getImplementation);
         if (field.isEmpty()) continue;
         // The binding is `this` I believe
-        var accept = concrete.implementation.accept(visitor, field.get().getExpression());
+        var accept = concrete.implementation == null ? null : concrete.implementation.accept(visitor, field.get().getExpression());
         if (accept != null) return accept;
       }
     return null;
