@@ -42,7 +42,7 @@ public abstract class BaseCoreExpressionVisitor<P, R> implements CoreExpressionV
 
   @Override
   public R visitInferenceReference(@NotNull CoreInferenceReferenceExpression expr, P params) {
-    return visit(expr, params);
+    return expr.getSubstExpression() == null ? visit(expr, params) : expr.getSubstExpression().accept(this, params);
   }
 
   @Override
