@@ -353,6 +353,7 @@ public class ElimBindingVisitor extends ExpressionTransformer<Void> {
       if (newArg == null) {
         return null;
       }
+      newArgs.add(newArg);
     }
 
     ExprSubstitution substitution = new ExprSubstitution();
