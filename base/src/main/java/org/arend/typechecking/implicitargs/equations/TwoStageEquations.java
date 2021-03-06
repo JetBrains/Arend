@@ -541,8 +541,12 @@ public class TwoStageEquations implements Equations {
 
           for (Iterator<Map.Entry<ClassField, Expression>> iterator = implementations.entrySet().iterator(); iterator.hasNext(); ) {
             Map.Entry<ClassField, Expression> entry = iterator.next();
-            Expression other = bound.getAbsImplementationHere(entry.getKey());
-            if (other == null || !CompareVisitor.compare(wrapper, CMP.EQ, entry.getValue(), other, solution.getDefinition().getFieldType(entry.getKey(), solution.getSortArgument(), thisExpr), pair.proj1.getSourceNode())) {
+            boolean remove = !entry.getKey().isProperty();
+            if (remove) {
+              Expression other = bound.getAbsImplementationHere(entry.getKey());
+              remove = other == null || !CompareVisitor.compare(wrapper, CMP.EQ, entry.getValue(), other, solution.getDefinition().getFieldType(entry.getKey(), solution.getSortArgument(), thisExpr), pair.proj1.getSourceNode());
+            }
+            if (remove) {
               iterator.remove();
             }
           }

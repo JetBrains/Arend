@@ -198,6 +198,9 @@ public class UseTypechecking {
           strictList = new ArrayList<>();
           Expression thisExpr = new ReferenceExpression(classCallLink);
           for (ClassField classField : classCall.getDefinition().getFields()) {
+            if (classField.isProperty()) {
+              continue;
+            }
             Expression impl = classCall.getImplementationHere(classField, thisExpr);
             if (impl == null) {
               continue;

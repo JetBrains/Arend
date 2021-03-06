@@ -178,25 +178,25 @@ public class UseLevelTest extends TypeCheckingTestCase {
   @Test
   public void restrictedClassInCaseTest() {
     typeCheckModule(
-      "\\record A\n" +
+      "\\record A (x : Nat)\n" +
       "\\record B \\extends A\n" +
       "\\data D : \\Set\n" +
       "\\record C (a : A) (df : D)\n" +
       "  \\where \\use \\level isProp {b : B} (x y : C b) : x = y => path (\\lam i => \\new C b ((\\case x.df \\return x.df = y.df \\with {}) @ i))\n" +
       "\\data TrP (A : \\Type) | inP A | truncP (x y : TrP A) (i : I) \\elim i { | left => x | right => y }\n" +
-      "\\func f (d : D) (x : TrP Nat) : C (\\new B) => \\case x \\with { | inP _ => \\new C { | df => d } }");
+      "\\func f (d : D) (x : TrP Nat) : C (\\new B 0) => \\case x \\with { | inP _ => \\new C { | df => d } }");
   }
 
   @Test
   public void restrictedClassInCaseTestError() {
     typeCheckModule(
-      "\\record A\n" +
+      "\\record A (x : Nat)\n" +
       "\\record B \\extends A\n" +
       "\\data D : \\Set\n" +
       "\\record C (a : A) (df : D)\n" +
       "  \\where \\use \\level isProp {b : B} (x y : C b) : x = y => path (\\lam i => \\new C b ((\\case x.df \\return x.df = y.df \\with {}) @ i))\n" +
       "\\data TrP (A : \\Type) | inP A | truncP (x y : TrP A) (i : I) \\elim i { | left => x | right => y }\n" +
-      "\\func f (d : D) (x : TrP Nat) : C (\\new A) => \\case x \\with { | inP _ => \\new C { | df => d } }", 1);
+      "\\func f (d : D) (x : TrP Nat) : C (\\new A 0) => \\case x \\with { | inP _ => \\new C { | df => d } }", 1);
   }
 
   @Test
@@ -222,23 +222,23 @@ public class UseLevelTest extends TypeCheckingTestCase {
   @Test
   public void restrictedClassInLemmaTest() {
     typeCheckModule(
-      "\\record A\n" +
+      "\\record A (x : Nat)\n" +
       "\\record B \\extends A\n" +
       "\\data D : \\Set\n" +
       "\\record C (a : A) (df : D)\n" +
       "  \\where \\use \\level isProp {b : B} (x y : C b) : x = y => path (\\lam i => \\new C b ((\\case x.df \\return x.df = y.df \\with {}) @ i))\n" +
-      "\\lemma f (d : D) : C (\\new B) => \\new C { | df => d }");
+      "\\lemma f (d : D) : C (\\new B 0) => \\new C { | df => d }");
   }
 
   @Test
   public void restrictedClassInLemmaTestError() {
     typeCheckModule(
-      "\\record A\n" +
+      "\\record A (x : Nat)\n" +
       "\\record B \\extends A\n" +
       "\\data D : \\Set\n" +
       "\\record C (a : A) (df : D)\n" +
       "  \\where \\use \\level isProp {b : B} (x y : C b) : x = y => path (\\lam i => \\new C b ((\\case x.df \\return x.df = y.df \\with {}) @ i))\n" +
-      "\\lemma f (d : D) : C (\\new A) => \\new C { | df => d }", 1);
+      "\\lemma f (d : D) : C (\\new A 0) => \\new C { | df => d }", 1);
   }
 
   @Test
@@ -265,23 +265,23 @@ public class UseLevelTest extends TypeCheckingTestCase {
   @Test
   public void restrictedClassInPropertyTest() {
     typeCheckModule(
-      "\\record A\n" +
+      "\\record A (X : Nat)\n" +
       "\\record B \\extends A\n" +
       "\\data D : \\Set\n" +
       "\\record C (a : A) (df : D)\n" +
       "  \\where \\use \\level isProp {b : B} (x y : C b) : x = y => path (\\lam i => \\new C b ((\\case x.df \\return x.df = y.df \\with {}) @ i))\n" +
-      "\\record R { \\property prop : C (\\new B) }");
+      "\\record R { \\property prop : C (\\new B 0) }");
   }
 
   @Test
   public void restrictedClassInPropertyTestError() {
     typeCheckModule(
-      "\\record A\n" +
+      "\\record A (x : Nat)\n" +
       "\\record B \\extends A\n" +
       "\\data D : \\Set\n" +
       "\\record C (a : A) (df : D)\n" +
       "  \\where \\use \\level isProp {b : B} (x y : C b) : x = y => path (\\lam i => \\new C b ((\\case x.df \\return x.df = y.df \\with {}) @ i))\n" +
-      "\\record R { \\property prop : C (\\new A) }", 1);
+      "\\record R { \\property prop : C (\\new A 0) }", 1);
   }
 
   @Test

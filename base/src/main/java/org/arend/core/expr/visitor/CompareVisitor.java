@@ -174,6 +174,10 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       return myNormalCompare && myEquations.addEquation(expr1, expr2.subst(getSubstitution()), type, myCMP, stuckVar1 != null ? stuckVar1.getSourceNode() : stuckVar2.getSourceNode(), stuckVar1, stuckVar2);
     }
 
+    if (expr1 instanceof FieldCallExpression && ((FieldCallExpression) expr1).getDefinition().isProperty() && expr2 instanceof FieldCallExpression && ((FieldCallExpression) expr2).getDefinition().isProperty()) {
+      return true;
+    }
+
     boolean onlySolveVars = myOnlySolveVars;
     if (useType && myNormalCompare && !myOnlySolveVars) {
       Expression normType = type == null ? null : type.getUnderlyingExpression();
