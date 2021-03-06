@@ -153,4 +153,11 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> {
     myClassCallNumber--;
     return expr;
   }
+
+  @Override
+  protected void visitClassFieldImpl(Concrete.ClassFieldImpl classFieldImpl, Void params) {
+    if (!(classFieldImpl instanceof Concrete.CoClauseFunctionReference)) {
+      super.visitClassFieldImpl(classFieldImpl, params);
+    }
+  }
 }

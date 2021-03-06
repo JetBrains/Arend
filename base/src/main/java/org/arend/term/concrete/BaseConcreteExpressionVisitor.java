@@ -180,7 +180,7 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
     return expr;
   }
 
-  private void visitClassFieldImpl(Concrete.ClassFieldImpl classFieldImpl, P params) {
+  protected void visitClassFieldImpl(Concrete.ClassFieldImpl classFieldImpl, P params) {
     if (classFieldImpl.implementation != null) {
       classFieldImpl.implementation = classFieldImpl.implementation.accept(this, params);
     }

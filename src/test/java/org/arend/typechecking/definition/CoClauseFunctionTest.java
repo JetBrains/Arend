@@ -308,4 +308,17 @@ public class CoClauseFunctionTest extends TypeCheckingTestCase {
       "    | suc n, b => f {B} {0} n b\n" +
       "  }");
   }
+
+  @Test
+  public void dynamicTest() {
+    typeCheckModule(
+      "\\record R (x : Nat)\n" +
+      "\\record S (r : R)\n" +
+      "\\record T {\n" +
+      "  \\func foo : S \\cowith\n" +
+      "    | r : R \\cowith {\n" +
+      "      | x => 0\n" +
+      "    }\n" +
+      "}");
+  }
 }

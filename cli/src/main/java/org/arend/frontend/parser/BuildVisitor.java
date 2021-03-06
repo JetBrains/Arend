@@ -473,7 +473,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
 
     Concrete.FunctionDefinition funcDef = new Concrete.FunctionDefinition(isInstance ? FunctionKind.INSTANCE : FunctionKind.CONS, reference, parameters, returnPair.proj1, returnPair.proj2, body);
     if (coClauses != null) {
-      visitCoClauses(coClauses, subgroups, resultGroup, reference, body.getCoClauseElements());
+      visitCoClauses(coClauses, subgroups, resultGroup, reference, enclosingClass, body.getCoClauseElements());
     }
     funcDef.enclosingClass = enclosingClass;
     reference.setDefinition(funcDef);
@@ -491,9 +491,9 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     throw new IllegalStateException();
   }
 
-  private void visitCoClauses(List<CoClauseContext> coClausesCtx, List<Group> subgroups, ChildGroup parentGroup, TCDefReferable enclosingDefinition, List<Concrete.CoClauseElement> result) {
+  private void visitCoClauses(List<CoClauseContext> coClausesCtx, List<Group> subgroups, ChildGroup parentGroup, TCDefReferable enclosingDefinition, TCDefReferable enclosingClass, List<Concrete.CoClauseElement> result) {
     for (CoClauseContext coClause : coClausesCtx) {
-      result.add(visitCoClause(coClause, subgroups, parentGroup, null, enclosingDefinition, false));
+      result.add(visitCoClause(coClause, subgroups, parentGroup, enclosingClass, enclosingDefinition, false));
     }
   }
 
@@ -617,7 +617,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
           : FunctionKind.FUNC,
         referable, visitLamTeles(ctx.tele(), true), returnPair.proj1, returnPair.proj2, body, parent.getReferable());
       if (coClauses != null) {
-        visitCoClauses(coClauses, subgroups, resultGroup, referable, body.getCoClauseElements());
+        visitCoClauses(coClauses, subgroups, resultGroup, referable, enclosingClass, body.getCoClauseElements());
       }
       if (isUse && !funDef.getKind().isUse()) {
         myErrorReporter.report(new ParserError(tokenPosition(ctx.funcKw().start), "\\use is not allowed on the top level"));
@@ -1165,7 +1165,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
         } else if (defBody instanceof CoClauseCowithContext) {
           List<CoClauseContext> coClauses = getCoClauses(((CoClauseCowithContext) defBody).coClauses());
           fBody = new Concrete.CoelimFunctionBody(tokenPosition(defBody.start), new ArrayList<>());
-          visitCoClauses(coClauses, subgroups, myGroup, reference, fBody.getCoClauseElements());
+          visitCoClauses(coClauses, subgroups, myGroup, reference, enclosingClass, fBody.getCoClauseElements());
         } else {
           throw new IllegalStateException();
         }
