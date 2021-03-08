@@ -7,7 +7,6 @@ import org.arend.core.elimtree.ElimClause;
 import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.pattern.Pattern;
 import org.arend.core.subst.UnfoldVisitor;
-import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.ext.core.expr.*;
 import org.arend.ext.variable.Variable;
 import org.arend.core.context.binding.inference.InferenceVariable;
@@ -208,7 +207,7 @@ public abstract class Expression implements Body, CoreExpression {
   }
 
   @Override
-  public @NotNull CoreExpression unfold(@NotNull Set<? extends CoreDefinition> functions, @Nullable Set<CoreDefinition> unfolded, boolean unfoldLet, boolean unfoldFields) {
+  public @NotNull CoreExpression unfold(@NotNull Set<? extends Variable> functions, @Nullable Set<Variable> unfolded, boolean unfoldLet, boolean unfoldFields) {
     return functions.isEmpty() && !unfoldLet && !unfoldFields ? this : accept(new UnfoldVisitor(functions, unfolded, unfoldLet, unfoldFields), null);
   }
 

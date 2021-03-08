@@ -1,22 +1,23 @@
 package org.arend.core.subst;
 
+import org.arend.core.context.binding.EvaluatingBinding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.HaveClause;
-import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.ext.variable.Variable;
 
 import java.util.Set;
 
 public class UnfoldVisitor extends SubstVisitor {
-  private final Set<? extends CoreDefinition> myDefinitions;
-  private final Set<CoreDefinition> myUnfolded;
+  private final Set<? extends Variable> myVariables;
+  private final Set<Variable> myUnfolded;
   private final boolean myUnfoldLet;
   private final boolean myUnfoldFields;
 
-  public UnfoldVisitor(Set<? extends CoreDefinition> definitions, Set<CoreDefinition> unfolded, boolean unfoldLet, boolean unfoldFields) {
+  public UnfoldVisitor(Set<? extends Variable> variables, Set<Variable> unfolded, boolean unfoldLet, boolean unfoldFields) {
     super(new ExprSubstitution(), LevelSubstitution.EMPTY);
-    myDefinitions = definitions;
+    myVariables = variables;
     myUnfolded = unfolded;
     myUnfoldLet = unfoldLet;
     myUnfoldFields = unfoldFields;
@@ -24,12 +25,22 @@ public class UnfoldVisitor extends SubstVisitor {
 
   @Override
   public boolean isEmpty() {
-    return !myUnfoldLet && !myUnfoldFields && myDefinitions.isEmpty() && super.isEmpty();
+    return !myUnfoldLet && !myUnfoldFields && myVariables.isEmpty() && super.isEmpty();
+  }
+
+  @Override
+  public Expression visitReference(ReferenceExpression expr, Void params) {
+    if (expr.getBinding() instanceof EvaluatingBinding && myVariables.contains(expr.getBinding())) {
+      myUnfolded.add(expr.getBinding());
+      return ((EvaluatingBinding) expr.getBinding()).getExpression();
+    } else {
+      return super.visitReference(expr, params);
+    }
   }
 
   @Override
   public Expression visitFunCall(FunCallExpression expr, Void params) {
-    if (expr.getDefinition().getBody() instanceof Expression && myDefinitions.contains(expr.getDefinition())) {
+    if (expr.getDefinition().getBody() instanceof Expression && myVariables.contains(expr.getDefinition())) {
       if (myUnfolded != null) {
         myUnfolded.add(expr.getDefinition());
       }
@@ -49,7 +60,7 @@ public class UnfoldVisitor extends SubstVisitor {
 
   @Override
   public Expression visitFieldCall(FieldCallExpression expr, Void params) {
-    if (!expr.getDefinition().isProperty() && (myUnfoldFields || myDefinitions.contains(expr.getDefinition()))) {
+    if (!expr.getDefinition().isProperty() && (myUnfoldFields || myVariables.contains(expr.getDefinition()))) {
       Expression type = expr.getArgument().getType();
       ClassCallExpression classCall = type == null ? null : type.normalize(NormalizationMode.WHNF).cast(ClassCallExpression.class);
       if (classCall != null) {

@@ -779,6 +779,9 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
     deferredMetas.clear();
     myCurrentStage = null;
+    if (stage != Stage.AFTER_LEVELS) {
+      myEquations.solveEquations();
+    }
   }
 
   public TypecheckingResult finalize(TypecheckingResult result, Concrete.SourceNode sourceNode, boolean propIfPossible) {
@@ -787,7 +790,6 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
 
     invokeDeferredMetas(null, null, Stage.BEFORE_SOLVER);
-    myEquations.solveEquations();
     invokeDeferredMetas(null, null, Stage.BEFORE_LEVELS);
     LevelEquationsSolver levelSolver = myEquations.makeLevelEquationsSolver();
     if (propIfPossible) {
@@ -876,7 +878,6 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     Type result = checkType(expr, expectedType);
     if (result == null) return null;
     invokeDeferredMetas(null, null, Stage.BEFORE_SOLVER);
-    myEquations.solveEquations();
     invokeDeferredMetas(null, null, Stage.BEFORE_LEVELS);
     LevelEquationsSolver levelSolver = myEquations.makeLevelEquationsSolver();
     if (propIfPossible) {
@@ -2340,7 +2341,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   @Nullable
   @Override
   public TypedExpression defer(@NotNull MetaDefinition meta, @NotNull ContextData contextData, @NotNull CoreExpression type, @NotNull Stage stage) {
-    if (myCurrentStage != null && myCurrentStage.ordinal() >= stage.ordinal()) {
+    if (myCurrentStage == Stage.AFTER_LEVELS) {
       if (stage.ordinal() > Stage.BEFORE_SOLVER.ordinal()) {
         myEquations.solveEquations();
       }

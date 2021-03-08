@@ -1,10 +1,10 @@
 package org.arend.ext.core.expr;
 
 import org.arend.ext.core.context.CoreBinding;
-import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.ExpressionMapper;
 import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.ext.variable.Variable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -34,14 +34,14 @@ public interface UncheckedExpression {
   @NotNull UncheckedExpression normalize(@NotNull NormalizationMode mode);
 
   /**
-   * Unfolds all occurrences of given functions in this expression.
+   * Unfolds all occurrences of given functions, fields, and variables in this expression.
    *
-   * @param definitions a set of functions and fields to unfold.
-   * @param unfolded    definitions that are actually unfolded will be added to this set.
-   * @param unfoldLet   unfolds \\let expressions if {@code true}.
+   * @param variables     a set of functions, fields, and variables to unfold.
+   * @param unfolded      variables that are actually unfolded will be added to this set.
+   * @param unfoldLet     unfolds \\let expressions if {@code true}.
    * @param unfoldFields  unfolds all fields if {@code true}.
    */
-  @NotNull UncheckedExpression unfold(@NotNull Set<? extends CoreDefinition> definitions, @Nullable Set<CoreDefinition> unfolded, boolean unfoldLet, boolean unfoldFields);
+  @NotNull UncheckedExpression unfold(@NotNull Set<? extends Variable> variables, @Nullable Set<Variable> unfolded, boolean unfoldLet, boolean unfoldFields);
 
   /**
    * Constructs a new expression replacing some subexpressions according to the mapper.

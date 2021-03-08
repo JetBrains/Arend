@@ -3,12 +3,11 @@ package org.arend.ext.core.expr;
 import org.arend.ext.core.body.CoreBody;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.context.CoreParameter;
-import org.arend.ext.core.definition.CoreDefinition;
-import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.prettyprinting.PrettyPrintable;
 import org.arend.ext.typechecking.TypedExpression;
+import org.arend.ext.variable.Variable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -45,14 +44,14 @@ public interface CoreExpression extends CoreBody, UncheckedExpression, Abstracte
   @Override @NotNull CoreExpression normalize(@NotNull NormalizationMode mode);
 
   /**
-   * Unfolds all occurrences of given functions and fields in this expression.
+   * Unfolds all occurrences of given functions, fields, and variables in this expression.
    *
-   * @param definitions   a set of functions and fields to unfold.
-   * @param unfolded      definitions that are actually unfolded will be added to this set.
+   * @param variables     a set of functions, fields, and variables to unfold.
+   * @param unfolded      variables that are actually unfolded will be added to this set.
    * @param unfoldLet     unfolds \let expressions if {@code true}.
    * @param unfoldFields  unfolds all fields if {@code true}.
    */
-  @Override @NotNull CoreExpression unfold(@NotNull Set<? extends CoreDefinition> definitions, @Nullable Set<CoreDefinition> unfolded, boolean unfoldLet, boolean unfoldFields);
+  @Override @NotNull CoreExpression unfold(@NotNull Set<? extends Variable> variables, @Nullable Set<Variable> unfolded, boolean unfoldLet, boolean unfoldFields);
 
   /**
    * Removes pi parameters and returns the codomain.
