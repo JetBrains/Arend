@@ -1042,10 +1042,11 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           AbsExpression impl = baseClass.getDefault(field);
           if (impl == null || notDefault.contains(field)) return false;
           Set<ClassField> dependencies = baseClass.getDefaultImplDependencies().get(field);
-          if (dependencies == null) return true;
-          for (ClassField dependency : dependencies) {
-            Boolean ok = visit(dependency);
-            if (ok == null || !ok) return false;
+          if (dependencies != null) {
+            for (ClassField dependency : dependencies) {
+              Boolean ok = visit(dependency);
+              if (ok == null || !ok) return false;
+            }
           }
           defaults.put(field, impl);
           return true;
