@@ -704,7 +704,12 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       if (clause instanceof LetClause) {
         isHave = false;
       }
-      Concrete.LetClausePattern pattern = makeLetClausePattern(clause.getPattern());
+      Concrete.LetClausePattern pattern;
+      if (clause.getPattern().getName() != null) {
+        pattern = new Concrete.LetClausePattern(makeLocalReference(clause, myFreeVariablesCollector.getFreeVariables(clause), false), (Concrete.Expression) null);
+      } else {
+        pattern = makeLetClausePattern(clause.getPattern());
+      }
       if (pattern == null) {
         Referable referable = makeLocalReference(clause, myFreeVariablesCollector.getFreeVariables(clause), false);
         if (referable != null) {

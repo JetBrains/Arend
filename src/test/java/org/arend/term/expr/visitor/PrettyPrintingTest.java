@@ -263,4 +263,18 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
       "\\func test => ((nil :: 2) :: 1) :: 0");
     assertEquals("nil :: 2 :: 1 :: 0", printTestExpr());
   }
+
+  @Test
+  public void letTest() {
+    String expr = "\n  \\let x => 0\n  \\in x";
+    typeCheckModule("\\func test =>" + expr);
+    assertEquals(expr, printTestExpr());
+  }
+
+  @Test
+  public void letTest2() {
+    String expr = "\n  \\let (x, y) => (0, 1)\n  \\in (x, y)";
+    typeCheckModule("\\func test =>" + expr);
+    assertEquals(expr, printTestExpr());
+  }
 }
