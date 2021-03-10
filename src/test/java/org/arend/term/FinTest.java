@@ -289,4 +289,10 @@ public class FinTest extends TypeCheckingTestCase {
   public void finSort() {
     assertEquals(Sort.SET0, Prelude.FIN.getSort());
   }
+
+  @Test
+  public void coverageTest() {
+    typeCheckDef("\\func test (x : Nat) (y : Fin x) (z : Fin y) : Nat", 1);
+    assertThatErrorsAre(Matchers.missingClauses(2));
+  }
 }

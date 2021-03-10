@@ -159,7 +159,14 @@ public class ExpressionMatcher {
       if (matchResult.pattern.getBinding() != null) {
         conSubst.add(matchResult.binding, expr);
       }
-      if (!(expr instanceof ReferenceExpression)) {
+      boolean isRef = expr instanceof ReferenceExpression;
+      if (isRef && (matchResult.pattern.getDefinition() == Prelude.ZERO || matchResult.pattern.getDefinition() == Prelude.SUC)) {
+        Expression type = expr.computeType().normalize(NormalizationMode.WHNF);
+        if (type instanceof DataCallExpression && ((DataCallExpression) type).getDefinition() == Prelude.FIN) {
+          isRef = false;
+        }
+      }
+      if (!isRef) {
         if (matchResult.pattern.getBinding() != null) {
           continue;
         }
