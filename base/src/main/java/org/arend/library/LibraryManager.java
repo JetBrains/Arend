@@ -176,10 +176,13 @@ public class LibraryManager {
    * @return the loaded library if loading succeeded, null otherwise.
    */
   public Library loadDependency(Library library, String dependencyName, TypecheckingOrderingListener typechecking) {
-    Library dependency = myLibraryResolver.resolve(library, dependencyName);
+    Library dependency = getRegisteredLibrary(dependencyName);
     if (dependency == null) {
-      showLibraryNotFoundError(dependencyName);
-      return null;
+      dependency = myLibraryResolver.resolve(library, dependencyName);
+      if (dependency == null) {
+        showLibraryNotFoundError(dependencyName);
+        return null;
+      }
     }
 
     return loadLibrary(dependency, typechecking) ? dependency : null;
