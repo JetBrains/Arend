@@ -13,6 +13,6 @@ public interface ChildGroup extends Group {
   @NotNull
   default Scope getGroupScope() {
     ChildGroup parent = getParentGroup();
-    return parent == null ? ScopeFactory.forGroup(this, EmptyModuleScopeProvider.INSTANCE) : LexicalScope.insideOf(this, parent.getGroupScope());
+    return parent == null ? ScopeFactory.forGroup(this, EmptyModuleScopeProvider.INSTANCE) : LexicalScope.insideOf(this, parent.getGroupScope(), LexicalScope.Extent.EXTERNAL_AND_FIELDS);
   }
 }

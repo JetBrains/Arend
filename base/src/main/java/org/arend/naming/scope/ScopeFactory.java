@@ -45,7 +45,8 @@ public class ScopeFactory {
   }
 
   public static @NotNull Scope forGroup(@Nullable Group group, @NotNull ModuleScopeProvider moduleScopeProvider, boolean prelude) {
-    return LexicalScope.insideOf(group, parentScopeForGroup(group, moduleScopeProvider, prelude));
+    Scope parent = parentScopeForGroup(group, moduleScopeProvider, prelude);
+    return group == null ? parent : LexicalScope.insideOf(group, parent, LexicalScope.Extent.EXTERNAL_AND_FIELDS);
   }
 
   public static boolean isGlobalScopeVisible(Abstract.SourceNode sourceNode) {

@@ -44,7 +44,9 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   };
 
   public TCReferable get(String path) {
-    return get(lastGroup.getGroupScope(), path);
+    ChildGroup parent = lastGroup.getParentGroup();
+    Scope scope = parent == null ? LexicalScope.insideOf(lastGroup, EmptyScope.INSTANCE, LexicalScope.Extent.EXTERNAL_AND_FIELDS) : LexicalScope.insideOf(lastGroup, parent.getGroupScope());
+    return get(scope, path);
   }
 
   public Concrete.ReferableDefinition getConcrete(String path) {
