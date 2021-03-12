@@ -121,6 +121,7 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
   }
 
   public boolean typecheckCollected(CollectingOrderingListener collector, CancellationIndicator cancellationIndicator) {
+    if (collector.isEmpty()) return true;
     return run(cancellationIndicator, () -> {
       collector.feed(this);
       return true;

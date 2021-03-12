@@ -92,6 +92,20 @@ public class Ordering extends BellmanFord<Concrete.ResolvableDefinition> {
     }
   }
 
+  public void orderExpression(Concrete.Expression expr) {
+    Set<TCReferable> dependencies = new LinkedHashSet<>();
+    expr.accept(new CollectDefCallsVisitor(dependencies, true), null);
+    for (TCReferable dependency : dependencies) {
+      TCReferable typecheckable = dependency.getTypecheckable();
+      if (!typecheckable.isTypechecked()) {
+        var def = myConcreteProvider.getConcrete(typecheckable);
+        if (def instanceof Concrete.ResolvableDefinition && def.getStage() != Concrete.Stage.TYPECHECKED) {
+          order((Concrete.ResolvableDefinition) def);
+        }
+      }
+    }
+  }
+
   @Override
   public void order(Concrete.ResolvableDefinition definition) {
     if (definition.getStage() != Concrete.Stage.TYPECHECKED && getTypechecked(definition.getData()) == null) {

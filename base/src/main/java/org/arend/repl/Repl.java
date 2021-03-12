@@ -48,7 +48,7 @@ public abstract class Repl {
   private final TCDefReferable myModuleReferable;
   protected final ReplScope myReplScope = new ReplScope(null, myMergedScopes);
   protected @NotNull Scope myScope = myReplScope;
-  protected @NotNull TypecheckingOrderingListener myTypechecking;
+  protected @NotNull TypecheckingOrderingListener typechecking;
   protected final @NotNull PrettyPrinterConfig myPpConfig = new PrettyPrinterConfig() {
     @Contract(" -> new")
     @Override
@@ -76,7 +76,7 @@ public abstract class Repl {
               @NotNull TypecheckingOrderingListener typecheckingOrderingListener) {
     myErrorReporter = listErrorReporter;
     myLibraryManager = libraryManager;
-    myTypechecking = typecheckingOrderingListener;
+    typechecking = typecheckingOrderingListener;
     myModuleReferable = new LocatedReferableImpl(Precedence.DEFAULT, replModulePath.getLibraryName(), new FullModuleReferable(replModulePath), GlobalReferable.Kind.OTHER);
   }
 
@@ -115,7 +115,7 @@ public abstract class Repl {
   }
 
   protected final boolean typecheckLibrary(@NotNull Library library) {
-    return myTypechecking.typecheckLibrary(library);
+    return typechecking.typecheckLibrary(library);
   }
 
   @Contract(pure = true)
@@ -150,7 +150,7 @@ public abstract class Repl {
     var scope = ScopeFactory.forGroup(group, moduleScopeProvider);
     myReplScope.addScope(scope);
     myReplScope.setCurrentLineScope(null);
-    new DefinitionResolveNameVisitor(myTypechecking.getConcreteProvider(), null, myErrorReporter)
+    new DefinitionResolveNameVisitor(typechecking.getConcreteProvider(), null, myErrorReporter)
         .resolveGroupWithTypes(group, myScope);
     if (checkErrors()) {
       myMergedScopes.remove(scope);
@@ -160,7 +160,7 @@ public abstract class Repl {
   }
 
   protected void typecheckStatements(@NotNull Group group, @NotNull Scope scope) {
-    if (!myTypechecking.typecheckModules(Collections.singletonList(group), null)) {
+    if (!typechecking.typecheckModules(Collections.singletonList(group), null)) {
       checkErrors();
       var isRemoved = removeScope(scope);
       assert isRemoved;
@@ -169,11 +169,11 @@ public abstract class Repl {
   }
 
   protected void onScopeAdded(Group group) {
-    myTypechecking.getInstanceProviderSet().collectInstances(
+    typechecking.getInstanceProviderSet().collectInstances(
       group,
       myScope,
       myModuleReferable,
-      myTypechecking.getReferableConverter()
+      typechecking.getReferableConverter()
     );
   }
 
@@ -283,7 +283,7 @@ public abstract class Repl {
     expr = DesugarVisitor.desugar(expr, myErrorReporter);
     if (checkErrors()) return;
     var typechecker = new CheckTypeVisitor(myErrorReporter, null, null);
-    var instanceProvider = myTypechecking.getInstanceProviderSet().get(myModuleReferable);
+    var instanceProvider = typechecking.getInstanceProviderSet().get(myModuleReferable);
     var instancePool = new GlobalInstancePool(instanceProvider, typechecker);
     typechecker.setInstancePool(instancePool);
     var result = typechecker.finalCheckExpr(expr, expectedType);
@@ -299,7 +299,7 @@ public abstract class Repl {
     var expr = parseExpr(text);
     if (expr == null || checkErrors()) return null;
     expr = expr
-        .accept(new ExpressionResolveNameVisitor(myTypechecking.getReferableConverter(),
+        .accept(new ExpressionResolveNameVisitor(typechecking.getReferableConverter(),
             myScope, new ArrayList<>(), myErrorReporter, null), null)
         .accept(new SyntacticDesugarVisitor(myErrorReporter), null);
     if (checkErrors()) return null;

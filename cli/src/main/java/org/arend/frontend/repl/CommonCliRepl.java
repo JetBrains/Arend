@@ -254,7 +254,7 @@ public abstract class CommonCliRepl extends Repl {
    * @return false means type checking failed.
    */
   public final boolean loadLibrary(@NotNull Library library) {
-    if (!myLibraryManager.loadLibrary(library, myTypechecking)) return false;
+    if (!myLibraryManager.loadLibrary(library, typechecking)) return false;
     myLibraryManager.registerDependency(myReplLibrary, library);
     typecheckLibrary(library);
     return true;
@@ -265,7 +265,7 @@ public abstract class CommonCliRepl extends Repl {
     if (!loadLibrary(new PreludeResourceLibrary()))
       eprintln("[FATAL] Failed to load Prelude");
     else myReplScope.addPreludeScope(PreludeLibrary.getPreludeScope());
-    if (!myLibraryManager.loadLibrary(myReplLibrary, myTypechecking))
+    if (!myLibraryManager.loadLibrary(myReplLibrary, typechecking))
       eprintln("[FATAL] Failed to load the REPL virtual library");
     typecheckLibrary(myReplLibrary);
   }
@@ -277,7 +277,7 @@ public abstract class CommonCliRepl extends Repl {
   public final @Nullable Scope loadModule(@NotNull ModulePath modulePath) {
     if (myModules.add(modulePath))
       myLibraryManager.unloadLibrary(myReplLibrary);
-    myLibraryManager.loadLibrary(myReplLibrary, myTypechecking);
+    myLibraryManager.loadLibrary(myReplLibrary, typechecking);
     typecheckLibrary(myReplLibrary);
     return getAvailableModuleScopeProvider().forModule(modulePath);
   }
@@ -285,7 +285,7 @@ public abstract class CommonCliRepl extends Repl {
   public final void loadModules(Collection<@NotNull ModulePath> modulePaths) {
     if (myModules.addAll(modulePaths))
       myLibraryManager.unloadLibrary(myReplLibrary);
-    myLibraryManager.loadLibrary(myReplLibrary, myTypechecking);
+    myLibraryManager.loadLibrary(myReplLibrary, typechecking);
     typecheckLibrary(myReplLibrary);
   }
 
