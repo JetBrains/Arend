@@ -86,7 +86,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
         elems.add(new Concrete.BinOpSequenceElem(((Concrete.Argument) argument).expression));
         first = false;
       } else {
-        elems.add(new Concrete.BinOpSequenceElem(((Concrete.Argument) argument).expression, Fixity.NONFIX, argument.isExplicit()));
+        elems.add(new Concrete.BinOpSequenceElem(((Concrete.Argument) argument).expression, Fixity.UNKNOWN, argument.isExplicit()));
       }
     }
 
