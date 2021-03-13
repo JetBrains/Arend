@@ -91,7 +91,8 @@ public class ElimBody implements Body, CoreElimBody {
           if (!(type instanceof DataCallExpression)) {
             throw new IllegalArgumentException();
           }
-          Constructor constructor = (Constructor) key;
+          boolean isFin = ((DataCallExpression) type).getDefinition() == Prelude.FIN;
+          Constructor constructor = isFin && key == Prelude.ZERO ? Prelude.FIN_ZERO : isFin && key == Prelude.SUC ? Prelude.FIN_SUC : (Constructor) key;
           List<ConCallExpression> conCalls = new ArrayList<>(1);
           ((DataCallExpression) type).getMatchedConCall(constructor, conCalls);
           if (conCalls.isEmpty()) {
