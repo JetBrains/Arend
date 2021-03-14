@@ -17,7 +17,11 @@ import java.util.*;
 
 public class ScopeFactory {
   public static @NotNull Scope forGroup(@Nullable Group group, @NotNull ModuleScopeProvider moduleScopeProvider) {
-    return forGroup(group, moduleScopeProvider, true);
+    return forGroup(group, moduleScopeProvider, true, LexicalScope.Extent.EXTERNAL_AND_FIELDS);
+  }
+
+  public static @NotNull Scope forGroup(@Nullable Group group, @NotNull ModuleScopeProvider moduleScopeProvider, boolean prelude) {
+    return forGroup(group, moduleScopeProvider, prelude, LexicalScope.Extent.EXTERNAL_AND_FIELDS);
   }
 
   public static @NotNull Scope parentScopeForGroup(@Nullable Group group, @NotNull ModuleScopeProvider moduleScopeProvider, boolean prelude) {
@@ -39,14 +43,14 @@ public class ScopeFactory {
       ImportedScope importedScope = new ImportedScope(group, moduleScopeProvider);
       parentScope = preludeScope == null ? importedScope : new MergeScope(preludeScope, importedScope);
     } else {
-      parentScope = forGroup(parentGroup, moduleScopeProvider, prelude);
+      parentScope = forGroup(parentGroup, moduleScopeProvider, prelude, LexicalScope.Extent.EVERYTHING);
     }
     return parentScope;
   }
 
-  public static @NotNull Scope forGroup(@Nullable Group group, @NotNull ModuleScopeProvider moduleScopeProvider, boolean prelude) {
+  public static @NotNull Scope forGroup(@Nullable Group group, @NotNull ModuleScopeProvider moduleScopeProvider, boolean prelude, LexicalScope.Extent extent) {
     Scope parent = parentScopeForGroup(group, moduleScopeProvider, prelude);
-    return group == null ? parent : LexicalScope.insideOf(group, parent, LexicalScope.Extent.EXTERNAL_AND_FIELDS);
+    return group == null ? parent : LexicalScope.insideOf(group, parent, extent);
   }
 
   public static boolean isGlobalScopeVisible(Abstract.SourceNode sourceNode) {

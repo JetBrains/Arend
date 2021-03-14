@@ -2,10 +2,7 @@ package org.arend.term.group;
 
 import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.reference.LocatedReferable;
-import org.arend.naming.scope.CachingScope;
-import org.arend.naming.scope.EmptyScope;
-import org.arend.naming.scope.Scope;
-import org.arend.naming.scope.ScopeFactory;
+import org.arend.naming.scope.*;
 import org.arend.term.ChildNamespaceCommand;
 import org.jetbrains.annotations.NotNull;
 
@@ -27,7 +24,7 @@ public class FileGroup extends StaticGroup {
 
   @NotNull
   @Override
-  public Scope getGroupScope() {
+  public Scope getGroupScope(LexicalScope.Extent extent) {
     return myScope;
   }
 }
