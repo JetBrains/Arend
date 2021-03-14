@@ -1081,7 +1081,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         for (Pair<Definition, Concrete.ClassFieldImpl> pair : implementations) {
           if (pair.proj1 instanceof ClassField) {
             ClassField field = (ClassField) pair.proj1;
-            TypecheckingResult implResult = typecheckImplementation(field, pair.proj2.implementation, resultClassCall);
+            TypecheckingResult implResult = typecheckImplementation(field, pair.proj2.implementation, resultClassCall, !(pair.proj2 instanceof Concrete.CoClauseFunctionReference));
             if (implResult != null) {
               Expression oldImpl = null;
               if (!field.isProperty()) {
@@ -1165,7 +1165,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
   }
 
-  private TypecheckingResult typecheckImplementation(ClassField field, Concrete.Expression implBody, ClassCallExpression fieldSetClass) {
+  private TypecheckingResult typecheckImplementation(ClassField field, Concrete.Expression implBody, ClassCallExpression fieldSetClass, boolean addImplicitLambdas) {
     Expression type = fieldSetClass.getDefinition().getFieldType(field, fieldSetClass.getSortArgument(), new ReferenceExpression(fieldSetClass.getThisBinding()));
 
     // Expression type = FieldCallExpression.make(field, fieldSetClass.getSortArgument(), new ReferenceExpression(fieldSetClass.getThisBinding())).getType();
@@ -1194,12 +1194,32 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     if (field.isProperty()) {
       setCaseLevel(implBody, -1);
     }
+
+    if (addImplicitLambdas) {
+      implBody = addImplicitLamParams(implBody, type);
+    }
+
     TypecheckingResult result = fieldSetClass.getDefinition().isGoodField(field) ? checkArgument(implBody, type, null) : checkExpr(implBody, type);
     if (result == null) {
       return null;
     }
     result.type = type;
     return result;
+  }
+
+  static Concrete.Expression addImplicitLamParams(Concrete.Expression expr, Expression type) {
+    if (!(expr instanceof Concrete.LamExpression)) {
+      List<SingleDependentLink> params = new ArrayList<>();
+      type.getPiParameters(params, true);
+      if (!params.isEmpty()) {
+        List<Concrete.Parameter> lamParams = new ArrayList<>(params.size());
+        for (SingleDependentLink ignored : params) {
+          lamParams.add(new Concrete.NameParameter(expr.getData(), false, null));
+        }
+        return new Concrete.LamExpression(expr.getData(), lamParams, expr);
+      }
+    }
+    return expr;
   }
 
   @Override
