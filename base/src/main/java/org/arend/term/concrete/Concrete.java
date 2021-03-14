@@ -3,6 +3,10 @@ package org.arend.term.concrete;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.ext.concrete.*;
 import org.arend.ext.concrete.expr.*;
+import org.arend.ext.concrete.pattern.ConcreteConstructorPattern;
+import org.arend.ext.concrete.pattern.ConcreteNumberPattern;
+import org.arend.ext.concrete.pattern.ConcretePattern;
+import org.arend.ext.concrete.pattern.ConcreteReferencePattern;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.error.LocalError;
 import org.arend.ext.module.LongName;
@@ -2341,6 +2345,7 @@ public final class Concrete {
       myAsReferables = asReferables;
     }
 
+    @Override
     public boolean isExplicit() {
       return myExplicit;
     }
@@ -2380,7 +2385,7 @@ public final class Concrete {
       myAsReferables = asReferables;
     }
 
-    public List<? extends Pattern> getPatterns() {
+    public @NotNull List<? extends Pattern> getPatterns() {
       return Collections.emptyList();
     }
   }
@@ -2407,7 +2412,7 @@ public final class Concrete {
     }
   }
 
-  public static class NamePattern extends Pattern {
+  public static class NamePattern extends Pattern implements ConcreteReferencePattern {
     private @Nullable Referable myReferable;
     public @Nullable Expression type;
 
@@ -2416,6 +2421,11 @@ public final class Concrete {
       setExplicit(isExplicit);
       myReferable = referable;
       this.type = type;
+    }
+
+    @Override
+    public @Nullable Referable getRef() {
+      return myReferable;
     }
 
     @Nullable
@@ -2455,7 +2465,7 @@ public final class Concrete {
     }
   }
 
-  public static class ConstructorPattern extends Pattern implements PatternHolder {
+  public static class ConstructorPattern extends Pattern implements PatternHolder, ConcreteConstructorPattern {
     private Referable myConstructor;
     private final List<Pattern> myArguments;
 
@@ -2472,6 +2482,7 @@ public final class Concrete {
       myArguments = arguments;
     }
 
+    @Override
     @NotNull
     public Referable getConstructor() {
       return myConstructor;
@@ -2513,7 +2524,7 @@ public final class Concrete {
     }
 
     @Override
-    public List<Pattern> getPatterns() {
+    public @NotNull List<Pattern> getPatterns() {
       return myPatterns;
     }
 

@@ -1,9 +1,9 @@
 package org.arend.ext.typechecking;
 
 import org.arend.ext.FreeBindingsModifier;
-import org.arend.ext.concrete.ConcreteNumberPattern;
+import org.arend.ext.concrete.pattern.ConcreteNumberPattern;
 import org.arend.ext.concrete.ConcreteParameter;
-import org.arend.ext.concrete.ConcretePattern;
+import org.arend.ext.concrete.pattern.ConcretePattern;
 import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.concrete.expr.ConcreteLamExpression;

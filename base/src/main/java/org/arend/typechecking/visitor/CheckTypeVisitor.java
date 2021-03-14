@@ -23,9 +23,9 @@ import org.arend.core.subst.SubstVisitor;
 import org.arend.error.*;
 import org.arend.ext.ArendExtension;
 import org.arend.ext.FreeBindingsModifier;
-import org.arend.ext.concrete.ConcreteNumberPattern;
+import org.arend.ext.concrete.pattern.ConcreteNumberPattern;
 import org.arend.ext.concrete.ConcreteParameter;
-import org.arend.ext.concrete.ConcretePattern;
+import org.arend.ext.concrete.pattern.ConcretePattern;
 import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.concrete.expr.ConcreteLamExpression;
@@ -441,8 +441,12 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         }
 
         List<String> names = new ArrayList<>();
+        DependentLink link1 = parameter;
         parameter = parameter.getNextTyped(names);
         single = ExpressionFactory.singleParams(parameter.isExplicit(), names, parameter.getType().subst(new SubstVisitor(substitution, LevelSubstitution.EMPTY)));
+        for (DependentLink link2 = single; link2.hasNext(); link1 = link1.getNext(), link2 = link2.getNext()) {
+          substitution.add(link1, new ReferenceExpression(link2));
+        }
         parameter = parameter.getNext();
       }
 
@@ -458,7 +462,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
     @Override
     public void subst(DependentLink param, Expression expr) {
-      substitution.add(param, expr);
+      substitution.subst(new ExprSubstitution(param, expr));
     }
   }
 

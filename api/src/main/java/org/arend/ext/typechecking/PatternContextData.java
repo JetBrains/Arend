@@ -1,6 +1,6 @@
 package org.arend.ext.typechecking;
 
-import org.arend.ext.concrete.ConcretePattern;
+import org.arend.ext.concrete.pattern.ConcretePattern;
 import org.jetbrains.annotations.NotNull;
 
 /**

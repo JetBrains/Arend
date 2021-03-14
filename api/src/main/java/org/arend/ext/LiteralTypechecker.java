@@ -1,10 +1,8 @@
 package org.arend.ext;
 
-import org.arend.ext.concrete.ConcreteNumberPattern;
-import org.arend.ext.concrete.ConcretePattern;
+import org.arend.ext.concrete.pattern.ConcreteNumberPattern;
+import org.arend.ext.concrete.pattern.ConcretePattern;
 import org.arend.ext.concrete.expr.ConcreteExpression;
-import org.arend.ext.concrete.expr.ConcreteNumberExpression;
-import org.arend.ext.core.body.CorePattern;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.typechecking.ContextData;
 import org.arend.ext.typechecking.ExpressionTypechecker;
