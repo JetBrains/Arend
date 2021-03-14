@@ -806,7 +806,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     boolean ok = true;
     for (Map.Entry<ClassField, AbsExpression> entry : classCall1.getDefinition().getImplemented()) {
       if (entry.getKey().getUniverseKind() != UniverseKind.NO_UNIVERSES && classCall2.getDefinition().getFields().contains(entry.getKey()) && !classCall2.isImplemented(entry.getKey())) {
-        Expression type = entry.getValue().apply(thisExpr, classCall1.getSortArgument()).getType();
+        Expression type = entry.getValue().apply(thisExpr, classCall1.getSortArgument()).normalize(NormalizationMode.WHNF).getType();
         if (type == null) {
           ok = false;
           break;
@@ -816,14 +816,14 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
         ok = compare(type, classCall1.getDefinition().getFieldType(entry.getKey(), classCall2.getSortArgument(), thisExpr), Type.OMEGA, false);
         myCMP = origCmp;
         if (!ok) {
-          return false;
+          break;
         }
       }
     }
     if (ok) {
       for (Map.Entry<ClassField, Expression> entry : classCall1.getImplementedHere().entrySet()) {
         if (entry.getKey().getUniverseKind() != UniverseKind.NO_UNIVERSES && classCall2.getDefinition().getFields().contains(entry.getKey()) && !classCall2.isImplemented(entry.getKey())) {
-          Expression type = entry.getValue().getType();
+          Expression type = entry.getValue().normalize(NormalizationMode.WHNF).getType();
           if (type == null) {
             ok = false;
             break;
@@ -833,7 +833,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
           ok = compare(type, classCall1.getDefinition().getFieldType(entry.getKey(), classCall2.getSortArgument(), thisExpr), Type.OMEGA, false);
           myCMP = origCmp;
           if (!ok) {
-            return false;
+            break;
           }
         }
       }
