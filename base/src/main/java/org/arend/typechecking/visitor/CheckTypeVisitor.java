@@ -49,10 +49,7 @@ import org.arend.ext.prettyprinting.doc.DocFactory;
 import org.arend.ext.reference.ArendRef;
 import org.arend.ext.typechecking.*;
 import org.arend.ext.variable.Variable;
-import org.arend.extImpl.AbstractedDependentLinkType;
-import org.arend.extImpl.AbstractedExpressionImpl;
-import org.arend.extImpl.ContextDataImpl;
-import org.arend.extImpl.UncheckedExpressionImpl;
+import org.arend.extImpl.*;
 import org.arend.extImpl.userData.UserDataHolderImpl;
 import org.arend.naming.reference.*;
 import org.arend.naming.renamer.Renamer;
@@ -1236,8 +1233,8 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       type.getPiParameters(params, true);
       if (!params.isEmpty()) {
         List<Concrete.Parameter> lamParams = new ArrayList<>(params.size());
-        for (SingleDependentLink ignored : params) {
-          lamParams.add(new Concrete.NameParameter(expr.getData(), false, null));
+        for (SingleDependentLink param : params) {
+          lamParams.add(new Concrete.NameParameter(expr.getData(), false, new LocalReferable(VariableRenamerFactoryImpl.INSTANCE.getNameFromBinding(param, null))));
         }
         return new Concrete.LamExpression(expr.getData(), lamParams, expr);
       }
