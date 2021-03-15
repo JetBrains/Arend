@@ -894,7 +894,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     return result.strip(stripVisitor);
   }
 
-  public TypecheckingResult checkArgument(Concrete.Expression expr, Expression expectedType, TResult result) {
+  public TypecheckingResult checkArgument(Concrete.Expression expr, Expression expectedType, TResult result, InferenceVariable infVar) {
     Concrete.ThisExpression thisExpr = null;
     Binding binding = null;
     if (expr instanceof Concrete.ThisExpression) {
@@ -915,8 +915,38 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       }
     }
 
-    if (thisExpr != null && (result == null || result instanceof DefCallResult && ((DefCallResult) result).getDefinition().isGoodParameter(((DefCallResult) result).getArguments().size()))) {
-      return checkThisExpression(thisExpr, binding, expectedType, expr, 0);
+    if (thisExpr != null) {
+      boolean ok = result == null;
+      if (!ok) {
+        // if infVar != null, it is a deferred argument, so we must find its index in the list of arguments
+        if (infVar != null) {
+          Definition definition = null;
+          List<? extends Expression> args = Collections.emptyList();
+          if (result instanceof DefCallResult) {
+            definition = ((DefCallResult) result).getDefinition();
+            args = ((DefCallResult) result).getArguments();
+          } else if (result instanceof TypecheckingResult && ((TypecheckingResult) result).expression instanceof DefCallExpression) {
+            definition = ((DefCallExpression) ((TypecheckingResult) result).expression).getDefinition();
+            args = ((DefCallExpression) ((TypecheckingResult) result).expression).getDefCallArguments();
+          }
+          int index = -1;
+          for (int i = 0; i < args.size(); i++) {
+            Expression arg = args.get(i);
+            if (arg instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) arg).getVariable() == infVar) {
+              index = i;
+              break;
+            }
+          }
+          if (index != -1) {
+            ok = definition.isGoodParameter(index);
+          }
+        } else {
+          ok = result instanceof DefCallResult && ((DefCallResult) result).getDefinition().isGoodParameter(((DefCallResult) result).getArguments().size());
+        }
+      }
+      if (ok) {
+        return checkThisExpression(thisExpr, binding, expectedType, expr, 0);
+      }
     }
 
     return checkExpr(expr, expectedType);
@@ -1192,7 +1222,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       implBody = addImplicitLamParams(implBody, type);
     }
 
-    TypecheckingResult result = fieldSetClass.getDefinition().isGoodField(field) ? checkArgument(implBody, type, null) : checkExpr(implBody, type);
+    TypecheckingResult result = fieldSetClass.getDefinition().isGoodField(field) ? checkArgument(implBody, type, null, null) : checkExpr(implBody, type);
     if (result == null) {
       return null;
     }

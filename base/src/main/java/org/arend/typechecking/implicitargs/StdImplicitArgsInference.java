@@ -142,7 +142,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
       return null;
     }
     if (arg == null || result instanceof TypecheckingResult && ((TypecheckingResult) result).expression.isError()) {
-      myVisitor.checkArgument(arg, null, result);
+      myVisitor.checkArgument(arg, null, result, null);
       return result;
     }
 
@@ -155,7 +155,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
           Sort sort = defCallResult.getSortArgument().succ();
           result = result.applyExpression(new LamExpression(sort, lamParam, binding), true, myVisitor.getErrorReporter(), fun);
 
-          TypecheckingResult argResult = myVisitor.checkArgument(arg, new PiExpression(sort, lamParam, binding), result);
+          TypecheckingResult argResult = myVisitor.checkArgument(arg, new PiExpression(sort, lamParam, binding), result, null);
           if (argResult == null) {
             return null;
           }
@@ -184,7 +184,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
       return fixImplicitArgs(result, Collections.singletonList(param), fun, false, arg instanceof RecursiveInstanceHoleExpression ? (RecursiveInstanceHoleExpression) arg : null);
     }
 
-    TypecheckingResult argResult = myVisitor.checkArgument(arg, param.hasNext() ? param.getTypeExpr() : null, result);
+    TypecheckingResult argResult = myVisitor.checkArgument(arg, param.hasNext() ? param.getTypeExpr() : null, result, null);
     if (argResult == null) {
       return null;
     }
@@ -227,7 +227,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
   }
 
   private void typecheckDeferredArgument(Pair<InferenceVariable, Concrete.Expression> pair, TResult result) {
-    TypecheckingResult argResult = myVisitor.checkArgument(pair.proj2, pair.proj1.getType(), result);
+    TypecheckingResult argResult = myVisitor.checkArgument(pair.proj2, pair.proj1.getType(), result, pair.proj1);
     Expression argResultExpr = argResult == null ? new ErrorExpression() : argResult.expression;
     pair.proj1.solve(myVisitor, argResultExpr);
   }
