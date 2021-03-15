@@ -2,6 +2,7 @@ package org.arend.core.sort;
 
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
+import org.arend.ext.core.context.CoreInferenceVariable;
 import org.arend.term.prettyprint.ToAbstractVisitor;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.ext.core.level.CoreLevel;
@@ -69,6 +70,11 @@ public class Level implements CoreLevel {
   @Override
   public boolean isClosed() {
     return myVar == null;
+  }
+
+  @Override
+  public boolean hasInferenceVar() {
+    return myVar instanceof CoreInferenceVariable;
   }
 
   public boolean isProp() {

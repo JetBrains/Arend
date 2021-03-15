@@ -12,7 +12,6 @@ import java.util.Set;
 public class TypecheckerState {
   public final CheckTypeVisitor.MyErrorReporter errorReporter;
   public final int numberOfDeferredMetasBeforeSolver;
-  public final int numberOfDeferredMetasBeforeLevels;
   public final int numberOfDeferredMetasAfterLevels;
   public final TypecheckerState previousState;
   public final List<InferenceVariable> solvedVariables = new ArrayList<>();
@@ -24,10 +23,9 @@ public class TypecheckerState {
   public Set<InferenceVariable> notSolvableFromEquationsVars;
   public UserDataHolderImpl userDataHolder;
 
-  public TypecheckerState(CheckTypeVisitor.MyErrorReporter errorReporter, int numberOfDeferredMetasBeforeSolver, int numberOfDeferredMetasBeforeLevels, int numberOfDeferredMetasAfterLevels, UserDataHolderImpl userDataHolder, TypecheckerState previousState) {
+  public TypecheckerState(CheckTypeVisitor.MyErrorReporter errorReporter, int numberOfDeferredMetasBeforeSolver, int numberOfDeferredMetasAfterLevels, UserDataHolderImpl userDataHolder, TypecheckerState previousState) {
     this.errorReporter = errorReporter;
     this.numberOfDeferredMetasBeforeSolver = numberOfDeferredMetasBeforeSolver;
-    this.numberOfDeferredMetasBeforeLevels = numberOfDeferredMetasBeforeLevels;
     this.numberOfDeferredMetasAfterLevels = numberOfDeferredMetasAfterLevels;
     this.userDataHolder = userDataHolder;
     this.previousState = previousState;

@@ -17,14 +17,12 @@ public class TypecheckingContext {
   public final InstancePool localInstancePool;
   public final ArendExtension arendExtension;
   public final UserDataHolderImpl userDataHolder;
-  public final ExpressionTypechecker.Stage currentStage;
 
-  public TypecheckingContext(Map<Referable, Binding> localContext, InstanceProvider instanceProvider, InstancePool localInstancePool, ArendExtension arendExtension, UserDataHolderImpl userDataHolder, ExpressionTypechecker.Stage currentStage) {
+  public TypecheckingContext(Map<Referable, Binding> localContext, InstanceProvider instanceProvider, InstancePool localInstancePool, ArendExtension arendExtension, UserDataHolderImpl userDataHolder) {
     this.localContext = localContext;
     this.instanceProvider = instanceProvider;
     this.localInstancePool = localInstancePool;
     this.arendExtension = arendExtension;
     this.userDataHolder = userDataHolder;
-    this.currentStage = currentStage;
   }
 }

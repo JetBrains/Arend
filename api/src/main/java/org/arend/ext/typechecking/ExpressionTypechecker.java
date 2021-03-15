@@ -148,8 +148,6 @@ public interface ExpressionTypechecker extends UserDataHolder {
    */
   @Nullable CoreParameter substituteParameters(@NotNull CoreParameter parameters, @Nullable CoreSort sort, @NotNull List<? extends ConcreteExpression> arguments);
 
-  enum Stage { BEFORE_SOLVER, BEFORE_LEVELS, AFTER_LEVELS }
-
   /**
    * Defers the invocation of the given meta.
    * This might be useful if the meta definition fails because some inference variable are not inferred at the given time.
@@ -159,7 +157,7 @@ public interface ExpressionTypechecker extends UserDataHolder {
    * @param type          the type of the returned expression
    * @return              a typed expression which represents the deferred meta with {@code type} as its type
    */
-  @Nullable TypedExpression defer(@NotNull MetaDefinition meta, @NotNull ContextData contextData, @NotNull CoreExpression type, @NotNull Stage stage);
+  @Nullable TypedExpression defer(@NotNull MetaDefinition meta, @NotNull ContextData contextData, @NotNull CoreExpression type, boolean afterLevels);
 
   /**
    * Compares two expressions.

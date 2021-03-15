@@ -2,6 +2,7 @@ package org.arend.ext.core.expr;
 
 import org.arend.ext.core.body.CoreBody;
 import org.arend.ext.core.context.CoreBinding;
+import org.arend.ext.core.context.CoreInferenceVariable;
 import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
@@ -108,4 +109,9 @@ public interface CoreExpression extends CoreBody, UncheckedExpression, Abstracte
    * @return  an expression of the form {@code a = a'} equivalent to this one or {@code null} if there is no such expression.
    */
   @Nullable CoreFunCallExpression toEquality();
+
+  /**
+   * @return a subexpression on which this expression is stuck or {@code null} if there is no such subexpression.
+   */
+  @Nullable CoreExpression getStuckExpression();
 }

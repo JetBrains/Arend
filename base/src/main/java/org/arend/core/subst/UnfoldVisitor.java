@@ -7,6 +7,8 @@ import org.arend.core.expr.let.HaveClause;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.variable.Variable;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 public class UnfoldVisitor extends SubstVisitor {
@@ -44,12 +46,13 @@ public class UnfoldVisitor extends SubstVisitor {
       if (myUnfolded != null) {
         myUnfolded.add(expr.getDefinition());
       }
-      ExprSubstitution substitution = getExprSubstitution();
-      DependentLink param = expr.getDefinition().getParameters();
+      List<Expression> newArgs = new ArrayList<>(expr.getDefCallArguments().size());
       for (Expression argument : expr.getDefCallArguments()) {
-        substitution.add(param, argument.accept(this, null));
-        param = param.getNext();
+        newArgs.add(argument.accept(this, null));
       }
+
+      ExprSubstitution substitution = getExprSubstitution();
+      substitution.add(expr.getDefinition().getParameters(), newArgs);
       Expression result = ((Expression) expr.getDefinition().getBody()).accept(new SubstVisitor(substitution, expr.getSortArgument().toLevelSubstitution().subst(getLevelSubstitution())), null);
       DependentLink.Helper.freeSubsts(expr.getDefinition().getParameters(), substitution);
       return result;

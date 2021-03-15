@@ -558,6 +558,7 @@ public abstract class Expression implements Body, CoreExpression {
 
   // This function assumes that the expression is in a WHNF.
   // If the expression is a constructor, then the function returns null.
+  @Override
   public abstract Expression getStuckExpression();
 
   public InferenceVariable getStuckInferenceVariable() {

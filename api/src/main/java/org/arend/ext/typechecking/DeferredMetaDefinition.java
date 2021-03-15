@@ -12,17 +12,17 @@ import java.util.List;
  */
 public class DeferredMetaDefinition extends BaseMetaDefinition {
   private final boolean allowNotDeferred;
-  private final ExpressionTypechecker.Stage stage;
+  private final boolean afterLevels;
   public final MetaDefinition deferredMeta;
 
-  public DeferredMetaDefinition(MetaDefinition deferredMeta, boolean allowNotDeferred, ExpressionTypechecker.Stage stage) {
+  public DeferredMetaDefinition(MetaDefinition deferredMeta, boolean allowNotDeferred, boolean afterLevels) {
     this.deferredMeta = deferredMeta;
     this.allowNotDeferred = allowNotDeferred;
-    this.stage = stage;
+    this.afterLevels = afterLevels;
   }
 
   public DeferredMetaDefinition(MetaDefinition deferredMeta, boolean allowNotDeferred) {
-    this(deferredMeta, allowNotDeferred, ExpressionTypechecker.Stage.BEFORE_SOLVER);
+    this(deferredMeta, allowNotDeferred, false);
   }
 
   public DeferredMetaDefinition(MetaDefinition deferredMeta) {
@@ -47,6 +47,6 @@ public class DeferredMetaDefinition extends BaseMetaDefinition {
   @Override
   public @Nullable TypedExpression invokeMeta(@NotNull ExpressionTypechecker typechecker, @NotNull ContextData contextData) {
     CoreExpression expectedType = contextData.getExpectedType();
-    return expectedType == null ? deferredMeta.checkAndInvokeMeta(typechecker, contextData) : typechecker.defer(deferredMeta, contextData, expectedType, stage);
+    return expectedType == null ? deferredMeta.checkAndInvokeMeta(typechecker, contextData) : typechecker.defer(deferredMeta, contextData, expectedType, afterLevels);
   }
 }

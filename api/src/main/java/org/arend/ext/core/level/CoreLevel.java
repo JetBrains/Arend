@@ -5,4 +5,5 @@ public interface CoreLevel {
   int getMaxConstant();
   boolean isInfinity();
   boolean isClosed();
+  boolean hasInferenceVar();
 }
