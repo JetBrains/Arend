@@ -58,7 +58,7 @@ public class DefinableMetaDefinition extends Concrete.ResolvableDefinition imple
 
   @Override
   public boolean checkContextData(@NotNull ContextData contextData, @NotNull ErrorReporter errorReporter) {
-    return checkArguments(contextData.getArguments(), errorReporter, contextData.getReferenceExpression());
+    return checkArguments(contextData.getArguments(), errorReporter, contextData.getMarker());
   }
 
   @Override

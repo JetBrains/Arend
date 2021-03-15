@@ -128,9 +128,9 @@ public class ContextDataChecker {
     }
   }
 
-  protected boolean checkExpectedType(CoreExpression expectedType, ConcreteReferenceExpression refExpr, ErrorReporter errorReporter) {
+  protected boolean checkExpectedType(CoreExpression expectedType, ConcreteExpression marker, ErrorReporter errorReporter) {
     if (expectedType == null && requireExpectedType()) {
-      errorReporter.report(new TypecheckingError("Cannot infer the expected type", refExpr));
+      errorReporter.report(new TypecheckingError("Cannot infer the expected type", marker));
       return false;
     } else {
       return true;
@@ -139,11 +139,11 @@ public class ContextDataChecker {
 
   public boolean checkContextData(@NotNull ContextData contextData, @NotNull ErrorReporter errorReporter) {
     ConcreteReferenceExpression refExpr = contextData.getReferenceExpression();
-    checkLevels(refExpr, errorReporter);
-    boolean ok = checkArguments(contextData.getArguments(), errorReporter, refExpr, argumentExplicitness());
+    if (refExpr != null) checkLevels(refExpr, errorReporter);
+    boolean ok = checkArguments(contextData.getArguments(), errorReporter, contextData.getMarker(), argumentExplicitness());
     ok = checkCoclauses(contextData.getCoclauses(), errorReporter) && ok;
     ok = checkClauses(contextData.getClauses(), errorReporter) && ok;
-    ok = checkExpectedType(contextData.getExpectedType(), refExpr, errorReporter) && ok;
+    ok = checkExpectedType(contextData.getExpectedType(), contextData.getMarker(), errorReporter) && ok;
     return ok;
   }
 }

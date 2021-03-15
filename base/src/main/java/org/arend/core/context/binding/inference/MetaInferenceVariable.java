@@ -15,6 +15,10 @@ public class MetaInferenceVariable extends InferenceVariable {
     super(reference.getReferent().getRefName(), type, reference, bounds);
   }
 
+  public MetaInferenceVariable(String name, Expression type, Concrete.SourceNode sourceNode, Set<Binding> bounds) {
+    super(name, type, sourceNode, bounds);
+  }
+
   @Override
   public boolean isSolvableFromEquations() {
     return false;

@@ -29,7 +29,6 @@ import org.arend.ext.concrete.pattern.ConcretePattern;
 import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.concrete.expr.ConcreteLamExpression;
-import org.arend.ext.concrete.expr.ConcreteReferenceExpression;
 import org.arend.ext.core.body.CoreExpressionPattern;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.context.CoreInferenceVariable;
@@ -762,18 +761,19 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
       int numberOfErrors = checkTypeVisitor.getNumberOfErrors();
       Concrete.ReferenceExpression refExpr = deferredMeta.contextData.getReferenceExpression();
+      Concrete.Expression marker = deferredMeta.contextData.getMarker();
       TypecheckingResult result = checkTypeVisitor.invokeMeta(deferredMeta.meta, deferredMeta.contextData);
-      fixCheckedExpression(result, refExpr.getReferent(), refExpr);
+      fixCheckedExpression(result, refExpr == null ? null : refExpr.getReferent(), marker);
       if (result != null) {
-        result = checkTypeVisitor.checkResult(type, result, refExpr);
+        result = checkTypeVisitor.checkResult(type, result, marker);
         if (afterLevels) {
-          result = checkTypeVisitor.finalize(result, refExpr, false);
+          result = checkTypeVisitor.finalize(result, marker, false);
         }
       }
       errorReporter = originalErrorReporter;
       context = originalContext;
       if (result == null && checkTypeVisitor.getNumberOfErrors() == numberOfErrors) {
-        deferredMeta.errorReporter.report(new TypecheckingError("Meta '" + refExpr.getReferent().getRefName() + "' failed", refExpr));
+        deferredMeta.errorReporter.report(new TypecheckingError(refExpr == null ? "Cannot check deferred expression" : "Meta '" + refExpr.getReferent().getRefName() + "' failed", marker));
       }
       deferredMeta.inferenceVar.solve(this, result == null ? new ErrorExpression() : result.expression);
     }
@@ -2076,13 +2076,24 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   @Override
   public TypecheckingResult visitProj(Concrete.ProjExpression expr, Expression expectedType) {
-    Concrete.Expression expr1 = expr.getExpression();
-    TypecheckingResult exprResult = checkExpr(expr1, null);
+    TypecheckingResult exprResult = checkExpr(expr.expression, null);
     if (exprResult == null) return null;
-
     exprResult.type = exprResult.type.normalize(NormalizationMode.WHNF);
+    if (expectedType != null && !(exprResult.type instanceof SigmaExpression) && exprResult.type.getStuckInferenceVariable() != null) {
+      return defer(new MetaDefinition() {
+        @Override
+        public @Nullable TypedExpression invokeMeta(@NotNull ExpressionTypechecker typechecker, @NotNull ContextData contextData) {
+          return checkProj(exprResult, expr, expectedType);
+        }
+      }, new ContextDataImpl(expr, Collections.emptyList(), null, null, expectedType, null), expectedType, false);
+    }
+    return checkProj(exprResult, expr, expectedType);
+  }
+
+  private TypecheckingResult checkProj(TypecheckingResult exprResult, Concrete.ProjExpression projExpr, Expression expectedType) {
+    Concrete.Expression expr = projExpr.expression;
     if (!(exprResult.type instanceof SigmaExpression)) {
-      TypecheckingResult coercedResult = CoerceData.coerceToKey(exprResult, new CoerceData.SigmaKey(), expr1, this);
+      TypecheckingResult coercedResult = CoerceData.coerceToKey(exprResult, new CoerceData.SigmaKey(), expr, this);
       if (coercedResult != null) {
         exprResult = coercedResult;
       }
@@ -2091,19 +2102,19 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     if (sigmaExpr == null) {
       Expression stuck = exprResult.type.getStuckExpression();
       if (stuck == null || !stuck.isError()) {
-        errorReporter.report(new TypeMismatchError(DocFactory.text("A sigma type"), exprResult.type, expr1));
+        errorReporter.report(new TypeMismatchError(DocFactory.text("A sigma type"), exprResult.type, expr));
       }
       return null;
     }
 
     DependentLink sigmaParams = sigmaExpr.getParameters();
-    if (expr.getField() < 0) {
-      errorReporter.report(new TypecheckingError("Index " + (expr.getField() +1) + " is too small; the lower bound of projection index is 1", expr));
+    if (projExpr.getField() < 0) {
+      errorReporter.report(new TypecheckingError("Index " + (projExpr.getField() +1) + " is too small; the lower bound of projection index is 1", projExpr));
       return null;
     }
-    DependentLink fieldLink = DependentLink.Helper.get(sigmaParams, expr.getField());
+    DependentLink fieldLink = DependentLink.Helper.get(sigmaParams, projExpr.getField());
     if (!fieldLink.hasNext()) {
-      errorReporter.report(new TypecheckingError("Index " + (expr.getField() + 1) + " is out of range; the number of parameters is " + DependentLink.Helper.size(sigmaParams), expr));
+      errorReporter.report(new TypecheckingError("Index " + (projExpr.getField() + 1) + " is out of range; the number of parameters is " + DependentLink.Helper.size(sigmaParams), projExpr));
       return null;
     }
 
@@ -2112,9 +2123,9 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       substitution.add(sigmaParams, ProjExpression.make(exprResult.expression, i));
     }
 
-    exprResult.expression = ProjExpression.make(exprResult.expression, expr.getField());
+    exprResult.expression = ProjExpression.make(exprResult.expression, projExpr.getField());
     exprResult.type = fieldLink.getTypeExpr().subst(substitution);
-    return checkResult(expectedType, exprResult, expr);
+    return checkResult(expectedType, exprResult, projExpr);
   }
 
   // Let
@@ -2357,18 +2368,18 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   @Nullable
   @Override
-  public TypedExpression defer(@NotNull MetaDefinition meta, @NotNull ContextData contextData, @NotNull CoreExpression type, boolean afterLevels) {
+  public TypecheckingResult defer(@NotNull MetaDefinition meta, @NotNull ContextData contextData, @NotNull CoreExpression type, boolean afterLevels) {
     if (!meta.checkContextData(contextData, errorReporter)) {
       return null;
     }
-    ConcreteReferenceExpression refExpr = contextData.getReferenceExpression();
-    if (!(refExpr instanceof Concrete.ReferenceExpression && type instanceof Expression)) {
+    ConcreteExpression marker = contextData.getMarker();
+    if (!(marker instanceof Concrete.Expression && type instanceof Expression)) {
       throw new IllegalArgumentException();
     }
 
     Expression expectedType = (Expression) type;
-    ContextDataImpl contextDataImpl = new ContextDataImpl((Concrete.ReferenceExpression) refExpr, contextData.getArguments(), contextData.getCoclauses(), contextData.getClauses(), expectedType, contextData.getUserData());
-    InferenceVariable inferenceVar = new MetaInferenceVariable(expectedType, (Concrete.ReferenceExpression) refExpr, getAllBindings());
+    ContextDataImpl contextDataImpl = new ContextDataImpl((Concrete.Expression) marker, contextData.getArguments(), contextData.getCoclauses(), contextData.getClauses(), expectedType, contextData.getUserData());
+    InferenceVariable inferenceVar = new MetaInferenceVariable(marker instanceof Concrete.ReferenceExpression ? ((Concrete.ReferenceExpression) marker).getReferent().getRefName() : "deferred", expectedType, (Concrete.Expression) marker, getAllBindings());
     (afterLevels ? myDeferredMetasAfterLevels : myDeferredMetasBeforeSolver).add(new DeferredMeta(meta, new LinkedHashMap<>(context), contextDataImpl, inferenceVar, errorReporter));
     return new TypecheckingResult(new InferenceReferenceExpression(inferenceVar), expectedType);
   }
