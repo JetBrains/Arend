@@ -56,6 +56,7 @@ public class ErrorExpression extends Expression implements CoreErrorExpression, 
     return new ErrorExpression(expr, myGoal, myUseExpression);
   }
 
+  @Override
   public boolean isGoal() {
     return myGoal;
   }
