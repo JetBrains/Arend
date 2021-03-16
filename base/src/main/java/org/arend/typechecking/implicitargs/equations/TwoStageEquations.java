@@ -335,10 +335,10 @@ public class TwoStageEquations implements Equations {
       equation.expr2 = equation.expr2.normalize(NormalizationMode.WHNF);
     }
 
-    for (Iterator<Equation> iterator = myEquations.iterator(); iterator.hasNext(); ) {
-      Equation equation = iterator.next();
+    for (int i = 0; i < myEquations.size(); i++) {
+      Equation equation = myEquations.get(i);
       if (equation.expr1 instanceof DataCallExpression && equation.expr2 instanceof DataCallExpression && ((DataCallExpression) equation.expr1).getDefinition() == Prelude.FIN && ((DataCallExpression) equation.expr2).getDefinition() == Prelude.FIN) {
-        iterator.remove();
+        myEquations.remove(i--);
         Expression arg1 = ((DataCallExpression) equation.expr1).getDefCallArguments().get(0);
         Expression arg2 = ((DataCallExpression) equation.expr2).getDefCallArguments().get(0);
         if (!CompareVisitor.compare(this, CMP.EQ, arg1, arg2, Nat(), equation.sourceNode)) {
