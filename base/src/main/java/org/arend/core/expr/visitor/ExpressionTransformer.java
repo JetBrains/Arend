@@ -24,6 +24,18 @@ public abstract class ExpressionTransformer<P> extends BaseExpressionVisitor<P, 
     return visit(expr, params);
   }
 
+  protected List<Expression> visitDataTypeArguments(List<? extends Expression> args, P params) {
+    List<Expression> dataTypeArgs = new ArrayList<>(args.size());
+    for (Expression arg : args) {
+      Expression newArg = visitDataTypeArgument(arg, params);
+      if (newArg == null) {
+        return null;
+      }
+      dataTypeArgs.add(newArg);
+    }
+    return dataTypeArgs;
+  }
+
   protected Expression preVisitConCall(ConCallExpression expr, P params) {
     return null;
   }
@@ -67,15 +79,8 @@ public abstract class ExpressionTransformer<P> extends BaseExpressionVisitor<P, 
       List<ConCallExpression> argStack = new ArrayList<>();
       List<ConCallExpression> resultStack = new ArrayList<>();
       while (true) {
-        List<Expression> dataTypeArgs = new ArrayList<>(expr.getDataTypeArguments().size());
-        for (Expression arg : expr.getDataTypeArguments()) {
-          Expression newArg = visitDataTypeArgument(arg, params);
-          if (newArg == null) {
-            return null;
-          }
-          dataTypeArgs.add(newArg);
-        }
-
+        List<Expression> dataTypeArgs = visitDataTypeArguments(expr.getDataTypeArguments(), params);
+        if (dataTypeArgs == null) return null;
         List<Expression> args = new ArrayList<>();
         ConCallExpression result = makeConCall(expr.getDefinition(), expr.getSortArgument(), dataTypeArgs, args);
         for (int i = 0; i < recursiveParam; i++) {
@@ -132,15 +137,8 @@ public abstract class ExpressionTransformer<P> extends BaseExpressionVisitor<P, 
         }
       }
 
-      List<Expression> dataTypeArgs = new ArrayList<>(conCall.getDataTypeArguments().size());
-      for (Expression arg : conCall.getDataTypeArguments()) {
-        Expression newArg = visitDataTypeArgument(arg, params);
-        if (newArg == null) {
-          return null;
-        }
-        dataTypeArgs.add(newArg);
-      }
-
+      List<Expression> dataTypeArgs = visitDataTypeArguments(conCall.getDataTypeArguments(), params);
+      if (dataTypeArgs == null) return null;
       List<Expression> newArgs = new ArrayList<>();
       it = makeConCall(conCall.getDefinition(), conCall.getSortArgument(), dataTypeArgs, newArgs);
       if (args != null) {

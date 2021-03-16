@@ -7,6 +7,7 @@ import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.context.param.TypedDependentLink;
 import org.arend.core.definition.ClassDefinition;
 import org.arend.core.definition.ClassField;
+import org.arend.core.definition.Constructor;
 import org.arend.core.definition.UniverseKind;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.type.TypeExpression;
@@ -15,7 +16,9 @@ import org.arend.core.expr.visitor.ExpressionVisitor2;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.sort.Sort;
+import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.InPlaceLevelSubstVisitor;
+import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.definition.CoreClassField;
 import org.arend.ext.core.expr.CoreClassCallExpression;
 import org.arend.ext.core.expr.CoreExpression;
@@ -24,6 +27,7 @@ import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.typechecking.TypedExpression;
 import org.arend.naming.renamer.Renamer;
 import org.arend.typechecking.result.TypecheckingResult;
+import org.arend.util.Wrapper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -255,8 +259,99 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
         continue;
       }
 
-      PiExpression piExpr = getDefinition().getFieldType(field, getSortArgument());
-      Expression type = piExpr.applyExpression(newExpr);
+      PiExpression piExpr = getDefinition().getFieldType(field);
+      Binding thisBindings = piExpr.getBinding();
+      Expression type = piExpr.getCodomain().accept(new SubstVisitor(new ExprSubstitution(thisBindings, newExpr), getSortArgument().toLevelSubstitution()) {
+        private Expression makeNewExpression(Expression arg, Expression type) {
+          arg = arg.getUnderlyingExpression();
+          if (arg instanceof ReferenceExpression && ((ReferenceExpression) arg).getBinding() == thisBindings) {
+            type = type.normalize(NormalizationMode.WHNF);
+            if (type instanceof ClassCallExpression && getDefinition().isSubClassOf(((ClassCallExpression) type).getDefinition())) {
+              Map<ClassField, Expression> subImplementations = new HashMap<>(((ClassCallExpression) type).getImplementedHere());
+              ClassCallExpression newClassCall = new ClassCallExpression(((ClassCallExpression) type).getDefinition(), getSortArgument(), subImplementations, Sort.PROP, UniverseKind.NO_UNIVERSES);
+              for (Map.Entry<ClassField, Expression> entry : implementations.entrySet()) {
+                if (!newClassCall.isImplemented(entry.getKey())) {
+                  subImplementations.put(entry.getKey(), entry.getValue());
+                }
+              }
+              return new NewExpression(null, newClassCall);
+            }
+          }
+          return null;
+        }
+
+        private List<Expression> visitArgs(List<? extends Expression> args, DependentLink params) {
+          List<Expression> newArgs = new ArrayList<>(args.size());
+          for (Expression arg : args) {
+            Expression newArg = makeNewExpression(arg, params.getTypeExpr());
+            newArgs.add(newArg != null ? newArg : arg.accept(this, null));
+            params = params.getNext();
+          }
+          return newArgs;
+        }
+
+        @Override
+        public Expression visitDefCall(DefCallExpression expr, Void params) {
+          if (expr instanceof FieldCallExpression) {
+            return super.visitDefCall(expr, params);
+          }
+          List<Expression> newArgs = visitArgs(expr.getDefCallArguments(), expr.getDefinition().getParameters());
+          return expr.getDefinition().getDefCall(expr.getSortArgument().subst(getLevelSubstitution()), newArgs);
+        }
+
+        private Constructor constructor;
+        private Map<Wrapper<Expression>, Expression> constructorArgMap = Collections.emptyMap();
+
+        @Override
+        protected Expression preVisitConCall(ConCallExpression expr, Void params) {
+          constructor = expr.getDefinition();
+          constructorArgMap = Collections.emptyMap();
+          DependentLink param = expr.getDefinition().getParameters();
+          for (Expression arg : expr.getDefCallArguments()) {
+            Expression newExpr = makeNewExpression(arg, param.getTypeExpr());
+            if (newExpr != null) {
+              if (constructorArgMap.isEmpty()) constructorArgMap = new HashMap<>();
+              constructorArgMap.put(new Wrapper<>(arg), newExpr);
+            }
+            param = param.getNext();
+          }
+          return null;
+        }
+
+        @Override
+        protected List<Expression> visitDataTypeArguments(List<? extends Expression> args, Void params) {
+          return visitArgs(args, constructor.getDataTypeParameters());
+        }
+
+        @Override
+        protected Expression visit(Expression expr, Void params) {
+          Expression result = constructorArgMap.get(new Wrapper<>(expr));
+          return result != null ? result : super.visit(expr, params);
+        }
+
+        @Override
+        public Expression visitConCall(ConCallExpression expr, Void params) {
+          if (expr.getDefCallArguments().isEmpty()) {
+            return ConCallExpression.make(expr.getDefinition(), expr.getSortArgument().subst(getLevelSubstitution()), visitArgs(expr.getDataTypeArguments(), expr.getDefinition().getDataTypeParameters()), Collections.emptyList());
+          } else {
+            return super.visitConCall(expr, params);
+          }
+        }
+
+        @Override
+        public Expression visitClassCall(ClassCallExpression expr, Void params) {
+          Map<ClassField, Expression> fieldSet = new HashMap<>();
+          ClassCallExpression result = new ClassCallExpression(expr.getDefinition(), expr.getSortArgument().subst(getLevelSubstitution()), fieldSet, expr.getSort().subst(getLevelSubstitution()), expr.getUniverseKind());
+          getExprSubstitution().add(expr.getThisBinding(), new ReferenceExpression(result.getThisBinding()));
+          for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
+            Expression newArg = makeNewExpression(entry.getValue(), entry.getKey().getType(Sort.STD).getCodomain());
+            fieldSet.put(entry.getKey(), newArg != null ? newArg : entry.getValue().accept(this, null));
+          }
+          getExprSubstitution().remove(expr.getThisBinding());
+          return result;
+        }
+      }, null);
+
       DependentLink link = new TypedDependentLink(true, Renamer.getNameFromType(type, field.getName()), type instanceof Type ? (Type) type : new TypeExpression(type, piExpr.getResultSort()), EmptyDependentLink.getInstance());
       implementations.put(field, new ReferenceExpression(link));
       list.append(link);
