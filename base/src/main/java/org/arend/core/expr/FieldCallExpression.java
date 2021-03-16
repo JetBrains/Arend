@@ -21,6 +21,10 @@ public class FieldCallExpression extends DefCallExpression implements CoreFieldC
   }
 
   public static Expression make(ClassField definition, Sort sortArgument, Expression thisExpr) {
+    return make(definition, sortArgument, thisExpr, true);
+  }
+
+  public static Expression make(ClassField definition, Sort sortArgument, Expression thisExpr, boolean unfoldRefs) {
     if (definition.isProperty()) {
       return new FieldCallExpression(definition, sortArgument, thisExpr);
     }
@@ -30,7 +34,7 @@ public class FieldCallExpression extends DefCallExpression implements CoreFieldC
       Expression impl = ((NewExpression) thisExpr).getImplementation(definition);
       assert impl != null;
       return impl;
-    } else if (thisExpr instanceof ReferenceExpression && ((ReferenceExpression) thisExpr).getBinding() instanceof ClassCallExpression.ClassCallBinding) {
+    } else if (unfoldRefs && thisExpr instanceof ReferenceExpression && ((ReferenceExpression) thisExpr).getBinding() instanceof ClassCallExpression.ClassCallBinding) {
       Expression impl = ((ClassCallExpression.ClassCallBinding) ((ReferenceExpression) thisExpr).getBinding()).getTypeExpr().getImplementation(definition, thisExpr);
       if (impl != null) {
         return impl;

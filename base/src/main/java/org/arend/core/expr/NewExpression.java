@@ -106,7 +106,7 @@ public class NewExpression extends Expression implements CoreNewExpression {
       }
       Expression impl = myClassCall.getImplementationHere(field, this);
       if (impl == null) {
-        impl = FieldCallExpression.make(field, myClassCall.getSortArgument(), myRenewExpression);
+        impl = FieldCallExpression.make(field, myClassCall.getSortArgument(), myRenewExpression, false);
       }
       implementations.put(field, impl);
     }
