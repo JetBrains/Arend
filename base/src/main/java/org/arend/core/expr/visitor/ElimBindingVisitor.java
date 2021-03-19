@@ -384,7 +384,7 @@ public class ElimBindingVisitor extends ExpressionTransformer<Void> {
     List<ElimClause<Pattern>> clauses = new ArrayList<>();
     for (ElimClause<Pattern> clause : expr.getElimBody().getClauses()) {
       ExprSubstitution clauseSubst = new ExprSubstitution();
-      DependentLink clauseParams = DependentLink.Helper.subst(expr.getParameters(), clauseSubst);
+      DependentLink clauseParams = DependentLink.Helper.subst(Pattern.getFirstBinding(clause.getPatterns()), clauseSubst);
       if (!visitDependentLink(clauseParams)) {
         return null;
       }
