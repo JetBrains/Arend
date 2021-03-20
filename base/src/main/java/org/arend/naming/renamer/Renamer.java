@@ -1,6 +1,8 @@
 package org.arend.naming.renamer;
 
 import org.arend.core.context.binding.Binding;
+import org.arend.core.context.param.EmptyDependentLink;
+import org.arend.core.context.param.UntypedDependentLink;
 import org.arend.ext.variable.Variable;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Definition;
@@ -33,12 +35,9 @@ public class Renamer implements VariableRenamer {
 
   public String getValidName(@NotNull Variable var) {
     String name = var.getName();
-    if (!myForceTypeSCName && name != null && !name.isEmpty() && !name.equals("_")) {
-      return name;
-    }
 
     Expression typeExpr = null;
-    if (var instanceof Binding)
+    if (var instanceof Binding && !(var instanceof UntypedDependentLink))
       typeExpr = ((Binding) var).getTypeExpr();
     else if (var instanceof ClassField)
       typeExpr = ((ClassField) var).getType(Sort.STD).getCodomain();
@@ -50,6 +49,10 @@ public class Renamer implements VariableRenamer {
 
     if (recursiveParameterName != null && typeExpr instanceof DefCallExpression && ((DefCallExpression) typeExpr).getDefinition() == recursiveData) {
       return recursiveParameterName;
+    }
+
+    if (!myForceTypeSCName && name != null && !name.isEmpty() && !name.equals("_")) {
+      return name;
     }
 
     if (c != null) {
