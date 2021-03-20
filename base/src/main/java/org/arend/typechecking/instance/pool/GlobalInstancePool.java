@@ -169,14 +169,15 @@ public class GlobalInstancePool implements InstancePool {
     }
 
     ClassDefinition actualClass = ((ClassCallExpression) predicate.instanceDef.getResultType()).getDefinition();
-    Concrete.Expression instanceExpr = new Concrete.ReferenceExpression(sourceNode.getData(), instance);
+    Object data = sourceNode == null ? null : sourceNode.getData();
+    Concrete.Expression instanceExpr = new Concrete.ReferenceExpression(data, instance);
     for (DependentLink link = predicate.instanceDef.getParameters(); link.hasNext(); link = link.getNext()) {
       List<RecursiveInstanceData> newRecursiveData = new ArrayList<>((recursiveHoleExpression == null ? 0 : recursiveHoleExpression.recursiveData.size()) + 1);
       if (recursiveHoleExpression != null) {
         newRecursiveData.addAll(recursiveHoleExpression.recursiveData);
       }
       newRecursiveData.add(new RecursiveInstanceData(instance, actualClass.getReferable(), classifyingExpression));
-      instanceExpr = Concrete.AppExpression.make(sourceNode.getData(), instanceExpr, new RecursiveInstanceHoleExpression(recursiveHoleExpression == null ? sourceNode : recursiveHoleExpression.getData(), newRecursiveData), link.isExplicit());
+      instanceExpr = Concrete.AppExpression.make(data, instanceExpr, new RecursiveInstanceHoleExpression(recursiveHoleExpression == null ? data : recursiveHoleExpression.getData(), newRecursiveData), link.isExplicit());
     }
 
     return parameters.testGlobalInstance(instanceExpr) ? new Pair<>(instanceExpr, actualClass) : null;
