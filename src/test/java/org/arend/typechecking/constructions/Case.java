@@ -131,6 +131,16 @@ public class Case extends TypeCheckingTestCase {
   }
 
   @Test
+  public void checkElimTypeError3() {
+    typeCheckModule(
+      "\\func test (A : \\Type) (x : A) (p : x = x) : p = p =>\n" +
+      "  \\case \\elim p, \\elim x \\with {\n" +
+      "    | _, _ => {?}\n" +
+      "  }", 1);
+    assertThatErrorsAre(elimSubstError("p"));
+  }
+
+  @Test
   public void elimContextTest() {
     typeCheckModule(
       "\\func test (x : Nat) (p : x = x) =>\n" +

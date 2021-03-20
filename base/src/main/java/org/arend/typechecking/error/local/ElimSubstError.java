@@ -15,10 +15,12 @@ import java.util.List;
 import static org.arend.ext.prettyprinting.doc.DocFactory.*;
 
 public class ElimSubstError extends TypecheckingError {
+  public final Referable referable;
   public final Collection<?> notEliminatedBindings; // either Referable or Binding
 
-  public ElimSubstError(Collection<?> notEliminatedBindings, @Nullable ConcreteSourceNode cause) {
+  public ElimSubstError(Referable referable, Collection<?> notEliminatedBindings, @Nullable ConcreteSourceNode cause) {
     super("", cause);
+    this.referable = referable;
     this.notEliminatedBindings = notEliminatedBindings;
   }
 
@@ -28,6 +30,8 @@ public class ElimSubstError extends TypecheckingError {
     for (Object binding : notEliminatedBindings) {
       docs.add(binding instanceof Referable ? refDoc((Referable) binding) : text(binding instanceof Binding ? ((Binding) binding).getName() : binding.toString()));
     }
-    return hList(text("Cannot perform substitution since the following bindings are not eliminated: "), hSep(text(", "), docs));
+    return referable == null
+      ? hList(text("Cannot perform substitution since " + (docs.size() > 1 ? "bindings " : "binding ")), hSep(text(", "), docs), text((docs.size() > 1 ? " are" : " is") + " not eliminated"))
+      : hList(text(docs.size() > 1 ? "Bindings " : "Binding "), hSep(text(", "), docs), text(" should be eliminated after "), refDoc(referable));
   }
 }

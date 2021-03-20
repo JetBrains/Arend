@@ -3033,16 +3033,17 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
   }
 
-  private Expression checkedSubst(Expression expr, ExprSubstitution substitution, Concrete.SourceNode sourceNode) {
+  private void replaceWithReferables(Set<Object> vars, Map<Referable, Binding> map) {
+    for (Map.Entry<Referable, Binding> entry : map.entrySet()) {
+      if (vars.remove(entry.getValue())) {
+        vars.add(entry.getKey());
+      }
+    }
+  }
+
+  private Expression checkedSubst(Expression expr, ExprSubstitution substitution, Set<Binding> allowedBindings, Concrete.SourceNode sourceNode) {
     if (substitution.isEmpty()) {
       return expr;
-    }
-
-    Set<Binding> allowedBindings = new HashSet<>();
-    for (Variable variable : substitution.getKeys()) {
-      if (variable instanceof Binding) {
-        allowedBindings.add((Binding) variable);
-      }
     }
 
     Set<Object> foundVars = new LinkedHashSet<>();
@@ -3058,12 +3059,8 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }, null);
 
     if (!foundVars.isEmpty()) {
-      for (Map.Entry<Referable, Binding> entry : context.entrySet()) {
-        if (foundVars.remove(entry.getValue())) {
-          foundVars.add(entry.getKey());
-        }
-      }
-      errorReporter.report(new ElimSubstError(foundVars, sourceNode));
+      replaceWithReferables(foundVars, context);
+      errorReporter.report(new ElimSubstError(null, foundVars, sourceNode));
       return expr;
     }
 
@@ -3092,6 +3089,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     Expression resultTypeLevel = null;
     Map<Referable, Binding> origElimBindings = new HashMap<>();
     ExprSubstitution elimSubst = new ExprSubstitution();
+    Set<Binding> allowedBindings = new HashSet<>();
     try (var ignored = new Utils.SetContextSaver<>(context)) {
       for (Concrete.CaseArgument caseArg : caseArgs) {
         Type argType = null;
@@ -3107,7 +3105,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           return null;
         }
         if (argType == null || caseArg.isElim) {
-          exprResult.type = checkedSubst(exprResult.type, elimSubst, caseArg.expression);
+          exprResult.type = checkedSubst(exprResult.type, elimSubst, allowedBindings, caseArg.expression);
         }
         Referable asRef = caseArg.isElim ? ((Concrete.ReferenceExpression) caseArg.expression).getReferent() : caseArg.referable;
         DependentLink link = ExpressionFactory.parameter(asRef == null ? null : asRef.textRepresentation(), argType != null ? argType : exprResult.type instanceof Type ? (Type) exprResult.type : new TypeExpression(exprResult.type, getSortOfType(exprResult.type, expr)));
@@ -3123,6 +3121,20 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           Binding origBinding = ((ReferenceExpression) exprResult.expression).getBinding();
           origElimBindings.put(asRef, origBinding);
           elimSubst.add(origBinding, new ReferenceExpression(link));
+
+          Set<Object> notEliminated = new HashSet<>();
+          for (Binding allowedBinding : allowedBindings) {
+            if (allowedBinding.getTypeExpr().findBinding(origBinding)) {
+              notEliminated.add(allowedBinding);
+            }
+          }
+          if (!notEliminated.isEmpty()) {
+            replaceWithReferables(notEliminated, origElimBindings);
+            replaceWithReferables(notEliminated, context);
+            errorReporter.report(new ElimSubstError(asRef, notEliminated, caseArg.expression));
+            return null;
+          }
+          allowedBindings.add(origBinding);
         }
         addBinding(asRef, link);
         expressions.add(exprResult.expression.subst(substitution));
@@ -3135,7 +3147,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       if (resultType == null && expectedType == null) {
         return null;
       }
-      resultExpr = resultType != null ? resultType.getExpr() : !(expectedType instanceof Type && ((Type) expectedType).isOmega()) ? checkedSubst(expectedType, elimSubst, expr.getResultType() != null ? expr.getResultType() : expr) : new UniverseExpression(Sort.generateInferVars(myEquations, false, expr));
+      resultExpr = resultType != null ? resultType.getExpr() : !(expectedType instanceof Type && ((Type) expectedType).isOmega()) ? checkedSubst(expectedType, elimSubst, allowedBindings, expr.getResultType() != null ? expr.getResultType() : expr) : new UniverseExpression(Sort.generateInferVars(myEquations, false, expr));
 
       if (expr.getResultTypeLevel() != null) {
         TypecheckingResult levelResult = checkExpr(expr.getResultTypeLevel(), null);
