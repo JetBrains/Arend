@@ -36,10 +36,13 @@ public class IdpTest extends TypeCheckingTestCase {
   @Test
   public void nestedIdpTest() {
     typeCheckModule(
+      "\\data \\infix 4 <= (n m : Nat) \\with\n" +
+      "  | 0, _ => zero<=_\n" +
+      "  | suc n, suc m => suc<=suc (n <= m)\n" +
       "\\data D (n : Nat) | con (n = 0) | con' (1 = n)\n" +
-      "\\func f (x : Nat) (d : D x) : x Nat.<= 1 \\elim d\n" +
-      "  | con idp => Nat.zero<=_\n" +
-      "  | con' idp => Nat.suc<=suc Nat.zero<=_");
+      "\\func f (x : Nat) (d : D x) : x <= 1 \\elim d\n" +
+      "  | con idp => zero<=_\n" +
+      "  | con' idp => suc<=suc zero<=_");
   }
 
   @Test

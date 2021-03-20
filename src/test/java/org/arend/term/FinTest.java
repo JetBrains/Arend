@@ -275,9 +275,12 @@ public class FinTest extends TypeCheckingTestCase {
   @Test
   public void sucMatchTest() {
     typeCheckModule(
-      "\\lemma test {n : Nat} (x : Fin n) : suc x Nat.<= n \\elim n, x\n" +
-      "  | suc n, zero => Nat.suc<=suc Nat.zero<=_\n" +
-      "  | suc n, suc x => Nat.suc<=suc (test x)");
+      "\\data \\infix 4 <= (n m : Nat) \\with\n" +
+      "  | 0, _ => zero<=_\n" +
+      "  | suc n, suc m => suc<=suc (n <= m)\n" +
+      "\\lemma test {n : Nat} (x : Fin n) : suc x <= n \\elim n, x\n" +
+      "  | suc n, zero => suc<=suc zero<=_\n" +
+      "  | suc n, suc x => suc<=suc (test x)");
   }
 
   @Test

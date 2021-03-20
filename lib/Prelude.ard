@@ -47,10 +47,6 @@
       | n, 0 => pos n
       | suc n, suc m => n - m
 
-    \data \infix 4 <= (n m : Nat) \with
-      | 0, _ => zero<=_
-      | suc n, suc m => suc<=suc (n <= m)
-
     {- | divMod n m returns the pair (q,r) such that n = m * q + r and r < m if 0 < m.
      -   If m == 0, then divMod n m returns (n,n).
      -}

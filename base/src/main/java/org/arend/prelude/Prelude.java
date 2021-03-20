@@ -7,7 +7,6 @@ import org.arend.core.context.param.TypedDependentLink;
 import org.arend.core.context.param.UnusedIntervalDependentLink;
 import org.arend.core.definition.*;
 import org.arend.core.expr.*;
-import org.arend.core.expr.type.Type;
 import org.arend.core.pattern.BindingPattern;
 import org.arend.core.pattern.ConstructorExpressionPattern;
 import org.arend.core.pattern.ExpressionPattern;
@@ -74,10 +73,6 @@ public class Prelude implements ArendPrelude {
   public static DConstructor IDP;
   public static FunctionDefinition AT;
   public static FunctionDefinition ISO;
-
-  private static DataDefinition LESS_OR_EQ;
-  private static Constructor ZERO_LESS_OR_EQ;
-  private static Constructor SUC_LESS_OR_EQ;
 
   public static FunctionDefinition DIV_MOD;
   public static FunctionDefinition DIV;
@@ -204,11 +199,6 @@ public class Prelude implements ArendPrelude {
         IN_PROP = (FunctionDefinition) definition;
         IN_PROP.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         break;
-      case "<=":
-        LESS_OR_EQ = (DataDefinition) definition;
-        ZERO_LESS_OR_EQ = LESS_OR_EQ.getConstructor("zero<=_");
-        SUC_LESS_OR_EQ = LESS_OR_EQ.getConstructor("suc<=suc");
-        break;
       case "divMod":
         DIV_MOD = (FunctionDefinition) definition;
         DIV_MOD.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
@@ -256,9 +246,6 @@ public class Prelude implements ArendPrelude {
     consumer.accept(COERCE);
     consumer.accept(COERCE2);
     consumer.accept(ISO);
-    consumer.accept(LESS_OR_EQ);
-    consumer.accept(ZERO_LESS_OR_EQ);
-    consumer.accept(SUC_LESS_OR_EQ);
     consumer.accept(DIV_MOD);
     consumer.accept(DIV);
     consumer.accept(MOD);
@@ -417,21 +404,6 @@ public class Prelude implements ArendPrelude {
   @Override
   public FunctionDefinition getIso() {
     return ISO;
-  }
-
-  @Override
-  public DataDefinition getLessOrEq() {
-    return LESS_OR_EQ;
-  }
-
-  @Override
-  public Constructor getZeroLessOrEq() {
-    return ZERO_LESS_OR_EQ;
-  }
-
-  @Override
-  public Constructor getSucLessOrEq() {
-    return SUC_LESS_OR_EQ;
   }
 
   @Override

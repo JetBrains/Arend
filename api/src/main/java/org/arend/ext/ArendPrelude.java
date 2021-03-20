@@ -33,9 +33,6 @@ public interface ArendPrelude {
   CoreFunctionDefinition getIdp();
   CoreFunctionDefinition getAt();
   CoreFunctionDefinition getIso();
-  CoreDataDefinition getLessOrEq();
-  CoreConstructor getZeroLessOrEq();
-  CoreConstructor getSucLessOrEq();
   CoreFunctionDefinition getDivMod();
   CoreFunctionDefinition getDiv();
   CoreFunctionDefinition getMod();

@@ -232,7 +232,11 @@ public class CoverageTest extends TypeCheckingTestCase {
 
   @Test
   public void yetAnotherTest() {
-    typeCheckDef("\\func test (x y z : Nat) (p : y Nat.<= z) : Nat \\elim x", 1);
+    typeCheckModule(
+      "\\data \\infix 4 <= (n m : Nat) \\with\n" +
+      "  | 0, _ => zero<=_\n" +
+      "  | suc n, suc m => suc<=suc (n <= m)\n" +
+      "\\func test (x y z : Nat) (p : y <= z) : Nat \\elim x", 1);
     assertThatErrorsAre(missingClauses(2));
   }
 }
