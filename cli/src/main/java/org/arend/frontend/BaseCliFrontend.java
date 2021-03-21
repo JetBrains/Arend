@@ -491,7 +491,7 @@ public abstract class BaseCliFrontend {
       //Print error
       PrettyPrinterConfigWithRenamer ppConfig = new PrettyPrinterConfigWithRenamer(EmptyScope.INSTANCE);
       if (error instanceof GoalError) {
-        ppConfig.expressionFlags = EnumSet.of(PrettyPrinterFlag.SHOW_FIELD_INSTANCE);
+        ppConfig.expressionFlags = EnumSet.of(PrettyPrinterFlag.SHOW_LOCAL_FIELD_INSTANCE);
       }
       if (error.level == GeneralError.Level.ERROR) {
         myExitWithError = true;

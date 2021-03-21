@@ -16,7 +16,7 @@ public interface PrettyPrinterConfig {
     return EnumSet.of(
       PrettyPrinterFlag.SHOW_COERCE_DEFINITIONS,
       PrettyPrinterFlag.SHOW_IMPLICIT_ARGS,
-      PrettyPrinterFlag.SHOW_FIELD_INSTANCE,
+      PrettyPrinterFlag.SHOW_LOCAL_FIELD_INSTANCE,
       PrettyPrinterFlag.SHOW_TYPES_IN_LAM,
       PrettyPrinterFlag.SHOW_CON_PARAMS);
   }

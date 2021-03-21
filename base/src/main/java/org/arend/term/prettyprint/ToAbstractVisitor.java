@@ -226,31 +226,29 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       return expr.getArgument().accept(this, null);
     }
 
-    if (hasFlag(PrettyPrinterFlag.SHOW_FIELD_INSTANCE)) {
-      String name = null;
-      boolean ok = false;
-      if (expr.getArgument() instanceof ReferenceExpression) {
-        ok = true;
-        name = ((ReferenceExpression) expr.getArgument()).getBinding().getName();
-      } else if (expr.getArgument() instanceof FunCallExpression) {
-        ok = true;
-        for (DependentLink param = ((FunCallExpression) expr.getArgument()).getDefinition().getParameters(); param.hasNext(); param = param.getNext()) {
-          param = param.getNextTyped(null);
-          if (param.isExplicit()) {
-            ok = false;
-            break;
-          }
+    String name = null;
+    boolean ok = false;
+    if (expr.getArgument() instanceof ReferenceExpression && hasFlag(PrettyPrinterFlag.SHOW_LOCAL_FIELD_INSTANCE)) {
+      ok = true;
+      name = ((ReferenceExpression) expr.getArgument()).getBinding().getName();
+    } else if (expr.getArgument() instanceof FunCallExpression && hasFlag(PrettyPrinterFlag.SHOW_GLOBAL_FIELD_INSTANCE)) {
+      ok = true;
+      for (DependentLink param = ((FunCallExpression) expr.getArgument()).getDefinition().getParameters(); param.hasNext(); param = param.getNext()) {
+        param = param.getNextTyped(null);
+        if (param.isExplicit()) {
+          ok = false;
+          break;
         }
-        name = ((FunCallExpression) expr.getArgument()).getDefinition().getName();
       }
-      if (ok) {
-        GlobalReferable ref = expr.getDefinition().getReferable();
-        return cVar(new LongName(name == null ? "_" : name, ref.getRepresentableName()), ref);
-      }
+      name = ((FunCallExpression) expr.getArgument()).getDefinition().getName();
+    }
+    if (ok) {
+      GlobalReferable ref = expr.getDefinition().getReferable();
+      return cVar(new LongName(name == null ? "_" : name, ref.getRepresentableName()), ref);
     }
 
     Concrete.ReferenceExpression result = makeReference(expr);
-    if (hasFlag(PrettyPrinterFlag.SHOW_FIELD_INSTANCE)) {
+    if (hasFlag(PrettyPrinterFlag.SHOW_LOCAL_FIELD_INSTANCE)) {
       ReferenceExpression refExpr = expr.getArgument().cast(ReferenceExpression.class);
       return refExpr != null && refExpr.getBinding().isHidden() ? result : Concrete.AppExpression.make(null, result, expr.getArgument().accept(this, null), false);
     } else {
