@@ -119,6 +119,15 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
   }
 
   @Override
+  public @Nullable AbsExpression getAbsImplementation(@NotNull CoreClassField field) {
+    if (!(field instanceof ClassField)) {
+      throw new IllegalArgumentException();
+    }
+    Expression impl = myImplementations.get(field);
+    return impl != null ? new AbsExpression(myThisBinding, impl) : getDefinition().getImplementation(field);
+  }
+
+  @Override
   public Expression getAbsImplementationHere(@NotNull CoreClassField field) {
     return field instanceof ClassField ? myImplementations.get(field) : null;
   }

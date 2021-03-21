@@ -16,6 +16,7 @@ public interface CoreClassCallExpression extends CoreDefCallExpression {
   @NotNull CoreBinding getThisBinding();
   @NotNull Collection<? extends Map.Entry<? extends CoreClassField, ? extends CoreExpression>> getImplementations();
 
+  @Nullable CoreAbsExpression getAbsImplementation(@NotNull CoreClassField field);
   @Nullable CoreExpression getAbsImplementationHere(@NotNull CoreClassField field);
   @Nullable UncheckedExpression getImplementationHere(@NotNull CoreClassField field, @NotNull CoreExpression thisExpr);
   @Nullable UncheckedExpression getImplementation(@NotNull CoreClassField field, @NotNull CoreExpression thisExpr);
