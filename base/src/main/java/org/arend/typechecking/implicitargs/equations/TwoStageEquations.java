@@ -740,7 +740,17 @@ public class TwoStageEquations implements Equations {
       }
     }
 
-    Expression actualType = result == null ? null : result.getType();
+    Expression actualType;
+    if (result == null) {
+      actualType = null;
+    } else {
+      if (result instanceof IntegerExpression) {
+        DataCallExpression dataCall = expectedType.cast(DataCallExpression.class);
+        actualType = dataCall != null && dataCall.getDefinition() == Prelude.FIN ? result.getType() : Nat();
+      } else {
+        actualType = result.getType();
+      }
+    }
     if (actualType == null) {
       return inferenceError(var, expr);
     }
