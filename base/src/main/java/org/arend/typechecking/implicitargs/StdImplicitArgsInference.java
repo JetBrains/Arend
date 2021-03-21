@@ -416,10 +416,17 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
         result = inferArg(result, expr.getArguments().get(current).expression, expr.getArguments().get(current).isExplicit(), fun);
       }
     } else {
+      List<Concrete.Argument> arguments = expr.getArguments();
+      if (result instanceof DefCallResult && ((DefCallResult) result).getDefinition() instanceof ClassField && (arguments.isEmpty() || arguments.get(0).isExplicit())) {
+        arguments = new ArrayList<>(expr.getArguments().size() + 1);
+        arguments.add(new Concrete.Argument(new Concrete.HoleExpression(fun.getData()), false));
+        arguments.addAll(expr.getArguments());
+      }
+
       int i = 0;
       if (expectedType != null && expectedType.getStuckInferenceVariable() == null) {
-        for (; i < expr.getArguments().size(); i++) {
-          Concrete.Argument argument = expr.getArguments().get(i);
+        for (; i < arguments.size(); i++) {
+          Concrete.Argument argument = arguments.get(i);
           if (result instanceof TypecheckingResult && argument.isExplicit()) {
             DependentLink param = result.getParameter();
             if (param.hasNext() && !param.isExplicit()) {
@@ -429,32 +436,32 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
           result = inferArg(result, argument.expression, argument.isExplicit(), fun);
         }
 
-        if (result == null || i == expr.getArguments().size()) {
+        if (result == null || i == arguments.size()) {
           return result;
         }
 
-        Pair<Expression, Integer> pair = normalizePi(expr.getArguments(), i, result.getType());
+        Pair<Expression, Integer> pair = normalizePi(arguments, i, result.getType());
         ((TypecheckingResult) result).type = pair.proj1;
 
         for (; i < pair.proj2; i++) {
-          Concrete.Argument argument = expr.getArguments().get(i);
+          Concrete.Argument argument = arguments.get(i);
           result = inferArg(result, argument.expression, argument.isExplicit(), fun);
         }
 
         if (result == null) {
           return null;
         }
-        if (i < expr.getArguments().size()) {
+        if (i < arguments.size()) {
           result = fixImplicitArgs(result, result.getImplicitParameters(), fun, false, null);
-          Expression actualType = dropPiParameters(result.getType(), expr.getArguments(), i);
+          Expression actualType = dropPiParameters(result.getType(), arguments, i);
           if (actualType != null) {
             new CompareVisitor(myVisitor.getEquations(), CMP.LE, fun).compare(actualType, expectedType, Type.OMEGA, false);
           }
         }
       }
 
-      for (; i < expr.getArguments().size(); i++) {
-        Concrete.Argument argument = expr.getArguments().get(i);
+      for (; i < arguments.size(); i++) {
+        Concrete.Argument argument = arguments.get(i);
         result = inferArg(result, argument.expression, argument.isExplicit(), fun);
       }
     }
