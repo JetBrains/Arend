@@ -2,6 +2,7 @@ package org.arend.typechecking.constructions;
 
 import org.arend.Matchers;
 import org.arend.core.context.binding.TypedBinding;
+import org.arend.core.definition.Definition;
 import org.arend.core.expr.*;
 import org.arend.core.sort.Sort;
 import org.arend.prelude.Prelude;
@@ -12,6 +13,7 @@ import org.junit.Test;
 import java.util.Arrays;
 
 import static org.arend.Matchers.*;
+import static org.junit.Assert.assertEquals;
 
 public class Case extends TypeCheckingTestCase {
   @Test
@@ -246,5 +248,11 @@ public class Case extends TypeCheckingTestCase {
       "    | p => 0\n" +
       "  }", 1);
     assertThatErrorsAre(typeMismatchError());
+  }
+
+  @Test
+  public void typeTest() {
+    Definition def = typeCheckDef("\\func test (n : Nat) (x : \\case n \\with { | 0 => Nat | suc _ => Nat }) : Nat => 0");
+    assertEquals(Sort.SET0, def.getParameters().getNext().getType().getSortOfType());
   }
 }
