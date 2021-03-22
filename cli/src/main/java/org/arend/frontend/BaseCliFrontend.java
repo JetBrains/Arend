@@ -56,6 +56,7 @@ public abstract class BaseCliFrontend {
   private boolean myExitWithError = false;
   private final ErrorReporter mySystemErrErrorReporter = error -> {
     System.err.println(error);
+    System.err.flush();
     myExitWithError = true;
   };
 
@@ -259,7 +260,9 @@ public abstract class BaseCliFrontend {
       for (String fileName : argFiles) {
         boolean isPath = fileName.contains(FileSystems.getDefault().getSeparator());
         Path path = Paths.get(fileName);
-        if (fileName.endsWith(FileUtils.LIBRARY_CONFIG_FILE) || isPath && Files.isDirectory(path)) {
+        if (!Files.exists(path)) {
+          myLibraryManager.getLibraryErrorReporter().report(new GeneralError(GeneralError.Level.ERROR, "File " + path + " not found"));
+        } else if (fileName.endsWith(FileUtils.LIBRARY_CONFIG_FILE) || isPath && Files.isDirectory(path)) {
           SourceLibrary library = myLibraryResolver.registerLibrary(path.toAbsolutePath().normalize());
           if (library != null) {
             requestedLibraries.add(library);
@@ -503,6 +506,7 @@ public abstract class BaseCliFrontend {
         System.err.flush();
       } else {
         System.out.println(errorText);
+        System.out.flush();
       }
     }
     myErrorReporter.getErrorList().clear();
