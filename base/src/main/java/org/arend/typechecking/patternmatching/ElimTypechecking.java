@@ -13,7 +13,6 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.*;
 import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
-import org.arend.core.expr.visitor.GetTypeVisitor;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.pattern.*;
 import org.arend.core.sort.Level;
@@ -805,9 +804,15 @@ public class ElimTypechecking {
       List<BranchKey> branchKeys;
       DataDefinition dataType;
       if (someConPattern.getDefinition() instanceof Constructor) {
-        dataType = ((Constructor) someConPattern.getDefinition()).getDataType();
+        Constructor constructor = (Constructor) someConPattern.getDefinition();
+        dataType = constructor.getDataType();
         if (dataType.hasIndexedConstructors() || dataType == Prelude.PATH) {
-          DataCallExpression dataCall = GetTypeVisitor.INSTANCE.visitConCall(((ConCallExpression) someConPattern.getDataExpression().subst(conClause.substitution)), null);
+          DataCallExpression dataCall;
+          if (constructor == Prelude.FIN_ZERO || constructor == Prelude.FIN_SUC) {
+            dataCall = Fin(Suc(((ConCallExpression) someConPattern.getDataExpression()).getDataTypeArguments().get(0).subst(conClause.substitution)));
+          } else {
+            dataCall = (DataCallExpression) someConPattern.getDataExpression().subst(conClause.substitution).getType();
+          }
           conCalls = dataCall.getMatchedConstructors();
           if (conCalls == null) {
             myErrorReporter.report(new ImpossibleEliminationError(dataCall, getClause(conClause.index, someConPattern), null, null, null, null, null));
