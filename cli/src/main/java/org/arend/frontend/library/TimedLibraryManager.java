@@ -15,7 +15,7 @@ public class TimedLibraryManager extends LibraryManager {
   private final Stack<Long> times = new Stack<>();
 
   public TimedLibraryManager(LibraryResolver libraryResolver, @Nullable InstanceProviderSet instanceProviderSet, ErrorReporter typecheckingErrorReporter, ErrorReporter libraryErrorReporter, DefinitionRequester definitionRequester) {
-    super(libraryResolver, instanceProviderSet, typecheckingErrorReporter, libraryErrorReporter, definitionRequester);
+    super(libraryResolver, instanceProviderSet, typecheckingErrorReporter, libraryErrorReporter, definitionRequester, null);
   }
 
   public static @NotNull String timeToString(long time) {

@@ -2,6 +2,7 @@ package org.arend.library;
 
 import org.arend.ext.ArendExtension;
 import org.arend.ext.error.ErrorReporter;
+import org.arend.ext.typechecking.DefinitionListener;
 import org.arend.extImpl.DefinitionRequester;
 import org.arend.library.classLoader.MultiClassLoader;
 import org.arend.library.error.LibraryError;
@@ -35,6 +36,7 @@ public class LibraryManager {
   private MultiClassLoader<Library> myExternalClassLoader = new MultiClassLoader<>(ArendExtension.class.getClassLoader());
   private MultiClassLoader<Library> myInternalClassLoader = new MultiClassLoader<>(myExternalClassLoader);
   private final DefinitionRequester myDefinitionRequester;
+  private final DefinitionListener myDefinitionListener;
 
   /**
    * Constructs new {@code LibraryManager}.
@@ -45,12 +47,13 @@ public class LibraryManager {
    * @param libraryErrorReporter      an error reporter for errors related to loading and unloading of libraries.
    * @param definitionRequester       a listener for definitions requested in extensions.
    */
-  public LibraryManager(LibraryResolver libraryResolver, @Nullable InstanceProviderSet instanceProviderSet, ErrorReporter typecheckingErrorReporter, ErrorReporter libraryErrorReporter, DefinitionRequester definitionRequester) {
+  public LibraryManager(LibraryResolver libraryResolver, @Nullable InstanceProviderSet instanceProviderSet, ErrorReporter typecheckingErrorReporter, ErrorReporter libraryErrorReporter, DefinitionRequester definitionRequester, DefinitionListener listener) {
     myLibraryResolver = libraryResolver;
     myInstanceProviderSet = instanceProviderSet;
     myTypecheckingErrorReporter = typecheckingErrorReporter;
     myLibraryErrorReporter = libraryErrorReporter;
     myDefinitionRequester = definitionRequester;
+    myDefinitionListener = listener;
   }
 
   /**
@@ -104,6 +107,10 @@ public class LibraryManager {
 
   public DefinitionRequester getDefinitionRequester() {
     return myDefinitionRequester;
+  }
+
+  public DefinitionListener getDefinitionListener() {
+    return myDefinitionListener;
   }
 
   /**

@@ -54,4 +54,12 @@ public class ListDefinitionListener implements DefinitionListener {
     }
     return this;
   }
+
+  public static DefinitionListener join(DefinitionListener... listeners) {
+    List<DefinitionListener> result = new ArrayList<>(listeners.length);
+    for (DefinitionListener listener : listeners) {
+      if (listener != null) result.add(listener);
+    }
+    return result.isEmpty() ? null : result.size() == 1 ? result.get(0) : new ListDefinitionListener(result);
+  }
 }
