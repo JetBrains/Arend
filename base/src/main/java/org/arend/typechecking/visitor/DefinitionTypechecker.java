@@ -1179,7 +1179,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             classifyingExpr = classifyingExpr.normalize(NormalizationMode.WHNF);
           }
 
-          boolean ok = classifyingExpr == null || classifyingExpr instanceof ErrorExpression || classifyingExpr instanceof DataCallExpression || classifyingExpr instanceof ConCallExpression || classifyingExpr instanceof ClassCallExpression || params.isEmpty() && (classifyingExpr instanceof UniverseExpression || classifyingExpr instanceof SigmaExpression || classifyingExpr instanceof PiExpression || classifyingExpr instanceof IntegerExpression);
+          boolean ok = classifyingExpr == null || classifyingExpr instanceof ErrorExpression || classifyingExpr instanceof DataCallExpression || classifyingExpr instanceof ConCallExpression || classifyingExpr instanceof FunCallExpression && ((FunCallExpression) classifyingExpr).getDefinition().getKind() == CoreFunctionDefinition.Kind.TYPE || classifyingExpr instanceof ClassCallExpression || params.isEmpty() && (classifyingExpr instanceof UniverseExpression || classifyingExpr instanceof SigmaExpression || classifyingExpr instanceof PiExpression || classifyingExpr instanceof IntegerExpression);
           if (classifyingExpr instanceof ClassCallExpression) {
             Map<ClassField, Expression> implemented = ((ClassCallExpression) classifyingExpr).getImplementedHere();
             if (implemented.size() < params.size()) {
