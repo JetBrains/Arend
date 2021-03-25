@@ -269,7 +269,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     return new TypecheckingResult(curExpr, curType);
   }
 
-  private static Pair<TypecheckingResult,Boolean> coerceToType(Expression expectedType, Function<Expression, Pair<Expression,Boolean>> checker) {
+  private static <T> Pair<TypecheckingResult,T> coerceToType(Expression expectedType, Function<Expression, Pair<Expression,T>> checker) {
     List<TypeCoerceExpression> stack = new ArrayList<>();
     Expression curType = expectedType;
     while (curType instanceof FunCallExpression && ((FunCallExpression) curType).getDefinition().getKind() == CoreFunctionDefinition.Kind.TYPE) {
@@ -281,16 +281,16 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       curType = typeCoerce.getArgumentType();
     }
     if (!stack.isEmpty()) {
-      Pair<Expression, Boolean> pair = checker.apply(curType);
+      Pair<Expression,T> pair = checker.apply(curType);
       Expression curExpr = pair.proj1;
       if (curExpr == null) return new Pair<>(null, pair.proj2);
       for (int i = stack.size() - 1; i >= 0; i--) {
         stack.get(i).setArgument(curExpr);
         curExpr = stack.get(i);
       }
-      return new Pair<>(new TypecheckingResult(stack.get(0), expectedType), true);
+      return new Pair<>(new TypecheckingResult(stack.get(0), expectedType), pair.proj2);
     }
-    return new Pair<>(null, true);
+    return null;
   }
 
   public TypecheckingResult checkResult(Expression expectedType, TypecheckingResult result, Concrete.Expression expr) {
@@ -348,9 +348,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         }
         return new Pair<>(result.expression, true);
       });
-      if (!coerceResult.proj2 || coerceResult.proj1 != null) {
-        return coerceResult.proj1;
-      }
+      if (coerceResult != null) return coerceResult.proj1;
     }
 
     TypecheckingResult coercedResult = CoerceData.coerce(result, expectedType, expr, this);
@@ -2072,6 +2070,18 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   @Override
   public TypecheckingResult visitLam(Concrete.LamExpression expr, Expression expectedType) {
     try (var ignored = new Utils.SetContextSaver<>(context)) {
+      if (expectedType != null) {
+        expectedType = expectedType.normalize(NormalizationMode.WHNF);
+        if (expectedType instanceof FunCallExpression && ((FunCallExpression) expectedType).getDefinition().getKind() == CoreFunctionDefinition.Kind.TYPE) {
+          Pair<TypecheckingResult,Boolean> pair = coerceToType(expectedType, argType -> {
+            TypecheckingResult result = visitLam(expr.getParameters(), expr, new ExpressionParametersProvider(argType));
+            return result == null ? new Pair<>(null, false) : new Pair<>(result.expression, true);
+          });
+          if (pair != null) {
+            return pair.proj1;
+          }
+        }
+      }
       return visitLam(expr.getParameters(), expr, expectedType == null ? NULL_PARAMETERS_PROVIDER : new ExpressionParametersProvider(expectedType));
     }
   }
@@ -2127,7 +2137,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   public TypecheckingResult visitTuple(Concrete.TupleExpression expr, Expression expectedType) {
     Function<Expression, Pair<Expression,Boolean>> checker = type -> {
       if (!(type instanceof SigmaExpression)) {
-        return new Pair<>(null, true);
+        return null;
       }
 
       DependentLink sigmaParams = ((SigmaExpression) type).getParameters();
@@ -2154,12 +2164,12 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
     Expression expectedTypeNorm = expectedType == null ? null : expectedType.normalize(NormalizationMode.WHNF);
     Pair<TypecheckingResult, Boolean> coerceResult = coerceToType(expectedTypeNorm, checker);
-    if (!coerceResult.proj2 || coerceResult.proj1 != null) {
+    if (coerceResult != null) {
       return coerceResult.proj1;
     }
     Pair<Expression,Boolean> pair = checker.apply(expectedTypeNorm);
-    if (!pair.proj2 || pair.proj1 != null) {
-      return new TypecheckingResult(pair.proj1, expectedType);
+    if (pair != null) {
+      return pair.proj1 == null ? null : new TypecheckingResult(pair.proj1, expectedType);
     }
 
     List<Sort> sorts = new ArrayList<>(expr.getFields().size());

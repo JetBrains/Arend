@@ -90,4 +90,11 @@ public class TypeTest extends TypeCheckingTestCase {
       "\\func test1 (x : F2 Nat) : E3 Nat => x\n" +
       "\\func test2 (x : E3 Nat) : F2 Nat => x");
   }
+
+  @Test
+  public void lamTest() {
+    typeCheckModule(
+      "\\type E (A : \\Type) => A -> A\n" +
+      "\\func test : E Nat => \\lam n => \\case n \\with { | 0 => 0 | suc n => n }");
+  }
 }
