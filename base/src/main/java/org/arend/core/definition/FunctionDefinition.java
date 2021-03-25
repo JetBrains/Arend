@@ -86,7 +86,7 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
   }
 
   public boolean isSFunc() {
-    return myKind == Kind.SFUNC || myKind == Kind.LEMMA;
+    return myKind == Kind.SFUNC || myKind == Kind.LEMMA || myKind == Kind.TYPE;
   }
 
   @NotNull

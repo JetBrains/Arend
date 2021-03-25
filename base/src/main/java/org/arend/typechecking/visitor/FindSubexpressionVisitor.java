@@ -187,4 +187,13 @@ public class FindSubexpressionVisitor extends SearchVisitor<Void> {
       default: return super.visitInteger(expression, param);
     }
   }
+
+  @Override
+  public Boolean visitTypeCoerce(TypeCoerceExpression expr, Void param) {
+    switch (myFunction.apply(expr)) {
+      case STOP: return true;
+      case SKIP: return false;
+      default: return super.visitTypeCoerce(expr, param);
+    }
+  }
 }

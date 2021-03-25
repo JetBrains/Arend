@@ -13,7 +13,6 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
-import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.core.definition.CoreConstructor;
 import org.arend.core.elimtree.BranchKey;
 import org.arend.naming.reference.TCDefReferable;
@@ -149,17 +148,7 @@ public class Constructor extends Definition implements Function, BranchKey, Core
           arguments.add(pattern.toExpression());
         }
       } else {
-        ExprSubstitution substitution = new ExprSubstitution();
-        DependentLink link = Pattern.getFirstBinding(myPatterns);
-        for (Expression argument : dataTypeArguments) {
-          substitution.add(link, argument);
-          link = link.getNext();
-        }
-
-        arguments = new ArrayList<>(myPatterns.size());
-        for (ExpressionPattern pattern : myPatterns) {
-          arguments.add(pattern.toExpression().subst(substitution));
-        }
+        arguments = ExpressionPattern.applyClauseArguments(myPatterns, dataTypeArguments, sortArgument);
       }
     }
 

@@ -25,4 +25,5 @@ public interface ExpressionVisitor<P, R> {
   R visitCase(CaseExpression expr, P params);
   R visitOfType(OfTypeExpression expr, P params);
   R visitInteger(IntegerExpression expr, P params);
+  R visitTypeCoerce(TypeCoerceExpression expr, P params);
 }

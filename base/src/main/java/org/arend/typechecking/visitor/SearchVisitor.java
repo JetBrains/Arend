@@ -282,4 +282,14 @@ public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean>
   public boolean visitFunction(FunctionDefinition definition, P params) {
     return visitDependentLink(definition.getParameters(), params) || definition.getResultType().accept(this, params) || definition.getResultTypeLevel() != null && definition.getResultTypeLevel().accept(this, params) || visitBody(definition.getBody(), params);
   }
+
+  @Override
+  public Boolean visitTypeCoerce(TypeCoerceExpression expr, P params) {
+    for (Expression argument : expr.getClauseArguments()) {
+      if (argument.accept(this, params)) {
+        return true;
+      }
+    }
+    return expr.getArgument().accept(this, params);
+  }
 }

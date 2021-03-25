@@ -23,4 +23,5 @@ public interface CoreExpressionVisitor<P, R> {
   R visitLet(@NotNull CoreLetExpression expr, P params);
   R visitCase(@NotNull CoreCaseExpression expr, P params);
   R visitInteger(@NotNull CoreIntegerExpression expr, P params);
+  R visitTypeCoerce(@NotNull CoreTypeCoerceExpression expr, P params);
 }

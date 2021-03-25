@@ -252,6 +252,12 @@ public class FreeVariablesClassifier implements ExpressionVisitor<Boolean, FreeV
   }
 
   @Override
+  public Result visitTypeCoerce(TypeCoerceExpression expr, Boolean good) {
+    Result result = visitList(expr.getClauseArguments(), good);
+    return result != Result.NONE ? result : expr.getArgument().accept(this, good);
+  }
+
+  @Override
   public Result visitPEval(PEvalExpression expr, Boolean good) {
     return expr.getExpression().accept(this, good);
   }

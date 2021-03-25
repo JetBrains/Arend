@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public interface CoreFunctionDefinition extends CoreDefinition {
-  enum Kind { FUNC, SFUNC, LEMMA, INSTANCE }
+  enum Kind { FUNC, SFUNC, TYPE, LEMMA, INSTANCE }
 
   @NotNull Kind getKind();
   CoreExpression getResultType();

@@ -2,6 +2,7 @@ package org.arend.core.pattern;
 
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.expr.Expression;
+import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.ext.core.body.CoreExpressionPattern;
@@ -61,6 +62,16 @@ public interface ExpressionPattern extends Pattern, CoreExpressionPattern {
     }
 
     return decision;
+  }
+
+  static List<Expression> applyClauseArguments(List<? extends ExpressionPattern> patterns, List<? extends Expression> clauseArguments, Sort sortArgument) {
+    ExprSubstitution substitution = new ExprSubstitution().add(Pattern.getFirstBinding(patterns), clauseArguments);
+    LevelSubstitution levelSubst = sortArgument.toLevelSubstitution();
+    List<Expression> result = new ArrayList<>(patterns.size());
+    for (ExpressionPattern pattern : patterns) {
+      result.add(pattern.toExpression().subst(substitution, levelSubst));
+    }
+    return result;
   }
 
   static boolean unify(List<? extends ExpressionPattern> patterns1, List<? extends ExpressionPattern> patterns2, ExprSubstitution idpSubst, ExprSubstitution substitution1, ExprSubstitution substitution2, ErrorReporter errorReporter, Concrete.SourceNode sourceNode) {

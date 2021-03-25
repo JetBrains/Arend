@@ -48,7 +48,6 @@ import org.arend.ext.instance.SubclassSearchParameters;
 import org.arend.ext.prettyprinting.doc.DocFactory;
 import org.arend.ext.reference.ArendRef;
 import org.arend.ext.typechecking.*;
-import org.arend.ext.variable.Variable;
 import org.arend.extImpl.*;
 import org.arend.extImpl.userData.UserDataHolderImpl;
 import org.arend.naming.reference.*;
@@ -257,6 +256,43 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     return visitor.compare(UncheckedExpressionImpl.extract(expr1), UncheckedExpressionImpl.extract(expr2), null, true);
   }
 
+  public static TypecheckingResult coerceFromType(TypecheckingResult result) {
+    Expression curExpr = result.expression;
+    Expression curType = result.type;
+    while (curType instanceof FunCallExpression && ((FunCallExpression) curType).getDefinition().getKind() == CoreFunctionDefinition.Kind.TYPE) {
+      curExpr = TypeCoerceExpression.match((FunCallExpression) curType, curExpr, true);
+      if (curExpr == null) {
+        return null;
+      }
+      curType = curExpr.getType();
+    }
+    return new TypecheckingResult(curExpr, curType);
+  }
+
+  private static Pair<TypecheckingResult,Boolean> coerceToType(Expression expectedType, Function<Expression, Pair<Expression,Boolean>> checker) {
+    List<TypeCoerceExpression> stack = new ArrayList<>();
+    Expression curType = expectedType;
+    while (curType instanceof FunCallExpression && ((FunCallExpression) curType).getDefinition().getKind() == CoreFunctionDefinition.Kind.TYPE) {
+      TypeCoerceExpression typeCoerce = TypeCoerceExpression.match((FunCallExpression) curType, null, false);
+      if (typeCoerce == null) {
+        break;
+      }
+      stack.add(typeCoerce);
+      curType = typeCoerce.getArgumentType();
+    }
+    if (!stack.isEmpty()) {
+      Pair<Expression, Boolean> pair = checker.apply(curType);
+      Expression curExpr = pair.proj1;
+      if (curExpr == null) return new Pair<>(null, pair.proj2);
+      for (int i = stack.size() - 1; i >= 0; i--) {
+        stack.get(i).setArgument(curExpr);
+        curExpr = stack.get(i);
+      }
+      return new Pair<>(new TypecheckingResult(stack.get(0), expectedType), true);
+    }
+    return new Pair<>(null, true);
+  }
+
   public TypecheckingResult checkResult(Expression expectedType, TypecheckingResult result, Concrete.Expression expr) {
     boolean isOmega = expectedType instanceof Type && ((Type) expectedType).isOmega();
     if (result == null || expectedType == null || isOmega && result.type instanceof UniverseExpression) {
@@ -270,10 +306,10 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
     result.type = result.type.normalize(NormalizationMode.WHNF);
     expectedType = expectedType.normalize(NormalizationMode.WHNF);
-    if (!isOmega) {
-      ClassCallExpression actualClassCall = result.type.cast(ClassCallExpression.class);
-      ClassCallExpression expectedClassCall = expectedType.cast(ClassCallExpression.class);
-      if (actualClassCall != null && expectedClassCall != null && actualClassCall.getDefinition().isSubClassOf(expectedClassCall.getDefinition())) {
+    if (result.type instanceof ClassCallExpression && expectedType instanceof ClassCallExpression) {
+      ClassCallExpression actualClassCall = (ClassCallExpression) result.type;
+      ClassCallExpression expectedClassCall = (ClassCallExpression) expectedType;
+      if (actualClassCall.getDefinition().isSubClassOf(expectedClassCall.getDefinition())) {
         boolean replace = false;
         for (ClassField field : expectedClassCall.getImplementedHere().keySet()) {
           if (!actualClassCall.isImplemented(field)) {
@@ -290,6 +326,30 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           result.type = result.expression.getType();
           return checkResultExpr(expectedClassCall, result, expr);
         }
+      }
+    }
+
+    boolean actualIsType = result.type instanceof FunCallExpression && ((FunCallExpression) result.type).getDefinition().getKind() == CoreFunctionDefinition.Kind.TYPE;
+    boolean expectedIsType = expectedType instanceof FunCallExpression && ((FunCallExpression) expectedType).getDefinition().getKind() == CoreFunctionDefinition.Kind.TYPE;
+    if (actualIsType && expectedType.getStuckInferenceVariable() == null) {
+      TypecheckingResult coerceResult = coerceFromType(result);
+      if (coerceResult != null) {
+        result.expression = coerceResult.expression;
+        result.type = coerceResult.type.normalize(NormalizationMode.WHNF);
+      }
+    }
+    if (expectedIsType && result.type.getStuckInferenceVariable() == null) {
+      Pair<TypecheckingResult, Boolean> coerceResult = coerceToType(expectedType, argType -> {
+        if (!CompareVisitor.compare(myEquations, CMP.LE, result.type, argType, Type.OMEGA, expr)) {
+          if (!result.type.isError()) {
+            errorReporter.report(new TypeMismatchError(argType, result.type, expr));
+          }
+          return new Pair<>(null, false);
+        }
+        return new Pair<>(result.expression, true);
+      });
+      if (!coerceResult.proj2 || coerceResult.proj1 != null) {
+        return coerceResult.proj1;
       }
     }
 
@@ -1894,10 +1954,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         Sort sort = PiExpression.generateUpperBound(link.getType().getSortOfType(), getSortOfType(bodyResult.type, expr), myEquations, expr);
         TypecheckingResult result = new TypecheckingResult(new LamExpression(sort, link, bodyResult.expression), new PiExpression(sort, link, bodyResult.type));
         Expression expectedType = provider.getType();
-        if (expectedType != null && checkResult(expectedType, result, expr) == null) {
-          return null;
-        }
-        return result;
+        return expectedType == null ? result : checkResult(expectedType, result, expr);
       } else {
         Referable referable = ((Concrete.NameParameter) param).getReferable();
         if (piParam.isExplicit() && !param.isExplicit()) {
@@ -1992,8 +2049,17 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       Sort sort = PiExpression.generateUpperBound(link.getType().getSortOfType(), getSortOfType(bodyResult.type, expr), myEquations, expr);
       if (actualLink.hasNext()) {
         Expression expectedType = provider.getType();
-        if (expectedType != null && checkResult(expectedType, new TypecheckingResult(null, new PiExpression(sort, actualLink, bodyResult.type)), expr) == null) {
-          return null;
+        if (expectedType != null) {
+          TypecheckingResult result = checkResult(expectedType, new TypecheckingResult(new LamExpression(sort, actualLink, bodyResult.expression), new PiExpression(sort, actualLink, bodyResult.type)), expr);
+          if (result == null || link == actualLink) return result;
+          if (!(result.expression instanceof LamExpression)) {
+            DependentLink prevLink = link;
+            while (prevLink.getNext() != actualLink) {
+              prevLink = prevLink.getNext();
+            }
+            prevLink.setNext(EmptyDependentLink.getInstance());
+            return new TypecheckingResult(new LamExpression(sort, link, result.expression), new PiExpression(sort, link, result.type));
+          }
         }
       }
 
@@ -2059,30 +2125,41 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   @Override
   public TypecheckingResult visitTuple(Concrete.TupleExpression expr, Expression expectedType) {
-    Expression expectedTypeNorm = expectedType == null ? null : expectedType.normalize(NormalizationMode.WHNF);
-    SigmaExpression expectedTypeSigma = expectedTypeNorm == null ? null : expectedTypeNorm.cast(SigmaExpression.class);
-    if (expectedTypeSigma != null) {
-      DependentLink sigmaParams = expectedTypeSigma.getParameters();
+    Function<Expression, Pair<Expression,Boolean>> checker = type -> {
+      if (!(type instanceof SigmaExpression)) {
+        return new Pair<>(null, true);
+      }
+
+      DependentLink sigmaParams = ((SigmaExpression) type).getParameters();
       int sigmaParamsSize = DependentLink.Helper.size(sigmaParams);
 
       if (expr.getFields().size() != sigmaParamsSize) {
         errorReporter.report(new TypecheckingError("Expected a tuple with " + sigmaParamsSize + " fields, but given " + expr.getFields().size(), expr));
-        return null;
+        return new Pair<>(null, false);
       }
 
       List<Expression> fields = new ArrayList<>(expr.getFields().size());
-      TypecheckingResult tupleResult = new TypecheckingResult(new TupleExpression(fields, expectedTypeSigma), expectedType);
       ExprSubstitution substitution = new ExprSubstitution();
       for (Concrete.Expression field : expr.getFields()) {
         Expression expType = sigmaParams.getTypeExpr().subst(substitution);
         TypecheckingResult result = checkExpr(field, expType);
-        if (result == null) return null;
+        if (result == null) return new Pair<>(null, false);
         fields.add(result.expression);
         substitution.add(sigmaParams, result.expression);
 
         sigmaParams = sigmaParams.getNext();
       }
-      return tupleResult;
+      return new Pair<>(new TupleExpression(fields, (SigmaExpression) type), true);
+    };
+
+    Expression expectedTypeNorm = expectedType == null ? null : expectedType.normalize(NormalizationMode.WHNF);
+    Pair<TypecheckingResult, Boolean> coerceResult = coerceToType(expectedTypeNorm, checker);
+    if (!coerceResult.proj2 || coerceResult.proj1 != null) {
+      return coerceResult.proj1;
+    }
+    Pair<Expression,Boolean> pair = checker.apply(expectedTypeNorm);
+    if (!pair.proj2 || pair.proj1 != null) {
+      return new TypecheckingResult(pair.proj1, expectedType);
     }
 
     List<Sort> sorts = new ArrayList<>(expr.getFields().size());
@@ -2106,6 +2183,15 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     TypecheckingResult exprResult = checkExpr(expr.expression, null);
     if (exprResult == null) return null;
     exprResult.type = exprResult.type.normalize(NormalizationMode.WHNF);
+
+    if (exprResult.type instanceof FunCallExpression && ((FunCallExpression) exprResult.type).getDefinition().getKind() == CoreFunctionDefinition.Kind.TYPE) {
+      TypecheckingResult coerceResult = coerceFromType(exprResult);
+      if (coerceResult != null) {
+        exprResult.expression = coerceResult.expression;
+        exprResult.type = coerceResult.type.normalize(NormalizationMode.WHNF);
+      }
+    }
+
     if (expectedType != null && !(exprResult.type instanceof SigmaExpression) && exprResult.type.getStuckInferenceVariable() != null) {
       return defer(new MetaDefinition() {
         @Override
@@ -2114,6 +2200,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         }
       }, new ContextDataImpl(expr, Collections.emptyList(), null, null, expectedType, null), expectedType, false);
     }
+
     return checkProj(exprResult, expr, expectedType);
   }
 

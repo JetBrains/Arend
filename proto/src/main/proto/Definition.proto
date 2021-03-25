@@ -137,6 +137,7 @@ message Definition {
         FUNC = 0;
         SFUNC = 1;
         LEMMA = 2;
+        TYPE = 6;
         INSTANCE = 3;
         COCLAUSE = 4;
         COCLAUSE_LEMMA = 5;

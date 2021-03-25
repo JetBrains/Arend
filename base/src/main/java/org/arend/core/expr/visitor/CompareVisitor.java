@@ -1207,6 +1207,15 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
   }
 
   @Override
+  public Boolean visitTypeCoerce(TypeCoerceExpression expr, Expression other, Expression type) {
+    TypeCoerceExpression typeCoerce2 = other.cast(TypeCoerceExpression.class);
+    if (typeCoerce2 == null || expr.isFromLeftToRight() != typeCoerce2.isFromLeftToRight() || expr.isFromLeftToRight() && !compare(expr.getArgumentType(), typeCoerce2.getArgumentType(), Type.OMEGA, false)) {
+      return false;
+    }
+    return compare(expr.getArgument(), typeCoerce2.getArgument(), expr.getArgumentType(), true);
+  }
+
+  @Override
   public Boolean visitPEval(PEvalExpression expr, Expression other, Expression type) {
     return other.isInstance(PEvalExpression.class);
   }

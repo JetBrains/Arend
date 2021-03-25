@@ -112,4 +112,11 @@ public class InPlaceLevelSubstVisitor extends VoidExpressionVisitor<Void> {
       }
     }
   }
+
+  @Override
+  public Void visitTypeCoerce(TypeCoerceExpression expr, Void params) {
+    expr.substSort(mySubstitution);
+    super.visitTypeCoerce(expr, params);
+    return null;
+  }
 }

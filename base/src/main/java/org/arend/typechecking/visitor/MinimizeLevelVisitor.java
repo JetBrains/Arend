@@ -145,4 +145,9 @@ public class MinimizeLevelVisitor extends BaseExpressionVisitor<Void, Type> {
   public Type visitInteger(IntegerExpression expr, Void params) {
     return null;
   }
+
+  @Override
+  public Type visitTypeCoerce(TypeCoerceExpression expr, Void params) {
+    return null;
+  }
 }

@@ -117,7 +117,7 @@ class ExpressionDeserialization {
     for (String name : proto.getNameList()) {
       unfixedNames.add(name.isEmpty() ? null : name);
     }
-    Type type = proto.getType() != null ? readType(proto.getType()) : null;
+    Type type = readType(proto.getType());
     SingleDependentLink tele = proto.getIsHidden() && unfixedNames.size() == 1
       ? new TypedSingleDependentLink(!proto.getIsNotExplicit(), unfixedNames.get(0), type, true)
       : ExpressionFactory.singleParams(!proto.getIsNotExplicit(), unfixedNames, type);
@@ -292,6 +292,8 @@ class ExpressionDeserialization {
         return readNew(proto.getNew());
       case PEVAL:
         return readPEval(proto.getPEval());
+      case TYPE_COERCE:
+        return readTypeCoerce(proto.getTypeCoerce());
       case LET:
         return readLet(proto.getLet());
       case CASE:
@@ -446,6 +448,12 @@ class ExpressionDeserialization {
 
   private PEvalExpression readPEval(ExpressionProtos.Expression.PEval proto) throws DeserializationException {
     return new PEvalExpression(readExpr(proto.getExpression()));
+  }
+
+  private TypeCoerceExpression readTypeCoerce(ExpressionProtos.Expression.TypeCoerce proto) throws DeserializationException {
+    FunctionDefinition function = myCallTargetProvider.getCallTarget(proto.getFunRef(), FunctionDefinition.class);
+    myDependencyListener.dependsOn(myDefinition, function.getReferable());
+    return new TypeCoerceExpression(function, new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), proto.getClauseIndex(), readExprList(proto.getClauseArgumentList()), readExpr(proto.getArgument()), proto.getFromLeftToRight());
   }
 
   private String validName(String name) {

@@ -700,6 +700,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       typedDef.setStrictParameters(getStrictParameters(def.getParameters()));
     }
 
+    if (def.getKind() == FunctionKind.TYPE && def.getBody() instanceof Concrete.ElimFunctionBody && def.getResultType() == null) {
+      def.setResultType(new Concrete.UniverseExpression(def.getData(), null, null));
+    }
+
     Expression expectedType = null;
     Concrete.Expression cResultType = def.getResultType();
     if (cResultType != null) {
@@ -729,7 +733,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
       typedDef.setParameters(list.getFirst());
       typedDef.setResultType(expectedType);
-      typedDef.setKind(kind.isSFunc() ? (kind == FunctionKind.LEMMA ? CoreFunctionDefinition.Kind.LEMMA : CoreFunctionDefinition.Kind.SFUNC) : kind == FunctionKind.INSTANCE ? CoreFunctionDefinition.Kind.INSTANCE : CoreFunctionDefinition.Kind.FUNC);
+      typedDef.setKind(kind.isSFunc() ? (kind == FunctionKind.LEMMA ? CoreFunctionDefinition.Kind.LEMMA : kind == FunctionKind.TYPE ? CoreFunctionDefinition.Kind.TYPE : CoreFunctionDefinition.Kind.SFUNC) : kind == FunctionKind.INSTANCE ? CoreFunctionDefinition.Kind.INSTANCE : CoreFunctionDefinition.Kind.FUNC);
 
       calculateTypeClassParameters(def, typedDef);
       calculateParametersTypecheckingOrder(typedDef);
@@ -1031,7 +1035,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       List<DependentLink> elimParams = ElimTypechecking.getEliminatedParameters(elimBody.getEliminatedReferences(), elimBody.getClauses(), typedDef.getParameters(), typechecker);
       clauses = elimParams == null ? null : new PatternTypechecking(errorReporter, PatternTypechecking.Mode.FUNCTION, typechecker, true, null, elimParams).typecheckClauses(elimBody.getClauses(), def.getParameters(), typedDef.getParameters(), expectedType);
       Sort sort = expectedType.getSortOfType();
-      Body typedBody = clauses == null ? null : new ElimTypechecking(errorReporter, typechecker.getEquations(), expectedType, PatternTypechecking.Mode.FUNCTION, typeLevel, sort != null ? sort.getHLevel() : Level.INFINITY, kind.isSFunc(), elimBody.getClauses(), def).typecheckElim(clauses, typedDef.getParameters(), elimParams);
+      Body typedBody = clauses == null ? null : new ElimTypechecking(errorReporter, typechecker.getEquations(), expectedType, PatternTypechecking.Mode.FUNCTION, typeLevel, sort != null ? sort.getHLevel() : Level.INFINITY, kind.isSFunc() && kind != FunctionKind.TYPE, elimBody.getClauses(), def).typecheckElim(clauses, typedDef.getParameters(), elimParams);
       if (typedBody != null) {
         if (newDef) {
           typedDef.setBody(typedBody);
@@ -1262,6 +1266,11 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           }
           index++;
         }
+      }
+    } else if (kind == FunctionKind.TYPE) {
+      if (!(typedDef.getResultType() instanceof UniverseExpression || typedDef.getResultType().isError())) {
+        errorReporter.report(new TypeMismatchError(new UniverseExpression(Sort.STD), typedDef.getResultType(), def.getResultType()));
+        typedDef.setKind(CoreFunctionDefinition.Kind.SFUNC);
       }
     } else if (newDef && def instanceof Concrete.CoClauseFunctionDefinition && def.getKind() == FunctionKind.CLASS_COCLAUSE) {
       Referable fieldRef = ((Concrete.CoClauseFunctionDefinition) def).getImplementedField();

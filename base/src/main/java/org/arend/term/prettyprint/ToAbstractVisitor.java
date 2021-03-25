@@ -800,4 +800,9 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   public Concrete.Expression visitInteger(IntegerExpression expr, Void params) {
     return new Concrete.NumericLiteral(null, expr.getBigInteger());
   }
+
+  @Override
+  public Concrete.Expression visitTypeCoerce(TypeCoerceExpression expr, Void params) {
+    return expr.getArgument().accept(this, null);
+  }
 }

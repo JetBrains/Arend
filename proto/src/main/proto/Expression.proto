@@ -29,6 +29,7 @@ message Expression {
         SmallInteger small_integer = 18;
         BigInteger big_integer = 19;
         PEval pEval = 20;
+        TypeCoerce type_coerce = 22;
     }
 
     message Abs {
@@ -122,6 +123,15 @@ message Expression {
     }
     message PEval {
         Expression expression = 1;
+    }
+    message TypeCoerce {
+        int32 fun_ref = 1;
+        Level pLevel = 2;
+        Level hLevel = 3;
+        int32 clause_index = 4;
+        repeated Expression clause_argument = 5;
+        Expression argument = 6;
+        bool from_left_to_right = 7;
     }
     message New {
         ClassCall class_call = 1;

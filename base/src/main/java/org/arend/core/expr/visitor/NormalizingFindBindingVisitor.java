@@ -190,4 +190,14 @@ public class NormalizingFindBindingVisitor extends SearchVisitor<Void> {
   public Boolean visitInteger(IntegerExpression expr, Void params) {
     return false;
   }
+
+  @Override
+  public Boolean visitTypeCoerce(TypeCoerceExpression expr, Void params) {
+    for (Expression argument : expr.getClauseArguments()) {
+      if (findBinding(argument, true)) {
+        return true;
+      }
+    }
+    return findBinding(expr.getArgument(), true);
+  }
 }

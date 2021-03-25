@@ -4,6 +4,7 @@ import org.arend.core.definition.Definition;
 import org.arend.core.elimtree.*;
 import org.arend.core.expr.DefCallExpression;
 import org.arend.core.expr.Expression;
+import org.arend.core.expr.TypeCoerceExpression;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -44,16 +45,20 @@ public class FindDefCallVisitor<T extends Definition> extends SearchVisitor<Void
     return visitor.myFoundDefinitions;
   }
 
-  @Override
-  protected boolean processDefCall(DefCallExpression expression, Void param) {
+  private boolean checkDefinition(Definition definition) {
     //noinspection SuspiciousMethodCalls
-    if (myDefinitions.contains(expression.getDefinition())) {
+    if (myDefinitions.contains(definition)) {
       //noinspection unchecked
-      myFoundDefinitions.add((T) expression.getDefinition());
+      myFoundDefinitions.add((T) definition);
       return !myFindAll;
     } else {
       return false;
     }
+  }
+
+  @Override
+  protected boolean processDefCall(DefCallExpression expression, Void param) {
+    return checkDefinition(expression.getDefinition());
   }
 
   @Override
@@ -64,5 +69,10 @@ public class FindDefCallVisitor<T extends Definition> extends SearchVisitor<Void
       }
     }
     return false;
+  }
+
+  @Override
+  public Boolean visitTypeCoerce(TypeCoerceExpression expr, Void params) {
+    return checkDefinition(expr.getDefinition());
   }
 }

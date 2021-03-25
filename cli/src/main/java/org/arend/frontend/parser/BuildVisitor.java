@@ -610,11 +610,13 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
         isUse ? (((FuncKwUseContext) funcKw).useMod() instanceof UseCoerceContext
           ? FunctionKind.COERCE
           : FunctionKind.LEVEL)
-          : funcKw instanceof FuncKwLemmaContext
+        : funcKw instanceof FuncKwLemmaContext
           ? FunctionKind.LEMMA
-          : funcKw instanceof FuncKwSFuncContext
-          ? FunctionKind.SFUNC
-          : FunctionKind.FUNC,
+          : funcKw instanceof FuncKwTypeContext
+            ? FunctionKind.TYPE
+            : funcKw instanceof FuncKwSFuncContext
+              ? FunctionKind.SFUNC
+              : FunctionKind.FUNC,
         referable, visitLamTeles(ctx.tele(), true), returnPair.proj1, returnPair.proj2, body, parent.getReferable());
       if (coClauses != null) {
         visitCoClauses(coClauses, subgroups, resultGroup, referable, enclosingClass, body.getCoClauseElements());

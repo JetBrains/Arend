@@ -230,4 +230,13 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> {
   public Void visitInteger(IntegerExpression expr, P params) {
     return null;
   }
+
+  @Override
+  public Void visitTypeCoerce(TypeCoerceExpression expr, P params) {
+    for (Expression argument : expr.getClauseArguments()) {
+      argument.accept(this, params);
+    }
+    expr.getArgument().accept(this, params);
+    return null;
+  }
 }

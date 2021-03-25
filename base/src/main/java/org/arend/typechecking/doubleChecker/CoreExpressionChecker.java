@@ -749,4 +749,19 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
   public Expression visitInteger(IntegerExpression expr, Expression expectedType) {
     return check(expectedType, ExpressionFactory.Fin(expr.suc()), expr);
   }
+
+  @Override
+  public Expression visitTypeCoerce(TypeCoerceExpression expr, Expression expectedType) {
+    if (expr.getDefinition().getActualBody() instanceof ElimBody) {
+      List<? extends ElimClause<Pattern>> clauses = ((ElimBody) expr.getDefinition().getActualBody()).getClauses();
+      if (expr.getClauseIndex() >= clauses.size()) {
+        throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Index " + expr.getClauseIndex() + " is too big. The number of clauses is " + clauses.size(), mySourceNode), expr));
+      }
+    }
+    LevelSubstitution levelSubst = expr.getSortArgument().toLevelSubstitution();
+    ExprSubstitution substitution = new ExprSubstitution();
+    checkList(expr.getClauseArguments(), expr.getParameters(), substitution, levelSubst);
+    expr.getArgument().accept(this, expr.getArgumentType());
+    return check(expectedType, expr.getType(), expr);
+  }
 }

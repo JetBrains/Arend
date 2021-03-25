@@ -217,6 +217,11 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
   }
 
   @Override
+  public Expression visitTypeCoerce(TypeCoerceExpression expr, Void params) {
+    return expr.getType();
+  }
+
+  @Override
   public Expression visitPEval(PEvalExpression expr, Void params) {
     Expression normExpr = expr.eval();
     if (normExpr == null) {

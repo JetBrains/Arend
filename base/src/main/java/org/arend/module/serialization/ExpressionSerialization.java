@@ -553,6 +553,21 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
   }
 
   @Override
+  public ExpressionProtos.Expression visitTypeCoerce(TypeCoerceExpression expr, Void params) {
+    ExpressionProtos.Expression.TypeCoerce.Builder builder = ExpressionProtos.Expression.TypeCoerce.newBuilder();
+    builder.setFunRef(myCallTargetIndexProvider.getDefIndex(expr.getDefinition()));
+    builder.setPLevel(writeLevel(expr.getSortArgument().getPLevel()));
+    builder.setHLevel(writeLevel(expr.getSortArgument().getHLevel()));
+    builder.setClauseIndex(expr.getClauseIndex());
+    for (Expression arg : expr.getClauseArguments()) {
+      builder.addClauseArgument(arg.accept(this, null));
+    }
+    builder.setArgument(expr.getArgument().accept(this, null));
+    builder.setFromLeftToRight(expr.isFromLeftToRight());
+    return ExpressionProtos.Expression.newBuilder().setTypeCoerce(builder.build()).build();
+  }
+
+  @Override
   public ExpressionProtos.Expression visitFieldCall(FieldCallExpression expr, Void params) {
     ExpressionProtos.Expression.FieldCall.Builder builder = ExpressionProtos.Expression.FieldCall.newBuilder();
     builder.setFieldRef(myCallTargetIndexProvider.getDefIndex(expr.getDefinition()));

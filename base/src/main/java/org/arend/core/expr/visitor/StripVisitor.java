@@ -271,6 +271,16 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
   }
 
   @Override
+  public Expression visitTypeCoerce(TypeCoerceExpression expr, Void params) {
+    List<Expression> args = expr.getClauseArguments();
+    for (int i = 0; i < args.size(); i++) {
+      args.set(i, args.get(i).accept(this, null));
+    }
+    expr.setArgument(expr.getArgument().accept(this, null));
+    return expr;
+  }
+
+  @Override
   public Expression visitPEval(PEvalExpression expr, Void params) {
     return new PEvalExpression(expr.getExpression().accept(this, null));
   }

@@ -8,6 +8,7 @@ public enum FunctionKind {
   },
   SFUNC { @Override public boolean isSFunc() { return true; } },
   LEMMA { @Override public boolean isSFunc() { return true; } },
+  TYPE { @Override public boolean isSFunc() { return true; } },
   FUNC_COCLAUSE { @Override public boolean isCoclause() { return true; } },
   CLASS_COCLAUSE { @Override public boolean isCoclause() { return true; } },
   FUNC,

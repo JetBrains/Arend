@@ -942,8 +942,28 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
   }
 
   @Override
-  public IntegerExpression visitInteger(IntegerExpression expr, NormalizationMode params) {
+  public IntegerExpression visitInteger(IntegerExpression expr, NormalizationMode mode) {
     return expr;
+  }
+
+  @Override
+  public Expression visitTypeCoerce(TypeCoerceExpression expr, NormalizationMode mode) {
+    Expression arg = expr.getArgument().accept(this, mode);
+    if (arg instanceof TypeCoerceExpression && ((TypeCoerceExpression) arg).getDefinition() == expr.getDefinition() && ((TypeCoerceExpression) arg).isFromLeftToRight() != expr.isFromLeftToRight()) {
+      Expression result = ((TypeCoerceExpression) arg).getArgument();
+      return mode == NormalizationMode.WHNF ? result.accept(this, mode) : result;
+    }
+
+    List<Expression> args;
+    if (mode == NormalizationMode.NF) {
+      args = new ArrayList<>(expr.getClauseArguments().size());
+      for (Expression argument : expr.getClauseArguments()) {
+        args.add(argument.accept(this, NormalizationMode.NF));
+      }
+    } else {
+      args = expr.getClauseArguments();
+    }
+    return new TypeCoerceExpression(expr.getDefinition(), expr.getSortArgument(), expr.getClauseIndex(), args, arg, expr.isFromLeftToRight());
   }
 
   @Override

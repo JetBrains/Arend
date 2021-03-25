@@ -65,4 +65,9 @@ public class CheckForUniversesVisitor extends SearchVisitor<Void> {
     }
     return expr instanceof FieldCallExpression ? visitFieldCall((FieldCallExpression) expr, apps) : expr.accept(this, null);
   }
+
+  @Override
+  public Boolean visitTypeCoerce(TypeCoerceExpression expr, Void params) {
+    return expr.getDefinition().getUniverseKind() != UniverseKind.NO_UNIVERSES && visitSort(expr.getSortArgument());
+  }
 }
