@@ -91,7 +91,7 @@ public class Renamer implements VariableRenamer {
       return null;
     }
 
-    return name.isEmpty() ? null : (Character.isLetter(name.charAt(0)) ? Character.toLowerCase(name.charAt(0)) : null);
+    return name == null || name.isEmpty() ? null : (Character.isLetter(name.charAt(0)) ? Character.toLowerCase(name.charAt(0)) : null);
   }
 
   public void setBase(int base) {
