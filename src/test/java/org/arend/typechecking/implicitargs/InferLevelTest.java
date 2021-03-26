@@ -2,14 +2,20 @@ package org.arend.typechecking.implicitargs;
 
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.ConCallExpression;
+import org.arend.core.expr.UniverseExpression;
+import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
+import org.arend.ext.core.ops.CMP;
+import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.TypeCheckingTestCase;
+import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.junit.Test;
 
 import java.util.Objects;
 
 import static org.arend.Matchers.typeMismatchError;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class InferLevelTest extends TypeCheckingTestCase {
   @Test
@@ -363,5 +369,11 @@ public class InferLevelTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\lemma test {A B : \\Prop} (f : A -> B) (g : B -> A) : A = B" +
       "  => path (iso f g (\\lam _ => Path.inProp _ _) (\\lam _ => Path.inProp _ _))");
+  }
+
+  @Test
+  public void propTest() {
+    FunctionDefinition def = (FunctionDefinition) typeCheckDef("\\func test => \\Pi (A : \\Set) (a : A) -> a = a");
+    assertTrue(Level.compare(new Level(0), ((UniverseExpression) def.getResultType()).getSort().getPLevel(), CMP.EQ, DummyEquations.getInstance(), null));
   }
 }

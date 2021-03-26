@@ -10,6 +10,7 @@ import org.arend.core.expr.*;
 import org.arend.core.expr.let.HaveClause;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.pattern.Pattern;
+import org.arend.core.sort.Sort;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.ListErrorReporter;
 import org.arend.ext.error.LocalError;
@@ -193,7 +194,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public UniverseExpression visitUniverse(UniverseExpression expr, Void params) {
-    return expr;
+    return expr.getSort().getHLevel().isProp() ? new UniverseExpression(Sort.PROP) : expr;
   }
 
   @Override

@@ -363,6 +363,9 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     if (expr.isOmega()) {
       throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Universes of the infinity level are not allowed", mySourceNode), expr));
     }
+    if (expr.getSort().getHLevel().isProp() && !(expr.getSort().getPLevel().isClosed() && expr.getSort().getPLevel().getConstant() == 0)) {
+      throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("p-level of \\Prop is not 0", mySourceNode), expr));
+    }
     return check(expectedType, new UniverseExpression(expr.getSort().succ()), expr);
   }
 
