@@ -3,6 +3,7 @@ package org.arend.core.expr.visitor;
 import org.arend.core.constructor.SingleConstructor;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.inference.InferenceVariable;
+import org.arend.core.context.binding.inference.MetaInferenceVariable;
 import org.arend.core.context.binding.inference.TypeClassInferenceVariable;
 import org.arend.core.context.param.*;
 import org.arend.core.definition.*;
@@ -163,10 +164,12 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       return true;
     }
 
-    if (stuck1 instanceof InferenceReferenceExpression && stuck2 instanceof InferenceReferenceExpression && myAllowEquations && ((InferenceReferenceExpression) stuck1).getVariable() != null && ((InferenceReferenceExpression) stuck2).getVariable() != null && !(expr1 instanceof DefCallExpression && !(expr1 instanceof FieldCallExpression) && expr2 instanceof DefCallExpression && ((DefCallExpression) expr1).getDefinition() == ((DefCallExpression) expr2).getDefinition())) {
-      InferenceVariable var1 = ((InferenceReferenceExpression) stuck1).getVariable();
-      InferenceVariable var2 = ((InferenceReferenceExpression) stuck2).getVariable();
-      return myEquations.addEquation(expr1, expr2.subst(getSubstitution()), type, myCMP, var1.getSourceNode(), var1, var2);
+    if ((stuck1 instanceof InferenceReferenceExpression || stuck2 instanceof InferenceReferenceExpression) && myAllowEquations) {
+      InferenceVariable var1 = stuck1 instanceof InferenceReferenceExpression ? ((InferenceReferenceExpression) stuck1).getVariable() : null;
+      InferenceVariable var2 = stuck2 instanceof InferenceReferenceExpression ? ((InferenceReferenceExpression) stuck2).getVariable() : null;
+      if (var1 instanceof MetaInferenceVariable || var2 instanceof MetaInferenceVariable || var1 != null && var2 != null && !(expr1 instanceof DefCallExpression && !(expr1 instanceof FieldCallExpression) && expr2 instanceof DefCallExpression && ((DefCallExpression) expr1).getDefinition() == ((DefCallExpression) expr2).getDefinition())) {
+        return myEquations.addEquation(expr1, expr2.subst(getSubstitution()), type, myCMP, (var1 != null ? var1 : var2).getSourceNode(), var1, var2);
+      }
     }
 
     InferenceVariable stuckVar1 = expr1.getInferenceVariable();
