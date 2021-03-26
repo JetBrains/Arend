@@ -104,4 +104,9 @@ public abstract class BaseCoreExpressionVisitor<P, R> implements CoreExpressionV
   public R visitInteger(@NotNull CoreIntegerExpression expr, P params) {
     return visit(expr, params);
   }
+
+  @Override
+  public R visitTypeCoerce(@NotNull CoreTypeCoerceExpression expr, P params) {
+    return visit(expr, params);
+  }
 }

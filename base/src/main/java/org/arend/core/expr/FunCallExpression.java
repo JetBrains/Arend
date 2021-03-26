@@ -5,12 +5,14 @@ import org.arend.core.definition.DConstructor;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
+import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CoreFunCallExpression;
 import org.arend.prelude.Prelude;
 import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;
@@ -73,6 +75,11 @@ public class FunCallExpression extends DefCallExpression implements CoreFunCallE
   @Override
   public FunctionDefinition getDefinition() {
     return (FunctionDefinition) super.getDefinition();
+  }
+
+  @Override
+  public @Nullable Expression evaluate() {
+    return NormalizeVisitor.INSTANCE.eval(this);
   }
 
   @Override
