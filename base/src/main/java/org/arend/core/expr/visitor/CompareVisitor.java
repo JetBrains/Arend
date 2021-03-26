@@ -13,6 +13,7 @@ import org.arend.core.expr.type.TypeExpression;
 import org.arend.core.pattern.Pattern;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
+import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
@@ -590,15 +591,13 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
   }
 
   private Boolean checkDefCallAndApp(Expression expr1, Expression expr2, boolean correctOrder) {
-    DataCallExpression dataCall1 = expr1.cast(DataCallExpression.class);
-    ClassCallExpression classCall1 = dataCall1 == null ? expr1.cast(ClassCallExpression.class) : null;
-    if (dataCall1 == null && classCall1 == null) {
-      return null;
-    }
+    DefCallExpression defCall1 = expr1.cast(DefCallExpression.class);
+    if (!(defCall1 instanceof DataCallExpression || defCall1 instanceof ClassCallExpression || defCall1 instanceof FunCallExpression && ((FunCallExpression) defCall1).getDefinition().getKind() == CoreFunctionDefinition.Kind.TYPE)) return null;
     AppExpression app2 = expr2.cast(AppExpression.class);
     if (app2 == null) {
       return null;
     }
+    ClassCallExpression classCall1 = defCall1 instanceof ClassCallExpression ? (ClassCallExpression) defCall1 : null;
 
     List<Expression> args = new ArrayList<>();
     while (true) {
@@ -617,7 +616,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       } else {
         variable = null;
       }
-      if (variable == null || dataCall1 != null && args.size() > dataCall1.getDefCallArguments().size() || classCall1 != null && args.size() > classCall1.getDefinition().getNumberOfNotImplementedFields()) {
+      if (variable == null || classCall1 == null && args.size() > defCall1.getDefCallArguments().size() || classCall1 != null && args.size() > classCall1.getDefinition().getNumberOfNotImplementedFields()) {
         return null;
       }
       if (myOnlySolveVars && !variable.isSolved()) {
@@ -626,47 +625,48 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       Collections.reverse(args);
 
       DependentLink dataParams;
-      List<Expression> oldDataArgs;
-      if (dataCall1 != null) {
-        dataParams = dataCall1.getDefinition().getParameters();
-        oldDataArgs = dataCall1.getDefCallArguments();
+      List<? extends Expression> oldDataArgs;
+      if (classCall1 == null) {
+        dataParams = defCall1.getDefinition().getParameters();
+        oldDataArgs = defCall1.getDefCallArguments();
       } else {
-        oldDataArgs = new ArrayList<>();
+        List<Expression> classArgs = new ArrayList<>();
         for (ClassField field : classCall1.getDefinition().getFields()) {
           if (!field.getReferable().isParameterField()) {
             break;
           }
           Expression implementation = classCall1.getAbsImplementationHere(field);
           if (implementation != null) {
-            oldDataArgs.add(implementation);
+            classArgs.add(implementation);
           } else {
             if (!classCall1.getDefinition().isImplemented(field)) {
               break;
             }
           }
         }
-        if (args.size() > oldDataArgs.size() || classCall1.getImplementedHere().size() > oldDataArgs.size() && !(correctOrder && myCMP == CMP.LE || !correctOrder && myCMP == CMP.GE)) {
+        if (args.size() > classArgs.size() || classCall1.getImplementedHere().size() > classArgs.size() && !(correctOrder && myCMP == CMP.LE || !correctOrder && myCMP == CMP.GE)) {
           return null;
         }
         dataParams = classCall1.getClassFieldParameters();
+        oldDataArgs = classArgs;
       }
 
-      List<Expression> oldList = oldDataArgs.subList(oldDataArgs.size() - args.size(), oldDataArgs.size());
-      if (!compareLists(correctOrder ? oldList : args, correctOrder ? args : oldList, dataParams, dataCall1 == null ? null : dataCall1.getDefinition(), new ExprSubstitution())) {
+      List<? extends Expression> oldList = oldDataArgs.subList(oldDataArgs.size() - args.size(), oldDataArgs.size());
+      if (!compareLists(correctOrder ? oldList : args, correctOrder ? args : oldList, dataParams, defCall1.getDefinition(), new ExprSubstitution())) {
         return false;
       }
 
       Expression lam;
       Sort codSort;
       List<SingleDependentLink> params = new ArrayList<>();
-      if (dataCall1 != null) {
+      if (classCall1 == null) {
         int numberOfOldArgs = oldDataArgs.size() - args.size();
         for (int i = 0; i < numberOfOldArgs; i++) {
           dataParams = dataParams.getNext();
         }
         List<Expression> newDataArgs = new ArrayList<>(oldDataArgs.subList(0, numberOfOldArgs));
-        lam = new DataCallExpression(dataCall1.getDefinition(), dataCall1.getSortArgument(), newDataArgs);
-        codSort = dataCall1.getDefinition().getSort();
+        lam = defCall1.getDefinition().getDefCall(defCall1.getSortArgument(), newDataArgs);
+        codSort = defCall1 instanceof DataCallExpression ? ((DataCallExpression) defCall1).getDefinition().getSort() : ((UniverseExpression) ((FunCallExpression) defCall1).getDefinition().getResultType()).getSort();
 
         SingleDependentLink firstParam = null;
         SingleDependentLink lastParam = null;

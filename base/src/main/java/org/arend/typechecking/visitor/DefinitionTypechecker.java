@@ -1268,8 +1268,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
       }
     } else if (kind == FunctionKind.TYPE) {
-      if (!(typedDef.getResultType() instanceof UniverseExpression || typedDef.getResultType().isError())) {
-        errorReporter.report(new TypeMismatchError(new UniverseExpression(Sort.STD), typedDef.getResultType(), def.getResultType()));
+      if (!(typedDef.getResultType() instanceof UniverseExpression)) {
+        if (!typedDef.getResultType().isError()) {
+          errorReporter.report(new TypeMismatchError(new UniverseExpression(Sort.STD), typedDef.getResultType(), def.getResultType()));
+        }
         typedDef.setKind(CoreFunctionDefinition.Kind.SFUNC);
       }
     } else if (newDef && def instanceof Concrete.CoClauseFunctionDefinition && def.getKind() == FunctionKind.CLASS_COCLAUSE) {
