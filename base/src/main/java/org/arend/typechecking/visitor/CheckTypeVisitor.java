@@ -331,24 +331,26 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
     boolean actualIsType = result.type instanceof FunCallExpression && ((FunCallExpression) result.type).getDefinition().getKind() == CoreFunctionDefinition.Kind.TYPE;
     boolean expectedIsType = expectedType instanceof FunCallExpression && ((FunCallExpression) expectedType).getDefinition().getKind() == CoreFunctionDefinition.Kind.TYPE;
-    if (actualIsType && expectedType.getStuckInferenceVariable() == null) {
-      TypecheckingResult coerceResult = coerceFromType(result);
-      if (coerceResult != null) {
-        result.expression = coerceResult.expression;
-        result.type = coerceResult.type.normalize(NormalizationMode.WHNF);
-      }
-    }
-    if (expectedIsType && result.type.getStuckInferenceVariable() == null) {
-      Pair<TypecheckingResult, Boolean> coerceResult = coerceToType(expectedType, argType -> {
-        if (!CompareVisitor.compare(myEquations, CMP.LE, result.type, argType, Type.OMEGA, expr)) {
-          if (!result.type.isError()) {
-            errorReporter.report(new TypeMismatchError(argType, result.type, expr));
-          }
-          return new Pair<>(null, false);
+    if (!(actualIsType && expectedIsType && ((FunCallExpression) result.type).getDefinition() == ((FunCallExpression) expectedType).getDefinition())) {
+      if (actualIsType && expectedType.getStuckInferenceVariable() == null) {
+        TypecheckingResult coerceResult = coerceFromType(result);
+        if (coerceResult != null) {
+          result.expression = coerceResult.expression;
+          result.type = coerceResult.type.normalize(NormalizationMode.WHNF);
         }
-        return new Pair<>(result.expression, true);
-      });
-      if (coerceResult != null) return coerceResult.proj1;
+      }
+      if (expectedIsType && result.type.getStuckInferenceVariable() == null) {
+        Pair<TypecheckingResult, Boolean> coerceResult = coerceToType(expectedType, argType -> {
+          if (!CompareVisitor.compare(myEquations, CMP.LE, result.type, argType, Type.OMEGA, expr)) {
+            if (!result.type.isError()) {
+              errorReporter.report(new TypeMismatchError(argType, result.type, expr));
+            }
+            return new Pair<>(null, false);
+          }
+          return new Pair<>(result.expression, true);
+        });
+        if (coerceResult != null) return coerceResult.proj1;
+      }
     }
 
     TypecheckingResult coercedResult = CoerceData.coerce(result, expectedType, expr, this);
