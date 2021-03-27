@@ -509,6 +509,11 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
 
     @Override
+    public @Nullable <T> Pair<TypecheckingResult, T> coerce(Function<ParametersProvider, Pair<Expression, T>> checker) {
+      return null;
+    }
+
+    @Override
     public @Nullable Expression getType() {
       return null;
     }
@@ -1867,6 +1872,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   private interface ParametersProvider {
     @Nullable SingleDependentLink nextParameter();
+    <T> @Nullable Pair<TypecheckingResult,T> coerce(Function<ParametersProvider, Pair<Expression,T>> checker);
     @Nullable Expression getType();
     void subst(DependentLink param, Expression expr);
   }
@@ -1874,6 +1880,11 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   private static final ParametersProvider NULL_PARAMETERS_PROVIDER = new ParametersProvider() {
     @Override
     public @Nullable SingleDependentLink nextParameter() {
+      return null;
+    }
+
+    @Override
+    public @Nullable <T> Pair<TypecheckingResult, T> coerce(Function<ParametersProvider, Pair<Expression, T>> checker) {
       return null;
     }
 
@@ -1919,6 +1930,12 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
 
     @Override
+    public <T> @Nullable Pair<TypecheckingResult,T> coerce(Function<ParametersProvider, Pair<Expression,T>> checker) {
+      return expression instanceof FunCallExpression && ((FunCallExpression) expression).getDefinition().getKind() == CoreFunctionDefinition.Kind.TYPE
+        ? coerceToType(expression, t -> checker.apply(new ExpressionParametersProvider(t))) : null;
+    }
+
+    @Override
     public @Nullable Expression getType() {
       return (parameter.hasNext() ? new PiExpression(sort, parameter, expression) : expression).subst(substitution);
     }
@@ -1934,156 +1951,161 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       return checkExpr(expr.getBody(), provider.getType());
     }
 
-    Concrete.Parameter param = parameters.get(0);
-    SingleDependentLink piParam = provider.nextParameter();
-    if (piParam != null && !piParam.isExplicit() && param.isExplicit()) {
-      for (SingleDependentLink link = piParam; link.hasNext(); link = link.getNext()) {
-        addBinding(null, link);
-        if (link instanceof UntypedSingleDependentLink) {
-          provider.nextParameter();
+    Function<Pair<ParametersProvider,SingleDependentLink>, Pair<TypecheckingResult,Boolean>> checker = pair -> {
+      ParametersProvider newProvider = pair.proj1;
+      SingleDependentLink piParam = pair.proj2;
+      Concrete.Parameter param = parameters.get(0);
+      if (piParam != null && !piParam.isExplicit() && param.isExplicit()) {
+        for (SingleDependentLink link = piParam; link.hasNext(); link = link.getNext()) {
+          addBinding(null, link);
+          if (link instanceof UntypedSingleDependentLink) {
+            newProvider.nextParameter();
+          }
         }
+        return new Pair<>(bodyToLam(piParam, visitLam(parameters, expr, newProvider), expr), true);
       }
-      return bodyToLam(piParam, visitLam(parameters, expr, provider), expr);
-    }
 
-    if (param instanceof Concrete.NameParameter) {
-      if (piParam == null) {
-        TypedSingleDependentLink link = visitNameParameter((Concrete.NameParameter) param, expr);
-        TypecheckingResult bodyResult = visitLam(parameters.subList(1, parameters.size()), expr, NULL_PARAMETERS_PROVIDER);
-        if (bodyResult == null) return null;
-        Sort sort = PiExpression.generateUpperBound(link.getType().getSortOfType(), getSortOfType(bodyResult.type, expr), myEquations, expr);
-        TypecheckingResult result = new TypecheckingResult(new LamExpression(sort, link, bodyResult.expression), new PiExpression(sort, link, bodyResult.type));
-        Expression expectedType = provider.getType();
-        return expectedType == null ? result : checkResult(expectedType, result, expr);
-      } else {
-        Referable referable = ((Concrete.NameParameter) param).getReferable();
-        if (piParam.isExplicit() && !param.isExplicit()) {
-          errorReporter.report(new ImplicitLambdaError(referable, -1, param));
-        }
-
-        Type paramType = piParam.getType();
-        DefCallExpression defCallParamType = paramType.getExpr().cast(DefCallExpression.class);
-        if (defCallParamType != null && defCallParamType.getDefinition().getUniverseKind() == UniverseKind.NO_UNIVERSES) { // fixes test pLevelTest
-          Definition definition = defCallParamType.getDefinition();
-          Sort sortArg = definition instanceof DataDefinition || definition instanceof FunctionDefinition || definition instanceof ClassDefinition ? Sort.generateInferVars(myEquations, false, param) : null;
-          if (definition instanceof ClassDefinition) {
-            ClassCallExpression classCall = (ClassCallExpression) defCallParamType;
-            for (Map.Entry<ClassField, Expression> entry : classCall.getImplementedHere().entrySet()) {
-              Expression type = entry.getValue().getType();
-              if (type == null || !CompareVisitor.compare(myEquations, CMP.LE, type, classCall.getDefinition().getFieldType(entry.getKey(), sortArg, new ReferenceExpression(classCall.getThisBinding())), Type.OMEGA, param)) {
-                sortArg = null;
-                break;
-              }
-            }
-          } else if (sortArg != null) {
-            ExprSubstitution substitution = new ExprSubstitution();
-            LevelSubstitution levelSubst = sortArg.toLevelSubstitution();
-            DependentLink link = definition.getParameters();
-            for (Expression arg : defCallParamType.getDefCallArguments()) {
-              Expression type = arg.getType();
-              if (type == null || !CompareVisitor.compare(myEquations, CMP.LE, type, link.getTypeExpr().subst(substitution, levelSubst), Type.OMEGA, param)) {
-                sortArg = null;
-                break;
-              }
-              substitution.add(link, arg);
-              link = link.getNext();
-            }
+      if (param instanceof Concrete.NameParameter) {
+        if (piParam == null) {
+          TypedSingleDependentLink link = visitNameParameter((Concrete.NameParameter) param, expr);
+          TypecheckingResult bodyResult = visitLam(parameters.subList(1, parameters.size()), expr, NULL_PARAMETERS_PROVIDER);
+          if (bodyResult == null) return new Pair<>(null, true);
+          Sort sort = PiExpression.generateUpperBound(link.getType().getSortOfType(), getSortOfType(bodyResult.type, expr), myEquations, expr);
+          TypecheckingResult result = new TypecheckingResult(new LamExpression(sort, link, bodyResult.expression), new PiExpression(sort, link, bodyResult.type));
+          Expression expectedType = newProvider.getType();
+          return new Pair<>(expectedType == null ? result : checkResult(expectedType, result, expr), true);
+        } else {
+          Referable referable = ((Concrete.NameParameter) param).getReferable();
+          if (piParam.isExplicit() && !param.isExplicit()) {
+            errorReporter.report(new ImplicitLambdaError(referable, -1, param));
           }
 
-          if (sortArg != null) {
-            if (definition instanceof DataDefinition) {
-              paramType = new DataCallExpression((DataDefinition) definition, sortArg, new ArrayList<>(defCallParamType.getDefCallArguments()));
-            } else if (definition instanceof FunctionDefinition) {
-              paramType = new TypeExpression(FunCallExpression.make((FunctionDefinition) definition, sortArg, new ArrayList<>(defCallParamType.getDefCallArguments())), paramType.getSortOfType());
-            } else {
+          Type paramType = piParam.getType();
+          DefCallExpression defCallParamType = paramType.getExpr().cast(DefCallExpression.class);
+          if (defCallParamType != null && defCallParamType.getDefinition().getUniverseKind() == UniverseKind.NO_UNIVERSES) { // fixes test pLevelTest
+            Definition definition = defCallParamType.getDefinition();
+            Sort sortArg = definition instanceof DataDefinition || definition instanceof FunctionDefinition || definition instanceof ClassDefinition ? Sort.generateInferVars(myEquations, false, param) : null;
+            if (definition instanceof ClassDefinition) {
               ClassCallExpression classCall = (ClassCallExpression) defCallParamType;
-              paramType = new ClassCallExpression((ClassDefinition) definition, sortArg, classCall.getImplementedHere(), classCall.getDefinition().computeSort(sortArg, classCall.getImplementedHere(), classCall.getThisBinding()), classCall.getUniverseKind());
+              for (Map.Entry<ClassField, Expression> entry : classCall.getImplementedHere().entrySet()) {
+                Expression type = entry.getValue().getType();
+                if (type == null || !CompareVisitor.compare(myEquations, CMP.LE, type, classCall.getDefinition().getFieldType(entry.getKey(), sortArg, new ReferenceExpression(classCall.getThisBinding())), Type.OMEGA, param)) {
+                  sortArg = null;
+                  break;
+                }
+              }
+            } else if (sortArg != null) {
+              ExprSubstitution substitution = new ExprSubstitution();
+              LevelSubstitution levelSubst = sortArg.toLevelSubstitution();
+              DependentLink link = definition.getParameters();
+              for (Expression arg : defCallParamType.getDefCallArguments()) {
+                Expression type = arg.getType();
+                if (type == null || !CompareVisitor.compare(myEquations, CMP.LE, type, link.getTypeExpr().subst(substitution, levelSubst), Type.OMEGA, param)) {
+                  sortArg = null;
+                  break;
+                }
+                substitution.add(link, arg);
+                link = link.getNext();
+              }
+            }
+
+            if (sortArg != null) {
+              if (definition instanceof DataDefinition) {
+                paramType = new DataCallExpression((DataDefinition) definition, sortArg, new ArrayList<>(defCallParamType.getDefCallArguments()));
+              } else if (definition instanceof FunctionDefinition) {
+                paramType = new TypeExpression(FunCallExpression.make((FunctionDefinition) definition, sortArg, new ArrayList<>(defCallParamType.getDefCallArguments())), paramType.getSortOfType());
+              } else {
+                ClassCallExpression classCall = (ClassCallExpression) defCallParamType;
+                paramType = new ClassCallExpression((ClassDefinition) definition, sortArg, classCall.getImplementedHere(), classCall.getDefinition().computeSort(sortArg, classCall.getImplementedHere(), classCall.getThisBinding()), classCall.getUniverseKind());
+              }
+            }
+          }
+
+          SingleDependentLink link = new TypedSingleDependentLink(piParam.isExplicit(), referable == null ? null : referable.textRepresentation(), paramType);
+          addBinding(referable, link);
+          newProvider.subst(piParam, new ReferenceExpression(link));
+          return new Pair<>(bodyToLam(link, visitLam(parameters.subList(1, parameters.size()), expr, newProvider), expr), true);
+        }
+      } else if (param instanceof Concrete.TypeParameter) {
+        SingleDependentLink link = visitTypeParameter((Concrete.TypeParameter) param, null, piParam == null || piParam.isExplicit() != param.isExplicit() ? null : piParam.getType());
+        if (link == null) {
+          return new Pair<>(null, true);
+        }
+
+        int namesCount = param.getNumberOfParameters();
+        SingleDependentLink actualLink = link;
+        if (piParam != null) {
+          Expression argType = link.getTypeExpr();
+          for (int i = 0; i < namesCount; i++, actualLink = actualLink.getNext()) {
+            while (piParam instanceof UntypedDependentLink && i < namesCount - 1) {
+              newProvider.subst(piParam, new ReferenceExpression(actualLink));
+              piParam = newProvider.nextParameter();
+              actualLink = actualLink.getNext();
+              i++;
+            }
+            if (piParam == null) {
+              break;
+            }
+            if (piParam.isExplicit() && !param.isExplicit() && i < namesCount) {
+              errorReporter.report(new ImplicitLambdaError(param.getReferableList().get(i), namesCount > 1 ? i : -1, param));
+            }
+            if (!CompareVisitor.compare(myEquations, CMP.EQ, argType, piParam.getTypeExpr(), Type.OMEGA, param.getType())) {
+              if (!argType.isError()) {
+                errorReporter.report(new TypeMismatchError("Type mismatch in an argument of the lambda", piParam.getTypeExpr(), argType, param.getType()));
+                return new Pair<>(null, true);
+              }
+            }
+
+            newProvider.subst(piParam, new ReferenceExpression(actualLink));
+            if (i < namesCount - 1) {
+              piParam = newProvider.nextParameter();
             }
           }
         }
 
-        SingleDependentLink link = new TypedSingleDependentLink(piParam.isExplicit(), referable == null ? null : referable.textRepresentation(), paramType);
-        addBinding(referable, link);
-        provider.subst(piParam, new ReferenceExpression(link));
-        return bodyToLam(link, visitLam(parameters.subList(1, parameters.size()), expr, provider), expr);
-      }
-    } else if (param instanceof Concrete.TypeParameter) {
-      SingleDependentLink link = visitTypeParameter((Concrete.TypeParameter) param, null, piParam == null || piParam.isExplicit() != param.isExplicit() ? null : piParam.getType());
-      if (link == null) {
-        return null;
-      }
-
-      int namesCount = param.getNumberOfParameters();
-      SingleDependentLink actualLink = link;
-      if (piParam != null) {
-        Expression argType = link.getTypeExpr();
-        for (int i = 0; i < namesCount; i++, actualLink = actualLink.getNext()) {
-          while (piParam instanceof UntypedDependentLink && i < namesCount - 1) {
-            provider.subst(piParam, new ReferenceExpression(actualLink));
-            piParam = provider.nextParameter();
-            actualLink = actualLink.getNext();
-            i++;
-          }
-          if (piParam == null) {
-            break;
-          }
-          if (piParam.isExplicit() && !param.isExplicit() && i < namesCount) {
-            errorReporter.report(new ImplicitLambdaError(param.getReferableList().get(i), namesCount > 1 ? i : -1, param));
-          }
-          if (!CompareVisitor.compare(myEquations, CMP.EQ, argType, piParam.getTypeExpr(), Type.OMEGA, param.getType())) {
-            if (!argType.isError()) {
-              errorReporter.report(new TypeMismatchError("Type mismatch in an argument of the lambda", piParam.getTypeExpr(), argType, param.getType()));
-              return null;
+        TypecheckingResult bodyResult = visitLam(parameters.subList(1, parameters.size()), expr, actualLink.hasNext() ? NULL_PARAMETERS_PROVIDER : newProvider);
+        if (bodyResult == null) return new Pair<>(null, true);
+        Sort sort = PiExpression.generateUpperBound(link.getType().getSortOfType(), getSortOfType(bodyResult.type, expr), myEquations, expr);
+        if (actualLink.hasNext()) {
+          Expression expectedType = newProvider.getType();
+          if (expectedType != null) {
+            TypecheckingResult result = checkResult(expectedType, new TypecheckingResult(new LamExpression(sort, actualLink, bodyResult.expression), new PiExpression(sort, actualLink, bodyResult.type)), expr);
+            if (result == null || link == actualLink) return new Pair<>(result, true);
+            if (!(result.expression instanceof LamExpression)) {
+              DependentLink prevLink = link;
+              while (prevLink.getNext() != actualLink) {
+                prevLink = prevLink.getNext();
+              }
+              prevLink.setNext(EmptyDependentLink.getInstance());
+              return new Pair<>(new TypecheckingResult(new LamExpression(sort, link, result.expression), new PiExpression(sort, link, result.type)), true);
             }
           }
-
-          provider.subst(piParam, new ReferenceExpression(actualLink));
-          if (i < namesCount - 1) {
-            piParam = provider.nextParameter();
-          }
         }
-      }
 
-      TypecheckingResult bodyResult = visitLam(parameters.subList(1, parameters.size()), expr, actualLink.hasNext() ? NULL_PARAMETERS_PROVIDER : provider);
-      if (bodyResult == null) return null;
-      Sort sort = PiExpression.generateUpperBound(link.getType().getSortOfType(), getSortOfType(bodyResult.type, expr), myEquations, expr);
-      if (actualLink.hasNext()) {
-        Expression expectedType = provider.getType();
-        if (expectedType != null) {
-          TypecheckingResult result = checkResult(expectedType, new TypecheckingResult(new LamExpression(sort, actualLink, bodyResult.expression), new PiExpression(sort, actualLink, bodyResult.type)), expr);
-          if (result == null || link == actualLink) return result;
-          if (!(result.expression instanceof LamExpression)) {
-            DependentLink prevLink = link;
-            while (prevLink.getNext() != actualLink) {
-              prevLink = prevLink.getNext();
-            }
-            prevLink.setNext(EmptyDependentLink.getInstance());
-            return new TypecheckingResult(new LamExpression(sort, link, result.expression), new PiExpression(sort, link, result.type));
-          }
-        }
+        return new Pair<>(new TypecheckingResult(new LamExpression(sort, link, bodyResult.expression), new PiExpression(sort, link, bodyResult.type)), true);
+      } else {
+        throw new IllegalStateException();
       }
+    };
 
-      return new TypecheckingResult(new LamExpression(sort, link, bodyResult.expression), new PiExpression(sort, link, bodyResult.type));
-    } else {
-      throw new IllegalStateException();
+    SingleDependentLink piParam = provider.nextParameter();
+    if (piParam != null) {
+      return checker.apply(new Pair<>(provider, piParam)).proj1;
     }
+
+    var pair2 = provider.coerce(newProvider -> {
+      SingleDependentLink newPiParam = newProvider.nextParameter();
+      if (newPiParam == null) return null;
+      var pair = checker.apply(new Pair<>(newProvider, newPiParam));
+      return new Pair<>(pair.proj1 == null ? null : pair.proj1.expression, pair.proj2);
+    });
+
+    return pair2 != null ? pair2.proj1 : checker.apply(new Pair<>(provider, null)).proj1;
   }
 
   @Override
   public TypecheckingResult visitLam(Concrete.LamExpression expr, Expression expectedType) {
     try (var ignored = new Utils.SetContextSaver<>(context)) {
-      if (expectedType != null) {
-        expectedType = expectedType.normalize(NormalizationMode.WHNF);
-        if (expectedType instanceof FunCallExpression && ((FunCallExpression) expectedType).getDefinition().getKind() == CoreFunctionDefinition.Kind.TYPE) {
-          Pair<TypecheckingResult,Boolean> pair = coerceToType(expectedType, argType -> {
-            TypecheckingResult result = visitLam(expr.getParameters(), expr, new ExpressionParametersProvider(argType));
-            return result == null ? new Pair<>(null, false) : new Pair<>(result.expression, true);
-          });
-          if (pair != null) {
-            return pair.proj1;
-          }
-        }
-      }
       return visitLam(expr.getParameters(), expr, expectedType == null ? NULL_PARAMETERS_PROVIDER : new ExpressionParametersProvider(expectedType));
     }
   }

@@ -92,6 +92,15 @@ public class TypeTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void instanceTest() {
+    typeCheckModule(
+      "\\type E (A : \\Type) => A\n" +
+      "\\class C (X : \\Type) | field : X\n" +
+      "\\instance c : C (E Nat) 0\n" +
+      "\\func test : E Nat => field");
+  }
+
+  @Test
   public void lamTest() {
     typeCheckModule(
       "\\type E (A : \\Type) => A -> A\n" +
@@ -99,11 +108,9 @@ public class TypeTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void instanceTest() {
+  public void lamTest2() {
     typeCheckModule(
-      "\\type E (A : \\Type) => A\n" +
-      "\\class C (X : \\Type) | field : X\n" +
-      "\\instance c : C (E Nat) 0\n" +
-      "\\func test : E Nat => field");
+      "\\type E (A : \\Type) => A -> A\n" +
+      "\\func test : Nat -> E Nat => \\lam m n => \\case n \\with { | 0 => 0 | suc n => n }");
   }
 }
