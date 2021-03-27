@@ -337,6 +337,9 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         if (coerceResult != null) {
           result.expression = coerceResult.expression;
           result.type = coerceResult.type.normalize(NormalizationMode.WHNF);
+          TypecheckingResult result2 = (TypecheckingResult) myArgsInference.inferTail(result, expectedType, expr);
+          result.expression = result2.expression;
+          result.type = result2.type;
         }
       }
       if (expectedIsType && result.type.getStuckInferenceVariable() == null) {
@@ -355,7 +358,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
     TypecheckingResult coercedResult = CoerceData.coerce(result, expectedType, expr, this);
     if (coercedResult != null) {
-      return coercedResult;
+      return (TypecheckingResult) myArgsInference.inferTail(coercedResult, expectedType, expr);
     }
 
     return isOmega ? result : checkResultExpr(expectedType, result, expr);
