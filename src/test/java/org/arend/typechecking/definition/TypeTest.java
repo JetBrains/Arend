@@ -40,6 +40,20 @@ public class TypeTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void appImplicitTest() {
+    typeCheckModule(
+      "\\type E (A : \\Type) (a : A) => \\Pi {a' : A} -> a = a' -> Nat\n" +
+      "\\func test (x : E Nat 0) => x idp");
+  }
+
+  @Test
+  public void appImplicitTest2() {
+    typeCheckModule(
+      "\\type E (A : \\Type) (a : A) => \\Pi {a' : A} -> a = a' -> Nat\n" +
+      "\\func test (x : E Nat 0) => x {_} idp");
+  }
+
+  @Test
   public void tupleTest() {
     typeCheckModule(
       "\\type E (A : \\Type) (y : A) => \\Sigma (x : A) (x = y)\n" +

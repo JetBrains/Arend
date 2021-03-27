@@ -174,12 +174,18 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
       TypecheckingResult coercedResult = CheckTypeVisitor.coerceFromType((TypecheckingResult) result);
       if (coercedResult != null) {
         result = coercedResult;
+        if (isExplicit) {
+          result = fixImplicitArgs(result, result.getImplicitParameters(), fun, false, null);
+        }
+        param = result.getParameter();
       }
-      param = result.getParameter();
       if (!param.hasNext()) {
         coercedResult = CoerceData.coerceToKey(((TypecheckingResult) result), new CoerceData.PiKey(), fun, myVisitor);
         if (coercedResult != null) {
           result = coercedResult;
+          if (isExplicit) {
+            result = fixImplicitArgs(result, result.getImplicitParameters(), fun, false, null);
+          }
           param = result.getParameter();
         }
       }
