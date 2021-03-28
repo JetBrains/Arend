@@ -282,6 +282,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
     if (!stack.isEmpty()) {
       Pair<Expression,T> pair = checker.apply(curType);
+      if (pair == null) return null;
       Expression curExpr = pair.proj1;
       if (curExpr == null) return new Pair<>(null, pair.proj2);
       for (int i = stack.size() - 1; i >= 0; i--) {
