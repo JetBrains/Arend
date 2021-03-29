@@ -24,6 +24,7 @@ import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.util.Pair;
 import org.jetbrains.annotations.TestOnly;
 
+import java.math.BigInteger;
 import java.util.*;
 
 @SuppressWarnings("BooleanMethodIsAlwaysInverted")
@@ -520,16 +521,14 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     return visitDefCall(expr1, expr2);
   }
 
-  private Pair<Expression, Integer> getSucs(Expression expr) {
+  private Pair<Expression, BigInteger> getSucs(Expression expr) {
     int sucs = 0;
     while (true) {
       if (!(expr instanceof ConCallExpression && ((ConCallExpression) expr).getDefinition() == Prelude.SUC)) {
-        return new Pair<>(expr, sucs);
+        return expr instanceof IntegerExpression ? new Pair<>(new SmallIntegerExpression(0), ((IntegerExpression) expr).plus(sucs).getBigInteger()) : new Pair<>(expr, BigInteger.valueOf(sucs));
       }
       expr = ((ConCallExpression) expr).getDefCallArguments().get(0);
-      if (myNormalize) {
-        expr = expr.normalize(NormalizationMode.WHNF);
-      }
+      expr = myNormalize ? expr.normalize(NormalizationMode.WHNF) : expr.getUnderlyingExpression();
       sucs++;
     }
   }
@@ -560,32 +559,35 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     var pair2 = getSucs(arg2);
     InferenceVariable stuckVar1 = pair1.proj1.getStuckInferenceVariable();
     InferenceVariable stuckVar2 = pair2.proj1.getStuckInferenceVariable();
-    if (stuckVar2 == null && (!(pair2.proj1 instanceof IntegerExpression) && pair1.proj2 > pair2.proj2 || pair2.proj1 instanceof IntegerExpression && ((IntegerExpression) pair2.proj1).compare(pair1.proj2) < 0)) {
+    if (stuckVar2 == null && pair1.proj2.compareTo(pair2.proj2) > 0) {
       return false;
     }
-    if (pair1.proj1 instanceof IntegerExpression && ((IntegerExpression) pair1.proj1).compare(pair2.proj2) <= 0) {
+    if (stuckVar2 == null && pair1.proj1 instanceof IntegerExpression || stuckVar2 != null && pair1.proj1 instanceof IntegerExpression && pair1.proj2.compareTo(pair2.proj2) <= 0) {
       return true;
     }
     if (stuckVar1 != null || stuckVar2 != null) {
+      if (pair1.proj1 instanceof InferenceReferenceExpression && pair2.proj1 instanceof InferenceReferenceExpression && stuckVar1 == stuckVar2) {
+        return pair1.proj2.compareTo(pair2.proj2) <= 0;
+      }
       if (!myNormalCompare || myEquations == DummyEquations.getInstance()) {
         return false;
       }
       if (pair1.proj1 instanceof InferenceReferenceExpression && stuckVar2 == null) {
-        return myEquations.addEquation(pair1.proj1, pair2.proj1 instanceof IntegerExpression ? ((IntegerExpression) pair2.proj1).minus(pair1.proj2) : ExpressionFactory.add(pair2.proj1, pair2.proj2 - pair1.proj2), ExpressionFactory.Nat(), CMP.EQ, stuckVar1.getSourceNode(), stuckVar1, null);
+        return myEquations.addEquation(pair1.proj1, pair2.proj1 instanceof IntegerExpression ? new BigIntegerExpression(pair2.proj2.subtract(pair1.proj2)) : ExpressionFactory.add(pair2.proj1, pair2.proj2.intValueExact() - pair1.proj2.intValueExact()), ExpressionFactory.Nat(), CMP.EQ, stuckVar1.getSourceNode(), stuckVar1, null);
       }
       if (pair2.proj1 instanceof InferenceReferenceExpression && stuckVar1 == null) {
         return myEquations.addEquation(
           pair1.proj1 instanceof IntegerExpression
-            ? (((IntegerExpression) pair1.proj1).compare(pair2.proj2) <= 0 ? new SmallIntegerExpression(0) : ((IntegerExpression) pair1.proj1).minus(pair2.proj2))
-            : (pair1.proj2 <= pair2.proj2 ? pair1.proj1 : ExpressionFactory.add(pair1.proj1, pair1.proj2 - pair2.proj2)),
+            ? new BigIntegerExpression(pair1.proj2.subtract(pair2.proj2))
+            : pair1.proj2.compareTo(pair2.proj2) <= 0 ? pair1.proj1 : ExpressionFactory.add(pair1.proj1, pair1.proj2.intValueExact() - pair2.proj2.intValueExact()),
           pair2.proj1, ExpressionFactory.Nat(), CMP.EQ, stuckVar2.getSourceNode(), null, stuckVar2);
       }
       if (!myAllowEquations) {
         return false;
       }
       if (myNormalize) {
-        expr1 = ExpressionFactory.Fin(ExpressionFactory.add(pair1.proj1, pair1.proj2));
-        expr2 = ExpressionFactory.Fin(ExpressionFactory.add(pair2.proj1, pair2.proj2));
+        expr1 = ExpressionFactory.Fin(pair1.proj1 instanceof IntegerExpression ? new BigIntegerExpression(pair1.proj2) : ExpressionFactory.add(pair1.proj1, pair1.proj2.intValueExact()));
+        expr2 = ExpressionFactory.Fin(pair2.proj1 instanceof IntegerExpression ? new BigIntegerExpression(pair2.proj2) : ExpressionFactory.add(pair2.proj1, pair2.proj2.intValueExact()));
       }
       return myEquations.addEquation((correctOrder ? expr1 : expr2), (correctOrder ? expr2 : expr1).subst(getSubstitution()), Type.OMEGA, myCMP, (stuckVar1 != null ? stuckVar1 : stuckVar2).getSourceNode(), stuckVar1, stuckVar2);
     } else {
