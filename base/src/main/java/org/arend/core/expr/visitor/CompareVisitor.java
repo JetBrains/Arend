@@ -1214,10 +1214,20 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
   @Override
   public Boolean visitTypeCoerce(TypeCoerceExpression expr, Expression other, Expression type) {
     TypeCoerceExpression typeCoerce2 = other.cast(TypeCoerceExpression.class);
-    if (typeCoerce2 == null || expr.isFromLeftToRight() != typeCoerce2.isFromLeftToRight() || expr.isFromLeftToRight() && !compare(expr.getArgumentType(), typeCoerce2.getArgumentType(), Type.OMEGA, false)) {
-      return false;
+    if (expr.isFromLeftToRight()) {
+      if (typeCoerce2 == null) return false;
+      if (typeCoerce2.isFromLeftToRight()) {
+        return compare(expr.getArgumentType(), typeCoerce2.getArgumentType(), Type.OMEGA, false) && compare(expr.getArgument(), typeCoerce2.getArgument(), expr.getArgumentType(), true);
+      } else {
+        return compare(new TypeCoerceExpression(typeCoerce2.getDefinition(), typeCoerce2.getSortArgument(), typeCoerce2.getClauseIndex(), typeCoerce2.getClauseArguments(), expr, true), typeCoerce2.getArgument(), expr.getArgumentType(), true);
+      }
+    } else {
+      if (typeCoerce2 == null || typeCoerce2.isFromLeftToRight()) {
+        return compare(expr.getArgument(), new TypeCoerceExpression(expr.getDefinition(), expr.getSortArgument(), expr.getClauseIndex(), expr.getClauseArguments(), other, true), expr.getArgumentType(), true);
+      } else {
+        return compare(expr.getArgument(), typeCoerce2.getArgument(), expr.getArgumentType(), true);
+      }
     }
-    return compare(expr.getArgument(), typeCoerce2.getArgument(), expr.getArgumentType(), true);
   }
 
   @Override
