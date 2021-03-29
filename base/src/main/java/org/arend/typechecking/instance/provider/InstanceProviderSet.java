@@ -43,6 +43,11 @@ public class InstanceProviderSet {
       if (instanceProvider.isEmpty()) return ref;
       TCReferable tcRef = referableConverter.toDataLocatedReferable(ref);
       if (tcRef instanceof TCDefReferable) {
+        SimpleInstanceProvider instanceProvider = this.instanceProvider;
+        if (tcRef.getKind() == GlobalReferable.Kind.INSTANCE) {
+          instanceProvider = new SimpleInstanceProvider(instanceProvider);
+          instanceProvider.remove((TCDefReferable) tcRef);
+        }
         myProviders.put((TCDefReferable) tcRef, instanceProvider);
       }
       return tcRef;
@@ -100,7 +105,9 @@ public class InstanceProviderSet {
     for (Group subgroup : subgroups) {
       LocatedReferable groupRef = subgroup.getReferable();
       if (groupRef.getKind() == GlobalReferable.Kind.COCLAUSE_FUNCTION) continue;
+      predicate.used = true;
       SimpleInstanceProvider instanceProvider = predicate.instanceProvider;
+      predicate.test(groupRef);
       processGroup(subgroup, parentScope, predicate);
 
       if (!predicate.instanceProvider.isEmpty()) {
