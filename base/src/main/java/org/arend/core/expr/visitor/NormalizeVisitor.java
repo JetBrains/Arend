@@ -963,7 +963,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
     } else {
       args = expr.getClauseArguments();
     }
-    return new TypeCoerceExpression(expr.getDefinition(), expr.getSortArgument(), expr.getClauseIndex(), args, arg, expr.isFromLeftToRight());
+    return TypeCoerceExpression.make(expr.getDefinition(), expr.getSortArgument(), expr.getClauseIndex(), args, arg, expr.isFromLeftToRight());
   }
 
   @Override

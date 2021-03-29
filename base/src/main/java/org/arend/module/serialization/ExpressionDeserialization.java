@@ -450,10 +450,10 @@ class ExpressionDeserialization {
     return new PEvalExpression(readExpr(proto.getExpression()));
   }
 
-  private TypeCoerceExpression readTypeCoerce(ExpressionProtos.Expression.TypeCoerce proto) throws DeserializationException {
+  private Expression readTypeCoerce(ExpressionProtos.Expression.TypeCoerce proto) throws DeserializationException {
     FunctionDefinition function = myCallTargetProvider.getCallTarget(proto.getFunRef(), FunctionDefinition.class);
     myDependencyListener.dependsOn(myDefinition, function.getReferable());
-    return new TypeCoerceExpression(function, new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), proto.getClauseIndex(), readExprList(proto.getClauseArgumentList()), readExpr(proto.getArgument()), proto.getFromLeftToRight());
+    return TypeCoerceExpression.make(function, new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), proto.getClauseIndex(), readExprList(proto.getClauseArgumentList()), readExpr(proto.getArgument()), proto.getFromLeftToRight());
   }
 
   private String validName(String name) {

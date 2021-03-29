@@ -281,6 +281,6 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
     for (Expression arg : expr.getClauseArguments()) {
       args.add(arg.accept(this, null));
     }
-    return new TypeCoerceExpression(expr.getDefinition(), expr.getSortArgument().subst(myLevelSubstitution), expr.getClauseIndex(), args, expr.getArgument().accept(this, null), expr.isFromLeftToRight());
+    return TypeCoerceExpression.make(expr.getDefinition(), expr.getSortArgument().subst(myLevelSubstitution), expr.getClauseIndex(), args, expr.getArgument().accept(this, null), expr.isFromLeftToRight());
   }
 }

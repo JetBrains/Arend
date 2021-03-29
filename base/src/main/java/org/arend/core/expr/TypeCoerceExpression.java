@@ -30,7 +30,7 @@ public class TypeCoerceExpression extends Expression implements CoreTypeCoerceEx
   private Expression myArgument;
   private final boolean myFromLeftToRight;
 
-  public TypeCoerceExpression(FunctionDefinition definition, Sort sortArgument, int clauseIndex, List<Expression> clauseArguments, Expression argument, boolean fromLeftToRight) {
+  private TypeCoerceExpression(FunctionDefinition definition, Sort sortArgument, int clauseIndex, List<Expression> clauseArguments, Expression argument, boolean fromLeftToRight) {
     myDefinition = definition;
     mySortArgument = sortArgument;
     myClauseIndex = clauseIndex;
@@ -39,10 +39,15 @@ public class TypeCoerceExpression extends Expression implements CoreTypeCoerceEx
     myFromLeftToRight = fromLeftToRight;
   }
 
-  public static TypeCoerceExpression match(FunCallExpression funCall, Expression argument, boolean fromLeftToRight) {
+  public static Expression make(FunctionDefinition definition, Sort sortArgument, int clauseIndex, List<Expression> clauseArguments, Expression argument, boolean fromLeftToRight) {
+    TypeCoerceExpression typeCoerce = argument == null ? null : argument.cast(TypeCoerceExpression.class);
+    return typeCoerce != null && definition == typeCoerce.myDefinition && fromLeftToRight != typeCoerce.myFromLeftToRight ? typeCoerce.myArgument : new TypeCoerceExpression(definition, sortArgument, clauseIndex, clauseArguments, argument, fromLeftToRight);
+  }
+
+  public static Expression match(FunCallExpression funCall, Expression argument, boolean fromLeftToRight) {
     if (funCall.getDefinition().getKind() != CoreFunctionDefinition.Kind.TYPE) return null;
     if (funCall.getDefinition().getActualBody() instanceof Expression) {
-      return new TypeCoerceExpression(funCall.getDefinition(), funCall.getSortArgument(), -1, new ArrayList<>(funCall.getDefCallArguments()), argument, fromLeftToRight);
+      return TypeCoerceExpression.make(funCall.getDefinition(), funCall.getSortArgument(), -1, new ArrayList<>(funCall.getDefCallArguments()), argument, fromLeftToRight);
     }
     if (!(funCall.getDefinition().getActualBody() instanceof ElimBody)) return null;
 
@@ -52,7 +57,7 @@ public class TypeCoerceExpression extends Expression implements CoreTypeCoerceEx
       List<ExpressionPattern> patterns = Pattern.toExpressionPatterns(clauses.get(i).getPatterns(), funCall.getDefinition().getParameters());
       if (patterns == null) continue;
       if (ExpressionPattern.match(patterns, funCall.getDefCallArguments(), result) == Decision.YES) {
-        return new TypeCoerceExpression(funCall.getDefinition(), funCall.getSortArgument(), i, result, argument, fromLeftToRight);
+        return TypeCoerceExpression.make(funCall.getDefinition(), funCall.getSortArgument(), i, result, argument, fromLeftToRight);
       }
     }
 

@@ -273,7 +273,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     List<TypeCoerceExpression> stack = new ArrayList<>();
     Expression curType = expectedType;
     while (curType instanceof FunCallExpression && ((FunCallExpression) curType).getDefinition().getKind() == CoreFunctionDefinition.Kind.TYPE) {
-      TypeCoerceExpression typeCoerce = TypeCoerceExpression.match((FunCallExpression) curType, null, false);
+      TypeCoerceExpression typeCoerce = (TypeCoerceExpression) TypeCoerceExpression.match((FunCallExpression) curType, null, false);
       if (typeCoerce == null) {
         break;
       }

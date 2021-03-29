@@ -423,6 +423,6 @@ public class ElimBindingVisitor extends ExpressionTransformer<Void> {
     List<Expression> newArgs = visitDefCallArguments(expr.getClauseArguments());
     if (newArgs == null) return null;
     Expression newArg = expr.getArgument().accept(this, null);
-    return newArg == null ? null : new TypeCoerceExpression(expr.getDefinition(), expr.getSortArgument(), expr.getClauseIndex(), newArgs, newArg, expr.isFromLeftToRight());
+    return newArg == null ? null : TypeCoerceExpression.make(expr.getDefinition(), expr.getSortArgument(), expr.getClauseIndex(), newArgs, newArg, expr.isFromLeftToRight());
   }
 }
