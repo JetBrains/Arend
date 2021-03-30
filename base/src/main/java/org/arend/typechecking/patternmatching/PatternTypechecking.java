@@ -720,7 +720,8 @@ public class PatternTypechecking {
 
       Constructor constructor;
       if (dataCall.getDefinition() == Prelude.FIN) {
-        constructor = conPattern.getConstructor() == Prelude.ZERO.getRef() ? Prelude.FIN_ZERO : conPattern.getConstructor() == Prelude.SUC.getRef() ? Prelude.FIN_SUC : null;
+        constructor = conPattern.getConstructor() == Prelude.ZERO.getRef() || conPattern.getConstructor() == Prelude.FIN_ZERO.getRef() ? Prelude.FIN_ZERO
+          : conPattern.getConstructor() == Prelude.SUC.getRef() || conPattern.getConstructor() == Prelude.FIN_SUC.getRef() ? Prelude.FIN_SUC : null;
       } else {
         constructor = conPattern.getConstructor() instanceof GlobalReferable ? dataCall.getDefinition().getConstructor((GlobalReferable) conPattern.getConstructor()) : null;
       }
