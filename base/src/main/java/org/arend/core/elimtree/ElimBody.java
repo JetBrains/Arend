@@ -2,6 +2,7 @@ package org.arend.core.elimtree;
 
 import org.arend.core.constructor.IdpConstructor;
 import org.arend.core.context.LinkList;
+import org.arend.core.context.binding.Binding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.context.param.TypedDependentLink;
@@ -81,12 +82,14 @@ public class ElimBody implements Body, CoreElimBody {
         throw new IllegalArgumentException();
       }
 
+      DependentLink param = params.get(elimTree.getSkip());
       int originalSize1 = clauseElems.size();
       BranchElimTree branchElimTree = (BranchElimTree) elimTree;
       for (BranchKey key : branchElimTree.getKeys()) {
-        Expression type = params.get(elimTree.getSkip()).getTypeExpr().subst(substitution).normalize(NormalizationMode.WHNF);
+        Expression type = param.getTypeExpr().subst(substitution).normalize(NormalizationMode.WHNF);
         List<DependentLink> newParams = new ArrayList<>();
 
+        ConstructorExpressionPattern conPattern;
         if (key instanceof Constructor) {
           if (!(type instanceof DataCallExpression)) {
             throw new IllegalArgumentException();
@@ -101,22 +104,32 @@ public class ElimBody implements Body, CoreElimBody {
             }
             continue;
           }
-          clauseElems.add(new Util.ConstructorClauseElem(constructor, ((DataCallExpression) type).getDefCallArguments()));
+          DataCallExpression dataCall = (DataCallExpression) type;
+          conPattern = new ConstructorExpressionPattern(new ConCallExpression(constructor, dataCall.getSortArgument(), dataCall.getDefCallArguments(), Collections.emptyList()), Collections.emptyList());
+          clauseElems.add(new Util.ConstructorClauseElem(constructor, dataCall.getDefCallArguments()));
           newParams.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(constructor.getParameters(), new ExprSubstitution().add(constructor.getDataTypeParameters(), conCalls.get(0).getDataTypeArguments()), conCalls.get(0).getSortArgument().toLevelSubstitution())));
         } else if (key instanceof IdpConstructor) {
-          clauseElems.add(new Util.PatternClauseElem(ConstructorPattern.make(Prelude.IDP, Collections.emptyList()).toExpressionPattern(type)));
+          conPattern = ConstructorPattern.make(Prelude.IDP, Collections.emptyList()).toExpressionPattern(type);
+          clauseElems.add(new Util.PatternClauseElem(conPattern));
         } else {
           if (type instanceof SigmaExpression) {
+            conPattern = new ConstructorExpressionPattern((SigmaExpression) type.subst(substitution), Collections.emptyList());
+            clauseElems.add(Util.makeDataClauseElem(key, conPattern));
             newParams.addAll(DependentLink.Helper.toList(((SigmaExpression) type).getParameters()));
-            clauseElems.add(Util.makeDataClauseElem(key, new ConstructorExpressionPattern((SigmaExpression) type.subst(substitution), Collections.emptyList())));
           } else if (type instanceof ClassCallExpression) {
+            conPattern = new ConstructorExpressionPattern((ClassCallExpression) type.subst(substitution), Collections.emptyList());
+            clauseElems.add(Util.makeDataClauseElem(key, conPattern));
             newParams.addAll(DependentLink.Helper.toList(((ClassCallExpression) type).getClassFieldParameters()));
-            clauseElems.add(Util.makeDataClauseElem(key, new ConstructorExpressionPattern((ClassCallExpression) type.subst(substitution), Collections.emptyList())));
           } else {
             throw new IllegalArgumentException();
           }
         }
 
+        List<Expression> args = new ArrayList<>(newParams.size());
+        for (Binding binding : newParams) {
+          args.add(new ReferenceExpression(binding));
+        }
+        substitution.add(param, conPattern.toExpression(args));
         newParams.addAll(params.subList(elimTree.getSkip() + 1, params.size()));
         computeRefinedPatterns(branchElimTree.getChild(key), newParams, substitution, clauseElems, result, linkList);
         clauseElems.subList(originalSize1, clauseElems.size()).clear();
