@@ -128,17 +128,17 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     }
 
     // Another optimization
-    boolean check;
+    boolean check = !myNormalCompare || !myNormalize;
     if (expr1 instanceof FunCallExpression) {
-      check = expr2 instanceof FunCallExpression && ((FunCallExpression) expr1).getDefinition() == ((FunCallExpression) expr2).getDefinition() && !((FunCallExpression) expr1).getDefinition().isSFunc();
+      check = expr2 instanceof FunCallExpression && ((FunCallExpression) expr1).getDefinition() == ((FunCallExpression) expr2).getDefinition() && (check || !((FunCallExpression) expr1).getDefinition().isSFunc());
     } else if (expr1 instanceof AppExpression) {
       check = expr2 instanceof AppExpression;
     } else if (expr1 instanceof FieldCallExpression) {
-      check = expr2 instanceof FieldCallExpression && ((FieldCallExpression) expr1).getDefinition() == ((FieldCallExpression) expr2).getDefinition() && !((FieldCallExpression) expr1).getDefinition().isProperty();
+      check = expr2 instanceof FieldCallExpression && ((FieldCallExpression) expr1).getDefinition() == ((FieldCallExpression) expr2).getDefinition() && (check || !((FieldCallExpression) expr1).getDefinition().isProperty());
     } else if (expr1 instanceof ProjExpression) {
       check = expr2 instanceof ProjExpression && ((ProjExpression) expr1).getField() == ((ProjExpression) expr2).getField();
-    } else {
-      check = !myNormalCompare || !myNormalize;
+    } else if (expr1 instanceof TypeCoerceExpression) {
+      check = expr2 instanceof TypeCoerceExpression;
     }
 
     if (check) {
