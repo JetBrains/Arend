@@ -598,7 +598,12 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       if (!parameters.hasNext()) {
         throw new CoreException(CoreErrorWrapper.make(new CertainTypecheckingError(CertainTypecheckingError.Kind.TOO_MANY_PATTERNS, mySourceNode), errorExpr));
       }
-      Expression type = parameters.getTypeExpr().subst(substitution).normalize(NormalizationMode.WHNF).getUnderlyingExpression();
+      Expression type = parameters.getTypeExpr().subst(substitution);
+      if (pattern instanceof ConstructorPattern) {
+        type = TypeCoerceExpression.unfoldType(type);
+      } else {
+        type = type.normalize(NormalizationMode.WHNF);
+      }
       if (noEmpty) {
         ExprSubstitution varSubst = new ExprSubstitution();
         if (!checkElimPattern(type, pattern, newBindings, varSubst, patternSubst, reversePatternSubst, errorExpr)) {

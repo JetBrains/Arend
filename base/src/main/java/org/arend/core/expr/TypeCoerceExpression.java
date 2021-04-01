@@ -15,6 +15,7 @@ import org.arend.core.subst.LevelSubstitution;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CoreTypeCoerceExpression;
+import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
 
@@ -62,6 +63,24 @@ public class TypeCoerceExpression extends Expression implements CoreTypeCoerceEx
     }
 
     return null;
+  }
+
+  public static Expression unfoldType(Expression type) {
+    type = type.normalize(NormalizationMode.WHNF);
+    while (type instanceof FunCallExpression && ((FunCallExpression) type).getDefinition().getKind() == CoreFunctionDefinition.Kind.TYPE) {
+      Expression next = TypeCoerceExpression.match((FunCallExpression) type, null, false);
+      if (next == null) return type;
+      type = ((TypeCoerceExpression) next).getRHSType().normalize(NormalizationMode.WHNF);
+    }
+    return type;
+  }
+
+  public static Expression unfoldExpression(Expression expr) {
+    expr = expr.normalize(NormalizationMode.WHNF);
+    while (expr instanceof TypeCoerceExpression && !((TypeCoerceExpression) expr).isFromLeftToRight()) {
+      expr = ((TypeCoerceExpression) expr).getArgument().normalize(NormalizationMode.WHNF);
+    }
+    return expr;
   }
 
   public Expression getArgumentType() {

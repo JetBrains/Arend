@@ -142,4 +142,25 @@ public class TypeTest extends TypeCheckingTestCase {
       "\\type E => D (\\Sigma Nat Nat)\n" +
       "\\func test : E => con (\\lam p => (p.2,p.1))");
   }
+
+  @Test
+  public void patternMatchingTest() {
+    typeCheckModule(
+      "\\type E => Nat\n" +
+      "\\func f (x : E) : Nat\n" +
+      "  | 0 => 0\n" +
+      "  | suc _ => 7\n" +
+      "\\func test : f 3 = 7 => idp");
+  }
+
+  @Test
+  public void patternMatchingTest2() {
+    typeCheckModule(
+      "\\data D | con1 | con2\n" +
+      "\\type E => D\n" +
+      "\\func f (x : E) : Nat\n" +
+      "  | con1 => 2\n" +
+      "  | con2 => 5\n" +
+      "\\func test : f con1 = 2 => idp");
+  }
 }

@@ -641,14 +641,14 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
         if (!might) {
           return false;
         }
-        Expression top = stack.isEmpty() ? null : stack.peek().getUnderlyingExpression();
+        Expression top = stack.isEmpty() ? null : TypeCoerceExpression.unfoldExpression(stack.peek());
         return !(top instanceof ConCallExpression || top instanceof IntegerExpression);
       }
     }
   }
 
   private ElimTree updateStack(Deque<Expression> stack, List<Expression> argList, BranchElimTree branchElimTree) {
-    Expression argument = stack.pop().accept(this, NormalizationMode.WHNF);
+    Expression argument = TypeCoerceExpression.unfoldExpression(stack.pop());
     ConCallExpression conCall = argument.cast(ConCallExpression.class);
     Constructor constructor = conCall == null ? null : conCall.getDefinition();
     IntegerExpression intExpr = constructor == null ? argument.cast(IntegerExpression.class) : null;

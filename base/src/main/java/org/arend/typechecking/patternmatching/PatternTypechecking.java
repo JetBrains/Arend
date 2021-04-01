@@ -676,7 +676,7 @@ public class PatternTypechecking {
       }
 
       // Constructor patterns
-      DataCallExpression dataCall = expr.cast(DataCallExpression.class);
+      DataCallExpression dataCall = TypeCoerceExpression.unfoldType(expr).cast(DataCallExpression.class);
       if (dataCall == null) {
         if (!expr.isError()) {
           myErrorReporter.report(new TypeMismatchError(DocFactory.text("a data type"), expr, pattern));
