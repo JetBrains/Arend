@@ -279,6 +279,32 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     return ok;
   }
 
+  private static boolean isInstance(FieldCallExpression fieldCall) {
+    FunCallExpression funCall = fieldCall.getArgument().cast(FunCallExpression.class);
+    return funCall != null && funCall.getDefinition().getBody() == null && funCall.getDefinition().getResultType() instanceof ClassCallExpression && ((ClassCallExpression) funCall.getDefinition().getResultType()).isImplemented(fieldCall.getDefinition());
+  }
+
+  private Boolean compareImmediately(Expression expr1, Expression expr2, Expression type) {
+    int n1 = 0;
+    Expression e1 = expr1;
+    while (e1 instanceof AppExpression) {
+      e1 = e1.getFunction().getUnderlyingExpression();
+      n1++;
+    }
+    int n2 = 0;
+    Expression e2 = expr2;
+    while (e2 instanceof AppExpression) {
+      e2 = e2.getFunction().getUnderlyingExpression();
+      n2++;
+    }
+    if (!(n1 == n2 && e1 instanceof FieldCallExpression && e2 instanceof FieldCallExpression)) return null;
+    FieldCallExpression fieldCall1 = (FieldCallExpression) e1;
+    FieldCallExpression fieldCall2 = (FieldCallExpression) e2;
+    if (fieldCall1.getDefinition() == fieldCall2.getDefinition() && (fieldCall1.getArgument().getInferenceVariable() != null && isInstance(fieldCall2) || fieldCall2.getArgument().getInferenceVariable() != null && isInstance(fieldCall1)))
+      return expr1.accept(this, expr2, type);
+    else return null;
+  }
+
   public Boolean compare(Expression expr1, Expression expr2, Expression type, boolean useType) {
     expr1 = expr1.getUnderlyingExpression();
     expr2 = expr2.getUnderlyingExpression();
@@ -302,6 +328,10 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     InferenceVariable stuckVar2 = expr2.getStuckInferenceVariable();
     if (stuckVar1 != stuckVar2 && (!myNormalCompare || myEquations == DummyEquations.getInstance())) {
       return myOnlySolveVars;
+    }
+    Boolean result = compareImmediately(expr1, expr2, type);
+    if (result != null) {
+      return result;
     }
     if (stuckVar1 == stuckVar2 && nonNormalizingCompare(expr1, expr2, type)) {
       return true;
