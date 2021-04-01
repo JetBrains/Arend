@@ -275,7 +275,7 @@ public class ElimTypechecking {
       if (elimParams.isEmpty()) {
         for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
           link = link.getNextTyped(null);
-          List<ConCallExpression> conCalls = getMatchedConstructors(link.getTypeExpr());
+          List<ConCallExpression> conCalls = getMatchedConstructors(TypeCoerceExpression.unfoldType(link.getTypeExpr()));
           if (conCalls != null && conCalls.isEmpty()) {
             emptyLink = link;
             break;
@@ -283,7 +283,7 @@ public class ElimTypechecking {
         }
       } else {
         for (DependentLink link : elimParams) {
-          List<ConCallExpression> conCalls = getMatchedConstructors(link.getTypeExpr());
+          List<ConCallExpression> conCalls = getMatchedConstructors(TypeCoerceExpression.unfoldType(link.getTypeExpr()));
           if (conCalls != null && conCalls.isEmpty()) {
             emptyLink = link;
             break;

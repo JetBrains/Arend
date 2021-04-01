@@ -163,4 +163,12 @@ public class TypeTest extends TypeCheckingTestCase {
       "  | con2 => 5\n" +
       "\\func test : f con1 = 2 => idp");
   }
+
+  @Test
+  public void emptyPatternMatchingTest() {
+    typeCheckModule(
+      "\\data Empty\n" +
+      "\\type E => Empty\n" +
+      "\\func test (x : E) : Nat");
+  }
 }
