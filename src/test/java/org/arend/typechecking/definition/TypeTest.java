@@ -134,4 +134,12 @@ public class TypeTest extends TypeCheckingTestCase {
       "\\type E (A : \\Type) => A -> A\n" +
       "\\func test : Nat -> E Nat => \\lam m n => \\case n \\with { | 0 => 0 | suc n => n }");
   }
+
+  @Test
+  public void constructorTest() {
+    typeCheckModule(
+      "\\data D (A : \\Type) | con (A -> A)\n" +
+      "\\type E => D (\\Sigma Nat Nat)\n" +
+      "\\func test : E => con (\\lam p => (p.2,p.1))");
+  }
 }

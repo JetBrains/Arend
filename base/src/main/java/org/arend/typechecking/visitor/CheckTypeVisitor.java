@@ -264,7 +264,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       if (curExpr == null) {
         return null;
       }
-      curType = curExpr.getType();
+      curType = curExpr.getType().normalize(NormalizationMode.WHNF);
     }
     return new TypecheckingResult(curExpr, curType);
   }
@@ -278,7 +278,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         break;
       }
       stack.add(typeCoerce);
-      curType = typeCoerce.getArgumentType();
+      curType = typeCoerce.getArgumentType().normalize(NormalizationMode.WHNF);
     }
     if (!stack.isEmpty()) {
       Pair<Expression,T> pair = checker.apply(curType);

@@ -16,6 +16,7 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.ext.concrete.expr.ConcreteArgument;
+import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.ArgumentExplicitnessError;
@@ -299,7 +300,13 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
     if (result instanceof DefCallResult && expr.getArguments().get(0).isExplicit() && expectedType != null) {
       DefCallResult defCallResult = (DefCallResult) result;
       if (defCallResult.getDefinition() instanceof Constructor && defCallResult.getArguments().size() < DependentLink.Helper.size(((Constructor) defCallResult.getDefinition()).getDataTypeParameters())) {
-        DataCallExpression dataCall = expectedType.normalize(NormalizationMode.WHNF).cast(DataCallExpression.class);
+        Expression type = expectedType.normalize(NormalizationMode.WHNF);
+        while (type instanceof FunCallExpression && ((FunCallExpression) type).getDefinition().getKind() == CoreFunctionDefinition.Kind.TYPE) {
+          type = TypeCoerceExpression.match((FunCallExpression) type, null, false);
+          if (type == null) break;
+          type = ((TypeCoerceExpression) type).getRHSType().normalize(NormalizationMode.WHNF);
+        }
+        DataCallExpression dataCall = type == null ? null : type.cast(DataCallExpression.class);
         if (dataCall != null) {
           if (((Constructor) defCallResult.getDefinition()).getDataType() != dataCall.getDefinition()) {
             myVisitor.getErrorReporter().report(new TypeMismatchError(dataCall, refDoc(((Constructor) defCallResult.getDefinition()).getDataType().getReferable()), fun));
