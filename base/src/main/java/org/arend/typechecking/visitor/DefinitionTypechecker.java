@@ -2673,13 +2673,13 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       return expr1 instanceof IntegerExpression ? ((IntegerExpression) expr1).compare((IntegerExpression) expr2) : 1;
     }
 
-    if (expr2 instanceof DataCallExpression) {
+    if (expr2 instanceof DataCallExpression || expr2 instanceof FunCallExpression && ((FunCallExpression) expr2).getDefinition().getKind() == CoreFunctionDefinition.Kind.TYPE) {
       int cmp = 0;
-      if (expr1 instanceof DataCallExpression && ((DataCallExpression) expr1).getDefinition() == ((DataCallExpression) expr2).getDefinition()) {
+      if (expr1 instanceof DefCallExpression && ((DefCallExpression) expr1).getDefinition() == ((DefCallExpression) expr2).getDefinition()) {
         ExprSubstitution substitution = new ExprSubstitution();
-        DependentLink link = ((DataCallExpression) expr1).getDefinition().getParameters();
-        List<Expression> args1 = ((DataCallExpression) expr1).getDefCallArguments();
-        List<Expression> args2 = ((DataCallExpression) expr2).getDefCallArguments();
+        DependentLink link = ((DefCallExpression) expr1).getDefinition().getParameters();
+        List<? extends Expression> args1 = ((DefCallExpression) expr1).getDefCallArguments();
+        List<? extends Expression> args2 = ((DefCallExpression) expr2).getDefCallArguments();
         for (int i = 0; i < args1.size(); i++) {
           int argCmp = compareExpressions(args1.get(i), args2.get(i), link.getTypeExpr().subst(substitution));
           if (argCmp == 1) {
@@ -2698,7 +2698,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
       }
 
-      for (Expression arg : ((DataCallExpression) expr2).getDefCallArguments()) {
+      for (Expression arg : ((DefCallExpression) expr2).getDefCallArguments()) {
         if (compareExpressions(expr1, arg, null) != 1) {
           return -1;
         }
@@ -2779,6 +2779,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       return cmp;
     }
 
+    while (expr1 instanceof FieldCallExpression && !(expr2 instanceof FieldCallExpression && ((FieldCallExpression) expr2).getDefinition() == ((FieldCallExpression) expr1).getDefinition())) {
+      expr1 = ((FieldCallExpression) expr1).getArgument();
+    }
     return Expression.compare(expr1, expr2, type, CMP.EQ) ? 0 : 1;
   }
 
