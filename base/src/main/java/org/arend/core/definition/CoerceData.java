@@ -175,7 +175,7 @@ public class CoerceData {
         if (def instanceof Constructor) {
           dataArgs = new ArrayList<>();
           for (DependentLink dataParams = ((Constructor) def).getDataTypeParameters(); dataParams.hasNext(); dataParams = dataParams.getNext(), index++) {
-            Expression arg = new InferenceReferenceExpression(new FunctionInferenceVariable(def, link, index + 1, link.getTypeExpr(), sourceNode, visitor.getAllBindings()), visitor.getEquations());
+            Expression arg = InferenceReferenceExpression.make(new FunctionInferenceVariable(def, link, index + 1, link.getTypeExpr(), sourceNode, visitor.getAllBindings()), visitor.getEquations());
             substitution.add(dataParams, arg);
             dataArgs.add(arg);
             index++;
@@ -185,7 +185,7 @@ public class CoerceData {
         while (true) {
           DependentLink next = link.getNext();
           if (next.hasNext()) {
-            Expression arg = new InferenceReferenceExpression(new FunctionInferenceVariable(def, link, index + 1, link.getTypeExpr(), sourceNode, visitor.getAllBindings()), visitor.getEquations());
+            Expression arg = InferenceReferenceExpression.make(new FunctionInferenceVariable(def, link, index + 1, link.getTypeExpr(), sourceNode, visitor.getAllBindings()), visitor.getEquations());
             substitution.add(link, arg);
             arguments.add(arg);
             link = next;

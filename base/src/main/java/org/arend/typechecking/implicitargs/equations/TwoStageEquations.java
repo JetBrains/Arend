@@ -158,7 +158,7 @@ public class TwoStageEquations implements Equations {
             myVisitor.addBinding(null, link);
           }
           InferenceVariable infVar = new DerivedInferenceVariable(cInf.getName() + "-cod", cInf, new UniverseExpression(codSort), myVisitor.getAllBindings());
-          Expression newRef = new InferenceReferenceExpression(infVar, this);
+          Expression newRef = InferenceReferenceExpression.make(infVar, this);
           solve(cInf, new PiExpression(piSort, pi.getParameters(), newRef), false);
           return addEquation(pi.getCodomain().normalize(NormalizationMode.WHNF), newRef, Type.OMEGA, cmp, sourceNode, pi.getCodomain().getStuckInferenceVariable(), infVar);
         }
@@ -614,7 +614,7 @@ public class TwoStageEquations implements Equations {
 
   private void reportBoundsError(InferenceVariable var, List<ClassCallExpression> bounds, CMP cmp) {
     List<Equation> equations = new ArrayList<>();
-    Expression infRefExpr = new InferenceReferenceExpression(var, (Expression) null);
+    Expression infRefExpr = new InferenceReferenceExpression(var, null);
     for (ClassCallExpression bound : bounds) {
       equations.add(cmp == CMP.GE ? new Equation(bound, infRefExpr, Type.OMEGA, CMP.LE, var.getSourceNode()) : new Equation(infRefExpr, bound, Type.OMEGA, CMP.LE, var.getSourceNode()));
     }
@@ -734,7 +734,7 @@ public class TwoStageEquations implements Equations {
       return inferenceError(var, expr);
     }
 
-    Expression expectedType = var.getType();
+    Expression expectedType = var.getType().normalize(NormalizationMode.WHNF);
     Expression result = ElimBindingVisitor.keepBindings(expr, var.getBounds(), isLowerBound);
     if (isLowerBound && result != null) {
       ClassCallExpression classCall = result.cast(ClassCallExpression.class);
@@ -751,14 +751,23 @@ public class TwoStageEquations implements Equations {
         DataCallExpression dataCall = expectedType.cast(DataCallExpression.class);
         actualType = dataCall != null && dataCall.getDefinition() == Prelude.FIN ? result.getType() : Nat();
       } else {
-        actualType = result.getType();
+        actualType = result.getType().normalize(NormalizationMode.WHNF);
+        if (actualType instanceof ClassCallExpression && expectedType instanceof ClassCallExpression) {
+          for (ClassField field : ((ClassCallExpression) actualType).getDefinition().getFields()) {
+            if (!((ClassCallExpression) actualType).isImplemented(field) && (((ClassCallExpression) expectedType).isImplemented(field) || var.isFieldImplemented(field))) {
+              result = new NewExpression(result, (ClassCallExpression) actualType);
+              actualType = result.getType();
+              break;
+            }
+          }
+        }
       }
     }
     if (actualType == null) {
       return inferenceError(var, expr);
     }
 
-    if (actualType.isLessOrEquals(expectedType, this, var.getSourceNode())) {
+    if (new CompareVisitor(this, CMP.LE, var.getSourceNode()).normalizedCompare(actualType, expectedType, Type.OMEGA, false)) {
       var.solve(myVisitor, OfTypeExpression.make(result, actualType, expectedType));
       return SolveResult.SOLVED;
     } else {

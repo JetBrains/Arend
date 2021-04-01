@@ -1,6 +1,7 @@
 package org.arend.core.context.binding.inference;
 
 import org.arend.core.context.binding.Binding;
+import org.arend.core.definition.ClassField;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.InferenceReferenceExpression;
 import org.arend.ext.core.context.CoreInferenceVariable;
@@ -102,6 +103,10 @@ public abstract class InferenceVariable implements Variable, CoreInferenceVariab
 
   public Concrete.SourceNode getSourceNode() {
     return mySourceNode;
+  }
+
+  public boolean isFieldImplemented(ClassField field) {
+    return myReference != null && myReference.isFieldImplemented(field);
   }
 
   public void setReference(InferenceReferenceExpression reference) {

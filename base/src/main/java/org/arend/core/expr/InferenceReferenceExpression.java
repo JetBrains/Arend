@@ -12,35 +12,44 @@ import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.HashSet;
+import java.util.Set;
+
 public class InferenceReferenceExpression extends Expression implements CoreInferenceReferenceExpression {
   private final InferenceVariable myVar;
+  private Set<ClassField> myImplementedFields;
   private Expression mySubstExpression;
 
-  public InferenceReferenceExpression(InferenceVariable binding, Equations equations) {
-    myVar = binding;
+  public static Expression make(InferenceVariable binding, Equations equations) {
+    InferenceReferenceExpression result = new InferenceReferenceExpression(binding);
     if (!equations.supportsExpressions()) {
-      return;
+      return result;
     }
 
-    binding.setReference(this);
     if (!binding.resetClassCall()) {
-      return;
+      return result;
     }
 
     Expression type = binding.getType().normalize(NormalizationMode.WHNF);
     ClassCallExpression classCall = type.cast(ClassCallExpression.class);
     if (classCall != null && !classCall.getDefinition().getFields().isEmpty()) {
+      result.myImplementedFields = new HashSet<>();
       for (ClassField field : classCall.getDefinition().getFields()) {
         if (!field.isProperty()) {
-          Expression impl = classCall.getImplementation(field, this);
+          Expression impl = classCall.getImplementation(field, result);
           if (impl != null) {
-            equations.addEquation(FieldCallExpression.make(field, classCall.getSortArgument(), this), impl.normalize(NormalizationMode.WHNF), classCall.getDefinition().getFieldType(field, classCall.getSortArgument(), this), CMP.EQ, binding.getSourceNode(), binding, impl.getStuckInferenceVariable(), false);
+            equations.addEquation(FieldCallExpression.make(field, classCall.getSortArgument(), result), impl.normalize(NormalizationMode.WHNF), classCall.getDefinition().getFieldType(field, classCall.getSortArgument(), result), CMP.EQ, binding.getSourceNode(), binding, impl.getStuckInferenceVariable(), false);
+            if (result.getSubstExpression() != null) {
+              return result.getSubstExpression();
+            }
+            result.myImplementedFields.add(field);
           }
         }
       }
       type = new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument());
     }
     binding.setType(type);
+    return result;
   }
 
   public InferenceReferenceExpression(InferenceVariable binding, Expression substExpression) {
@@ -60,6 +69,10 @@ public class InferenceReferenceExpression extends Expression implements CoreInfe
 
   public InferenceVariable getOriginalVariable() {
     return myVar;
+  }
+
+  public boolean isFieldImplemented(ClassField field) {
+    return myImplementedFields != null && myImplementedFields.contains(field);
   }
 
   @Override

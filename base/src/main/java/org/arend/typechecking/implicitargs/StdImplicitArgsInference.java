@@ -128,7 +128,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
           : new FunctionInferenceVariable(null, parameter, i + 1, type, expr, myVisitor.getAllBindings());
       }
 
-      Expression binding = new InferenceReferenceExpression(infVar, myVisitor.getEquations());
+      Expression binding = InferenceReferenceExpression.make(infVar, myVisitor.getEquations());
       result = result.applyExpression(binding, parameter.isExplicit(), myVisitor.getErrorReporter(), expr);
       substitution.add(parameter, binding);
       i++;
@@ -151,7 +151,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
         DefCallResult defCallResult = (DefCallResult) result;
         if (defCallResult.getDefinition() == Prelude.PATH_CON && defCallResult.getArguments().isEmpty()) {
           SingleDependentLink lamParam = new TypedSingleDependentLink(true, "i", Interval());
-          Expression binding = new InferenceReferenceExpression(new FunctionInferenceVariable(Prelude.PATH_CON, Prelude.PATH_CON.getDataTypeParameters(), 1, new UniverseExpression(defCallResult.getSortArgument()), fun, myVisitor.getAllBindings()), myVisitor.getEquations());
+          Expression binding = InferenceReferenceExpression.make(new FunctionInferenceVariable(Prelude.PATH_CON, Prelude.PATH_CON.getDataTypeParameters(), 1, new UniverseExpression(defCallResult.getSortArgument()), fun, myVisitor.getAllBindings()), myVisitor.getEquations());
           Sort sort = defCallResult.getSortArgument().succ();
           result = result.applyExpression(new LamExpression(sort, lamParam, binding), true, myVisitor.getErrorReporter(), fun);
 
@@ -395,7 +395,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
           }
           InferenceVariable var = new ExpressionInferenceVariable(parameter.getTypeExpr(), argument.getExpression(), myVisitor.getAllBindings());
           deferredArguments.put(current + numberOfImplicitArguments, new Pair<>(var, argument.getExpression()));
-          result = result.applyExpression(new InferenceReferenceExpression(var, myVisitor.getEquations()), parameter.isExplicit(), myVisitor.getErrorReporter(), fun);
+          result = result.applyExpression(InferenceReferenceExpression.make(var, myVisitor.getEquations()), parameter.isExplicit(), myVisitor.getErrorReporter(), fun);
           current++;
         }
 

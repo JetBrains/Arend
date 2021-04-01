@@ -570,7 +570,7 @@ public class PatternTypechecking {
               Set<Binding> bindings = myVisitor.getAllBindings();
               int i = 0;
               for (; i < constructor.getNumberOfParameters(); i++) {
-                Expression arg = new InferenceReferenceExpression(new FunctionInferenceVariable(constructor, link, i + 1, link.getTypeExpr().subst(substitution, levelSubst), conPattern, bindings), myVisitor.getEquations());
+                Expression arg = InferenceReferenceExpression.make(new FunctionInferenceVariable(constructor, link, i + 1, link.getTypeExpr().subst(substitution, levelSubst), conPattern, bindings), myVisitor.getEquations());
                 args.add(arg);
                 substitution.add(link, arg);
                 collector.getResult().remove(link);
@@ -578,7 +578,7 @@ public class PatternTypechecking {
               }
               if (!collector.getResult().isEmpty()) {
                 for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext(), i++) {
-                  substitution.add(link1, new InferenceReferenceExpression(new FunctionInferenceVariable(constructor, link1, i + 1, link1.getTypeExpr().subst(substitution, levelSubst), conPattern, bindings), myVisitor.getEquations()));
+                  substitution.add(link1, InferenceReferenceExpression.make(new FunctionInferenceVariable(constructor, link1, i + 1, link1.getTypeExpr().subst(substitution, levelSubst), conPattern, bindings), myVisitor.getEquations()));
                 }
               }
             }

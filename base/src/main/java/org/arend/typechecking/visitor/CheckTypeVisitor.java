@@ -1275,7 +1275,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           }
         }
       } else {
-        result = new TypecheckingResult(new InferenceReferenceExpression(new TypeClassInferenceVariable(field.getName(), type, classDef, false, implBody, holeExpr, getAllBindings()), myEquations), type);
+        result = new TypecheckingResult(InferenceReferenceExpression.make(new TypeClassInferenceVariable(field.getName(), type, classDef, false, implBody, holeExpr, getAllBindings()), myEquations), type);
       }
       return result;
     }
@@ -1647,7 +1647,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
 
     if (expectedType != null && !isOmega) {
-      return new TypecheckingResult(new InferenceReferenceExpression(myArgsInference.newInferenceVariable(expectedType, expr), getEquations()), expectedType);
+      return new TypecheckingResult(InferenceReferenceExpression.make(myArgsInference.newInferenceVariable(expectedType, expr), getEquations()), expectedType);
     } else {
       errorReporter.report(new ArgInferenceError(expression(), expr, new Expression[0]));
       return null;
@@ -1797,7 +1797,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     String name = referable == null ? null : referable.textRepresentation();
     Sort sort = Sort.generateInferVars(myEquations, false, sourceNode);
     InferenceVariable inferenceVariable = new LambdaInferenceVariable(name == null ? "_" : "type-of-" + name, new UniverseExpression(sort), param.getReferable(), false, sourceNode, getAllBindings());
-    Expression argType = new InferenceReferenceExpression(inferenceVariable, myEquations);
+    Expression argType = InferenceReferenceExpression.make(inferenceVariable, myEquations);
 
     TypedSingleDependentLink link = new TypedSingleDependentLink(param.isExplicit(), name, new TypeExpression(argType, sort));
     addBinding(referable, link);
