@@ -894,7 +894,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
 
   @Override
   public Expression visitLet(LetExpression let, NormalizationMode mode) {
-    if (mode == NormalizationMode.RNF || mode == NormalizationMode.RNF_EXP) {
+    if ((mode == NormalizationMode.RNF || mode == NormalizationMode.RNF_EXP) && !let.isStrict()) {
       ExprSubstitution substitution = new ExprSubstitution();
       List<HaveClause> newClauses = new ArrayList<>(let.getClauses().size());
       for (HaveClause clause : let.getClauses()) {
