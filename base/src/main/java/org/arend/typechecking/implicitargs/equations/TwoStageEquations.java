@@ -61,7 +61,9 @@ public class TwoStageEquations implements Equations {
   }
 
   @Override
-  public boolean addEquation(Expression expr1, Expression expr2, Expression type, CMP cmp, Concrete.SourceNode sourceNode, InferenceVariable stuckVar1, InferenceVariable stuckVar2) {
+  public boolean addEquation(Expression origExpr1, Expression origExpr2, Expression type, CMP cmp, Concrete.SourceNode sourceNode, InferenceVariable stuckVar1, InferenceVariable stuckVar2, boolean normalize) {
+    Expression expr1 = normalize ? origExpr1.normalize(NormalizationMode.WHNF) : origExpr1;
+    Expression expr2 = normalize ? origExpr2.normalize(NormalizationMode.WHNF) : origExpr2;
     InferenceVariable inf1 = expr1.getInferenceVariable();
     InferenceVariable inf2 = expr2.getInferenceVariable();
 
@@ -101,11 +103,10 @@ public class TwoStageEquations implements Equations {
     // expr1 == ?x && expr2 /= ?y || expr1 /= ?x && expr2 == ?y
     if (inf1 == null && inf2 != null && inf2.isSolvableFromEquations() || inf2 == null && inf1 != null && inf1.isSolvableFromEquations()) {
       InferenceVariable cInf = inf1 != null ? inf1 : inf2;
-      Expression cType = (inf1 != null ? expr2 : expr1).normalize(NormalizationMode.WHNF);
-      Expression cTypeExpr = cType.getUnderlyingExpression();
+      Expression cType = inf1 != null ? expr2 : expr1;
 
       // cType /= Pi, cType /= Type, cType /= Class, cType /= stuck on ?X
-      if (!(cTypeExpr instanceof PiExpression) && !(cTypeExpr instanceof UniverseExpression) && !(cTypeExpr instanceof ClassCallExpression) && cTypeExpr.getStuckInferenceVariable() == null) {
+      if (!(cType instanceof PiExpression) && !(cType instanceof UniverseExpression) && !(cType instanceof ClassCallExpression) && cType.getStuckInferenceVariable() == null) {
         cmp = CMP.EQ;
       }
 
@@ -113,7 +114,7 @@ public class TwoStageEquations implements Equations {
         cmp = cmp.not();
       }
 
-      if (cTypeExpr instanceof UniverseExpression && ((UniverseExpression) cTypeExpr).getSort().isProp()) {
+      if (cType instanceof UniverseExpression && ((UniverseExpression) cType).getSort().isProp()) {
         if (cmp == CMP.LE) {
           myProps.add(cInf);
           return true;
@@ -124,7 +125,7 @@ public class TwoStageEquations implements Equations {
 
       // If cType is not pi, classCall, universe, or a stuck expression, then solve immediately.
       if (cmp != CMP.EQ) {
-        Expression cod = cTypeExpr;
+        Expression cod = cType;
         while (cod instanceof PiExpression) {
           cod = ((PiExpression) cod).getCodomain().getUnderlyingExpression();
         }
@@ -135,17 +136,19 @@ public class TwoStageEquations implements Equations {
 
       // ?x == _
       if (cmp == CMP.EQ) {
-        InferenceReferenceExpression infRef = cTypeExpr instanceof FieldCallExpression ? ((FieldCallExpression) cTypeExpr).getArgument().cast(InferenceReferenceExpression.class) : null;
+        InferenceReferenceExpression infRef = cType instanceof FieldCallExpression ? ((FieldCallExpression) cType).getArgument().cast(InferenceReferenceExpression.class) : null;
         if (infRef == null || !(infRef.getVariable() instanceof TypeClassInferenceVariable)) {
-          if (solve(cInf, cType, false, cInf instanceof TypeClassInferenceVariable, true) != SolveResult.NOT_SOLVED) {
+          Expression typeType = cType.getType();
+          boolean useOrig = !(typeType instanceof UniverseExpression || typeType instanceof DataCallExpression && ((DataCallExpression) typeType).getDefinition() == Prelude.FIN);
+          if (solve(cInf, useOrig ? (inf1 != null ? origExpr2 : origExpr1) : cType, false, cInf instanceof TypeClassInferenceVariable, true) != SolveResult.NOT_SOLVED) {
             return true;
           }
         }
       }
 
       // ?x <> Pi
-      if (cTypeExpr instanceof PiExpression) {
-        PiExpression pi = (PiExpression) cTypeExpr;
+      if (cType instanceof PiExpression) {
+        PiExpression pi = (PiExpression) cType;
         Sort domSort = pi.getParameters().getType().getSortOfType();
         Sort codSort = Sort.generateInferVars(this, false, sourceNode);
         Sort piSort = PiExpression.generateUpperBound(domSort, codSort, this, sourceNode);
@@ -162,10 +165,10 @@ public class TwoStageEquations implements Equations {
       }
 
       // ?x <> Type
-      if (cTypeExpr instanceof UniverseExpression) {
+      if (cType instanceof UniverseExpression) {
         Sort genSort = Sort.generateInferVars(this, true, cInf.getSourceNode());
         solve(cInf, new UniverseExpression(genSort), false);
-        Sort sort = ((UniverseExpression) cTypeExpr).getSort();
+        Sort sort = ((UniverseExpression) cType).getSort();
         if (cmp == CMP.LE) {
           Sort.compare(sort, genSort, CMP.LE, this, sourceNode);
         } else {

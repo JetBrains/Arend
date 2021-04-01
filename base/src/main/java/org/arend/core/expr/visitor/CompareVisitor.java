@@ -292,10 +292,10 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       return true;
     }
     if (infRefExpr1 != null && infRefExpr1.getVariable() != null) {
-      return myNormalCompare && myEquations.addEquation(infRefExpr1, expr2.subst(getSubstitution()).normalize(NormalizationMode.WHNF), type, myCMP, infRefExpr1.getVariable().getSourceNode(), infRefExpr1.getVariable(), expr2.getStuckInferenceVariable());
+      return myNormalCompare && myEquations.addEquation(infRefExpr1, expr2.subst(getSubstitution()), type, myCMP, infRefExpr1.getVariable().getSourceNode(), infRefExpr1.getVariable(), expr2.getStuckInferenceVariable());
     }
     if (infRefExpr2 != null && infRefExpr2.getVariable() != null) {
-      return myNormalCompare && myEquations.addEquation(expr1.normalize(NormalizationMode.WHNF), infRefExpr2, type, myCMP, infRefExpr2.getVariable().getSourceNode(), expr1.getStuckInferenceVariable(), infRefExpr2.getVariable());
+      return myNormalCompare && myEquations.addEquation(expr1, infRefExpr2, type, myCMP, infRefExpr2.getVariable().getSourceNode(), expr1.getStuckInferenceVariable(), infRefExpr2.getVariable());
     }
 
     InferenceVariable stuckVar1 = expr1.getStuckInferenceVariable();

@@ -169,16 +169,35 @@ public class ElimBindingVisitor extends ExpressionTransformer<Void> {
 
   @Override
   public Expression visitInferenceReference(InferenceReferenceExpression expr, Void params) {
-    return expr.getSubstExpression() != null ? acceptSelf(expr.getSubstExpression(), true) : expr;
+    if (expr.getSubstExpression() != null) {
+      return acceptSelf(expr.getSubstExpression(), true);
+    }
+    if (myKeepVisitor != null) {
+      expr.getVariable().getBounds().retainAll(myKeepVisitor.getBindings());
+    }
+    return expr;
   }
 
   @Override
   public Expression visitSubst(SubstExpression expr, Void params) {
-    ExprSubstitution substitution = new ExprSubstitution();
-    for (Map.Entry<Binding, Expression> entry : expr.getSubstitution().getEntries()) {
-      substitution.add(entry.getKey(), entry.getValue().accept(this, null));
+    if (myKeepVisitor != null) {
+      if (expr.isInferenceVariable()) {
+        ((InferenceReferenceExpression) expr.getExpression()).getVariable().getBounds().removeIf(bound -> !myKeepVisitor.getBindings().contains(bound) && !expr.getSubstitution().getKeys().contains(bound));
+        ExprSubstitution substitution = new ExprSubstitution();
+        for (Map.Entry<Binding, Expression> entry : expr.getSubstitution().getEntries()) {
+          substitution.add(entry.getKey(), entry.getValue().accept(this, null));
+        }
+        return SubstExpression.make(expr, substitution, expr.getLevelSubstitution());
+      } else {
+        return expr.getSubstExpression().accept(this, null);
+      }
+    } else {
+      ExprSubstitution substitution = new ExprSubstitution();
+      for (Map.Entry<Binding, Expression> entry : expr.getSubstitution().getEntries()) {
+        substitution.add(entry.getKey(), entry.getValue().accept(this, null));
+      }
+      return SubstExpression.make(expr.getExpression().accept(this, null), substitution, expr.getLevelSubstitution());
     }
-    return SubstExpression.make(expr.getExpression().accept(this, null), substitution, expr.getLevelSubstitution());
   }
 
   @Override

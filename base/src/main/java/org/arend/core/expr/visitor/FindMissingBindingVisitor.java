@@ -1,6 +1,7 @@
 package org.arend.core.expr.visitor;
 
 import org.arend.core.context.binding.Binding;
+import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.elimtree.ElimBody;
 import org.arend.core.expr.let.HaveClause;
@@ -8,6 +9,7 @@ import org.arend.ext.variable.Variable;
 import org.arend.core.expr.*;
 import org.arend.typechecking.visitor.SearchVisitor;
 
+import java.util.Map;
 import java.util.Set;
 
 public class FindMissingBindingVisitor extends SearchVisitor<Void> {
@@ -33,6 +35,41 @@ public class FindMissingBindingVisitor extends SearchVisitor<Void> {
       return true;
     } else {
       return false;
+    }
+  }
+
+  @Override
+  public Boolean visitInferenceReference(InferenceReferenceExpression expression, Void param) {
+    InferenceVariable var = expression.getVariable();
+    if (var != null) {
+      for (Binding bound : var.getBounds()) {
+        if (!myBindings.contains(bound)) {
+          myResult = bound;
+          return true;
+        }
+      }
+      return false;
+    }
+    return super.visitInferenceReference(expression, param);
+  }
+
+  @Override
+  public Boolean visitSubst(SubstExpression expr, Void param) {
+    if (expr.isInferenceVariable()) {
+      for (Binding bound : ((InferenceReferenceExpression) expr.getExpression()).getVariable().getBounds()) {
+        if (!myBindings.contains(bound) && !expr.getSubstitution().getKeys().contains(bound)) {
+          myResult = bound;
+          return true;
+        }
+      }
+      for (Map.Entry<Binding, Expression> entry : expr.getSubstitution().getEntries()) {
+        if (entry.getValue().accept(this, null)) {
+          return true;
+        }
+      }
+      return false;
+    } else {
+      return expr.getSubstExpression().accept(this, null);
     }
   }
 
