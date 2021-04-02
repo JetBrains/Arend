@@ -20,7 +20,6 @@ import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.body.CoreElimBody;
 import org.arend.ext.core.body.CorePattern;
 import org.arend.ext.core.context.CoreParameter;
-import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.patternmatching.Util;
@@ -86,7 +85,7 @@ public class ElimBody implements Body, CoreElimBody {
       int originalSize1 = clauseElems.size();
       BranchElimTree branchElimTree = (BranchElimTree) elimTree;
       for (BranchKey key : branchElimTree.getKeys()) {
-        Expression type = param.getTypeExpr().subst(substitution).normalize(NormalizationMode.WHNF);
+        Expression type = TypeCoerceExpression.unfoldType(param.getTypeExpr().subst(substitution));
         List<DependentLink> newParams = new ArrayList<>();
 
         ConstructorExpressionPattern conPattern;
