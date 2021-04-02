@@ -525,6 +525,10 @@ public class PatternTypechecking {
               myErrorReporter.report(new IdpPatternError(IdpPatternError.variable(substVar.getName()), dataCall, conPattern));
               return null;
             }
+            Expression otherExpr2 = ElimBindingVisitor.elimBinding(num == 1 ? dataCall.getDefCallArguments().get(1) : dataCall.getDefCallArguments().get(2), substVar);
+            if (otherExpr2 == null) {
+              otherExpr2 = otherExpr;
+            }
 
             args.add(type);
             substitution.add(link, type);
@@ -537,7 +541,7 @@ public class PatternTypechecking {
             if (totalSubst != null) {
               totalSubst.addSubst(substVar, otherExpr);
             }
-            paramsSubst.addSubst(substVar, otherExpr);
+            paramsSubst.addSubst(substVar, otherExpr2);
             Set<Binding> freeVars = FreeVariablesCollector.getFreeVariables(otherExpr);
             Binding banVar = null;
             List<DependentLink> params = DependentLink.Helper.toList(myLinkList.getFirst());
