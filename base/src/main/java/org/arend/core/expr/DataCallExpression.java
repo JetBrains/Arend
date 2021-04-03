@@ -204,6 +204,12 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
         if (arg instanceof IntegerExpression && ((IntegerExpression) arg).isOne()) {
           return true;
         }
+        if (arg instanceof ConCallExpression && ((ConCallExpression) arg).getDefinition() == Prelude.SUC) {
+          Expression argArg = ((ConCallExpression) arg).getDefCallArguments().get(0).normalize(NormalizationMode.WHNF);
+          if (argArg instanceof IntegerExpression && ((IntegerExpression) argArg).isZero()) {
+            return true;
+          }
+        }
         arguments = Collections.singletonList(arg);
       }
       matchedParameters = new ArrayList<>();
