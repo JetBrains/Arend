@@ -4,9 +4,11 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.context.param.TypedSingleDependentLink;
 import org.arend.core.definition.*;
+import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.ClassCallExpression;
 import org.arend.core.expr.ErrorExpression;
 import org.arend.core.expr.PiExpression;
+import org.arend.core.pattern.ExpressionPattern;
 import org.arend.core.sort.Sort;
 import org.arend.error.CountingErrorReporter;
 import org.arend.ext.ArendExtension;
@@ -230,8 +232,8 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
     if (recursive && typechecked instanceof DataDefinition) {
       ((DataDefinition) typechecked).setRecursiveDefinitions(Collections.singleton(typechecked));
     }
-    if (definition.isRecursive() && typechecked instanceof FunctionDefinition && clauses != null) {
-      checkRecursiveFunctions(Collections.singletonMap((FunctionDefinition) typechecked, definition), Collections.singletonMap((FunctionDefinition) typechecked, clauses));
+    if (definition.isRecursive() && typechecked instanceof FunctionDefinition) {
+      checkRecursiveFunctions(Collections.singletonMap((FunctionDefinition) typechecked, definition), clauses == null ? Collections.emptyMap() : Collections.singletonMap((FunctionDefinition) typechecked, clauses));
     }
 
     typecheckingUnitFinished(definition.getData(), typechecked);
@@ -296,7 +298,7 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
   @Override
   public void bodiesFound(List<Concrete.Definition> definitions) {
     Map<FunctionDefinition,Concrete.Definition> functionDefinitions = new HashMap<>();
-    Map<FunctionDefinition, List<ExtElimClause>> clausesMap = new HashMap<>();
+    Map<FunctionDefinition, List<? extends ElimClause<ExpressionPattern>>> clausesMap = new HashMap<>();
     Set<DataDefinition> dataDefinitions = new HashSet<>();
     List<Concrete.Definition> orderedDefinitions = new ArrayList<>(definitions.size());
     List<Concrete.Definition> otherDefs = new ArrayList<>();
@@ -325,10 +327,12 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
       Pair<CheckTypeVisitor, Boolean> pair = mySuspensions.remove(definition.getData());
       if (myHeadersAreOK && pair != null) {
         typechecking.setTypechecker(pair.proj1);
-        List<ExtElimClause> clauses = typechecking.typecheckBody(def, definition, dataDefinitions, pair.proj2);
-        if (clauses != null) {
+        List<? extends ElimClause<ExpressionPattern>> clauses = typechecking.typecheckBody(def, definition, dataDefinitions, pair.proj2);
+        if (def instanceof FunctionDefinition) {
           functionDefinitions.put((FunctionDefinition) def, definition);
-          clausesMap.put((FunctionDefinition) def, clauses);
+          if (clauses != null) {
+            clausesMap.put((FunctionDefinition) def, clauses);
+          }
         }
 
         ArendExtension extension = pair.proj1.getExtension();
@@ -394,28 +398,36 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
     myCurrentDefinitions = Collections.emptyList();
   }
 
-  private void checkRecursiveFunctions(Map<FunctionDefinition,Concrete.Definition> definitions, Map<FunctionDefinition, List<ExtElimClause>> clauses) {
+  private void checkRecursiveFunctions(Map<FunctionDefinition,Concrete.Definition> definitions, Map<FunctionDefinition, ? extends List<? extends ElimClause<ExpressionPattern>>> clauses) {
+    boolean ok = true;
     DefinitionCallGraph definitionCallGraph = new DefinitionCallGraph();
     for (Map.Entry<FunctionDefinition, Concrete.Definition> entry : definitions.entrySet()) {
-      List<ExtElimClause> functionClauses = clauses.get(entry.getKey());
-      if (functionClauses != null) {
-        definitionCallGraph.add(entry.getKey(), functionClauses, definitions.keySet());
-      }
+      List<? extends ElimClause<ExpressionPattern>> functionClauses = clauses.get(entry.getKey());
+      definitionCallGraph.add(entry.getKey(), functionClauses == null ? Collections.emptyList() : functionClauses, definitions.keySet());
       for (DependentLink link = entry.getKey().getParameters(); link.hasNext(); link = link.getNext()) {
         link = link.getNextTyped(null);
         if (FindDefCallVisitor.findDefinition(link.getTypeExpr(), definitions.keySet()) != null) {
           myErrorReporter.report(new TypecheckingError("Mutually recursive functions are not allowed in parameters", entry.getValue()).withDefinition(entry.getKey().getReferable()));
+          ok = false;
         }
+      }
+      if (entry.getValue() instanceof Concrete.FunctionDefinition && ((Concrete.FunctionDefinition) entry.getValue()).getBody() instanceof Concrete.CoelimFunctionBody) {
+        myErrorReporter.report(new TypecheckingError("Recursive functions cannot be defined by copattern matching", entry.getValue()).withDefinition(entry.getKey().getReferable()));
+        ok = false;
       }
     }
 
     if (!definitionCallGraph.checkTermination()) {
+      for (Map.Entry<Definition, Set<RecursiveBehavior<Definition>>> entry : definitionCallGraph.myErrorInfo.entrySet()) {
+        myErrorReporter.report(new TerminationCheckError(entry.getKey(), entry.getValue()));
+      }
+      ok = false;
+    }
+
+    if (!ok) {
       for (FunctionDefinition definition : definitions.keySet()) {
         definition.addStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
         definition.setBody(null);
-      }
-      for (Map.Entry<Definition, Set<RecursiveBehavior<Definition>>> entry : definitionCallGraph.myErrorInfo.entrySet()) {
-        myErrorReporter.report(new TerminationCheckError(entry.getKey(), entry.getValue()));
       }
     }
   }

@@ -1089,10 +1089,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
       if (termResult != null) {
         if (newDef) {
-          typedDef.setResultType(termResult.type);
-        }
-        if (termResult.expression != null) {
-          if (newDef && !def.isRecursive()) {
+          if (!def.isRecursive()) {
+            typedDef.setResultType(termResult.type);
+          }
+          if (termResult.expression != null) {
             typedDef.setBody(termResult.expression);
           }
         }
@@ -1104,20 +1104,14 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
         if (termResult.expression instanceof NewExpression) {
           bodyIsOK = true;
-          if (newDef && (expectedType.isError() || !typedDef.isSFunc())) {
+          if (newDef && (expectedType.isError() || !typedDef.isSFunc()) && !def.isRecursive()) {
             typedDef.setBody(null);
-            if (!def.isRecursive()) {
-              typedDef.setResultType(((NewExpression) termResult.expression).getType());
-            }
+            typedDef.setResultType(((NewExpression) termResult.expression).getType());
           }
         }
       }
     } else {
       throw new IllegalStateException();
-    }
-
-    if (!checkElimBody(def)) {
-      typedDef.setBody(null);
     }
 
     if (newDef) {

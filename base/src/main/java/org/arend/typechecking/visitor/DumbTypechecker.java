@@ -36,7 +36,6 @@ public class DumbTypechecker extends VoidConcreteVisitor<Void, Void> {
   public Void visitFunctionBody(Concrete.BaseFunctionDefinition def, Void params) {
     checkClauses(def.getBody().getClauses(), def.getBody().getEliminatedReferences(), def.getParameters());
     super.visitFunctionBody(def, null);
-    myTypechecker.checkElimBody(def);
     return null;
   }
 

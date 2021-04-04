@@ -26,15 +26,6 @@ public class BaseDefinitionTypechecker {
     }
   }
 
-  protected boolean checkElimBody(Concrete.BaseFunctionDefinition def) {
-    if (def.isRecursive() && !(def.getBody() instanceof Concrete.ElimFunctionBody)) {
-      errorReporter.report(new TypecheckingError("Recursive functions must be defined by pattern matching", def));
-      return false;
-    } else {
-      return true;
-    }
-  }
-
   public static int checkNumberInPattern(int n, ErrorReporter errorReporter, Concrete.SourceNode sourceNode) {
     if (n < 0) {
       n = -n;

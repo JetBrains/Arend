@@ -26,11 +26,7 @@ public class CollectCallVisitor extends SearchVisitor<Void> {
     myCycle = cycle;
     myCollectedCalls = new HashSet<>();
 
-    collectIntervals();
-  }
-
-  private void collectIntervals() {
-    Body body = myDefinition.getActualBody();
+    Body body = def.getActualBody();
     if (body instanceof IntervalElim) {
       IntervalElim elim = (IntervalElim) body;
       List<ExpressionPattern> patternList = new ArrayList<>();
@@ -49,19 +45,19 @@ public class CollectCallVisitor extends SearchVisitor<Void> {
         pair.proj2.accept(this, null);
         patternList.set(i, old);
       }
+
+      body = elim.getOtherwise();
     }
 
-    Expression resultType = myDefinition.getResultType();
-    if (resultType != null) {
-      List<ExpressionPattern> patternList = new ArrayList<>();
+    List<ExpressionPattern> patternList = new ArrayList<>();
+    for (DependentLink param = myDefinition.getParameters(); param.hasNext(); param = param.getNext()) {
+      patternList.add(new BindingPattern(param));
+    }
 
-      for (DependentLink p = myDefinition.getParameters(); p.hasNext(); p = p.getNext()) {
-        p = p.getNextTyped(null);
-        patternList.add(new BindingPattern(p));
-      }
-
-      myPatterns = patternList;
-      resultType.accept(this, null);
+    myPatterns = patternList;
+    myDefinition.getResultType().accept(this, null);
+    if (body instanceof Expression) {
+      ((Expression) body).accept(this, null);
     }
   }
 

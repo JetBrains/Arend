@@ -188,4 +188,18 @@ public class RecursiveTest extends TypeCheckingTestCase {
       "  | con1 => con1'\n" +
       "  | con2 _ _ => con2'");
   }
+
+  @Test
+  public void withoutPatternMatching() {
+    typeCheckModule(
+      "\\func f (n : Nat) : Nat | 0 => 0 | suc n => g n\n" +
+      "\\func g (n : Nat) : Nat => f n");
+  }
+
+  @Test
+  public void withoutPatternMatchingError() {
+    typeCheckModule(
+      "\\func f (n : Nat) : Nat | 0 => 0 | suc n => g n\n" +
+      "\\func g (n : Nat) : Nat => f (suc n)", 2);
+  }
 }
