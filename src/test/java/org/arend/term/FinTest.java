@@ -298,4 +298,11 @@ public class FinTest extends TypeCheckingTestCase {
     typeCheckDef("\\func test (x : Nat) (y : Fin x) (z : Fin y) : Nat", 1);
     assertThatErrorsAre(Matchers.missingClauses(2));
   }
+
+  @Test
+  public void castTest() {
+    typeCheckModule(
+      "\\class C (A : \\Type) | f : A -> A\n" +
+      "\\func test (c : C Nat) (x : Fin 3) => f (x : Nat)");
+  }
 }
