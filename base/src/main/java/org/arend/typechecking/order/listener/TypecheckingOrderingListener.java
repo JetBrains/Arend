@@ -327,7 +327,8 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
       Pair<CheckTypeVisitor, Boolean> pair = mySuspensions.remove(definition.getData());
       if (myHeadersAreOK && pair != null) {
         typechecking.setTypechecker(pair.proj1);
-        List<? extends ElimClause<ExpressionPattern>> clauses = typechecking.typecheckBody(def, definition, dataDefinitions, pair.proj2);
+        typechecking.updateState(!pair.proj2);
+        List<? extends ElimClause<ExpressionPattern>> clauses = typechecking.typecheckBody(def, definition, dataDefinitions);
         if (def instanceof FunctionDefinition) {
           functionDefinitions.put((FunctionDefinition) def, definition);
           if (clauses != null) {
