@@ -342,4 +342,14 @@ public class DataTest extends TypeCheckingTestCase {
       "\\data D (n : Nat) (c : C) \\elim n | zero => con Nat\n" +
       "\\func f (c : C) => con 0");
   }
+
+  @Test
+  public void recordPositiveTest() {
+    typeCheckModule(
+      "\\record R (A : \\Set) (field : Nat -> A)\n" +
+      "\\data D | con1 (R D) | con2\n" +
+      "\\func test (d : D) : Nat\n" +
+      "  | con1 (r : R) => test (r.field 0)\n" +
+      "  | con2 => 1");
+  }
 }

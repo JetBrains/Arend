@@ -97,9 +97,9 @@ public class CollectCallVisitor extends SearchVisitor<Void> {
       DependentLink binding2 = ((BindingPattern) pattern2).getBinding();
       if (expr1 instanceof ReferenceExpression) {
         if (((ReferenceExpression) expr1).getBinding() == binding2) return BaseCallMatrix.R.Equal;
-      } else if (expr1 instanceof AppExpression) {
-        Expression function = expr1.getFunction();
-        if (function instanceof ReferenceExpression && ((ReferenceExpression) function).getBinding() == binding2)
+      } else {
+        expr1 = removeArgs(expr1);
+        if (expr1 instanceof ReferenceExpression && ((ReferenceExpression) expr1).getBinding() == binding2)
           return BaseCallMatrix.R.LessThan; // ensures that "e x < e"
       }
     }
@@ -134,23 +134,28 @@ public class CollectCallVisitor extends SearchVisitor<Void> {
     callMatrix.setBlock(param2, param1, isLess(expr1, pattern2));
   }
 
+  private static Expression removeArgs(Expression expr) {
+    while (true) {
+      if (expr instanceof AppExpression) {
+        expr = expr.getFunction();
+      } else if (expr instanceof ProjExpression) {
+        expr = ((ProjExpression) expr).getExpression();
+      } else if (expr instanceof FunCallExpression && ((FunCallExpression) expr).getDefinition() == Prelude.AT) {
+        expr = ((FunCallExpression) expr).getDefCallArguments().get(3);
+      } else if (expr instanceof FieldCallExpression) {
+        expr = ((FieldCallExpression) expr).getArgument();
+      } else {
+        break;
+      }
+    }
+    return expr;
+  }
+
   private static void doProcessLists(CallMatrix cm, DependentLink patternIndex, List<? extends ExpressionPattern> patternList, DependentLink argumentIndex, List<? extends Expression> argumentList) {
     for (ExpressionPattern pattern : patternList) {
       DependentLink argIndex = argumentIndex;
       for (Expression argument : argumentList) {
-        // strip currentExpression of App & Proj calls
-        while (true) {
-          if (argument instanceof AppExpression) {
-            argument = argument.getFunction();
-          } else if (argument instanceof ProjExpression) {
-            argument = ((ProjExpression) argument).getExpression();
-          } else if (argument instanceof FunCallExpression && ((FunCallExpression) argument).getDefinition() == Prelude.AT) {
-            argument = ((FunCallExpression) argument).getDefCallArguments().get(3);
-          } else {
-            break;
-          }
-        }
-        initMatrixBlock(cm, argument, argIndex, pattern, patternIndex);
+        initMatrixBlock(cm, removeArgs(argument), argIndex, pattern, patternIndex);
         argIndex = argIndex.getNext();
       }
       patternIndex = patternIndex.getNext();
