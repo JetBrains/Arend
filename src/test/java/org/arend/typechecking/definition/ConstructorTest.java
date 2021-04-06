@@ -221,7 +221,28 @@ public class ConstructorTest extends TypeCheckingTestCase {
       "\\cons con (n m k : Nat) => con2 (con1 (pair (suc n) m)) (suc k)\n" +
       "\\func f (d : D2) : Nat\n" +
       "  | con n m k => n Nat.+ m Nat.+ k\n" +
-      "  | _ => 0");
+      "  | _ => 0\n" +
+      "\\func test : f (con2 (con1 (\\new Pair Nat Nat 7 12)) 3) = 20 => idp");
+  }
+
+  @Test
+  public void newTest() {
+    typeCheckModule(
+      "\\record Pair (A B : \\Type)\n" +
+      "  | proj1 : A\n" +
+      "  | proj2 : B\n" +
+      "\\cons pair {A B : \\Type} (a : A) (b : B) : Pair A B\n" +
+      "  => \\new Pair {\n" +
+      "    | proj1 => a\n" +
+      "    | proj2 => b\n" +
+      "  }\n" +
+      "\\data D1 | con1 (Pair Nat Nat)\n" +
+      "\\data D2 | con2 D1 Nat\n" +
+      "\\cons con (n m k : Nat) => con2 (con1 (pair (suc n) m)) (suc k)\n" +
+      "\\func f (d : D2) : Nat\n" +
+      "  | con n m k => n Nat.+ m Nat.+ k\n" +
+      "  | _ => 0\n" +
+      "\\func test : f (con2 (con1 (\\new Pair Nat Nat 7 12)) 3) = 20 => idp");
   }
 
   @Test

@@ -1099,7 +1099,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       Concrete.Expression bodyTerm = ((Concrete.TermFunctionBody) body).getTerm();
       boolean useExpectedType = !expectedType.isError();
       TypecheckingResult nonFinalResult = typechecker.checkExpr(bodyTerm, useExpectedType ? expectedType : null);
-      if (useExpectedType && (kind == FunctionKind.LEMMA || nonFinalResult == null || !nonFinalResult.type.isInstance(ClassCallExpression.class)) && !(expectedType instanceof Type && ((Type) expectedType).isOmega())) {
+      if (useExpectedType && (kind == FunctionKind.LEMMA || def.getData().getKind() == GlobalReferable.Kind.DEFINED_CONSTRUCTOR || nonFinalResult == null || !nonFinalResult.type.isInstance(ClassCallExpression.class)) && !(expectedType instanceof Type && ((Type) expectedType).isOmega())) {
         if (nonFinalResult == null) {
           nonFinalResult = new TypecheckingResult(null, expectedType);
         } else {
@@ -1125,7 +1125,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
         if (termResult.expression instanceof NewExpression) {
           bodyIsOK = true;
-          if (myNewDef && (expectedType.isError() || !typedDef.isSFunc()) && !def.isRecursive()) {
+          if (myNewDef && def.getData().getKind() != GlobalReferable.Kind.DEFINED_CONSTRUCTOR && (expectedType.isError() || !typedDef.isSFunc()) && !def.isRecursive()) {
             typedDef.setBody(null);
             typedDef.setResultType(((NewExpression) termResult.expression).getType());
           }
@@ -1318,11 +1318,13 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       Set<DependentLink> usedVars = new HashSet<>();
       ExpressionPattern pattern = null;
       if (body instanceof Concrete.TermFunctionBody) {
-        if (typedDef.getBody() instanceof Expression) {
+        if (typedDef.getBody() instanceof NewExpression && typedDef.getResultType() instanceof ClassCallExpression) {
+          pattern = checkDConstructor((ClassCallExpression) typedDef.getResultType(), (NewExpression) typedDef.getBody(), usedVars, def);
+        } else if (typedDef.getBody() instanceof Expression) {
           pattern = checkDConstructor((Expression) typedDef.getBody(), usedVars, body.getTerm());
         }
       } else if (body instanceof Concrete.CoelimFunctionBody) {
-        if (consType != null && typedDef.getResultType() instanceof ClassCallExpression) {
+        if (consType != null && typedDef.getResultType() instanceof ClassCallExpression && ((ClassCallExpression) typedDef.getResultType()).getNumberOfNotImplementedFields() == 0) {
           pattern = checkDConstructor(consType, new NewExpression(null, (ClassCallExpression) typedDef.getResultType()), usedVars, def);
         }
       } else {
