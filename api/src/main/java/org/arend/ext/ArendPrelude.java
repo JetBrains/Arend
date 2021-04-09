@@ -1,8 +1,6 @@
 package org.arend.ext;
 
-import org.arend.ext.core.definition.CoreConstructor;
-import org.arend.ext.core.definition.CoreDataDefinition;
-import org.arend.ext.core.definition.CoreFunctionDefinition;
+import org.arend.ext.core.definition.*;
 
 /**
  * Provides access to the definitions in the prelude.
@@ -37,4 +35,11 @@ public interface ArendPrelude {
   CoreFunctionDefinition getDiv();
   CoreFunctionDefinition getMod();
   CoreFunctionDefinition getDivModProp();
+  CoreClassDefinition getArray();
+  CoreClassField getArrayElementsType();
+  CoreClassField getArrayLength();
+  CoreClassField getArrayAt();
+  CoreFunctionDefinition getEmptyArray();
+  CoreFunctionDefinition getArrayCons();
+  CoreFunctionDefinition getArrayIndex();
 }

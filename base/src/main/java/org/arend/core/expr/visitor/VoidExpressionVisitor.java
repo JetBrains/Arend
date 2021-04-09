@@ -239,4 +239,16 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> {
     expr.getArgument().accept(this, params);
     return null;
   }
+
+  @Override
+  public Void visitArray(ArrayExpression expr, P params) {
+    expr.getElementsType().accept(this, params);
+    for (Expression element : expr.getElements()) {
+      element.accept(this, params);
+    }
+    if (expr.getTail() != null) {
+      expr.getTail().accept(this, params);
+    }
+    return null;
+  }
 }

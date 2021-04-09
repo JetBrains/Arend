@@ -283,4 +283,13 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
     }
     return TypeCoerceExpression.make(expr.getDefinition(), expr.getSortArgument().subst(myLevelSubstitution), expr.getClauseIndex(), args, expr.getArgument().accept(this, null), expr.isFromLeftToRight());
   }
+
+  @Override
+  public Expression visitArray(ArrayExpression expr, Void params) {
+    List<Expression> elements = new ArrayList<>(expr.getElements().size());
+    for (Expression arg : expr.getElements()) {
+      elements.add(arg.accept(this, null));
+    }
+    return ArrayExpression.make(expr.getSortArgument().subst(myLevelSubstitution), expr.getElementsType().accept(this, null), elements, expr.getTail() == null ? null : expr.getTail().accept(this, null));
+  }
 }

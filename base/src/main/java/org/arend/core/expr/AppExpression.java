@@ -5,9 +5,11 @@ import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
 import org.arend.ext.core.expr.CoreAppExpression;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
+import org.arend.prelude.Prelude;
 import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -23,11 +25,14 @@ public class AppExpression extends Expression implements CoreAppExpression {
   }
 
   public static Expression make(Expression function, Expression argument, boolean isExplicit) {
-    LamExpression lamExpr = function.cast(LamExpression.class);
-    if (lamExpr != null) {
+    function = function.getUnderlyingExpression();
+    if (function instanceof LamExpression) {
+      LamExpression lamExpr = (LamExpression) function;
       SingleDependentLink var = lamExpr.getParameters();
       SingleDependentLink next = var.getNext();
       return (next.hasNext() ? new LamExpression(lamExpr.getResultSort(), next, lamExpr.getBody()) : lamExpr.getBody()).subst(var, argument);
+    } else if (function instanceof FieldCallExpression && ((FieldCallExpression) function).getDefinition() == Prelude.ARRAY_AT && Prelude.ARRAY_INDEX != null) {
+      return FunCallExpression.make(Prelude.ARRAY_INDEX, ((FieldCallExpression) function).getSortArgument(), Arrays.asList(((FieldCallExpression) function).getArgument(), argument));
     } else {
       return new AppExpression(function, argument, isExplicit);
     }

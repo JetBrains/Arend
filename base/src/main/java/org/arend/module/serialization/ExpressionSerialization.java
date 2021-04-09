@@ -568,6 +568,20 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
   }
 
   @Override
+  public ExpressionProtos.Expression visitArray(ArrayExpression expr, Void params) {
+    ExpressionProtos.Expression.Array.Builder builder = ExpressionProtos.Expression.Array.newBuilder();
+    builder.setSortArg(writeSort(expr.getSortArgument()));
+    builder.setElementsType(writeExpr(expr.getElementsType()));
+    for (Expression element : expr.getElements()) {
+      builder.addElement(writeExpr(element));
+    }
+    if (expr.getTail() != null) {
+      builder.setTail(writeExpr(expr.getTail()));
+    }
+    return ExpressionProtos.Expression.newBuilder().setArray(builder.build()).build();
+  }
+
+  @Override
   public ExpressionProtos.Expression visitFieldCall(FieldCallExpression expr, Void params) {
     ExpressionProtos.Expression.FieldCall.Builder builder = ExpressionProtos.Expression.FieldCall.newBuilder();
     builder.setFieldRef(myCallTargetIndexProvider.getDefIndex(expr.getDefinition()));

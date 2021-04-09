@@ -310,7 +310,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     if (result.type instanceof ClassCallExpression && expectedType instanceof ClassCallExpression) {
       ClassCallExpression actualClassCall = (ClassCallExpression) result.type;
       ClassCallExpression expectedClassCall = (ClassCallExpression) expectedType;
-      if (actualClassCall.getDefinition().isSubClassOf(expectedClassCall.getDefinition())) {
+      if (actualClassCall.getDefinition().isSubClassOf(expectedClassCall.getDefinition()) && actualClassCall.getDefinition() != Prelude.ARRAY) {
         boolean replace = false;
         for (ClassField field : expectedClassCall.getImplementedHere().keySet()) {
           if (!actualClassCall.isImplemented(field)) {
@@ -1428,7 +1428,14 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
 
     if (checkAllImplemented(classCallExpr, pseudoImplemented, expr)) {
-      return checkResult(expectedType, new TypecheckingResult(new NewExpression(null, classCallExpr), classCallExpr), expr);
+      TypecheckingResult result;
+      if (classCallExpr.getDefinition() == Prelude.ARRAY) {
+        Expression resultNorm = new NewExpression(null, classCallExpr).normalize(NormalizationMode.WHNF);
+        result = new TypecheckingResult(resultNorm, resultNorm.getType());
+      } else {
+        result = new TypecheckingResult(new NewExpression(null, classCallExpr), classCallExpr);
+      }
+      return checkResult(expectedType, result, expr);
     } else {
       return null;
     }

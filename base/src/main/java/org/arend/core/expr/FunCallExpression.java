@@ -14,6 +14,7 @@ import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -48,6 +49,12 @@ public class FunCallExpression extends DefCallExpression implements CoreFunCallE
       } else if (arguments.get(3) instanceof ConCallExpression && ((ConCallExpression) arguments.get(3)).getDefinition() == Prelude.PATH_CON) {
         return AppExpression.make(((ConCallExpression) arguments.get(3)).getDefCallArguments().get(0), arguments.get(4), true);
       }
+    }
+    if (definition == Prelude.EMPTY_ARRAY && arguments.size() == 1) {
+      return ArrayExpression.make(sortArgument, arguments.get(0), Collections.emptyList(), null);
+    }
+    if (definition == Prelude.ARRAY_CONS && arguments.size() == 3) {
+      return ArrayExpression.make(sortArgument, arguments.get(0), Collections.singletonList(arguments.get(1)), arguments.get(2));
     }
     return new FunCallExpression(definition, sortArgument, arguments);
   }

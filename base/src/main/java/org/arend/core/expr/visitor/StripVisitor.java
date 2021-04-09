@@ -282,6 +282,15 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
   }
 
   @Override
+  public Expression visitArray(ArrayExpression expr, Void params) {
+    List<Expression> elements = expr.getElements();
+    for (int i = 0; i < elements.size(); i++) {
+      elements.set(i, elements.get(i).accept(this, null));
+    }
+    return ArrayExpression.make(expr.getSortArgument(), expr.getElementsType().accept(this, null), elements, expr.getTail() == null ? null : expr.getTail().accept(this, null));
+  }
+
+  @Override
   public Expression visitPEval(PEvalExpression expr, Void params) {
     return new PEvalExpression(expr.getExpression().accept(this, null));
   }

@@ -14,6 +14,9 @@ import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.error.DummyErrorReporter;
 import org.arend.ext.ArendPrelude;
+import org.arend.ext.core.definition.CoreClassDefinition;
+import org.arend.ext.core.definition.CoreClassField;
+import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.module.ModulePath;
 import org.arend.ext.reference.Precedence;
 import org.arend.module.ModuleLocation;
@@ -77,10 +80,16 @@ public class Prelude implements ArendPrelude {
   public static FunctionDefinition DIV_MOD;
   public static FunctionDefinition DIV;
   public static FunctionDefinition MOD;
-
   public static FunctionDefinition DIV_MOD_PROPERTY;
-
   public static SigmaExpression DIV_MOD_TYPE;
+
+  public static ClassDefinition ARRAY;
+  public static ClassField ARRAY_ELEMENTS_TYPE;
+  public static ClassField ARRAY_LENGTH;
+  public static ClassField ARRAY_AT;
+  public static DConstructor EMPTY_ARRAY;
+  public static DConstructor ARRAY_CONS;
+  public static FunctionDefinition ARRAY_INDEX;
 
   public static boolean isInitialized() {
     return INTERVAL != null;
@@ -215,6 +224,24 @@ public class Prelude implements ArendPrelude {
         DIV_MOD_PROPERTY = (FunctionDefinition) definition;
         DIV_MOD_PROPERTY.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         break;
+      case "Array":
+        ARRAY = (ClassDefinition) definition;
+        ARRAY_ELEMENTS_TYPE = ARRAY.getPersonalFields().get(0);
+        ARRAY_LENGTH = ARRAY.getPersonalFields().get(1);
+        ARRAY_AT = ARRAY.getPersonalFields().get(2);
+        break;
+      case "empty":
+        EMPTY_ARRAY = (DConstructor) definition;
+        EMPTY_ARRAY.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+        break;
+      case "cons":
+        ARRAY_CONS = (DConstructor) definition;
+        ARRAY_CONS.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+        break;
+      case "!!":
+        ARRAY_INDEX = (FunctionDefinition) definition;
+        ARRAY_INDEX.setBody(null);
+        break;
       default:
         throw new IllegalStateException();
     }
@@ -250,6 +277,13 @@ public class Prelude implements ArendPrelude {
     consumer.accept(DIV);
     consumer.accept(MOD);
     consumer.accept(DIV_MOD_PROPERTY);
+    consumer.accept(ARRAY);
+    consumer.accept(ARRAY_ELEMENTS_TYPE);
+    consumer.accept(ARRAY_LENGTH);
+    consumer.accept(ARRAY_AT);
+    consumer.accept(EMPTY_ARRAY);
+    consumer.accept(ARRAY_CONS);
+    consumer.accept(ARRAY_INDEX);
   }
 
   public static void initialize(Scope scope) {
@@ -424,5 +458,40 @@ public class Prelude implements ArendPrelude {
   @Override
   public FunctionDefinition getDivModProp() {
     return DIV_MOD_PROPERTY;
+  }
+
+  @Override
+  public CoreClassDefinition getArray() {
+    return ARRAY;
+  }
+
+  @Override
+  public CoreClassField getArrayElementsType() {
+    return ARRAY_ELEMENTS_TYPE;
+  }
+
+  @Override
+  public CoreClassField getArrayLength() {
+    return ARRAY_LENGTH;
+  }
+
+  @Override
+  public CoreClassField getArrayAt() {
+    return ARRAY_AT;
+  }
+
+  @Override
+  public CoreFunctionDefinition getEmptyArray() {
+    return EMPTY_ARRAY;
+  }
+
+  @Override
+  public CoreFunctionDefinition getArrayCons() {
+    return ARRAY_CONS;
+  }
+
+  @Override
+  public CoreFunctionDefinition getArrayIndex() {
+    return ARRAY_INDEX;
   }
 }

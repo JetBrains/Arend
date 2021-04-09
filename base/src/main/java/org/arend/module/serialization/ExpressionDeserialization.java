@@ -294,6 +294,8 @@ class ExpressionDeserialization {
         return readPEval(proto.getPEval());
       case TYPE_COERCE:
         return readTypeCoerce(proto.getTypeCoerce());
+      case ARRAY:
+        return readArray(proto.getArray());
       case LET:
         return readLet(proto.getLet());
       case CASE:
@@ -454,6 +456,10 @@ class ExpressionDeserialization {
     FunctionDefinition function = myCallTargetProvider.getCallTarget(proto.getFunRef(), FunctionDefinition.class);
     myDependencyListener.dependsOn(myDefinition, function.getReferable());
     return TypeCoerceExpression.make(function, new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), proto.getClauseIndex(), readExprList(proto.getClauseArgumentList()), readExpr(proto.getArgument()), proto.getFromLeftToRight());
+  }
+
+  private Expression readArray(ExpressionProtos.Expression.Array proto) throws DeserializationException {
+    return ArrayExpression.make(readSort(proto.getSortArg()), readExpr(proto.getElementsType()), readExprList(proto.getElementList()), proto.hasTail() ? readExpr(proto.getTail()) : null);
   }
 
   private String validName(String name) {

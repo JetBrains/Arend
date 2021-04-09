@@ -799,4 +799,31 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   public Concrete.Expression visitTypeCoerce(TypeCoerceExpression expr, Void params) {
     return expr.getArgument().accept(this, null);
   }
+
+  @Override
+  public Concrete.Expression visitArray(ArrayExpression expr, Void params) {
+    Concrete.Expression elementsType = hasFlag(PrettyPrinterFlag.SHOW_IMPLICIT_ARGS) ? expr.getElementsType().accept(this, null) : null;
+
+    Concrete.Expression result;
+    if (expr.getTail() == null) {
+      result = new Concrete.ReferenceExpression(null, Prelude.EMPTY_ARRAY.getReferable());
+      if (elementsType != null) {
+        result = Concrete.AppExpression.make(null, result, elementsType, false);
+      }
+    } else {
+      result = expr.getTail().accept(this, null);
+    }
+
+    for (int i = expr.getElements().size() - 1; i >= 0; i--) {
+      List<Concrete.Argument> arguments = new ArrayList<>(3);
+      if (elementsType != null) {
+        arguments.add(new Concrete.Argument(elementsType, false));
+      }
+      arguments.add(new Concrete.Argument(expr.getElements().get(i).accept(this, null), true));
+      arguments.add(new Concrete.Argument(result, true));
+      result = Concrete.AppExpression.make(null, new Concrete.ReferenceExpression(null, Prelude.ARRAY_CONS.getReferable()), arguments);
+    }
+
+    return result;
+  }
 }

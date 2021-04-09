@@ -292,4 +292,17 @@ public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean>
     }
     return expr.getArgument().accept(this, params);
   }
+
+  @Override
+  public Boolean visitArray(ArrayExpression expr, P params) {
+    if (expr.getElementsType().accept(this, params)) {
+      return true;
+    }
+    for (Expression element : expr.getElements()) {
+      if (element.accept(this, params)) {
+        return true;
+      }
+    }
+    return expr.getTail() != null && expr.getTail().accept(this, params);
+  }
 }

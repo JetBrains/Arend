@@ -200,4 +200,17 @@ public class NormalizingFindBindingVisitor extends SearchVisitor<Void> {
     }
     return findBinding(expr.getArgument(), true);
   }
+
+  @Override
+  public Boolean visitArray(ArrayExpression expr, Void params) {
+    if (findBinding(expr.getElementsType(), true)) {
+      return true;
+    }
+    for (Expression element : expr.getElements()) {
+      if (findBinding(element, true)) {
+        return true;
+      }
+    }
+    return expr.getTail() != null && findBinding(expr.getTail(), true);
+  }
 }

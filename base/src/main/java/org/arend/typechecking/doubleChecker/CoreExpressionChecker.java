@@ -10,6 +10,7 @@ import org.arend.core.context.param.UnusedIntervalDependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
 import org.arend.core.definition.Definition;
+import org.arend.core.definition.UniverseKind;
 import org.arend.core.elimtree.ElimBody;
 import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.*;
@@ -770,6 +771,18 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     ExprSubstitution substitution = new ExprSubstitution();
     checkList(expr.getClauseArguments(), expr.getParameters(), substitution, levelSubst);
     expr.getArgument().accept(this, expr.getArgumentType());
+    return check(expectedType, expr.getType(), expr);
+  }
+
+  @Override
+  public Expression visitArray(ArrayExpression expr, Expression expectedType) {
+    expr.getElementsType().accept(this, new UniverseExpression(expr.getSortArgument()));
+    for (Expression element : expr.getElements()) {
+      element.accept(this, expr.getElementsType());
+    }
+    if (expr.getTail() != null) {
+      expr.getTail().accept(this, new ClassCallExpression(Prelude.ARRAY, expr.getSortArgument(), Collections.singletonMap(Prelude.ARRAY_ELEMENTS_TYPE, expr.getElementsType()), expr.getSortArgument().max(Sort.SET0), UniverseKind.NO_UNIVERSES));
+    }
     return check(expectedType, expr.getType(), expr);
   }
 }

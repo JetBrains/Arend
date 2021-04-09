@@ -441,7 +441,23 @@ public class ElimBindingVisitor extends ExpressionTransformer<Void> {
   public Expression visitTypeCoerce(TypeCoerceExpression expr, Void params) {
     List<Expression> newArgs = visitDefCallArguments(expr.getClauseArguments());
     if (newArgs == null) return null;
-    Expression newArg = expr.getArgument().accept(this, null);
+    Expression newArg = acceptSelf(expr.getArgument(), true);
     return newArg == null ? null : TypeCoerceExpression.make(expr.getDefinition(), expr.getSortArgument(), expr.getClauseIndex(), newArgs, newArg, expr.isFromLeftToRight());
+  }
+
+  @Override
+  public Expression visitArray(ArrayExpression expr, Void params) {
+    Expression elementsType = acceptSelf(expr.getElementsType(), true);
+    if (elementsType == null) return null;
+    List<Expression> elements = visitDefCallArguments(expr.getElements());
+    if (elements == null) return null;
+    Expression tail;
+    if (expr.getTail() != null) {
+      tail = acceptSelf(expr.getTail(), true);
+      if (tail == null) return null;
+    } else {
+      tail = null;
+    }
+    return ArrayExpression.make(expr.getSortArgument(), elementsType, elements, tail);
   }
 }

@@ -30,6 +30,7 @@ message Expression {
         BigInteger big_integer = 19;
         PEval pEval = 20;
         TypeCoerce type_coerce = 22;
+        Array array = 23;
     }
 
     message Abs {
@@ -132,6 +133,12 @@ message Expression {
         repeated Expression clause_argument = 5;
         Expression argument = 6;
         bool from_left_to_right = 7;
+    }
+    message Array {
+      Sort sort_arg = 1;
+      Expression elementsType = 2;
+      repeated Expression element = 3;
+      Expression tail = 4;
     }
     message New {
         ClassCall class_call = 1;

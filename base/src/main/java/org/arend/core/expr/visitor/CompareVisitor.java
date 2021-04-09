@@ -1261,6 +1261,25 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
   }
 
   @Override
+  public Boolean visitArray(ArrayExpression expr, Expression other, Expression type) {
+    if (!(other instanceof ArrayExpression)) {
+      return false;
+    }
+
+    ArrayExpression array2 = (ArrayExpression) other;
+    if (!(compare(expr.getElementsType(), array2.getElementsType(), Type.OMEGA, false) && expr.getElements().size() == array2.getElements().size() && (expr.getTail() == null) == (array2.getTail() == null))) {
+      return false;
+    }
+
+    for (int i = 0; i < expr.getElements().size(); i++) {
+      if (!compare(expr.getElements().get(i), array2.getElements().get(i), expr.getElementsType(), true)) {
+        return false;
+      }
+    }
+    return expr.getTail() == null || compare(expr.getTail(), array2.getTail(), null, false);
+  }
+
+  @Override
   public Boolean visitPEval(PEvalExpression expr, Expression other, Expression type) {
     return other.isInstance(PEvalExpression.class);
   }

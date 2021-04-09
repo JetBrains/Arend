@@ -1,7 +1,9 @@
 package org.arend.core.expr.visitor;
 
 import org.arend.core.context.param.DependentLink;
+import org.arend.core.definition.ClassField;
 import org.arend.core.definition.FunctionDefinition;
+import org.arend.core.definition.UniverseKind;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.HaveClause;
 import org.arend.core.expr.let.LetClause;
@@ -13,7 +15,9 @@ import org.arend.prelude.Prelude;
 import org.arend.util.SingletonList;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.arend.core.expr.ExpressionFactory.*;
 
@@ -186,7 +190,14 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public ClassCallExpression visitNew(NewExpression expr, Void params) {
-    return expr.getType();
+    ClassCallExpression classCall = expr.getType();
+    if (classCall.getDefinition() != Prelude.ARRAY) {
+      return classCall;
+    }
+
+    Map<ClassField, Expression> newImplementations = new HashMap<>(classCall.getImplementedHere());
+    newImplementations.remove(Prelude.ARRAY_AT);
+    return new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), newImplementations, classCall.getSortArgument().max(Sort.SET0), UniverseKind.NO_UNIVERSES);
   }
 
   @Override
@@ -219,6 +230,31 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
   @Override
   public Expression visitTypeCoerce(TypeCoerceExpression expr, Void params) {
     return expr.getType();
+  }
+
+  @Override
+  public Expression visitArray(ArrayExpression expr, Void params) {
+    Map<ClassField, Expression> implementations = new HashMap<>();
+    implementations.put(Prelude.ARRAY_ELEMENTS_TYPE, expr.getElementsType());
+    if (expr.getTail() == null) {
+      implementations.put(Prelude.ARRAY_LENGTH, new SmallIntegerExpression(expr.getElements().size()));
+    } else {
+      Expression tailType = expr.getTail().accept(this, null).getUnderlyingExpression();
+      if (tailType instanceof ClassCallExpression && ((ClassCallExpression) tailType).getDefinition() == Prelude.ARRAY) {
+        Expression length = ((ClassCallExpression) tailType).getImplementationHere(Prelude.ARRAY_LENGTH, expr.getTail());
+        if (length instanceof IntegerExpression) {
+          length = ((IntegerExpression) length).plus(expr.getElements().size());
+        } else if (length != null) {
+          for (Expression ignored : expr.getElements()) {
+            length = Suc(length);
+          }
+        }
+        if (length != null) {
+          implementations.put(Prelude.ARRAY_LENGTH, length);
+        }
+      }
+    }
+    return new ClassCallExpression(Prelude.ARRAY, expr.getSortArgument(), implementations, expr.getSortArgument().max(Sort.SET0), UniverseKind.NO_UNIVERSES);
   }
 
   @Override

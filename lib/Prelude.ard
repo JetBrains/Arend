@@ -30,6 +30,17 @@
   | _, right => a'
   | path f, i => f i
 
+\func coe (A : I -> \Type) (a : A left) (i : I) : A i \elim i
+  | left => a
+
+\func coe2 (A : I -> \Type) (i : I) (a : A i) (j : I) : A j \elim i, j
+  | left, j => coe A a j
+  | i, right => coe (\lam k => A (I.squeezeR i k)) a right
+
+\func iso {A B : \Type} (f : A -> B) (g : B -> A) (p : \Pi (x : A) -> g (f x) = x) (q : \Pi (y : B) -> f (g y) = y) (i : I) : \Type \elim i
+  | left => A
+  | right => B
+
 \data Nat
   | zero
   | suc Nat
@@ -61,21 +72,26 @@
 
 \data Fin (n : Nat)
   \where {
-    \use \coerce fromNat {k : Nat} (n : Nat) : Fin (suc k)
-      => n Nat.`mod` suc k
+    \use \coerce fromNat {m : Nat} (n : Nat) : Fin (suc m)
+      => n Nat.mod suc m
   }
 
 \data Int
   | \coerce pos Nat
   | neg Nat \with { zero => pos zero }
 
-\func coe (A : I -> \Type) (a : A left) (i : I) : A i \elim i
-  | left => a
+\record Array (A : \Type) (len : Nat) (at : Fin len -> A)
+  \where {
+    \func \infixl 9 !! (a : Array) (i : Fin a.len) => a.at i
 
-\func coe2 (A : I -> \Type) (i : I) (a : A i) (j : I) : A j \elim i, j
-  | left, j => coe A a j
-  | i, right => coe (\lam k => A (I.squeezeR i k)) a right
+    \cons empty {A : \Type} : Array A \cowith
+      | len => 0
+      | at => \case __
 
-\func iso {A B : \Type} (f : A -> B) (g : B -> A) (p : \Pi (x : A) -> g (f x) = x) (q : \Pi (y : B) -> f (g y) = y) (i : I) : \Type \elim i
-  | left => A
-  | right => B
+    \cons \infixr 5 cons {A : \Type} (a : A) (arr : Array A) : Array A \cowith
+      | len => suc arr.len
+      | at => \case __ \with {
+        | 0 => a
+        | suc i => arr !! i
+      }
+  }

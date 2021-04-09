@@ -773,8 +773,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     return pair != null;
   }
 
-  // Returns a pair consisting of classCalls corresponding to the body and the type (so, the first one is an extension of the second).
-  private Pair<ClassCallExpression,ClassCallExpression> typecheckCoClauses(FunctionDefinition typedDef, Concrete.BaseFunctionDefinition def, FunctionKind kind, List<Concrete.CoClauseElement> elements) {
+  private Pair<Expression,ClassCallExpression> typecheckCoClauses(FunctionDefinition typedDef, Concrete.BaseFunctionDefinition def, FunctionKind kind, List<Concrete.CoClauseElement> elements) {
     List<Concrete.Argument> arguments = new ArrayList<>();
     for (Concrete.Parameter parameter : def.getParameters()) {
       for (Referable referable : parameter.getReferableList()) {
@@ -811,13 +810,18 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         errorReporter.report(new TypeMismatchError(DocFactory.text("a classCall"), resultExpr, def.getResultType()));
         return null;
       }
-      typechecker.checkAllImplemented((ClassCallExpression) resultExpr, pseudoImplemented, def);
-      return new Pair<>((ClassCallExpression) resultExpr, type);
+      ClassCallExpression classCall = (ClassCallExpression) resultExpr;
+      typechecker.checkAllImplemented(classCall, pseudoImplemented, def);
+      classCall.getImplementedHere().remove(Prelude.ARRAY_AT);
+      classCall.setSort(classCall.getSortArgument().max(Sort.SET0));
+      return new Pair<>(new NewExpression(null, classCall), type);
     } else {
       TypecheckingResult result = typechecker.finalCheckExpr(new Concrete.NewExpression(def.getData(), Concrete.ClassExtExpression.make(def.getData(), typechecker.desugarClassApp(resultType, true), new Concrete.Coclauses(def.getData(), classFieldImpls))), null);
-      if (result == null || !(result.expression instanceof NewExpression)) return null;
-      ClassCallExpression resultClassCall = ((NewExpression) result.expression).getType();
-      return new Pair<>(resultClassCall, resultClassCall);
+      if (result == null) return null;
+      if (!(result.type instanceof ClassCallExpression)) {
+        throw new IllegalStateException();
+      }
+      return new Pair<>(result.expression, (ClassCallExpression) result.type);
     }
   }
 
@@ -1072,15 +1076,15 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     } else if (body instanceof Concrete.CoelimFunctionBody) {
       if (def.getResultType() != null) {
         if (def.getStatus() != Concrete.Status.HAS_ERRORS) {
-          Pair<ClassCallExpression, ClassCallExpression> result = typecheckCoClauses(typedDef, def, kind, body.getCoClauseElements());
+          Pair<Expression, ClassCallExpression> result = typecheckCoClauses(typedDef, def, kind, body.getCoClauseElements());
           if (result != null) {
             if (myNewDef && !def.isRecursive()) {
               if (kind == FunctionKind.CONS) {
-                typedDef.setResultType(result.proj1);
+                typedDef.setResultType(result.proj1.getType());
               } else {
                 typedDef.setResultType(result.proj2);
-                if (typedDef.isSFunc() && result.proj1.getImplementedHere().size() != result.proj2.getImplementedHere().size()) {
-                  typedDef.setBody(new NewExpression(null, result.proj1));
+                if (result.proj2.getNumberOfNotImplementedFields() > 0) {
+                  typedDef.setBody(result.proj1);
                 }
               }
             }
@@ -2018,6 +2022,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     for (Concrete.ReferenceExpression aSuperClass : def.getSuperClasses()) {
       ClassDefinition superClass = typechecker.referableToDefinition(aSuperClass.getReferent(), ClassDefinition.class, "Expected a class", aSuperClass);
       if (superClass == null) {
+        continue;
+      }
+      if (superClass == Prelude.ARRAY) {
+        errorReporter.report(new TypecheckingError("Array cannot be extended", aSuperClass));
         continue;
       }
 

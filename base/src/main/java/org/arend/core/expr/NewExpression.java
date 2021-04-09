@@ -7,6 +7,7 @@ import org.arend.core.expr.visitor.ExpressionVisitor2;
 import org.arend.core.sort.Sort;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CoreNewExpression;
+import org.arend.prelude.Prelude;
 import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -84,12 +85,17 @@ public class NewExpression extends Expression implements CoreNewExpression {
 
   @Override
   public Decision isWHNF() {
-    return Decision.YES;
+    if (myClassCall.getDefinition() != Prelude.ARRAY) {
+      return Decision.YES;
+    }
+
+    Expression length = getImplementation(Prelude.ARRAY_LENGTH).getUnderlyingExpression();
+    return length instanceof IntegerExpression || length instanceof ConCallExpression ? Decision.NO : length.isWHNF();
   }
 
   @Override
   public Expression getStuckExpression() {
-    return null;
+    return myClassCall.getDefinition() == Prelude.ARRAY ? getImplementation(Prelude.ARRAY_LENGTH).getStuckExpression() : null;
   }
 
   @NotNull
