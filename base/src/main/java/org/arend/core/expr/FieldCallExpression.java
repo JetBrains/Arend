@@ -6,11 +6,14 @@ import org.arend.core.expr.visitor.ExpressionVisitor2;
 import org.arend.core.sort.Sort;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CoreFieldCallExpression;
+import org.arend.prelude.Prelude;
 import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
 import java.util.List;
+
+import static org.arend.core.expr.ExpressionFactory.Suc;
 
 public class FieldCallExpression extends DefCallExpression implements CoreFieldCallExpression {
   private final Expression myArgument;
@@ -41,6 +44,17 @@ public class FieldCallExpression extends DefCallExpression implements CoreFieldC
       }
     } else if (thisExpr instanceof ErrorExpression && ((ErrorExpression) thisExpr).getExpression() != null) {
       return new FieldCallExpression(definition, sortArgument, ((ErrorExpression) thisExpr).replaceExpression(null));
+    } else if (definition == Prelude.ARRAY_LENGTH && thisExpr instanceof ArrayExpression) {
+      ArrayExpression array = (ArrayExpression) thisExpr;
+      if (array.getTail() == null) {
+        return new SmallIntegerExpression(array.getElements().size());
+      } else {
+        Expression result = array.getTail();
+        for (Expression ignored : array.getElements()) {
+          result = Suc(result);
+        }
+        return result;
+      }
     }
 
     return new FieldCallExpression(definition, sortArgument, thisExpr);
