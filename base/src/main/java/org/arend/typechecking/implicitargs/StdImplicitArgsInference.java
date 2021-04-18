@@ -447,7 +447,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
             ClassCallExpression classCall = (ClassCallExpression) result.getParameter().getTypeExpr();
             expectedType = expectedType.normalize(NormalizationMode.WHNF);
             if (expectedType instanceof ClassCallExpression) {
-              Expression length = ((ClassCallExpression) expectedType).getAbsImplementationHere(Prelude.ARRAY_LENGTH);
+              Expression length = ((ClassCallExpression) expectedType).getClosedImplementation(Prelude.ARRAY_LENGTH);
               if (length != null) {
                 length = length.normalize(NormalizationMode.WHNF);
                 if (length instanceof IntegerExpression && !((IntegerExpression) length).isZero() || length instanceof ConCallExpression && ((ConCallExpression) length).getDefinition() == Prelude.SUC) {
