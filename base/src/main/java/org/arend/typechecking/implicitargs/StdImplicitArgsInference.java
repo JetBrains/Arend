@@ -312,10 +312,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
           args1.addAll(args.subList(defCallResult.getArguments().size(), args.size()));
           args1 = ((Constructor) defCallResult.getDefinition()).matchDataTypeArguments(args1);
           if (args1 != null) {
-            boolean ok = true;
-            if (dataCall.getUniverseKind() != UniverseKind.NO_UNIVERSES && !Sort.compare(defCallResult.getSortArgument(), dataCall.getSortArgument(), dataCall.getUniverseKind() == UniverseKind.ONLY_COVARIANT ? CMP.LE : CMP.EQ, myVisitor.getEquations(), fun)) {
-              ok = false;
-            }
+            boolean ok = dataCall.getUniverseKind() == UniverseKind.NO_UNIVERSES || Sort.compare(defCallResult.getSortArgument(), dataCall.getSortArgument(), dataCall.getUniverseKind() == UniverseKind.ONLY_COVARIANT ? CMP.LE : CMP.EQ, myVisitor.getEquations(), fun);
 
             if (ok && !defCallResult.getArguments().isEmpty()) {
               ok = new CompareVisitor(myVisitor.getEquations(), CMP.LE, fun).compareLists(defCallResult.getArguments(), dataCall.getDefCallArguments().subList(0, defCallResult.getArguments().size()), dataCall.getDefinition().getParameters(), dataCall.getDefinition(), new ExprSubstitution());
@@ -446,7 +443,25 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
               break;
             }
           }
-          result = inferArg(result, argument.expression, argument.isExplicit(), fun);
+          if (definition == Prelude.ARRAY_CONS && argument.isExplicit() && result instanceof DefCallResult && ((DefCallResult) result).getArguments().size() == 2) {
+            ClassCallExpression classCall = (ClassCallExpression) result.getParameter().getTypeExpr();
+            expectedType = expectedType.normalize(NormalizationMode.WHNF);
+            if (expectedType instanceof ClassCallExpression) {
+              Expression length = ((ClassCallExpression) expectedType).getAbsImplementationHere(Prelude.ARRAY_LENGTH);
+              if (length != null) {
+                length = length.normalize(NormalizationMode.WHNF);
+                if (length instanceof IntegerExpression && !((IntegerExpression) length).isZero() || length instanceof ConCallExpression && ((ConCallExpression) length).getDefinition() == Prelude.SUC) {
+                  Map<ClassField, Expression> impls = new HashMap<>(classCall.getImplementedHere());
+                  impls.put(Prelude.ARRAY_LENGTH, length instanceof IntegerExpression ? ((IntegerExpression) length).pred() : ((ConCallExpression) length).getDefCallArguments().get(0));
+                  classCall = new ClassCallExpression(Prelude.ARRAY, classCall.getSortArgument(), impls, classCall.getSort(), classCall.getUniverseKind());
+                }
+              }
+            }
+            TypecheckingResult argResult = myVisitor.checkArgument(argument.expression, classCall, result, null);
+            result = argResult == null ? null : result.applyExpression(argResult.expression, true, myVisitor.getErrorReporter(), fun);
+          } else {
+            result = inferArg(result, argument.expression, argument.isExplicit(), fun);
+          }
         }
 
         if (result == null || i == arguments.size()) {

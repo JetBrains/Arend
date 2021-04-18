@@ -398,6 +398,31 @@ public class Matchers {
     };
   }
 
+  public static Matcher<GeneralError> goal(Expression expectedType) {
+    return new TypeSafeDiagnosingMatcher<>() {
+      @Override
+      protected boolean matchesSafely(GeneralError error, Description description) {
+        if (error instanceof GoalError) {
+          description.appendText("goal");
+          if (Objects.equals(expectedType, ((GoalError) error).expectedType)) {
+            return true;
+          } else {
+            description.appendText(" with expected type: " + ((GoalError) error).expectedType);
+            return false;
+          }
+        } else {
+          description.appendText("not a goal");
+          return false;
+        }
+      }
+
+      @Override
+      public void describeTo(Description description) {
+        description.appendText("should be a goal with expected type: " + expectedType);
+      }
+    };
+  }
+
   public static Matcher<GeneralError> hasErrors(GlobalReferable cause) {
     return new TypeSafeDiagnosingMatcher<>() {
       @Override

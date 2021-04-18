@@ -1,13 +1,23 @@
 package org.arend.typechecking.constructions;
 
 import org.arend.Matchers;
+import org.arend.core.definition.ClassField;
+import org.arend.core.definition.Definition;
 import org.arend.core.definition.FunctionDefinition;
+import org.arend.core.definition.UniverseKind;
 import org.arend.core.expr.ClassCallExpression;
+import org.arend.core.expr.Expression;
+import org.arend.core.expr.ReferenceExpression;
+import org.arend.core.expr.SmallIntegerExpression;
 import org.arend.core.sort.Sort;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.arend.core.expr.ExpressionFactory.Nat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
@@ -28,6 +38,11 @@ public class ArrayTest extends TypeCheckingTestCase {
     assertEquals(sort, ((ClassCallExpression) Prelude.EMPTY_ARRAY.getResultType()).getSort());
     assertFalse(((ClassCallExpression) Prelude.ARRAY_CONS.getResultType()).isImplemented(Prelude.ARRAY_AT));
     assertEquals(sort, ((ClassCallExpression) Prelude.ARRAY_CONS.getResultType()).getSort());
+  }
+
+  @Test
+  public void consTest() {
+    typeCheckDef("\\func test (n : Nat) (x : Array Nat n) : Array Nat (suc n) => n Array.cons x");
   }
 
   @Test
@@ -194,5 +209,23 @@ public class ArrayTest extends TypeCheckingTestCase {
       "  | empty {A} => A\n" +
       "  | cons {A} _ _ => A\n" +
       "\\func test : f (cons 1 empty) = Nat => idp");
+  }
+
+  @Test
+  public void goalTest() {
+    Definition def = typeCheckDef("\\func test (n : Nat) : Array Nat (suc n) => {?} Array.cons {?}", 2);
+    Map<ClassField, Expression> impls = new HashMap<>();
+    impls.put(Prelude.ARRAY_ELEMENTS_TYPE, Nat());
+    impls.put(Prelude.ARRAY_LENGTH, new ReferenceExpression(def.getParameters()));
+    assertThatErrorsAre(Matchers.goal(1), Matchers.goal(new ClassCallExpression(Prelude.ARRAY, Sort.SET0, impls, Sort.SET0, UniverseKind.NO_UNIVERSES)));
+  }
+
+  @Test
+  public void goalTest2() {
+    typeCheckDef("\\func test : Array Nat 7 => {?} Array.cons {?} Array.cons {?}", 3);
+    Map<ClassField, Expression> impls = new HashMap<>();
+    impls.put(Prelude.ARRAY_ELEMENTS_TYPE, Nat());
+    impls.put(Prelude.ARRAY_LENGTH, new SmallIntegerExpression(5));
+    assertThatErrorsAre(Matchers.goal(0), Matchers.goal(0), Matchers.goal(new ClassCallExpression(Prelude.ARRAY, Sort.SET0, impls, Sort.SET0, UniverseKind.NO_UNIVERSES)));
   }
 }

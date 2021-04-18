@@ -161,8 +161,10 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
   public boolean normalizedCompare(Expression expr1, Expression expr2, Expression type, boolean useType) {
     Expression stuck1 = expr1.getStuckExpression();
     Expression stuck2 = expr2.getStuckExpression();
-    if (stuck1 != null && stuck1.isError() && !(stuck2 instanceof InferenceReferenceExpression) ||
-      stuck2 != null && stuck2.isError() && !(stuck1 instanceof InferenceReferenceExpression)) {
+    if (stuck1 != null) stuck1 = stuck1.getUnderlyingExpression();
+    if (stuck2 != null) stuck2 = stuck2.getUnderlyingExpression();
+    if (stuck1 instanceof ErrorExpression && !(stuck2 instanceof InferenceReferenceExpression) ||
+        stuck2 instanceof ErrorExpression && !(stuck1 instanceof InferenceReferenceExpression)) {
       return true;
     }
 
