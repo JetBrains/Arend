@@ -274,7 +274,7 @@ public class ScopeFactory {
 
     // Parameters are not visible in \extends
     if (parentSourceNode instanceof Abstract.ClassDefinition && sourceNode instanceof Abstract.Reference) {
-      return parentScope;
+      return new ElimScope(parentScope, Collections.singleton(Prelude.ARRAY.getRef()));
     }
 
     // Extend the scope with parameters

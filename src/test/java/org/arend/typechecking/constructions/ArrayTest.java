@@ -43,6 +43,12 @@ public class ArrayTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void extendsTest() {
+    resolveNamesDef("\\record R \\extends Array", 1);
+    assertThatErrorsAre(Matchers.notInScope("Array"));
+  }
+
+  @Test
   public void newConsTest() {
     typeCheckModule(
       "\\open Array\n" +

@@ -17,6 +17,8 @@ import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.naming.resolving.ResolverListener;
 import org.arend.naming.scope.*;
+import org.arend.naming.scope.local.ElimScope;
+import org.arend.prelude.Prelude;
 import org.arend.term.ClassFieldKind;
 import org.arend.term.FunctionKind;
 import org.arend.term.NameRenaming;
@@ -501,7 +503,11 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     }
   }
 
-  private void resolveSuperClasses(Concrete.ClassDefinition def, ExpressionResolveNameVisitor exprVisitor) {
+  private void resolveSuperClasses(Concrete.ClassDefinition def, Scope scope) {
+    if (def.getSuperClasses().isEmpty()) {
+      return;
+    }
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myReferableConverter, new ElimScope(scope, Collections.singleton(Prelude.ARRAY.getRef())), null, myErrorReporter, myResolverListener);
     for (int i = 0; i < def.getSuperClasses().size(); i++) {
       Concrete.ReferenceExpression superClass = def.getSuperClasses().get(i);
       Concrete.Expression resolved = exprVisitor.visitReference(superClass, null);
@@ -562,10 +568,10 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       }
     }
 
+    resolveSuperClasses(def, scope);
+
     List<Referable> context = new ArrayList<>();
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myReferableConverter, scope, context, myLocalErrorReporter, myResolverListener);
-    resolveSuperClasses(def, exprVisitor);
-
     Concrete.Expression previousType = null;
     for (int i = 0; i < classFields.size(); i++) {
       Concrete.ClassField field = classFields.get(i);
@@ -660,8 +666,8 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
 
     var def = myConcreteProvider.getConcrete(groupRef);
     Scope cachedScope = CachingScope.make(makeScope(group, scope, def instanceof Concrete.ClassDefinition ? LexicalScope.Extent.EXTERNAL_AND_FIELDS : LexicalScope.Extent.EVERYTHING));
-    if (def instanceof Concrete.ClassDefinition && !((Concrete.ClassDefinition) def).getSuperClasses().isEmpty()) {
-      resolveSuperClasses((Concrete.ClassDefinition) def, new ExpressionResolveNameVisitor(myReferableConverter, cachedScope, null, myErrorReporter, myResolverListener));
+    if (def instanceof Concrete.ClassDefinition) {
+      resolveSuperClasses((Concrete.ClassDefinition) def, cachedScope);
     }
     if (def instanceof Concrete.ResolvableDefinition) {
       ((Concrete.ResolvableDefinition) def).accept(this, cachedScope);
