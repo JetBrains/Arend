@@ -15,6 +15,7 @@ import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.naming.renamer.Renamer;
+import org.arend.prelude.Prelude;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -36,6 +37,14 @@ public interface Pattern extends CorePattern {
   default Definition getConstructor() {
     Definition def = getDefinition();
     return def instanceof Constructor || def instanceof DConstructor ? def : null;
+  }
+
+  @Override
+  @NotNull
+  default DependentLink getParameters() {
+    Definition def = getDefinition();
+    List<? extends Pattern> subPatterns = getSubPatterns();
+    return def == Prelude.EMPTY_ARRAY && subPatterns.size() == 0 || def == Prelude.ARRAY_CONS && subPatterns.size() == 2 ? def.getParameters().getNext() : def != null ? def.getParameters() : EmptyDependentLink.getInstance();
   }
 
   @Override

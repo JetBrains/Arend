@@ -380,13 +380,35 @@ public class ElimTypechecking {
     }
 
     List<ConCallExpression> conCalls = paramSpec2.get(link);
+    Expression type = null;
     if (conCalls == null) {
-      conCalls = getMatchedConstructors(link.getTypeExpr().subst(substitution));
+      type = link.getTypeExpr().subst(substitution).normalize(NormalizationMode.WHNF);
+      conCalls = type instanceof DataCallExpression ? ((DataCallExpression) type).getMatchedConstructors() : null;
     }
 
+    List<ConstructorExpressionPattern> conPatterns;
     if (conCalls != null) {
+      conPatterns = new ArrayList<>(conCalls.size());
+      for (ConCallExpression conCall : conCalls) {
+        conPatterns.add(new ConstructorExpressionPattern(conCall, Collections.emptyList()));
+      }
+    } else if (type instanceof ClassCallExpression && ((ClassCallExpression) type).getDefinition() == Prelude.ARRAY) {
+      Expression elementsType = ((ClassCallExpression) type).getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
+      Boolean isEmpty = ConstructorExpressionPattern.isArrayEmpty(type);
+      conPatterns = new ArrayList<>(2);
+      if (isEmpty == null || isEmpty.equals(true)) {
+        conPatterns.add(new ConstructorExpressionPattern(new FunCallExpression(Prelude.EMPTY_ARRAY, Sort.STD, elementsType), isEmpty, Collections.emptyList()));
+      }
+      if (isEmpty == null || isEmpty.equals(false)) {
+        conPatterns.add(new ConstructorExpressionPattern(new FunCallExpression(Prelude.ARRAY_CONS, Sort.STD, elementsType), isEmpty, Collections.emptyList()));
+      }
+    } else {
+      conPatterns = null;
+    }
+
+    if (conPatterns != null) {
       List<List<ExpressionPattern>> totalResult = new ArrayList<>();
-      if (conCalls.isEmpty()) {
+      if (conPatterns.isEmpty()) {
         List<ExpressionPattern> patterns = new ArrayList<>();
         for (int j = elimParams.size() - 1; j > i; j--) {
           patterns.add(new BindingPattern(elimParams.get(j)));
@@ -395,14 +417,14 @@ public class ElimTypechecking {
         totalResult.add(patterns);
       } else {
         boolean firstHasEmpty = false;
-        for (ConCallExpression conCall : conCalls) {
+        for (ConstructorExpressionPattern conPattern : conPatterns) {
           List<Expression> arguments = new ArrayList<>();
           List<ExpressionPattern> subPatterns = new ArrayList<>();
-          for (DependentLink link1 = conCall.getDefinition().getParameters(); link1.hasNext(); link1 = link1.getNext()) {
+          for (DependentLink link1 = conPattern.getParameters(); link1.hasNext(); link1 = link1.getNext()) {
             arguments.add(new ReferenceExpression(link1));
             subPatterns.add(new BindingPattern(link1));
           }
-          substitution.add(link, ConCallExpression.make(conCall.getDefinition(), conCall.getSortArgument(), conCall.getDataTypeArguments(), arguments));
+          substitution.add(link, conPattern.toExpression(arguments));
           List<List<ExpressionPattern>> result = generateMissingClauses(elimParams, i + 1, substitution, paramSpec, paramSpec2);
 
           boolean hasEmpty = false;
@@ -429,7 +451,7 @@ public class ElimTypechecking {
           }
 
           for (List<ExpressionPattern> patterns : result) {
-            patterns.add(new ConstructorExpressionPattern(conCall, subPatterns));
+            patterns.add(new ConstructorExpressionPattern(conPattern, subPatterns));
           }
           totalResult.addAll(result);
         }

@@ -98,7 +98,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     if (pattern instanceof ConstructorExpressionPattern) {
       Definition def = pattern.getDefinition();
       return def instanceof Constructor || def instanceof DConstructor
-        ? cConPattern(isExplicit, def.getReferable(), visitPatterns(pattern.getSubPatterns(), def.getParameters()))
+        ? cConPattern(isExplicit, def.getReferable(), visitPatterns(pattern.getSubPatterns(), pattern.getParameters()))
         : cTuplePattern(isExplicit, visitPatterns(pattern.getSubPatterns(), EmptyDependentLink.getInstance()));
     }
     throw new IllegalStateException();
@@ -768,10 +768,10 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
         patterns.add(new Concrete.NumberPattern(null, 0, Collections.emptyList()));
       } else {
         List<Concrete.Pattern> subPatterns = new ArrayList<>();
-        DependentLink param = def == null ? null : def.getParameters();
+        DependentLink param = pattern.getParameters();
         for (Pattern subPattern : pattern.getSubPatterns()) {
-          visitElimPattern(subPattern, param == null || param.isExplicit(), subPatterns);
-          if (param != null && param.hasNext()) {
+          visitElimPattern(subPattern, param.isExplicit(), subPatterns);
+          if (param.hasNext()) {
             param = param.getNext();
           }
         }

@@ -111,6 +111,14 @@ public class ArrayTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void disjointConstructorsError4() {
+    typeCheckModule(
+      "\\open Array\n" +
+      "\\lemma test (a : Array Nat 2) (p : 1 cons 2 cons a = 1 cons 2 cons 3 cons 4 cons empty) : 0 = 1", 1);
+    assertThatErrorsAre(Matchers.missingClauses(1));
+  }
+
+  @Test
   public void patternMatchingTest() {
     typeCheckModule(
       "\\open Array\n" +
@@ -170,6 +178,12 @@ public class ArrayTest extends TypeCheckingTestCase {
       "  | (A, _) => A\n" +
       "\\func test7 {n : Nat} (x : Array { | len => n }) : Fin n -> x.A\n" +
       "  | (_, f) => f");
+  }
+
+  @Test
+  public void patternMatchingError() {
+    typeCheckDef("\\func f (x : Array Nat) : Nat", 1);
+    assertThatErrorsAre(Matchers.missingClauses(2));
   }
 
   @Test
