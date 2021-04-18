@@ -11,6 +11,7 @@ import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CoreFunCallExpression;
 import org.arend.prelude.Prelude;
 import org.arend.util.Decision;
+import org.arend.util.SingletonList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,7 +30,7 @@ public class FunCallExpression extends DefCallExpression implements CoreFunCallE
   // a fake funCall that can be used only in ConstructorExpressionPattern
   public FunCallExpression(DConstructor function, Sort sortArgument, Expression elementsType) {
     super(function, sortArgument);
-    myArguments = elementsType == null ? Collections.emptyList() : Collections.singletonList(elementsType);
+    myArguments = elementsType == null ? Collections.emptyList() : new SingletonList<>(elementsType);
   }
 
   public static Expression make(FunctionDefinition definition, Sort sortArgument, List<Expression> arguments) {
@@ -60,7 +61,7 @@ public class FunCallExpression extends DefCallExpression implements CoreFunCallE
       return ArrayExpression.make(sortArgument, arguments.get(0), Collections.emptyList(), null);
     }
     if (definition == Prelude.ARRAY_CONS && arguments.size() == 3) {
-      return ArrayExpression.make(sortArgument, arguments.get(0), Collections.singletonList(arguments.get(1)), arguments.get(2));
+      return ArrayExpression.make(sortArgument, arguments.get(0), new SingletonList<>(arguments.get(1)), arguments.get(2));
     }
     return new FunCallExpression(definition, sortArgument, arguments);
   }
