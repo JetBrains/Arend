@@ -116,7 +116,7 @@ public class ElimBody implements Body, CoreElimBody {
             throw new IllegalArgumentException();
           }
           ClassCallExpression classCall = (ClassCallExpression) type;
-          var elem = new Util.ArrayClauseElem(((ArrayConstructor) key).getConstructor(), classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE), ConstructorExpressionPattern.isArrayEmpty(classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH)));
+          var elem = new Util.ArrayClauseElem(((ArrayConstructor) key).getConstructor(), classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE), ConstructorExpressionPattern.isArrayEmpty(classCall));
           conPattern = elem.getPattern(Collections.emptyList());
           clauseElems.add(elem);
         } else {

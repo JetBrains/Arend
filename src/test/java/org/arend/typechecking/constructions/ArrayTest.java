@@ -21,9 +21,9 @@ public class ArrayTest extends TypeCheckingTestCase {
       "  | at _ => 1");
     Sort sort = Sort.STD.max(Sort.SET0);
     assertFalse(((ClassCallExpression) ((FunctionDefinition) getDefinition("test1")).getResultType()).isImplemented(Prelude.ARRAY_AT));
-    assertEquals(sort, ((ClassCallExpression) ((FunctionDefinition) getDefinition("test1")).getResultType()).getSort());
+    assertEquals(Sort.SET0, ((ClassCallExpression) ((FunctionDefinition) getDefinition("test1")).getResultType()).getSort());
     assertFalse(((ClassCallExpression) ((FunctionDefinition) getDefinition("test2")).getResultType()).isImplemented(Prelude.ARRAY_AT));
-    assertEquals(sort, ((ClassCallExpression) ((FunctionDefinition) getDefinition("test2")).getResultType()).getSort());
+    assertEquals(Sort.SET0, ((ClassCallExpression) ((FunctionDefinition) getDefinition("test2")).getResultType()).getSort());
     assertFalse(((ClassCallExpression) Prelude.EMPTY_ARRAY.getResultType()).isImplemented(Prelude.ARRAY_AT));
     assertEquals(sort, ((ClassCallExpression) Prelude.EMPTY_ARRAY.getResultType()).getSort());
     assertFalse(((ClassCallExpression) Prelude.ARRAY_CONS.getResultType()).isImplemented(Prelude.ARRAY_AT));
@@ -49,6 +49,21 @@ public class ArrayTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void etaTest() {
+    typeCheckModule(
+      "\\open Array\n" +
+      "\\lemma test1 (a b : Array Nat 0) : a = b => idp\n" +
+      "\\func test2 (a : Array { | len => 0 }) : a = empty => idp\n" +
+      "\\func test3 (a : Array { | len => 0 }) : empty = a => idp");
+  }
+
+  @Test
+  public void etaError() {
+    typeCheckDef("\\func test (a b : Array { | len => 0 }) : a = b => idp", 1);
+    assertThatErrorsAre(Matchers.typeMismatchError());
+  }
+
+  @Test
   public void newConsTest() {
     typeCheckModule(
       "\\open Array\n" +
@@ -66,7 +81,9 @@ public class ArrayTest extends TypeCheckingTestCase {
       "\\lemma test4 (a : Array Nat 3) (p : 1 cons 2 cons 3 cons a = 1 cons 2 cons empty) : 0 = 1\n" +
       "\\lemma test5 (p : 1 cons 2 cons 3 cons empty = 1 cons 2 cons 4 cons empty) : 0 = 1\n" +
       "\\lemma test6 (a : Array Nat 3) (p : 1 cons 2 cons 3 cons a = 1 cons 3 cons 3 cons empty) : 0 = 1\n" +
-      "\\lemma test7 (a b : Array Nat 3) (p : 1 cons 2 cons 3 cons a = 1 cons 2 cons 4 cons b) : 0 = 1");
+      "\\lemma test7 (a b : Array Nat 3) (p : 1 cons 2 cons 3 cons a = 1 cons 2 cons 4 cons b) : 0 = 1\n" +
+      "\\lemma test8 (a : Array Nat 0) (p : 1 cons 2 cons a = 1 cons 2 cons 3 cons empty) : 0 = 1\n" +
+      "\\lemma test9 (a : Array Nat 0) (p : 1 cons 2 cons 3 cons empty = 1 cons 2 cons a) : 0 = 1");
   }
 
   @Test

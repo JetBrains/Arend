@@ -48,7 +48,7 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
   }
 
   public ConstructorExpressionPattern(FunCallExpression funCall, Expression arrayLength, List<? extends ExpressionPattern> patterns) {
-    this(funCall, isArrayEmpty(arrayLength), patterns);
+    this(funCall, isEqualToZero(arrayLength), patterns);
   }
 
   private static class ArrayPair {
@@ -61,10 +61,15 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
     }
   }
 
-  public static Boolean isArrayEmpty(Expression length) {
+  public static Boolean isEqualToZero(Expression length) {
     if (length == null) return null;
     length = length.normalize(NormalizationMode.WHNF);
     return length instanceof IntegerExpression ? (Boolean) ((IntegerExpression) length).isZero() : length instanceof ConCallExpression && ((ConCallExpression) length).getDefinition() == Prelude.SUC ? false : null;
+  }
+
+  public static Boolean isArrayEmpty(Expression type) {
+    type = type.normalize(NormalizationMode.WHNF);
+    return type instanceof ClassCallExpression && ((ClassCallExpression) type).getDefinition() == Prelude.ARRAY ? isEqualToZero(((ClassCallExpression) type).getAbsImplementationHere(Prelude.ARRAY_LENGTH)) : null;
   }
 
   public Expression getDataExpression() {

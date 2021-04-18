@@ -11,6 +11,7 @@ import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.type.TypeExpression;
+import org.arend.core.pattern.ConstructorExpressionPattern;
 import org.arend.core.pattern.Pattern;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
@@ -188,7 +189,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       Expression normType = type == null ? null : type.getUnderlyingExpression();
       boolean allowProp = normType instanceof DataCallExpression && ((DataCallExpression) normType).getDefinition().getConstructors().isEmpty() || !expr1.canBeConstructor() && !expr2.canBeConstructor();
       if (normType instanceof SigmaExpression && !((SigmaExpression) normType).getParameters().hasNext() ||
-          normType instanceof ClassCallExpression && ((ClassCallExpression) normType).getNumberOfNotImplementedFields() == 0 ||
+          normType instanceof ClassCallExpression && (((ClassCallExpression) normType).getNumberOfNotImplementedFields() == 0 || Boolean.TRUE.equals(ConstructorExpressionPattern.isArrayEmpty(normType))) ||
           allowProp && normType != null && Sort.PROP.equals(normType.getSortOfType())) {
         myOnlySolveVars = true;
       }
@@ -1107,6 +1108,14 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
   }
 
   private boolean compareClassInstances(Expression expr1, ClassCallExpression classCall1, Expression expr2, ClassCallExpression classCall2, Expression type) {
+    if (Boolean.TRUE.equals(ConstructorExpressionPattern.isArrayEmpty(classCall1)) && Boolean.TRUE.equals(ConstructorExpressionPattern.isArrayEmpty(classCall2))) {
+      Expression elemsType1 = classCall1.getImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE, expr1);
+      if (elemsType1 == null) elemsType1 = FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, classCall1.getSortArgument(), expr1);
+      Expression elemsType2 = classCall2.getImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE, expr2);
+      if (elemsType2 == null) elemsType2 = FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, classCall2.getSortArgument(), expr2);
+      return compare(elemsType1, elemsType2, ExpressionFactory.Nat(), false);
+    }
+
     Set<? extends ClassField> fields = null;
     if (type != null) {
       ClassCallExpression classCall = type.cast(ClassCallExpression.class);

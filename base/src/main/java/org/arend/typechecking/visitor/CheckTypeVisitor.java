@@ -1054,7 +1054,21 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       expr = classExt;
       baseClassExpr = classExt.getBaseClassExpression();
     }
-    TypecheckingResult typeCheckedBaseClass = baseClassExpr instanceof Concrete.ReferenceExpression ? tResultToResult(null, visitReference((Concrete.ReferenceExpression) baseClassExpr), baseClassExpr) : checkExpr(baseClassExpr, null);
+    TypecheckingResult typeCheckedBaseClass;
+    if (baseClassExpr instanceof Concrete.ReferenceExpression) {
+      boolean withoutUniverses = false;
+      if (((Concrete.ReferenceExpression) baseClassExpr).getReferent() == Prelude.ARRAY.getRef()) {
+        for (Concrete.ClassFieldImpl classFieldImpl : expr.getStatements()) {
+          if (classFieldImpl.getImplementedField() == Prelude.ARRAY_ELEMENTS_TYPE.getRef()) {
+            withoutUniverses = true;
+            break;
+          }
+        }
+      }
+      typeCheckedBaseClass = tResultToResult(null, visitReference((Concrete.ReferenceExpression) baseClassExpr, withoutUniverses), baseClassExpr);
+    } else {
+      typeCheckedBaseClass = checkExpr(baseClassExpr, null);
+    }
     if (typeCheckedBaseClass == null) {
       return null;
     }
@@ -1397,7 +1411,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         classFieldImpls = Collections.emptyList();
       }
 
-      TypecheckingResult typeCheckedBaseClass = checkExpr(baseClassExpr, null);
+      TypecheckingResult typeCheckedBaseClass = baseClassExpr instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) baseClassExpr).getReferent() == Prelude.ARRAY.getRef() ? tResultToResult(null, visitReference((Concrete.ReferenceExpression) baseClassExpr, true), baseClassExpr) : checkExpr(baseClassExpr, null);
       if (typeCheckedBaseClass == null) {
         return null;
       }
@@ -1519,7 +1533,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
   }
 
-  private TResult typeCheckDefCall(TCDefReferable resolvedDefinition, Concrete.ReferenceExpression expr) {
+  private TResult typeCheckDefCall(TCDefReferable resolvedDefinition, Concrete.ReferenceExpression expr, boolean withoutUniverses) {
     Definition definition = getTypeCheckedDefinition(resolvedDefinition, expr);
     if (definition == null) {
       return null;
@@ -1528,7 +1542,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     Sort sortArgument;
     boolean isMin = definition instanceof DataDefinition && !definition.getParameters().hasNext() && definition.getUniverseKind() == UniverseKind.NO_UNIVERSES;
     if (expr.getPLevel() == null && expr.getHLevel() == null) {
-      sortArgument = isMin ? Sort.PROP : Sort.generateInferVars(getEquations(), definition.getUniverseKind(), expr);
+      sortArgument = isMin ? Sort.PROP : Sort.generateInferVars(getEquations(), !withoutUniverses && definition.getUniverseKind() != UniverseKind.NO_UNIVERSES, expr);
       if (definition == Prelude.PATH || definition == Prelude.PATH_INFIX) {
         InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, definition.getUniverseKind() != UniverseKind.NO_UNIVERSES, expr);
         myEquations.addVariable(pl);
@@ -1595,6 +1609,10 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   public TResult visitReference(Concrete.ReferenceExpression expr) {
+    return visitReference(expr, false);
+  }
+
+  private TResult visitReference(Concrete.ReferenceExpression expr, boolean withoutUniverses) {
     Referable ref = expr.getReferent();
     if (ref instanceof CoreReferable) {
       TypecheckingResult result = ((CoreReferable) ref).result;
@@ -1605,7 +1623,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     if (!(ref instanceof GlobalReferable) && (expr.getPLevel() != null || expr.getHLevel() != null)) {
       errorReporter.report(new IgnoredLevelsError(expr.getPLevel(), expr.getHLevel()));
     }
-    return ref instanceof TCDefReferable ? typeCheckDefCall((TCDefReferable) ref, expr) : getLocalVar(expr.getReferent(), expr);
+    return ref instanceof TCDefReferable ? typeCheckDefCall((TCDefReferable) ref, expr, withoutUniverses) : getLocalVar(expr.getReferent(), expr);
   }
 
   @Override

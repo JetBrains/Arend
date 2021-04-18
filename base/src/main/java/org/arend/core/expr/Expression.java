@@ -5,6 +5,7 @@ import org.arend.core.definition.Constructor;
 import org.arend.core.elimtree.ElimBody;
 import org.arend.core.elimtree.ElimClause;
 import org.arend.core.elimtree.IntervalElim;
+import org.arend.core.pattern.ConstructorExpressionPattern;
 import org.arend.core.pattern.Pattern;
 import org.arend.core.subst.UnfoldVisitor;
 import org.arend.ext.core.expr.*;
@@ -345,7 +346,7 @@ public abstract class Expression implements Body, CoreExpression {
           return true;
         }
       }
-      return false;
+      return array1.getTail() != null && Boolean.TRUE.equals(ConstructorExpressionPattern.isArrayEmpty(array1.getTail().getType())) || array2.getTail() != null && Boolean.TRUE.equals(ConstructorExpressionPattern.isArrayEmpty(array2.getTail().getType()));
     }
     if (!(expr1 instanceof ConCallExpression) || !(expr2 instanceof ConCallExpression)) {
       return false;

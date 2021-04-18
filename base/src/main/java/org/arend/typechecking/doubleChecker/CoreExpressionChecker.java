@@ -565,7 +565,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
         throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(new ClassCallExpression(Prelude.ARRAY, Sort.STD), type, mySourceNode), errorExpr));
       }
       ClassCallExpression classCall = (ClassCallExpression) type;
-      Boolean isEmpty = ConstructorExpressionPattern.isArrayEmpty(classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH));
+      Boolean isEmpty = ConstructorExpressionPattern.isArrayEmpty(classCall);
       if (isEmpty != null && isEmpty != (constructor == Prelude.EMPTY_ARRAY)) {
         throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(DocFactory.text(Prelude.ARRAY.getName() + " " + (isEmpty ? "0" : "(" + Prelude.SUC + " _)")), type, mySourceNode), errorExpr));
       }
