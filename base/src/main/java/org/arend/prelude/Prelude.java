@@ -295,7 +295,7 @@ public class Prelude implements ArendPrelude {
       }
     }
 
-    for (String name : new String[] {"Nat", "Int", "Fin", "Path", "I"}) {
+    for (String name : new String[] {"Nat", "Int", "Fin", "Path", "I", "Array"}) {
       Scope childScope = scope.resolveNamespace(name, true);
       assert childScope != null;
       for (Referable ref : childScope.getElements()) {
