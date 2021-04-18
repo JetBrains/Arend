@@ -6,6 +6,7 @@ import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.PrettyPrinterConfigImpl;
+import org.arend.ext.prettyprinting.PrettyPrinterFlag;
 import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.ext.prettyprinting.doc.LineDoc;
 import org.jetbrains.annotations.NotNull;
@@ -48,6 +49,8 @@ public class MissingClausesError extends TypecheckingError {
   public Doc getBodyDoc(PrettyPrinterConfig ppConfig) {
     PrettyPrinterConfigImpl modPPConfig = new PrettyPrinterConfigImpl(ppConfig);
     modPPConfig.normalizationMode = null;
+    modPPConfig.expressionFlags = modPPConfig.expressionFlags.clone();
+    modPPConfig.expressionFlags.remove(PrettyPrinterFlag.SHOW_BIN_OP_IMPLICIT_ARGS);
 
     List<LineDoc> docs = new ArrayList<>();
     for (List<? extends CorePattern> missingClause : getLimitedMissingClauses()) {

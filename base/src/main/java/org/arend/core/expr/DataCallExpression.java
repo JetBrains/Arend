@@ -192,6 +192,9 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
   }
 
   public boolean getMatchedConCall(Constructor constructor, List<ConCallExpression> conCalls) {
+    if (constructor.getDataType() != getDefinition()) {
+      return false;
+    }
     if (!constructor.status().headerIsOK()) {
       return true;
     }

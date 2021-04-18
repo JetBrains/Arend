@@ -23,7 +23,14 @@ public class ExpressionMatcher {
     }
 
     if (data instanceof FunCallExpression) {
-      return expression;
+      FunCallExpression funCall = (FunCallExpression) data;
+      newArgs.addAll(0, funCall.getDefCallArguments());
+      return funCall.getDefinition() == Prelude.IDP ? expression : FunCallExpression.make(funCall.getDefinition(), funCall.getSortArgument(), newArgs);
+    }
+
+    if (data instanceof ConCallExpression && ((ConCallExpression) data).getDefinition() != Prelude.SUC) {
+      ConCallExpression conCall = (ConCallExpression) data;
+      return ConCallExpression.make(conCall.getDefinition(), conCall.getSortArgument(), conCall.getDataTypeArguments(), newArgs);
     }
 
     if (data instanceof ConCallExpression || data instanceof SmallIntegerExpression) {
@@ -95,7 +102,7 @@ public class ExpressionMatcher {
     }
 
     List<Expression> newArgs = matchExpressions(args, pattern.getSubPatterns(), computeData, result);
-    return computeData ? replaceMatchingExpressionArguments(conPattern, expr, newArgs) : expr;
+    return newArgs == null ? null : computeData ? replaceMatchingExpressionArguments(conPattern, expr, newArgs) : expr;
   }
 
   /**

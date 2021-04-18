@@ -18,8 +18,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-public class ConstructorExpressionPattern extends ConstructorPattern<Expression> implements ExpressionPattern {
-  private ConstructorExpressionPattern(Expression expression, List<? extends ExpressionPattern> patterns) {
+public class ConstructorExpressionPattern extends ConstructorPattern<Object> implements ExpressionPattern {
+  private ConstructorExpressionPattern(Object expression, List<? extends ExpressionPattern> patterns) {
     super(expression, patterns);
   }
 
@@ -43,8 +43,32 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Expression>
     super(pattern.data, patterns);
   }
 
+  public ConstructorExpressionPattern(FunCallExpression funCall, Boolean isArrayEmpty, List<? extends ExpressionPattern> patterns) {
+    super(isArrayEmpty == null ? funCall : new ArrayPair(funCall, isArrayEmpty), patterns);
+  }
+
+  public ConstructorExpressionPattern(FunCallExpression funCall, Expression arrayLength, List<? extends ExpressionPattern> patterns) {
+    this(funCall, isArrayEmpty(arrayLength), patterns);
+  }
+
+  private static class ArrayPair {
+    final FunCallExpression funCall;
+    final Boolean isEmpty;
+
+    private ArrayPair(FunCallExpression funCall, Boolean isEmpty) {
+      this.funCall = funCall;
+      this.isEmpty = isEmpty;
+    }
+  }
+
+  public static Boolean isArrayEmpty(Expression length) {
+    if (length == null) return null;
+    length = length.normalize(NormalizationMode.WHNF);
+    return length instanceof IntegerExpression ? (Boolean) ((IntegerExpression) length).isZero() : length instanceof ConCallExpression && ((ConCallExpression) length).getDefinition() == Prelude.SUC ? false : null;
+  }
+
   public Expression getDataExpression() {
-    return data;
+    return data instanceof ArrayPair ? ((ArrayPair) data).funCall : (Expression) data;
   }
 
   @Override
@@ -92,58 +116,78 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Expression>
 
   @Override
   public Definition getDefinition() {
-    return data instanceof DefCallExpression ? ((DefCallExpression) data).getDefinition() : data instanceof SmallIntegerExpression ? Prelude.ZERO : null;
+    return data instanceof DefCallExpression ? ((DefCallExpression) data).getDefinition() : data instanceof SmallIntegerExpression ? Prelude.ZERO : data instanceof ArrayPair ? ((ArrayPair) data).funCall.getDefinition() : null;
   }
 
   public List<? extends Expression> getDataTypeArguments() {
-    return data instanceof ConCallExpression
-      ? ((ConCallExpression) data).getDataTypeArguments()
-      : data instanceof FunCallExpression
-        ? ((FunCallExpression) data).getDefCallArguments()
-        : data instanceof SmallIntegerExpression
-          ? Collections.emptyList()
-          : null;
+    return data instanceof ConCallExpression ? ((ConCallExpression) data).getDataTypeArguments() : Collections.emptyList();
+  }
+
+  public Expression getArrayElementsType() {
+    Expression dataExpr = getDataExpression();
+    return dataExpr instanceof FunCallExpression && ((FunCallExpression) dataExpr).getDefCallArguments().size() == 1 ? ((FunCallExpression) dataExpr).getDefCallArguments().get(0) : null;
+  }
+
+  public Boolean isArrayEmpty() {
+    return data instanceof ArrayPair ? ((ArrayPair) data).isEmpty : null;
   }
 
   public Sort getSortArgument() {
-    return data instanceof DefCallExpression ? ((DefCallExpression) data).getSortArgument() : data instanceof SmallIntegerExpression ? Sort.PROP : null;
+    Expression dataExpr = getDataExpression();
+    return dataExpr instanceof DefCallExpression ? ((DefCallExpression) dataExpr).getSortArgument() : dataExpr instanceof SmallIntegerExpression ? Sort.PROP : null;
   }
 
   public DependentLink getParameters() {
-    return data instanceof ClassCallExpression
-      ? ((ClassCallExpression) data).getClassFieldParameters()
-      : data instanceof FunCallExpression || data instanceof SmallIntegerExpression
+    Expression dataExpr = getDataExpression();
+    return dataExpr instanceof ClassCallExpression
+      ? ((ClassCallExpression) dataExpr).getClassFieldParameters()
+      : dataExpr instanceof FunCallExpression && ((FunCallExpression) dataExpr).getDefinition() == Prelude.IDP || dataExpr instanceof SmallIntegerExpression
         ? EmptyDependentLink.getInstance()
-        : data instanceof DefCallExpression
-          ? ((DefCallExpression) data).getDefinition().getParameters()
-          : ((SigmaExpression) data).getParameters();
+        : dataExpr instanceof DefCallExpression
+          ? ((DefCallExpression) dataExpr).getDefinition().getParameters()
+          : ((SigmaExpression) dataExpr).getParameters();
   }
 
   public int getLength() {
-    return data instanceof ConCallExpression
-      ? DependentLink.Helper.size(((ConCallExpression) data).getDefinition().getParameters())
-      : data instanceof SigmaExpression
-        ? DependentLink.Helper.size(((SigmaExpression) data).getParameters())
-        : data instanceof ClassCallExpression
-          ? ((ClassCallExpression) data).getDefinition().getNumberOfNotImplementedFields()
+    Expression dataExpr = getDataExpression();
+    return dataExpr instanceof ClassCallExpression
+      ? ((ClassCallExpression) dataExpr).getDefinition().getNumberOfNotImplementedFields()
+      : dataExpr instanceof DefCallExpression && ((DefCallExpression) dataExpr).getDefinition() != Prelude.IDP
+        ? DependentLink.Helper.size(((DefCallExpression) dataExpr).getDefinition().getParameters())
+        : dataExpr instanceof SigmaExpression
+          ? DependentLink.Helper.size(((SigmaExpression) dataExpr).getParameters())
           : 0;
   }
 
   public Expression toExpression(List<Expression> arguments) {
-    if (data instanceof SigmaExpression) {
-      return new TupleExpression(arguments, (SigmaExpression) data);
+    Expression dataExpr = getDataExpression();
+    if (dataExpr instanceof SigmaExpression) {
+      return new TupleExpression(arguments, (SigmaExpression) dataExpr);
     }
 
-    if (data instanceof ConCallExpression) {
-      ConCallExpression conCall = (ConCallExpression) data;
+    if (dataExpr instanceof ConCallExpression) {
+      ConCallExpression conCall = (ConCallExpression) dataExpr;
       return ConCallExpression.make(conCall.getDefinition(), conCall.getSortArgument(), conCall.getDataTypeArguments(), arguments);
     }
 
-    if (data instanceof FunCallExpression || data instanceof SmallIntegerExpression) {
-      return data;
+    if (dataExpr instanceof FunCallExpression && ((FunCallExpression) dataExpr).getDefinition() == Prelude.IDP || dataExpr instanceof SmallIntegerExpression) {
+      return dataExpr;
     }
 
-    ClassCallExpression classCall = (ClassCallExpression) data;
+    if (dataExpr instanceof FunCallExpression) {
+      FunCallExpression funCall = (FunCallExpression) dataExpr;
+      List<Expression> newArgs;
+      if (!funCall.getDefCallArguments().isEmpty()) {
+        newArgs = new ArrayList<>(funCall.getDefCallArguments().size() + arguments.size());
+        newArgs.addAll(funCall.getDefCallArguments());
+        newArgs.addAll(arguments);
+      } else {
+        newArgs = arguments;
+      }
+      return FunCallExpression.make(funCall.getDefinition(), funCall.getSortArgument(), newArgs);
+    }
+
+    ClassCallExpression classCall = (ClassCallExpression) dataExpr;
     Map<ClassField, Expression> implementations = new HashMap<>();
     ClassCallExpression resultClassCall = new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), implementations, Sort.PROP, UniverseKind.NO_UNIVERSES);
     resultClassCall.copyImplementationsFrom(classCall);
@@ -171,8 +215,9 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Expression>
 
   @Override
   public Expression toPatternExpression() {
-    if (data instanceof FunCallExpression || data instanceof SmallIntegerExpression) {
-      return data;
+    Expression dataExpr = getDataExpression();
+    if (dataExpr instanceof FunCallExpression && ((FunCallExpression) dataExpr).getDefinition() == Prelude.IDP || dataExpr instanceof SmallIntegerExpression) {
+      return dataExpr;
     }
 
     List<Expression> arguments = new ArrayList<>();
@@ -183,7 +228,7 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Expression>
       }
       arguments.add(argument);
     }
-    return (data instanceof ClassCallExpression ? new ConstructorExpressionPattern(new SigmaExpression(Sort.PROP, getParameters()), getSubPatterns()) : this).toExpression(arguments);
+    return (dataExpr instanceof ClassCallExpression ? new ConstructorExpressionPattern(new SigmaExpression(Sort.PROP, getParameters()), getSubPatterns()) : this).toExpression(arguments);
   }
 
   @Override
@@ -197,13 +242,25 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Expression>
   }
 
   public List<? extends Expression> getMatchingExpressionArguments(Expression expression, boolean normalize) {
-    if (data instanceof SigmaExpression) {
+    Expression dataExpr = getDataExpression();
+    if (dataExpr instanceof SigmaExpression) {
       TupleExpression tuple = expression.cast(TupleExpression.class);
       return tuple == null ? null : tuple.getFields();
     }
 
-    if (data instanceof FunCallExpression) {
+    if (dataExpr instanceof FunCallExpression) {
+      FunctionDefinition function = ((FunCallExpression) dataExpr).getDefinition();
       expression = expression.getUnderlyingExpression();
+      if (function == Prelude.EMPTY_ARRAY || function == Prelude.ARRAY_CONS) {
+        if (!(expression instanceof ArrayExpression)) {
+          return null;
+        }
+        ArrayExpression array = (ArrayExpression) expression;
+        return array.getElements().isEmpty() == (function == Prelude.EMPTY_ARRAY) ? array.getConstructorArguments(((FunCallExpression) dataExpr).getDefCallArguments().isEmpty()) : null;
+      }
+      if (function != Prelude.IDP) {
+        return null;
+      }
       if (expression instanceof FunCallExpression && ((FunCallExpression) expression).getDefinition() == Prelude.IDP) {
         return Collections.emptyList();
       }
@@ -222,7 +279,7 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Expression>
       return NormalizingFindBindingVisitor.findBinding(body, lamExpr.getParameters()) ? null : Collections.emptyList();
     }
 
-    if (data instanceof ConCallExpression || data instanceof SmallIntegerExpression) {
+    if (dataExpr instanceof ConCallExpression || dataExpr instanceof SmallIntegerExpression) {
       ConCallExpression conCall = expression.cast(ConCallExpression.class);
       Definition myConstructor = getDefinition();
       if (conCall == null && (myConstructor == Prelude.ZERO || myConstructor == Prelude.SUC)) {
@@ -246,8 +303,8 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Expression>
       return null;
     }
     List<Expression> arguments = new ArrayList<>();
-    for (ClassField field : ((ClassCallExpression) data).getDefinition().getFields()) {
-      if (!((ClassCallExpression) data).isImplemented(field)) {
+    for (ClassField field : ((ClassCallExpression) dataExpr).getDefinition().getFields()) {
+      if (!((ClassCallExpression) dataExpr).isImplemented(field)) {
         arguments.add(newExpr.getImplementation(field));
       }
     }
@@ -256,13 +313,14 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Expression>
 
   @Override
   public Decision match(Expression expression, List<Expression> result) {
+    Expression dataExpr = getDataExpression();
     expression = expression.normalize(NormalizationMode.WHNF);
     List<? extends Expression> arguments = getMatchingExpressionArguments(expression, true);
     if (arguments != null) {
       return ExpressionPattern.match(getSubPatterns(), arguments, result);
     }
 
-    if (data instanceof ConCallExpression || data instanceof SmallIntegerExpression) {
+    if (dataExpr instanceof ConCallExpression || dataExpr instanceof SmallIntegerExpression) {
       ConCallExpression conCall = expression.cast(ConCallExpression.class);
       Definition myConstructor = getDefinition();
       if (conCall != null && conCall.getDefinition() != myConstructor) {
@@ -274,6 +332,9 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Expression>
           return Decision.NO;
         }
       }
+    }
+    if (dataExpr instanceof FunCallExpression && ((FunCallExpression) dataExpr).getDefinition() != Prelude.IDP && expression instanceof ArrayExpression && ((ArrayExpression) expression).getElements().isEmpty() != (((FunCallExpression) dataExpr).getDefinition() == Prelude.EMPTY_ARRAY)) {
+      return Decision.NO;
     }
     return Decision.MAYBE;
   }
@@ -289,10 +350,12 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Expression>
 
     if (other instanceof ConstructorExpressionPattern) {
       ConstructorExpressionPattern conPattern = (ConstructorExpressionPattern) other;
-      return (data instanceof SigmaExpression && conPattern.data instanceof SigmaExpression ||
-              data instanceof SmallIntegerExpression && conPattern.data instanceof SmallIntegerExpression ||
-              data instanceof DefCallExpression && conPattern.data instanceof DefCallExpression &&
-                ((DefCallExpression) data).getDefinition() == ((DefCallExpression) conPattern.data).getDefinition())
+      Expression dataExpr = getDataExpression();
+      Expression otherExpr = conPattern.getDataExpression();
+      return (dataExpr instanceof SigmaExpression && otherExpr instanceof SigmaExpression ||
+              dataExpr instanceof SmallIntegerExpression && otherExpr instanceof SmallIntegerExpression ||
+              dataExpr instanceof DefCallExpression && otherExpr instanceof DefCallExpression &&
+                ((DefCallExpression) dataExpr).getDefinition() == ((DefCallExpression) otherExpr).getDefinition())
         && ExpressionPattern.unify(getSubPatterns(), conPattern.getSubPatterns(), idpSubst, substitution1, substitution2, errorReporter, sourceNode);
     }
 
@@ -309,10 +372,12 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Expression>
     }
 
     ConstructorExpressionPattern conPattern = (ConstructorExpressionPattern) other;
-    if (data instanceof SigmaExpression && conPattern.data instanceof SigmaExpression ||
-        data instanceof SmallIntegerExpression && conPattern.data instanceof SmallIntegerExpression ||
-        data instanceof DefCallExpression && conPattern.data instanceof DefCallExpression &&
-          ((DefCallExpression) data).getDefinition() == ((DefCallExpression) conPattern.data).getDefinition()) {
+    Expression dataExpr = getDataExpression();
+    Expression otherExpr = conPattern.getDataExpression();
+    if (dataExpr instanceof SigmaExpression && otherExpr instanceof SigmaExpression ||
+        dataExpr instanceof SmallIntegerExpression && otherExpr instanceof SmallIntegerExpression ||
+        dataExpr instanceof DefCallExpression && otherExpr instanceof DefCallExpression &&
+          ((DefCallExpression) dataExpr).getDefinition() == ((DefCallExpression) otherExpr).getDefinition()) {
 
       List<ExpressionPattern> resultSubPatterns = new ArrayList<>();
       List<? extends ExpressionPattern> subPatterns1 = getSubPatterns();
@@ -324,7 +389,7 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Expression>
         }
         resultSubPatterns.add(pattern);
       }
-      return new ConstructorExpressionPattern(data, resultSubPatterns);
+      return new ConstructorExpressionPattern(dataExpr, resultSubPatterns);
     } else {
       return null;
     }
@@ -336,7 +401,7 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Expression>
     for (ExpressionPattern pattern : getSubPatterns()) {
       patterns.add(pattern.subst(exprSubst, levelSubst, patternSubst));
     }
-    return new ConstructorExpressionPattern(data.subst(exprSubst, levelSubst), patterns);
+    return new ConstructorExpressionPattern(getDataExpression().subst(exprSubst, levelSubst), patterns);
   }
 
   @Override

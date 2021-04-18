@@ -1,9 +1,6 @@
 package org.arend.typechecking.patternmatching;
 
-import org.arend.core.constructor.ClassConstructor;
-import org.arend.core.constructor.IdpConstructor;
-import org.arend.core.constructor.SingleConstructor;
-import org.arend.core.constructor.TupleConstructor;
+import org.arend.core.constructor.*;
 import org.arend.core.context.Utils;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.LevelVariable;
@@ -800,6 +797,7 @@ public class ElimTypechecking {
 
       assert conClause != null;
       ConstructorExpressionPattern someConPattern = (ConstructorExpressionPattern) conClause.getPatterns().get(index);
+      Expression arrayElementsType = someConPattern.getArrayElementsType();
       List<ConCallExpression> conCalls = null;
       List<BranchKey> branchKeys;
       DataDefinition dataType;
@@ -826,6 +824,16 @@ public class ElimTypechecking {
         } else {
           branchKeys = new ArrayList<>(dataType.getConstructors());
         }
+      } else if (someConPattern.getDefinition() == Prelude.EMPTY_ARRAY || someConPattern.getDefinition() == Prelude.ARRAY_CONS) {
+        Boolean empty = someConPattern.isArrayEmpty();
+        branchKeys = new ArrayList<>(2);
+        if (empty == null || empty.equals(Boolean.TRUE)) {
+          branchKeys.add(new ArrayConstructor(true, arrayElementsType != null));
+        }
+        if (empty == null || empty.equals(Boolean.FALSE)) {
+          branchKeys.add(new ArrayConstructor(false, arrayElementsType != null));
+        }
+        dataType = null;
       } else {
         if (someConPattern.getDataExpression() instanceof ClassCallExpression) {
           ClassCallExpression classCall = (ClassCallExpression) someConPattern.getDataExpression();
@@ -886,7 +894,7 @@ public class ElimTypechecking {
           }
         } else {
           Definition def = clause.getPatterns().get(index).getDefinition();
-          BranchKey key = def instanceof Constructor ? (Constructor) def : null;
+          BranchKey key = def instanceof Constructor ? (Constructor) def : def == Prelude.EMPTY_ARRAY || def == Prelude.ARRAY_CONS ? new ArrayConstructor((DConstructor) def, true) : null;
           if (key == null && !branchKeys.isEmpty() && branchKeys.get(0) instanceof SingleConstructor) {
             key = branchKeys.get(0);
           }
@@ -948,40 +956,44 @@ public class ElimTypechecking {
               List<Expression> dataTypesArgs = conCall.getDataTypeArguments();
               substExpr = ConCallExpression.make(conCall.getDefinition(), conCall.getSortArgument(), dataTypesArgs, arguments);
               conParameters = DependentLink.Helper.subst(branchKey.getParameters(), DependentLink.Helper.toSubstitution(conCall.getDefinition().getDataTypeParameters(), dataTypesArgs));
-            } else {
-              if (branchKey instanceof SingleConstructor) {
-                conParameters = someConPattern.getParameters();
-                Expression someExpr = someConPattern.getDataExpression();
-                if (someExpr instanceof ClassCallExpression) {
-                  ClassCallExpression classCall = (ClassCallExpression) someExpr;
-                  Map<ClassField, Expression> implementations = new HashMap<>();
-                  DependentLink link = conParameters;
-                  for (ClassField field : classCall.getDefinition().getFields()) {
-                    if (!classCall.isImplemented(field)) {
-                      implementations.put(field, new ReferenceExpression(link));
-                      link = link.getNext();
-                    }
+            } else if (branchKey instanceof SingleConstructor) {
+              conParameters = someConPattern.getParameters();
+              Expression someExpr = someConPattern.getDataExpression();
+              if (someExpr instanceof ClassCallExpression) {
+                ClassCallExpression classCall = (ClassCallExpression) someExpr;
+                Map<ClassField, Expression> implementations = new HashMap<>();
+                DependentLink link = conParameters;
+                for (ClassField field : classCall.getDefinition().getFields()) {
+                  if (!classCall.isImplemented(field)) {
+                    implementations.put(field, new ReferenceExpression(link));
+                    link = link.getNext();
                   }
-                  substExpr = new NewExpression(null, new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), implementations, Sort.PROP, UniverseKind.NO_UNIVERSES));
-                } else if (someExpr instanceof SigmaExpression) {
-                  substExpr = new TupleExpression(arguments, (SigmaExpression) someExpr);
-                  conParameters = DependentLink.Helper.copy(conParameters);
-                } else if (someExpr instanceof FunCallExpression) {
-                  substExpr = someExpr;
-                } else {
-                  throw new IllegalStateException();
                 }
-              } else if (branchKey instanceof Constructor) {
-                List<Expression> dataTypesArgs = new ArrayList<>();
-                for (Expression dataTypeArg : someConPattern.getDataTypeArguments()) {
-                  dataTypesArgs.add(dataTypeArg.subst(conClause.substitution));
-                }
-                Constructor constructor = (Constructor) branchKey;
-                substExpr = ConCallExpression.make(constructor, someConPattern.getSortArgument(), dataTypesArgs, arguments);
-                conParameters = DependentLink.Helper.subst(constructor.getParameters(), DependentLink.Helper.toSubstitution(constructor.getDataTypeParameters(), someConPattern.getDataTypeArguments()));
+                substExpr = new NewExpression(null, new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), implementations, Sort.PROP, UniverseKind.NO_UNIVERSES));
+              } else if (someExpr instanceof SigmaExpression) {
+                substExpr = new TupleExpression(arguments, (SigmaExpression) someExpr);
+                conParameters = DependentLink.Helper.copy(conParameters);
+              } else if (someExpr instanceof FunCallExpression) {
+                substExpr = someExpr;
               } else {
                 throw new IllegalStateException();
               }
+            } else if (branchKey instanceof Constructor) {
+              List<Expression> dataTypesArgs = new ArrayList<>();
+              for (Expression dataTypeArg : someConPattern.getDataTypeArguments()) {
+                dataTypesArgs.add(dataTypeArg.subst(conClause.substitution));
+              }
+              Constructor constructor = (Constructor) branchKey;
+              substExpr = ConCallExpression.make(constructor, someConPattern.getSortArgument(), dataTypesArgs, arguments);
+              conParameters = DependentLink.Helper.subst(constructor.getParameters(), DependentLink.Helper.toSubstitution(constructor.getDataTypeParameters(), someConPattern.getDataTypeArguments()));
+            } else if (branchKey instanceof ArrayConstructor) {
+              if (arrayElementsType != null) {
+                arguments.add(arrayElementsType);
+              }
+              substExpr = FunCallExpression.make(((ArrayConstructor) branchKey).getConstructor(), someConPattern.getSortArgument(), arguments);
+              conParameters = branchKey.getParameters();
+            } else {
+              throw new IllegalStateException();
             }
 
             if (numberOfFakeVars == 0) {

@@ -1,12 +1,14 @@
 package org.arend.typechecking.patternmatching;
 
+import org.arend.core.constructor.ArrayConstructor;
 import org.arend.core.constructor.SingleConstructor;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.Constructor;
+import org.arend.core.definition.DConstructor;
 import org.arend.core.elimtree.BranchKey;
 import org.arend.core.expr.ConCallExpression;
-import org.arend.core.expr.DataCallExpression;
 import org.arend.core.expr.Expression;
+import org.arend.core.expr.FunCallExpression;
 import org.arend.core.pattern.BindingPattern;
 import org.arend.core.pattern.ConstructorExpressionPattern;
 import org.arend.core.pattern.ExpressionPattern;
@@ -36,6 +38,8 @@ public class Util {
       return new TupleClauseElem(pattern);
     } else if (branchKey instanceof Constructor) {
       return new ConstructorClauseElem((Constructor) branchKey, pattern.getDataTypeArguments());
+    } else if (branchKey instanceof ArrayConstructor) {
+      return new ArrayClauseElem(((ArrayConstructor) branchKey).getConstructor(), pattern.getArrayElementsType(), pattern.isArrayEmpty());
     } else {
       throw new IllegalStateException();
     }
@@ -76,6 +80,28 @@ public class Util {
     @Override
     public ConstructorExpressionPattern getPattern(List<ExpressionPattern> subPatterns) {
       return new ConstructorExpressionPattern(new ConCallExpression(constructor, Sort.STD, dataArguments, Collections.emptyList()), subPatterns);
+    }
+  }
+
+  public static class ArrayClauseElem implements DataClauseElem {
+    private final DConstructor myConstructor;
+    private final Expression myElementsType;
+    private final Boolean myEmpty;
+
+    public ArrayClauseElem(DConstructor constructor, Expression elementsType, Boolean isEmpty) {
+      myConstructor = constructor;
+      myElementsType = elementsType;
+      myEmpty = isEmpty;
+    }
+
+    @Override
+    public DependentLink getParameters() {
+      return myElementsType == null ? myConstructor.getParameters() : myConstructor.getParameters().getNext();
+    }
+
+    @Override
+    public ConstructorExpressionPattern getPattern(List<ExpressionPattern> subPatterns) {
+      return new ConstructorExpressionPattern(new FunCallExpression(myConstructor, Sort.STD, myElementsType), myEmpty, subPatterns);
     }
   }
 

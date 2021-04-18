@@ -802,7 +802,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   @Override
   public Concrete.Expression visitArray(ArrayExpression expr, Void params) {
-    Concrete.Expression elementsType = hasFlag(PrettyPrinterFlag.SHOW_IMPLICIT_ARGS) ? expr.getElementsType().accept(this, null) : null;
+    Concrete.Expression elementsType = hasFlag(PrettyPrinterFlag.SHOW_IMPLICIT_ARGS) && hasFlag(PrettyPrinterFlag.SHOW_BIN_OP_IMPLICIT_ARGS) ? expr.getElementsType().accept(this, null) : null;
 
     Concrete.Expression result;
     if (expr.getTail() == null) {

@@ -7,9 +7,7 @@ import org.arend.core.context.binding.TypedEvaluatingBinding;
 import org.arend.core.context.binding.inference.FunctionInferenceVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.UntypedDependentLink;
-import org.arend.core.definition.Constructor;
-import org.arend.core.definition.DConstructor;
-import org.arend.core.definition.Definition;
+import org.arend.core.definition.*;
 import org.arend.core.elimtree.ElimBody;
 import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.*;
@@ -454,7 +452,7 @@ public class PatternTypechecking {
       if (pattern instanceof Concrete.ConstructorPattern) {
         Concrete.ConstructorPattern conPattern = (Concrete.ConstructorPattern) pattern;
         Definition def = conPattern.getConstructor() instanceof TCDefReferable ? ((TCDefReferable) conPattern.getConstructor()).getTypechecked() : null;
-        if (def instanceof DConstructor) {
+        if (def instanceof DConstructor && def != Prelude.EMPTY_ARRAY && def != Prelude.ARRAY_CONS) {
           if (myVisitor == null || ((DConstructor) def).getPattern() == null) {
             return null;
           }
@@ -680,28 +678,43 @@ public class PatternTypechecking {
       }
 
       // Constructor patterns
-      DataCallExpression dataCall = TypeCoerceExpression.unfoldType(expr).cast(DataCallExpression.class);
-      if (dataCall == null) {
+      Expression unfoldedExpr = TypeCoerceExpression.unfoldType(expr).getUnderlyingExpression();
+      DataCallExpression dataCall = unfoldedExpr instanceof DataCallExpression ? (DataCallExpression) unfoldedExpr : null;
+      ClassCallExpression classCall = unfoldedExpr instanceof ClassCallExpression ? (ClassCallExpression) unfoldedExpr : null;
+      if (!(dataCall != null || classCall != null && classCall.getDefinition() == Prelude.ARRAY)) {
         if (!expr.isError()) {
           myErrorReporter.report(new TypeMismatchError(DocFactory.text("a data type"), expr, pattern));
         }
         return null;
       }
-      if (!myMode.allowInterval() && dataCall.getDefinition() == Prelude.INTERVAL) {
+      if (!myMode.allowInterval() && dataCall != null && dataCall.getDefinition() == Prelude.INTERVAL) {
         myErrorReporter.report(new TypecheckingError("Pattern matching on the interval is not allowed here", pattern));
         return null;
       }
 
       // Empty pattern
       if (pattern instanceof Concrete.TuplePattern) {
-        List<ConCallExpression> conCalls = dataCall.getMatchedConstructors();
-        if (conCalls == null) {
-          myErrorReporter.report(new ImpossibleEliminationError(dataCall, pattern, paramsSubst, clausesParameters, parameters, myElimParams, myCaseArguments));
-          return null;
-
+        List<Definition> constructors;
+        if (dataCall != null) {
+          List<ConCallExpression> conCalls = dataCall.getMatchedConstructors();
+          if (conCalls == null) {
+            myErrorReporter.report(new ImpossibleEliminationError(dataCall, pattern, paramsSubst, clausesParameters, parameters, myElimParams, myCaseArguments));
+            return null;
+          }
+          constructors = DataTypeNotEmptyError.getConstructors(conCalls);
+        } else {
+          Expression length = classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH);
+          if (length != null) length = length.normalize(NormalizationMode.WHNF);
+          if (length instanceof IntegerExpression && ((IntegerExpression) length).isZero()) {
+            constructors = Collections.singletonList(Prelude.EMPTY_ARRAY);
+          } else if (length instanceof IntegerExpression || length instanceof ConCallExpression && ((ConCallExpression) length).getDefinition() == Prelude.SUC) {
+            constructors = Collections.singletonList(Prelude.ARRAY_CONS);
+          } else {
+            constructors = Arrays.asList(Prelude.EMPTY_ARRAY, Prelude.ARRAY_CONS);
+          }
         }
-        if (!conCalls.isEmpty()) {
-          myErrorReporter.report(new DataTypeNotEmptyError(dataCall, DataTypeNotEmptyError.getConstructors(conCalls), pattern));
+        if (!constructors.isEmpty()) {
+          myErrorReporter.report(new DataTypeNotEmptyError(dataCall, constructors, pattern));
           return null;
         }
         result.add(EmptyPattern.INSTANCE);
@@ -716,41 +729,42 @@ public class PatternTypechecking {
       }
       Concrete.ConstructorPattern conPattern = (Concrete.ConstructorPattern) pattern;
 
-      if (dataCall.getDefinition() == Prelude.INT && (conPattern.getConstructor() == Prelude.ZERO.getReferable() || conPattern.getConstructor() == Prelude.SUC.getReferable())) {
+      if (dataCall != null && dataCall.getDefinition() == Prelude.INT && (conPattern.getConstructor() == Prelude.ZERO.getReferable() || conPattern.getConstructor() == Prelude.SUC.getReferable())) {
         boolean isExplicit = conPattern.isExplicit();
         conPattern.setExplicit(true);
         conPattern = new Concrete.ConstructorPattern(conPattern.getData(), isExplicit, Prelude.POS.getReferable(), Collections.singletonList(conPattern), conPattern.getAsReferables());
       }
 
-      Constructor constructor;
-      if (dataCall.getDefinition() == Prelude.FIN) {
+      Definition constructor;
+      if (dataCall != null && dataCall.getDefinition() == Prelude.FIN) {
         constructor = conPattern.getConstructor() == Prelude.ZERO.getRef() || conPattern.getConstructor() == Prelude.FIN_ZERO.getRef() ? Prelude.FIN_ZERO
           : conPattern.getConstructor() == Prelude.SUC.getRef() || conPattern.getConstructor() == Prelude.FIN_SUC.getRef() ? Prelude.FIN_SUC : null;
       } else {
-        constructor = conPattern.getConstructor() instanceof GlobalReferable ? dataCall.getDefinition().getConstructor((GlobalReferable) conPattern.getConstructor()) : null;
+        constructor = conPattern.getConstructor() instanceof TCDefReferable ? ((TCDefReferable) conPattern.getConstructor()).getTypechecked() : null;
       }
       List<ConCallExpression> conCalls = new ArrayList<>(1);
-      if (constructor == null || !dataCall.getMatchedConCall(constructor, conCalls) || conCalls.isEmpty()) {
+      if (constructor == null || dataCall != null && (!(constructor instanceof Constructor) || !dataCall.getMatchedConCall((Constructor) constructor, conCalls) || conCalls.isEmpty()) || classCall != null && constructor != Prelude.EMPTY_ARRAY && constructor != Prelude.ARRAY_CONS) {
         Referable conRef = conPattern.getConstructor();
         if (constructor != null || conRef instanceof TCDefReferable && ((TCDefReferable) conRef).getKind() == GlobalReferable.Kind.CONSTRUCTOR) {
           myErrorReporter.report(new ExpectedConstructorError((GlobalReferable) conRef, dataCall, parameters, conPattern, myCaseArguments, myLinkList.getFirst(), clausesParameters));
         }
         return null;
       }
-      ConCallExpression conCall = conCalls.get(0);
-      ExprSubstitution substitution = new ExprSubstitution();
-      int i = 0;
-      for (DependentLink link = constructor.getDataTypeParameters(); link.hasNext(); link = link.getNext(), i++) {
-        substitution.add(link, conCall.getDataTypeArguments().get(i));
+      ConCallExpression conCall = dataCall != null ? conCalls.get(0) : null;
+      DependentLink newParameters;
+      if (dataCall != null) {
+        newParameters = DependentLink.Helper.subst(constructor.getParameters(), new ExprSubstitution().add(((Constructor) constructor).getDataTypeParameters(), conCall.getDataTypeArguments()), dataCall.getSortArgument().toLevelSubstitution());
+      } else {
+        newParameters = ((DConstructor) constructor).getArrayParameters(classCall);
       }
-      Result conResult = doTypechecking(conPattern.getPatterns(), DependentLink.Helper.subst(constructor.getParameters(), substitution, conCall.getSortArgument().toLevelSubstitution()), paramsSubst, totalSubst, conPattern, false);
+      Result conResult = doTypechecking(conPattern.getPatterns(), newParameters, paramsSubst, totalSubst, conPattern, false);
       if (conResult == null) {
         return null;
       }
       varSubst.addSubst(conResult.varSubst);
       listSubst(result, exprs, conResult.varSubst);
 
-      if (!myMode.allowConditions()) {
+      if (!myMode.allowConditions() && conCall != null) {
         if (conCall.getDefinition().getBody() instanceof IntervalElim) {
           myErrorReporter.report(new TypecheckingError("Pattern matching on a constructor with interval conditions is not allowed here", conPattern));
           return null;
@@ -761,15 +775,23 @@ public class PatternTypechecking {
         }
       }
 
-      if (!conResult.varSubst.isEmpty()) {
-        conCall = (ConCallExpression) new SubstVisitor(conResult.varSubst, LevelSubstitution.EMPTY).visitConCall(conCall, null);
+      if (dataCall != null) {
+        if (!conResult.varSubst.isEmpty()) {
+          conCall = (ConCallExpression) new SubstVisitor(conResult.varSubst, LevelSubstitution.EMPTY).visitConCall(conCall, null);
+        }
+        result.add(new ConstructorExpressionPattern(conCall, conResult.patterns));
+      } else {
+        FunCallExpression funCall = new FunCallExpression((DConstructor) constructor, classCall.getSortArgument(), classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE));
+        if (!conResult.varSubst.isEmpty()) {
+          funCall = (FunCallExpression) new SubstVisitor(conResult.varSubst, LevelSubstitution.EMPTY).visitFunCall(funCall, null);
+        }
+        result.add(new ConstructorExpressionPattern(funCall, classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH), conResult.patterns));
       }
-      result.add(new ConstructorExpressionPattern(conCall, conResult.patterns));
       if (conResult.exprs == null) {
         exprs = null;
         typecheckAsPatterns(pattern.getAsReferables(), null, null);
       } else {
-        Expression newConCall = ConCallExpression.make(conCall.getDefinition(), conCall.getSortArgument(), conCall.getDataTypeArguments(), conResult.exprs);
+        Expression newConCall = dataCall != null ? ConCallExpression.make(conCall.getDefinition(), conCall.getSortArgument(), conCall.getDataTypeArguments(), conResult.exprs) : FunCallExpression.make((FunctionDefinition) constructor, classCall.getSortArgument(), conResult.exprs);
         typecheckAsPatterns(pattern.getAsReferables(), newConCall, expr);
         exprs.add(newConCall);
         paramsSubst.add(parameters, newConCall);

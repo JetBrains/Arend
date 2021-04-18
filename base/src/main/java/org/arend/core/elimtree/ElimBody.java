@@ -1,5 +1,6 @@
 package org.arend.core.elimtree;
 
+import org.arend.core.constructor.ArrayConstructor;
 import org.arend.core.constructor.IdpConstructor;
 import org.arend.core.context.LinkList;
 import org.arend.core.context.binding.Binding;
@@ -110,6 +111,14 @@ public class ElimBody implements Body, CoreElimBody {
         } else if (key instanceof IdpConstructor) {
           conPattern = ConstructorPattern.make(Prelude.IDP, Collections.emptyList()).toExpressionPattern(type);
           clauseElems.add(new Util.PatternClauseElem(conPattern));
+        } else if (key instanceof ArrayConstructor) {
+          if (!(type instanceof ClassCallExpression)) {
+            throw new IllegalArgumentException();
+          }
+          ClassCallExpression classCall = (ClassCallExpression) type;
+          var elem = new Util.ArrayClauseElem(((ArrayConstructor) key).getConstructor(), classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE), ConstructorExpressionPattern.isArrayEmpty(classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH)));
+          conPattern = elem.getPattern(Collections.emptyList());
+          clauseElems.add(elem);
         } else {
           if (type instanceof SigmaExpression) {
             conPattern = new ConstructorExpressionPattern((SigmaExpression) type.subst(substitution), Collections.emptyList());

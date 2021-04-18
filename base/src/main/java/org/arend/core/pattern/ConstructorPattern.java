@@ -3,6 +3,7 @@ package org.arend.core.pattern;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.definition.Constructor;
+import org.arend.core.definition.DConstructor;
 import org.arend.core.definition.Definition;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.*;
@@ -106,6 +107,14 @@ public abstract class ConstructorPattern<T> implements Pattern {
       return new ConstructorExpressionPattern(FunCallExpression.makeFunCall(Prelude.IDP, equality.getSortArgument(), Arrays.asList(equality.getDefCallArguments().get(0), equality.getDefCallArguments().get(1))), Collections.emptyList());
     } else if (type instanceof ClassCallExpression) {
       ClassCallExpression classCall = (ClassCallExpression) type;
+      if (classCall.getDefinition() == Prelude.ARRAY) {
+        Definition def = getDefinition();
+        if (def == Prelude.EMPTY_ARRAY || def == Prelude.ARRAY_CONS) {
+          Expression elementsType = classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
+          return new ConstructorExpressionPattern(new FunCallExpression((DConstructor) def, classCall.getSortArgument(), elementsType), classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH), Pattern.toExpressionPatterns(mySubPatterns, ((DConstructor) def).getArrayParameters(classCall)));
+        }
+      }
+
       List<ExpressionPattern> subPatterns = Pattern.toExpressionPatterns(mySubPatterns, classCall.getClassFieldParameters());
       if (subPatterns == null) {
         return null;

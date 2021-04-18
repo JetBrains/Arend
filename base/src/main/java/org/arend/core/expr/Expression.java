@@ -334,6 +334,19 @@ public abstract class Expression implements Body, CoreExpression {
     if (expr2 instanceof IntegerExpression) {
       return checkInteger(((IntegerExpression) expr2).getBigInteger(), expr1);
     }
+    if (expr1 instanceof ArrayExpression && expr2 instanceof ArrayExpression) {
+      ArrayExpression array1 = (ArrayExpression) expr1;
+      ArrayExpression array2 = (ArrayExpression) expr2;
+      if (array1.getTail() == null && array1.getElements().size() < array2.getElements().size() || array2.getTail() == null && array2.getElements().size() < array1.getElements().size()) {
+        return true;
+      }
+      for (int i = 0; i < array1.getElements().size() && i < array2.getElements().size(); i++) {
+        if (array1.getElements().get(i).areDisjointConstructors(array2.getElements().get(i))) {
+          return true;
+        }
+      }
+      return false;
+    }
     if (!(expr1 instanceof ConCallExpression) || !(expr2 instanceof ConCallExpression)) {
       return false;
     }

@@ -26,6 +26,12 @@ public class FunCallExpression extends DefCallExpression implements CoreFunCallE
     myArguments = arguments;
   }
 
+  // a fake funCall that can be used only in ConstructorExpressionPattern
+  public FunCallExpression(DConstructor function, Sort sortArgument, Expression elementsType) {
+    super(function, sortArgument);
+    myArguments = elementsType == null ? Collections.emptyList() : Collections.singletonList(elementsType);
+  }
+
   public static Expression make(FunctionDefinition definition, Sort sortArgument, List<Expression> arguments) {
     if ((definition == Prelude.PLUS || definition == Prelude.MUL || definition == Prelude.MINUS || definition == Prelude.DIV || definition == Prelude.MOD || definition == Prelude.DIV_MOD) && arguments.size() == 2 && arguments.get(0) instanceof IntegerExpression && arguments.get(1) instanceof IntegerExpression) {
       IntegerExpression expr1 = (IntegerExpression) arguments.get(0);

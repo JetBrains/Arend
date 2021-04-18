@@ -7,10 +7,7 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.context.param.TypedDependentLink;
 import org.arend.core.context.param.UnusedIntervalDependentLink;
-import org.arend.core.definition.ClassField;
-import org.arend.core.definition.Constructor;
-import org.arend.core.definition.Definition;
-import org.arend.core.definition.UniverseKind;
+import org.arend.core.definition.*;
 import org.arend.core.elimtree.ElimBody;
 import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.*;
@@ -455,7 +452,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       addBinding(clause, expr);
     }
     Expression type = expr.getExpression().accept(this, expectedType);
-    myContext.removeAll(expr.getClauses());
+    expr.getClauses().forEach(myContext::remove);
     return type;
   }
 
@@ -557,6 +554,27 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       } else {
         throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(DocFactory.text("a sigma type or a class call"), type, mySourceNode), errorExpr));
       }
+    }
+
+    if (pattern instanceof ConstructorPattern && pattern.getConstructor() instanceof DConstructor) {
+      DConstructor constructor = (DConstructor) pattern.getConstructor();
+      if (constructor != Prelude.EMPTY_ARRAY && constructor != Prelude.ARRAY_CONS) {
+        throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Expected either '" + Prelude.EMPTY_ARRAY.getName() + "' or '" + Prelude.ARRAY_CONS.getName() + "'", mySourceNode), errorExpr));
+      }
+      if (!(type instanceof ClassCallExpression && ((ClassCallExpression) type).getDefinition() == Prelude.ARRAY)) {
+        throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(new ClassCallExpression(Prelude.ARRAY, Sort.STD), type, mySourceNode), errorExpr));
+      }
+      ClassCallExpression classCall = (ClassCallExpression) type;
+      Boolean isEmpty = ConstructorExpressionPattern.isArrayEmpty(classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH));
+      if (isEmpty != null && isEmpty != (constructor == Prelude.EMPTY_ARRAY)) {
+        throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(DocFactory.text(Prelude.ARRAY.getName() + " " + (isEmpty ? "0" : "(" + Prelude.SUC + " _)")), type, mySourceNode), errorExpr));
+      }
+      DependentLink params = constructor.getParameters();
+      Expression arrayElementsType = classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
+      if (arrayElementsType != null) {
+        params = DependentLink.Helper.subst(params.getNext(), new ExprSubstitution(params, arrayElementsType));
+      }
+      return checkElimPatterns(params, pattern.getSubPatterns(), new ExprSubstitution(), newBindings, idpSubst, patternSubst, reversePatternSubst, errorExpr, null);
     }
 
     if (!(type instanceof DataCallExpression)) {
@@ -668,7 +686,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       for (Map.Entry<Binding, Expression> entry : patternSubst.getEntries()) {
         Expression actualType = entry.getKey().getTypeExpr();
         Expression expectedType = entry.getValue().getType().subst(idpSubst);
-        if (!new CompareVisitor(myEquations, CMP.EQ, mySourceNode).normalizedCompare(expectedType, actualType.normalize(NormalizationMode.WHNF), Type.OMEGA, false)) {
+        if (!new CompareVisitor(myEquations, CMP.LE, mySourceNode).normalizedCompare(actualType.normalize(NormalizationMode.WHNF), expectedType, Type.OMEGA, false)) {
           throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(expectedType, actualType, mySourceNode), errorExpr));
         }
       }

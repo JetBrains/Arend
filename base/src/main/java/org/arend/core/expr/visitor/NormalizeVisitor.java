@@ -1,5 +1,6 @@
 package org.arend.core.expr.visitor;
 
+import org.arend.core.constructor.ArrayConstructor;
 import org.arend.core.constructor.IdpConstructor;
 import org.arend.core.constructor.SingleConstructor;
 import org.arend.core.context.binding.Binding;
@@ -7,7 +8,6 @@ import org.arend.core.context.binding.EvaluatingBinding;
 import org.arend.core.context.binding.inference.TypeClassInferenceVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
-import org.arend.core.context.param.TypedDependentLink;
 import org.arend.core.context.param.TypedSingleDependentLink;
 import org.arend.core.definition.*;
 import org.arend.core.elimtree.*;
@@ -674,24 +674,22 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
           return false;
         }
         Expression top = stack.isEmpty() ? null : TypeCoerceExpression.unfoldExpression(stack.peek());
-        return !(top instanceof ConCallExpression || top instanceof IntegerExpression);
+        return !(top instanceof ConCallExpression || top instanceof IntegerExpression || top instanceof ArrayExpression);
       }
     }
   }
 
   private ElimTree updateStack(Deque<Expression> stack, List<Expression> argList, BranchElimTree branchElimTree) {
     Expression argument = TypeCoerceExpression.unfoldExpression(stack.pop());
-    ConCallExpression conCall = argument.cast(ConCallExpression.class);
-    Constructor constructor = conCall == null ? null : conCall.getDefinition();
-    IntegerExpression intExpr = constructor == null ? argument.cast(IntegerExpression.class) : null;
-    if (intExpr != null) {
-      constructor = intExpr.isZero() ? Prelude.ZERO : Prelude.SUC;
-    }
+    ConCallExpression conCall = argument instanceof ConCallExpression ? (ConCallExpression) argument : null;
+    IntegerExpression intExpr = argument instanceof IntegerExpression ? (IntegerExpression) argument : null;
+    ArrayExpression array = argument instanceof ArrayExpression ? (ArrayExpression) argument : null;
+    BranchKey key = conCall != null ? conCall.getDefinition() : intExpr != null ? (intExpr.isZero() ? Prelude.ZERO : Prelude.SUC) : array != null ? new ArrayConstructor(array.getElements().isEmpty(), true) : null;
 
-    ElimTree elimTree = constructor == null ? branchElimTree.getSingleConstructorChild() : branchElimTree.getChild(constructor);
-    if (elimTree == null && constructor == Prelude.PATH_CON && branchElimTree.getSingleConstructorKey() instanceof IdpConstructor) {
+    ElimTree elimTree = key == null ? branchElimTree.getSingleConstructorChild() : branchElimTree.getChild(key);
+    if (elimTree == null && key == Prelude.PATH_CON && branchElimTree.getSingleConstructorKey() instanceof IdpConstructor) {
       elimTree = branchElimTree.getSingleConstructorChild();
-      constructor = null;
+      key = null;
     }
     if (elimTree != null) {
       if (argList != null && branchElimTree.keepConCall()) {
@@ -699,12 +697,14 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
       }
 
       List<? extends Expression> args;
-      if (constructor != null) {
+      if (key != null) {
         args = conCall != null
           ? conCall.getDefCallArguments()
-          : constructor == Prelude.ZERO
-            ? Collections.emptyList()
-            : Collections.singletonList(intExpr.pred());
+          : array != null
+            ? array.getConstructorArguments(!branchElimTree.withElementsType())
+            : key == Prelude.ZERO
+              ? Collections.emptyList()
+              : Collections.singletonList(intExpr.pred());
       } else {
         SingleConstructor singleConstructor = branchElimTree.getSingleConstructorKey();
         if (singleConstructor == null) {

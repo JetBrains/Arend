@@ -11,6 +11,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class ArrayExpression extends Expression implements CoreArrayExpression {
@@ -39,6 +41,19 @@ public class ArrayExpression extends Expression implements CoreArrayExpression {
 
   public void substSort(LevelSubstitution substitution) {
     mySortArg = mySortArg.subst(substitution);
+  }
+
+  public Expression drop(int n) {
+    assert n <= myElements.size();
+    if (n >= myElements.size()) {
+      return myTail == null ? new ArrayExpression(mySortArg, myElementsType, Collections.emptyList(), null) : myTail;
+    } else {
+      return new ArrayExpression(mySortArg, myElementsType, myElements.subList(n, myElements.size()), myTail);
+    }
+  }
+
+  public List<Expression> getConstructorArguments(boolean withElementsType) {
+    return myElements.isEmpty() ? (withElementsType ? Collections.singletonList(myElementsType) : Collections.emptyList()) : (withElementsType ? Arrays.asList(myElementsType, myElements.get(0), drop(1)) : Arrays.asList(myElements.get(0), drop(1)));
   }
 
   @Override
