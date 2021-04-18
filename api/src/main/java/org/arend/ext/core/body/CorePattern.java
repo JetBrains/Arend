@@ -37,7 +37,9 @@ public interface CorePattern extends PrettyPrintable {
   /**
    * @return the parameters of the definition or the \Sigma-type
    */
-  @NotNull CoreParameter getParameters();
+  default @Nullable CoreParameter getParameters() {
+    return null;
+  }
 
   /**
    * If the pattern is a constructor pattern or a tuple pattern, returns the list of subpatterns.
