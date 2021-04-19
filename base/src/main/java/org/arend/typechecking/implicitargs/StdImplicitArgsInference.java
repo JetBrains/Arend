@@ -605,9 +605,11 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
       PiExpression pi = (PiExpression) type;
       type = pi.getCodomain();
       SingleDependentLink param = pi.getParameters();
+      loop:
       for (; param.hasNext() && i < arguments.size(); param = param.getNext(), i++) {
-        while (param.hasNext() && param.isExplicit() != arguments.get(i).isExplicit()) {
+        while (param.isExplicit() != arguments.get(i).isExplicit()) {
           param = param.getNext();
+          if (!param.hasNext()) break loop;
         }
       }
       if (i == arguments.size()) {
