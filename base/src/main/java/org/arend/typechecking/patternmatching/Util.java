@@ -13,6 +13,7 @@ import org.arend.core.pattern.BindingPattern;
 import org.arend.core.pattern.ConstructorExpressionPattern;
 import org.arend.core.pattern.ExpressionPattern;
 import org.arend.core.sort.Sort;
+import org.arend.core.subst.ExprSubstitution;
 
 import java.util.*;
 
@@ -96,7 +97,7 @@ public class Util {
 
     @Override
     public DependentLink getParameters() {
-      return myElementsType == null ? myConstructor.getParameters() : myConstructor.getParameters().getNext();
+      return myElementsType == null ? myConstructor.getParameters() : DependentLink.Helper.subst(myConstructor.getParameters().getNext(), new ExprSubstitution(myConstructor.getParameters(), myElementsType));
     }
 
     @Override

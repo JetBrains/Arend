@@ -111,33 +111,6 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
     return constructors;
   }
 
-  public static class ConstructorWithDataArgumentsImpl implements ConstructorWithDataArguments {
-    private final ConCallExpression myConCall;
-    private DependentLink myParameters;
-
-    public ConstructorWithDataArgumentsImpl(ConCallExpression conCall) {
-      myConCall = conCall;
-    }
-
-    @Override
-    public @NotNull Constructor getConstructor() {
-      return myConCall.getDefinition();
-    }
-
-    @Override
-    public @NotNull List<? extends Expression> getDataTypeArguments() {
-      return myConCall.getDataTypeArguments();
-    }
-
-    @Override
-    public @NotNull CoreParameter getParameters() {
-      if (myParameters == null) {
-        myParameters = myConCall.getDataTypeArguments().isEmpty() ? myConCall.getDefinition().getParameters() : DependentLink.Helper.subst(myConCall.getDefinition().getParameters(), new ExprSubstitution().add(myConCall.getDefinition().getDataType().getParameters(), myConCall.getDataTypeArguments()));
-      }
-      return myParameters;
-    }
-  }
-
   @Override
   public boolean computeMatchedConstructorsWithDataArguments(List<? super ConstructorWithDataArguments> result) {
     List<ConCallExpression> conCalls = new ArrayList<>();
@@ -229,5 +202,32 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
 
     conCalls.add(new ConCallExpression(constructor, getSortArgument(), matchedParameters, new ArrayList<>()));
     return true;
+  }
+
+  private static class ConstructorWithDataArgumentsImpl implements ConstructorWithDataArguments {
+    private final ConCallExpression myConCall;
+    private DependentLink myParameters;
+
+    private ConstructorWithDataArgumentsImpl(ConCallExpression conCall) {
+      myConCall = conCall;
+    }
+
+    @Override
+    public @NotNull Constructor getConstructor() {
+      return myConCall.getDefinition();
+    }
+
+    @Override
+    public @NotNull List<? extends Expression> getDataTypeArguments() {
+      return myConCall.getDataTypeArguments();
+    }
+
+    @Override
+    public @NotNull CoreParameter getParameters() {
+      if (myParameters == null) {
+        myParameters = myConCall.getDataTypeArguments().isEmpty() ? myConCall.getDefinition().getParameters() : DependentLink.Helper.subst(myConCall.getDefinition().getParameters(), new ExprSubstitution().add(myConCall.getDefinition().getDataType().getParameters(), myConCall.getDataTypeArguments()));
+      }
+      return myParameters;
+    }
   }
 }

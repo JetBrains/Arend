@@ -5,16 +5,14 @@ import org.arend.core.context.binding.Binding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.context.param.TypedDependentLink;
-import org.arend.core.definition.ClassDefinition;
-import org.arend.core.definition.ClassField;
-import org.arend.core.definition.Constructor;
-import org.arend.core.definition.UniverseKind;
+import org.arend.core.definition.*;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.type.TypeExpression;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.expr.visitor.StripVisitor;
+import org.arend.core.pattern.ConstructorExpressionPattern;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.InPlaceLevelSubstVisitor;
@@ -26,7 +24,9 @@ import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.typechecking.TypedExpression;
 import org.arend.naming.renamer.Renamer;
+import org.arend.prelude.Prelude;
 import org.arend.typechecking.result.TypecheckingResult;
+import org.arend.util.SingletonList;
 import org.arend.util.Wrapper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -432,5 +432,53 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
   @Override
   public <P, R> R accept(@NotNull CoreExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitClassCall(this, params);
+  }
+
+  private static class ConstructorWithDataArgumentsImpl implements ConstructorWithDataArguments {
+    private final Definition myConstructor;
+    private final Expression myElementsType;
+
+    private ConstructorWithDataArgumentsImpl(Definition constructor, Expression elementsType) {
+      myConstructor = constructor;
+      myElementsType = elementsType;
+    }
+
+    @Override
+    public @NotNull Definition getConstructor() {
+      return myConstructor;
+    }
+
+    @Override
+    public @NotNull List<? extends Expression> getDataTypeArguments() {
+      return myElementsType == null ? Collections.emptyList() : new SingletonList<>(myElementsType);
+    }
+
+    @Override
+    public @NotNull DependentLink getParameters() {
+      return myElementsType == null ? myConstructor.getParameters() : DependentLink.Helper.subst(myConstructor.getParameters().getNext(), new ExprSubstitution(myConstructor.getParameters(), myElementsType));
+    }
+  }
+
+  @Override
+  public boolean computeMatchedConstructorsWithDataArguments(List<? super ConstructorWithDataArguments> result) {
+    List<ConstructorWithDataArguments> cons = computeMatchedConstructorsWithDataArguments();
+    if (cons == null) return false;
+    result.addAll(cons);
+    return true;
+  }
+
+  @Override
+  public @Nullable List<ConstructorWithDataArguments> computeMatchedConstructorsWithDataArguments() {
+    if (getDefinition() != Prelude.ARRAY) return null;
+    List<ConstructorWithDataArguments> result = new ArrayList<>(2);
+    Boolean isEmpty = ConstructorExpressionPattern.isArrayEmpty(this);
+    Expression elementsType = getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
+    if (isEmpty == null || isEmpty.equals(true)) {
+      result.add(new ConstructorWithDataArgumentsImpl(Prelude.EMPTY_ARRAY, elementsType));
+    }
+    if (isEmpty == null || isEmpty.equals(false)) {
+      result.add(new ConstructorWithDataArgumentsImpl(Prelude.ARRAY_CONS, elementsType));
+    }
+    return result;
   }
 }

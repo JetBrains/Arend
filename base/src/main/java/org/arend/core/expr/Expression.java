@@ -597,4 +597,14 @@ public abstract class Expression implements Body, CoreExpression {
       }
     }
   }
+
+  @Override
+  public boolean computeMatchedConstructorsWithDataArguments(List<? super ConstructorWithDataArguments> result) {
+    return false;
+  }
+
+  @Override
+  public @Nullable List<ConstructorWithDataArguments> computeMatchedConstructorsWithDataArguments() {
+    return null;
+  }
 }

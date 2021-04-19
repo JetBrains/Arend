@@ -119,6 +119,7 @@ public class ElimBody implements Body, CoreElimBody {
           var elem = new Util.ArrayClauseElem(((ArrayConstructor) key).getConstructor(), classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE), ConstructorExpressionPattern.isArrayEmpty(classCall));
           conPattern = elem.getPattern(Collections.emptyList());
           clauseElems.add(elem);
+          newParams.addAll(DependentLink.Helper.toList(elem.getParameters()));
         } else {
           if (type instanceof SigmaExpression) {
             conPattern = new ConstructorExpressionPattern((SigmaExpression) type.subst(substitution), Collections.emptyList());

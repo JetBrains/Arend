@@ -791,7 +791,21 @@ public class PatternTypechecking {
         exprs = null;
         typecheckAsPatterns(pattern.getAsReferables(), null, null);
       } else {
-        Expression newConCall = dataCall != null ? ConCallExpression.make(conCall.getDefinition(), conCall.getSortArgument(), conCall.getDataTypeArguments(), conResult.exprs) : FunCallExpression.make((FunctionDefinition) constructor, classCall.getSortArgument(), conResult.exprs);
+        Expression newConCall;
+        if (dataCall != null) {
+          newConCall = ConCallExpression.make(conCall.getDefinition(), conCall.getSortArgument(), conCall.getDataTypeArguments(), conResult.exprs);
+        } else {
+          List<Expression> funCallArgs;
+          Expression elementsType = classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
+          if (elementsType != null) {
+            funCallArgs = new ArrayList<>();
+            funCallArgs.add(elementsType);
+            funCallArgs.addAll(conResult.exprs);
+          } else {
+            funCallArgs = conResult.exprs;
+          }
+          newConCall = FunCallExpression.make((FunctionDefinition) constructor, classCall.getSortArgument(), funCallArgs);
+        }
         typecheckAsPatterns(pattern.getAsReferables(), newConCall, expr);
         exprs.add(newConCall);
         paramsSubst.add(parameters, newConCall);

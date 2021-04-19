@@ -4,6 +4,7 @@ import org.arend.ext.core.body.CoreBody;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.context.CoreInferenceVariable;
 import org.arend.ext.core.context.CoreParameter;
+import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.prettyprinting.PrettyPrintable;
@@ -114,4 +115,26 @@ public interface CoreExpression extends CoreBody, UncheckedExpression, Abstracte
    * @return a subexpression on which this expression is stuck or {@code null} if there is no such subexpression.
    */
   @Nullable CoreExpression getStuckExpression();
+
+  interface ConstructorWithDataArguments {
+    @NotNull CoreDefinition getConstructor();
+    @NotNull List<? extends CoreExpression> getDataTypeArguments();
+
+    /**
+     * @return Parameters of this constructor with substituted data type arguments and sort argument.
+     */
+    @NotNull CoreParameter getParameters();
+  }
+
+  /**
+   * Computes the list of constructors with data arguments matching this type.
+   *
+   * @return true if the list can be determined, false otherwise.
+   */
+  boolean computeMatchedConstructorsWithDataArguments(List<? super ConstructorWithDataArguments> result);
+
+  /**
+   * @return the list of constructors with data arguments matching this type or {@code null} if it cannot be determined
+   */
+  @Nullable List<ConstructorWithDataArguments> computeMatchedConstructorsWithDataArguments();
 }
