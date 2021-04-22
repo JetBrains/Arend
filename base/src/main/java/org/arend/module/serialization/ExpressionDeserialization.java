@@ -1,5 +1,6 @@
 package org.arend.module.serialization;
 
+import org.arend.core.constructor.ArrayConstructor;
 import org.arend.core.constructor.ClassConstructor;
 import org.arend.core.constructor.IdpConstructor;
 import org.arend.core.constructor.TupleConstructor;
@@ -247,6 +248,15 @@ class ExpressionDeserialization {
               fields.add(myCallTargetProvider.getCallTarget(fieldRef, ClassField.class));
             }
             result.addChild(new ClassConstructor(myCallTargetProvider.getCallTarget(classProto.getClassRef(), ClassDefinition.class), readSort(classProto.getSort()), fields), elimTree);
+          }
+        }
+        if (branchProto.hasArrayClause()) {
+          ExpressionProtos.ElimTree.Branch.ArrayClause arrayClause = branchProto.getArrayClause();
+          if (arrayClause.hasEmptyElimTree()) {
+            result.addChild(new ArrayConstructor(true, arrayClause.getWithElementsType()), readElimTree(arrayClause.getEmptyElimTree()));
+          }
+          if (arrayClause.hasConsElimTree()) {
+            result.addChild(new ArrayConstructor(false, arrayClause.getWithElementsType()), readElimTree(arrayClause.getConsElimTree()));
           }
         }
         return result;

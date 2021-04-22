@@ -269,9 +269,15 @@ message ElimTree {
             message Idp {
             }
         }
+        message ArrayClause {
+            bool with_elements_type = 1;
+            ElimTree emptyElimTree = 2;
+            ElimTree consElimTree = 3;
+        }
 
         map<int32, ElimTree> clauses = 1;
         SingleConstructorClause single_clause = 2;
+        ArrayClause array_clause = 4;
         bool keep_con_call = 3;
     }
 }

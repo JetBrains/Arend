@@ -1,10 +1,7 @@
 package org.arend.module.serialization;
 
 import com.google.protobuf.ByteString;
-import org.arend.core.constructor.ClassConstructor;
-import org.arend.core.constructor.IdpConstructor;
-import org.arend.core.constructor.SingleConstructor;
-import org.arend.core.constructor.TupleConstructor;
+import org.arend.core.constructor.*;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.param.DependentLink;
@@ -23,6 +20,7 @@ import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.pattern.*;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
+import org.arend.prelude.Prelude;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -219,33 +217,50 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
       ExpressionProtos.ElimTree.Branch.Builder branchBuilder = ExpressionProtos.ElimTree.Branch.newBuilder();
       branchBuilder.setKeepConCall(branchElimTree.keepConCall());
 
-      for (Map.Entry<BranchKey, ElimTree> entry : branchElimTree.getChildren()) {
-        if (entry.getKey() == null) {
-          branchBuilder.putClauses(0, writeElimTree(entry.getValue()));
-        } else if (entry.getKey() instanceof SingleConstructor) {
-          ExpressionProtos.ElimTree.Branch.SingleConstructorClause.Builder singleClauseBuilder = ExpressionProtos.ElimTree.Branch.SingleConstructorClause.newBuilder();
-          if (entry.getKey() instanceof TupleConstructor) {
-            singleClauseBuilder.setTuple(ExpressionProtos.ElimTree.Branch.SingleConstructorClause.Tuple.newBuilder().setLength(entry.getKey().getNumberOfParameters()).build());
-          } else if (entry.getKey() instanceof IdpConstructor) {
-            singleClauseBuilder.setIdp(ExpressionProtos.ElimTree.Branch.SingleConstructorClause.Idp.newBuilder());
-          } else if (entry.getKey() instanceof ClassConstructor) {
-            ClassConstructor classCon = (ClassConstructor) entry.getKey();
-            ExpressionProtos.ElimTree.Branch.SingleConstructorClause.Class.Builder conBuilder = ExpressionProtos.ElimTree.Branch.SingleConstructorClause.Class.newBuilder();
-            conBuilder.setClassRef(myCallTargetIndexProvider.getDefIndex(classCon.getClassDefinition()));
-            conBuilder.setSort(writeSort(classCon.getSort()));
-            for (ClassField field : classCon.getImplementedFields()) {
-              conBuilder.addField(myCallTargetIndexProvider.getDefIndex(field));
+      if (branchElimTree.isArray()) {
+        ExpressionProtos.ElimTree.Branch.ArrayClause.Builder arrayBuilder = ExpressionProtos.ElimTree.Branch.ArrayClause.newBuilder();
+        boolean withElementsType = true;
+        for (Map.Entry<BranchKey, ElimTree> entry : branchElimTree.getChildren()) {
+          if (entry.getKey() instanceof ArrayConstructor) {
+            withElementsType = ((ArrayConstructor) entry.getKey()).withElementsType();
+            if (((ArrayConstructor) entry.getKey()).getConstructor() == Prelude.EMPTY_ARRAY) {
+              arrayBuilder.setEmptyElimTree(writeElimTree(entry.getValue()));
+            } else {
+              arrayBuilder.setConsElimTree(writeElimTree(entry.getValue()));
             }
-            singleClauseBuilder.setClass_(conBuilder.build());
-          } else {
-            throw new IllegalStateException("Unknown SingleConstructor type: " + entry.getKey().getClass());
           }
-          singleClauseBuilder.setElimTree(writeElimTree(entry.getValue()));
-          branchBuilder.setSingleClause(singleClauseBuilder.build());
-        } else if (entry.getKey() instanceof Constructor) {
-          branchBuilder.putClauses(myCallTargetIndexProvider.getDefIndex((Constructor) entry.getKey()), writeElimTree(entry.getValue()));
-        } else {
-          throw new IllegalStateException();
+        }
+        arrayBuilder.setWithElementsType(withElementsType);
+        branchBuilder.setArrayClause(arrayBuilder.build());
+      } else {
+        for (Map.Entry<BranchKey, ElimTree> entry : branchElimTree.getChildren()) {
+          if (entry.getKey() == null) {
+            branchBuilder.putClauses(0, writeElimTree(entry.getValue()));
+          } else if (entry.getKey() instanceof SingleConstructor) {
+            ExpressionProtos.ElimTree.Branch.SingleConstructorClause.Builder singleClauseBuilder = ExpressionProtos.ElimTree.Branch.SingleConstructorClause.newBuilder();
+            if (entry.getKey() instanceof TupleConstructor) {
+              singleClauseBuilder.setTuple(ExpressionProtos.ElimTree.Branch.SingleConstructorClause.Tuple.newBuilder().setLength(entry.getKey().getNumberOfParameters()).build());
+            } else if (entry.getKey() instanceof IdpConstructor) {
+              singleClauseBuilder.setIdp(ExpressionProtos.ElimTree.Branch.SingleConstructorClause.Idp.newBuilder());
+            } else if (entry.getKey() instanceof ClassConstructor) {
+              ClassConstructor classCon = (ClassConstructor) entry.getKey();
+              ExpressionProtos.ElimTree.Branch.SingleConstructorClause.Class.Builder conBuilder = ExpressionProtos.ElimTree.Branch.SingleConstructorClause.Class.newBuilder();
+              conBuilder.setClassRef(myCallTargetIndexProvider.getDefIndex(classCon.getClassDefinition()));
+              conBuilder.setSort(writeSort(classCon.getSort()));
+              for (ClassField field : classCon.getImplementedFields()) {
+                conBuilder.addField(myCallTargetIndexProvider.getDefIndex(field));
+              }
+              singleClauseBuilder.setClass_(conBuilder.build());
+            } else {
+              throw new IllegalStateException("Unknown SingleConstructor type: " + entry.getKey().getClass());
+            }
+            singleClauseBuilder.setElimTree(writeElimTree(entry.getValue()));
+            branchBuilder.setSingleClause(singleClauseBuilder.build());
+          } else if (entry.getKey() instanceof Constructor) {
+            branchBuilder.putClauses(myCallTargetIndexProvider.getDefIndex((Constructor) entry.getKey()), writeElimTree(entry.getValue()));
+          } else {
+            throw new IllegalStateException();
+          }
         }
       }
 
