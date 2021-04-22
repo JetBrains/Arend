@@ -49,7 +49,7 @@ public class FieldCallExpression extends DefCallExpression implements CoreFieldC
       if (array.getTail() == null) {
         return new SmallIntegerExpression(array.getElements().size());
       } else {
-        Expression result = array.getTail();
+        Expression result = make(Prelude.ARRAY_LENGTH, sortArgument, array.getTail(), unfoldRefs);
         for (Expression ignored : array.getElements()) {
           result = Suc(result);
         }
