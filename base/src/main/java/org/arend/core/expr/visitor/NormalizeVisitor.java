@@ -349,7 +349,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
                 indexArg = Suc(indexArg);
               }
             }
-            return FunCallExpression.make(Prelude.ARRAY_INDEX, expr.getSortArgument(), Arrays.asList(array.getTail(), indexArg));
+            return FunCallExpression.make(Prelude.ARRAY_INDEX, expr.getSortArgument(), Arrays.asList(array.getTail(), indexArg)).accept(this, mode);
           }
         }
       } else {
