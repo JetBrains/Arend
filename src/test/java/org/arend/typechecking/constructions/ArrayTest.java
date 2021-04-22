@@ -5,10 +5,7 @@ import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Definition;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.definition.UniverseKind;
-import org.arend.core.expr.ClassCallExpression;
-import org.arend.core.expr.Expression;
-import org.arend.core.expr.ReferenceExpression;
-import org.arend.core.expr.SmallIntegerExpression;
+import org.arend.core.expr.*;
 import org.arend.core.sort.Sort;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.TypeCheckingTestCase;
@@ -18,8 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.arend.core.expr.ExpressionFactory.Nat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.*;
 
 public class ArrayTest extends TypeCheckingTestCase {
   @Test
@@ -30,10 +26,10 @@ public class ArrayTest extends TypeCheckingTestCase {
       "  | len => 3\n" +
       "  | at _ => 1");
     Sort sort = Sort.STD.max(Sort.SET0);
-    assertFalse(((ClassCallExpression) ((FunctionDefinition) getDefinition("test1")).getResultType()).isImplemented(Prelude.ARRAY_AT));
-    assertEquals(Sort.SET0, ((ClassCallExpression) ((FunctionDefinition) getDefinition("test1")).getResultType()).getSort());
-    assertFalse(((ClassCallExpression) ((FunctionDefinition) getDefinition("test2")).getResultType()).isImplemented(Prelude.ARRAY_AT));
-    assertEquals(Sort.SET0, ((ClassCallExpression) ((FunctionDefinition) getDefinition("test2")).getResultType()).getSort());
+    assertTrue(((ClassCallExpression) ((FunctionDefinition) getDefinition("test1")).getResultType()).isImplemented(Prelude.ARRAY_AT));
+    assertEquals(Sort.PROP, ((ClassCallExpression) ((FunctionDefinition) getDefinition("test1")).getResultType()).getSort());
+    assertTrue(((ClassCallExpression) ((FunctionDefinition) getDefinition("test2")).getResultType()).isImplemented(Prelude.ARRAY_AT));
+    assertEquals(Sort.PROP, ((ClassCallExpression) ((FunctionDefinition) getDefinition("test2")).getResultType()).getSort());
     assertFalse(((ClassCallExpression) Prelude.EMPTY_ARRAY.getResultType()).isImplemented(Prelude.ARRAY_AT));
     assertEquals(sort, ((ClassCallExpression) Prelude.EMPTY_ARRAY.getResultType()).getSort());
     assertFalse(((ClassCallExpression) Prelude.ARRAY_CONS.getResultType()).isImplemented(Prelude.ARRAY_AT));
@@ -42,7 +38,9 @@ public class ArrayTest extends TypeCheckingTestCase {
 
   @Test
   public void consTest() {
-    typeCheckDef("\\func test (n : Nat) (x : Array Nat n) : Array Nat (suc n) => n Array.cons x");
+    FunctionDefinition def = (FunctionDefinition) typeCheckDef("\\func test (n : Nat) (x : Array Nat n) : Array Nat (suc n) => n Array.cons x");
+    assertTrue(def.getBody() instanceof ArrayExpression);
+    assertEquals(Sort.SET0, ((ClassCallExpression) def.getResultType()).getSort());
   }
 
   @Test
@@ -84,6 +82,22 @@ public class ArrayTest extends TypeCheckingTestCase {
       "\\open Array\n" +
       "\\lemma test1 : (\\new Array Nat 2 (\\case __ \\with { | 0 => 5 | 1 => 7 })) = 5 cons 7 cons empty => idp\n" +
       "\\lemma test2 : (\\new Array Nat 3 (\\case __ \\with { | 0 => 5 | suc i => \\case i \\with { | 0 => 7 | 1 => 12 } })) = (\\new Array Nat 3 (\\case __ \\with { | 0 => 5 | 1 => 7 | 2 => 12 })) => idp");
+  }
+
+  @Test
+  public void cowithIndexTest() {
+    typeCheckModule(
+      "\\open Array\n" +
+      "\\func f (a : Array Nat) : Array Nat a.len (\\lam _ => 7) \\cowith\n" +
+      "\\lemma test (a : Array Nat) (i : Fin a.len) : f a !! i = 7 => idp");
+  }
+
+  @Test
+  public void consEtaTest() {
+    typeCheckModule(
+      "\\open Array\n" +
+      "\\func map {A B : \\Type} (f : A -> B) (as : Array A) : Array B as.len (\\lam i => f (as.at i)) \\cowith\n" +
+      "\\func test {A B : \\Type} (f : A -> B) {a : A} (as : Array A) : map f (a cons as) = f a cons map f as => idp");
   }
 
   @Test

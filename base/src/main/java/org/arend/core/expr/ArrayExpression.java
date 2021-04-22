@@ -39,6 +39,10 @@ public class ArrayExpression extends Expression implements CoreArrayExpression {
     }
   }
 
+  public static ArrayExpression makeArray(Sort sortArg, Expression elementsType, List<Expression> elements, Expression tail) {
+    return (ArrayExpression) make(sortArg, elementsType, elements, tail);
+  }
+
   public void substSort(LevelSubstitution substitution) {
     mySortArg = mySortArg.subst(substitution);
   }

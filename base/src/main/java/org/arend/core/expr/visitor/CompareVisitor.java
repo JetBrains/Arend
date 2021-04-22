@@ -1110,12 +1110,44 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
   }
 
   private boolean compareClassInstances(Expression expr1, ClassCallExpression classCall1, Expression expr2, ClassCallExpression classCall2, Expression type) {
-    if (Boolean.TRUE.equals(ConstructorExpressionPattern.isArrayEmpty(classCall1)) && Boolean.TRUE.equals(ConstructorExpressionPattern.isArrayEmpty(classCall2))) {
-      Expression elemsType1 = classCall1.getImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE, expr1);
-      if (elemsType1 == null) elemsType1 = FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, classCall1.getSortArgument(), expr1);
-      Expression elemsType2 = classCall2.getImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE, expr2);
-      if (elemsType2 == null) elemsType2 = FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, classCall2.getSortArgument(), expr2);
-      return compare(elemsType1, elemsType2, ExpressionFactory.Nat(), false);
+    if (expr1 instanceof ArrayExpression && expr2 instanceof ArrayExpression) return false;
+    if (classCall1.getDefinition() == Prelude.ARRAY && classCall2.getDefinition() == Prelude.ARRAY) {
+      Expression length1 = classCall1.getImplementationHere(Prelude.ARRAY_LENGTH, expr1);
+      Expression length2 = classCall2.getImplementationHere(Prelude.ARRAY_LENGTH, expr1);
+      if (length1 != null && length2 != null) {
+        length1 = length1.normalize(NormalizationMode.WHNF);
+        length2 = length2.normalize(NormalizationMode.WHNF);
+        if (length1 instanceof IntegerExpression && ((IntegerExpression) length1).isZero() && length2 instanceof IntegerExpression && ((IntegerExpression) length2).isZero()) {
+          Expression elemsType1 = classCall1.getImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE, expr1);
+          if (elemsType1 == null) elemsType1 = FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, classCall1.getSortArgument(), expr1);
+          Expression elemsType2 = classCall2.getImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE, expr2);
+          if (elemsType2 == null) elemsType2 = FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, classCall2.getSortArgument(), expr2);
+          return compare(elemsType1, elemsType2, ExpressionFactory.Nat(), false);
+        } else {
+          Expression at1 = classCall1.getImplementationHere(Prelude.ARRAY_AT, expr1);
+          Expression at2 = classCall2.getImplementationHere(Prelude.ARRAY_AT, expr2);
+          if (at1 == null && !(expr1 instanceof ArrayExpression) && at2 == null && !(expr2 instanceof ArrayExpression)) {
+            return false;
+          }
+          var pair1 = getSucs(length1);
+          var pair2 = getSucs(length2);
+          BigInteger m = pair1.proj2.min(pair2.proj2);
+          if (m.equals(BigInteger.ZERO)) {
+            return false;
+          }
+          if (!m.equals(BigInteger.ZERO)) {
+            Expression elementsType = classCall1.getImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE, expr1);
+            if (elementsType == null) elementsType = classCall2.getImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE, expr2);
+            for (BigInteger i = BigInteger.ZERO; i.compareTo(m) < 0; i = i.add(BigInteger.ONE)) {
+              IntegerExpression index = new BigIntegerExpression(i);
+              if (!normalizedCompare(FunCallExpression.make(Prelude.ARRAY_INDEX, classCall1.getSortArgument(), Arrays.asList(expr1, index)).normalize(NormalizationMode.WHNF), FunCallExpression.make(Prelude.ARRAY_INDEX, classCall2.getSortArgument(), Arrays.asList(expr2, index)).normalize(NormalizationMode.WHNF), elementsType, true)) {
+                return false;
+              }
+            }
+            return true;
+          }
+        }
+      }
     }
 
     Set<? extends ClassField> fields = null;

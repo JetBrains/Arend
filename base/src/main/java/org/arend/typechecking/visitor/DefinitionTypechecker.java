@@ -1121,18 +1121,14 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             typedDef.setBody(termResult.expression);
           }
         }
-        if (termResult.expression instanceof FunCallExpression && ((FunCallExpression) termResult.expression).getDefinition().getActualBody() == null && ((FunCallExpression) termResult.expression).getDefinition().status() != Definition.TypeCheckingStatus.TYPE_CHECKING) {
+        if (termResult.expression instanceof FunCallExpression && myNewDef && ((FunCallExpression) termResult.expression).getDefinition().getActualBody() == null && ((FunCallExpression) termResult.expression).getDefinition().status() != Definition.TypeCheckingStatus.TYPE_CHECKING) {
           bodyIsOK = true;
-          if (myNewDef) {
-            typedDef.hideBody();
-          }
+          typedDef.hideBody();
         }
-        if (termResult.expression instanceof NewExpression) {
+        if (termResult.expression instanceof NewExpression && myNewDef && def.getData().getKind() != GlobalReferable.Kind.DEFINED_CONSTRUCTOR && (expectedType.isError() || !typedDef.isSFunc()) && !def.isRecursive()) {
           bodyIsOK = true;
-          if (myNewDef && def.getData().getKind() != GlobalReferable.Kind.DEFINED_CONSTRUCTOR && (expectedType.isError() || !typedDef.isSFunc()) && !def.isRecursive()) {
-            typedDef.setBody(null);
-            typedDef.setResultType(((NewExpression) termResult.expression).getType());
-          }
+          typedDef.setBody(null);
+          typedDef.setResultType(((NewExpression) termResult.expression).getType());
         }
       }
     } else {

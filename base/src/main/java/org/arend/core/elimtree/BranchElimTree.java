@@ -42,6 +42,10 @@ public class BranchElimTree extends ElimTree {
     }
   }
 
+  public boolean isArray() {
+    return !myChildren.isEmpty() && myChildren.keySet().iterator().next() instanceof ArrayConstructor;
+  }
+
   public Collection<Map.Entry<BranchKey, ElimTree>> getChildren() {
     return myChildren.entrySet();
   }

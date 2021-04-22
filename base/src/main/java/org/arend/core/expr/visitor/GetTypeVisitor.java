@@ -190,14 +190,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public ClassCallExpression visitNew(NewExpression expr, Void params) {
-    ClassCallExpression classCall = expr.getType();
-    if (classCall.getDefinition() != Prelude.ARRAY) {
-      return classCall;
-    }
-
-    Map<ClassField, Expression> newImplementations = new HashMap<>(classCall.getImplementedHere());
-    newImplementations.remove(Prelude.ARRAY_AT);
-    return new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), newImplementations, classCall.getSortArgument().max(Sort.SET0), UniverseKind.NO_UNIVERSES);
+    return expr.getType();
   }
 
   @Override

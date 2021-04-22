@@ -1442,14 +1442,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
 
     if (checkAllImplemented(classCallExpr, pseudoImplemented, expr)) {
-      TypecheckingResult result;
-      if (classCallExpr.getDefinition() == Prelude.ARRAY) {
-        Expression resultNorm = new NewExpression(null, classCallExpr).normalize(NormalizationMode.WHNF);
-        result = new TypecheckingResult(resultNorm, resultNorm.getType());
-      } else {
-        result = new TypecheckingResult(new NewExpression(null, classCallExpr), classCallExpr);
-      }
-      return checkResult(expectedType, result, expr);
+      return checkResult(expectedType, new TypecheckingResult(new NewExpression(null, classCallExpr), classCallExpr), expr);
     } else {
       return null;
     }

@@ -22,6 +22,7 @@ import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.computation.ComputationRunner;
 import org.arend.util.Pair;
+import org.arend.util.SingletonList;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -349,6 +350,14 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
               }
             }
             return FunCallExpression.make(Prelude.ARRAY_INDEX, expr.getSortArgument(), Arrays.asList(array.getTail(), indexArg));
+          }
+        }
+      } else {
+        Expression type = arg.getType().normalize(NormalizationMode.WHNF);
+        if (type instanceof ClassCallExpression) {
+          Expression at = ((ClassCallExpression) type).getImplementationHere(Prelude.ARRAY_AT, arg);
+          if (at != null) {
+            return AppExpression.make(at, defCallArgs.get(1), true).accept(this, mode);
           }
         }
       }
@@ -691,6 +700,35 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
       elimTree = branchElimTree.getSingleConstructorChild();
       key = null;
     }
+    if (elimTree == null && branchElimTree.isArray()) {
+      Expression type = argument.getType().normalize(NormalizationMode.WHNF);
+      if (type instanceof ClassCallExpression && ((ClassCallExpression) type).getDefinition() == Prelude.ARRAY) {
+        ClassCallExpression classCall = (ClassCallExpression) type;
+        Expression length = classCall.getImplementationHere(Prelude.ARRAY_LENGTH, argument);
+        if (length != null) {
+          length = length.normalize(NormalizationMode.WHNF);
+          if (length instanceof IntegerExpression || length instanceof ConCallExpression && ((ConCallExpression) length).getDefinition() == Prelude.SUC) {
+            Expression elementsType = classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
+            if (elementsType == null) elementsType = FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, classCall.getSortArgument(), argument);
+            if (length instanceof IntegerExpression && ((IntegerExpression) length).isZero()) {
+              array = ArrayExpression.makeArray(classCall.getSortArgument(), elementsType, Collections.emptyList(), null);
+              key = new ArrayConstructor(true, true);
+            } else {
+              Expression at = classCall.getImplementationHere(Prelude.ARRAY_AT, argument);
+              Map<ClassField, Expression> impls = new HashMap<>();
+              impls.put(Prelude.ARRAY_ELEMENTS_TYPE, elementsType);
+              Expression length_1 = length instanceof IntegerExpression ? ((IntegerExpression) length).pred() : ((ConCallExpression) length).getDefCallArguments().get(0);
+              impls.put(Prelude.ARRAY_LENGTH, length_1);
+              TypedSingleDependentLink param = new TypedSingleDependentLink(true, "i", Fin(length_1));
+              impls.put(Prelude.ARRAY_AT, new LamExpression(classCall.getSortArgument().max(Sort.SET0), param, at != null ? AppExpression.make(at, Suc(new ReferenceExpression(param)), true) : FunCallExpression.make(Prelude.ARRAY_INDEX, classCall.getSortArgument(), Arrays.asList(argument, Suc(new ReferenceExpression(param))))));
+              array = ArrayExpression.makeArray(classCall.getSortArgument(), elementsType, new SingletonList<>(at != null ? AppExpression.make(at, new SmallIntegerExpression(0), true) : FunCallExpression.make(Prelude.ARRAY_INDEX, classCall.getSortArgument(), Arrays.asList(argument, new SmallIntegerExpression(0)))), new NewExpression(null, new ClassCallExpression(Prelude.ARRAY, classCall.getSortArgument(), impls, Sort.PROP, UniverseKind.NO_UNIVERSES)));
+              key = new ArrayConstructor(false, true);
+            }
+            elimTree = branchElimTree.getChild(key);
+          }
+        }
+      }
+    }
     if (elimTree != null) {
       if (argList != null && branchElimTree.keepConCall()) {
         argList.add(argument);
@@ -924,7 +962,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
     }
   }
 
-  private Pair<BigInteger,Expression> getNumber(Expression expr) {
+  private static Pair<BigInteger,Expression> getNumber(Expression expr) {
     expr = expr.normalize(NormalizationMode.WHNF);
     int s = 0;
     while (expr instanceof ConCallExpression && ((ConCallExpression) expr).getDefinition() == Prelude.SUC) {
@@ -936,35 +974,6 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
 
   @Override
   public Expression visitNew(NewExpression expr, NormalizationMode mode) {
-    if (expr.getClassCall().getDefinition() == Prelude.ARRAY) {
-      var pair = getNumber(expr.getImplementation(Prelude.ARRAY_LENGTH));
-      if (pair.proj1 != null) {
-        BigInteger b = pair.proj1;
-        Expression length = pair.proj2;
-        List<Expression> elements = new ArrayList<>();
-        Expression atFunc = expr.getImplementation(Prelude.ARRAY_AT);
-        for (BigInteger i = BigInteger.ZERO; i.compareTo(b) < 0; i = i.add(BigInteger.ONE)) {
-          elements.add(AppExpression.make(atFunc, new BigIntegerExpression(i), true));
-        }
-        Expression elementsType = expr.getImplementation(Prelude.ARRAY_ELEMENTS_TYPE);
-        Expression tail;
-        if (length instanceof IntegerExpression) {
-          tail = null;
-        } else {
-          Map<ClassField, Expression> implementations = new HashMap<>();
-          implementations.put(Prelude.ARRAY_ELEMENTS_TYPE, elementsType);
-          implementations.put(Prelude.ARRAY_LENGTH, length);
-          TypedSingleDependentLink lamParam = new TypedSingleDependentLink(true, "j", Fin(length));
-          Expression lamBody = new ReferenceExpression(lamParam);
-          for (BigInteger i = BigInteger.ZERO; i.compareTo(b) < 0; i = i.add(BigInteger.ONE)) {
-            lamBody = Suc(lamBody);
-          }
-          implementations.put(Prelude.ARRAY_AT, new LamExpression(expr.getClassCall().getSortArgument().max(Sort.SET0), lamParam, AppExpression.make(atFunc, lamBody, true)));
-          tail = new NewExpression(null, new ClassCallExpression(Prelude.ARRAY, expr.getClassCall().getSortArgument(), implementations, Sort.PROP, UniverseKind.NO_UNIVERSES));
-        }
-        return ArrayExpression.make(expr.getClassCall().getSortArgument(), elementsType, elements, tail);
-      }
-    }
     return mode == NormalizationMode.WHNF ? expr : new NewExpression(expr.getRenewExpression() == null ? null : expr.getRenewExpression().accept(this, mode), visitClassCall(expr.getClassCall(), mode));
   }
 
