@@ -996,7 +996,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
   @Override
   public Expression visitCase(CaseExpression expr, NormalizationMode mode) {
     if (!expr.isSCase()) {
-      Expression result = eval(expr.getElimBody(), expr.getArguments(), new ExprSubstitution(), LevelSubstitution.EMPTY, expr, mode);
+      Expression result = eval(expr.getElimBody(), expr.getArguments(), new ExprSubstitution(), LevelSubstitution.EMPTY, mode == NormalizationMode.WHNF ? expr : null, mode);
       if (result != null) {
         return result;
       }
@@ -1007,15 +1007,15 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
       args.add(arg.accept(this, mode));
     }
     ExprSubstitution substitution = new ExprSubstitution();
-    DependentLink parameters = mode == NormalizationMode.NF ? normalizeParameters(expr.getParameters(), mode, substitution) : expr.getParameters();
-    return new CaseExpression(expr.isSCase(), parameters, mode == NormalizationMode.NF ? expr.getResultType().subst(substitution).accept(this, mode) : expr.getResultType(), expr.getResultTypeLevel() != null && mode == NormalizationMode.NF ? expr.getResultTypeLevel().subst(substitution).accept(this, mode) : expr.getResultTypeLevel(), mode == NormalizationMode.WHNF ? expr.getElimBody() : normalizeElimBody(expr.getElimBody(), mode), args);
+    DependentLink parameters = normalizeParameters(expr.getParameters(), mode, substitution);
+    return new CaseExpression(expr.isSCase(), parameters, expr.getResultType().subst(substitution).accept(this, mode), expr.getResultTypeLevel() != null && mode == NormalizationMode.NF ? expr.getResultTypeLevel().subst(substitution).accept(this, mode) : expr.getResultTypeLevel(), mode == NormalizationMode.WHNF ? expr.getElimBody() : normalizeElimBody(expr.getElimBody(), mode), args);
   }
 
   private ElimBody normalizeElimBody(ElimBody elimBody, NormalizationMode mode) {
     List<ElimClause<Pattern>> clauses = new ArrayList<>();
     for (ElimClause<Pattern> clause : elimBody.getClauses()) {
       ExprSubstitution substitution = new ExprSubstitution();
-      DependentLink parameters = mode == NormalizationMode.NF ? normalizeParameters(clause.getParameters(), mode, substitution) : clause.getParameters();
+      DependentLink parameters = normalizeParameters(clause.getParameters(), mode, substitution);
       clauses.add(new ElimClause<>(Pattern.replaceBindings(clause.getPatterns(), parameters), clause.getExpression() == null ? null : clause.getExpression().subst(substitution).accept(this, mode)));
     }
     return new ElimBody(clauses, elimBody.getElimTree());
