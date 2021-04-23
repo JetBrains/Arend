@@ -1132,9 +1132,6 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
           var pair1 = getSucs(length1);
           var pair2 = getSucs(length2);
           BigInteger m = pair1.proj2.min(pair2.proj2);
-          if (m.equals(BigInteger.ZERO)) {
-            return false;
-          }
           if (!m.equals(BigInteger.ZERO)) {
             Expression elementsType = classCall1.getImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE, expr1);
             if (elementsType == null) elementsType = classCall2.getImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE, expr2);
@@ -1319,7 +1316,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
         return false;
       }
     }
-    return expr.getTail() == null || compare(expr.getTail(), array2.getTail(), null, false);
+    return expr.getTail() == null || compare(expr.getTail(), array2.getTail(), null, true);
   }
 
   @Override
