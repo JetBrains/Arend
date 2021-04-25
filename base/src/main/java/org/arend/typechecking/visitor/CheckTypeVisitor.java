@@ -2973,8 +2973,9 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   private void saveState() {
-    TypecheckerState state = new TypecheckerState(errorReporter, myDeferredMetasBeforeSolver.size(), myDeferredMetasAfterLevels.size(), copyUserData(), mySavedState);
-    errorReporter = new MyErrorReporter(new ListErrorReporter());
+    ListErrorReporter listErrorReporter = new ListErrorReporter();
+    TypecheckerState state = new TypecheckerState(errorReporter, myDeferredMetasBeforeSolver.size(), myDeferredMetasAfterLevels.size(), copyUserData(), mySavedState, listErrorReporter);
+    errorReporter = new MyErrorReporter(listErrorReporter);
     myEquations.saveState(state);
     mySavedState = state;
   }
@@ -3000,21 +3001,19 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   @Override
   public void updateSavedState() {
-    if (mySavedState == null || !(errorReporter.myErrorReporter.getErrorReporter() instanceof ListErrorReporter)) {
+    if (mySavedState == null) {
       throw new IllegalStateException();
     }
 
-    ((ListErrorReporter) errorReporter.myErrorReporter.getErrorReporter()).reportTo(mySavedState.errorReporter);
-    TypecheckerState state = new TypecheckerState(mySavedState.errorReporter, myDeferredMetasBeforeSolver.size(), myDeferredMetasAfterLevels.size(), copyUserData(), mySavedState.previousState);
+    mySavedState.listErrorReporter.reportTo(mySavedState.errorReporter);
+    mySavedState.listErrorReporter.getErrorList().clear();
+    TypecheckerState state = new TypecheckerState(mySavedState.errorReporter, myDeferredMetasBeforeSolver.size(), myDeferredMetasAfterLevels.size(), copyUserData(), mySavedState.previousState, mySavedState.listErrorReporter);
     myEquations.saveState(state);
     mySavedState = state;
   }
 
   private void loadState(TypecheckerState state) {
-    if (!(errorReporter.myErrorReporter.getErrorReporter() instanceof ListErrorReporter)) {
-      throw new IllegalStateException();
-    }
-    ((ListErrorReporter) errorReporter.myErrorReporter.getErrorReporter()).getErrorList().clear();
+    state.listErrorReporter.getErrorList().clear();
     if (state.numberOfDeferredMetasBeforeSolver < myDeferredMetasBeforeSolver.size()) {
       myDeferredMetasBeforeSolver.subList(state.numberOfDeferredMetasBeforeSolver, myDeferredMetasBeforeSolver.size()).clear();
     }
