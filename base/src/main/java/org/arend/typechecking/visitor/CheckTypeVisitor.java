@@ -1056,12 +1056,28 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
     TypecheckingResult typeCheckedBaseClass;
     if (baseClassExpr instanceof Concrete.ReferenceExpression) {
-      boolean withoutUniverses = false;
-      if (((Concrete.ReferenceExpression) baseClassExpr).getReferent() == Prelude.ARRAY.getRef()) {
-        for (Concrete.ClassFieldImpl classFieldImpl : expr.getStatements()) {
-          if (classFieldImpl.getImplementedField() == Prelude.ARRAY_ELEMENTS_TYPE.getRef()) {
-            withoutUniverses = true;
-            break;
+      boolean withoutUniverses = true;
+      Referable ref = ((Concrete.ReferenceExpression) baseClassExpr).getReferent();
+      if (ref instanceof TCDefReferable && ((TCDefReferable) ref).getTypechecked() instanceof ClassDefinition) {
+        ClassDefinition classDef = (ClassDefinition) ((TCDefReferable) ref).getTypechecked();
+        if (classDef.getUniverseKind() != UniverseKind.NO_UNIVERSES) {
+          Set<ClassField> implemented = new HashSet<>(classDef.getImplementedFields());
+          for (Concrete.ClassFieldImpl classFieldImpl : expr.getStatements()) {
+            Referable fieldRef = classFieldImpl.getImplementedField();
+            if (fieldRef instanceof TCDefReferable) {
+              Definition fieldDef = ((TCDefReferable) fieldRef).getTypechecked();
+              if (fieldDef instanceof ClassField) {
+                implemented.add((ClassField) fieldDef);
+              } else if (fieldDef instanceof ClassDefinition) {
+                implemented.addAll(((ClassDefinition) fieldDef).getImplementedFields());
+              }
+            }
+          }
+          for (ClassField field : classDef.getFields()) {
+            if (field.getUniverseKind() != UniverseKind.NO_UNIVERSES && !implemented.contains(field)) {
+              withoutUniverses = false;
+              break;
+            }
           }
         }
       }

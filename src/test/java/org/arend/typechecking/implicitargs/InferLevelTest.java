@@ -376,4 +376,12 @@ public class InferLevelTest extends TypeCheckingTestCase {
     FunctionDefinition def = (FunctionDefinition) typeCheckDef("\\func test => \\Pi (A : \\Set) (a : A) -> a = a");
     assertTrue(Level.compare(new Level(0), ((UniverseExpression) def.getResultType()).getSort().getPLevel(), CMP.EQ, DummyEquations.getInstance(), null));
   }
+
+  @Test
+  public void recordTest() {
+    typeCheckModule(
+      "\\record R (A : \\Type) (a : A) (p : a = a)\n" +
+      "\\lemma test {A : \\Set} (a : A) : R A a \\cowith\n" +
+      "  | p => idp");
+  }
 }

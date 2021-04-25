@@ -385,12 +385,12 @@ public class UseLevelTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void sortArgError() {
+  public void sortArgTest() {
     typeCheckModule(
-      "\\record R {A B : \\Type} (prop : \\Pi (b b' : B) -> b = b') (a a' : A) (proof : a = a') (bField : B)\n" +
-      "  \\where \\use \\level levelProp (A B : \\Set) (prop : \\Pi (b b' : B) -> b = b') (a a' : A) (r1 r2 : R prop a a') : r1 = r2\n" +
-      "    => path (\\lam i => \\new R { | bField => prop r1.bField r2.bField @ i | proof => Path.inProp {a = a'} r1.proof r2.proof @ i })\n" +
-      "\\func f {B : \\Set} (prop : \\Pi (b b' : B) -> b = b') : \\Prop => R prop 0 1", 1);
+      "\\record R (A : \\Type) (a : A)\n" +
+      "  \\where \\use \\level levelProp (A : \\Prop) (r1 r2 : R A) : r1 = r2\n" +
+      "    => path (\\lam i => \\new R { | a => Path.inProp r1.a r2.a @ i })");
+    assertEquals(Sort.STD.succ(), ((ClassDefinition) getDefinition("R")).getSort());
   }
 
   @Test
