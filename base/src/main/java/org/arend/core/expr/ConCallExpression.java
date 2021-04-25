@@ -10,6 +10,7 @@ import org.arend.prelude.Prelude;
 import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collections;
 import java.util.List;
 
 public class ConCallExpression extends DefCallExpression implements CoreConCallExpression {
@@ -29,6 +30,7 @@ public class ConCallExpression extends DefCallExpression implements CoreConCallE
     }
     if (constructor == Prelude.FIN_SUC) {
       constructor = Prelude.SUC;
+      dataTypeArguments = Collections.emptyList();
     }
     if (constructor == Prelude.SUC && !arguments.isEmpty()) {
       IntegerExpression intExpr = arguments.get(0).cast(IntegerExpression.class);
