@@ -253,4 +253,12 @@ public class ArrayTest extends TypeCheckingTestCase {
     FunctionDefinition def = (FunctionDefinition) typeCheckDef("\\func test (a : Array Nat 2) (i : Fin 2) => a i");
     assertTrue(def.getBody() instanceof FunCallExpression && ((FunCallExpression) def.getBody()).getDefinition() == Prelude.ARRAY_INDEX);
   }
+
+  @Test
+  public void inferTypeTest() {
+    typeCheckModule(
+      "\\func test1 : Fin 2 -> Fin 7 => Array.at {3 Array.cons 5 Array.cons Array.empty}\n" +
+      "\\func test2 : Fin 2 -> Fin 7 => (3 Array.cons 5 Array.cons Array.empty) Array.!!\n" +
+      "\\func test3 : Fin 2 -> Fin 7 => 3 Array.cons 5 Array.cons Array.empty");
+  }
 }

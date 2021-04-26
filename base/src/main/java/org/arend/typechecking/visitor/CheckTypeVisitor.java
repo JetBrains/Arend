@@ -2761,29 +2761,36 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       return checkMeta((Concrete.ReferenceExpression) expr.getFunction(), expr.getArguments(), null, expectedType);
     }
 
-    if (Prelude.DIV_MOD != null && Prelude.MOD != null) {
-      Referable referable = expr.getFunction() instanceof Concrete.ReferenceExpression ? ((Concrete.ReferenceExpression) expr.getFunction()).getReferent() : null;
-      if ((referable == Prelude.MOD.getReferable() || referable == Prelude.DIV_MOD.getReferable()) && expr.getArguments().size() == 2 && expr.getArguments().get(0).isExplicit() && expr.getArguments().get(1).isExplicit()) {
-        TypecheckingResult arg1 = checkExpr(expr.getArguments().get(0).getExpression(), ExpressionFactory.Nat());
-        TypecheckingResult arg2 = checkExpr(expr.getArguments().get(1).getExpression(), ExpressionFactory.Nat());
-        if (arg1 == null || arg2 == null) {
-          return null;
-        }
+    Referable referable = expr.getFunction() instanceof Concrete.ReferenceExpression ? ((Concrete.ReferenceExpression) expr.getFunction()).getReferent() : null;
+    Definition definition = referable instanceof TCDefReferable ? ((TCDefReferable) referable).getTypechecked() : null;
+    if ((definition == Prelude.MOD || definition == Prelude.DIV_MOD) && expr.getArguments().size() == 2 && expr.getArguments().get(0).isExplicit() && expr.getArguments().get(1).isExplicit()) {
+      TypecheckingResult arg1 = checkExpr(expr.getArguments().get(0).getExpression(), ExpressionFactory.Nat());
+      TypecheckingResult arg2 = checkExpr(expr.getArguments().get(1).getExpression(), ExpressionFactory.Nat());
+      if (arg1 == null || arg2 == null) {
+        return null;
+      }
 
-        Type type;
-        IntegerExpression intExpr = arg2.expression.cast(IntegerExpression.class);
-        ConCallExpression conCall = arg2.expression.cast(ConCallExpression.class);
-        if (intExpr != null && !intExpr.isZero() || conCall != null && conCall.getDefinition() == Prelude.SUC) {
-          type = ExpressionFactory.Fin(arg2.expression);
-        } else {
-          type = ExpressionFactory.Nat();
-        }
+      Type type;
+      IntegerExpression intExpr = arg2.expression.cast(IntegerExpression.class);
+      ConCallExpression conCall = arg2.expression.cast(ConCallExpression.class);
+      if (intExpr != null && !intExpr.isZero() || conCall != null && conCall.getDefinition() == Prelude.SUC) {
+        type = ExpressionFactory.Fin(arg2.expression);
+      } else {
+        type = ExpressionFactory.Nat();
+      }
 
-        boolean isMod = referable == Prelude.MOD.getReferable();
-        if (!isMod) {
-          type = ExpressionFactory.divModType(type);
-        }
-        return checkResult(expectedType, new TypecheckingResult(FunCallExpression.make(isMod ? Prelude.MOD : Prelude.DIV_MOD, Sort.PROP, Arrays.asList(arg1.expression, arg2.expression)), type.getExpr()), expr);
+      boolean isMod = definition == Prelude.MOD;
+      if (!isMod) {
+        type = ExpressionFactory.divModType(type);
+      }
+      return checkResult(expectedType, new TypecheckingResult(FunCallExpression.make(isMod ? Prelude.MOD : Prelude.DIV_MOD, Sort.PROP, Arrays.asList(arg1.expression, arg2.expression)), type.getExpr()), expr);
+    }
+
+    if (expectedType != null && (definition == Prelude.ARRAY_AT || definition == Prelude.ARRAY_INDEX || definition == Prelude.EMPTY_ARRAY || definition == Prelude.ARRAY_CONS)) {
+      PiExpression piExpr = TypeCoerceExpression.unfoldType(expectedType).cast(PiExpression.class);
+      if (piExpr != null && piExpr.getParameters().isExplicit()) {
+        Referable lamParam = new LocalReferable("i");
+        return visitLam(new Concrete.LamExpression(expr.getData(), Collections.singletonList(new Concrete.NameParameter(expr.getData(), true, lamParam)), Concrete.AppExpression.make(expr.getData(), expr, new Concrete.ReferenceExpression(expr.getData(), lamParam), true)), expectedType);
       }
     }
 
