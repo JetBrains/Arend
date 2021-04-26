@@ -230,12 +230,12 @@ public class Prelude implements ArendPrelude {
         ARRAY_LENGTH = ARRAY.getPersonalFields().get(1);
         ARRAY_AT = ARRAY.getPersonalFields().get(2);
         break;
-      case "empty":
+      case "nil":
         EMPTY_ARRAY = (DConstructor) definition;
         EMPTY_ARRAY.setPattern(new ConstructorExpressionPattern(FunCallExpression.makeFunCall(EMPTY_ARRAY, Sort.STD, Collections.emptyList()), Collections.singletonList(new BindingPattern(EMPTY_ARRAY.getParameters()))));
         EMPTY_ARRAY.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         break;
-      case "cons":
+      case "::":
         ARRAY_CONS = (DConstructor) definition;
         ARRAY_CONS.setPattern(new ConstructorExpressionPattern(FunCallExpression.makeFunCall(ARRAY_CONS, Sort.STD, Collections.emptyList()), Arrays.asList(new BindingPattern(ARRAY_CONS.getParameters()), new BindingPattern(ARRAY_CONS.getParameters().getNext()), new BindingPattern(ARRAY_CONS.getParameters().getNext().getNext()))));
         ARRAY_CONS.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);

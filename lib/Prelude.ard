@@ -81,17 +81,15 @@
   | neg Nat \with { zero => pos zero }
 
 \record Array (A : \Type) (len : Nat) (\coerce at : Fin len -> A)
-  \where {
-    \func \infixl 9 !! (a : Array) (i : Fin a.len) => a.at i
+  \where \func \infixl 9 !! (a : Array) (i : Fin a.len) => a.at i
 
-    \cons empty {A : \Type} : Array A \cowith
-      | len => 0
-      | at => \case __
+\cons nil {A : \Type} : Array A \cowith
+  | len => 0
+  | at => \case __
 
-    \cons \infixr 5 cons {A : \Type} (a : A) (arr : Array A) : Array A \cowith
-      | len => suc arr.len
-      | at => \case __ \with {
-        | 0 => a
-        | suc i => arr !! i
-      }
+\cons \infixr 5 :: {A : \Type} (a : A) (arr : Array A) : Array A \cowith
+  | len => suc arr.len
+  | at => \case __ \with {
+    | 0 => a
+    | suc i => arr i
   }

@@ -38,7 +38,7 @@ public class ArrayTest extends TypeCheckingTestCase {
 
   @Test
   public void consTest() {
-    FunctionDefinition def = (FunctionDefinition) typeCheckDef("\\func test (n : Nat) (x : Array Nat n) : Array Nat (suc n) => n Array.cons x");
+    FunctionDefinition def = (FunctionDefinition) typeCheckDef("\\func test (n : Nat) (x : Array Nat n) : Array Nat (suc n) => n :: x");
     assertTrue(def.getBody() instanceof ArrayExpression);
     assertEquals(Sort.SET0, ((ClassCallExpression) def.getResultType()).getSort());
   }
@@ -46,8 +46,8 @@ public class ArrayTest extends TypeCheckingTestCase {
   @Test
   public void indexTest() {
     typeCheckModule(
-      "\\open Array\n" +
-      "\\func array : Array Nat 2 => 14 cons 22 cons empty\n" +
+      "\\open Array(!!)\n" +
+      "\\func array : Array Nat 2 => 14 :: 22 :: nil\n" +
       "\\lemma test1 : array.at 0 = 14 => idp\n" +
       "\\lemma test2 : array.at 1 = 22 => idp\n" +
       "\\lemma test3 : array !! 0 = 14 => idp\n" +
@@ -64,10 +64,9 @@ public class ArrayTest extends TypeCheckingTestCase {
   @Test
   public void etaTest() {
     typeCheckModule(
-      "\\open Array\n" +
       "\\lemma test1 (a b : Array Nat 0) : a = b => idp\n" +
-      "\\func test2 (a : Array { | len => 0 }) : a = empty => idp\n" +
-      "\\func test3 (a : Array { | len => 0 }) : empty = a => idp");
+      "\\func test2 (a : Array { | len => 0 }) : a = nil => idp\n" +
+      "\\func test3 (a : Array { | len => 0 }) : nil = a => idp");
   }
 
   @Test
@@ -79,17 +78,15 @@ public class ArrayTest extends TypeCheckingTestCase {
   @Test
   public void newConsTest() {
     typeCheckModule(
-      "\\open Array\n" +
-      "\\lemma test1 : (\\new Array Nat 2 (\\case __ \\with { | 0 => 5 | 1 => 7 })) = 5 cons 7 cons empty => idp\n" +
+      "\\lemma test1 : (\\new Array Nat 2 (\\case __ \\with { | 0 => 5 | 1 => 7 })) = 5 :: 7 :: nil => idp\n" +
       "\\lemma test2 : (\\new Array Nat 3 (\\case __ \\with { | 0 => 5 | suc i => \\case i \\with { | 0 => 7 | 1 => 12 } })) = (\\new Array Nat 3 (\\case __ \\with { | 0 => 5 | 1 => 7 | 2 => 12 })) => idp");
   }
 
   @Test
   public void cowithIndexTest() {
     typeCheckModule(
-      "\\open Array\n" +
       "\\func f (a : Array Nat) : Array Nat a.len (\\lam _ => 7) \\cowith\n" +
-      "\\lemma test (a : Array Nat) (i : Fin a.len) : f a !! i = 7 => idp");
+      "\\lemma test (a : Array Nat) (i : Fin a.len) : f a Array.!! i = 7 => idp");
   }
 
   @Test
@@ -97,29 +94,29 @@ public class ArrayTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\open Array\n" +
       "\\func map {A B : \\Type} (f : A -> B) (as : Array A) : Array B as.len (\\lam i => f (as.at i)) \\cowith\n" +
-      "\\func test {A B : \\Type} (f : A -> B) {a : A} (as : Array A) : map f (a cons as) = f a cons map f as => idp");
+      "\\func test {A B : \\Type} (f : A -> B) {a : A} (as : Array A) : map f (a :: as) = f a :: map f as => idp");
   }
 
   @Test
   public void disjointConstructorsTest() {
     typeCheckModule(
       "\\open Array\n" +
-      "\\lemma test1 (p : 1 cons 2 cons empty = 1 cons 2 cons 3 cons empty) : 0 = 1\n" +
-      "\\lemma test2 (p : 1 cons 2 cons 3 cons empty = 1 cons 2 cons empty) : 0 = 1\n" +
-      "\\lemma test3 (a : Array Nat 3) (p : 1 cons 2 cons empty = 1 cons 2 cons 3 cons a) : 0 = 1\n" +
-      "\\lemma test4 (a : Array Nat 3) (p : 1 cons 2 cons 3 cons a = 1 cons 2 cons empty) : 0 = 1\n" +
-      "\\lemma test5 (p : 1 cons 2 cons 3 cons empty = 1 cons 2 cons 4 cons empty) : 0 = 1\n" +
-      "\\lemma test6 (a : Array Nat 3) (p : 1 cons 2 cons 3 cons a = 1 cons 3 cons 3 cons empty) : 0 = 1\n" +
-      "\\lemma test7 (a b : Array Nat 3) (p : 1 cons 2 cons 3 cons a = 1 cons 2 cons 4 cons b) : 0 = 1\n" +
-      "\\lemma test8 (a : Array Nat 0) (p : 1 cons 2 cons a = 1 cons 2 cons 3 cons empty) : 0 = 1\n" +
-      "\\lemma test9 (a : Array Nat 0) (p : 1 cons 2 cons 3 cons empty = 1 cons 2 cons a) : 0 = 1");
+      "\\lemma test1 (p : 1 :: 2 :: nil = 1 :: 2 :: 3 :: nil) : 0 = 1\n" +
+      "\\lemma test2 (p : 1 :: 2 :: 3 :: nil = 1 :: 2 :: nil) : 0 = 1\n" +
+      "\\lemma test3 (a : Array Nat 3) (p : 1 :: 2 :: nil = 1 :: 2 :: 3 :: a) : 0 = 1\n" +
+      "\\lemma test4 (a : Array Nat 3) (p : 1 :: 2 :: 3 :: a = 1 :: 2 :: nil) : 0 = 1\n" +
+      "\\lemma test5 (p : 1 :: 2 :: 3 :: nil = 1 :: 2 :: 4 :: nil) : 0 = 1\n" +
+      "\\lemma test6 (a : Array Nat 3) (p : 1 :: 2 :: 3 :: a = 1 :: 3 :: 3 :: nil) : 0 = 1\n" +
+      "\\lemma test7 (a b : Array Nat 3) (p : 1 :: 2 :: 3 :: a = 1 :: 2 :: 4 :: b) : 0 = 1\n" +
+      "\\lemma test8 (a : Array Nat 0) (p : 1 :: 2 :: a = 1 :: 2 :: 3 :: nil) : 0 = 1\n" +
+      "\\lemma test9 (a : Array Nat 0) (p : 1 :: 2 :: 3 :: nil = 1 :: 2 :: a) : 0 = 1");
   }
 
   @Test
   public void disjointConstructorsError() {
     typeCheckModule(
       "\\open Array\n" +
-      "\\lemma test (a : Array Nat 1) (p : 1 cons 2 cons 3 cons empty = 1 cons 2 cons a) : 0 = 1", 1);
+      "\\lemma test (a : Array Nat 1) (p : 1 :: 2 :: 3 :: nil = 1 :: 2 :: a) : 0 = 1", 1);
     assertThatErrorsAre(Matchers.missingClauses(1));
   }
 
@@ -127,7 +124,7 @@ public class ArrayTest extends TypeCheckingTestCase {
   public void disjointConstructorsError2() {
     typeCheckModule(
       "\\open Array\n" +
-      "\\lemma test (a : Array Nat 1) (p : 1 cons 2 cons a = 1 cons 2 cons 3 cons empty) : 0 = 1", 1);
+      "\\lemma test (a : Array Nat 1) (p : 1 :: 2 :: a = 1 :: 2 :: 3 :: nil) : 0 = 1", 1);
     assertThatErrorsAre(Matchers.missingClauses(1));
   }
 
@@ -135,7 +132,7 @@ public class ArrayTest extends TypeCheckingTestCase {
   public void disjointConstructorsError3() {
     typeCheckModule(
       "\\open Array\n" +
-      "\\lemma test (a b : Array Nat 1) (p : 1 cons 2 cons a = 1 cons 2 cons b) : 0 = 1", 1);
+      "\\lemma test (a b : Array Nat 1) (p : 1 :: 2 :: a = 1 :: 2 :: b) : 0 = 1", 1);
     assertThatErrorsAre(Matchers.missingClauses(1));
   }
 
@@ -143,7 +140,7 @@ public class ArrayTest extends TypeCheckingTestCase {
   public void disjointConstructorsError4() {
     typeCheckModule(
       "\\open Array\n" +
-      "\\lemma test (a : Array Nat 2) (p : 1 cons 2 cons a = 1 cons 2 cons 3 cons 4 cons empty) : 0 = 1", 1);
+      "\\lemma test (a : Array Nat 2) (p : 1 :: 2 :: a = 1 :: 2 :: 3 :: 4 :: nil) : 0 = 1", 1);
     assertThatErrorsAre(Matchers.missingClauses(1));
   }
 
@@ -152,8 +149,8 @@ public class ArrayTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\open Array\n" +
       "\\func f (x : Array Nat 2) : Nat\n" +
-      "  | cons x (cons y empty) => x Nat.+ y\n" +
-      "\\lemma test1 : f (cons 3 (cons 5 empty)) = 8 => idp\n" +
+      "  | :: x (:: y nil) => x Nat.+ y\n" +
+      "\\lemma test1 : f (3 :: 5 :: nil) = 8 => idp\n" +
       "\\lemma test2 : f (\\new Array Nat 2 (\\lam _ => 6)) = 12 => idp");
   }
 
@@ -162,10 +159,10 @@ public class ArrayTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\open Array\n" +
       "\\func f (x : Array Nat) : Nat\n" +
-      "  | empty => 0\n" +
-      "  | cons x empty => x\n" +
-      "  | cons x (cons y _) => x Nat.+ y\n" +
-      "\\lemma test1 : f (cons 7 (cons 12 (cons 22 empty))) = 19 => idp\n" +
+      "  | nil => 0\n" +
+      "  | :: x nil => x\n" +
+      "  | :: x (:: y _) => x Nat.+ y\n" +
+      "\\lemma test1 : f (7 :: 12 :: 22 :: nil) = 19 => idp\n" +
       "\\lemma test2 : f (\\new Array Nat 5 (\\case __ \\with { | 0 => 41 | 1 => 56 | _ => 17 })) = 97 => idp");
   }
 
@@ -174,9 +171,9 @@ public class ArrayTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\open Array\n" +
       "\\func f {n : Nat} (x : Array Nat n) : Nat \\elim n, x\n" +
-      "  | 0, empty => 0\n" +
-      "  | suc n, cons x a => x Nat.+ f a\n" +
-      "\\lemma test1 : f (cons 7 (cons 22 (cons 46 empty))) = 75 => idp\n" +
+      "  | 0, nil => 0\n" +
+      "  | suc n, :: x a => x Nat.+ f a\n" +
+      "\\lemma test1 : f (7 :: 22 :: 46 :: nil) = 75 => idp\n" +
       "\\lemma test2 : f (\\new Array Nat 4 (\\lam _ => 5)) = 20 => idp");
   }
 
@@ -185,8 +182,8 @@ public class ArrayTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\open Array\n" +
       "\\func f {n : Nat} (x : Array Nat (suc (suc n))) : Nat\n" +
-      "  | cons x (cons y _) => x Nat.+ y\n" +
-      "\\lemma test1 : f (cons 3 (cons 5 empty)) = 8 => idp\n" +
+      "  | :: x (:: y _) => x Nat.+ y\n" +
+      "\\lemma test1 : f (3 :: 5 :: nil) = 8 => idp\n" +
       "\\lemma test2 : f (\\new Array Nat 2 (\\lam _ => 6)) = 12 => idp");
   }
 
@@ -220,14 +217,14 @@ public class ArrayTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\open Array\n" +
       "\\func f (x : Array) : \\Type\n" +
-      "  | empty {A} => A\n" +
-      "  | cons {A} _ _ => A\n" +
-      "\\func test : f (cons 1 empty) = Nat => idp");
+      "  | nil {A} => A\n" +
+      "  | :: {A} _ _ => A\n" +
+      "\\func test : f (1 :: nil) = Nat => idp");
   }
 
   @Test
   public void goalTest() {
-    Definition def = typeCheckDef("\\func test (n : Nat) : Array Nat (suc n) => {?} Array.cons {?}", 2);
+    Definition def = typeCheckDef("\\func test (n : Nat) : Array Nat (suc n) => {?} :: {?}", 2);
     Map<ClassField, Expression> impls = new HashMap<>();
     impls.put(Prelude.ARRAY_ELEMENTS_TYPE, Nat());
     impls.put(Prelude.ARRAY_LENGTH, new ReferenceExpression(def.getParameters()));
@@ -236,7 +233,7 @@ public class ArrayTest extends TypeCheckingTestCase {
 
   @Test
   public void goalTest2() {
-    typeCheckDef("\\func test : Array Nat 7 => {?} Array.cons {?} Array.cons {?}", 3);
+    typeCheckDef("\\func test : Array Nat 7 => {?} :: {?} :: {?}", 3);
     Map<ClassField, Expression> impls = new HashMap<>();
     impls.put(Prelude.ARRAY_ELEMENTS_TYPE, Nat());
     impls.put(Prelude.ARRAY_LENGTH, new SmallIntegerExpression(5));
@@ -245,7 +242,7 @@ public class ArrayTest extends TypeCheckingTestCase {
 
   @Test
   public void consTypeTest() {
-    typeCheckDef("\\func test : Array (Fin 2) => 0 Array.cons 1 Array.cons Array.empty");
+    typeCheckDef("\\func test : Array (Fin 2) => 0 :: 1 :: nil");
   }
 
   @Test
@@ -257,8 +254,8 @@ public class ArrayTest extends TypeCheckingTestCase {
   @Test
   public void inferTypeTest() {
     typeCheckModule(
-      "\\func test1 : Fin 2 -> Fin 7 => Array.at {3 Array.cons 5 Array.cons Array.empty}\n" +
-      "\\func test2 : Fin 2 -> Fin 7 => (3 Array.cons 5 Array.cons Array.empty) Array.!!\n" +
-      "\\func test3 : Fin 2 -> Fin 7 => 3 Array.cons 5 Array.cons Array.empty");
+      "\\func test1 : Fin 2 -> Fin 7 => Array.at {3 :: 5 :: nil}\n" +
+      "\\func test2 : Fin 2 -> Fin 7 => (3 :: 5 :: nil) Array.!!\n" +
+      "\\func test3 : Fin 2 -> Fin 7 => 3 :: 5 :: nil");
   }
 }
