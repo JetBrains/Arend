@@ -329,6 +329,18 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
             }
           }
         }
+      } else if ((defCallResult.getDefinition() == Prelude.EMPTY_ARRAY || defCallResult.getDefinition() == Prelude.ARRAY_CONS) && defCallResult.getArguments().isEmpty()) {
+        ClassCallExpression classCall = TypeCoerceExpression.unfoldType(expectedType).cast(ClassCallExpression.class);
+        if (classCall != null) {
+          if (classCall.getDefinition() != Prelude.ARRAY) {
+            myVisitor.getErrorReporter().report(new TypeMismatchError(classCall, refDoc(Prelude.ARRAY.getRef()), fun));
+            return null;
+          }
+          Expression elementsType = classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
+          if (elementsType != null) {
+            result = DefCallResult.makeTResult(defCallResult.getDefCall(), defCallResult.getDefinition(), classCall.getSortArgument()).applyExpression(elementsType, true, myVisitor.getErrorReporter(), fun);
+          }
+        }
       }
     }
 

@@ -242,4 +242,9 @@ public class ArrayTest extends TypeCheckingTestCase {
     impls.put(Prelude.ARRAY_LENGTH, new SmallIntegerExpression(5));
     assertThatErrorsAre(Matchers.goal(0), Matchers.goal(0), Matchers.goal(new ClassCallExpression(Prelude.ARRAY, Sort.SET0, impls, Sort.SET0, UniverseKind.NO_UNIVERSES)));
   }
+
+  @Test
+  public void consTypeTest() {
+    typeCheckDef("\\func test : Array (Fin 2) => 0 Array.cons 1 Array.cons Array.empty");
+  }
 }
