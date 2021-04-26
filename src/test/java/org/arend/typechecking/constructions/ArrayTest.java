@@ -247,4 +247,10 @@ public class ArrayTest extends TypeCheckingTestCase {
   public void consTypeTest() {
     typeCheckDef("\\func test : Array (Fin 2) => 0 Array.cons 1 Array.cons Array.empty");
   }
+
+  @Test
+  public void coerceTest() {
+    FunctionDefinition def = (FunctionDefinition) typeCheckDef("\\func test (a : Array Nat 2) (i : Fin 2) => a i");
+    assertTrue(def.getBody() instanceof FunCallExpression && ((FunCallExpression) def.getBody()).getDefinition() == Prelude.ARRAY_INDEX);
+  }
 }

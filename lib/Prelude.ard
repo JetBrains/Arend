@@ -80,7 +80,7 @@
   | \coerce pos Nat
   | neg Nat \with { zero => pos zero }
 
-\record Array (A : \Type) (len : Nat) (at : Fin len -> A)
+\record Array (A : \Type) (len : Nat) (\coerce at : Fin len -> A)
   \where {
     \func \infixl 9 !! (a : Array) (i : Fin a.len) => a.at i
 

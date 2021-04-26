@@ -1121,9 +1121,12 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             typedDef.setBody(termResult.expression);
           }
         }
-        if (termResult.expression instanceof FunCallExpression && myNewDef && ((FunCallExpression) termResult.expression).getDefinition().getActualBody() == null && ((FunCallExpression) termResult.expression).getDefinition().status() != Definition.TypeCheckingStatus.TYPE_CHECKING) {
-          bodyIsOK = true;
-          typedDef.hideBody();
+        if (termResult.expression instanceof FunCallExpression && myNewDef) {
+          FunctionDefinition fun = ((FunCallExpression) termResult.expression).getDefinition();
+          if (fun.getActualBody() == null && fun != Prelude.EMPTY_ARRAY && fun != Prelude.ARRAY_CONS && fun != Prelude.ARRAY_INDEX && fun.status() != Definition.TypeCheckingStatus.TYPE_CHECKING) {
+            bodyIsOK = true;
+            typedDef.hideBody();
+          }
         }
         if (termResult.expression instanceof NewExpression && myNewDef && def.getData().getKind() != GlobalReferable.Kind.DEFINED_CONSTRUCTOR && (expectedType.isError() || !typedDef.isSFunc()) && !def.isRecursive()) {
           bodyIsOK = true;
