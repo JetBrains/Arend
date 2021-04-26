@@ -195,13 +195,18 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   @Override
   public Concrete.Expression visitDefCall(DefCallExpression expr, Void params) {
-    if (expr.getDefinition().isHideable() && !hasFlag(PrettyPrinterFlag.SHOW_COERCE_DEFINITIONS)) {
-      int index = 0;
-      for (DependentLink link = expr.getDefinition().getParameters(); link.hasNext(); link = link.getNext()) {
-        if (index == expr.getDefinition().getVisibleParameter()) {
-          return expr.getDefCallArguments().get(index).accept(this, null);
+    if (!hasFlag(PrettyPrinterFlag.SHOW_COERCE_DEFINITIONS)) {
+      if (expr.getDefinition().isHideable()) {
+        int index = 0;
+        for (DependentLink link = expr.getDefinition().getParameters(); link.hasNext(); link = link.getNext()) {
+          if (index == expr.getDefinition().getVisibleParameter()) {
+            return expr.getDefCallArguments().get(index).accept(this, null);
+          }
+          index++;
         }
-        index++;
+      }
+      if (expr.getDefinition() == Prelude.ARRAY_INDEX) {
+        return Concrete.AppExpression.make(null, expr.getDefCallArguments().get(0).accept(this, null), expr.getDefCallArguments().get(1).accept(this, null), true);
       }
     }
 
