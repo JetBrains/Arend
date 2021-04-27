@@ -190,7 +190,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   private Concrete.ReferenceExpression makeReference(DefCallExpression defCall) {
     Referable ref = defCall.getDefinition().getReferable();
-    return hasFlag(PrettyPrinterFlag.SHOW_LEVELS) ? cDefCall(myDefinitionRenamer.renameDefinition(defCall.getDefinition().getRef()), ref, visitLevelNull(defCall.getSortArgument().getPLevel()), visitLevelNull(defCall.getSortArgument().getHLevel())) : cVar(myDefinitionRenamer.renameDefinition(defCall.getDefinition().getRef()), ref);
+    return hasFlag(PrettyPrinterFlag.SHOW_LEVELS) ? cDefCall(myDefinitionRenamer.renameDefinition(defCall.getDefinition().getRef()), ref, visitLevelNull(defCall.getPLevel()), visitLevelNull(defCall.getHLevel())) : cVar(myDefinitionRenamer.renameDefinition(defCall.getDefinition().getRef()), ref);
   }
 
   @Override
@@ -657,7 +657,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     if (expr.getField() == 0 || expr.getField() == 1) {
       FunCallExpression funCall = expr.getExpression().cast(FunCallExpression.class);
       if (funCall != null && funCall.getDefinition() == Prelude.DIV_MOD) {
-        return FunCallExpression.make(expr.getField() == 0 ? Prelude.DIV : Prelude.MOD, funCall.getSortArgument(), new ArrayList<>(funCall.getDefCallArguments())).accept(this, null);
+        return FunCallExpression.make(expr.getField() == 0 ? Prelude.DIV : Prelude.MOD, funCall.getLevels(), new ArrayList<>(funCall.getDefCallArguments())).accept(this, null);
       }
     }
     return cProj(expr.getExpression().accept(this, null), expr.getField());

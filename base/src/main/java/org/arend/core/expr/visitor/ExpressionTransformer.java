@@ -5,7 +5,7 @@ import org.arend.core.expr.ConCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.ExpressionFactory;
 import org.arend.core.expr.IntegerExpression;
-import org.arend.core.sort.Sort;
+import org.arend.core.subst.LevelPair;
 import org.arend.prelude.Prelude;
 
 import java.util.ArrayList;
@@ -40,8 +40,8 @@ public abstract class ExpressionTransformer<P> extends BaseExpressionVisitor<P, 
     return null;
   }
 
-  protected ConCallExpression makeConCall(Constructor constructor, Sort sortArgument, List<Expression> dataTypeArguments, List<Expression> arguments) {
-    return new ConCallExpression(constructor, sortArgument, dataTypeArguments, arguments);
+  protected ConCallExpression makeConCall(Constructor constructor, LevelPair levels, List<Expression> dataTypeArguments, List<Expression> arguments) {
+    return new ConCallExpression(constructor, levels, dataTypeArguments, arguments);
   }
 
   @Override
@@ -82,7 +82,7 @@ public abstract class ExpressionTransformer<P> extends BaseExpressionVisitor<P, 
         List<Expression> dataTypeArgs = visitDataTypeArguments(expr.getDataTypeArguments(), params);
         if (dataTypeArgs == null) return null;
         List<Expression> args = new ArrayList<>();
-        ConCallExpression result = makeConCall(expr.getDefinition(), expr.getSortArgument(), dataTypeArgs, args);
+        ConCallExpression result = makeConCall(expr.getDefinition(), expr.getLevels(), dataTypeArgs, args);
         for (int i = 0; i < recursiveParam; i++) {
           Expression newArg = visit(expr.getDefCallArguments().get(i), params);
           if (newArg == null) {
@@ -140,7 +140,7 @@ public abstract class ExpressionTransformer<P> extends BaseExpressionVisitor<P, 
       List<Expression> dataTypeArgs = visitDataTypeArguments(conCall.getDataTypeArguments(), params);
       if (dataTypeArgs == null) return null;
       List<Expression> newArgs = new ArrayList<>();
-      it = makeConCall(conCall.getDefinition(), conCall.getSortArgument(), dataTypeArgs, newArgs);
+      it = makeConCall(conCall.getDefinition(), conCall.getLevels(), dataTypeArgs, newArgs);
       if (args != null) {
         args.set(recursiveParam, it);
       } else {

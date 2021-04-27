@@ -2,7 +2,7 @@ package org.arend.typechecking.typeclass;
 
 import org.arend.Matchers;
 import org.arend.core.definition.Constructor;
-import org.arend.core.sort.Sort;
+import org.arend.core.subst.LevelPair;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
@@ -27,7 +27,7 @@ public class TypeClassesClassifiers extends TypeCheckingTestCase {
       "\\class C (d : D) | p : d = d\n" +
       "\\instance f : C con1 | p => idp\n" +
       "\\func g : con2 = con2 => p", 1);
-    assertThatErrorsAre(Matchers.instanceInference(get("C"), ConCall((Constructor) getDefinition("D.con2"), Sort.STD, Collections.emptyList())));
+    assertThatErrorsAre(Matchers.instanceInference(get("C"), ConCall((Constructor) getDefinition("D.con2"), LevelPair.STD, Collections.emptyList())));
   }
 
   @Test

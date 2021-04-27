@@ -1,7 +1,7 @@
 package org.arend.typechecking.constructions;
 
 import org.arend.core.context.param.SingleDependentLink;
-import org.arend.core.sort.Sort;
+import org.arend.core.subst.LevelPair;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.arend.typechecking.result.TypecheckingResult;
@@ -98,7 +98,7 @@ public class Lambda extends TypeCheckingTestCase {
   @Test
   public void lambda2() {
     SingleDependentLink param = singleParams(true, vars("x", "y"), Nat());
-    TypecheckingResult result = typeCheckExpr("\\lam (x y z w : Nat) => path (\\lam _ => y)", Pi(Nat(), Pi(param, Pi(Nat(), FunCall(Prelude.PATH_INFIX, Sort.SET0, Nat(), Ref(param), Ref(param))))));
+    TypecheckingResult result = typeCheckExpr("\\lam (x y z w : Nat) => path (\\lam _ => y)", Pi(Nat(), Pi(param, Pi(Nat(), FunCall(Prelude.PATH_INFIX, LevelPair.SET0, Nat(), Ref(param), Ref(param))))));
     assertNotNull(result);
   }
 

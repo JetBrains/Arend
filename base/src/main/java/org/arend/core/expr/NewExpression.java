@@ -40,7 +40,7 @@ public class NewExpression extends Expression implements CoreNewExpression {
         }
         implementations.put(field, impl);
       }
-      myClassCall = new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), implementations, Sort.PROP, UniverseKind.NO_UNIVERSES);
+      myClassCall = new ClassCallExpression(classCall.getDefinition(), classCall.getLevels(), implementations, Sort.PROP, UniverseKind.NO_UNIVERSES);
     } else {
       myRenewExpression = renewExpression;
       myClassCall = classCall;
@@ -60,12 +60,12 @@ public class NewExpression extends Expression implements CoreNewExpression {
 
   public Expression getImplementationHere(ClassField field) {
     Expression impl = myClassCall.getImplementationHere(field, this);
-    return impl != null ? impl : FieldCallExpression.make(field, myClassCall.getSortArgument(), myRenewExpression);
+    return impl != null ? impl : FieldCallExpression.make(field, myClassCall.getLevels(), myRenewExpression);
   }
 
   public Expression getImplementation(ClassField field) {
     Expression impl = myClassCall.getImplementation(field, this);
-    return impl != null ? impl : FieldCallExpression.make(field, myClassCall.getSortArgument(), myRenewExpression);
+    return impl != null ? impl : FieldCallExpression.make(field, myClassCall.getLevels(), myRenewExpression);
   }
 
   @Override
@@ -112,11 +112,11 @@ public class NewExpression extends Expression implements CoreNewExpression {
       }
       Expression impl = myClassCall.getImplementationHere(field, this);
       if (impl == null) {
-        impl = FieldCallExpression.make(field, myClassCall.getSortArgument(), myRenewExpression, false);
+        impl = FieldCallExpression.make(field, myClassCall.getLevels(), myRenewExpression, false);
       }
       implementations.put(field, impl);
     }
-    return new ClassCallExpression(myClassCall.getDefinition(), myClassCall.getSortArgument(), implementations, Sort.PROP, UniverseKind.NO_UNIVERSES);
+    return new ClassCallExpression(myClassCall.getDefinition(), myClassCall.getLevels(), implementations, Sort.PROP, UniverseKind.NO_UNIVERSES);
   }
 
   @Override

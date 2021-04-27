@@ -25,12 +25,12 @@ public class ExpressionMatcher {
     if (data instanceof FunCallExpression) {
       FunCallExpression funCall = (FunCallExpression) data;
       newArgs.addAll(0, funCall.getDefCallArguments());
-      return funCall.getDefinition() == Prelude.IDP ? expression : FunCallExpression.make(funCall.getDefinition(), funCall.getSortArgument(), newArgs);
+      return funCall.getDefinition() == Prelude.IDP ? expression : FunCallExpression.make(funCall.getDefinition(), funCall.getLevels(), newArgs);
     }
 
     if (data instanceof ConCallExpression && ((ConCallExpression) data).getDefinition() != Prelude.SUC) {
       ConCallExpression conCall = (ConCallExpression) data;
-      return ConCallExpression.make(conCall.getDefinition(), conCall.getSortArgument(), conCall.getDataTypeArguments(), newArgs);
+      return ConCallExpression.make(conCall.getDefinition(), conCall.getLevels(), conCall.getDataTypeArguments(), newArgs);
     }
 
     if (data instanceof ConCallExpression || data instanceof SmallIntegerExpression) {
@@ -55,7 +55,7 @@ public class ExpressionMatcher {
     }
 
     ClassCallExpression classCall = newExpr.getClassCall();
-    return new NewExpression(null, new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), newImpls, classCall.getSort(), classCall.getUniverseKind()));
+    return new NewExpression(null, new ClassCallExpression(classCall.getDefinition(), classCall.getLevels(), newImpls, classCall.getSort(), classCall.getUniverseKind()));
   }
 
   /**
@@ -151,7 +151,7 @@ public class ExpressionMatcher {
     }
 
     List<Expression> newArgs = matchExpressions(dataCall.getDefCallArguments(), constructor.getPatterns(), computeData, matchResults);
-    return computeData ? new DataCallExpression(dataCall.getDefinition(), dataCall.getSortArgument(), newArgs) : dataCall;
+    return computeData ? new DataCallExpression(dataCall.getDefinition(), dataCall.getLevels(), newArgs) : dataCall;
   }
 
   public static @Nullable ConCallExpression computeMatchingPatterns(DataCallExpression dataCall, Constructor constructor, @Nullable ExprSubstitution substitution, Map<Binding, ExpressionPattern> result) {
@@ -204,6 +204,6 @@ public class ExpressionMatcher {
       Expression expr = conSubst.get(link);
       args.add(expr != null ? expr : new ReferenceExpression(link));
     }
-    return new ConCallExpression(constructor, dataCall.getSortArgument(), args, Collections.emptyList());
+    return new ConCallExpression(constructor, dataCall.getLevels(), args, Collections.emptyList());
   }
 }

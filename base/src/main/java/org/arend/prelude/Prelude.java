@@ -12,6 +12,7 @@ import org.arend.core.pattern.ConstructorExpressionPattern;
 import org.arend.core.pattern.ExpressionPattern;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
+import org.arend.core.subst.LevelPair;
 import org.arend.error.DummyErrorReporter;
 import org.arend.ext.ArendPrelude;
 import org.arend.ext.core.definition.CoreClassDefinition;
@@ -109,7 +110,7 @@ public class Prelude implements ArendPrelude {
         if (FIN.getConstructors().isEmpty()) {
           FIN_ZERO = new Constructor(new LocatedReferableImpl(Precedence.DEFAULT, "zero", FIN.getRef(), GlobalReferable.Kind.CONSTRUCTOR), FIN);
           DependentLink binding = new TypedDependentLink(true, "n", ExpressionFactory.Nat(), EmptyDependentLink.getInstance());
-          List<ExpressionPattern> patterns = Collections.singletonList(new ConstructorExpressionPattern(new ConCallExpression(SUC, Sort.STD, Collections.emptyList(), Collections.emptyList()), Collections.singletonList(new BindingPattern(binding))));
+          List<ExpressionPattern> patterns = Collections.singletonList(new ConstructorExpressionPattern(new ConCallExpression(SUC, LevelPair.STD, Collections.emptyList(), Collections.emptyList()), Collections.singletonList(new BindingPattern(binding))));
           FIN_ZERO.setPatterns(patterns);
           FIN_ZERO.setParameters(EmptyDependentLink.getInstance());
           FIN_ZERO.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
@@ -117,7 +118,7 @@ public class Prelude implements ArendPrelude {
           FIN.addConstructor(FIN_ZERO);
           FIN_SUC = new Constructor(new LocatedReferableImpl(Precedence.DEFAULT, "suc", FIN.getRef(), GlobalReferable.Kind.CONSTRUCTOR), FIN);
           FIN_SUC.setPatterns(patterns);
-          FIN_SUC.setParameters(new TypedDependentLink(true, null, new DataCallExpression(FIN, Sort.STD, new SingletonList<>(new ReferenceExpression(binding))), EmptyDependentLink.getInstance()));
+          FIN_SUC.setParameters(new TypedDependentLink(true, null, new DataCallExpression(FIN, LevelPair.STD, new SingletonList<>(new ReferenceExpression(binding))), EmptyDependentLink.getInstance()));
           FIN_SUC.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
           FIN_SUC.getReferable().setTypechecked(FIN_SUC);
           FIN.addConstructor(FIN_SUC);
@@ -166,7 +167,7 @@ public class Prelude implements ArendPrelude {
         PATH_INFIX.setResultType(new UniverseExpression(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR, -1))));
         DataCallExpression dataCall = (DataCallExpression) PATH_INFIX.getBody();
         assert dataCall != null;
-        PATH_INFIX.setBody(new DataCallExpression(dataCall.getDefinition(), dataCall.getSortArgument(), Arrays.asList(new LamExpression(new Sort(new Level(LevelVariable.PVAR, 1), Level.INFINITY), UnusedIntervalDependentLink.INSTANCE, ((LamExpression) dataCall.getDefCallArguments().get(0)).getBody()), dataCall.getDefCallArguments().get(1), dataCall.getDefCallArguments().get(2))));
+        PATH_INFIX.setBody(new DataCallExpression(dataCall.getDefinition(), dataCall.getLevels(), Arrays.asList(new LamExpression(new Sort(new Level(LevelVariable.PVAR, 1), Level.INFINITY), UnusedIntervalDependentLink.INSTANCE, ((LamExpression) dataCall.getDefCallArguments().get(0)).getBody()), dataCall.getDefCallArguments().get(1), dataCall.getDefCallArguments().get(2))));
         break;
       }
       case "idp": {
@@ -174,12 +175,12 @@ public class Prelude implements ArendPrelude {
         List<Expression> args = new ArrayList<>(2);
         args.add(new ReferenceExpression(IDP.getParameters()));
         args.add(new ReferenceExpression(IDP.getParameters().getNext()));
-        IDP.setPattern(new ConstructorExpressionPattern(FunCallExpression.makeFunCall(IDP, Sort.STD, args), Collections.emptyList()));
+        IDP.setPattern(new ConstructorExpressionPattern(FunCallExpression.makeFunCall(IDP, LevelPair.STD, args), Collections.emptyList()));
         IDP.setNumberOfParameters(2);
         IDP.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         ConCallExpression conCall = (ConCallExpression) IDP.getBody();
         assert conCall != null;
-        IDP.setBody(ConCallExpression.make(conCall.getDefinition(), conCall.getSortArgument(), conCall.getDataTypeArguments(), new SingletonList<>(new LamExpression(new Sort(new Level(LevelVariable.PVAR), Level.INFINITY), UnusedIntervalDependentLink.INSTANCE, ((LamExpression) conCall.getDefCallArguments().get(0)).getBody()))));
+        IDP.setBody(ConCallExpression.make(conCall.getDefinition(), conCall.getLevels(), conCall.getDataTypeArguments(), new SingletonList<>(new LamExpression(new Sort(new Level(LevelVariable.PVAR), Level.INFINITY), UnusedIntervalDependentLink.INSTANCE, ((LamExpression) conCall.getDefCallArguments().get(0)).getBody()))));
         break;
       }
       case "@": {
@@ -232,12 +233,12 @@ public class Prelude implements ArendPrelude {
         break;
       case "nil":
         EMPTY_ARRAY = (DConstructor) definition;
-        EMPTY_ARRAY.setPattern(new ConstructorExpressionPattern(FunCallExpression.makeFunCall(EMPTY_ARRAY, Sort.STD, Collections.emptyList()), Collections.singletonList(new BindingPattern(EMPTY_ARRAY.getParameters()))));
+        EMPTY_ARRAY.setPattern(new ConstructorExpressionPattern(FunCallExpression.makeFunCall(EMPTY_ARRAY, LevelPair.STD, Collections.emptyList()), Collections.singletonList(new BindingPattern(EMPTY_ARRAY.getParameters()))));
         EMPTY_ARRAY.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         break;
       case "::":
         ARRAY_CONS = (DConstructor) definition;
-        ARRAY_CONS.setPattern(new ConstructorExpressionPattern(FunCallExpression.makeFunCall(ARRAY_CONS, Sort.STD, Collections.emptyList()), Arrays.asList(new BindingPattern(ARRAY_CONS.getParameters()), new BindingPattern(ARRAY_CONS.getParameters().getNext()), new BindingPattern(ARRAY_CONS.getParameters().getNext().getNext()))));
+        ARRAY_CONS.setPattern(new ConstructorExpressionPattern(FunCallExpression.makeFunCall(ARRAY_CONS, LevelPair.STD, Collections.emptyList()), Arrays.asList(new BindingPattern(ARRAY_CONS.getParameters()), new BindingPattern(ARRAY_CONS.getParameters().getNext()), new BindingPattern(ARRAY_CONS.getParameters().getNext().getNext()))));
         ARRAY_CONS.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         break;
       case "!!":

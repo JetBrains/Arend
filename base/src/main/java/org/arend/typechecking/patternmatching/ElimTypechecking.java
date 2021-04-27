@@ -15,6 +15,7 @@ import org.arend.core.pattern.*;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
+import org.arend.core.subst.LevelPair;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.ErrorReporter;
@@ -397,10 +398,10 @@ public class ElimTypechecking {
       Boolean isEmpty = ConstructorExpressionPattern.isArrayEmpty(type);
       conPatterns = new ArrayList<>(2);
       if (isEmpty == null || isEmpty.equals(true)) {
-        conPatterns.add(new ConstructorExpressionPattern(new FunCallExpression(Prelude.EMPTY_ARRAY, Sort.STD, elementsType), isEmpty, Collections.emptyList()));
+        conPatterns.add(new ConstructorExpressionPattern(new FunCallExpression(Prelude.EMPTY_ARRAY, LevelPair.STD, elementsType), isEmpty, Collections.emptyList()));
       }
       if (isEmpty == null || isEmpty.equals(false)) {
-        conPatterns.add(new ConstructorExpressionPattern(new FunCallExpression(Prelude.ARRAY_CONS, Sort.STD, elementsType), isEmpty, Collections.emptyList()));
+        conPatterns.add(new ConstructorExpressionPattern(new FunCallExpression(Prelude.ARRAY_CONS, LevelPair.STD, elementsType), isEmpty, Collections.emptyList()));
       }
     } else {
       conPatterns = null;
@@ -859,7 +860,7 @@ public class ElimTypechecking {
       } else {
         if (someConPattern.getDataExpression() instanceof ClassCallExpression) {
           ClassCallExpression classCall = (ClassCallExpression) someConPattern.getDataExpression();
-          branchKeys = Collections.singletonList(new ClassConstructor(classCall.getDefinition(), classCall.getSortArgument(), classCall.getImplementedHere().keySet()));
+          branchKeys = Collections.singletonList(new ClassConstructor(classCall.getDefinition(), classCall.getLevels(), classCall.getImplementedHere().keySet()));
         } else if (someConPattern.getDataExpression() instanceof SigmaExpression) {
           branchKeys = Collections.singletonList(new TupleConstructor(someConPattern.getLength()));
         } else {
@@ -976,7 +977,7 @@ public class ElimTypechecking {
               }
               assert conCall != null;
               List<Expression> dataTypesArgs = conCall.getDataTypeArguments();
-              substExpr = ConCallExpression.make(conCall.getDefinition(), conCall.getSortArgument(), dataTypesArgs, arguments);
+              substExpr = ConCallExpression.make(conCall.getDefinition(), conCall.getLevels(), dataTypesArgs, arguments);
               conParameters = DependentLink.Helper.subst(branchKey.getParameters(), DependentLink.Helper.toSubstitution(conCall.getDefinition().getDataTypeParameters(), dataTypesArgs));
             } else if (branchKey instanceof SingleConstructor) {
               conParameters = someConPattern.getParameters();
@@ -991,7 +992,7 @@ public class ElimTypechecking {
                     link = link.getNext();
                   }
                 }
-                substExpr = new NewExpression(null, new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), implementations, Sort.PROP, UniverseKind.NO_UNIVERSES));
+                substExpr = new NewExpression(null, new ClassCallExpression(classCall.getDefinition(), classCall.getLevels(), implementations, Sort.PROP, UniverseKind.NO_UNIVERSES));
               } else if (someExpr instanceof SigmaExpression) {
                 substExpr = new TupleExpression(arguments, (SigmaExpression) someExpr);
                 conParameters = DependentLink.Helper.copy(conParameters);
@@ -1006,13 +1007,13 @@ public class ElimTypechecking {
                 dataTypesArgs.add(dataTypeArg.subst(conClause.substitution));
               }
               Constructor constructor = (Constructor) branchKey;
-              substExpr = ConCallExpression.make(constructor, someConPattern.getSortArgument(), dataTypesArgs, arguments);
+              substExpr = ConCallExpression.make(constructor, someConPattern.getLevels(), dataTypesArgs, arguments);
               conParameters = DependentLink.Helper.subst(constructor.getParameters(), DependentLink.Helper.toSubstitution(constructor.getDataTypeParameters(), someConPattern.getDataTypeArguments()));
             } else if (branchKey instanceof ArrayConstructor) {
               if (arrayElementsType != null) {
                 arguments.add(arrayElementsType);
               }
-              substExpr = FunCallExpression.make(((ArrayConstructor) branchKey).getConstructor(), someConPattern.getSortArgument(), arguments);
+              substExpr = FunCallExpression.make(((ArrayConstructor) branchKey).getConstructor(), someConPattern.getLevels(), arguments);
               conParameters = branchKey.getParameters();
             } else {
               throw new IllegalStateException();

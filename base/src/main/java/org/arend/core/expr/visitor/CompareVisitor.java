@@ -13,8 +13,10 @@ import org.arend.core.expr.type.Type;
 import org.arend.core.expr.type.TypeExpression;
 import org.arend.core.pattern.ConstructorExpressionPattern;
 import org.arend.core.pattern.Pattern;
+import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
+import org.arend.core.subst.LevelPair;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
@@ -415,8 +417,9 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     }
     args.add(expr2);
     args.add(paramRef);
-    expr2 = new LamExpression(conCall1.getSortArgument(), param, FunCallExpression.make(Prelude.AT, conCall1.getSortArgument(), args));
-    Expression type = new PiExpression(conCall1.getSortArgument(), param, AppExpression.make(conCall1.getDataTypeArguments().get(0), paramRef, true));
+    Sort sort = new Sort(conCall1.getPLevel(), Level.INFINITY);
+    expr2 = new LamExpression(sort, param, FunCallExpression.make(Prelude.AT, conCall1.getLevels(), args));
+    Expression type = new PiExpression(sort, param, AppExpression.make(conCall1.getDataTypeArguments().get(0), paramRef, true));
     return correctOrder ? compare(conCall1.getDefCallArguments().get(0), expr2, type, true) : compare(expr2, conCall1.getDefCallArguments().get(0), type, true);
   }
 
@@ -429,7 +432,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       return true;
     }
     CMP cmp = universeKind == UniverseKind.ONLY_COVARIANT ? myCMP : CMP.EQ;
-    return Sort.compare(expr1.getSortArgument(), expr2.getSortArgument(), cmp, myNormalCompare ? myEquations : DummyEquations.getInstance(), mySourceNode);
+    return LevelPair.compare(expr1.getLevels(), expr2.getLevels(), cmp, myNormalCompare ? myEquations : DummyEquations.getInstance(), mySourceNode);
   }
 
   private Boolean visitDefCall(DefCallExpression expr1, Expression expr2) {
@@ -703,7 +706,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
           dataParams = dataParams.getNext();
         }
         List<Expression> newDataArgs = new ArrayList<>(oldDataArgs.subList(0, numberOfOldArgs));
-        lam = defCall1.getDefinition().getDefCall(defCall1.getSortArgument(), newDataArgs);
+        lam = defCall1.getDefinition().getDefCall(defCall1.getLevels(), newDataArgs);
         codSort = defCall1 instanceof DataCallExpression ? ((DataCallExpression) defCall1).getDefinition().getSort() : ((UniverseExpression) ((FunCallExpression) defCall1).getDefinition().getResultType()).getSort();
 
         SingleDependentLink firstParam = null;
@@ -733,7 +736,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       } else {
         Map<ClassField, Expression> implementations = new HashMap<>();
         codSort = classCall1.getSort();
-        ClassCallExpression classCall = new ClassCallExpression(classCall1.getDefinition(), classCall1.getSortArgument(), implementations, codSort, classCall1.getUniverseKind());
+        ClassCallExpression classCall = new ClassCallExpression(classCall1.getDefinition(), classCall1.getLevels(), implementations, codSort, classCall1.getUniverseKind());
         int i = 0;
         for (ClassField field : classCall1.getDefinition().getFields()) {
           if (!classCall1.getDefinition().isImplemented(field)) {
@@ -741,7 +744,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
               implementations.put(field, classCall1.getImplementationHere(field, new ReferenceExpression(classCall.getThisBinding())));
               i++;
             } else {
-              PiExpression piType = classCall1.getDefinition().getFieldType(field, classCall1.getSortArgument());
+              PiExpression piType = classCall1.getDefinition().getFieldType(field, classCall1.getLevels());
               Expression type = piType.getCodomain();
               TypedSingleDependentLink link = new TypedSingleDependentLink(field.getReferable().isExplicitField(), field.getName(), type instanceof Type ? (Type) type : new TypeExpression(type, piType.getResultSort()));
               params.add(link);
@@ -819,7 +822,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       if (impl1 == null) {
         AbsExpression absImpl1 = classCall1.getDefinition().getImplementation(field);
         if (absImpl1 != null) {
-          impl1 = absImpl1.apply(new ReferenceExpression(binding), classCall1.getSortArgument());
+          impl1 = absImpl1.apply(new ReferenceExpression(binding), classCall1.getLevels());
         }
       }
       if (impl1 == null) {
@@ -829,7 +832,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
         myCMP = CMP.EQ;
       }
       mySubstitution.put(classCall2.getThisBinding(), binding);
-      boolean ok = compare(correctOrder ? impl1 : impl2, correctOrder ? impl2 : impl1, field.getType(classCall2.getSortArgument()).applyExpression(new ReferenceExpression(binding)), true);
+      boolean ok = compare(correctOrder ? impl1 : impl2, correctOrder ? impl2 : impl1, field.getType(classCall2.getLevels()).applyExpression(new ReferenceExpression(binding)), true);
       mySubstitution.remove(classCall2.getThisBinding());
       if (!ok) {
         return false;
@@ -839,19 +842,19 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     return true;
   }
 
-  private boolean checkClassCallSortArguments(ClassCallExpression classCall1, ClassCallExpression classCall2, CMP onSuccess, CMP onFailure) {
+  private boolean checkClassCallLevels(ClassCallExpression classCall1, ClassCallExpression classCall2, CMP onSuccess, CMP onFailure) {
     ReferenceExpression thisExpr = new ReferenceExpression(classCall1.getThisBinding());
     boolean ok = true;
     for (Map.Entry<ClassField, AbsExpression> entry : classCall1.getDefinition().getImplemented()) {
       if (entry.getKey().getUniverseKind() != UniverseKind.NO_UNIVERSES && classCall2.getDefinition().getFields().contains(entry.getKey()) && !classCall2.isImplemented(entry.getKey())) {
-        Expression type = entry.getValue().apply(thisExpr, classCall1.getSortArgument()).normalize(NormalizationMode.WHNF).getType();
+        Expression type = entry.getValue().apply(thisExpr, classCall1.getLevels()).normalize(NormalizationMode.WHNF).getType();
         if (type == null) {
           ok = false;
           break;
         }
         CMP origCmp = myCMP;
         myCMP = CMP.LE;
-        ok = compare(type, classCall1.getDefinition().getFieldType(entry.getKey(), classCall2.getSortArgument(), thisExpr), Type.OMEGA, false);
+        ok = compare(type, classCall1.getDefinition().getFieldType(entry.getKey(), classCall2.getLevels(), thisExpr), Type.OMEGA, false);
         myCMP = origCmp;
         if (!ok) {
           break;
@@ -868,7 +871,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
           }
           CMP origCmp = myCMP;
           myCMP = CMP.LE;
-          ok = compare(type, classCall1.getDefinition().getFieldType(entry.getKey(), classCall2.getSortArgument(), thisExpr), Type.OMEGA, false);
+          ok = compare(type, classCall1.getDefinition().getFieldType(entry.getKey(), classCall2.getLevels(), thisExpr), Type.OMEGA, false);
           myCMP = origCmp;
           if (!ok) {
             break;
@@ -878,25 +881,25 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     }
 
     if (ok) {
-      return onSuccess == null || myNormalCompare && Sort.compare(classCall1.getSortArgument(), classCall2.getSortArgument(), onSuccess, myEquations, mySourceNode);
+      return onSuccess == null || myNormalCompare && LevelPair.compare(classCall1.getLevels(), classCall2.getLevels(), onSuccess, myEquations, mySourceNode);
     } else {
-      return myNormalCompare && Sort.compare(classCall1.getSortArgument(), classCall2.getSortArgument(), onFailure, myEquations, mySourceNode);
+      return myNormalCompare && LevelPair.compare(classCall1.getLevels(), classCall2.getLevels(), onFailure, myEquations, mySourceNode);
     }
   }
 
-  public boolean compareClassCallSortArguments(ClassCallExpression classCall1, ClassCallExpression classCall2) {
+  public boolean compareClassCallLevels(ClassCallExpression classCall1, ClassCallExpression classCall2) {
     UniverseKind kind1 = classCall1.getUniverseKind();
     UniverseKind kind2 = classCall2.getUniverseKind();
     if (kind1 == UniverseKind.NO_UNIVERSES && kind2 == UniverseKind.NO_UNIVERSES) {
       return true;
     }
     if (myCMP == CMP.EQ || kind1 == kind2) {
-      return Sort.compare(classCall1.getSortArgument(), classCall2.getSortArgument(), kind1 == UniverseKind.ONLY_COVARIANT ? myCMP : CMP.EQ, myNormalCompare ? myEquations : DummyEquations.getInstance(), mySourceNode);
+      return LevelPair.compare(classCall1.getLevels(), classCall2.getLevels(), kind1 == UniverseKind.ONLY_COVARIANT ? myCMP : CMP.EQ, myNormalCompare ? myEquations : DummyEquations.getInstance(), mySourceNode);
     }
-    if (!Sort.compare(classCall1.getSortArgument(), classCall2.getSortArgument(), myCMP, DummyEquations.getInstance(), mySourceNode)) {
+    if (!LevelPair.compare(classCall1.getLevels(), classCall2.getLevels(), myCMP, DummyEquations.getInstance(), mySourceNode)) {
       CMP onSuccess = kind1 == UniverseKind.NO_UNIVERSES || kind2 == UniverseKind.NO_UNIVERSES ? null : CMP.LE;
       CMP onFailure = kind1 == UniverseKind.WITH_UNIVERSES || kind2 == UniverseKind.WITH_UNIVERSES ? CMP.EQ : CMP.LE;
-      return myCMP == CMP.LE ? checkClassCallSortArguments(classCall1, classCall2, onSuccess, onFailure) : checkClassCallSortArguments(classCall2, classCall1, onSuccess, onFailure);
+      return myCMP == CMP.LE ? checkClassCallLevels(classCall1, classCall2, onSuccess, onFailure) : checkClassCallLevels(classCall2, classCall1, onSuccess, onFailure);
     }
     return true;
   }
@@ -908,7 +911,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       return false;
     }
 
-    if (!compareClassCallSortArguments(expr1, classCall2)) {
+    if (!compareClassCallLevels(expr1, classCall2)) {
       return false;
     }
 
@@ -1119,9 +1122,9 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
         length2 = length2.normalize(NormalizationMode.WHNF);
         if (length1 instanceof IntegerExpression && ((IntegerExpression) length1).isZero() && length2 instanceof IntegerExpression && ((IntegerExpression) length2).isZero()) {
           Expression elemsType1 = classCall1.getImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE, expr1);
-          if (elemsType1 == null) elemsType1 = FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, classCall1.getSortArgument(), expr1);
+          if (elemsType1 == null) elemsType1 = FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, classCall1.getLevels(), expr1);
           Expression elemsType2 = classCall2.getImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE, expr2);
-          if (elemsType2 == null) elemsType2 = FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, classCall2.getSortArgument(), expr2);
+          if (elemsType2 == null) elemsType2 = FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, classCall2.getLevels(), expr2);
           return compare(elemsType1, elemsType2, ExpressionFactory.Nat(), false);
         } else {
           Expression at1 = classCall1.getImplementationHere(Prelude.ARRAY_AT, expr1);
@@ -1137,7 +1140,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
             if (elementsType == null) elementsType = classCall2.getImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE, expr2);
             for (BigInteger i = BigInteger.ZERO; i.compareTo(m) < 0; i = i.add(BigInteger.ONE)) {
               IntegerExpression index = new BigIntegerExpression(i);
-              if (!normalizedCompare(FunCallExpression.make(Prelude.ARRAY_INDEX, classCall1.getSortArgument(), Arrays.asList(expr1, index)).normalize(NormalizationMode.WHNF), FunCallExpression.make(Prelude.ARRAY_INDEX, classCall2.getSortArgument(), Arrays.asList(expr2, index)).normalize(NormalizationMode.WHNF), elementsType, true)) {
+              if (!normalizedCompare(FunCallExpression.make(Prelude.ARRAY_INDEX, classCall1.getLevels(), Arrays.asList(expr1, index)).normalize(NormalizationMode.WHNF), FunCallExpression.make(Prelude.ARRAY_INDEX, classCall2.getLevels(), Arrays.asList(expr2, index)).normalize(NormalizationMode.WHNF), elementsType, true)) {
                 return false;
               }
             }
@@ -1177,12 +1180,12 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       Expression impl1 = classCall1.getImplementation(field, expr1);
       Expression impl2 = classCall2.getImplementation(field, expr2);
       if (impl1 == null) {
-        impl1 = FieldCallExpression.make(field, classCall1.getSortArgument(), expr1);
+        impl1 = FieldCallExpression.make(field, classCall1.getLevels(), expr1);
       }
       if (impl2 == null) {
-        impl2 = FieldCallExpression.make(field, classCall2.getSortArgument(), expr2);
+        impl2 = FieldCallExpression.make(field, classCall2.getLevels(), expr2);
       }
-      if (!compare(impl1, impl2, field.getType(classCall1.getSortArgument()).applyExpression(expr1), true)) {
+      if (!compare(impl1, impl2, field.getType(classCall1.getLevels()).applyExpression(expr1), true)) {
         return false;
       }
     }
@@ -1289,11 +1292,11 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       if (typeCoerce2.isFromLeftToRight()) {
         return compare(expr.getArgumentType(), typeCoerce2.getArgumentType(), Type.OMEGA, false) && compare(expr.getArgument(), typeCoerce2.getArgument(), expr.getArgumentType(), true);
       } else {
-        return compare(TypeCoerceExpression.make(typeCoerce2.getDefinition(), typeCoerce2.getSortArgument(), typeCoerce2.getClauseIndex(), typeCoerce2.getClauseArguments(), expr, true), typeCoerce2.getArgument(), expr.getArgumentType(), true);
+        return compare(TypeCoerceExpression.make(typeCoerce2.getDefinition(), typeCoerce2.getLevels(), typeCoerce2.getClauseIndex(), typeCoerce2.getClauseArguments(), expr, true), typeCoerce2.getArgument(), expr.getArgumentType(), true);
       }
     } else {
       if (typeCoerce2 == null || typeCoerce2.isFromLeftToRight()) {
-        return compare(expr.getArgument(), TypeCoerceExpression.make(expr.getDefinition(), expr.getSortArgument(), expr.getClauseIndex(), expr.getClauseArguments(), other, true), expr.getArgumentType(), true);
+        return compare(expr.getArgument(), TypeCoerceExpression.make(expr.getDefinition(), expr.getLevels(), expr.getClauseIndex(), expr.getClauseArguments(), other, true), expr.getArgumentType(), true);
       } else {
         return compare(expr.getArgument(), typeCoerce2.getArgument(), expr.getArgumentType(), true);
       }

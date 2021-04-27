@@ -6,6 +6,7 @@ import org.arend.core.definition.DataDefinition;
 import org.arend.core.expr.DataCallExpression;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
+import org.arend.core.subst.LevelPair;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
@@ -107,7 +108,7 @@ public class DataPolyTest extends TypeCheckingTestCase {
   @Test
   public void recursiveData() {
     Constructor constructor = ((DataDefinition) typeCheckDef("\\data D | con D")).getConstructors().get(0);
-    assertEquals(Sort.STD, ((DataCallExpression) constructor.getParameters().getTypeExpr()).getSortArgument());
+    assertEquals(LevelPair.STD, ((DataCallExpression) constructor.getParameters().getTypeExpr()).getLevels());
   }
 
   @Test

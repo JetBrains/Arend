@@ -8,6 +8,7 @@ import org.arend.core.expr.DataCallExpression;
 import org.arend.core.expr.NewExpression;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
+import org.arend.core.subst.LevelPair;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Assert;
 import org.junit.Test;
@@ -155,7 +156,7 @@ public class RecordsTest extends TypeCheckingTestCase {
         "\\class Point { | x : Nat | y : Nat }\n" +
         "\\func C => Point { | x => 0 }");
     Assert.assertEquals(Sort.SET0, ((ClassDefinition) getDefinition("Point")).getSort());
-    assertEquals(Universe(Sort.SET0), getDefinition("C").getTypeWithParams(new ArrayList<>(), Sort.STD));
+    assertEquals(Universe(Sort.SET0), getDefinition("C").getTypeWithParams(new ArrayList<>(), LevelPair.STD));
   }
 
   @Test
@@ -164,7 +165,7 @@ public class RecordsTest extends TypeCheckingTestCase {
         "\\class Point { | x : Nat | y : Nat }\n" +
         "\\func C => Point { | x => 0 | y => 1 }");
     Assert.assertEquals(Sort.SET0, ((ClassDefinition) getDefinition("Point")).getSort());
-    assertEquals(Universe(Sort.PROP), getDefinition("C").getTypeWithParams(new ArrayList<>(), Sort.STD));
+    assertEquals(Universe(Sort.PROP), getDefinition("C").getTypeWithParams(new ArrayList<>(), LevelPair.STD));
   }
 
   @Test
@@ -173,7 +174,7 @@ public class RecordsTest extends TypeCheckingTestCase {
         "\\class Point { | x : \\Type3 | y : \\Type1 }\n" +
         "\\func C => Point { | x => Nat }");
     Assert.assertEquals(new Sort(new Level(4), new Level(LevelVariable.HVAR, 1)), ((ClassDefinition) getDefinition("Point")).getSort());
-    assertEquals(Universe(new Sort(new Level(2), new Level(LevelVariable.HVAR, 1, 1))), getDefinition("C").getTypeWithParams(new ArrayList<>(), Sort.STD));
+    assertEquals(Universe(new Sort(new Level(2), new Level(LevelVariable.HVAR, 1, 1))), getDefinition("C").getTypeWithParams(new ArrayList<>(), LevelPair.STD));
   }
 
   @Test
@@ -182,7 +183,7 @@ public class RecordsTest extends TypeCheckingTestCase {
         "\\class Point { | x : \\Type3 | y : \\oo-Type1 }\n" +
         "\\func C => Point { | x => Nat }");
     Assert.assertEquals(new Sort(new Level(4), Level.INFINITY), ((ClassDefinition) getDefinition("Point")).getSort());
-    assertEquals(Universe(new Sort(new Level(2), Level.INFINITY)), getDefinition("C").getTypeWithParams(new ArrayList<>(), Sort.STD));
+    assertEquals(Universe(new Sort(new Level(2), Level.INFINITY)), getDefinition("C").getTypeWithParams(new ArrayList<>(), LevelPair.STD));
   }
 
   @Test
@@ -191,7 +192,7 @@ public class RecordsTest extends TypeCheckingTestCase {
         "\\class Point { | x : \\Type3 | y : \\Type1 }\n" +
         "\\func C => Point { | x => \\Type2 }");
     Assert.assertEquals(new Sort(new Level(4), new Level(LevelVariable.HVAR, 1)), ((ClassDefinition) getDefinition("Point")).getSort());
-    assertEquals(Universe(new Sort(new Level(2), new Level(LevelVariable.HVAR, 2))), getDefinition("C").getTypeWithParams(new ArrayList<>(), Sort.STD));
+    assertEquals(Universe(new Sort(new Level(2), new Level(LevelVariable.HVAR, 2))), getDefinition("C").getTypeWithParams(new ArrayList<>(), LevelPair.STD));
   }
 
   @Test

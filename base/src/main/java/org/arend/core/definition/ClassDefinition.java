@@ -6,6 +6,7 @@ import org.arend.core.expr.*;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
+import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.definition.CoreClassDefinition;
 import org.arend.ext.core.definition.CoreClassField;
@@ -137,13 +138,13 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
     return null;
   }
 
-  public Sort computeSort(Sort sortArgument, Map<ClassField,Expression> implemented, Binding thisBinding) {
+  public Sort computeSort(LevelPair levels, Map<ClassField,Expression> implemented, Binding thisBinding) {
     Integer hLevel = getUseLevel(implemented, thisBinding, true);
     if (hLevel != null && hLevel == -1) {
       return Sort.PROP;
     }
 
-    ClassCallExpression thisClass = new ClassCallExpression(this, sortArgument, Collections.emptyMap(), mySort.subst(sortArgument.toLevelSubstitution()), getUniverseKind());
+    ClassCallExpression thisClass = new ClassCallExpression(this, levels, Collections.emptyMap(), mySort.subst(levels), getUniverseKind());
     Sort sort = Sort.PROP;
 
     for (ClassField field : myFields) {
@@ -151,7 +152,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
         continue;
       }
 
-      PiExpression fieldType = getFieldType(field, sortArgument);
+      PiExpression fieldType = getFieldType(field, levels);
       if (fieldType.getCodomain().isInstance(ErrorExpression.class)) {
         continue;
       }
@@ -170,7 +171,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
   }
 
   public void updateSort() {
-    mySort = computeSort(Sort.STD, Collections.emptyMap(), null);
+    mySort = computeSort(LevelPair.STD, Collections.emptyMap(), null);
   }
 
   @NotNull
@@ -323,27 +324,27 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
     return myOverridden.entrySet();
   }
 
-  public PiExpression getOverriddenType(ClassField field, Sort sortArg) {
+  public PiExpression getOverriddenType(ClassField field, LevelPair levels) {
     PiExpression type = myOverridden.get(field);
-    return type == null || sortArg.equals(Sort.STD) ? type : (PiExpression) new SubstVisitor(new ExprSubstitution(), sortArg.toLevelSubstitution()).visitPi(type, null);
+    return type == null || levels.isSTD() ? type : (PiExpression) new SubstVisitor(new ExprSubstitution(), levels).visitPi(type, null);
   }
 
   public PiExpression getFieldType(ClassField field) {
     PiExpression type = myOverridden.get(field);
-    return type == null ? field.getType(Sort.STD) : type;
+    return type == null ? field.getType(LevelPair.STD) : type;
   }
 
-  public PiExpression getFieldType(ClassField field, Sort sortArg) {
+  public PiExpression getFieldType(ClassField field, LevelPair levels) {
     PiExpression type = myOverridden.get(field);
-    return type == null ? field.getType(sortArg) : sortArg.equals(Sort.STD) ? type : (PiExpression) new SubstVisitor(new ExprSubstitution(), sortArg.toLevelSubstitution()).visitPi(type, null);
+    return type == null ? field.getType(levels) : levels.isSTD() ? type : (PiExpression) new SubstVisitor(new ExprSubstitution(), levels).visitPi(type, null);
   }
 
-  public Expression getFieldType(ClassField field, Sort sortArg, Expression thisExpr) {
+  public Expression getFieldType(ClassField field, LevelPair levels, Expression thisExpr) {
     PiExpression type = myOverridden.get(field);
     if (type == null) {
-      type = field.getType(Sort.STD);
+      type = field.getType(LevelPair.STD);
     }
-    return type.getCodomain().subst(new ExprSubstitution(type.getParameters(), thisExpr), sortArg.toLevelSubstitution());
+    return type.getCodomain().subst(new ExprSubstitution(type.getParameters(), thisExpr), levels);
   }
 
   @Nullable
@@ -396,13 +397,13 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
   }
 
   @Override
-  public Expression getTypeWithParams(List<? super DependentLink> params, Sort sortArgument) {
-    return new UniverseExpression(mySort.subst(sortArgument.toLevelSubstitution()));
+  public Expression getTypeWithParams(List<? super DependentLink> params, LevelPair levels) {
+    return new UniverseExpression(mySort.subst(levels));
   }
 
   @Override
-  public ClassCallExpression getDefCall(Sort sortArgument, List<Expression> args) {
-    return new ClassCallExpression(this, sortArgument, Collections.emptyMap(), mySort.subst(sortArgument.toLevelSubstitution()), getUniverseKind());
+  public ClassCallExpression getDefCall(LevelPair levels, List<Expression> args) {
+    return new ClassCallExpression(this, levels, Collections.emptyMap(), mySort.subst(levels), getUniverseKind());
   }
 
   public void clear() {

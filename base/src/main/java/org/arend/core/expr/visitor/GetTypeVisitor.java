@@ -7,8 +7,10 @@ import org.arend.core.definition.UniverseKind;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.HaveClause;
 import org.arend.core.expr.let.LetClause;
+import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
+import org.arend.core.subst.LevelPair;
 import org.arend.error.IncorrectExpressionException;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
@@ -56,14 +58,14 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
     }
 
     List<DependentLink> defParams = new ArrayList<>();
-    Expression type = definition.getTypeWithParams(defParams, expr.getSortArgument());
+    Expression type = definition.getTypeWithParams(defParams, expr.getLevels());
     assert arguments.size() == defParams.size();
     return type.subst(DependentLink.Helper.toSubstitution(defParams, arguments));
   }
 
   @Override
   public UniverseExpression visitDataCall(DataCallExpression expr, Void params) {
-    return new UniverseExpression(expr.getDefinition().getSort().subst(expr.getSortArgument().toLevelSubstitution()));
+    return new UniverseExpression(expr.getDefinition().getSort().subst(expr.getLevels()));
   }
 
   @Override
@@ -72,13 +74,13 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
     if (type != null) {
       ClassCallExpression classCall = type.cast(ClassCallExpression.class);
       if (classCall != null) {
-        PiExpression fieldType = classCall.getDefinition().getOverriddenType(expr.getDefinition(), expr.getSortArgument());
+        PiExpression fieldType = classCall.getDefinition().getOverriddenType(expr.getDefinition(), expr.getLevels());
         if (fieldType != null) {
           return fieldType.applyExpression(expr.getArgument());
         }
       }
     }
-    return expr.getDefinition().getType(expr.getSortArgument()).applyExpression(expr.getArgument());
+    return expr.getDefinition().getType(expr.getLevels()).applyExpression(expr.getArgument());
   }
 
   @Override
@@ -98,17 +100,17 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
           for (int i = 0; i < sucs; i++) {
             arg = Suc(arg);
           }
-          return new DataCallExpression(dataCall.getDefinition(), dataCall.getSortArgument(), new SingletonList<>(arg));
+          return new DataCallExpression(dataCall.getDefinition(), dataCall.getLevels(), new SingletonList<>(arg));
         }
       }
       return Nat();
     }
-    return expr.getDefinition().getDataTypeExpression(expr.getSortArgument(), expr.getDataTypeArguments());
+    return expr.getDefinition().getDataTypeExpression(expr.getLevels(), expr.getDataTypeArguments());
   }
 
   @Override
   public Expression visitClassCall(ClassCallExpression expr, Void params) {
-    return new UniverseExpression(expr.getSort().subst(expr.getSortArgument().toLevelSubstitution()));
+    return new UniverseExpression(expr.getSort().subst(expr.getLevels()));
   }
 
   @Override
@@ -247,7 +249,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
         }
       }
     }
-    return new ClassCallExpression(Prelude.ARRAY, expr.getSortArgument(), implementations, expr.getSortArgument().max(Sort.SET0), UniverseKind.NO_UNIVERSES);
+    return new ClassCallExpression(Prelude.ARRAY, expr.getLevels(), implementations, new Sort(expr.getPLevel(), expr.getHLevel().max(new Level(0))), UniverseKind.NO_UNIVERSES);
   }
 
   @Override
@@ -258,8 +260,8 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
     }
 
     Expression type = expr.getExpression().accept(this, null);
-    Sort sortArg = type == null ? null : type.getSortOfType();
-    if (sortArg == null) {
+    Sort sort = type == null ? null : type.getSortOfType();
+    if (sort == null) {
       return null;
     }
 
@@ -267,6 +269,6 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
     args.add(type);
     args.add(expr.getExpression());
     args.add(normExpr);
-    return FunCallExpression.make(Prelude.PATH_INFIX, sortArg, args);
+    return FunCallExpression.make(Prelude.PATH_INFIX, new LevelPair(sort.getPLevel(), sort.getHLevel()), args);
   }
 }

@@ -9,9 +9,8 @@ import org.arend.core.expr.Expression;
 import org.arend.core.expr.ReferenceExpression;
 import org.arend.core.pattern.ExpressionPattern;
 import org.arend.core.pattern.Pattern;
-import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelSubstitution;
+import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.definition.CoreConstructor;
 import org.arend.core.elimtree.BranchKey;
@@ -124,11 +123,11 @@ public class Constructor extends Definition implements Function, BranchKey, Core
     }
   }
 
-  public DataCallExpression getDataTypeExpression(Sort sortArgument) {
-    return getDataTypeExpression(sortArgument, null);
+  public DataCallExpression getDataTypeExpression(LevelPair levels) {
+    return getDataTypeExpression(levels, null);
   }
 
-  public DataCallExpression getDataTypeExpression(Sort sortArgument, List<? extends Expression> dataTypeArguments) {
+  public DataCallExpression getDataTypeExpression(LevelPair levels, List<? extends Expression> dataTypeArguments) {
     assert myDataType.status().headerIsOK();
 
     List<Expression> arguments;
@@ -148,11 +147,11 @@ public class Constructor extends Definition implements Function, BranchKey, Core
           arguments.add(pattern.toExpression());
         }
       } else {
-        arguments = ExpressionPattern.applyClauseArguments(myPatterns, dataTypeArguments, sortArgument);
+        arguments = ExpressionPattern.applyClauseArguments(myPatterns, dataTypeArguments, levels);
       }
     }
 
-    return myDataType.getDefCall(sortArgument, arguments);
+    return myDataType.getDefCall(levels, arguments);
   }
 
   @Override
@@ -214,35 +213,34 @@ public class Constructor extends Definition implements Function, BranchKey, Core
   }
 
   @Override
-  public DataCallExpression getTypeWithParams(List<? super DependentLink> params, Sort sortArgument) {
-    LevelSubstitution polySubst = sortArgument.toLevelSubstitution();
-    DataCallExpression resultType = getDataTypeExpression(sortArgument);
+  public DataCallExpression getTypeWithParams(List<? super DependentLink> params, LevelPair levels) {
+    DataCallExpression resultType = getDataTypeExpression(levels);
     DependentLink parameters = getDataTypeParameters();
     ExprSubstitution substitution = new ExprSubstitution();
     List<DependentLink> paramList = null;
     if (parameters.hasNext()) {
-      parameters = DependentLink.Helper.subst(parameters, substitution, polySubst);
+      parameters = DependentLink.Helper.subst(parameters, substitution, levels);
       for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
         link.setExplicit(false);
       }
       paramList = DependentLink.Helper.toList(parameters);
       params.addAll(paramList);
     }
-    DependentLink conParams = DependentLink.Helper.subst(myParameters, substitution, polySubst);
+    DependentLink conParams = DependentLink.Helper.subst(myParameters, substitution, levels);
     if (paramList != null && !paramList.isEmpty()) {
       paramList.get(paramList.size() - 1).setNext(conParams);
     }
     params.addAll(DependentLink.Helper.toList(conParams));
-    resultType = (DataCallExpression) resultType.accept(new SubstVisitor(substitution, polySubst), null);
+    resultType = (DataCallExpression) resultType.accept(new SubstVisitor(substitution, levels), null);
     return resultType;
   }
 
   @Override
-  public Expression getDefCall(Sort sortArgument, List<Expression> args) {
+  public Expression getDefCall(LevelPair levels, List<Expression> args) {
     int dataTypeArgsNumber = DependentLink.Helper.size(getDataTypeParameters());
     List<Expression> dataTypeArgs = new ArrayList<>(dataTypeArgsNumber);
     dataTypeArgs.addAll(args.subList(0, dataTypeArgsNumber));
-    return ConCallExpression.make(this, sortArgument, dataTypeArgs, args.subList(dataTypeArgsNumber, args.size()));
+    return ConCallExpression.make(this, levels, dataTypeArgs, args.subList(dataTypeArgsNumber, args.size()));
   }
 
   @Override

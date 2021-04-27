@@ -7,6 +7,7 @@ import org.arend.core.expr.type.Type;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
+import org.arend.core.subst.LevelPair;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.ErrorReporter;
@@ -164,8 +165,8 @@ public class UseTypechecking {
       if (ok) {
         if (link.hasNext() || resultType != null) {
           type = useParent instanceof DataDefinition
-            ? new DataCallExpression((DataDefinition) useParent, Sort.STD, defCallArgs)
-            : FunCallExpression.make((FunctionDefinition) useParent, Sort.STD, defCallArgs);
+            ? new DataCallExpression((DataDefinition) useParent, LevelPair.STD, defCallArgs)
+            : FunCallExpression.make((FunctionDefinition) useParent, LevelPair.STD, defCallArgs);
         } else {
           ok = false;
         }
@@ -176,7 +177,7 @@ public class UseTypechecking {
       for (; classCallLink.hasNext(); classCallLink = classCallLink.getNext()) {
         classCallLink = classCallLink.getNextTyped(null);
         classCall = classCallLink.getTypeExpr().cast(ClassCallExpression.class);
-        if (classCall != null && classCall.getDefinition() == useParent && (classCall.getUniverseKind() == UniverseKind.NO_UNIVERSES || classCall.getSortArgument().equals(Sort.STD))) {
+        if (classCall != null && classCall.getDefinition() == useParent && (classCall.getUniverseKind() == UniverseKind.NO_UNIVERSES || classCall.getLevels().isSTD())) {
           break;
         }
       }
@@ -184,7 +185,7 @@ public class UseTypechecking {
         PiExpression piType = resultType.normalize(NormalizationMode.WHNF).cast(PiExpression.class);
         if (piType != null) {
           classCall = piType.getParameters().getTypeExpr().normalize(NormalizationMode.WHNF).cast(ClassCallExpression.class);
-          if (classCall != null && classCall.getDefinition() == useParent && (classCall.getUniverseKind() == UniverseKind.NO_UNIVERSES || classCall.getSortArgument().equals(Sort.STD))) {
+          if (classCall != null && classCall.getDefinition() == useParent && (classCall.getUniverseKind() == UniverseKind.NO_UNIVERSES || classCall.getLevels().isSTD())) {
             classCallLink = piType.getParameters();
           }
         }
@@ -210,7 +211,7 @@ public class UseTypechecking {
               break;
             }
             levelFields.add(classField);
-            Expression fieldType = classCall.getDefinition().getFieldType(classField, classCall.getSortArgument(), thisExpr);
+            Expression fieldType = classCall.getDefinition().getFieldType(classField, classCall.getLevels(), thisExpr);
             Expression paramType = link.getTypeExpr();
             if (!Expression.compare(fieldType, paramType, Type.OMEGA, CMP.EQ)) {
               if (parameters == null) {
@@ -223,7 +224,7 @@ public class UseTypechecking {
 
               ClassCallExpression fieldClassCall = fieldType.cast(ClassCallExpression.class);
               ClassCallExpression paramClassCall = paramType.cast(ClassCallExpression.class);
-              if (strictList != null && paramClassCall != null && fieldClassCall != null && paramClassCall.getSortArgument().equals(fieldClassCall.getSortArgument()) && paramClassCall.getUniverseKind().ordinal() <= fieldClassCall.getUniverseKind().ordinal()) {
+              if (strictList != null && paramClassCall != null && fieldClassCall != null && paramClassCall.getLevels().equals(fieldClassCall.getLevels()) && paramClassCall.getUniverseKind().ordinal() <= fieldClassCall.getUniverseKind().ordinal()) {
                 strictList.add(new Pair<>(paramClassCall.getDefinition(), paramClassCall.getImplementedHere().keySet()));
               } else {
                 strictList = null;

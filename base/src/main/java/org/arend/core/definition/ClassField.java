@@ -4,8 +4,8 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.context.param.TypedSingleDependentLink;
 import org.arend.core.expr.*;
-import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
+import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.definition.CoreClassField;
 import org.arend.naming.reference.TCFieldReferable;
@@ -50,8 +50,8 @@ public class ClassField extends Definition implements CoreClassField {
     myType = type;
   }
 
-  public PiExpression getType(Sort sortArgument) {
-    return sortArgument == Sort.STD ? myType : (PiExpression) new SubstVisitor(new ExprSubstitution(), sortArgument.toLevelSubstitution()).visitPi(myType, null);
+  public PiExpression getType(LevelPair levels) {
+    return levels.isSTD() ? myType : (PiExpression) new SubstVisitor(new ExprSubstitution(), levels).visitPi(myType, null);
   }
 
   public void setNumberOfParameters(int numberOfParameters) {
@@ -145,21 +145,21 @@ public class ClassField extends Definition implements CoreClassField {
   }
 
   @Override
-  public Expression getTypeWithParams(List<? super DependentLink> params, Sort sortArgument) {
-    PiExpression type = getType(sortArgument);
+  public Expression getTypeWithParams(List<? super DependentLink> params, LevelPair levels) {
+    PiExpression type = getType(levels);
     params.add(type.getParameters());
     return type.getCodomain();
   }
 
   @Override
-  public Expression getDefCall(Sort sortArgument, List<Expression> args) {
-    return FieldCallExpression.make(this, sortArgument, args.get(0));
+  public Expression getDefCall(LevelPair levels, List<Expression> args) {
+    return FieldCallExpression.make(this, levels, args.get(0));
   }
 
   @Override
   public void fill() {
     if (myType == null) {
-      ClassCallExpression classCall = new ClassCallExpression(myParentClass, Sort.STD);
+      ClassCallExpression classCall = new ClassCallExpression(myParentClass, LevelPair.STD);
       myType = new PiExpression(classCall.getSort(), new TypedSingleDependentLink(false, "this", classCall), new ErrorExpression());
     }
   }

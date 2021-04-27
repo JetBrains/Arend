@@ -8,8 +8,8 @@ import org.arend.core.definition.Constructor;
 import org.arend.core.definition.DataDefinition;
 import org.arend.core.definition.Definition;
 import org.arend.core.expr.Expression;
-import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
+import org.arend.core.subst.LevelPair;
 import org.arend.naming.reference.LocalReferable;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
@@ -32,7 +32,7 @@ public class DataTest extends TypeCheckingTestCase {
   public void dataType() {
     DataDefinition typedDef = (DataDefinition) typeCheckDef("\\data D {A B : \\Set0} (I : A -> B -> \\Set0) (a : A) (b : B) | con1 (x : A) (I x b) | con2 {y : B} (I a y)");
     List<DependentLink> params = new ArrayList<>();
-    Expression type = typedDef.getTypeWithParams(params, Sort.SET0);
+    Expression type = typedDef.getTypeWithParams(params, LevelPair.SET0);
 
     SingleDependentLink A = singleParams(false, vars("A", "B"), Universe(0, 0));
     SingleDependentLink B = A.getNext();
@@ -59,19 +59,19 @@ public class DataTest extends TypeCheckingTestCase {
     link = link.getNext();
     substitution.add(link, Ref(b));
     List<DependentLink> con1Params = new ArrayList<>();
-    Expression con1Type = typedDef.getConstructors().get(0).getTypeWithParams(con1Params, Sort.SET0);
+    Expression con1Type = typedDef.getConstructors().get(0).getTypeWithParams(con1Params, LevelPair.SET0);
     I.setExplicit(false);
     a.setExplicit(false);
     b.setExplicit(false);
-    assertEquals(Pi(A, Pi(I, Pi(a, Pi(b, Pi(x, Pi(Apps(Ref(I), Ref(x), Ref(b)), DataCall(typedDef, Sort.SET0,
+    assertEquals(Pi(A, Pi(I, Pi(a, Pi(b, Pi(x, Pi(Apps(Ref(I), Ref(x), Ref(b)), DataCall(typedDef, LevelPair.SET0,
       Ref(A),
       Ref(B),
       Ref(I),
       Ref(a),
       Ref(b)))))))), fromPiParameters(con1Type, con1Params));
     List<DependentLink> con2Params = new ArrayList<>();
-    Expression con2Type = typedDef.getConstructors().get(1).getTypeWithParams(con2Params, Sort.SET0);
-    assertEquals(Pi(A, Pi(I, Pi(a, Pi(b, Pi(y, Pi(Apps(Ref(I), Ref(a), Ref(y)), DataCall(typedDef, Sort.SET0,
+    Expression con2Type = typedDef.getConstructors().get(1).getTypeWithParams(con2Params, LevelPair.SET0);
+    assertEquals(Pi(A, Pi(I, Pi(a, Pi(b, Pi(y, Pi(Apps(Ref(I), Ref(a), Ref(y)), DataCall(typedDef, LevelPair.SET0,
       Ref(A),
       Ref(B),
       Ref(I),
@@ -84,11 +84,11 @@ public class DataTest extends TypeCheckingTestCase {
     DataDefinition typedDef = (DataDefinition) typeCheckDef("\\data D (A : \\7-Type2) | con1 (X : \\1-Type5) X | con2 (Y : \\2-Type3) A Y");
     SingleDependentLink A = singleParam("A", Universe(2, 7));
     List<DependentLink> params = new ArrayList<>();
-    Expression type = typedDef.getTypeWithParams(params, Sort.SET0);
+    Expression type = typedDef.getTypeWithParams(params, LevelPair.SET0);
     List<DependentLink> con1Params = new ArrayList<>();
-    Expression con1Type = typedDef.getConstructors().get(0).getTypeWithParams(con1Params, Sort.SET0);
+    Expression con1Type = typedDef.getConstructors().get(0).getTypeWithParams(con1Params, LevelPair.SET0);
     List<DependentLink> con2Params = new ArrayList<>();
-    Expression con2Type = typedDef.getConstructors().get(1).getTypeWithParams(con2Params, Sort.SET0);
+    Expression con2Type = typedDef.getConstructors().get(1).getTypeWithParams(con2Params, LevelPair.SET0);
 
     SingleDependentLink X = singleParam("X", Universe(5, 1));
     SingleDependentLink Y = singleParam("Y", Universe(3, 2));
@@ -99,8 +99,8 @@ public class DataTest extends TypeCheckingTestCase {
     assertEquals(2, typedDef.getConstructors().size());
 
     A.setExplicit(false);
-    assertEquals(Pi(A, Pi(X, Pi(Ref(X), DataCall(typedDef, Sort.SET0, Ref(A))))), fromPiParameters(con1Type, con1Params));
-    assertEquals(Pi(A, Pi(Y, Pi(Ref(A), Pi(Ref(Y), DataCall(typedDef, Sort.SET0, Ref(A)))))), fromPiParameters(con2Type, con2Params));
+    assertEquals(Pi(A, Pi(X, Pi(Ref(X), DataCall(typedDef, LevelPair.SET0, Ref(A))))), fromPiParameters(con1Type, con1Params));
+    assertEquals(Pi(A, Pi(Y, Pi(Ref(A), Pi(Ref(Y), DataCall(typedDef, LevelPair.SET0, Ref(A)))))), fromPiParameters(con2Type, con2Params));
   }
 
   @Test
@@ -111,7 +111,7 @@ public class DataTest extends TypeCheckingTestCase {
     Concrete.Expression expr = cApps(cVar(con.getReferable()), cNat(), cZero(), cZero());
 
     TypecheckingResult result = typeCheckExpr(expr, null);
-    assertEquals(result.type, DataCall(def, Sort.STD, Nat()));
+    assertEquals(result.type, DataCall(def, LevelPair.STD, Nat()));
   }
 
   @Test
@@ -123,7 +123,7 @@ public class DataTest extends TypeCheckingTestCase {
     LocalReferable x = ref("x");
     Concrete.Expression expr = cApps(cVar(f), cApps(cVar(con.getReferable()), cNat(), cLam(cName(x), cVar(x)), cZero()));
 
-    TypecheckingResult result = typeCheckExpr(Collections.singletonMap(f, new TypedBinding(f.textRepresentation(), Pi(DataCall(def, Sort.SET0, Pi(Nat(), Nat())), Nat()))), expr, null);
+    TypecheckingResult result = typeCheckExpr(Collections.singletonMap(f, new TypedBinding(f.textRepresentation(), Pi(DataCall(def, LevelPair.SET0, Pi(Nat(), Nat())), Nat()))), expr, null);
     assertEquals(result.type, Nat());
   }
 
@@ -135,7 +135,7 @@ public class DataTest extends TypeCheckingTestCase {
     LocalReferable f = ref("f");
     Concrete.Expression expr = cApps(cVar(f), cVar(con.getReferable()));
 
-    TypecheckingResult result = typeCheckExpr(Collections.singletonMap(f, new TypedBinding(f.textRepresentation(), Pi(Pi(Nat(), DataCall(def, Sort.SET0, Nat())), Pi(Nat(), Nat())))), expr, null);
+    TypecheckingResult result = typeCheckExpr(Collections.singletonMap(f, new TypedBinding(f.textRepresentation(), Pi(Pi(Nat(), DataCall(def, LevelPair.SET0, Nat())), Pi(Nat(), Nat())))), expr, null);
     assertEquals(result.type, Pi(Nat(), Nat()));
   }
 

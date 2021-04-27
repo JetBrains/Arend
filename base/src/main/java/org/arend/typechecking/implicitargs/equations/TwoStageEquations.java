@@ -16,6 +16,7 @@ import org.arend.core.expr.visitor.CompareVisitor;
 import org.arend.core.expr.visitor.ElimBindingVisitor;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
+import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
@@ -528,9 +529,9 @@ public class TwoStageEquations implements Equations {
       ClassCallExpression solution;
       if (cmp == CMP.LE) {
         Equations wrapper = new LevelEquationsWrapper(this);
-        Sort sortArg = Sort.generateInferVars(this, universeKind, pair.proj1.getSourceNode());
+        LevelPair levels = LevelPair.generateInferVars(this, universeKind, pair.proj1.getSourceNode());
         Map<ClassField, Expression> implementations = new HashMap<>();
-        solution = new ClassCallExpression(classDef, sortArg, implementations, classDef.getSort(), universeKind);
+        solution = new ClassCallExpression(classDef, levels, implementations, classDef.getSort(), universeKind);
         ReferenceExpression thisExpr = new ReferenceExpression(solution.getThisBinding());
         boolean first = true;
         for (ClassCallExpression bound : pair.proj2) {
@@ -547,7 +548,7 @@ public class TwoStageEquations implements Equations {
             boolean remove = !entry.getKey().isProperty();
             if (remove) {
               Expression other = bound.getAbsImplementationHere(entry.getKey());
-              remove = other == null || !CompareVisitor.compare(wrapper, CMP.EQ, entry.getValue(), other, solution.getDefinition().getFieldType(entry.getKey(), solution.getSortArgument(), thisExpr), pair.proj1.getSourceNode());
+              remove = other == null || !CompareVisitor.compare(wrapper, CMP.EQ, entry.getValue(), other, solution.getDefinition().getFieldType(entry.getKey(), solution.getLevels(), thisExpr), pair.proj1.getSourceNode());
             }
             if (remove) {
               iterator.remove();
@@ -555,16 +556,16 @@ public class TwoStageEquations implements Equations {
           }
         }
 
-        solution.setSort(classDef.computeSort(solution.getSortArgument(), implementations, solution.getThisBinding()));
+        solution.setSort(classDef.computeSort(solution.getLevels(), implementations, solution.getThisBinding()));
         solution.updateHasUniverses();
 
-        if (!Sort.compare(pair.proj2.get(0).getSortArgument(), sortArg, CMP.LE, this, pair.proj1.getSourceNode())) {
+        if (!LevelPair.compare(pair.proj2.get(0).getLevels(), levels, CMP.LE, this, pair.proj1.getSourceNode())) {
           reportBoundsError(pair.proj1, pair.proj2, CMP.GE);
           allOK = false;
           continue;
         }
         for (ClassCallExpression lowerBound : pair.proj2) {
-          if (!new CompareVisitor(this, CMP.LE, pair.proj1.getSourceNode()).compareClassCallSortArguments(lowerBound, solution)) {
+          if (!new CompareVisitor(this, CMP.LE, pair.proj1.getSourceNode()).compareClassCallLevels(lowerBound, solution)) {
             reportBoundsError(pair.proj1, pair.proj2, CMP.GE);
             allOK = false;
             continue loop;
@@ -584,7 +585,7 @@ public class TwoStageEquations implements Equations {
 
           for (Map.Entry<ClassField, Expression> entry : map.entrySet()) {
             Expression other = otherMap.get(entry.getKey());
-            if (other == null || !CompareVisitor.compare(this, CMP.EQ, entry.getValue(), other, solution.getDefinition().getFieldType(entry.getKey(), solution.getSortArgument(), thisExpr), pair.proj1.getSourceNode())) {
+            if (other == null || !CompareVisitor.compare(this, CMP.EQ, entry.getValue(), other, solution.getDefinition().getFieldType(entry.getKey(), solution.getLevels(), thisExpr), pair.proj1.getSourceNode())) {
               reportBoundsError(pair.proj1, pair.proj2, CMP.LE);
               allOK = false;
               continue loop;
@@ -672,13 +673,13 @@ public class TwoStageEquations implements Equations {
   private ClassCallExpression removeDependencies(ClassCallExpression solution, int originalSize) {
     ClassDefinition classDef = solution.getDefinition();
     Map<ClassField, Expression> implementations = solution.getImplementedHere();
-    Sort sortArgument = solution.getSortArgument();
+    LevelPair levels = solution.getLevels();
 
     for (ClassField field : classDef.getFields()) {
       if (!implementations.containsKey(field)) {
         continue;
       }
-      field.getType(sortArgument).getCodomain().accept(new SearchVisitor<Void>() {
+      field.getType(levels).getCodomain().accept(new SearchVisitor<Void>() {
         @Override
         protected boolean processDefCall(DefCallExpression expression, Void param) {
           if (expression instanceof FieldCallExpression && classDef.getFields().contains(((FieldCallExpression) expression).getDefinition()) && !solution.isImplemented((ClassField) expression.getDefinition())) {
@@ -692,9 +693,9 @@ public class TwoStageEquations implements Equations {
 
     ClassCallExpression sol = solution;
     if (originalSize != implementations.size()) {
-      Sort newSort = classDef.computeSort(sortArgument, implementations, solution.getThisBinding());
+      Sort newSort = classDef.computeSort(levels, implementations, solution.getThisBinding());
       if (!newSort.equals(sol.getSort())) {
-        sol = new ClassCallExpression(classDef, sortArgument, implementations, newSort, classDef.getUniverseKind());
+        sol = new ClassCallExpression(classDef, levels, implementations, newSort, classDef.getUniverseKind());
         for (Map.Entry<ClassField, Expression> entry : implementations.entrySet()) {
           entry.setValue(entry.getValue().subst(solution.getThisBinding(), new ReferenceExpression(sol.getThisBinding())));
         }

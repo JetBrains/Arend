@@ -5,7 +5,7 @@ import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.core.definition.UniverseKind;
 import org.arend.core.expr.UniverseExpression;
 import org.arend.core.subst.LevelSubstitution;
-import org.arend.core.subst.StdLevelSubstitution;
+import org.arend.core.subst.LevelPair;
 import org.arend.ext.core.level.CoreSort;
 import org.arend.ext.core.ops.CMP;
 import org.arend.term.concrete.Concrete;
@@ -100,7 +100,7 @@ public class Sort implements CoreSort {
   }
 
   public LevelSubstitution toLevelSubstitution() {
-    return isStd() ? LevelSubstitution.EMPTY : new StdLevelSubstitution(myPLevel, myHLevel);
+    return isStd() ? LevelSubstitution.EMPTY : new LevelPair(myPLevel, myHLevel);
   }
 
   private static boolean compareProp(Sort sort, Equations equations, Concrete.SourceNode sourceNode) {

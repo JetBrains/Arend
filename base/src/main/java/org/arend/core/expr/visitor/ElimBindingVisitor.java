@@ -105,13 +105,13 @@ public class ElimBindingVisitor extends ExpressionTransformer<Void> {
   @Override
   public Expression visitDefCall(DefCallExpression expr, Void params) {
     List<Expression> newArgs = visitDefCallArguments(expr.getDefCallArguments());
-    return newArgs == null ? null : expr.getDefinition().getDefCall(expr.getSortArgument(), newArgs);
+    return newArgs == null ? null : expr.getDefinition().getDefCall(expr.getLevels(), newArgs);
   }
 
   @Override
   public Expression visitFieldCall(FieldCallExpression expr, Void params) {
     Expression newExpr = acceptSelf(expr.getArgument(), false);
-    return newExpr == null ? null : FieldCallExpression.make(expr.getDefinition(), expr.getSortArgument(), newExpr);
+    return newExpr == null ? null : FieldCallExpression.make(expr.getDefinition(), expr.getLevels(), newExpr);
   }
 
   @Override
@@ -121,7 +121,7 @@ public class ElimBindingVisitor extends ExpressionTransformer<Void> {
 
   public ClassCallExpression visitClassCall(ClassCallExpression expr, boolean removeImplementations) {
     Map<ClassField, Expression> newFieldSet = new HashMap<>();
-    ClassCallExpression result = new ClassCallExpression(expr.getDefinition(), expr.getSortArgument(), newFieldSet, expr.getSort(), expr.getUniverseKind());
+    ClassCallExpression result = new ClassCallExpression(expr.getDefinition(), expr.getLevels(), newFieldSet, expr.getSort(), expr.getUniverseKind());
     if (myKeepVisitor != null) {
       myKeepVisitor.getBindings().add(expr.getThisBinding());
     }
@@ -143,7 +143,7 @@ public class ElimBindingVisitor extends ExpressionTransformer<Void> {
       myKeepVisitor.getBindings().remove(expr.getThisBinding());
     }
 
-    result.setSort(result.getDefinition().computeSort(result.getSortArgument(), result.getImplementedHere(), result.getThisBinding()));
+    result.setSort(result.getDefinition().computeSort(result.getLevels(), result.getImplementedHere(), result.getThisBinding()));
     result.updateHasUniverses();
     return result;
   }
@@ -442,7 +442,7 @@ public class ElimBindingVisitor extends ExpressionTransformer<Void> {
     List<Expression> newArgs = visitDefCallArguments(expr.getClauseArguments());
     if (newArgs == null) return null;
     Expression newArg = acceptSelf(expr.getArgument(), true);
-    return newArg == null ? null : TypeCoerceExpression.make(expr.getDefinition(), expr.getSortArgument(), expr.getClauseIndex(), newArgs, newArg, expr.isFromLeftToRight());
+    return newArg == null ? null : TypeCoerceExpression.make(expr.getDefinition(), expr.getLevels(), expr.getClauseIndex(), newArgs, newArg, expr.isFromLeftToRight());
   }
 
   @Override
@@ -458,6 +458,6 @@ public class ElimBindingVisitor extends ExpressionTransformer<Void> {
     } else {
       tail = null;
     }
-    return ArrayExpression.make(expr.getSortArgument(), elementsType, elements, tail);
+    return ArrayExpression.make(expr.getLevels(), elementsType, elements, tail);
   }
 }

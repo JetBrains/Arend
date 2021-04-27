@@ -5,7 +5,7 @@ import org.arend.core.definition.Definition;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.definition.UniverseKind;
 import org.arend.core.expr.Expression;
-import org.arend.core.sort.Sort;
+import org.arend.core.subst.LevelPair;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
@@ -30,7 +30,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
     FunctionDefinition typedDef = (FunctionDefinition) typeCheckDef("\\func f => 0");
     assertNotNull(typedDef);
     assertSame(typedDef.status(), Definition.TypeCheckingStatus.NO_ERRORS);
-    assertEquals(Nat(), typedDef.getTypeWithParams(new ArrayList<>(), Sort.SET0));
+    assertEquals(Nat(), typedDef.getTypeWithParams(new ArrayList<>(), LevelPair.SET0));
   }
 
   @Test
@@ -39,7 +39,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
     assertNotNull(typedDef);
     assertSame(typedDef.status(), Definition.TypeCheckingStatus.NO_ERRORS);
     List<DependentLink> params = new ArrayList<>();
-    Expression type = typedDef.getTypeWithParams(params, Sort.SET0);
+    Expression type = typedDef.getTypeWithParams(params, LevelPair.SET0);
     assertEquals(Pi(Nat(), Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat()))), fromPiParameters(type, params));
   }
 

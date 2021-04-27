@@ -7,6 +7,7 @@ import org.arend.core.expr.*;
 import org.arend.core.expr.visitor.NormalizingFindBindingVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
+import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.ErrorReporter;
@@ -140,9 +141,9 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
     return data instanceof ArrayPair ? ((ArrayPair) data).isEmpty : null;
   }
 
-  public Sort getSortArgument() {
+  public LevelPair getLevels() {
     Expression dataExpr = getDataExpression();
-    return dataExpr instanceof DefCallExpression ? ((DefCallExpression) dataExpr).getSortArgument() : dataExpr instanceof SmallIntegerExpression ? Sort.PROP : null;
+    return dataExpr instanceof DefCallExpression ? ((DefCallExpression) dataExpr).getLevels() : dataExpr instanceof SmallIntegerExpression ? LevelPair.PROP : null;
   }
 
   @Override
@@ -180,7 +181,7 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
 
     if (dataExpr instanceof ConCallExpression) {
       ConCallExpression conCall = (ConCallExpression) dataExpr;
-      return ConCallExpression.make(conCall.getDefinition(), conCall.getSortArgument(), conCall.getDataTypeArguments(), arguments);
+      return ConCallExpression.make(conCall.getDefinition(), conCall.getLevels(), conCall.getDataTypeArguments(), arguments);
     }
 
     if (dataExpr instanceof FunCallExpression && ((FunCallExpression) dataExpr).getDefinition() == Prelude.IDP || dataExpr instanceof SmallIntegerExpression) {
@@ -197,12 +198,12 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
       } else {
         newArgs = arguments;
       }
-      return FunCallExpression.make(funCall.getDefinition(), funCall.getSortArgument(), newArgs);
+      return FunCallExpression.make(funCall.getDefinition(), funCall.getLevels(), newArgs);
     }
 
     ClassCallExpression classCall = (ClassCallExpression) dataExpr;
     Map<ClassField, Expression> implementations = new HashMap<>();
-    ClassCallExpression resultClassCall = new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), implementations, Sort.PROP, UniverseKind.NO_UNIVERSES);
+    ClassCallExpression resultClassCall = new ClassCallExpression(classCall.getDefinition(), classCall.getLevels(), implementations, Sort.PROP, UniverseKind.NO_UNIVERSES);
     resultClassCall.copyImplementationsFrom(classCall);
     int i = 0;
     for (ClassField field : classCall.getDefinition().getFields()) {

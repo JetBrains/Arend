@@ -8,6 +8,7 @@ import org.arend.core.expr.LamExpression;
 import org.arend.core.expr.UniverseExpression;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
+import org.arend.core.subst.LevelPair;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.result.TypecheckingResult;
@@ -127,7 +128,7 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
   @Test
   public void parameters() {
     FunctionDefinition def = (FunctionDefinition) typeCheckDef("\\func f (x : Nat Nat) (p : x = {Nat} x) => p", 1);
-    assertEquals(FunCall(Prelude.PATH_INFIX, Sort.SET0, Nat(), Ref(def.getParameters()), Ref(def.getParameters())), def.getResultType());
+    assertEquals(FunCall(Prelude.PATH_INFIX, LevelPair.SET0, Nat(), Ref(def.getParameters()), Ref(def.getParameters())), def.getResultType());
   }
 
   @Test

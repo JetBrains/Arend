@@ -9,8 +9,8 @@ import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
 import org.arend.core.pattern.ExpressionPattern;
 import org.arend.core.pattern.Pattern;
-import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
+import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
@@ -25,30 +25,30 @@ import java.util.Objects;
 
 public class TypeCoerceExpression extends Expression implements CoreTypeCoerceExpression {
   private final FunctionDefinition myDefinition;
-  private Sort mySortArgument;
+  private LevelPair myLevels;
   private final int myClauseIndex;
   private final List<Expression> myClauseArguments;
   private Expression myArgument;
   private final boolean myFromLeftToRight;
 
-  private TypeCoerceExpression(FunctionDefinition definition, Sort sortArgument, int clauseIndex, List<Expression> clauseArguments, Expression argument, boolean fromLeftToRight) {
+  private TypeCoerceExpression(FunctionDefinition definition, LevelPair levels, int clauseIndex, List<Expression> clauseArguments, Expression argument, boolean fromLeftToRight) {
     myDefinition = definition;
-    mySortArgument = sortArgument;
+    myLevels = levels;
     myClauseIndex = clauseIndex;
     myClauseArguments = clauseArguments;
     myArgument = argument;
     myFromLeftToRight = fromLeftToRight;
   }
 
-  public static Expression make(FunctionDefinition definition, Sort sortArgument, int clauseIndex, List<Expression> clauseArguments, Expression argument, boolean fromLeftToRight) {
+  public static Expression make(FunctionDefinition definition, LevelPair levels, int clauseIndex, List<Expression> clauseArguments, Expression argument, boolean fromLeftToRight) {
     TypeCoerceExpression typeCoerce = argument == null ? null : argument.cast(TypeCoerceExpression.class);
-    return typeCoerce != null && definition == typeCoerce.myDefinition && fromLeftToRight != typeCoerce.myFromLeftToRight ? typeCoerce.myArgument : new TypeCoerceExpression(definition, sortArgument, clauseIndex, clauseArguments, argument, fromLeftToRight);
+    return typeCoerce != null && definition == typeCoerce.myDefinition && fromLeftToRight != typeCoerce.myFromLeftToRight ? typeCoerce.myArgument : new TypeCoerceExpression(definition, levels, clauseIndex, clauseArguments, argument, fromLeftToRight);
   }
 
   public static Expression match(FunCallExpression funCall, Expression argument, boolean fromLeftToRight) {
     if (funCall.getDefinition().getKind() != CoreFunctionDefinition.Kind.TYPE) return null;
     if (funCall.getDefinition().getActualBody() instanceof Expression) {
-      return TypeCoerceExpression.make(funCall.getDefinition(), funCall.getSortArgument(), -1, new ArrayList<>(funCall.getDefCallArguments()), argument, fromLeftToRight);
+      return TypeCoerceExpression.make(funCall.getDefinition(), funCall.getLevels(), -1, new ArrayList<>(funCall.getDefCallArguments()), argument, fromLeftToRight);
     }
     if (!(funCall.getDefinition().getActualBody() instanceof ElimBody)) return null;
 
@@ -58,7 +58,7 @@ public class TypeCoerceExpression extends Expression implements CoreTypeCoerceEx
       List<ExpressionPattern> patterns = Pattern.toExpressionPatterns(clauses.get(i).getPatterns(), funCall.getDefinition().getParameters());
       if (patterns == null) continue;
       if (ExpressionPattern.match(patterns, funCall.getDefCallArguments(), result) == Decision.YES) {
-        return TypeCoerceExpression.make(funCall.getDefinition(), funCall.getSortArgument(), i, result, argument, fromLeftToRight);
+        return TypeCoerceExpression.make(funCall.getDefinition(), funCall.getLevels(), i, result, argument, fromLeftToRight);
       }
     }
 
@@ -96,12 +96,12 @@ public class TypeCoerceExpression extends Expression implements CoreTypeCoerceEx
   public @NotNull FunCallExpression getLHSType() {
     Body body = myDefinition.getActualBody();
     if (body instanceof Expression) {
-      return FunCallExpression.makeFunCall(myDefinition, mySortArgument, myClauseArguments);
+      return FunCallExpression.makeFunCall(myDefinition, myLevels, myClauseArguments);
     } else {
       ElimClause<Pattern> clause = ((ElimBody) Objects.requireNonNull(body)).getClauses().get(myClauseIndex);
       List<ExpressionPattern> patterns = Pattern.toExpressionPatterns(clause.getPatterns(), myDefinition.getParameters());
-      List<Expression> defCallArguments = ExpressionPattern.applyClauseArguments(patterns, myClauseArguments, mySortArgument);
-      return FunCallExpression.makeFunCall(myDefinition, mySortArgument, defCallArguments);
+      List<Expression> defCallArguments = ExpressionPattern.applyClauseArguments(patterns, myClauseArguments, myLevels);
+      return FunCallExpression.makeFunCall(myDefinition, myLevels, defCallArguments);
     }
   }
 
@@ -109,10 +109,10 @@ public class TypeCoerceExpression extends Expression implements CoreTypeCoerceEx
   public @NotNull Expression getRHSType() {
     Body body = myDefinition.getActualBody();
     if (body instanceof Expression) {
-      return ((Expression) body).subst(new ExprSubstitution().add(myDefinition.getParameters(), myClauseArguments), mySortArgument.toLevelSubstitution());
+      return ((Expression) body).subst(new ExprSubstitution().add(myDefinition.getParameters(), myClauseArguments), myLevels);
     } else {
       ElimClause<Pattern> clause = ((ElimBody) Objects.requireNonNull(body)).getClauses().get(myClauseIndex);
-      return Objects.requireNonNull(clause.getExpression()).subst(new ExprSubstitution().add(Pattern.getFirstBinding(clause.getPatterns()), myClauseArguments), mySortArgument.toLevelSubstitution());
+      return Objects.requireNonNull(clause.getExpression()).subst(new ExprSubstitution().add(Pattern.getFirstBinding(clause.getPatterns()), myClauseArguments), myLevels);
     }
   }
 
@@ -120,12 +120,12 @@ public class TypeCoerceExpression extends Expression implements CoreTypeCoerceEx
     return myDefinition;
   }
 
-  public Sort getSortArgument() {
-    return mySortArgument;
+  public LevelPair getLevels() {
+    return myLevels;
   }
 
   public void substSort(LevelSubstitution substitution) {
-    mySortArgument = mySortArgument.subst(substitution);
+    myLevels = myLevels.subst(substitution);
   }
 
   public int getClauseIndex() {

@@ -14,6 +14,7 @@ import org.arend.core.expr.visitor.CompareVisitor;
 import org.arend.core.expr.visitor.FreeVariablesCollector;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
+import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.ext.concrete.expr.ConcreteArgument;
 import org.arend.ext.core.ops.CMP;
@@ -151,8 +152,9 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
         DefCallResult defCallResult = (DefCallResult) result;
         if (defCallResult.getDefinition() == Prelude.PATH_CON && defCallResult.getArguments().isEmpty()) {
           SingleDependentLink lamParam = new TypedSingleDependentLink(true, "i", Interval());
-          Expression binding = InferenceReferenceExpression.make(new FunctionInferenceVariable(Prelude.PATH_CON, Prelude.PATH_CON.getDataTypeParameters(), 1, new UniverseExpression(defCallResult.getSortArgument()), fun, myVisitor.getAllBindings()), myVisitor.getEquations());
-          Sort sort = defCallResult.getSortArgument().succ();
+          Sort sort0 = Sort.STD.subst(defCallResult.getLevels());
+          Expression binding = InferenceReferenceExpression.make(new FunctionInferenceVariable(Prelude.PATH_CON, Prelude.PATH_CON.getDataTypeParameters(), 1, new UniverseExpression(sort0), fun, myVisitor.getAllBindings()), myVisitor.getEquations());
+          Sort sort = sort0.succ();
           result = result.applyExpression(new LamExpression(sort, lamParam, binding), true, myVisitor.getErrorReporter(), fun);
 
           TypecheckingResult argResult = myVisitor.checkArgument(arg, new PiExpression(sort, lamParam, binding), result, null);
@@ -221,18 +223,18 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
       ClassCallExpression classCall = argResult.type.normalize(NormalizationMode.WHNF).cast(ClassCallExpression.class);
       PiExpression piType = null;
       if (classCall != null) {
-        piType = classCall.getDefinition().getOverriddenType(field, defCallResult.getSortArgument());
+        piType = classCall.getDefinition().getOverriddenType(field, defCallResult.getLevels());
       }
       if (piType == null) {
-        piType = field.getType(defCallResult.getSortArgument());
+        piType = field.getType(defCallResult.getLevels());
       }
-      return new TypecheckingResult(FieldCallExpression.make(field, defCallResult.getSortArgument(), argResult.expression), piType.applyExpression(argResult.expression));
+      return new TypecheckingResult(FieldCallExpression.make(field, defCallResult.getLevels(), argResult.expression), piType.applyExpression(argResult.expression));
     }
 
     if (result instanceof DefCallResult && ((DefCallResult) result).getDefinition() == Prelude.SUC) {
       Expression type = argResult.type.normalize(NormalizationMode.WHNF);
       if (type instanceof DataCallExpression && ((DataCallExpression) type).getDefinition() == Prelude.FIN) {
-        return new TypecheckingResult(Suc(argResult.expression), new DataCallExpression(Prelude.FIN, ((DataCallExpression) type).getSortArgument(), new SingletonList<>(Suc(((DataCallExpression) type).getDefCallArguments().get(0)))));
+        return new TypecheckingResult(Suc(argResult.expression), new DataCallExpression(Prelude.FIN, ((DataCallExpression) type).getLevels(), new SingletonList<>(Suc(((DataCallExpression) type).getDefCallArguments().get(0)))));
       }
     }
 
@@ -312,18 +314,18 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
           args1.addAll(args.subList(defCallResult.getArguments().size(), args.size()));
           args1 = ((Constructor) defCallResult.getDefinition()).matchDataTypeArguments(args1);
           if (args1 != null) {
-            boolean ok = dataCall.getUniverseKind() == UniverseKind.NO_UNIVERSES || Sort.compare(defCallResult.getSortArgument(), dataCall.getSortArgument(), dataCall.getUniverseKind() == UniverseKind.ONLY_COVARIANT ? CMP.LE : CMP.EQ, myVisitor.getEquations(), fun);
+            boolean ok = dataCall.getUniverseKind() == UniverseKind.NO_UNIVERSES || LevelPair.compare(defCallResult.getLevels(), dataCall.getLevels(), dataCall.getUniverseKind() == UniverseKind.ONLY_COVARIANT ? CMP.LE : CMP.EQ, myVisitor.getEquations(), fun);
 
             if (ok && !defCallResult.getArguments().isEmpty()) {
               ok = new CompareVisitor(myVisitor.getEquations(), CMP.LE, fun).compareLists(defCallResult.getArguments(), dataCall.getDefCallArguments().subList(0, defCallResult.getArguments().size()), dataCall.getDefinition().getParameters(), dataCall.getDefinition(), new ExprSubstitution());
             }
 
             if (!ok) {
-              myVisitor.getErrorReporter().report(new TypeMismatchError(dataCall, new DataCallExpression(dataCall.getDefinition(), defCallResult.getSortArgument(), args1), fun));
+              myVisitor.getErrorReporter().report(new TypeMismatchError(dataCall, new DataCallExpression(dataCall.getDefinition(), defCallResult.getLevels(), args1), fun));
               return null;
             }
 
-            result = DefCallResult.makeTResult(defCallResult.getDefCall(), defCallResult.getDefinition(), dataCall.getSortArgument());
+            result = DefCallResult.makeTResult(defCallResult.getDefCall(), defCallResult.getDefinition(), dataCall.getLevels());
             if (!args1.isEmpty()) {
               result = ((DefCallResult) result).applyExpressions(args1);
             }
@@ -338,7 +340,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
           }
           Expression elementsType = classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
           if (elementsType != null) {
-            result = DefCallResult.makeTResult(defCallResult.getDefCall(), defCallResult.getDefinition(), classCall.getSortArgument()).applyExpression(elementsType, true, myVisitor.getErrorReporter(), fun);
+            result = DefCallResult.makeTResult(defCallResult.getDefCall(), defCallResult.getDefinition(), classCall.getLevels()).applyExpression(elementsType, true, myVisitor.getErrorReporter(), fun);
           }
         }
       }
@@ -465,7 +467,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
                 if (length instanceof IntegerExpression && !((IntegerExpression) length).isZero() || length instanceof ConCallExpression && ((ConCallExpression) length).getDefinition() == Prelude.SUC) {
                   Map<ClassField, Expression> impls = new HashMap<>(classCall.getImplementedHere());
                   impls.put(Prelude.ARRAY_LENGTH, length instanceof IntegerExpression ? ((IntegerExpression) length).pred() : ((ConCallExpression) length).getDefCallArguments().get(0));
-                  classCall = new ClassCallExpression(Prelude.ARRAY, classCall.getSortArgument(), impls, classCall.getSort(), classCall.getUniverseKind());
+                  classCall = new ClassCallExpression(Prelude.ARRAY, classCall.getLevels(), impls, classCall.getSort(), classCall.getUniverseKind());
                 }
               }
             }

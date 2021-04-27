@@ -32,7 +32,7 @@ public class AppExpression extends Expression implements CoreAppExpression {
       SingleDependentLink next = var.getNext();
       return (next.hasNext() ? new LamExpression(lamExpr.getResultSort(), next, lamExpr.getBody()) : lamExpr.getBody()).subst(var, argument);
     } else if (function instanceof FieldCallExpression && ((FieldCallExpression) function).getDefinition() == Prelude.ARRAY_AT && Prelude.ARRAY_INDEX != null) {
-      return FunCallExpression.make(Prelude.ARRAY_INDEX, ((FieldCallExpression) function).getSortArgument(), Arrays.asList(((FieldCallExpression) function).getArgument(), argument));
+      return FunCallExpression.make(Prelude.ARRAY_INDEX, ((FieldCallExpression) function).getLevels(), Arrays.asList(((FieldCallExpression) function).getArgument(), argument));
     } else {
       return new AppExpression(function, argument, isExplicit);
     }

@@ -10,6 +10,7 @@ import org.arend.core.expr.ErrorExpression;
 import org.arend.core.expr.PiExpression;
 import org.arend.core.pattern.ExpressionPattern;
 import org.arend.core.sort.Sort;
+import org.arend.core.subst.LevelPair;
 import org.arend.error.CountingErrorReporter;
 import org.arend.ext.ArendExtension;
 import org.arend.ext.error.ErrorReporter;
@@ -178,7 +179,7 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
       typechecked = new ClassDefinition(definition.getData());
       for (Concrete.ClassElement element : ((Concrete.ClassDefinition) definition).getElements()) {
         if (element instanceof Concrete.ClassField) {
-          ClassField classField = new ClassField(((Concrete.ClassField) element).getData(), (ClassDefinition) typechecked, new PiExpression(Sort.PROP, new TypedSingleDependentLink(false, "this", new ClassCallExpression((ClassDefinition) typechecked, Sort.STD), true), new ErrorExpression()), null);
+          ClassField classField = new ClassField(((Concrete.ClassField) element).getData(), (ClassDefinition) typechecked, new PiExpression(Sort.PROP, new TypedSingleDependentLink(false, "this", new ClassCallExpression((ClassDefinition) typechecked, LevelPair.STD), true), new ErrorExpression()), null);
           classField.setStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
           ((ClassDefinition) typechecked).addPersonalField(classField);
           classField.getReferable().setTypecheckedIfAbsent(classField);

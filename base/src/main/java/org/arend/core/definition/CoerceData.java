@@ -3,9 +3,8 @@ package org.arend.core.definition;
 import org.arend.core.context.binding.inference.FunctionInferenceVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.expr.*;
-import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelSubstitution;
+import org.arend.core.subst.LevelPair;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.term.concrete.Concrete;
@@ -162,7 +161,7 @@ public class CoerceData {
       if (def instanceof ClassField) {
         ClassField field = (ClassField) def;
         ClassCallExpression classCall = result.type.cast(ClassCallExpression.class);
-        Sort sort = classCall == null ? Sort.generateInferVars(visitor.getEquations(), field.getParentClass().getUniverseKind(), sourceNode) : classCall.getSortArgument();
+        LevelPair sort = classCall == null ? LevelPair.generateInferVars(visitor.getEquations(), field.getParentClass().getUniverseKind(), sourceNode) : classCall.getLevels();
         Expression resultExpr = FieldCallExpression.make(field, sort, result.expression);
         result = new TypecheckingResult(resultExpr, resultExpr.getType());
       } else if (def instanceof FunctionDefinition || def instanceof Constructor) {
@@ -196,9 +195,8 @@ public class CoerceData {
           }
         }
 
-        Sort sortArg = Sort.generateInferVars(visitor.getEquations(), def.getUniverseKind(), sourceNode);
-        LevelSubstitution levelSubst = sortArg.toLevelSubstitution();
-        if (!visitor.checkCoerceResult(link.getTypeExpr().subst(substitution, levelSubst), result, sourceNode, argStrict)) {
+        LevelPair levels = LevelPair.generateInferVars(visitor.getEquations(), def.getUniverseKind(), sourceNode);
+        if (!visitor.checkCoerceResult(link.getTypeExpr().subst(substitution, levels), result, sourceNode, argStrict)) {
           if (argStrict) {
             return null;
           }
@@ -207,9 +205,9 @@ public class CoerceData {
 
         substitution.add(link, result.expression);
         if (def instanceof FunctionDefinition) {
-          result = new TypecheckingResult(FunCallExpression.make((FunctionDefinition) def, sortArg, arguments), ((FunctionDefinition) def).getResultType().subst(substitution, levelSubst).normalize(NormalizationMode.WHNF));
+          result = new TypecheckingResult(FunCallExpression.make((FunctionDefinition) def, levels, arguments), ((FunctionDefinition) def).getResultType().subst(substitution, levels).normalize(NormalizationMode.WHNF));
         } else {
-          Expression resultExpr = ConCallExpression.make((Constructor) def, sortArg, dataArgs, arguments);
+          Expression resultExpr = ConCallExpression.make((Constructor) def, levels, dataArgs, arguments);
           result = new TypecheckingResult(resultExpr, resultExpr.computeType().normalize(NormalizationMode.WHNF));
         }
       } else {
@@ -310,7 +308,7 @@ public class CoerceData {
   }
 
   public void addCoercingField(ClassField coercingField, @Nullable ErrorReporter errorReporter, @Nullable Concrete.SourceNode cause) {
-    Key key = getKey(coercingField.getType(Sort.STD).getCodomain());
+    Key key = getKey(coercingField.getType(LevelPair.STD).getCodomain());
     if (myMapTo.putIfAbsent(key, Collections.singletonList(coercingField)) != null && errorReporter != null) {
       errorReporter.report(new CoerceClashError(key, cause));
     }

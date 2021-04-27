@@ -5,6 +5,7 @@ import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.expr.ClassCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.sort.Sort;
+import org.arend.core.subst.LevelPair;
 import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.extImpl.userData.UserDataHolderImpl;
 import org.arend.naming.reference.TCDefReferable;
@@ -74,9 +75,9 @@ public abstract class Definition extends UserDataHolderImpl implements CoreDefin
     }
   }
 
-  public abstract Expression getTypeWithParams(List<? super DependentLink> params, Sort sortArgument);
+  public abstract Expression getTypeWithParams(List<? super DependentLink> params, LevelPair levels);
 
-  public abstract Expression getDefCall(Sort sortArgument, List<Expression> args);
+  public abstract Expression getDefCall(LevelPair levels, List<Expression> args);
 
   public CoerceData getCoerceData() {
     return null;

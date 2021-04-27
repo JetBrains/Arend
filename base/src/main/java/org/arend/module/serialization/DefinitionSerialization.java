@@ -13,7 +13,7 @@ import org.arend.core.pattern.BindingPattern;
 import org.arend.core.pattern.ConstructorExpressionPattern;
 import org.arend.core.pattern.EmptyPattern;
 import org.arend.core.pattern.ExpressionPattern;
-import org.arend.core.sort.Sort;
+import org.arend.core.subst.LevelPair;
 import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.ext.reference.Precedence;
 import org.arend.ext.serialization.ArendSerializer;
@@ -84,7 +84,7 @@ public class DefinitionSerialization implements ArendSerializer {
     for (ClassField field : definition.getPersonalFields()) {
       DefinitionProtos.Definition.ClassData.Field.Builder fBuilder = DefinitionProtos.Definition.ClassData.Field.newBuilder();
       fBuilder.setReferable(writeReferable(field));
-      fBuilder.setType(defSerializer.visitPi(field.getType(Sort.STD)));
+      fBuilder.setType(defSerializer.visitPi(field.getType(LevelPair.STD)));
       if (field.getTypeLevel() != null) {
         fBuilder.setTypeLevel(defSerializer.writeExpr(field.getTypeLevel()));
       }

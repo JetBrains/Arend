@@ -45,7 +45,7 @@ public class PEvalExpression extends Expression implements CorePEvalExpression {
   }
 
   public LevelSubstitution getLevelSubstitution() {
-    return myExpression instanceof FunCallExpression ? ((FunCallExpression) myExpression).getSortArgument().toLevelSubstitution() : LevelSubstitution.EMPTY;
+    return myExpression instanceof FunCallExpression ? ((FunCallExpression) myExpression).getLevels() : LevelSubstitution.EMPTY;
   }
 
   public List<? extends Expression> getArguments() {

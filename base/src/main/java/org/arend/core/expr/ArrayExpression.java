@@ -1,8 +1,10 @@
 package org.arend.core.expr;
 
+import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
-import org.arend.core.sort.Sort;
+import org.arend.core.sort.Level;
+import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.ext.core.expr.CoreArrayExpression;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
@@ -16,43 +18,43 @@ import java.util.Collections;
 import java.util.List;
 
 public class ArrayExpression extends Expression implements CoreArrayExpression {
-  private Sort mySortArg;
+  private LevelPair myLevels;
   private final Expression myElementsType;
   private final List<Expression> myElements;
   private final Expression myTail;
 
-  private ArrayExpression(Sort sortArg, Expression elementsType, List<Expression> elements, Expression tail) {
-    mySortArg = sortArg;
+  private ArrayExpression(LevelPair levels, Expression elementsType, List<Expression> elements, Expression tail) {
+    myLevels = levels;
     myElementsType = elementsType;
     myElements = elements;
     myTail = tail;
   }
 
-  public static Expression make(Sort sortArg, Expression elementsType, List<Expression> elements, Expression tail) {
+  public static Expression make(LevelPair levels, Expression elementsType, List<Expression> elements, Expression tail) {
     if (tail instanceof ArrayExpression) {
       List<Expression> newElements = new ArrayList<>(elements.size() + ((ArrayExpression) tail).myElements.size());
       newElements.addAll(elements);
       newElements.addAll(((ArrayExpression) tail).myElements);
-      return new ArrayExpression(sortArg, elementsType, newElements, ((ArrayExpression) tail).myTail);
+      return new ArrayExpression(levels, elementsType, newElements, ((ArrayExpression) tail).myTail);
     } else {
-      return tail != null && elements.isEmpty() ? tail : new ArrayExpression(sortArg, elementsType, elements, tail);
+      return tail != null && elements.isEmpty() ? tail : new ArrayExpression(levels, elementsType, elements, tail);
     }
   }
 
-  public static ArrayExpression makeArray(Sort sortArg, Expression elementsType, List<Expression> elements, Expression tail) {
-    return (ArrayExpression) make(sortArg, elementsType, elements, tail);
+  public static ArrayExpression makeArray(LevelPair levels, Expression elementsType, List<Expression> elements, Expression tail) {
+    return (ArrayExpression) make(levels, elementsType, elements, tail);
   }
 
-  public void substSort(LevelSubstitution substitution) {
-    mySortArg = mySortArg.subst(substitution);
+  public void substLevels(LevelSubstitution substitution) {
+    myLevels = myLevels.subst(substitution);
   }
 
   public Expression drop(int n) {
     assert n <= myElements.size();
     if (n >= myElements.size()) {
-      return myTail == null ? new ArrayExpression(mySortArg, myElementsType, Collections.emptyList(), null) : myTail;
+      return myTail == null ? new ArrayExpression(myLevels, myElementsType, Collections.emptyList(), null) : myTail;
     } else {
-      return new ArrayExpression(mySortArg, myElementsType, myElements.subList(n, myElements.size()), myTail);
+      return new ArrayExpression(myLevels, myElementsType, myElements.subList(n, myElements.size()), myTail);
     }
   }
 
@@ -65,9 +67,18 @@ public class ArrayExpression extends Expression implements CoreArrayExpression {
     return myElementsType;
   }
 
+  public @NotNull LevelPair getLevels() {
+    return myLevels;
+  }
+
   @Override
-  public @NotNull Sort getSortArgument() {
-    return mySortArg;
+  public @NotNull Level getPLevel() {
+    return myLevels.get(LevelVariable.PVAR);
+  }
+
+  @Override
+  public @NotNull Level getHLevel() {
+    return myLevels.get(LevelVariable.HVAR);
   }
 
   @Override

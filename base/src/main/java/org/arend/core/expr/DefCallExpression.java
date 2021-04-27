@@ -1,12 +1,12 @@
 package org.arend.core.expr;
 
-import org.arend.core.context.param.DependentLink;
+import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.definition.Definition;
 import org.arend.core.definition.ParametersLevel;
 import org.arend.core.definition.UniverseKind;
-import org.arend.core.sort.Sort;
-import org.arend.core.subst.ExprSubstitution;
+import org.arend.core.sort.Level;
 import org.arend.core.subst.LevelSubstitution;
+import org.arend.core.subst.LevelPair;
 import org.arend.ext.core.expr.CoreDefCallExpression;
 import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
@@ -16,11 +16,11 @@ import java.util.List;
 
 public abstract class DefCallExpression extends Expression implements CoreDefCallExpression {
   private final Definition myDefinition;
-  private Sort mySortArgument;
+  private LevelPair myLevels;
 
-  public DefCallExpression(Definition definition, Sort sortArgument) {
+  public DefCallExpression(Definition definition, LevelPair levels) {
     myDefinition = definition;
-    mySortArgument = sortArgument;
+    myLevels = levels;
   }
 
   @Override
@@ -32,22 +32,23 @@ public abstract class DefCallExpression extends Expression implements CoreDefCal
     return getDefCallArguments();
   }
 
-  public ExprSubstitution addArguments(ExprSubstitution substitution) {
-    DependentLink link = myDefinition.getParameters();
-    for (Expression argument : getDefCallArguments()) {
-      substitution.add(link, argument);
-      link = link.getNext();
-    }
-    return substitution;
+  @NotNull
+  public LevelPair getLevels() {
+    return myLevels;
   }
 
-  @NotNull
-  public Sort getSortArgument() {
-    return mySortArgument;
+  @Override
+  public @NotNull Level getPLevel() {
+    return myLevels.get(LevelVariable.PVAR);
+  }
+
+  @Override
+  public @NotNull Level getHLevel() {
+    return myLevels.get(LevelVariable.HVAR);
   }
 
   public void substSort(LevelSubstitution substitution) {
-    mySortArgument = mySortArgument.subst(substitution);
+    myLevels = myLevels.subst(substitution);
   }
 
   @Override

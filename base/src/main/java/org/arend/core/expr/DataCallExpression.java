@@ -12,6 +12,7 @@ import org.arend.core.pattern.ExpressionPattern;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.InPlaceLevelSubstVisitor;
+import org.arend.core.subst.LevelPair;
 import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.core.definition.CoreConstructor;
 import org.arend.ext.core.expr.CoreDataCallExpression;
@@ -29,8 +30,8 @@ import java.util.List;
 public class DataCallExpression extends DefCallExpression implements Type, CoreDataCallExpression {
   private final List<Expression> myArguments;
 
-  public DataCallExpression(DataDefinition definition, Sort sortArgument, List<Expression> arguments) {
-    super(definition, sortArgument);
+  public DataCallExpression(DataDefinition definition, LevelPair levels, List<Expression> arguments) {
+    super(definition, levels);
     myArguments = arguments;
   }
 
@@ -68,7 +69,7 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
 
   @Override
   public Sort getSortOfType() {
-    return getDefinition().getSort().subst(getSortArgument().toLevelSubstitution());
+    return getDefinition().getSort().subst(getLevels());
   }
 
   @Override
@@ -200,7 +201,7 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
       matchedParameters = myArguments;
     }
 
-    conCalls.add(new ConCallExpression(constructor, getSortArgument(), matchedParameters, new ArrayList<>()));
+    conCalls.add(new ConCallExpression(constructor, getLevels(), matchedParameters, new ArrayList<>()));
     return true;
   }
 

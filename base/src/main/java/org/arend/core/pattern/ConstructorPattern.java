@@ -9,6 +9,7 @@ import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.*;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
+import org.arend.core.subst.LevelPair;
 import org.arend.ext.core.body.CorePattern;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
@@ -46,10 +47,10 @@ public abstract class ConstructorPattern<T> implements Pattern {
       args.add(toExpression(subPattern));
     }
     if (conPattern.data instanceof Constructor) {
-      return ConCallExpression.make((Constructor) conPattern.data, Sort.STD, Collections.emptyList(), args);
+      return ConCallExpression.make((Constructor) conPattern.data, LevelPair.STD, Collections.emptyList(), args);
     }
     if (conPattern.data instanceof FunctionDefinition) {
-      return FunCallExpression.make((FunctionDefinition) conPattern.data, Sort.STD, args);
+      return FunCallExpression.make((FunctionDefinition) conPattern.data, LevelPair.STD, args);
     }
     return new TupleExpression(args, new SigmaExpression(Sort.PROP, EmptyDependentLink.getInstance()));
   }
@@ -98,20 +99,20 @@ public abstract class ConstructorPattern<T> implements Pattern {
         return null;
       }
 
-      return new ConstructorExpressionPattern(new ConCallExpression(constructor, dataCall.getSortArgument(), args, Collections.emptyList()), subPatterns);
+      return new ConstructorExpressionPattern(new ConCallExpression(constructor, dataCall.getLevels(), args, Collections.emptyList()), subPatterns);
     } else if (type instanceof DataCallExpression && getDefinition() == Prelude.IDP) {
       FunCallExpression equality = type.toEquality();
       if (equality == null) {
         return null;
       }
-      return new ConstructorExpressionPattern(FunCallExpression.makeFunCall(Prelude.IDP, equality.getSortArgument(), Arrays.asList(equality.getDefCallArguments().get(0), equality.getDefCallArguments().get(1))), Collections.emptyList());
+      return new ConstructorExpressionPattern(FunCallExpression.makeFunCall(Prelude.IDP, equality.getLevels(), Arrays.asList(equality.getDefCallArguments().get(0), equality.getDefCallArguments().get(1))), Collections.emptyList());
     } else if (type instanceof ClassCallExpression) {
       ClassCallExpression classCall = (ClassCallExpression) type;
       if (classCall.getDefinition() == Prelude.ARRAY) {
         Definition def = getDefinition();
         if (def == Prelude.EMPTY_ARRAY || def == Prelude.ARRAY_CONS) {
           Expression elementsType = classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
-          return new ConstructorExpressionPattern(new FunCallExpression((DConstructor) def, classCall.getSortArgument(), elementsType), classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH), Pattern.toExpressionPatterns(mySubPatterns, ((DConstructor) def).getArrayParameters(classCall)));
+          return new ConstructorExpressionPattern(new FunCallExpression((DConstructor) def, classCall.getLevels(), elementsType), classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH), Pattern.toExpressionPatterns(mySubPatterns, ((DConstructor) def).getArrayParameters(classCall)));
         }
       }
 

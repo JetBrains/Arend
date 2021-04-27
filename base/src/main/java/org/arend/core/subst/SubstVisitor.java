@@ -15,7 +15,6 @@ import org.arend.core.expr.let.HaveClause;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.visitor.ExpressionTransformer;
 import org.arend.core.pattern.Pattern;
-import org.arend.core.sort.Sort;
 
 import java.util.*;
 
@@ -53,12 +52,12 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
     for (Expression arg : expr.getDefCallArguments()) {
       args.add(arg.accept(this, null));
     }
-    return expr.getDefinition().getDefCall(expr.getSortArgument().subst(myLevelSubstitution), args);
+    return expr.getDefinition().getDefCall(expr.getLevels().subst(myLevelSubstitution), args);
   }
 
   @Override
-  protected ConCallExpression makeConCall(Constructor constructor, Sort sortArgument, List<Expression> dataTypeArguments, List<Expression> arguments) {
-    return new ConCallExpression(constructor, sortArgument.subst(myLevelSubstitution), dataTypeArguments, arguments);
+  protected ConCallExpression makeConCall(Constructor constructor, LevelPair levels, List<Expression> dataTypeArguments, List<Expression> arguments) {
+    return new ConCallExpression(constructor, levels.subst(myLevelSubstitution), dataTypeArguments, arguments);
   }
 
   @Override
@@ -68,7 +67,7 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
       for (Expression parameter : expr.getDataTypeArguments()) {
         dataTypeArgs.add(parameter.accept(this, null));
       }
-      return ConCallExpression.make(expr.getDefinition(), expr.getSortArgument().subst(myLevelSubstitution), dataTypeArgs, Collections.emptyList());
+      return ConCallExpression.make(expr.getDefinition(), expr.getLevels().subst(myLevelSubstitution), dataTypeArgs, Collections.emptyList());
     } else {
       return super.visitConCall(expr, null);
     }
@@ -77,7 +76,7 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
   @Override
   public Expression visitClassCall(ClassCallExpression expr, Void params) {
     Map<ClassField, Expression> fieldSet = new HashMap<>();
-    ClassCallExpression result = new ClassCallExpression(expr.getDefinition(), expr.getSortArgument().subst(myLevelSubstitution), fieldSet, expr.getSort().subst(myLevelSubstitution), expr.getUniverseKind());
+    ClassCallExpression result = new ClassCallExpression(expr.getDefinition(), expr.getLevels().subst(myLevelSubstitution), fieldSet, expr.getSort().subst(myLevelSubstitution), expr.getUniverseKind());
     if (expr.getImplementedHere().isEmpty()) {
       return result;
     }
@@ -92,7 +91,7 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
 
   @Override
   public Expression visitFieldCall(FieldCallExpression expr, Void params) {
-    return FieldCallExpression.make(expr.getDefinition(), expr.getSortArgument().subst(myLevelSubstitution), expr.getArgument().accept(this, null));
+    return FieldCallExpression.make(expr.getDefinition(), expr.getLevels().subst(myLevelSubstitution), expr.getArgument().accept(this, null));
   }
 
   @Override
@@ -256,7 +255,7 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
       BranchKey key;
       if (entry.getKey() instanceof ClassConstructor) {
         ClassConstructor classCon = (ClassConstructor) entry.getKey();
-        key = new ClassConstructor(classCon.getClassDefinition(), classCon.getSort().subst(myLevelSubstitution), classCon.getImplementedFields());
+        key = new ClassConstructor(classCon.getClassDefinition(), classCon.getLevels().subst(myLevelSubstitution), classCon.getImplementedFields());
       } else {
         key = entry.getKey();
       }
@@ -281,7 +280,7 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
     for (Expression arg : expr.getClauseArguments()) {
       args.add(arg.accept(this, null));
     }
-    return TypeCoerceExpression.make(expr.getDefinition(), expr.getSortArgument().subst(myLevelSubstitution), expr.getClauseIndex(), args, expr.getArgument().accept(this, null), expr.isFromLeftToRight());
+    return TypeCoerceExpression.make(expr.getDefinition(), expr.getLevels().subst(myLevelSubstitution), expr.getClauseIndex(), args, expr.getArgument().accept(this, null), expr.isFromLeftToRight());
   }
 
   @Override
@@ -290,6 +289,6 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
     for (Expression arg : expr.getElements()) {
       elements.add(arg.accept(this, null));
     }
-    return ArrayExpression.make(expr.getSortArgument().subst(myLevelSubstitution), expr.getElementsType().accept(this, null), elements, expr.getTail() == null ? null : expr.getTail().accept(this, null));
+    return ArrayExpression.make(expr.getLevels().subst(myLevelSubstitution), expr.getElementsType().accept(this, null), elements, expr.getTail() == null ? null : expr.getTail().accept(this, null));
   }
 }

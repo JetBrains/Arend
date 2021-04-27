@@ -13,7 +13,7 @@ import org.arend.core.expr.ReferenceExpression;
 import org.arend.core.pattern.BindingPattern;
 import org.arend.core.pattern.ConstructorPattern;
 import org.arend.core.pattern.Pattern;
-import org.arend.core.sort.Sort;
+import org.arend.core.subst.LevelPair;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.TypeCheckingTestCase;
@@ -162,10 +162,11 @@ public class ElimTest extends TypeCheckingTestCase {
     FunctionDefinition test = (FunctionDefinition) getDefinition("test");
     Constructor d = (Constructor) getDefinition("d");
     Binding binding = new TypedBinding("y", Nat());
-    Expression call1 = ConCall(d, Sort.SET0, Collections.emptyList(), Zero(), Ref(binding));
-    Expression call2 = ConCall(d, Sort.SET0, Collections.emptyList(), Suc(Zero()), Ref(binding));
-    assertEquals(FunCall(test, Sort.SET0, call1), FunCall(test, Sort.SET0, call1).normalize(NormalizationMode.NF));
-    assertEquals(Suc(Zero()), FunCall(test, Sort.SET0, call2).normalize(NormalizationMode.NF));
+    LevelPair set0 = LevelPair.SET0;
+    Expression call1 = ConCall(d, set0, Collections.emptyList(), Zero(), Ref(binding));
+    Expression call2 = ConCall(d, set0, Collections.emptyList(), Suc(Zero()), Ref(binding));
+    assertEquals(FunCall(test, set0, call1), FunCall(test, set0, call1).normalize(NormalizationMode.NF));
+    assertEquals(Suc(Zero()), FunCall(test, set0, call2).normalize(NormalizationMode.NF));
   }
 
   @Test

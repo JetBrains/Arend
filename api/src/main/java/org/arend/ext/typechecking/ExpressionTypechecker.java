@@ -16,6 +16,7 @@ import org.arend.ext.core.expr.AbstractedExpression;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.core.expr.CoreInferenceReferenceExpression;
 import org.arend.ext.core.expr.UncheckedExpression;
+import org.arend.ext.core.level.CoreLevel;
 import org.arend.ext.core.level.CoreSort;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.SubstitutionPair;
@@ -120,17 +121,17 @@ public interface ExpressionTypechecker extends UserDataHolder {
 
   /**
    * Typechecks expressions in {@code substitution} and substitutes them into {@code expression}.
-   * Also, substitutes {@code sort} if it is not null.
+   * Also, substitutes {@code pLevel} and {@code hLevel} if they are not null.
    * Bindings in {@code substitution} must be listed in the same order they are defined.
    */
-  @Nullable CoreExpression substitute(@NotNull CoreExpression expression, @Nullable CoreSort sort, @NotNull List<SubstitutionPair> substitution);
+  @Nullable CoreExpression substitute(@NotNull CoreExpression expression, @Nullable CoreLevel pLevel, @Nullable CoreLevel hLevel, @NotNull List<SubstitutionPair> substitution);
 
   /**
    * Typechecks {@code arguments} and substitutes them into {@code expression}.
-   * Also, substitutes {@code sort} if it is not null.
+   * Also, substitutes {@code pLevel} and {@code hLevel} if they are not null.
    * The number of {@code arguments} should be less than or equal to the length of the context of {@code expression}.
    */
-  @Nullable AbstractedExpression substituteAbstractedExpression(@NotNull AbstractedExpression expression, @Nullable CoreSort sort, @NotNull List<? extends ConcreteExpression> arguments);
+  @Nullable AbstractedExpression substituteAbstractedExpression(@NotNull AbstractedExpression expression, @Nullable CoreLevel pLevel, @Nullable CoreLevel hLevel, @NotNull List<? extends ConcreteExpression> arguments);
 
   /**
    * Typechecks {@code arguments} and substitutes them into {@code expression}.
@@ -141,12 +142,12 @@ public interface ExpressionTypechecker extends UserDataHolder {
 
   /**
    * Typechecks {@code arguments} and substitutes them into {@code parameters}.
-   * Also, substitutes {@code sort} if it is not null.
+   * Also, substitutes {@code pLevel} and {@code hLevel} if they are not null.
    * Some elements of {@code arguments} may be {@code null}; the corresponding parameters will be added to the result.
    * The size of {@code arguments} should be less than or equal to the size of {@code parameters}.
    * The size of the result is the size of {@code parameters} minus the number of non-null elements of {@code arguments}.
    */
-  @Nullable CoreParameter substituteParameters(@NotNull CoreParameter parameters, @Nullable CoreSort sort, @NotNull List<? extends ConcreteExpression> arguments);
+  @Nullable CoreParameter substituteParameters(@NotNull CoreParameter parameters, @Nullable CoreLevel pLevel, @Nullable CoreLevel hLevel, @NotNull List<? extends ConcreteExpression> arguments);
 
   /**
    * Defers the invocation of the given meta.

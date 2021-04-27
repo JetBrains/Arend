@@ -38,7 +38,7 @@ public class InferenceReferenceExpression extends Expression implements CoreInfe
         if (!field.isProperty()) {
           Expression impl = classCall.getImplementation(field, result);
           if (impl != null) {
-            equations.addEquation(FieldCallExpression.make(field, classCall.getSortArgument(), result), impl.normalize(NormalizationMode.WHNF), classCall.getDefinition().getFieldType(field, classCall.getSortArgument(), result), CMP.EQ, binding.getSourceNode(), binding, impl.getStuckInferenceVariable(), false);
+            equations.addEquation(FieldCallExpression.make(field, classCall.getLevels(), result), impl.normalize(NormalizationMode.WHNF), classCall.getDefinition().getFieldType(field, classCall.getLevels(), result), CMP.EQ, binding.getSourceNode(), binding, impl.getStuckInferenceVariable(), false);
             if (result.getSubstExpression() != null) {
               return result.getSubstExpression();
             }
@@ -46,7 +46,7 @@ public class InferenceReferenceExpression extends Expression implements CoreInfe
           }
         }
       }
-      type = new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument());
+      type = new ClassCallExpression(classCall.getDefinition(), classCall.getLevels());
     }
     binding.setType(type);
     return result;

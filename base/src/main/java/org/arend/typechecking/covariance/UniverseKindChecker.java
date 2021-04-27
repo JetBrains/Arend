@@ -4,7 +4,7 @@ import org.arend.core.definition.UniverseKind;
 import org.arend.core.elimtree.*;
 import org.arend.core.expr.DefCallExpression;
 import org.arend.core.expr.Expression;
-import org.arend.core.sort.Sort;
+import org.arend.core.sort.Level;
 import org.arend.typechecking.visitor.CheckForUniversesVisitor;
 import org.arend.util.Pair;
 
@@ -60,8 +60,8 @@ public class UniverseKindChecker extends UniverseInParametersChecker {
   }
 
   @Override
-  protected boolean checkSort(Sort sort, DefCallExpression defCall) {
-    if (!CheckForUniversesVisitor.visitSort(sort)) {
+  protected boolean checkLevels(Level pLevel, Level hLevel, DefCallExpression defCall) {
+    if (!CheckForUniversesVisitor.visitLevels(pLevel, hLevel)) {
       return false;
     }
 

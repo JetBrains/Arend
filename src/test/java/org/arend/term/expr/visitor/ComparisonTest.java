@@ -10,7 +10,8 @@ import org.arend.core.expr.DataCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.PiExpression;
 import org.arend.core.expr.let.LetClause;
-import org.arend.core.sort.Sort;
+import org.arend.core.sort.Level;
+import org.arend.core.subst.LevelPair;
 import org.arend.ext.core.ops.CMP;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.TypeCheckingTestCase;
@@ -178,7 +179,7 @@ public class ComparisonTest extends TypeCheckingTestCase {
 
   @Test
   public void etaLam() {
-    PiExpression type = Pi(singleParam(null, Nat()), DataCall(Prelude.PATH, Sort.SET0,
+    PiExpression type = Pi(singleParam(null, Nat()), DataCall(Prelude.PATH, LevelPair.SET0,
             Lam(singleParam("i", Interval()), Nat()), Zero(), Zero()));
     TypecheckingResult result1 = typeCheckExpr("\\lam a x => path (\\lam i => a x @ i)", Pi(singleParam(null, type), type));
     TypecheckingResult result2 = typeCheckExpr("\\lam a => a", Pi(singleParam(null, type), type));
@@ -187,7 +188,7 @@ public class ComparisonTest extends TypeCheckingTestCase {
 
   @Test
   public void etaLamBody() {
-    PiExpression type = Pi(singleParam(null, Nat()), DataCall(Prelude.PATH, Sort.SET0,
+    PiExpression type = Pi(singleParam(null, Nat()), DataCall(Prelude.PATH, LevelPair.SET0,
       Lam(singleParam("i", Interval()), Nat()), Zero(), Zero()));
     TypecheckingResult result1 = typeCheckExpr("\\lam a x => path (\\lam i => a x @ i)", Pi(singleParam(null, type), type));
     TypecheckingResult result2 = typeCheckExpr("\\lam a => \\lam x => a x", Pi(singleParam(null, type), type));
@@ -197,7 +198,7 @@ public class ComparisonTest extends TypeCheckingTestCase {
   @Test
   public void etaPath() {
     SingleDependentLink x = singleParam("x", Nat());
-    DataCallExpression type = DataCall(Prelude.PATH, Sort.SET0,
+    DataCallExpression type = DataCall(Prelude.PATH, LevelPair.SET0,
             Lam(singleParam("i", Interval()), Pi(singleParam(null, Nat()), Nat())), Lam(x, Ref(x)), Lam(x, Ref(x)));
     TypecheckingResult result1 = typeCheckExpr("\\lam a => path (\\lam i x => (a @ i) x)", Pi(singleParam(null, type), type));
     TypecheckingResult result2 = typeCheckExpr("\\lam a => a", Pi(singleParam(null, type), type));

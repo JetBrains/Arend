@@ -7,6 +7,7 @@ import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.definition.UniverseKind;
 import org.arend.core.expr.*;
 import org.arend.core.sort.Sort;
+import org.arend.core.subst.LevelPair;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
@@ -228,7 +229,7 @@ public class ArrayTest extends TypeCheckingTestCase {
     Map<ClassField, Expression> impls = new HashMap<>();
     impls.put(Prelude.ARRAY_ELEMENTS_TYPE, Nat());
     impls.put(Prelude.ARRAY_LENGTH, new ReferenceExpression(def.getParameters()));
-    assertThatErrorsAre(Matchers.goal(1), Matchers.goal(new ClassCallExpression(Prelude.ARRAY, Sort.SET0, impls, Sort.SET0, UniverseKind.NO_UNIVERSES)));
+    assertThatErrorsAre(Matchers.goal(1), Matchers.goal(new ClassCallExpression(Prelude.ARRAY, LevelPair.SET0, impls, Sort.SET0, UniverseKind.NO_UNIVERSES)));
   }
 
   @Test
@@ -237,7 +238,7 @@ public class ArrayTest extends TypeCheckingTestCase {
     Map<ClassField, Expression> impls = new HashMap<>();
     impls.put(Prelude.ARRAY_ELEMENTS_TYPE, Nat());
     impls.put(Prelude.ARRAY_LENGTH, new SmallIntegerExpression(5));
-    assertThatErrorsAre(Matchers.goal(0), Matchers.goal(0), Matchers.goal(new ClassCallExpression(Prelude.ARRAY, Sort.SET0, impls, Sort.SET0, UniverseKind.NO_UNIVERSES)));
+    assertThatErrorsAre(Matchers.goal(0), Matchers.goal(0), Matchers.goal(new ClassCallExpression(Prelude.ARRAY, LevelPair.SET0, impls, Sort.SET0, UniverseKind.NO_UNIVERSES)));
   }
 
   @Test

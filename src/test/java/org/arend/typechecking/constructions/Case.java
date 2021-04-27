@@ -5,6 +5,7 @@ import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.definition.Definition;
 import org.arend.core.expr.*;
 import org.arend.core.sort.Sort;
+import org.arend.core.subst.LevelPair;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.arend.typechecking.error.local.TruncatedDataError;
@@ -212,7 +213,7 @@ public class Case extends TypeCheckingTestCase {
   @Test
   public void elimTypeTest() {
     TypedBinding n = new TypedBinding("n", ExpressionFactory.Nat());
-    Expression type = FunCallExpression.make(Prelude.PATH_INFIX, Sort.SET0, Arrays.asList(ExpressionFactory.Nat(), new ReferenceExpression(n), new SmallIntegerExpression(0)));
+    Expression type = FunCallExpression.make(Prelude.PATH_INFIX, LevelPair.SET0, Arrays.asList(ExpressionFactory.Nat(), new ReferenceExpression(n), new SmallIntegerExpression(0)));
     typeCheckExpr(Arrays.asList(n, new TypedBinding("p", type)),
       "\\case \\elim n, p \\with {\n" +
       "  | 0, _ => idp\n" +
@@ -223,7 +224,7 @@ public class Case extends TypeCheckingTestCase {
   @Test
   public void elimTypeTest2() {
     TypedBinding n = new TypedBinding("n", ExpressionFactory.Nat());
-    Expression type = FunCallExpression.make(Prelude.PATH_INFIX, Sort.SET0, Arrays.asList(ExpressionFactory.Nat(), new ReferenceExpression(n), new SmallIntegerExpression(0)));
+    Expression type = FunCallExpression.make(Prelude.PATH_INFIX, LevelPair.SET0, Arrays.asList(ExpressionFactory.Nat(), new ReferenceExpression(n), new SmallIntegerExpression(0)));
     typeCheckExpr(Arrays.asList(n, new TypedBinding("p", type)),
       "\\case \\elim n, p \\return n = 0 \\with {\n" +
       "  | 0, _ => idp\n" +

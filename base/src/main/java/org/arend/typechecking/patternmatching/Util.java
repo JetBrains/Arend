@@ -12,8 +12,8 @@ import org.arend.core.expr.FunCallExpression;
 import org.arend.core.pattern.BindingPattern;
 import org.arend.core.pattern.ConstructorExpressionPattern;
 import org.arend.core.pattern.ExpressionPattern;
-import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
+import org.arend.core.subst.LevelPair;
 
 import java.util.*;
 
@@ -80,7 +80,7 @@ public class Util {
 
     @Override
     public ConstructorExpressionPattern getPattern(List<ExpressionPattern> subPatterns) {
-      return new ConstructorExpressionPattern(new ConCallExpression(constructor, Sort.STD, dataArguments, Collections.emptyList()), subPatterns);
+      return new ConstructorExpressionPattern(new ConCallExpression(constructor, LevelPair.STD, dataArguments, Collections.emptyList()), subPatterns);
     }
   }
 
@@ -102,7 +102,7 @@ public class Util {
 
     @Override
     public ConstructorExpressionPattern getPattern(List<ExpressionPattern> subPatterns) {
-      return new ConstructorExpressionPattern(new FunCallExpression(myConstructor, Sort.STD, myElementsType), myEmpty, subPatterns);
+      return new ConstructorExpressionPattern(new FunCallExpression(myConstructor, LevelPair.STD, myElementsType), myEmpty, subPatterns);
     }
   }
 

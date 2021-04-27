@@ -15,6 +15,7 @@ import org.arend.core.expr.type.TypeExpression;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
+import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.LevelSubstitution;
 
 import java.util.ArrayList;
@@ -37,24 +38,24 @@ public class ExpressionFactory {
     return result;
   }
 
-  public static Expression FunCall(FunctionDefinition definition, Sort sortArgument, Expression... arguments) {
-    return FunCallExpression.make(definition, sortArgument, Arrays.asList(arguments));
+  public static Expression FunCall(FunctionDefinition definition, LevelPair levels, Expression... arguments) {
+    return FunCallExpression.make(definition, levels, Arrays.asList(arguments));
   }
 
-  public static DataCallExpression DataCall(DataDefinition definition, Sort sortArgument, List<Expression> arguments) {
-    return new DataCallExpression(definition, sortArgument, arguments);
+  public static DataCallExpression DataCall(DataDefinition definition, LevelPair levels, List<Expression> arguments) {
+    return new DataCallExpression(definition, levels, arguments);
   }
 
-  public static DataCallExpression DataCall(DataDefinition definition, Sort sortArgument, Expression... arguments) {
-    return new DataCallExpression(definition, sortArgument, Arrays.asList(arguments));
+  public static DataCallExpression DataCall(DataDefinition definition, LevelPair levels, Expression... arguments) {
+    return new DataCallExpression(definition, levels, Arrays.asList(arguments));
   }
 
   public static ClassCallExpression ClassCall(ClassDefinition definition) {
-    return new ClassCallExpression(definition, Sort.STD);
+    return new ClassCallExpression(definition, LevelPair.STD);
   }
 
-  public static Expression ConCall(Constructor definition, Sort sortArgument, List<Expression> dataTypeArguments, Expression... arguments) {
-    return ConCallExpression.make(definition, sortArgument, dataTypeArguments, Arrays.asList(arguments));
+  public static Expression ConCall(Constructor definition, LevelPair levels, List<Expression> dataTypeArguments, Expression... arguments) {
+    return ConCallExpression.make(definition, levels, dataTypeArguments, Arrays.asList(arguments));
   }
 
   public static ReferenceExpression Ref(Binding binding) {

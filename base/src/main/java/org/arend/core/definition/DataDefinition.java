@@ -6,7 +6,7 @@ import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.*;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelSubstitution;
+import org.arend.core.subst.LevelPair;
 import org.arend.ext.core.definition.CoreConstructor;
 import org.arend.ext.core.definition.CoreDataDefinition;
 import org.arend.naming.reference.GlobalReferable;
@@ -207,19 +207,18 @@ public class DataDefinition extends Definition implements CoreDataDefinition {
   }
 
   @Override
-  public Expression getTypeWithParams(List<? super DependentLink> params, Sort sortArgument) {
+  public Expression getTypeWithParams(List<? super DependentLink> params, LevelPair levels) {
     if (!status().headerIsOK()) {
       return null;
     }
 
-    LevelSubstitution polySubst = sortArgument.toLevelSubstitution();
-    params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myParameters, new ExprSubstitution(), polySubst)));
-    return new UniverseExpression(mySort.subst(polySubst));
+    params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myParameters, new ExprSubstitution(), levels)));
+    return new UniverseExpression(mySort.subst(levels));
   }
 
   @Override
-  public DataCallExpression getDefCall(Sort sortArgument, List<Expression> arguments) {
-    return new DataCallExpression(this, sortArgument, arguments);
+  public DataCallExpression getDefCall(LevelPair levels, List<Expression> arguments) {
+    return new DataCallExpression(this, levels, arguments);
   }
 
   @Override

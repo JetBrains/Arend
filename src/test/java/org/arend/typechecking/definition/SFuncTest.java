@@ -3,13 +3,14 @@ package org.arend.typechecking.definition;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.ExpressionFactory;
-import org.arend.core.sort.Sort;
+import org.arend.core.subst.LevelPair;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.arend.util.SingletonList;
 import org.junit.Test;
 
 import java.util.Collections;
+import java.util.Objects;
 
 import static org.arend.Matchers.typeMismatchError;
 import static org.junit.Assert.assertEquals;
@@ -19,7 +20,7 @@ public class SFuncTest extends TypeCheckingTestCase {
   @Test
   public void normTest() {
     typeCheckModule("\\sfunc pred (n : Nat) : Nat | 0 => 0 | suc n => n");
-    Expression expr = getDefinition("pred").getDefCall(Sort.STD, new SingletonList<>(ExpressionFactory.Zero()));
+    Expression expr = getDefinition("pred").getDefCall(LevelPair.STD, new SingletonList<>(ExpressionFactory.Zero()));
     assertSame(expr, expr.normalize(NormalizationMode.WHNF));
   }
 
@@ -28,7 +29,7 @@ public class SFuncTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\sfunc pred (n : Nat) : Nat | 0 => 0 | suc n => n\n" +
       "\\func test => \\eval pred 2");
-    Expression expr = getDefinition("test").getDefCall(Sort.STD, Collections.emptyList());
+    Expression expr = getDefinition("test").getDefCall(LevelPair.STD, Collections.emptyList());
     assertEquals(ExpressionFactory.Suc(ExpressionFactory.Zero()), expr.normalize(NormalizationMode.WHNF));
   }
 
@@ -153,14 +154,14 @@ public class SFuncTest extends TypeCheckingTestCase {
   public void caseNormTest() {
     typeCheckModule("\\func test : Nat => \\scase 0 \\with { | 0 => 0 | suc n => n }");
     Expression expr = (Expression) ((FunctionDefinition) getDefinition("test")).getBody();
-    assertEquals(expr, expr.normalize(NormalizationMode.WHNF));
+    assertEquals(expr, Objects.requireNonNull(expr).normalize(NormalizationMode.WHNF));
   }
 
   @Test
   public void evalCaseTest() {
     typeCheckModule("\\func test : Nat => \\eval \\scase 2 \\with { | 0 => 0 | suc n => n }");
     Expression expr = (Expression) ((FunctionDefinition) getDefinition("test")).getBody();
-    assertEquals(ExpressionFactory.Suc(ExpressionFactory.Zero()), expr.normalize(NormalizationMode.WHNF));
+    assertEquals(ExpressionFactory.Suc(ExpressionFactory.Zero()), Objects.requireNonNull(expr).normalize(NormalizationMode.WHNF));
   }
 
   @Test

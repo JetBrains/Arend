@@ -53,7 +53,7 @@ public class UnfoldVisitor extends SubstVisitor {
 
       ExprSubstitution substitution = getExprSubstitution();
       substitution.add(expr.getDefinition().getParameters(), newArgs);
-      Expression result = ((Expression) expr.getDefinition().getBody()).accept(new SubstVisitor(substitution, expr.getSortArgument().toLevelSubstitution().subst(getLevelSubstitution())), null);
+      Expression result = ((Expression) expr.getDefinition().getBody()).accept(new SubstVisitor(substitution, expr.getLevels().subst(getLevelSubstitution())), null);
       DependentLink.Helper.freeSubsts(expr.getDefinition().getParameters(), substitution);
       return result;
     } else {

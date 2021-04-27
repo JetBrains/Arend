@@ -11,6 +11,7 @@ import org.arend.core.expr.*;
 import org.arend.core.expr.type.Type;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
+import org.arend.core.subst.LevelPair;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
@@ -116,7 +117,7 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
 
         DataCallExpression dataCall = link.getTypeExpr().normalize(NormalizationMode.WHNF).cast(DataCallExpression.class);
         if (!(dataCall != null && dataCall.getDefinition() == Prelude.INTERVAL)) {
-          errorReporter.report(new TypeMismatchError(new DataCallExpression(Prelude.INTERVAL, Sort.PROP, Collections.emptyList()), link.getTypeExpr(), null));
+          errorReporter.report(new TypeMismatchError(new DataCallExpression(Prelude.INTERVAL, LevelPair.PROP, Collections.emptyList()), link.getTypeExpr(), null));
           return false;
         }
 
@@ -272,7 +273,7 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
         return false;
       }
 
-      PiExpression fieldType = definition.getFieldType(field, Sort.STD);
+      PiExpression fieldType = definition.getFieldType(field, LevelPair.STD);
       myChecker.addBinding(fieldType.getParameters(), fieldType.getCodomain());
       Expression typeType = fieldType.getCodomain().accept(myChecker, Type.OMEGA);
       myChecker.removeBinding(fieldType.getParameters());

@@ -3,7 +3,8 @@ package org.arend.classes;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.*;
 import org.arend.core.expr.*;
-import org.arend.core.sort.Sort;
+import org.arend.core.sort.Level;
+import org.arend.core.subst.LevelPair;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.TypeCheckingTestCase;
@@ -444,8 +445,8 @@ public class DynamicTest extends TypeCheckingTestCase {
     ClassField xField = (ClassField) getDefinition("A.x");
     ClassField aField = (ClassField) getDefinition("B.a");
     ClassField yField = (ClassField) getDefinition("B.y");
-    PiExpression piType = yField.getType(Sort.SET0);
-    assertEquals(FieldCall(xField, Sort.PROP, FieldCall(aField, Sort.PROP, Ref(piType.getParameters()))), piType.getCodomain());
+    PiExpression piType = yField.getType(LevelPair.SET0);
+    assertEquals(FieldCall(xField, LevelPair.PROP, FieldCall(aField, LevelPair.PROP, Ref(piType.getParameters()))), piType.getCodomain());
   }
 
   @Test
@@ -472,24 +473,24 @@ public class DynamicTest extends TypeCheckingTestCase {
     ClassDefinition aClass = (ClassDefinition) getDefinition("A");
     assertTrue(aClass.getFields().isEmpty());
     FunctionDefinition pFun = (FunctionDefinition) getDefinition("A.p");
-    assertEquals(Nat(), pFun.getTypeWithParams(new ArrayList<>(), Sort.SET0));
+    assertEquals(Nat(), pFun.getTypeWithParams(new ArrayList<>(), LevelPair.SET0));
     assertEquals(Zero(), pFun.getBody());
     FunctionDefinition qFun = (FunctionDefinition) getDefinition("A.q");
     List<DependentLink> qParams = new ArrayList<>();
-    Expression qType = qFun.getTypeWithParams(qParams, Sort.SET0);
+    Expression qType = qFun.getTypeWithParams(qParams, LevelPair.SET0);
     assertEquals(Pi(false, ClassCall(aClass), Nat()), fromPiParameters(qType, qParams));
-    assertEquals(FunCall(pFun, Sort.SET0), qFun.getBody());
+    assertEquals(FunCall(pFun, LevelPair.SET0), qFun.getBody());
 
     ClassDefinition bClass = (ClassDefinition) getDefinition("A.B");
     assertTrue(bClass.getFields().isEmpty());
     FunctionDefinition fFun = (FunctionDefinition) getDefinition("A.B.f");
-    assertEquals(Nat(), fFun.getTypeWithParams(new ArrayList<>(), Sort.SET0));
-    assertEquals(FunCall(pFun, Sort.SET0), fFun.getBody());
+    assertEquals(Nat(), fFun.getTypeWithParams(new ArrayList<>(), LevelPair.SET0));
+    assertEquals(FunCall(pFun, LevelPair.SET0), fFun.getBody());
     FunctionDefinition gFun = (FunctionDefinition) getDefinition("A.B.g");
     List<DependentLink> gParams = new ArrayList<>();
-    Expression gType = gFun.getTypeWithParams(gParams, Sort.SET0);
+    Expression gType = gFun.getTypeWithParams(gParams, LevelPair.SET0);
     assertEquals(Pi(false, ClassCall(bClass), Nat()), fromPiParameters(gType, gParams));
-    assertEquals(FunCall(plus, Sort.SET0, FunCall(fFun, Sort.SET0), FunCall(pFun, Sort.SET0)), gFun.getBody());
+    assertEquals(FunCall(plus, LevelPair.SET0, FunCall(fFun, LevelPair.SET0), FunCall(pFun, LevelPair.SET0)), gFun.getBody());
 
     ClassDefinition cClass = (ClassDefinition) getDefinition("A.C");
     assertEquals(1, cClass.getFields().size());
@@ -497,17 +498,17 @@ public class DynamicTest extends TypeCheckingTestCase {
     assertNotNull(cParent);
     FunctionDefinition hFun = (FunctionDefinition) getDefinition("A.C.h");
     List<DependentLink> hParams = new ArrayList<>();
-    Expression hType = hFun.getTypeWithParams(hParams, Sort.SET0);
+    Expression hType = hFun.getTypeWithParams(hParams, LevelPair.SET0);
     assertEquals(Pi(false, ClassCall(aClass), Nat()), fromPiParameters(hType, hParams));
     DependentLink hFunParam = param("\\this", ClassCall(aClass));
-    assertEquals(FunCall(plus, Sort.SET0, FunCall(pFun, Sort.SET0), FunCall(qFun, Sort.SET0, Ref(hFunParam))), hFun.getBody());
+    assertEquals(FunCall(plus, LevelPair.SET0, FunCall(pFun, LevelPair.SET0), FunCall(qFun, LevelPair.SET0, Ref(hFunParam))), hFun.getBody());
     FunctionDefinition kFun = (FunctionDefinition) getDefinition("A.C.k");
     List<DependentLink> kParams = new ArrayList<>();
-    Expression kType = kFun.getTypeWithParams(kParams, Sort.SET0);
+    Expression kType = kFun.getTypeWithParams(kParams, LevelPair.SET0);
     assertEquals(Pi(false, ClassCall(cClass), Nat()), fromPiParameters(kType, kParams));
     DependentLink kFunParam = param("\\this", ClassCall(cClass));
-    Expression aRef = FieldCall(cParent, Sort.PROP, Ref(kFunParam));
-    assertEquals(FunCall(plus, Sort.SET0, FunCall(hFun, Sort.SET0, aRef), FunCall(plus, Sort.SET0, FunCall(pFun, Sort.SET0), FunCall(qFun, Sort.SET0, aRef))), kFun.getBody());
+    Expression aRef = FieldCall(cParent, LevelPair.PROP, Ref(kFunParam));
+    assertEquals(FunCall(plus, LevelPair.SET0, FunCall(hFun, LevelPair.SET0, aRef), FunCall(plus, LevelPair.SET0, FunCall(pFun, LevelPair.SET0), FunCall(qFun, LevelPair.SET0, aRef))), kFun.getBody());
   }
 
   @Test
@@ -674,7 +675,7 @@ public class DynamicTest extends TypeCheckingTestCase {
     List<? extends Expression> domArguments = domFunction.cast(DataCallExpression.class).getDefCallArguments();
     assertEquals(3, domArguments.size());
     assertEquals(Prelude.NAT, domArguments.get(0).cast(LamExpression.class).getBody().cast(DefCallExpression.class).getDefinition());
-    assertEquals(FieldCall((ClassField) getDefinition("A.x"), Sort.PROP, Ref(testFun.getParameters())), domArguments.get(1));
+    assertEquals(FieldCall((ClassField) getDefinition("A.x"), LevelPair.PROP, Ref(testFun.getParameters())), domArguments.get(1));
     assertEquals(0, domArguments.get(2).cast(SmallIntegerExpression.class).getInteger());
   }
 
@@ -688,7 +689,7 @@ public class DynamicTest extends TypeCheckingTestCase {
         "}\n" +
         "\\func test (q : A) => A.y {q}");
     FunctionDefinition testFun = (FunctionDefinition) getDefinition("test");
-    Expression xCall = FieldCall((ClassField) getDefinition("A.x"), Sort.PROP, Ref(testFun.getParameters()));
+    Expression xCall = FieldCall((ClassField) getDefinition("A.x"), LevelPair.PROP, Ref(testFun.getParameters()));
     Expression function = testFun.getResultType().cast(PiExpression.class).getParameters().getTypeExpr().normalize(NormalizationMode.NF);
     assertEquals(Prelude.PATH, function.cast(DataCallExpression.class).getDefinition());
     List<? extends Expression> arguments = function.cast(DataCallExpression.class).getDefCallArguments();

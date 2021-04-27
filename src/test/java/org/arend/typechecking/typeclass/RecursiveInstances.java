@@ -2,7 +2,7 @@ package org.arend.typechecking.typeclass;
 
 import org.arend.Matchers;
 import org.arend.core.definition.ClassField;
-import org.arend.core.sort.Sort;
+import org.arend.core.subst.LevelPair;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -122,7 +122,7 @@ public class RecursiveInstances extends TypeCheckingTestCase {
       "\\data Data (X : \\Set) | con X\n" +
       "\\instance Nat-inst : A Nat | x => 0 | Y => Nat\n" +
       "\\instance Data-inst {a : A} : A (Data a.Y) | x => con x | Y => Nat", 1);
-    assertThatErrorsAre(Matchers.instanceInference(get("A"), FieldCall((ClassField) getDefinition("A.Y"), Sort.STD, Ref(getDefinition("Data-inst").getParameters()))));
+    assertThatErrorsAre(Matchers.instanceInference(get("A"), FieldCall((ClassField) getDefinition("A.Y"), LevelPair.STD, Ref(getDefinition("Data-inst").getParameters()))));
   }
 
   @Test

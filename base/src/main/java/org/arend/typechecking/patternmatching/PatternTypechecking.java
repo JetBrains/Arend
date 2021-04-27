@@ -19,6 +19,7 @@ import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.pattern.*;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
+import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.concrete.pattern.ConcretePattern;
@@ -458,7 +459,7 @@ public class PatternTypechecking {
           }
 
           DConstructor constructor = (DConstructor) def;
-          Sort sortArg;
+          LevelPair levels;
           DependentLink link = constructor.getParameters();
           ExprSubstitution substitution = new ExprSubstitution();
           List<Expression> args = new ArrayList<>();
@@ -480,9 +481,9 @@ public class PatternTypechecking {
             Sort actualSort = type.getSortOfType();
             if (actualSort == null) {
               Sort dataSort = dataCall.getSortOfType();
-              sortArg = new Sort(dataSort.getPLevel(), dataSort.getHLevel().add(1));
+              levels = new LevelPair(dataSort.getPLevel(), dataSort.getHLevel().add(1));
             } else {
-              sortArg = actualSort;
+              levels = new LevelPair(actualSort.getPLevel(), actualSort.getHLevel());
             }
 
             Expression expr1 = dataCall.getDefCallArguments().get(2).normalize(NormalizationMode.WHNF);
@@ -563,8 +564,7 @@ public class PatternTypechecking {
             }
             listSubst(result, exprs, varSubst);
           } else {
-            sortArg = Sort.generateInferVars(myVisitor.getEquations(), def.getUniverseKind(), conPattern);
-            LevelSubstitution levelSubst = sortArg.toLevelSubstitution();
+            levels = LevelPair.generateInferVars(myVisitor.getEquations(), def.getUniverseKind(), conPattern);
 
             FreeVariablesCollector collector = new FreeVariablesCollector();
             constructor.getResultType().accept(collector, null);
@@ -572,7 +572,7 @@ public class PatternTypechecking {
               Set<Binding> bindings = myVisitor.getAllBindings();
               int i = 0;
               for (; i < constructor.getNumberOfParameters(); i++) {
-                Expression arg = InferenceReferenceExpression.make(new FunctionInferenceVariable(constructor, link, i + 1, link.getTypeExpr().subst(substitution, levelSubst), conPattern, bindings), myVisitor.getEquations());
+                Expression arg = InferenceReferenceExpression.make(new FunctionInferenceVariable(constructor, link, i + 1, link.getTypeExpr().subst(substitution, levels), conPattern, bindings), myVisitor.getEquations());
                 args.add(arg);
                 substitution.add(link, arg);
                 collector.getResult().remove(link);
@@ -580,12 +580,12 @@ public class PatternTypechecking {
               }
               if (!collector.getResult().isEmpty()) {
                 for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext(), i++) {
-                  substitution.add(link1, InferenceReferenceExpression.make(new FunctionInferenceVariable(constructor, link1, i + 1, link1.getTypeExpr().subst(substitution, levelSubst), conPattern, bindings), myVisitor.getEquations()));
+                  substitution.add(link1, InferenceReferenceExpression.make(new FunctionInferenceVariable(constructor, link1, i + 1, link1.getTypeExpr().subst(substitution, levels), conPattern, bindings), myVisitor.getEquations()));
                 }
               }
             }
 
-            Expression actualType = constructor.getResultType().subst(substitution, levelSubst).normalize(NormalizationMode.WHNF);
+            Expression actualType = constructor.getResultType().subst(substitution, levels).normalize(NormalizationMode.WHNF);
             if (!CompareVisitor.compare(myVisitor.getEquations(), CMP.EQ, actualType, expr, Type.OMEGA, conPattern)) {
               myErrorReporter.report(new TypeMismatchError(expr, actualType, conPattern));
               return null;
@@ -666,7 +666,7 @@ public class PatternTypechecking {
             typecheckAsPatterns(pattern.getAsReferables(), null, null);
           } else {
             args.addAll(conResult.exprs);
-            Expression newExpr = FunCallExpression.make(constructor, sortArg.subst(levelSolution), args);
+            Expression newExpr = FunCallExpression.make(constructor, levels.subst(levelSolution), args);
             typecheckAsPatterns(pattern.getAsReferables(), newExpr, expr);
             exprs.add(newExpr);
             paramsSubst.add(parameters, newExpr);
@@ -753,7 +753,7 @@ public class PatternTypechecking {
       ConCallExpression conCall = dataCall != null ? conCalls.get(0) : null;
       DependentLink newParameters;
       if (dataCall != null) {
-        newParameters = DependentLink.Helper.subst(constructor.getParameters(), new ExprSubstitution().add(((Constructor) constructor).getDataTypeParameters(), conCall.getDataTypeArguments()), dataCall.getSortArgument().toLevelSubstitution());
+        newParameters = DependentLink.Helper.subst(constructor.getParameters(), new ExprSubstitution().add(((Constructor) constructor).getDataTypeParameters(), conCall.getDataTypeArguments()), dataCall.getLevels());
       } else {
         newParameters = ((DConstructor) constructor).getArrayParameters(classCall);
       }
@@ -781,7 +781,7 @@ public class PatternTypechecking {
         }
         result.add(new ConstructorExpressionPattern(conCall, conResult.patterns));
       } else {
-        FunCallExpression funCall = new FunCallExpression((DConstructor) constructor, classCall.getSortArgument(), classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE));
+        FunCallExpression funCall = new FunCallExpression((DConstructor) constructor, classCall.getLevels(), classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE));
         if (!conResult.varSubst.isEmpty()) {
           funCall = (FunCallExpression) new SubstVisitor(conResult.varSubst, LevelSubstitution.EMPTY).visitFunCall(funCall, null);
         }
@@ -793,7 +793,7 @@ public class PatternTypechecking {
       } else {
         Expression newConCall;
         if (dataCall != null) {
-          newConCall = ConCallExpression.make(conCall.getDefinition(), conCall.getSortArgument(), conCall.getDataTypeArguments(), conResult.exprs);
+          newConCall = ConCallExpression.make(conCall.getDefinition(), conCall.getLevels(), conCall.getDataTypeArguments(), conResult.exprs);
         } else {
           List<Expression> funCallArgs;
           Expression elementsType = classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
@@ -804,7 +804,7 @@ public class PatternTypechecking {
           } else {
             funCallArgs = conResult.exprs;
           }
-          newConCall = FunCallExpression.make((FunctionDefinition) constructor, classCall.getSortArgument(), funCallArgs);
+          newConCall = FunCallExpression.make((FunctionDefinition) constructor, classCall.getLevels(), funCallArgs);
         }
         typecheckAsPatterns(pattern.getAsReferables(), newConCall, expr);
         exprs.add(newConCall);

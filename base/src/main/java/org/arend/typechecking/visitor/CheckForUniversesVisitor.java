@@ -1,15 +1,16 @@
 package org.arend.typechecking.visitor;
 
+import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.UniverseKind;
 import org.arend.core.expr.*;
 import org.arend.core.expr.visitor.NormalizeVisitor;
-import org.arend.core.sort.Sort;
+import org.arend.core.sort.Level;
 
 public class CheckForUniversesVisitor extends SearchVisitor<Void> {
-  public static boolean visitSort(Sort sort) {
-    return !sort.getPLevel().isClosed() || !sort.getHLevel().isClosed();
+  public static boolean visitLevels(Level pLevel, Level hLevel) {
+    return !pLevel.isClosed() || !hLevel.isClosed();
   }
 
   @Override
@@ -17,12 +18,12 @@ public class CheckForUniversesVisitor extends SearchVisitor<Void> {
     if (expression.getDefinition() instanceof ClassField) {
       return false;
     }
-    return expression.getUniverseKind() != UniverseKind.NO_UNIVERSES && visitSort(expression.getSortArgument());
+    return expression.getUniverseKind() != UniverseKind.NO_UNIVERSES && visitLevels(expression.getPLevel(), expression.getHLevel());
   }
 
   @Override
   public Boolean visitUniverse(UniverseExpression expression, Void param) {
-    return visitSort(expression.getSort());
+    return visitLevels(expression.getSort().getPLevel(), expression.getSort().getHLevel());
   }
 
   private boolean visitFieldCall(FieldCallExpression expr, int apps) {
@@ -68,6 +69,6 @@ public class CheckForUniversesVisitor extends SearchVisitor<Void> {
 
   @Override
   public Boolean visitTypeCoerce(TypeCoerceExpression expr, Void params) {
-    return expr.getDefinition().getUniverseKind() != UniverseKind.NO_UNIVERSES && visitSort(expr.getSortArgument());
+    return expr.getDefinition().getUniverseKind() != UniverseKind.NO_UNIVERSES && visitLevels(expr.getLevels().get(LevelVariable.PVAR), expr.getLevels().get(LevelVariable.HVAR));
   }
 }

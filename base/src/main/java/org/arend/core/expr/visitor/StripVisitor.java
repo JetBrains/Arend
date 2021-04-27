@@ -52,7 +52,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
     for (Expression arg : expr.getDefCallArguments()) {
       args.add(arg.accept(this, null));
     }
-    return FunCallExpression.make(expr.getDefinition(), expr.getSortArgument(), args);
+    return FunCallExpression.make(expr.getDefinition(), expr.getLevels(), args);
   }
 
   @Override
@@ -118,7 +118,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
         return newExpr.getImplementation(expr.getDefinition()).accept(this, null);
       }
     }
-    return FieldCallExpression.make(expr.getDefinition(), expr.getSortArgument(), expr.getArgument().accept(this, null));
+    return FieldCallExpression.make(expr.getDefinition(), expr.getLevels(), expr.getArgument().accept(this, null));
   }
 
   @Override
@@ -287,7 +287,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
     for (int i = 0; i < elements.size(); i++) {
       elements.set(i, elements.get(i).accept(this, null));
     }
-    return ArrayExpression.make(expr.getSortArgument(), expr.getElementsType().accept(this, null), elements, expr.getTail() == null ? null : expr.getTail().accept(this, null));
+    return ArrayExpression.make(expr.getLevels(), expr.getElementsType().accept(this, null), elements, expr.getTail() == null ? null : expr.getTail().accept(this, null));
   }
 
   @Override

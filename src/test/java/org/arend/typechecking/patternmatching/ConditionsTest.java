@@ -5,14 +5,15 @@ import org.arend.core.definition.Constructor;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.elimtree.ElimBody;
 import org.arend.core.expr.*;
-import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
+import org.arend.core.subst.LevelPair;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.arend.typechecking.error.local.HigherConstructorMatchingError;
 import org.arend.util.SingletonList;
 import org.junit.Test;
 
 import java.util.Collections;
+import java.util.Objects;
 
 import static org.arend.Matchers.*;
 import static org.arend.core.expr.ExpressionFactory.*;
@@ -310,7 +311,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
       "  | point2 => 7\n" +
       "  | point1 => 3\n" +
       "  | seg i => {?}", 1);
-    DependentLink binding = ((ElimBody) ((FunctionDefinition) getDefinition("f")).getBody()).getClauses().get(2).getPatterns().get(0).getFirstBinding();
+    DependentLink binding = ((ElimBody) Objects.requireNonNull(((FunctionDefinition) getDefinition("f")).getBody())).getClauses().get(2).getPatterns().get(0).getFirstBinding();
     assertThatErrorsAre(goalError(
       new Condition(null, new ExprSubstitution(binding, Left()), new SmallIntegerExpression(3)),
       new Condition(null, new ExprSubstitution(binding, Right()), new SmallIntegerExpression(7))));
@@ -325,7 +326,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
       "  | point1 => 3\n" +
       "  | seg i => {?}\n" +
       "}", 1);
-    DependentLink binding = ((CaseExpression) ((FunctionDefinition) getDefinition("f")).getBody()).getElimBody().getClauses().get(2).getPatterns().get(0).getFirstBinding();
+    DependentLink binding = ((CaseExpression) Objects.requireNonNull(((FunctionDefinition) getDefinition("f")).getBody())).getElimBody().getClauses().get(2).getPatterns().get(0).getFirstBinding();
     assertThatErrorsAre(goalError(
       new Condition(null, new ExprSubstitution(binding, Left()), new SmallIntegerExpression(3)),
       new Condition(null, new ExprSubstitution(binding, Right()), new SmallIntegerExpression(7))));
@@ -340,11 +341,11 @@ public class ConditionsTest extends TypeCheckingTestCase {
       "  | loop i, base => loop i\n" +
       "  | loop i, loop j => {?}", 1);
 
-    DependentLink i = ((ElimBody) ((FunctionDefinition) getDefinition("f")).getBody()).getClauses().get(2).getPatterns().get(0).getFirstBinding();
+    DependentLink i = ((ElimBody) Objects.requireNonNull(((FunctionDefinition) getDefinition("f")).getBody())).getClauses().get(2).getPatterns().get(0).getFirstBinding();
     DependentLink j = i.getNext();
     Constructor loop = (Constructor) getDefinition("S1.loop");
-    Expression iResult = ConCallExpression.make(loop, Sort.STD, Collections.emptyList(), new SingletonList<>(new ReferenceExpression(j)));
-    Expression jResult = ConCallExpression.make(loop, Sort.STD, Collections.emptyList(), new SingletonList<>(new ReferenceExpression(i)));
+    Expression iResult = ConCallExpression.make(loop, LevelPair.STD, Collections.emptyList(), new SingletonList<>(new ReferenceExpression(j)));
+    Expression jResult = ConCallExpression.make(loop, LevelPair.STD, Collections.emptyList(), new SingletonList<>(new ReferenceExpression(i)));
 
     assertThatErrorsAre(goalError(
       new Condition(null, new ExprSubstitution(i, Left()), iResult), new Condition(null, new ExprSubstitution(i, Right()), iResult),
@@ -361,11 +362,11 @@ public class ConditionsTest extends TypeCheckingTestCase {
       "  | loop i, loop j => {?}\n" +
       "}", 1);
 
-    DependentLink i = ((CaseExpression) ((FunctionDefinition) getDefinition("f")).getBody()).getElimBody().getClauses().get(2).getPatterns().get(0).getFirstBinding();
+    DependentLink i = ((CaseExpression) Objects.requireNonNull(((FunctionDefinition) getDefinition("f")).getBody())).getElimBody().getClauses().get(2).getPatterns().get(0).getFirstBinding();
     DependentLink j = i.getNext();
     Constructor loop = (Constructor) getDefinition("S1.loop");
-    Expression iResult = ConCallExpression.make(loop, Sort.STD, Collections.emptyList(), new SingletonList<>(new ReferenceExpression(j)));
-    Expression jResult = ConCallExpression.make(loop, Sort.STD, Collections.emptyList(), new SingletonList<>(new ReferenceExpression(i)));
+    Expression iResult = ConCallExpression.make(loop, LevelPair.STD, Collections.emptyList(), new SingletonList<>(new ReferenceExpression(j)));
+    Expression jResult = ConCallExpression.make(loop, LevelPair.STD, Collections.emptyList(), new SingletonList<>(new ReferenceExpression(i)));
 
     assertThatErrorsAre(goalError(
       new Condition(null, new ExprSubstitution(i, Left()), iResult), new Condition(null, new ExprSubstitution(i, Right()), iResult),
@@ -378,7 +379,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
       "\\func f (x : Int) : Nat\n" +
       "  | pos n => suc (suc n)\n" +
       "  | neg n => {?}", 1);
-    DependentLink binding = ((ElimBody) ((FunctionDefinition) getDefinition("f")).getBody()).getClauses().get(1).getPatterns().get(0).getFirstBinding();
+    DependentLink binding = ((ElimBody) Objects.requireNonNull(((FunctionDefinition) getDefinition("f")).getBody())).getClauses().get(1).getPatterns().get(0).getFirstBinding();
     assertThatErrorsAre(goalError(new Condition(null, new ExprSubstitution(binding, Zero()), new SmallIntegerExpression(2))));
   }
 
@@ -388,7 +389,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
       "\\func f (x : Int) : Nat\n" +
       "  | pos n => n\n" +
       "  | neg n => {?(suc n)}", 1);
-    DependentLink binding = ((ElimBody) ((FunctionDefinition) getDefinition("f")).getBody()).getClauses().get(1).getPatterns().get(0).getFirstBinding();
+    DependentLink binding = ((ElimBody) Objects.requireNonNull(((FunctionDefinition) getDefinition("f")).getBody())).getClauses().get(1).getPatterns().get(0).getFirstBinding();
     assertThatErrorsAre(goalError(new Condition(null, new ExprSubstitution(binding, Zero()), new SmallIntegerExpression(0))));
   }
 
@@ -399,10 +400,10 @@ public class ConditionsTest extends TypeCheckingTestCase {
       "\\func f (x : S1) : base = x => path (\\lam i => {?})", 1);
 
     FunctionDefinition f = (FunctionDefinition) getDefinition("f");
-    DependentLink binding = ((LamExpression) ((ConCallExpression) f.getBody()).getDefCallArguments().get(0)).getParameters();
+    DependentLink binding = ((LamExpression) ((ConCallExpression) Objects.requireNonNull(f.getBody())).getDefCallArguments().get(0)).getParameters();
     Constructor base = (Constructor) getDefinition("S1.base");
     assertThatErrorsAre(goalError(
-      new Condition(null, new ExprSubstitution(binding, Left()), ConCallExpression.make(base, Sort.STD, Collections.emptyList(), Collections.emptyList())),
+      new Condition(null, new ExprSubstitution(binding, Left()), ConCallExpression.make(base, LevelPair.STD, Collections.emptyList(), Collections.emptyList())),
       new Condition(null, new ExprSubstitution(binding, Right()), new ReferenceExpression(f.getParameters()))));
   }
 

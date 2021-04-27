@@ -5,13 +5,14 @@ import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.definition.DataDefinition;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.Expression;
-import org.arend.core.sort.Sort;
+import org.arend.core.subst.LevelPair;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static org.arend.ExpressionFactory.*;
 import static org.arend.core.expr.ExpressionFactory.*;
@@ -52,12 +53,13 @@ public class DataIndicesTest extends TypeCheckingTestCase {
         "\\data NatVec Nat \\with\n" +
         "  | zero  => nil\n" +
         "  | suc n => cons Nat (NatVec n)");
+    LevelPair set0 = LevelPair.SET0;
     DataDefinition data = (DataDefinition) getDefinition("NatVec");
-    assertEquals(DataCall(data, Sort.SET0, Zero()), data.getConstructor("nil").getTypeWithParams(new ArrayList<>(), Sort.SET0));
+    assertEquals(DataCall(data, set0, Zero()), data.getConstructor("nil").getTypeWithParams(new ArrayList<>(), set0));
     SingleDependentLink param = singleParams(false, vars("n"), Nat());
     List<DependentLink> consParams = new ArrayList<>();
-    Expression consType = data.getConstructor("cons").getTypeWithParams(consParams, Sort.SET0);
-    assertEquals(Pi(param, Pi(Nat(), Pi(DataCall(data, Sort.SET0, Ref(param)), DataCall(data, Sort.SET0, Suc(Ref(param)))))), fromPiParameters(consType, consParams));
+    Expression consType = data.getConstructor("cons").getTypeWithParams(consParams, set0);
+    assertEquals(Pi(param, Pi(Nat(), Pi(DataCall(data, set0, Ref(param)), DataCall(data, set0, Suc(Ref(param)))))), fromPiParameters(consType, consParams));
   }
 
   @Test
@@ -67,6 +69,6 @@ public class DataIndicesTest extends TypeCheckingTestCase {
         "  | suc n => fzero\n" +
         "  | suc n => fsuc (Fin n)\n" +
         "\\func f (n : Nat) (x : Fin n) => fsuc (fsuc x)");
-    assertEquals("fsuc {suc n} (fsuc {n} x)", ((Expression) ((FunctionDefinition) getDefinition("f")).getBody()).normalize(NormalizationMode.NF).toString());
+    assertEquals("fsuc {suc n} (fsuc {n} x)", ((Expression) Objects.requireNonNull(((FunctionDefinition) getDefinition("f")).getBody())).normalize(NormalizationMode.NF).toString());
   }
 }

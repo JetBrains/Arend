@@ -4,9 +4,8 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.elimtree.Body;
 import org.arend.core.expr.*;
-import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelSubstitution;
+import org.arend.core.subst.LevelPair;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.naming.reference.TCDefReferable;
 import org.jetbrains.annotations.NotNull;
@@ -191,20 +190,19 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
   }
 
   @Override
-  public Expression getTypeWithParams(List<? super DependentLink> params, Sort sortArgument) {
+  public Expression getTypeWithParams(List<? super DependentLink> params, LevelPair levels) {
     if (!status().headerIsOK()) {
       return null;
     }
 
     ExprSubstitution subst = new ExprSubstitution();
-    LevelSubstitution polySubst = sortArgument.toLevelSubstitution();
-    params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myParameters, subst, polySubst)));
-    return myResultType.subst(subst, polySubst);
+    params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myParameters, subst, levels)));
+    return myResultType.subst(subst, levels);
   }
 
   @Override
-  public Expression getDefCall(Sort sortArgument, List<Expression> arguments) {
-    return FunCallExpression.make(this, sortArgument, arguments);
+  public Expression getDefCall(LevelPair levels, List<Expression> arguments) {
+    return FunCallExpression.make(this, levels, arguments);
   }
 
   @Override

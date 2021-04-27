@@ -257,7 +257,7 @@ public class BranchElimTree extends ElimTree {
             }
           }
         }
-        result.add(new NewExpression(null, new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), implementations, classCall.getSort(), classCall.getUniverseKind())));
+        result.add(new NewExpression(null, new ClassCallExpression(classCall.getDefinition(), classCall.getLevels(), implementations, classCall.getSort(), classCall.getUniverseKind())));
         result.addAll(newArgs.subList(i, newArgs.size()));
         return result;
       }
@@ -269,7 +269,7 @@ public class BranchElimTree extends ElimTree {
         args.addAll(conCall.getDefCallArguments());
         args.addAll(arguments.subList(index + 1, arguments.size()));
         List<Expression> newArgs = elimTree.normalizeArguments(args);
-        result.add(ConCallExpression.make(conCall.getDefinition(), conCall.getSortArgument(), conCall.getDataTypeArguments(), newArgs.subList(0, conCall.getDefCallArguments().size())));
+        result.add(ConCallExpression.make(conCall.getDefinition(), conCall.getLevels(), conCall.getDataTypeArguments(), newArgs.subList(0, conCall.getDefCallArguments().size())));
         result.addAll(newArgs.subList(conCall.getDefCallArguments().size(), newArgs.size()));
         return result;
       }
@@ -301,7 +301,7 @@ public class BranchElimTree extends ElimTree {
         }
         args.addAll(arguments.subList(index + 1, arguments.size()));
         List<Expression> newArgs = elimTree.normalizeArguments(args);
-        result.add(array.getElements().isEmpty() ? array : FunCallExpression.make(Prelude.ARRAY_CONS, array.getSortArgument(), newArgs.subList(0, withElementsType ? 2 : 3)));
+        result.add(array.getElements().isEmpty() ? array : FunCallExpression.make(Prelude.ARRAY_CONS, array.getLevels(), newArgs.subList(0, withElementsType ? 2 : 3)));
         result.addAll(newArgs.subList((array.getElements().isEmpty() ? 0 : 2) + (withElementsType ? 0 : 1), newArgs.size()));
         return result;
       }

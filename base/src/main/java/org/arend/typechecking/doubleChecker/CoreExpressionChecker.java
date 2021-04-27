@@ -18,6 +18,7 @@ import org.arend.core.pattern.*;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
+import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
@@ -71,7 +72,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   @Override
   public Expression visitFunCall(FunCallExpression expr, Expression expectedType) {
-    LevelSubstitution levelSubst = expr.getSortArgument().toLevelSubstitution();
+    LevelSubstitution levelSubst = expr.getLevels();
     ExprSubstitution substitution = new ExprSubstitution();
     List<? extends Expression> args = expr.getDefCallArguments();
     checkList(args, expr.getDefinition().getParameters(), substitution, levelSubst);
@@ -106,7 +107,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
         for (int i = 0; i < sucs; i++) {
           arg = Suc(arg);
         }
-        return check(expectedType, new DataCallExpression(dataCall.getDefinition(), dataCall.getSortArgument(), new SingletonList<>(arg)), expr);
+        return check(expectedType, new DataCallExpression(dataCall.getDefinition(), dataCall.getLevels(), new SingletonList<>(arg)), expr);
       }
       return check(expectedType, Nat(), expr);
     }
@@ -115,10 +116,10 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     Expression it = expr;
     do {
       ConCallExpression conCall = (ConCallExpression) it;
-      LevelSubstitution levelSubst = conCall.getSortArgument().toLevelSubstitution();
+      LevelSubstitution levelSubst = conCall.getLevels();
       ExprSubstitution substitution = new ExprSubstitution();
       checkList(conCall.getDataTypeArguments(), conCall.getDefinition().getDataTypeParameters(), substitution, levelSubst);
-      Expression actualType = conCall.getDefinition().getDataTypeExpression(conCall.getSortArgument(), conCall.getDataTypeArguments());
+      Expression actualType = conCall.getDefinition().getDataTypeExpression(conCall.getLevels(), conCall.getDataTypeArguments());
       check(expectedType, actualType, conCall);
       if (result == null) {
         result = actualType;
@@ -151,20 +152,20 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   @Override
   public Expression visitDataCall(DataCallExpression expr, Expression expectedType) {
-    LevelSubstitution levelSubst = expr.getSortArgument().toLevelSubstitution();
+    LevelSubstitution levelSubst = expr.getLevels();
     checkList(expr.getDefCallArguments(), expr.getDefinition().getParameters(), new ExprSubstitution(), levelSubst);
     return check(expectedType, new UniverseExpression(expr.getDefinition().getSort().subst(levelSubst)), expr);
   }
 
   @Override
   public Expression visitFieldCall(FieldCallExpression expr, Expression expectedType) {
-    PiExpression type = expr.getDefinition().getType(expr.getSortArgument());
+    PiExpression type = expr.getDefinition().getType(expr.getLevels());
     Expression argType = expr.getArgument().accept(this, type.getParameters().getTypeExpr());
 
     Expression actualType = null;
     ClassCallExpression argClassCall = argType.normalize(NormalizationMode.WHNF).cast(ClassCallExpression.class);
     if (argClassCall != null) {
-      PiExpression overriddenType = argClassCall.getDefinition().getOverriddenType(expr.getDefinition(), expr.getSortArgument());
+      PiExpression overriddenType = argClassCall.getDefinition().getOverriddenType(expr.getDefinition(), expr.getLevels());
       if (overriddenType != null) {
         actualType = overriddenType.applyExpression(expr.getArgument());
       }
@@ -180,7 +181,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     addBinding(expr.getThisBinding(), expr);
     Expression thisExpr = new ReferenceExpression(expr.getThisBinding());
     for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
-      Expression type = expr.getDefinition().getFieldType(entry.getKey(), expr.getSortArgument(), thisExpr);
+      Expression type = expr.getDefinition().getFieldType(entry.getKey(), expr.getLevels(), thisExpr);
       if (entry.getKey().isProperty()) {
         if (entry.getValue() instanceof LamExpression) {
           checkLam((LamExpression) entry.getValue(), type, -1);
@@ -199,7 +200,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     if (level == null || level != -1) {
       for (ClassField field : expr.getDefinition().getFields()) {
         if (!expr.isImplemented(field)) {
-          Sort sort = expr.getDefinition().getFieldType(field, expr.getSortArgument(), thisExpr).normalize(NormalizationMode.WHNF).getSortOfType();
+          Sort sort = expr.getDefinition().getFieldType(field, expr.getLevels(), thisExpr).normalize(NormalizationMode.WHNF).getSortOfType();
           if (sort == null) {
             throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Cannot infer the type of field '" + field.getName() + "'", mySourceNode), expr));
           }
@@ -433,8 +434,8 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
   @Override
   public Expression visitPEval(PEvalExpression expr, Expression expectedType) {
     Expression type = expr.getExpression().accept(this, null);
-    Sort sortArg = type.getSortOfType();
-    if (sortArg == null) {
+    Sort sort = type.getSortOfType();
+    if (sort == null) {
       throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Cannot infer the sort of the type of the expression", mySourceNode), expr.getExpression()));
     }
 
@@ -442,7 +443,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     args.add(type);
     args.add(expr.getExpression());
     args.add(expr.eval());
-    return check(expectedType, FunCallExpression.make(Prelude.PATH_INFIX, sortArg, args), expr);
+    return check(expectedType, FunCallExpression.make(Prelude.PATH_INFIX, new LevelPair(sort.getPLevel(), sort.getHLevel()), args), expr);
   }
 
   @Override
@@ -474,7 +475,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       args.add(type);
       args.add(new ReferenceExpression(params.get(i)));
       args.add(new ReferenceExpression(params.get(i + 1)));
-      type = FunCallExpression.make(Prelude.PATH_INFIX, Sort.PROP, args);
+      type = FunCallExpression.make(Prelude.PATH_INFIX, LevelPair.PROP, args);
     }
 
     return params.size() / 2 - 2;
@@ -562,7 +563,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
         throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Expected either '" + Prelude.EMPTY_ARRAY.getName() + "' or '" + Prelude.ARRAY_CONS.getName() + "'", mySourceNode), errorExpr));
       }
       if (!(type instanceof ClassCallExpression && ((ClassCallExpression) type).getDefinition() == Prelude.ARRAY)) {
-        throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(new ClassCallExpression(Prelude.ARRAY, Sort.STD), type, mySourceNode), errorExpr));
+        throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(new ClassCallExpression(Prelude.ARRAY, LevelPair.STD), type, mySourceNode), errorExpr));
       }
       ClassCallExpression classCall = (ClassCallExpression) type;
       Boolean isEmpty = ConstructorExpressionPattern.isArrayEmpty(classCall);
@@ -785,7 +786,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
         throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Index " + expr.getClauseIndex() + " is too big. The number of clauses is " + clauses.size(), mySourceNode), expr));
       }
     }
-    LevelSubstitution levelSubst = expr.getSortArgument().toLevelSubstitution();
+    LevelSubstitution levelSubst = expr.getLevels();
     ExprSubstitution substitution = new ExprSubstitution();
     checkList(expr.getClauseArguments(), expr.getParameters(), substitution, levelSubst);
     expr.getArgument().accept(this, expr.getArgumentType());
@@ -794,12 +795,12 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   @Override
   public Expression visitArray(ArrayExpression expr, Expression expectedType) {
-    expr.getElementsType().accept(this, new UniverseExpression(expr.getSortArgument()));
+    expr.getElementsType().accept(this, new UniverseExpression(Sort.STD.subst(expr.getLevels())));
     for (Expression element : expr.getElements()) {
       element.accept(this, expr.getElementsType());
     }
     if (expr.getTail() != null) {
-      expr.getTail().accept(this, new ClassCallExpression(Prelude.ARRAY, expr.getSortArgument(), Collections.singletonMap(Prelude.ARRAY_ELEMENTS_TYPE, expr.getElementsType()), expr.getSortArgument().max(Sort.SET0), UniverseKind.NO_UNIVERSES));
+      expr.getTail().accept(this, new ClassCallExpression(Prelude.ARRAY, expr.getLevels(), Collections.singletonMap(Prelude.ARRAY_ELEMENTS_TYPE, expr.getElementsType()), new Sort(expr.getPLevel(), expr.getHLevel().max(new Level(0))), UniverseKind.NO_UNIVERSES));
     }
     return check(expectedType, expr.getType(), expr);
   }

@@ -5,9 +5,11 @@ import org.arend.core.expr.Expression;
 import org.arend.core.expr.NewExpression;
 import org.arend.core.expr.TupleExpression;
 import org.arend.core.sort.Level;
-import org.arend.core.sort.Sort;
+import org.arend.core.subst.LevelPair;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
+
+import java.util.Objects;
 
 import static org.junit.Assert.assertEquals;
 
@@ -75,7 +77,7 @@ public class NewInstanceExtensionTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\record C (A : \\Type) (a : A)\n" +
       "\\func f : \\Sigma (C (\\suc \\lp) (\\suc \\lh)) Nat => (\\new C \\levels 1 1 Nat 0, 0)");
-    assertEquals(new Sort(new Level(1), new Level(1)), ((Expression) ((FunctionDefinition) getDefinition("f")).getBody()).cast(TupleExpression.class).getFields().get(0).cast(NewExpression.class).getClassCall().getSortArgument());
+    assertEquals(new LevelPair(new Level(1), new Level(1)), ((Expression) Objects.requireNonNull(((FunctionDefinition) getDefinition("f")).getBody())).cast(TupleExpression.class).getFields().get(0).cast(NewExpression.class).getClassCall().getLevels());
   }
 
   @Test

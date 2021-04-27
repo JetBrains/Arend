@@ -385,7 +385,7 @@ public class UseLevelTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void sortArgTest() {
+  public void levelsTest() {
     typeCheckModule(
       "\\record R (A : \\Type) (a : A)\n" +
       "  \\where \\use \\level levelProp (A : \\Prop) (r1 r2 : R A) : r1 = r2\n" +

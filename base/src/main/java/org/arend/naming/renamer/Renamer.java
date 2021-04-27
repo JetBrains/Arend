@@ -1,8 +1,8 @@
 package org.arend.naming.renamer;
 
 import org.arend.core.context.binding.Binding;
-import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.context.param.UntypedDependentLink;
+import org.arend.core.subst.LevelPair;
 import org.arend.ext.variable.Variable;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Definition;
@@ -10,7 +10,6 @@ import org.arend.core.expr.AppExpression;
 import org.arend.core.expr.DefCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.ReferenceExpression;
-import org.arend.core.sort.Sort;
 import org.arend.ext.variable.VariableRenamer;
 import org.arend.prelude.Prelude;
 import org.jetbrains.annotations.NotNull;
@@ -40,7 +39,7 @@ public class Renamer implements VariableRenamer {
     if (var instanceof Binding && !(var instanceof UntypedDependentLink))
       typeExpr = ((Binding) var).getTypeExpr();
     else if (var instanceof ClassField)
-      typeExpr = ((ClassField) var).getType(Sort.STD).getCodomain();
+      typeExpr = ((ClassField) var).getType(LevelPair.STD).getCodomain();
 
     Character c = typeExpr != null ? getTypeStartingCharacter(typeExpr): null;
     if (c == null && name != null && !name.isEmpty() && !name.equals("_")) {

@@ -1,10 +1,8 @@
 package org.arend.typechecking.covariance;
 
-import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.definition.UniverseKind;
 import org.arend.core.expr.*;
-import org.arend.core.expr.visitor.NormalizeVisitor;
-import org.arend.core.sort.Sort;
+import org.arend.core.sort.Level;
 import org.arend.typechecking.visitor.CheckForUniversesVisitor;
 
 public class UniverseInParametersChecker extends CovarianceChecker {
@@ -21,7 +19,7 @@ public class UniverseInParametersChecker extends CovarianceChecker {
   }
 
   @Override
-  protected boolean checkSort(Sort sort, DefCallExpression defCall) {
+  protected boolean checkLevels(Level pLevel, Level hLevel, DefCallExpression defCall) {
     return defCall != null && defCall.getUniverseKind() == UniverseKind.WITH_UNIVERSES;
   }
 }

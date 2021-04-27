@@ -6,7 +6,7 @@ import org.arend.core.definition.UniverseKind;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.FieldCallExpression;
 import org.arend.core.expr.NewExpression;
-import org.arend.core.sort.Sort;
+import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.ext.core.ops.CMP;
 import org.arend.term.concrete.Concrete;
@@ -19,12 +19,12 @@ import java.util.Set;
 
 public final class ClassConstructor extends SingleConstructor {
   private final ClassDefinition myClassDef;
-  private Sort mySort;
+  private LevelPair myLevels;
   private final Set<? extends ClassField> myImplementedFields;
 
-  public ClassConstructor(ClassDefinition classDef, Sort sort, Set<? extends ClassField> implementedFields) {
+  public ClassConstructor(ClassDefinition classDef, LevelPair levels, Set<? extends ClassField> implementedFields) {
     myClassDef = classDef;
-    mySort = sort;
+    myLevels = levels;
     myImplementedFields = implementedFields;
   }
 
@@ -33,12 +33,12 @@ public final class ClassConstructor extends SingleConstructor {
     return myClassDef;
   }
 
-  public Sort getSort() {
-    return mySort;
+  public LevelPair getLevels() {
+    return myLevels;
   }
 
   public void substSort(LevelSubstitution substitution) {
-    mySort = mySort.subst(substitution);
+    myLevels = myLevels.subst(substitution);
   }
 
   public Set<? extends ClassField> getImplementedFields() {
@@ -57,7 +57,7 @@ public final class ClassConstructor extends SingleConstructor {
     for (ClassField field : myClassDef.getFields()) {
       if (!myClassDef.isImplemented(field) && !myImplementedFields.contains(field)) {
         Expression impl = newExpr == null ? null : newExpr.getImplementationHere(field);
-        args.add(impl != null ? impl : FieldCallExpression.make(field, mySort, argument));
+        args.add(impl != null ? impl : FieldCallExpression.make(field, myLevels, argument));
       }
     }
     return args;
@@ -82,7 +82,7 @@ public final class ClassConstructor extends SingleConstructor {
     }
     for (ClassField field : myClassDef.getFields()) {
       if (field.getUniverseKind() != UniverseKind.NO_UNIVERSES && !myClassDef.isImplemented(field) && !myImplementedFields.contains(field)) {
-        return Sort.compare(mySort, con.mySort, CMP.EQ, equations, sourceNode);
+        return LevelPair.compare(myLevels, con.myLevels, CMP.EQ, equations, sourceNode);
       }
     }
     return true;
