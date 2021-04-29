@@ -268,6 +268,8 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       ok = visitLam((LamExpression) expr2, expr1, type, false);
     } else if (expr2 instanceof TupleExpression) {
       ok = visitTuple((TupleExpression) expr2, expr1, false);
+    } else if (expr2 instanceof TypeCoerceExpression && !((TypeCoerceExpression) expr2).isFromLeftToRight()) {
+      ok = visitTypeCoerce((TypeCoerceExpression) expr2, expr1, false);
     } else {
       ok = expr1.accept(this, expr2, type);
     }
@@ -1284,10 +1286,20 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     return visitInteger(expr, expr2);
   }
 
+  private Boolean visitTypeCoerce(TypeCoerceExpression expr1, Expression expr2, boolean correctOrder) {
+    TypeCoerceExpression typeCoerce2 = expr2.cast(TypeCoerceExpression.class);
+    if (typeCoerce2 == null || typeCoerce2.isFromLeftToRight()) {
+      Expression arg = TypeCoerceExpression.make(expr1.getDefinition(), expr1.getLevels(), expr1.getClauseIndex(), expr1.getClauseArguments(), expr2, true);
+      return compare(correctOrder ? expr1.getArgument() : arg, correctOrder ? arg : expr1.getArgument(), expr1.getArgumentType(), true);
+    } else {
+      return compare((correctOrder ? expr1 : typeCoerce2).getArgument(), (correctOrder ? typeCoerce2 : expr1).getArgument(), (correctOrder ? expr1 : typeCoerce2).getArgumentType(), true);
+    }
+  }
+
   @Override
   public Boolean visitTypeCoerce(TypeCoerceExpression expr, Expression other, Expression type) {
-    TypeCoerceExpression typeCoerce2 = other.cast(TypeCoerceExpression.class);
     if (expr.isFromLeftToRight()) {
+      TypeCoerceExpression typeCoerce2 = other.cast(TypeCoerceExpression.class);
       if (typeCoerce2 == null) return false;
       if (typeCoerce2.isFromLeftToRight()) {
         return compare(expr.getArgumentType(), typeCoerce2.getArgumentType(), Type.OMEGA, false) && compare(expr.getArgument(), typeCoerce2.getArgument(), expr.getArgumentType(), true);
@@ -1295,11 +1307,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
         return compare(TypeCoerceExpression.make(typeCoerce2.getDefinition(), typeCoerce2.getLevels(), typeCoerce2.getClauseIndex(), typeCoerce2.getClauseArguments(), expr, true), typeCoerce2.getArgument(), expr.getArgumentType(), true);
       }
     } else {
-      if (typeCoerce2 == null || typeCoerce2.isFromLeftToRight()) {
-        return compare(expr.getArgument(), TypeCoerceExpression.make(expr.getDefinition(), expr.getLevels(), expr.getClauseIndex(), expr.getClauseArguments(), other, true), expr.getArgumentType(), true);
-      } else {
-        return compare(expr.getArgument(), typeCoerce2.getArgument(), expr.getArgumentType(), true);
-      }
+      return visitTypeCoerce(expr, other, true);
     }
   }
 

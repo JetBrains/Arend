@@ -171,4 +171,18 @@ public class TypeTest extends TypeCheckingTestCase {
       "\\type E => Empty\n" +
       "\\func test (x : E) : Nat");
   }
+
+  @Test
+  public void etaTest() {
+    typeCheckModule(
+      "\\type E => \\Sigma Nat Nat\n" +
+      "\\func test (x : E) : x = (x.1,x.2) => idp");
+  }
+
+  @Test
+  public void etaTest2() {
+    typeCheckModule(
+      "\\type E => \\Sigma Nat Nat\n" +
+      "\\func test (x : E) : (x.1,x.2) = x => idp");
+  }
 }
