@@ -765,7 +765,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     if (pattern instanceof BindingPattern) {
       DependentLink link = pattern.getFirstBinding();
       patterns.add(cNamePattern(isExplicit, makeLocalReference(link, myFreeVariablesCollector.getFreeVariables(link.getNextTyped(null)), false)));
-    } else if (pattern == EmptyPattern.INSTANCE) {
+    } else if (pattern instanceof EmptyPattern) {
       patterns.add(cEmptyPattern(isExplicit));
     } else {
       Definition def = pattern.getConstructor();

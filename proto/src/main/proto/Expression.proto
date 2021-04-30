@@ -226,6 +226,7 @@ message Pattern {
         repeated Pattern pattern = 2;
     }
     message Empty {
+        SingleParameter var = 1;
     }
 }
 

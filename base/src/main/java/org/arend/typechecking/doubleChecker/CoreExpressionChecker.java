@@ -583,7 +583,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     }
     DataCallExpression dataCall = (DataCallExpression) type;
 
-    if (pattern == EmptyPattern.INSTANCE) {
+    if (pattern instanceof EmptyPattern) {
       List<ConCallExpression> conCalls = dataCall.getMatchedConstructors();
       if (conCalls == null) {
         throw new CoreException(CoreErrorWrapper.make(new ImpossibleEliminationError(dataCall, mySourceNode, null, null, null, null, null), errorExpr));
@@ -658,14 +658,14 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   private DependentLink checkStitchedPatterns(Collection<? extends Pattern> patterns, DependentLink link, Expression errorExpr) {
     for (Pattern pattern : patterns) {
-      if (pattern instanceof BindingPattern) {
-        if (((BindingPattern) pattern).getBinding() != link) {
+      if (pattern instanceof BindingPattern || pattern instanceof EmptyPattern) {
+        if (pattern.getFirstBinding() != link || pattern instanceof BindingPattern && pattern.getBinding() != pattern.getFirstBinding()) {
           throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("", mySourceNode), errorExpr));
         }
         link = link.getNext();
       } else if (pattern instanceof ConstructorPattern) {
         link = checkStitchedPatterns(pattern.getSubPatterns(), link, errorExpr);
-      } else if (pattern != EmptyPattern.INSTANCE) {
+      } else {
         throw new IllegalStateException();
       }
     }

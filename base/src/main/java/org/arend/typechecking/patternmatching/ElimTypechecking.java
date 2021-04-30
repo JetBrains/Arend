@@ -414,7 +414,7 @@ public class ElimTypechecking {
         for (int j = elimParams.size() - 1; j > i; j--) {
           patterns.add(new BindingPattern(elimParams.get(j)));
         }
-        patterns.add(EmptyPattern.INSTANCE);
+        patterns.add(new EmptyPattern(link));
         totalResult.add(patterns);
       } else {
         boolean firstHasEmpty = false;

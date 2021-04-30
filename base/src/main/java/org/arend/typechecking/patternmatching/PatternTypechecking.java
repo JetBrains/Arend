@@ -717,7 +717,9 @@ public class PatternTypechecking {
           myErrorReporter.report(new DataTypeNotEmptyError(dataCall, constructors, pattern));
           return null;
         }
-        result.add(EmptyPattern.INSTANCE);
+        DependentLink newParam = parameters.subst(new SubstVisitor(paramsSubst, LevelSubstitution.EMPTY), 1, false);
+        myLinkList.append(newParam);
+        result.add(new EmptyPattern(newParam));
         exprs = null;
         typecheckAsPatterns(pattern.getAsReferables(), null, null);
         parameters = parameters.getNext();

@@ -13,7 +13,6 @@ import org.arend.ext.core.body.CorePattern;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.core.definition.CoreDefinition;
-import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.naming.renamer.Renamer;
 import org.arend.prelude.Prelude;
 import org.jetbrains.annotations.NotNull;
@@ -128,7 +127,11 @@ public interface Pattern extends CorePattern {
     }
 
     if (pattern.isAbsurd()) {
-      return EmptyPattern.INSTANCE;
+      CoreParameter param = pattern.getAllBindings();
+      if (!(param instanceof DependentLink) || !param.hasNext()) {
+        throw new IllegalArgumentException();
+      }
+      return new EmptyPattern((DependentLink) param);
     }
 
     CoreBinding binding = pattern.getBinding();

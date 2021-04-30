@@ -191,12 +191,16 @@ class ExpressionDeserialization {
 
   private Pattern readPattern(ExpressionProtos.Pattern proto, LinkList list) throws DeserializationException {
     switch (proto.getKindCase()) {
-      case BINDING:
+      case BINDING: {
         DependentLink param = readParameter(proto.getBinding().getVar());
         list.append(param);
         return new BindingPattern(param);
-      case EMPTY:
-        return EmptyPattern.INSTANCE;
+      }
+      case EMPTY: {
+        DependentLink param = readParameter(proto.getEmpty().getVar());
+        list.append(param);
+        return new EmptyPattern(param);
+      }
       case CONSTRUCTOR: {
         ExpressionProtos.Pattern.Constructor conProto = proto.getConstructor();
         int def = conProto.getDefinition();

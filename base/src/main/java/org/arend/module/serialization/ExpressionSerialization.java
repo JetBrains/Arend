@@ -60,6 +60,9 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
       return 0;
     } else {
       Integer ref = myBindingsMap.get(binding);
+      if (ref == null) {
+        throw new IllegalStateException();
+      }
       return ref + 1;  // zero is reserved for null
     }
   }
@@ -173,8 +176,9 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
     if (pattern instanceof BindingPattern) {
       builder.setBinding(ExpressionProtos.Pattern.Binding.newBuilder()
         .setVar(writeParameter(((BindingPattern) pattern).getBinding())));
-    } else if (pattern == EmptyPattern.INSTANCE) {
-      builder.setEmpty(ExpressionProtos.Pattern.Empty.newBuilder());
+    } else if (pattern instanceof EmptyPattern) {
+      builder.setEmpty(ExpressionProtos.Pattern.Empty.newBuilder()
+        .setVar(writeParameter(pattern.getFirstBinding())));
     } else if (pattern instanceof ConstructorExpressionPattern) {
       ExpressionProtos.Pattern.ExpressionConstructor.Builder pBuilder = ExpressionProtos.Pattern.ExpressionConstructor.newBuilder();
       pBuilder.setExpression(writeExpr(((ConstructorExpressionPattern) pattern).getDataExpression()));

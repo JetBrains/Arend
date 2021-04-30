@@ -4,6 +4,7 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.definition.Definition;
 import org.arend.core.expr.Expression;
+import org.arend.core.expr.ReferenceExpression;
 import org.arend.core.expr.SigmaExpression;
 import org.arend.core.expr.TupleExpression;
 import org.arend.core.sort.Sort;
@@ -22,13 +23,15 @@ import java.util.List;
 import java.util.Map;
 
 public class EmptyPattern implements ExpressionPattern {
-  public final static EmptyPattern INSTANCE = new EmptyPattern();
+  private final DependentLink myBinding;
 
-  private EmptyPattern() {}
+  public EmptyPattern(DependentLink binding) {
+    myBinding = binding;
+  }
 
   @Override
   public Expression toExpression() {
-    return null;
+    return new ReferenceExpression(myBinding);
   }
 
   @Override
@@ -38,12 +41,12 @@ public class EmptyPattern implements ExpressionPattern {
 
   @Override
   public DependentLink getFirstBinding() {
-    return EmptyDependentLink.getInstance();
+    return myBinding;
   }
 
   @Override
   public DependentLink getLastBinding() {
-    return EmptyDependentLink.getInstance();
+    return myBinding;
   }
 
   @Override
@@ -74,8 +77,8 @@ public class EmptyPattern implements ExpressionPattern {
 
   @Override
   public DependentLink replaceBindings(DependentLink link, List<Pattern> result) {
-    result.add(INSTANCE);
-    return link;
+    result.add(new EmptyPattern(link));
+    return link.getNext();
   }
 
   @Override
@@ -100,7 +103,12 @@ public class EmptyPattern implements ExpressionPattern {
 
   @Override
   public ExpressionPattern subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, Map<DependentLink, ExpressionPattern> patternSubst) {
-    return this;
+    if (patternSubst == null) {
+      return this;
+    }
+    ExpressionPattern result = patternSubst.get(myBinding);
+    assert result != null;
+    return result;
   }
 
   @Override
