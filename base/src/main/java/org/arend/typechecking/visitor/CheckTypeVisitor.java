@@ -31,10 +31,7 @@ import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.context.CoreInferenceVariable;
 import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
-import org.arend.ext.core.expr.AbstractedExpression;
-import org.arend.ext.core.expr.CoreExpression;
-import org.arend.ext.core.expr.CoreInferenceReferenceExpression;
-import org.arend.ext.core.expr.UncheckedExpression;
+import org.arend.ext.core.expr.*;
 import org.arend.ext.core.level.CoreLevel;
 import org.arend.ext.core.level.CoreSort;
 import org.arend.ext.core.ops.CMP;
@@ -352,6 +349,30 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           return new Pair<>(result.expression, true);
         });
         if (coerceResult != null) return coerceResult.proj1;
+      }
+    }
+
+    if (expectedType instanceof ClassCallExpression && ((ClassCallExpression) expectedType).getDefinition() == Prelude.ARRAY && result.type instanceof PiExpression) {
+      PiExpression piExpr = (PiExpression) result.type;
+      Expression dom = piExpr.getParameters().getTypeExpr().normalize(NormalizationMode.WHNF);
+      if (dom instanceof DataCallExpression && ((DataCallExpression) dom).getDefinition() == Prelude.FIN || dom.getStuckInferenceVariable() != null) {
+        ClassCallExpression classCall = (ClassCallExpression) expectedType;
+        Expression length = classCall.getClosedImplementation(Prelude.ARRAY_LENGTH);
+        if (length == null && dom instanceof DataCallExpression) {
+          length = ((DataCallExpression) dom).getDefCallArguments().get(0);
+        }
+        if (length != null) {
+          Expression elementsType = classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
+          if (elementsType == null) {
+            elementsType = piExpr.getParameters().getNext().hasNext() ? new PiExpression(piExpr.getResultSort(), piExpr.getParameters().getNext(), piExpr.getCodomain()) : piExpr.getCodomain();
+          }
+          Map<ClassField, Expression> impls = new HashMap<>();
+          impls.put(Prelude.ARRAY_ELEMENTS_TYPE, elementsType);
+          impls.put(Prelude.ARRAY_LENGTH, length);
+          impls.put(Prelude.ARRAY_AT, result.expression);
+          ClassCallExpression resultClassCall = new ClassCallExpression(Prelude.ARRAY, classCall.getLevels(), impls, Sort.PROP, UniverseKind.NO_UNIVERSES);
+          return checkResultExpr(expectedType, new TypecheckingResult(new NewExpression(null, resultClassCall), resultClassCall), expr);
+        }
       }
     }
 

@@ -259,4 +259,14 @@ public class ArrayTest extends TypeCheckingTestCase {
       "\\func test2 : Fin 2 -> Fin 7 => (3 :: 5 :: nil) Array.!!\n" +
       "\\func test3 : Fin 2 -> Fin 7 => 3 :: 5 :: nil");
   }
+
+  @Test
+  public void coerceTest2() {
+    typeCheckModule(
+      "\\func test1 (P : Array Nat -> \\Type) (x : Array Nat) (p : P x) : P x => p\n" +
+      "\\func test2 (P : Array Nat -> \\Type) (x : Array Nat) (p : P (x Array.!!)) : P x => p\n" +
+      "\\func test3 (P : Array Nat -> \\Type) (x : Array Nat) (p : P x.at) : P x => p\n" +
+      "\\func test4 (P : Array Nat -> \\Type) (x : Array Nat) (p : P (\\lam i => x Array.!! i)) : P x => p\n" +
+      "\\func test5 (P : Array Nat -> \\Type) (x : Array Nat) (p : P (\\lam i => x.at i)) : P x => p");
+  }
 }
