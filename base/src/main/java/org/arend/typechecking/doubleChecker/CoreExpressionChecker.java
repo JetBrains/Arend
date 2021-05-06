@@ -52,7 +52,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
   }
 
   void clear() {
-    myContext.clear();
+    if (myContext != null) myContext.clear();
   }
 
   public Expression check(Expression expectedType, Expression actualType, Expression expression) {
@@ -194,7 +194,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
         entry.getValue().accept(this, type);
       }
     }
-    myContext.remove(expr.getThisBinding());
+    if (myContext != null) myContext.remove(expr.getThisBinding());
 
     Integer level = expr.getDefinition().getUseLevel(expr.getImplementedHere(), expr.getThisBinding(), true);
     if (level == null || level != -1) {
@@ -242,7 +242,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   @Override
   public Expression visitReference(ReferenceExpression expr, Expression expectedType) {
-    if (!myContext.contains(expr.getBinding())) {
+    if (myContext != null && !myContext.contains(expr.getBinding())) {
       throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Variable '" + expr.getBinding().getName() + "' is not bound", mySourceNode), expr));
     }
     return check(expectedType, expr.getBinding().getTypeExpr(), expr);
@@ -255,7 +255,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     }
     InferenceVariable infVar = expr.getVariable();
     for (Binding bound : infVar.getBounds()) {
-      if (!myContext.contains(bound)) {
+      if (myContext != null && !myContext.contains(bound)) {
         throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Variable '" + bound.getName() + "' is not bound", mySourceNode), expr));
       }
     }
@@ -268,13 +268,13 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
   }
 
   void addBinding(Binding binding, Expression expr) {
-    if (binding != UnusedIntervalDependentLink.INSTANCE && !myContext.add(binding)) {
+    if (binding != UnusedIntervalDependentLink.INSTANCE && !(myContext == null || myContext.add(binding))) {
       throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Binding '" + binding.getName() + "' is already bound", mySourceNode), expr));
     }
   }
 
   void removeBinding(Binding binding) {
-    myContext.remove(binding);
+    if (myContext != null) myContext.remove(binding);
   }
 
   void checkDependentLink(DependentLink link, Expression type, Expression expr) {
@@ -310,7 +310,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   void freeDependentLink(DependentLink link) {
     for (; link.hasNext(); link = link.getNext()) {
-      myContext.remove(link);
+      if (myContext != null) myContext.remove(link);
     }
   }
 
@@ -453,7 +453,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       addBinding(clause, expr);
     }
     Expression type = expr.getExpression().accept(this, expectedType);
-    expr.getClauses().forEach(myContext::remove);
+    if (myContext != null) expr.getClauses().forEach(myContext::remove);
     return type;
   }
 
@@ -542,7 +542,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       }
 
       var = ((ReferenceExpression) reversePatternSubst.get(var)).getBinding();
-      myContext.remove(var);
+      if (myContext != null) myContext.remove(var);
       idpSubst.add(var, otherExpr.subst(reversePatternSubst));
       return true;
     }

@@ -11,6 +11,7 @@ import org.arend.ext.core.body.CoreExpressionPattern;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.context.CoreInferenceVariable;
 import org.arend.ext.core.context.CoreParameter;
+import org.arend.ext.core.context.CoreParameterBuilder;
 import org.arend.ext.core.definition.CoreClassDefinition;
 import org.arend.ext.core.expr.AbstractedExpression;
 import org.arend.ext.core.expr.CoreExpression;
@@ -110,14 +111,9 @@ public interface ExpressionTypechecker extends UserDataHolder {
   @Nullable TypedExpression typecheckLambda(@NotNull ConcreteLamExpression expr, @NotNull CoreParameter parameters);
 
   /**
-   * @return a list of explicit parameters with specified types, or {@code null} if one of the expressions in {@code types} is not a type.
+   * Creates a new {@code CoreParameterBuilder}.
    */
-  @NotNull CoreParameter makeParameters(@NotNull List<? extends CoreExpression> types, @NotNull ConcreteSourceNode marker);
-
-  /**
-   * Merges a list of parameters.
-   */
-  @NotNull CoreParameter mergeParameters(@NotNull List<? extends CoreParameter> parameters);
+  @NotNull CoreParameterBuilder newCoreParameterBuilder();
 
   /**
    * Typechecks expressions in {@code substitution} and substitutes them into {@code expression}.

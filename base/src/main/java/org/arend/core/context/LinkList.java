@@ -2,15 +2,18 @@ package org.arend.core.context;
 
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
+import org.jetbrains.annotations.NotNull;
 
 public class LinkList {
   private DependentLink myFirst = EmptyDependentLink.getInstance();
   private DependentLink myLast = EmptyDependentLink.getInstance();
 
+  @NotNull
   public DependentLink getFirst() {
     return myFirst;
   }
 
+  @NotNull
   public DependentLink getLast() {
     return myLast;
   }

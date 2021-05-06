@@ -30,6 +30,7 @@ import org.arend.ext.core.body.CoreExpressionPattern;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.context.CoreInferenceVariable;
 import org.arend.ext.core.context.CoreParameter;
+import org.arend.ext.core.context.CoreParameterBuilder;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.expr.*;
 import org.arend.ext.core.level.CoreLevel;
@@ -452,7 +453,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
     Expression expr = UncheckedExpressionImpl.extract(expression);
     try {
-      return new TypecheckingResult(expr, expr.accept(new CoreExpressionChecker(getAllBindings(), myEquations, (Concrete.SourceNode) sourceNode), null));
+      return new TypecheckingResult(expr, expr.accept(new CoreExpressionChecker(null, myEquations, (Concrete.SourceNode) sourceNode), null));
     } catch (CoreException e) {
       errorReporter.report(e.error);
       return null;
@@ -560,44 +561,8 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   @Override
-  public @NotNull DependentLink makeParameters(@NotNull List<? extends CoreExpression> types, @NotNull ConcreteSourceNode marker) {
-    if (!(marker instanceof Concrete.SourceNode)) {
-      throw new IllegalArgumentException();
-    }
-
-    DependentLink result = EmptyDependentLink.getInstance();
-    for (int i = types.size() - 1; i >= 0; i--) {
-      if (!(types.get(i) instanceof Expression)) {
-        throw new IllegalArgumentException();
-      }
-      Expression typeExpr = (Expression) types.get(i);
-      result = new TypedDependentLink(true, null, typeExpr instanceof Type ? (Type) typeExpr : new TypeExpression(typeExpr, getSortOfType(typeExpr, (Concrete.SourceNode) marker)), result);
-    }
-    return result;
-  }
-
-  @Override
-  public @NotNull CoreParameter mergeParameters(@NotNull List<? extends CoreParameter> parameters) {
-    if (parameters.isEmpty()) {
-      return EmptyDependentLink.getInstance();
-    }
-    CoreParameter param = parameters.get(parameters.size() - 1);
-    if (!(param instanceof DependentLink)) {
-      throw new IllegalArgumentException();
-    }
-
-    DependentLink link = (DependentLink) param;
-    for (int i = parameters.size() - 2; i >= 0; i--) {
-      if (!(parameters.get(i) instanceof DependentLink)) {
-        throw new IllegalArgumentException();
-      }
-      if (parameters.get(i).hasNext()) {
-        DependentLink link1 = DependentLink.Helper.copy((DependentLink) parameters.get(i));
-        DependentLink.Helper.getLast(link1).setNext(link);
-        link = link1;
-      }
-    }
-    return link;
+  public @NotNull CoreParameterBuilder newCoreParameterBuilder() {
+    return new CoreParameterBuilderImpl(this);
   }
 
   private void checkSubstExpr(Expression expr, Collection<? extends CoreBinding> bindings) {
