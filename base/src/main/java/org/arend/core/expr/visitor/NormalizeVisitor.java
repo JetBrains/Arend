@@ -647,7 +647,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
           conArgs.set(recursiveParam, resultExpr);
         }
         result = addSucs(result, sucs);
-        return mode == NormalizationMode.WHNF || mode == null || !(result instanceof DefCallExpression) ? result : applyDefCall((DefCallExpression) result, mode);
+        return mode == NormalizationMode.WHNF || mode == null || !(result instanceof DefCallExpression) ? (result != null && mode != NormalizationMode.WHNF ? result.accept(this, mode) : result) : applyDefCall((DefCallExpression) result, mode);
       }
     }
   }
