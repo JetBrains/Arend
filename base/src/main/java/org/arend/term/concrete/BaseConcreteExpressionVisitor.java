@@ -256,17 +256,19 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
     visitClassElements(body.getCoClauseElements(), params);
   }
 
-  @Override
-  public Void visitFunction(Concrete.BaseFunctionDefinition def, P params) {
+  public void visitFunctionHeader(Concrete.BaseFunctionDefinition def, P params) {
     visitParameters(def.getParameters(), params);
-
     if (def.getResultType() != null) {
       def.setResultType(def.getResultType().accept(this, params));
     }
     if (def.getResultTypeLevel() != null) {
       def.setResultTypeLevel(def.getResultTypeLevel().accept(this, params));
     }
+  }
 
+  @Override
+  public Void visitFunction(Concrete.BaseFunctionDefinition def, P params) {
+    visitFunctionHeader(def, params);
     visitFunctionBody(def.getBody(), params);
     return null;
   }

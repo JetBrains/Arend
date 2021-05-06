@@ -321,4 +321,19 @@ public class CoClauseFunctionTest extends TypeCheckingTestCase {
       "    }\n" +
       "}");
   }
+
+  @Test
+  public void parametersSubstTest() {
+    typeCheckModule(
+      "\\record C (f : Nat -> Nat) (g : \\Pi (x : Nat) -> f x = 0)\n" +
+      "\\func test (n : Nat) : C \\cowith\n" +
+      "  | f (m : Nat) : Nat \\with {\n" +
+      "    | 0 => 0\n" +
+      "    | suc m => 0\n" +
+      "  }\n" +
+      "  | g (m : Nat) : f m = 0 \\with {\n" +
+      "    | 0 => idp\n" +
+      "    | suc m => idp\n" +
+      "  }");
+  }
 }

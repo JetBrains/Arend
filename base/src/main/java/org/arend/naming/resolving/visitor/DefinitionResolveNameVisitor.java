@@ -23,10 +23,7 @@ import org.arend.term.ClassFieldKind;
 import org.arend.term.FunctionKind;
 import org.arend.term.NameRenaming;
 import org.arend.term.NamespaceCommand;
-import org.arend.term.concrete.Concrete;
-import org.arend.term.concrete.ConcreteResolvableDefinitionVisitor;
-import org.arend.term.concrete.DefinableMetaDefinition;
-import org.arend.term.concrete.SubstConcreteExpressionVisitor;
+import org.arend.term.concrete.*;
 import org.arend.term.group.ChildGroup;
 import org.arend.term.group.Group;
 import org.arend.typechecking.error.local.LocalErrorReporter;
@@ -253,7 +250,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
           parameter.setExplicit(false);
         }
         def.getParameters().addAll(0, parameters);
-        ((Concrete.CoClauseFunctionDefinition) def).setNumberOfExternalParameters(parameters.size());
+        function.setNumberOfExternalParameters(parameters.size());
       }
       if (function.getImplementedField() instanceof UnresolvedReference || function.getData() instanceof LocatedReferableImpl && !((LocatedReferableImpl) function.getData()).isPrecedenceSet()) {
         Referable classRef = null;
@@ -380,8 +377,48 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       }
     }
 
-    def.setResolved();
     def.accept(new SyntacticDesugarVisitor(myLocalErrorReporter), null);
+
+    if (def instanceof Concrete.CoClauseFunctionDefinition && def.getKind() == FunctionKind.FUNC_COCLAUSE && ((Concrete.CoClauseFunctionDefinition) def).getNumberOfExternalParameters() > 0) {
+      Concrete.CoClauseFunctionDefinition function = (Concrete.CoClauseFunctionDefinition) def;
+      BaseConcreteExpressionVisitor<Void> visitor = new BaseConcreteExpressionVisitor<>() {
+        @Override
+        public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Void params) {
+          if (expr.getReferent() instanceof TCReferable && ((TCReferable) expr.getReferent()).getKind() == GlobalReferable.Kind.COCLAUSE_FUNCTION) {
+            Concrete.GeneralDefinition definition = myConcreteProvider.getConcrete((TCReferable) expr.getReferent());
+            if (definition instanceof Concrete.CoClauseFunctionDefinition && ((Concrete.CoClauseFunctionDefinition) definition).getUseParent() == function.getUseParent()) {
+              List<Concrete.Argument> args = new ArrayList<>();
+              int i = 0;
+              loop:
+              for (Concrete.Parameter parameter : def.getParameters()) {
+                for (Referable referable : parameter.getReferableList()) {
+                  args.add(new Concrete.Argument(new Concrete.ReferenceExpression(expr.getData(), referable), false));
+                  if (++i >= function.getNumberOfExternalParameters()) {
+                    break loop;
+                  }
+                }
+              }
+              return Concrete.AppExpression.make(expr.getData(), expr, args);
+            }
+          }
+          return expr;
+        }
+
+        @Override
+        public Concrete.Expression visitApp(Concrete.AppExpression expr, Void params) {
+          if (expr.getArguments().get(0).isExplicit() || !(expr.getFunction() instanceof Concrete.ReferenceExpression)) {
+            return super.visitApp(expr, params);
+          }
+          for (Concrete.Argument argument : expr.getArguments()) {
+            argument.expression = argument.expression.accept(this, params);
+          }
+          return expr;
+        }
+      };
+      visitor.visitFunctionHeader(function, null);
+    }
+
+    def.setResolved();
     if (myResolverListener != null) {
       myResolverListener.definitionResolved(def);
     }
