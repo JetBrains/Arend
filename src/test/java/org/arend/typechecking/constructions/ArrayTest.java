@@ -269,4 +269,9 @@ public class ArrayTest extends TypeCheckingTestCase {
       "\\func test4 (P : Array Nat -> \\Type) (x : Array Nat) (p : P (\\lam i => x Array.!! i)) : P x => p\n" +
       "\\func test5 (P : Array Nat -> \\Type) (x : Array Nat) (p : P (\\lam i => x.at i)) : P x => p");
   }
+
+  @Test
+  public void consEquality() {
+    typeCheckDef("\\func test {A : \\Type} (x y : A) (l : Array A) => x :: l = y :: l");
+  }
 }
