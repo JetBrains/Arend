@@ -48,6 +48,10 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     myCMP = cmp;
   }
 
+  public void setCMP(CMP cmp) {
+    myCMP = cmp;
+  }
+
   public void doNotAllowEquations() {
     myAllowEquations = false;
   }
@@ -193,7 +197,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       Expression normType = type == null ? null : type.getUnderlyingExpression();
       boolean allowProp = normType instanceof DataCallExpression && ((DataCallExpression) normType).getDefinition().getConstructors().isEmpty() || !expr1.canBeConstructor() && !expr2.canBeConstructor();
       if (normType instanceof SigmaExpression && !((SigmaExpression) normType).getParameters().hasNext() ||
-          normType instanceof ClassCallExpression && (((ClassCallExpression) normType).getNumberOfNotImplementedFields() == 0 || Boolean.TRUE.equals(ConstructorExpressionPattern.isArrayEmpty(normType))) ||
+          normType instanceof ClassCallExpression && (((ClassCallExpression) normType).getNumberOfNotImplementedFields() == 0 || Boolean.TRUE.equals(ConstructorExpressionPattern.isArrayEmpty(normType)) && ((ClassCallExpression) normType).isImplemented(Prelude.ARRAY_ELEMENTS_TYPE)) ||
           allowProp && normType != null && Sort.PROP.equals(normType.getSortOfType())) {
         myOnlySolveVars = true;
       }

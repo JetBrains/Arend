@@ -18,6 +18,7 @@ public interface Equations {
   }
   boolean solve(Expression expr1, Expression expr2, Expression type, CMP cmp, Concrete.SourceNode sourceNode);
   boolean solve(InferenceVariable var, Expression expr);
+  void solveLowerBounds(InferenceVariable var);
   boolean addEquation(Level level1, Level level2, CMP cmp, Concrete.SourceNode sourceNode);
   boolean addVariable(InferenceLevelVariable var);
   void bindVariables(InferenceLevelVariable pVar, InferenceLevelVariable hVar);

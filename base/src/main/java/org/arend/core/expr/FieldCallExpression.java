@@ -55,6 +55,8 @@ public class FieldCallExpression extends DefCallExpression implements CoreFieldC
         }
         return result;
       }
+    } else if (definition == Prelude.ARRAY_ELEMENTS_TYPE && thisExpr instanceof ArrayExpression) {
+      return ((ArrayExpression) thisExpr).getElementsType();
     }
 
     return new FieldCallExpression(definition, levels, thisExpr);

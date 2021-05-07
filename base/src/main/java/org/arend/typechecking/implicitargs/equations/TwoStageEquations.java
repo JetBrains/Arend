@@ -487,118 +487,7 @@ public class TwoStageEquations implements Equations {
 
     // @bounds consists of entries (@v,@list) such that every expression @e in @list is either a classCall or an inference variable and @e `cmp` @v.
     // The result of @calculateClosure is the transitive closure of @bounds.
-    loop:
-    for (Pair<InferenceVariable, List<ClassCallExpression>> pair : calculateClosure(bounds)) {
-      // Solve pair.proj1 as the intersection of their bounds
-
-      if (pair.proj2.size() == 1) {
-        solve(pair.proj1, pair.proj2.get(0), true);
-        solved = true;
-        continue;
-      }
-
-      ClassDefinition classDef = checkClasses(pair.proj1, pair.proj2, cmp);
-      if (classDef == null) {
-        allOK = false;
-        continue;
-      }
-
-      UniverseKind universeKind = classDef.getUniverseKind();
-      if (universeKind != UniverseKind.NO_UNIVERSES) {
-        universeKind = UniverseKind.NO_UNIVERSES;
-        for (ClassField field : classDef.getFields()) {
-          if (field.getUniverseKind() == UniverseKind.NO_UNIVERSES || classDef.isImplemented(field)) {
-            continue;
-          }
-          boolean implemented = false;
-          for (ClassCallExpression classCall : pair.proj2) {
-            if (classCall.isImplementedHere(field)) {
-              implemented = true;
-              break;
-            }
-          }
-          if (!implemented) {
-            universeKind = universeKind.max(field.getUniverseKind());
-            if (universeKind == UniverseKind.WITH_UNIVERSES) {
-              break;
-            }
-          }
-        }
-      }
-
-      ClassCallExpression solution;
-      if (cmp == CMP.LE) {
-        Equations wrapper = new LevelEquationsWrapper(this);
-        LevelPair levels = LevelPair.generateInferVars(this, universeKind, pair.proj1.getSourceNode());
-        Map<ClassField, Expression> implementations = new HashMap<>();
-        solution = new ClassCallExpression(classDef, levels, implementations, classDef.getSort(), universeKind);
-        ReferenceExpression thisExpr = new ReferenceExpression(solution.getThisBinding());
-        boolean first = true;
-        for (ClassCallExpression bound : pair.proj2) {
-          if (first) {
-            for (Map.Entry<ClassField, Expression> entry : bound.getImplementedHere().entrySet()) {
-              implementations.put(entry.getKey(), entry.getValue().subst(bound.getThisBinding(), thisExpr));
-            }
-            first = false;
-            continue;
-          }
-
-          for (Iterator<Map.Entry<ClassField, Expression>> iterator = implementations.entrySet().iterator(); iterator.hasNext(); ) {
-            Map.Entry<ClassField, Expression> entry = iterator.next();
-            boolean remove = !entry.getKey().isProperty();
-            if (remove) {
-              Expression other = bound.getAbsImplementationHere(entry.getKey());
-              remove = other == null || !CompareVisitor.compare(wrapper, CMP.EQ, entry.getValue(), other, solution.getDefinition().getFieldType(entry.getKey(), solution.getLevels(), thisExpr), pair.proj1.getSourceNode());
-            }
-            if (remove) {
-              iterator.remove();
-            }
-          }
-        }
-
-        solution.setSort(classDef.computeSort(solution.getLevels(), implementations, solution.getThisBinding()));
-        solution.updateHasUniverses();
-
-        if (!LevelPair.compare(pair.proj2.get(0).getLevels(), levels, CMP.LE, this, pair.proj1.getSourceNode())) {
-          reportBoundsError(pair.proj1, pair.proj2, CMP.GE);
-          allOK = false;
-          continue;
-        }
-        for (ClassCallExpression lowerBound : pair.proj2) {
-          if (!new CompareVisitor(this, CMP.LE, pair.proj1.getSourceNode()).compareClassCallLevels(lowerBound, solution)) {
-            reportBoundsError(pair.proj1, pair.proj2, CMP.GE);
-            allOK = false;
-            continue loop;
-          }
-        }
-      } else {
-        solution = pair.proj2.get(0);
-        Map<ClassField, Expression> map = solution.getImplementedHere();
-        Expression thisExpr = new ReferenceExpression(solution.getThisBinding());
-        for (int i = 1; i < pair.proj2.size(); i++) {
-          Map<ClassField, Expression> otherMap = pair.proj2.get(i).getImplementedHere();
-          if (map.size() != otherMap.size()) {
-            reportBoundsError(pair.proj1, pair.proj2, CMP.LE);
-            allOK = false;
-            continue loop;
-          }
-
-          for (Map.Entry<ClassField, Expression> entry : map.entrySet()) {
-            Expression other = otherMap.get(entry.getKey());
-            if (other == null || !CompareVisitor.compare(this, CMP.EQ, entry.getValue(), other, solution.getDefinition().getFieldType(entry.getKey(), solution.getLevels(), thisExpr), pair.proj1.getSourceNode())) {
-              reportBoundsError(pair.proj1, pair.proj2, CMP.LE);
-              allOK = false;
-              continue loop;
-            }
-          }
-        }
-      }
-
-      solve(pair.proj1, solution, true);
-      solved = true;
-    }
-
-    return allOK && solved;
+    return solveClassCallLowerBounds(calculateClosure(bounds), allOK, solved, cmp);
   }
 
   private ClassDefinition checkClasses(InferenceVariable var, List<ClassCallExpression> bounds, CMP cmp) {
@@ -708,6 +597,153 @@ public class TwoStageEquations implements Equations {
   @Override
   public boolean solve(InferenceVariable var, Expression expr) {
     return solve(var, expr, false, false, false) == SolveResult.SOLVED;
+  }
+
+  @Override
+  public void solveLowerBounds(InferenceVariable var) {
+    List<Equation> equations = new ArrayList<>();
+    for (Iterator<Equation> iterator = myEquations.iterator(); iterator.hasNext(); ) {
+      Equation equation = iterator.next();
+      Expression varExpr = equation.cmp == CMP.LE ? equation.expr2 : equation.expr1;
+      if (varExpr instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) varExpr).getVariable() == var) {
+        Expression other = (equation.cmp == CMP.LE ? equation.expr1 : equation.expr2).normalize(NormalizationMode.WHNF);
+        if (other instanceof ClassCallExpression) {
+          if (equation.cmp == CMP.LE) {
+            equation.expr1 = other;
+          } else {
+            equation.expr2 = other;
+          }
+        } else {
+          myEquations.addAll(equations);
+          return;
+        }
+        equations.add(equation);
+        iterator.remove();
+      }
+    }
+
+    if (equations.isEmpty()) return;
+    List<ClassCallExpression> bounds = new ArrayList<>(equations.size());
+    for (Equation equation : equations) {
+      if (equation.expr1 instanceof ClassCallExpression) {
+        bounds.add((ClassCallExpression) equation.expr1);
+      } else if (equation.expr2 instanceof ClassCallExpression) {
+        bounds.add((ClassCallExpression) equation.expr2);
+      }
+    }
+    solveClassCallLowerBounds(Collections.singletonList(new Pair<>(var, bounds)), true, false, CMP.LE);
+  }
+
+  private boolean solveClassCallLowerBounds(List<Pair<InferenceVariable, List<ClassCallExpression>>> list, boolean allOK, boolean solved, CMP cmp) {
+    loop:
+    for (Pair<InferenceVariable, List<ClassCallExpression>> pair : list) {
+      if (pair.proj2.size() == 1) {
+        solve(pair.proj1, pair.proj2.get(0), true);
+        solved = true;
+        continue;
+      }
+
+      ClassDefinition classDef = checkClasses(pair.proj1, pair.proj2, cmp);
+      if (classDef == null) {
+        allOK = false;
+        continue;
+      }
+
+      UniverseKind universeKind = classDef.getUniverseKind();
+      if (universeKind != UniverseKind.NO_UNIVERSES) {
+        universeKind = UniverseKind.NO_UNIVERSES;
+        for (ClassField field : classDef.getFields()) {
+          if (field.getUniverseKind() == UniverseKind.NO_UNIVERSES || classDef.isImplemented(field)) {
+            continue;
+          }
+          boolean implemented = false;
+          for (ClassCallExpression classCall : pair.proj2) {
+            if (classCall.isImplementedHere(field)) {
+              implemented = true;
+              break;
+            }
+          }
+          if (!implemented) {
+            universeKind = universeKind.max(field.getUniverseKind());
+            if (universeKind == UniverseKind.WITH_UNIVERSES) {
+              break;
+            }
+          }
+        }
+      }
+
+      ClassCallExpression solution;
+      if (cmp == CMP.LE) {
+        Equations wrapper = new LevelEquationsWrapper(this);
+        LevelPair levels = LevelPair.generateInferVars(this, universeKind, pair.proj1.getSourceNode());
+        Map<ClassField, Expression> implementations = new HashMap<>();
+        solution = new ClassCallExpression(classDef, levels, implementations, classDef.getSort(), universeKind);
+        ReferenceExpression thisExpr = new ReferenceExpression(solution.getThisBinding());
+        boolean first = true;
+        for (ClassCallExpression bound : pair.proj2) {
+          if (first) {
+            for (Map.Entry<ClassField, Expression> entry : bound.getImplementedHere().entrySet()) {
+              implementations.put(entry.getKey(), entry.getValue().subst(bound.getThisBinding(), thisExpr));
+            }
+            first = false;
+            continue;
+          }
+
+          for (Iterator<Map.Entry<ClassField, Expression>> iterator = implementations.entrySet().iterator(); iterator.hasNext(); ) {
+            Map.Entry<ClassField, Expression> entry = iterator.next();
+            boolean remove = !entry.getKey().isProperty();
+            if (remove) {
+              Expression other = bound.getAbsImplementationHere(entry.getKey());
+              remove = other == null || !CompareVisitor.compare(wrapper, CMP.EQ, entry.getValue(), other, solution.getDefinition().getFieldType(entry.getKey(), solution.getLevels(), thisExpr), pair.proj1.getSourceNode());
+            }
+            if (remove) {
+              iterator.remove();
+            }
+          }
+        }
+
+        solution.setSort(classDef.computeSort(solution.getLevels(), implementations, solution.getThisBinding()));
+        solution.updateHasUniverses();
+
+        if (!LevelPair.compare(pair.proj2.get(0).getLevels(), levels, CMP.LE, this, pair.proj1.getSourceNode())) {
+          reportBoundsError(pair.proj1, pair.proj2, CMP.GE);
+          allOK = false;
+          continue;
+        }
+        for (ClassCallExpression lowerBound : pair.proj2) {
+          if (!new CompareVisitor(this, CMP.LE, pair.proj1.getSourceNode()).compareClassCallLevels(lowerBound, solution)) {
+            reportBoundsError(pair.proj1, pair.proj2, CMP.GE);
+            allOK = false;
+            continue loop;
+          }
+        }
+      } else {
+        solution = pair.proj2.get(0);
+        Map<ClassField, Expression> map = solution.getImplementedHere();
+        Expression thisExpr = new ReferenceExpression(solution.getThisBinding());
+        for (int i = 1; i < pair.proj2.size(); i++) {
+          Map<ClassField, Expression> otherMap = pair.proj2.get(i).getImplementedHere();
+          if (map.size() != otherMap.size()) {
+            reportBoundsError(pair.proj1, pair.proj2, CMP.LE);
+            allOK = false;
+            continue loop;
+          }
+
+          for (Map.Entry<ClassField, Expression> entry : map.entrySet()) {
+            Expression other = otherMap.get(entry.getKey());
+            if (other == null || !CompareVisitor.compare(this, CMP.EQ, entry.getValue(), other, solution.getDefinition().getFieldType(entry.getKey(), solution.getLevels(), thisExpr), pair.proj1.getSourceNode())) {
+              reportBoundsError(pair.proj1, pair.proj2, CMP.LE);
+              allOK = false;
+              continue loop;
+            }
+          }
+        }
+      }
+
+      solve(pair.proj1, solution, true);
+      solved = true;
+    }
+    return allOK && solved;
   }
 
   private enum SolveResult { SOLVED, NOT_SOLVED, ERROR }

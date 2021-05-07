@@ -303,6 +303,46 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
     result.type = result.type.normalize(NormalizationMode.WHNF);
     expectedType = expectedType.normalize(NormalizationMode.WHNF);
+
+    if (result.expression instanceof FunCallExpression && ((FunCallExpression) result.expression).getDefinition() == Prelude.IDP) {
+      FunCallExpression idp = (FunCallExpression) result.expression;
+      FunCallExpression equality = expectedType.toEquality();
+      if (equality != null) {
+        CompareVisitor visitor = new CompareVisitor(myEquations, CMP.LE, expr);
+        boolean ok = LevelPair.compare(idp.getLevels(), equality.getLevels(), CMP.LE, myEquations, expr) && visitor.compare(idp.getDefCallArguments().get(0), equality.getDefCallArguments().get(0), Type.OMEGA, false);
+        if (ok) {
+          visitor.setCMP(CMP.EQ);
+          Expression type = equality.getDefCallArguments().get(0);
+          Expression left = equality.getDefCallArguments().get(1).getUnderlyingExpression();
+          Expression right = equality.getDefCallArguments().get(2).getUnderlyingExpression();
+          ok = visitor.compare(idp.getDefCallArguments().get(1), left, type, true) && visitor.compare(idp.getDefCallArguments().get(1), right, type, true);
+          if (left instanceof ArrayExpression) {
+            Expression elementsType = ((ArrayExpression) left).getElementsType();
+            if (elementsType instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) elementsType).getVariable() != null) {
+              type = type.normalize(NormalizationMode.WHNF);
+              if (type instanceof ClassCallExpression) {
+                myEquations.addEquation(elementsType, FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, ((ClassCallExpression) type).getLevels(), right), type, CMP.EQ, expr, ((InferenceReferenceExpression) elementsType).getVariable(), right.getStuckInferenceVariable());
+              }
+            }
+          } else if (right instanceof ArrayExpression) {
+            Expression elementsType = ((ArrayExpression) right).getElementsType();
+            if (elementsType instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) elementsType).getVariable() != null) {
+              type = type.normalize(NormalizationMode.WHNF);
+              if (type instanceof ClassCallExpression) {
+                myEquations.addEquation(elementsType, FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, ((ClassCallExpression) type).getLevels(), left), type, CMP.EQ, expr, ((InferenceReferenceExpression) elementsType).getVariable(), left.getStuckInferenceVariable());
+              }
+            }
+          }
+        }
+        if (ok) {
+          return result;
+        } else {
+          errorReporter.report(new TypeMismatchError(equality, result.type, expr));
+          return null;
+        }
+      }
+    }
+
     if (result.type instanceof ClassCallExpression && expectedType instanceof ClassCallExpression) {
       ClassCallExpression actualClassCall = (ClassCallExpression) result.type;
       ClassCallExpression expectedClassCall = (ClassCallExpression) expectedType;
@@ -2780,6 +2820,29 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     TResult result = myArgsInference.infer(expr, expectedType);
     if (result == null || !checkPath(result, expr)) {
       return null;
+    }
+
+    if (definition instanceof DataDefinition || definition == Prelude.PATH_INFIX) {
+      List<? extends Expression> args = null;
+      if (result instanceof DefCallResult) {
+        args = ((DefCallResult) result).getArguments();
+      } else if (result instanceof TypecheckingResult) {
+        Expression resultExpr = ((TypecheckingResult) result).expression;
+        while (resultExpr instanceof AppExpression) {
+          resultExpr = resultExpr.getFunction();
+        }
+        if (resultExpr instanceof DefCallExpression) {
+          args = ((DefCallExpression) resultExpr).getDefCallArguments();
+        }
+      }
+      if (args != null) {
+        DataDefinition dataDef = definition instanceof DataDefinition ? (DataDefinition) definition : Prelude.PATH;
+        for (int i = 0; i < args.size(); i++) {
+          if (args.get(i) instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) args.get(i)).getVariable() != null && dataDef.isCovariant(i)) {
+            myEquations.solveLowerBounds(((InferenceReferenceExpression) args.get(i)).getVariable());
+          }
+        }
+      }
     }
 
     return tResultToResult(expectedType, result, expr);
