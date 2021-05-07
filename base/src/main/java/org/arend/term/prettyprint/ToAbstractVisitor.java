@@ -229,12 +229,13 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       return argument.accept(this, null);
     }
 
+    boolean isGlobalInstance = argument instanceof FunCallExpression && !expr.getDefinition().getParentClass().isRecord();
     String name = null;
     boolean ok = false;
     if (argument instanceof ReferenceExpression && hasFlag(PrettyPrinterFlag.SHOW_LOCAL_FIELD_INSTANCE)) {
       ok = true;
       name = ((ReferenceExpression) argument).getBinding().getName();
-    } else if (argument instanceof FunCallExpression && hasFlag(PrettyPrinterFlag.SHOW_GLOBAL_FIELD_INSTANCE)) {
+    } else if (isGlobalInstance && hasFlag(PrettyPrinterFlag.SHOW_GLOBAL_FIELD_INSTANCE)) {
       ok = true;
       for (DependentLink param = ((FunCallExpression) argument).getDefinition().getParameters(); param.hasNext(); param = param.getNext()) {
         param = param.getNextTyped(null);
@@ -251,7 +252,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     }
 
     Concrete.ReferenceExpression result = makeReference(expr);
-    return !(argument instanceof FunCallExpression) && hasFlag(PrettyPrinterFlag.SHOW_LOCAL_FIELD_INSTANCE) || argument instanceof FunCallExpression && hasFlag(PrettyPrinterFlag.SHOW_GLOBAL_FIELD_INSTANCE)
+    return !isGlobalInstance && hasFlag(PrettyPrinterFlag.SHOW_LOCAL_FIELD_INSTANCE) || isGlobalInstance && hasFlag(PrettyPrinterFlag.SHOW_GLOBAL_FIELD_INSTANCE)
       ? Concrete.AppExpression.make(null, result, argument.accept(this, null), false) : result;
   }
 
