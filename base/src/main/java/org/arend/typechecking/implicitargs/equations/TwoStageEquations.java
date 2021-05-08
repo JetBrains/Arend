@@ -487,7 +487,7 @@ public class TwoStageEquations implements Equations {
 
     // @bounds consists of entries (@v,@list) such that every expression @e in @list is either a classCall or an inference variable and @e `cmp` @v.
     // The result of @calculateClosure is the transitive closure of @bounds.
-    return solveClassCallLowerBounds(calculateClosure(bounds), allOK, solved, cmp);
+    return solveClassCallLowerBounds(calculateClosure(bounds), allOK, solved, cmp, true);
   }
 
   private ClassDefinition checkClasses(InferenceVariable var, List<ClassCallExpression> bounds, CMP cmp) {
@@ -631,10 +631,10 @@ public class TwoStageEquations implements Equations {
         bounds.add((ClassCallExpression) equation.expr2);
       }
     }
-    solveClassCallLowerBounds(Collections.singletonList(new Pair<>(var, bounds)), true, false, CMP.LE);
+    solveClassCallLowerBounds(Collections.singletonList(new Pair<>(var, bounds)), true, false, CMP.LE, false);
   }
 
-  private boolean solveClassCallLowerBounds(List<Pair<InferenceVariable, List<ClassCallExpression>>> list, boolean allOK, boolean solved, CMP cmp) {
+  private boolean solveClassCallLowerBounds(List<Pair<InferenceVariable, List<ClassCallExpression>>> list, boolean allOK, boolean solved, CMP cmp, boolean useWrapper) {
     loop:
     for (Pair<InferenceVariable, List<ClassCallExpression>> pair : list) {
       if (pair.proj2.size() == 1) {
@@ -674,7 +674,7 @@ public class TwoStageEquations implements Equations {
 
       ClassCallExpression solution;
       if (cmp == CMP.LE) {
-        Equations wrapper = new LevelEquationsWrapper(this);
+        Equations wrapper = useWrapper ? new LevelEquationsWrapper(this) : this;
         LevelPair levels = LevelPair.generateInferVars(this, universeKind, pair.proj1.getSourceNode());
         Map<ClassField, Expression> implementations = new HashMap<>();
         solution = new ClassCallExpression(classDef, levels, implementations, classDef.getSort(), universeKind);
