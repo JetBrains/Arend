@@ -1216,8 +1216,17 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
 
     if (!implementations.isEmpty()) {
-      FieldDFS dfs = new FieldDFS(resultClassCall.getDefinition());
+      if (resultClassCall.getDefinition() == Prelude.ARRAY && !resultClassCall.getImplementedHere().isEmpty()) {
+        for (Pair<Definition, Concrete.ClassFieldImpl> pair : implementations) {
+          if (pair.proj1 instanceof ClassField) {
+            resultClassCall.getImplementedHere().remove(pair.proj1);
+          } else if (pair.proj1 instanceof ClassDefinition) {
+            resultClassCall.getImplementedHere().keySet().removeAll(((ClassDefinition) pair.proj1).getFields());
+          }
+        }
+      }
 
+      FieldDFS dfs = new FieldDFS(resultClassCall.getDefinition());
       Referable thisRef = addBinding(null, resultClassCall.getThisBinding());
       myClassCallBindings.add(resultClassCall.getThisBinding());
       try {

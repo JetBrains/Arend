@@ -63,7 +63,7 @@ public class ArrayTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void etaTest() {
+  public void nilEtaTest() {
     typeCheckModule(
       "\\lemma test1 (a b : Array Nat 0) : a = b => idp\n" +
       "\\func test2 (a : Array { | len => 0 }) : a = nil => idp\n" +
@@ -71,7 +71,7 @@ public class ArrayTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void etaError() {
+  public void nilEtaError() {
     typeCheckDef("\\func test (a b : Array { | len => 0 }) : a = b => idp", 1);
     assertThatErrorsAre(Matchers.typeMismatchError());
   }
@@ -93,9 +93,19 @@ public class ArrayTest extends TypeCheckingTestCase {
   @Test
   public void consEtaTest() {
     typeCheckModule(
-      "\\open Array\n" +
-      "\\func map {A B : \\Type} (f : A -> B) (as : Array A) : Array B as.len (\\lam i => f (as.at i)) \\cowith\n" +
+      "\\func map {A B : \\Type} (f : A -> B) (as : Array A) : Array B as.len (\\lam i => f (as i)) \\cowith\n" +
       "\\func test {A B : \\Type} (f : A -> B) {a : A} (as : Array A) : map f (a :: as) = f a :: map f as => idp");
+  }
+
+  @Test
+  public void etaTest() {
+    typeCheckDef("\\func test {A : \\Type} {n : Nat} (g : Fin n -> Array A 3) : (\\new Array (Array A) n g) = {Array (Array A)} \\new Array (Array A 3) n g => idp");
+  }
+
+  @Test
+  public void etaError() {
+    typeCheckDef("\\func test {A : \\Type} {n : Nat} (g : Fin n -> Array A 3) : (\\new Array (Array A) n g) = {Array} \\new Array (Array A 3) n g => idp", 1);
+    assertThatErrorsAre(Matchers.typeMismatchError());
   }
 
   @Test
