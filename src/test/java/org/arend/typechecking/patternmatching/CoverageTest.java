@@ -239,4 +239,10 @@ public class CoverageTest extends TypeCheckingTestCase {
       "\\func test (x y z : Nat) (p : y <= z) : Nat \\elim x", 1);
     assertThatErrorsAre(missingClauses(2));
   }
+
+  @Test
+  public void tupleTest() {
+    typeCheckDef("\\func test (p : \\Sigma Nat Nat) : Nat", 1);
+    assertThatErrorsAre(missingClauses(1));
+  }
 }

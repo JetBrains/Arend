@@ -585,50 +585,43 @@ public class ElimTypechecking {
       return emptyLink;
     }
 
-    if (missingClauses.size() == 1 && elimParams.isEmpty()) {
-      boolean allVars = true;
-      for (ExpressionPattern pattern : missingClauses.get(0)) {
-        if (!(pattern instanceof BindingPattern)) {
-          allVars = false;
-          break;
-        }
-      }
-
-      if (allVars) {
-        myErrorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.BODY_REQUIRED, mySourceNode));
-        return null;
-      }
-    }
-
     for (List<ExpressionPattern> patterns : missingClauses) {
       Collections.reverse(patterns);
     }
 
-    if (!elimParams.isEmpty()) {
-      for (List<ExpressionPattern> patterns : missingClauses) {
-        DependentLink param = parameters;
-        for (int i = 0; i < patterns.size(); i++, param = param.getNext()) {
-          if (patterns.get(i) instanceof BindingPattern && !paramSpec.containsKey(param)) {
-            ConstructorExpressionPattern newPattern;
-            List<ExpressionPattern> subPatterns;
-            Expression type = ((BindingPattern) patterns.get(i)).getBinding().getTypeExpr().getUnderlyingExpression();
-            if (type instanceof SigmaExpression) {
-              subPatterns = new ArrayList<>();
-              newPattern = new ConstructorExpressionPattern((SigmaExpression) type, subPatterns);
-            } else if (type instanceof ClassCallExpression) {
-              subPatterns = new ArrayList<>();
-              newPattern = new ConstructorExpressionPattern((ClassCallExpression) type, subPatterns);
-            } else {
-              continue;
-            }
+    boolean allVars = missingClauses.size() == 1;
+    for (List<ExpressionPattern> patterns : missingClauses) {
+      DependentLink param = parameters;
+      for (int i = 0; i < patterns.size(); i++, param = param.getNext()) {
+        if (!(patterns.get(i) instanceof BindingPattern)) {
+          allVars = false;
+        }
+        if (patterns.get(i) instanceof BindingPattern && !paramSpec.containsKey(param)) {
+          ConstructorExpressionPattern newPattern;
+          List<ExpressionPattern> subPatterns;
+          Expression type = ((BindingPattern) patterns.get(i)).getBinding().getTypeExpr().getUnderlyingExpression();
+          if (type instanceof SigmaExpression) {
+            subPatterns = new ArrayList<>();
+            newPattern = new ConstructorExpressionPattern((SigmaExpression) type, subPatterns);
+          } else if (type instanceof ClassCallExpression) {
+            subPatterns = new ArrayList<>();
+            newPattern = new ConstructorExpressionPattern((ClassCallExpression) type, subPatterns);
+          } else {
+            continue;
+          }
 
-            patterns.set(i, newPattern);
-            for (DependentLink link = newPattern.getParameters(); link.hasNext(); link = link.getNext()) {
-              subPatterns.add(new BindingPattern(link));
-            }
+          allVars = false;
+          patterns.set(i, newPattern);
+          for (DependentLink link = newPattern.getParameters(); link.hasNext(); link = link.getNext()) {
+            subPatterns.add(new BindingPattern(link));
           }
         }
       }
+    }
+
+    if (allVars) {
+      myErrorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.BODY_REQUIRED, mySourceNode));
+      return null;
     }
 
     myErrorReporter.report(new MissingClausesError(missingClauses, parameters, elimParams, true, mySourceNode));
