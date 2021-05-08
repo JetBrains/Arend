@@ -2,6 +2,7 @@ package org.arend.classes;
 
 import org.arend.Matchers;
 import org.arend.typechecking.TypeCheckingTestCase;
+import org.arend.typechecking.error.local.NotEqualExpressionsError;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -67,7 +68,7 @@ public class DefaultImplTest extends TypeCheckingTestCase {
       "  \\default x => 0\n" +
       "  \\default y => idp\n" +
       "}", 1);
-    assertThatErrorsAre(Matchers.typeMismatchError());
+    assertThatErrorsAre(Matchers.typecheckingError(NotEqualExpressionsError.class));
   }
 
   @Test
@@ -145,7 +146,7 @@ public class DefaultImplTest extends TypeCheckingTestCase {
       "  }\n" +
       "  \\default g \\as g' n => idp\n" +
       "}", 1);
-    assertThatErrorsAre(Matchers.typeMismatchError());
+    assertThatErrorsAre(Matchers.typecheckingError(NotEqualExpressionsError.class));
   }
 
   @Test

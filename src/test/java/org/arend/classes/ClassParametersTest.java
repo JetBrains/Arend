@@ -3,6 +3,7 @@ package org.arend.classes;
 import org.arend.Matchers;
 import org.arend.core.definition.ClassDefinition;
 import org.arend.typechecking.TypeCheckingTestCase;
+import org.arend.typechecking.error.local.NotEqualExpressionsError;
 import org.junit.Test;
 
 import static junit.framework.TestCase.assertEquals;
@@ -206,7 +207,7 @@ public class ClassParametersTest extends TypeCheckingTestCase {
       "\\record R {x : Nat} (p : x = 0) | q : p = p\n" +
       "\\record T {z : Nat} \\extends R { | x => z }\n" +
       "\\func f => \\new T { | p => idp | q => idp | z => 0 }", 1);
-    assertThatErrorsAre(typeMismatchError());
+    assertThatErrorsAre(Matchers.typecheckingError(NotEqualExpressionsError.class));
   }
 
   @Test

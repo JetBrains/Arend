@@ -10,6 +10,7 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.LevelPair;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.TypeCheckingTestCase;
+import org.arend.typechecking.error.local.NotEqualExpressionsError;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -73,7 +74,7 @@ public class ArrayTest extends TypeCheckingTestCase {
   @Test
   public void nilEtaError() {
     typeCheckDef("\\func test (a b : Array { | len => 0 }) : a = b => idp", 1);
-    assertThatErrorsAre(Matchers.typeMismatchError());
+    assertThatErrorsAre(Matchers.typecheckingError(NotEqualExpressionsError.class));
   }
 
   @Test
@@ -105,7 +106,7 @@ public class ArrayTest extends TypeCheckingTestCase {
   @Test
   public void etaError() {
     typeCheckDef("\\func test {A : \\Type} {n : Nat} (g : Fin n -> Array A 3) : (\\new Array (Array A) n g) = {Array} \\new Array (Array A 3) n g => idp", 1);
-    assertThatErrorsAre(Matchers.typeMismatchError());
+    assertThatErrorsAre(Matchers.typecheckingError(NotEqualExpressionsError.class));
   }
 
   @Test

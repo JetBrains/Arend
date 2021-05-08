@@ -1,14 +1,14 @@
 package org.arend.typechecking;
 
+import org.arend.Matchers;
+import org.arend.typechecking.error.local.NotEqualExpressionsError;
 import org.junit.Test;
-
-import static org.arend.Matchers.typeMismatchError;
 
 public class StrictPropTest extends TypeCheckingTestCase {
   @Test
   public void parametersError() {
     typeCheckDef("\\func f {A : \\Prop} (x y : A) : x = y => idp", 1);
-    assertThatErrorsAre(typeMismatchError());
+    assertThatErrorsAre(Matchers.typecheckingError(NotEqualExpressionsError.class));
   }
 
   @Test
@@ -24,7 +24,7 @@ public class StrictPropTest extends TypeCheckingTestCase {
   @Test
   public void setPathError() {
     typeCheckDef("\\func f {A : \\Set} (x y : A) (p q : x = y) : p = q => idp", 1);
-    assertThatErrorsAre(typeMismatchError());
+    assertThatErrorsAre(Matchers.typecheckingError(NotEqualExpressionsError.class));
   }
 
   @Test
@@ -35,7 +35,7 @@ public class StrictPropTest extends TypeCheckingTestCase {
   @Test
   public void setPiError() {
     typeCheckDef("\\func f {A : \\Set} (x y : A) : \\Pi (p q : = \\levels \\lp 0 x y) -> p = q => \\lam p q => idp", 1);
-    assertThatErrorsAre(typeMismatchError());
+    assertThatErrorsAre(Matchers.typecheckingError(NotEqualExpressionsError.class));
   }
 
   @Test
@@ -56,7 +56,7 @@ public class StrictPropTest extends TypeCheckingTestCase {
       "\\record B (X : \\Type) (p : \\Pi (x x' : X) -> x = x') (x0 : X)\n" +
       " \\where \\use \\level levelProp {X : \\Type} {p : \\Pi (x x' : X) -> x = x'} (b b' : B X p) : b = b' => path (\\lam i => \\new B X p (p b.x0 b'.x0 @ i))\n" +
       "\\func f {X : \\Type} {p : \\Pi (x x' : X) -> x = x'} (b b' : B X p) : b = {B X p} b' => idp", 1);
-    assertThatErrorsAre(typeMismatchError());
+    assertThatErrorsAre(Matchers.typecheckingError(NotEqualExpressionsError.class));
   }
 
   @Test

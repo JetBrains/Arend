@@ -309,37 +309,38 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       FunCallExpression equality = expectedType.toEquality();
       if (equality != null) {
         CompareVisitor visitor = new CompareVisitor(myEquations, CMP.LE, expr);
-        boolean ok = LevelPair.compare(idp.getLevels(), equality.getLevels(), CMP.LE, myEquations, expr) && visitor.compare(idp.getDefCallArguments().get(0), equality.getDefCallArguments().get(0), Type.OMEGA, false);
-        if (ok) {
-          visitor.setCMP(CMP.EQ);
-          Expression type = equality.getDefCallArguments().get(0);
-          Expression left = equality.getDefCallArguments().get(1).getUnderlyingExpression();
-          Expression right = equality.getDefCallArguments().get(2).getUnderlyingExpression();
-          ok = visitor.compare(idp.getDefCallArguments().get(1), left, type, true) && visitor.compare(idp.getDefCallArguments().get(1), right, type, true);
-          if (left instanceof ArrayExpression) {
-            Expression elementsType = ((ArrayExpression) left).getElementsType();
-            if (elementsType instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) elementsType).getVariable() != null) {
-              type = type.normalize(NormalizationMode.WHNF);
-              if (type instanceof ClassCallExpression) {
-                myEquations.addEquation(elementsType, FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, ((ClassCallExpression) type).getLevels(), right), type, CMP.EQ, expr, ((InferenceReferenceExpression) elementsType).getVariable(), right.getStuckInferenceVariable());
-              }
-            }
-          } else if (right instanceof ArrayExpression) {
-            Expression elementsType = ((ArrayExpression) right).getElementsType();
-            if (elementsType instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) elementsType).getVariable() != null) {
-              type = type.normalize(NormalizationMode.WHNF);
-              if (type instanceof ClassCallExpression) {
-                myEquations.addEquation(elementsType, FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, ((ClassCallExpression) type).getLevels(), left), type, CMP.EQ, expr, ((InferenceReferenceExpression) elementsType).getVariable(), left.getStuckInferenceVariable());
-              }
-            }
-          }
-        }
-        if (ok) {
-          return result;
-        } else {
+        if (!(LevelPair.compare(idp.getLevels(), equality.getLevels(), CMP.LE, myEquations, expr) && visitor.compare(idp.getDefCallArguments().get(0), equality.getDefCallArguments().get(0), Type.OMEGA, false))) {
           errorReporter.report(new TypeMismatchError(equality, result.type, expr));
           return null;
         }
+        visitor.setCMP(CMP.EQ);
+        Expression type = equality.getDefCallArguments().get(0);
+        Expression left = equality.getDefCallArguments().get(1).getUnderlyingExpression();
+        Expression right = equality.getDefCallArguments().get(2).getUnderlyingExpression();
+        Expression idpArg = idp.getDefCallArguments().get(1).getUnderlyingExpression();
+        boolean isNotEqualError = idpArg instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) idpArg).getVariable() != null;
+        if (!(visitor.compare(idpArg, left, type, true) && visitor.compare(idpArg, right, type, true))) {
+          errorReporter.report(isNotEqualError ? new NotEqualExpressionsError(left, right, expr) : new TypeMismatchError(equality, result.type, expr));
+          return null;
+        }
+        if (left instanceof ArrayExpression) {
+          Expression elementsType = ((ArrayExpression) left).getElementsType();
+          if (elementsType instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) elementsType).getVariable() != null) {
+            type = type.normalize(NormalizationMode.WHNF);
+            if (type instanceof ClassCallExpression) {
+              myEquations.addEquation(elementsType, FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, ((ClassCallExpression) type).getLevels(), right), type, CMP.EQ, expr, ((InferenceReferenceExpression) elementsType).getVariable(), right.getStuckInferenceVariable());
+            }
+          }
+        } else if (right instanceof ArrayExpression) {
+          Expression elementsType = ((ArrayExpression) right).getElementsType();
+          if (elementsType instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) elementsType).getVariable() != null) {
+            type = type.normalize(NormalizationMode.WHNF);
+            if (type instanceof ClassCallExpression) {
+              myEquations.addEquation(elementsType, FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, ((ClassCallExpression) type).getLevels(), left), type, CMP.EQ, expr, ((InferenceReferenceExpression) elementsType).getVariable(), left.getStuckInferenceVariable());
+            }
+          }
+        }
+        return result;
       }
     }
 

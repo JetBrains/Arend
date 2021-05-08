@@ -1,14 +1,15 @@
 package org.arend.typechecking;
 
+import org.arend.Matchers;
 import org.arend.core.definition.Definition;
 import org.arend.ext.ArendPrelude;
 import org.arend.prelude.Prelude;
+import org.arend.typechecking.error.local.NotEqualExpressionsError;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
-import static org.arend.Matchers.typeMismatchError;
 import static org.junit.Assert.fail;
 
 public class PreludeTest extends TypeCheckingTestCase {
@@ -70,7 +71,7 @@ public class PreludeTest extends TypeCheckingTestCase {
       "  | 0 => idp\n" +
       "  | suc n => idp\n" +
       "\\func test : path (iso id id (\\lam _ => idp) (\\lam _ => idp)) = path (iso id id' id'-id id'-id) => idp", 1);
-    assertThatErrorsAre(typeMismatchError());
+    assertThatErrorsAre(Matchers.typecheckingError(NotEqualExpressionsError.class));
   }
 
   @Test
@@ -84,7 +85,7 @@ public class PreludeTest extends TypeCheckingTestCase {
       "  | 0 => idp\n" +
       "  | suc n => idp\n" +
       "\\func test : path (iso id id (\\lam _ => idp) (\\lam _ => idp)) = path (iso id' id id'-id id'-id) => idp", 1);
-    assertThatErrorsAre(typeMismatchError());
+    assertThatErrorsAre(Matchers.typecheckingError(NotEqualExpressionsError.class));
   }
 
   // This works only with a stricter version of iso, see NormalizeVisitor
@@ -99,7 +100,7 @@ public class PreludeTest extends TypeCheckingTestCase {
       "  | 0 => idp\n" +
       "  | suc n => idp\n" +
       "\\func test : coe (\\lam i => iso id (id' i) (id'-id i) (id'-id i) i) 0 right = 0 => idp", 1);
-    assertThatErrorsAre(typeMismatchError());
+    assertThatErrorsAre(Matchers.typecheckingError(NotEqualExpressionsError.class));
   }
 
   @Test
@@ -113,6 +114,6 @@ public class PreludeTest extends TypeCheckingTestCase {
       "  | 0 => idp\n" +
       "  | suc n => idp\n" +
       "\\func test : coe (\\lam i => iso (id' i) id (id'-id i) (id'-id i) i) 0 right = 0 => idp", 1);
-    assertThatErrorsAre(typeMismatchError());
+    assertThatErrorsAre(Matchers.typecheckingError(NotEqualExpressionsError.class));
   }
 }

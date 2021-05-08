@@ -7,9 +7,9 @@ import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.arend.typechecking.error.local.LevelMismatchError;
+import org.arend.typechecking.error.local.NotEqualExpressionsError;
 import org.junit.Test;
 
-import static org.arend.Matchers.typeMismatchError;
 import static org.arend.Matchers.typecheckingError;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -39,7 +39,7 @@ public class ClassFieldPropertyTest extends TypeCheckingTestCase {
       "  | p : 0 = 0\n" +
       "}\n" +
       "\\func foo (x : 0 = 0) : p {\\new C x} = x => idp", 1);
-    assertThatErrorsAre(typeMismatchError());
+    assertThatErrorsAre(typecheckingError(NotEqualExpressionsError.class));
   }
 
   @Test
@@ -50,7 +50,7 @@ public class ClassFieldPropertyTest extends TypeCheckingTestCase {
       "}\n" +
       "\\func inst : C \\cowith | p => idp\n" +
       "\\func foo : p {inst} = idp => idp", 1);
-    assertThatErrorsAre(typeMismatchError());
+    assertThatErrorsAre(typecheckingError(NotEqualExpressionsError.class));
   }
 
   @Test

@@ -2,9 +2,9 @@ package org.arend.typechecking.definition;
 
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.arend.typechecking.error.local.LevelMismatchError;
+import org.arend.typechecking.error.local.NotEqualExpressionsError;
 import org.junit.Test;
 
-import static org.arend.Matchers.typeMismatchError;
 import static org.arend.Matchers.typecheckingError;
 
 public class LemmaTest extends TypeCheckingTestCase {
@@ -74,7 +74,7 @@ public class LemmaTest extends TypeCheckingTestCase {
       "\\lemma f : C 0 \\cowith\n" +
       "  | x => idp\n" +
       "\\func g : f.x = idp => idp", 1);
-    assertThatErrorsAre(typeMismatchError());
+    assertThatErrorsAre(typecheckingError(NotEqualExpressionsError.class));
   }
 
   @Test
