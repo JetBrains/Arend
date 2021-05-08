@@ -560,10 +560,8 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   }
 
   private GlobalReferable visitPattern(Concrete.Pattern pattern, Map<String, Referable> usedNames) {
-    for (Concrete.TypedReferable typedReferable : pattern.getAsReferables()) {
-      if (typedReferable.type != null) {
-        typedReferable.type = typedReferable.type.accept(this, null);
-      }
+    if (pattern.getAsReferable() != null && pattern.getAsReferable().type != null) {
+      pattern.getAsReferable().type = pattern.getAsReferable().type.accept(this, null);
     }
 
     if (pattern instanceof Concrete.NamePattern) {
@@ -594,8 +592,8 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       throw new IllegalStateException();
     }
 
-    for (Concrete.TypedReferable typedReferable : pattern.getAsReferables()) {
-      addReferable(typedReferable.referable, typedReferable.type, usedNames);
+    if (pattern.getAsReferable() != null) {
+      addReferable(pattern.getAsReferable().referable, pattern.getAsReferable().type, usedNames);
     }
 
     return null;
@@ -607,7 +605,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       Referable ref = pattern instanceof Concrete.NamePattern ? ((Concrete.NamePattern) pattern).getReferable() : null;
       Referable constructor = visitPattern(pattern, usedNames);
       if (constructor != null) {
-        Concrete.ConstructorPattern newPattern = new Concrete.ConstructorPattern(pattern.getData(), pattern.isExplicit(), constructor, Collections.emptyList(), Collections.emptyList());
+        Concrete.ConstructorPattern newPattern = new Concrete.ConstructorPattern(pattern.getData(), pattern.isExplicit(), constructor, Collections.emptyList(), null);
         patterns.set(i, newPattern);
         if (myResolverListener != null) {
           myResolverListener.patternResolved(ref, newPattern, Collections.singletonList(constructor));

@@ -15,6 +15,11 @@ public class ParserError extends GeneralError {
     this.position = position;
   }
 
+  public ParserError(Level level, Position position, String message) {
+    super(level, message);
+    this.position = position;
+  }
+
   @Override
   public Position getCause() {
     return position;

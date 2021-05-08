@@ -187,18 +187,18 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
       return false;
     }
 
-    if (pattern1.getAsReferables().size() != pattern2.getAsReferables().size()) {
+    if ((pattern1.getAsReferable() == null) != (pattern2.getAsReferable() == null)) {
       return false;
     }
-    for (int i = 0; i < pattern1.getAsReferables().size(); i++) {
-      if (!compare(pattern1.getAsReferables().get(i).type, pattern2.getAsReferables().get(i).type)) {
+    if (pattern1.getAsReferable() != null) {
+      if (!compare(pattern1.getAsReferable().type, pattern2.getAsReferable().type)) {
         return false;
       }
-      if ((pattern1.getAsReferables().get(i).referable == null) != (pattern2.getAsReferables().get(i).referable == null)) {
+      if ((pattern1.getAsReferable().referable == null) != (pattern2.getAsReferable().referable == null)) {
         return false;
       }
-      if (pattern1.getAsReferables().get(i).referable != null) {
-        mySubstitution.put(pattern1.getAsReferables().get(i).referable, pattern2.getAsReferables().get(i).referable);
+      if (pattern1.getAsReferable().referable != null) {
+        mySubstitution.put(pattern1.getAsReferable().referable, pattern2.getAsReferable().referable);
       }
     }
 

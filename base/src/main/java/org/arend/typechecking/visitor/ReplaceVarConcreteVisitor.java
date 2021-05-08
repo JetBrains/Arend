@@ -85,8 +85,8 @@ public class ReplaceVarConcreteVisitor extends BaseConcreteExpressionVisitor<Voi
         freePattern(subpattern);
       }
     }
-    for (Concrete.TypedReferable ref : pattern.getAsReferables()) {
-      freeVar(ref.referable);
+    if (pattern.getAsReferable() != null) {
+      freeVar(pattern.getAsReferable().referable);
     }
   }
 
@@ -162,11 +162,11 @@ public class ReplaceVarConcreteVisitor extends BaseConcreteExpressionVisitor<Voi
         visitPattern(subpattern, null);
       }
     }
-    for (Concrete.TypedReferable ref : pattern.getAsReferables()) {
-      if (ref.type != null) {
-        ref.type = ref.type.accept(this, params);
+    if (pattern.getAsReferable() != null) {
+      if (pattern.getAsReferable().type != null) {
+        pattern.getAsReferable().type = pattern.getAsReferable().type.accept(this, params);
       }
-      ref.referable = addVar(ref.referable);
+      pattern.getAsReferable().referable = addVar(pattern.getAsReferable().referable);
     }
   }
 

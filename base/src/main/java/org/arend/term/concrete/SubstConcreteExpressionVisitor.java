@@ -187,19 +187,17 @@ public class SubstConcreteExpressionVisitor implements DataContainer, ConcreteEx
       return new Concrete.NamePattern(data, namePattern.isExplicit(), namePattern.getReferable(), namePattern.type);
     } else if (Concrete.ConstructorPattern.class.equals(pattern.getClass())) {
       var conPattern = (Concrete.ConstructorPattern) pattern;
-      return new Concrete.ConstructorPattern(data, conPattern.isExplicit(), conPattern.getConstructor(), visitPatterns(conPattern.getPatterns()), visitTypedReferables(conPattern.getAsReferables()));
+      return new Concrete.ConstructorPattern(data, conPattern.isExplicit(), conPattern.getConstructor(), visitPatterns(conPattern.getPatterns()), visitTypedReferable(conPattern.getAsReferable()));
     } else if (Concrete.TuplePattern.class.equals(pattern.getClass())) {
       var tuplePattern = (Concrete.TuplePattern) pattern;
-      return new Concrete.TuplePattern(data, tuplePattern.isExplicit(), visitPatterns(tuplePattern.getPatterns()), visitTypedReferables(tuplePattern.getAsReferables()));
+      return new Concrete.TuplePattern(data, tuplePattern.isExplicit(), visitPatterns(tuplePattern.getPatterns()), visitTypedReferable(tuplePattern.getAsReferable()));
     } else {
       throw new IllegalArgumentException("Unhandled pattern: " + pattern.getClass());
     }
   }
 
-  private List<Concrete.TypedReferable> visitTypedReferables(List<Concrete.TypedReferable> asReferables) {
-    return asReferables.stream()
-      .map(ref -> new Concrete.TypedReferable(myData != null ? myData : ref.getData(), ref.referable, ref.type.accept(this, null)))
-      .collect(Collectors.toList());
+  private Concrete.TypedReferable visitTypedReferable(Concrete.TypedReferable asReferable) {
+    return asReferable == null ? null : new Concrete.TypedReferable(myData != null ? myData : asReferable.getData(), asReferable.referable, asReferable.type.accept(this, null));
   }
 
   private @NotNull List<Concrete.Pattern> visitPatterns(List<Concrete.Pattern> patterns) {

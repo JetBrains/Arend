@@ -24,12 +24,10 @@ public class FreeReferablesVisitor implements ConcreteExpressionVisitor<Void, TC
   }
 
   public TCReferable visitPattern(Concrete.Pattern pattern) {
-    for (Concrete.TypedReferable typedReferable : pattern.getAsReferables()) {
-      if (typedReferable.type != null) {
-        TCReferable ref = typedReferable.type.accept(this, null);
-        if (ref != null) {
-          return ref;
-        }
+    if (pattern.getAsReferable() != null && pattern.getAsReferable().type != null) {
+      TCReferable ref = pattern.getAsReferable().type.accept(this, null);
+      if (ref != null) {
+        return ref;
       }
     }
 

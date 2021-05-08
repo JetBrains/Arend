@@ -228,24 +228,22 @@ public class PatternTypechecking {
     return type;
   }
 
-  private void typecheckAsPatterns(List<Concrete.TypedReferable> asPatterns, Expression expression, Expression expectedType) {
+  private void typecheckAsPattern(Concrete.TypedReferable asPattern, Expression expression, Expression expectedType) {
     if (myVisitor == null) {
       return;
     }
 
-    if (expression == null || asPatterns.isEmpty()) {
-      if (!asPatterns.isEmpty()) {
-        myErrorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.AS_PATTERN_IGNORED, asPatterns.get(0)));
+    if (expression == null || asPattern == null) {
+      if (asPattern != null) {
+        myErrorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.AS_PATTERN_IGNORED, asPattern));
       }
       return;
     }
 
     expectedType = expectedType.copy();
-    for (Concrete.TypedReferable typedReferable : asPatterns) {
-      Type type = typecheckType(typedReferable.type, expectedType);
-      if (typedReferable.referable != null) {
-        addBinding(typedReferable.referable, new TypedEvaluatingBinding(typedReferable.referable.textRepresentation(), expression, type == null ? expectedType : type.getExpr()));
-      }
+    Type type = typecheckType(asPattern.type, expectedType);
+    if (asPattern.referable != null) {
+      addBinding(asPattern.referable, new TypedEvaluatingBinding(asPattern.referable.textRepresentation(), expression, type == null ? expectedType : type.getExpr()));
     }
   }
 
@@ -361,8 +359,8 @@ public class PatternTypechecking {
         if (pattern != null) {
           if (!(pattern instanceof Concrete.NamePattern)) {
             myErrorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.PATTERN_IGNORED, pattern));
-          } else if (!pattern.getAsReferables().isEmpty()) {
-            myErrorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.AS_PATTERN_IGNORED, pattern.getAsReferables().get(0)));
+          } else if (pattern.getAsReferable() != null) {
+            myErrorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.AS_PATTERN_IGNORED, pattern.getAsReferable()));
           }
         }
 
@@ -423,10 +421,10 @@ public class PatternTypechecking {
           result.add(newPattern);
           if (conResult.exprs == null) {
             exprs = null;
-            typecheckAsPatterns(pattern.getAsReferables(), null, null);
+            typecheckAsPattern(pattern.getAsReferable(), null, null);
           } else {
             Expression newExpr = newPattern.toExpression(conResult.exprs);
-            typecheckAsPatterns(pattern.getAsReferables(), newExpr, expr);
+            typecheckAsPattern(pattern.getAsReferable(), newExpr, expr);
             exprs.add(newExpr);
             paramsSubst.add(parameters, newExpr);
           }
@@ -663,11 +661,11 @@ public class PatternTypechecking {
           result.add(constructor.getPattern().subst(substitution, levelSolution, patternSubst));
           if (conResult.exprs == null) {
             exprs = null;
-            typecheckAsPatterns(pattern.getAsReferables(), null, null);
+            typecheckAsPattern(pattern.getAsReferable(), null, null);
           } else {
             args.addAll(conResult.exprs);
             Expression newExpr = FunCallExpression.make(constructor, levels.subst(levelSolution), args);
-            typecheckAsPatterns(pattern.getAsReferables(), newExpr, expr);
+            typecheckAsPattern(pattern.getAsReferable(), newExpr, expr);
             exprs.add(newExpr);
             paramsSubst.add(parameters, newExpr);
           }
@@ -721,7 +719,7 @@ public class PatternTypechecking {
         myLinkList.append(newParam);
         result.add(new EmptyPattern(newParam));
         exprs = null;
-        typecheckAsPatterns(pattern.getAsReferables(), null, null);
+        typecheckAsPattern(pattern.getAsReferable(), null, null);
         parameters = parameters.getNext();
         continue;
       }
@@ -734,7 +732,7 @@ public class PatternTypechecking {
       if (dataCall != null && dataCall.getDefinition() == Prelude.INT && (conPattern.getConstructor() == Prelude.ZERO.getReferable() || conPattern.getConstructor() == Prelude.SUC.getReferable())) {
         boolean isExplicit = conPattern.isExplicit();
         conPattern.setExplicit(true);
-        conPattern = new Concrete.ConstructorPattern(conPattern.getData(), isExplicit, Prelude.POS.getReferable(), Collections.singletonList(conPattern), conPattern.getAsReferables());
+        conPattern = new Concrete.ConstructorPattern(conPattern.getData(), isExplicit, Prelude.POS.getReferable(), Collections.singletonList(conPattern), conPattern.getAsReferable());
       }
 
       Definition constructor;
@@ -791,7 +789,7 @@ public class PatternTypechecking {
       }
       if (conResult.exprs == null) {
         exprs = null;
-        typecheckAsPatterns(pattern.getAsReferables(), null, null);
+        typecheckAsPattern(pattern.getAsReferable(), null, null);
       } else {
         Expression newConCall;
         if (dataCall != null) {
@@ -808,7 +806,7 @@ public class PatternTypechecking {
           }
           newConCall = FunCallExpression.make((FunctionDefinition) constructor, classCall.getLevels(), funCallArgs);
         }
-        typecheckAsPatterns(pattern.getAsReferables(), newConCall, expr);
+        typecheckAsPattern(pattern.getAsReferable(), newConCall, expr);
         exprs.add(newConCall);
         paramsSubst.add(parameters, newConCall);
       }

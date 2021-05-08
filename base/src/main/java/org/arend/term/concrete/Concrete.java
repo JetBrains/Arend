@@ -2337,12 +2337,12 @@ public final class Concrete {
   public static abstract class Pattern extends SourceNodeImpl implements ConcretePattern {
     public static final byte PREC = 11;
     private boolean myExplicit;
-    private List<TypedReferable> myAsReferables;
+    private TypedReferable myAsReferable;
 
-    public Pattern(Object data, List<TypedReferable> asReferables) {
+    public Pattern(Object data, TypedReferable asReferable) {
       super(data);
       myExplicit = true;
-      myAsReferables = asReferables;
+      myAsReferable = asReferable;
     }
 
     @Override
@@ -2369,20 +2369,17 @@ public final class Concrete {
       if (!(ref instanceof Referable && type instanceof Expression)) {
         throw new IllegalArgumentException();
       }
-      if (myAsReferables.isEmpty()) {
-        myAsReferables = new ArrayList<>();
-      }
-      myAsReferables.add(new TypedReferable(null, (Referable) ref, (Expression) type));
+      myAsReferable = new TypedReferable(getData(), (Referable) ref, (Expression) type);
       return this;
     }
 
-    @NotNull
-    public List<TypedReferable> getAsReferables() {
-      return myAsReferables;
+    @Nullable
+    public TypedReferable getAsReferable() {
+      return myAsReferable;
     }
 
-    public void setAsReferables(List<TypedReferable> asReferables) {
-      myAsReferables = asReferables;
+    public void setAsReferable(TypedReferable asReferable) {
+      myAsReferable = asReferable;
     }
 
     public @NotNull List<? extends Pattern> getPatterns() {
@@ -2394,8 +2391,8 @@ public final class Concrete {
     public final static int MAX_VALUE = 100;
     private final int myNumber;
 
-    public NumberPattern(Object data, int number, List<TypedReferable> asReferables) {
-      super(data, asReferables);
+    public NumberPattern(Object data, int number, TypedReferable asReferable) {
+      super(data, asReferable);
       myNumber = number;
     }
 
@@ -2406,7 +2403,7 @@ public final class Concrete {
 
     @Override
     public Pattern copy() {
-      NumberPattern result = new NumberPattern(getData(), myNumber, getAsReferables());
+      NumberPattern result = new NumberPattern(getData(), myNumber, getAsReferable());
       result.setExplicit(isExplicit());
       return result;
     }
@@ -2417,7 +2414,7 @@ public final class Concrete {
     public @Nullable Expression type;
 
     public NamePattern(Object data, boolean isExplicit, @Nullable Referable referable, @Nullable Expression type) {
-      super(data, Collections.emptyList());
+      super(data, null);
       setExplicit(isExplicit);
       myReferable = referable;
       this.type = type;
@@ -2469,15 +2466,15 @@ public final class Concrete {
     private Referable myConstructor;
     private final List<Pattern> myArguments;
 
-    public ConstructorPattern(Object data, boolean isExplicit, Referable constructor, List<Pattern> arguments, List<TypedReferable> asReferables) {
-      super(data, asReferables);
+    public ConstructorPattern(Object data, boolean isExplicit, Referable constructor, List<Pattern> arguments, TypedReferable asReferable) {
+      super(data, asReferable);
       setExplicit(isExplicit);
       myConstructor = constructor;
       myArguments = arguments;
     }
 
-    public ConstructorPattern(Object data, Referable constructor, List<Pattern> arguments, List<TypedReferable> asReferables) {
-      super(data, asReferables);
+    public ConstructorPattern(Object data, Referable constructor, List<Pattern> arguments, TypedReferable asReferable) {
+      super(data, asReferable);
       myConstructor = constructor;
       myArguments = arguments;
     }
@@ -2505,20 +2502,20 @@ public final class Concrete {
 
     @Override
     public Pattern copy() {
-      return new ConstructorPattern(getData(), isExplicit(), myConstructor, myArguments, getAsReferables());
+      return new ConstructorPattern(getData(), isExplicit(), myConstructor, myArguments, getAsReferable());
     }
   }
 
   public static class TuplePattern extends Pattern {
     private final List<Pattern> myPatterns;
 
-    public TuplePattern(Object data, List<Pattern> patterns, List<TypedReferable> asReferables) {
-      super(data, asReferables);
+    public TuplePattern(Object data, List<Pattern> patterns, TypedReferable asReferable) {
+      super(data, asReferable);
       myPatterns = patterns;
     }
 
-    public TuplePattern(Object data, boolean isExplicit, List<Pattern> patterns, List<TypedReferable> asReferables) {
-      super(data, asReferables);
+    public TuplePattern(Object data, boolean isExplicit, List<Pattern> patterns, TypedReferable asReferable) {
+      super(data, asReferable);
       setExplicit(isExplicit);
       myPatterns = patterns;
     }
@@ -2530,7 +2527,7 @@ public final class Concrete {
 
     @Override
     public Pattern copy() {
-      return new TuplePattern(getData(), isExplicit(), myPatterns, getAsReferables());
+      return new TuplePattern(getData(), isExplicit(), myPatterns, getAsReferable());
     }
   }
 }

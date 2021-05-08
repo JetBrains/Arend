@@ -119,10 +119,8 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
       }
     }
 
-    for (Concrete.TypedReferable typedReferable : pattern.getAsReferables()) {
-      if (typedReferable.type != null) {
-        typedReferable.type = typedReferable.type.accept(this, params);
-      }
+    if (pattern.getAsReferable() != null && pattern.getAsReferable().type != null) {
+      pattern.getAsReferable().type = pattern.getAsReferable().type.accept(this, params);
     }
   }
 

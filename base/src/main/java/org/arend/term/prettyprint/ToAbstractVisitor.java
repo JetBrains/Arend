@@ -771,7 +771,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     } else {
       Definition def = pattern.getConstructor();
       if (def == Prelude.ZERO) {
-        patterns.add(new Concrete.NumberPattern(null, 0, Collections.emptyList()));
+        patterns.add(new Concrete.NumberPattern(null, 0, null));
       } else {
         List<Concrete.Pattern> subPatterns = new ArrayList<>();
         DependentLink param = pattern.getParameters();

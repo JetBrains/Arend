@@ -187,9 +187,9 @@ public class VoidConcreteVisitor<P, R> implements ConcreteExpressionVisitor<P,Vo
   }
 
   protected void visitPattern(Concrete.Pattern pattern, P params) {
-    for (Concrete.TypedReferable typedReferable : pattern.getAsReferables()) {
-      if (typedReferable.type != null) {
-        typedReferable.type.accept(this, params);
+    if (pattern.getAsReferable() != null) {
+      if (pattern.getAsReferable().type != null) {
+        pattern.getAsReferable().type.accept(this, params);
       }
     }
 

@@ -103,9 +103,9 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
     }
 
     if (definition != null) {
-      return new Concrete.ConstructorPattern(data, isExplicit, definition.getRef(), patterns, Collections.emptyList());
+      return new Concrete.ConstructorPattern(data, isExplicit, definition.getRef(), patterns, null);
     } else {
-      return new Concrete.TuplePattern(data, isExplicit, patterns, Collections.emptyList());
+      return new Concrete.TuplePattern(data, isExplicit, patterns, null);
     }
   }
 

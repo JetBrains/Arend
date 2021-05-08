@@ -421,13 +421,17 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
     return parameters;
   }
 
-  public List<Concrete.TypedReferable> buildTypedReferables(List<? extends Abstract.TypedReferable> typedReferables) {
-    List<Concrete.TypedReferable> result = new ArrayList<>();
+  public Concrete.TypedReferable buildTypedReferables(List<? extends Abstract.TypedReferable> typedReferables) {
+    Concrete.TypedReferable result = null;
     for (Abstract.TypedReferable typedReferable : typedReferables) {
       Referable referable = typedReferable.getReferable();
       if (referable != null) {
-        Abstract.Expression type = typedReferable.getType();
-        result.add(new Concrete.TypedReferable(typedReferable.getData(), DataLocalReferable.make(referable), type == null ? null : type.accept(this, null)));
+        if (result == null) {
+          Abstract.Expression type = typedReferable.getType();
+          result = new Concrete.TypedReferable(typedReferable.getData(), DataLocalReferable.make(referable), type == null ? null : type.accept(this, null));
+        } else {
+          myErrorReporter.report(new AbstractExpressionError(GeneralError.Level.WARNING_UNUSED, "\\as binding is ignored", typedReferable.getData()));
+        }
       }
     }
     return result;

@@ -632,12 +632,12 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
   @NotNull
   @Override
   public ConcretePattern tuplePattern(@NotNull ConcretePattern... subpatterns) {
-    return new Concrete.TuplePattern(myData, true, patterns(Arrays.asList(subpatterns)), Collections.emptyList());
+    return new Concrete.TuplePattern(myData, true, patterns(Arrays.asList(subpatterns)), null);
   }
 
   @Override
   public @NotNull ConcretePattern tuplePattern(@NotNull Collection<? extends ConcretePattern> subpatterns) {
-    return new Concrete.TuplePattern(myData, true, patterns(subpatterns), Collections.emptyList());
+    return new Concrete.TuplePattern(myData, true, patterns(subpatterns), null);
   }
 
   @NotNull
@@ -645,7 +645,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
   public ConcretePattern numberPattern(int number) {
     if (number > Concrete.NumberPattern.MAX_VALUE) number = Concrete.NumberPattern.MAX_VALUE;
     if (number < -Concrete.NumberPattern.MAX_VALUE) number = -Concrete.NumberPattern.MAX_VALUE;
-    return new Concrete.NumberPattern(myData, number, Collections.emptyList());
+    return new Concrete.NumberPattern(myData, number, null);
   }
 
   @NotNull
@@ -654,7 +654,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     if (!(constructor instanceof Referable)) {
       throw new IllegalArgumentException();
     }
-    return new Concrete.ConstructorPattern(myData, true, (Referable) constructor, patterns(Arrays.asList(subpatterns)), Collections.emptyList());
+    return new Concrete.ConstructorPattern(myData, true, (Referable) constructor, patterns(Arrays.asList(subpatterns)), null);
   }
 
   @Override
@@ -662,7 +662,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     if (!(constructor instanceof Referable)) {
       throw new IllegalArgumentException();
     }
-    return new Concrete.ConstructorPattern(myData, true, (Referable) constructor, patterns(subpatterns), Collections.emptyList());
+    return new Concrete.ConstructorPattern(myData, true, (Referable) constructor, patterns(subpatterns), null);
   }
 
   @NotNull
