@@ -22,6 +22,7 @@ import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.ArgumentExplicitnessError;
 import org.arend.ext.error.TypeMismatchError;
 import org.arend.ext.instance.SubclassSearchParameters;
+import org.arend.naming.reference.Referable;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.NotPiType;
@@ -459,15 +460,27 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
           }
           if (definition == Prelude.ARRAY_CONS && argument.isExplicit() && result instanceof DefCallResult && ((DefCallResult) result).getArguments().size() == 2) {
             ClassCallExpression classCall = (ClassCallExpression) result.getParameter().getTypeExpr();
-            expectedType = expectedType.normalize(NormalizationMode.WHNF);
-            if (expectedType instanceof ClassCallExpression) {
-              Expression length = ((ClassCallExpression) expectedType).getClosedImplementation(Prelude.ARRAY_LENGTH);
-              if (length != null) {
-                length = length.normalize(NormalizationMode.WHNF);
-                if (length instanceof IntegerExpression && !((IntegerExpression) length).isZero() || length instanceof ConCallExpression && ((ConCallExpression) length).getDefinition() == Prelude.SUC) {
-                  Map<ClassField, Expression> impls = new HashMap<>(classCall.getImplementedHere());
-                  impls.put(Prelude.ARRAY_LENGTH, length instanceof IntegerExpression ? ((IntegerExpression) length).pred() : ((ConCallExpression) length).getDefCallArguments().get(0));
-                  classCall = new ClassCallExpression(Prelude.ARRAY, classCall.getLevels(), impls, classCall.getSort(), classCall.getUniverseKind());
+            boolean ok = argument.expression instanceof Concrete.GoalExpression;
+            if (!ok && argument.expression instanceof Concrete.AppExpression) {
+              Concrete.Expression function = ((Concrete.AppExpression) argument.expression).getFunction();
+              if (function instanceof Concrete.ReferenceExpression) {
+                Referable ref = ((Concrete.ReferenceExpression) function).getReferent();
+                if (ref == Prelude.EMPTY_ARRAY.getRef() || ref == Prelude.ARRAY_CONS.getRef()) {
+                  ok = true;
+                }
+              }
+            }
+            if (ok) {
+              expectedType = expectedType.normalize(NormalizationMode.WHNF);
+              if (expectedType instanceof ClassCallExpression) {
+                Expression length = ((ClassCallExpression) expectedType).getClosedImplementation(Prelude.ARRAY_LENGTH);
+                if (length != null) {
+                  length = length.normalize(NormalizationMode.WHNF);
+                  if (length instanceof IntegerExpression && !((IntegerExpression) length).isZero() || length instanceof ConCallExpression && ((ConCallExpression) length).getDefinition() == Prelude.SUC) {
+                    Map<ClassField, Expression> impls = new HashMap<>(classCall.getImplementedHere());
+                    impls.put(Prelude.ARRAY_LENGTH, length instanceof IntegerExpression ? ((IntegerExpression) length).pred() : ((ConCallExpression) length).getDefCallArguments().get(0));
+                    classCall = new ClassCallExpression(Prelude.ARRAY, classCall.getLevels(), impls, classCall.getSort(), classCall.getUniverseKind());
+                  }
                 }
               }
             }
