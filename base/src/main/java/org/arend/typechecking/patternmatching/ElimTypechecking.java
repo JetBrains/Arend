@@ -383,7 +383,7 @@ public class ElimTypechecking {
     List<ConCallExpression> conCalls = paramSpec2.get(link);
     Expression type = null;
     if (conCalls == null) {
-      type = link.getTypeExpr().subst(substitution).normalize(NormalizationMode.WHNF);
+      type = TypeCoerceExpression.unfoldType(link.getTypeExpr().subst(substitution));
       conCalls = type instanceof DataCallExpression ? ((DataCallExpression) type).getMatchedConstructors() : null;
     }
 

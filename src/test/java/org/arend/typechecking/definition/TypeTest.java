@@ -1,5 +1,6 @@
 package org.arend.typechecking.definition;
 
+import org.arend.Matchers;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
@@ -184,5 +185,13 @@ public class TypeTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\type E => \\Sigma Nat Nat\n" +
       "\\func test (x : E) : (x.1,x.2) = x => idp");
+  }
+
+  @Test
+  public void missingClausesTest() {
+    typeCheckModule(
+      "\\type MyNat => Nat\n" +
+      "\\func test (x : MyNat) : Nat", 1);
+    assertThatErrorsAre(Matchers.missingClauses(2));
   }
 }
