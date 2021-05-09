@@ -464,7 +464,11 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   @Override
   public Concrete.Expression visitLam(Concrete.LamExpression expr, Void params) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-      visitParameters(expr.getParameters(), null);
+      if (expr instanceof Concrete.PatternLamExpression) {
+        visitPatterns(((Concrete.PatternLamExpression) expr).getPatterns(), expr.getParameters(), new HashMap<>(), true);
+      } else {
+        visitParameters(expr.getParameters(), null);
+      }
       expr.body = expr.body.accept(this, null);
       return expr;
     }
@@ -599,9 +603,14 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     return null;
   }
 
-  public void visitPatterns(List<Concrete.Pattern> patterns, Map<String, Referable> usedNames, boolean resolvePatterns) {
+  private void visitPatterns(List<Concrete.Pattern> patterns, List<Concrete.Parameter> parameters, Map<String, Referable> usedNames, boolean resolvePatterns) {
+    int j = 0;
     for (int i = 0; i < patterns.size(); i++) {
       Concrete.Pattern pattern = patterns.get(i);
+      if (pattern == null) {
+        visitParameter(parameters.get(j++), null);
+        continue;
+      }
       Referable ref = pattern instanceof Concrete.NamePattern ? ((Concrete.NamePattern) pattern).getReferable() : null;
       Referable constructor = visitPattern(pattern, usedNames);
       if (constructor != null) {
@@ -617,6 +626,10 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
         resolvePattern(patterns.get(i));
       }
     }
+  }
+
+  public void visitPatterns(List<Concrete.Pattern> patterns, Map<String, Referable> usedNames, boolean resolvePatterns) {
+    visitPatterns(patterns, null, usedNames, resolvePatterns);
   }
 
   public void resolvePattern(Concrete.Pattern pattern) {

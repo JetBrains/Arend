@@ -40,6 +40,13 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
   @Override
   public Concrete.Expression visitLam(Concrete.LamExpression expr, P params) {
     visitParameters(expr.getParameters(), params);
+    if (expr instanceof Concrete.PatternLamExpression) {
+      for (Concrete.Pattern pattern : ((Concrete.PatternLamExpression) expr).getPatterns()) {
+        if (pattern != null) {
+          visitPattern(pattern, params);
+        }
+      }
+    }
     expr.body = expr.body.accept(this, params);
     return expr;
   }

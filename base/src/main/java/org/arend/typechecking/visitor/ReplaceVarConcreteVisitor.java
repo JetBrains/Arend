@@ -94,6 +94,11 @@ public class ReplaceVarConcreteVisitor extends BaseConcreteExpressionVisitor<Voi
   public Concrete.Expression visitLam(Concrete.LamExpression expr, Void params) {
     Concrete.Expression result = super.visitLam(expr, params);
     freeVars(expr.getParameters());
+    if (expr instanceof Concrete.PatternLamExpression) {
+      for (Concrete.Pattern pattern : ((Concrete.PatternLamExpression) expr).getPatterns()) {
+        if (pattern != null) freePattern(pattern);
+      }
+    }
     return result;
   }
 

@@ -271,4 +271,59 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
       }
     }
   }
+
+  private static boolean hasIdp(List<? extends Concrete.Pattern> patterns) {
+    for (Concrete.Pattern pattern : patterns) {
+      if (pattern != null && (pattern instanceof Concrete.ConstructorPattern && ((Concrete.ConstructorPattern) pattern).getConstructor() == Prelude.IDP.getRef() || hasIdp(pattern.getPatterns()))) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  @Override
+  public Concrete.Expression visitLam(Concrete.LamExpression expr, Void params) {
+    if (!(expr instanceof Concrete.PatternLamExpression)) {
+      return super.visitLam(expr, params);
+    }
+
+    boolean genLambda = !hasIdp(((Concrete.PatternLamExpression) expr).getPatterns());
+
+    int i = 0;
+    int j = 0;
+    List<Concrete.Pattern> newPatterns = new ArrayList<>();
+    List<Concrete.Parameter> newParams = new ArrayList<>();
+    List<Concrete.CaseArgument> caseArgs = new ArrayList<>();
+    for (Concrete.Pattern pat : ((Concrete.PatternLamExpression) expr).getPatterns()) {
+      List<Concrete.Pattern> patterns;
+      if (pat == null) {
+        Concrete.Parameter param = expr.getParameters().get(i++);
+        if (genLambda && caseArgs.isEmpty()) {
+          visitParameter(param, null);
+          newParams.add(param);
+          continue;
+        }
+        patterns = new ArrayList<>();
+        for (Referable referable : param.getReferableList()) {
+          patterns.add(new Concrete.NamePattern(param.getData(), param.isExplicit(), referable, param.getType()));
+        }
+      } else {
+        patterns = Collections.singletonList(pat);
+      }
+
+      for (Concrete.Pattern pattern : patterns) {
+        Referable ref = pattern instanceof Concrete.NamePattern ? ((Concrete.NamePattern) pattern).getRef() : null;
+        if (ref == null && pattern.getAsReferable() != null) ref = pattern.getAsReferable().referable;
+        if (ref == null) ref = new LocalReferable("p" + j++);
+        Concrete.Expression type = pattern instanceof Concrete.NamePattern ? ((Concrete.NamePattern) pattern).type : pattern.getAsReferable() != null ? pattern.getAsReferable().type : null;
+        newParams.add(type != null ? new Concrete.TelescopeParameter(pattern.getData(), pattern.isExplicit(), Collections.singletonList(ref), type.accept(this, null)) : new Concrete.NameParameter(pattern.getData(), pattern.isExplicit(), ref));
+        caseArgs.add(new Concrete.CaseArgument(new Concrete.ReferenceExpression(pattern.getData(), ref), null));
+        pattern.setExplicit(true);
+        newPatterns.add(pattern);
+      }
+    }
+
+    Concrete.Expression body = expr.body.accept(this, null);
+    return caseArgs.isEmpty() ? new Concrete.LamExpression(expr.getData(), newParams, body) : new Concrete.LamExpression(expr.getData(), newParams, new Concrete.CaseExpression(expr.getData(), false, caseArgs, null, null, Collections.singletonList(new Concrete.FunctionClause(expr.getData(), newPatterns, body instanceof Concrete.IncompleteExpression ? null : body))));
+  }
 }

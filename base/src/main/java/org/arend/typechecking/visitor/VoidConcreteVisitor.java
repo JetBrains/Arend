@@ -1,6 +1,5 @@
 package org.arend.typechecking.visitor;
 
-import org.arend.naming.reference.TCReferable;
 import org.arend.term.concrete.*;
 
 import java.util.List;
@@ -130,6 +129,11 @@ public class VoidConcreteVisitor<P, R> implements ConcreteExpressionVisitor<P,Vo
   @Override
   public Void visitLam(Concrete.LamExpression expr, P params) {
     visitParameters(expr.getParameters(), params);
+    if (expr instanceof Concrete.PatternLamExpression) {
+      for (Concrete.Pattern pattern : ((Concrete.PatternLamExpression) expr).getPatterns()) {
+        if (pattern != null) visitPattern(pattern, params);
+      }
+    }
     expr.getBody().accept(this, params);
     return null;
   }

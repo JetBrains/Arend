@@ -440,7 +440,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
   public Concrete.Pattern buildPattern(Abstract.Pattern pattern) {
     Referable reference = pattern.getHeadReference();
     if (reference == null) {
-      Integer number = pattern.getNumber();
+      Integer number = pattern.getInteger();
       if (number != null) {
         Concrete.Pattern cPattern = new Concrete.NumberPattern(pattern.getData(), number, buildTypedReferables(pattern.getAsPatterns()));
         cPattern.setExplicit(pattern.isExplicit());
@@ -509,12 +509,34 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
   }
 
   @Override
-  public Concrete.Expression visitLam(@Nullable Object data, @NotNull Collection<? extends Abstract.Parameter> parameters, @Nullable Abstract.Expression body, Void params) {
+  public Concrete.Expression visitLam(@Nullable Object data, @NotNull Collection<? extends Abstract.LamParameter> parameters, @Nullable Abstract.Expression body, Void params) {
     if (parameters.isEmpty() && body == null) {
       return new Concrete.ErrorHoleExpression(data, null);
     }
     Concrete.Expression cBody = body == null ? new Concrete.IncompleteExpression(data) : body.accept(this, null);
-    return parameters.isEmpty() ? cBody : new Concrete.LamExpression(data, buildParameters(parameters, false), cBody);
+    if (parameters.isEmpty()) return cBody;
+    List<Concrete.Parameter> cParams = new ArrayList<>();
+    List<Concrete.Pattern> patterns = buildLamParameters(parameters, cParams);
+    return patterns.isEmpty() ? new Concrete.LamExpression(data, cParams, cBody) : new Concrete.PatternLamExpression(data, cParams, patterns, cBody);
+  }
+
+  private List<Concrete.Pattern> buildLamParameters(Collection<? extends Abstract.LamParameter> parameters, List<Concrete.Parameter> cParams) {
+    List<Concrete.Pattern> patterns = Collections.emptyList();
+    for (Abstract.LamParameter parameter : parameters) {
+      if (parameter instanceof Abstract.Parameter) {
+        cParams.add(buildParameter((Abstract.Parameter) parameter, true, false));
+        if (!patterns.isEmpty()) patterns.add(null);
+      } else if (parameter instanceof Abstract.Pattern) {
+        if (patterns.isEmpty()) {
+          patterns = new ArrayList<>();
+          for (Concrete.Parameter ignored : cParams) {
+            patterns.add(null);
+          }
+        }
+        patterns.add(buildPattern((Abstract.Pattern) parameter));
+      }
+    }
+    return patterns;
   }
 
   @Override

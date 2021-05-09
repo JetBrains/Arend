@@ -911,6 +911,20 @@ public final class Concrete {
     }
   }
 
+  public static class PatternLamExpression extends LamExpression {
+    // null elements of the list correspond to parameters of the lambda
+    private final List<Pattern> myPatterns;
+
+    public PatternLamExpression(Object data, List<Parameter> parameters, List<Pattern> patterns, Expression body) {
+      super(data, parameters, body);
+      myPatterns = patterns;
+    }
+
+    public List<Pattern> getPatterns() {
+      return myPatterns;
+    }
+  }
+
   public static class LetClausePattern implements SourceNode, ConcreteSinglePattern {
     private final Object myData;
     private Referable myReferable;

@@ -8,6 +8,7 @@ import org.arend.naming.scope.local.*;
 import org.arend.prelude.Prelude;
 import org.arend.term.NamespaceCommand;
 import org.arend.term.abs.Abstract;
+import org.arend.term.abs.AbstractParameterPattern;
 import org.arend.term.group.ChildGroup;
 import org.arend.term.group.Group;
 import org.jetbrains.annotations.NotNull;
@@ -279,6 +280,30 @@ public class ScopeFactory {
 
     // Extend the scope with parameters
     if (parentSourceNode instanceof Abstract.ParametersHolder) {
+      if (parentSourceNode instanceof Abstract.LamParametersHolder) {
+        List<? extends Abstract.LamParameter> parameters = ((Abstract.LamParametersHolder) parentSourceNode).getLamParameters();
+        boolean hasPatterns = false;
+        for (Abstract.LamParameter parameter : parameters) {
+          if (parameter instanceof Abstract.Pattern) {
+            hasPatterns = true;
+            break;
+          }
+        }
+        if (hasPatterns) {
+          List<Abstract.Pattern> patterns = new ArrayList<>();
+          for (Abstract.LamParameter parameter : parameters) {
+            if (parameter instanceof Abstract.Pattern) {
+              patterns.add((Abstract.Pattern) parameter);
+            } else if (parameter instanceof Abstract.Parameter) {
+              for (Referable referable : ((Abstract.Parameter) parameter).getReferableList()) {
+                patterns.add(new AbstractParameterPattern((Abstract.Parameter) parameter, referable));
+              }
+            }
+          }
+          return new PatternScope(parentScope, patterns);
+        }
+      }
+
       List<? extends Abstract.Parameter> parameters = ((Abstract.ParametersHolder) parentSourceNode).getParameters();
       if (sourceNode instanceof Abstract.Parameter && !(sourceNode instanceof Abstract.Expression)) {
         List<Abstract.Parameter> parameters1 = new ArrayList<>(parameters.size());

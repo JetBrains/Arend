@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 public final class Abstract {
@@ -38,8 +39,11 @@ public final class Abstract {
     }
   }
 
-  public interface Parameter extends SourceNode, org.arend.naming.reference.Parameter {
+  public interface LamParameter extends SourceNode {
     @Nullable Object getData();
+  }
+
+  public interface Parameter extends LamParameter, org.arend.naming.reference.Parameter {
     @Nullable Expression getType();
     boolean isStrict();
   }
@@ -78,11 +82,10 @@ public final class Abstract {
     @Nullable Expression getType();
   }
 
-  public interface Pattern extends SourceNode {
-    @Nullable Object getData();
+  public interface Pattern extends LamParameter {
     boolean isUnnamed();
     boolean isExplicit();
-    @Nullable Integer getNumber();
+    @Nullable Integer getInteger();
     @Nullable Referable getHeadReference();
     @NotNull List<? extends Pattern> getArguments();
     @Nullable Expression getType();
@@ -101,6 +104,10 @@ public final class Abstract {
 
   public interface ParametersHolder extends SourceNode {
     @NotNull List<? extends Parameter> getParameters();
+  }
+
+  public interface LamParametersHolder extends ParametersHolder {
+    @NotNull List<? extends LamParameter> getLamParameters();
   }
 
   public interface LetClausesHolder extends SourceNode {

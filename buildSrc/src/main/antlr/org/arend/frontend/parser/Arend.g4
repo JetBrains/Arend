@@ -134,7 +134,7 @@ expr  : appPrefix? appExpr (implementStatements argument*)? withBody?     # app
       | <assoc=right> expr '->' expr                                      # arr
       | '\\Pi' tele+ '->' expr                                            # pi
       | '\\Sigma' tele*                                                   # sigma
-      | '\\lam' tele+ ('=>' expr?)?                                       # lam
+      | '\\lam' lamParam+ ('=>' expr?)?                                   # lam
       | letKw '|'? letClause ('|' letClause)* ('\\in' expr?)?             # let
       | caseExpr                                                          # case
       ;
@@ -143,10 +143,14 @@ expr2 : appPrefix? appExpr (implementStatements argument*)?               # app2
       | <assoc=right> expr2 '->' expr2                                    # arr2
       | '\\Pi' tele+ '->' expr2                                           # pi2
       | '\\Sigma' tele*                                                   # sigma2
-      | '\\lam' tele+ ('=>' expr2?)?                                      # lam2
+      | '\\lam' lamParam+ ('=>' expr2?)?                                  # lam2
       | letKw '|'? letClause ('|' letClause)* ('\\in' expr2?)?            # let2
       | caseExpr                                                          # case2
       ;
+
+lamParam : nameTele     # lamTele
+         | atomPattern  # lamPattern
+         ;
 
 caseExpr : (EVAL | PEVAL)? (CASE | SCASE) caseArg (',' caseArg)* ('\\return' returnExpr2)? withBody?;
 
@@ -271,6 +275,17 @@ tele : literal                          # teleLiteral
      ;
 
 typedExpr : STRICT? expr (':' expr)? ;
+
+nameTele : idOrUnknown                                  # nameId
+         | '(' idOrUnknown+ ':' expr ')'                # nameExplicit
+         | '{' idOrUnknown (idOrUnknown* ':' expr)? '}' # nameImplicit
+         ;
+
+idOrUnknown : ID            # iuId
+            | UNDERSCORE    # iuUnknown
+            ;
+
+nameTypedExpr : expr ':' expr ;
 
 fieldTele : '(' (CLASSIFYING | COERCE)? ID+ ':' expr ')'        # explicitFieldTele
           | '{' (CLASSIFYING | COERCE)? ID+ ':' expr '}'        # implicitFieldTele

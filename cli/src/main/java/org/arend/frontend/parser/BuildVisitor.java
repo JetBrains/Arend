@@ -1023,14 +1023,68 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return arguments;
   }
 
+  private Referable visitIdOrUnknown(IdOrUnknownContext ctx) {
+    return ctx instanceof IuIdContext ? new ParsedLocalReferable(tokenPosition(ctx.start), ((IuIdContext) ctx).ID().getText()) : null;
+  }
+
+  private List<Concrete.Parameter> visitNameTele(NameTeleContext tele) {
+    List<Concrete.Parameter> parameters = new ArrayList<>();
+    if (tele instanceof NameIdContext) {
+      parameters.add(new Concrete.NameParameter(tokenPosition(tele.start), true, visitIdOrUnknown(((NameIdContext) tele).idOrUnknown())));
+    } else {
+      boolean explicit = tele instanceof NameExplicitContext;
+      List<IdOrUnknownContext> ids = explicit ? ((NameExplicitContext) tele).idOrUnknown() : ((NameImplicitContext) tele).idOrUnknown();
+      ExprContext type = explicit ? ((NameExplicitContext) tele).expr() : ((NameImplicitContext) tele).expr();
+      if (type == null) {
+        for (IdOrUnknownContext id : ids) {
+          parameters.add(new Concrete.NameParameter(tokenPosition(id.start), explicit, visitIdOrUnknown(id)));
+        }
+      } else {
+        List<Referable> vars = new ArrayList<>(ids.size());
+        for (IdOrUnknownContext id : ids) {
+          vars.add(visitIdOrUnknown(id));
+        }
+        parameters.add(new Concrete.TelescopeParameter(tokenPosition(tele.start), explicit, vars, visitExpr(type)));
+      }
+    }
+    return parameters;
+  }
+
+  private List<Concrete.Pattern> visitLamParams(List<LamParamContext> list, List<Concrete.Parameter> parameters) {
+    List<Concrete.Pattern> patterns = Collections.emptyList();
+    for (LamParamContext ctx : list) {
+      if (ctx instanceof LamTeleContext) {
+        parameters.addAll(visitNameTele(((LamTeleContext) ctx).nameTele()));
+        if (!patterns.isEmpty()) patterns.add(null);
+      } else if (ctx instanceof LamPatternContext) {
+        if (patterns.isEmpty()) {
+          patterns = new ArrayList<>();
+          for (Concrete.Parameter ignored : parameters) {
+            patterns.add(null);
+          }
+        }
+        patterns.add((Concrete.Pattern) visit(((LamPatternContext) ctx).atomPattern()));
+      } else {
+        throw new IllegalStateException();
+      }
+    }
+    return patterns;
+  }
+
   @Override
   public Concrete.LamExpression visitLam(LamContext ctx) {
-    return new Concrete.LamExpression(tokenPosition(ctx.start), visitLamTeles(ctx.tele(), false), visitIncompleteExpression(ctx.expr(), ctx));
+    List<Concrete.Parameter> parameters = new ArrayList<>();
+    List<Concrete.Pattern> patterns = visitLamParams(ctx.lamParam(), parameters);
+    Concrete.Expression body = visitIncompleteExpression(ctx.expr(), ctx);
+    return patterns.isEmpty() ? new Concrete.LamExpression(tokenPosition(ctx.start), parameters, body) : new Concrete.PatternLamExpression(tokenPosition(ctx.start), parameters, patterns, body);
   }
 
   @Override
   public Concrete.LamExpression visitLam2(Lam2Context ctx) {
-    return new Concrete.LamExpression(tokenPosition(ctx.start), visitLamTeles(ctx.tele(), false), visitIncompleteExpression(ctx.expr2(), ctx));
+    List<Concrete.Parameter> parameters = new ArrayList<>();
+    List<Concrete.Pattern> patterns = visitLamParams(ctx.lamParam(), parameters);
+    Concrete.Expression body = visitIncompleteExpression(ctx.expr2(), ctx);
+    return patterns.isEmpty() ? new Concrete.LamExpression(tokenPosition(ctx.start), parameters, body) : new Concrete.PatternLamExpression(tokenPosition(ctx.start), parameters, patterns, body);
   }
 
   private Concrete.Expression visitAppExpr(AppExprContext ctx) {
