@@ -608,6 +608,18 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       return true;
     }
     if (stuckVar1 != null || stuckVar2 != null) {
+      if (pair1.proj1.getInferenceVariable() == null && pair2.proj1.getInferenceVariable() == null) {
+        boolean allowEquations = myAllowEquations;
+        CMP cmp = myCMP;
+        myAllowEquations = false;
+        boolean ok = normalizedCompare((correctOrder ? pair1 : pair2).proj1, (correctOrder ? pair2 : pair1).proj1, ExpressionFactory.Nat(), false);
+        myAllowEquations = allowEquations;
+        myCMP = cmp;
+        if (ok) {
+          return true;
+        }
+      }
+
       if (pair1.proj1 instanceof InferenceReferenceExpression && pair2.proj1 instanceof InferenceReferenceExpression && stuckVar1 == stuckVar2) {
         return pair1.proj2.compareTo(pair2.proj2) <= 0;
       }
