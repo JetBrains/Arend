@@ -335,10 +335,12 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
 
     Abstract.Expression impl = implementation.getImplementation();
     if (impl != null) {
-      List<? extends Abstract.Parameter> parameters = implementation.getParameters();
+      List<? extends Abstract.LamParameter> parameters = implementation.getLamParameters();
       Concrete.Expression term = impl.accept(this, null);
-      if (!parameters.isEmpty()) {
-        term = new Concrete.LamExpression(parameters.get(0).getData(), buildParameters(parameters, false), term);
+      List<Concrete.Parameter> cParams = new ArrayList<>();
+      List<Concrete.Pattern> patterns = buildLamParameters(parameters, cParams);
+      if (!parameters.isEmpty() || !patterns.isEmpty()) {
+        term = Concrete.PatternLamExpression.make(parameters.get(0).getData(), cParams, patterns, term);
       }
 
       implementations.add(new Concrete.ClassFieldImpl(implementation.getData(), implementedField.getReferent(), term, null, implementation.isDefault()));
@@ -516,8 +518,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
     Concrete.Expression cBody = body == null ? new Concrete.IncompleteExpression(data) : body.accept(this, null);
     if (parameters.isEmpty()) return cBody;
     List<Concrete.Parameter> cParams = new ArrayList<>();
-    List<Concrete.Pattern> patterns = buildLamParameters(parameters, cParams);
-    return patterns.isEmpty() ? new Concrete.LamExpression(data, cParams, cBody) : new Concrete.PatternLamExpression(data, cParams, patterns, cBody);
+    return Concrete.PatternLamExpression.make(data, cParams, buildLamParameters(parameters, cParams), cBody);
   }
 
   private List<Concrete.Pattern> buildLamParameters(Collection<? extends Abstract.LamParameter> parameters, List<Concrete.Parameter> cParams) {

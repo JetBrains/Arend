@@ -1074,17 +1074,13 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   @Override
   public Concrete.LamExpression visitLam(LamContext ctx) {
     List<Concrete.Parameter> parameters = new ArrayList<>();
-    List<Concrete.Pattern> patterns = visitLamParams(ctx.lamParam(), parameters);
-    Concrete.Expression body = visitIncompleteExpression(ctx.expr(), ctx);
-    return patterns.isEmpty() ? new Concrete.LamExpression(tokenPosition(ctx.start), parameters, body) : new Concrete.PatternLamExpression(tokenPosition(ctx.start), parameters, patterns, body);
+    return Concrete.PatternLamExpression.make(tokenPosition(ctx.start), parameters, visitLamParams(ctx.lamParam(), parameters), visitIncompleteExpression(ctx.expr(), ctx));
   }
 
   @Override
   public Concrete.LamExpression visitLam2(Lam2Context ctx) {
     List<Concrete.Parameter> parameters = new ArrayList<>();
-    List<Concrete.Pattern> patterns = visitLamParams(ctx.lamParam(), parameters);
-    Concrete.Expression body = visitIncompleteExpression(ctx.expr2(), ctx);
-    return patterns.isEmpty() ? new Concrete.LamExpression(tokenPosition(ctx.start), parameters, body) : new Concrete.PatternLamExpression(tokenPosition(ctx.start), parameters, patterns, body);
+    return Concrete.PatternLamExpression.make(tokenPosition(ctx.start), parameters, visitLamParams(ctx.lamParam(), parameters), visitIncompleteExpression(ctx.expr2(), ctx));
   }
 
   private Concrete.Expression visitAppExpr(AppExprContext ctx) {
@@ -1181,11 +1177,13 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       PrecedenceContext precCtx = ctx.precedence();
       TerminalNode id = ctx.ID();
       if (defBody instanceof CoClauseExprContext && precCtx == null && id == null && returnCtx == null) {
-        List<TeleContext> teleCtxs = ((CoClauseDefContext) body).tele();
-        List<Concrete.Parameter> parameters = visitLamTeles(teleCtxs, false);
+        List<LamParamContext> lamParamCtxs = ((CoClauseDefContext) body).lamParam();
+        List<Concrete.Parameter> parameters = new ArrayList<>();
+        List<Concrete.Pattern> patterns = visitLamParams(lamParamCtxs, parameters);
         term = visitExpr(((CoClauseExprContext) defBody).expr());
-        if (!parameters.isEmpty()) {
-          term = new Concrete.LamExpression(tokenPosition(teleCtxs.get(0).start), parameters, term);
+        if (!parameters.isEmpty() || !patterns.isEmpty()) {
+          Position pos = tokenPosition(lamParamCtxs.get(0).start);
+          term = Concrete.PatternLamExpression.make(pos, parameters, patterns, term);
         }
       } else {
         ConcreteLocatedReferable reference = makeReferable(position, id != null ? id.getText() : path.get(path.size() - 1), precCtx == null || precCtx instanceof NoPrecedenceContext ? null : visitPrecedence(precCtx), null, Precedence.DEFAULT, parentGroup, LocatedReferableImpl.Kind.COCLAUSE_FUNCTION);
@@ -1210,8 +1208,12 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
         } else {
           throw new IllegalStateException();
         }
-        List<TeleContext> teleCtxs = ((CoClauseDefContext) body).tele();
-        List<Concrete.Parameter> parameters = visitLamTeles(teleCtxs, true);
+        List<LamParamContext> lamParamCtxs = ((CoClauseDefContext) body).lamParam();
+        List<Concrete.Parameter> parameters = new ArrayList<>();
+        List<Concrete.Pattern> patterns = visitLamParams(lamParamCtxs, parameters);
+        if (!patterns.isEmpty()) {
+          myErrorReporter.report(new ParserError((Position) patterns.get(0).getData(), "Patterns are not allowed in coclause functions"));
+        }
         Concrete.CoClauseFunctionDefinition def = new Concrete.CoClauseFunctionDefinition(isDefault ? FunctionKind.CLASS_COCLAUSE : FunctionKind.FUNC_COCLAUSE, reference, enclosingDefinition, fieldRef, parameters, pair.proj1, pair.proj2, fBody);
         def.enclosingClass = enclosingClass;
         reference.setDefinition(def);
@@ -1242,19 +1244,21 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   public Concrete.ClassFieldImpl visitLocalCoClause(LocalCoClauseContext ctx) {
     List<String> path = visitLongNamePath(ctx.longName());
     Position position = tokenPosition(ctx.start);
-    List<TeleContext> teleCtxs = ctx.tele();
-    List<Concrete.Parameter> parameters = visitLamTeles(teleCtxs, false);
+    List<LamParamContext> lamParamCtxs = ctx.lamParam();
+    List<Concrete.Parameter> parameters = new ArrayList<>();
+    List<Concrete.Pattern> patterns = visitLamParams(lamParamCtxs, parameters);
     Concrete.Expression term = null;
     List<Concrete.ClassFieldImpl> subClassFieldImpls = null;
     ExprContext exprCtx = ctx.expr();
     if (exprCtx != null) {
       term = visitExpr(exprCtx);
-      if (!parameters.isEmpty()) {
-        term = new Concrete.LamExpression(tokenPosition(teleCtxs.get(0).start), parameters, term);
+      if (!parameters.isEmpty() || !patterns.isEmpty()) {
+        Position pos = tokenPosition(lamParamCtxs.get(0).start);
+        term = Concrete.PatternLamExpression.make(pos, parameters, patterns, term);
       }
     } else {
-      if (!parameters.isEmpty()) {
-        myErrorReporter.report(new ParserError(tokenPosition(teleCtxs.get(0).start), "Parameters are allowed only before '=> <expression>'"));
+      if (!parameters.isEmpty() || !patterns.isEmpty()) {
+        myErrorReporter.report(new ParserError(tokenPosition(lamParamCtxs.get(0).start), "Parameters are allowed only before '=> <expression>'"));
       }
       subClassFieldImpls = visitLocalCoClauses(ctx.localCoClause());
     }

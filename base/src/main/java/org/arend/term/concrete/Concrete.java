@@ -915,9 +915,13 @@ public final class Concrete {
     // null elements of the list correspond to parameters of the lambda
     private final List<Pattern> myPatterns;
 
-    public PatternLamExpression(Object data, List<Parameter> parameters, List<Pattern> patterns, Expression body) {
+    private PatternLamExpression(Object data, List<Parameter> parameters, List<Pattern> patterns, Expression body) {
       super(data, parameters, body);
       myPatterns = patterns;
+    }
+
+    public static LamExpression make(Object data, List<Parameter> parameters, List<Pattern> patterns, Expression body) {
+      return patterns.isEmpty() ? new LamExpression(data, parameters, body) : new PatternLamExpression(data, parameters, patterns, body);
     }
 
     public List<Pattern> getPatterns() {

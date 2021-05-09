@@ -173,7 +173,7 @@ public final class Abstract {
     /* @NotNull */ @Nullable Reference getImplementedField();
   }
 
-  public interface ClassFieldImpl extends CoClauseElement, ParametersHolder, ClassReferenceHolder {
+  public interface ClassFieldImpl extends CoClauseElement, LamParametersHolder, ClassReferenceHolder {
     @Nullable Object getCoClauseData();
     @Override @NotNull Collection<? extends ClassFieldImpl> getCoClauseElements();
     @Nullable Object getData();

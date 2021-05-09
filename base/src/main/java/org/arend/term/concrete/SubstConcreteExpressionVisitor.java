@@ -107,7 +107,7 @@ public class SubstConcreteExpressionVisitor implements DataContainer, ConcreteEx
   @Override
   public Concrete.Expression visitLam(Concrete.LamExpression expr, Void ignored) {
     if (expr instanceof Concrete.PatternLamExpression) {
-      return new Concrete.PatternLamExpression(myData != null ? myData : expr.getData(), visitParameters(expr.getParameters()), visitPatterns(((Concrete.PatternLamExpression) expr).getPatterns()), expr.body.accept(this, null));
+      return Concrete.PatternLamExpression.make(myData != null ? myData : expr.getData(), visitParameters(expr.getParameters()), visitPatterns(((Concrete.PatternLamExpression) expr).getPatterns()), expr.body.accept(this, null));
     } else {
       return new Concrete.LamExpression(myData != null ? myData : expr.getData(), visitParameters(expr.getParameters()), expr.body.accept(this, null));
     }

@@ -190,8 +190,8 @@ clause : pattern (',' pattern)* ('=>' expr)?;
 
 coClause : longName (AS precedence ID)? coClauseBody;
 
-coClauseBody : '{' ('|' localCoClause)* '}'                 # coClauseRec
-             | tele* (COLON returnExpr2)? coClauseDefBody   # coClauseDef
+coClauseBody : '{' ('|' localCoClause)* '}'                     # coClauseRec
+             | lamParam* (COLON returnExpr2)? coClauseDefBody   # coClauseDef
              ;
 
 coClauseDefBody : '=>' expr                                 # coClauseExpr
@@ -199,7 +199,7 @@ coClauseDefBody : '=>' expr                                 # coClauseExpr
                 | elim? ('{' clause? ('|' clause)* '}')?    # coClauseWith
                 ;
 
-localCoClause : longName tele* ('=>' expr | '{' ('|' localCoClause)* '}');
+localCoClause : longName lamParam* ('=>' expr | '{' ('|' localCoClause)* '}');
 
 letClause : (ID tele* typeAnnotation? | tuplePattern) '=>' expr;
 

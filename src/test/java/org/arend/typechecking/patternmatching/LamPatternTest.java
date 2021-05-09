@@ -71,4 +71,28 @@ public class LamPatternTest extends TypeCheckingTestCase {
   public void idpTest() {
     typeCheckDef("\\func test : \\Pi (x : Nat) -> x = 0 -> 0 = x => \\lam x (idp) => idp");
   }
+
+  @Test
+  public void coclauseTest() {
+    typeCheckModule(
+      "\\record R | f : (\\Sigma Nat Nat) -> Nat\n" +
+      "\\func test : R \\cowith\n" +
+      "  | f (x,y) => x");
+  }
+
+  @Test
+  public void fieldImplTest() {
+    typeCheckModule(
+      "\\record R | f : (\\Sigma Nat Nat) -> Nat\n" +
+      "\\record S \\extends R\n" +
+      "  | f (x,y) => x");
+  }
+
+  @Test
+  public void coclauseFunctionTest() {
+    parseModule(
+      "\\record R | f : (\\Sigma Nat Nat) -> Nat\n" +
+      "\\func test : R \\cowith\n" +
+      "  | f (x,y) : Nat => x", 1);
+  }
 }
