@@ -86,7 +86,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       return true;
     }
     if (node instanceof Concrete.Pattern) {
-      prettyPrintPattern((Concrete.Pattern) node, prec);
+      prettyPrintPattern((Concrete.Pattern) node, prec, false);
       return true;
     }
     if (node instanceof Concrete.LevelExpression) {
@@ -789,7 +789,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       }.doPrettyPrint(this, noIndent);
     } else {
       for (int i = 0; i < clause.getPatterns().size(); i++) {
-        prettyPrintPattern(clause.getPatterns().get(i), Concrete.Pattern.PREC);
+        prettyPrintPattern(clause.getPatterns().get(i), Concrete.Pattern.PREC, false);
         if (i != clause.getPatterns().size() - 1) {
           myBuilder.append(", ");
         }
@@ -926,33 +926,11 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     return null;
   }
 
-  public void prettyPrintLetClausePattern(Concrete.LetClausePattern pattern) {
-    if (pattern.getReferable() != null || pattern.isIgnored()) {
-      myBuilder.append(pattern.isIgnored() ? "_" : pattern.getReferable().textRepresentation());
-      if (pattern.type != null) {
-        myBuilder.append(" : ");
-        pattern.type.accept(this, new Precedence(Concrete.Expression.PREC));
-      }
-    } else {
-      myBuilder.append('(');
-      boolean first = true;
-      for (Concrete.LetClausePattern subPattern : pattern.getPatterns()) {
-        if (first) {
-          first = false;
-        } else {
-          myBuilder.append(", ");
-        }
-        prettyPrintLetClausePattern(subPattern);
-      }
-      myBuilder.append(')');
-    }
-  }
-
   public void prettyPrintLetClause(Concrete.LetClause letClause, boolean printPipe) {
     if (printPipe) {
       myBuilder.append("| ");
     }
-    prettyPrintLetClausePattern(letClause.getPattern());
+    prettyPrintPattern(letClause.getPattern(), Concrete.Pattern.PREC, true);
     for (Concrete.Parameter arg : letClause.getParameters()) {
       myBuilder.append(" ");
       prettyPrintParameter(arg);
@@ -1292,11 +1270,11 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       } else {
         myBuilder.append(", ");
       }
-      prettyPrintPattern(pattern, Concrete.Pattern.PREC);
+      prettyPrintPattern(pattern, Concrete.Pattern.PREC, false);
     }
   }
 
-  public void prettyPrintPattern(Concrete.Pattern pattern, byte prec) {
+  public void prettyPrintPattern(Concrete.Pattern pattern, byte prec, boolean withParens) {
     if (!pattern.isExplicit()) {
       myBuilder.append("{");
     }
@@ -1324,20 +1302,20 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
         } else {
           myBuilder.append(',');
         }
-        prettyPrintPattern(arg, Concrete.Pattern.PREC);
+        prettyPrintPattern(arg, Concrete.Pattern.PREC, false);
       }
       myBuilder.append(')');
     } else if (pattern instanceof Concrete.ConstructorPattern) {
       Concrete.ConstructorPattern conPattern = (Concrete.ConstructorPattern) pattern;
-      if (!conPattern.getPatterns().isEmpty() && prec > Concrete.Pattern.PREC && pattern.isExplicit()) myBuilder.append('(');
+      if ((withParens || !conPattern.getPatterns().isEmpty() && prec > Concrete.Pattern.PREC) && pattern.isExplicit()) myBuilder.append('(');
 
       myBuilder.append(conPattern.getConstructor().textRepresentation());
       for (Concrete.Pattern patternArg : conPattern.getPatterns()) {
         myBuilder.append(' ');
-        prettyPrintPattern(patternArg, (byte) (Concrete.Pattern.PREC + 1));
+        prettyPrintPattern(patternArg, (byte) (Concrete.Pattern.PREC + 1), false);
       }
 
-      if (!conPattern.getPatterns().isEmpty() && prec > Concrete.Pattern.PREC && pattern.isExplicit()) myBuilder.append(')');
+      if ((withParens || !conPattern.getPatterns().isEmpty() && prec > Concrete.Pattern.PREC) && pattern.isExplicit()) myBuilder.append(')');
     }
 
     if (pattern.getAsReferable() != null) {

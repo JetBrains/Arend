@@ -326,4 +326,72 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
     Concrete.Expression body = expr.body.accept(this, null);
     return caseArgs.isEmpty() ? new Concrete.LamExpression(expr.getData(), newParams, body) : new Concrete.LamExpression(expr.getData(), newParams, new Concrete.CaseExpression(expr.getData(), false, caseArgs, null, null, Collections.singletonList(new Concrete.FunctionClause(expr.getData(), newPatterns, body instanceof Concrete.IncompleteExpression ? null : body))));
   }
+
+  private static boolean isTuplePattern(Concrete.Pattern pattern) {
+    if (!(pattern instanceof Concrete.NamePattern || pattern instanceof Concrete.TuplePattern)) {
+      return false;
+    }
+    for (Concrete.Pattern subpattern : pattern.getPatterns()) {
+      if (!isTuplePattern(subpattern)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private static void collectRefs(Concrete.Pattern pattern, Set<Referable> refs) {
+    if (pattern instanceof Concrete.NamePattern) {
+      Referable ref = ((Concrete.NamePattern) pattern).getRef();
+      if (ref != null) refs.add(ref);
+    }
+    for (Concrete.Pattern subpattern : pattern.getPatterns()) {
+      collectRefs(subpattern, refs);
+    }
+  }
+
+  private Concrete.Expression desugarLet(Object data, boolean isHave, boolean isStrict, List<Concrete.LetClause> clauses, Concrete.Expression body) {
+    for (int i = 0; i < clauses.size(); i++) {
+      Concrete.LetClause clause = clauses.get(i);
+      if (!isTuplePattern(clause.getPattern())) {
+        Set<Referable> refs = new HashSet<>();
+        collectRefs(clause.getPattern(), refs);
+        int j = i + 1;
+        for (; j < clauses.size(); j++) {
+          if (!isTuplePattern(clauses.get(j).getPattern())) break;
+          if (!refs.isEmpty()) {
+            boolean[] ok = new boolean[] { true };
+            clauses.get(j).term.accept(new VoidConcreteVisitor<>() {
+              @Override
+              public Void visitReference(Concrete.ReferenceExpression expr, Object params) {
+                if (refs.contains(expr.getReferent())) {
+                  ok[0] = false;
+                }
+                return null;
+              }
+            }, null);
+            if (!ok[0]) break;
+          }
+          collectRefs(clause.getPattern(), refs);
+        }
+        Concrete.Expression newBody = j < clauses.size() ? desugarLet(data, isHave, isStrict, clauses.subList(j, clauses.size()), body) : body.accept(this, null);
+        List<Concrete.CaseArgument> caseArgs = new ArrayList<>();
+        List<Concrete.Pattern> patterns = new ArrayList<>();
+        for (int k = i; k < j; k++) {
+          Concrete.LetClause curClause = clauses.get(k);
+          caseArgs.add(curClause.term instanceof Concrete.ReferenceExpression ? new Concrete.CaseArgument((Concrete.ReferenceExpression) curClause.term, curClause.resultType) : new Concrete.CaseArgument(curClause.term, null, curClause.resultType));
+          patterns.add(curClause.getPattern());
+        }
+        newBody = new Concrete.CaseExpression(data, false, caseArgs, null, null, Collections.singletonList(new Concrete.FunctionClause(data, patterns, newBody)));
+        return i > 0 ? new Concrete.LetExpression(data, isHave, isStrict, clauses.subList(0, i), newBody) : newBody;
+      } else {
+        visitLetClause(clause, null);
+      }
+    }
+    return new Concrete.LetExpression(data, isHave, isStrict, clauses, body.accept(this, null));
+  }
+
+  @Override
+  public Concrete.Expression visitLet(Concrete.LetExpression expr, Void params) {
+    return desugarLet(expr.getData(), expr.isHave(), expr.isStrict(), expr.getClauses(), expr.getExpression());
+  }
 }

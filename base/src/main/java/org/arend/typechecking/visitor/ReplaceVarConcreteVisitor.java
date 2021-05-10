@@ -116,23 +116,9 @@ public class ReplaceVarConcreteVisitor extends BaseConcreteExpressionVisitor<Voi
     return result;
   }
 
-  private void visitLetClausePattern(Concrete.LetClausePattern pattern) {
-    pattern.setReferable(addVar(pattern.getReferable()));
-    for (Concrete.LetClausePattern subpattern : pattern.getPatterns()) {
-      visitLetClausePattern(subpattern);
-    }
-  }
-
-  private void freeLetClausePattern(Concrete.LetClausePattern pattern) {
-    freeVar(pattern.getReferable());
-    for (Concrete.LetClausePattern subpattern : pattern.getPatterns()) {
-      freeLetClausePattern(subpattern);
-    }
-  }
-
   @Override
   protected void visitLetClause(Concrete.LetClause clause, Void params) {
-    visitLetClausePattern(clause.getPattern());
+    visitPattern(clause.getPattern(), null);
     super.visitLetClause(clause, params);
     freeVars(clause.getParameters());
   }
@@ -189,7 +175,7 @@ public class ReplaceVarConcreteVisitor extends BaseConcreteExpressionVisitor<Voi
   public Concrete.Expression visitLet(Concrete.LetExpression expr, Void params) {
     super.visitLet(expr, params);
     for (Concrete.LetClause clause : expr.getClauses()) {
-      freeLetClausePattern(clause.getPattern());
+      freePattern(clause.getPattern());
     }
     return expr;
   }

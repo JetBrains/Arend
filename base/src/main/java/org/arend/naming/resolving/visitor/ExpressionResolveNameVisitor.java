@@ -777,17 +777,6 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     }
   }
 
-  private void visitLetClausePattern(Concrete.LetClausePattern pattern) {
-    if (pattern.type != null) {
-      pattern.type = pattern.type.accept(this, null);
-    }
-    addReferable(pattern.getReferable(), pattern.type, null);
-
-    for (Concrete.LetClausePattern subPattern : pattern.getPatterns()) {
-      visitLetClausePattern(subPattern);
-    }
-  }
-
   @Override
   public Concrete.Expression visitLet(Concrete.LetExpression expr, Void params) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
@@ -800,16 +789,16 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
           clause.term = clause.term.accept(this, null);
         }
 
-        Concrete.LetClausePattern pattern = clause.getPattern();
-        if (pattern.getReferable() != null) {
+        Concrete.Pattern pattern = clause.getPattern();
+        if (pattern instanceof Concrete.NamePattern && ((Concrete.NamePattern) pattern).getRef() != null) {
           ClassReferable classRef = clause.resultType != null
             ? new TypeClassReferenceExtractVisitor().getTypeClassReference(clause.getParameters(), clause.resultType)
             : clause.term instanceof Concrete.NewExpression
               ? new TypeClassReferenceExtractVisitor().getTypeClassReference(clause.getParameters(), ((Concrete.NewExpression) clause.term).expression)
               : null;
-          addLocalRef(pattern.getReferable(), classRef);
+          addLocalRef(((Concrete.NamePattern) pattern).getRef(), classRef);
         } else {
-          visitLetClausePattern(pattern);
+          visitPatterns(Collections.singletonList(pattern), null, new HashMap<>(), true);
         }
       }
 

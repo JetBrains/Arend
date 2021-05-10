@@ -512,45 +512,11 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
 
   @NotNull
   @Override
-  public ConcreteLetClause letClause(@NotNull ConcreteSinglePattern pattern, @Nullable ConcreteExpression type, @NotNull ConcreteExpression term) {
-    if (!(pattern instanceof Concrete.LetClausePattern && (type == null || type instanceof Concrete.Expression) && term instanceof Concrete.Expression)) {
+  public ConcreteLetClause letClause(@NotNull ConcretePattern pattern, @Nullable ConcreteExpression type, @NotNull ConcreteExpression term) {
+    if (!(pattern instanceof Concrete.Pattern && (type == null || type instanceof Concrete.Expression) && term instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }
-    return new Concrete.LetClause((Concrete.LetClausePattern) pattern, (Concrete.Expression) type, (Concrete.Expression) term);
-  }
-
-  @NotNull
-  @Override
-  public ConcreteSinglePattern singlePatternRef(@Nullable ArendRef ref, @Nullable ConcreteExpression type) {
-    if (!(type == null || type instanceof Concrete.Expression)) {
-      throw new IllegalArgumentException();
-    }
-    return new Concrete.LetClausePattern(makeLocalRef(ref), (Concrete.Expression) type);
-  }
-
-  @NotNull
-  @Override
-  public ConcreteSinglePattern singlePatternConstructor(@NotNull ConcreteSinglePattern... subpatterns) {
-    List<Concrete.LetClausePattern> cPatterns = new ArrayList<>(subpatterns.length);
-    for (ConcreteSinglePattern subpattern : subpatterns) {
-      if (!(subpattern instanceof Concrete.LetClausePattern)) {
-        throw new IllegalArgumentException();
-      }
-      cPatterns.add((Concrete.LetClausePattern) subpattern);
-    }
-    return new Concrete.LetClausePattern(myData, cPatterns);
-  }
-
-  @Override
-  public @NotNull ConcreteSinglePattern singlePatternConstructor(@NotNull Collection<? extends ConcreteSinglePattern> subpatterns) {
-    List<Concrete.LetClausePattern> cPatterns = new ArrayList<>(subpatterns.size());
-    for (ConcreteSinglePattern subpattern : subpatterns) {
-      if (!(subpattern instanceof Concrete.LetClausePattern)) {
-        throw new IllegalArgumentException();
-      }
-      cPatterns.add((Concrete.LetClausePattern) subpattern);
-    }
-    return new Concrete.LetClausePattern(myData, cPatterns);
+    return new Concrete.LetClause((Concrete.Pattern) pattern, (Concrete.Expression) type, (Concrete.Expression) term);
   }
 
   @NotNull

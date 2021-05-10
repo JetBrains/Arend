@@ -19,14 +19,14 @@ public class LetScope implements Scope {
     myClauses = clauses;
   }
 
-  private Referable find(Abstract.LetClausePattern pattern, Predicate<Referable> pred) {
-    Referable ref = pattern.getReferable();
+  private Referable find(Abstract.Pattern pattern, Predicate<Referable> pred) {
+    Referable ref = pattern.getHeadReference();
     if (ref != null) {
       if (pred.test(ref)) {
         return ref;
       }
     } else {
-      List<? extends Abstract.LetClausePattern> patterns = pattern.getPatterns();
+      List<? extends Abstract.Pattern> patterns = pattern.getArguments();
       for (int i = patterns.size() - 1; i >= 0; i--) {
         ref = find(patterns.get(i), pred);
         if (ref != null) {
@@ -46,7 +46,7 @@ public class LetScope implements Scope {
           return ref;
         }
       } else {
-        Abstract.LetClausePattern pattern = myClauses.get(i).getPattern();
+        Abstract.Pattern pattern = myClauses.get(i).getPattern();
         if (pattern != null) {
           ref = find(pattern, pred);
           if (ref != null) {
@@ -58,14 +58,14 @@ public class LetScope implements Scope {
     return myParent.find(pred);
   }
 
-  private Referable resolveName(Abstract.LetClausePattern pattern, String name) {
-    Referable ref = pattern.getReferable();
+  private Referable resolveName(Abstract.Pattern pattern, String name) {
+    Referable ref = pattern.getHeadReference();
     if (ref != null) {
       if (ref.textRepresentation().equals(name)) {
         return ref;
       }
     } else {
-      List<? extends Abstract.LetClausePattern> patterns = pattern.getPatterns();
+      List<? extends Abstract.Pattern> patterns = pattern.getArguments();
       for (int i = patterns.size() - 1; i >= 0; i--) {
         ref = resolveName(patterns.get(i), name);
         if (ref != null) {
@@ -86,7 +86,7 @@ public class LetScope implements Scope {
           return ref;
         }
       } else {
-        Abstract.LetClausePattern pattern = myClauses.get(i).getPattern();
+        Abstract.Pattern pattern = myClauses.get(i).getPattern();
         if (pattern != null) {
           ref = resolveName(pattern, name);
           if (ref != null) {

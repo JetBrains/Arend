@@ -95,4 +95,25 @@ public class LamPatternTest extends TypeCheckingTestCase {
       "\\func test : R \\cowith\n" +
       "  | f (x,y) : Nat => x", 1);
   }
+
+  @Test
+  public void letTest() {
+    typeCheckModule(
+      "\\data D | con Nat\n" +
+      "\\func test (f : Nat -> D) : Nat => \\let (con n) => f 0 \\in n");
+  }
+
+  @Test
+  public void letTest2() {
+    typeCheckModule(
+      "\\data D | con Nat\n" +
+      "\\func test (f : Nat -> D) : Nat => \\let | (con n) => f 0 | (con m) => f 1 \\in n Nat.+ m");
+  }
+
+  @Test
+  public void letTest3() {
+    typeCheckModule(
+      "\\data D | con Nat\n" +
+      "\\func test (f : Nat -> D) : Nat => \\let | (con n) => f 0 | (con m) => f n \\in m");
+  }
 }

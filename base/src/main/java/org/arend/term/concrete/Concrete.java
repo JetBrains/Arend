@@ -929,74 +929,13 @@ public final class Concrete {
     }
   }
 
-  public static class LetClausePattern implements SourceNode, ConcreteSinglePattern {
-    private final Object myData;
-    private Referable myReferable;
-    public Expression type;
-    private final List<LetClausePattern> myPatterns;
-    private final boolean myIgnored;
-
-    public LetClausePattern(Object data, Referable referable, Expression type, List<LetClausePattern> patterns, boolean ignored) {
-      myData = data;
-      myReferable = referable;
-      this.type = type;
-      myPatterns = patterns;
-      myIgnored = ignored;
-    }
-
-    public LetClausePattern(Referable referable, Expression type) {
-      this(referable, referable, type, Collections.emptyList(), referable == null);
-    }
-
-    public LetClausePattern(Object data, List<LetClausePattern> patterns) {
-      this(data, null, null, patterns, false);
-    }
-
-    public LetClausePattern(Object data) {
-      myData = data;
-      myReferable = null;
-      type = null;
-      myPatterns = Collections.emptyList();
-      myIgnored = true;
-    }
-
-    @Nullable
-    @Override
-    public Object getData() {
-      return myData;
-    }
-
-    public boolean isIgnored() {
-      return myIgnored;
-    }
-
-    @Nullable
-    public Referable getReferable() {
-      return myReferable;
-    }
-
-    public void setReferable(Referable ref) {
-      myReferable = ref;
-    }
-
-    @NotNull
-    public List<? extends LetClausePattern> getPatterns() {
-      return myPatterns;
-    }
-
-    @Override
-    public void prettyPrint(StringBuilder builder, PrettyPrinterConfig ppConfig) {
-      new PrettyPrintVisitor(builder, 0, !ppConfig.isSingleLine()).prettyPrintLetClausePattern(this);
-    }
-  }
-
   public static class LetClause implements SourceNode, ConcreteLetClause {
     private final List<Parameter> myParameters;
     public Expression resultType;
     public Expression term;
-    private final LetClausePattern myPattern;
+    private final Pattern myPattern;
 
-    public LetClause(List<Parameter> parameters, Expression resultType, Expression term, LetClausePattern pattern) {
+    public LetClause(List<Parameter> parameters, Expression resultType, Expression term, Pattern pattern) {
       myParameters = parameters;
       this.resultType = resultType;
       this.term = term;
@@ -1004,10 +943,10 @@ public final class Concrete {
     }
 
     public LetClause(Referable referable, List<Parameter> parameters, Expression resultType, Expression term) {
-      this(parameters, resultType, term, new LetClausePattern(referable, (Expression) null));
+      this(parameters, resultType, term, new NamePattern(referable, true, referable, null));
     }
 
-    public LetClause(LetClausePattern pattern, Expression resultType, Expression term) {
+    public LetClause(Pattern pattern, Expression resultType, Expression term) {
       this(Collections.emptyList(), resultType, term, pattern);
     }
 
@@ -1017,7 +956,7 @@ public final class Concrete {
       return myPattern.getData();
     }
 
-    public LetClausePattern getPattern() {
+    public Pattern getPattern() {
       return myPattern;
     }
 

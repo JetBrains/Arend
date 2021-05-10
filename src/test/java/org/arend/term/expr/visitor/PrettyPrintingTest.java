@@ -274,7 +274,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
 
   @Test
   public void letTest2() {
-    String expr = "\n  \\let (x, y) => (0, 1)\n  \\in (x, y)";
+    String expr = "\n  \\let (x,y) => (0, 1)\n  \\in (x, y)";
     typeCheckModule("\\func test =>" + expr);
     assertEquals(expr, printTestExpr());
   }

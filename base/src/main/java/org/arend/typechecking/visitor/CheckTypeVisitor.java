@@ -2383,19 +2383,23 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
   }
 
-  private void getLetClauseName(Concrete.LetClausePattern pattern, StringBuilder builder) {
-    if (pattern.getReferable() != null) {
-      builder.append(pattern.getReferable().textRepresentation());
-    } else {
-      boolean first = true;
-      for (Concrete.LetClausePattern subPattern : pattern.getPatterns()) {
-        if (first) {
-          first = false;
-        } else {
-          builder.append('_');
-        }
-        getLetClauseName(subPattern, builder);
+  private void getLetClauseName(Concrete.Pattern pattern, StringBuilder builder) {
+    if (pattern instanceof Concrete.NamePattern) {
+      Referable ref = ((Concrete.NamePattern) pattern).getRef();
+      if (ref != null) {
+        builder.append(ref.textRepresentation());
+        return;
       }
+    }
+
+    boolean first = true;
+    for (Concrete.Pattern subPattern : pattern.getPatterns()) {
+      if (first) {
+        first = false;
+      } else {
+        builder.append('_');
+      }
+      getLetClauseName(subPattern, builder);
     }
   }
 
@@ -2407,7 +2411,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       }
 
       String name;
-      if (clause.getPattern().isIgnored()) {
+      if (clause.getPattern() instanceof Concrete.NamePattern && ((Concrete.NamePattern) clause.getPattern()).getRef() == null) {
         name = null;
       } else {
         StringBuilder builder = new StringBuilder();
@@ -2421,13 +2425,14 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
   }
 
-  private LetClausePattern typecheckLetClausePattern(Concrete.LetClausePattern pattern, Expression expression, Expression type, Set<Binding> bindings) {
-    Referable referable = pattern.getReferable();
-    if (referable != null || pattern.isIgnored()) {
-      if (pattern.type != null) {
-        Type typeResult = checkType(pattern.type, Type.OMEGA);
-        if (typeResult != null && !type.isLessOrEquals(typeResult.getExpr(), myEquations, pattern.type)) {
-          errorReporter.report(new TypeMismatchError(typeResult.getExpr(), type, pattern.type));
+  private LetClausePattern typecheckLetClausePattern(Concrete.Pattern pattern, Expression expression, Expression type, Set<Binding> bindings) {
+    if (pattern instanceof Concrete.NamePattern) {
+      Referable referable = ((Concrete.NamePattern) pattern).getRef();
+      Concrete.Expression patternType = ((Concrete.NamePattern) pattern).type;
+      if (patternType != null) {
+        Type typeResult = checkType(((Concrete.NamePattern) pattern).type, Type.OMEGA);
+        if (typeResult != null && !type.isLessOrEquals(typeResult.getExpr(), myEquations, patternType)) {
+          errorReporter.report(new TypeMismatchError(typeResult.getExpr(), type, patternType));
         }
       }
 
@@ -2454,7 +2459,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     DependentLink link = sigma == null ? null : sigma.getParameters();
     for (int i = 0; i < numberOfPatterns; i++) {
       assert link != null || notImplementedFields != null;
-      Concrete.LetClausePattern subPattern = pattern.getPatterns().get(i);
+      Concrete.Pattern subPattern = pattern.getPatterns().get(i);
       Expression newType;
       if (link != null) {
         ExprSubstitution substitution = new ExprSubstitution();
@@ -2491,8 +2496,8 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           if (pair == null) {
             return null;
           }
-          Referable referable = clause.getPattern().getReferable();
-          if (referable != null || clause.getPattern().isIgnored()) {
+          if (clause.getPattern() instanceof Concrete.NamePattern) {
+            Referable referable = ((Concrete.NamePattern) clause.getPattern()).getRef();
             pair.proj1.setPattern(new NameLetClausePattern(referable == null ? null : referable.textRepresentation()));
             if (referable != null) {
               addBinding(referable, pair.proj1);

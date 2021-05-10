@@ -694,24 +694,6 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
     return makeBinOpSequence(data, result, sequence, clauses);
   }
 
-  private Concrete.LetClausePattern visitLetClausePattern(Abstract.LetClausePattern pattern) {
-    Referable referable = pattern.getReferable();
-    if (referable == null && pattern.isIgnored()) {
-      return new Concrete.LetClausePattern(pattern);
-    }
-
-    if (referable != null) {
-      Abstract.Expression type = pattern.getType();
-      return new Concrete.LetClausePattern(DataLocalReferable.make(referable), type == null ? null : type.accept(this, null));
-    } else {
-      List<Concrete.LetClausePattern> concretePatterns = new ArrayList<>();
-      for (Abstract.LetClausePattern subPattern : pattern.getPatterns()) {
-        concretePatterns.add(visitLetClausePattern(subPattern));
-      }
-      return new Concrete.LetClausePattern(pattern, concretePatterns);
-    }
-  }
-
   @Override
   public Concrete.Expression visitLet(@Nullable Object data, boolean isHave, boolean isStrict, @NotNull Collection<? extends Abstract.LetClause> absClauses, @Nullable Abstract.Expression expression, Void params) {
     if (absClauses.isEmpty()) {
@@ -730,9 +712,9 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
         if (referable != null) {
           clauses.add(new Concrete.LetClause(DataLocalReferable.make(referable), buildParameters(parameters, false), resultType == null ? null : resultType.accept(this, null), term.accept(this, null)));
         } else {
-          Abstract.LetClausePattern pattern = clause.getPattern();
+          Abstract.Pattern pattern = clause.getPattern();
           if (pattern != null) {
-            clauses.add(new Concrete.LetClause(visitLetClausePattern(pattern), resultType == null ? null : resultType.accept(this, null), term.accept(this, null)));
+            clauses.add(new Concrete.LetClause(buildPattern(pattern), resultType == null ? null : resultType.accept(this, null), term.accept(this, null)));
           }
         }
       } else {

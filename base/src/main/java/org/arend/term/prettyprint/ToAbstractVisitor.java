@@ -678,20 +678,20 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     return cEval(true, expr.getExpression().accept(this, null));
   }
 
-  private Concrete.LetClausePattern makeLetClausePattern(LetClausePattern pattern) {
+  private Concrete.Pattern makeLetClausePattern(LetClausePattern pattern) {
     if (pattern == null) return null;
     if (pattern.getName() != null) {
-      return new Concrete.LetClausePattern(new LocalReferable(pattern.getName()), (Concrete.Expression) null);
+      return new Concrete.NamePattern(null, true, new LocalReferable(pattern.getName()), null);
     }
     List<? extends LetClausePattern> patterns = pattern.getPatterns();
     if (patterns == null) return null;
-    List<Concrete.LetClausePattern> cPatterns = new ArrayList<>(patterns.size());
+    List<Concrete.Pattern> cPatterns = new ArrayList<>(patterns.size());
     for (LetClausePattern subpattern : patterns) {
-      Concrete.LetClausePattern cSubpattern = makeLetClausePattern(subpattern);
+      Concrete.Pattern cSubpattern = makeLetClausePattern(subpattern);
       if (cSubpattern == null) return null;
       cPatterns.add(cSubpattern);
     }
-    return new Concrete.LetClausePattern(null, cPatterns);
+    return new Concrete.TuplePattern(null, cPatterns, null);
   }
 
   @Override
@@ -702,9 +702,9 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       if (clause instanceof LetClause) {
         isHave = false;
       }
-      Concrete.LetClausePattern pattern;
+      Concrete.Pattern pattern;
       if (clause.getPattern().getName() != null) {
-        pattern = new Concrete.LetClausePattern(makeLocalReference(clause, myFreeVariablesCollector.getFreeVariables(clause), false), (Concrete.Expression) null);
+        pattern = new Concrete.NamePattern(null, true, makeLocalReference(clause, myFreeVariablesCollector.getFreeVariables(clause), false), null);
       } else {
         pattern = makeLetClausePattern(clause.getPattern());
       }

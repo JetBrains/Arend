@@ -123,7 +123,7 @@ public class FindBinding {
       Object patternData, Concrete.LetExpression expr, LetExpression let) {
     return visitLet(expr, let, (coreLetClause, exprLetClause) ->
         Objects.equals(exprLetClause.getPattern().getData(), patternData)
-            || Objects.equals(Referable.getUnderlyingReferable(exprLetClause.getPattern().getReferable()), patternData)
+            || exprLetClause.getPattern() instanceof Concrete.NamePattern && Objects.equals(Referable.getUnderlyingReferable(((Concrete.NamePattern) exprLetClause.getPattern()).getRef()), patternData)
             ? coreLetClause.getTypeExpr() : null);
   }
 

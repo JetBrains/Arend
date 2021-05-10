@@ -187,15 +187,8 @@ public final class Abstract {
     @Nullable LocatedReferable getFunctionReference();
   }
 
-  public interface LetClausePattern extends SourceNode {
-    boolean isIgnored();
-    @Nullable Referable getReferable();
-    @Nullable Abstract.Expression getType();
-    @NotNull List<? extends LetClausePattern> getPatterns();
-  }
-
   public interface LetClause extends ParametersHolder {
-    @Nullable LetClausePattern getPattern();
+    @Nullable Pattern getPattern();
     @Nullable Referable getReferable();
     @Nullable Expression getResultType();
     /* @NotNull */ @Nullable Expression getTerm();

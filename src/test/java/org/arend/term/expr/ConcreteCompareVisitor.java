@@ -361,27 +361,8 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
     return expr2 instanceof Concrete.NewExpression && compare(expr1.getExpression(), ((Concrete.NewExpression) expr2).getExpression());
   }
 
-  private boolean compareLetClausePattern(Concrete.LetClausePattern pattern1, Concrete.LetClausePattern pattern2) {
-    if ((pattern1.getReferable() == null) != (pattern2.getReferable() == null)) {
-      return false;
-    }
-    if (pattern1.getReferable() != null) {
-      mySubstitution.put(pattern1.getReferable(), pattern2.getReferable());
-    }
-
-    if (pattern1.getPatterns().size() != pattern2.getPatterns().size()) {
-      return false;
-    }
-    for (int i = 0; i < pattern1.getPatterns().size(); i++) {
-      if (!compareLetClausePattern(pattern1.getPatterns().get(i), pattern2.getPatterns().get(i))) {
-        return false;
-      }
-    }
-    return true;
-  }
-
   private boolean compareLetClause(Concrete.LetClause clause1, Concrete.LetClause clause2) {
-    return compareParameters(clause1.getParameters(), clause2.getParameters()) && compare(clause1.getTerm(), clause2.getTerm()) && (clause1.getResultType() == null && clause2.getResultType() == null || clause1.getResultType() != null && clause2.getResultType() != null && compare(clause1.getResultType(), clause2.getResultType())) && compareLetClausePattern(clause1.getPattern(), clause2.getPattern());
+    return compareParameters(clause1.getParameters(), clause2.getParameters()) && compare(clause1.getTerm(), clause2.getTerm()) && (clause1.getResultType() == null && clause2.getResultType() == null || clause1.getResultType() != null && clause2.getResultType() != null && compare(clause1.getResultType(), clause2.getResultType())) && comparePattern(clause1.getPattern(), clause2.getPattern());
   }
 
   @Override
