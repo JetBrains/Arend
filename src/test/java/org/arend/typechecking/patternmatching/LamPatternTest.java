@@ -2,6 +2,7 @@ package org.arend.typechecking.patternmatching;
 
 import org.arend.Matchers;
 import org.arend.typechecking.TypeCheckingTestCase;
+import org.arend.typechecking.error.local.CertainTypecheckingError;
 import org.arend.typechecking.error.local.NotEqualExpressionsError;
 import org.junit.Test;
 
@@ -115,5 +116,13 @@ public class LamPatternTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\data D | con Nat\n" +
       "\\func test (f : Nat -> D) : Nat => \\let | (con n) => f 0 | (con m) => f n \\in m");
+  }
+
+  @Test
+  public void letError() {
+    typeCheckModule(
+      "\\data D | con Nat\n" +
+      "\\func test (f : Nat -> D) : Nat => \\let | {con n} => f 0 \\in n", 1);
+    assertThatErrorsAre(Matchers.typecheckingError(CertainTypecheckingError.Kind.EXPECTED_EXPLICIT_PATTERN));
   }
 }
