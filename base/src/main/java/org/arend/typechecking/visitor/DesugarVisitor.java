@@ -373,7 +373,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
           }
           collectRefs(clause.getPattern(), refs);
         }
-        Concrete.Expression newBody = j < clauses.size() ? desugarLet(data, isHave, isStrict, clauses.subList(j, clauses.size()), body) : body.accept(this, null);
+        Concrete.Expression newBody = j < clauses.size() ? desugarLet(data, isHave, isStrict, clauses.subList(j, clauses.size()), body) : body;
         List<Concrete.CaseArgument> caseArgs = new ArrayList<>();
         List<Concrete.Pattern> patterns = new ArrayList<>();
         for (int k = i; k < j; k++) {
@@ -383,15 +383,16 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
         }
         newBody = new Concrete.CaseExpression(data, false, caseArgs, null, null, Collections.singletonList(new Concrete.FunctionClause(data, patterns, newBody)));
         return i > 0 ? new Concrete.LetExpression(data, isHave, isStrict, clauses.subList(0, i), newBody) : newBody;
-      } else {
-        visitLetClause(clause, null);
       }
     }
-    return new Concrete.LetExpression(data, isHave, isStrict, clauses, body.accept(this, null));
+    return new Concrete.LetExpression(data, isHave, isStrict, clauses, body);
   }
 
   @Override
   public Concrete.Expression visitLet(Concrete.LetExpression expr, Void params) {
-    return desugarLet(expr.getData(), expr.isHave(), expr.isStrict(), expr.getClauses(), expr.getExpression());
+    for (Concrete.LetClause clause : expr.getClauses()) {
+      visitLetClause(clause, null);
+    }
+    return desugarLet(expr.getData(), expr.isHave(), expr.isStrict(), expr.getClauses(), expr.getExpression().accept(this, null));
   }
 }

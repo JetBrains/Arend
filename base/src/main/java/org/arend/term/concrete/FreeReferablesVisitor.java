@@ -243,7 +243,11 @@ public class FreeReferablesVisitor implements ConcreteExpressionVisitor<Void, TC
   @Override
   public TCReferable visitLet(Concrete.LetExpression expr, Void params) {
     for (Concrete.LetClause clause : expr.getClauses()) {
-      TCReferable ref = visitParameters(clause.getParameters());
+      TCReferable ref = visitPattern(clause.getPattern());
+      if (ref != null) {
+        return ref;
+      }
+      ref = visitParameters(clause.getParameters());
       if (ref != null) {
         return ref;
       }

@@ -298,6 +298,7 @@ public class VoidConcreteVisitor<P, R> implements ConcreteExpressionVisitor<P,Vo
   @Override
   public Void visitLet(Concrete.LetExpression expr, P params) {
     for (Concrete.LetClause clause : expr.getClauses()) {
+      visitPattern(clause.getPattern(), params);
       visitParameters(clause.getParameters(), params);
       if (clause.getResultType() != null) {
         clause.getResultType().accept(this, params);

@@ -118,7 +118,6 @@ public class ReplaceVarConcreteVisitor extends BaseConcreteExpressionVisitor<Voi
 
   @Override
   protected void visitLetClause(Concrete.LetClause clause, Void params) {
-    visitPattern(clause.getPattern(), null);
     super.visitLetClause(clause, params);
     freeVars(clause.getParameters());
   }
