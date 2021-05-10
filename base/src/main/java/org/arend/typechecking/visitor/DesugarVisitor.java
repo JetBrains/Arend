@@ -12,6 +12,7 @@ import org.arend.prelude.Prelude;
 import org.arend.term.FunctionKind;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
+import org.arend.term.concrete.LocalFreeReferableVisitor;
 import org.arend.typechecking.error.local.WrongReferable;
 import org.jetbrains.annotations.NotNull;
 
@@ -352,38 +353,60 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
   private Concrete.Expression desugarLet(Object data, boolean isHave, boolean isStrict, List<Concrete.LetClause> clauses, Concrete.Expression body) {
     for (int i = 0; i < clauses.size(); i++) {
       Concrete.LetClause clause = clauses.get(i);
-      if (!isTuplePattern(clause.getPattern())) {
-        Set<Referable> refs = new HashSet<>();
-        collectRefs(clause.getPattern(), refs);
-        int j = i + 1;
-        for (; j < clauses.size(); j++) {
-          if (!isTuplePattern(clauses.get(j).getPattern())) break;
-          if (!refs.isEmpty()) {
-            boolean[] ok = new boolean[] { true };
-            clauses.get(j).term.accept(new VoidConcreteVisitor<>() {
-              @Override
-              public Void visitReference(Concrete.ReferenceExpression expr, Object params) {
-                if (refs.contains(expr.getReferent())) {
-                  ok[0] = false;
-                }
-                return null;
-              }
-            }, null);
-            if (!ok[0]) break;
-          }
-          collectRefs(clause.getPattern(), refs);
-        }
-        Concrete.Expression newBody = j < clauses.size() ? desugarLet(data, isHave, isStrict, clauses.subList(j, clauses.size()), body) : body;
-        List<Concrete.CaseArgument> caseArgs = new ArrayList<>();
-        List<Concrete.Pattern> patterns = new ArrayList<>();
-        for (int k = i; k < j; k++) {
-          Concrete.LetClause curClause = clauses.get(k);
-          caseArgs.add(curClause.term instanceof Concrete.ReferenceExpression ? new Concrete.CaseArgument((Concrete.ReferenceExpression) curClause.term, curClause.resultType) : new Concrete.CaseArgument(curClause.term, null, curClause.resultType));
-          patterns.add(curClause.getPattern());
-        }
-        newBody = new Concrete.CaseExpression(data, false, caseArgs, null, null, Collections.singletonList(new Concrete.FunctionClause(data, patterns, newBody)));
-        return i > 0 ? new Concrete.LetExpression(data, isHave, isStrict, clauses.subList(0, i), newBody) : newBody;
+      if (isTuplePattern(clause.getPattern())) {
+        continue;
       }
+
+      Set<Referable> asRefs = new HashSet<>();
+      Set<Referable> refs = new HashSet<>();
+      collectRefs(clause.getPattern(), refs);
+      if (clause.getPattern().getAsReferable() != null) {
+        Referable ref = clause.getPattern().getAsReferable().referable;
+        if (ref != null) asRefs.add(ref);
+      }
+      int j = i + 1;
+      for (; j < clauses.size(); j++) {
+        Concrete.LetClause curClause = clauses.get(j);
+        if (isTuplePattern(curClause.getPattern())) {
+          if (asRefs.isEmpty() || curClause.resultType == null) break;
+          LocalFreeReferableVisitor visitor = new LocalFreeReferableVisitor(asRefs);
+          curClause.resultType.accept(visitor, null);
+          if (visitor.getFound() == null) break;
+        }
+        if (!refs.isEmpty()) {
+          LocalFreeReferableVisitor visitor = new LocalFreeReferableVisitor(refs);
+          curClause.term.accept(visitor, null);
+          if (visitor.getFound() != null) break;
+        }
+        collectRefs(curClause.getPattern(), refs);
+        if (curClause.getPattern().getAsReferable() != null) {
+          Referable ref = curClause.getPattern().getAsReferable().referable;
+          if (ref != null) asRefs.add(ref);
+        }
+      }
+      Concrete.Expression newBody = j < clauses.size() ? desugarLet(data, isHave, isStrict, clauses.subList(j, clauses.size()), body) : body;
+      List<Concrete.CaseArgument> caseArgs = new ArrayList<>();
+      List<Concrete.Pattern> patterns = new ArrayList<>();
+      for (int k = i; k < j; k++) {
+        Concrete.LetClause curClause = clauses.get(k);
+        boolean isElim = curClause.term instanceof Concrete.ReferenceExpression && curClause.getPattern().getAsReferable() == null;
+        if (isElim) {
+          LocalFreeReferableVisitor visitor = new LocalFreeReferableVisitor(Collections.singleton(((Concrete.ReferenceExpression) curClause.term).getReferent()));
+          for (int m = k + 1; m < j; m++) {
+            if (clauses.get(m).resultType != null) {
+              clauses.get(m).resultType.accept(visitor, null);
+              if (visitor.getFound() != null) {
+                isElim = false;
+                break;
+              }
+            }
+          }
+        }
+        caseArgs.add(isElim ? new Concrete.CaseArgument((Concrete.ReferenceExpression) curClause.term, curClause.resultType) : new Concrete.CaseArgument(curClause.term, curClause.getPattern().getAsReferable() == null ? null : curClause.getPattern().getAsReferable().referable, curClause.resultType));
+        patterns.add(curClause.getPattern());
+      }
+      newBody = new Concrete.CaseExpression(data, false, caseArgs, null, null, Collections.singletonList(new Concrete.FunctionClause(data, patterns, newBody)));
+      return i > 0 ? new Concrete.LetExpression(data, isHave, isStrict, clauses.subList(0, i), newBody) : newBody;
     }
     return new Concrete.LetExpression(data, isHave, isStrict, clauses, body);
   }

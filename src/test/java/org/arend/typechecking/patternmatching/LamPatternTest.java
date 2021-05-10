@@ -125,4 +125,32 @@ public class LamPatternTest extends TypeCheckingTestCase {
       "\\func test (f : Nat -> D) : Nat => \\let | {con n} => f 0 \\in n", 1);
     assertThatErrorsAre(Matchers.typecheckingError(CertainTypecheckingError.Kind.EXPECTED_EXPLICIT_PATTERN));
   }
+
+  @Test
+  public void asLamTest() {
+    typeCheckModule(
+      "\\data D | con Nat\n" +
+      "\\func f : D -> D => \\lam (con n \\as d) => d\n" +
+      "\\func test (x : D) : f x = x\n" +
+      "  | con n => idp");
+  }
+
+  @Test
+  public void asLetTest() {
+    typeCheckModule(
+      "\\data D | con Nat\n" +
+      "\\func f (x : D) : D => \\let (con n \\as d) => x \\in d\n" +
+      "\\func test (x : D) : f x = x\n" +
+      "  | con n => idp");
+  }
+
+  @Test
+  public void caseAsLetTest() {
+    typeCheckModule(
+      "\\data D | con Nat\n" +
+      "\\func test (x : D) : \\Sigma (n : Nat) (x = con n)\n" +
+      "  => \\let | (con n \\as d) => x\n" +
+      "           | p : x = d => idp\n" +
+      "     \\in (n,p)");
+  }
 }
