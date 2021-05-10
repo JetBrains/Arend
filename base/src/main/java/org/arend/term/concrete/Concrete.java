@@ -2313,6 +2313,10 @@ public final class Concrete {
 
     public abstract Pattern copy();
 
+    public Pattern toConstructor() {
+      return this;
+    }
+
     @NotNull
     @Override
     public ConcretePattern implicit() {
@@ -2389,6 +2393,11 @@ public final class Concrete {
 
     public void setReferable(Referable ref) {
       myReferable = ref;
+    }
+
+    @Override
+    public Pattern toConstructor() {
+      return myReferable == null || type != null ? this : new ConstructorPattern(getData(), isExplicit(), new NamedUnresolvedReference(getData(), myReferable.getRefName()), Collections.emptyList(), getAsReferable());
     }
 
     @Override

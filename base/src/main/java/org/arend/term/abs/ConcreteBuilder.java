@@ -714,7 +714,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
         } else {
           Abstract.Pattern pattern = clause.getPattern();
           if (pattern != null) {
-            clauses.add(new Concrete.LetClause(buildPattern(pattern), resultType == null ? null : resultType.accept(this, null), term.accept(this, null)));
+            clauses.add(new Concrete.LetClause(buildPattern(pattern).toConstructor(), resultType == null ? null : resultType.accept(this, null), term.accept(this, null)));
           }
         }
       } else {

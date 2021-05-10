@@ -1786,7 +1786,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       return new Concrete.LetClause(new ParsedLocalReferable(tokenPosition(ctx.start), id.getText()), arguments, resultType, visitExpr(ctx.expr()));
     }
 
-    return new Concrete.LetClause((Concrete.Pattern) visit(ctx.atomPattern()), resultType, visitExpr(ctx.expr()));
+    return new Concrete.LetClause(((Concrete.Pattern) visit(ctx.atomPattern())).toConstructor(), resultType, visitExpr(ctx.expr()));
   }
 
   private Concrete.Expression visitIncompleteExpression(ParserRuleContext exprCtx, ParserRuleContext parentCtx) {

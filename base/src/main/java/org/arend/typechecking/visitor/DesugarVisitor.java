@@ -332,6 +332,9 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
     if (!(pattern instanceof Concrete.NamePattern || pattern instanceof Concrete.TuplePattern)) {
       return false;
     }
+    if (pattern instanceof Concrete.TuplePattern && pattern.getPatterns().isEmpty()) {
+      return false;
+    }
     for (Concrete.Pattern subpattern : pattern.getPatterns()) {
       if (!isTuplePattern(subpattern)) {
         return false;
@@ -405,7 +408,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
         caseArgs.add(isElim ? new Concrete.CaseArgument((Concrete.ReferenceExpression) curClause.term, curClause.resultType) : new Concrete.CaseArgument(curClause.term, curClause.getPattern().getAsReferable() == null ? null : curClause.getPattern().getAsReferable().referable, curClause.resultType));
         patterns.add(curClause.getPattern());
       }
-      newBody = new Concrete.CaseExpression(data, false, caseArgs, null, null, Collections.singletonList(new Concrete.FunctionClause(data, patterns, newBody)));
+      newBody = new Concrete.CaseExpression(data, false, caseArgs, null, null, Collections.singletonList(new Concrete.FunctionClause(data, patterns, newBody instanceof Concrete.IncompleteExpression ? null : newBody)));
       return i > 0 ? new Concrete.LetExpression(data, isHave, isStrict, clauses.subList(0, i), newBody) : newBody;
     }
     return new Concrete.LetExpression(data, isHave, isStrict, clauses, body);

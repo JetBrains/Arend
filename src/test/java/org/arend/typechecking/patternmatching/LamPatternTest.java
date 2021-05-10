@@ -153,4 +153,14 @@ public class LamPatternTest extends TypeCheckingTestCase {
       "           | p : x = d => idp\n" +
       "     \\in (n,p)");
   }
+
+  @Test
+  public void absurdPatternLetTest() {
+    typeCheckModule(
+      "\\data Bool | true | false\n" +
+      "\\data D (x y : Bool) \\with\n" +
+      "  | false, true => con\n" +
+      "\\func test (x : Bool) (p : D x x) : 0 = 1\n" +
+      "  => \\let | (true) => x | () => p");
+  }
 }
