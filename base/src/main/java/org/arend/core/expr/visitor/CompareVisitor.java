@@ -1172,13 +1172,13 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     if (type != null) {
       ClassCallExpression classCall = type.cast(ClassCallExpression.class);
       if (classCall != null) {
-        if (classCall.getDefinition() == Prelude.ARRAY) {
-          Set<ClassField> fieldsCopy = new HashSet<>(classCall.getDefinition().getFields());
-          fieldsCopy.removeAll(classCall.getImplementedHere().keySet());
-          fields = fieldsCopy;
-        } else {
-          fields = classCall.getDefinition().getFields();
+        Set<ClassField> fieldsCopy = new HashSet<>();
+        for (ClassField field : classCall.getDefinition().getFields()) {
+          if (!classCall.isImplemented(field)) {
+            fieldsCopy.add(field);
+          }
         }
+        fields = fieldsCopy;
       }
     }
     if (fields == null) {
