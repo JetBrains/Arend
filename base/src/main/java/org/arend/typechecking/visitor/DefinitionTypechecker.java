@@ -1487,7 +1487,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           if (dataPatternTypechecking != null) {
             ExprSubstitution substitution = new ExprSubstitution();
             result = dataPatternTypechecking.typecheckPatterns(clause.getPatterns(), def.getParameters(), dataDefinition.getParameters(), substitution, null, def);
-            if (instancePool != null && result != null && result.hasEmptyPattern()) {
+            if (instancePool != null) {
               typechecker.getInstancePool().setInstancePool(instancePool.subst(substitution));
             }
             if (result != null && result.hasEmptyPattern()) {
