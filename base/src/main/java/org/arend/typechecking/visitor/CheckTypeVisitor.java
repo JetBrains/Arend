@@ -3264,7 +3264,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
   }
 
-  private void replaceWithReferables(Set<Object> vars, Map<Referable, Binding> map) {
+  private static void replaceWithReferables(Set<Object> vars, Map<Referable, Binding> map) {
     for (Map.Entry<Referable, Binding> entry : map.entrySet()) {
       if (vars.remove(entry.getValue())) {
         vars.add(entry.getKey());
@@ -3278,24 +3278,14 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
 
     Set<Object> foundVars = new LinkedHashSet<>();
-    expr.accept(new FindMissingBindingVisitor(allowedBindings) {
-      @Override
-      public Boolean visitReference(ReferenceExpression expr, Void params) {
-        Binding binding = expr.getBinding();
-        if (!allowedBindings.contains(binding) && binding.getTypeExpr().findBinding(substitution.getKeys()) != null) {
-          foundVars.add(binding);
-        }
-        return false;
-      }
-    }, null);
-
-    if (!foundVars.isEmpty()) {
+    Expression result = CompareVisitor.checkedSubst(expr, substitution, allowedBindings, foundVars);
+    if (result == null) {
       replaceWithReferables(foundVars, context);
       errorReporter.report(new ElimSubstError(null, foundVars, sourceNode));
       return expr;
+    } else {
+      return result;
     }
-
-    return expr.subst(substitution);
   }
 
   Integer minInteger(Integer int1, Integer int2) {

@@ -10,8 +10,11 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.util.Decision;
+import org.arend.util.Pair;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class SubstExpression extends Expression {
@@ -35,7 +38,7 @@ public class SubstExpression extends Expression {
       return result != null ? result : expression;
     }
 
-    if (expression instanceof SubstExpression && ((SubstExpression) expression).isMetaInferenceVariable()) {
+    if (expression instanceof SubstExpression && ((SubstExpression) expression).isInferenceVariable()) {
       ExprSubstitution newSubst = new ExprSubstitution();
       for (Map.Entry<Binding, Expression> entry : ((SubstExpression) expression).getSubstitution().getEntries()) {
         newSubst.add(entry.getKey(), entry.getValue().subst(substitution, levelSubstitution));
@@ -49,7 +52,7 @@ public class SubstExpression extends Expression {
       return new SubstExpression(infRefExpr, newSubst, ((SubstExpression) expression).getLevelSubstitution().subst(levelSubstitution));
     }
 
-    return new SubstExpression(expression, substitution, levelSubstitution);
+    return new SubstExpression(expression, new ExprSubstitution(substitution), levelSubstitution);
   }
 
   public Expression getExpression() {
@@ -95,8 +98,32 @@ public class SubstExpression extends Expression {
       return make(let.getExpression(), substitution, levelSubstitution);
     }
 
-    Expression expr = myExpression instanceof SubstExpression ? ((SubstExpression) myExpression).getSubstExpression() : myExpression;
-    return expr instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) expr).getSubstExpression() == null ? (expr == myExpression ? this : new SubstExpression(expr, mySubstitution, levelSubstitution)) : expr.subst(mySubstitution, levelSubstitution);
+    if (myExpression instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) myExpression).getVariable() != null) {
+      return this;
+    }
+
+    if (myExpression instanceof SubstExpression) {
+      List<Pair<ExprSubstitution, LevelSubstitution>> substitutions = new ArrayList<>();
+      Expression expr = this;
+      while (expr instanceof SubstExpression) {
+        substitutions.add(new Pair<>(((SubstExpression) expr).mySubstitution, ((SubstExpression) expr).levelSubstitution));
+        expr = ((SubstExpression) expr).getExpression();
+      }
+      ExprSubstitution totalSubst = new ExprSubstitution();
+      totalSubst.addAll(substitutions.get(substitutions.size() - 1).proj1);
+      LevelSubstitution totalLevelSubst = substitutions.get(substitutions.size() - 1).proj2;
+      for (int i = substitutions.size() - 2; i >= 0; i--) {
+        totalSubst.addSubst(substitutions.get(i).proj1);
+        totalLevelSubst = totalLevelSubst.subst(substitutions.get(i).proj2);
+      }
+      if (expr instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) expr).getVariable() != null) {
+        return new SubstExpression(expr, totalSubst, totalLevelSubst);
+      } else {
+        return expr.subst(totalSubst, totalLevelSubst);
+      }
+    } else {
+      return myExpression.subst(mySubstitution, levelSubstitution);
+    }
   }
 
   @Override

@@ -28,7 +28,7 @@ public interface DependentLink extends Binding, CoreParameter {
   void setName(String name);
   DependentLink subst(SubstVisitor substVisitor, int size, boolean updateSubst);
   TypedDependentLink getNextTyped(List<String> names);
-  Type getType();
+  @Override Type getType();
 
   @NotNull
   @Override

@@ -21,12 +21,18 @@ import java.util.*;
 public class SubstVisitor extends ExpressionTransformer<Void> {
   private final ExprSubstitution myExprSubstitution;
   private final LevelSubstitution myLevelSubstitution;
+  private final boolean myClearInferenceVariables;
 
   public static class SubstException extends RuntimeException {}
 
   public SubstVisitor(ExprSubstitution exprSubstitution, LevelSubstitution levelSubstitution) {
+    this(exprSubstitution, levelSubstitution, true);
+  }
+
+  public SubstVisitor(ExprSubstitution exprSubstitution, LevelSubstitution levelSubstitution, boolean clearInferenceVariables) {
     myExprSubstitution = exprSubstitution;
     myLevelSubstitution = levelSubstitution;
+    myClearInferenceVariables = clearInferenceVariables;
   }
 
   public ExprSubstitution getExprSubstitution() {
@@ -113,7 +119,7 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
       return expr.getSubstExpression().accept(this, null);
     }
 
-    if (expr.getVariable() instanceof MetaInferenceVariable) {
+    if (!myClearInferenceVariables || expr.getVariable() instanceof MetaInferenceVariable) {
       if (myLevelSubstitution.isEmpty() && Collections.disjoint(expr.getVariable().getBounds(), myExprSubstitution.getKeys())) {
         return expr;
       }

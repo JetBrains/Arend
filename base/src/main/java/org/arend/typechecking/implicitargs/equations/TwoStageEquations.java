@@ -1,6 +1,7 @@
 package org.arend.typechecking.implicitargs.equations;
 
 import org.arend.core.context.Utils;
+import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.inference.DerivedInferenceVariable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
@@ -16,8 +17,10 @@ import org.arend.core.expr.visitor.CompareVisitor;
 import org.arend.core.expr.visitor.ElimBindingVisitor;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
+import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.LevelSubstitution;
+import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.LocalError;
@@ -61,10 +64,44 @@ public class TwoStageEquations implements Equations {
     return null;
   }
 
+  private static Pair<Expression, ExprSubstitution> reverseSubstitution(Expression expr) {
+    ExprSubstitution totalSubst = new ExprSubstitution();
+    while (expr instanceof SubstExpression) {
+      ExprSubstitution reversedSubst = new ExprSubstitution();
+      for (Map.Entry<Binding, Expression> entry : ((SubstExpression) expr).getSubstitution().getEntries()) {
+        if (entry.getValue() instanceof ReferenceExpression) {
+          reversedSubst.add(((ReferenceExpression) entry.getValue()).getBinding(), new ReferenceExpression(entry.getKey()));
+        } else {
+          return null;
+        }
+      }
+      expr = ((SubstExpression) expr).getExpression();
+      totalSubst.addSubst(reversedSubst);
+    }
+    return new Pair<>(expr, totalSubst);
+  }
+
   @Override
   public boolean addEquation(Expression origExpr1, Expression origExpr2, Expression type, CMP cmp, Concrete.SourceNode sourceNode, InferenceVariable stuckVar1, InferenceVariable stuckVar2, boolean normalize) {
     Expression expr1 = normalize ? origExpr1.normalize(NormalizationMode.WHNF) : origExpr1;
     Expression expr2 = normalize ? origExpr2.normalize(NormalizationMode.WHNF) : origExpr2;
+    if (expr1 instanceof SubstExpression && !(expr2 instanceof SubstExpression)) {
+      Pair<Expression, ExprSubstitution> pair = reverseSubstitution(expr1);
+      if (pair != null) {
+        origExpr1 = expr1 = pair.proj1;
+        SubstVisitor substVisitor = new SubstVisitor(pair.proj2, LevelSubstitution.EMPTY, false);
+        expr2 = expr2.accept(substVisitor, null);
+        origExpr2 = normalize ? origExpr2.accept(substVisitor, null) : expr2;
+      }
+    } else if (expr2 instanceof SubstExpression && !(expr1 instanceof SubstExpression)) {
+      Pair<Expression, ExprSubstitution> pair = reverseSubstitution(expr2);
+      if (pair != null) {
+        origExpr2 = expr2 = pair.proj1;
+        SubstVisitor substVisitor = new SubstVisitor(pair.proj2, LevelSubstitution.EMPTY, false);
+        expr1 = expr1.accept(substVisitor, null);
+        origExpr1 = normalize ? origExpr1.accept(substVisitor, null) : expr1;
+      }
+    }
     InferenceVariable inf1 = expr1.getInferenceVariable();
     InferenceVariable inf2 = expr2.getInferenceVariable();
 

@@ -53,6 +53,11 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
     }
 
     @Override
+    public Type getType() {
+      return ClassCallExpression.this;
+    }
+
+    @Override
     public void strip(StripVisitor stripVisitor) {
       ClassCallExpression.this.accept(stripVisitor, null);
     }

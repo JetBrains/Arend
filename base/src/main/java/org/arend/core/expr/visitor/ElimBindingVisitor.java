@@ -2,6 +2,7 @@ package org.arend.core.expr.visitor;
 
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.EvaluatingBinding;
+import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.context.param.UnusedIntervalDependentLink;
 import org.arend.ext.variable.Variable;
 import org.arend.core.context.param.DependentLink;
@@ -182,21 +183,31 @@ public class ElimBindingVisitor extends ExpressionTransformer<Void> {
   public Expression visitSubst(SubstExpression expr, Void params) {
     if (myKeepVisitor != null) {
       if (expr.isInferenceVariable()) {
-        ((InferenceReferenceExpression) expr.getExpression()).getVariable().getBounds().removeIf(bound -> !myKeepVisitor.getBindings().contains(bound) && !expr.getSubstitution().getKeys().contains(bound));
+        InferenceVariable var = ((InferenceReferenceExpression) expr.getExpression()).getVariable();
+        var.getBounds().removeIf(bound -> !myKeepVisitor.getBindings().contains(bound) && !expr.getSubstitution().getKeys().contains(bound));
         ExprSubstitution substitution = new ExprSubstitution();
         for (Map.Entry<Binding, Expression> entry : expr.getSubstitution().getEntries()) {
-          substitution.add(entry.getKey(), entry.getValue().accept(this, null));
+          Expression value = acceptSelf(entry.getValue(), true);
+          if (value == null) {
+            var.getBounds().remove(entry.getKey());
+          } else {
+            substitution.add(entry.getKey(), value);
+          }
         }
         return SubstExpression.make(expr, substitution, expr.getLevelSubstitution());
       } else {
-        return expr.getSubstExpression().accept(this, null);
+        return acceptSelf(expr.getSubstExpression(), false);
       }
     } else {
       ExprSubstitution substitution = new ExprSubstitution();
       for (Map.Entry<Binding, Expression> entry : expr.getSubstitution().getEntries()) {
-        substitution.add(entry.getKey(), entry.getValue().accept(this, null));
+        Expression value = acceptSelf(entry.getValue(), true);
+        if (value == null) return null;
+        substitution.add(entry.getKey(), value);
       }
-      return SubstExpression.make(expr.getExpression().accept(this, null), substitution, expr.getLevelSubstitution());
+      Expression result = acceptSelf(expr.getExpression(), true);
+      if (result == null) return null;
+      return SubstExpression.make(result, substitution, expr.getLevelSubstitution());
     }
   }
 

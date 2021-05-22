@@ -65,7 +65,7 @@ public class ArgInferenceError extends TypecheckingError {
     return vList(
       candidates.length == 0
         ? nullDoc()
-        : hang(text("Candidates are:"),
+        : hang(text(candidates.length == 1 ? "Candidate is:" : "Candidates are:"),
             vList(Arrays.stream(candidates).map(expr -> termDoc(expr, ppConfig)).collect(Collectors.toList()))),
       expected == null && actual == null
         ? nullDoc()

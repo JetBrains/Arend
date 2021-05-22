@@ -108,4 +108,18 @@ public class InferenceTest extends TypeCheckingTestCase {
       "  | \\infixr 8 * {x y z : E} : x ~ y -> y ~ z -> x ~ z\n" +
       "\\func f {X : C} {x y : X} (p : x ~ y) => p * refl");
   }
+
+  @Test
+  public void functionTest() {
+    typeCheckModule(
+      "\\func f {A : \\Type} {B : A -> \\Type} (p : \\Sigma (x : A) (B x)) => p.1\n" +
+      "\\func test {A : \\Type} {B : A -> \\Type} (p : \\Sigma (x : A) (B x)) => f p");
+  }
+
+  @Test
+  public void functionTest2() {
+    typeCheckModule(
+      "\\func f {A : \\Type} {B : A -> \\Type} {C : \\Pi (a : A) -> B a -> \\Type} (p : \\Sigma (x : A) (y : B x) (C x y)) => p.1\n" +
+      "\\func test {A : \\Type} {B : A -> \\Type} {C : \\Pi (a : A) -> B a -> \\Type} (p : \\Sigma (x : A) (y : B x) (C x y)) => f p");
+  }
 }
