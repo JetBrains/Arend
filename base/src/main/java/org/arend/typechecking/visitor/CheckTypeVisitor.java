@@ -3049,10 +3049,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   private void restoreState() {
-    if (!(errorReporter.myErrorReporter.getErrorReporter() instanceof ListErrorReporter)) {
-      throw new IllegalStateException();
-    }
-    ((ListErrorReporter) errorReporter.myErrorReporter.getErrorReporter()).reportTo(mySavedState.errorReporter);
+    mySavedState.listErrorReporter.reportTo(mySavedState.errorReporter);
     errorReporter = mySavedState.errorReporter;
     mySavedState = mySavedState.previousState;
   }
