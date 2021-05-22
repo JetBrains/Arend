@@ -3051,6 +3051,9 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   private void restoreState() {
     mySavedState.listErrorReporter.reportTo(mySavedState.errorReporter);
     errorReporter = mySavedState.errorReporter;
+    if (mySavedState.previousState != null) {
+      mySavedState.previousState.solvedVariables.addAll(mySavedState.solvedVariables);
+    }
     mySavedState = mySavedState.previousState;
   }
 
@@ -3072,6 +3075,9 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
     mySavedState.listErrorReporter.reportTo(mySavedState.errorReporter);
     mySavedState.listErrorReporter.getErrorList().clear();
+    if (mySavedState.previousState != null) {
+      mySavedState.previousState.solvedVariables.addAll(mySavedState.solvedVariables);
+    }
     TypecheckerState state = new TypecheckerState(mySavedState.errorReporter, myDeferredMetasBeforeSolver.size(), myDeferredMetasAfterLevels.size(), copyUserData(), mySavedState.previousState, mySavedState.listErrorReporter);
     myEquations.saveState(state);
     mySavedState = state;
