@@ -141,6 +141,12 @@ public class FunCallExpression extends DefCallExpression implements CoreFunCallE
       stuck = myArguments.get(3).getStuckExpression();
       return stuck != null ? stuck : myArguments.get(0).getStuckExpression();
     }
+    if (definition == Prelude.ARRAY_INDEX) {
+      Expression stuck = myArguments.get(1).getStuckExpression();
+      if (stuck instanceof InferenceReferenceExpression) return stuck;
+      Expression stuck2 = myArguments.get(0).getStuckExpression();
+      return stuck2 instanceof InferenceReferenceExpression ? stuck2 : stuck;
+    }
     return definition.getBody() != null ? definition.getBody().getStuckExpression(myArguments, this) : null;
   }
 }
