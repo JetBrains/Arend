@@ -285,4 +285,12 @@ public class ArrayTest extends TypeCheckingTestCase {
   public void consEquality() {
     typeCheckDef("\\func test {A : \\Type} (x y : A) (l : Array A) => x :: l = y :: l");
   }
+
+  @Test
+  public void doublePatternMatching() {
+    typeCheckDef(
+      "\\func test (n : Nat) (l l' : Array Nat n) : Nat\n" +
+      "  | 0, nil, nil => 0\n" +
+      "  | suc n, :: a l, :: a' l' => 1");
+  }
 }

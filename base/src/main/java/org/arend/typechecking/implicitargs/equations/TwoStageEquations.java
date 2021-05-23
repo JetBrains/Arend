@@ -349,6 +349,7 @@ public class TwoStageEquations implements Equations {
     myEquations.clear();
     myProps.clear();
     myNotSolvableFromEquationsVars.clear();
+    myBoundVariables.clear();
   }
 
   @Override

@@ -54,9 +54,9 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
 
   private static class ArrayPair {
     final FunCallExpression funCall;
-    final Boolean isEmpty;
+    final boolean isEmpty;
 
-    private ArrayPair(FunCallExpression funCall, Boolean isEmpty) {
+    private ArrayPair(FunCallExpression funCall, boolean isEmpty) {
       this.funCall = funCall;
       this.isEmpty = isEmpty;
     }
@@ -403,7 +403,7 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
         }
         resultSubPatterns.add(pattern);
       }
-      return new ConstructorExpressionPattern(dataExpr, resultSubPatterns);
+      return new ConstructorExpressionPattern(data, resultSubPatterns);
     } else {
       return null;
     }
@@ -415,7 +415,13 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
     for (ExpressionPattern pattern : getSubPatterns()) {
       patterns.add(pattern.subst(exprSubst, levelSubst, patternSubst));
     }
-    return new ConstructorExpressionPattern(getDataExpression().subst(exprSubst, levelSubst), patterns);
+
+    if (data instanceof ArrayPair) {
+      ArrayPair pair = (ArrayPair) data;
+      return new ConstructorExpressionPattern(new ArrayPair(new FunCallExpression((DConstructor) pair.funCall.getDefinition(), pair.funCall.getLevels().subst(levelSubst), pair.funCall.getDefCallArguments().get(0).subst(exprSubst, levelSubst)), pair.isEmpty), patterns);
+    } else {
+      return new ConstructorExpressionPattern(getDataExpression().subst(exprSubst, levelSubst), patterns);
+    }
   }
 
   @Override

@@ -296,7 +296,7 @@ public class PatternTypechecking {
   }
 
   private static void listSubst(List<ExpressionPattern> patterns, List<Expression> exprs, ExprSubstitution varSubst) {
-    if (varSubst == null) {
+    if (varSubst == null || varSubst.isEmpty()) {
       return;
     }
     for (int i = 0; i < patterns.size(); i++) {
