@@ -3,6 +3,7 @@ package org.arend.core.subst;
 import org.arend.core.constructor.ClassConstructor;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.EvaluatingBinding;
+import org.arend.core.context.binding.inference.LambdaInferenceVariable;
 import org.arend.core.context.binding.inference.MetaInferenceVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
@@ -119,7 +120,7 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
       return expr.getSubstExpression().accept(this, null);
     }
 
-    if (!myClearInferenceVariables || expr.getVariable() instanceof MetaInferenceVariable) {
+    if (!myClearInferenceVariables || expr.getVariable() instanceof MetaInferenceVariable || expr.getVariable() instanceof LambdaInferenceVariable) {
       if (myLevelSubstitution.isEmpty() && Collections.disjoint(expr.getVariable().getBounds(), myExprSubstitution.getKeys())) {
         return expr;
       }

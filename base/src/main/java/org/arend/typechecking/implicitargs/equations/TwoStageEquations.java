@@ -186,19 +186,30 @@ public class TwoStageEquations implements Equations {
 
       // ?x <> Pi
       if (cType instanceof PiExpression) {
-        PiExpression pi = (PiExpression) cType;
-        Sort domSort = pi.getParameters().getType().getSortOfType();
+        List<PiExpression> pis = new ArrayList<>();
+        Expression cod = cType;
+        while (cod instanceof PiExpression) {
+          pis.add((PiExpression) cod);
+          cod = ((PiExpression) cod).getCodomain().normalize(NormalizationMode.WHNF);
+        }
         Sort codSort = Sort.generateInferVars(this, false, sourceNode);
-        Sort piSort = PiExpression.generateUpperBound(domSort, codSort, this, sourceNode);
 
         try (var ignore = new Utils.SetContextSaver<>(myVisitor.getContext())) {
-          for (SingleDependentLink link = pi.getParameters(); link.hasNext(); link = link.getNext()) {
-            myVisitor.addBinding(null, link);
+          for (PiExpression pi : pis) {
+            for (SingleDependentLink link = pi.getParameters(); link.hasNext(); link = link.getNext()) {
+              myVisitor.addBinding(null, link);
+            }
           }
           InferenceVariable infVar = new DerivedInferenceVariable(cInf.getName() + "-cod", cInf, new UniverseExpression(codSort), myVisitor.getAllBindings());
           Expression newRef = InferenceReferenceExpression.make(infVar, this);
-          solve(cInf, new PiExpression(piSort, pi.getParameters(), newRef), false);
-          return addEquation(pi.getCodomain().normalize(NormalizationMode.WHNF), newRef, Type.OMEGA, cmp, sourceNode, pi.getCodomain().getStuckInferenceVariable(), infVar);
+          Expression solution = newRef;
+          Sort piSort = codSort;
+          for (int i = pis.size() - 1; i >= 0; i--) {
+            piSort = PiExpression.generateUpperBound(pis.get(i).getParameters().getType().getSortOfType(), piSort, this, sourceNode);
+            solution = new PiExpression(piSort, pis.get(i).getParameters(), solution);
+          }
+          solve(cInf, solution, false);
+          return addEquation(cod, newRef, Type.OMEGA, cmp, sourceNode, cod.getStuckInferenceVariable(), infVar);
         }
       }
 
