@@ -179,4 +179,11 @@ public class GoodThisParametersVisitor extends VoidExpressionVisitor<Void> {
     }
     return super.visitFieldCall(expr, params);
   }
+
+  @Override
+  public Void visitTypeCoerce(TypeCoerceExpression expr, Void params) {
+    visitArguments(expr.getClauseArguments(), expr.getDefinition().getGoodThisParameters());
+    expr.getArgument().accept(this, null);
+    return null;
+  }
 }
