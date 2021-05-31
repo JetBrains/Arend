@@ -4,7 +4,7 @@ import org.arend.core.context.binding.EvaluatingBinding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.HaveClause;
-import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.ext.variable.Variable;
 
 import java.util.ArrayList;
@@ -64,16 +64,12 @@ public class UnfoldVisitor extends SubstVisitor {
   @Override
   public Expression visitFieldCall(FieldCallExpression expr, Void params) {
     if (!expr.getDefinition().isProperty() && (myUnfoldFields || myVariables.contains(expr.getDefinition()))) {
-      Expression type = expr.getArgument().getType();
-      ClassCallExpression classCall = type == null ? null : type.normalize(NormalizationMode.WHNF).cast(ClassCallExpression.class);
-      if (classCall != null) {
-        Expression impl = classCall.getImplementation(expr.getDefinition(), expr.getArgument());
-        if (impl != null) {
-          if (myUnfolded != null) {
-            myUnfolded.add(expr.getDefinition());
-          }
-          return impl.accept(this, null);
+      Expression result = NormalizeVisitor.INSTANCE.evalFieldCall(expr.getDefinition(), expr.getArgument());
+      if (result != null) {
+        if (myUnfolded != null) {
+          myUnfolded.add(expr.getDefinition());
         }
+        return result.accept(this, null);
       }
     }
     return super.visitFieldCall(expr, params);
