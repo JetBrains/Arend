@@ -9,8 +9,16 @@ import org.arend.typechecking.error.local.inference.ArgInferenceError;
 import java.util.Set;
 
 public class ExpressionInferenceVariable extends InferenceVariable {
-  public ExpressionInferenceVariable(Expression type, Concrete.SourceNode sourceNode, Set<Binding> bounds) {
+  private final boolean mySolvableFromEquations;
+
+  public ExpressionInferenceVariable(Expression type, Concrete.SourceNode sourceNode, Set<Binding> bounds, boolean solvableFromEquations) {
     super("H", type, sourceNode, bounds);
+    mySolvableFromEquations = solvableFromEquations;
+  }
+
+  @Override
+  public boolean isSolvableFromEquations() {
+    return mySolvableFromEquations;
   }
 
   @Override

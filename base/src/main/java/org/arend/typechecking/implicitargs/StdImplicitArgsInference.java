@@ -405,7 +405,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
             myVisitor.getErrorReporter().report(new ArgumentExplicitnessError(parameter.isExplicit(), argument.getExpression()));
             return null;
           }
-          InferenceVariable var = new ExpressionInferenceVariable(parameter.getTypeExpr(), argument.getExpression(), myVisitor.getAllBindings());
+          InferenceVariable var = new ExpressionInferenceVariable(parameter.getTypeExpr(), argument.getExpression(), myVisitor.getAllBindings(), false);
           deferredArguments.put(current + numberOfImplicitArguments, new Pair<>(var, argument.getExpression()));
           result = result.applyExpression(InferenceReferenceExpression.make(var, myVisitor.getEquations()), parameter.isExplicit(), myVisitor.getErrorReporter(), fun);
           current++;
@@ -709,6 +709,6 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
 
   @Override
   public InferenceVariable newInferenceVariable(Expression expectedType, Concrete.SourceNode sourceNode) {
-    return new ExpressionInferenceVariable(expectedType, sourceNode, myVisitor.getAllBindings());
+    return new ExpressionInferenceVariable(expectedType, sourceNode, myVisitor.getAllBindings(), true);
   }
 }
