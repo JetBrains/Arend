@@ -1285,6 +1285,10 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
         continue;
       }
 
+      AbsExpression absImpl1 = classCall1.getAbsImplementation(field);
+      if (absImpl1 != null && absImpl1 == classCall2.getAbsImplementation(field)) {
+        return true;
+      }
       Expression impl1 = classCall1.getImplementation(field, expr1);
       Expression impl2 = classCall2.getImplementation(field, expr2);
       if (impl1 == null) {

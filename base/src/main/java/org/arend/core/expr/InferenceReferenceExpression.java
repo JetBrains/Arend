@@ -2,8 +2,6 @@ package org.arend.core.expr;
 
 import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.definition.ClassField;
-import org.arend.core.expr.type.Type;
-import org.arend.core.expr.visitor.CompareVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
@@ -40,7 +38,7 @@ public class InferenceReferenceExpression extends Expression implements CoreInfe
       result.myImplementedFields = new HashSet<>();
       for (ClassField field : classCall.getDefinition().getFields()) {
         if (!field.isProperty()) {
-          Expression impl = classCall.getImplementation(field, result);
+          Expression impl = classCall.getImplementationHere(field, result);
           if (impl != null) {
             equations.addEquation(FieldCallExpression.make(field, classCall.getLevels(), result), impl.normalize(NormalizationMode.WHNF), classCall.getDefinition().getFieldType(field, classCall.getLevels(), result), CMP.EQ, binding.getSourceNode(), binding, impl.getStuckInferenceVariable(), false);
             if (result.getSubstExpression() != null) {
