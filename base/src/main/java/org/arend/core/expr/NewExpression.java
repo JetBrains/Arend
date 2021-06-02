@@ -24,27 +24,37 @@ public class NewExpression extends Expression implements CoreNewExpression {
     myClassCall = classCall;
   }
 
-  public NewExpression(Expression renewExpression, ClassCallExpression classCall) {
-    NewExpression newExpr = renewExpression == null ? null : renewExpression.cast(NewExpression.class);
-    if (newExpr != null) {
-      myRenewExpression = newExpr.myRenewExpression;
-      Map<ClassField, Expression> implementations = new HashMap<>();
-      NewExpression myNewExpr = new NewExpression(newExpr, classCall);
-      for (ClassField field : classCall.getDefinition().getFields()) {
-        if (classCall.getDefinition().isImplemented(field)) {
-          continue;
+  // only for SubstVisitor
+  public NewExpression(Expression renewExpression, ClassCallExpression classCall, boolean checkRenew) {
+    if (checkRenew) {
+      NewExpression newExpr = renewExpression == null ? null : renewExpression.cast(NewExpression.class);
+      if (newExpr != null) {
+        myRenewExpression = newExpr.myRenewExpression;
+        Map<ClassField, Expression> implementations = new HashMap<>();
+        NewExpression myNewExpr = new NewExpression(newExpr, classCall);
+        for (ClassField field : classCall.getDefinition().getFields()) {
+          if (classCall.getDefinition().isImplemented(field)) {
+            continue;
+          }
+          Expression impl = classCall.getImplementationHere(field, myNewExpr);
+          if (impl == null) {
+            impl = newExpr.myClassCall.getImplementationHere(field, newExpr);
+          }
+          implementations.put(field, impl);
         }
-        Expression impl = classCall.getImplementationHere(field, myNewExpr);
-        if (impl == null) {
-          impl = newExpr.myClassCall.getImplementationHere(field, newExpr);
-        }
-        implementations.put(field, impl);
+        myClassCall = new ClassCallExpression(classCall.getDefinition(), classCall.getLevels(), implementations, Sort.PROP, UniverseKind.NO_UNIVERSES);
+      } else {
+        myRenewExpression = renewExpression;
+        myClassCall = classCall;
       }
-      myClassCall = new ClassCallExpression(classCall.getDefinition(), classCall.getLevels(), implementations, Sort.PROP, UniverseKind.NO_UNIVERSES);
     } else {
       myRenewExpression = renewExpression;
       myClassCall = classCall;
     }
+  }
+
+  public NewExpression(Expression renewExpression, ClassCallExpression classCall) {
+    this(renewExpression, classCall, true);
   }
 
   @Nullable

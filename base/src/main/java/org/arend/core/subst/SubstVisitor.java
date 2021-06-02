@@ -209,7 +209,7 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
     if (!(arg instanceof ClassCallExpression)) {
       throw new SubstException();
     }
-    return new NewExpression(renewExpression, (ClassCallExpression) arg);
+    return new NewExpression(renewExpression, (ClassCallExpression) arg, false);
   }
 
   @Override
