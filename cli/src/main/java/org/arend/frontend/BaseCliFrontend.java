@@ -34,8 +34,10 @@ import org.arend.typechecking.order.dependency.DependencyListener;
 import org.arend.typechecking.order.dependency.MetaDependencyCollector;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.arend.util.FileUtils;
+import org.arend.util.Pair;
 import org.arend.util.Range;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.nio.file.FileSystems;
@@ -51,6 +53,7 @@ public abstract class BaseCliFrontend {
   private final ListErrorReporter myErrorReporter = new ListErrorReporter();
   private final Map<ModulePath, GeneralError.Level> myModuleResults = new LinkedHashMap<>();
   private final DependencyListener myDependencyCollector = new MetaDependencyCollector();
+  private Map<TCDefReferable, Pair<Long,Long>> myTimes = null;
 
   // Status information
   private boolean myExitWithError = false;
@@ -83,14 +86,53 @@ public abstract class BaseCliFrontend {
       super(myLibraryManager.getInstanceProviderSet(), ConcreteReferableProvider.INSTANCE, IdReferableConverter.INSTANCE, myErrorReporter, myDependencyCollector, PositionComparator.INSTANCE, new LibraryArendExtensionProvider(myLibraryManager));
     }
 
+    private void startTimer(TCDefReferable ref) {
+      if (myTimes != null) {
+        myTimes.compute(ref, (r,pair) -> new Pair<>(System.currentTimeMillis(), pair == null ? 0 : pair.proj2));
+      }
+    }
+
+    private void stopTimer(TCDefReferable ref) {
+      if (myTimes != null) {
+        myTimes.compute(ref, (r,pair) -> pair == null ? new Pair<>(0L, 0L) : new Pair<>(pair.proj1, pair.proj2 + (System.currentTimeMillis() - pair.proj1)));
+      }
+    }
+
+    @Override
+    public void typecheckingHeaderStarted(TCDefReferable definition) {
+      startTimer(definition);
+    }
+
+    @Override
+    public void typecheckingBodyStarted(TCDefReferable definition) {
+      startTimer(definition);
+    }
+
+    @Override
+    public void typecheckingUnitStarted(TCDefReferable definition) {
+      startTimer(definition);
+    }
+
     @Override
     public void typecheckingBodyFinished(TCDefReferable referable, Definition definition) {
+      stopTimer(referable);
       update(definition);
     }
 
     @Override
     public void typecheckingUnitFinished(TCDefReferable referable, Definition definition) {
+      stopTimer(referable);
       update(definition);
+    }
+
+    @Override
+    public void typecheckingHeaderFinished(TCDefReferable referable, Definition definition) {
+      stopTimer(referable);
+    }
+
+    @Override
+    public void typecheckingInterrupted(TCDefReferable definition, @Nullable Definition typechecked) {
+      stopTimer(definition);
     }
 
     private void update(Definition definition) {
@@ -130,6 +172,7 @@ public abstract class BaseCliFrontend {
       cmdOptions.addOption(Option.builder("i").longOpt("interactive").hasArg().optionalArg(true).argName("type").desc("start an interactive REPL, type can be plain or jline (default)").build());
       cmdOptions.addOption("t", "test", false, "run tests");
       cmdOptions.addOption("v", "version", false, "print language version");
+      cmdOptions.addOption(Option.builder().longOpt("show-times").build());
       addCommandOptions(cmdOptions);
       CommandLine cmdLine = new DefaultParser().parse(cmdOptions, args);
 
@@ -175,6 +218,10 @@ public abstract class BaseCliFrontend {
         myExitWithError = true;
         System.err.println("[ERROR] " + libDir + " is not a directory");
       }
+    }
+
+    if (cmdLine.hasOption("show-times")) {
+      myTimes = new HashMap<>();
     }
 
     String recompileString = cmdLine.getOptionValue("r");
@@ -404,6 +451,18 @@ public abstract class BaseCliFrontend {
           System.out.println("Number of modules with goals: " + numWithGoals);
         }
         System.out.println("--- Done (" + timeToString(time) + ") ---");
+
+        if (myTimes != null && !myTimes.isEmpty()) {
+          System.out.println();
+          List<Pair<TCDefReferable,Long>> list = new ArrayList<>(myTimes.size());
+          for (Map.Entry<TCDefReferable, Pair<Long, Long>> entry : myTimes.entrySet()) {
+            list.add(new Pair<>(entry.getKey(), entry.getValue().proj2));
+          }
+          list.sort((o1, o2) -> Long.compare(o2.proj2, o1.proj2));
+          for (Pair<TCDefReferable, Long> pair : list) {
+            System.out.println(pair.proj1.getRefLongName() + ": " + timeToString(pair.proj2));
+          }
+        }
 
         // Persist updated modules
         if (library.supportsPersisting()) {
