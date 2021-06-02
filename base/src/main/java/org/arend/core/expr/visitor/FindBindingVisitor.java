@@ -2,7 +2,7 @@ package org.arend.core.expr.visitor;
 
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.param.DependentLink;
-import org.arend.core.context.param.TypedSingleDependentLink;
+import org.arend.core.context.param.TypedDependentLink;
 import org.arend.core.elimtree.ElimBody;
 import org.arend.core.expr.let.HaveClause;
 import org.arend.ext.variable.Variable;
@@ -63,17 +63,17 @@ public class FindBindingVisitor extends SearchVisitor<Void> {
   }
 
   @Override
-  public Boolean visitClassCall(ClassCallExpression exprexpression, Void param) {
-    myAllowedBindings.add(exprexpression.getThisBinding());
-    Boolean result = super.visitClassCall(exprexpression, param);
-    myAllowedBindings.remove(exprexpression.getThisBinding());
+  public Boolean visitClassCall(ClassCallExpression expr, Void param) {
+    myAllowedBindings.add(expr.getThisBinding());
+    Boolean result = super.visitClassCall(expr, param);
+    myAllowedBindings.remove(expr.getThisBinding());
     return result;
   }
 
   @Override
   protected boolean visitDependentLink(DependentLink link, Void param) {
     for (; link.hasNext(); link = link.getNext()) {
-      if (link instanceof TypedSingleDependentLink && link.getTypeExpr().accept(this, param)) {
+      if (link instanceof TypedDependentLink && link.getTypeExpr().accept(this, param)) {
         return true;
       }
       myAllowedBindings.add(link);
