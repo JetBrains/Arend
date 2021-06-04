@@ -1,5 +1,6 @@
 package org.arend.classes;
 
+import org.arend.Matchers;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
@@ -288,5 +289,30 @@ public class OverrideTest extends TypeCheckingTestCase {
       "\\record D \\extends C {\n" +
       "  \\override m : R\n" +
       "}");
+  }
+
+  @Test
+  public void levelError() {
+    typeCheckModule(
+      "\\class C (X : \\hType (\\suc \\lp))\n" +
+      "\\class S \\extends C {\n" +
+      "  \\override X : \\hType \\lp\n" +
+      "}\n" +
+      "\\func f (X : \\hType (\\suc \\lp)) : C X \\cowith\n" +
+      "\\func g (X : \\hType (\\suc \\lp)) : S \\lp \\cowith\n" +
+      "  | C => f \\lp X", 1);
+    assertThatErrorsAre(Matchers.typeMismatchError());
+  }
+
+  @Test
+  public void levelTest() {
+    typeCheckModule(
+      "\\class C (X : \\hType (\\suc \\lp))\n" +
+      "\\class S \\extends C {\n" +
+      "  \\override X : \\hType \\lp\n" +
+      "}\n" +
+      "\\func f (X : \\hType (\\suc \\lp)) : C X \\cowith\n" +
+      "\\func g (X : \\hType) : S \\lp \\cowith\n" +
+      "  | C => f \\lp X");
   }
 }

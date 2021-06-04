@@ -72,9 +72,11 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
   public Expression visitFieldCall(FieldCallExpression expr, Void params) {
     Expression type = expr.getArgument().accept(this, null);
     if (type != null) {
-      ClassCallExpression classCall = type.cast(ClassCallExpression.class);
-      if (classCall != null) {
-        PiExpression fieldType = classCall.getDefinition().getOverriddenType(expr.getDefinition(), expr.getLevels());
+      if (myNormalizing) {
+        type = type.normalize(NormalizationMode.WHNF);
+      }
+      if (type instanceof ClassCallExpression) {
+        PiExpression fieldType = ((ClassCallExpression) type).getDefinition().getOverriddenType(expr.getDefinition(), expr.getLevels());
         if (fieldType != null) {
           return fieldType.applyExpression(expr.getArgument());
         }

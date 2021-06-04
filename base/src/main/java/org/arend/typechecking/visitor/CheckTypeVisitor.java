@@ -1257,6 +1257,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
               fieldSet.put(field, new ErrorExpression());
             }
           } else if (pair.proj1 instanceof ClassDefinition) {
+            ClassDefinition classDef = (ClassDefinition) pair.proj1;
             TypecheckingResult result = pair.proj2.implementation instanceof Concrete.ThisExpression ? checkThisExpression((Concrete.ThisExpression) pair.proj2.implementation, null, null, pair.proj2.implementation, 1) : checkExpr(pair.proj2.implementation, null);
             if (result != null) {
               Expression type = result.type.normalize(NormalizationMode.WHNF);
@@ -1267,22 +1268,33 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
                   errorReporter.report(var != null && !(var instanceof MetaInferenceVariable) ? var.getErrorInfer() : new TypeMismatchError(DocFactory.text("a class"), type, pair.proj2.implementation));
                 }
               } else {
-                if (!classCall.getDefinition().isSubClassOf((ClassDefinition) pair.proj1)) {
-                  errorReporter.report(new TypeMismatchError(new ClassCallExpression((ClassDefinition) pair.proj1, LevelPair.PROP), type, pair.proj2.implementation));
+                if (!classCall.getDefinition().isSubClassOf(classDef)) {
+                  errorReporter.report(new TypeMismatchError(new ClassCallExpression(classDef, LevelPair.PROP), type, pair.proj2.implementation));
                 } else {
                   if (!new CompareVisitor(myEquations, CMP.LE, pair.proj2.implementation).compareClassCallLevels(classCall, resultClassCall)) {
                     errorReporter.report(new TypeMismatchError(new ClassCallExpression(classCall.getDefinition(), resultClassCall.getLevels()), classCall, pair.proj2.implementation));
                     return null;
                   }
-                  for (ClassField field : ((ClassDefinition) pair.proj1).getFields()) {
-                    Expression impl = FieldCallExpression.make(field, classCall.getLevels(), result.expression);
+                  for (ClassField field : classDef.getFields()) {
+                    Expression impl = FieldCallExpression.make(field, classCall.getLevels(), result.expression).normalize(NormalizationMode.WHNF);
                     Expression oldImpl = field.isProperty() ? null : resultClassCall.getImplementation(field, result.expression);
                     if (oldImpl != null) {
                       if (!CompareVisitor.compare(myEquations, CMP.EQ, impl, oldImpl, classCall.getDefinition().getFieldType(field, classCall.getLevels(), result.expression), pair.proj2.implementation)) {
                         errorReporter.report(new FieldsImplementationError(true, baseClass.getReferable(), Collections.singletonList(field.getReferable()), pair.proj2));
                       }
-                    } else if (!resultClassCall.isImplemented(field)) {
-                      checkImplementationCycle(dfs, field, impl, resultClassCall, pair.proj2.implementation);
+                    } else {
+                      if (!resultClassCall.isImplemented(field)) {
+                        checkImplementationCycle(dfs, field, impl, resultClassCall, pair.proj2.implementation);
+
+                        PiExpression overridden = baseClass.getOverriddenType(field);
+                        if (overridden != null && classCall.getDefinition().getOverriddenType(field) != overridden) {
+                          Expression actualFieldType = impl.getType();
+                          Expression expectedFieldType = overridden.getCodomain().subst(new ExprSubstitution(overridden.getParameters(), result.expression), classCallExpr.getLevels());
+                          if (!CompareVisitor.compare(myEquations, CMP.LE, actualFieldType, expectedFieldType, Type.OMEGA, pair.proj2.implementation)) {
+                            errorReporter.report(new TypeMismatchError("The type of field '" + field.getName() + "' does not match", expectedFieldType, actualFieldType, pair.proj2.implementation));
+                          }
+                        }
+                      }
                     }
                   }
                   resultClassCall.updateHasUniverses();
