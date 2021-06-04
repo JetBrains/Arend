@@ -12,10 +12,7 @@ import org.arend.core.elimtree.ElimBody;
 import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.*;
 import org.arend.core.expr.type.Type;
-import org.arend.core.expr.visitor.CompareVisitor;
-import org.arend.core.expr.visitor.ElimBindingVisitor;
-import org.arend.core.expr.visitor.FreeVariablesCollector;
-import org.arend.core.expr.visitor.NormalizeVisitor;
+import org.arend.core.expr.visitor.*;
 import org.arend.core.pattern.*;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
@@ -272,7 +269,12 @@ public class PatternTypechecking {
     }
 
     myLinkList.clear();
-    return doTypechecking(patterns, parameters, paramSubst, totalSubst, sourceNode, !myElimParams.isEmpty());
+    Result result = doTypechecking(patterns, parameters, paramSubst, totalSubst, sourceNode, !myElimParams.isEmpty());
+    if (result == null) return null;
+    if (myFinal) {
+      new StripVisitor(myErrorReporter).visitParameters(Pattern.getFirstBinding(result.patterns));
+    }
+    return result;
   }
 
   public static class Result {
