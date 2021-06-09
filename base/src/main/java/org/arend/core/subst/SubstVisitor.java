@@ -141,6 +141,25 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
 
   @Override
   public Expression visitSubst(SubstExpression expr, Void params) {
+    Expression arg = expr.getExpression();
+    if (arg instanceof InferenceReferenceExpression) {
+      Expression substExpr = ((InferenceReferenceExpression) arg).getSubstExpression();
+      if (substExpr == null) {
+        ExprSubstitution newSubst = new ExprSubstitution();
+        for (Map.Entry<Binding, Expression> entry : expr.getSubstitution().getEntries()) {
+          newSubst.add(entry.getKey(), entry.getValue().accept(this, null));
+        }
+        for (Binding var : ((InferenceReferenceExpression) arg).getVariable().getBounds()) {
+          Expression newExpr = myExprSubstitution.get(var);
+          if (newExpr != null) {
+            newSubst.add(var, newExpr);
+          }
+        }
+        return SubstExpression.make(arg, newSubst, expr.getLevelSubstitution().subst(myLevelSubstitution));
+      } else {
+        return substExpr.subst(expr.getSubstitution(), expr.getLevelSubstitution()).accept(this, null);
+      }
+    }
     return SubstExpression.make(expr, myExprSubstitution, myLevelSubstitution);
   }
 
