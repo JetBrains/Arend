@@ -241,7 +241,11 @@ public class BranchElimTree extends ElimTree {
         List<Expression> args = new ArrayList<>();
         for (ClassField field : classCon.getClassDefinition().getFields()) {
           if (!classCon.getClassDefinition().isImplemented(field) && !classCon.getImplementedFields().contains(field)) {
-            args.add(classCall.getImplementedHere().get(field));
+            if (field.isProperty()) {
+              args.add(FieldCallExpression.make(field, classCall.getLevels(), argument));
+            } else {
+              args.add(classCall.getAbsImplementationHere(field));
+            }
           }
         }
         args.addAll(arguments.subList(index + 1, arguments.size()));
@@ -251,7 +255,7 @@ public class BranchElimTree extends ElimTree {
         for (ClassField field : classCon.getClassDefinition().getFields()) {
           if (!classCon.getClassDefinition().isImplemented(field)) {
             if (classCon.getImplementedFields().contains(field)) {
-              implementations.put(field, classCall.getImplementedHere().get(field));
+              implementations.put(field, classCall.getAbsImplementationHere(field));
             } else {
               implementations.put(field, newArgs.get(i++));
             }

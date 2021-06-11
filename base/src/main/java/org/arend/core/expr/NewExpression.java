@@ -120,7 +120,7 @@ public class NewExpression extends Expression implements CoreNewExpression {
       if (myClassCall.getDefinition().isImplemented(field)) {
         continue;
       }
-      Expression impl = myClassCall.getImplementationHere(field, this);
+      Expression impl = field.isProperty() ? null : myClassCall.getImplementationHere(field, this);
       if (impl == null) {
         impl = FieldCallExpression.make(field, myClassCall.getLevels(), myRenewExpression, false);
       }

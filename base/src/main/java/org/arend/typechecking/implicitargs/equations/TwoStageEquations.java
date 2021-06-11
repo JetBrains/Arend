@@ -773,12 +773,28 @@ public class TwoStageEquations implements Equations {
         for (int i = 1; i < pair.proj2.size(); i++) {
           Map<ClassField, Expression> otherMap = pair.proj2.get(i).getImplementedHere();
           if (map.size() != otherMap.size()) {
-            reportBoundsError(pair.proj1, pair.proj2, CMP.LE);
-            allOK = false;
-            continue loop;
+            boolean ok = true;
+            for (ClassField field : map.keySet()) {
+              if (!field.isProperty() && !otherMap.containsKey(field)) {
+                ok = false;
+                break;
+              }
+            }
+            for (ClassField field : otherMap.keySet()) {
+              if (!field.isProperty() && !map.containsKey(field)) {
+                ok = false;
+                break;
+              }
+            }
+            if (!ok) {
+              reportBoundsError(pair.proj1, pair.proj2, CMP.LE);
+              allOK = false;
+              continue loop;
+            }
           }
 
           for (Map.Entry<ClassField, Expression> entry : map.entrySet()) {
+            if (entry.getKey().isProperty()) continue;
             Expression other = otherMap.get(entry.getKey());
             if (other == null || !CompareVisitor.compare(this, CMP.EQ, entry.getValue(), other, solution.getDefinition().getFieldType(entry.getKey(), solution.getLevels(), thisExpr), pair.proj1.getSourceNode())) {
               reportBoundsError(pair.proj1, pair.proj2, CMP.LE);
