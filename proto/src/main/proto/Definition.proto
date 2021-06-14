@@ -111,9 +111,15 @@ message Definition {
         FunctionKind kind = 8;
         int32 visible_parameter = 9;
         repeated ParametersLevel parameters_levels = 10;
-        bool body_is_hidden = 11;
+        HiddenStatus body_hidden_status = 16;
         bool has_enclosing_class = 13;
         repeated bool strict_parameters = 15;
+
+        enum HiddenStatus {
+            NOT_HIDDEN = 0;
+            HIDDEN = 1;
+            REALLY_HIDDEN = 2;
+        }
     }
     message DConstructorData {
         FunctionData function = 1;

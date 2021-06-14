@@ -1,7 +1,13 @@
 package org.arend.typechecking.copatternmatching;
 
+import org.arend.core.definition.FunctionDefinition;
+import org.arend.core.expr.ClassCallExpression;
+import org.arend.ext.core.definition.CoreClassField;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class Functions extends TypeCheckingTestCase {
   @Test
@@ -67,5 +73,15 @@ public class Functions extends TypeCheckingTestCase {
       "\\record R (x y : Nat)\n" +
       "\\record R' (x' y' : Nat)\n" +
       "\\func f : R \\cowith | x => 0 | y => 0 | x' => 0", 1);
+  }
+
+  @Test
+  public void hiddenFieldTest() {
+    typeCheckModule(
+      "\\record R (x : Nat) (p : x = x)\n" +
+      "\\func f : R \\cowith | x => 0 | p => idp");
+    ClassCallExpression classCall = (ClassCallExpression) ((FunctionDefinition) getDefinition("f")).getResultType();
+    assertTrue(classCall.isImplemented((CoreClassField) getDefinition("R.x")));
+    assertFalse(classCall.isImplemented((CoreClassField) getDefinition("R.p")));
   }
 }

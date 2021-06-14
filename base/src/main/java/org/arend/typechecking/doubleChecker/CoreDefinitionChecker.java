@@ -85,7 +85,7 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
       }
     }
 
-    Body body = definition.getActualBody();
+    Body body = definition.getReallyActualBody();
     if (body instanceof Expression) {
       if (body instanceof CaseExpression) {
         myChecker.checkCase((CaseExpression) body, definition.getResultType(), level);

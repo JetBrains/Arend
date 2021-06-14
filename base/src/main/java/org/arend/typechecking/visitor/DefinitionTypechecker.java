@@ -1083,9 +1083,30 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
               if (kind == FunctionKind.CONS) {
                 typedDef.setResultType(result.proj1.getType());
               } else {
-                typedDef.setResultType(result.proj2);
-                if (result.proj2.getNumberOfNotImplementedFields() > 0) {
+                ClassCallExpression resultType = result.proj2;
+                boolean hasProperties = false;
+                for (ClassField field : resultType.getImplementedHere().keySet()) {
+                  if (field.isProperty()) {
+                    hasProperties = true;
+                    break;
+                  }
+                }
+                if (hasProperties) {
+                  Map<ClassField, Expression> resultTypeImpls = new HashMap<>();
+                  resultType = new ClassCallExpression(result.proj2.getDefinition(), result.proj2.getLevels(), resultTypeImpls, Sort.PROP, UniverseKind.NO_UNIVERSES);
+                  ExprSubstitution substitution = new ExprSubstitution(result.proj2.getThisBinding(), new ReferenceExpression(resultType.getThisBinding()));
+                  for (Map.Entry<ClassField, Expression> entry : result.proj2.getImplementedHere().entrySet()) {
+                    if (!entry.getKey().isProperty()) {
+                      resultTypeImpls.put(entry.getKey(), entry.getValue().subst(substitution));
+                    }
+                  }
+                  typechecker.fixClassExtSort(resultType, def.getResultType());
+                  resultType.updateHasUniverses();
+                }
+                typedDef.setResultType(resultType);
+                if (hasProperties || result.proj2.getNumberOfNotImplementedFields() > 0) {
                   typedDef.setBody(result.proj1);
+                  if (hasProperties) typedDef.reallyHideBody();
                 }
               }
             }

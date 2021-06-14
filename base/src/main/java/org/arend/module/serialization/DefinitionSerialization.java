@@ -326,7 +326,17 @@ public class DefinitionSerialization implements ArendSerializer {
     if (definition.getResultTypeLevel() != null) {
       builder.setTypeLevel(defSerializer.writeExpr(definition.getResultTypeLevel()));
     }
-    builder.setBodyIsHidden(definition.isBodyHidden());
+    switch (definition.getBodyHiddenStatus()) {
+      case NOT_HIDDEN:
+        builder.setBodyHiddenStatus(DefinitionProtos.Definition.FunctionData.HiddenStatus.NOT_HIDDEN);
+        break;
+      case HIDDEN:
+        builder.setBodyHiddenStatus(DefinitionProtos.Definition.FunctionData.HiddenStatus.HIDDEN);
+        break;
+      case REALLY_HIDDEN:
+        builder.setBodyHiddenStatus(DefinitionProtos.Definition.FunctionData.HiddenStatus.REALLY_HIDDEN);
+        break;
+    }
     DefinitionProtos.Definition.FunctionKind kind;
     switch (definition.getKind()) {
       case LEMMA:
@@ -346,8 +356,8 @@ public class DefinitionSerialization implements ArendSerializer {
     }
     builder.setKind(kind);
     builder.setVisibleParameter(definition.getVisibleParameter());
-    if (definition.getActualBody() != null) {
-      builder.setBody(writeBody(defSerializer, definition.getActualBody()));
+    if (definition.getReallyActualBody() != null) {
+      builder.setBody(writeBody(defSerializer, definition.getReallyActualBody()));
     }
 
     return builder.build();

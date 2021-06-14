@@ -780,8 +780,8 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   @Override
   public Expression visitTypeCoerce(TypeCoerceExpression expr, Expression expectedType) {
-    if (expr.getDefinition().getActualBody() instanceof ElimBody) {
-      List<? extends ElimClause<Pattern>> clauses = ((ElimBody) expr.getDefinition().getActualBody()).getClauses();
+    if (expr.getDefinition().getReallyActualBody() instanceof ElimBody) {
+      List<? extends ElimClause<Pattern>> clauses = ((ElimBody) expr.getDefinition().getReallyActualBody()).getClauses();
       if (expr.getClauseIndex() >= clauses.size()) {
         throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Index " + expr.getClauseIndex() + " is too big. The number of clauses is " + clauses.size(), mySourceNode), expr));
       }

@@ -21,7 +21,7 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
   private Body myBody;
   private List<Integer> myParametersTypecheckingOrder;
   private Kind myKind = Kind.FUNC;
-  private boolean myBodyIsHidden = false;
+  private HiddenStatus myBodyIsHidden = HiddenStatus.NOT_HIDDEN;
   private List<Boolean> myGoodThisParameters = Collections.emptyList();
   private List<TypeClassParameterKind> myTypeClassParameters = Collections.emptyList();
   private int myVisibleParameter = -1;
@@ -30,6 +30,8 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
   private boolean myHasEnclosingClass;
   private List<Boolean> myStrictParameters = Collections.emptyList();
 
+  public enum HiddenStatus { NOT_HIDDEN, HIDDEN, REALLY_HIDDEN }
+
   public FunctionDefinition(TCDefReferable referable) {
     super(referable, TypeCheckingStatus.NEEDS_TYPE_CHECKING);
     myParameters = EmptyDependentLink.getInstance();
@@ -37,20 +39,28 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
 
   @Override
   public Body getBody() {
-    return isSFunc() || myBodyIsHidden ? null : myBody;
+    return isSFunc() || myBodyIsHidden != HiddenStatus.NOT_HIDDEN ? null : myBody;
   }
 
   @Override
   public Body getActualBody() {
+    return myBodyIsHidden == HiddenStatus.REALLY_HIDDEN ? null : myBody;
+  }
+
+  public Body getReallyActualBody() {
     return myBody;
   }
 
-  public boolean isBodyHidden() {
+  public HiddenStatus getBodyHiddenStatus() {
     return myBodyIsHidden;
   }
 
   public void hideBody() {
-    myBodyIsHidden = true;
+    myBodyIsHidden = HiddenStatus.HIDDEN;
+  }
+
+  public void reallyHideBody() {
+    myBodyIsHidden = HiddenStatus.REALLY_HIDDEN;
   }
 
   public void setBody(Body body) {

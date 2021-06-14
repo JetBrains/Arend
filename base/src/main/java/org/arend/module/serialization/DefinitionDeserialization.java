@@ -8,7 +8,6 @@ import org.arend.core.definition.*;
 import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
 import org.arend.core.pattern.*;
-import org.arend.core.sort.Sort;
 import org.arend.core.subst.LevelPair;
 import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
@@ -416,8 +415,9 @@ public class DefinitionDeserialization implements ArendDeserializer {
     if (functionProto.hasTypeLevel()) {
       functionDef.setResultTypeLevel(defDeserializer.readExpr(functionProto.getTypeLevel()));
     }
-    if (functionProto.getBodyIsHidden()) {
-      functionDef.hideBody();
+    switch (functionProto.getBodyHiddenStatus()) {
+      case HIDDEN: functionDef.hideBody(); break;
+      case REALLY_HIDDEN: functionDef.reallyHideBody();
     }
     FunctionDefinition.Kind kind;
     switch (functionProto.getKind()) {

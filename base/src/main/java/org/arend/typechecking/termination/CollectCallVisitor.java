@@ -26,7 +26,7 @@ public class CollectCallVisitor extends SearchVisitor<Void> {
     myCycle = cycle;
     myCollectedCalls = new HashSet<>();
 
-    Body body = def.getActualBody();
+    Body body = def.getReallyActualBody();
     if (body instanceof IntervalElim) {
       IntervalElim elim = (IntervalElim) body;
       List<ExpressionPattern> patternList = new ArrayList<>();
