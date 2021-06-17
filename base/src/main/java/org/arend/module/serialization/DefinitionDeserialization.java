@@ -3,6 +3,8 @@ package org.arend.module.serialization;
 import com.google.protobuf.ByteString;
 import org.arend.core.context.LinkList;
 import org.arend.core.context.binding.Binding;
+import org.arend.core.context.binding.LevelVariable;
+import org.arend.core.context.binding.ParamLevelVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.*;
 import org.arend.core.elimtree.*;
@@ -94,7 +96,24 @@ public class DefinitionDeserialization implements ArendDeserializer {
     throw new DeserializationException("Incorrect class field type");
   }
 
+  private List<LevelVariable> readLevelParameters(List<DefinitionProtos.Definition.LevelParameter> parameters, boolean isStd) {
+    if (isStd) return null;
+    List<LevelVariable> result = new ArrayList<>(parameters.size());
+    for (DefinitionProtos.Definition.LevelParameter parameter : parameters) {
+      LevelVariable base = parameter.getIsPlevel() ? LevelVariable.PVAR : LevelVariable.HVAR;
+      int size = parameter.getSize();
+      if (size == -1) {
+        result.add(base);
+      } else {
+        result.add(new ParamLevelVariable(base.getType(), parameter.getName(), size));
+      }
+    }
+    return result;
+  }
+
   private void fillInClassDefinition(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.ClassData classProto, ClassDefinition classDef) throws DeserializationException {
+    classDef.setLevelParameters(readLevelParameters(classProto.getLevelParamList(), classProto.getIsStdLevels()));
+
     for (DefinitionProtos.Definition.ClassData.Field fieldProto : classProto.getPersonalFieldList()) {
       ClassField field = myCallTargetProvider.getCallTarget(fieldProto.getReferable().getIndex(), ClassField.class);
       if (!fieldProto.hasType()) {
@@ -240,6 +259,7 @@ public class DefinitionDeserialization implements ArendDeserializer {
   }
 
   private void fillInDataDefinition(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.DataData dataProto, DataDefinition dataDef) throws DeserializationException {
+    dataDef.setLevelParameters(readLevelParameters(dataProto.getLevelParamList(), dataProto.getIsStdLevels()));
     if (dataProto.getHasEnclosingClass()) {
       dataDef.setHasEnclosingClass(true);
     }
@@ -381,6 +401,7 @@ public class DefinitionDeserialization implements ArendDeserializer {
   }
 
   private void fillInFunctionDefinition(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.FunctionData functionProto, FunctionDefinition functionDef) throws DeserializationException {
+    functionDef.setLevelParameters(readLevelParameters(functionProto.getLevelParamList(), functionProto.getIsStdLevels()));
     if (functionProto.getHasEnclosingClass()) {
       functionDef.setHasEnclosingClass(true);
     }

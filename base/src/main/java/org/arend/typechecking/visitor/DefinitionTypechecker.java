@@ -4,6 +4,7 @@ import org.arend.core.context.LinkList;
 import org.arend.core.context.Utils;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.LevelVariable;
+import org.arend.core.context.binding.ParamLevelVariable;
 import org.arend.core.context.param.*;
 import org.arend.core.definition.*;
 import org.arend.core.elimtree.Body;
@@ -704,6 +705,29 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
   }
 
+  private void typecheckLevelParameters(Concrete.LevelParameters params, LevelVariable base, Map<Referable, ParamLevelVariable> result, List<LevelVariable> parameters) {
+    if (params == null) {
+      parameters.add(base);
+      return;
+    }
+    for (int i = 0; i < params.referables.size(); i++) {
+      Referable ref = params.referables.get(i);
+      ParamLevelVariable var = new ParamLevelVariable(base.getType(), ref.getRefName(), params.isIncreasing ? i : params.referables.size() - 1 - i);
+      result.put(ref, var);
+      parameters.add(var);
+    }
+  }
+
+  private List<LevelVariable> typecheckLevelParameters(Concrete.Definition def) {
+    if (def.getPLevelParameters() == null && def.getHLevelParameters() == null) return null;
+    Map<Referable, ParamLevelVariable> result = new HashMap<>();
+    List<LevelVariable> parameters = new ArrayList<>();
+    typecheckLevelParameters(def.getPLevelParameters(), LevelVariable.PVAR, result, parameters);
+    typecheckLevelParameters(def.getHLevelParameters(), LevelVariable.HVAR, result, parameters);
+    typechecker.setLevelVariables(result);
+    return parameters;
+  }
+
   @SuppressWarnings("UnusedReturnValue")
   private boolean typecheckFunctionHeader(FunctionDefinition typedDef, Concrete.BaseFunctionDefinition def, LocalInstancePool localInstancePool) {
     def.getData().setTypecheckedIfNotCancelled(typedDef);
@@ -713,6 +737,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     ClassField implementedField = def instanceof Concrete.CoClauseFunctionDefinition ? typechecker.referableToClassField(((Concrete.CoClauseFunctionDefinition) def).getImplementedField(), def) : null;
     FunctionKind kind = implementedField == null ? def.getKind() : implementedField.isProperty() && implementedField.getTypeLevel() == null ? FunctionKind.LEMMA : FunctionKind.FUNC;
     checkFunctionLevel(def, kind);
+
+    if (myNewDef) {
+      typedDef.setLevelParameters(typecheckLevelParameters(def));
+    }
 
     LinkList list = new LinkList();
     Pair<Sort, Expression> pair = typecheckParameters(def, list, localInstancePool, null, myNewDef ? null : typedDef.getParameters(), implementedField == null ? null : implementedField.getType(LevelPair.STD));
@@ -1413,8 +1441,11 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     if (def.enclosingClass != null) {
       dataDefinition.setHasEnclosingClass(true);
     }
-    LinkList list = new LinkList();
+    if (myNewDef) {
+      dataDefinition.setLevelParameters(typecheckLevelParameters(def));
+    }
 
+    LinkList list = new LinkList();
     Sort userSort = null;
     boolean paramsOk = typecheckParameters(def, list, localInstancePool, null, myNewDef ? null : dataDefinition.getParameters(), null) != null;
     checkNoStrictParameters(def.getParameters());
@@ -2034,6 +2065,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
     if (myNewDef) {
       typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+      typedDef.setLevelParameters(typecheckLevelParameters(def));
     }
 
     List<FieldReferable> alreadyImplementFields = new ArrayList<>();

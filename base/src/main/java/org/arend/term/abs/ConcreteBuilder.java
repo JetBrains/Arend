@@ -148,7 +148,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
         result.enclosingClass = parentRef;
       }
     } else {
-      result = Concrete.UseDefinition.make(def.getFunctionKind(), (TCDefReferable) myDefinition, parameters, type, typeLevel, body, parentRef);
+      result = Concrete.UseDefinition.make(def.getFunctionKind(), (TCDefReferable) myDefinition, null, null, parameters, type, typeLevel, body, parentRef); // TODO[levels]
     }
     setEnclosingClass(result, def);
     result.setUsedDefinitions(visitUsedDefinitions(def.getUsedDefinitions()));
@@ -167,7 +167,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
     Collection<? extends Abstract.ConstructorClause> absClauses = def.getClauses();
     List<Concrete.ConstructorClause> clauses = new ArrayList<>(absClauses.size());
     Collection<? extends Abstract.Reference> elimExpressions = def.getEliminatedExpressions();
-    Concrete.DataDefinition data = new Concrete.DataDefinition((TCDefReferable) myDefinition, typeParameters, elimExpressions == null ? null : buildReferences(elimExpressions), def.isTruncated(), universe instanceof Concrete.UniverseExpression ? (Concrete.UniverseExpression) universe : null, clauses);
+    Concrete.DataDefinition data = new Concrete.DataDefinition((TCDefReferable) myDefinition, null, null, typeParameters, elimExpressions == null ? null : buildReferences(elimExpressions), def.isTruncated(), universe instanceof Concrete.UniverseExpression ? (Concrete.UniverseExpression) universe : null, clauses); // TODO[levels]
     setEnclosingClass(data, def);
 
     for (Abstract.ConstructorClause clause : absClauses) {
@@ -233,7 +233,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
   @Override
   public Concrete.Definition visitClass(Abstract.ClassDefinition def) {
     List<Concrete.ClassElement> elements = new ArrayList<>();
-    Concrete.ClassDefinition classDef = new Concrete.ClassDefinition((TCDefReferable) myDefinition, def.isRecord(), def.withoutClassifying(), buildReferences(def.getSuperClasses()), elements);
+    Concrete.ClassDefinition classDef = new Concrete.ClassDefinition((TCDefReferable) myDefinition, null, null, def.isRecord(), def.withoutClassifying(), buildReferences(def.getSuperClasses()), elements); // TODO[levels]
     buildClassParameters(def.getParameters(), classDef, elements);
 
     for (Abstract.ClassElement element : def.getClassElements()) {

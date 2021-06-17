@@ -100,8 +100,9 @@ public class Level implements CoreLevel {
     }
 
     if (myVar != null && level.myVar != null) {
-      if (myVar == level.myVar) {
-        return new Level(myVar, Math.max(myConstant, level.myConstant), Math.max(myMaxConstant, level.myMaxConstant));
+      LevelVariable var = myVar.max(level.myVar);
+      if (var != null) {
+        return new Level(var, Math.max(myConstant, level.myConstant), Math.max(myMaxConstant, level.myMaxConstant));
       } else {
         return null;
       }
@@ -177,7 +178,7 @@ public class Level implements CoreLevel {
       }
     }
 
-    if (level1.myVar == level2.myVar) {
+    if (level1.myVar != null && level2.myVar != null && level1.myVar.compare(level2.myVar, cmp)) {
       if (cmp == CMP.EQ && level1.myConstant != level2.myConstant || cmp == CMP.LE && level1.myConstant > level2.myConstant) {
         return false;
       }

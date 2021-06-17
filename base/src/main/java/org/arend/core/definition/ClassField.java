@@ -1,5 +1,6 @@
 package org.arend.core.definition;
 
+import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.context.param.TypedSingleDependentLink;
@@ -38,6 +39,11 @@ public class ClassField extends Definition implements CoreClassField {
   @Override
   public TCFieldReferable getReferable() {
     return (TCFieldReferable) super.getReferable();
+  }
+
+  @Override
+  public List<LevelVariable> getLevelParameters() {
+    return myParentClass.getLevelParameters();
   }
 
   @NotNull

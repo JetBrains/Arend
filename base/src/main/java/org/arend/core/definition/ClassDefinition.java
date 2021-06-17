@@ -1,6 +1,7 @@
 package org.arend.core.definition;
 
 import org.arend.core.context.binding.Binding;
+import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.expr.*;
 import org.arend.core.sort.Level;
@@ -35,6 +36,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
   private Set<ClassField> myTypeClassParameters = Collections.emptySet();
   private final ParametersLevels<ParametersLevel> myParametersLevels = new ParametersLevels<>();
   private FunctionDefinition mySquasher;
+  private List<LevelVariable> myLevelParameters;
 
   public ClassDefinition(TCDefReferable referable) {
     super(referable, TypeCheckingStatus.NEEDS_TYPE_CHECKING);
@@ -394,6 +396,15 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
 
   public void setTypeClassFields(Set<ClassField> typeClassFields) {
     myTypeClassParameters = typeClassFields;
+  }
+
+  @Override
+  public List<LevelVariable> getLevelParameters() {
+    return myLevelParameters;
+  }
+
+  public void setLevelParameters(List<LevelVariable> parameters) {
+    myLevelParameters = parameters;
   }
 
   @Override

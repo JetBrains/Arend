@@ -1,5 +1,6 @@
 package org.arend.core.definition;
 
+import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.elimtree.IntervalElim;
@@ -30,6 +31,7 @@ public class DataDefinition extends Definition implements CoreDataDefinition {
   private final ParametersLevels<ParametersLevel> myParametersLevels = new ParametersLevels<>();
   private Set<Definition> myRecursiveDefinitions = Collections.emptySet();
   private boolean myHasEnclosingClass;
+  private List<LevelVariable> myLevelParameters;
 
   public DataDefinition(TCDefReferable referable) {
     super(referable, TypeCheckingStatus.NEEDS_TYPE_CHECKING);
@@ -49,6 +51,15 @@ public class DataDefinition extends Definition implements CoreDataDefinition {
   @Override
   public @NotNull Set<? extends Definition> getRecursiveDefinitions() {
     return myRecursiveDefinitions;
+  }
+
+  @Override
+  public List<LevelVariable> getLevelParameters() {
+    return myLevelParameters;
+  }
+
+  public void setLevelParameters(List<LevelVariable> parameters) {
+    myLevelParameters = parameters;
   }
 
   public void setRecursiveDefinitions(Set<Definition> recursiveDefinitions) {

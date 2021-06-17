@@ -31,12 +31,12 @@ classStat : '|' classFieldOrImpl                        # classFieldOrImplStat
           | '\\default' coClause                        # classDefaultStat
           ;
 
-definition  : funcKw defId tele* (':' returnExpr2)? functionBody where?                                         # defFunction
-            | TRUNCATED? '\\data' defId tele* (':' expr2)? dataBody where?                                      # defData
-            | classKw defId NO_CLASSIFYING? fieldTele* ('\\extends' longName (',' longName)*)? classBody where? # defClass
-            | '\\module' ID where?                                                                              # defModule
-            | '\\meta' defId (ID* '=>' expr)? where?                                                            # defMeta
-            | instanceKw defId tele* (':' returnExpr2)? instanceBody where?                                     # defInstance
+definition  : funcKw topDefId tele* (':' returnExpr2)? functionBody where?                                          # defFunction
+            | TRUNCATED? '\\data' topDefId tele* (':' expr2)? dataBody where?                                       # defData
+            | classKw topDefId NO_CLASSIFYING? fieldTele* ('\\extends' longName (',' longName)*)? classBody where?  # defClass
+            | '\\module' ID where?                                                                                  # defModule
+            | '\\meta' topDefId (ID* '=>' expr)? where?                                                             # defMeta
+            | instanceKw topDefId tele* (':' returnExpr2)? instanceBody where?                                      # defInstance
             ;
 
 returnExpr  : expr ('\\level' expr)?                # returnExprExpr
@@ -111,6 +111,12 @@ atomPatternOrID : atomPattern     # patternOrIDAtom
                 ;
 
 constructor : COERCE? defId tele* /* TODO[hits] (':' expr)? */ (elim? '{' clause? ('|' clause)* '}')?;
+
+topDefId : defId plevelParams? hlevelParams?;
+
+plevelParams : '\\plevels' ID*;
+
+hlevelParams : '\\hlevels' ID*;
 
 defId : precedence ID alias?;
 
@@ -209,6 +215,7 @@ levelAtom : '\\lp'              # pLevel
           | '\\lh'              # hLevel
           | '\\oo'              # infLevel
           | NUMBER              # numLevel
+          | ID                  # idLevel
           | '(' levelExpr ')'   # parenLevel
           ;
 

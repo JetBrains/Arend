@@ -1,10 +1,10 @@
 package org.arend.core.definition;
 
+import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.expr.ClassCallExpression;
 import org.arend.core.expr.Expression;
-import org.arend.core.sort.Sort;
 import org.arend.core.subst.LevelPair;
 import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.extImpl.userData.UserDataHolderImpl;
@@ -43,6 +43,8 @@ public abstract class Definition extends UserDataHolderImpl implements CoreDefin
   public @NotNull Set<? extends Definition> getRecursiveDefinitions() {
     return Collections.emptySet();
   }
+
+  public abstract List<LevelVariable> getLevelParameters();
 
   @NotNull
   @Override

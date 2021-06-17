@@ -1,4 +1,4 @@
-package org.arend.typechecking.implicitargs;
+package org.arend.typechecking.levels;
 
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.ConCallExpression;

@@ -1,6 +1,7 @@
 package org.arend.typechecking;
 
 import org.arend.core.context.binding.Binding;
+import org.arend.core.context.binding.ParamLevelVariable;
 import org.arend.ext.ArendExtension;
 import org.arend.ext.typechecking.ExpressionTypechecker;
 import org.arend.extImpl.userData.UserDataHolderImpl;
@@ -17,12 +18,14 @@ public class TypecheckingContext {
   public final InstancePool localInstancePool;
   public final ArendExtension arendExtension;
   public final UserDataHolderImpl userDataHolder;
+  public final Map<Referable, ParamLevelVariable> levelVariables;
 
-  public TypecheckingContext(Map<Referable, Binding> localContext, InstanceProvider instanceProvider, InstancePool localInstancePool, ArendExtension arendExtension, UserDataHolderImpl userDataHolder) {
+  public TypecheckingContext(Map<Referable, Binding> localContext, InstanceProvider instanceProvider, InstancePool localInstancePool, ArendExtension arendExtension, UserDataHolderImpl userDataHolder, Map<Referable, ParamLevelVariable> levelVariables) {
     this.localContext = localContext;
     this.instanceProvider = instanceProvider;
     this.localInstancePool = localInstancePool;
     this.arendExtension = arendExtension;
     this.userDataHolder = userDataHolder;
+    this.levelVariables = levelVariables;
   }
 }

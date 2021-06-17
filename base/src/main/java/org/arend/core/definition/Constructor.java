@@ -1,5 +1,7 @@
 package org.arend.core.definition;
 
+import org.arend.core.context.binding.LevelVariable;
+import org.arend.core.context.binding.ParamLevelVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.elimtree.Body;
@@ -60,6 +62,11 @@ public class Constructor extends Definition implements Function, BranchKey, Core
   @Override
   public @NotNull Set<? extends Definition> getRecursiveDefinitions() {
     return myDataType.getRecursiveDefinitions();
+  }
+
+  @Override
+  public List<LevelVariable> getLevelParameters() {
+    return myDataType.getLevelParameters();
   }
 
   public int getRecursiveParameter() {

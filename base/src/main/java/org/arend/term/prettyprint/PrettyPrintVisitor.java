@@ -497,6 +497,12 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   }
 
   @Override
+  public Void visitId(Concrete.IdLevelExpression expr, Precedence param) {
+    myBuilder.append(expr.getReferent().getRefName());
+    return null;
+  }
+
+  @Override
   public Void visitSuc(Concrete.SucLevelExpression expr, Precedence prec) {
     if (prec.priority > Concrete.AppExpression.PREC) myBuilder.append('(');
     myBuilder.append("\\suc ");

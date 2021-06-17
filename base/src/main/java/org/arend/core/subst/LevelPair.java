@@ -25,7 +25,7 @@ public class LevelPair implements LevelSubstitution {
 
   @Override
   public boolean isEmpty() {
-    return myPLevel.getVar() == LevelVariable.PVAR && myPLevel.isVarOnly() && myHLevel.getVar() == LevelVariable.HVAR && myHLevel.isVarOnly();
+    return isSTD();
   }
 
   public boolean isSTD() {

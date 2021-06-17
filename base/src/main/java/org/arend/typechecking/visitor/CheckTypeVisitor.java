@@ -4,6 +4,7 @@ import org.arend.core.context.LinkList;
 import org.arend.core.context.Utils;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.LevelVariable;
+import org.arend.core.context.binding.ParamLevelVariable;
 import org.arend.core.context.binding.TypedEvaluatingBinding;
 import org.arend.core.context.binding.inference.*;
 import org.arend.core.context.param.*;
@@ -96,6 +97,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   private final List<DeferredMeta> myDeferredMetasAfterLevels = new ArrayList<>();
   private final ArendExtension myArendExtension;
   private TypecheckerState mySavedState;
+  private Map<Referable, ParamLevelVariable> myLevelVariables = Collections.emptyMap();
 
   private static class DeferredMeta {
     final MetaDefinition meta;
@@ -157,12 +159,13 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   public TypecheckingContext saveTypecheckingContext() {
-    return new TypecheckingContext(new LinkedHashMap<>(context), myInstancePool.getInstanceProvider(), myInstancePool.getInstancePool(), myArendExtension, copyUserData());
+    return new TypecheckingContext(new LinkedHashMap<>(context), myInstancePool.getInstanceProvider(), myInstancePool.getInstancePool(), myArendExtension, copyUserData(), myLevelVariables);
   }
 
   public static CheckTypeVisitor loadTypecheckingContext(TypecheckingContext typecheckingContext, ErrorReporter errorReporter) {
     CheckTypeVisitor visitor = new CheckTypeVisitor(typecheckingContext.localContext, errorReporter, null, typecheckingContext.arendExtension, typecheckingContext.userDataHolder);
     visitor.setInstancePool(new GlobalInstancePool(typecheckingContext.instanceProvider, visitor, typecheckingContext.localInstancePool));
+    visitor.setLevelVariables(typecheckingContext.levelVariables);
     return visitor;
   }
 
@@ -182,6 +185,10 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   public void setInstancePool(GlobalInstancePool pool) {
     myInstancePool = pool;
+  }
+
+  public void setLevelVariables(Map<Referable,ParamLevelVariable> vars) {
+    myLevelVariables = vars;
   }
 
   @NotNull
@@ -848,6 +855,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         }
         checkTypeVisitor = new CheckTypeVisitor(deferredMeta.context, deferredMeta.errorReporter, null, myArendExtension, this);
         checkTypeVisitor.setInstancePool(new GlobalInstancePool(myInstancePool.getInstanceProvider(), checkTypeVisitor, myInstancePool.getInstancePool()));
+        checkTypeVisitor.setLevelVariables(myLevelVariables);
       } else {
         checkTypeVisitor = this;
         errorReporter = deferredMeta.errorReporter;
@@ -1644,12 +1652,16 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     return DefCallResult.makeTResult(expr, definition, levels);
   }
 
-  private TResult getLocalVar(Referable ref, Concrete.SourceNode sourceNode) {
+  private boolean checkUnresolved(Referable ref, Concrete.SourceNode sourceNode) {
     if (ref instanceof UnresolvedReference || ref instanceof RedirectingReferable) {
       errorReporter.report(new TypecheckingError("Unresolved reference `" + ref.textRepresentation() + "`. This may be caused by a bug in a meta resolver.", sourceNode));
-      return null;
+      return false;
     }
-    if (ref instanceof ErrorReference) {
+    return true;
+  }
+
+  private TResult getLocalVar(Referable ref, Concrete.SourceNode sourceNode) {
+    if (ref instanceof ErrorReference || !checkUnresolved(ref, sourceNode)) {
       return null;
     }
 
@@ -1768,6 +1780,18 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   @Override
   public Level visitNumber(Concrete.NumberLevelExpression expr, LevelVariable base) {
     return new Level(expr.getNumber());
+  }
+
+  @Override
+  public Level visitId(Concrete.IdLevelExpression expr, LevelVariable base) {
+    ParamLevelVariable var = myLevelVariables.get(expr.getReferent());
+    if (var == null) {
+      if (checkUnresolved(expr.getReferent(), expr)) {
+        errorReporter.report(new IncorrectReferenceError(expr.getReferent(), expr));
+      }
+      return new Level(base);
+    }
+    return new Level(var);
   }
 
   @Override

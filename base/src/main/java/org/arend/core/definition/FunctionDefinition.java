@@ -1,5 +1,6 @@
 package org.arend.core.definition;
 
+import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.elimtree.Body;
@@ -29,6 +30,7 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
   private Set<Definition> myRecursiveDefinitions = Collections.emptySet();
   private boolean myHasEnclosingClass;
   private List<Boolean> myStrictParameters = Collections.emptyList();
+  private List<LevelVariable> myLevelParameters;
 
   public enum HiddenStatus { NOT_HIDDEN, HIDDEN, REALLY_HIDDEN }
 
@@ -88,6 +90,15 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
   @Override
   public @NotNull Set<? extends Definition> getRecursiveDefinitions() {
     return myRecursiveDefinitions;
+  }
+
+  @Override
+  public List<LevelVariable> getLevelParameters() {
+    return myLevelParameters;
+  }
+
+  public void setLevelParameters(List<LevelVariable> parameters) {
+    myLevelParameters = parameters;
   }
 
   public void setRecursiveDefinitions(Set<Definition> recursiveDefinitions) {
