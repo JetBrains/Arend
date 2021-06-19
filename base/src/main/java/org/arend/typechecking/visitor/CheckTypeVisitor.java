@@ -842,6 +842,10 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       MyErrorReporter originalErrorReporter = errorReporter;
       Map<Referable, Binding> originalContext = context;
       if (afterLevels) {
+        for (Binding binding : deferredMeta.context.values()) {
+          Type bindingType = binding.getType();
+          if (bindingType != null) bindingType.subst(substVisitor);
+        }
         checkTypeVisitor = new CheckTypeVisitor(deferredMeta.context, deferredMeta.errorReporter, null, myArendExtension, this);
         checkTypeVisitor.setInstancePool(new GlobalInstancePool(myInstancePool.getInstanceProvider(), checkTypeVisitor, myInstancePool.getInstancePool()));
       } else {

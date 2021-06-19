@@ -21,7 +21,7 @@ public interface Binding extends CoreBinding {
   default Type getType() {
     Expression type = getTypeExpr();
     if (type instanceof Type) return (Type) type;
-    Sort sort = type.toSort();
+    Sort sort = type.getSortOfType();
     return sort == null ? null : new TypeExpression(type, sort);
   }
 
