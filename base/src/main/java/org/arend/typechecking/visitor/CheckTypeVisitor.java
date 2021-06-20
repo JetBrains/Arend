@@ -1439,7 +1439,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         if (baseExpr instanceof Concrete.ReferenceExpression) {
           Concrete.ReferenceExpression baseRefExpr = (Concrete.ReferenceExpression) baseExpr;
           boolean ok = ((ClassDefinition) actualDef).isSubClassOf(expectedClassCall.getDefinition());
-          if (ok && (actualDef != expectedClassCall.getDefinition() || baseRefExpr.getPLevel() != null || baseRefExpr.getHLevel() != null)) {
+          if (ok && (actualDef != expectedClassCall.getDefinition() || baseRefExpr.getPLevels() != null || baseRefExpr.getHLevels() != null)) {
             boolean fieldsOK = true;
             for (ClassField implField : expectedClassCall.getImplementedHere().keySet()) {
               if (((ClassDefinition) actualDef).isImplemented(implField)) {
@@ -1447,8 +1447,8 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
                 break;
               }
             }
-            Level pLevel = baseRefExpr.getPLevel() == null ? null : baseRefExpr.getPLevel().accept(this, LevelVariable.PVAR);
-            Level hLevel = baseRefExpr.getHLevel() == null ? null : baseRefExpr.getHLevel().accept(this, LevelVariable.HVAR);
+            Level pLevel = baseRefExpr.getPLevels() == null ? null : baseRefExpr.getPLevels().get(0).accept(this, LevelVariable.PVAR); // TODO[levels]
+            Level hLevel = baseRefExpr.getHLevels() == null ? null : baseRefExpr.getHLevels().get(0).accept(this, LevelVariable.HVAR); // TODO[levels]
             LevelPair expectedLevels = expectedClassCall.getLevels();
             actualClassCall = new ClassCallExpression((ClassDefinition) actualDef, pLevel == null && hLevel == null ? expectedLevels : new LevelPair(pLevel == null ? expectedLevels.get(LevelVariable.PVAR) : pLevel, hLevel == null ? expectedLevels.get(LevelVariable.HVAR) : hLevel), new HashMap<>(), expectedClassCall.getSort(), actualDef.getUniverseKind());
             if (fieldsOK) {
@@ -1608,7 +1608,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
     LevelPair levels;
     boolean isMin = definition instanceof DataDefinition && !definition.getParameters().hasNext() && definition.getUniverseKind() == UniverseKind.NO_UNIVERSES;
-    if (expr.getPLevel() == null && expr.getHLevel() == null) {
+    if (expr.getPLevels() == null && expr.getHLevels() == null) {
       levels = isMin ? LevelPair.PROP : LevelPair.generateInferVars(getEquations(), !withoutUniverses && definition.getUniverseKind() != UniverseKind.NO_UNIVERSES, expr);
       if (definition == Prelude.PATH || definition == Prelude.PATH_INFIX) {
         InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, definition.getUniverseKind() != UniverseKind.NO_UNIVERSES, expr);
@@ -1619,8 +1619,8 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       }
     } else {
       Level pLevel = null;
-      if (expr.getPLevel() != null) {
-        pLevel = expr.getPLevel().accept(this, LevelVariable.PVAR);
+      if (expr.getPLevels() != null) {
+        pLevel = expr.getPLevels().get(0).accept(this, LevelVariable.PVAR); // TODO[levels]
       }
       if (pLevel == null) {
         if (isMin) {
@@ -1633,8 +1633,8 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       }
 
       Level hLevel = null;
-      if (expr.getHLevel() != null) {
-        hLevel = expr.getHLevel().accept(this, LevelVariable.HVAR);
+      if (expr.getHLevels() != null) {
+        hLevel = expr.getHLevels().get(0).accept(this, LevelVariable.HVAR); // TODO[levels]
       }
       if (hLevel == null) {
         if (isMin) {
@@ -1691,8 +1691,8 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       return new TypecheckingResult(result.expression, result.type);
     }
 
-    if (!(ref instanceof GlobalReferable) && (expr.getPLevel() != null || expr.getHLevel() != null)) {
-      errorReporter.report(new IgnoredLevelsError(expr.getPLevel(), expr.getHLevel()));
+    if (!(ref instanceof GlobalReferable) && (expr.getPLevels() != null || expr.getHLevels() != null)) {
+      errorReporter.report(new IgnoredLevelsError(expr));
     }
     return ref instanceof TCDefReferable ? typeCheckDefCall((TCDefReferable) ref, expr, withoutUniverses) : getLocalVar(expr.getReferent(), expr);
   }
@@ -1779,7 +1779,12 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   @Override
   public Level visitNumber(Concrete.NumberLevelExpression expr, LevelVariable base) {
-    return new Level(expr.getNumber());
+    int level = expr.getNumber();
+    if (level < base.getMinValue()) {
+      errorReporter.report(new TypecheckingError("Expected a " + (base == LevelVariable.HVAR ? "number >= -1" : "positive number"), expr));
+      level = base.getMinValue();
+    }
+    return new Level(level);
   }
 
   @Override
@@ -3436,7 +3441,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       if (typeType instanceof Concrete.UniverseExpression) {
         Concrete.UniverseExpression universeType = (Concrete.UniverseExpression) typeType;
         if (universeType.getHLevel() instanceof Concrete.NumberLevelExpression) {
-          level = minInteger(level, ((Concrete.NumberLevelExpression) universeType.getHLevel()).getNumber());
+          level = minInteger(level, Math.max(((Concrete.NumberLevelExpression) universeType.getHLevel()).getNumber(), -1));
         }
       }
     }

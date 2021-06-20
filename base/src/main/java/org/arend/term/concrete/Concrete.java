@@ -504,14 +504,14 @@ public final class Concrete {
   public static class ReferenceExpression extends Expression implements Reference, ConcreteReferenceExpression {
     public static final byte PREC = 12;
     private Referable myReferent;
-    private LevelExpression myPLevel;
-    private LevelExpression myHLevel;
+    private final List<LevelExpression> myPLevels;
+    private final List<LevelExpression> myHLevels;
 
-    public ReferenceExpression(Object data, @NotNull Referable referable, LevelExpression pLevel, LevelExpression hLevel) {
+    public ReferenceExpression(Object data, @NotNull Referable referable, List<LevelExpression> pLevels, List<LevelExpression> hLevels) {
       super(data);
       myReferent = referable;
-      myPLevel = pLevel;
-      myHLevel = hLevel;
+      myPLevels = pLevels;
+      myHLevels = hLevels;
     }
 
     public ReferenceExpression(Object data, @NotNull Referable referable) {
@@ -529,21 +529,13 @@ public final class Concrete {
     }
 
     @Override
-    public LevelExpression getPLevel() {
-      return myPLevel;
+    public List<LevelExpression> getPLevels() {
+      return myPLevels;
     }
 
     @Override
-    public LevelExpression getHLevel() {
-      return myHLevel;
-    }
-
-    public void setPLevel(LevelExpression pLevel) {
-      myPLevel = pLevel;
-    }
-
-    public void setHLevel(LevelExpression hLevel) {
-      myHLevel = hLevel;
+    public List<LevelExpression> getHLevels() {
+      return myHLevels;
     }
 
     @Override
@@ -555,8 +547,8 @@ public final class Concrete {
   public static class LongReferenceExpression extends ReferenceExpression {
     private final LongName myLongName;
 
-    public LongReferenceExpression(Object data, LongName longName, Referable referable, LevelExpression pLevel, LevelExpression hLevel) {
-      super(data, referable, pLevel, hLevel);
+    public LongReferenceExpression(Object data, LongName longName, Referable referable, List<LevelExpression> pLevels, List<LevelExpression> hLevels) {
+      super(data, referable, pLevels, hLevels);
       myLongName = longName;
     }
 
@@ -578,8 +570,8 @@ public final class Concrete {
       this.fixity = fixity;
     }
 
-    public static ReferenceExpression make(Object data, Referable referable, Fixity fixity, LevelExpression pLevel, LevelExpression hLevel) {
-      return fixity == null ? new ReferenceExpression(data, referable, pLevel, hLevel) : new FixityReferenceExpression(data, referable, fixity);
+    public static ReferenceExpression make(Object data, Referable referable, Fixity fixity, List<LevelExpression> pLevels, List<LevelExpression> hLevels) {
+      return fixity == null ? new ReferenceExpression(data, referable, pLevels, hLevels) : new FixityReferenceExpression(data, referable, fixity);
     }
   }
 

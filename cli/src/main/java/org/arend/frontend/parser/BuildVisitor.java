@@ -1136,7 +1136,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return visitArgumentAppExpr(ctx.argumentAppExpr());
   }
 
-  @SuppressWarnings("rawtypes")
+  @SuppressWarnings({"rawtypes", "unchecked"})
   @Override
   public Concrete.Expression visitArgumentAppExpr(ArgumentAppExprContext ctx) {
     Concrete.Expression expr = visitAtomFieldsAcc(ctx.atomFieldsAcc());
@@ -1149,17 +1149,17 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
           myErrorReporter.report(new ParserError(tokenPosition(onlyLevelAtoms.get(0).start), "too many level specifications"));
         }
 
-        Concrete.LevelExpression level1;
-        Concrete.LevelExpression level2;
+        List<Concrete.LevelExpression> levels1;
+        List<Concrete.LevelExpression> levels2;
         if (obj1 instanceof Pair) {
-          level1 = (Concrete.LevelExpression) ((Pair) obj1).proj1;
-          level2 = (Concrete.LevelExpression) ((Pair) obj1).proj2;
+          levels1 = (List<Concrete.LevelExpression>) ((Pair) obj1).proj1;
+          levels2 = (List<Concrete.LevelExpression>) ((Pair) obj1).proj2;
         } else {
-          level1 = (Concrete.LevelExpression) obj1;
-          level2 = obj2 instanceof Concrete.LevelExpression ? (Concrete.LevelExpression) obj2 : null;
+          levels1 = Collections.singletonList((Concrete.LevelExpression) obj1);
+          levels2 = obj2 instanceof Concrete.LevelExpression ? Collections.singletonList((Concrete.LevelExpression) obj2) : null;
         }
 
-        expr = new Concrete.ReferenceExpression(expr.getData(), ((Concrete.ReferenceExpression) expr).getReferent(), level1, level2);
+        expr = new Concrete.ReferenceExpression(expr.getData(), ((Concrete.ReferenceExpression) expr).getReferent(), levels1, levels2);
       } else {
         myErrorReporter.report(new ParserError(tokenPosition(onlyLevelAtoms.get(0).start), "Level annotations are allowed only after a reference"));
       }
@@ -1415,6 +1415,26 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return (Concrete.LevelExpression) visit(ctx);
   }
 
+  private List<Concrete.LevelExpression> visitLevels(MaybeLevelAtomsContext ctx) {
+    //noinspection unchecked
+    return (List<Concrete.LevelExpression>) visit(ctx);
+  }
+
+  @Override
+  public List<Concrete.LevelExpression> visitMultiLevel(MultiLevelContext ctx) {
+    List<Concrete.LevelExpression> result = new ArrayList<>();
+    for (LevelExprContext expr : ctx.levelExpr()) {
+      result.add((Concrete.LevelExpression) visit(expr));
+    }
+    return result;
+  }
+
+  @Override
+  public List<Concrete.LevelExpression> visitSingleLevel(SingleLevelContext ctx) {
+    MaybeLevelAtomContext level = ctx.maybeLevelAtom();
+    return level instanceof WithoutLevelAtomContext ? null : Collections.singletonList(visitLevel(level));
+  }
+
   @Override
   public Concrete.LevelExpression visitWithLevelAtom(WithLevelAtomContext ctx) {
     return visitLevel(ctx.levelAtom());
@@ -1443,6 +1463,11 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   @Override
   public Concrete.NumberLevelExpression visitNumLevel(NumLevelContext ctx) {
     return new Concrete.NumberLevelExpression(tokenPosition(ctx.start), Integer.parseInt(ctx.NUMBER().getText()));
+  }
+
+  @Override
+  public Concrete.NumberLevelExpression visitNegLevel(NegLevelContext ctx) {
+    return new Concrete.NumberLevelExpression(tokenPosition(ctx.start), Integer.parseInt(ctx.NEGATIVE_NUMBER().getText()));
   }
 
   @Override
@@ -1497,10 +1522,9 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   }
 
   @Override
-  public Pair<Concrete.LevelExpression, Concrete.LevelExpression> visitLevelsOnlyLevel(LevelsOnlyLevelContext ctx) {
-    Position position = tokenPosition(ctx.start);
-    List<MaybeLevelAtomContext> maybeLevelAtomCtxs = ctx.maybeLevelAtom();
-    return maybeLevelAtomCtxs.isEmpty() ? new Pair<>(new Concrete.NumberLevelExpression(position, 0), new Concrete.NumberLevelExpression(position, -1)) : new Pair<>(visitLevel(maybeLevelAtomCtxs.get(0)), visitLevel(maybeLevelAtomCtxs.get(1)));
+  public Pair<List<Concrete.LevelExpression>, List<Concrete.LevelExpression>> visitLevelsOnlyLevel(LevelsOnlyLevelContext ctx) {
+    List<MaybeLevelAtomsContext> maybeLevelAtomsCtxs = ctx.maybeLevelAtoms();
+    return new Pair<>(visitLevels(maybeLevelAtomsCtxs.get(0)), visitLevels(maybeLevelAtomsCtxs.get(1)));
   }
 
   @Override

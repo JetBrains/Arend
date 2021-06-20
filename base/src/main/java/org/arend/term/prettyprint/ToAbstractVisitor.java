@@ -190,7 +190,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   private Concrete.ReferenceExpression makeReference(DefCallExpression defCall) {
     Referable ref = defCall.getDefinition().getReferable();
-    return hasFlag(PrettyPrinterFlag.SHOW_LEVELS) ? cDefCall(myDefinitionRenamer.renameDefinition(defCall.getDefinition().getRef()), ref, visitLevelNull(defCall.getPLevel()), visitLevelNull(defCall.getHLevel())) : cVar(myDefinitionRenamer.renameDefinition(defCall.getDefinition().getRef()), ref);
+    return hasFlag(PrettyPrinterFlag.SHOW_LEVELS) ? cDefCall(myDefinitionRenamer.renameDefinition(defCall.getDefinition().getRef()), ref, visitLevelsNull(defCall.getPLevel()), visitLevelsNull(defCall.getHLevel())) : cVar(myDefinitionRenamer.renameDefinition(defCall.getDefinition().getRef()), ref);
   }
 
   @Override
@@ -547,6 +547,14 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   private Concrete.LevelExpression visitLevelNull(Level level) {
     return level.isClosed() || !level.isVarOnly() && hasFlag(PrettyPrinterFlag.SHOW_LEVELS) ? visitLevel(level) : null;
+  }
+
+  private List<Concrete.LevelExpression> visitLevelsNull(Level level) {
+    if (!level.isClosed() && (level.isVarOnly() || !hasFlag(PrettyPrinterFlag.SHOW_LEVELS))) {
+      return null;
+    }
+    Concrete.LevelExpression result = visitLevel(level);
+    return result == null ? null : Collections.singletonList(result);
   }
 
   private Concrete.Expression visitSort(Sort sort) {

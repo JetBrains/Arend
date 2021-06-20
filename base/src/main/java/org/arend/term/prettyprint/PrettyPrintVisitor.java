@@ -278,31 +278,41 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     }
   }
 
+  private void printLevels(List<Concrete.LevelExpression> levels) {
+    if (levels != null) {
+      if (levels.size() == 1) {
+        levels.get(0).accept(this, new Precedence((byte) (Concrete.AppExpression.PREC + 1)));
+      } else {
+        myBuilder.append('(');
+        boolean first = true;
+        for (Concrete.LevelExpression level : levels) {
+          if (first) {
+            first = false;
+          } else {
+            level.accept(this, new Precedence(Expression.PREC));
+          }
+          myBuilder.append(", ");
+        }
+        myBuilder.append(')');
+      }
+    } else {
+      myBuilder.append('_');
+    }
+  }
+
   @Override
   public Void visitReference(Concrete.ReferenceExpression expr, Precedence prec) {
-    boolean parens = expr.getReferent() instanceof GlobalReferable && ((GlobalReferable) expr.getReferent()).getRepresentablePrecedence().isInfix || expr.getPLevel() != null || expr.getHLevel() != null;
+    boolean parens = expr.getReferent() instanceof GlobalReferable && ((GlobalReferable) expr.getReferent()).getRepresentablePrecedence().isInfix || expr.getPLevels() != null || expr.getHLevels() != null;
     if (parens) {
       myBuilder.append('(');
     }
     printReferenceName(expr, prec);
 
-    if (expr.getPLevel() != null || expr.getHLevel() != null) {
+    if (expr.getPLevels() != null || expr.getHLevels() != null) {
       myBuilder.append(" \\levels ");
-      if (expr.getHLevel() instanceof Concrete.NumberLevelExpression && ((Concrete.NumberLevelExpression) expr.getHLevel()).getNumber() == -1) {
-        myBuilder.append("\\Prop");
-      } else {
-        if (expr.getPLevel() != null) {
-          expr.getPLevel().accept(this, new Precedence((byte) (Concrete.AppExpression.PREC + 1)));
-        } else {
-          myBuilder.append('_');
-        }
-        myBuilder.append(' ');
-        if (expr.getHLevel() != null) {
-          expr.getHLevel().accept(this, new Precedence((byte) (Concrete.AppExpression.PREC + 1)));
-        } else {
-          myBuilder.append('_');
-        }
-      }
+      printLevels(expr.getPLevels());
+      myBuilder.append(' ');
+      printLevels(expr.getHLevels());
     }
     if (parens) {
       myBuilder.append(')');

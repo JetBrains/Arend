@@ -38,13 +38,23 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     return new Concrete.ReferenceExpression(myData, (Referable) ref);
   }
 
+  private List<Concrete.LevelExpression> makeLevels(List<? extends ConcreteLevel> levels) {
+    if (levels == null) return null;
+    List<Concrete.LevelExpression> result = new ArrayList<>(levels.size());
+    for (ConcreteLevel level : levels) {
+      if (!(level == null || level instanceof Concrete.LevelExpression)) throw new IllegalArgumentException();
+      result.add((Concrete.LevelExpression) level);
+    }
+    return result;
+  }
+
   @NotNull
   @Override
-  public ConcreteReferenceExpression ref(@NotNull ArendRef ref, @Nullable ConcreteLevel pLevel, @Nullable ConcreteLevel hLevel) {
-    if (!(ref instanceof Referable && (pLevel == null || pLevel instanceof Concrete.LevelExpression) && (hLevel == null || hLevel instanceof Concrete.LevelExpression) )) {
+  public ConcreteReferenceExpression ref(@NotNull ArendRef ref, @Nullable List<? extends ConcreteLevel> pLevels, @Nullable List<? extends ConcreteLevel> hLevels) {
+    if (!(ref instanceof Referable)) {
       throw new IllegalArgumentException();
     }
-    return new Concrete.ReferenceExpression(myData, (Referable) ref, (Concrete.LevelExpression) pLevel, (Concrete.LevelExpression) hLevel);
+    return new Concrete.ReferenceExpression(myData, (Referable) ref, makeLevels(pLevels), makeLevels(hLevels));
   }
 
   @Override
@@ -64,13 +74,13 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
   @NotNull
   @Override
   public ConcreteExpression core(@Nullable String name, @NotNull TypedExpression expr) {
-    return new Concrete.ReferenceExpression(myData, new CoreReferable(name, TypecheckingResult.fromChecked(Objects.requireNonNull(expr))), null, null);
+    return new Concrete.ReferenceExpression(myData, new CoreReferable(name, TypecheckingResult.fromChecked(Objects.requireNonNull(expr))));
   }
 
   @NotNull
   @Override
   public ConcreteExpression meta(@NotNull String name, @NotNull MetaDefinition meta) {
-    return new Concrete.ReferenceExpression(myData, new MetaReferable(Precedence.DEFAULT, name, "", meta, null, null), null, null);
+    return new Concrete.ReferenceExpression(myData, new MetaReferable(Precedence.DEFAULT, name, "", meta, null, null));
   }
 
   @NotNull

@@ -215,6 +215,7 @@ levelAtom : '\\lp'              # pLevel
           | '\\lh'              # hLevel
           | '\\oo'              # infLevel
           | NUMBER              # numLevel
+          | NEGATIVE_NUMBER     # negLevel
           | ID                  # idLevel
           | '(' levelExpr ')'   # parenLevel
           ;
@@ -227,9 +228,13 @@ levelExpr : levelAtom                     # atomLevel
 onlyLevelAtom : '\\lp'                                                # pOnlyLevel
               | '\\lh'                                                # hOnlyLevel
               | '\\oo'                                                # infOnlyLevel
-              | '\\levels' (maybeLevelAtom maybeLevelAtom | '\\Prop') # levelsOnlyLevel
+              | '\\levels' maybeLevelAtoms maybeLevelAtoms            # levelsOnlyLevel
               | '(' onlyLevelExpr ')'                                 # parenOnlyLevel
               ;
+
+maybeLevelAtoms : '(' levelExpr (',' levelExpr)* ')'    # multiLevel
+                | maybeLevelAtom                        # singleLevel
+                ;
 
 maybeLevelAtom : levelAtom  # withLevelAtom
                | '_'        # withoutLevelAtom

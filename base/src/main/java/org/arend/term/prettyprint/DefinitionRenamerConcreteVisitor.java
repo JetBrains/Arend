@@ -18,7 +18,7 @@ public class DefinitionRenamerConcreteVisitor extends BaseConcreteExpressionVisi
     if (expr.getReferent() instanceof LocatedReferable) {
       LongName longName = myDefinitionRenamer.renameDefinition(expr.getReferent());
       if (longName != null) {
-        return new Concrete.LongReferenceExpression(expr.getData(), longName, expr.getReferent(), expr.getPLevel(), expr.getHLevel());
+        return new Concrete.LongReferenceExpression(expr.getData(), longName, expr.getReferent(), expr.getPLevels(), expr.getHLevels());
       }
     }
     return expr;

@@ -282,11 +282,15 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       argument = null;
     }
 
-    if (expr.getPLevel() != null) {
-      expr.getPLevel().accept(this, LevelVariable.PVAR);
+    if (expr.getPLevels() != null) {
+      for (Concrete.LevelExpression level : expr.getPLevels()) {
+        level.accept(this, LevelVariable.PVAR);
+      }
     }
-    if (expr.getHLevel() != null) {
-      expr.getHLevel().accept(this, LevelVariable.HVAR);
+    if (expr.getHLevels() != null) {
+      for (Concrete.LevelExpression level : expr.getHLevels()) {
+        level.accept(this, LevelVariable.HVAR);
+      }
     }
 
     return invokeMetaWithoutArguments(expr, argument, invokeMeta);

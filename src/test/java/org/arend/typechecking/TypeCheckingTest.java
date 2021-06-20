@@ -215,7 +215,7 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
   public void isoPropExplicit() {
     typeCheckModule(
       "\\func propExt (A B : \\Prop) (f : A -> B) (g : B -> A) =>\n" +
-      "  path {\\lam _ => \\Prop} (iso \\levels \\Prop f g (\\lam _ => Path.inProp _ _) (\\lam _ => Path.inProp _ _))");
+      "  path {\\lam _ => \\Prop} (iso \\levels 0 -1 f g (\\lam _ => Path.inProp _ _) (\\lam _ => Path.inProp _ _))");
     assertEquals(new UniverseExpression(Sort.PROP), ((FunctionDefinition) getDefinition("propExt")).getResultType().normalize(NormalizationMode.WHNF).cast(DataCallExpression.class).getDefCallArguments().get(0).cast(LamExpression.class).getBody());
   }
 
@@ -223,7 +223,7 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
   public void isoPropExplicit2() {
     typeCheckModule(
       "\\func propExt (A B : \\Prop) (f : A -> B) (g : B -> A) : A = {\\Prop} B =>\n" +
-      "  path (iso \\levels \\Prop f g (\\lam _ => Path.inProp _ _) (\\lam _ => Path.inProp _ _))");
+      "  path (iso \\levels 0 -1 f g (\\lam _ => Path.inProp _ _) (\\lam _ => Path.inProp _ _))");
     assertEquals(new UniverseExpression(Sort.PROP), ((FunctionDefinition) getDefinition("propExt")).getResultType().cast(FunCallExpression.class).getDefCallArguments().get(0));
   }
 

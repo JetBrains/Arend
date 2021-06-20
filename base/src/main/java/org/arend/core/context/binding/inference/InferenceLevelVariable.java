@@ -22,7 +22,7 @@ public class InferenceLevelVariable implements LevelVariable {
 
   @Override
   public LevelVariable max(LevelVariable other) {
-    return null;
+    return this == other ? this : null;
   }
 
   @Override
