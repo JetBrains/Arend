@@ -1,6 +1,6 @@
 package org.arend.term.concrete;
 
-import org.arend.core.context.binding.inference.InferenceLevelVariable;
+import org.arend.core.context.binding.LevelVariable;
 import org.arend.ext.concrete.*;
 import org.arend.ext.concrete.expr.*;
 import org.arend.ext.concrete.pattern.ConcreteConstructorPattern;
@@ -1349,16 +1349,16 @@ public final class Concrete {
     public abstract <P, R> R accept(ConcreteLevelExpressionVisitor<? super P, ? extends R> visitor, P params);
   }
 
-  public static class InferVarLevelExpression extends LevelExpression {
-    private final InferenceLevelVariable myVariable;
+  public static class VarLevelExpression extends LevelExpression {
+    private final LevelVariable myVariable;
 
-    public InferVarLevelExpression(Object data, InferenceLevelVariable variable) {
+    public VarLevelExpression(Object data, LevelVariable variable) {
       super(data);
       myVariable = variable;
     }
 
     @NotNull
-    public InferenceLevelVariable getVariable() {
+    public LevelVariable getVariable() {
       return myVariable;
     }
 

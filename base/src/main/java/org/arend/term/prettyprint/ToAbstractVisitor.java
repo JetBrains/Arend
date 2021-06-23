@@ -9,7 +9,6 @@ import org.arend.core.expr.visitor.BaseExpressionVisitor;
 import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.extImpl.definitionRenamer.ConflictDefinitionRenamer;
 import org.arend.ext.variable.Variable;
-import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.context.param.SingleDependentLink;
@@ -604,13 +603,11 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       result = new Concrete.PLevelExpression(null);
     } else if (level.getVar() == LevelVariable.HVAR) {
       result = new Concrete.HLevelExpression(null);
-    } else if (level.getVar() instanceof InferenceLevelVariable) {
+    } else {
       if (!hasFlag(PrettyPrinterFlag.SHOW_LEVELS)) {
         return null;
       }
-      result = new Concrete.InferVarLevelExpression(null, (InferenceLevelVariable) level.getVar());
-    } else {
-      throw new IllegalStateException();
+      result = new Concrete.VarLevelExpression(null, level.getVar());
     }
 
     for (int i = 0; i < level.getConstant(); i++) {

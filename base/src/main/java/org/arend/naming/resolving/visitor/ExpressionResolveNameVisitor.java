@@ -883,7 +883,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   }
 
   @Override
-  public Concrete.LevelExpression visitVar(Concrete.InferVarLevelExpression expr, LevelVariable param) {
+  public Concrete.LevelExpression visitVar(Concrete.VarLevelExpression expr, LevelVariable param) {
     return expr;
   }
 }

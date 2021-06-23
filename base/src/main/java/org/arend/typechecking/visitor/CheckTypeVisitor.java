@@ -1844,7 +1844,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   @Override
-  public Level visitVar(Concrete.InferVarLevelExpression expr, LevelVariable base) {
+  public Level visitVar(Concrete.VarLevelExpression expr, LevelVariable base) {
     errorReporter.report(new TypecheckingError("Cannot typecheck an inference variable", expr));
     return new Level(base);
   }

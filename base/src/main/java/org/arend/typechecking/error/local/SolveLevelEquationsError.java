@@ -85,11 +85,7 @@ public class SolveLevelEquationsError extends TypecheckingError {
           builder.append('(');
         }
       }
-      if (var instanceof InferenceLevelVariable) {
-        ppv.prettyPrintInferLevelVar((InferenceLevelVariable) var);
-      } else {
-        builder.append(var);
-      }
+      ppv.prettyPrintLevelVar(var);
       if (constant != null && constant > 0) {
         builder.append(" + ").append(constant);
         if (withMax) {
