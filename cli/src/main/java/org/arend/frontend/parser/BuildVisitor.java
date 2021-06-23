@@ -438,7 +438,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     for (int i = -1; i < ids.size(); i += 2) {
       if (i >= 0) {
         String op = ids.get(i).getText();
-        Boolean inc = op.equals(">=") ? Boolean.TRUE : op.equals("<=") ? false : null;
+        Boolean inc = op.equals(">=") ? Boolean.FALSE : op.equals("<=") ? true : null;
         if (inc == null) {
           myErrorReporter.report(new ParserError(tokenPosition(ids.get(i).getSymbol()), "Expected either '<=' or '>='"));
           return null;

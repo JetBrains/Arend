@@ -178,22 +178,22 @@ public class Level implements CoreLevel {
       }
     }
 
-    if (level1.myVar != null && level2.myVar != null && level1.myVar.compare(level2.myVar, cmp)) {
-      if (cmp == CMP.EQ && level1.myConstant != level2.myConstant || cmp == CMP.LE && level1.myConstant > level2.myConstant) {
-        return false;
-      }
-      if (level1.myMaxConstant == level2.myMaxConstant || cmp == CMP.LE && (level1.myMaxConstant <= level2.myMaxConstant || level1.myMaxConstant <= level2.myConstant + level2.myVar.getMinValue())) {
-        return true;
-      }
-      if (!(level1.myVar instanceof InferenceLevelVariable)) {
+    if (level1.myVar != null && level2.myVar != null) {
+      if (level1.myVar.compare(level2.myVar, cmp)) {
+        if (cmp == CMP.EQ && level1.myConstant != level2.myConstant || cmp == CMP.LE && level1.myConstant > level2.myConstant) {
+          return false;
+        }
+        if (level1.myMaxConstant == level2.myMaxConstant || cmp == CMP.LE && (level1.myMaxConstant <= level2.myMaxConstant || level1.myMaxConstant <= level2.myConstant + level2.myVar.getMinValue())) {
+          return true;
+        }
+        if (!(level1.myVar instanceof InferenceLevelVariable)) {
+          return false;
+        }
+      } else if (!(level1.myVar instanceof InferenceLevelVariable) && !(level2.myVar instanceof InferenceLevelVariable)) {
         return false;
       }
     }
 
-    if (equations == null) {
-      return level1.myVar instanceof InferenceLevelVariable || level2.myVar instanceof InferenceLevelVariable;
-    } else {
-      return equations.addEquation(level1, level2, cmp, sourceNode);
-    }
+    return equations == null || equations.addEquation(level1, level2, cmp, sourceNode);
   }
 }

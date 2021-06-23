@@ -833,11 +833,11 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   public Concrete.Expression visitUniverse(Concrete.UniverseExpression expr, Void params) {
     Concrete.LevelExpression pLevel = expr.getPLevel();
     if (pLevel != null) {
-      pLevel = pLevel.accept(this, null);
+      pLevel = pLevel.accept(this, LevelVariable.PVAR);
     }
     Concrete.LevelExpression hLevel = expr.getHLevel();
     if (hLevel != null) {
-      hLevel = hLevel.accept(this, null);
+      hLevel = hLevel.accept(this, LevelVariable.HVAR);
     }
     return new Concrete.UniverseExpression(expr.getData(), pLevel, hLevel);
   }

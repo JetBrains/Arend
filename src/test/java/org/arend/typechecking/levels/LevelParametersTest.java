@@ -19,7 +19,7 @@ public class LevelParametersTest extends TypeCheckingTestCase {
 
   @Test
   public void levelsTest2() {
-    typeCheckDef("\\func test \\plevels p1 <= p2 (A : \\Type p1) : \\Type p2 => A");
+    typeCheckDef("\\func test \\hlevels h1 <= h2 (A : \\Type \\lp h1) : \\Type \\lp h2 => A");
   }
 
   @Test
@@ -46,7 +46,8 @@ public class LevelParametersTest extends TypeCheckingTestCase {
 
   @Test
   public void levelTypeError() {
-    typeCheckDef("\\func test \\hlevels h1 <= h2 (A : \\Type h2) => 0", 1);
+    resolveNamesDef("\\func test \\hlevels h1 <= h2 (A : \\Type h2) => 0", 1);
+    assertThatErrorsAre(Matchers.notInScope("h2"));
   }
 
   @Test
