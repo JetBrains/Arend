@@ -4,7 +4,7 @@ import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.ext.core.context.CoreInferenceVariable;
 import org.arend.term.prettyprint.ToAbstractVisitor;
-import org.arend.core.subst.LevelSubstitution;
+import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.core.level.CoreLevel;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.reference.Precedence;
@@ -121,7 +121,7 @@ public class Level implements CoreLevel {
     if (myVar == null || this == INFINITY) {
       return this;
     }
-    Level level = subst.get(myVar);
+    Level level = (Level) subst.get(myVar);
     if (level == null) {
       return this;
     }

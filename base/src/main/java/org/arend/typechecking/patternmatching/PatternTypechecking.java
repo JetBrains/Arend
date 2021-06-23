@@ -17,7 +17,8 @@ import org.arend.core.pattern.*;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelPair;
-import org.arend.core.subst.LevelSubstitution;
+import org.arend.core.subst.Levels;
+import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.concrete.pattern.ConcretePattern;
 import org.arend.ext.concrete.ConcreteSourceNode;
@@ -459,7 +460,7 @@ public class PatternTypechecking {
           }
 
           DConstructor constructor = (DConstructor) def;
-          LevelPair levels;
+          Levels levels;
           DependentLink link = constructor.getParameters();
           ExprSubstitution substitution = new ExprSubstitution();
           List<Expression> args = new ArrayList<>();
@@ -564,7 +565,8 @@ public class PatternTypechecking {
             }
             listSubst(result, exprs, varSubst);
           } else {
-            levels = LevelPair.generateInferVars(myVisitor.getEquations(), def.getUniverseKind(), conPattern);
+            levels = def.generateInferVars(myVisitor.getEquations(), conPattern);
+            LevelSubstitution levelSubst = levels.makeSubstitution(def);
 
             FreeVariablesCollector collector = new FreeVariablesCollector();
             constructor.getResultType().accept(collector, null);
@@ -572,7 +574,7 @@ public class PatternTypechecking {
               Set<Binding> bindings = myVisitor.getAllBindings();
               int i = 0;
               for (; i < constructor.getNumberOfParameters(); i++) {
-                Expression arg = InferenceReferenceExpression.make(new FunctionInferenceVariable(constructor, link, i + 1, link.getTypeExpr().subst(substitution, levels), conPattern, bindings), myVisitor.getEquations());
+                Expression arg = InferenceReferenceExpression.make(new FunctionInferenceVariable(constructor, link, i + 1, link.getTypeExpr().subst(substitution, levelSubst), conPattern, bindings), myVisitor.getEquations());
                 args.add(arg);
                 substitution.add(link, arg);
                 collector.getResult().remove(link);
@@ -580,12 +582,12 @@ public class PatternTypechecking {
               }
               if (!collector.getResult().isEmpty()) {
                 for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext(), i++) {
-                  substitution.add(link1, InferenceReferenceExpression.make(new FunctionInferenceVariable(constructor, link1, i + 1, link1.getTypeExpr().subst(substitution, levels), conPattern, bindings), myVisitor.getEquations()));
+                  substitution.add(link1, InferenceReferenceExpression.make(new FunctionInferenceVariable(constructor, link1, i + 1, link1.getTypeExpr().subst(substitution, levelSubst), conPattern, bindings), myVisitor.getEquations()));
                 }
               }
             }
 
-            Expression actualType = constructor.getResultType().subst(substitution, levels).normalize(NormalizationMode.WHNF);
+            Expression actualType = constructor.getResultType().subst(substitution, levelSubst).normalize(NormalizationMode.WHNF);
             if (!CompareVisitor.compare(myVisitor.getEquations(), CMP.EQ, actualType, expr, Type.OMEGA, conPattern)) {
               myErrorReporter.report(new TypeMismatchError(expr, actualType, conPattern));
               return null;
@@ -755,7 +757,7 @@ public class PatternTypechecking {
       ConCallExpression conCall = dataCall != null ? conCalls.get(0) : null;
       DependentLink newParameters;
       if (dataCall != null) {
-        newParameters = DependentLink.Helper.subst(constructor.getParameters(), new ExprSubstitution().add(((Constructor) constructor).getDataTypeParameters(), conCall.getDataTypeArguments()), dataCall.getLevels());
+        newParameters = DependentLink.Helper.subst(constructor.getParameters(), new ExprSubstitution().add(((Constructor) constructor).getDataTypeParameters(), conCall.getDataTypeArguments()), dataCall.getLevelSubstitution());
       } else {
         newParameters = ((DConstructor) constructor).getArrayParameters(classCall);
       }

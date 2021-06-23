@@ -5,6 +5,7 @@ import org.arend.core.definition.ClassField;
 import org.arend.core.expr.type.Type;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.LevelPair;
+import org.arend.core.subst.Levels;
 import org.arend.prelude.Prelude;
 import org.arend.util.SingletonList;
 
@@ -12,7 +13,7 @@ import java.util.Collections;
 import java.util.List;
 
 public class ExpressionFactory {
-  public static Expression FieldCall(ClassField definition, LevelPair levels, Expression thisExpr) {
+  public static Expression FieldCall(ClassField definition, Levels levels, Expression thisExpr) {
     return FieldCallExpression.make(definition, levels, thisExpr);
   }
 

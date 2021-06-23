@@ -14,6 +14,7 @@ import org.arend.core.pattern.ConstructorExpressionPattern;
 import org.arend.core.pattern.ExpressionPattern;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelPair;
+import org.arend.core.subst.Levels;
 
 import java.util.*;
 
@@ -38,7 +39,7 @@ public class Util {
     if (branchKey instanceof SingleConstructor) {
       return new TupleClauseElem(pattern);
     } else if (branchKey instanceof Constructor) {
-      return new ConstructorClauseElem((Constructor) branchKey, pattern.getDataTypeArguments());
+      return new ConstructorClauseElem((Constructor) branchKey, pattern.getLevels(), pattern.getDataTypeArguments());
     } else if (branchKey instanceof ArrayConstructor) {
       return new ArrayClauseElem(((ArrayConstructor) branchKey).getConstructor(), pattern.getArrayElementsType(), pattern.isArrayEmpty());
     } else {
@@ -67,10 +68,12 @@ public class Util {
   public static class ConstructorClauseElem implements DataClauseElem {
     final List<Expression> dataArguments;
     final Constructor constructor;
+    final Levels levels;
 
-    public ConstructorClauseElem(Constructor constructor, List<? extends Expression> dataArguments) {
+    public ConstructorClauseElem(Constructor constructor, Levels levels, List<? extends Expression> dataArguments) {
       this.dataArguments = new ArrayList<>(dataArguments);
       this.constructor = constructor;
+      this.levels = levels;
     }
 
     @Override
@@ -80,7 +83,7 @@ public class Util {
 
     @Override
     public ConstructorExpressionPattern getPattern(List<ExpressionPattern> subPatterns) {
-      return new ConstructorExpressionPattern(new ConCallExpression(constructor, LevelPair.STD, dataArguments, Collections.emptyList()), subPatterns);
+      return new ConstructorExpressionPattern(new ConCallExpression(constructor, levels, dataArguments, Collections.emptyList()), subPatterns);
     }
   }
 

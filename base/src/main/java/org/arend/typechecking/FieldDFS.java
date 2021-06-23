@@ -5,7 +5,6 @@ import org.arend.core.definition.ClassField;
 import org.arend.core.expr.AbsExpression;
 import org.arend.core.expr.PiExpression;
 import org.arend.core.expr.visitor.FieldsCollector;
-import org.arend.core.subst.LevelPair;
 
 import java.util.*;
 
@@ -42,7 +41,7 @@ public class FieldDFS {
 
     Set<ClassField> deps = references.computeIfAbsent(field, f -> {
       AbsExpression impl = classDef.getImplementation(field);
-      PiExpression type = field.getType(LevelPair.STD);
+      PiExpression type = field.getType();
       Set<ClassField> result = FieldsCollector.getFields(type.getCodomain(), type.getParameters(), classDef.getFields());
       if (impl != null) {
         FieldsCollector.getFields(impl.getExpression(), impl.getBinding(), classDef.getFields(), result);

@@ -6,6 +6,7 @@ import org.arend.core.expr.let.HaveClause;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.let.LetClausePattern;
 import org.arend.core.expr.visitor.BaseExpressionVisitor;
+import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.extImpl.definitionRenamer.ConflictDefinitionRenamer;
 import org.arend.ext.variable.Variable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
@@ -189,8 +190,32 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   }
 
   private Concrete.ReferenceExpression makeReference(DefCallExpression defCall) {
-    Referable ref = defCall.getDefinition().getReferable();
-    return hasFlag(PrettyPrinterFlag.SHOW_LEVELS) ? cDefCall(myDefinitionRenamer.renameDefinition(defCall.getDefinition().getRef()), ref, visitLevelsNull(defCall.getPLevel()), visitLevelsNull(defCall.getHLevel())) : cVar(myDefinitionRenamer.renameDefinition(defCall.getDefinition().getRef()), ref);
+    Definition def = defCall.getDefinition();
+    Referable ref = def.getRef();
+    if (!hasFlag(PrettyPrinterFlag.SHOW_LEVELS)) {
+      return cVar(myDefinitionRenamer.renameDefinition(ref), ref);
+    }
+
+    LevelSubstitution subst = defCall.getLevelSubstitution();
+    List<LevelVariable> params = def.getLevelParameters();
+    List<Level> pLevels;
+    List<Level> hLevels;
+    if (params == null) {
+      pLevels = Collections.singletonList((Level) subst.get(LevelVariable.PVAR));
+      hLevels = Collections.singletonList((Level) subst.get(LevelVariable.HVAR));
+    } else {
+      int pNum = def.getNumberOfPLevelParameters();
+      pLevels = new ArrayList<>(pNum);
+      hLevels = new ArrayList<>(params.size() - pNum);
+      for (int i = 0; i < pNum; i++) {
+        pLevels.add((Level) subst.get(params.get(i)));
+      }
+      for (int i = pNum; i < params.size(); i++) {
+        hLevels.add((Level) subst.get(params.get(i)));
+      }
+    }
+
+    return cDefCall(myDefinitionRenamer.renameDefinition(ref), ref, visitLevelsNull(pLevels), visitLevelsNull(hLevels));
   }
 
   @Override
@@ -549,12 +574,17 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     return level.isClosed() || !level.isVarOnly() && hasFlag(PrettyPrinterFlag.SHOW_LEVELS) ? visitLevel(level) : null;
   }
 
-  private List<Concrete.LevelExpression> visitLevelsNull(Level level) {
-    if (!level.isClosed() && (level.isVarOnly() || !hasFlag(PrettyPrinterFlag.SHOW_LEVELS))) {
-      return null;
+  private List<Concrete.LevelExpression> visitLevelsNull(List<Level> levels) {
+    if (levels.size() == 1) {
+      Concrete.LevelExpression result = visitLevelNull(levels.get(0));
+      return result == null ? null : Collections.singletonList(result);
     }
-    Concrete.LevelExpression result = visitLevel(level);
-    return result == null ? null : Collections.singletonList(result);
+
+    List<Concrete.LevelExpression> result = new ArrayList<>(levels.size());
+    for (Level level : levels) {
+      result.add(visitLevel(level));
+    }
+    return result;
   }
 
   private Concrete.Expression visitSort(Sort sort) {

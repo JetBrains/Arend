@@ -10,8 +10,8 @@ import org.arend.core.expr.visitor.ExpressionVisitor2;
 import org.arend.core.pattern.ExpressionPattern;
 import org.arend.core.pattern.Pattern;
 import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelPair;
-import org.arend.core.subst.LevelSubstitution;
+import org.arend.core.subst.Levels;
+import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CoreTypeCoerceExpression;
@@ -25,13 +25,13 @@ import java.util.Objects;
 
 public class TypeCoerceExpression extends Expression implements CoreTypeCoerceExpression {
   private final FunctionDefinition myDefinition;
-  private LevelPair myLevels;
+  private Levels myLevels;
   private final int myClauseIndex;
   private final List<Expression> myClauseArguments;
   private Expression myArgument;
   private final boolean myFromLeftToRight;
 
-  private TypeCoerceExpression(FunctionDefinition definition, LevelPair levels, int clauseIndex, List<Expression> clauseArguments, Expression argument, boolean fromLeftToRight) {
+  private TypeCoerceExpression(FunctionDefinition definition, Levels levels, int clauseIndex, List<Expression> clauseArguments, Expression argument, boolean fromLeftToRight) {
     myDefinition = definition;
     myLevels = levels;
     myClauseIndex = clauseIndex;
@@ -40,7 +40,7 @@ public class TypeCoerceExpression extends Expression implements CoreTypeCoerceEx
     myFromLeftToRight = fromLeftToRight;
   }
 
-  public static Expression make(FunctionDefinition definition, LevelPair levels, int clauseIndex, List<Expression> clauseArguments, Expression argument, boolean fromLeftToRight) {
+  public static Expression make(FunctionDefinition definition, Levels levels, int clauseIndex, List<Expression> clauseArguments, Expression argument, boolean fromLeftToRight) {
     TypeCoerceExpression typeCoerce = argument == null ? null : argument.cast(TypeCoerceExpression.class);
     return typeCoerce != null && definition == typeCoerce.myDefinition && fromLeftToRight != typeCoerce.myFromLeftToRight ? typeCoerce.myArgument : new TypeCoerceExpression(definition, levels, clauseIndex, clauseArguments, argument, fromLeftToRight);
   }
@@ -100,7 +100,7 @@ public class TypeCoerceExpression extends Expression implements CoreTypeCoerceEx
     } else {
       ElimClause<Pattern> clause = ((ElimBody) Objects.requireNonNull(body)).getClauses().get(myClauseIndex);
       List<ExpressionPattern> patterns = Pattern.toExpressionPatterns(clause.getPatterns(), myDefinition.getParameters());
-      List<Expression> defCallArguments = ExpressionPattern.applyClauseArguments(patterns, myClauseArguments, myLevels);
+      List<Expression> defCallArguments = ExpressionPattern.applyClauseArguments(patterns, myClauseArguments, myLevels.makeSubstitution(myDefinition));
       return FunCallExpression.makeFunCall(myDefinition, myLevels, defCallArguments);
     }
   }
@@ -109,10 +109,10 @@ public class TypeCoerceExpression extends Expression implements CoreTypeCoerceEx
   public @NotNull Expression getRHSType() {
     Body body = myDefinition.getActualBody();
     if (body instanceof Expression) {
-      return ((Expression) body).subst(new ExprSubstitution().add(myDefinition.getParameters(), myClauseArguments), myLevels);
+      return ((Expression) body).subst(new ExprSubstitution().add(myDefinition.getParameters(), myClauseArguments), myLevels.makeSubstitution(myDefinition));
     } else {
       ElimClause<Pattern> clause = ((ElimBody) Objects.requireNonNull(body)).getClauses().get(myClauseIndex);
-      return Objects.requireNonNull(clause.getExpression()).subst(new ExprSubstitution().add(Pattern.getFirstBinding(clause.getPatterns()), myClauseArguments), myLevels);
+      return Objects.requireNonNull(clause.getExpression()).subst(new ExprSubstitution().add(Pattern.getFirstBinding(clause.getPatterns()), myClauseArguments), myLevels.makeSubstitution(myDefinition));
     }
   }
 
@@ -120,7 +120,7 @@ public class TypeCoerceExpression extends Expression implements CoreTypeCoerceEx
     return myDefinition;
   }
 
-  public LevelPair getLevels() {
+  public Levels getLevels() {
     return myLevels;
   }
 

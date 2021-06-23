@@ -94,4 +94,28 @@ public class LevelParametersTest extends TypeCheckingTestCase {
       "\\func f \\plevels p1 <= p2 \\hlevels h1 >= h2 (A : \\Type) => A\n" +
       "\\func test => f \\levels (3,7) (4,5) Nat", 1);
   }
+
+  @Test
+  public void useTest() {
+    typeCheckModule(
+      "\\data D \\plevels p1 <= p2 | con Nat\n" +
+      "  \\where \\use \\coerce test \\plevels p1 <= p2 (n : Nat) => con n");
+  }
+
+  @Test
+  public void useError() {
+    typeCheckModule(
+      "\\data D \\plevels p1 <= p2 | con Nat\n" +
+      "  \\where \\use \\coerce test (n : Nat) => con n");
+  }
+
+  @Test
+  public void defaultTest() {
+    typeCheckModule(
+      "\\record R \\plevels p1 <= p2 {\n" +
+      "  | f : Nat -> Nat\n" +
+      "  \\default f (n : Nat) : Nat => n\n" +
+      "}");
+    assertEquals(2, getDefinition("R.f").getLevelParameters().size());
+  }
 }

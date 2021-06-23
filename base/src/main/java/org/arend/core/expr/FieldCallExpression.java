@@ -4,6 +4,7 @@ import org.arend.core.definition.ClassField;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
 import org.arend.core.subst.LevelPair;
+import org.arend.core.subst.Levels;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CoreFieldCallExpression;
 import org.arend.prelude.Prelude;
@@ -18,16 +19,16 @@ import static org.arend.core.expr.ExpressionFactory.Suc;
 public class FieldCallExpression extends DefCallExpression implements CoreFieldCallExpression {
   private final Expression myArgument;
 
-  private FieldCallExpression(ClassField definition, LevelPair levels, Expression argument) {
+  private FieldCallExpression(ClassField definition, Levels levels, Expression argument) {
     super(definition, levels);
     myArgument = argument;
   }
 
-  public static Expression make(ClassField definition, LevelPair levels, Expression thisExpr) {
+  public static Expression make(ClassField definition, Levels levels, Expression thisExpr) {
     return make(definition, levels, thisExpr, true);
   }
 
-  public static Expression make(ClassField definition, LevelPair levels, Expression thisExpr, boolean unfoldRefs) {
+  public static Expression make(ClassField definition, Levels levels, Expression thisExpr, boolean unfoldRefs) {
     if (definition.isProperty()) {
       return new FieldCallExpression(definition, levels, thisExpr);
     }

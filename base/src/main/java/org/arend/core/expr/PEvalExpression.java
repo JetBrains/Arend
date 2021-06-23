@@ -6,7 +6,7 @@ import org.arend.core.elimtree.Body;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
 import org.arend.core.expr.visitor.NormalizeVisitor;
-import org.arend.core.subst.LevelSubstitution;
+import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CorePEvalExpression;
 import org.arend.util.Decision;
@@ -45,7 +45,7 @@ public class PEvalExpression extends Expression implements CorePEvalExpression {
   }
 
   public LevelSubstitution getLevelSubstitution() {
-    return myExpression instanceof FunCallExpression ? ((FunCallExpression) myExpression).getLevels() : LevelSubstitution.EMPTY;
+    return myExpression instanceof FunCallExpression ? ((FunCallExpression) myExpression).getLevelSubstitution() : LevelSubstitution.EMPTY;
   }
 
   public List<? extends Expression> getArguments() {

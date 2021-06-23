@@ -18,8 +18,8 @@ import org.arend.core.expr.visitor.ElimBindingVisitor;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelPair;
-import org.arend.core.subst.LevelSubstitution;
+import org.arend.core.subst.Levels;
+import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
@@ -611,7 +611,7 @@ public class TwoStageEquations implements Equations {
   private ClassCallExpression removeDependencies(ClassCallExpression solution, int originalSize) {
     ClassDefinition classDef = solution.getDefinition();
     Map<ClassField, Expression> implementations = solution.getImplementedHere();
-    LevelPair levels = solution.getLevels();
+    Levels levels = solution.getLevels();
 
     for (ClassField field : classDef.getFields()) {
       if (!implementations.containsKey(field)) {
@@ -724,7 +724,7 @@ public class TwoStageEquations implements Equations {
       ClassCallExpression solution;
       if (cmp == CMP.LE) {
         Equations wrapper = useWrapper ? new LevelEquationsWrapper(this) : this;
-        LevelPair levels = LevelPair.generateInferVars(this, universeKind, pair.proj1.getSourceNode());
+        Levels levels = classDef.generateInferVars(this, pair.proj1.getSourceNode());
         Map<ClassField, Expression> implementations = new HashMap<>();
         solution = new ClassCallExpression(classDef, levels, implementations, classDef.getSort(), universeKind);
         ReferenceExpression thisExpr = new ReferenceExpression(solution.getThisBinding());
@@ -754,7 +754,7 @@ public class TwoStageEquations implements Equations {
         solution.setSort(classDef.computeSort(solution.getLevels(), implementations, solution.getThisBinding()));
         solution.updateHasUniverses();
 
-        if (!LevelPair.compare(pair.proj2.get(0).getLevels(), levels, CMP.LE, this, pair.proj1.getSourceNode())) {
+        if (!pair.proj2.get(0).getLevels().compare(levels, CMP.LE, this, pair.proj1.getSourceNode())) {
           reportBoundsError(pair.proj1, pair.proj2, CMP.GE);
           allOK = false;
           continue;

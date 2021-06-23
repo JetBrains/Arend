@@ -3,7 +3,7 @@ package org.arend.typechecking.implicitargs.equations;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.core.sort.Level;
-import org.arend.core.subst.LevelSubstitution;
+import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.core.subst.SimpleLevelSubstitution;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.error.ErrorReporter;

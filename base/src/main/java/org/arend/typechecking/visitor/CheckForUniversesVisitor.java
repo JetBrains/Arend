@@ -1,29 +1,23 @@
 package org.arend.typechecking.visitor;
 
-import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.UniverseKind;
 import org.arend.core.expr.*;
 import org.arend.core.expr.visitor.NormalizeVisitor;
-import org.arend.core.sort.Level;
 
 public class CheckForUniversesVisitor extends SearchVisitor<Void> {
-  public static boolean visitLevels(Level pLevel, Level hLevel) {
-    return !pLevel.isClosed() || !hLevel.isClosed();
-  }
-
   @Override
   public boolean processDefCall(DefCallExpression expression, Void param) {
     if (expression.getDefinition() instanceof ClassField) {
       return false;
     }
-    return expression.getUniverseKind() != UniverseKind.NO_UNIVERSES && visitLevels(expression.getPLevel(), expression.getHLevel());
+    return expression.getUniverseKind() != UniverseKind.NO_UNIVERSES && !expression.getLevels().isClosed();
   }
 
   @Override
   public Boolean visitUniverse(UniverseExpression expression, Void param) {
-    return visitLevels(expression.getSort().getPLevel(), expression.getSort().getHLevel());
+    return !expression.getSort().getPLevel().isClosed() || !expression.getSort().getHLevel().isClosed();
   }
 
   private boolean visitFieldCall(FieldCallExpression expr, int apps) {
@@ -69,6 +63,6 @@ public class CheckForUniversesVisitor extends SearchVisitor<Void> {
 
   @Override
   public Boolean visitTypeCoerce(TypeCoerceExpression expr, Void params) {
-    return expr.getDefinition().getUniverseKind() != UniverseKind.NO_UNIVERSES && visitLevels(expr.getLevels().get(LevelVariable.PVAR), expr.getLevels().get(LevelVariable.HVAR));
+    return expr.getDefinition().getUniverseKind() != UniverseKind.NO_UNIVERSES && !expr.getLevels().isClosed();
   }
 }

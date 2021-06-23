@@ -14,8 +14,7 @@ import org.arend.core.expr.visitor.CompareVisitor;
 import org.arend.core.expr.visitor.FreeVariablesCollector;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelPair;
-import org.arend.core.subst.LevelSubstitution;
+import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.concrete.expr.ConcreteArgument;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
@@ -153,7 +152,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
         DefCallResult defCallResult = (DefCallResult) result;
         if (defCallResult.getDefinition() == Prelude.PATH_CON && defCallResult.getArguments().isEmpty()) {
           SingleDependentLink lamParam = new TypedSingleDependentLink(true, "i", Interval());
-          Sort sort0 = Sort.STD.subst(defCallResult.getLevels());
+          Sort sort0 = Sort.STD.subst(defCallResult.getLevels().toLevelPair());
           Expression binding = InferenceReferenceExpression.make(new FunctionInferenceVariable(Prelude.PATH_CON, Prelude.PATH_CON.getDataTypeParameters(), 1, new UniverseExpression(sort0), fun, myVisitor.getAllBindings()), myVisitor.getEquations());
           Sort sort = sort0.succ();
           result = result.applyExpression(new LamExpression(sort, lamParam, binding), true, myVisitor.getErrorReporter(), fun);
@@ -315,7 +314,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
           args1.addAll(args.subList(defCallResult.getArguments().size(), args.size()));
           args1 = ((Constructor) defCallResult.getDefinition()).matchDataTypeArguments(args1);
           if (args1 != null) {
-            boolean ok = dataCall.getUniverseKind() == UniverseKind.NO_UNIVERSES || LevelPair.compare(defCallResult.getLevels(), dataCall.getLevels(), dataCall.getUniverseKind() == UniverseKind.ONLY_COVARIANT ? CMP.LE : CMP.EQ, myVisitor.getEquations(), fun);
+            boolean ok = dataCall.getUniverseKind() == UniverseKind.NO_UNIVERSES || defCallResult.getLevels().compare(dataCall.getLevels(), dataCall.getUniverseKind() == UniverseKind.ONLY_COVARIANT ? CMP.LE : CMP.EQ, myVisitor.getEquations(), fun);
 
             if (ok && !defCallResult.getArguments().isEmpty()) {
               ok = new CompareVisitor(myVisitor.getEquations(), CMP.LE, fun).compareLists(defCallResult.getArguments(), dataCall.getDefCallArguments().subList(0, defCallResult.getArguments().size()), dataCall.getDefinition().getParameters(), dataCall.getDefinition(), new ExprSubstitution());

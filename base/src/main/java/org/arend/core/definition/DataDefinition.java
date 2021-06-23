@@ -7,9 +7,10 @@ import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.*;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelPair;
+import org.arend.core.subst.Levels;
 import org.arend.ext.core.definition.CoreConstructor;
 import org.arend.ext.core.definition.CoreDataDefinition;
+import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.TCDefReferable;
 import org.jetbrains.annotations.NotNull;
@@ -218,30 +219,18 @@ public class DataDefinition extends Definition implements CoreDataDefinition {
   }
 
   @Override
-  public Expression getTypeWithParams(List<? super DependentLink> params, LevelPair levels) {
+  public Expression getTypeWithParams(List<? super DependentLink> params, Levels levels) {
     if (!status().headerIsOK()) {
       return null;
     }
 
-    params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myParameters, new ExprSubstitution(), levels)));
-    return new UniverseExpression(mySort.subst(levels));
+    LevelSubstitution levelSubst = levels.makeSubstitution(this);
+    params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myParameters, new ExprSubstitution(), levelSubst)));
+    return new UniverseExpression(mySort.subst(levelSubst));
   }
 
   @Override
-  public DataCallExpression getDefCall(LevelPair levels, List<Expression> arguments) {
+  public DataCallExpression getDefCall(Levels levels, List<Expression> arguments) {
     return new DataCallExpression(this, levels, arguments);
-  }
-
-  @Override
-  public void fill() {
-    if (myParameters == null) {
-      myParameters = EmptyDependentLink.getInstance();
-    }
-    if (mySort == null) {
-      mySort = Sort.PROP;
-    }
-    for (Constructor constructor : myConstructors) {
-      constructor.fill();
-    }
   }
 }

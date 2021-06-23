@@ -65,7 +65,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public UniverseExpression visitDataCall(DataCallExpression expr, Void params) {
-    return new UniverseExpression(expr.getDefinition().getSort().subst(expr.getLevels()));
+    return new UniverseExpression(expr.getDefinition().getSort().subst(expr.getLevelSubstitution()));
   }
 
   @Override
@@ -112,7 +112,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitClassCall(ClassCallExpression expr, Void params) {
-    return new UniverseExpression(expr.getSort().subst(expr.getLevels()));
+    return new UniverseExpression(expr.getSort().subst(expr.getLevelSubstitution()));
   }
 
   @Override

@@ -34,8 +34,8 @@ import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.core.context.CoreParameterBuilder;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.expr.*;
-import org.arend.ext.core.level.CoreLevel;
 import org.arend.ext.core.level.CoreSort;
+import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.core.ops.SubstitutionPair;
@@ -316,7 +316,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       FunCallExpression equality = expectedType.toEquality();
       if (equality != null) {
         CompareVisitor visitor = new CompareVisitor(myEquations, CMP.LE, expr);
-        if (!(LevelPair.compare(idp.getLevels(), equality.getLevels(), CMP.LE, myEquations, expr) && visitor.compare(idp.getDefCallArguments().get(0), equality.getDefCallArguments().get(0), Type.OMEGA, false))) {
+        if (!(idp.getLevels().compare(equality.getLevels(), CMP.LE, myEquations, expr) && visitor.compare(idp.getDefCallArguments().get(0), equality.getDefCallArguments().get(0), Type.OMEGA, false))) {
           errorReporter.report(new TypeMismatchError(equality, result.type, expr));
           return null;
         }
@@ -634,11 +634,10 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   @Override
-  public @Nullable Expression substitute(@NotNull CoreExpression expression, @Nullable CoreLevel pLevel, @Nullable CoreLevel hLevel, @NotNull List<SubstitutionPair> substPairs) {
-    if (!(expression instanceof Expression && (pLevel == null || pLevel instanceof Level) && (hLevel == null || hLevel instanceof Level))) throw new IllegalArgumentException();
-    LevelPair levels = pLevel == null && hLevel == null ? null : new LevelPair(pLevel == null ? new Level(LevelVariable.PVAR) : (Level) pLevel, hLevel == null ? new Level(LevelVariable.HVAR) : (Level) hLevel);
+  public @Nullable Expression substitute(@NotNull CoreExpression expression, @NotNull LevelSubstitution levelSubst, @NotNull List<SubstitutionPair> substPairs) {
+    if (!(expression instanceof Expression)) throw new IllegalArgumentException();
     if (substPairs.isEmpty()) {
-      return pLevel == null && hLevel == null ? (Expression) expression : ((Expression) expression).subst(levels);
+      return levelSubst.isEmpty() ? (Expression) expression : ((Expression) expression).subst(levelSubst);
     }
 
     List<CoreBinding> substVars = new ArrayList<>(substPairs.size());
@@ -648,7 +647,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     checkSubstExpr((Expression) expression, substVars);
 
     ExprSubstitution substitution = new ExprSubstitution();
-    SubstVisitor substVisitor = new SubstVisitor(substitution, levels == null ? LevelSubstitution.EMPTY : levels);
+    SubstVisitor substVisitor = new SubstVisitor(substitution, levelSubst);
     for (SubstitutionPair pair : substPairs) {
       if (!(pair.binding instanceof Binding)) {
         throw new IllegalArgumentException();
@@ -663,17 +662,14 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   @Override
-  public @Nullable AbstractedExpression substituteAbstractedExpression(@NotNull AbstractedExpression expression, @Nullable CoreLevel pLevel, @Nullable CoreLevel hLevel, @NotNull List<? extends ConcreteExpression> arguments) {
+  public @Nullable AbstractedExpression substituteAbstractedExpression(@NotNull AbstractedExpression expression, @NotNull LevelSubstitution levelSubst, @NotNull List<? extends ConcreteExpression> arguments) {
     if (arguments.isEmpty()) {
       return expression;
-    }
-    if (!(pLevel == null || pLevel instanceof Level) || !(hLevel == null || hLevel instanceof Level)) {
-      throw new IllegalArgumentException();
     }
 
     int i = 0;
     ExprSubstitution substitution = new ExprSubstitution();
-    SubstVisitor substVisitor = new SubstVisitor(substitution, pLevel == null && hLevel == null ? LevelSubstitution.EMPTY : new LevelPair(pLevel == null ? new Level(LevelVariable.PVAR) : (Level) pLevel, hLevel == null ? new Level(LevelVariable.HVAR) : (Level) hLevel));
+    SubstVisitor substVisitor = new SubstVisitor(substitution, levelSubst);
     while (i < arguments.size()) {
       DependentLink link;
       int drop = 0;
@@ -745,7 +741,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   @Override
-  public @Nullable CoreParameter substituteParameters(@NotNull CoreParameter parameters, @Nullable CoreLevel pLevel, @Nullable CoreLevel hLevel, @NotNull List<? extends ConcreteExpression> arguments) {
+  public @Nullable CoreParameter substituteParameters(@NotNull CoreParameter parameters, @NotNull LevelSubstitution levelSubst, @NotNull List<? extends ConcreteExpression> arguments) {
     boolean allNull = true;
     for (ConcreteExpression argument : arguments) {
       if (argument != null) {
@@ -757,7 +753,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       return parameters;
     }
 
-    if (!(parameters instanceof DependentLink && (pLevel == null || pLevel instanceof Level) && (hLevel == null || hLevel instanceof Level))) {
+    if (!(parameters instanceof DependentLink)) {
       throw new IllegalArgumentException();
     }
 
@@ -767,7 +763,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
 
     ExprSubstitution substitution = new ExprSubstitution();
-    SubstVisitor substVisitor = new SubstVisitor(substitution, pLevel == null && hLevel == null ? LevelSubstitution.EMPTY : new LevelPair(pLevel == null ? new Level(LevelVariable.PVAR) : (Level) pLevel, hLevel == null ? new Level(LevelVariable.HVAR) : (Level) hLevel));
+    SubstVisitor substVisitor = new SubstVisitor(substitution, levelSubst);
     LinkList list = new LinkList();
     for (int i = 0; i < links.size();) {
       int typedIndex = i;
@@ -1171,7 +1167,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     if (renewExpr != null) {
       for (ClassField field : baseClass.getFields()) {
         if (!defined.contains(field) && !resultClassCall.isImplemented(field)) {
-          Set<ClassField> found = FindDefCallVisitor.findDefinitions(field.getType(LevelPair.STD).getCodomain(), defined);
+          Set<ClassField> found = FindDefCallVisitor.findDefinitions(field.getType().getCodomain(), defined);
           if (!found.isEmpty()) {
             Concrete.SourceNode sourceNode = null;
             for (Pair<Definition, Concrete.ClassFieldImpl> implementation : implementations) {
@@ -1223,7 +1219,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         implDfs.visit(field);
         AbsExpression defaultImpl = defaults.get(field);
         if (defaultImpl != null && !notDefault.contains(field)) {
-          resultClassCall.getImplementedHere().put(field, defaultImpl.apply(new ReferenceExpression(resultClassCall.getThisBinding()), resultClassCall.getLevels()));
+          resultClassCall.getImplementedHere().put(field, defaultImpl.apply(new ReferenceExpression(resultClassCall.getThisBinding()), resultClassCall.getLevelSubstitution()));
         }
       }
     }
@@ -1253,7 +1249,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
                 oldImpl = resultClassCall.getAbsImplementationHere(field);
                 if (oldImpl == null) {
                   AbsExpression absImpl = resultClassCall.getDefinition().getImplementation(field);
-                  oldImpl = absImpl == null ? null : absImpl.getExpression().subst(resultClassCall.getLevels());
+                  oldImpl = absImpl == null ? null : absImpl.getExpression().subst(resultClassCall.getLevelSubstitution());
                 }
               }
               if (oldImpl != null) {
@@ -1281,7 +1277,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
                 }
               } else {
                 if (!classCall.getDefinition().isSubClassOf(classDef)) {
-                  errorReporter.report(new TypeMismatchError(new ClassCallExpression(classDef, LevelPair.PROP), type, pair.proj2.implementation));
+                  errorReporter.report(new TypeMismatchError(new ClassCallExpression(classDef, classDef.makeMinLevels()), type, pair.proj2.implementation));
                 } else {
                   if (!new CompareVisitor(myEquations, CMP.LE, pair.proj2.implementation).compareClassCallLevels(classCall, resultClassCall)) {
                     errorReporter.report(new TypeMismatchError(new ClassCallExpression(classCall.getDefinition(), resultClassCall.getLevels()), classCall, pair.proj2.implementation));
@@ -1301,7 +1297,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
                         PiExpression overridden = baseClass.getOverriddenType(field);
                         if (overridden != null && classCall.getDefinition().getOverriddenType(field) != overridden) {
                           Expression actualFieldType = impl.getType();
-                          Expression expectedFieldType = overridden.getCodomain().subst(new ExprSubstitution(overridden.getParameters(), result.expression), classCallExpr.getLevels());
+                          Expression expectedFieldType = overridden.getCodomain().subst(new ExprSubstitution(overridden.getParameters(), result.expression), classCallExpr.getLevelSubstitution());
                           if (!CompareVisitor.compare(myEquations, CMP.LE, actualFieldType, expectedFieldType, Type.OMEGA, pair.proj2.implementation)) {
                             errorReporter.report(new TypeMismatchError("The type of field '" + field.getName() + "' does not match", expectedFieldType, actualFieldType, pair.proj2.implementation));
                           }
@@ -1447,10 +1443,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
                 break;
               }
             }
-            Level pLevel = baseRefExpr.getPLevels() == null ? null : baseRefExpr.getPLevels().get(0).accept(this, LevelVariable.PVAR); // TODO[levels]
-            Level hLevel = baseRefExpr.getHLevels() == null ? null : baseRefExpr.getHLevels().get(0).accept(this, LevelVariable.HVAR); // TODO[levels]
-            LevelPair expectedLevels = expectedClassCall.getLevels();
-            actualClassCall = new ClassCallExpression((ClassDefinition) actualDef, pLevel == null && hLevel == null ? expectedLevels : new LevelPair(pLevel == null ? expectedLevels.get(LevelVariable.PVAR) : pLevel, hLevel == null ? expectedLevels.get(LevelVariable.HVAR) : hLevel), new HashMap<>(), expectedClassCall.getSort(), actualDef.getUniverseKind());
+            actualClassCall = new ClassCallExpression((ClassDefinition) actualDef, typecheckLevels(actualDef, baseRefExpr, expectedClassCall.getLevels(), false), new HashMap<>(), expectedClassCall.getSort(), actualDef.getUniverseKind());
             if (fieldsOK) {
               actualClassCall.copyImplementationsFrom(expectedClassCall);
             }
@@ -1600,53 +1593,94 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
   }
 
+  private void generateLevel(LevelVariable param, LevelSubstitution defaultLevels, boolean useMinAsDefault, boolean isUniverseLike, Concrete.SourceNode sourceNode, List<Level> result) {
+    if (defaultLevels != null) {
+      Level level = (Level) defaultLevels.get(param);
+      if (level != null) {
+        result.add(level);
+        return;
+      }
+    }
+
+    if (useMinAsDefault) {
+      result.add(new Level(param.getMinValue()));
+      return;
+    }
+
+    InferenceLevelVariable var = new InferenceLevelVariable(param.getType(), isUniverseLike, sourceNode);
+    myEquations.addVariable(var);
+    result.add(new Level(var));
+  }
+
+  private void typecheckLevels(List<Concrete.LevelExpression> levels, List<LevelVariable> params, LevelSubstitution defaultLevels, boolean useMinAsDefault, boolean isUniverseLike, Concrete.SourceNode sourceNode, List<Level> result) {
+    if (levels == null) {
+      for (LevelVariable param : params) {
+        generateLevel(param, defaultLevels, useMinAsDefault, isUniverseLike, sourceNode, result);
+      }
+    } else {
+      if (levels.size() > params.size()) {
+        Concrete.LevelExpression level = levels.get(params.size());
+        errorReporter.report(new TypecheckingError("Too many level arguments" + (level == null ? ", expected " + params.size() : ""), level == null ? sourceNode : level));
+      }
+      for (int i = 0; i < params.size(); i++) {
+        Concrete.LevelExpression level = levels.get(i);
+        if (level == null) {
+          generateLevel(params.get(i), defaultLevels, useMinAsDefault, isUniverseLike, sourceNode, result);
+        } else {
+          result.add(level.accept(this, params.get(i).getStd()));
+        }
+      }
+    }
+  }
+
+  private Levels typecheckLevels(Definition def, Concrete.ReferenceExpression expr, Levels defaultLevels, boolean useMinAsDefault) {
+    List<Concrete.LevelExpression> pLevels = expr.getPLevels();
+    List<Concrete.LevelExpression> hLevels = expr.getHLevels();
+    if (pLevels == null && hLevels == null) {
+      return defaultLevels != null ? defaultLevels : useMinAsDefault ? def.makeMinLevels() : def.generateInferVars(myEquations, expr);
+    }
+
+    List<LevelVariable> params = def.getLevelParameters();
+    List<LevelVariable> pParams;
+    List<LevelVariable> hParams;
+
+    if (params == null) {
+      pParams = Collections.singletonList(LevelVariable.PVAR);
+      hParams = Collections.singletonList(LevelVariable.HVAR);
+    } else {
+      int pNum = def.getNumberOfPLevelParameters();
+      pParams = params.subList(0, pNum);
+      hParams = params.subList(pNum, params.size());
+    }
+
+    List<Level> result = new ArrayList<>();
+    LevelSubstitution defaultSubst = defaultLevels == null ? null : defaultLevels.makeSubstitution(def);
+    boolean isUniverseLike = def.getUniverseKind() != UniverseKind.NO_UNIVERSES;
+    typecheckLevels(pLevels, pParams, defaultSubst, useMinAsDefault, isUniverseLike, expr, result);
+    typecheckLevels(hLevels, hParams, defaultSubst, useMinAsDefault, isUniverseLike, expr, result);
+    return params == null ? new LevelPair(result.get(0), result.get(1)) : new ListLevels(result);
+  }
+
   private TResult typeCheckDefCall(TCDefReferable resolvedDefinition, Concrete.ReferenceExpression expr, boolean withoutUniverses) {
     Definition definition = getTypeCheckedDefinition(resolvedDefinition, expr);
     if (definition == null) {
       return null;
     }
 
-    LevelPair levels;
+    Levels levels;
     boolean isMin = definition instanceof DataDefinition && !definition.getParameters().hasNext() && definition.getUniverseKind() == UniverseKind.NO_UNIVERSES;
     if (expr.getPLevels() == null && expr.getHLevels() == null) {
-      levels = isMin ? LevelPair.PROP : LevelPair.generateInferVars(getEquations(), !withoutUniverses && definition.getUniverseKind() != UniverseKind.NO_UNIVERSES, expr);
+      levels = isMin ? definition.makeMinLevels() : definition.generateInferVars(getEquations(), !withoutUniverses && definition.getUniverseKind() != UniverseKind.NO_UNIVERSES, expr);
       if (definition == Prelude.PATH || definition == Prelude.PATH_INFIX) {
+        LevelPair levelPair = (LevelPair) levels;
         InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, definition.getUniverseKind() != UniverseKind.NO_UNIVERSES, expr);
         myEquations.addVariable(pl);
-        myEquations.addEquation(new Level(levels.get(LevelVariable.PVAR).getVar()), new Level(pl), CMP.LE, expr);
-        getEquations().bindVariables(pl, (InferenceLevelVariable) levels.get(LevelVariable.HVAR).getVar());
-        return DefCallResult.makePathType(expr, definition == Prelude.PATH_INFIX, levels, new Sort(new Level(pl), new Level(levels.get(LevelVariable.HVAR).getVar(), -1, -1)));
+        myEquations.addEquation(new Level(levelPair.get(LevelVariable.PVAR).getVar()), new Level(pl), CMP.LE, expr);
+        getEquations().bindVariables(pl, (InferenceLevelVariable) levelPair.get(LevelVariable.HVAR).getVar());
+        return DefCallResult.makePathType(expr, definition == Prelude.PATH_INFIX, levels, new Sort(new Level(pl), new Level(levelPair.get(LevelVariable.HVAR).getVar(), -1, -1)));
       }
     } else {
-      Level pLevel = null;
-      if (expr.getPLevels() != null) {
-        pLevel = expr.getPLevels().get(0).accept(this, LevelVariable.PVAR); // TODO[levels]
-      }
-      if (pLevel == null) {
-        if (isMin) {
-          pLevel = new Level(0);
-        } else {
-          InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, definition.getUniverseKind() != UniverseKind.NO_UNIVERSES, expr);
-          getEquations().addVariable(pl);
-          pLevel = new Level(pl);
-        }
-      }
-
-      Level hLevel = null;
-      if (expr.getHLevels() != null) {
-        hLevel = expr.getHLevels().get(0).accept(this, LevelVariable.HVAR); // TODO[levels]
-      }
-      if (hLevel == null) {
-        if (isMin) {
-          hLevel = new Level(-1);
-        } else {
-          InferenceLevelVariable hl = new InferenceLevelVariable(LevelVariable.LvlType.HLVL, definition.getUniverseKind() != UniverseKind.NO_UNIVERSES, expr);
-          getEquations().addVariable(hl);
-          hLevel = new Level(hl);
-        }
-      }
-
-      levels = new LevelPair(pLevel, hLevel);
+      levels = typecheckLevels(definition, expr, null, isMin);
     }
 
     return DefCallResult.makeTResult(expr, definition, levels);
@@ -1900,7 +1934,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       }
     }
 
-    classCall.setSort(sorts == null ? Sort.PROP : generateUpperBound(sorts, sourceNode).subst(classCall.getLevels()));
+    classCall.setSort(sorts == null ? Sort.PROP : generateUpperBound(sorts, sourceNode).subst(classCall.getLevelSubstitution()));
   }
 
   // Parameters
@@ -2101,7 +2135,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           DefCallExpression defCallParamType = paramType.getExpr().cast(DefCallExpression.class);
           if (defCallParamType != null && defCallParamType.getDefinition().getUniverseKind() == UniverseKind.NO_UNIVERSES) { // fixes test pLevelTest
             Definition definition = defCallParamType.getDefinition();
-            LevelPair levels = definition instanceof DataDefinition || definition instanceof FunctionDefinition || definition instanceof ClassDefinition ? LevelPair.generateInferVars(myEquations, false, param) : null;
+            Levels levels = definition instanceof DataDefinition || definition instanceof FunctionDefinition || definition instanceof ClassDefinition ? definition.generateInferVars(myEquations, false, param) : null;
             if (definition instanceof ClassDefinition) {
               ClassCallExpression classCall = (ClassCallExpression) defCallParamType;
               for (Map.Entry<ClassField, Expression> entry : classCall.getImplementedHere().entrySet()) {
@@ -2114,9 +2148,10 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
             } else if (levels != null) {
               ExprSubstitution substitution = new ExprSubstitution();
               DependentLink link = definition.getParameters();
+              LevelSubstitution levelSubst = levels.makeSubstitution(definition);
               for (Expression arg : defCallParamType.getDefCallArguments()) {
                 Expression type = arg.getType();
-                if (type == null || !CompareVisitor.compare(myEquations, CMP.LE, type, link.getTypeExpr().subst(substitution, levels), Type.OMEGA, param)) {
+                if (type == null || !CompareVisitor.compare(myEquations, CMP.LE, type, link.getTypeExpr().subst(substitution, levelSubst), Type.OMEGA, param)) {
                   levels = null;
                   break;
                 }

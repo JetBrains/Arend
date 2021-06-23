@@ -16,7 +16,8 @@ import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelPair;
-import org.arend.core.subst.LevelSubstitution;
+import org.arend.core.subst.Levels;
+import org.arend.ext.core.level.LevelSubstitution;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,15 +39,15 @@ public class ExpressionFactory {
     return result;
   }
 
-  public static Expression FunCall(FunctionDefinition definition, LevelPair levels, Expression... arguments) {
+  public static Expression FunCall(FunctionDefinition definition, Levels levels, Expression... arguments) {
     return FunCallExpression.make(definition, levels, Arrays.asList(arguments));
   }
 
-  public static DataCallExpression DataCall(DataDefinition definition, LevelPair levels, List<Expression> arguments) {
+  public static DataCallExpression DataCall(DataDefinition definition, Levels levels, List<Expression> arguments) {
     return new DataCallExpression(definition, levels, arguments);
   }
 
-  public static DataCallExpression DataCall(DataDefinition definition, LevelPair levels, Expression... arguments) {
+  public static DataCallExpression DataCall(DataDefinition definition, Levels levels, Expression... arguments) {
     return new DataCallExpression(definition, levels, Arrays.asList(arguments));
   }
 
@@ -54,7 +55,7 @@ public class ExpressionFactory {
     return new ClassCallExpression(definition, LevelPair.STD);
   }
 
-  public static Expression ConCall(Constructor definition, LevelPair levels, List<Expression> dataTypeArguments, Expression... arguments) {
+  public static Expression ConCall(Constructor definition, Levels levels, List<Expression> dataTypeArguments, Expression... arguments) {
     return ConCallExpression.make(definition, levels, dataTypeArguments, Arrays.asList(arguments));
   }
 

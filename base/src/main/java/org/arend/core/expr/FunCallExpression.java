@@ -6,7 +6,7 @@ import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
 import org.arend.core.expr.visitor.NormalizeVisitor;
-import org.arend.core.subst.LevelPair;
+import org.arend.core.subst.Levels;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CoreFunCallExpression;
 import org.arend.prelude.Prelude;
@@ -22,18 +22,18 @@ import java.util.Objects;
 public class FunCallExpression extends DefCallExpression implements CoreFunCallExpression {
   private final List<Expression> myArguments;
 
-  private FunCallExpression(FunctionDefinition definition, LevelPair levels, List<Expression> arguments) {
+  private FunCallExpression(FunctionDefinition definition, Levels levels, List<Expression> arguments) {
     super(definition, levels);
     myArguments = arguments;
   }
 
   // a fake funCall that can be used only in ConstructorExpressionPattern
-  public FunCallExpression(DConstructor function, LevelPair levels, Expression elementsType) {
+  public FunCallExpression(DConstructor function, Levels levels, Expression elementsType) {
     super(function, levels);
     myArguments = elementsType == null ? Collections.emptyList() : new SingletonList<>(elementsType);
   }
 
-  public static Expression make(FunctionDefinition definition, LevelPair levels, List<Expression> arguments) {
+  public static Expression make(FunctionDefinition definition, Levels levels, List<Expression> arguments) {
     if ((definition == Prelude.PLUS || definition == Prelude.MUL || definition == Prelude.MINUS || definition == Prelude.DIV || definition == Prelude.MOD || definition == Prelude.DIV_MOD) && arguments.size() == 2 && arguments.get(0) instanceof IntegerExpression && arguments.get(1) instanceof IntegerExpression) {
       IntegerExpression expr1 = (IntegerExpression) arguments.get(0);
       IntegerExpression expr2 = (IntegerExpression) arguments.get(1);
@@ -58,15 +58,15 @@ public class FunCallExpression extends DefCallExpression implements CoreFunCallE
       }
     }
     if (definition == Prelude.EMPTY_ARRAY && arguments.size() == 1) {
-      return ArrayExpression.make(levels, arguments.get(0), Collections.emptyList(), null);
+      return ArrayExpression.make(levels.toLevelPair(), arguments.get(0), Collections.emptyList(), null);
     }
     if (definition == Prelude.ARRAY_CONS && arguments.size() == 3) {
-      return ArrayExpression.make(levels, arguments.get(0), new SingletonList<>(arguments.get(1)), arguments.get(2));
+      return ArrayExpression.make(levels.toLevelPair(), arguments.get(0), new SingletonList<>(arguments.get(1)), arguments.get(2));
     }
     return new FunCallExpression(definition, levels, arguments);
   }
 
-  public static FunCallExpression makeFunCall(FunctionDefinition definition, LevelPair levels, List<Expression> arguments) {
+  public static FunCallExpression makeFunCall(FunctionDefinition definition, Levels levels, List<Expression> arguments) {
     Expression result = make(definition, levels, arguments);
     if (!(result instanceof FunCallExpression)) {
       throw new IllegalArgumentException();

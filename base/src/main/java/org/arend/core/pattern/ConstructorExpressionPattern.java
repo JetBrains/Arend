@@ -8,7 +8,8 @@ import org.arend.core.expr.visitor.NormalizingFindBindingVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelPair;
-import org.arend.core.subst.LevelSubstitution;
+import org.arend.core.subst.Levels;
+import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.prelude.Prelude;
@@ -141,7 +142,7 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
     return data instanceof ArrayPair ? ((ArrayPair) data).isEmpty : null;
   }
 
-  public LevelPair getLevels() {
+  public Levels getLevels() {
     Expression dataExpr = getDataExpression();
     return dataExpr instanceof DefCallExpression ? ((DefCallExpression) dataExpr).getLevels() : dataExpr instanceof SmallIntegerExpression ? LevelPair.PROP : null;
   }

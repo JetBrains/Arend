@@ -19,7 +19,7 @@ import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelPair;
-import org.arend.core.subst.LevelSubstitution;
+import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.*;
@@ -72,7 +72,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   @Override
   public Expression visitFunCall(FunCallExpression expr, Expression expectedType) {
-    LevelSubstitution levelSubst = expr.getLevels();
+    LevelSubstitution levelSubst = expr.getLevelSubstitution();
     ExprSubstitution substitution = new ExprSubstitution();
     List<? extends Expression> args = expr.getDefCallArguments();
     checkList(args, expr.getDefinition().getParameters(), substitution, levelSubst);
@@ -116,7 +116,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     Expression it = expr;
     do {
       ConCallExpression conCall = (ConCallExpression) it;
-      LevelSubstitution levelSubst = conCall.getLevels();
+      LevelSubstitution levelSubst = conCall.getLevelSubstitution();
       ExprSubstitution substitution = new ExprSubstitution();
       checkList(conCall.getDataTypeArguments(), conCall.getDefinition().getDataTypeParameters(), substitution, levelSubst);
       Expression actualType = conCall.getDefinition().getDataTypeExpression(conCall.getLevels(), conCall.getDataTypeArguments());
@@ -152,7 +152,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   @Override
   public Expression visitDataCall(DataCallExpression expr, Expression expectedType) {
-    LevelSubstitution levelSubst = expr.getLevels();
+    LevelSubstitution levelSubst = expr.getLevelSubstitution();
     checkList(expr.getDefCallArguments(), expr.getDefinition().getParameters(), new ExprSubstitution(), levelSubst);
     return check(expectedType, new UniverseExpression(expr.getDefinition().getSort().subst(levelSubst)), expr);
   }
@@ -786,7 +786,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
         throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Index " + expr.getClauseIndex() + " is too big. The number of clauses is " + clauses.size(), mySourceNode), expr));
       }
     }
-    LevelSubstitution levelSubst = expr.getLevels();
+    LevelSubstitution levelSubst = expr.getLHSType().getLevelSubstitution();
     ExprSubstitution substitution = new ExprSubstitution();
     checkList(expr.getClauseArguments(), expr.getParameters(), substitution, levelSubst);
     expr.getArgument().accept(this, expr.getArgumentType());

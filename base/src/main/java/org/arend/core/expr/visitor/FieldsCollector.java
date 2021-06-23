@@ -7,7 +7,6 @@ import org.arend.core.elimtree.Body;
 import org.arend.core.elimtree.ElimBody;
 import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.*;
-import org.arend.core.subst.LevelPair;
 import org.arend.ext.core.ops.NormalizationMode;
 
 import java.util.HashSet;
@@ -119,7 +118,7 @@ public class FieldsCollector extends VoidExpressionVisitor<Void> {
   @Override
   public Void visitClassCall(ClassCallExpression expr, Void params) {
     for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
-      checkArgument(entry.getValue(), entry.getKey().getType(LevelPair.STD).getCodomain());
+      checkArgument(entry.getValue(), entry.getKey().getType().getCodomain());
     }
     return super.visitClassCall(expr, params);
   }

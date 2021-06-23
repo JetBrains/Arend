@@ -44,8 +44,7 @@ message Expression {
     }
     message ClassCall {
         int32 class_ref = 1;
-        Level pLevel = 2;
-        Level hLevel = 3;
+        repeated Level levels = 7;
         map<int32, Expression> field_set = 4;
         Sort sort = 5;
         UniverseKind universe_kind = 6;
@@ -55,16 +54,14 @@ message Expression {
     }
     message ConCall {
         int32 constructor_ref = 1;
-        Level pLevel = 2;
-        Level hLevel = 3;
+        repeated Level levels = 7;
         repeated Expression datatype_argument = 4;
         repeated Expression argument = 5;
         int32 recursive_param = 6;
     }
     message DataCall {
         int32 data_ref = 1;
-        Level pLevel = 2;
-        Level hLevel = 3;
+        repeated Level levels = 5;
         repeated Expression argument = 4;
     }
     message Error {
@@ -74,14 +71,12 @@ message Expression {
     }
     message FieldCall {
         int32 field_ref = 1;
-        Level pLevel = 2;
-        Level hLevel = 3;
+        repeated Level level = 5;
         Expression expression = 4;
     }
     message FunCall {
         int32 fun_ref = 1;
-        Level pLevel = 2;
-        Level hLevel = 3;
+        repeated Level levels = 5;
         repeated Expression argument = 4;
     }
     message Lam {
@@ -127,15 +122,15 @@ message Expression {
     }
     message TypeCoerce {
         int32 fun_ref = 1;
-        Level pLevel = 2;
-        Level hLevel = 3;
+        repeated Level level = 8;
         int32 clause_index = 4;
         repeated Expression clause_argument = 5;
         Expression argument = 6;
         bool from_left_to_right = 7;
     }
     message Array {
-      Sort sort_arg = 1;
+      Level pLevel = 5;
+      Level hLevel = 6;
       Expression elementsType = 2;
       repeated Expression element = 3;
       Expression tail = 4;
@@ -263,7 +258,7 @@ message ElimTree {
 
             message Class {
                 int32 class_ref = 1;
-                Sort sort = 2;
+                repeated Level level = 4;
                 repeated int32 field = 3;
             }
 

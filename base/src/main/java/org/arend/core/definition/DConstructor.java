@@ -41,7 +41,7 @@ public class DConstructor extends FunctionDefinition {
       substitution.add(getParameters(), arrayElementsType);
     }
     Expression arrayLength = type.getAbsImplementationHere(Prelude.ARRAY_LENGTH);
-    DependentLink newParameters = DependentLink.Helper.subst(arrayElementsType == null ? getParameters() : getParameters().getNext(), substitution, type.getLevels());
+    DependentLink newParameters = DependentLink.Helper.subst(arrayElementsType == null ? getParameters() : getParameters().getNext(), substitution, type.getLevelSubstitution());
     if (this == Prelude.ARRAY_CONS && (arrayLength instanceof IntegerExpression || arrayLength instanceof ConCallExpression && ((ConCallExpression) arrayLength).getDefinition() == Prelude.SUC)) {
       DependentLink link = newParameters;
       while (link.getNext().hasNext()) {

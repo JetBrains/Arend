@@ -3,6 +3,7 @@ package org.arend.core.subst;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.expr.Expression;
+import org.arend.ext.core.level.LevelSubstitution;
 
 import java.util.*;
 

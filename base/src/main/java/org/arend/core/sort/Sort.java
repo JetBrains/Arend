@@ -3,7 +3,7 @@ package org.arend.core.sort;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.core.expr.UniverseExpression;
-import org.arend.core.subst.LevelSubstitution;
+import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.core.level.CoreSort;
 import org.arend.ext.core.ops.CMP;
 import org.arend.term.concrete.Concrete;

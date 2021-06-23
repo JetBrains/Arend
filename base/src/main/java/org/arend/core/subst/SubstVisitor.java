@@ -16,6 +16,7 @@ import org.arend.core.expr.let.HaveClause;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.visitor.ExpressionTransformer;
 import org.arend.core.pattern.Pattern;
+import org.arend.ext.core.level.LevelSubstitution;
 
 import java.util.*;
 
@@ -63,7 +64,7 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
   }
 
   @Override
-  protected ConCallExpression makeConCall(Constructor constructor, LevelPair levels, List<Expression> dataTypeArguments, List<Expression> arguments) {
+  protected ConCallExpression makeConCall(Constructor constructor, Levels levels, List<Expression> dataTypeArguments, List<Expression> arguments) {
     return new ConCallExpression(constructor, levels.subst(myLevelSubstitution), dataTypeArguments, arguments);
   }
 

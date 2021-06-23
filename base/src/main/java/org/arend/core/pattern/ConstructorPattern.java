@@ -9,7 +9,6 @@ import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.*;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelPair;
 import org.arend.ext.core.body.CorePattern;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
@@ -47,10 +46,10 @@ public abstract class ConstructorPattern<T> implements Pattern {
       args.add(toExpression(subPattern));
     }
     if (conPattern.data instanceof Constructor) {
-      return ConCallExpression.make((Constructor) conPattern.data, LevelPair.STD, Collections.emptyList(), args);
+      return ConCallExpression.make((Constructor) conPattern.data, ((Constructor) conPattern.data).makeMinLevels(), Collections.emptyList(), args);
     }
     if (conPattern.data instanceof FunctionDefinition) {
-      return FunCallExpression.make((FunctionDefinition) conPattern.data, LevelPair.STD, args);
+      return FunCallExpression.make((FunctionDefinition) conPattern.data, ((FunctionDefinition) conPattern.data).makeMinLevels(), args);
     }
     return new TupleExpression(args, new SigmaExpression(Sort.PROP, EmptyDependentLink.getInstance()));
   }

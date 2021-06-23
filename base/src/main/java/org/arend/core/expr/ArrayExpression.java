@@ -5,7 +5,7 @@ import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
 import org.arend.core.sort.Level;
 import org.arend.core.subst.LevelPair;
-import org.arend.core.subst.LevelSubstitution;
+import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.core.expr.CoreArrayExpression;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.util.Decision;

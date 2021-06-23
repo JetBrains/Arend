@@ -14,10 +14,7 @@ import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.pattern.ConstructorExpressionPattern;
 import org.arend.core.sort.Sort;
-import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.InPlaceLevelSubstVisitor;
-import org.arend.core.subst.LevelPair;
-import org.arend.core.subst.SubstVisitor;
+import org.arend.core.subst.*;
 import org.arend.ext.core.definition.CoreClassField;
 import org.arend.ext.core.expr.CoreClassCallExpression;
 import org.arend.ext.core.expr.CoreExpression;
@@ -73,14 +70,14 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
     }
   }
 
-  public ClassCallExpression(ClassDefinition definition, LevelPair levels) {
+  public ClassCallExpression(ClassDefinition definition, Levels levels) {
     super(definition, levels);
     myImplementations = Collections.emptyMap();
-    mySort = definition.getSort().subst(levels);
+    mySort = definition.getSort().subst(levels.makeSubstitution(definition));
     myUniverseKind = definition.getUniverseKind();
   }
 
-  public ClassCallExpression(ClassDefinition definition, LevelPair levels, Map<ClassField, Expression> implementations, Sort sort, UniverseKind universeKind) {
+  public ClassCallExpression(ClassDefinition definition, Levels levels, Map<ClassField, Expression> implementations, Sort sort, UniverseKind universeKind) {
     super(definition, levels);
     myImplementations = implementations;
     mySort = sort;
@@ -157,7 +154,7 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
       return expr.subst(myThisBinding, (Expression) thisExpr);
     }
     AbsExpression impl = getDefinition().getImplementation(field);
-    return impl == null ? null : impl.apply((Expression) thisExpr, getLevels());
+    return impl == null ? null : impl.apply((Expression) thisExpr, getLevelSubstitution());
   }
 
   private static void checkImplementation(CoreClassField field, Expression type) {
@@ -201,7 +198,7 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
       return null;
     }
     checkImplementation(field, result.type);
-    return impl.apply(result.expression, getLevels());
+    return impl.apply(result.expression, getLevelSubstitution());
   }
 
   @Override
@@ -215,7 +212,7 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
     }
     AbsExpression impl = getDefinition().getImplementation(field);
     Expression result = impl == null ? null : impl.getBinding() == null ? impl.getExpression() : impl.getExpression().removeUnusedBinding(impl.getBinding());
-    return result == null ? null : result.subst(getLevels());
+    return result == null ? null : result.subst(getLevelSubstitution());
   }
 
   @Override
@@ -276,7 +273,7 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
 
       PiExpression piExpr = getDefinition().getFieldType(field);
       Binding thisBindings = piExpr.getBinding();
-      Expression type = piExpr.getCodomain().accept(new SubstVisitor(new ExprSubstitution(thisBindings, newExpr), getLevels()) {
+      Expression type = piExpr.getCodomain().accept(new SubstVisitor(new ExprSubstitution(thisBindings, newExpr), getLevelSubstitution()) {
         private Expression makeNewExpression(Expression arg, Expression type) {
           arg = arg.getUnderlyingExpression();
           if (arg instanceof ReferenceExpression && ((ReferenceExpression) arg).getBinding() == thisBindings) {
@@ -359,7 +356,7 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
           ClassCallExpression result = new ClassCallExpression(expr.getDefinition(), expr.getLevels().subst(getLevelSubstitution()), fieldSet, expr.getSort().subst(getLevelSubstitution()), expr.getUniverseKind());
           getExprSubstitution().add(expr.getThisBinding(), new ReferenceExpression(result.getThisBinding()));
           for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
-            Expression newArg = makeNewExpression(entry.getValue(), entry.getKey().getType(LevelPair.STD).getCodomain());
+            Expression newArg = makeNewExpression(entry.getValue(), entry.getKey().getType().getCodomain());
             fieldSet.put(entry.getKey(), newArg != null ? newArg : entry.getValue().accept(this, null));
           }
           getExprSubstitution().remove(expr.getThisBinding());

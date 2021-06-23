@@ -19,8 +19,8 @@ import org.arend.core.pattern.*;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelPair;
-import org.arend.core.subst.LevelSubstitution;
+import org.arend.core.subst.Levels;
+import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.error.ListErrorReporter;
 import org.arend.ext.core.ops.CMP;
@@ -112,7 +112,8 @@ public class ConditionsChecking {
       for (DependentLink link3 = definition.getParameters(); link3.hasNext(); link3 = link3.getNext()) {
         defCallArgs2.add(link3 == link2 ? (isLeft2 ? ExpressionFactory.Left() : ExpressionFactory.Right()) : new ReferenceExpression(link3));
       }
-      myErrorReporter.report(new ConditionsError(new Condition(definition.getDefCall(LevelPair.STD, defCallArgs1), substitution1, evaluatedExpr1), new Condition(definition.getDefCall(LevelPair.STD, defCallArgs2), substitution2, evaluatedExpr2), mySourceNode));
+      Levels levels = definition.makeMinLevels();
+      myErrorReporter.report(new ConditionsError(new Condition(definition.getDefCall(levels, defCallArgs1), substitution1, evaluatedExpr1), new Condition(definition.getDefCall(levels, defCallArgs2), substitution2, evaluatedExpr2), mySourceNode));
       return false;
     } else {
       return true;
@@ -186,7 +187,8 @@ public class ConditionsChecking {
         }
       }
 
-      myErrorReporter.report(new ConditionsError(new Condition(definition.getDefCall(LevelPair.STD, defCallArgs1), substitution1, evaluatedExpr1), new Condition(definition.getDefCall(LevelPair.STD, defCallArgs2), substitution2, evaluatedExpr2), sourceNode));
+      Levels levels = definition.makeMinLevels();
+      myErrorReporter.report(new ConditionsError(new Condition(definition.getDefCall(levels, defCallArgs1), substitution1, evaluatedExpr1), new Condition(definition.getDefCall(levels, defCallArgs2), substitution2, evaluatedExpr2), sourceNode));
       return false;
     } else {
       return true;
@@ -208,7 +210,7 @@ public class ConditionsChecking {
           elimTree.addChild(Prelude.LEFT, new LeafElimTree(0, Collections.emptyList(), 0));
           elimTree.addChild(Prelude.RIGHT, new LeafElimTree(0, Collections.emptyList(), 1));
           elimTree.addChild(null, new LeafElimTree(0, null, 1));
-          substitution.add(((BindingPattern) conPattern.getSubPatterns().get(0)).getBinding(), new LamExpression(new Sort(conPattern.getLevels().get(LevelVariable.PVAR), Level.INFINITY), lamParam, new CaseExpression(false, lamParam, AppExpression.make(conPattern.getDataTypeArguments().get(0), lamRef, true), null, new ElimBody(clauses, elimTree), Collections.singletonList(lamRef))));
+          substitution.add(((BindingPattern) conPattern.getSubPatterns().get(0)).getBinding(), new LamExpression(new Sort(conPattern.getLevels().toLevelPair().get(LevelVariable.PVAR), Level.INFINITY), lamParam, new CaseExpression(false, lamParam, AppExpression.make(conPattern.getDataTypeArguments().get(0), lamRef, true), null, new ElimBody(clauses, elimTree), Collections.singletonList(lamRef))));
         }
       }
     }
@@ -274,10 +276,10 @@ public class ConditionsChecking {
       if (elimBody != null && (definition == null || definition instanceof FunctionDefinition && (((FunctionDefinition) definition).getKind() == CoreFunctionDefinition.Kind.SFUNC || ((FunctionDefinition) definition).getKind() == CoreFunctionDefinition.Kind.TYPE) || expr instanceof GoalErrorExpression)) {
         evaluatedExpr1 = NormalizeVisitor.INSTANCE.eval(elimBody, pair.proj1, new ExprSubstitution(), LevelSubstitution.EMPTY, null, null);
         if (evaluatedExpr1 == null && definition != null) {
-          evaluatedExpr1 = definition.getDefCall(LevelPair.STD, pair.proj1);
+          evaluatedExpr1 = definition.getDefCall(definition.makeIdLevels(), pair.proj1);
         }
       } else {
-        evaluatedExpr1 = definition.getDefCall(LevelPair.STD, pair.proj1);
+        evaluatedExpr1 = definition.getDefCall(definition.makeIdLevels(), pair.proj1);
       }
 
       if (expr instanceof GoalErrorExpression) {
@@ -304,7 +306,7 @@ public class ConditionsChecking {
       for (ExpressionPattern pattern : clause.getPatterns()) {
         args.add(pattern.toExpression());
       }
-      Expression expr1 = definition == null ? new CaseExpression(false, EmptyDependentLink.getInstance(), new ErrorExpression(), null, new ElimBody(Collections.emptyList(), new BranchElimTree(0, false)), args) : definition.getDefCall(LevelPair.STD, args);
+      Expression expr1 = definition == null ? new CaseExpression(false, EmptyDependentLink.getInstance(), new ErrorExpression(), null, new ElimBody(Collections.emptyList(), new BranchElimTree(0, false)), args) : definition.getDefCall(definition.makeMinLevels(), args);
       errorReporter.report(new ConditionsError(new Condition(expr1, pair.proj2, evaluatedExpr1), new Condition(clause.getExpression(), pair.proj2, evaluatedExpr2), sourceNode));
       return false;
     }

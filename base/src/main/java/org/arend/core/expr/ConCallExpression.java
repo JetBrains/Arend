@@ -3,7 +3,7 @@ package org.arend.core.expr;
 import org.arend.core.definition.Constructor;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
-import org.arend.core.subst.LevelPair;
+import org.arend.core.subst.Levels;
 import org.arend.ext.core.expr.CoreConCallExpression;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.prelude.Prelude;
@@ -17,14 +17,14 @@ public class ConCallExpression extends DefCallExpression implements CoreConCallE
   private final List<Expression> myDataTypeArguments;
   private final List<Expression> myArguments;
 
-  public ConCallExpression(Constructor definition, LevelPair levels, List<Expression> dataTypeArguments, List<Expression> arguments) {
+  public ConCallExpression(Constructor definition, Levels levels, List<Expression> dataTypeArguments, List<Expression> arguments) {
     super(definition, levels);
     assert dataTypeArguments != null;
     myDataTypeArguments = dataTypeArguments;
     myArguments = arguments;
   }
 
-  public static Expression make(Constructor constructor, LevelPair levels, List<Expression> dataTypeArguments, List<Expression> arguments) {
+  public static Expression make(Constructor constructor, Levels levels, List<Expression> dataTypeArguments, List<Expression> arguments) {
     if (constructor == Prelude.ZERO || constructor == Prelude.FIN_ZERO) {
       return new SmallIntegerExpression(0);
     }
@@ -41,7 +41,7 @@ public class ConCallExpression extends DefCallExpression implements CoreConCallE
     return new ConCallExpression(constructor, levels, dataTypeArguments, arguments);
   }
 
-  public static ConCallExpression makeConCall(Constructor constructor, LevelPair levels, List<Expression> dataTypeArguments, List<Expression> arguments) {
+  public static ConCallExpression makeConCall(Constructor constructor, Levels levels, List<Expression> dataTypeArguments, List<Expression> arguments) {
     Expression conCall = make(constructor, levels, dataTypeArguments, arguments);
     if (!(conCall instanceof ConCallExpression)) {
       throw new IllegalArgumentException();
