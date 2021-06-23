@@ -16,6 +16,7 @@ public interface LevelVariable extends Variable {
 
   LvlType getType();
   LevelVariable max(LevelVariable other);
+  LevelVariable min(LevelVariable other);
   boolean compare(LevelVariable other, CMP cmp);
 
   default int getMinValue() {
@@ -43,6 +44,11 @@ public interface LevelVariable extends Variable {
     }
 
     @Override
+    public LevelVariable min(LevelVariable other) {
+      return other instanceof InferenceLevelVariable || getType() != other.getType() ? null : this;
+    }
+
+    @Override
     public boolean compare(LevelVariable other, CMP cmp) {
       return this == other || other instanceof ParamLevelVariable && other.getType() == LvlType.PLVL && (cmp == CMP.LE || ((ParamLevelVariable) other).getSize() == 0);
     }
@@ -67,6 +73,11 @@ public interface LevelVariable extends Variable {
     @Override
     public LevelVariable max(LevelVariable other) {
       return other instanceof InferenceLevelVariable || getType() != other.getType() ? null : other;
+    }
+
+    @Override
+    public LevelVariable min(LevelVariable other) {
+      return other instanceof InferenceLevelVariable || getType() != other.getType() ? null : this;
     }
 
     @Override

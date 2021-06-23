@@ -26,6 +26,11 @@ public class InferenceLevelVariable implements LevelVariable {
   }
 
   @Override
+  public LevelVariable min(LevelVariable other) {
+    return this == other ? this : null;
+  }
+
+  @Override
   public boolean compare(LevelVariable other, CMP cmp) {
     return this == other;
   }

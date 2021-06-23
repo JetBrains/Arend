@@ -270,9 +270,11 @@ public class TwoStageEquations implements Equations {
       return;
     }
 
-    // l <= max(l - c, +d), l <= max(+-c, +-d) // 4
-    if ((var1 == LevelVariable.PVAR || var1 == LevelVariable.HVAR) && !(var2 instanceof InferenceLevelVariable) && (var2 == null || constant < 0)) {
-      myVisitor.getErrorReporter().report(new SolveLevelEquationsError(Collections.singletonList(new LevelEquation<>(var1, var2, constant, maxConstant)), sourceNode));
+    // l <= max(l' +- c, +d), l <= max(+-c, +-d) // 6
+    if ((var1 == LevelVariable.PVAR || var1 == LevelVariable.HVAR) && !(var2 instanceof InferenceLevelVariable)) {
+      if (!(var2 != null && constant >= 0 && var1.compare(var2, CMP.LE))) {
+        myVisitor.getErrorReporter().report(new SolveLevelEquationsError(Collections.singletonList(new LevelEquation<>(var1, var2, constant, maxConstant)), sourceNode));
+      }
       return;
     }
 
