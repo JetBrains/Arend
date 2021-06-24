@@ -13,6 +13,7 @@ import org.arend.term.FunctionKind;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.DefinableMetaDefinition;
 import org.arend.typechecking.error.local.LocalErrorReporter;
+import org.arend.util.SingletonList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -492,12 +493,12 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
 
   @Override
   public Concrete.ReferenceExpression visitReference(@Nullable Object data, @NotNull Referable referent, @Nullable Fixity fixity, @Nullable Abstract.LevelExpression level1, @Nullable Abstract.LevelExpression level2, Void params) {
-    return Concrete.FixityReferenceExpression.make(data, referent, fixity, level1 == null ? null : Collections.singletonList(level1.accept(this, null)), level2 == null ? null : Collections.singletonList(level2.accept(this, null)));
+    return Concrete.FixityReferenceExpression.make(data, referent, fixity, level1 == null ? null : new SingletonList<>(level1.accept(this, null)), level2 == null ? null : new SingletonList<>(level2.accept(this, null)));
   }
 
   @Override
   public Concrete.ReferenceExpression visitReference(@Nullable Object data, @NotNull Referable referent, int lp, int lh, Void params) {
-    return new Concrete.ReferenceExpression(data, referent, Collections.singletonList(new Concrete.NumberLevelExpression(data, lp)), Collections.singletonList(new Concrete.NumberLevelExpression(data, lh)));
+    return new Concrete.ReferenceExpression(data, referent, new SingletonList<>(new Concrete.NumberLevelExpression(data, lp)), new SingletonList<>(new Concrete.NumberLevelExpression(data, lh)));
   }
 
   @Override

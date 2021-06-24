@@ -34,6 +34,7 @@ import org.arend.naming.renamer.ReferableRenamer;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.visitor.VoidConcreteVisitor;
+import org.arend.util.SingletonList;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -576,7 +577,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   private List<Concrete.LevelExpression> visitLevelsNull(List<Level> levels) {
     if (levels.size() == 1) {
       Concrete.LevelExpression result = visitLevelNull(levels.get(0));
-      return result == null ? null : Collections.singletonList(result);
+      return result == null ? null : new SingletonList<>(result);
     }
 
     List<Concrete.LevelExpression> result = new ArrayList<>(levels.size());

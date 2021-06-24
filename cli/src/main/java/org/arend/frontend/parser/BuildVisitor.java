@@ -15,6 +15,7 @@ import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.DefinableMetaDefinition;
 import org.arend.term.group.*;
 import org.arend.util.Pair;
+import org.arend.util.SingletonList;
 import org.arend.util.StringEscapeUtils;
 
 import java.math.BigInteger;
@@ -1155,8 +1156,8 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
           levels1 = (List<Concrete.LevelExpression>) ((Pair) obj1).proj1;
           levels2 = (List<Concrete.LevelExpression>) ((Pair) obj1).proj2;
         } else {
-          levels1 = Collections.singletonList((Concrete.LevelExpression) obj1);
-          levels2 = obj2 instanceof Concrete.LevelExpression ? Collections.singletonList((Concrete.LevelExpression) obj2) : null;
+          levels1 = new SingletonList<>((Concrete.LevelExpression) obj1);
+          levels2 = obj2 instanceof Concrete.LevelExpression ? new SingletonList<>((Concrete.LevelExpression) obj2) : null;
         }
 
         expr = new Concrete.ReferenceExpression(expr.getData(), ((Concrete.ReferenceExpression) expr).getReferent(), levels1, levels2);
@@ -1432,7 +1433,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   @Override
   public List<Concrete.LevelExpression> visitSingleLevel(SingleLevelContext ctx) {
     MaybeLevelAtomContext level = ctx.maybeLevelAtom();
-    return level instanceof WithoutLevelAtomContext ? null : Collections.singletonList(visitLevel(level));
+    return level instanceof WithoutLevelAtomContext ? null : new SingletonList<>(visitLevel(level));
   }
 
   @Override
