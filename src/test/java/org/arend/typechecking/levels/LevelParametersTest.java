@@ -57,9 +57,31 @@ public class LevelParametersTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void noPLevelsTest2() {
+    typeCheckDef("\\func test \\plevels (A : \\Type) : \\Type => A");
+  }
+
+  @Test
+  public void noPLevelsTest3() {
+    typeCheckDef("\\func test \\plevels \\hlevels h1 >= h2 => Nat");
+  }
+
+  @Test
   public void noHLevelTest() {
-    FunctionDefinition def = (FunctionDefinition) typeCheckDef("\\func test \\hlevels => \\Type");
-    assertEquals(new UniverseExpression(new Sort(new Level(LevelVariable.PVAR), new Level(0))), def.getBody());
+    FunctionDefinition def = (FunctionDefinition) typeCheckDef("\\func test \\hlevels => \\Type", 1);
+    assertEquals(new UniverseExpression(Sort.PROP), def.getBody());
+    assertThatErrorsAre(Matchers.warning());
+  }
+
+  @Test
+  public void noHLevelsTest2() {
+    typeCheckDef("\\func test \\plevels p1 >= p2 \\hlevels (A : \\Type p2) : \\Type p1 => A", 2);
+    assertThatErrorsAre(Matchers.warning(), Matchers.warning());
+  }
+
+  @Test
+  public void noHLevelsTest3() {
+    typeCheckDef("\\func test \\plevels p1 >= p2 \\hlevels => Nat");
   }
 
   @Test

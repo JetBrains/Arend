@@ -97,7 +97,8 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   private final List<DeferredMeta> myDeferredMetasAfterLevels = new ArrayList<>();
   private final ArendExtension myArendExtension;
   private TypecheckerState mySavedState;
-  private Map<Referable, ParamLevelVariable> myLevelVariables = Collections.emptyMap();
+  private Map<Referable, ParamLevelVariable> myPLevelVariables;
+  private Map<Referable, ParamLevelVariable> myHLevelVariables;
 
   private static class DeferredMeta {
     final MetaDefinition meta;
@@ -159,13 +160,13 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   public TypecheckingContext saveTypecheckingContext() {
-    return new TypecheckingContext(new LinkedHashMap<>(context), myInstancePool.getInstanceProvider(), myInstancePool.getInstancePool(), myArendExtension, copyUserData(), myLevelVariables);
+    return new TypecheckingContext(new LinkedHashMap<>(context), myInstancePool.getInstanceProvider(), myInstancePool.getInstancePool(), myArendExtension, copyUserData(), myPLevelVariables, myHLevelVariables);
   }
 
   public static CheckTypeVisitor loadTypecheckingContext(TypecheckingContext typecheckingContext, ErrorReporter errorReporter) {
     CheckTypeVisitor visitor = new CheckTypeVisitor(typecheckingContext.localContext, errorReporter, null, typecheckingContext.arendExtension, typecheckingContext.userDataHolder);
     visitor.setInstancePool(new GlobalInstancePool(typecheckingContext.instanceProvider, visitor, typecheckingContext.localInstancePool));
-    visitor.setLevelVariables(typecheckingContext.levelVariables);
+    visitor.setLevelVariables(typecheckingContext.pLevelVariables, typecheckingContext.hLevelVariables);
     return visitor;
   }
 
@@ -187,8 +188,17 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     myInstancePool = pool;
   }
 
-  public void setLevelVariables(Map<Referable,ParamLevelVariable> vars) {
-    myLevelVariables = vars;
+  public boolean isPBased() {
+    return myPLevelVariables == null || !myPLevelVariables.isEmpty();
+  }
+
+  public boolean isHBased() {
+    return myHLevelVariables == null || !myHLevelVariables.isEmpty();
+  }
+
+  public void setLevelVariables(Map<Referable,ParamLevelVariable> pVars, Map<Referable,ParamLevelVariable> hVars) {
+    myPLevelVariables = pVars;
+    myHLevelVariables = hVars;
   }
 
   @NotNull
@@ -851,7 +861,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         }
         checkTypeVisitor = new CheckTypeVisitor(deferredMeta.context, deferredMeta.errorReporter, null, myArendExtension, this);
         checkTypeVisitor.setInstancePool(new GlobalInstancePool(myInstancePool.getInstanceProvider(), checkTypeVisitor, myInstancePool.getInstancePool()));
-        checkTypeVisitor.setLevelVariables(myLevelVariables);
+        checkTypeVisitor.setLevelVariables(myPLevelVariables, myHLevelVariables);
       } else {
         checkTypeVisitor = this;
         errorReporter = deferredMeta.errorReporter;
@@ -1828,7 +1838,8 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   @Override
   public Level visitId(Concrete.IdLevelExpression expr, LevelVariable base) {
-    ParamLevelVariable var = myLevelVariables.get(expr.getReferent());
+    var vars = base == LevelVariable.HVAR ? myHLevelVariables : myPLevelVariables;
+    ParamLevelVariable var = vars == null ? null : vars.get(expr.getReferent());
     if (var == null) {
       if (checkUnresolved(expr.getReferent(), expr)) {
         errorReporter.report(new IncorrectReferenceError(expr.getReferent(), expr));
@@ -2950,6 +2961,11 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   @Override
   public TypecheckingResult visitUniverse(Concrete.UniverseExpression expr, Expression expectedType) {
+    if (!isHBased() && expr.getHLevel() == null) {
+      errorReporter.report(new TypecheckingError(GeneralError.Level.WARNING, "Universe can be replaced with \\Prop", expr));
+      return new TypecheckingResult(new UniverseExpression(Sort.PROP), new UniverseExpression(Sort.SET0));
+    }
+
     Level pLevel = expr.getPLevel() != null ? expr.getPLevel().accept(this, LevelVariable.PVAR) : null;
     Level hLevel = expr.getHLevel() != null ? expr.getHLevel().accept(this, LevelVariable.HVAR) : null;
 

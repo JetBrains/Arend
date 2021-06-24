@@ -330,7 +330,7 @@ public class TwoStageEquations implements Equations {
 
   @Override
   public LevelEquationsSolver makeLevelEquationsSolver() {
-    return new LevelEquationsSolver(myLevelEquations, myLevelVariables, myBoundVariables, myVisitor.getErrorReporter());
+    return new LevelEquationsSolver(myLevelEquations, myLevelVariables, myBoundVariables, myVisitor.getErrorReporter(), myVisitor.isPBased(), myVisitor.isHBased());
   }
 
   @Override

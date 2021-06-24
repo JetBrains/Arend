@@ -718,11 +718,12 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
   private List<LevelVariable> typecheckLevelParameters(Concrete.Definition def) {
     if (def.getPLevelParameters() == null && def.getHLevelParameters() == null) return null;
-    Map<Referable, ParamLevelVariable> result = new HashMap<>();
+    Map<Referable, ParamLevelVariable> pVars = def.getPLevelParameters() == null ? null : new HashMap<>();
+    Map<Referable, ParamLevelVariable> hVars = def.getHLevelParameters() == null ? null : new HashMap<>();
     List<LevelVariable> parameters = new ArrayList<>();
-    typecheckLevelParameters(def.getPLevelParameters(), LevelVariable.PVAR, result, parameters);
-    typecheckLevelParameters(def.getHLevelParameters(), LevelVariable.HVAR, result, parameters);
-    typechecker.setLevelVariables(result);
+    typecheckLevelParameters(def.getPLevelParameters(), LevelVariable.PVAR, pVars, parameters);
+    typecheckLevelParameters(def.getHLevelParameters(), LevelVariable.HVAR, hVars, parameters);
+    typechecker.setLevelVariables(pVars, hVars);
     return parameters;
   }
 
