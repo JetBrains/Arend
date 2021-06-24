@@ -289,9 +289,9 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
           if (first) {
             first = false;
           } else {
-            level.accept(this, new Precedence(Expression.PREC));
+            myBuilder.append(", ");
           }
-          myBuilder.append(", ");
+          level.accept(this, new Precedence(Expression.PREC));
         }
         myBuilder.append(')');
       }

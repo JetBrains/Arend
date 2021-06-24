@@ -9,6 +9,7 @@ import org.arend.ext.core.ops.CMP;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.typechecking.error.local.ConstantSolveLevelEquationError;
 import org.arend.typechecking.error.local.SolveLevelEquationsError;
+import org.arend.typechecking.order.DFS;
 import org.arend.typechecking.order.MapDFS;
 import org.arend.util.Pair;
 
@@ -178,12 +179,33 @@ public class LevelEquationsSolver {
     return myHLevelEquations.solve(solution) == null ? solution.get(var) : null;
   }
 
+  private LevelVariable getLowerBound(InferenceLevelVariable var) {
+    return new DFS<InferenceLevelVariable,LevelVariable>() {
+      @Override
+      protected LevelVariable forDependencies(InferenceLevelVariable unit) {
+        Set<LevelVariable> bounds = myLowerBounds.get(unit);
+        LevelVariable result = unit.getStd();
+        if (bounds != null) {
+          for (LevelVariable bound : bounds) {
+            result = result.max(bound instanceof InferenceLevelVariable ? visit((InferenceLevelVariable) bound) : bound);
+          }
+        }
+        return result;
+      }
+
+      @Override
+      protected LevelVariable getVisitedValue(InferenceLevelVariable unit, boolean cycle) {
+        return unit.getStd();
+      }
+    }.visit(var);
+  }
+
   public LevelSubstitution solveLevels() {
     Map<InferenceLevelVariable, Integer> basedSolution = new HashMap<>();
     List<LevelEquation<InferenceLevelVariable>> cycle = myBasedHLevelEquations.solve(basedSolution);
 
     Set<InferenceLevelVariable> unBased = new HashSet<>();
-    calculateUnBased(myBasedHLevelEquations, unBased, basedSolution, LevelVariable.HVAR);
+    calculateUnBased(myBasedHLevelEquations, unBased, basedSolution);
 
     boolean ok = cycle == null;
     if (!ok) {
@@ -216,7 +238,7 @@ public class LevelEquationsSolver {
 
     cycle = myBasedPLevelEquations.solve(basedSolution);
     Set<InferenceLevelVariable> pUnBased = new HashSet<>();
-    calculateUnBased(myBasedPLevelEquations, pUnBased, basedSolution, LevelVariable.PVAR);
+    calculateUnBased(myBasedPLevelEquations, pUnBased, basedSolution);
     ok = cycle == null;
     if (!ok) {
       reportCycle(cycle, pUnBased);
@@ -233,12 +255,23 @@ public class LevelEquationsSolver {
       assert sol != LevelEquations.INFINITY || var.getType() == LevelVariable.LvlType.HLVL;
       result.add(var, sol == LevelEquations.INFINITY ? Level.INFINITY : new Level(-sol));
     }
+
+    boolean useStd = true;
+    for (Set<LevelVariable> vars : myLowerBounds.values()) {
+      for (LevelVariable var : vars) {
+        if (!(var instanceof InferenceLevelVariable) && var != LevelVariable.PVAR && var != LevelVariable.HVAR) {
+          useStd = false;
+          break;
+        }
+      }
+    }
+
     for (Map.Entry<InferenceLevelVariable, Integer> entry : basedSolution.entrySet()) {
       assert entry.getValue() != LevelEquations.INFINITY || entry.getKey().getType() == LevelVariable.LvlType.HLVL;
       if (!unBased.contains(entry.getKey())) {
         int sol = solution.get(entry.getKey());
         assert sol != LevelEquations.INFINITY || entry.getKey().getType() == LevelVariable.LvlType.HLVL;
-        result.add(entry.getKey(), sol == LevelEquations.INFINITY || entry.getValue() == LevelEquations.INFINITY ? Level.INFINITY : new Level(entry.getKey().getStd(), -entry.getValue(), -sol));
+        result.add(entry.getKey(), sol == LevelEquations.INFINITY || entry.getValue() == LevelEquations.INFINITY ? Level.INFINITY : new Level(useStd ? entry.getKey().getStd() : getLowerBound(entry.getKey()), -entry.getValue(), -sol));
       }
     }
 
@@ -261,7 +294,7 @@ public class LevelEquationsSolver {
     return result;
   }
 
-  private void calculateUnBased(LevelEquations<InferenceLevelVariable> basedEquations, Set<InferenceLevelVariable> unBased, Map<InferenceLevelVariable, Integer> basedSolution, LevelVariable baseVar) {
+  private void calculateUnBased(LevelEquations<InferenceLevelVariable> basedEquations, Set<InferenceLevelVariable> unBased, Map<InferenceLevelVariable, Integer> basedSolution) {
     Map<InferenceLevelVariable,Boolean> unBasedMap = new HashMap<>();
     if (!myConstantUpperBounds.isEmpty()) {
       for (InferenceLevelVariable var : basedEquations.getVariables()) {
@@ -311,14 +344,13 @@ public class LevelEquationsSolver {
     }
 
     MapDFS<LevelVariable> dfs = new MapDFS<>(myUpperBounds);
-    dfs.visit(baseVar);
-    for (InferenceLevelVariable variable : basedEquations.getVariables()) {
-      if (variable.isUniverseLike()) {
-        dfs.visit(variable);
+    for (LevelVariable var : myUpperBounds.keySet()) {
+      if (!(var instanceof InferenceLevelVariable) || ((InferenceLevelVariable) var).isUniverseLike()) {
+        dfs.visit(var);
       }
     }
     for (InferenceLevelVariable variable : basedEquations.getVariables()) {
-      if (Boolean.TRUE.equals(unBasedMap.get(variable)) || !dfs.getVisited().contains(variable)) {
+      if (Boolean.TRUE.equals(unBasedMap.get(variable)) || !variable.isUniverseLike() && !dfs.getVisited().contains(variable)) {
         unBased.add(variable);
       }
     }

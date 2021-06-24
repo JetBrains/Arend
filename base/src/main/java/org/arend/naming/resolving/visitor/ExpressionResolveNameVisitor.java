@@ -169,6 +169,21 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     return arg;
   }
 
+  private void resolveLevels(Concrete.ReferenceExpression expr) {
+    if (expr.getPLevels() != null) {
+      List<Concrete.LevelExpression> pLevels = expr.getPLevels();
+      for (int i = 0; i < pLevels.size(); i++) {
+        pLevels.set(i, pLevels.get(i).accept(this, LevelVariable.PVAR));
+      }
+    }
+    if (expr.getHLevels() != null) {
+      List<Concrete.LevelExpression> hLevels = expr.getHLevels();
+      for (int i = 0; i < hLevels.size(); i++) {
+        hLevels.set(i, hLevels.get(i).accept(this, LevelVariable.HVAR));
+      }
+    }
+  }
+
   void resolveLocal(Concrete.ReferenceExpression expr) {
     Referable origRef = expr.getReferent();
     if (origRef instanceof UnresolvedReference) {
@@ -282,16 +297,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       argument = null;
     }
 
-    if (expr.getPLevels() != null) {
-      for (Concrete.LevelExpression level : expr.getPLevels()) {
-        level.accept(this, LevelVariable.PVAR);
-      }
-    }
-    if (expr.getHLevels() != null) {
-      for (Concrete.LevelExpression level : expr.getHLevels()) {
-        level.accept(this, LevelVariable.HVAR);
-      }
-    }
+    resolveLevels(expr);
 
     return invokeMetaWithoutArguments(expr, argument, invokeMeta);
   }
@@ -388,6 +394,8 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
         } else {
           resolvedRefs.add(new MetaBinOpParser.ResolvedReference(refExpr, null, null));
         }
+
+        resolveLevels(refExpr);
 
         if (!hasMeta && getMetaResolver(refExpr.getReferent()) != null) {
           hasMeta = true;

@@ -65,14 +65,14 @@ public class LevelParametersTest extends TypeCheckingTestCase {
   @Test
   public void maxLevelTest() {
     FunctionDefinition def = (FunctionDefinition) typeCheckDef("\\func test \\plevels p1 >= p2 \\hlevels h1 <= h2 (A : \\Type p1 h1) (B : \\Type p2 h2) => A -> B");
-    assertEquals(new Sort(new Level(def.getLevelParameters().get(0)), new Level(def.getLevelParameters().get(3))), def.getResultType().getSortOfType());
+    assertEquals(new Sort(new Level(def.getLevelParameters().get(0)), new Level(def.getLevelParameters().get(3))), def.getResultType().toSort());
   }
 
   @Test
   public void applyLevels() {
     typeCheckModule(
       "\\func f \\plevels p1 <= p2 \\hlevels h1 >= h2 (A : \\Type) => A\n" +
-      "\\func test \\plevels p1 >= p2 => f \\levels (p2,p1) (\\lh,\\lh) Nat");
+      "\\func test \\plevels p1 >= p2 => f \\levels (p2,p1) (\\suc \\lh, \\suc \\lh) Nat");
   }
 
   @Test
@@ -86,7 +86,7 @@ public class LevelParametersTest extends TypeCheckingTestCase {
   public void applyLevelsError() {
     typeCheckModule(
       "\\func f \\plevels p1 <= p2 \\hlevels h1 >= h2 (A : \\Type) => A\n" +
-      "\\func test \\plevels p1 >= p2 => f \\levels (p1,p2) (\\lh,\\lh) Nat", 1);
+      "\\func test \\plevels p1 >= p2 => f \\levels (p1,p2) (\\suc \\lh, \\suc \\lh) Nat", 1);
   }
 
   @Test
@@ -107,7 +107,7 @@ public class LevelParametersTest extends TypeCheckingTestCase {
   public void useError() {
     typeCheckModule(
       "\\data D \\plevels p1 <= p2 | con Nat\n" +
-      "  \\where \\use \\coerce test (n : Nat) => con n");
+      "  \\where \\use \\coerce test (n : Nat) => con n", 1);
   }
 
   @Test
