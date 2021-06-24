@@ -1613,6 +1613,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   private void typecheckLevels(List<Concrete.LevelExpression> levels, List<LevelVariable> params, LevelSubstitution defaultLevels, boolean useMinAsDefault, boolean isUniverseLike, Concrete.SourceNode sourceNode, List<Level> result) {
+    int s = result.size();
     if (levels == null) {
       for (LevelVariable param : params) {
         generateLevel(param, defaultLevels, useMinAsDefault, isUniverseLike, sourceNode, result);
@@ -1623,13 +1624,17 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         errorReporter.report(new TypecheckingError("Too many level arguments" + (level == null ? ", expected " + params.size() : ""), level == null ? sourceNode : level));
       }
       for (int i = 0; i < params.size(); i++) {
-        Concrete.LevelExpression level = levels.get(i);
+        Concrete.LevelExpression level = i < levels.size() ? levels.get(i) : null;
         if (level == null) {
           generateLevel(params.get(i), defaultLevels, useMinAsDefault, isUniverseLike, sourceNode, result);
         } else {
           result.add(level.accept(this, params.get(i).getStd()));
         }
       }
+    }
+
+    for (int i = 0; i < params.size() - 1; i++) {
+      myEquations.addEquation(result.get(s + i + 1), result.get(s + i), params.get(i + 1).compare(params.get(i), CMP.LE) ? CMP.LE : CMP.GE, sourceNode);
     }
   }
 

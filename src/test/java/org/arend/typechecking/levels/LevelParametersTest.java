@@ -72,7 +72,7 @@ public class LevelParametersTest extends TypeCheckingTestCase {
   public void applyLevels() {
     typeCheckModule(
       "\\func f \\plevels p1 <= p2 \\hlevels h1 >= h2 (A : \\Type) => A\n" +
-      "\\func test \\plevels p1 >= p2 => f \\levels (p2,p1) (\\suc \\lh, \\suc \\lh) Nat");
+      "\\func test \\plevels p1 >= p2 => f \\levels (p2,p1) (\\suc (\\suc \\lh), \\suc \\lh) Nat");
   }
 
   @Test
@@ -86,7 +86,7 @@ public class LevelParametersTest extends TypeCheckingTestCase {
   public void applyLevelsError() {
     typeCheckModule(
       "\\func f \\plevels p1 <= p2 \\hlevels h1 >= h2 (A : \\Type) => A\n" +
-      "\\func test \\plevels p1 >= p2 => f \\levels (p1,p2) (\\suc \\lh, \\suc \\lh) Nat", 1);
+      "\\func test \\plevels p1 >= p2 => f \\levels (p1,p2) (\\suc \\lh, \\suc (\\suc \\lh)) Nat", 1);
   }
 
   @Test
