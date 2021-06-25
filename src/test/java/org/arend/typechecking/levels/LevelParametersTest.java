@@ -2,10 +2,7 @@ package org.arend.typechecking.levels;
 
 import org.arend.Matchers;
 import org.arend.core.context.binding.LevelVariable;
-import org.arend.core.definition.ClassDefinition;
-import org.arend.core.definition.ClassField;
-import org.arend.core.definition.Definition;
-import org.arend.core.definition.FunctionDefinition;
+import org.arend.core.definition.*;
 import org.arend.core.expr.ClassCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.FunCallExpression;
@@ -132,14 +129,23 @@ public class LevelParametersTest extends TypeCheckingTestCase {
   public void useTest() {
     typeCheckModule(
       "\\data D \\plevels p1 <= p2 | con Nat\n" +
-      "  \\where \\use \\coerce test \\plevels p1 <= p2 (n : Nat) => con n");
+      "  \\where \\use \\coerce test \\plevels p3 <= p4 (A : \\Type p4) (n : Nat) => con n");
+    assertEquals(3, getDefinition("D.test").getLevelParameters().size());
+  }
+
+  @Test
+  public void useTest2() {
+    typeCheckModule(
+      "\\data D \\plevels p1 <= p2 | con Nat\n" +
+      "  \\where \\use \\coerce test (A : \\Type p2) (n : Nat) => con n");
+    assertEquals(3, getDefinition("D.test").getLevelParameters().size());
   }
 
   @Test
   public void useError() {
-    typeCheckModule(
+    resolveNamesModule(
       "\\data D \\plevels p1 <= p2 | con Nat\n" +
-      "  \\where \\use \\coerce test (n : Nat) => con n", 1);
+      "  \\where \\use \\coerce test \\plevels p1 >= p2 (n : Nat) => con n", 1);
   }
 
   @Test

@@ -249,92 +249,94 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       return null;
     }
 
-    Map<String, Referable> pLevels = visitLevelParameters(def.getPLevelParameters());
-    Map<String, Referable> hLevels = visitLevelParameters(def.getHLevelParameters());
-
-    if (def instanceof Concrete.CoClauseFunctionDefinition && ((Concrete.CoClauseFunctionDefinition) def).getImplementedField() instanceof UnresolvedReference) {
-      Concrete.CoClauseFunctionDefinition function = (Concrete.CoClauseFunctionDefinition) def;
-      TCReferable enclosingRef = function.getUseParent();
-      Concrete.GeneralDefinition enclosingDef = myConcreteProvider.getConcrete(enclosingRef);
-      if (enclosingDef instanceof Concrete.BaseFunctionDefinition) {
-        List<Concrete.Parameter> parameters = new SubstConcreteExpressionVisitor(def.getData()).visitParameters(((Concrete.BaseFunctionDefinition) enclosingDef).getParameters());
-        for (Concrete.Parameter parameter : parameters) {
-          parameter.setExplicit(false);
+    if (def instanceof Concrete.UseDefinition) {
+      Concrete.GeneralDefinition enclosingDef = myConcreteProvider.getConcrete(def.getUseParent());
+      boolean setPLevels = false;
+      boolean setHLevels = false;
+      if (def.getPLevelParameters() == null) {
+        setPLevels = true;
+        if (enclosingDef instanceof Concrete.Definition && ((Concrete.Definition) enclosingDef).getPLevelParameters() != null) {
+          def.setPLevelParameters(((Concrete.Definition) enclosingDef).getPLevelParameters());
         }
-        def.getParameters().addAll(0, parameters);
-        function.setNumberOfExternalParameters(parameters.size());
+      } else if (def.getKind().isUse() && enclosingDef instanceof Concrete.Definition) {
+        compareUseLevelParameters(def.getPLevelParameters(), ((Concrete.Definition) enclosingDef).getPLevelParameters());
       }
-      if (function.getImplementedField() instanceof UnresolvedReference || function.getData() instanceof LocatedReferableImpl && !((LocatedReferableImpl) function.getData()).isPrecedenceSet()) {
-        Referable classRef = null;
-        List<? extends Concrete.ClassElement> elements = Collections.emptyList();
+      if (def.getHLevelParameters() == null) {
+        setHLevels = true;
+        if (enclosingDef instanceof Concrete.Definition && ((Concrete.Definition) enclosingDef).getHLevelParameters() != null) {
+          def.setHLevelParameters(((Concrete.Definition) enclosingDef).getHLevelParameters());
+        }
+      } else if (def.getKind().isUse() && enclosingDef instanceof Concrete.Definition) {
+        compareUseLevelParameters(def.getHLevelParameters(), ((Concrete.Definition) enclosingDef).getHLevelParameters());
+      }
+
+      if (def instanceof Concrete.CoClauseFunctionDefinition && ((Concrete.CoClauseFunctionDefinition) def).getImplementedField() instanceof UnresolvedReference) {
+        Concrete.CoClauseFunctionDefinition function = (Concrete.CoClauseFunctionDefinition) def;
         if (enclosingDef instanceof Concrete.BaseFunctionDefinition) {
-          Concrete.BaseFunctionDefinition enclosingFunction = (Concrete.BaseFunctionDefinition) enclosingDef;
-          if (enclosingFunction.getResultType() != null) {
-            if (enclosingFunction.getStage().ordinal() < Concrete.Stage.RESOLVED.ordinal()) {
-              resolveTypeClassReference(enclosingFunction.getParameters(), enclosingFunction.getResultType(), scope, true);
-            }
-            classRef = new TypeClassReferenceExtractVisitor().getTypeClassReference(Collections.emptyList(), enclosingFunction.getResultType());
-            elements = enclosingFunction.getBody().getCoClauseElements();
+          List<Concrete.Parameter> parameters = new SubstConcreteExpressionVisitor(def.getData()).visitParameters(((Concrete.BaseFunctionDefinition) enclosingDef).getParameters());
+          for (Concrete.Parameter parameter : parameters) {
+            parameter.setExplicit(false);
           }
-        } else if (enclosingDef instanceof Concrete.ClassDefinition) {
-          classRef = enclosingDef.getData();
-          elements = ((Concrete.ClassDefinition) enclosingDef).getElements();
+          def.getParameters().addAll(0, parameters);
+          function.setNumberOfExternalParameters(parameters.size());
         }
-
-        boolean setPLevels = false;
-        boolean setHLevels = false;
-        if (function.getPLevelParameters() == null) {
-          setPLevels = true;
-          if (enclosingDef instanceof Concrete.Definition && ((Concrete.Definition) enclosingDef).getPLevelParameters() != null) {
-            function.setPLevelParameters(((Concrete.Definition) enclosingDef).getPLevelParameters());
-          }
-        }
-        if (function.getHLevelParameters() == null) {
-          setHLevels = true;
-          if (enclosingDef instanceof Concrete.Definition && ((Concrete.Definition) enclosingDef).getHLevelParameters() != null) {
-            function.setHLevelParameters(((Concrete.Definition) enclosingDef).getHLevelParameters());
-          }
-        }
-
-        if (classRef != null && !(classRef instanceof ClassReferable)) {
-          classRef = classRef.getUnderlyingReferable();
-        }
-        if (classRef instanceof ClassReferable) {
-          Concrete.CoClauseFunctionReference functionRef = null;
-          for (Concrete.ClassElement element : elements) {
-            if (element instanceof Concrete.CoClauseFunctionReference && ((Concrete.CoClauseFunctionReference) element).getFunctionReference().equals(def.getData())) {
-              functionRef = (Concrete.CoClauseFunctionReference) element;
-              break;
-            }
-          }
-          assert functionRef != null;
-          function.setImplementedField(new ExpressionResolveNameVisitor(myReferableConverter, scope, null, myLocalErrorReporter, myResolverListener, pLevels, hLevels).visitClassFieldReference(functionRef, function.getImplementedField(), (ClassReferable) classRef));
-          Concrete.ReferenceExpression refExpr = functionRef.getReferenceExpression();
-          if (setPLevels) {
-            if (function.getPLevelParameters() == null) {
-              refExpr.setPLevels(new SingletonList<>(new Concrete.PLevelExpression(refExpr.getData())));
-            } else {
-              List<Concrete.LevelExpression> args = new ArrayList<>();
-              for (Referable ref : function.getPLevelParameters().referables) {
-                args.add(new Concrete.IdLevelExpression(refExpr.getData(), ref));
+        if (function.getImplementedField() instanceof UnresolvedReference || function.getData() instanceof LocatedReferableImpl && !((LocatedReferableImpl) function.getData()).isPrecedenceSet()) {
+          Referable classRef = null;
+          List<? extends Concrete.ClassElement> elements = Collections.emptyList();
+          if (enclosingDef instanceof Concrete.BaseFunctionDefinition) {
+            Concrete.BaseFunctionDefinition enclosingFunction = (Concrete.BaseFunctionDefinition) enclosingDef;
+            if (enclosingFunction.getResultType() != null) {
+              if (enclosingFunction.getStage().ordinal() < Concrete.Stage.RESOLVED.ordinal()) {
+                resolveTypeClassReference(enclosingFunction.getParameters(), enclosingFunction.getResultType(), scope, true);
               }
-              refExpr.setPLevels(args);
+              classRef = new TypeClassReferenceExtractVisitor().getTypeClassReference(Collections.emptyList(), enclosingFunction.getResultType());
+              elements = enclosingFunction.getBody().getCoClauseElements();
             }
+          } else if (enclosingDef instanceof Concrete.ClassDefinition) {
+            classRef = enclosingDef.getData();
+            elements = ((Concrete.ClassDefinition) enclosingDef).getElements();
           }
-          if (setHLevels) {
-            if (function.getHLevelParameters() == null) {
-              refExpr.setHLevels(new SingletonList<>(new Concrete.HLevelExpression(refExpr.getData())));
-            } else {
-              List<Concrete.LevelExpression> args = new ArrayList<>();
-              for (Referable ref : function.getHLevelParameters().referables) {
-                args.add(new Concrete.IdLevelExpression(refExpr.getData(), ref));
+
+          if (classRef != null && !(classRef instanceof ClassReferable)) {
+            classRef = classRef.getUnderlyingReferable();
+          }
+          if (classRef instanceof ClassReferable) {
+            Concrete.CoClauseFunctionReference functionRef = null;
+            for (Concrete.ClassElement element : elements) {
+              if (element instanceof Concrete.CoClauseFunctionReference && ((Concrete.CoClauseFunctionReference) element).getFunctionReference().equals(def.getData())) {
+                functionRef = (Concrete.CoClauseFunctionReference) element;
+                break;
               }
-              refExpr.setHLevels(args);
+            }
+            assert functionRef != null;
+            function.setImplementedField(new ExpressionResolveNameVisitor(myReferableConverter, scope, null, myLocalErrorReporter, myResolverListener, Collections.emptyMap(), Collections.emptyMap()).visitClassFieldReference(functionRef, function.getImplementedField(), (ClassReferable) classRef));
+            Concrete.ReferenceExpression refExpr = functionRef.getReferenceExpression();
+            if (setPLevels) {
+              if (function.getPLevelParameters() == null) {
+                refExpr.setPLevels(new SingletonList<>(new Concrete.PLevelExpression(refExpr.getData())));
+              } else {
+                List<Concrete.LevelExpression> args = new ArrayList<>();
+                for (Referable ref : function.getPLevelParameters().referables) {
+                  args.add(new Concrete.IdLevelExpression(refExpr.getData(), ref));
+                }
+                refExpr.setPLevels(args);
+              }
+            }
+            if (setHLevels) {
+              if (function.getHLevelParameters() == null) {
+                refExpr.setHLevels(new SingletonList<>(new Concrete.HLevelExpression(refExpr.getData())));
+              } else {
+                List<Concrete.LevelExpression> args = new ArrayList<>();
+                for (Referable ref : function.getHLevelParameters().referables) {
+                  args.add(new Concrete.IdLevelExpression(refExpr.getData(), ref));
+                }
+                refExpr.setHLevels(args);
+              }
             }
           }
-        }
-        if (function.getData() instanceof LocatedReferableImpl && !((LocatedReferableImpl) function.getData()).isPrecedenceSet() && function.getImplementedField() instanceof GlobalReferable) {
-          ((LocatedReferableImpl) function.getData()).setPrecedence(((GlobalReferable) function.getImplementedField()).getPrecedence());
+          if (function.getData() instanceof LocatedReferableImpl && !((LocatedReferableImpl) function.getData()).isPrecedenceSet() && function.getImplementedField() instanceof GlobalReferable) {
+            ((LocatedReferableImpl) function.getData()).setPrecedence(((GlobalReferable) function.getImplementedField()).getPrecedence());
+          }
         }
       }
     }
@@ -343,7 +345,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
 
     Concrete.FunctionBody body = def.getBody();
     List<Referable> context = new ArrayList<>();
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myReferableConverter, scope, context, myLocalErrorReporter, myResolverListener, pLevels, hLevels);
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myReferableConverter, scope, context, myLocalErrorReporter, myResolverListener, visitLevelParameters(def.getPLevelParameters()), visitLevelParameters(def.getHLevelParameters()));
 
     exprVisitor.visitParameters(def.getParameters(), null);
     if (def.getResultType() != null) {
@@ -613,9 +615,19 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     }
   }
 
+  private boolean compareLevelParameters(Concrete.LevelParameters params1, Concrete.LevelParameters params2) {
+    return params1 == null && params2 == null || params1 != null && params2 != null && params1.isIncreasing == params2.isIncreasing && params1.referables.size() == params2.referables.size();
+  }
+
+  private void compareUseLevelParameters(Concrete.LevelParameters useParams, Concrete.LevelParameters parentParams) {
+    if (!compareLevelParameters(useParams, parentParams)) {
+      myErrorReporter.report(new TypecheckingError("The levels parameters of the \\use definition do not match the level parameters of the parent", useParams));
+    }
+  }
+
   private void compareLevelParameters(Concrete.LevelParameters params1, Concrete.LevelParameters params2, Concrete.ReferenceExpression superClass) {
-    if ((params1 != null || params2 != null) && (params1 == null || params2 == null || params1.isIncreasing != params2.isIncreasing || params1.referables.size() != params2.referables.size())) {
-      myErrorReporter.report(new TypecheckingError("The levels of the super class does not match the levels of the first super class", superClass));
+    if (!compareLevelParameters(params1, params2)) {
+      myErrorReporter.report(new TypecheckingError("The level parameters of the super class does not match the levels of the first super class", superClass));
     }
   }
 
