@@ -1647,11 +1647,12 @@ public final class Concrete {
     }
   }
 
-  public static class LevelParameters {
+  public static class LevelParameters extends SourceNodeImpl {
     public final List<Referable> referables;
     public final boolean isIncreasing;
 
-    public LevelParameters(List<Referable> referables, boolean isIncreasing) {
+    public LevelParameters(Object data, List<Referable> referables, boolean isIncreasing) {
+      super(data);
       this.referables = referables;
       this.isIncreasing = isIncreasing;
     }

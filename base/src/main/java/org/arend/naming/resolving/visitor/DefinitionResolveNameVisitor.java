@@ -7,6 +7,7 @@ import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.error.NameResolverError;
+import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.reference.Precedence;
 import org.arend.naming.error.DuplicateNameError;
 import org.arend.naming.error.DuplicateOpenedNameError;
@@ -612,6 +613,12 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     }
   }
 
+  private void compareLevelParameters(Concrete.LevelParameters params1, Concrete.LevelParameters params2, Concrete.ReferenceExpression superClass) {
+    if ((params1 != null || params2 != null) && (params1 == null || params2 == null || params1.isIncreasing != params2.isIncreasing || params1.referables.size() != params2.referables.size())) {
+      myErrorReporter.report(new TypecheckingError("The levels of the super class does not match the levels of the first super class", superClass));
+    }
+  }
+
   @Override
   public Void visitClass(Concrete.ClassDefinition def, Scope scope) {
     if (def.getStage().ordinal() >= Concrete.Stage.RESOLVED.ordinal()) {
@@ -658,6 +665,39 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     }
 
     resolveSuperClasses(def, scope);
+    if (!def.getSuperClasses().isEmpty()) {
+      Concrete.LevelParameters pLevelParams = def.getPLevelParameters();
+      Concrete.LevelParameters hLevelParams = def.getHLevelParameters();
+      if (pLevelParams != null || hLevelParams != null) {
+        myErrorReporter.report(new TypecheckingError(GeneralError.Level.WARNING_UNUSED, "Level parameters of a super class will be used", pLevelParams != null ? pLevelParams : hLevelParams));
+      }
+      Concrete.ClassDefinition superClass = def;
+      while (!superClass.getSuperClasses().isEmpty()) {
+        Referable ref = superClass.getSuperClasses().get(0).getReferent();
+        Concrete.ClassDefinition classDef = ref instanceof GlobalReferable ? myConcreteProvider.getConcreteClass((GlobalReferable) ref) : null;
+        if (classDef == null) break;
+        superClass = classDef;
+      }
+      def.setPLevelParameters(superClass.getPLevelParameters());
+      def.setHLevelParameters(superClass.getHLevelParameters());
+
+      if (pLevelParams == null && hLevelParams == null) {
+        for (int i = 1; i < def.getSuperClasses().size(); i++) {
+          Referable ref = def.getSuperClasses().get(i).getReferent();
+          superClass = ref instanceof GlobalReferable ? myConcreteProvider.getConcreteClass((GlobalReferable) ref) : null;
+          if (superClass != null) {
+            while (superClass.getPLevelParameters() == null && superClass.getHLevelParameters() == null && !superClass.getSuperClasses().isEmpty()) {
+              ref = superClass.getSuperClasses().get(0).getReferent();
+              Concrete.ClassDefinition classDef = ref instanceof GlobalReferable ? myConcreteProvider.getConcreteClass((GlobalReferable) ref) : null;
+              if (classDef == null) break;
+              superClass = classDef;
+            }
+            compareLevelParameters(def.getPLevelParameters(), superClass.getPLevelParameters(), def.getSuperClasses().get(i));
+            compareLevelParameters(def.getHLevelParameters(), superClass.getHLevelParameters(), def.getSuperClasses().get(i));
+          }
+        }
+      }
+    }
 
     List<Referable> context = new ArrayList<>();
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myReferableConverter, scope, context, myLocalErrorReporter, myResolverListener, visitLevelParameters(def.getPLevelParameters()), visitLevelParameters(def.getHLevelParameters()));

@@ -2,6 +2,7 @@ package org.arend.typechecking.levels;
 
 import org.arend.Matchers;
 import org.arend.core.context.binding.LevelVariable;
+import org.arend.core.definition.ClassDefinition;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Definition;
 import org.arend.core.definition.FunctionDefinition;
@@ -142,14 +143,57 @@ public class LevelParametersTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void extendsTest() {
+    typeCheckModule(
+      "\\record R \\plevels p1 <= p2\n" +
+      "\\record S \\extends R\n" +
+      "  | A : \\Type p1\n" +
+      "\\record T \\extends R\n" +
+      "\\record X \\extends S, T\n" +
+      "  | B : \\Type p2");
+    assertEquals(3, getDefinition("S").getLevelParameters().size());
+    assertEquals(3, getDefinition("T").getLevelParameters().size());
+    assertEquals(3, getDefinition("X").getLevelParameters().size());
+  }
+
+  @Test
+  public void extendsError() {
+    resolveNamesModule(
+      "\\record R \\plevels p1 <= p2\n" +
+      "\\record S \\plevels p3 <= p4 \\extends R", 1);
+  }
+
+  @Test
+  public void extendsTest2() {
+    typeCheckModule(
+      "\\record R \\plevels p1 <= p2\n" +
+      "\\record S \\plevels p3 <= p4\n" +
+      "\\record T \\extends R, S\n" +
+      "  | A : \\Type p2");
+  }
+
+  @Test
+  public void extendsError2() {
+    resolveNamesModule(
+      "\\record R \\plevels p1 <= p2\n" +
+      "\\record S \\plevels p3 >= p4\n" +
+      "\\record T \\extends R, S", 1);
+  }
+
+  @Test
   public void defaultTest() {
     typeCheckModule(
       "\\record R \\plevels p1 <= p2\n" +
       "  | f : Nat\n" +
       "\\record S \\extends R {\n" +
-      "  \\default f : Nat => n\n" +
+      "  \\default f : Nat => 0\n" +
       "}");
-    assertEquals(2, getDefinition("S.f").getLevelParameters().size());
+    assertEquals(3, getDefinition("S.f").getLevelParameters().size());
+    ClassDefinition classDef = (ClassDefinition) getDefinition("S");
+    Expression impl = classDef.getDefault((ClassField) getDefinition("R.f")).getExpression();
+    List<? extends Level> levels = ((FunCallExpression) impl).getLevels().toList();
+    List<LevelVariable> params = classDef.getLevelParameters();
+    assertEquals(Arrays.asList(new Level(params.get(0)), new Level(params.get(1)), new Level(params.get(2))), levels);
   }
 
   @Test

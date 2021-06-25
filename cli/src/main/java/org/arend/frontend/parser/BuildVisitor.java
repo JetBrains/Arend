@@ -427,8 +427,8 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       : new ConcreteLocatedReferable(position, name, precedence, aliasName, aliasPrecedence, (TCReferable) parent.getReferable(), kind);
   }
 
-  private Concrete.LevelParameters parseLevelParameters(List<TerminalNode> ids) {
-    if (ids.isEmpty()) return new Concrete.LevelParameters(Collections.emptyList(), true);
+  private Concrete.LevelParameters parseLevelParameters(Token token, List<TerminalNode> ids) {
+    if (ids.isEmpty()) return new Concrete.LevelParameters(tokenPosition(token), Collections.emptyList(), true);
     if (ids.size() % 2 == 0) {
       myErrorReporter.report(new ParserError(tokenPosition(ids.get(0).getSymbol()), "Cannot parse level parameters"));
       return null;
@@ -453,17 +453,17 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       }
       refs.add(new ParsedLocalReferable(tokenPosition(ids.get(i + 1).getSymbol()), ids.get(i + 1).getText()));
     }
-    return new Concrete.LevelParameters(refs, increasing == null || increasing);
+    return new Concrete.LevelParameters(tokenPosition(token), refs, increasing == null || increasing);
   }
 
   @Override
   public Concrete.LevelParameters visitPlevelParams(PlevelParamsContext ctx) {
-    return ctx == null ? null : parseLevelParameters(ctx.ID());
+    return ctx == null ? null : parseLevelParameters(ctx.start, ctx.ID());
   }
 
   @Override
   public Concrete.LevelParameters visitHlevelParams(HlevelParamsContext ctx) {
-    return ctx == null ? null : parseLevelParameters(ctx.ID());
+    return ctx == null ? null : parseLevelParameters(ctx.start, ctx.ID());
   }
 
   private StaticGroup visitDefInstance(DefInstanceContext ctx, ChildGroup parent, TCDefReferable enclosingClass) {
