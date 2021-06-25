@@ -10,6 +10,7 @@ import org.arend.ext.core.ops.CMP;
 import org.arend.ext.reference.Precedence;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
+import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.implicitargs.equations.Equations;
 
 public class Level implements CoreLevel {
@@ -142,6 +143,11 @@ public class Level implements CoreLevel {
     StringBuilder builder = new StringBuilder();
     ToAbstractVisitor.convert(this).accept(new PrettyPrintVisitor(builder, 0), new Precedence(Concrete.Expression.PREC));
     return builder.toString();
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    return this == obj || obj instanceof Level && compare(this, (Level) obj, CMP.EQ, DummyEquations.getInstance(), null);
   }
 
   public static boolean compare(Level level1, Level level2, CMP cmp, Equations equations, Concrete.SourceNode sourceNode) {

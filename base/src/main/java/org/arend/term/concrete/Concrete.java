@@ -504,8 +504,8 @@ public final class Concrete {
   public static class ReferenceExpression extends Expression implements Reference, ConcreteReferenceExpression {
     public static final byte PREC = 12;
     private Referable myReferent;
-    private final List<LevelExpression> myPLevels;
-    private final List<LevelExpression> myHLevels;
+    private List<LevelExpression> myPLevels;
+    private List<LevelExpression> myHLevels;
 
     public ReferenceExpression(Object data, @NotNull Referable referable, List<LevelExpression> pLevels, List<LevelExpression> hLevels) {
       super(data);
@@ -533,9 +533,17 @@ public final class Concrete {
       return myPLevels;
     }
 
+    public void setPLevels(List<LevelExpression> levels) {
+      myPLevels = levels;
+    }
+
     @Override
     public List<LevelExpression> getHLevels() {
       return myHLevels;
+    }
+
+    public void setHLevels(List<LevelExpression> levels) {
+      myHLevels = levels;
     }
 
     @Override
@@ -698,10 +706,14 @@ public final class Concrete {
       this(functionReference.getData(), implementedField, functionReference, isDefault);
     }
 
-    public TCDefReferable getFunctionReference() {
+    public ReferenceExpression getReferenceExpression() {
       Expression impl = getImplementation();
       assert impl instanceof ReferenceExpression || impl instanceof AppExpression;
-      return (TCDefReferable) ((ReferenceExpression) (impl instanceof ReferenceExpression ? impl : ((AppExpression) impl).getFunction())).getReferent();
+      return (ReferenceExpression) (impl instanceof ReferenceExpression ? impl : ((AppExpression) impl).getFunction());
+    }
+
+    public TCDefReferable getFunctionReference() {
+      return (TCDefReferable) getReferenceExpression().getReferent();
     }
   }
 
@@ -1647,8 +1659,8 @@ public final class Concrete {
 
   public static abstract class Definition extends ResolvableDefinition implements ReferableDefinition {
     private final TCDefReferable myReferable;
-    private final LevelParameters myPLevelParameters;
-    private final LevelParameters myHLevelParameters;
+    private LevelParameters myPLevelParameters;
+    private LevelParameters myHLevelParameters;
     public TCDefReferable enclosingClass;
     private Set<TCDefReferable> myRecursiveDefinitions = Collections.emptySet();
 
@@ -1712,8 +1724,16 @@ public final class Concrete {
       return myPLevelParameters;
     }
 
+    public void setPLevelParameters(LevelParameters parameters) {
+      myPLevelParameters = parameters;
+    }
+
     public LevelParameters getHLevelParameters() {
       return myHLevelParameters;
+    }
+
+    public void setHLevelParameters(LevelParameters parameters) {
+      myHLevelParameters = parameters;
     }
 
     public abstract <P, R> R accept(ConcreteDefinitionVisitor<? super P, ? extends R> visitor, P params);

@@ -2,14 +2,23 @@ package org.arend.typechecking.levels;
 
 import org.arend.Matchers;
 import org.arend.core.context.binding.LevelVariable;
+import org.arend.core.definition.ClassField;
+import org.arend.core.definition.Definition;
 import org.arend.core.definition.FunctionDefinition;
+import org.arend.core.expr.ClassCallExpression;
+import org.arend.core.expr.Expression;
+import org.arend.core.expr.FunCallExpression;
 import org.arend.core.expr.UniverseExpression;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.List;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public class LevelParametersTest extends TypeCheckingTestCase {
   @Test
@@ -135,10 +144,25 @@ public class LevelParametersTest extends TypeCheckingTestCase {
   @Test
   public void defaultTest() {
     typeCheckModule(
-      "\\record R \\plevels p1 <= p2 {\n" +
-      "  | f : Nat -> Nat\n" +
-      "  \\default f (n : Nat) : Nat => n\n" +
+      "\\record R \\plevels p1 <= p2\n" +
+      "  | f : Nat\n" +
+      "\\record S \\extends R {\n" +
+      "  \\default f : Nat => n\n" +
       "}");
-    assertEquals(2, getDefinition("R.f").getLevelParameters().size());
+    assertEquals(2, getDefinition("S.f").getLevelParameters().size());
+  }
+
+  @Test
+  public void coclauseTest() {
+    typeCheckModule(
+      "\\record R (x : Nat)\n" +
+      "\\func g \\plevels p1 <= p2 : R \\cowith\n" +
+      "  | x : Nat => 0");
+    assertEquals(3, getDefinition("g.x").getLevelParameters().size());
+    Expression impl = ((ClassCallExpression) ((FunctionDefinition) getDefinition("g")).getResultType()).getAbsImplementationHere((ClassField) getDefinition("R.x"));
+    assertNotNull(impl);
+    List<? extends Level> levels = ((FunCallExpression) impl).getLevels().toList();
+    List<LevelVariable> params = getDefinition("g").getLevelParameters();
+    assertEquals(Arrays.asList(new Level(params.get(0)), new Level(params.get(1)), new Level(params.get(2))), levels);
   }
 }

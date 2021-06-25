@@ -30,6 +30,7 @@ import org.arend.typechecking.error.local.LocalErrorReporter;
 import org.arend.typechecking.provider.ConcreteProvider;
 import org.arend.typechecking.visitor.SyntacticDesugarVisitor;
 import org.arend.util.Pair;
+import org.arend.util.SingletonList;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -279,6 +280,21 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
           elements = ((Concrete.ClassDefinition) enclosingDef).getElements();
         }
 
+        boolean setPLevels = false;
+        boolean setHLevels = false;
+        if (function.getPLevelParameters() == null) {
+          setPLevels = true;
+          if (enclosingDef instanceof Concrete.Definition && ((Concrete.Definition) enclosingDef).getPLevelParameters() != null) {
+            function.setPLevelParameters(((Concrete.Definition) enclosingDef).getPLevelParameters());
+          }
+        }
+        if (function.getHLevelParameters() == null) {
+          setHLevels = true;
+          if (enclosingDef instanceof Concrete.Definition && ((Concrete.Definition) enclosingDef).getHLevelParameters() != null) {
+            function.setHLevelParameters(((Concrete.Definition) enclosingDef).getHLevelParameters());
+          }
+        }
+
         if (classRef != null && !(classRef instanceof ClassReferable)) {
           classRef = classRef.getUnderlyingReferable();
         }
@@ -290,7 +306,31 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
               break;
             }
           }
+          assert functionRef != null;
           function.setImplementedField(new ExpressionResolveNameVisitor(myReferableConverter, scope, null, myLocalErrorReporter, myResolverListener, pLevels, hLevels).visitClassFieldReference(functionRef, function.getImplementedField(), (ClassReferable) classRef));
+          Concrete.ReferenceExpression refExpr = functionRef.getReferenceExpression();
+          if (setPLevels) {
+            if (function.getPLevelParameters() == null) {
+              refExpr.setPLevels(new SingletonList<>(new Concrete.PLevelExpression(refExpr.getData())));
+            } else {
+              List<Concrete.LevelExpression> args = new ArrayList<>();
+              for (Referable ref : function.getPLevelParameters().referables) {
+                args.add(new Concrete.IdLevelExpression(refExpr.getData(), ref));
+              }
+              refExpr.setPLevels(args);
+            }
+          }
+          if (setHLevels) {
+            if (function.getHLevelParameters() == null) {
+              refExpr.setHLevels(new SingletonList<>(new Concrete.HLevelExpression(refExpr.getData())));
+            } else {
+              List<Concrete.LevelExpression> args = new ArrayList<>();
+              for (Referable ref : function.getHLevelParameters().referables) {
+                args.add(new Concrete.IdLevelExpression(refExpr.getData(), ref));
+              }
+              refExpr.setHLevels(args);
+            }
+          }
         }
         if (function.getData() instanceof LocatedReferableImpl && !((LocatedReferableImpl) function.getData()).isPrecedenceSet() && function.getImplementedField() instanceof GlobalReferable) {
           ((LocatedReferableImpl) function.getData()).setPrecedence(((GlobalReferable) function.getImplementedField()).getPrecedence());
