@@ -683,9 +683,11 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       if (pLevelParams != null || hLevelParams != null) {
         myErrorReporter.report(new TypecheckingError(GeneralError.Level.WARNING_UNUSED, "Level parameters of a super class will be used", pLevelParams != null ? pLevelParams : hLevelParams));
       }
+      Set<Referable> visited = new HashSet<>();
       Concrete.ClassDefinition superClass = def;
       while (!superClass.getSuperClasses().isEmpty()) {
         Referable ref = superClass.getSuperClasses().get(0).getReferent();
+        if (!visited.add(ref)) break;
         Concrete.ClassDefinition classDef = ref instanceof GlobalReferable ? myConcreteProvider.getConcreteClass((GlobalReferable) ref) : null;
         if (classDef == null) break;
         superClass = classDef;
@@ -698,8 +700,10 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
           Referable ref = def.getSuperClasses().get(i).getReferent();
           superClass = ref instanceof GlobalReferable ? myConcreteProvider.getConcreteClass((GlobalReferable) ref) : null;
           if (superClass != null) {
+            visited.clear();
             while (superClass.getPLevelParameters() == null && superClass.getHLevelParameters() == null && !superClass.getSuperClasses().isEmpty()) {
               ref = superClass.getSuperClasses().get(0).getReferent();
+              if (!visited.add(ref)) break;
               Concrete.ClassDefinition classDef = ref instanceof GlobalReferable ? myConcreteProvider.getConcreteClass((GlobalReferable) ref) : null;
               if (classDef == null) break;
               superClass = classDef;
