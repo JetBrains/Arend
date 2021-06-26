@@ -35,9 +35,13 @@ definition  : funcKw topDefId tele* (':' returnExpr2)? functionBody where?      
             | TRUNCATED? '\\data' topDefId tele* (':' expr2)? dataBody where?                                       # defData
             | classKw topDefId NO_CLASSIFYING? fieldTele* ('\\extends' longName (',' longName)*)? classBody where?  # defClass
             | '\\module' ID where?                                                                                  # defModule
-            | '\\meta' topDefId (ID* '=>' expr)? where?                                                             # defMeta
+            | '\\meta' defId metaPLevels? metaHLevels? (ID* '=>' expr)? where?                                      # defMeta
             | instanceKw topDefId tele* (':' returnExpr2)? instanceBody where?                                      # defInstance
             ;
+
+metaPLevels : '\\plevels' (ID (COMMA ID)*)?;
+
+metaHLevels : '\\hlevels' (ID (COMMA ID)*)?;
 
 returnExpr  : expr ('\\level' expr)?                # returnExprExpr
             | '\\level' atomFieldsAcc atomFieldsAcc # returnExprLevel

@@ -2,11 +2,9 @@ package org.arend.typechecking.levels;
 
 import org.arend.Matchers;
 import org.arend.core.context.binding.LevelVariable;
+import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.*;
-import org.arend.core.expr.ClassCallExpression;
-import org.arend.core.expr.Expression;
-import org.arend.core.expr.FunCallExpression;
-import org.arend.core.expr.UniverseExpression;
+import org.arend.core.expr.*;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.typechecking.TypeCheckingTestCase;
@@ -14,6 +12,7 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -214,5 +213,15 @@ public class LevelParametersTest extends TypeCheckingTestCase {
     List<? extends Level> levels = ((FunCallExpression) impl).getLevels().toList();
     List<LevelVariable> params = getDefinition("g").getLevelParameters();
     assertEquals(Arrays.asList(new Level(params.get(0)), new Level(params.get(1)), new Level(params.get(2))), levels);
+  }
+
+  @Test
+  public void metaTest() {
+    typeCheckModule(
+      "\\meta m \\plevels p1, p2 => \\Sigma (\\Type p1) (\\Type p2)\n" +
+      "\\func f => m \\levels (1,2) _");
+    DependentLink params = ((SigmaExpression) Objects.requireNonNull(((FunctionDefinition) getDefinition("f")).getBody())).getParameters();
+    assertEquals(new UniverseExpression(new Sort(new Level(1), new Level(LevelVariable.HVAR))), params.getTypeExpr());
+    assertEquals(new UniverseExpression(new Sort(new Level(2), new Level(LevelVariable.HVAR))), params.getNext().getTypeExpr());
   }
 }

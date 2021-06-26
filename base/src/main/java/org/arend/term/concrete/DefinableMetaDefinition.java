@@ -1,8 +1,10 @@
 package org.arend.term.concrete;
 
+import org.arend.ext.concrete.ConcreteLevel;
 import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.concrete.expr.ConcreteArgument;
 import org.arend.ext.concrete.expr.ConcreteExpression;
+import org.arend.ext.concrete.expr.ConcreteReferenceExpression;
 import org.arend.ext.error.ArgumentExplicitnessError;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.TypecheckingError;
@@ -11,6 +13,7 @@ import org.arend.ext.typechecking.ExpressionTypechecker;
 import org.arend.ext.typechecking.MetaDefinition;
 import org.arend.ext.typechecking.TypedExpression;
 import org.arend.naming.reference.MetaReferable;
+import org.arend.naming.reference.Referable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -24,11 +27,23 @@ public class DefinableMetaDefinition extends Concrete.ResolvableDefinition imple
   private final List<Concrete.NameParameter> myParameters;
   private final MetaReferable myReferable;
   public Concrete.@Nullable Expression body;
+  private final List<Referable> myPLevelParameters;
+  private final List<Referable> myHLevelParameters;
 
-  public DefinableMetaDefinition(MetaReferable referable, List<Concrete.NameParameter> parameters, Concrete.@Nullable Expression body) {
+  public DefinableMetaDefinition(MetaReferable referable, List<Referable> pLevelParameters, List<Referable> hLevelParameters, List<Concrete.NameParameter> parameters, Concrete.@Nullable Expression body) {
     myReferable = referable;
+    myPLevelParameters = pLevelParameters;
+    myHLevelParameters = hLevelParameters;
     myParameters = parameters;
     this.body = body;
+  }
+
+  public List<Referable> getPLevelParameters() {
+    return myPLevelParameters;
+  }
+
+  public List<Referable> getHLevelParameters() {
+    return myHLevelParameters;
   }
 
   public List<? extends Concrete.NameParameter> getParameters() {
@@ -63,10 +78,10 @@ public class DefinableMetaDefinition extends Concrete.ResolvableDefinition imple
 
   @Override
   public @Nullable ConcreteExpression getConcreteRepresentation(@NotNull List<? extends ConcreteArgument> arguments) {
-    return getConcreteRepresentation(arguments, null);
+    return getConcreteRepresentation(null, null, null, arguments);
   }
 
-  private @Nullable ConcreteExpression getConcreteRepresentation(@NotNull List<? extends ConcreteArgument> arguments, @Nullable Object data) {
+  private @Nullable ConcreteExpression getConcreteRepresentation(@Nullable Object data, @Nullable List<? extends ConcreteLevel> pLevels, @Nullable List<? extends ConcreteLevel> hLevels, @NotNull List<? extends ConcreteArgument> arguments) {
     if (body == null) return null;
     assert myParameters.size() == arguments.size();
     var subst = new SubstConcreteExpressionVisitor(data);
@@ -74,12 +89,25 @@ public class DefinableMetaDefinition extends Concrete.ResolvableDefinition imple
       subst.bind(Objects.requireNonNull(myParameters.get(i).getReferable()),
         (Concrete.Expression) arguments.get(i).getExpression());
     }
+    binLevelParameters(subst, pLevels, myPLevelParameters);
+    binLevelParameters(subst, hLevels, myHLevelParameters);
     return body.accept(subst, null);
+  }
+
+  private void binLevelParameters(SubstConcreteExpressionVisitor subst, @Nullable List<? extends ConcreteLevel> levels, List<Referable> levelParameters) {
+    if (levelParameters != null && levels != null) {
+      for (int i = 0; i < levelParameters.size() && i < levels.size(); i++) {
+        ConcreteLevel pLevel = levels.get(i);
+        if (!(pLevel instanceof Concrete.LevelExpression)) throw new IllegalArgumentException();
+        subst.bind(levelParameters.get(i), (Concrete.LevelExpression) pLevel);
+      }
+    }
   }
 
   @Override
   public @Nullable TypedExpression invokeMeta(@NotNull ExpressionTypechecker typechecker, @NotNull ContextData contextData) {
-    ConcreteExpression result = getConcreteRepresentation(contextData.getArguments(), contextData.getMarker().getData());
+    ConcreteReferenceExpression refExpr = contextData.getReferenceExpression();
+    ConcreteExpression result = getConcreteRepresentation(refExpr.getData(), refExpr.getPLevels(), refExpr.getHLevels(), contextData.getArguments());
     if (result == null) {
       typechecker.getErrorReporter().report(new TypecheckingError("Meta '" + myReferable.getRefName() + "' is not defined", contextData.getMarker()));
       return null;

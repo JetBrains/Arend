@@ -172,7 +172,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     checkNameAndPrecedence(def, def.getData());
 
     List<Referable> context = new ArrayList<>();
-    var exprVisitor = new ExpressionResolveNameVisitor(myReferableConverter, scope, context, myLocalErrorReporter, myResolverListener);
+    var exprVisitor = new ExpressionResolveNameVisitor(myReferableConverter, scope, context, myLocalErrorReporter, myResolverListener, visitLevelParameters(def.getPLevelParameters()), visitLevelParameters(def.getHLevelParameters()));
     exprVisitor.visitParameters(def.getParameters(), null);
 
     if (def.body != null) {
@@ -216,13 +216,17 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     }
   }
 
-  private static Map<String, Referable> visitLevelParameters(Concrete.LevelParameters params) {
+  private static Map<String, Referable> visitLevelParameters(List<Referable> params) {
     if (params == null) return Collections.emptyMap();
     Map<String, Referable> result = new HashMap<>();
-    for (Referable ref : params.referables) {
+    for (Referable ref : params) {
       result.put(ref.getRefName(), ref);
     }
     return result;
+  }
+
+  private static Map<String, Referable> visitLevelParameters(Concrete.LevelParameters params) {
+    return params == null ? Collections.emptyMap() : visitLevelParameters(params.referables);
   }
 
   @Override

@@ -99,7 +99,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
     if (!(referable instanceof MetaReferable)) {
       throw new IllegalStateException("Expected MetaReferable, got: " + referable.getClass());
     }
-    var definition = new DefinableMetaDefinition((MetaReferable) referable, parameters, body);
+    var definition = new DefinableMetaDefinition((MetaReferable) referable, null, null, parameters, body); // TODO[levels]
     if (term != null) { // if term == null, it may be a generated meta, in which case we shouldn't replace its definition
       ((MetaReferable) referable).setDefinition(definition);
     }

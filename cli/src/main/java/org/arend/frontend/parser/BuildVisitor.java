@@ -466,6 +466,24 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return ctx == null ? null : parseLevelParameters(ctx.start, ctx.ID());
   }
 
+  private List<Referable> visitMetaLevels(List<TerminalNode> ids) {
+    List<Referable> refs = new ArrayList<>();
+    for (TerminalNode id : ids) {
+      refs.add(new ParsedLocalReferable(tokenPosition(id.getSymbol()), id.getText()));
+    }
+    return refs;
+  }
+
+  @Override
+  public List<Referable> visitMetaPLevels(MetaPLevelsContext ctx) {
+    return ctx == null ? null : visitMetaLevels(ctx.ID());
+  }
+
+  @Override
+  public List<Referable> visitMetaHLevels(MetaHLevelsContext ctx) {
+    return ctx == null ? null : visitMetaLevels(ctx.ID());
+  }
+
   private StaticGroup visitDefInstance(DefInstanceContext ctx, ChildGroup parent, TCDefReferable enclosingClass) {
     boolean isInstance = ctx.instanceKw() instanceof FuncKwInstanceContext;
     List<Concrete.Parameter> parameters = visitLamTeles(ctx.tele(), true);
@@ -582,8 +600,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   }
 
   private StaticGroup visitDefMeta(DefMetaContext ctx, ChildGroup parent, TCDefReferable enclosingClass) {
-    TopDefIdContext topDefId = ctx.topDefId();
-    DefIdContext defId = topDefId.defId();
+    DefIdContext defId = ctx.defId();
     var where = ctx.where();
     List<Group> staticSubgroups = where == null ? Collections.emptyList() : new ArrayList<>();
     List<ChildNamespaceCommand> namespaceCommands = where == null ? Collections.emptyList() : new ArrayList<>();
@@ -597,8 +614,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       var params = ctx.ID().stream()
         .map(r -> new Concrete.NameParameter(tokenPosition(r.getSymbol()), true, new LocalReferable(r.getText())))
         .collect(Collectors.toList());
-      var metaDef = new DefinableMetaDefinition(reference, params, visitExpr(body));
-      reference.setDefinition(metaDef);
+      reference.setDefinition(new DefinableMetaDefinition(reference, visitMetaPLevels(ctx.metaPLevels()), visitMetaHLevels(ctx.metaHLevels()), params, visitExpr(body)));
     }
 
     var resultGroup = new StaticGroup(reference, staticSubgroups, namespaceCommands, parent);
