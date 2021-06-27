@@ -236,7 +236,7 @@ onlyLevelAtom : '\\lp'                                                # pOnlyLev
               | '(' onlyLevelExpr ')'                                 # parenOnlyLevel
               ;
 
-maybeLevelAtoms : '(' levelExpr (',' levelExpr)* ')'    # multiLevel
+maybeLevelAtoms : '(' (levelExpr (',' levelExpr)*)? ')' # multiLevel
                 | maybeLevelAtom                        # singleLevel
                 ;
 

@@ -6,6 +6,7 @@ import org.arend.naming.reference.Referable;
 import org.arend.term.ClassFieldKind;
 import org.arend.term.FunctionKind;
 import org.arend.term.NamespaceCommand;
+import org.arend.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -210,10 +211,20 @@ public final class Abstract {
     }
   }
 
+  public enum Comparison { LESS_OR_EQUALS, GREATER_OR_EQUALS }
+
+  public interface LevelParameters {
+    @Nullable Object getData();
+    @NotNull Collection<? extends Referable> getReferables();
+    @NotNull Collection<Comparison> getComparisonList();
+  }
+
   public interface Definition extends ReferableDefinition {
     @Nullable ClassReferable getEnclosingClass();
     @Override @NotNull LocatedReferable getReferable();
     <R> R accept(AbstractDefinitionVisitor<? extends R> visitor);
+    @Nullable LevelParameters getPLevelParameters();
+    @Nullable LevelParameters getHLevelParameters();
   }
 
   public interface MetaDefinition extends Definition, ParametersHolder {

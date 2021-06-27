@@ -1838,6 +1838,9 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   @Override
   public Level visitId(Concrete.IdLevelExpression expr, LevelVariable base) {
+    if (expr.getReferent() instanceof ErrorReference) {
+      return new Level(base);
+    }
     var vars = base == LevelVariable.HVAR ? myHLevelVariables : myPLevelVariables;
     ParamLevelVariable var = vars == null ? null : vars.get(expr.getReferent());
     if (var == null) {
