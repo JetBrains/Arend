@@ -161,7 +161,7 @@ public class CoerceData {
       if (def instanceof ClassField) {
         ClassField field = (ClassField) def;
         ClassCallExpression classCall = result.type.cast(ClassCallExpression.class);
-        Levels levels = classCall == null ? field.getParentClass().generateInferVars(visitor.getEquations(), sourceNode) : classCall.getLevels();
+        Levels levels = classCall == null ? field.getParentClass().generateInferVars(visitor.getEquations(), sourceNode) : classCall.getLevels(field.getParentClass());
         Expression resultExpr = FieldCallExpression.make(field, levels, result.expression);
         result = new TypecheckingResult(resultExpr, resultExpr.getType());
       } else if (def instanceof FunctionDefinition || def instanceof Constructor) {

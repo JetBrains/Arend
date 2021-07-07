@@ -22,7 +22,7 @@ public class ListLevels implements Levels {
 
   @Override
   public LevelSubstitution makeSubstitution(@NotNull Definition definition) {
-    List<LevelVariable> vars = definition.getLevelParameters();
+    List<? extends LevelVariable> vars = definition.getLevelParameters();
     if (vars.size() != myLevels.size()) {
       throw new IllegalStateException();
     }

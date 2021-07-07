@@ -8,6 +8,7 @@ import org.arend.core.expr.*;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.typechecking.TypeCheckingTestCase;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -148,44 +149,6 @@ public class LevelParametersTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void extendsTest() {
-    typeCheckModule(
-      "\\record R \\plevels p1 <= p2\n" +
-      "\\record S \\extends R\n" +
-      "  | A : \\Type p1\n" +
-      "\\record T \\extends R\n" +
-      "\\record X \\extends S, T\n" +
-      "  | B : \\Type p2");
-    assertEquals(3, getDefinition("S").getLevelParameters().size());
-    assertEquals(3, getDefinition("T").getLevelParameters().size());
-    assertEquals(3, getDefinition("X").getLevelParameters().size());
-  }
-
-  @Test
-  public void extendsError() {
-    resolveNamesModule(
-      "\\record R \\plevels p1 <= p2\n" +
-      "\\record S \\plevels p3 <= p4 \\extends R", 1);
-  }
-
-  @Test
-  public void extendsTest2() {
-    typeCheckModule(
-      "\\record R \\plevels p1 <= p2\n" +
-      "\\record S \\plevels p3 <= p4\n" +
-      "\\record T \\extends R, S\n" +
-      "  | A : \\Type p2");
-  }
-
-  @Test
-  public void extendsError2() {
-    resolveNamesModule(
-      "\\record R \\plevels p1 <= p2\n" +
-      "\\record S \\plevels p3 >= p4\n" +
-      "\\record T \\extends R, S", 1);
-  }
-
-  @Test
   public void defaultTest() {
     typeCheckModule(
       "\\record R \\plevels p1 <= p2\n" +
@@ -197,7 +160,24 @@ public class LevelParametersTest extends TypeCheckingTestCase {
     ClassDefinition classDef = (ClassDefinition) getDefinition("S");
     Expression impl = classDef.getDefault((ClassField) getDefinition("R.f")).getExpression();
     List<? extends Level> levels = ((FunCallExpression) impl).getLevels().toList();
-    List<LevelVariable> params = classDef.getLevelParameters();
+    List<? extends LevelVariable> params = classDef.getLevelParameters();
+    assertEquals(Arrays.asList(new Level(params.get(0)), new Level(params.get(1)), new Level(params.get(2))), levels);
+  }
+
+  @Ignore
+  @Test
+  public void defaultTest2() {
+    typeCheckModule(
+      "\\record R \\plevels p1 <= p2\n" +
+      "  | f : \\hType (\\suc p2)\n" +
+      "\\record S \\extends R {\n" +
+      "  \\default f \\plevels p1 <= p2 : \\hType (\\suc p2) => \\hType p1\n" +
+      "}");
+    assertEquals(3, getDefinition("S.f").getLevelParameters().size());
+    ClassDefinition classDef = (ClassDefinition) getDefinition("S");
+    Expression impl = classDef.getDefault((ClassField) getDefinition("R.f")).getExpression();
+    List<? extends Level> levels = ((FunCallExpression) impl).getLevels().toList();
+    List<? extends LevelVariable> params = classDef.getLevelParameters();
     assertEquals(Arrays.asList(new Level(params.get(0)), new Level(params.get(1)), new Level(params.get(2))), levels);
   }
 
@@ -211,8 +191,16 @@ public class LevelParametersTest extends TypeCheckingTestCase {
     Expression impl = ((ClassCallExpression) ((FunctionDefinition) getDefinition("g")).getResultType()).getAbsImplementationHere((ClassField) getDefinition("R.x"));
     assertNotNull(impl);
     List<? extends Level> levels = ((FunCallExpression) impl).getLevels().toList();
-    List<LevelVariable> params = getDefinition("g").getLevelParameters();
+    List<? extends LevelVariable> params = getDefinition("g").getLevelParameters();
     assertEquals(Arrays.asList(new Level(params.get(0)), new Level(params.get(1)), new Level(params.get(2))), levels);
+  }
+
+  @Test
+  public void coclauseTest2() {
+    typeCheckModule(
+      "\\record R \\plevels p1 <= p2 (x : \\hType (\\suc p2))\n" +
+      "\\func g \\plevels p1 <= p2 : R \\levels (p1,p2) _ \\cowith\n" +
+      "  | x : \\hType (\\suc p2) => \\hType p1");
   }
 
   @Test

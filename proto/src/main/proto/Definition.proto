@@ -27,6 +27,10 @@ message Definition {
         string name = 2;
         int32 size = 3;
     }
+    message LevelField {
+        LevelParameter parameter = 1;
+        int32 ref = 2;
+    }
     message ClassData {
         repeated int32 super_class_ref = 1;
         repeated Field personal_field = 2;
@@ -44,8 +48,9 @@ message Definition {
         repeated ClassParametersLevel parameters_level = 11;
         map<int32, Expression.Pi> overridden_field = 12;
         int32 squasher = 13;
-        repeated LevelParameter level_param = 17;
+        repeated LevelField level_field = 17;
         bool is_std_levels = 18;
+        map<int32, Levels> super_levels = 19;
 
         message Field {
             Referable referable = 1;

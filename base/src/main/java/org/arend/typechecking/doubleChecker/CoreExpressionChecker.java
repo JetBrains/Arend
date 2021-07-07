@@ -181,7 +181,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     addBinding(expr.getThisBinding(), expr);
     Expression thisExpr = new ReferenceExpression(expr.getThisBinding());
     for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
-      Expression type = expr.getDefinition().getFieldType(entry.getKey(), expr.getLevels(), thisExpr);
+      Expression type = expr.getDefinition().getFieldType(entry.getKey(), expr.getLevels(entry.getKey().getParentClass()), thisExpr);
       if (entry.getKey().isProperty()) {
         if (entry.getValue() instanceof LamExpression) {
           checkLam((LamExpression) entry.getValue(), type, -1);
@@ -200,7 +200,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     if (level == null || level != -1) {
       for (ClassField field : expr.getDefinition().getFields()) {
         if (!expr.isImplemented(field)) {
-          Sort sort = expr.getDefinition().getFieldType(field, expr.getLevels(), thisExpr).normalize(NormalizationMode.WHNF).getSortOfType();
+          Sort sort = expr.getDefinition().getFieldType(field, expr.getLevels(field.getParentClass()), thisExpr).normalize(NormalizationMode.WHNF).getSortOfType();
           if (sort == null) {
             throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Cannot infer the type of field '" + field.getName() + "'", mySourceNode), expr));
           }

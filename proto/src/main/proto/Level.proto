@@ -16,6 +16,10 @@ message Level {
     Variable variable = 2;
 }
 
+message Levels {
+  repeated Level level = 1;
+}
+
 message Sort {
     Level p_level = 1;
     Level h_level = 2;

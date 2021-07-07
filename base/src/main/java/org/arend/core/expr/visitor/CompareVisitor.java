@@ -851,7 +851,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
               implementations.put(field, classCall1.getImplementationHere(field, new ReferenceExpression(classCall.getThisBinding())));
               i++;
             } else {
-              PiExpression piType = classCall1.getDefinition().getFieldType(field, classCall1.getLevels());
+              PiExpression piType = classCall1.getDefinition().getFieldType(field, classCall1.getLevels(field.getParentClass()));
               Expression type = piType.getCodomain();
               TypedSingleDependentLink link = new TypedSingleDependentLink(field.getReferable().isExplicitField(), field.getName(), type instanceof Type ? (Type) type : new TypeExpression(type, piType.getResultSort()));
               params.add(link);
@@ -938,7 +938,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
         myCMP = CMP.EQ;
       }
       mySubstitution.put(classCall2.getThisBinding(), binding);
-      boolean ok = compare(correctOrder ? impl1 : impl2, correctOrder ? impl2 : impl1, field.getType(classCall2.getLevels()).applyExpression(new ReferenceExpression(binding)), true);
+      boolean ok = compare(correctOrder ? impl1 : impl2, correctOrder ? impl2 : impl1, field.getType(classCall2.getLevels(field.getParentClass())).applyExpression(new ReferenceExpression(binding)), true);
       mySubstitution.remove(classCall2.getThisBinding());
       if (!ok) {
         return false;
@@ -946,6 +946,10 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       myCMP = origCMP;
     }
     return true;
+  }
+
+  private boolean compareClassCallLevelsLE(ClassCallExpression classCall1, ClassCallExpression classCall2, CMP cmp, Equations equations) {
+    return myCMP == CMP.EQ ? classCall1.getLevels().compare(classCall2.getLevels(), cmp, equations, mySourceNode) : classCall1.getLevels(classCall2.getDefinition()).compare(classCall2.getLevels(), cmp, equations, mySourceNode);
   }
 
   private boolean checkClassCallLevels(ClassCallExpression classCall1, ClassCallExpression classCall2, CMP onSuccess, CMP onFailure) {
@@ -960,7 +964,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
         }
         CMP origCmp = myCMP;
         myCMP = CMP.LE;
-        ok = compare(type, classCall1.getDefinition().getFieldType(entry.getKey(), classCall2.getLevels(), thisExpr), Type.OMEGA, false);
+        ok = compare(type, classCall1.getDefinition().getFieldType(entry.getKey(), classCall2.getLevels(entry.getKey().getParentClass()), thisExpr), Type.OMEGA, false);
         myCMP = origCmp;
         if (!ok) {
           break;
@@ -977,7 +981,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
           }
           CMP origCmp = myCMP;
           myCMP = CMP.LE;
-          ok = compare(type, classCall1.getDefinition().getFieldType(entry.getKey(), classCall2.getLevels(), thisExpr), Type.OMEGA, false);
+          ok = compare(type, classCall1.getDefinition().getFieldType(entry.getKey(), classCall2.getLevels(entry.getKey().getParentClass()), thisExpr), Type.OMEGA, false);
           myCMP = origCmp;
           if (!ok) {
             break;
@@ -987,10 +991,14 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     }
 
     if (ok) {
-      return onSuccess == null || myNormalCompare && classCall1.getLevels().compare(classCall2.getLevels(), onSuccess, myEquations, mySourceNode);
+      return onSuccess == null || myNormalCompare && compareClassCallLevelsLE(classCall1, classCall2, onSuccess, myEquations);
     } else {
-      return myNormalCompare && classCall1.getLevels().compare(classCall2.getLevels(), onFailure, myEquations, mySourceNode);
+      return myNormalCompare && compareClassCallLevelsLE(classCall1, classCall2, onFailure, myEquations);
     }
+  }
+
+  private boolean compareClassCallLevels(ClassCallExpression classCall1, ClassCallExpression classCall2, CMP cmp, Equations equations) {
+    return cmp == CMP.GE ? compareClassCallLevelsLE(classCall2, classCall1, cmp.not(), equations) : compareClassCallLevelsLE(classCall1, classCall2, cmp, equations);
   }
 
   public boolean compareClassCallLevels(ClassCallExpression classCall1, ClassCallExpression classCall2) {
@@ -1000,9 +1008,9 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       return true;
     }
     if (myCMP == CMP.EQ || kind1 == kind2) {
-      return classCall1.getLevels().compare(classCall2.getLevels(), kind1 == UniverseKind.ONLY_COVARIANT ? myCMP : CMP.EQ, myNormalCompare ? myEquations : DummyEquations.getInstance(), mySourceNode);
+      return compareClassCallLevels(classCall1, classCall2, kind1 == UniverseKind.ONLY_COVARIANT ? myCMP : CMP.EQ, myNormalCompare ? myEquations : DummyEquations.getInstance());
     }
-    if (!classCall1.getLevels().compare(classCall2.getLevels(), myCMP, DummyEquations.getInstance(), mySourceNode)) {
+    if (!compareClassCallLevels(classCall1, classCall2, myCMP, DummyEquations.getInstance())) {
       CMP onSuccess = kind1 == UniverseKind.NO_UNIVERSES || kind2 == UniverseKind.NO_UNIVERSES ? null : CMP.LE;
       CMP onFailure = kind1 == UniverseKind.WITH_UNIVERSES || kind2 == UniverseKind.WITH_UNIVERSES ? CMP.EQ : CMP.LE;
       return myCMP == CMP.LE ? checkClassCallLevels(classCall1, classCall2, onSuccess, onFailure) : checkClassCallLevels(classCall2, classCall1, onSuccess, onFailure);
@@ -1017,25 +1025,29 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       return false;
     }
 
+    if (myCMP == CMP.LE && !expr1.getDefinition().isSubClassOf(classCall2.getDefinition())) {
+      return false;
+    }
+    if (myCMP == CMP.GE && !classCall2.getDefinition().isSubClassOf(expr1.getDefinition())) {
+      return false;
+    }
+    if (myCMP == CMP.EQ && expr1.getDefinition() != classCall2.getDefinition()) {
+      return false;
+    }
+
     if (!compareClassCallLevels(expr1, classCall2)) {
       return false;
     }
 
     if (myCMP == CMP.LE) {
-      if (!expr1.getDefinition().isSubClassOf(classCall2.getDefinition())) {
-        return false;
-      }
       return checkSubclassImpl(expr1, classCall2, true);
     }
 
     if (myCMP == CMP.GE) {
-      if (!classCall2.getDefinition().isSubClassOf(expr1.getDefinition())) {
-        return false;
-      }
       return checkSubclassImpl(classCall2, expr1, false);
     }
 
-    return expr1.getDefinition() == classCall2.getDefinition() && expr1.getImplementedHere().size() == classCall2.getImplementedHere().size() && checkSubclassImpl(expr1, classCall2, true);
+    return expr1.getImplementedHere().size() == classCall2.getImplementedHere().size() && checkSubclassImpl(expr1, classCall2, true);
   }
 
   private Binding substBinding(Binding binding) {
@@ -1292,12 +1304,12 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       Expression impl1 = classCall1.getImplementation(field, expr1);
       Expression impl2 = classCall2.getImplementation(field, expr2);
       if (impl1 == null) {
-        impl1 = FieldCallExpression.make(field, classCall1.getLevels(), expr1);
+        impl1 = FieldCallExpression.make(field, classCall1.getLevels(field.getParentClass()), expr1);
       }
       if (impl2 == null) {
-        impl2 = FieldCallExpression.make(field, classCall2.getLevels(), expr2);
+        impl2 = FieldCallExpression.make(field, classCall2.getLevels(field.getParentClass()), expr2);
       }
-      if (!compare(impl1, impl2, field.getType(classCall1.getLevels()).applyExpression(expr1), true)) {
+      if (!compare(impl1, impl2, field.getType(classCall1.getLevels(field.getParentClass())).applyExpression(expr1), true)) {
         return false;
       }
     }

@@ -1192,7 +1192,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
             errorReporter.report(new FieldDependencyError(field, found, sourceNode));
             return null;
           }
-          fieldSet.put(field, FieldCallExpression.make(field, classCallExpr.getLevels(), renewExpr));
+          fieldSet.put(field, FieldCallExpression.make(field, classCallExpr.getLevels(field.getParentClass()), renewExpr));
         }
       }
     } else if (useDefaults && !baseClass.getDefaults().isEmpty()) {
@@ -1290,14 +1290,15 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
                   errorReporter.report(new TypeMismatchError(new ClassCallExpression(classDef, classDef.makeMinLevels()), type, pair.proj2.implementation));
                 } else {
                   if (!new CompareVisitor(myEquations, CMP.LE, pair.proj2.implementation).compareClassCallLevels(classCall, resultClassCall)) {
-                    errorReporter.report(new TypeMismatchError(new ClassCallExpression(classCall.getDefinition(), resultClassCall.getLevels()), classCall, pair.proj2.implementation));
+                    errorReporter.report(new TypeMismatchError(new ClassCallExpression(classDef, resultClassCall.getLevels(classDef)), classCall, pair.proj2.implementation));
                     return null;
                   }
                   for (ClassField field : classDef.getFields()) {
-                    Expression impl = FieldCallExpression.make(field, classCall.getLevels(), result.expression).normalize(NormalizationMode.WHNF);
+                    Levels fieldLevels = classCall.getLevels(field.getParentClass());
+                    Expression impl = FieldCallExpression.make(field, fieldLevels, result.expression).normalize(NormalizationMode.WHNF);
                     Expression oldImpl = field.isProperty() ? null : resultClassCall.getImplementation(field, result.expression);
                     if (oldImpl != null) {
-                      if (!CompareVisitor.compare(myEquations, CMP.EQ, impl, oldImpl, classCall.getDefinition().getFieldType(field, classCall.getLevels(), result.expression), pair.proj2.implementation)) {
+                      if (!CompareVisitor.compare(myEquations, CMP.EQ, impl, oldImpl, classCall.getDefinition().getFieldType(field, fieldLevels, result.expression), pair.proj2.implementation)) {
                         errorReporter.report(new FieldsImplementationError(true, baseClass.getReferable(), Collections.singletonList(field.getReferable()), pair.proj2));
                       }
                     } else {
@@ -1349,7 +1350,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   private TypecheckingResult typecheckImplementation(ClassField field, Concrete.Expression implBody, ClassCallExpression fieldSetClass, boolean addImplicitLambdas) {
-    Expression type = fieldSetClass.getDefinition().getFieldType(field, fieldSetClass.getLevels(), new ReferenceExpression(fieldSetClass.getThisBinding()));
+    Expression type = fieldSetClass.getDefinition().getFieldType(field, fieldSetClass.getLevels(field.getParentClass()), new ReferenceExpression(fieldSetClass.getThisBinding()));
 
     // Expression type = FieldCallExpression.make(field, fieldSetClass.getLevels(), new ReferenceExpression(fieldSetClass.getThisBinding())).getType();
     if (implBody instanceof Concrete.HoleExpression && field.getReferable().isParameterField() && !field.getReferable().isExplicitField() && field.isTypeClass() && type instanceof ClassCallExpression && !((ClassCallExpression) type).getDefinition().isRecord()) {
@@ -1453,7 +1454,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
                 break;
               }
             }
-            actualClassCall = new ClassCallExpression((ClassDefinition) actualDef, typecheckLevels(actualDef, baseRefExpr, expectedClassCall.getLevels(), false), new HashMap<>(), expectedClassCall.getSort(), actualDef.getUniverseKind());
+            actualClassCall = new ClassCallExpression((ClassDefinition) actualDef, typecheckLevels(actualDef, baseRefExpr, expectedClassCall.getLevels((ClassDefinition) actualDef), false), new HashMap<>(), expectedClassCall.getSort(), actualDef.getUniverseKind());
             if (fieldsOK) {
               actualClassCall.copyImplementationsFrom(expectedClassCall);
             }
@@ -1622,7 +1623,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     result.add(new Level(var));
   }
 
-  private void typecheckLevels(List<Concrete.LevelExpression> levels, List<LevelVariable> params, LevelSubstitution defaultLevels, boolean useMinAsDefault, boolean isUniverseLike, Concrete.SourceNode sourceNode, List<Level> result) {
+  private void typecheckLevels(List<Concrete.LevelExpression> levels, List<? extends LevelVariable> params, LevelSubstitution defaultLevels, boolean useMinAsDefault, boolean isUniverseLike, Concrete.SourceNode sourceNode, List<Level> result) {
     int s = result.size();
     if (levels == null) {
       for (LevelVariable param : params) {
@@ -1648,16 +1649,16 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
   }
 
-  private Levels typecheckLevels(Definition def, Concrete.ReferenceExpression expr, Levels defaultLevels, boolean useMinAsDefault) {
+  public Levels typecheckLevels(Definition def, Concrete.ReferenceExpression expr, Levels defaultLevels, boolean useMinAsDefault) {
     List<Concrete.LevelExpression> pLevels = expr.getPLevels();
     List<Concrete.LevelExpression> hLevels = expr.getHLevels();
     if (pLevels == null && hLevels == null) {
       return defaultLevels != null ? defaultLevels : useMinAsDefault ? def.makeMinLevels() : def.generateInferVars(myEquations, expr);
     }
 
-    List<LevelVariable> params = def.getLevelParameters();
-    List<LevelVariable> pParams;
-    List<LevelVariable> hParams;
+    List<? extends LevelVariable> params = def.getLevelParameters();
+    List<? extends LevelVariable> pParams;
+    List<? extends LevelVariable> hParams;
 
     if (params == null) {
       pParams = Collections.singletonList(LevelVariable.PVAR);
@@ -1941,7 +1942,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     List<Sort> sorts = hLevel != null && hLevel == -1 ? null : new ArrayList<>();
     for (ClassField field : classCall.getDefinition().getFields()) {
       if (classCall.isImplemented(field)) continue;
-      Expression fieldType = classCall.getDefinition().getFieldType(field, classCall.getLevels(), thisExpr).normalize(NormalizationMode.WHNF);
+      Expression fieldType = classCall.getDefinition().getFieldType(field, classCall.getLevels(field.getParentClass()), thisExpr).normalize(NormalizationMode.WHNF);
       if (sorts != null && !fieldType.isInstance(ErrorExpression.class)) {
         sorts.add(getSortOfType(fieldType, sourceNode));
       }
@@ -2568,9 +2569,10 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         }
         newType = link.getTypeExpr().subst(substitution);
       } else {
-        newType = classCall.getDefinition().getFieldType(notImplementedFields.get(i), classCall.getLevels(), expression);
+        ClassField field = notImplementedFields.get(i);
+        newType = classCall.getDefinition().getFieldType(field, classCall.getLevels(field.getParentClass()), expression);
       }
-      LetClausePattern letClausePattern = typecheckLetClausePattern(subPattern, link != null ? ProjExpression.make(expression, i) : FieldCallExpression.make(notImplementedFields.get(i), classCall.getLevels(), expression), newType, bindings);
+      LetClausePattern letClausePattern = typecheckLetClausePattern(subPattern, link != null ? ProjExpression.make(expression, i) : FieldCallExpression.make(notImplementedFields.get(i), classCall.getLevels(notImplementedFields.get(i).getParentClass()), expression), newType, bindings);
       if (letClausePattern == null) {
         return null;
       }
@@ -2614,7 +2616,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           if (myInstancePool != null && pair.proj2 instanceof ClassCallExpression && !((ClassCallExpression) pair.proj2).getDefinition().isRecord()) {
             ClassDefinition classDef = ((ClassCallExpression) pair.proj2).getDefinition();
             Expression instance = new ReferenceExpression(pair.proj1);
-            myInstancePool.addLocalInstance(classDef.getClassifyingField() == null ? null : FieldCallExpression.make(classDef.getClassifyingField(), ((ClassCallExpression) pair.proj2).getLevels(), instance), classDef, instance);
+            myInstancePool.addLocalInstance(classDef.getClassifyingField() == null ? null : FieldCallExpression.make(classDef.getClassifyingField(), ((ClassCallExpression) pair.proj2).getLevels(classDef.getClassifyingField().getParentClass()), instance), classDef, instance);
           }
         }
 

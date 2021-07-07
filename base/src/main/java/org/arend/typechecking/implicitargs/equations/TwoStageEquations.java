@@ -619,7 +619,7 @@ public class TwoStageEquations implements Equations {
       if (!implementations.containsKey(field)) {
         continue;
       }
-      field.getType(levels).getCodomain().accept(new SearchVisitor<Void>() {
+      field.getType(solution.getLevels(field.getParentClass())).getCodomain().accept(new SearchVisitor<Void>() {
         @Override
         protected boolean processDefCall(DefCallExpression expression, Void param) {
           if (expression instanceof FieldCallExpression && classDef.getFields().contains(((FieldCallExpression) expression).getDefinition()) && !solution.isImplemented((ClassField) expression.getDefinition())) {
@@ -745,7 +745,7 @@ public class TwoStageEquations implements Equations {
             boolean remove = !entry.getKey().isProperty();
             if (remove) {
               Expression other = bound.getAbsImplementationHere(entry.getKey());
-              remove = other == null || !CompareVisitor.compare(wrapper, CMP.EQ, entry.getValue(), other, solution.getDefinition().getFieldType(entry.getKey(), solution.getLevels(), thisExpr), pair.proj1.getSourceNode());
+              remove = other == null || !CompareVisitor.compare(wrapper, CMP.EQ, entry.getValue(), other, solution.getDefinition().getFieldType(entry.getKey(), solution.getLevels(entry.getKey().getParentClass()), thisExpr), pair.proj1.getSourceNode());
             }
             if (remove) {
               iterator.remove();
@@ -798,7 +798,7 @@ public class TwoStageEquations implements Equations {
           for (Map.Entry<ClassField, Expression> entry : map.entrySet()) {
             if (entry.getKey().isProperty()) continue;
             Expression other = otherMap.get(entry.getKey());
-            if (other == null || !CompareVisitor.compare(this, CMP.EQ, entry.getValue(), other, solution.getDefinition().getFieldType(entry.getKey(), solution.getLevels(), thisExpr), pair.proj1.getSourceNode())) {
+            if (other == null || !CompareVisitor.compare(this, CMP.EQ, entry.getValue(), other, solution.getDefinition().getFieldType(entry.getKey(), solution.getLevels(entry.getKey().getParentClass()), thisExpr), pair.proj1.getSourceNode())) {
               reportBoundsError(pair.proj1, pair.proj2, CMP.LE);
               allOK = false;
               continue loop;

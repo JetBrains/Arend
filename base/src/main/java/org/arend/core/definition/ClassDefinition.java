@@ -37,7 +37,8 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
   private Set<ClassField> myTypeClassParameters = Collections.emptySet();
   private final ParametersLevels<ParametersLevel> myParametersLevels = new ParametersLevels<>();
   private FunctionDefinition mySquasher;
-  private List<LevelVariable> myLevelParameters;
+  private List<? extends LevelVariable> myLevelParameters;
+  private Map<ClassDefinition, Levels> mySuperLevels = Collections.emptyMap();
 
   public ClassDefinition(TCDefReferable referable) {
     super(referable, TypeCheckingStatus.NEEDS_TYPE_CHECKING);
@@ -119,6 +120,20 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
     mySquasher = squasher;
   }
 
+  public Map<ClassDefinition, Levels> getSuperLevels() {
+    return mySuperLevels;
+  }
+
+  public void setSuperLevels(Map<ClassDefinition, Levels> superLevels) {
+    mySuperLevels = superLevels;
+  }
+
+  public Levels castLevels(ClassDefinition superClass, Levels levels) {
+    if (superClass == this) return levels;
+    Levels result = mySuperLevels.get(superClass);
+    return result == null ? levels : result.subst(levels.makeSubstitution(this));
+  }
+
   public Integer getUseLevel(Map<ClassField,Expression> implemented, Binding thisBinding, boolean isStrict) {
     loop:
     for (ParametersLevel parametersLevel : myParametersLevels.getList()) {
@@ -155,7 +170,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
         continue;
       }
 
-      PiExpression fieldType = getFieldType(field, levels);
+      PiExpression fieldType = getFieldType(field, castLevels(field.getParentClass(), levels));
       if (fieldType.getCodomain().isInstance(ErrorExpression.class)) {
         continue;
       }
@@ -329,7 +344,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
 
   public PiExpression getOverriddenType(ClassField field, Levels levels) {
     PiExpression type = myOverridden.get(field);
-    return type == null ? null : (PiExpression) new SubstVisitor(new ExprSubstitution(), levels.makeSubstitution(this)).visitPi(type, null);
+    return type == null ? null : (PiExpression) new SubstVisitor(new ExprSubstitution(), levels.makeSubstitution(field)).visitPi(type, null);
   }
 
   public PiExpression getFieldType(ClassField field) {
@@ -339,7 +354,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
 
   public PiExpression getFieldType(ClassField field, Levels levels) {
     PiExpression type = myOverridden.get(field);
-    return type == null ? field.getType(levels) : (PiExpression) new SubstVisitor(new ExprSubstitution(), levels.makeSubstitution(this)).visitPi(type, null);
+    return type == null ? field.getType(levels) : (PiExpression) new SubstVisitor(new ExprSubstitution(), levels.makeSubstitution(field)).visitPi(type, null);
   }
 
   public Expression getFieldType(ClassField field, LevelSubstitution levels, Expression thisExpr) {
@@ -351,7 +366,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
   }
 
   public Expression getFieldType(ClassField field, Levels levels, Expression thisExpr) {
-    return getFieldType(field, levels.makeSubstitution(this), thisExpr);
+    return getFieldType(field, levels.makeSubstitution(field), thisExpr);
   }
 
   @Nullable
@@ -404,11 +419,11 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
   }
 
   @Override
-  public List<LevelVariable> getLevelParameters() {
+  public List<? extends LevelVariable> getLevelParameters() {
     return myLevelParameters;
   }
 
-  public void setLevelParameters(List<LevelVariable> parameters) {
+  public void setLevelParameters(List<? extends LevelVariable> parameters) {
     myLevelParameters = parameters;
   }
 

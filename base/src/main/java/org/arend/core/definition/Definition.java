@@ -51,10 +51,10 @@ public abstract class Definition extends UserDataHolderImpl implements CoreDefin
     return Collections.emptySet();
   }
 
-  public abstract List<LevelVariable> getLevelParameters();
+  public abstract List<? extends LevelVariable> getLevelParameters();
 
   public int getNumberOfPLevelParameters() {
-    List<LevelVariable> vars = getLevelParameters();
+    List<? extends LevelVariable> vars = getLevelParameters();
     if (vars == null) return 1;
     int result = 0;
     for (LevelVariable param : vars) {
@@ -68,7 +68,7 @@ public abstract class Definition extends UserDataHolderImpl implements CoreDefin
 
   public boolean isIdLevels(Levels levels) {
     LevelSubstitution subst = levels.makeSubstitution(this);
-    List<LevelVariable> vars = getLevelParameters();
+    List<? extends LevelVariable> vars = getLevelParameters();
     if (vars == null) {
       Level pLevel = (Level) subst.get(LevelVariable.PVAR);
       Level hLevel = (Level) subst.get(LevelVariable.HVAR);
@@ -85,7 +85,7 @@ public abstract class Definition extends UserDataHolderImpl implements CoreDefin
   }
 
   public Levels makeIdLevels() {
-    List<LevelVariable> vars = getLevelParameters();
+    List<? extends LevelVariable> vars = getLevelParameters();
     if (vars == null) return LevelPair.STD;
     List<Level> result = new ArrayList<>(vars.size());
     for (LevelVariable var : vars) {
@@ -95,7 +95,7 @@ public abstract class Definition extends UserDataHolderImpl implements CoreDefin
   }
 
   public Levels makeMinLevels() {
-    List<LevelVariable> vars = getLevelParameters();
+    List<? extends LevelVariable> vars = getLevelParameters();
     if (vars == null) return LevelPair.PROP;
     List<Level> result = new ArrayList<>(vars.size());
     for (LevelVariable var : vars) {
@@ -105,12 +105,11 @@ public abstract class Definition extends UserDataHolderImpl implements CoreDefin
   }
 
   public Levels makeLevelsFromList(List<Level> levels) {
-    List<LevelVariable> vars = getLevelParameters();
-    return vars == null ? new LevelPair(levels.get(0), levels.get(1)) : new ListLevels(levels);
+    return getLevelParameters() == null ? new LevelPair(levels.get(0), levels.get(1)) : new ListLevels(levels);
   }
 
   public Levels generateInferVars(Equations equations, boolean isUniverseLike, Concrete.SourceNode sourceNode) {
-    List<LevelVariable> vars = getLevelParameters();
+    List<? extends LevelVariable> vars = getLevelParameters();
     if (vars == null) return LevelPair.generateInferVars(equations, isUniverseLike, sourceNode);
     List<Level> result = new ArrayList<>(vars.size());
     for (LevelVariable var : vars) {

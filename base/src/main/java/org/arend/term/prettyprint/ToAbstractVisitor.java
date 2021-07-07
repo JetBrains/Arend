@@ -197,7 +197,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     }
 
     LevelSubstitution subst = defCall.getLevelSubstitution();
-    List<LevelVariable> params = def.getLevelParameters();
+    List<? extends LevelVariable> params = def.getLevelParameters();
     List<Level> pLevels;
     List<Level> hLevels;
     if (params == null) {

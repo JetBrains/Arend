@@ -41,7 +41,7 @@ public class ClassField extends Definition implements CoreClassField {
   }
 
   @Override
-  public List<LevelVariable> getLevelParameters() {
+  public List<? extends LevelVariable> getLevelParameters() {
     return myParentClass.getLevelParameters();
   }
 

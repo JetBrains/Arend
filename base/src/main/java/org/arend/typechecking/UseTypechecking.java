@@ -210,7 +210,7 @@ public class UseTypechecking {
               break;
             }
             levelFields.add(classField);
-            Expression fieldType = classCall.getDefinition().getFieldType(classField, classCall.getLevels(), thisExpr);
+            Expression fieldType = classCall.getDefinition().getFieldType(classField, classCall.getLevels(classField.getParentClass()), thisExpr);
             Expression paramType = link.getTypeExpr();
             if (!Expression.compare(fieldType, paramType, Type.OMEGA, CMP.EQ)) {
               if (parameters == null) {
@@ -223,7 +223,7 @@ public class UseTypechecking {
 
               ClassCallExpression fieldClassCall = fieldType.cast(ClassCallExpression.class);
               ClassCallExpression paramClassCall = paramType.cast(ClassCallExpression.class);
-              if (strictList != null && paramClassCall != null && fieldClassCall != null && paramClassCall.getLevels().equals(fieldClassCall.getLevels()) && paramClassCall.getUniverseKind().ordinal() <= fieldClassCall.getUniverseKind().ordinal()) {
+              if (strictList != null && paramClassCall != null && fieldClassCall != null && paramClassCall.getDefinition().isSubClassOf(fieldClassCall.getDefinition()) && paramClassCall.getLevels(fieldClassCall.getDefinition()).equals(fieldClassCall.getLevels()) && paramClassCall.getUniverseKind().ordinal() <= fieldClassCall.getUniverseKind().ordinal()) {
                 strictList.add(new Pair<>(paramClassCall.getDefinition(), paramClassCall.getImplementedHere().keySet()));
               } else {
                 strictList = null;

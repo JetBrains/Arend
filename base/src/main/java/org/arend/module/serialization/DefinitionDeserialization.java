@@ -3,6 +3,7 @@ package org.arend.module.serialization;
 import com.google.protobuf.ByteString;
 import org.arend.core.context.LinkList;
 import org.arend.core.context.binding.Binding;
+import org.arend.core.context.binding.FieldLevelVariable;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.ParamLevelVariable;
 import org.arend.core.context.param.DependentLink;
@@ -11,6 +12,7 @@ import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
 import org.arend.core.pattern.*;
 import org.arend.core.subst.LevelPair;
+import org.arend.core.subst.Levels;
 import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.serialization.ArendDeserializer;
@@ -112,7 +114,25 @@ public class DefinitionDeserialization implements ArendDeserializer {
   }
 
   private void fillInClassDefinition(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.ClassData classProto, ClassDefinition classDef) throws DeserializationException {
-    classDef.setLevelParameters(readLevelParameters(classProto.getLevelParamList(), classProto.getIsStdLevels()));
+    if (!classProto.getIsStdLevels()) {
+      List<LevelVariable> fieldLevels = new ArrayList<>();
+      for (DefinitionProtos.Definition.LevelField levelFieldProto : classProto.getLevelFieldList()) {
+        DefinitionProtos.Definition.LevelParameter parameter = levelFieldProto.getParameter();
+        int ref = levelFieldProto.getRef();
+        fieldLevels.add(ref == -1 ? (parameter.getIsPlevel() ? LevelVariable.PVAR : LevelVariable.HVAR) : new FieldLevelVariable(parameter.getIsPlevel() ? LevelVariable.LvlType.PLVL : LevelVariable.LvlType.HLVL, parameter.getName(), parameter.getSize(), myCallTargetProvider.getLevelCallTarget(ref)));
+      }
+      classDef.setLevelParameters(fieldLevels);
+    }
+
+    Map<Integer, LevelProtos.Levels> superLevelsProto = classProto.getSuperLevelsMap();
+    if (!superLevelsProto.isEmpty()) {
+      Map<ClassDefinition, Levels> superLevels = new HashMap<>();
+      for (Map.Entry<Integer, LevelProtos.Levels> entry : superLevelsProto.entrySet()) {
+        ClassDefinition superClass = myCallTargetProvider.getCallTarget(entry.getKey(), ClassDefinition.class);
+        superLevels.put(superClass, defDeserializer.readLevels(entry.getValue().getLevelList(), superClass));
+      }
+      classDef.setSuperLevels(superLevels);
+    }
 
     for (DefinitionProtos.Definition.ClassData.Field fieldProto : classProto.getPersonalFieldList()) {
       ClassField field = myCallTargetProvider.getCallTarget(fieldProto.getReferable().getIndex(), ClassField.class);

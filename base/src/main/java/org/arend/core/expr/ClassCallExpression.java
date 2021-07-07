@@ -90,6 +90,11 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
     return myThisBinding;
   }
 
+  @NotNull
+  public Levels getLevels(ClassDefinition superClass) {
+    return getDefinition().castLevels(superClass, getLevels());
+  }
+
   public void updateHasUniverses() {
     if (getDefinition().getUniverseKind() == UniverseKind.NO_UNIVERSES) {
       myUniverseKind = UniverseKind.NO_UNIVERSES;
@@ -279,8 +284,9 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
           if (arg instanceof ReferenceExpression && ((ReferenceExpression) arg).getBinding() == thisBindings) {
             type = type.normalize(NormalizationMode.WHNF);
             if (type instanceof ClassCallExpression && getDefinition().isSubClassOf(((ClassCallExpression) type).getDefinition())) {
-              Map<ClassField, Expression> subImplementations = new HashMap<>(((ClassCallExpression) type).getImplementedHere());
-              ClassCallExpression newClassCall = new ClassCallExpression(((ClassCallExpression) type).getDefinition(), getLevels(), subImplementations, Sort.PROP, UniverseKind.NO_UNIVERSES);
+              ClassCallExpression classCall = (ClassCallExpression) type;
+              Map<ClassField, Expression> subImplementations = new HashMap<>(classCall.getImplementedHere());
+              ClassCallExpression newClassCall = new ClassCallExpression(classCall.getDefinition(), classCall.getLevels().subst(getLevelSubstitution()), subImplementations, Sort.PROP, UniverseKind.NO_UNIVERSES);
               for (Map.Entry<ClassField, Expression> entry : implementations.entrySet()) {
                 if (!newClassCall.isImplemented(entry.getKey())) {
                   subImplementations.put(entry.getKey(), entry.getValue());

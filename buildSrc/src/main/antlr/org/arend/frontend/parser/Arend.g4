@@ -31,13 +31,15 @@ classStat : '|' classFieldOrImpl                        # classFieldOrImplStat
           | '\\default' coClause                        # classDefaultStat
           ;
 
-definition  : funcKw topDefId tele* (':' returnExpr2)? functionBody where?                                          # defFunction
-            | TRUNCATED? '\\data' topDefId tele* (':' expr2)? dataBody where?                                       # defData
-            | classKw topDefId NO_CLASSIFYING? fieldTele* ('\\extends' longName (',' longName)*)? classBody where?  # defClass
-            | '\\module' ID where?                                                                                  # defModule
-            | '\\meta' defId metaPLevels? metaHLevels? (ID* '=>' expr)? where?                                      # defMeta
-            | instanceKw topDefId tele* (':' returnExpr2)? instanceBody where?                                      # defInstance
+definition  : funcKw topDefId tele* (':' returnExpr2)? functionBody where?                                              # defFunction
+            | TRUNCATED? '\\data' topDefId tele* (':' expr2)? dataBody where?                                           # defData
+            | classKw topDefId NO_CLASSIFYING? fieldTele* ('\\extends' superClass (',' superClass)*)? classBody where?  # defClass
+            | '\\module' ID where?                                                                                      # defModule
+            | '\\meta' defId metaPLevels? metaHLevels? (ID* '=>' expr)? where?                                          # defMeta
+            | instanceKw topDefId tele* (':' returnExpr2)? instanceBody where?                                          # defInstance
             ;
+
+superClass : longName (maybeLevelAtoms maybeLevelAtoms?)?;
 
 metaPLevels : '\\plevels' (ID (COMMA ID)*)?;
 

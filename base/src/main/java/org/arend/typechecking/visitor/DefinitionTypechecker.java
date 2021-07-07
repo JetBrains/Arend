@@ -3,6 +3,7 @@ package org.arend.typechecking.visitor;
 import org.arend.core.context.LinkList;
 import org.arend.core.context.Utils;
 import org.arend.core.context.binding.Binding;
+import org.arend.core.context.binding.FieldLevelVariable;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.ParamLevelVariable;
 import org.arend.core.context.param.*;
@@ -47,6 +48,7 @@ import org.arend.typechecking.error.CycleError;
 import org.arend.typechecking.error.ErrorReporterCounter;
 import org.arend.typechecking.error.local.*;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
+import org.arend.typechecking.implicitargs.equations.LevelEquationsSolver;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.instance.pool.InstancePool;
 import org.arend.typechecking.instance.pool.LocalInstancePool;
@@ -615,7 +617,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             if (classifyingField == null) {
               localInstancePool.addLocalInstance(null, classDef, reference);
             } else {
-              localInstancePool.addLocalInstance(FieldCallExpression.make(classifyingField, ((ClassCallExpression) paramResult).getLevels(), reference), classDef, reference);
+              localInstancePool.addLocalInstance(FieldCallExpression.make(classifyingField, ((ClassCallExpression) paramResult).getLevels(classifyingField.getParentClass()), reference), classDef, reference);
             }
           }
         }
@@ -692,7 +694,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       addFieldInstance(field, instances);
     }
 
-    addLocalInstances(instances, thisParam, levels, null, localInstancePool);
+    addLocalInstances(instances, thisParam, levels, (ClassDefinition) classDef, false, localInstancePool);
   }
 
   private void checkNoStrictParameters(List<? extends Concrete.Parameter> parameters) {
@@ -739,6 +741,12 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
     if (myNewDef) {
       typedDef.setLevelParameters(typecheckLevelParameters(def));
+      if (typedDef.getLevelParameters() == null && def.getKind() == FunctionKind.CLASS_COCLAUSE) {
+        List<? extends LevelVariable> params = def.enclosingClass.getTypechecked().getLevelParameters();
+        if (params != null) {
+          typedDef.setLevelParameters(new ArrayList<>(params));
+        }
+      }
     }
 
     LinkList list = new LinkList();
@@ -1322,10 +1330,15 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
               ClassCallExpression classCall = (ClassCallExpression) type;
               ClassField paramClassifyingField = classCall.getDefinition().getClassifyingField();
               ReferenceExpression refExpr = new ReferenceExpression(link);
-              Expression classifyingImpl = paramClassifyingField == null ? null : classCall.getImplementation(paramClassifyingField, refExpr);
-              Expression classifyingExprType = paramClassifyingField == null ? null : classCall.getDefinition().getFieldType(paramClassifyingField, classCall.getLevels(), refExpr);
-              if (classifyingImpl == null && paramClassifyingField != null) {
-                classifyingImpl = FieldCallExpression.make(paramClassifyingField, classCall.getLevels(), refExpr);
+              Expression classifyingImpl = null;
+              Expression classifyingExprType = null;
+              if (paramClassifyingField != null) {
+                Levels fieldLevels = classCall.getLevels(paramClassifyingField.getParentClass());
+                classifyingImpl = classCall.getImplementation(paramClassifyingField, refExpr);
+                if (classifyingImpl == null) {
+                  classifyingImpl = FieldCallExpression.make(paramClassifyingField, fieldLevels, refExpr);
+                }
+                classifyingExprType = classCall.getDefinition().getFieldType(paramClassifyingField, fieldLevels, refExpr);
               }
               if (classifyingImpl == null || classifyingExpr == null || compareExpressions(classifyingImpl, classifyingExpr, classifyingExprType) != -1) {
                 typedDef.setTypeClassParameter(index, Definition.TypeClassParameterKind.ONLY_LOCAL);
@@ -2073,6 +2086,57 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     return null;
   }
 
+  private boolean typecheckLevelFields(ClassDefinition typedDef, LevelVariable base, List<LevelVariable> levelFields, Map<ClassDefinition, List<Level>> superLevels) {
+    Map<FieldLevelVariable.LevelField, LevelVariable> fieldsMap = new HashMap<>();
+    boolean setLevelFields = false;
+    boolean hasStd = false;
+    int order = 0;
+    for (ClassDefinition superClass : typedDef.getSuperClasses()) {
+      List<? extends LevelVariable> superLevelFields = superClass.getLevelParameters();
+      if (superLevelFields != null) {
+        setLevelFields = true;
+      } else {
+        superLevelFields = Collections.singletonList(base);
+      }
+      List<Level> list = superLevels.computeIfAbsent(superClass, k -> new ArrayList<>());
+      for (LevelVariable superLevelField : superLevelFields) {
+        if (superLevelField.getType() == base.getType()) {
+          LevelVariable levelField;
+          boolean addField;
+          if (superLevelField instanceof FieldLevelVariable) {
+            FieldLevelVariable.LevelField key = ((FieldLevelVariable) superLevelField).getLevelField();
+            levelField = fieldsMap.get(key);
+            if (levelField == null) {
+              levelField = new FieldLevelVariable(base.getType(), superLevelField.getName(), order++, ((FieldLevelVariable) superLevelField).getLevelField());
+              fieldsMap.put(key, levelField);
+              addField = true;
+            } else {
+              addField = false;
+            }
+          } else {
+            levelField = superLevelField;
+            addField = !hasStd;
+            hasStd = true;
+          }
+          list.add(new Level(levelField));
+          if (addField) {
+            levelFields.add(levelField);
+          }
+        }
+      }
+    }
+    return setLevelFields;
+  }
+
+  private void typecheckClassLevelParameters(Concrete.LevelParameters params, LevelVariable.LvlType type, Map<Referable, ParamLevelVariable> result, List<LevelVariable> parameters) {
+    for (int i = 0; i < params.referables.size(); i++) {
+      Referable ref = params.referables.get(i);
+      FieldLevelVariable var = new FieldLevelVariable(type, ref.getRefName(), params.isIncreasing ? i : params.referables.size() - 1 - i, new FieldLevelVariable.LevelField());
+      result.put(ref, var);
+      parameters.add(var);
+    }
+  }
+
   private void typecheckClass(Concrete.ClassDefinition def, ClassDefinition typedDef) {
     if (myNewDef) {
       typedDef.clear();
@@ -2083,7 +2147,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
     if (myNewDef) {
       typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-      typedDef.setLevelParameters(typecheckLevelParameters(def));
     }
 
     List<FieldReferable> alreadyImplementFields = new ArrayList<>();
@@ -2113,6 +2176,87 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
     }
 
+    // Set level fields
+    Map<ClassDefinition, List<Level>> superPLevels = new HashMap<>();
+    Map<ClassDefinition, List<Level>> superHLevels = new HashMap<>();
+    {
+      boolean setLevelFields;
+      List<LevelVariable> levelFields = new ArrayList<>();
+      Map<Referable, ParamLevelVariable> pVars = def.getPLevelParameters() == null ? null : new HashMap<>();
+      Map<Referable, ParamLevelVariable> hVars = def.getHLevelParameters() == null ? null : new HashMap<>();
+      if (def.getPLevelParameters() != null) {
+        typecheckClassLevelParameters(def.getPLevelParameters(), LevelVariable.LvlType.PLVL, pVars, levelFields);
+        setLevelFields = true;
+      } else {
+        setLevelFields = typecheckLevelFields(typedDef, LevelVariable.PVAR, levelFields, superPLevels);
+      }
+      if (def.getHLevelParameters() != null) {
+        typecheckClassLevelParameters(def.getHLevelParameters(), LevelVariable.LvlType.HLVL, hVars, levelFields);
+        setLevelFields = true;
+      } else if (typecheckLevelFields(typedDef, LevelVariable.HVAR, levelFields, superHLevels)) {
+        setLevelFields = true;
+      }
+      if (setLevelFields) {
+        if (myNewDef && !(levelFields.size() == 2 && levelFields.get(0).equals(LevelVariable.PVAR) && levelFields.get(1).equals(LevelVariable.HVAR))) {
+          typedDef.setLevelParameters(levelFields);
+        }
+        typechecker.setLevelVariables(pVars, hVars);
+      }
+    }
+
+    Levels idLevels = typedDef.makeIdLevels();
+
+    // Set super class levels
+    {
+      Map<ClassDefinition, Levels> superLevels = new HashMap<>();
+      int i = 0;
+      for (ClassDefinition superClass : typedDef.getSuperClasses()) {
+        Levels defaultLevels;
+        List<Level> pDefaults = superPLevels.get(superClass);
+        List<Level> hDefaults = superHLevels.get(superClass);
+        if (pDefaults == null && hDefaults == null) {
+          defaultLevels = null;
+        } else {
+          List<Level> levels = new ArrayList<>(superClass.generateInferVars(typechecker.getEquations(), def.getSuperClasses().get(i)).toList());
+          if (pDefaults != null) {
+            for (int j = 0; j < pDefaults.size(); j++) {
+              levels.set(j, pDefaults.get(j));
+            }
+          }
+          if (hDefaults != null) {
+            for (int j = 0, k = levels.size() - hDefaults.size(); j < hDefaults.size(); j++, k++) {
+              levels.set(k, hDefaults.get(j));
+            }
+          }
+          defaultLevels = superClass.makeLevelsFromList(levels);
+        }
+        superLevels.put(superClass, typechecker.typecheckLevels(superClass, def.getSuperClasses().get(i++), defaultLevels, false));
+      }
+      for (ClassDefinition superClass : typedDef.getSuperClasses()) {
+        for (Map.Entry<ClassDefinition, Levels> entry : superClass.getSuperLevels().entrySet()) {
+          Levels levels = entry.getValue();
+          Levels superClassLevels = superLevels.get(superClass);
+          superLevels.put(entry.getKey(), superClassLevels == null ? levels : levels.subst(superClassLevels.makeSubstitution(superClass)));
+        }
+      }
+      if (!superLevels.isEmpty()) {
+        LevelEquationsSolver levelSolver = typechecker.getEquations().makeLevelEquationsSolver();
+        LevelSubstitution subst = levelSolver.solveLevels();
+        if (myNewDef) {
+          for (Iterator<Map.Entry<ClassDefinition, Levels>> iterator = superLevels.entrySet().iterator(); iterator.hasNext(); ) {
+            Map.Entry<ClassDefinition, Levels> entry = iterator.next();
+            Levels levels = entry.getValue().subst(subst);
+            if (levels.compare(idLevels, CMP.EQ, DummyEquations.getInstance(), null)) {
+              iterator.remove();
+            } else {
+              entry.setValue(levels);
+            }
+          }
+          typedDef.setSuperLevels(superLevels);
+        }
+      }
+    }
+
     boolean hasClassifyingField = false;
     if (!def.isRecord() && !def.withoutClassifying()) {
       if (def.getClassifyingField() != null) {
@@ -2138,8 +2282,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         break;
       }
     }
-
-    Levels idLevels = typedDef.makeIdLevels();
 
     // Set overridden fields from super classes
     if (!typedDef.getSuperClasses().isEmpty()) {
@@ -2267,7 +2409,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         if (lamImpl != null) {
           typechecker.addBinding(lamImpl.getParameters().get(0).getReferableList().get(0), thisBinding);
           LocalInstancePool localInstancePool = new LocalInstancePool(typechecker);
-          addLocalInstances(localInstances, thisBinding, idLevels, !typedDef.isRecord() && typedDef.getClassifyingField() == null ? typedDef : null, localInstancePool);
+          addLocalInstances(localInstances, thisBinding, idLevels, typedDef, !typedDef.isRecord() && typedDef.getClassifyingField() == null, localInstancePool);
           myInstancePool.setInstancePool(localInstancePool);
           if (field.isProperty()) {
             CheckTypeVisitor.setCaseLevel(lamImpl.body, -1);
@@ -2539,7 +2681,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
 
       LocalInstancePool localInstancePool = new LocalInstancePool(typechecker);
-      addLocalInstances(localInstances, thisParam, idLevels, !parentClass.isRecord() && !hasClassifyingField ? parentClass : null, localInstancePool);
+      addLocalInstances(localInstances, thisParam, idLevels, parentClass, !parentClass.isRecord() && !hasClassifyingField, localInstancePool);
       myInstancePool.setInstancePool(localInstancePool);
       ClassFieldKind kind = def instanceof Concrete.ClassField ? ((Concrete.ClassField) def).getKind() : typedDef == null ? ClassFieldKind.ANY : typedDef.isProperty() ? ClassFieldKind.PROPERTY : ClassFieldKind.FIELD;
       Type typeResult = typechecker.finalCheckType(codomain, Type.OMEGA, kind == ClassFieldKind.PROPERTY && def.getResultTypeLevel() == null);
@@ -2667,21 +2809,21 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     return typedDef;
   }
 
-  private void addLocalInstances(List<LocalInstance> localInstances, Binding thisParam, Levels levels, ClassDefinition classDef, LocalInstancePool localInstancePool) {
-    if (localInstances.isEmpty() && classDef == null) {
+  private void addLocalInstances(List<LocalInstance> localInstances, Binding thisParam, Levels levels, ClassDefinition classDef, boolean useClassDef, LocalInstancePool localInstancePool) {
+    if (localInstances.isEmpty() && !useClassDef) {
       return;
     }
 
-    if (classDef != null) {
+    if (useClassDef) {
       localInstancePool.addLocalInstance(null, classDef, new ReferenceExpression(thisParam));
     }
     for (LocalInstance localInstance : localInstances) {
       ClassField classifyingField = localInstance.classCall.getDefinition().getClassifyingField();
-      Expression instance = FieldCallExpression.make(localInstance.instanceField, levels, new ReferenceExpression(thisParam));
+      Expression instance = FieldCallExpression.make(localInstance.instanceField, classDef.castLevels(localInstance.instanceField.getParentClass(), levels), new ReferenceExpression(thisParam));
       if (classifyingField == null) {
         localInstancePool.addLocalInstance(null, localInstance.classCall.getDefinition(), instance);
       } else {
-        localInstancePool.addLocalInstance(FieldCallExpression.make(classifyingField, localInstance.classCall.getLevels(), instance), localInstance.classCall.getDefinition(), instance);
+        localInstancePool.addLocalInstance(FieldCallExpression.make(classifyingField, localInstance.classCall.getLevels(classifyingField.getParentClass()), instance), localInstance.classCall.getDefinition(), instance);
       }
     }
   }

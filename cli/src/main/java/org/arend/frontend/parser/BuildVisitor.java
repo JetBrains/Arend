@@ -886,6 +886,19 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return resultGroup;
   }
 
+  @Override
+  public Concrete.ReferenceExpression visitSuperClass(SuperClassContext ctx) {
+    Concrete.ReferenceExpression result = visitLongNameRef(ctx.longName(), null, null);
+    List<MaybeLevelAtomsContext> levelCtxs = ctx.maybeLevelAtoms();
+    if (!levelCtxs.isEmpty()) {
+      result.setPLevels(visitLevels(levelCtxs.get(0)));
+    }
+    if (levelCtxs.size() >= 2) {
+      result.setHLevels(visitLevels(levelCtxs.get(1)));
+    }
+    return result;
+  }
+
   private ClassGroup visitDefClass(DefClassContext ctx, ChildGroup parent, TCDefReferable enclosingClass) {
     WhereContext where = ctx.where();
 
@@ -894,8 +907,8 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     List<ChildNamespaceCommand> namespaceCommands = where == null ? Collections.emptyList() : new ArrayList<>();
 
     List<Concrete.ReferenceExpression> superClasses = new ArrayList<>();
-    for (LongNameContext longNameCtx : ctx.longName()) {
-      superClasses.add(visitLongNameRef(longNameCtx, null, null));
+    for (SuperClassContext superClassCtx : ctx.superClass()) {
+      superClasses.add(visitSuperClass(superClassCtx));
     }
 
     TopDefIdContext topDefId = ctx.topDefId();
