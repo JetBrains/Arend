@@ -9,6 +9,7 @@ import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class ClassLevelsTest extends TypeCheckingTestCase {
   @Test
@@ -127,7 +128,7 @@ public class ClassLevelsTest extends TypeCheckingTestCase {
   public void extendsMin() {
     typeCheckModule(
       "\\record R \\plevels p1 <= p2\n" +
-      "\\record S \\plevels p3 <= p4 \\extends R");
+      "\\record S \\plevels p3 <= p4 \\extends R", 1);
   }
 
   @Test
@@ -136,8 +137,7 @@ public class ClassLevelsTest extends TypeCheckingTestCase {
       "\\record R \\plevels p1 <= p2\n" +
       "\\record S \\plevels p1 <= p2\n" +
       "\\record T \\extends R, S\n" +
-      "  | A : \\Type p2");
-    assertEquals(5, getDefinition("T").getLevelParameters().size());
+      "  | A : \\Type p2", 1);
   }
 
   @Test
@@ -145,8 +145,7 @@ public class ClassLevelsTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\record R \\plevels p1 <= p2\n" +
       "\\record S \\plevels p3 >= p4\n" +
-      "\\record T \\extends R, S");
-    assertEquals(5, getDefinition("T").getLevelParameters().size());
+      "\\record T \\extends R, S", 1);
   }
 
   @Test
@@ -156,9 +155,9 @@ public class ClassLevelsTest extends TypeCheckingTestCase {
       "\\record S \\plevels p3 >= p4 \\extends R (p4,p3)\n" +
       "  | A : \\Type p1\n" +
       "\\record T \\plevels p5 <= p6 <= p7 \\extends R (p6,p7)\n" +
-      "\\record X \\extends S, T\n" +
-      "  | B : \\Type p2");
-    assertEquals(8, getDefinition("X").getLevelParameters().size());
+      "\\record X \\extends S (\\lp,\\lp,\\lp,\\lp), T (\\lp,\\lp)\n" +
+      "  | B : \\Type \\lp");
+    assertEquals(2, getDefinition("X").getLevelParameters().size());
   }
 
   @Test
@@ -166,7 +165,7 @@ public class ClassLevelsTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\record R \\plevels p1 <= p2\n" +
       "\\record S \\extends R (\\lp,\\lp)");
-    assertEquals(2, getDefinition("S").getLevelParameters().size());
+    assertNull(getDefinition("S").getLevelParameters());
   }
 
   @Test
