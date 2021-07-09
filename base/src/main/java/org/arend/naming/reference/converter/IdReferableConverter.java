@@ -1,5 +1,6 @@
 package org.arend.naming.reference.converter;
 
+import org.arend.naming.reference.LevelReferable;
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
@@ -12,6 +13,11 @@ public class IdReferableConverter implements ReferableConverter {
   @Override
   public TCReferable toDataLocatedReferable(LocatedReferable referable) {
     return referable instanceof TCReferable ? (TCReferable) referable : null;
+  }
+
+  @Override
+  public LevelReferable toDataFieldReferable(Referable referable) {
+    return referable instanceof LevelReferable ? (LevelReferable) referable : null;
   }
 
   @Override

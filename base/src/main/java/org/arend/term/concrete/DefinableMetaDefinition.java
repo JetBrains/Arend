@@ -12,8 +12,8 @@ import org.arend.ext.typechecking.ContextData;
 import org.arend.ext.typechecking.ExpressionTypechecker;
 import org.arend.ext.typechecking.MetaDefinition;
 import org.arend.ext.typechecking.TypedExpression;
+import org.arend.naming.reference.LevelReferable;
 import org.arend.naming.reference.MetaReferable;
-import org.arend.naming.reference.Referable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -27,10 +27,10 @@ public class DefinableMetaDefinition extends Concrete.ResolvableDefinition imple
   private final List<Concrete.NameParameter> myParameters;
   private final MetaReferable myReferable;
   public Concrete.@Nullable Expression body;
-  private final List<Referable> myPLevelParameters;
-  private final List<Referable> myHLevelParameters;
+  private final List<LevelReferable> myPLevelParameters;
+  private final List<LevelReferable> myHLevelParameters;
 
-  public DefinableMetaDefinition(MetaReferable referable, List<Referable> pLevelParameters, List<Referable> hLevelParameters, List<Concrete.NameParameter> parameters, Concrete.@Nullable Expression body) {
+  public DefinableMetaDefinition(MetaReferable referable, List<LevelReferable> pLevelParameters, List<LevelReferable> hLevelParameters, List<Concrete.NameParameter> parameters, Concrete.@Nullable Expression body) {
     myReferable = referable;
     myPLevelParameters = pLevelParameters;
     myHLevelParameters = hLevelParameters;
@@ -38,11 +38,11 @@ public class DefinableMetaDefinition extends Concrete.ResolvableDefinition imple
     this.body = body;
   }
 
-  public List<Referable> getPLevelParameters() {
+  public List<LevelReferable> getPLevelParameters() {
     return myPLevelParameters;
   }
 
-  public List<Referable> getHLevelParameters() {
+  public List<LevelReferable> getHLevelParameters() {
     return myHLevelParameters;
   }
 
@@ -94,7 +94,7 @@ public class DefinableMetaDefinition extends Concrete.ResolvableDefinition imple
     return body.accept(subst, null);
   }
 
-  private void binLevelParameters(SubstConcreteExpressionVisitor subst, @Nullable List<? extends ConcreteLevel> levels, List<Referable> levelParameters) {
+  private void binLevelParameters(SubstConcreteExpressionVisitor subst, @Nullable List<? extends ConcreteLevel> levels, List<LevelReferable> levelParameters) {
     if (levelParameters != null && levels != null) {
       for (int i = 0; i < levelParameters.size() && i < levels.size(); i++) {
         ConcreteLevel pLevel = levels.get(i);

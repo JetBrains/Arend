@@ -434,7 +434,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       return null;
     }
     boolean linear = true;
-    List<Referable> refs = new ArrayList<>();
+    List<LevelReferable> refs = new ArrayList<>();
     Boolean increasing = null;
     for (int i = -1; i < ids.size(); i += 2) {
       if (i >= 0) {
@@ -446,12 +446,12 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
         }
         if (increasing == null) {
           increasing = inc;
-        } else if (linear) {
+        } else if (linear && increasing != inc) {
           myErrorReporter.report(new ParserError(tokenPosition(ids.get(i).getSymbol()), "Level parameters must be linearly ordered"));
           linear = false;
         }
       }
-      refs.add(new ParsedLocalReferable(tokenPosition(ids.get(i + 1).getSymbol()), ids.get(i + 1).getText()));
+      refs.add(new ConcreteLevelReferable(tokenPosition(ids.get(i + 1).getSymbol()), ids.get(i + 1).getText()));
     }
     return new Concrete.LevelParameters(tokenPosition(token), refs, increasing == null || increasing);
   }
@@ -466,21 +466,21 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return ctx == null ? null : parseLevelParameters(ctx.start, ctx.ID());
   }
 
-  private List<Referable> visitMetaLevels(List<TerminalNode> ids) {
-    List<Referable> refs = new ArrayList<>();
+  private List<LevelReferable> visitMetaLevels(List<TerminalNode> ids) {
+    List<LevelReferable> refs = new ArrayList<>();
     for (TerminalNode id : ids) {
-      refs.add(new ParsedLocalReferable(tokenPosition(id.getSymbol()), id.getText()));
+      refs.add(new ConcreteLevelReferable(tokenPosition(id.getSymbol()), id.getText()));
     }
     return refs;
   }
 
   @Override
-  public List<Referable> visitMetaPLevels(MetaPLevelsContext ctx) {
+  public List<LevelReferable> visitMetaPLevels(MetaPLevelsContext ctx) {
     return ctx == null ? null : visitMetaLevels(ctx.ID());
   }
 
   @Override
-  public List<Referable> visitMetaHLevels(MetaHLevelsContext ctx) {
+  public List<LevelReferable> visitMetaHLevels(MetaHLevelsContext ctx) {
     return ctx == null ? null : visitMetaLevels(ctx.ID());
   }
 

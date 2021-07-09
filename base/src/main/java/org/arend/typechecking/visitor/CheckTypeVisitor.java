@@ -97,8 +97,8 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   private final List<DeferredMeta> myDeferredMetasAfterLevels = new ArrayList<>();
   private final ArendExtension myArendExtension;
   private TypecheckerState mySavedState;
-  private Map<Referable, ParamLevelVariable> myPLevelVariables;
-  private Map<Referable, ParamLevelVariable> myHLevelVariables;
+  private boolean myPBased = true;
+  private boolean myHBased = true;
 
   private static class DeferredMeta {
     final MetaDefinition meta;
@@ -160,13 +160,13 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   public TypecheckingContext saveTypecheckingContext() {
-    return new TypecheckingContext(new LinkedHashMap<>(context), myInstancePool.getInstanceProvider(), myInstancePool.getInstancePool(), myArendExtension, copyUserData(), myPLevelVariables, myHLevelVariables);
+    return new TypecheckingContext(new LinkedHashMap<>(context), myInstancePool.getInstanceProvider(), myInstancePool.getInstancePool(), myArendExtension, copyUserData(), myPBased, myHBased);
   }
 
   public static CheckTypeVisitor loadTypecheckingContext(TypecheckingContext typecheckingContext, ErrorReporter errorReporter) {
     CheckTypeVisitor visitor = new CheckTypeVisitor(typecheckingContext.localContext, errorReporter, null, typecheckingContext.arendExtension, typecheckingContext.userDataHolder);
     visitor.setInstancePool(new GlobalInstancePool(typecheckingContext.instanceProvider, visitor, typecheckingContext.localInstancePool));
-    visitor.setLevelVariables(typecheckingContext.pLevelVariables, typecheckingContext.hLevelVariables);
+    visitor.setIsBased(typecheckingContext.isPBased, typecheckingContext.isHBased);
     return visitor;
   }
 
@@ -189,16 +189,16 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   public boolean isPBased() {
-    return myPLevelVariables == null || !myPLevelVariables.isEmpty();
+    return myPBased;
   }
 
   public boolean isHBased() {
-    return myHLevelVariables == null || !myHLevelVariables.isEmpty();
+    return myHBased;
   }
 
-  public void setLevelVariables(Map<Referable,ParamLevelVariable> pVars, Map<Referable,ParamLevelVariable> hVars) {
-    myPLevelVariables = pVars;
-    myHLevelVariables = hVars;
+  public void setIsBased(boolean isPBased, boolean isHBased) {
+    myPBased = isPBased;
+    myHBased = isHBased;
   }
 
   @NotNull
@@ -861,7 +861,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         }
         checkTypeVisitor = new CheckTypeVisitor(deferredMeta.context, deferredMeta.errorReporter, null, myArendExtension, this);
         checkTypeVisitor.setInstancePool(new GlobalInstancePool(myInstancePool.getInstanceProvider(), checkTypeVisitor, myInstancePool.getInstancePool()));
-        checkTypeVisitor.setLevelVariables(myPLevelVariables, myHLevelVariables);
+        checkTypeVisitor.setIsBased(myPBased, myHBased);
       } else {
         checkTypeVisitor = this;
         errorReporter = deferredMeta.errorReporter;
@@ -1842,8 +1842,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     if (expr.getReferent() instanceof ErrorReference) {
       return new Level(base);
     }
-    var vars = base == LevelVariable.HVAR ? myHLevelVariables : myPLevelVariables;
-    ParamLevelVariable var = vars == null ? null : vars.get(expr.getReferent());
+    ParamLevelVariable var = expr.getReferent() instanceof LevelReferable ? ((LevelReferable) expr.getReferent()).getLevelVariable() : null;
     if (var == null) {
       if (checkUnresolved(expr.getReferent(), expr)) {
         errorReporter.report(new IncorrectReferenceError(expr.getReferent(), expr));

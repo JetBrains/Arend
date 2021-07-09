@@ -84,11 +84,11 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
     }
   }
 
-  private List<Referable> getLevelParametersRefs(Abstract.LevelParameters params) {
+  private List<LevelReferable> getLevelParametersRefs(Abstract.LevelParameters params) {
     if (params == null) return null;
-    List<Referable> result = new ArrayList<>();
+    List<LevelReferable> result = new ArrayList<>();
     for (Referable ref : params.getReferables()) {
-      result.add(DataLocalReferable.make(ref));
+      result.add(myReferableConverter.toDataFieldReferable(ref));
     }
     return result;
   }
