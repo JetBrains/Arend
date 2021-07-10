@@ -16,7 +16,7 @@ public class IdReferableConverter implements ReferableConverter {
   }
 
   @Override
-  public LevelReferable toDataFieldReferable(Referable referable) {
+  public LevelReferable toDataLevelReferable(Referable referable) {
     return referable instanceof LevelReferable ? (LevelReferable) referable : null;
   }
 

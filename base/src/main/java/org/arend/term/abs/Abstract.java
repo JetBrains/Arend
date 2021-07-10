@@ -6,12 +6,10 @@ import org.arend.naming.reference.Referable;
 import org.arend.term.ClassFieldKind;
 import org.arend.term.FunctionKind;
 import org.arend.term.NamespaceCommand;
-import org.arend.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 public final class Abstract {
@@ -144,6 +142,13 @@ public final class Abstract {
     <P, R> R accept(@NotNull AbstractExpressionVisitor<? super P, ? extends R> visitor, @Nullable P params);
   }
 
+  public interface ReferenceExpression extends SourceNode {
+    @Nullable Object getData();
+    @NotNull Referable getReferent();
+    @Nullable Collection<? extends LevelExpression> getPLevels();
+    @Nullable Collection<? extends LevelExpression> getHLevels();
+  }
+
   public interface CaseArgument extends SourceNode {
     @Nullable Object getApplyHoleData();
     @Nullable Expression getExpression();
@@ -258,7 +263,7 @@ public final class Abstract {
     @Override @NotNull Collection<? extends ClassFieldImpl> getCoClauseElements();
     boolean isRecord();
     boolean withoutClassifying();
-    @NotNull Collection<? extends Reference> getSuperClasses();
+    @NotNull Collection<? extends ReferenceExpression> getSuperClasses();
     @NotNull Collection<? extends ClassElement> getClassElements();
     @NotNull Collection<? extends LocatedReferable> getUsedDefinitions();
   }

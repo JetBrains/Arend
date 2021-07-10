@@ -7,7 +7,7 @@ import org.arend.naming.reference.TCReferable;
 
 public interface ReferableConverter {
   TCReferable toDataLocatedReferable(LocatedReferable referable);
-  LevelReferable toDataFieldReferable(Referable referable);
+  LevelReferable toDataLevelReferable(Referable referable);
 
   default Referable convert(Referable referable) {
     return referable instanceof LocatedReferable ? toDataLocatedReferable((LocatedReferable) referable) : referable;

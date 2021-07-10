@@ -451,7 +451,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
           linear = false;
         }
       }
-      refs.add(new ConcreteLevelReferable(tokenPosition(ids.get(i + 1).getSymbol()), ids.get(i + 1).getText()));
+      refs.add(new DataLevelReferable(tokenPosition(ids.get(i + 1).getSymbol()), ids.get(i + 1).getText()));
     }
     return new Concrete.LevelParameters(tokenPosition(token), refs, increasing == null || increasing);
   }
@@ -469,7 +469,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   private List<LevelReferable> visitMetaLevels(List<TerminalNode> ids) {
     List<LevelReferable> refs = new ArrayList<>();
     for (TerminalNode id : ids) {
-      refs.add(new ConcreteLevelReferable(tokenPosition(id.getSymbol()), id.getText()));
+      refs.add(new DataLevelReferable(tokenPosition(id.getSymbol()), id.getText()));
     }
     return refs;
   }

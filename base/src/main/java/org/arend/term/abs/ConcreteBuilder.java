@@ -88,7 +88,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
     if (params == null) return null;
     List<LevelReferable> result = new ArrayList<>();
     for (Referable ref : params.getReferables()) {
-      result.add(myReferableConverter.toDataFieldReferable(ref));
+      result.add(myReferableConverter.toDataLevelReferable(ref));
     }
     return result;
   }
@@ -257,7 +257,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
   @Override
   public Concrete.Definition visitClass(Abstract.ClassDefinition def) {
     List<Concrete.ClassElement> elements = new ArrayList<>();
-    Concrete.ClassDefinition classDef = new Concrete.ClassDefinition((TCDefReferable) myDefinition, visitLevelParameters(def.getPLevelParameters()), visitLevelParameters(def.getHLevelParameters()), def.isRecord(), def.withoutClassifying(), buildReferences(def.getSuperClasses()), elements);
+    Concrete.ClassDefinition classDef = new Concrete.ClassDefinition((TCDefReferable) myDefinition, visitLevelParameters(def.getPLevelParameters()), visitLevelParameters(def.getHLevelParameters()), def.isRecord(), def.withoutClassifying(), buildReferenceExpressions(def.getSuperClasses()), elements);
     buildClassParameters(def.getParameters(), classDef, elements);
 
     for (Abstract.ClassElement element : def.getClassElements()) {
@@ -331,6 +331,14 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
     List<Concrete.ReferenceExpression> elimExpressions = new ArrayList<>(absElimExpressions.size());
     for (Abstract.Reference reference : absElimExpressions) {
       elimExpressions.add(buildReference(reference));
+    }
+    return elimExpressions;
+  }
+
+  public List<Concrete.ReferenceExpression> buildReferenceExpressions(Collection<? extends Abstract.ReferenceExpression> absElimExpressions) {
+    List<Concrete.ReferenceExpression> elimExpressions = new ArrayList<>(absElimExpressions.size());
+    for (Abstract.ReferenceExpression expr : absElimExpressions) {
+      elimExpressions.add(new Concrete.ReferenceExpression(expr.getData(), expr.getReferent(), visitLevels(expr.getPLevels()), visitLevels(expr.getHLevels())));
     }
     return elimExpressions;
   }
@@ -515,6 +523,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
   // Expression
 
   private List<Concrete.LevelExpression> visitLevels(Collection<? extends Abstract.LevelExpression> levels) {
+    if (levels == null) return null;
     List<Concrete.LevelExpression> result = new ArrayList<>(levels.size());
     for (Abstract.LevelExpression level : levels) {
       result.add(level.accept(this, null));
@@ -524,7 +533,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
 
   @Override
   public Concrete.ReferenceExpression visitReference(@Nullable Object data, @NotNull Referable referent, @Nullable Fixity fixity, @Nullable Collection<? extends Abstract.LevelExpression> pLevels, @Nullable Collection<? extends Abstract.LevelExpression> hLevels, Void params) {
-    return Concrete.FixityReferenceExpression.make(data, referent, fixity, pLevels == null ? null : visitLevels(pLevels), hLevels == null ? null : visitLevels(hLevels));
+    return Concrete.FixityReferenceExpression.make(data, referent, fixity, visitLevels(pLevels), visitLevels(hLevels));
   }
 
   @Override
