@@ -313,29 +313,30 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
                 break;
               }
             }
-            assert functionRef != null;
-            function.setImplementedField(new ExpressionResolveNameVisitor(myReferableConverter, scope, null, myLocalErrorReporter, myResolverListener, Collections.emptyMap(), Collections.emptyMap()).visitClassFieldReference(functionRef, function.getImplementedField(), (ClassReferable) classRef));
-            Concrete.ReferenceExpression refExpr = functionRef.getReferenceExpression();
-            if (setPLevels) {
-              if (function.getPLevelParameters() == null) {
-                refExpr.setPLevels(new SingletonList<>(new Concrete.PLevelExpression(refExpr.getData())));
-              } else {
-                List<Concrete.LevelExpression> args = new ArrayList<>();
-                for (Referable ref : function.getPLevelParameters().referables) {
-                  args.add(new Concrete.IdLevelExpression(refExpr.getData(), ref));
+            if (functionRef != null) {
+              function.setImplementedField(new ExpressionResolveNameVisitor(myReferableConverter, scope, null, myLocalErrorReporter, myResolverListener, Collections.emptyMap(), Collections.emptyMap()).visitClassFieldReference(functionRef, function.getImplementedField(), (ClassReferable) classRef));
+              Concrete.ReferenceExpression refExpr = functionRef.getReferenceExpression();
+              if (setPLevels) {
+                if (function.getPLevelParameters() == null) {
+                  refExpr.setPLevels(new SingletonList<>(new Concrete.PLevelExpression(refExpr.getData())));
+                } else {
+                  List<Concrete.LevelExpression> args = new ArrayList<>();
+                  for (Referable ref : function.getPLevelParameters().referables) {
+                    args.add(new Concrete.IdLevelExpression(refExpr.getData(), ref));
+                  }
+                  refExpr.setPLevels(args);
                 }
-                refExpr.setPLevels(args);
               }
-            }
-            if (setHLevels) {
-              if (function.getHLevelParameters() == null) {
-                refExpr.setHLevels(new SingletonList<>(new Concrete.HLevelExpression(refExpr.getData())));
-              } else {
-                List<Concrete.LevelExpression> args = new ArrayList<>();
-                for (Referable ref : function.getHLevelParameters().referables) {
-                  args.add(new Concrete.IdLevelExpression(refExpr.getData(), ref));
+              if (setHLevels) {
+                if (function.getHLevelParameters() == null) {
+                  refExpr.setHLevels(new SingletonList<>(new Concrete.HLevelExpression(refExpr.getData())));
+                } else {
+                  List<Concrete.LevelExpression> args = new ArrayList<>();
+                  for (Referable ref : function.getHLevelParameters().referables) {
+                    args.add(new Concrete.IdLevelExpression(refExpr.getData(), ref));
+                  }
+                  refExpr.setHLevels(args);
                 }
-                refExpr.setHLevels(args);
               }
             }
           }
