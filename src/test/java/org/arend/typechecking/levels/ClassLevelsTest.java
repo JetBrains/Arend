@@ -192,4 +192,12 @@ public class ClassLevelsTest extends TypeCheckingTestCase {
       "\\record R \\plevels p1 <= p2\n" +
       "\\record S \\extends R (\\suc \\lp, \\lp)", 1);
   }
+
+  @Test
+  public void extendsTest5() {
+    typeCheckModule(
+      "\\record R\n" +
+      "\\record S \\extends R\n" +
+      "\\record T \\plevels p1 <= p2 \\extends S");
+  }
 }

@@ -2122,7 +2122,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     return (levelField1 instanceof FieldLevelVariable) == (levelField2 instanceof FieldLevelVariable) && (!(levelField1 instanceof FieldLevelVariable) || ((FieldLevelVariable) levelField1).getLevelField().equals(((FieldLevelVariable) levelField2).getLevelField()));
   }
 
-  private boolean compareLevelFields(List<? extends LevelVariable> levelFields1, List<? extends LevelVariable> levelFields2, List<? extends Concrete.ReferenceExpression> superClasses, Concrete.ReferenceExpression superClass2, boolean isPLevels) {
+  private boolean compareLevelFields(List<? extends LevelVariable> levelFields1, List<? extends LevelVariable> levelFields2, Concrete.ReferenceExpression superClass2, boolean isPLevels) {
     if (levelFields1 == null && levelFields2 == null) return true;
     if (levelFields1 == null) {
       levelFields1 = Collections.singletonList(isPLevels ? LevelVariable.PVAR : LevelVariable.HVAR);
@@ -2139,23 +2139,16 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
     }
     if (!ok && (isPLevels ? superClass2.getPLevels() : superClass2.getHLevels()) == null) {
-      Concrete.ReferenceExpression superClass1 = null;
-      for (Concrete.ReferenceExpression superClass : superClasses) {
-        if (isPLevels && superClass.getPLevels() == null || !isPLevels && superClass.getHLevels() == null) {
-          superClass1 = superClass;
-          break;
-        }
-      }
-      errorReporter.report(new LevelFieldsDifferError(superClass1 == null ? superClass2 : superClass1, superClass2));
+      errorReporter.report(new TypecheckingError(GeneralError.Level.WARNING, "The level parameters of the super class do not match the level parameters of the class", superClass2));
     }
     return ok;
   }
 
-  private boolean compareLevelFields(ClassDefinition classDef1, ClassDefinition classDef2, List<? extends Concrete.ReferenceExpression> superClasses, Concrete.ReferenceExpression superClass) {
+  private boolean compareLevelFields(ClassDefinition classDef1, ClassDefinition classDef2, Concrete.ReferenceExpression superClass) {
     List<? extends LevelVariable> levelParams1 = classDef1.getLevelParameters();
     List<? extends LevelVariable> levelParams2 = classDef2.getLevelParameters();
-    return compareLevelFields(levelParams1 == null ? null : levelParams1.subList(0, classDef1.getNumberOfPLevelParameters()), levelParams2 == null ? null : levelParams2.subList(0, classDef2.getNumberOfPLevelParameters()), superClasses, superClass, true)
-        && compareLevelFields(levelParams1 == null ? null : levelParams1.subList(classDef1.getNumberOfPLevelParameters(), levelParams1.size()), levelParams2 == null ? null : levelParams2.subList(classDef2.getNumberOfPLevelParameters(), levelParams2.size()), superClasses, superClass, false);
+    return compareLevelFields(levelParams1 == null ? null : levelParams1.subList(0, classDef1.getNumberOfPLevelParameters()), levelParams2 == null ? null : levelParams2.subList(0, classDef2.getNumberOfPLevelParameters()), superClass, true)
+        && compareLevelFields(levelParams1 == null ? null : levelParams1.subList(classDef1.getNumberOfPLevelParameters(), levelParams1.size()), levelParams2 == null ? null : levelParams2.subList(classDef2.getNumberOfPLevelParameters(), levelParams2.size()), superClass, false);
   }
 
   private void typecheckClass(Concrete.ClassDefinition def, ClassDefinition typedDef) {
@@ -2224,8 +2217,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     {
       Map<ClassDefinition, Levels> superLevels = new HashMap<>();
       int i = 0;
+      boolean compareLevels = def.getPLevelParameters() == null && def.getHLevelParameters() == null;
       for (ClassDefinition superClass : typedDef.getSuperClasses()) {
-        boolean ok = compareLevelFields(typedDef, superClass, def.getSuperClasses(), def.getSuperClasses().get(i));
+        boolean ok = (compareLevels || superClass.getLevelParameters() != null) && compareLevelFields(typedDef, superClass, def.getSuperClasses().get(i));
         superLevels.put(superClass, typechecker.typecheckLevels(superClass, def.getSuperClasses().get(i++), ok ? idLevels : null, false));
       }
       if (!superLevels.isEmpty()) {
