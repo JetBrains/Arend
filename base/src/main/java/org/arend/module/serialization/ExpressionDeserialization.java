@@ -31,14 +31,16 @@ import java.util.*;
 class ExpressionDeserialization {
   private final CallTargetProvider myCallTargetProvider;
   private final List<Binding> myBindings = new ArrayList<>();
+  private final List<? extends LevelVariable> myLevelParameters;
 
   private final DependencyListener myDependencyListener;
   private final TCDefReferable myDefinition;
 
-  ExpressionDeserialization(CallTargetProvider callTargetProvider, DependencyListener dependencyListener, TCDefReferable definition) {
+  ExpressionDeserialization(CallTargetProvider callTargetProvider, DependencyListener dependencyListener, Definition definition) {
     myCallTargetProvider = callTargetProvider;
     myDependencyListener = dependencyListener;
-    myDefinition = definition;
+    myDefinition = definition.getRef();
+    myLevelParameters = definition.getLevelParameters();
   }
 
   // Bindings
@@ -66,20 +68,10 @@ class ExpressionDeserialization {
 
   // Sorts and levels
 
-  private Level readLevel(LevelProtos.Level proto) throws DeserializationException {
+  private Level readLevel(LevelProtos.Level proto, LevelVariable base) {
     LevelVariable var;
-    switch (proto.getVariable()) {
-      case NO_VAR:
-        var = null;
-        break;
-      case PLVL:
-        var = LevelVariable.PVAR;
-        break;
-      case HLVL:
-        var = LevelVariable.HVAR;
-        break;
-      default: throw new DeserializationException("Unrecognized level variable");
-    }
+    int index = proto.getVariable();
+    var = index == -2 ? null : index == -1 ? base : myLevelParameters.get(index);
 
     int constant = proto.getConstant();
     if (var == null && constant == Level.INFINITY.getConstant()) {
@@ -89,14 +81,14 @@ class ExpressionDeserialization {
     }
   }
 
-  Sort readSort(LevelProtos.Sort proto) throws DeserializationException {
-    return new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel()));
+  Sort readSort(LevelProtos.Sort proto) {
+    return new Sort(readLevel(proto.getPLevel(), LevelVariable.PVAR), readLevel(proto.getHLevel(), LevelVariable.HVAR));
   }
 
-  Levels readLevels(List<LevelProtos.Level> protos, Definition def) throws DeserializationException {
+  Levels readLevels(List<LevelProtos.Level> protos, Definition def) {
     List<Level> levels = new ArrayList<>(protos.size());
-    for (LevelProtos.Level proto : protos) {
-      levels.add(readLevel(proto));
+    for (int i = 0; i < protos.size(); i++) {
+      levels.add(readLevel(protos.get(i), i < def.getNumberOfPLevelParameters() ? LevelVariable.PVAR : LevelVariable.HVAR));
     }
     return def.makeLevelsFromList(levels);
   }
@@ -443,7 +435,7 @@ class ExpressionDeserialization {
     return new PiExpression(readSort(proto.getResultSort()), readSingleParameter(proto.getParam()), readExpr(proto.getCodomain()));
   }
 
-  private UniverseExpression readUniverse(ExpressionProtos.Expression.Universe proto) throws DeserializationException {
+  private UniverseExpression readUniverse(ExpressionProtos.Expression.Universe proto) {
     return new UniverseExpression(readSort(proto.getSort()));
   }
 
@@ -462,7 +454,7 @@ class ExpressionDeserialization {
   }
 
   private SigmaExpression readSigma(ExpressionProtos.Expression.Sigma proto) throws DeserializationException {
-    return new SigmaExpression(new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readParameters(proto.getParamList()));
+    return new SigmaExpression(new Sort(readLevel(proto.getPLevel(), LevelVariable.PVAR), readLevel(proto.getHLevel(), LevelVariable.HVAR)), readParameters(proto.getParamList()));
   }
 
   private Expression readProj(ExpressionProtos.Expression.Proj proto) throws DeserializationException {
@@ -484,7 +476,7 @@ class ExpressionDeserialization {
   }
 
   private Expression readArray(ExpressionProtos.Expression.Array proto) throws DeserializationException {
-    return ArrayExpression.make(new LevelPair(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readExpr(proto.getElementsType()), readExprList(proto.getElementList()), proto.hasTail() ? readExpr(proto.getTail()) : null);
+    return ArrayExpression.make(new LevelPair(readLevel(proto.getPLevel(), LevelVariable.PVAR), readLevel(proto.getHLevel(), LevelVariable.HVAR)), readExpr(proto.getElementsType()), readExprList(proto.getElementList()), proto.hasTail() ? readExpr(proto.getTail()) : null);
   }
 
   private String validName(String name) {

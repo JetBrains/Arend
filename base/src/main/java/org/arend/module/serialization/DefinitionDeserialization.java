@@ -42,7 +42,7 @@ public class DefinitionDeserialization implements ArendDeserializer {
   }
 
   public void fillInDefinition(DefinitionProtos.Definition defProto, Definition def) throws DeserializationException {
-    final ExpressionDeserialization defDeserializer = new ExpressionDeserialization(myCallTargetProvider, myDependencyListener, def.getReferable());
+    final ExpressionDeserialization defDeserializer = new ExpressionDeserialization(myCallTargetProvider, myDependencyListener, def);
 
     switch (defProto.getDefinitionDataCase()) {
       case CLASS:
