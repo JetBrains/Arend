@@ -52,6 +52,7 @@ import org.arend.typechecking.implicitargs.equations.LevelEquationsSolver;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.instance.pool.InstancePool;
 import org.arend.typechecking.instance.pool.LocalInstancePool;
+import org.arend.typechecking.order.DFS;
 import org.arend.typechecking.order.MapDFS;
 import org.arend.typechecking.patternmatching.ConditionsChecking;
 import org.arend.typechecking.patternmatching.ElimTypechecking;
@@ -2231,15 +2232,63 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           }
         }
       }
+
+      for (Iterator<Map.Entry<ClassDefinition, Levels>> iterator = superLevels.entrySet().iterator(); iterator.hasNext(); ) {
+        Map.Entry<ClassDefinition, Levels> entry = iterator.next();
+        Levels levels = entry.getValue();
+        if (levels.compare(idLevels, CMP.EQ, DummyEquations.getInstance(), null)) {
+          iterator.remove();
+        } else {
+          entry.setValue(levels);
+        }
+      }
+
+      i = 0;
+      for (ClassDefinition currentClass : typedDef.getSuperClasses()) {
+        Concrete.ReferenceExpression aSuperClass = def.getSuperClasses().get(i++);
+        Levels currentLevels = superLevels.get(currentClass);
+        if (currentLevels == null) {
+          for (Map.Entry<ClassDefinition, Levels> entry : currentClass.getSuperLevels().entrySet()) {
+            Levels levels = entry.getValue();
+            Levels superClassLevels = superLevels.get(currentClass);
+            if (superClassLevels != null) levels = levels.subst(superClassLevels.makeSubstitution(currentClass));
+            Levels oldLevels = superLevels.putIfAbsent(entry.getKey(), levels);
+            if (oldLevels != null && !oldLevels.equals(levels)) {
+              errorReporter.report(new SuperLevelsMismatchError(entry.getKey(), oldLevels, levels, aSuperClass));
+            }
+          }
+        } else {
+          new DFS<ClassDefinition, Void>() {
+            @Override
+            protected Void forDependencies(ClassDefinition unit) {
+              if (unit != currentClass) {
+                Levels newLevels = currentClass.castLevels(unit, currentLevels);
+                Levels oldLevels = superLevels.putIfAbsent(unit, newLevels);
+                if (oldLevels != null && !oldLevels.equals(newLevels)) {
+                  errorReporter.report(new SuperLevelsMismatchError(unit, oldLevels, newLevels, aSuperClass));
+                }
+              }
+              for (ClassDefinition superClass : unit.getSuperClasses()) {
+                visit(superClass);
+              }
+              return null;
+            }
+          }.visit(currentClass);
+        }
+      }
+
       i = 0;
       for (ClassDefinition superClass : typedDef.getSuperClasses()) {
-        for (Map.Entry<ClassDefinition, Levels> entry : superClass.getSuperLevels().entrySet()) {
-          Levels levels = entry.getValue();
-          Levels superClassLevels = superLevels.get(superClass);
-          if (superClassLevels != null) levels = levels.subst(superClassLevels.makeSubstitution(superClass));
-          Levels oldLevels = superLevels.putIfAbsent(entry.getKey(), levels);
-          if (oldLevels != null && !oldLevels.equals(levels)) {
-            errorReporter.report(new SuperLevelsMismatchError(entry.getKey(), oldLevels, levels, def.getSuperClasses().get(i)));
+        if (superLevels.get(superClass) != null) continue;
+        for (Map.Entry<ClassDefinition, Levels> entry : superLevels.entrySet()) {
+          Levels oldLevels = superLevels.get(entry.getKey());
+          if (oldLevels != null && !superClass.getSuperLevels().containsKey(entry.getKey()) && superClass.isSubClassOf(entry.getKey())) {
+            Levels levels = entry.getKey().makeIdLevels();
+            Levels superClassLevels = superLevels.get(superClass);
+            if (superClassLevels != null) levels = levels.subst(superClassLevels.makeSubstitution(superClass));
+            if (!oldLevels.equals(levels)) {
+              errorReporter.report(new SuperLevelsMismatchError(entry.getKey(), oldLevels, levels, def.getSuperClasses().get(i)));
+            }
           }
         }
         i++;
@@ -2253,22 +2302,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         } else {
           entry.setValue(levels);
         }
-      }
-
-      i = 0;
-      for (ClassDefinition superClass : typedDef.getSuperClasses()) {
-        for (Map.Entry<ClassDefinition, Levels> entry : superLevels.entrySet()) {
-          Levels oldLevels = superLevels.get(entry.getKey());
-          if (oldLevels != null && !superClass.getSuperLevels().containsKey(entry.getKey()) && superClass.isSubClassOf(entry.getKey())) {
-            Levels levels = entry.getKey().makeIdLevels();
-            Levels superClassLevels = superLevels.get(superClass);
-            if (superClassLevels != null) levels = levels.subst(superClassLevels.makeSubstitution(superClass));
-            if (!oldLevels.equals(levels)) {
-              errorReporter.report(new SuperLevelsMismatchError(entry.getKey(), oldLevels, levels, def.getSuperClasses().get(i)));
-            }
-          }
-        }
-        i++;
       }
 
       if (!superLevels.isEmpty()) {

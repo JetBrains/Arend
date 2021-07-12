@@ -200,4 +200,15 @@ public class ClassLevelsTest extends TypeCheckingTestCase {
       "\\record S \\extends R\n" +
       "\\record T \\plevels p1 <= p2 \\extends S");
   }
+
+  @Test
+  public void extendsTest6() {
+    typeCheckModule(
+      "\\record R (A : \\Type)\n" +
+      "\\record S \\extends R\n" +
+      "\\record T \\plevels p1 <= p2 \\extends S");
+    ClassDefinition tClass = ((ClassDefinition) getDefinition("T"));
+    assertEquals(LevelPair.STD, tClass.getSuperLevels().get((ClassDefinition) getDefinition("S")));
+    assertEquals(LevelPair.STD, tClass.getSuperLevels().get((ClassDefinition) getDefinition("R")));
+  }
 }
