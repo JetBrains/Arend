@@ -2466,7 +2466,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           if (field.isProperty()) {
             CheckTypeVisitor.setCaseLevel(lamImpl.body, -1);
           }
-          Expression type = typedDef.getFieldType(field, LevelSubstitution.EMPTY, new ReferenceExpression(thisBinding));
+          Levels superLevels = typedDef.getSuperLevels().get(field.getParentClass());
+          Expression type = typedDef.getFieldType(field, superLevels == null ? LevelSubstitution.EMPTY : superLevels.makeSubstitution(field), new ReferenceExpression(thisBinding));
           result = typechecker.finalCheckExpr(CheckTypeVisitor.addImplicitLamParams(lamImpl.body, type), type);
           myInstancePool.setInstancePool(null);
         } else {

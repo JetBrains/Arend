@@ -1,6 +1,8 @@
 package org.arend.typechecking.doubleChecker;
 
 import org.arend.core.context.binding.Binding;
+import org.arend.core.context.binding.LevelVariable;
+import org.arend.core.context.binding.ParamLevelVariable;
 import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.context.param.DependentLink;
@@ -19,6 +21,7 @@ import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelPair;
+import org.arend.core.subst.Levels;
 import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
@@ -44,6 +47,9 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
   private final Set<Binding> myContext;
   private final Equations myEquations;
   private final Concrete.SourceNode mySourceNode;
+  private List<? extends LevelVariable> myPParameters;
+  private List<? extends LevelVariable> myHParameters;
+  private boolean myCheckLevelVariables;
 
   public CoreExpressionChecker(Set<Binding> context, Equations equations, Concrete.SourceNode sourceNode) {
     myContext = context;
@@ -53,6 +59,16 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   void clear() {
     if (myContext != null) myContext.clear();
+    myPParameters = null;
+    myHParameters = null;
+    myCheckLevelVariables = false;
+  }
+
+  void setDefinition(Definition definition) {
+    List<? extends LevelVariable> params = definition.getLevelParameters();
+    myPParameters = params == null ? null : params.subList(0, definition.getNumberOfPLevelParameters());
+    myHParameters = params == null ? null : params.subList(definition.getNumberOfPLevelParameters(), params.size());
+    myCheckLevelVariables = true;
   }
 
   public Expression check(Expression expectedType, Expression actualType, Expression expression) {
@@ -70,8 +86,19 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     }
   }
 
+  private void checkLevels(Levels levels, Definition definition, Expression expr) {
+    List<? extends Level> list = levels.toList();
+    for (int i = 0; i < definition.getNumberOfPLevelParameters(); i++) {
+      checkLevel(list.get(i), LevelVariable.LvlType.PLVL, expr);
+    }
+    for (int i = definition.getNumberOfPLevelParameters(); i < list.size(); i++) {
+      checkLevel(list.get(i), LevelVariable.LvlType.HLVL, expr);
+    }
+  }
+
   @Override
   public Expression visitFunCall(FunCallExpression expr, Expression expectedType) {
+    checkLevels(expr.getLevels(), expr.getDefinition(), expr);
     LevelSubstitution levelSubst = expr.getLevelSubstitution();
     ExprSubstitution substitution = new ExprSubstitution();
     List<? extends Expression> args = expr.getDefCallArguments();
@@ -90,6 +117,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   @Override
   public Expression visitConCall(ConCallExpression expr, Expression expectedType) {
+    checkLevels(expr.getLevels(), expr.getDefinition(), expr);
     if (expr.getDefinition() == Prelude.FIN_ZERO || expr.getDefinition() == Prelude.FIN_SUC) {
       throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("'Fin." + expr.getDefinition().getName() + "' is not allowed", mySourceNode), expr));
     }
@@ -152,6 +180,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   @Override
   public Expression visitDataCall(DataCallExpression expr, Expression expectedType) {
+    checkLevels(expr.getLevels(), expr.getDefinition(), expr);
     LevelSubstitution levelSubst = expr.getLevelSubstitution();
     checkList(expr.getDefCallArguments(), expr.getDefinition().getParameters(), new ExprSubstitution(), levelSubst);
     return check(expectedType, new UniverseExpression(expr.getDefinition().getSort().subst(levelSubst)), expr);
@@ -159,6 +188,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   @Override
   public Expression visitFieldCall(FieldCallExpression expr, Expression expectedType) {
+    checkLevels(expr.getLevels(), expr.getDefinition(), expr);
     PiExpression type = expr.getDefinition().getType(expr.getLevels());
     Expression argType = expr.getArgument().accept(this, type.getParameters().getTypeExpr());
 
@@ -178,6 +208,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   @Override
   public Expression visitClassCall(ClassCallExpression expr, Expression expectedType) {
+    checkLevels(expr.getLevels(), expr.getDefinition(), expr);
     addBinding(expr.getThisBinding(), expr);
     Expression thisExpr = new ReferenceExpression(expr.getThisBinding());
     for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
@@ -315,7 +346,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
   }
 
   private Expression checkLam(LamExpression expr, Expression expectedType, Integer level) {
-    checkDependentLink(expr.getParameters(), new UniverseExpression(new Sort(expr.getResultSort().getPLevel(), Level.INFINITY)), expr);
+    checkDependentLink(expr.getParameters(), expr.getResultSort().isProp() ? null : new UniverseExpression(new Sort(expr.getResultSort().getPLevel(), Level.INFINITY)), expr);
     Expression type;
     if (expr.getBody() instanceof LamExpression) {
       type = checkLam((LamExpression) expr.getBody(), null, level);
@@ -337,11 +368,13 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   @Override
   public Expression visitLam(LamExpression expr, Expression expectedType) {
+    checkSort(expr.getResultSort(), expr);
     return checkLam(expr, expectedType, null);
   }
 
   @Override
   public Expression visitPi(PiExpression expr, Expression expectedType) {
+    checkSort(expr.getResultSort(), expr);
     UniverseExpression type = new UniverseExpression(expr.getResultSort());
     checkDependentLink(expr.getParameters(), expr.getResultSort().isProp() ? null : new UniverseExpression(new Sort(expr.getResultSort().getPLevel(), Level.INFINITY)), expr);
     expr.getCodomain().accept(this, type);
@@ -351,10 +384,29 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   @Override
   public Expression visitSigma(SigmaExpression expr, Expression expectedType) {
+    checkSort(expr.getSort(), expr);
     UniverseExpression type = new UniverseExpression(expr.getSort());
     checkDependentLink(expr.getParameters(), type, expr);
     freeDependentLink(expr.getParameters());
     return check(expectedType, type, expr);
+  }
+
+  private void checkLevel(Level level, LevelVariable.LvlType type, Expression expr) {
+    LevelVariable var = level.getVar();
+    if (var == null) return;
+    if (var.getType() != type) {
+      throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(DocFactory.text(type.toString()), DocFactory.text(var.getType().toString()), mySourceNode), expr));
+    }
+    if (!myCheckLevelVariables) return;
+    List<? extends LevelVariable> params = type == LevelVariable.LvlType.HLVL ? myHParameters : myPParameters;
+    if (params != null && params.isEmpty() || var instanceof ParamLevelVariable && (params == null || !params.contains(var))) {
+      throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Variable '" + var + "' is not defined", mySourceNode), expr));
+    }
+  }
+
+  private void checkSort(Sort sort, Expression expr) {
+    checkLevel(sort.getPLevel(), LevelVariable.LvlType.PLVL, expr);
+    checkLevel(sort.getHLevel(), LevelVariable.LvlType.HLVL, expr);
   }
 
   @Override
@@ -362,10 +414,12 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     if (expr.isOmega()) {
       throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Universes of the infinity level are not allowed", mySourceNode), expr));
     }
-    if (expr.getSort().getHLevel().isProp() && !(expr.getSort().getPLevel().isClosed() && expr.getSort().getPLevel().getConstant() == 0)) {
+    Sort sort = expr.getSort();
+    if (sort.getHLevel().isProp() && !(sort.getPLevel().isClosed() && sort.getPLevel().getConstant() == 0)) {
       throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("p-level of \\Prop is not 0", mySourceNode), expr));
     }
-    return check(expectedType, new UniverseExpression(expr.getSort().succ()), expr);
+    checkSort(sort, expr);
+    return check(expectedType, new UniverseExpression(sort.succ()), expr);
   }
 
   @Override
@@ -795,6 +849,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   @Override
   public Expression visitArray(ArrayExpression expr, Expression expectedType) {
+    checkLevels(expr.getLevels(), Prelude.ARRAY, expr);
     expr.getElementsType().accept(this, new UniverseExpression(Sort.STD.subst(expr.getLevels())));
     for (Expression element : expr.getElements()) {
       element.accept(this, expr.getElementsType());

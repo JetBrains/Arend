@@ -59,6 +59,10 @@ public class PiExpression extends Expression implements Type, CorePiExpression, 
     return myResultSort;
   }
 
+  public void setResultSort(Sort sort) {
+    myResultSort = sort;
+  }
+
   @NotNull
   @Override
   public SingleDependentLink getParameters() {

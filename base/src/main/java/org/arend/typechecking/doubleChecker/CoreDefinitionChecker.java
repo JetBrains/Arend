@@ -44,6 +44,7 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
 
   public boolean check(Definition definition) {
     myChecker.clear();
+    myChecker.setDefinition(definition);
     try {
       myChecker.checkDependentLink(definition.getParameters(), Type.OMEGA, null);
 

@@ -27,6 +27,10 @@ public class LamExpression extends Expression implements CoreLamExpression {
     return myResultSort;
   }
 
+  public void setResultSort(Sort sort) {
+    myResultSort = sort;
+  }
+
   public void substSort(LevelSubstitution substitution) {
     myResultSort = myResultSort.subst(substitution);
   }
