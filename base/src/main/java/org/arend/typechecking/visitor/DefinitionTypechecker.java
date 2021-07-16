@@ -40,6 +40,7 @@ import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteDefinitionVisitor;
 import org.arend.term.concrete.FreeReferablesVisitor;
 import org.arend.typechecking.FieldDFS;
+import org.arend.typechecking.LevelContext;
 import org.arend.typechecking.covariance.ParametersCovarianceChecker;
 import org.arend.typechecking.covariance.RecursiveDataChecker;
 import org.arend.typechecking.covariance.UniverseInParametersChecker;
@@ -706,7 +707,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
   }
 
-  private boolean typecheckLevelParameters(Concrete.LevelParameters params, LevelVariable base, List<LevelVariable> parameters) {
+  private boolean typecheckLevelParameters(Concrete.LevelParameters params, LevelVariable base, List<LevelVariable> parameters, Map<LevelReferable, ParamLevelVariable> variables) {
     if (params == null) {
       parameters.add(base);
       return true;
@@ -714,8 +715,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     for (int i = 0; i < params.referables.size(); i++) {
       LevelReferable ref = params.referables.get(i);
       ParamLevelVariable var = new ParamLevelVariable(base.getType(), ref.getRefName(), params.isIncreasing ? i : params.referables.size() - 1 - i);
-      ref.setLevelVariable(var);
       parameters.add(var);
+      variables.put(ref, var);
     }
     return !params.referables.isEmpty();
   }
@@ -723,9 +724,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   private List<LevelVariable> typecheckLevelParameters(Concrete.Definition def) {
     if (def.getPLevelParameters() == null && def.getHLevelParameters() == null) return null;
     List<LevelVariable> parameters = new ArrayList<>();
-    boolean isPBased = typecheckLevelParameters(def.getPLevelParameters(), LevelVariable.PVAR, parameters);
-    boolean isHBased = typecheckLevelParameters(def.getHLevelParameters(), LevelVariable.HVAR, parameters);
-    typechecker.setIsBased(isPBased, isHBased);
+    Map<LevelReferable, ParamLevelVariable> variables = new HashMap<>();
+    boolean isPBased = typecheckLevelParameters(def.getPLevelParameters(), LevelVariable.PVAR, parameters, variables);
+    boolean isHBased = typecheckLevelParameters(def.getHLevelParameters(), LevelVariable.HVAR, parameters, variables);
+    typechecker.setLevelContext(new LevelContext(variables, isPBased, isHBased));
     return parameters;
   }
 
@@ -2109,11 +2111,14 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     levelFields.add(base);
   }
 
-  private void typecheckClassLevelParameters(Concrete.LevelParameters params, LevelVariable.LvlType type, Map<Referable, ParamLevelVariable> result, List<LevelVariable> parameters) {
+  private void typecheckClassLevelParameters(Concrete.LevelParameters params, LevelVariable.LvlType type, Map<LevelReferable, ParamLevelVariable> result, List<LevelVariable> parameters, boolean useOriginalField) {
     for (int i = 0; i < params.referables.size(); i++) {
       LevelReferable ref = params.referables.get(i);
-      FieldLevelVariable var = new FieldLevelVariable(type, ref.getRefName(), params.isIncreasing ? i : params.referables.size() - 1 - i, new FieldLevelVariable.LevelField());
-      ref.setLevelVariable(var);
+      FieldLevelVariable.LevelField originalField = ref.getLevelField();
+      FieldLevelVariable var = new FieldLevelVariable(type, ref.getRefName(), params.isIncreasing ? i : params.referables.size() - 1 - i, useOriginalField && originalField != null ? originalField : new FieldLevelVariable.LevelField());
+      if (!useOriginalField || originalField == null) {
+        ref.setLevelField(var.getLevelField());
+      }
       result.put(ref, var);
       parameters.add(var);
     }
@@ -2194,22 +2199,21 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     // Set level fields
     {
       List<LevelVariable> levelFields = new ArrayList<>();
-      Map<Referable, ParamLevelVariable> pVars = def.getPLevelParameters() == null ? null : new HashMap<>();
-      Map<Referable, ParamLevelVariable> hVars = def.getHLevelParameters() == null ? null : new HashMap<>();
+      Map<LevelReferable, ParamLevelVariable> variables = new HashMap<>();
       if (def.getPLevelParameters() != null) {
-        typecheckClassLevelParameters(def.getPLevelParameters(), LevelVariable.LvlType.PLVL, pVars, levelFields);
+        typecheckClassLevelParameters(def.getPLevelParameters(), LevelVariable.LvlType.PLVL, variables, levelFields, def.arePParametersInherited);
       } else {
         typecheckLevelFields(typedDef, def, LevelVariable.PVAR, levelFields);
       }
       if (def.getHLevelParameters() != null) {
-        typecheckClassLevelParameters(def.getHLevelParameters(), LevelVariable.LvlType.HLVL, hVars, levelFields);
+        typecheckClassLevelParameters(def.getHLevelParameters(), LevelVariable.LvlType.HLVL, variables, levelFields, def.areHParametersInherited);
       } else {
         typecheckLevelFields(typedDef, def, LevelVariable.HVAR, levelFields);
       }
       if (myNewDef && !(levelFields.size() == 2 && levelFields.get(0).equals(LevelVariable.PVAR) && levelFields.get(1).equals(LevelVariable.HVAR))) {
         typedDef.setLevelParameters(levelFields);
       }
-      typechecker.setIsBased(def.getPLevelParameters() == null || !def.getPLevelParameters().referables.isEmpty(), def.getHLevelParameters() == null || !def.getHLevelParameters().referables.isEmpty());
+      typechecker.setLevelContext(new LevelContext(variables, !levelFields.isEmpty() && levelFields.get(0).getType() == LevelVariable.LvlType.PLVL, !levelFields.isEmpty() && levelFields.get(levelFields.size() - 1).getType() == LevelVariable.LvlType.HLVL));
     }
 
     Levels idLevels = typedDef.makeIdLevels();

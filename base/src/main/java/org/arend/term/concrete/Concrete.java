@@ -1758,6 +1758,8 @@ public final class Concrete {
     private TCFieldReferable myClassifyingField;
     private boolean myForcedClassifyingField;
     private List<TCDefReferable> myUsedDefinitions = Collections.emptyList();
+    public boolean arePParametersInherited;
+    public boolean areHParametersInherited;
 
     public ClassDefinition(TCDefReferable referable, LevelParameters pParams, LevelParameters hParams, boolean isRecord, boolean withoutClassifying, List<ReferenceExpression> superClasses, List<ClassElement> elements) {
       super(referable, pParams, hParams);

@@ -54,6 +54,7 @@ import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteExpressionVisitor;
 import org.arend.term.concrete.ConcreteLevelExpressionVisitor;
 import org.arend.typechecking.FieldDFS;
+import org.arend.typechecking.LevelContext;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.TypecheckingContext;
 import org.arend.typechecking.computation.ComputationRunner;
@@ -97,8 +98,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   private final List<DeferredMeta> myDeferredMetasAfterLevels = new ArrayList<>();
   private final ArendExtension myArendExtension;
   private TypecheckerState mySavedState;
-  private boolean myPBased = true;
-  private boolean myHBased = true;
+  private LevelContext myLevelContext;
 
   private static class DeferredMeta {
     final MetaDefinition meta;
@@ -160,13 +160,13 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   public TypecheckingContext saveTypecheckingContext() {
-    return new TypecheckingContext(new LinkedHashMap<>(context), myInstancePool.getInstanceProvider(), myInstancePool.getInstancePool(), myArendExtension, copyUserData(), myPBased, myHBased);
+    return new TypecheckingContext(new LinkedHashMap<>(context), myInstancePool.getInstanceProvider(), myInstancePool.getInstancePool(), myArendExtension, copyUserData(), myLevelContext);
   }
 
   public static CheckTypeVisitor loadTypecheckingContext(TypecheckingContext typecheckingContext, ErrorReporter errorReporter) {
     CheckTypeVisitor visitor = new CheckTypeVisitor(typecheckingContext.localContext, errorReporter, null, typecheckingContext.arendExtension, typecheckingContext.userDataHolder);
     visitor.setInstancePool(new GlobalInstancePool(typecheckingContext.instanceProvider, visitor, typecheckingContext.localInstancePool));
-    visitor.setIsBased(typecheckingContext.isPBased, typecheckingContext.isHBased);
+    visitor.setLevelContext(typecheckingContext.levelContext);
     return visitor;
   }
 
@@ -189,16 +189,15 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   public boolean isPBased() {
-    return myPBased;
+    return myLevelContext == null || myLevelContext.isPBased;
   }
 
   public boolean isHBased() {
-    return myHBased;
+    return myLevelContext == null || myLevelContext.isHBased;
   }
 
-  public void setIsBased(boolean isPBased, boolean isHBased) {
-    myPBased = isPBased;
-    myHBased = isHBased;
+  public void setLevelContext(LevelContext levelContext) {
+    myLevelContext = levelContext;
   }
 
   @NotNull
@@ -861,7 +860,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         }
         checkTypeVisitor = new CheckTypeVisitor(deferredMeta.context, deferredMeta.errorReporter, null, myArendExtension, this);
         checkTypeVisitor.setInstancePool(new GlobalInstancePool(myInstancePool.getInstanceProvider(), checkTypeVisitor, myInstancePool.getInstancePool()));
-        checkTypeVisitor.setIsBased(myPBased, myHBased);
+        checkTypeVisitor.setLevelContext(myLevelContext);
       } else {
         checkTypeVisitor = this;
         errorReporter = deferredMeta.errorReporter;
@@ -1842,7 +1841,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     if (expr.getReferent() instanceof ErrorReference) {
       return new Level(base);
     }
-    ParamLevelVariable var = expr.getReferent() instanceof LevelReferable ? ((LevelReferable) expr.getReferent()).getLevelVariable() : null;
+    ParamLevelVariable var = myLevelContext != null && expr.getReferent() instanceof LevelReferable ? myLevelContext.getVariable((LevelReferable) expr.getReferent()) : null;
     if (var == null) {
       if (checkUnresolved(expr.getReferent(), expr)) {
         errorReporter.report(new IncorrectReferenceError(expr.getReferent(), expr));

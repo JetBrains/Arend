@@ -694,16 +694,29 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
           }
           if (levelParams.get(0) != null && levelParams.get(1) != null) return null;
           for (Concrete.ReferenceExpression superClass : classDef.getSuperClasses()) {
-            visit(superClass.getReferent());
-            if (levelParams.get(0) != null && levelParams.get(1) != null) break;
+            if (superClass.getPLevels() == null && superClass.getHLevels() == null) {
+              visit(superClass.getReferent());
+              if (levelParams.get(0) != null && levelParams.get(1) != null) break;
+            }
           }
           return null;
         }
       };
       for (Concrete.ReferenceExpression superClass : def.getSuperClasses()) {
-        dfs.visit(superClass.getReferent());
-        if (levelParams.get(0) != null && levelParams.get(1) != null) break;
+        if (superClass.getPLevels() == null && superClass.getHLevels() == null) {
+          dfs.visit(superClass.getReferent());
+          if (levelParams.get(0) != null && levelParams.get(1) != null) break;
+        }
       }
+
+      if (def.getPLevelParameters() == null && levelParams.get(0) != null) {
+        def.arePParametersInherited = true;
+      }
+      if (def.getHLevelParameters() == null && levelParams.get(1) != null) {
+        def.areHParametersInherited = true;
+      }
+      def.setPLevelParameters(levelParams.get(0));
+      def.setHLevelParameters(levelParams.get(1));
     }
 
     List<Referable> context = new ArrayList<>();

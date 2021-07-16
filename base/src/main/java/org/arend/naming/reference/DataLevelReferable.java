@@ -1,13 +1,13 @@
 package org.arend.naming.reference;
 
-import org.arend.core.context.binding.ParamLevelVariable;
+import org.arend.core.context.binding.FieldLevelVariable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class DataLevelReferable implements LevelReferable {
   private final Object myData;
   private final String myName;
-  private ParamLevelVariable myVar;
+  private FieldLevelVariable.LevelField myField;
 
   public DataLevelReferable(Object data, String name) {
     myData = data;
@@ -30,12 +30,12 @@ public class DataLevelReferable implements LevelReferable {
   }
 
   @Override
-  public ParamLevelVariable getLevelVariable() {
-    return myVar;
+  public FieldLevelVariable.LevelField getLevelField() {
+    return myField;
   }
 
   @Override
-  public void setLevelVariable(ParamLevelVariable levelVariable) {
-    myVar = levelVariable;
+  public void setLevelField(FieldLevelVariable.LevelField levelField) {
+    myField = levelField;
   }
 }

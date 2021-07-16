@@ -15,16 +15,14 @@ public class TypecheckingContext {
   public final InstancePool localInstancePool;
   public final ArendExtension arendExtension;
   public final UserDataHolderImpl userDataHolder;
-  public final boolean isPBased;
-  public final boolean isHBased;
+  public final LevelContext levelContext;
 
-  public TypecheckingContext(Map<Referable, Binding> localContext, InstanceProvider instanceProvider, InstancePool localInstancePool, ArendExtension arendExtension, UserDataHolderImpl userDataHolder, boolean isPBased, boolean isHBased) {
+  public TypecheckingContext(Map<Referable, Binding> localContext, InstanceProvider instanceProvider, InstancePool localInstancePool, ArendExtension arendExtension, UserDataHolderImpl userDataHolder, LevelContext levelContext) {
     this.localContext = localContext;
     this.instanceProvider = instanceProvider;
     this.localInstancePool = localInstancePool;
     this.arendExtension = arendExtension;
     this.userDataHolder = userDataHolder;
-    this.isPBased = isPBased;
-    this.isHBased = isHBased;
+    this.levelContext = levelContext;
   }
 }
