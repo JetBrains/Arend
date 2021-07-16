@@ -39,12 +39,12 @@ public class LevelPair implements LevelSubstitution, Levels {
   }
 
   public boolean isSTD() {
-    return myPLevel.isVarOnly() && myPLevel.getVar() == LevelVariable.PVAR && myHLevel.isVarOnly() && myHLevel.getVar() == LevelVariable.HVAR;
+    return myPLevel.isVarOnly() && myPLevel.getVar().equals(LevelVariable.PVAR) && myHLevel.isVarOnly() && myHLevel.getVar().equals(LevelVariable.HVAR);
   }
 
   @Override
   public Level get(Variable variable) {
-    return variable == LevelVariable.PVAR ? myPLevel : variable == LevelVariable.HVAR ? myHLevel : null;
+    return LevelVariable.PVAR.equals(variable) ? myPLevel : LevelVariable.HVAR.equals(variable) ? myHLevel : null;
   }
 
   @Override

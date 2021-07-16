@@ -265,13 +265,13 @@ public class TwoStageEquations implements Equations {
 
   private void addLevelEquation(final LevelVariable var1, LevelVariable var2, int constant, int maxConstant, Concrete.SourceNode sourceNode) {
     // _ <= max(-c, -d), _ <= max(l - c, -d) // 6
-    if (!(var2 instanceof InferenceLevelVariable) && maxConstant < 0 && (constant < 0 || constant == 0 && var2 == LevelVariable.HVAR && var1 == null) && !(var2 == null && var1 instanceof InferenceLevelVariable && var1.getType() == LevelVariable.LvlType.HLVL && constant >= -1 && maxConstant >= -1)) {
+    if (!(var2 instanceof InferenceLevelVariable) && maxConstant < 0 && (constant < 0 || constant == 0 && var2 != null && var2.getType() == LevelVariable.LvlType.HLVL && var1 == null) && !(var2 == null && var1 instanceof InferenceLevelVariable && var1.getType() == LevelVariable.LvlType.HLVL && constant >= -1 && maxConstant >= -1)) {
       myVisitor.getErrorReporter().report(new SolveLevelEquationsError(Collections.singletonList(new LevelEquation<>(var1, var2, constant)), sourceNode));
       return;
     }
 
     // l <= max(l' +- c, +d), l <= max(+-c, +-d) // 6
-    if ((var1 == LevelVariable.PVAR || var1 == LevelVariable.HVAR) && !(var2 instanceof InferenceLevelVariable)) {
+    if (var1 != null && !(var1 instanceof InferenceLevelVariable) && !(var2 instanceof InferenceLevelVariable)) {
       if (!(var2 != null && constant >= 0 && var1.compare(var2, CMP.LE))) {
         myVisitor.getErrorReporter().report(new SolveLevelEquationsError(Collections.singletonList(new LevelEquation<>(var1, var2, constant, maxConstant)), sourceNode));
       }

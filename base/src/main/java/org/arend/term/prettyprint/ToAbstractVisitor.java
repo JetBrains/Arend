@@ -615,7 +615,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       result = new Concrete.SucLevelExpression(null, result);
     }
 
-    if (level.getMaxConstant() > 0 || level.getMaxConstant() == 0 && level.getVar() == LevelVariable.HVAR) {
+    if (level.getMaxConstant() > 0 || level.getMaxConstant() == 0 && level.getVar() != null && level.getVar().getType() == LevelVariable.LvlType.HLVL) {
       result = new Concrete.MaxLevelExpression(null, result, visitLevel(new Level(level.getMaxConstant())));
     }
 
