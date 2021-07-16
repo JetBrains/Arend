@@ -129,7 +129,7 @@ public class DefinitionDeserialization implements ArendDeserializer {
       Map<ClassDefinition, Levels> superLevels = new HashMap<>();
       for (Map.Entry<Integer, LevelProtos.Levels> entry : superLevelsProto.entrySet()) {
         ClassDefinition superClass = myCallTargetProvider.getCallTarget(entry.getKey(), ClassDefinition.class);
-        superLevels.put(superClass, defDeserializer.readLevels(entry.getValue().getLevelList(), superClass));
+        superLevels.put(superClass, defDeserializer.readLevels(entry.getValue()));
       }
       classDef.setSuperLevels(superLevels);
     }

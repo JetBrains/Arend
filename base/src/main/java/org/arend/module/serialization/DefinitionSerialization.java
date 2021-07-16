@@ -115,9 +115,7 @@ public class DefinitionSerialization implements ArendSerializer {
     }
 
     for (Map.Entry<ClassDefinition, Levels> entry : definition.getSuperLevels().entrySet()) {
-      LevelProtos.Levels.Builder levelsBuilder = LevelProtos.Levels.newBuilder();
-      levelsBuilder.addAllLevel(defSerializer.writeLevels(entry.getValue()));
-      builder.putSuperLevels(myCallTargetIndexProvider.getDefIndex(entry.getKey()), levelsBuilder.build());
+      builder.putSuperLevels(myCallTargetIndexProvider.getDefIndex(entry.getKey()), defSerializer.writeLevels(entry.getValue(), entry.getKey()));
     }
 
     for (ClassField field : definition.getPersonalFields()) {

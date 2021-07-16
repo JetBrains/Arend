@@ -12,7 +12,9 @@ message Level {
 }
 
 message Levels {
-  repeated Level level = 1;
+  repeated Level pLevel = 1;
+  repeated Level hLevel = 2;
+  bool is_std = 3;
 }
 
 message Sort {

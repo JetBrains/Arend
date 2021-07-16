@@ -18,7 +18,7 @@ public abstract class DefCallExpression extends Expression implements CoreDefCal
   private Levels myLevels;
 
   public DefCallExpression(Definition definition, Levels levels) {
-    assert (definition.getLevelParameters() == null) == (levels instanceof LevelPair);
+    assert definition.status().needsTypeChecking() || (definition.getLevelParameters() == null) == (levels instanceof LevelPair);
     myDefinition = definition;
     myLevels = levels;
   }

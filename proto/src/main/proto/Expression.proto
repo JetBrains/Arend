@@ -44,7 +44,7 @@ message Expression {
     }
     message ClassCall {
         int32 class_ref = 1;
-        repeated Level levels = 7;
+        Levels levels = 7;
         map<int32, Expression> field_set = 4;
         Sort sort = 5;
         UniverseKind universe_kind = 6;
@@ -54,14 +54,14 @@ message Expression {
     }
     message ConCall {
         int32 constructor_ref = 1;
-        repeated Level levels = 7;
+        Levels levels = 7;
         repeated Expression datatype_argument = 4;
         repeated Expression argument = 5;
         int32 recursive_param = 6;
     }
     message DataCall {
         int32 data_ref = 1;
-        repeated Level levels = 5;
+        Levels levels = 5;
         repeated Expression argument = 4;
     }
     message Error {
@@ -71,12 +71,12 @@ message Expression {
     }
     message FieldCall {
         int32 field_ref = 1;
-        repeated Level level = 5;
+        Levels levels = 5;
         Expression expression = 4;
     }
     message FunCall {
         int32 fun_ref = 1;
-        repeated Level levels = 5;
+        Levels levels = 5;
         repeated Expression argument = 4;
     }
     message Lam {
@@ -122,7 +122,7 @@ message Expression {
     }
     message TypeCoerce {
         int32 fun_ref = 1;
-        repeated Level level = 8;
+        Levels levels = 8;
         int32 clause_index = 4;
         repeated Expression clause_argument = 5;
         Expression argument = 6;
@@ -258,7 +258,7 @@ message ElimTree {
 
             message Class {
                 int32 class_ref = 1;
-                repeated Level level = 4;
+                Levels levels = 4;
                 repeated int32 field = 3;
             }
 

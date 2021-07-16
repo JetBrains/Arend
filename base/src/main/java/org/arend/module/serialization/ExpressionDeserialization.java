@@ -20,6 +20,7 @@ import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.Levels;
+import org.arend.core.subst.ListLevels;
 import org.arend.ext.serialization.DeserializationException;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.order.dependency.DependencyListener;
@@ -82,12 +83,19 @@ class ExpressionDeserialization {
     return new Sort(readLevel(proto.getPLevel(), LevelVariable.PVAR), readLevel(proto.getHLevel(), LevelVariable.HVAR));
   }
 
-  Levels readLevels(List<LevelProtos.Level> protos, Definition def) {
-    List<Level> levels = new ArrayList<>(protos.size());
-    for (int i = 0; i < protos.size(); i++) {
-      levels.add(readLevel(protos.get(i), i < def.getNumberOfPLevelParameters() ? LevelVariable.PVAR : LevelVariable.HVAR));
+  Levels readLevels(LevelProtos.Levels proto) {
+    if (proto.getIsStd()) {
+      return new LevelPair(readLevel(proto.getPLevel(0), LevelVariable.PVAR), readLevel(proto.getHLevel(0), LevelVariable.HVAR));
+    } else {
+      List<Level> levels = new ArrayList<>();
+      for (LevelProtos.Level level : proto.getPLevelList()) {
+        levels.add(readLevel(level, LevelVariable.PVAR));
+      }
+      for (LevelProtos.Level level : proto.getHLevelList()) {
+        levels.add(readLevel(level, LevelVariable.HVAR));
+      }
+      return new ListLevels(levels);
     }
-    return def.makeLevelsFromList(levels);
   }
 
 
@@ -251,7 +259,7 @@ class ExpressionDeserialization {
               fields.add(myCallTargetProvider.getCallTarget(fieldRef, ClassField.class));
             }
             ClassDefinition def = myCallTargetProvider.getCallTarget(classProto.getClassRef(), ClassDefinition.class);
-            result.addChild(new ClassConstructor(def, readLevels(classProto.getLevelList(), def), fields), elimTree);
+            result.addChild(new ClassConstructor(def, readLevels(classProto.getLevels()), fields), elimTree);
           }
         }
         if (branchProto.hasArrayClause()) {
@@ -341,7 +349,7 @@ class ExpressionDeserialization {
   private Expression readFunCall(ExpressionProtos.Expression.FunCall proto) throws DeserializationException {
     FunctionDefinition functionDefinition = myCallTargetProvider.getCallTarget(proto.getFunRef(), FunctionDefinition.class);
     myDependencyListener.dependsOn(myDefinition.getRef(), functionDefinition.getReferable());
-    return FunCallExpression.make(functionDefinition, readLevels(proto.getLevelsList(), functionDefinition), readExprList(proto.getArgumentList()));
+    return FunCallExpression.make(functionDefinition, readLevels(proto.getLevels()), readExprList(proto.getArgumentList()));
   }
 
   private Expression readConCalls(ExpressionProtos.Expression.ConCalls protos) throws DeserializationException {
@@ -376,7 +384,7 @@ class ExpressionDeserialization {
 
     List<ExpressionProtos.Expression> protos = proto.getArgumentList();
     List<Expression> args = new ArrayList<>(protos.size());
-    ConCallExpression result = ConCallExpression.makeConCall(constructor, readLevels(proto.getLevelsList(), constructor), readExprList(proto.getDatatypeArgumentList()), args);
+    ConCallExpression result = ConCallExpression.makeConCall(constructor, readLevels(proto.getLevels()), readExprList(proto.getDatatypeArgumentList()), args);
     for (int i = 0; i < protos.size(); i++) {
       if (!last && i == recursiveParam) {
         args.add(null);
@@ -395,7 +403,7 @@ class ExpressionDeserialization {
   private DataCallExpression readDataCall(ExpressionProtos.Expression.DataCall proto) throws DeserializationException {
     DataDefinition dataDefinition = myCallTargetProvider.getCallTarget(proto.getDataRef(), DataDefinition.class);
     myDependencyListener.dependsOn(myDefinition.getRef(), dataDefinition.getReferable());
-    return new DataCallExpression(dataDefinition, readLevels(proto.getLevelsList(), dataDefinition), readExprList(proto.getArgumentList()));
+    return new DataCallExpression(dataDefinition, readLevels(proto.getLevels()), readExprList(proto.getArgumentList()));
   }
 
   private ClassCallExpression readClassCall(ExpressionProtos.Expression.ClassCall proto) throws DeserializationException {
@@ -403,7 +411,7 @@ class ExpressionDeserialization {
     myDependencyListener.dependsOn(myDefinition.getRef(), classDefinition.getReferable());
 
     Map<ClassField, Expression> fieldSet = new HashMap<>();
-    ClassCallExpression classCall = new ClassCallExpression(classDefinition, readLevels(proto.getLevelsList(), classDefinition), fieldSet, readSort(proto.getSort()), readUniverseKind(proto.getUniverseKind()));
+    ClassCallExpression classCall = new ClassCallExpression(classDefinition, readLevels(proto.getLevels()), fieldSet, readSort(proto.getSort()), readUniverseKind(proto.getUniverseKind()));
     registerBinding(classCall.getThisBinding());
     for (Map.Entry<Integer, ExpressionProtos.Expression> entry : proto.getFieldSetMap().entrySet()) {
       fieldSet.put(myCallTargetProvider.getCallTarget(entry.getKey(), ClassField.class), readExpr(entry.getValue()));
@@ -469,7 +477,7 @@ class ExpressionDeserialization {
   private Expression readTypeCoerce(ExpressionProtos.Expression.TypeCoerce proto) throws DeserializationException {
     FunctionDefinition function = myCallTargetProvider.getCallTarget(proto.getFunRef(), FunctionDefinition.class);
     myDependencyListener.dependsOn(myDefinition.getRef(), function.getReferable());
-    return TypeCoerceExpression.make(function, readLevels(proto.getLevelList(), function), proto.getClauseIndex(), readExprList(proto.getClauseArgumentList()), readExpr(proto.getArgument()), proto.getFromLeftToRight());
+    return TypeCoerceExpression.make(function, readLevels(proto.getLevels()), proto.getClauseIndex(), readExprList(proto.getClauseArgumentList()), readExpr(proto.getArgument()), proto.getFromLeftToRight());
   }
 
   private Expression readArray(ExpressionProtos.Expression.Array proto) throws DeserializationException {
@@ -532,7 +540,7 @@ class ExpressionDeserialization {
   private Expression readFieldCall(ExpressionProtos.Expression.FieldCall proto) throws DeserializationException {
     ClassField classField = myCallTargetProvider.getCallTarget(proto.getFieldRef(), ClassField.class);
     myDependencyListener.dependsOn(myDefinition.getRef(), classField.getParentClass().getReferable());
-    return FieldCallExpression.make(classField, readLevels(proto.getLevelList(), classField), readExpr(proto.getExpression()));
+    return FieldCallExpression.make(classField, readLevels(proto.getLevels()), readExpr(proto.getExpression()));
   }
 
   private SmallIntegerExpression readSmallInteger(ExpressionProtos.Expression.SmallInteger proto) {
