@@ -66,8 +66,9 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   void setDefinition(Definition definition) {
     List<? extends LevelVariable> params = definition.getLevelParameters();
-    myPParameters = params == null ? null : params.subList(0, definition.getNumberOfPLevelParameters());
-    myHParameters = params == null ? null : params.subList(definition.getNumberOfPLevelParameters(), params.size());
+    int pNum = definition.getNumberOfPLevelParameters();
+    myPParameters = params == null ? null : params.subList(0, pNum);
+    myHParameters = params == null ? null : params.subList(pNum, params.size());
     myCheckLevelVariables = true;
   }
 
@@ -88,10 +89,11 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   private void checkLevels(Levels levels, Definition definition, Expression expr) {
     List<? extends Level> list = levels.toList();
-    for (int i = 0; i < definition.getNumberOfPLevelParameters(); i++) {
+    int pNum = definition.getNumberOfPLevelParameters();
+    for (int i = 0; i < pNum; i++) {
       checkLevel(list.get(i), LevelVariable.LvlType.PLVL, expr);
     }
-    for (int i = definition.getNumberOfPLevelParameters(); i < list.size(); i++) {
+    for (int i = pNum; i < list.size(); i++) {
       checkLevel(list.get(i), LevelVariable.LvlType.HLVL, expr);
     }
   }

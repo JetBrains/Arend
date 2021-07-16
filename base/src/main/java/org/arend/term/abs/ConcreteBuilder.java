@@ -88,7 +88,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
     if (params == null) return null;
     List<LevelReferable> result = new ArrayList<>();
     for (Referable ref : params.getReferables()) {
-      result.add(myReferableConverter.toDataLevelReferable(ref));
+      result.add(new DataLevelReferable(ref, ref.getRefName()));
     }
     return result;
   }

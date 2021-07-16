@@ -677,9 +677,9 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     }
 
     resolveSuperClasses(def, scope);
-    List<Concrete.LevelParameters> levelParams = new ArrayList<>(2);
-    levelParams.add(def.getPLevelParameters());
-    levelParams.add(def.getHLevelParameters());
+    List<Concrete.ClassDefinition> levelParams = new ArrayList<>(2);
+    levelParams.add(null);
+    levelParams.add(null);
     if (!def.getSuperClasses().isEmpty() && (def.getPLevelParameters() == null || def.getHLevelParameters() == null)) {
       DFS<Referable, Void> dfs = new DFS<>() {
         @Override
@@ -687,10 +687,10 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
           Concrete.ClassDefinition classDef = ref instanceof GlobalReferable ? myConcreteProvider.getConcreteClass((GlobalReferable) ref) : null;
           if (classDef == null) return null;
           if (levelParams.get(0) == null && classDef.getPLevelParameters() != null) {
-            levelParams.set(0, classDef.getPLevelParameters());
+            levelParams.set(0, classDef);
           }
           if (levelParams.get(1) == null && classDef.getHLevelParameters() != null) {
-            levelParams.set(1, classDef.getHLevelParameters());
+            levelParams.set(1, classDef);
           }
           if (levelParams.get(0) != null && levelParams.get(1) != null) return null;
           for (Concrete.ReferenceExpression superClass : classDef.getSuperClasses()) {
@@ -710,17 +710,17 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       }
 
       if (def.getPLevelParameters() == null && levelParams.get(0) != null) {
-        def.arePParametersInherited = true;
+        def.pSuperClass = levelParams.get(0).getData();
+        def.setPLevelParameters(levelParams.get(0).getPLevelParameters());
       }
       if (def.getHLevelParameters() == null && levelParams.get(1) != null) {
-        def.areHParametersInherited = true;
+        def.hSuperClass = levelParams.get(1).getData();
+        def.setHLevelParameters(levelParams.get(1).getHLevelParameters());
       }
-      def.setPLevelParameters(levelParams.get(0));
-      def.setHLevelParameters(levelParams.get(1));
     }
 
     List<Referable> context = new ArrayList<>();
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myReferableConverter, scope, context, myLocalErrorReporter, myResolverListener, visitLevelParameters(levelParams.get(0)), visitLevelParameters(levelParams.get(1)));
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myReferableConverter, scope, context, myLocalErrorReporter, myResolverListener, visitLevelParameters(def.getPLevelParameters()), visitLevelParameters(def.getHLevelParameters()));
     Concrete.Expression previousType = null;
     for (int i = 0; i < classFields.size(); i++) {
       Concrete.ClassField field = classFields.get(i);

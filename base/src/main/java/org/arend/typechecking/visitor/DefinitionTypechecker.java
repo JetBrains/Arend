@@ -2111,14 +2111,16 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     levelFields.add(base);
   }
 
-  private void typecheckClassLevelParameters(Concrete.LevelParameters params, LevelVariable.LvlType type, Map<LevelReferable, ParamLevelVariable> result, List<LevelVariable> parameters, boolean useOriginalField) {
+  private void typecheckClassLevelParameters(Concrete.LevelParameters params, LevelVariable.LvlType type, Map<LevelReferable, ParamLevelVariable> result, List<LevelVariable> parameters, TCDefReferable superClass) {
+    ClassDefinition superClassDef = superClass != null && superClass.getTypechecked() instanceof ClassDefinition ? (ClassDefinition) superClass.getTypechecked() : null;
+    List<? extends LevelVariable> levelParams = superClassDef == null || superClassDef.getLevelParameters() == null ? null : superClassDef.getLevelParameters();
+    if (levelParams != null) {
+      levelParams = type == LevelVariable.LvlType.PLVL ? levelParams.subList(0, superClassDef.getNumberOfPLevelParameters()) : levelParams.subList(superClassDef.getNumberOfPLevelParameters(), levelParams.size());
+    }
     for (int i = 0; i < params.referables.size(); i++) {
       LevelReferable ref = params.referables.get(i);
-      FieldLevelVariable.LevelField originalField = ref.getLevelField();
-      FieldLevelVariable var = new FieldLevelVariable(type, ref.getRefName(), params.isIncreasing ? i : params.referables.size() - 1 - i, useOriginalField && originalField != null ? originalField : new FieldLevelVariable.LevelField());
-      if (!useOriginalField || originalField == null) {
-        ref.setLevelField(var.getLevelField());
-      }
+      FieldLevelVariable.LevelField originalField = levelParams != null && i < levelParams.size() && levelParams.get(i) instanceof FieldLevelVariable ? ((FieldLevelVariable) levelParams.get(i)).getLevelField() : null;
+      FieldLevelVariable var = new FieldLevelVariable(type, ref.getRefName(), params.isIncreasing ? i : params.referables.size() - 1 - i, originalField != null ? originalField : new FieldLevelVariable.LevelField());
       result.put(ref, var);
       parameters.add(var);
     }
@@ -2201,12 +2203,12 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       List<LevelVariable> levelFields = new ArrayList<>();
       Map<LevelReferable, ParamLevelVariable> variables = new HashMap<>();
       if (def.getPLevelParameters() != null) {
-        typecheckClassLevelParameters(def.getPLevelParameters(), LevelVariable.LvlType.PLVL, variables, levelFields, def.arePParametersInherited);
+        typecheckClassLevelParameters(def.getPLevelParameters(), LevelVariable.LvlType.PLVL, variables, levelFields, def.pSuperClass);
       } else {
         typecheckLevelFields(typedDef, def, LevelVariable.PVAR, levelFields);
       }
       if (def.getHLevelParameters() != null) {
-        typecheckClassLevelParameters(def.getHLevelParameters(), LevelVariable.LvlType.HLVL, variables, levelFields, def.areHParametersInherited);
+        typecheckClassLevelParameters(def.getHLevelParameters(), LevelVariable.LvlType.HLVL, variables, levelFields, def.hSuperClass);
       } else {
         typecheckLevelFields(typedDef, def, LevelVariable.HVAR, levelFields);
       }
@@ -2222,7 +2224,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     {
       Map<ClassDefinition, Levels> superLevels = new HashMap<>();
       int i = 0;
-      boolean compareLevels = def.getPLevelParameters() == null && def.getHLevelParameters() == null;
+      boolean compareLevels = (def.getPLevelParameters() == null || def.pSuperClass != null) && (def.getHLevelParameters() == null || def.hSuperClass != null);
       for (ClassDefinition superClass : typedDef.getSuperClasses()) {
         boolean ok = (compareLevels || superClass.getLevelParameters() != null) && compareLevelFields(typedDef, superClass, def.getSuperClasses().get(i));
         superLevels.put(superClass, typechecker.typecheckLevels(superClass, def.getSuperClasses().get(i++), ok ? idLevels : null, false));
