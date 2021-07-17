@@ -2205,12 +2205,12 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       List<LevelVariable> levelFields = new ArrayList<>();
       Map<LevelReferable, ParamLevelVariable> variables = new HashMap<>();
       if (def.getPLevelParameters() != null) {
-        typecheckClassLevelParameters(def.getPLevelParameters(), LevelVariable.LvlType.PLVL, variables, levelFields, def.pSuperClass);
+        typecheckClassLevelParameters(def.getPLevelParameters(), LevelVariable.LvlType.PLVL, variables, levelFields, def.pOriginalDef);
       } else {
         typecheckLevelFields(typedDef, def, LevelVariable.PVAR, levelFields);
       }
       if (def.getHLevelParameters() != null) {
-        typecheckClassLevelParameters(def.getHLevelParameters(), LevelVariable.LvlType.HLVL, variables, levelFields, def.hSuperClass);
+        typecheckClassLevelParameters(def.getHLevelParameters(), LevelVariable.LvlType.HLVL, variables, levelFields, def.hOriginalDef);
       } else {
         typecheckLevelFields(typedDef, def, LevelVariable.HVAR, levelFields);
       }
@@ -2226,7 +2226,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     {
       Map<ClassDefinition, Levels> superLevels = new HashMap<>();
       int i = 0;
-      boolean compareLevels = (def.getPLevelParameters() == null || def.pSuperClass != null) && (def.getHLevelParameters() == null || def.hSuperClass != null);
+      boolean compareLevels = (def.getPLevelParameters() == null || def.pOriginalDef != null) && (def.getHLevelParameters() == null || def.hOriginalDef != null);
       for (ClassDefinition superClass : typedDef.getSuperClasses()) {
         boolean ok = (compareLevels || superClass.getLevelParameters() != null) && compareLevelFields(typedDef, superClass, def.getSuperClasses().get(i));
         superLevels.put(superClass, typechecker.typecheckLevels(superClass, def.getSuperClasses().get(i++), ok ? idLevels : null, false));

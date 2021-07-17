@@ -230,6 +230,23 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     return params == null ? Collections.emptyMap() : visitLevelParameters(params.referables);
   }
 
+  private void copyLevelParameters(Concrete.Definition def) {
+    if (def.enclosingClass != null && (def.getPLevelParameters() == null || def.getHLevelParameters() == null)) {
+      Concrete.GeneralDefinition enclosingDef = myConcreteProvider.getConcrete(def.enclosingClass);
+      if (enclosingDef instanceof Concrete.ClassDefinition) {
+        Concrete.ClassDefinition classDef = (Concrete.ClassDefinition) enclosingDef;
+        if (def.getPLevelParameters() == null && classDef.getPLevelParameters() != null) {
+          def.setPLevelParameters(classDef.getPLevelParameters());
+          def.pOriginalDef = classDef.getData();
+        }
+        if (def.getHLevelParameters() == null && classDef.getHLevelParameters() != null) {
+          def.setHLevelParameters(classDef.getHLevelParameters());
+          def.hOriginalDef = classDef.getData();
+        }
+      }
+    }
+  }
+
   @Override
   public Void visitFunction(Concrete.BaseFunctionDefinition def, Scope scope) {
     if (def.getStage().ordinal() >= Concrete.Stage.RESOLVED.ordinal()) {
@@ -253,6 +270,8 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       def.setTypeClassReferencesResolved();
       return null;
     }
+
+    copyLevelParameters(def);
 
     if (def instanceof Concrete.UseDefinition) {
       Concrete.GeneralDefinition enclosingDef = myConcreteProvider.getConcrete(def.getUseParent());
@@ -523,6 +542,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
 
     myLocalErrorReporter = new ConcreteProxyErrorReporter(def);
 
+    copyLevelParameters(def);
     checkNameAndPrecedence(def);
 
     Map<String, TCReferable> constructorNames = new HashMap<>();
@@ -709,11 +729,11 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       }
 
       if (def.getPLevelParameters() == null && levelParams.get(0) != null) {
-        def.pSuperClass = levelParams.get(0).getData();
+        def.pOriginalDef = levelParams.get(0).getData();
         def.setPLevelParameters(levelParams.get(0).getPLevelParameters());
       }
       if (def.getHLevelParameters() == null && levelParams.get(1) != null) {
-        def.hSuperClass = levelParams.get(1).getData();
+        def.hOriginalDef = levelParams.get(1).getData();
         def.setHLevelParameters(levelParams.get(1).getHLevelParameters());
       }
     }

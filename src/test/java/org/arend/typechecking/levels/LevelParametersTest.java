@@ -7,6 +7,7 @@ import org.arend.core.definition.*;
 import org.arend.core.expr.*;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
+import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -15,8 +16,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 public class LevelParametersTest extends TypeCheckingTestCase {
   @Test
@@ -211,5 +211,17 @@ public class LevelParametersTest extends TypeCheckingTestCase {
     DependentLink params = ((SigmaExpression) Objects.requireNonNull(((FunctionDefinition) getDefinition("f")).getBody())).getParameters();
     assertEquals(new UniverseExpression(new Sort(new Level(1), new Level(LevelVariable.HVAR))), params.getTypeExpr());
     assertEquals(new UniverseExpression(new Sort(new Level(2), new Level(LevelVariable.HVAR))), params.getNext().getTypeExpr());
+  }
+
+  @Test
+  public void dynamicTest() {
+    typeCheckModule(
+      "\\record R \\plevels p1 <= p2 {\n" +
+      "  \\func f => 0\n" +
+      "}");
+    assertEquals(3, getDefinition("R.f").getLevelParameters().size());
+    Concrete.ReferenceExpression type = (Concrete.ReferenceExpression) ((Concrete.ClassExtExpression) Objects.requireNonNull(((Concrete.FunctionDefinition) getConcrete("R.f")).getParameters().get(0).getType())).getBaseClassExpression();
+    assertNotNull(type.getPLevels());
+    assertNull(type.getHLevels());
   }
 }

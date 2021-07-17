@@ -1664,6 +1664,8 @@ public final class Concrete {
     private LevelParameters myHLevelParameters;
     public TCDefReferable enclosingClass;
     private Set<TCDefReferable> myRecursiveDefinitions = Collections.emptySet();
+    public TCDefReferable pOriginalDef; // definition from which p-levels were copied, or null if they are not inherited
+    public TCDefReferable hOriginalDef;
 
     @Override
     public @NotNull TCDefReferable getData() {
@@ -1758,8 +1760,6 @@ public final class Concrete {
     private TCFieldReferable myClassifyingField;
     private boolean myForcedClassifyingField;
     private List<TCDefReferable> myUsedDefinitions = Collections.emptyList();
-    public TCDefReferable pSuperClass; // the super class from which p-levels were inherited, or null if they are not inherited
-    public TCDefReferable hSuperClass;
 
     public ClassDefinition(TCDefReferable referable, LevelParameters pParams, LevelParameters hParams, boolean isRecord, boolean withoutClassifying, List<ReferenceExpression> superClasses, List<ClassElement> elements) {
       super(referable, pParams, hParams);
