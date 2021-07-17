@@ -850,9 +850,11 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
       ClassCallExpression classCall = (ClassCallExpression) resultExpr;
       typechecker.checkAllImplemented(classCall, pseudoImplemented, def);
-      classCall.getImplementedHere().remove(Prelude.ARRAY_AT);
-      LevelPair levels = classCall.getLevels().toLevelPair();
-      classCall.setSort(new Sort(levels.get(LevelVariable.PVAR), levels.get(LevelVariable.HVAR).max(new Level(0))));
+      if (classCall.getDefinition() == Prelude.ARRAY) {
+        classCall.getImplementedHere().remove(Prelude.ARRAY_AT);
+        LevelPair levels = classCall.getLevels().toLevelPair();
+        classCall.setSort(new Sort(levels.get(LevelVariable.PVAR), levels.get(LevelVariable.HVAR).max(new Level(0))));
+      }
       return new Pair<>(new NewExpression(null, classCall), type);
     } else {
       TypecheckingResult result = typechecker.finalCheckExpr(new Concrete.NewExpression(def.getData(), Concrete.ClassExtExpression.make(def.getData(), typechecker.desugarClassApp(resultType, true), new Concrete.Coclauses(def.getData(), classFieldImpls))), null);
