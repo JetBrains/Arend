@@ -601,14 +601,14 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     }
   }
 
-  private void resolveSuperClasses(Concrete.ClassDefinition def, Scope scope) {
+  private void resolveSuperClasses(Concrete.ClassDefinition def, Scope scope, boolean resolveLevels) {
     if (def.getSuperClasses().isEmpty()) {
       return;
     }
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myReferableConverter, new ElimScope(scope, Collections.singleton(Prelude.ARRAY.getRef())), null, myErrorReporter, myResolverListener, visitLevelParameters(def.getPLevelParameters()), visitLevelParameters(def.getHLevelParameters()));
     for (int i = 0; i < def.getSuperClasses().size(); i++) {
       Concrete.ReferenceExpression superClass = def.getSuperClasses().get(i);
-      Concrete.Expression resolved = exprVisitor.visitReference(superClass, null);
+      Concrete.Expression resolved = exprVisitor.visitReference(superClass, true, resolveLevels);
       Referable ref = RedirectingReferable.getOriginalReferable(superClass.getReferent());
       if (resolved != superClass || !(ref instanceof GlobalReferable && ((GlobalReferable) ref).getKind() == GlobalReferable.Kind.CLASS)) {
         if (!(ref instanceof ErrorReference)) {
@@ -676,7 +676,6 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       }
     }
 
-    resolveSuperClasses(def, scope);
     List<Concrete.ClassDefinition> levelParams = new ArrayList<>(2);
     levelParams.add(null);
     levelParams.add(null);
@@ -718,6 +717,8 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
         def.setHLevelParameters(levelParams.get(1).getHLevelParameters());
       }
     }
+
+    resolveSuperClasses(def, scope, true);
 
     List<Referable> context = new ArrayList<>();
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myReferableConverter, scope, context, myLocalErrorReporter, myResolverListener, visitLevelParameters(def.getPLevelParameters()), visitLevelParameters(def.getHLevelParameters()));
@@ -816,7 +817,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     var def = myConcreteProvider.getConcrete(groupRef);
     Scope cachedScope = CachingScope.make(makeScope(group, scope, def instanceof Concrete.ClassDefinition ? LexicalScope.Extent.EXTERNAL_AND_FIELDS : LexicalScope.Extent.EVERYTHING));
     if (def instanceof Concrete.ClassDefinition) {
-      resolveSuperClasses((Concrete.ClassDefinition) def, cachedScope);
+      resolveSuperClasses((Concrete.ClassDefinition) def, cachedScope, false);
     }
     if (def instanceof Concrete.ResolvableDefinition) {
       ((Concrete.ResolvableDefinition) def).accept(this, cachedScope);

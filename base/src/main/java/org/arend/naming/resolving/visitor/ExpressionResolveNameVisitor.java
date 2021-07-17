@@ -267,7 +267,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     return argument == null ? expr : Concrete.AppExpression.make(expr.getData(), expr, argument, false);
   }
 
-  private Concrete.Expression visitReference(Concrete.ReferenceExpression expr, boolean invokeMeta) {
+  Concrete.Expression visitReference(Concrete.ReferenceExpression expr, boolean invokeMeta, boolean resolveLevels) {
     if (expr instanceof Concrete.FixityReferenceExpression) {
       Fixity fixity = ((Concrete.FixityReferenceExpression) expr).fixity;
       if (fixity == Fixity.INFIX || fixity == Fixity.POSTFIX) {
@@ -297,14 +297,16 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       argument = null;
     }
 
-    resolveLevels(expr);
+    if (resolveLevels) {
+      resolveLevels(expr);
+    }
 
     return invokeMetaWithoutArguments(expr, argument, invokeMeta);
   }
 
   @Override
   public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Void params) {
-    return visitReference(expr, true);
+    return visitReference(expr, true, true);
   }
 
   public Concrete.Expression convertMetaResult(ConcreteExpression expr, Concrete.ReferenceExpression refExpr, List<Concrete.Argument> args, Concrete.Coclauses coclauses, Concrete.FunctionClauses clauses) {
@@ -347,7 +349,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   @Override
   public Concrete.Expression visitApp(Concrete.AppExpression expr, Void params) {
     if (expr.getFunction() instanceof Concrete.ReferenceExpression) {
-      Concrete.Expression function = visitReference((Concrete.ReferenceExpression) expr.getFunction(), false);
+      Concrete.Expression function = visitReference((Concrete.ReferenceExpression) expr.getFunction(), false, true);
       Concrete.Expression metaResult = visitMeta(function, expr.getArguments(), null);
       return metaResult != null ? metaResult : visitArguments(function, expr.getArguments());
     } else {
@@ -732,14 +734,14 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   public Concrete.Expression visitClassExt(Concrete.ClassExtExpression expr, Void params) {
     Concrete.Expression baseExpr = expr.getBaseClassExpression();
     if (baseExpr instanceof Concrete.ReferenceExpression) {
-      baseExpr = visitReference((Concrete.ReferenceExpression) baseExpr, false);
+      baseExpr = visitReference((Concrete.ReferenceExpression) baseExpr, false, true);
       Concrete.Expression metaResult = visitMeta(baseExpr, Collections.emptyList(), expr.getCoclauses());
       if (metaResult != null) {
         return metaResult;
       }
     } else if (baseExpr instanceof Concrete.AppExpression) {
       Concrete.Expression function = ((Concrete.AppExpression) baseExpr).getFunction();
-      function = function instanceof Concrete.ReferenceExpression ? visitReference((Concrete.ReferenceExpression) function, false) : function.accept(this, null);
+      function = function instanceof Concrete.ReferenceExpression ? visitReference((Concrete.ReferenceExpression) function, false, true) : function.accept(this, null);
       Concrete.Expression metaResult = visitMeta(function, ((Concrete.AppExpression) baseExpr).getArguments(), expr.getCoclauses());
       if (metaResult != null) {
         return metaResult;

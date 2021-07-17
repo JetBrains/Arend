@@ -211,4 +211,21 @@ public class ClassLevelsTest extends TypeCheckingTestCase {
     assertEquals(LevelPair.STD, tClass.getSuperLevels().get((ClassDefinition) getDefinition("S")));
     assertEquals(LevelPair.STD, tClass.getSuperLevels().get((ClassDefinition) getDefinition("R")));
   }
+
+  @Test
+  public void extendsResolveTest() {
+    typeCheckModule(
+      "\\record R \\plevels p1 <= p2\n" +
+      "\\record S\n" +
+      "\\record T \\extends R, S p2");
+  }
+
+  @Test
+  public void extendsResolveError() {
+    resolveNamesModule(
+      "\\record R \\plevels p1 <= p2\n" +
+      "\\record S\n" +
+      "\\record T \\extends R, S p3", 1);
+    assertThatErrorsAre(Matchers.notInScope("p3"));
+  }
 }
