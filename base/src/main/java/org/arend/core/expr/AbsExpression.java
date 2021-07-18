@@ -30,6 +30,10 @@ public class AbsExpression implements CoreAbsExpression {
   }
 
   public Expression apply(Expression argument, LevelSubstitution levelSubst) {
-    return myBinding == null ? myExpression : myExpression.subst(new ExprSubstitution(myBinding, argument), levelSubst);
+    return myExpression.subst(myBinding == null ? new ExprSubstitution() : new ExprSubstitution(myBinding, argument), levelSubst);
+  }
+
+  public AbsExpression subst(ExprSubstitution substitution, LevelSubstitution levelSubst) {
+    return new AbsExpression(myBinding, myExpression.subst(substitution, levelSubst));
   }
 }

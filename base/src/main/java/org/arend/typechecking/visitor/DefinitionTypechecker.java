@@ -2173,9 +2173,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     }
 
-    List<FieldReferable> alreadyImplementFields = new ArrayList<>();
-    Concrete.SourceNode alreadyImplementedSourceNode = null;
-
     // Process super classes
     for (Concrete.ReferenceExpression aSuperClass : def.getSuperClasses()) {
       ClassDefinition superClass = typechecker.referableToDefinition(aSuperClass.getReferent(), ClassDefinition.class, "Expected a class", aSuperClass);
@@ -2190,13 +2187,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       if (myNewDef) {
         typedDef.addFields(superClass.getFields());
         typedDef.addSuperClass(superClass);
-      }
-
-      for (Map.Entry<ClassField, AbsExpression> entry : superClass.getImplemented()) {
-        if (!implementField(entry.getKey(), entry.getValue(), typedDef, alreadyImplementFields)) {
-          classOk = false;
-          alreadyImplementedSourceNode = aSuperClass;
-        }
       }
     }
 
@@ -2314,6 +2304,21 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
       if (!superLevels.isEmpty()) {
         typedDef.setSuperLevels(superLevels);
+      }
+    }
+
+    Concrete.SourceNode alreadyImplementedSourceNode = null;
+    List<FieldReferable> alreadyImplementFields = new ArrayList<>();
+    for (Concrete.ReferenceExpression aSuperClass : def.getSuperClasses()) {
+      Definition superClassDef = aSuperClass.getReferent() instanceof TCDefReferable ? ((TCDefReferable) aSuperClass.getReferent()).getTypechecked() : null;
+      if (superClassDef instanceof ClassDefinition) {
+        for (Map.Entry<ClassField, AbsExpression> entry : ((ClassDefinition) superClassDef).getImplemented()) {
+          Levels levels = typedDef.getSuperLevels().get(superClassDef);
+          if (!implementField(entry.getKey(), entry.getValue().subst(new ExprSubstitution(), levels == null ? idLevels.makeSubstitution(superClassDef) : levels.makeSubstitution(superClassDef)), typedDef, alreadyImplementFields)) {
+            classOk = false;
+            alreadyImplementedSourceNode = aSuperClass;
+          }
+        }
       }
     }
 
@@ -2475,7 +2480,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             CheckTypeVisitor.setCaseLevel(lamImpl.body, -1);
           }
           Levels superLevels = typedDef.getSuperLevels().get(field.getParentClass());
-          Expression type = typedDef.getFieldType(field, superLevels == null ? LevelSubstitution.EMPTY : superLevels.makeSubstitution(field), new ReferenceExpression(thisBinding));
+          Expression type = typedDef.getFieldType(field, superLevels == null ? idLevels.makeSubstitution(field) : superLevels.makeSubstitution(field), new ReferenceExpression(thisBinding));
           result = typechecker.finalCheckExpr(CheckTypeVisitor.addImplicitLamParams(lamImpl.body, type), type);
           myInstancePool.setInstancePool(null);
         } else {
@@ -2519,7 +2524,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
     for (ClassDefinition superClass : typedDef.getSuperClasses()) {
       for (Map.Entry<ClassField, AbsExpression> entry : superClass.getDefaults()) {
-        typedDef.addDefaultIfAbsent(entry.getKey(), entry.getValue());
+        Levels levels = typedDef.getSuperLevels().get(superClass);
+        typedDef.addDefaultIfAbsent(entry.getKey(), entry.getValue().subst(new ExprSubstitution(), levels == null ? idLevels.makeSubstitution(superClass) : levels.makeSubstitution(superClass)));
       }
       for (Map.Entry<ClassField, Set<ClassField>> entry : superClass.getDefaultDependencies().entrySet()) {
         typedDef.addDefaultDependencies(entry.getKey(), entry.getValue());
