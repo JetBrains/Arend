@@ -11,5 +11,5 @@ public interface AbstractLevelExpressionVisitor<P, R> {
   R visitId(@Nullable Object data, Referable ref, P param);
   R visitSuc(@Nullable Object data, /* @NotNull */ @Nullable Abstract.LevelExpression expr, P param);
   R visitMax(@Nullable Object data, /* @NotNull */ @Nullable Abstract.LevelExpression left, /* @NotNull */ @Nullable Abstract.LevelExpression right, P param);
-  R visitError(@Nullable Object data);
+  R visitError(@Nullable Object data, P param);
 }
