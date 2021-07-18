@@ -5,8 +5,8 @@ public class FieldLevelVariable extends ParamLevelVariable {
 
   private final LevelField myField;
 
-  public FieldLevelVariable(LvlType levelType, String name, int size, LevelField field) {
-    super(levelType, name, size);
+  public FieldLevelVariable(LvlType levelType, String name, int index, int size, LevelField field) {
+    super(levelType, name, index, size);
     myField = field;
   }
 

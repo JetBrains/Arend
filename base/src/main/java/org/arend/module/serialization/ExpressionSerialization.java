@@ -81,7 +81,7 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
     } else if (var == LevelVariable.PVAR || var == LevelVariable.HVAR) {
       builder.setVariable(-1);
     } else if (var instanceof ParamLevelVariable) {
-      builder.setVariable(((ParamLevelVariable) var).getSize());
+      builder.setVariable(((ParamLevelVariable) var).getIndex());
     } else {
       throw new IllegalStateException();
     }

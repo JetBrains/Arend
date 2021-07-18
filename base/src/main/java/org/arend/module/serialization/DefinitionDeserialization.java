@@ -107,7 +107,7 @@ public class DefinitionDeserialization implements ArendDeserializer {
       if (size == -1) {
         result.add(base);
       } else {
-        result.add(new ParamLevelVariable(base.getType(), parameter.getName(), size));
+        result.add(new ParamLevelVariable(base.getType(), parameter.getName(), parameter.getIndex(), size));
       }
     }
     return result;
@@ -119,7 +119,7 @@ public class DefinitionDeserialization implements ArendDeserializer {
       for (DefinitionProtos.Definition.LevelField levelFieldProto : classProto.getLevelFieldList()) {
         DefinitionProtos.Definition.LevelParameter parameter = levelFieldProto.getParameter();
         int ref = levelFieldProto.getRef();
-        fieldLevels.add(ref == -1 ? (parameter.getIsPlevel() ? LevelVariable.PVAR : LevelVariable.HVAR) : new FieldLevelVariable(parameter.getIsPlevel() ? LevelVariable.LvlType.PLVL : LevelVariable.LvlType.HLVL, parameter.getName(), parameter.getSize(), myCallTargetProvider.getLevelCallTarget(ref)));
+        fieldLevels.add(ref == -1 ? (parameter.getIsPlevel() ? LevelVariable.PVAR : LevelVariable.HVAR) : new FieldLevelVariable(parameter.getIsPlevel() ? LevelVariable.LvlType.PLVL : LevelVariable.LvlType.HLVL, parameter.getName(), parameter.getIndex(), parameter.getSize(), myCallTargetProvider.getLevelCallTarget(ref)));
       }
       classDef.setLevelParameters(fieldLevels);
     }

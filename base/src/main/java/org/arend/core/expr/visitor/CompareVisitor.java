@@ -949,7 +949,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
   }
 
   private boolean compareClassCallLevelsLE(ClassCallExpression classCall1, ClassCallExpression classCall2, CMP cmp, Equations equations) {
-    return myCMP == CMP.EQ ? classCall1.getLevels().compare(classCall2.getLevels(), cmp, equations, mySourceNode) : classCall1.getLevels(classCall2.getDefinition()).compare(classCall2.getLevels(), cmp, equations, mySourceNode);
+    return cmp == CMP.EQ ? classCall1.getLevels().compare(classCall2.getLevels(), cmp, equations, mySourceNode) : classCall1.getLevels(classCall2.getDefinition()).compare(classCall2.getLevels(), cmp, equations, mySourceNode);
   }
 
   private boolean checkClassCallLevels(ClassCallExpression classCall1, ClassCallExpression classCall2, CMP onSuccess, CMP onFailure) {

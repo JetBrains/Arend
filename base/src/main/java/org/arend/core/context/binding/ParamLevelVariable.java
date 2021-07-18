@@ -6,11 +6,13 @@ import org.arend.ext.core.ops.CMP;
 public class ParamLevelVariable implements LevelVariable {
   private final LvlType myLevelType;
   private final String myName;
+  private final int myIndex;
   private final int mySize;
 
-  public ParamLevelVariable(LvlType levelType, String name, int size) {
+  public ParamLevelVariable(LvlType levelType, String name, int index, int size) {
     myLevelType = levelType;
     myName = name;
+    myIndex = index;
     mySize = size;
   }
 
@@ -36,6 +38,10 @@ public class ParamLevelVariable implements LevelVariable {
   @Override
   public boolean compare(LevelVariable other, CMP cmp) {
     return other == getStd() && (mySize == 0 || cmp == CMP.GE) || other instanceof ParamLevelVariable && compare(mySize, ((ParamLevelVariable) other).mySize, cmp);
+  }
+
+  public int getIndex() {
+    return myIndex;
   }
 
   public int getSize() {

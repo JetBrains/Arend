@@ -714,7 +714,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
     for (int i = 0; i < params.referables.size(); i++) {
       LevelReferable ref = params.referables.get(i);
-      ParamLevelVariable var = new ParamLevelVariable(base.getType(), ref.getRefName(), params.isIncreasing ? i : params.referables.size() - 1 - i);
+      ParamLevelVariable var = new ParamLevelVariable(base.getType(), ref.getRefName(), i, params.isIncreasing ? i : params.referables.size() - 1 - i);
       parameters.add(var);
       variables.put(ref, var);
     }
@@ -2104,7 +2104,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         int order = 0;
         for (LevelVariable superLevelField : superLevelFields) {
           if (superLevelField.getType() == base.getType()) {
-            levelFields.add(superLevelField instanceof FieldLevelVariable ? new FieldLevelVariable(base.getType(), superLevelField.getName(), order++, ((FieldLevelVariable) superLevelField).getLevelField()) : superLevelField);
+            levelFields.add(superLevelField instanceof FieldLevelVariable ? new FieldLevelVariable(base.getType(), superLevelField.getName(), order++, ((FieldLevelVariable) superLevelField).getSize(), ((FieldLevelVariable) superLevelField).getLevelField()) : superLevelField);
           }
         }
       }
@@ -2122,7 +2122,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     for (int i = 0; i < params.referables.size(); i++) {
       LevelReferable ref = params.referables.get(i);
       FieldLevelVariable.LevelField originalField = levelParams != null && i < levelParams.size() && levelParams.get(i) instanceof FieldLevelVariable ? ((FieldLevelVariable) levelParams.get(i)).getLevelField() : null;
-      FieldLevelVariable var = new FieldLevelVariable(type, ref.getRefName(), params.isIncreasing ? i : params.referables.size() - 1 - i, originalField != null ? originalField : new FieldLevelVariable.LevelField());
+      FieldLevelVariable var = new FieldLevelVariable(type, ref.getRefName(), i, params.isIncreasing ? i : params.referables.size() - 1 - i, originalField != null ? originalField : new FieldLevelVariable.LevelField());
       result.put(ref, var);
       parameters.add(var);
     }
