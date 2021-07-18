@@ -65,4 +65,17 @@ public class CheckForUniversesVisitor extends SearchVisitor<Void> {
   public Boolean visitTypeCoerce(TypeCoerceExpression expr, Void params) {
     return expr.getDefinition().getUniverseKind() != UniverseKind.NO_UNIVERSES && !expr.getLevels().isClosed();
   }
+
+  @Override
+  public Boolean visitNew(NewExpression expression, Void param) {
+    if (expression.getRenewExpression() != null && expression.getRenewExpression().accept(this, param)) {
+      return true;
+    }
+    for (Expression impl : expression.getClassCall().getImplementedHere().values()) {
+      if (impl.accept(this, param)) {
+        return true;
+      }
+    }
+    return false;
+  }
 }
