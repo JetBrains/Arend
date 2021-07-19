@@ -550,8 +550,13 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       if (stuckVar2 != null && (!myNormalCompare || myEquations == DummyEquations.getInstance())) {
         return myOnlySolveVars;
       }
-      if (!myNormalCompare || !myNormalize || myOnlySolveVars && stuckVar2 != null) {
+
+      if (myOnlySolveVars && stuckVar2 != null) {
         return true;
+      }
+
+      if (!myNormalCompare || !myNormalize) {
+        return false;
       }
 
       // normalizedCompare(it, expr2, null)
