@@ -324,8 +324,21 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     if (!(n1 == n2 && e1 instanceof FieldCallExpression && e2 instanceof FieldCallExpression)) return null;
     FieldCallExpression fieldCall1 = (FieldCallExpression) e1;
     FieldCallExpression fieldCall2 = (FieldCallExpression) e2;
-    if (fieldCall1.getDefinition() == fieldCall2.getDefinition() && (fieldCall1.getArgument().getInferenceVariable() != null && isInstance(fieldCall2) || fieldCall2.getArgument().getInferenceVariable() != null && isInstance(fieldCall1)))
-      return expr1.accept(this, expr2, type);
+    if (fieldCall1.getDefinition() == fieldCall2.getDefinition() && (fieldCall1.getArgument().getInferenceVariable() != null && isInstance(fieldCall2) || fieldCall2.getArgument().getInferenceVariable() != null && isInstance(fieldCall1))) {
+      if (!expr1.accept(this, expr2, type)) {
+        return false;
+      }
+      e1 = expr1;
+      e2 = expr2;
+      while (e1 instanceof AppExpression && e2 instanceof AppExpression) {
+        if (!compare(((AppExpression) e1).getArgument(), ((AppExpression) e2).getArgument(), null, false)) {
+          return false;
+        }
+        e1 = e1.getFunction().getUnderlyingExpression();
+        e2 = e2.getFunction().getUnderlyingExpression();
+      }
+      return true;
+    }
     else return null;
   }
 
