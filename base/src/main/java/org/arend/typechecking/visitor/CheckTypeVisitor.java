@@ -459,8 +459,12 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     boolean ok = isOmega && result.type.isInstance(UniverseExpression.class);
     if (!ok && expectedType != null && !isOmega) {
       CompareVisitor visitor = new CompareVisitor(strict ? new LevelEquationsWrapper(myEquations) : myEquations, CMP.LE, expr);
-      DefCallExpression actualType = result.type.cast(DefCallExpression.class);
-      ok = visitor.normalizedCompare(actualType != null && expectedType instanceof DefCallExpression && actualType.getDefinition() == ((DefCallExpression) expectedType).getDefinition() ? result.type : result.type.normalize(NormalizationMode.WHNF), expectedType, Type.OMEGA, false);
+      FieldCallExpression actualType = result.type.cast(FieldCallExpression.class);
+      if (actualType != null && expectedType instanceof FieldCallExpression && actualType.getDefinition() == ((FieldCallExpression) expectedType).getDefinition() && (actualType.getArgument().getUnderlyingExpression() instanceof InferenceReferenceExpression || ((FieldCallExpression) expectedType).getArgument().getUnderlyingExpression() instanceof InferenceReferenceExpression)) {
+        ok = visitor.normalizedCompare(result.type, expectedType, Type.OMEGA, false);
+      } else {
+        ok = visitor.normalizedCompare(result.type.normalize(NormalizationMode.WHNF), expectedType, Type.OMEGA, false);
+      }
     }
     if (ok) {
       if (!strict && !isOmega) {
