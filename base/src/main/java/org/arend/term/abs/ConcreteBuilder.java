@@ -164,13 +164,13 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
 
     FunctionKind kind = def.getFunctionKind();
 
-    TCDefReferable parentRef = (TCDefReferable) myReferableConverter.toDataLocatedReferable(def.getReferable().getLocatedReferableParent());
+    LocatedReferable parentRef = myReferableConverter.toDataLocatedReferable(def.getReferable().getLocatedReferableParent());
     Concrete.FunctionDefinition result;
-    if (kind.isCoclause()) {
+    if (kind.isCoclause() && parentRef instanceof TCDefReferable) {
       Abstract.Reference implementedField = def.getImplementedField();
-      result = new Concrete.CoClauseFunctionDefinition(kind, (TCDefReferable) myDefinition, parentRef, implementedField == null ? null : implementedField.getReferent(), parameters, type, typeLevel, body);
+      result = new Concrete.CoClauseFunctionDefinition(kind, (TCDefReferable) myDefinition, (TCDefReferable) parentRef, implementedField == null ? null : implementedField.getReferent(), parameters, type, typeLevel, body);
       if (kind == FunctionKind.CLASS_COCLAUSE) {
-        result.enclosingClass = parentRef;
+        result.enclosingClass = (TCDefReferable) parentRef;
       }
     } else {
       result = Concrete.UseDefinition.make(def.getFunctionKind(), (TCDefReferable) myDefinition, visitLevelParameters(def.getPLevelParameters()), visitLevelParameters(def.getHLevelParameters()), parameters, type, typeLevel, body, parentRef);
