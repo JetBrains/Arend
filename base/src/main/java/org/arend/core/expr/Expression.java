@@ -112,7 +112,7 @@ public abstract class Expression implements Body, CoreExpression {
       try {
         return accept(GetTypeVisitor.INSTANCE, null);
       } catch (IncorrectExpressionException e) {
-        return null;
+        return new ErrorExpression();
       }
     } else {
       return accept(GetTypeVisitor.NN_INSTANCE, null);
