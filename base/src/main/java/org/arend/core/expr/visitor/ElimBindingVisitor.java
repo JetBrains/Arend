@@ -188,9 +188,7 @@ public class ElimBindingVisitor extends ExpressionTransformer<Void> {
         ExprSubstitution substitution = new ExprSubstitution();
         for (Map.Entry<Binding, Expression> entry : expr.getSubstitution().getEntries()) {
           Expression value = acceptSelf(entry.getValue(), true);
-          if (value == null) {
-            var.getBounds().remove(entry.getKey());
-          } else {
+          if (value != null) {
             substitution.add(entry.getKey(), value);
           }
         }
