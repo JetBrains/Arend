@@ -1292,7 +1292,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
                 if (!classCall.getDefinition().isSubClassOf(classDef)) {
                   errorReporter.report(new TypeMismatchError(new ClassCallExpression(classDef, classDef.makeMinLevels()), type, pair.proj2.implementation));
                 } else {
-                  if (!new CompareVisitor(myEquations, CMP.LE, pair.proj2.implementation).compareClassCallLevels(classCall, resultClassCall)) {
+                  if (classCall.getDefinition().getUniverseKind() != UniverseKind.NO_UNIVERSES && resultClassCall.getDefinition().getUniverseKind() != UniverseKind.NO_UNIVERSES && !resultClassCall.getLevels(classCall.getDefinition()).compare(classCall.getLevels(), CMP.EQ, myEquations, pair.proj2.implementation)) {
                     errorReporter.report(new TypeMismatchError(new ClassCallExpression(classDef, resultClassCall.getLevels(classDef)), classCall, pair.proj2.implementation));
                     return null;
                   }
@@ -1535,7 +1535,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     if (notImplemented == 0) {
       return true;
     } else if (notImplemented < 0) {
-      throw new IllegalArgumentException("Too many implemented fields (expected " + expectedFields + "): " + classCall.getImplementedHere());
+      throw new IllegalArgumentException("Too many implemented fields (expected " + expectedFields + "): " + classCall);
     } else {
       List<FieldReferable> fields = new ArrayList<>(notImplemented);
       for (ClassField field : classCall.getDefinition().getFields()) {
