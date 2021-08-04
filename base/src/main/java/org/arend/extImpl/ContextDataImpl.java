@@ -5,6 +5,7 @@ import org.arend.ext.concrete.ConcreteClause;
 import org.arend.ext.concrete.expr.ConcreteArgument;
 import org.arend.ext.concrete.expr.ConcreteClauses;
 import org.arend.ext.concrete.expr.ConcreteCoclauses;
+import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.typechecking.ContextData;
 import org.arend.term.concrete.Concrete;
@@ -14,7 +15,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 public class ContextDataImpl extends BaseContextDataImpl implements ContextData {
-  private final Concrete.Expression myExpression;
+  private Concrete.Expression myExpression;
   private List<? extends ConcreteArgument> myArguments;
   private ConcreteCoclauses myCoclauses;
   private ConcreteClauses myClauses;
@@ -38,6 +39,12 @@ public class ContextDataImpl extends BaseContextDataImpl implements ContextData 
   @Override
   public Concrete.Expression getMarker() {
     return myExpression;
+  }
+
+  @Override
+  public void setMarker(ConcreteExpression marker) {
+    if (!(marker instanceof Concrete.Expression)) throw new IllegalArgumentException();
+    myExpression = (Concrete.Expression) marker;
   }
 
   @NotNull

@@ -23,6 +23,8 @@ public interface ContextData extends BaseContextData {
 
   @NotNull ConcreteExpression getMarker();
 
+  void setMarker(ConcreteExpression marker);
+
   /**
    * Returns the list of arguments passed to the meta definition.
    */
