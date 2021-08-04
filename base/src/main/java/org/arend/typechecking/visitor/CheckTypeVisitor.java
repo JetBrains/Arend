@@ -2,10 +2,7 @@ package org.arend.typechecking.visitor;
 
 import org.arend.core.context.LinkList;
 import org.arend.core.context.Utils;
-import org.arend.core.context.binding.Binding;
-import org.arend.core.context.binding.LevelVariable;
-import org.arend.core.context.binding.ParamLevelVariable;
-import org.arend.core.context.binding.TypedEvaluatingBinding;
+import org.arend.core.context.binding.*;
 import org.arend.core.context.binding.inference.*;
 import org.arend.core.context.param.*;
 import org.arend.core.definition.*;
@@ -210,7 +207,17 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   public Set<Binding> getAllBindings() {
-    return new HashSet<>(context.values());
+    Set<Binding> result = new HashSet<>();
+    for (Binding binding : context.values()) {
+      result.add(binding);
+      if (binding instanceof EvaluatingBinding) {
+        Expression expr = ((EvaluatingBinding) binding).getExpression();
+        if (expr instanceof ReferenceExpression) {
+          result.add(((ReferenceExpression) expr).getBinding());
+        }
+      }
+    }
+    return result;
   }
 
   private static class VeryFakeLocalReferable extends FakeLocalReferable {
