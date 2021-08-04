@@ -10,4 +10,8 @@ public interface ConcreteProvider {
   @Nullable Concrete.FunctionDefinition getConcreteInstance(GlobalReferable referable);
   @Nullable Concrete.ClassDefinition getConcreteClass(GlobalReferable referable);
   @Nullable Concrete.DataDefinition getConcreteData(GlobalReferable referable);
+
+  default @Nullable Concrete.ClassDefinition getConcreteClassHeader(GlobalReferable referable) {
+    return getConcreteClass(referable);
+  }
 }

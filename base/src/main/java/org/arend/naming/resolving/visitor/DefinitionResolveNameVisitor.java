@@ -703,7 +703,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       DFS<Referable, Void> dfs = new DFS<>() {
         @Override
         protected Void forDependencies(Referable ref) {
-          Concrete.ClassDefinition classDef = ref instanceof GlobalReferable ? myConcreteProvider.getConcreteClass((GlobalReferable) ref) : null;
+          Concrete.ClassDefinition classDef = ref instanceof GlobalReferable ? myConcreteProvider.getConcreteClassHeader((GlobalReferable) ref) : null;
           if (classDef == null) return null;
           if (levelParams.get(0) == null && classDef.getPLevelParameters() != null) {
             levelParams.set(0, classDef);
