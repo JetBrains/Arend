@@ -58,11 +58,12 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
 
   @Override
   public Expression visitDefCall(DefCallExpression expr, Void params) {
+    assert expr instanceof LeveledDefCallExpression;
     List<Expression> args = new ArrayList<>(expr.getDefCallArguments().size());
     for (Expression arg : expr.getDefCallArguments()) {
       args.add(arg.accept(this, null));
     }
-    return expr.getDefinition().getDefCall(expr.getLevels().subst(myLevelSubstitution), args);
+    return expr.getDefinition().getDefCall(((LeveledDefCallExpression) expr).getLevels().subst(myLevelSubstitution), args);
   }
 
   @Override
@@ -101,7 +102,7 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
 
   @Override
   public Expression visitFieldCall(FieldCallExpression expr, Void params) {
-    return FieldCallExpression.make(expr.getDefinition(), expr.getLevels().subst(myLevelSubstitution), expr.getArgument().accept(this, null));
+    return FieldCallExpression.make(expr.getDefinition(), expr.getArgument().accept(this, null));
   }
 
   @Override

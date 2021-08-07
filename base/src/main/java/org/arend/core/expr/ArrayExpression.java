@@ -67,7 +67,7 @@ public class ArrayExpression extends Expression implements CoreArrayExpression {
       return new SmallIntegerExpression(myElements.size());
     }
 
-    Expression result = FieldCallExpression.make(Prelude.ARRAY_LENGTH, myLevels, myTail);
+    Expression result = FieldCallExpression.make(Prelude.ARRAY_LENGTH, myTail);
     for (Expression ignored : myElements) {
       result = ExpressionFactory.Suc(result);
     }

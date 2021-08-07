@@ -125,7 +125,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
         return newExpr.getImplementation(expr.getDefinition()).accept(this, null);
       }
     }
-    return FieldCallExpression.make(expr.getDefinition(), expr.getLevels(), expr.getArgument().accept(this, null), false);
+    return FieldCallExpression.make(expr.getDefinition(), expr.getArgument().accept(this, null), false);
   }
 
   @Override

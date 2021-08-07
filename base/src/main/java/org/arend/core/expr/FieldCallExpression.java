@@ -3,8 +3,6 @@ package org.arend.core.expr;
 import org.arend.core.definition.ClassField;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
-import org.arend.core.subst.LevelPair;
-import org.arend.core.subst.Levels;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CoreFieldCallExpression;
 import org.arend.prelude.Prelude;
@@ -19,18 +17,18 @@ import static org.arend.core.expr.ExpressionFactory.Suc;
 public class FieldCallExpression extends DefCallExpression implements CoreFieldCallExpression {
   private final Expression myArgument;
 
-  private FieldCallExpression(ClassField definition, Levels levels, Expression argument) {
-    super(definition, levels);
+  private FieldCallExpression(ClassField definition, Expression argument) {
+    super(definition);
     myArgument = argument;
   }
 
-  public static Expression make(ClassField definition, Levels levels, Expression thisExpr) {
-    return make(definition, levels, thisExpr, true);
+  public static Expression make(ClassField definition, Expression thisExpr) {
+    return make(definition, thisExpr, true);
   }
 
-  public static Expression make(ClassField definition, Levels levels, Expression thisExpr, boolean unfoldRefs) {
+  public static Expression make(ClassField definition, Expression thisExpr, boolean unfoldRefs) {
     if (definition.isProperty()) {
-      return new FieldCallExpression(definition, levels, thisExpr);
+      return new FieldCallExpression(definition, thisExpr);
     }
 
     thisExpr = thisExpr.getUnderlyingExpression();
@@ -44,13 +42,13 @@ public class FieldCallExpression extends DefCallExpression implements CoreFieldC
         return impl;
       }
     } else if (thisExpr instanceof ErrorExpression && ((ErrorExpression) thisExpr).getExpression() != null) {
-      return new FieldCallExpression(definition, levels, ((ErrorExpression) thisExpr).replaceExpression(null));
+      return new FieldCallExpression(definition, ((ErrorExpression) thisExpr).replaceExpression(null));
     } else if (definition == Prelude.ARRAY_LENGTH && thisExpr instanceof ArrayExpression) {
       ArrayExpression array = (ArrayExpression) thisExpr;
       if (array.getTail() == null) {
         return new SmallIntegerExpression(array.getElements().size());
       } else {
-        Expression result = make(Prelude.ARRAY_LENGTH, levels, array.getTail(), unfoldRefs);
+        Expression result = make(Prelude.ARRAY_LENGTH, array.getTail(), unfoldRefs);
         for (Expression ignored : array.getElements()) {
           result = Suc(result);
         }
@@ -60,7 +58,7 @@ public class FieldCallExpression extends DefCallExpression implements CoreFieldC
       return ((ArrayExpression) thisExpr).getElementsType();
     }
 
-    return new FieldCallExpression(definition, levels, thisExpr);
+    return new FieldCallExpression(definition, thisExpr);
   }
 
   @NotNull

@@ -364,7 +364,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           if (elementsType instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) elementsType).getVariable() != null) {
             type = type.normalize(NormalizationMode.WHNF);
             if (type instanceof ClassCallExpression) {
-              myEquations.addEquation(elementsType, FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, ((ClassCallExpression) type).getLevels(), right), type, CMP.EQ, expr, ((InferenceReferenceExpression) elementsType).getVariable(), right.getStuckInferenceVariable());
+              myEquations.addEquation(elementsType, FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, right), type, CMP.EQ, expr, ((InferenceReferenceExpression) elementsType).getVariable(), right.getStuckInferenceVariable());
             }
           }
         } else if (right instanceof ArrayExpression) {
@@ -372,7 +372,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           if (elementsType instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) elementsType).getVariable() != null) {
             type = type.normalize(NormalizationMode.WHNF);
             if (type instanceof ClassCallExpression) {
-              myEquations.addEquation(elementsType, FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, ((ClassCallExpression) type).getLevels(), left), type, CMP.EQ, expr, ((InferenceReferenceExpression) elementsType).getVariable(), left.getStuckInferenceVariable());
+              myEquations.addEquation(elementsType, FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, left), type, CMP.EQ, expr, ((InferenceReferenceExpression) elementsType).getVariable(), left.getStuckInferenceVariable());
             }
           }
         }
@@ -1297,7 +1297,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
             errorReporter.report(new FieldDependencyError(field, found, sourceNode));
             return null;
           }
-          fieldSet.put(field, FieldCallExpression.make(field, classCallExpr.getLevels(field.getParentClass()), renewExpr));
+          fieldSet.put(field, FieldCallExpression.make(field, renewExpr));
         }
       }
     } else if (useDefaults && !baseClass.getDefaults().isEmpty()) {
@@ -1400,7 +1400,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
                   }
                   for (ClassField field : classDef.getFields()) {
                     Levels fieldLevels = classCall.getLevels(field.getParentClass());
-                    Expression impl = FieldCallExpression.make(field, fieldLevels, result.expression).normalize(NormalizationMode.WHNF);
+                    Expression impl = FieldCallExpression.make(field, result.expression).normalize(NormalizationMode.WHNF);
                     Expression oldImpl = field.isProperty() ? null : resultClassCall.getImplementation(field, result.expression);
                     if (oldImpl != null) {
                       if (!CompareVisitor.compare(myEquations, CMP.EQ, impl, oldImpl, classCall.getDefinition().getFieldType(field, fieldLevels, result.expression), pair.proj2.implementation)) {
@@ -2751,7 +2751,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         ClassField field = notImplementedFields.get(i);
         newType = classCall.getDefinition().getFieldType(field, classCall.getLevels(field.getParentClass()), expression);
       }
-      TypecheckingResult unfolded = TypeConstructorExpression.unfoldResult(new TypecheckingResult(link != null ? ProjExpression.make(expression, i) : FieldCallExpression.make(notImplementedFields.get(i), classCall.getLevels(notImplementedFields.get(i).getParentClass()), expression), newType));
+      TypecheckingResult unfolded = TypeConstructorExpression.unfoldResult(new TypecheckingResult(link != null ? ProjExpression.make(expression, i) : FieldCallExpression.make(notImplementedFields.get(i), expression), newType));
       LetClausePattern letClausePattern = typecheckLetClausePattern(subPattern, unfolded.expression, unfolded.type, bindings);
       if (letClausePattern == null) {
         return null;
@@ -2797,7 +2797,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           if (myInstancePool != null && pair.proj2 instanceof ClassCallExpression && !((ClassCallExpression) pair.proj2).getDefinition().isRecord()) {
             ClassDefinition classDef = ((ClassCallExpression) pair.proj2).getDefinition();
             Expression instance = new ReferenceExpression(pair.proj1);
-            myInstancePool.addLocalInstance(classDef.getClassifyingField() == null ? null : FieldCallExpression.make(classDef.getClassifyingField(), ((ClassCallExpression) pair.proj2).getLevels(classDef.getClassifyingField().getParentClass()), instance), classDef, instance);
+            myInstancePool.addLocalInstance(classDef.getClassifyingField() == null ? null : FieldCallExpression.make(classDef.getClassifyingField(), instance), classDef, instance);
           }
         }
 

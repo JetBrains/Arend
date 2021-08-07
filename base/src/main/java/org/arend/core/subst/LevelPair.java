@@ -63,7 +63,7 @@ public class LevelPair implements LevelSubstitution, Levels {
 
   @Override
   public LevelPair subst(LevelSubstitution substitution) {
-    return new LevelPair(myPLevel.subst(substitution), myHLevel.subst(substitution));
+    return isClosed() ? this : new LevelPair(myPLevel.subst(substitution), myHLevel.subst(substitution));
   }
 
   @Override

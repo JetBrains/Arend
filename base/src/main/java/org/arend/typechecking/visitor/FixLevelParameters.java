@@ -90,7 +90,7 @@ public class FixLevelParameters extends VoidExpressionVisitor<Void> {
     expr.accept(new FixLevelParameters(null, false, false), null);
   }
 
-  private static void removeLevels(DefCallExpression defCall, boolean removePLevels, boolean removeHLevels) {
+  private static void removeLevels(LeveledDefCallExpression defCall, boolean removePLevels, boolean removeHLevels) {
     Levels levels;
     if (removePLevels && removeHLevels) {
       levels = Levels.EMPTY;
@@ -108,13 +108,15 @@ public class FixLevelParameters extends VoidExpressionVisitor<Void> {
   }
 
   private void processDefCall(DefCallExpression defCall) {
+    if (!(defCall instanceof LeveledDefCallExpression)) return;
+    LeveledDefCallExpression leveled = (LeveledDefCallExpression) defCall;
     if (myDefinitions == null) {
-      List<? extends LevelVariable> params = defCall.getDefinition().getLevelParameters();
-      if (params != null && (defCall.getLevels() instanceof LevelPair || defCall.getLevels().toList().size() != params.size())) {
-        removeLevels(defCall, params.isEmpty() || params.get(0).getType() == LevelVariable.LvlType.HLVL, params.isEmpty() || params.get(0).getType() == LevelVariable.LvlType.PLVL);
+      List<? extends LevelVariable> params = leveled.getDefinition().getLevelParameters();
+      if (params != null && (leveled.getLevels() instanceof LevelPair || leveled.getLevels().toList().size() != params.size())) {
+        removeLevels(leveled, params.isEmpty() || params.get(0).getType() == LevelVariable.LvlType.HLVL, params.isEmpty() || params.get(0).getType() == LevelVariable.LvlType.PLVL);
       }
-    } else if (myDefinitions.contains(defCall.getDefinition())) {
-      removeLevels(defCall, myRemovePLevels, myRemoveHLevels);
+    } else if (myDefinitions.contains(leveled.getDefinition())) {
+      removeLevels(leveled, myRemovePLevels, myRemoveHLevels);
     }
   }
 

@@ -48,7 +48,7 @@ public class FindLevelParameters extends SearchVisitor<Void> {
 
   @Override
   public CoreExpression.FindAction processDefCall(DefCallExpression expr, Void param) {
-    return !myAllowedDefinition.contains(expr.getDefinition()) && checkLevels(expr.getLevels()) ? CoreExpression.FindAction.STOP : CoreExpression.FindAction.CONTINUE;
+    return expr instanceof LeveledDefCallExpression && !myAllowedDefinition.contains(expr.getDefinition()) && checkLevels(((LeveledDefCallExpression) expr).getLevels()) ? CoreExpression.FindAction.STOP : CoreExpression.FindAction.CONTINUE;
   }
 
   @Override

@@ -181,17 +181,17 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   @Override
   public Expression visitFieldCall(FieldCallExpression expr, Expression expectedType) {
-    checkLevels(expr.getLevels(), expr.getDefinition(), expr);
-    Levels levels = expr.minimizeLevels();
-    Expression argType = expr.getArgument().accept(this, expr.getDefinition().getType().getParameters().getTypeExpr().subst(levels.makeSubstitution(expr.getDefinition())));
+    Expression argType = expr.getArgument().accept(this, null).normalize(NormalizationMode.WHNF);
+    ClassCallExpression argClassCall = argType.cast(ClassCallExpression.class);
+    if (argClassCall == null || !argClassCall.getDefinition().isSubClassOf(expr.getDefinition().getParentClass())) {
+      throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(DocFactory.refDoc(expr.getDefinition().getParentClass().getRef()), argType, mySourceNode), expr));
+    }
 
     Expression actualType = null;
-    ClassCallExpression argClassCall = argType.normalize(NormalizationMode.WHNF).cast(ClassCallExpression.class);
-    if (argClassCall != null) {
-      PiExpression overriddenType = argClassCall.getDefinition().getOverriddenType(expr.getDefinition(), levels);
-      if (overriddenType != null) {
-        actualType = overriddenType.applyExpression(expr.getArgument());
-      }
+    Levels levels = argClassCall.getLevels(expr.getDefinition().getParentClass());
+    PiExpression overriddenType = argClassCall.getDefinition().getOverriddenType(expr.getDefinition(), levels);
+    if (overriddenType != null) {
+      actualType = overriddenType.applyExpression(expr.getArgument());
     }
     if (actualType == null) {
       actualType = expr.getDefinition().getResultType().subst(new ExprSubstitution(expr.getDefinition().getType().getParameters(), expr.getArgument()), levels.makeSubstitution(expr.getDefinition()));
@@ -391,7 +391,6 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   @Override
   public Expression visitLam(LamExpression expr, Expression expectedType) {
-    checkSort(expr.getResultSort(), expr);
     return checkLam(expr, expectedType, null);
   }
 
@@ -893,7 +892,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       if (expr.getElements().isEmpty()) {
         throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Empty array with a tail", mySourceNode), expr));
       }
-      tailLength = FieldCallExpression.make(Prelude.ARRAY_LENGTH, expr.getLevels(), expr.getTail());
+      tailLength = FieldCallExpression.make(Prelude.ARRAY_LENGTH, expr.getTail());
       int s = expr.getElements().size() - 1;
       for (int i = 0; i < s; i++) {
         tailLength = Suc(tailLength);

@@ -257,7 +257,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
       if (piType == null) {
         piType = field.getType(defCallResult.getLevels());
       }
-      return new TypecheckingResult(FieldCallExpression.make(field, defCallResult.getLevels(), argResult.expression), piType.applyExpression(argResult.expression));
+      return new TypecheckingResult(FieldCallExpression.make(field, argResult.expression), piType.applyExpression(argResult.expression));
     }
 
     if (result instanceof DefCallResult && ((DefCallResult) result).getDefinition() == Prelude.SUC) {
@@ -364,7 +364,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
           if (constType != null) {
             Map<ClassField, Expression> impls = new HashMap<>();
             argClassCall = new ClassCallExpression(Prelude.DEP_ARRAY, defCallResult.getLevels(), impls, Sort.STD, UniverseKind.NO_UNIVERSES);
-            impls.put(Prelude.ARRAY_ELEMENTS_TYPE, new LamExpression(sort0, new TypedSingleDependentLink(true, null, Fin(FieldCallExpression.make(Prelude.ARRAY_LENGTH, argClassCall.getLevels(), new ReferenceExpression(argClassCall.getThisBinding())))), constType));
+            impls.put(Prelude.ARRAY_ELEMENTS_TYPE, new LamExpression(sort0, new TypedSingleDependentLink(true, null, Fin(FieldCallExpression.make(Prelude.ARRAY_LENGTH, new ReferenceExpression(argClassCall.getThisBinding())))), constType));
           }
         }
       }
@@ -396,7 +396,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
           if (result1 == null) return null;
           checked = true;
           if (length == null) length = classCall == null ? null : classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH);
-          if (length == null) length = FieldCallExpression.make(Prelude.ARRAY_LENGTH, (classCall != null ? classCall : argClassCall).getLevels(), result2.expression);
+          if (length == null) length = FieldCallExpression.make(Prelude.ARRAY_LENGTH, result2.expression);
           result = result
             .applyExpression(length, false, myVisitor, fun)
             .applyExpression(new LamExpression(sort0, new TypedSingleDependentLink(true, null, new DataCallExpression(Prelude.FIN, Levels.EMPTY, new SingletonList<>(Suc(length)))), constType), false, myVisitor, fun);
@@ -409,7 +409,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
 
         if (var != null) {
           if (length == null) length = classCall == null ? null : classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH);
-          if (length == null) length = FieldCallExpression.make(Prelude.ARRAY_LENGTH, (classCall != null ? classCall : argClassCall).getLevels(), result2.expression);
+          if (length == null) length = FieldCallExpression.make(Prelude.ARRAY_LENGTH, result2.expression);
           Expression actualElementsType = new LamExpression(sort0, new TypedSingleDependentLink(true, null, new DataCallExpression(Prelude.FIN, Levels.EMPTY, new SingletonList<>(length))), result1.type);
           if (new CompareVisitor(myVisitor.getEquations(), CMP.LE, fun).normalizedCompare(actualElementsType, elementsType, null, false)) {
             checked = true;
@@ -463,7 +463,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
       }
 
       TypedSingleDependentLink lamParam = new TypedSingleDependentLink(true, "l", type);
-      if (length == null) length = FieldCallExpression.make(Prelude.ARRAY_LENGTH, defCallResult.getLevels(), new ReferenceExpression(lamParam));
+      if (length == null) length = FieldCallExpression.make(Prelude.ARRAY_LENGTH, new ReferenceExpression(lamParam));
       elementsType = new LamExpression(sort0, new TypedSingleDependentLink(true, null, Fin(Suc(length))), result1.type);
       Expression resultExpr = new LamExpression(sort, lamParam, ArrayExpression.make(defCallResult.getLevels().toLevelPair(), elementsType, new SingletonList<>(result1.expression), new ReferenceExpression(lamParam)));
       return new TypecheckingResult(resultExpr, resultExpr.getType());

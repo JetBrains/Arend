@@ -105,14 +105,15 @@ public class ElimBindingVisitor extends ExpressionTransformer<Void> {
 
   @Override
   public Expression visitDefCall(DefCallExpression expr, Void params) {
+    assert expr instanceof LeveledDefCallExpression;
     List<Expression> newArgs = visitDefCallArguments(expr.getDefCallArguments());
-    return newArgs == null ? null : expr.getDefinition().getDefCall(expr.getLevels(), newArgs);
+    return newArgs == null ? null : expr.getDefinition().getDefCall(((LeveledDefCallExpression) expr).getLevels(), newArgs);
   }
 
   @Override
   public Expression visitFieldCall(FieldCallExpression expr, Void params) {
     Expression newExpr = acceptSelf(expr.getArgument(), false);
-    return newExpr == null ? null : FieldCallExpression.make(expr.getDefinition(), expr.getLevels(), newExpr);
+    return newExpr == null ? null : FieldCallExpression.make(expr.getDefinition(), newExpr);
   }
 
   @Override

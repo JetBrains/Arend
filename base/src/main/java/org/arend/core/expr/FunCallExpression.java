@@ -20,7 +20,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-public class FunCallExpression extends DefCallExpression implements CoreFunCallExpression {
+public class FunCallExpression extends LeveledDefCallExpression implements CoreFunCallExpression {
   private final List<Expression> myArguments;
 
   private FunCallExpression(FunctionDefinition definition, Levels levels, List<Expression> arguments) {

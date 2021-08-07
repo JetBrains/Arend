@@ -120,69 +120,61 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
     }
   }
 
-  public Levels minimizeLevels(DefCallExpression defCall) {
-    if (!(defCall instanceof FieldCallExpression || defCall.getUniverseKind() == UniverseKind.NO_UNIVERSES && defCall.getDefinition() != Prelude.DIV_MOD && defCall.getDefinition() != Prelude.MOD && !(defCall instanceof ConCallExpression))) {
+  public Levels minimizeLevels(LeveledDefCallExpression defCall) {
+    if (!(defCall.getUniverseKind() == UniverseKind.NO_UNIVERSES && defCall.getDefinition() != Prelude.DIV_MOD && defCall.getDefinition() != Prelude.MOD && !(defCall instanceof ConCallExpression))) {
       return defCall.getLevels();
     }
-    Levels levels = defCall.getLevels();
-    if (defCall instanceof FieldCallExpression) {
-      Expression type = ((FieldCallExpression) defCall).getArgument().accept(this, null);
-      type = myNormalizing ? type.normalize(NormalizationMode.WHNF) : type.getUnderlyingExpression();
-      if (type instanceof ClassCallExpression) {
-        levels = ((ClassCallExpression) type).getDefinition().castLevels(((FieldCallExpression) defCall).getDefinition().getParentClass(), minimizeLevels((ClassCallExpression) type));
+    boolean ok = true;
+    Map<LevelVariable, Level> levelMap = new HashMap<>();
+    if (defCall instanceof ClassCallExpression) {
+      ClassCallExpression classCall = (ClassCallExpression) defCall;
+      Levels idLevels = classCall.getDefinition().makeIdLevels();
+      for (Map.Entry<ClassField, Expression> entry : classCall.getImplementedHere().entrySet()) {
+        ClassField field = entry.getKey();
+        if (classCall.getDefinition().isOmegaField(field)) {
+          Levels superLevels = classCall.getDefinition().getSuperLevels().get(field.getParentClass());
+          if (superLevels == null) superLevels = idLevels;
+          ok = matchArguments(field.getResultType().subst(superLevels.makeSubstitution(field)), entry.getValue().accept(this, null), levelMap);
+          if (!ok) break;
+        }
       }
     } else {
-      boolean ok = true;
-      Map<LevelVariable, Level> levelMap = new HashMap<>();
-      if (defCall instanceof ClassCallExpression) {
-        ClassCallExpression classCall = (ClassCallExpression) defCall;
-        Levels idLevels = classCall.getDefinition().makeIdLevels();
-        for (Map.Entry<ClassField, Expression> entry : classCall.getImplementedHere().entrySet()) {
-          ClassField field = entry.getKey();
-          if (classCall.getDefinition().isOmegaField(field)) {
-            Levels superLevels = classCall.getDefinition().getSuperLevels().get(field.getParentClass());
-            if (superLevels == null) superLevels = idLevels;
-            ok = matchArguments(field.getResultType().subst(superLevels.makeSubstitution(field)), entry.getValue().accept(this, null), levelMap);
-            if (!ok) break;
-          }
-        }
-      } else {
-        DependentLink param = defCall.getDefinition().getParameters();
-        List<? extends Expression> defCallArguments = defCall.getDefCallArguments();
-        for (int i = 0; i < defCallArguments.size(); i++) {
-          ok = !defCall.getDefinition().isOmegaParameter(i) || matchArguments(param.getTypeExpr(), defCallArguments.get(i).accept(this, null), levelMap);
-          if (!ok) break;
-          param = param.getNext();
-        }
+      DependentLink param = defCall.getDefinition().getParameters();
+      List<? extends Expression> defCallArguments = defCall.getDefCallArguments();
+      for (int i = 0; i < defCallArguments.size(); i++) {
+        ok = !defCall.getDefinition().isOmegaParameter(i) || matchArguments(param.getTypeExpr(), defCallArguments.get(i).accept(this, null), levelMap);
+        if (!ok) break;
+        param = param.getNext();
       }
+    }
 
-      if (ok) {
-        if (defCall.getDefinition().getLevelParameters() == null) {
-          Level pLevel = levelMap.get(LevelVariable.PVAR);
-          Level hLevel = levelMap.get(LevelVariable.HVAR);
-          levels = new LevelPair(pLevel == null ? new Level(0) : pLevel, hLevel == null ? new Level(-1) : hLevel);
-        } else {
-          List<Level> list = new ArrayList<>();
-          List<? extends LevelVariable> vars = defCall.getDefinition().getLevelParameters();
-          for (LevelVariable var : vars) {
-            Level level = levelMap.get(var);
-            list.add(level == null ? new Level(var.getMinValue()) : level);
+    Levels levels = defCall.getLevels();
+    if (ok) {
+      if (defCall.getDefinition().getLevelParameters() == null) {
+        Level pLevel = levelMap.get(LevelVariable.PVAR);
+        Level hLevel = levelMap.get(LevelVariable.HVAR);
+        levels = new LevelPair(pLevel == null ? new Level(0) : pLevel, hLevel == null ? new Level(-1) : hLevel);
+      } else {
+        List<Level> list = new ArrayList<>();
+        List<? extends LevelVariable> vars = defCall.getDefinition().getLevelParameters();
+        for (LevelVariable var : vars) {
+          Level level = levelMap.get(var);
+          list.add(level == null ? new Level(var.getMinValue()) : level);
+        }
+        for (int i = 0; i < list.size() - 1; i++) {
+          Level maxLevel = list.get(i).max(list.get(i + 1));
+          if (maxLevel == null) {
+            ok = false;
+            break;
           }
-          for (int i = 0; i < list.size() - 1; i++) {
-            Level maxLevel = list.get(i).max(list.get(i + 1));
-            if (maxLevel == null) {
-              ok = false;
-              break;
-            }
-            if (vars.get(i).compare(vars.get(i + 1), CMP.LE)) {
-              list.set(i + 1, maxLevel);
-            } else {
-              list.set(i, maxLevel);
-            }
+          if (vars.get(i).compare(vars.get(i + 1), CMP.LE)) {
+            list.set(i + 1, maxLevel);
+          } else {
+            list.set(i, maxLevel);
           }
-          if (ok) {
-            levels = new ListLevels(list);
-          }
+        }
+        if (ok) {
+          levels = new ListLevels(list);
         }
       }
     }
@@ -218,19 +210,23 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
   @Override
   public Expression visitFieldCall(FieldCallExpression expr, Void params) {
     Expression type = expr.getArgument().accept(this, null);
-    Levels levels = minimizeLevels(expr);
     if (type != null) {
       if (myNormalizing) {
         type = type.normalize(NormalizationMode.WHNF);
       }
       if (type instanceof ClassCallExpression) {
-        PiExpression fieldType = ((ClassCallExpression) type).getDefinition().getOverriddenType(expr.getDefinition(), levels);
+        ClassCallExpression classCall = (ClassCallExpression) type;
+        PiExpression fieldType = classCall.getDefinition().getOverriddenType(expr.getDefinition(), classCall.getLevels());
         if (fieldType != null) {
           return fieldType.applyExpression(expr.getArgument());
         }
+        return expr.getDefinition().getType(classCall.getLevels(expr.getDefinition().getParentClass())).applyExpression(expr.getArgument());
       }
     }
-    return expr.getDefinition().getResultType().subst(new ExprSubstitution(expr.getDefinition().getType().getParameters(), expr.getArgument()), levels.makeSubstitution(expr.getDefinition()));
+    if (myNormalizing) {
+      throw new IncorrectExpressionException("Expression " + expr.getArgument() + " does not have a class type");
+    }
+    return null;
   }
 
   @Override
@@ -424,7 +420,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
         length = ((ClassCallExpression) tailType).getImplementationHere(Prelude.ARRAY_LENGTH, expr.getTail());
       }
       if (length == null) {
-        length = FieldCallExpression.make(Prelude.ARRAY_LENGTH, expr.getLevels(), expr.getTail());
+        length = FieldCallExpression.make(Prelude.ARRAY_LENGTH, expr.getTail());
       }
       length = length.getUnderlyingExpression();
       if (length instanceof IntegerExpression) {

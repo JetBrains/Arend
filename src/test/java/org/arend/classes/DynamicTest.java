@@ -3,7 +3,6 @@ package org.arend.classes;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.*;
 import org.arend.core.expr.*;
-import org.arend.core.sort.Level;
 import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.Levels;
 import org.arend.core.subst.ListLevels;
@@ -449,7 +448,7 @@ public class DynamicTest extends TypeCheckingTestCase {
     ClassField aField = (ClassField) getDefinition("B.a");
     ClassField yField = (ClassField) getDefinition("B.y");
     PiExpression piType = yField.getType(LevelPair.SET0);
-    assertEquals(FieldCall(xField, new ListLevels(Collections.singletonList(new Level(xField.getLevelParameters().get(0)))), FieldCall(aField, new ListLevels(Collections.singletonList(new Level(aField.getLevelParameters().get(0)))), Ref(piType.getParameters()))), piType.getCodomain());
+    assertEquals(FieldCall(xField, FieldCall(aField, Ref(piType.getParameters()))), piType.getCodomain());
   }
 
   @Test
@@ -510,7 +509,7 @@ public class DynamicTest extends TypeCheckingTestCase {
     Expression kType = kFun.getTypeWithParams(kParams, LevelPair.SET0);
     assertEquals(Pi(false, ClassCall(cClass), Nat()), fromPiParameters(kType, kParams));
     DependentLink kFunParam = param("\\this", ClassCall(cClass));
-    Expression aRef = FieldCall(cParent, Levels.EMPTY, Ref(kFunParam));
+    Expression aRef = FieldCall(cParent, Ref(kFunParam));
     assertEquals(FunCall(plus, Levels.EMPTY, FunCall(hFun, Levels.EMPTY, aRef), FunCall(plus, Levels.EMPTY, FunCall(pFun, Levels.EMPTY), FunCall(qFun, Levels.EMPTY, aRef))), kFun.getBody());
   }
 
@@ -678,7 +677,7 @@ public class DynamicTest extends TypeCheckingTestCase {
     List<? extends Expression> domArguments = domFunction.cast(DataCallExpression.class).getDefCallArguments();
     assertEquals(3, domArguments.size());
     assertEquals(Prelude.NAT, domArguments.get(0).cast(LamExpression.class).getBody().cast(DefCallExpression.class).getDefinition());
-    assertEquals(FieldCall((ClassField) getDefinition("A.x"), Levels.EMPTY, Ref(testFun.getParameters())), domArguments.get(1));
+    assertEquals(FieldCall((ClassField) getDefinition("A.x"), Ref(testFun.getParameters())), domArguments.get(1));
     assertEquals(0, domArguments.get(2).cast(SmallIntegerExpression.class).getInteger());
   }
 
@@ -692,7 +691,7 @@ public class DynamicTest extends TypeCheckingTestCase {
         "}\n" +
         "\\func test (q : A) => A.y {q}");
     FunctionDefinition testFun = (FunctionDefinition) getDefinition("test");
-    Expression xCall = FieldCall((ClassField) getDefinition("A.x"), Levels.EMPTY, Ref(testFun.getParameters()));
+    Expression xCall = FieldCall((ClassField) getDefinition("A.x"), Ref(testFun.getParameters()));
     Expression function = testFun.getResultType().cast(PiExpression.class).getParameters().getTypeExpr().normalize(NormalizationMode.NF);
     assertEquals(Prelude.PATH, function.cast(DataCallExpression.class).getDefinition());
     List<? extends Expression> arguments = function.cast(DataCallExpression.class).getDefCallArguments();
