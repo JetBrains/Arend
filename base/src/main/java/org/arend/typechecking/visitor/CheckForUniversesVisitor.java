@@ -12,7 +12,8 @@ public class CheckForUniversesVisitor extends SearchVisitor<Void> {
     if (expression.getDefinition() instanceof ClassField) {
       return false;
     }
-    return expression.getUniverseKind() != UniverseKind.NO_UNIVERSES && !expression.getLevels().isClosed();
+    assert expression instanceof LeveledDefCallExpression;
+    return expression.getUniverseKind() != UniverseKind.NO_UNIVERSES && !((LeveledDefCallExpression) expression).getLevels().isClosed();
   }
 
   @Override

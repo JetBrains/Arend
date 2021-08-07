@@ -57,7 +57,7 @@ public final class ClassConstructor extends SingleConstructor {
     for (ClassField field : myClassDef.getFields()) {
       if (!myClassDef.isImplemented(field) && !myImplementedFields.contains(field)) {
         Expression impl = newExpr == null || field.isProperty() ? null : newExpr.getImplementationHere(field);
-        args.add(impl != null ? impl : FieldCallExpression.make(field, myLevels, argument));
+        args.add(impl != null ? impl : FieldCallExpression.make(field, argument));
       }
     }
     return args;

@@ -190,21 +190,31 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   @Override
   public Expression visitFieldCall(FieldCallExpression expr, Expression expectedType) {
-    checkLevels(expr.getLevels(), expr.getDefinition(), expr);
-    PiExpression type = expr.getDefinition().getType(expr.getLevels());
-    Expression argType = expr.getArgument().accept(this, type.getParameters().getTypeExpr());
+    Expression argType = expr.getArgument().accept(this, null).normalize(NormalizationMode.WHNF);
+    ClassCallExpression argClassCall = argType.cast(ClassCallExpression.class);
+    if (argClassCall == null || !argClassCall.getDefinition().isSubClassOf(expr.getDefinition().getParentClass())) {
+      throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(DocFactory.refDoc(expr.getDefinition().getParentClass().getRef()), argType, mySourceNode), expr));
+    }
 
     Expression actualType = null;
-    ClassCallExpression argClassCall = argType.normalize(NormalizationMode.WHNF).cast(ClassCallExpression.class);
-    if (argClassCall != null) {
-      PiExpression overriddenType = argClassCall.getDefinition().getOverriddenType(expr.getDefinition(), expr.getLevels());
+    if (!expr.getDefinition().isProperty()) {
+      Expression impl = argClassCall.getImplementation(expr.getDefinition(), expr.getArgument());
+      if (impl != null) {
+        actualType = impl.getType();
+      }
+    }
+
+    if (actualType == null) {
+      Levels levels = argClassCall.getLevels(expr.getDefinition().getParentClass());
+      PiExpression overriddenType = argClassCall.getDefinition().getOverriddenType(expr.getDefinition(), levels);
       if (overriddenType != null) {
         actualType = overriddenType.applyExpression(expr.getArgument());
       }
+      if (actualType == null) {
+        actualType = expr.getDefinition().getType(levels).applyExpression(expr.getArgument());
+      }
     }
-    if (actualType == null) {
-      actualType = type.applyExpression(expr.getArgument());
-    }
+
     return check(expectedType, actualType, expr);
   }
 
@@ -347,8 +357,14 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     }
   }
 
+  private void compareSort(Sort expected, Sort actual, Expression expr) {
+    if (!Sort.compare(actual, expected, CMP.LE, myEquations, mySourceNode)) {
+      throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError("Sort mismatch", new UniverseExpression(expected), new UniverseExpression(actual), mySourceNode), expr));
+    }
+  }
+
   private Expression checkLam(LamExpression expr, Expression expectedType, Integer level) {
-    checkDependentLink(expr.getParameters(), expr.getResultSort().isProp() ? null : new UniverseExpression(new Sort(expr.getResultSort().getPLevel(), Level.INFINITY)), expr);
+    checkDependentLink(expr.getParameters(), Type.OMEGA, expr);
     Expression type;
     if (expr.getBody() instanceof LamExpression) {
       type = checkLam((LamExpression) expr.getBody(), null, level);
@@ -361,27 +377,34 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     if (sort == null) {
       throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Cannot infer sort", mySourceNode), expr));
     }
-    if (!Sort.compare(sort, expr.getResultSort(), CMP.LE, myEquations, mySourceNode)) {
-      throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError("Sort mismatch", new UniverseExpression(expr.getResultSort()), new UniverseExpression(sort), mySourceNode), expr));
-    }
     freeDependentLink(expr.getParameters());
-    return check(expectedType, new PiExpression(expr.getResultSort(), expr.getParameters(), type), expr);
+    Level pLevel = sort.isProp() ? new Level(0) : expr.getParameters().getType().getSortOfType().getPLevel().max(sort.getPLevel());
+    if (pLevel == null) {
+      checkSort(expr.getResultSort(), expr);
+      compareSort(expr.getResultSort(), new Sort(expr.getParameters().getType().getSortOfType().getPLevel(), expr.getResultSort().getHLevel()), expr);
+      compareSort(expr.getResultSort(), sort, expr);
+    }
+    return check(expectedType, new PiExpression(pLevel == null ? expr.getResultSort() : new Sort(pLevel, sort.getHLevel()), expr.getParameters(), type), expr);
   }
 
   @Override
   public Expression visitLam(LamExpression expr, Expression expectedType) {
-    checkSort(expr.getResultSort(), expr);
     return checkLam(expr, expectedType, null);
   }
 
   @Override
   public Expression visitPi(PiExpression expr, Expression expectedType) {
-    checkSort(expr.getResultSort(), expr);
-    UniverseExpression type = new UniverseExpression(expr.getResultSort());
-    checkDependentLink(expr.getParameters(), expr.getResultSort().isProp() ? null : new UniverseExpression(new Sort(expr.getResultSort().getPLevel(), Level.INFINITY)), expr);
-    expr.getCodomain().accept(this, type);
+    checkDependentLink(expr.getParameters(), Type.OMEGA, expr);
+    Expression codType = expr.getCodomain().accept(this, Type.OMEGA).normalize(NormalizationMode.WHNF);
     freeDependentLink(expr.getParameters());
-    return check(expectedType, type, expr);
+    Sort codSort = ((UniverseExpression) codType).getSort();
+    Level pLevel = codSort.isProp() ? new Level(0) : codSort.getPLevel().max(expr.getParameters().getType().getSortOfType().getPLevel());
+    if (pLevel == null) {
+      checkSort(expr.getResultSort(), expr);
+      compareSort(expr.getResultSort(), new Sort(expr.getParameters().getType().getSortOfType().getPLevel(), expr.getResultSort().getHLevel()), expr);
+      compareSort(expr.getResultSort(), codSort, expr);
+    }
+    return check(expectedType, new UniverseExpression(pLevel == null ? expr.getResultSort() : new Sort(pLevel, codSort.getHLevel())), expr);
   }
 
   @Override

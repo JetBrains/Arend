@@ -71,7 +71,6 @@ message Expression {
     }
     message FieldCall {
         int32 field_ref = 1;
-        Levels levels = 5;
         Expression expression = 4;
     }
     message FunCall {

@@ -260,7 +260,9 @@ public class ArrayTest extends TypeCheckingTestCase {
   @Test
   public void coerceTest() {
     FunctionDefinition def = (FunctionDefinition) typeCheckDef("\\func test (a : Array Nat 2) (i : Fin 2) => a i");
-    assertTrue(def.getBody() instanceof FunCallExpression && ((FunCallExpression) def.getBody()).getDefinition() == Prelude.ARRAY_INDEX);
+    assertTrue(def.getBody() instanceof AppExpression);
+    Expression fun = ((AppExpression) def.getBody()).getFunction();
+    assertTrue(fun instanceof FieldCallExpression && ((FieldCallExpression) fun).getDefinition() == Prelude.ARRAY_AT);
   }
 
   @Test

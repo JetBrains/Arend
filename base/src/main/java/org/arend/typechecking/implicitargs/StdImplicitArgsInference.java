@@ -228,7 +228,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
       if (piType == null) {
         piType = field.getType(defCallResult.getLevels());
       }
-      return new TypecheckingResult(FieldCallExpression.make(field, defCallResult.getLevels(), argResult.expression), piType.applyExpression(argResult.expression));
+      return new TypecheckingResult(FieldCallExpression.make(field, argResult.expression), piType.applyExpression(argResult.expression));
     }
 
     if (result instanceof DefCallResult && ((DefCallResult) result).getDefinition() == Prelude.SUC) {

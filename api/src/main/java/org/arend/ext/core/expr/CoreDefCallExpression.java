@@ -10,6 +10,5 @@ import java.util.List;
 
 public interface CoreDefCallExpression extends CoreExpression {
   @NotNull CoreDefinition getDefinition();
-  @NotNull CoreLevels getLevels();
   @NotNull List<? extends CoreExpression> getDefCallArguments();
 }

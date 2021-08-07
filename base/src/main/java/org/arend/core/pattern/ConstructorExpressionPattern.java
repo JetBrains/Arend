@@ -144,7 +144,7 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
 
   public Levels getLevels() {
     Expression dataExpr = getDataExpression();
-    return dataExpr instanceof DefCallExpression ? ((DefCallExpression) dataExpr).getLevels() : dataExpr instanceof SmallIntegerExpression ? LevelPair.PROP : null;
+    return dataExpr instanceof LeveledDefCallExpression ? ((LeveledDefCallExpression) dataExpr).getLevels() : dataExpr instanceof SmallIntegerExpression ? LevelPair.PROP : null;
   }
 
   @Override

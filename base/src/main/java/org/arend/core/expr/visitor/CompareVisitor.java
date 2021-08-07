@@ -459,7 +459,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     return correctOrder ? compare(conCall1.getDefCallArguments().get(0), expr2, type, true) : compare(expr2, conCall1.getDefCallArguments().get(0), type, true);
   }
 
-  private boolean compareDef(DefCallExpression expr1, DefCallExpression expr2) {
+  private boolean compareDef(LeveledDefCallExpression expr1, LeveledDefCallExpression expr2) {
     if (expr2 == null || expr1.getDefinition() != expr2.getDefinition()) {
       return false;
     }
@@ -471,8 +471,8 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     return expr1.getLevels().compare(expr2.getLevels(), cmp, myNormalCompare ? myEquations : DummyEquations.getInstance(), mySourceNode);
   }
 
-  private Boolean visitDefCall(DefCallExpression expr1, Expression expr2) {
-    DefCallExpression defCall2 = expr2.cast(DefCallExpression.class);
+  private Boolean visitDefCall(LeveledDefCallExpression expr1, Expression expr2) {
+    LeveledDefCallExpression defCall2 = expr2.cast(LeveledDefCallExpression.class);
     if (!compareDef(expr1, defCall2)) {
       return false;
     }
@@ -754,7 +754,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
   }
 
   private Boolean checkDefCallAndApp(Expression expr1, Expression expr2, boolean correctOrder) {
-    DefCallExpression defCall1 = expr1.cast(DefCallExpression.class);
+    LeveledDefCallExpression defCall1 = expr1.cast(LeveledDefCallExpression.class);
     if (!(defCall1 instanceof DataCallExpression || defCall1 instanceof ClassCallExpression || defCall1 instanceof FunCallExpression && ((FunCallExpression) defCall1).getDefinition().getKind() == CoreFunctionDefinition.Kind.TYPE)) return null;
     AppExpression app2 = expr2.cast(AppExpression.class);
     if (app2 == null) {
@@ -1249,9 +1249,9 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
         length2 = length2.normalize(NormalizationMode.WHNF);
         if (length1 instanceof IntegerExpression && ((IntegerExpression) length1).isZero() && length2 instanceof IntegerExpression && ((IntegerExpression) length2).isZero()) {
           Expression elemsType1 = classCall1.getImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE, expr1);
-          if (elemsType1 == null) elemsType1 = FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, classCall1.getLevels(), expr1);
+          if (elemsType1 == null) elemsType1 = FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, expr1);
           Expression elemsType2 = classCall2.getImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE, expr2);
-          if (elemsType2 == null) elemsType2 = FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, classCall2.getLevels(), expr2);
+          if (elemsType2 == null) elemsType2 = FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, expr2);
           return compare(elemsType1, elemsType2, ExpressionFactory.Nat(), false);
         } else {
           Expression at1 = classCall1.getImplementationHere(Prelude.ARRAY_AT, expr1);
@@ -1317,10 +1317,10 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       Expression impl1 = classCall1.getImplementation(field, expr1);
       Expression impl2 = classCall2.getImplementation(field, expr2);
       if (impl1 == null) {
-        impl1 = FieldCallExpression.make(field, classCall1.getLevels(field.getParentClass()), expr1);
+        impl1 = FieldCallExpression.make(field, expr1);
       }
       if (impl2 == null) {
-        impl2 = FieldCallExpression.make(field, classCall2.getLevels(field.getParentClass()), expr2);
+        impl2 = FieldCallExpression.make(field, expr2);
       }
       if (!compare(impl1, impl2, field.getType(classCall1.getLevels(field.getParentClass())).applyExpression(expr1), true)) {
         return false;

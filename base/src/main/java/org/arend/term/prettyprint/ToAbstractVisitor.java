@@ -196,23 +196,28 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       return cVar(myDefinitionRenamer.renameDefinition(ref), ref);
     }
 
-    LevelSubstitution subst = defCall.getLevelSubstitution();
-    List<? extends LevelVariable> params = def.getLevelParameters();
     List<Level> pLevels;
     List<Level> hLevels;
-    if (params == null) {
-      pLevels = Collections.singletonList((Level) subst.get(LevelVariable.PVAR));
-      hLevels = Collections.singletonList((Level) subst.get(LevelVariable.HVAR));
+    if (defCall instanceof LeveledDefCallExpression) {
+      List<? extends LevelVariable> params = def.getLevelParameters();
+      LevelSubstitution subst = ((LeveledDefCallExpression) defCall).getLevelSubstitution();
+      if (params == null) {
+        pLevels = Collections.singletonList((Level) subst.get(LevelVariable.PVAR));
+        hLevels = Collections.singletonList((Level) subst.get(LevelVariable.HVAR));
+      } else {
+        int pNum = def.getNumberOfPLevelParameters();
+        pLevels = new ArrayList<>(pNum);
+        hLevels = new ArrayList<>(params.size() - pNum);
+        for (int i = 0; i < pNum; i++) {
+          pLevels.add((Level) subst.get(params.get(i)));
+        }
+        for (int i = pNum; i < params.size(); i++) {
+          hLevels.add((Level) subst.get(params.get(i)));
+        }
+      }
     } else {
-      int pNum = def.getNumberOfPLevelParameters();
-      pLevels = new ArrayList<>(pNum);
-      hLevels = new ArrayList<>(params.size() - pNum);
-      for (int i = 0; i < pNum; i++) {
-        pLevels.add((Level) subst.get(params.get(i)));
-      }
-      for (int i = pNum; i < params.size(); i++) {
-        hLevels.add((Level) subst.get(params.get(i)));
-      }
+      pLevels = Collections.singletonList(null);
+      hLevels = Collections.singletonList(null);
     }
 
     return cDefCall(myDefinitionRenamer.renameDefinition(ref), ref, visitLevelsNull(pLevels), visitLevelsNull(hLevels));
