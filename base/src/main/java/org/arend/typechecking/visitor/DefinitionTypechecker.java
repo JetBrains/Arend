@@ -1201,10 +1201,24 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     if (myNewDef) {
-      Expression resultType = typedDef.getResultType();
-      if (resultType instanceof ClassCallExpression && ((ClassCallExpression) resultType).getNumberOfNotImplementedFields() == 0) {
-        bodyIsOK = true;
-        typedDef.setBody(null);
+      ClassCallExpression resultClassCall = typedDef.getResultType().cast(ClassCallExpression.class);
+      if (resultClassCall != null) {
+        if (resultClassCall.getNumberOfNotImplementedFields() == 0) {
+          bodyIsOK = true;
+          typedDef.setBody(null);
+        } else {
+          boolean allImpl = true;
+          for (ClassField field : resultClassCall.getDefinition().getFields()) {
+            if (!field.isProperty() && !resultClassCall.isImplemented(field)) {
+              allImpl = false;
+              break;
+            }
+          }
+          if (allImpl) {
+            bodyIsOK = true;
+            typedDef.hideBody();
+          }
+        }
       }
 
       if (kind != FunctionKind.LEMMA && kind != FunctionKind.LEVEL && typedDef.getBody() instanceof DefCallExpression) {
