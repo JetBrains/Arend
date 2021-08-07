@@ -1201,6 +1201,12 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     if (myNewDef) {
+      Expression resultType = typedDef.getResultType();
+      if (resultType instanceof ClassCallExpression && ((ClassCallExpression) resultType).getNumberOfNotImplementedFields() == 0) {
+        bodyIsOK = true;
+        typedDef.setBody(null);
+      }
+
       if (kind != FunctionKind.LEMMA && kind != FunctionKind.LEVEL && typedDef.getBody() instanceof DefCallExpression) {
         Integer level = ((DefCallExpression) typedDef.getBody()).getUseLevel();
         if (level != null) {
