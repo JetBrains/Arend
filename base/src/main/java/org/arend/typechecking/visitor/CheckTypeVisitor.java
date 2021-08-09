@@ -2654,7 +2654,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           }
           resultType = result.type.subst(substitution);
         }
-        return new TypecheckingResult(new LetExpression(expr.isStrict(), clauses, result.expression), resultType);
+        return new TypecheckingResult(expr.isGeneratedFromLambda ? result.expression : new LetExpression(expr.isStrict(), clauses, result.expression), resultType);
       }
     }
   }

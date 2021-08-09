@@ -990,6 +990,7 @@ public final class Concrete {
     private final boolean myStrict;
     private final List<LetClause> myClauses;
     public Expression expression;
+    public boolean isGeneratedFromLambda;
 
     public LetExpression(Object data, boolean isHave, boolean isStrict, List<LetClause> clauses, Expression expression) {
       super(data);

@@ -328,7 +328,9 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
         pattern.setExplicit(true);
         clauses.add(new Concrete.LetClause(pattern, null, new Concrete.ReferenceExpression(pattern.getData(), ref)));
       }
-      return new Concrete.LamExpression(expr.getData(), newParams, new Concrete.LetExpression(expr.getData(), false, false, clauses, body));
+      Concrete.LetExpression let = new Concrete.LetExpression(expr.getData(), false, false, clauses, body);
+      let.isGeneratedFromLambda = true;
+      return new Concrete.LamExpression(expr.getData(), newParams, let);
     }
 
     boolean genLambda = !hasIdp(((Concrete.PatternLamExpression) expr).getPatterns());
