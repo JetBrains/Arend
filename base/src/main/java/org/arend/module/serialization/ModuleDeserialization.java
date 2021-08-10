@@ -12,6 +12,7 @@ import org.arend.naming.reference.*;
 import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.naming.scope.Scope;
 import org.arend.prelude.Prelude;
+import org.arend.term.concrete.Concrete;
 import org.arend.term.group.*;
 import org.arend.typechecking.order.dependency.DependencyListener;
 import org.arend.util.Pair;
@@ -226,7 +227,8 @@ public class ModuleDeserialization {
     if (groupProto.hasDefinition() && kind == GlobalReferable.Kind.CLASS) {
       dynamicReferables = new ArrayList<>();
       fieldReferables = new ArrayList<>();
-      referable = new ClassReferableImpl(readPrecedence(referableProto.getPrecedence()), referableProto.getName(), groupProto.getDefinition().getClass_().getIsRecord(), new ArrayList<>(), fieldReferables, dynamicReferables, modulePath);
+      DefinitionProtos.Definition.ClassData classProto = groupProto.getDefinition().getClass_();
+      referable = new ClassReferableImpl(readPrecedence(referableProto.getPrecedence()), referableProto.getName(), classProto.getIsRecord(), null, null, new ArrayList<>(), new ArrayList<>(), fieldReferables, dynamicReferables, modulePath);
     } else {
       dynamicReferables = null;
       fieldReferables = new ArrayList<>(0);

@@ -20,6 +20,7 @@ import org.arend.naming.reference.*;
 import org.arend.term.ClassFieldKind;
 import org.arend.term.Fixity;
 import org.arend.term.FunctionKind;
+import org.arend.term.abs.Abstract;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -1648,7 +1649,7 @@ public final class Concrete {
     }
   }
 
-  public static class LevelParameters extends SourceNodeImpl {
+  public static class LevelParameters extends SourceNodeImpl implements Abstract.LevelParameters {
     public final List<LevelReferable> referables;
     public final boolean isIncreasing;
 
@@ -1656,6 +1657,39 @@ public final class Concrete {
       super(data);
       this.referables = referables;
       this.isIncreasing = isIncreasing;
+    }
+
+    @Override
+    public @NotNull Collection<? extends Referable> getReferables() {
+      return referables;
+    }
+
+    @Override
+    public @NotNull Collection<Abstract.Comparison> getComparisonList() {
+      if (referables.isEmpty()) return Collections.emptyList();
+      List<Abstract.Comparison> result = new ArrayList<>(referables.size() - 1);
+      for (int i = 0; i < referables.size() - 1; i++) {
+        result.add(isIncreasing ? Abstract.Comparison.LESS_OR_EQUALS : Abstract.Comparison.GREATER_OR_EQUALS);
+      }
+      return result;
+    }
+
+    @Override
+    public boolean isIncreasing() {
+      return isIncreasing;
+    }
+
+    public static LevelParameters fromAbstract(Abstract.LevelParameters parameters) {
+      return new LevelParameters(parameters.getData(), getLevelParametersRefs(parameters), parameters.isIncreasing());
+    }
+
+    public static List<LevelReferable> getLevelParametersRefs(Abstract.LevelParameters params) {
+      if (params == null) return null;
+      List<LevelReferable> result = new ArrayList<>();
+      for (Referable ref : params.getReferables()) {
+        result.add(new DataLevelReferable(ref, ref.getRefName()));
+      }
+      return result;
     }
   }
 

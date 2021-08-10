@@ -222,6 +222,7 @@ public final class Abstract {
     @Nullable Object getData();
     @NotNull Collection<? extends Referable> getReferables();
     @NotNull Collection<Comparison> getComparisonList();
+    boolean isIncreasing();
   }
 
   public interface Definition extends ReferableDefinition {

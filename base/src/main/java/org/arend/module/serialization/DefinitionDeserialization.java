@@ -22,6 +22,7 @@ import org.arend.ext.typechecking.DefinitionListener;
 import org.arend.extImpl.SerializableKeyRegistryImpl;
 import org.arend.naming.reference.*;
 import org.arend.prelude.Prelude;
+import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.order.dependency.DependencyListener;
 import org.arend.util.Pair;
 import org.jetbrains.annotations.NotNull;
@@ -113,6 +114,15 @@ public class DefinitionDeserialization implements ArendDeserializer {
     return result;
   }
 
+  private Concrete.LevelParameters makeLevelParameters(List<? extends LevelVariable> variables) {
+    if (variables.isEmpty()) return null;
+    List<LevelReferable> refs = new ArrayList<>(variables.size());
+    for (LevelVariable variable : variables) {
+      refs.add(new DataLevelReferable(null, variable.getName()));
+    }
+    return new Concrete.LevelParameters(null, refs, variables.size() == 1 || variables.get(0).getStd() == variables.get(0) || variables.get(0) instanceof ParamLevelVariable && variables.get(1) instanceof ParamLevelVariable && ((ParamLevelVariable) variables.get(0)).getSize() <= ((ParamLevelVariable) variables.get(1)).getSize());
+  }
+
   private void fillInClassDefinition(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.ClassData classProto, ClassDefinition classDef) throws DeserializationException {
     if (!classProto.getIsStdLevels()) {
       List<LevelVariable> fieldLevels = new ArrayList<>();
@@ -180,16 +190,27 @@ public class DefinitionDeserialization implements ArendDeserializer {
       ClassDefinition superClass = myCallTargetProvider.getCallTarget(superClassRef, ClassDefinition.class);
       classDef.addSuperClass(superClass);
       myDependencyListener.dependsOn(classDef.getReferable(), superClass.getReferable());
-      TCReferable classRef = classDef.getReferable();
-      if (classRef instanceof ClassReferableImpl) {
-        Referable superRef = superClass.getReferable().getUnderlyingReferable();
-        if (superRef instanceof ClassReferable) {
-          ((ClassReferableImpl) classRef).getSuperClassReferences().add((ClassReferable) superRef);
-        }
-      }
 
       for (Map.Entry<ClassField, AbsExpression> entry : superClass.getImplemented()) {
         classDef.implementField(entry.getKey(), entry.getValue());
+      }
+    }
+
+    if (classDef.getReferable() instanceof ClassReferableImpl) {
+      ClassReferableImpl classRef = (ClassReferableImpl) classDef.getReferable();
+      for (ClassDefinition superClass : classDef.getSuperClasses()) {
+        Referable superRef = superClass.getReferable().getUnderlyingReferable();
+        if (superRef instanceof ClassReferable) {
+          classRef.getSuperClassReferences().add((ClassReferable) superRef);
+        }
+        if (!classDef.getSuperLevels().isEmpty()) {
+          classRef.addSuperLevels(classDef.getSuperLevels().get(superClass) != null);
+        }
+      }
+      if (classDef.getLevelParameters() != null && !classDef.getLevelParameters().isEmpty()) {
+        int n = classDef.getNumberOfPLevelParameters();
+        classRef.setPLevelParameters(makeLevelParameters(classDef.getLevelParameters().subList(0, n)));
+        classRef.setHLevelParameters(makeLevelParameters(classDef.getLevelParameters().subList(n, classDef.getLevelParameters().size())));
       }
     }
 

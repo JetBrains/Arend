@@ -24,6 +24,7 @@ import org.arend.term.ClassFieldKind;
 import org.arend.term.FunctionKind;
 import org.arend.term.NameRenaming;
 import org.arend.term.NamespaceCommand;
+import org.arend.term.abs.Abstract;
 import org.arend.term.concrete.*;
 import org.arend.term.group.ChildGroup;
 import org.arend.term.group.Group;
@@ -696,45 +697,57 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       }
     }
 
-    List<Concrete.ClassDefinition> levelParams = new ArrayList<>(2);
-    levelParams.add(null);
-    levelParams.add(null);
     if (!def.getSuperClasses().isEmpty() && (def.getPLevelParameters() == null || def.getHLevelParameters() == null)) {
-      DFS<Referable, Void> dfs = new DFS<>() {
+      List<Pair<ClassReferable, Abstract.LevelParameters>> levelParams = new ArrayList<>(2);
+      levelParams.add(null);
+      levelParams.add(null);
+      DFS<ClassReferable, Void> dfs = new DFS<>() {
         @Override
-        protected Void forDependencies(Referable ref) {
-          Concrete.ClassDefinition classDef = ref instanceof GlobalReferable ? myConcreteProvider.getConcreteClassHeader((GlobalReferable) ref) : null;
-          if (classDef == null) return null;
-          if (levelParams.get(0) == null && classDef.getPLevelParameters() != null) {
-            levelParams.set(0, classDef);
+        protected Void forDependencies(ClassReferable ref) {
+          if (levelParams.get(0) == null) {
+            Abstract.LevelParameters params = ref.getPLevelParameters();
+            if (params != null) {
+              levelParams.set(0, new Pair<>(ref, params));
+            }
           }
-          if (levelParams.get(1) == null && classDef.getHLevelParameters() != null) {
-            levelParams.set(1, classDef);
+          if (levelParams.get(1) == null) {
+            Abstract.LevelParameters params = ref.getHLevelParameters();
+            if (params != null) {
+              levelParams.set(1, new Pair<>(ref, params));
+            }
           }
           if (levelParams.get(0) != null && levelParams.get(1) != null) return null;
-          for (Concrete.ReferenceExpression superClass : classDef.getSuperClasses()) {
-            if (superClass.getPLevels() == null && superClass.getHLevels() == null) {
-              visit(superClass.getReferent());
+          int i = 0;
+          for (ClassReferable superClass : ref.getSuperClassReferences()) {
+            if (!ref.hasLevels(i++)) {
+              visit(superClass);
               if (levelParams.get(0) != null && levelParams.get(1) != null) break;
             }
           }
           return null;
         }
       };
-      for (Concrete.ReferenceExpression superClass : def.getSuperClasses()) {
-        if (superClass.getPLevels() == null && superClass.getHLevels() == null) {
-          dfs.visit(superClass.getReferent());
-          if (levelParams.get(0) != null && levelParams.get(1) != null) break;
-        }
-      }
 
-      if (def.getPLevelParameters() == null && levelParams.get(0) != null) {
-        def.pOriginalDef = levelParams.get(0).getData();
-        def.setPLevelParameters(levelParams.get(0).getPLevelParameters());
+      Referable classRef = def.getData();
+      if (!(classRef instanceof ClassReferable)) {
+        classRef = classRef.getUnderlyingReferable();
       }
-      if (def.getHLevelParameters() == null && levelParams.get(1) != null) {
-        def.hOriginalDef = levelParams.get(1).getData();
-        def.setHLevelParameters(levelParams.get(1).getHLevelParameters());
+      if (classRef instanceof ClassReferable) {
+        dfs.visit((ClassReferable) classRef);
+        if (def.getPLevelParameters() == null && levelParams.get(0) != null) {
+          TCReferable ref = myReferableConverter.toDataLocatedReferable(levelParams.get(0).proj1);
+          if (ref instanceof TCDefReferable) {
+            def.pOriginalDef = (TCDefReferable) ref;
+            def.setPLevelParameters(Concrete.LevelParameters.fromAbstract(levelParams.get(0).proj2));
+          }
+        }
+        if (def.getHLevelParameters() == null && levelParams.get(1) != null) {
+          TCReferable ref = myReferableConverter.toDataLocatedReferable(levelParams.get(1).proj1);
+          if (ref instanceof TCDefReferable) {
+            def.hOriginalDef = (TCDefReferable) ref;
+            def.setHLevelParameters(Concrete.LevelParameters.fromAbstract(levelParams.get(1).proj2));
+          }
+        }
       }
     }
 

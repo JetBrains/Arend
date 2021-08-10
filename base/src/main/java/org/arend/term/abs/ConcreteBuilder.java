@@ -25,6 +25,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static org.arend.term.concrete.Concrete.LevelParameters.getLevelParametersRefs;
+
 @SuppressWarnings("WeakerAccess")
 public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.ResolvableDefinition>, AbstractExpressionVisitor<Void, Concrete.Expression>, AbstractLevelExpressionVisitor<LevelVariable, Concrete.LevelExpression> {
   private final ReferableConverter myReferableConverter;
@@ -55,11 +57,6 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
     return result;
   }
 
-  public static @NotNull Concrete.ClassDefinition convertClassHeader(ReferableConverter referableConverter, Abstract.ClassDefinition def, ErrorReporter errorReporter) {
-    ConcreteBuilder builder = new ConcreteBuilder(referableConverter, errorReporter, referableConverter.toDataLocatedReferable(def.getReferable()));
-    return new Concrete.ClassDefinition((TCDefReferable) builder.myDefinition, builder.visitLevelParameters(def.getPLevelParameters()), builder.visitLevelParameters(def.getHLevelParameters()), def.isRecord(), def.withoutClassifying(), builder.buildReferenceExpressions(def.getSuperClasses()), Collections.emptyList());
-  }
-
   public static @Nullable Concrete.Expression convertWithoutErrors(Abstract.Expression expression) {
     CountingErrorReporter errorReporter = new CountingErrorReporter(DummyErrorReporter.INSTANCE);
     Concrete.Expression result = expression.accept(new ConcreteBuilder(null, errorReporter, null), null);
@@ -88,15 +85,6 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
     if (!(definition instanceof Concrete.ClassDefinition)) {
       definition.enclosingClass = enclosingClass;
     }
-  }
-
-  private List<LevelReferable> getLevelParametersRefs(Abstract.LevelParameters params) {
-    if (params == null) return null;
-    List<LevelReferable> result = new ArrayList<>();
-    for (Referable ref : params.getReferables()) {
-      result.add(new DataLevelReferable(ref, ref.getRefName()));
-    }
-    return result;
   }
 
   private Concrete.LevelParameters visitLevelParameters(Abstract.LevelParameters params) {

@@ -10,6 +10,7 @@ import org.arend.naming.scope.CachingScope;
 import org.arend.naming.scope.LexicalScope;
 import org.arend.naming.scope.Scope;
 import org.arend.naming.scope.ScopeFactory;
+import org.arend.term.abs.Abstract;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.ChildGroup;
 import org.arend.term.group.Group;
@@ -70,6 +71,12 @@ public class ConcreteClassReferable extends ConcreteLocatedReferable implements 
     return mySuperClasses;
   }
 
+  @Override
+  public boolean hasLevels(int index) {
+    List<Concrete.ReferenceExpression> superClasses = getDefinition().getSuperClasses();
+    return index < superClasses.size() && (superClasses.get(index).getPLevels() != null || superClasses.get(index).getHLevels() != null);
+  }
+
   protected void resolve() {
     if (!myResolved) {
       ChildGroup parent = myGroup.getParentGroup();
@@ -114,5 +121,15 @@ public class ConcreteClassReferable extends ConcreteLocatedReferable implements 
   @Override
   public boolean isRecord() {
     return getDefinition().isRecord();
+  }
+
+  @Override
+  public @Nullable Abstract.LevelParameters getPLevelParameters() {
+    return getDefinition().getPLevelParameters();
+  }
+
+  @Override
+  public @Nullable Abstract.LevelParameters getHLevelParameters() {
+    return getDefinition().getHLevelParameters();
   }
 }
