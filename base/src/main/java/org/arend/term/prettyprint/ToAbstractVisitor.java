@@ -35,6 +35,7 @@ import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.visitor.VoidConcreteVisitor;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -54,6 +55,28 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   }
 
   public static Concrete.Expression convert(Expression expression, PrettyPrinterConfig config) {
+    return convertExtended(expression, config, null).concreteExpression;
+  }
+
+  public static class ConversionResult {
+    private final Concrete.Expression concreteExpression;
+    private final Map<Variable, LocalReferable> referables;
+
+    public ConversionResult(Concrete.Expression concreteExpression, Map<Variable, LocalReferable> referables) {
+      this.concreteExpression = concreteExpression;
+      this.referables = referables;
+    }
+
+    public @NotNull Concrete.Expression getConvertedExpression() {
+      return concreteExpression;
+    }
+
+    public Map<Variable, LocalReferable> getFreeVariables() {
+      return referables;
+    }
+  }
+
+  public static @NotNull ConversionResult convertExtended(Expression expression, PrettyPrinterConfig config, @Nullable Map<Variable, LocalReferable> initialReferences) {
     DefinitionRenamer definitionRenamer = config.getDefinitionRenamer();
     if (definitionRenamer == null) {
       definitionRenamer = new ConflictDefinitionRenamer();
@@ -68,10 +91,14 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       expression = expression.normalize(mode);
     }
     expression.accept(collector, variables);
-    ReferableRenamer renamer = new ReferableRenamer();
+    if (initialReferences != null) {
+      variables.removeAll(initialReferences.keySet());
+    }
+    ReferableRenamer renamer = new ReferableRenamer(initialReferences == null ? new HashMap<>() : initialReferences);
     ToAbstractVisitor visitor = new ToAbstractVisitor(config, definitionRenamer, collector, renamer);
     renamer.generateFreshNames(variables);
-    return expression.accept(visitor, null);
+    Concrete.Expression converted = expression.accept(visitor, null);
+    return new ConversionResult(converted, renamer.getMapping());
   }
 
   public static Concrete.LevelExpression convert(Level level) {
