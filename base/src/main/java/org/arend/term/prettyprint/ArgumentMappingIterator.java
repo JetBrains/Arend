@@ -12,16 +12,21 @@ import org.arend.ext.core.context.CoreParameter;
 import org.arend.term.concrete.Concrete;
 import org.arend.util.Pair;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.ListIterator;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class ArgumentMappingIterator implements Iterator<Pair<CoreParameter, ConcreteArgument>> {
     private final Iterator<DependentLink> coreParameter;
     private final ListIterator<Concrete.Argument> argumentsIterator;
 
     public ArgumentMappingIterator(Definition definition, Concrete.AppExpression call) {
-        coreParameter = getParameters(definition);
+        coreParameter = getParameters(definition).iterator();
         argumentsIterator = call.getArguments().listIterator();
     }
 
@@ -31,7 +36,7 @@ public class ArgumentMappingIterator implements Iterator<Pair<CoreParameter, Con
     }
 
     @Override
-    public Pair<CoreParameter, ConcreteArgument> next() {
+    public Pair<@Nullable CoreParameter, @Nullable ConcreteArgument> next() {
         var currentParameter = coreParameter.hasNext() ? coreParameter.next() : null;
         var currentArgument = argumentsIterator.hasNext() ? argumentsIterator.next() : null;
         if (currentParameter == null) {
@@ -48,75 +53,39 @@ public class ArgumentMappingIterator implements Iterator<Pair<CoreParameter, Con
         }
     }
 
-    private Iterator<DependentLink> getParameters(@NotNull Definition definition) {
+    private List<DependentLink> linkToList(DependentLink link) {
+        ArrayList<DependentLink> list = new ArrayList<>();
+        while (link.hasNext()) {
+            list.add(link);
+            link = link.getNext();
+        }
+        return list;
+    }
+
+    private Iterable<DependentLink> getParameters(@NotNull Definition definition) {
         if (definition instanceof ClassField) {
-            var type = ((ClassField) definition).getType(LevelPair.STD);
-            return new Iterator<>() {
-                Expression piExpression = type;
-
-                @Override
-                public boolean hasNext() {
-                    return piExpression instanceof PiExpression;
-                }
-
-                @Override
-                public DependentLink next() {
-                    var current = ((PiExpression) piExpression).getParameters();
-                    piExpression = ((PiExpression) piExpression).getCodomain();
-                    return current;
-                }
-            };
+            Expression type = ((ClassField) definition).getType(LevelPair.STD);
+            ArrayList<DependentLink> parameters = new ArrayList<>();
+            do {
+                parameters.add(((PiExpression) type).getParameters());
+                type = ((PiExpression) type).getCodomain();
+            } while (type instanceof PiExpression);
+            return parameters;
         } else if (definition instanceof Constructor) {
             var datatype = ((Constructor) definition).getDataType();
-            return new Iterator<>() {
-                DependentLink datatypeParams = datatype.getParameters();
-                DependentLink constructorParams = definition.getParameters();
-
+            return Stream.concat(linkToList(datatype.getParameters()).stream().map(link -> new UntypedDependentLink(link.getName()) {
                 @Override
-                public boolean hasNext() {
-                    return datatypeParams.hasNext() || constructorParams.hasNext();
+                public Type getType() {
+                    return link.getType();
                 }
 
                 @Override
-                public DependentLink next() {
-                    DependentLink currentLink;
-                    if (datatypeParams.hasNext()) {
-                        var currentDatatypeParams = datatypeParams;
-                        currentLink = new UntypedDependentLink(currentDatatypeParams.getName()) {
-                            @Override
-                            public Type getType() {
-                                return currentDatatypeParams.getType();
-                            }
-
-                            @Override
-                            public boolean isExplicit() {
-                                return false;
-                            }
-                        };
-                        datatypeParams = datatypeParams.getNext();
-                    } else {
-                        currentLink = constructorParams;
-                        constructorParams = constructorParams.getNext();
-                    }
-                    return currentLink;
+                public boolean isExplicit() {
+                    return false;
                 }
-            };
+            }), linkToList(definition.getParameters()).stream()).collect(Collectors.toList());
         } else {
-            return new Iterator<>() {
-                DependentLink param = definition.getParameters();
-
-                @Override
-                public boolean hasNext() {
-                    return param.hasNext();
-                }
-
-                @Override
-                public DependentLink next() {
-                    var current = param;
-                    param = param.getNext();
-                    return current;
-                }
-            };
+            return linkToList(definition.getParameters());
         }
     }
 }
