@@ -1,13 +1,15 @@
 package org.arend.term.prettyprint;
 
 import org.arend.core.context.param.DependentLink;
-import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.context.param.UntypedDependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
 import org.arend.core.definition.Definition;
 import org.arend.core.definition.FunctionDefinition;
+import org.arend.core.expr.Expression;
+import org.arend.core.expr.PiExpression;
 import org.arend.core.expr.type.Type;
+import org.arend.core.subst.LevelPair;
 import org.arend.ext.concrete.expr.ConcreteArgument;
 import org.arend.ext.core.context.CoreParameter;
 import org.arend.term.concrete.Concrete;
@@ -18,7 +20,7 @@ import java.util.Iterator;
 import java.util.ListIterator;
 
 public class ArgumentMappingIterator implements Iterator<Pair<CoreParameter, ConcreteArgument>> {
-    private Iterator<DependentLink> coreParameter;
+    private final Iterator<DependentLink> coreParameter;
     private final ListIterator<Concrete.Argument> argumentsIterator;
 
     public ArgumentMappingIterator(Definition definition, Concrete.AppExpression call) {
@@ -50,7 +52,7 @@ public class ArgumentMappingIterator implements Iterator<Pair<CoreParameter, Con
     }
 
     private Iterator<DependentLink> getParameters(@NotNull Definition definition) {
-        if (definition instanceof FunctionDefinition || definition instanceof ClassField) {
+        if (definition instanceof FunctionDefinition) {
             return new Iterator<>() {
                 DependentLink param = definition.getParameters();
 
@@ -63,6 +65,23 @@ public class ArgumentMappingIterator implements Iterator<Pair<CoreParameter, Con
                 public DependentLink next() {
                     var current = param;
                     param = param.getNext();
+                    return current;
+                }
+            };
+        } else if (definition instanceof ClassField) {
+            var type = ((ClassField) definition).getType(LevelPair.STD);
+            return new Iterator<>() {
+                Expression piExpression = type;
+
+                @Override
+                public boolean hasNext() {
+                    return piExpression instanceof PiExpression;
+                }
+
+                @Override
+                public DependentLink next() {
+                    var current = ((PiExpression) piExpression).getParameters();
+                    piExpression = ((PiExpression) piExpression).getCodomain();
                     return current;
                 }
             };
