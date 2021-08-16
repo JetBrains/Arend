@@ -135,7 +135,7 @@ final public class MinimizedRepresentation {
     }
 
     private static boolean tryFixError(CheckTypeVisitor checkTypeVisitor, Concrete.Expression completeConcrete, Concrete.Expression minimizedConcrete, List<Concrete.LetClause> clauses, ConcreteFactoryImpl concreteFactory, List<GeneralError> errorsCollector) {
-        var finalizedConcrete = (Concrete.LetExpression) concreteFactory.letExpr(true, false, clauses, minimizedConcrete);
+        var finalizedConcrete = (Concrete.LetExpression) concreteFactory.letExpr(false, false, clauses, minimizedConcrete);
         checkTypeVisitor.finalCheckExpr(finalizedConcrete, null);
         if (!errorsCollector.isEmpty()) {
             minimizedConcrete.accept(new ErrorFixingConcreteExpressionVisitor(errorsCollector, concreteFactory), new ConcreteTree(minimizedConcrete, completeConcrete));
