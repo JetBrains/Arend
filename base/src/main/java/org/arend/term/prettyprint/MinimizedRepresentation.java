@@ -2,6 +2,7 @@ package org.arend.term.prettyprint;
 
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.param.DependentLink;
+import org.arend.core.definition.ClassField;
 import org.arend.core.expr.DefCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.ReferenceExpression;
@@ -20,7 +21,6 @@ import org.arend.naming.reference.TCDefReferable;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.GoalError;
-import org.arend.typechecking.error.local.SolveEquationError;
 import org.arend.typechecking.error.local.inference.ArgInferenceError;
 import org.arend.typechecking.error.local.inference.FunctionArgInferenceError;
 import org.arend.typechecking.error.local.inference.InstanceInferenceError;
@@ -33,7 +33,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 final public class MinimizedRepresentation {
@@ -138,7 +137,7 @@ final public class MinimizedRepresentation {
         var finalizedConcrete = (Concrete.LetExpression) concreteFactory.letExpr(false, false, clauses, minimizedConcrete);
         checkTypeVisitor.finalCheckExpr(finalizedConcrete, null);
         if (!errorsCollector.isEmpty()) {
-            minimizedConcrete.accept(new ErrorFixingConcreteExpressionVisitor(errorsCollector, concreteFactory), new ConcreteTree(minimizedConcrete, completeConcrete));
+            minimizedConcrete.accept(new ErrorFixingConcreteExpressionVisitor(errorsCollector, concreteFactory), completeConcrete);
             return false;
         } else {
             return true;
@@ -146,40 +145,7 @@ final public class MinimizedRepresentation {
     }
 }
 
-final class ConcreteTree {
-    private final List<Concrete.SourceNode> myActual;
-
-    private final List<Concrete.SourceNode> myComplete;
-
-    public ConcreteTree(Concrete.SourceNode actual, Concrete.SourceNode complete) {
-        myActual = new ArrayList<>();
-        myActual.add(actual);
-        myComplete = new ArrayList<>();
-        myComplete.add(complete);
-    }
-
-    public List<Concrete.SourceNode> getActual() {
-        return myActual;
-    }
-
-    public List<Concrete.SourceNode> getComplete() {
-        return myComplete;
-    }
-}
-
-class MyException extends RuntimeException {
-    private final Concrete.Expression expression;
-
-    MyException(Concrete.Expression expression) {
-        this.expression = expression;
-    }
-
-    public Concrete.Expression getExpression() {
-        return expression;
-    }
-}
-
-class ErrorFixingConcreteExpressionVisitor extends BaseConcreteExpressionVisitor<ConcreteTree> {
+class ErrorFixingConcreteExpressionVisitor extends BaseConcreteExpressionVisitor<Concrete.SourceNode> {
 
     private final List<GeneralError> myErrors;
     private final ConcreteFactory myFactory;
@@ -189,87 +155,55 @@ class ErrorFixingConcreteExpressionVisitor extends BaseConcreteExpressionVisitor
         this.myFactory = myFactory;
     }
 
-    private static <T extends Concrete.SourceNode> T getLastComplete(ConcreteTree tree, Class<T> clazz) {
-        return clazz.cast(tree.getComplete().get(tree.getComplete().size() - 1));
-    }
-
-    private <T, R extends Concrete.Expression> void withState(ConcreteTree tree, T actual, T complete, Function<T, @Nullable R> picker) {
-        var newActual = picker.apply(actual);
-        var newComplete = picker.apply(complete);
-        tree.getActual().add(newActual);
-        tree.getComplete().add(newComplete);
-        try {
-            if (newActual != null) {
-                newActual.accept(this, tree);
-            }
-        } finally {
-            tree.getComplete().remove(tree.getComplete().size() - 1);
-            tree.getActual().remove(tree.getActual().size() - 1);
-        }
-
-    }
-
-
-    private <T extends Concrete.Parameter> void visitParameters(List<T> actualParameters, List<T> completeParameters, ConcreteTree tree) {
+    private <T extends Concrete.Parameter> void visitParameters(List<T> actualParameters, List<T> completeParameters) {
         for (int i = 0; i < actualParameters.size(); ++i) {
-            final var j = i;
-            withState(tree, actualParameters, completeParameters, ts -> {
-                var param = ts.get(j);
-                if (param instanceof Concrete.TypeParameter) {
-                    return ((Concrete.TypeParameter) param).type;
-                } else {
-                    return null;
-                }
-            });
+            var param = actualParameters.get(i);
+            if (param instanceof Concrete.TypeParameter) {
+                ((Concrete.TypeParameter) param).type.accept(this, ((Concrete.TypeParameter) completeParameters.get(i)).type);
+            }
         }
     }
 
     @Override
-    public Concrete.Expression visitPi(Concrete.PiExpression expr, ConcreteTree params) {
-        var verboseExpr = getLastComplete(params, Concrete.PiExpression.class);
-        visitParameters(expr.getParameters(), verboseExpr.getParameters(), params);
-        withState(params, expr, verboseExpr, Concrete.PiExpression::getCodomain);
+    public Concrete.Expression visitPi(Concrete.PiExpression expr, Concrete.SourceNode params) {
+        var verboseExpr = (Concrete.PiExpression) params;
+        visitParameters(expr.getParameters(), verboseExpr.getParameters());
+        expr.codomain.accept(this, verboseExpr.codomain);
         return expr;
     }
 
     @Override
-    public Concrete.Expression visitLam(Concrete.LamExpression expr, ConcreteTree params) {
-        var verboseExpr = getLastComplete(params, Concrete.LamExpression.class);
-        visitParameters(expr.getParameters(), verboseExpr.getParameters(), params);
-        withState(params, expr, verboseExpr, Concrete.LamExpression::getBody);
+    public Concrete.Expression visitLam(Concrete.LamExpression expr, Concrete.SourceNode params) {
+        var verboseExpr = (Concrete.LamExpression) params;
+        visitParameters(expr.getParameters(), verboseExpr.getParameters());
+        expr.body.accept(this, verboseExpr.body);
         return expr;
     }
 
     @Override
-    public Concrete.Expression visitApp(Concrete.AppExpression expr, ConcreteTree params) {
-        Concrete.AppExpression verboseExpr = (Concrete.AppExpression) params.getComplete().get(params.getComplete().size() - 1);
-        params.getActual().add(expr.getFunction());
-        params.getComplete().add(verboseExpr.getFunction());
-        Concrete.Expression newFunction;
-        try {
-            newFunction = expr.getFunction().accept(this, params);
-        } catch (MyException e) {
-            expr.getArguments().clear();
-            expr.setFunction(e.getExpression());
-            return expr;
-        } finally {
-            params.getActual().remove(params.getActual().size() - 1);
-            params.getComplete().remove(params.getComplete().size() - 1);
+    public Concrete.Expression visitApp(Concrete.AppExpression expr, Concrete.SourceNode params) {
+        Concrete.AppExpression verboseExpr = (Concrete.AppExpression) params;
+        if (expr.getFunction() instanceof Concrete.ReferenceExpression) {
+            var errorList = myErrors.stream().filter(err -> err.getCauseSourceNode() == expr.getFunction()).collect(Collectors.toList());
+            if (!errorList.isEmpty()) {
+                GeneralError mostImportantError = findMostImportantError(errorList);
+                myErrors.clear();
+                var fixed = fixError(expr, verboseExpr, mostImportantError);
+                expr.getArguments().clear();
+                expr.setFunction(fixed);
+                return expr;
+            }
         }
-
         var allArguments = verboseExpr.getArguments().iterator();
         for (var argument : expr.getArguments()) {
             var currentArgument = allArguments.next();
             while (currentArgument.isExplicit() != argument.isExplicit()) {
                 currentArgument = allArguments.next();
             }
-            params.getActual().add(argument.expression);
-            params.getComplete().add(currentArgument.expression);
-            argument.expression = argument.expression.accept(this, params);
-            params.getActual().remove(params.getActual().size() - 1);
-            params.getComplete().remove(params.getComplete().size() - 1);
+            argument.expression = argument.expression.accept(this, currentArgument.expression);
         }
-        expr.setFunction(newFunction);
+
+        expr.setFunction(expr.getFunction().accept(this, verboseExpr.getFunction()));
 
         return expr;
     }
@@ -287,72 +221,76 @@ class ErrorFixingConcreteExpressionVisitor extends BaseConcreteExpressionVisitor
                 );
     }
 
-    @Override
-    public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, ConcreteTree params) {
-        var errorList = myErrors.stream().filter(err -> err.getCauseSourceNode() == expr).collect(Collectors.toList());
-        if (errorList.isEmpty()) {
-            return expr;
+    Concrete.AppExpression fixError(Concrete.AppExpression incomplete, Concrete.AppExpression complete, GeneralError error) {
+        if (error instanceof InstanceInferenceError) {
+            return fixInstanceInferenceError(incomplete, complete, (InstanceInferenceError) error);
+        } else if (error instanceof FunctionArgInferenceError) {
+            return fixFunctionArgInferenceError(incomplete, complete, (FunctionArgInferenceError) error);
+        } else {
+            return fixUnknownError(incomplete, complete);
         }
-        var targetError = findMostImportantError(errorList);
-        myErrors.clear();
-        if (targetError instanceof InstanceInferenceError) {
-            var definition = ((TCDefReferable) expr.getReferent()).getTypechecked();
-            var args = new ArrayList<Concrete.Argument>();
-            var fullIterator = new ArgumentMappingIterator(definition, (Concrete.AppExpression) params.getComplete().get(params.getComplete().size() - 2));
-            var incompleteIterator = new ArgumentMappingIterator(definition, (Concrete.AppExpression) params.getActual().get(params.getActual().size() - 2));
-            var inserted = false;
-            while (fullIterator.hasNext()) {
-                var fullResult = fullIterator.next();
-                var incompleteResult = incompleteIterator.next();
-                var param = fullResult.proj1;
-                if (param instanceof DependentLink && ((DependentLink) param).getType() instanceof DefCallExpression && ((DefCallExpression) ((DependentLink) param).getType()).getDefinition() == ((InstanceInferenceError) targetError).classRef.getTypechecked()) {
-                    args.add((Concrete.Argument) fullResult.proj2);
-                    inserted = true;
-                } else if (incompleteResult.proj2 != null) {
-                    args.add((Concrete.Argument) incompleteResult.proj2);
-                } else if (!inserted) {
-                    args.add((Concrete.Argument) myFactory.arg(myFactory.hole(), fullResult.proj2.isExplicit()));
-                }
+    }
+
+    private Concrete.AppExpression fixUnknownError(Concrete.AppExpression incomplete, Concrete.AppExpression complete) {
+        var args = new ArrayList<Concrete.Argument>();
+        var parentIterator = incomplete.getArguments().iterator();
+        var parentProperIterator = complete.getArguments().iterator();
+        var currentActualArg = parentIterator.next();
+        while (parentProperIterator.hasNext()) {
+            var currentProperArg = parentProperIterator.next();
+            if (currentActualArg == null || (currentProperArg.isExplicit() == currentActualArg.isExplicit())) {
+                args.add(currentActualArg);
+                currentActualArg = parentIterator.hasNext() ? parentIterator.next() : null;
+            } else {
+                args.add(currentProperArg);
             }
-            throw new MyException((Concrete.Expression) myFactory.app(expr, args));
-        } else if (targetError instanceof FunctionArgInferenceError) {
-            var args = new ArrayList<Concrete.Argument>();
-            var fullIterator = new ArgumentMappingIterator(((FunctionArgInferenceError) targetError).definition, (Concrete.AppExpression) params.getComplete().get(params.getComplete().size() - 2));
-            var incompleteIterator = new ArgumentMappingIterator(((FunctionArgInferenceError) targetError).definition, (Concrete.AppExpression) params.getActual().get(params.getActual().size() - 2));
-            var inserted = false;
-            var i = 1;
-            while (fullIterator.hasNext()) {
-                var fullArg = fullIterator.next().proj2;
-                var incompleteArg = incompleteIterator.next().proj2;
-                if (i == ((FunctionArgInferenceError) targetError).index) {
-                    args.add((Concrete.Argument) fullArg);
-                    inserted = true;
-                } else if (incompleteArg != null) {
-                    args.add((Concrete.Argument) incompleteArg);
-                } else if (!inserted) {
-                    args.add((Concrete.Argument) myFactory.arg(myFactory.hole(), fullArg.isExplicit()));
-                }
-                i += 1;
-            }
-            throw new MyException((Concrete.Expression) myFactory.app(expr, args));
-        } else if (targetError instanceof SolveEquationError) {
-            var args = new ArrayList<Concrete.Argument>();
-            var parentArgs = (Concrete.AppExpression) params.getActual().get(params.getActual().size() - 2);
-            var parentProperArgs = (Concrete.AppExpression) params.getComplete().get(params.getComplete().size() - 2);
-            var parentIterator = parentArgs.getArguments().iterator();
-            var parentProperIterator = parentProperArgs.getArguments().iterator();
-            var currentActualArg = parentIterator.next();
-            while (parentProperIterator.hasNext()) {
-                var currentProperArg = parentProperIterator.next();
-                if (currentActualArg == null || (currentProperArg.isExplicit() == currentActualArg.isExplicit())) {
-                    args.add(currentActualArg);
-                    currentActualArg = parentIterator.hasNext() ? parentIterator.next() : null;
-                } else {
-                    args.add(currentProperArg);
-                }
-            }
-            throw new MyException((Concrete.Expression) myFactory.app(expr, args));
         }
-        return expr;
+        return (Concrete.AppExpression) myFactory.app(incomplete.getFunction(), args);
+    }
+
+    private Concrete.AppExpression fixFunctionArgInferenceError(Concrete.AppExpression incomplete, Concrete.AppExpression complete, FunctionArgInferenceError targetError) {
+        var definition = targetError.definition;
+        var args = new ArrayList<Concrete.Argument>();
+        var fullIterator = new ArgumentMappingIterator(definition, complete);
+        var incompleteIterator = new ArgumentMappingIterator(definition, incomplete);
+        var inserted = false;
+        var i = definition instanceof ClassField ? 0 : 1;
+        while (fullIterator.hasNext()) {
+            var fullArg = fullIterator.next().proj2;
+            var incompleteArg = incompleteIterator.next().proj2;
+            if (i == targetError.index) {
+                args.add((Concrete.Argument) fullArg);
+                inserted = true;
+            } else if (incompleteArg != null) {
+                args.add((Concrete.Argument) incompleteArg);
+            } else if (!inserted) {
+                args.add((Concrete.Argument) myFactory.arg(myFactory.hole(), fullArg.isExplicit()));
+            }
+            i += 1;
+        }
+        return (Concrete.AppExpression) myFactory.app(incomplete.getFunction(), args);
+    }
+
+    private Concrete.AppExpression fixInstanceInferenceError(Concrete.AppExpression incomplete, Concrete.AppExpression complete, InstanceInferenceError targetError) {
+        var function = (Concrete.ReferenceExpression) incomplete.getFunction();
+        var definition = ((TCDefReferable) function.getReferent()).getTypechecked();
+        var args = new ArrayList<Concrete.Argument>();
+        var fullIterator = new ArgumentMappingIterator(definition, complete);
+        var incompleteIterator = new ArgumentMappingIterator(definition, incomplete);
+        var inserted = false;
+        while (fullIterator.hasNext()) {
+            var fullResult = fullIterator.next();
+            var incompleteResult = incompleteIterator.next();
+            var param = fullResult.proj1;
+            if (param instanceof DependentLink && ((DependentLink) param).getType() instanceof DefCallExpression && ((DefCallExpression) ((DependentLink) param).getType()).getDefinition() == targetError.classRef.getTypechecked()) {
+                args.add((Concrete.Argument) fullResult.proj2);
+                inserted = true;
+            } else if (incompleteResult.proj2 != null) {
+                args.add((Concrete.Argument) incompleteResult.proj2);
+            } else if (!inserted) {
+                args.add((Concrete.Argument) myFactory.arg(myFactory.hole(), fullResult.proj2.isExplicit()));
+            }
+        }
+        return (Concrete.AppExpression) myFactory.app(function, args);
     }
 }
