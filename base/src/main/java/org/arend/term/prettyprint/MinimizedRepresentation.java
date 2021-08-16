@@ -233,6 +233,14 @@ class ErrorFixingConcreteExpressionVisitor extends BaseConcreteExpressionVisitor
     }
 
     @Override
+    public Concrete.Expression visitLam(Concrete.LamExpression expr, ConcreteTree params) {
+        var verboseExpr = getLastComplete(params, Concrete.LamExpression.class);
+        visitParameters(expr.getParameters(), verboseExpr.getParameters(), params);
+        withState(params, expr, verboseExpr, Concrete.LamExpression::getBody);
+        return expr;
+    }
+
+    @Override
     public Concrete.Expression visitApp(Concrete.AppExpression expr, ConcreteTree params) {
         Concrete.AppExpression verboseExpr = (Concrete.AppExpression) params.getComplete().get(params.getComplete().size() - 1);
         params.getActual().add(expr.getFunction());
