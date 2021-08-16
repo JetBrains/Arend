@@ -33,6 +33,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 final public class MinimizedRepresentation {
@@ -181,6 +182,49 @@ class ErrorFixingConcreteExpressionVisitor extends BaseConcreteExpressionVisitor
     public ErrorFixingConcreteExpressionVisitor(List<GeneralError> myErrors, ConcreteFactory myFactory) {
         this.myErrors = myErrors;
         this.myFactory = myFactory;
+    }
+
+    private static <T extends Concrete.SourceNode> T getLastComplete(ConcreteTree tree, Class<T> clazz) {
+        return clazz.cast(tree.getComplete().get(tree.getComplete().size() - 1));
+    }
+
+    private <T, R extends Concrete.Expression> void withState(ConcreteTree tree, T actual, T complete, Function<T, @Nullable R> picker) {
+        var newActual = picker.apply(actual);
+        var newComplete = picker.apply(complete);
+        tree.getActual().add(newActual);
+        tree.getComplete().add(newComplete);
+        try {
+            if (newActual != null) {
+                newActual.accept(this, tree);
+            }
+        } finally {
+            tree.getComplete().remove(tree.getComplete().size() - 1);
+            tree.getActual().remove(tree.getActual().size() - 1);
+        }
+
+    }
+
+
+    private <T extends Concrete.Parameter> void visitParameters(List<T> actualParameters, List<T> completeParameters, ConcreteTree tree) {
+        for (int i = 0; i < actualParameters.size(); ++i) {
+            final var j = i;
+            withState(tree, actualParameters, completeParameters, ts -> {
+                var param = ts.get(j);
+                if (param instanceof Concrete.TypeParameter) {
+                    return ((Concrete.TypeParameter) param).type;
+                } else {
+                    return null;
+                }
+            });
+        }
+    }
+
+    @Override
+    public Concrete.Expression visitPi(Concrete.PiExpression expr, ConcreteTree params) {
+        var verboseExpr = getLastComplete(params, Concrete.PiExpression.class);
+        visitParameters(expr.getParameters(), verboseExpr.getParameters(), params);
+        withState(params, expr, verboseExpr, Concrete.PiExpression::getCodomain);
+        return expr;
     }
 
     @Override
