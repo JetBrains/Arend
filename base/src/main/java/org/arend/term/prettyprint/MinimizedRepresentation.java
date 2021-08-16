@@ -97,10 +97,15 @@ final public class MinimizedRepresentation {
         }, null, null);
         checkTypeVisitor.setInstancePool(new GlobalInstancePool(instanceProvider, checkTypeVisitor, new LocalInstancePool(checkTypeVisitor)));
 
+        int limit = 50;
         while (true) {
             var result = tryFixError(checkTypeVisitor, verboseRepresentation.getConvertedExpression(), emptyRepresentation.getConvertedExpression(), clauses, concreteFactory, errorsCollector);
             if (result) {
                 return emptyRepresentation.getConvertedExpression();
+            }
+            --limit;
+            if (limit == 0) {
+                throw new AssertionError("Minimization of expression (" + expressionToPrint + ") is likely diverged. Please report it to maintainers.");
             }
         }
     }
