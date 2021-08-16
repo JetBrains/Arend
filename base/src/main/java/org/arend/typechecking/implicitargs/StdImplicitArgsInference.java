@@ -125,9 +125,15 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
         if (classVarsOnly) {
           return result;
         }
-        infVar = result instanceof DefCallResult
-          ? new FunctionInferenceVariable(((DefCallResult) result).getDefinition(), parameter, i + 1, type, expr, myVisitor.getAllBindings())
-          : new FunctionInferenceVariable(null, parameter, i + 1, type, expr, myVisitor.getAllBindings());
+        Definition definition;
+        if (result instanceof DefCallResult) {
+          definition = ((DefCallResult) result).getDefinition();
+        } else if (result instanceof TypecheckingResult && ((TypecheckingResult) result).getExpression() instanceof DefCallExpression) {
+          definition = ((DefCallExpression) ((TypecheckingResult) result).getExpression()).getDefinition();
+        } else {
+          definition = null;
+        }
+        infVar = new FunctionInferenceVariable(definition, parameter, i + 1, type, expr, myVisitor.getAllBindings());
       }
 
       Expression binding = InferenceReferenceExpression.make(infVar, myVisitor.getEquations());
