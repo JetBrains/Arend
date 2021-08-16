@@ -2,10 +2,7 @@ package org.arend.term.prettyprint;
 
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.UntypedDependentLink;
-import org.arend.core.definition.ClassField;
-import org.arend.core.definition.Constructor;
-import org.arend.core.definition.Definition;
-import org.arend.core.definition.FunctionDefinition;
+import org.arend.core.definition.*;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.PiExpression;
 import org.arend.core.expr.type.Type;
@@ -52,23 +49,7 @@ public class ArgumentMappingIterator implements Iterator<Pair<CoreParameter, Con
     }
 
     private Iterator<DependentLink> getParameters(@NotNull Definition definition) {
-        if (definition instanceof FunctionDefinition) {
-            return new Iterator<>() {
-                DependentLink param = definition.getParameters();
-
-                @Override
-                public boolean hasNext() {
-                    return param.hasNext();
-                }
-
-                @Override
-                public DependentLink next() {
-                    var current = param;
-                    param = param.getNext();
-                    return current;
-                }
-            };
-        } else if (definition instanceof ClassField) {
+        if (definition instanceof ClassField) {
             var type = ((ClassField) definition).getType(LevelPair.STD);
             return new Iterator<>() {
                 Expression piExpression = type;
@@ -120,7 +101,22 @@ public class ArgumentMappingIterator implements Iterator<Pair<CoreParameter, Con
                     return currentLink;
                 }
             };
+        } else {
+            return new Iterator<>() {
+                DependentLink param = definition.getParameters();
+
+                @Override
+                public boolean hasNext() {
+                    return param.hasNext();
+                }
+
+                @Override
+                public DependentLink next() {
+                    var current = param;
+                    param = param.getNext();
+                    return current;
+                }
+            };
         }
-        throw new AssertionError("No other definitions should appear");
     }
 }
