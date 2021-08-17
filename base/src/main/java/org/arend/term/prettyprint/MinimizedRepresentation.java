@@ -213,6 +213,24 @@ class ErrorFixingConcreteExpressionVisitor extends BaseConcreteExpressionVisitor
     }
 
     @Override
+    public Concrete.Expression visitGoal(Concrete.GoalExpression expr, Concrete.SourceNode params) {
+        if (expr.expression != null) {
+            var verboseExpr = (Concrete.GoalExpression) params;
+            expr.expression.accept(this, verboseExpr.expression);
+        }
+        return super.visitGoal(expr, params);
+    }
+
+    @Override
+    public Concrete.Expression visitTuple(Concrete.TupleExpression expr, Concrete.SourceNode verbose) {
+        var verboseExpr = (Concrete.TupleExpression) verbose;
+        for (int i = 0; i < expr.getFields().size(); i++) {
+            expr.getFields().set(i, expr.getFields().get(i).accept(this, verboseExpr.getFields().get(i)));
+        }
+        return expr;
+    }
+
+    @Override
     public Concrete.Expression visitApp(Concrete.AppExpression expr, Concrete.SourceNode verbose) {
         Concrete.AppExpression verboseExpr = (Concrete.AppExpression) verbose;
         if (expr.getFunction() instanceof Concrete.ReferenceExpression) {

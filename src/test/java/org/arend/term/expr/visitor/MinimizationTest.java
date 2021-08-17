@@ -39,4 +39,24 @@ public class MinimizationTest extends TypeCheckingTestCase {
         + "\\data C {y : Nat} (x : Nat) | c\n" +
                 "\\func test : \\Sigma (D 1) (C {2} 1) => (d, c)", "\\Sigma (D 1) (C {2} 1)");
     }
+
+    @Test
+    public void testFunction() {
+        checkType("\\func D {A : \\Type} (x : A) : \\Type => x = x\n" +
+                "\\func test : D 1 => idp", "D 1");
+    }
+
+    @Test
+    public void testInfix() {
+        checkType("\\data D {A : \\Type} (x : A) | d\n" +
+                "\\func \\infixr 10 === {A : \\Type} (x : A) (y : A) : \\Type => x = y\n" +
+                "\\func test : (D 1) === (D 1) => idp", "D 1 === D 1");
+    }
+
+    @Test
+    public void testInfix2() {
+        checkType("\\data D {A : \\Type} (x : A) | d\n" +
+                "\\func \\infixr 10 === {z : Nat} (x : Nat) (y : Nat) : \\Type => x = y\n" +
+                "\\func test : 1 === {2} 1 => idp", "1 === {2} 1");
+    }
 }
