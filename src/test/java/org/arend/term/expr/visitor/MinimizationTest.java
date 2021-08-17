@@ -32,4 +32,11 @@ public class MinimizationTest extends TypeCheckingTestCase {
         checkType("\\data D {A : \\Type} (x : A) | d" +
                 "\\func test : D {Nat} 1 => d", "D 1");
     }
+
+    @Test
+    public void testSigma() {
+        checkType("\\data D {A : \\Type} (x : A) | d\n"
+        + "\\data C {y : Nat} (x : Nat) | c\n" +
+                "\\func test : \\Sigma (D 1) (C {2} 1) => (d, c)", "\\Sigma (D 1) (C {2} 1)");
+    }
 }

@@ -190,6 +190,13 @@ class ErrorFixingConcreteExpressionVisitor extends BaseConcreteExpressionVisitor
     }
 
     @Override
+    public Concrete.Expression visitSigma(Concrete.SigmaExpression expr, Concrete.SourceNode verbose) {
+        var verboseExpr = (Concrete.SigmaExpression) verbose;
+        visitParameters(expr.getParameters(), verboseExpr.getParameters());
+        return expr;
+    }
+
+    @Override
     public Concrete.Expression visitPi(Concrete.PiExpression expr, Concrete.SourceNode verbose) {
         var verboseExpr = (Concrete.PiExpression) verbose;
         visitParameters(expr.getParameters(), verboseExpr.getParameters());
