@@ -28,7 +28,6 @@ import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.instance.pool.LocalInstancePool;
 import org.arend.typechecking.instance.provider.InstanceProvider;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
-import org.arend.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -47,19 +46,12 @@ final public class MinimizedRepresentation {
             @NotNull Expression expressionToPrint,
             @Nullable InstanceProvider instanceProvider,
             @Nullable DefinitionRenamer definitionRenamer) {
-        PrettyPrinterConfig verboseConfig;
-        PrettyPrinterConfig emptyConfig;
-        {
-            var configs = getConfigs(definitionRenamer);
-            verboseConfig = configs.proj1;
-            emptyConfig = configs.proj2;
-        }
-        var verboseRepresentation = ToAbstractVisitor.convertExtended(expressionToPrint, verboseConfig, null);
-        Map<Variable, LocalReferable> referableMapping = verboseRepresentation.getFreeVariables();
-        var emptyRepresentation = ToAbstractVisitor.convertExtended(expressionToPrint, emptyConfig, verboseRepresentation.getFreeVariables());
-        for (Variable binding : verboseRepresentation.getFreeVariables().keySet().toArray(new Variable[0])) {
+        Converter converter = new Converter(definitionRenamer);
+        var verboseRepresentation = converter.coreToConcrete(expressionToPrint, true);
+        var emptyRepresentation = converter.coreToConcrete(expressionToPrint, false);
+        for (Variable binding : converter.freeVariableBindings.keySet().toArray(new Variable[0])) {
             if (binding instanceof Binding && ((Binding) binding).getTypeExpr() != null) {
-                ToAbstractVisitor.convertExtended(((Binding) binding).getTypeExpr(), verboseConfig, verboseRepresentation.getFreeVariables());
+                converter.coreToConcrete(((Binding) binding).getTypeExpr(), true);
             }
         }
         List<GeneralError> errorsCollector = new ArrayList<>();
@@ -67,9 +59,9 @@ final public class MinimizedRepresentation {
         ExpressionVisitor<Void, Void> resolveVariablesVisitor = new VoidExpressionVisitor<>() {
             @Override
             public Void visitReference(ReferenceExpression expr, Void params) {
-                if (referableMapping.containsKey(expr.getBinding())) {
+                if (converter.freeVariableBindings.containsKey(expr.getBinding())) {
                     expr.getType().accept(this, null);
-                    refToType.putIfAbsent(referableMapping.get(expr.getBinding()), expr.getBinding().getTypeExpr());
+                    refToType.putIfAbsent(converter.freeVariableBindings.get(expr.getBinding()), expr.getBinding().getTypeExpr());
                 }
                 return null;
             }
@@ -85,7 +77,7 @@ final public class MinimizedRepresentation {
                         .map(entry -> (Concrete.LetClause) concreteFactory.letClause(
                                 entry.getKey(),
                                 List.of(),
-                                ToAbstractVisitor.convertExtended(entry.getValue(), verboseConfig, referableMapping).getConvertedExpression(),
+                                converter.coreToConcrete(entry.getValue(), true),
                                 concreteFactory.goal())
                         )
                         .collect(Collectors.toList());
@@ -98,9 +90,9 @@ final public class MinimizedRepresentation {
 
         int limit = 50;
         while (true) {
-            var result = tryFixError(checkTypeVisitor, verboseRepresentation.getConvertedExpression(), emptyRepresentation.getConvertedExpression(), clauses, concreteFactory, errorsCollector);
+            var result = tryFixError(checkTypeVisitor, verboseRepresentation, emptyRepresentation, clauses, concreteFactory, errorsCollector);
             if (result) {
-                return emptyRepresentation.getConvertedExpression();
+                return emptyRepresentation;
             }
             --limit;
             if (limit == 0) {
@@ -109,29 +101,44 @@ final public class MinimizedRepresentation {
         }
     }
 
-    private static Pair<PrettyPrinterConfig, PrettyPrinterConfig> getConfigs(DefinitionRenamer definitionRenamer) {
-        return new Pair<>(new PrettyPrinterConfig() {
-            @Override
-            public @NotNull EnumSet<PrettyPrinterFlag> getExpressionFlags() {
-                return EnumSet.of(PrettyPrinterFlag.SHOW_TYPES_IN_LAM, PrettyPrinterFlag.SHOW_CASE_RESULT_TYPE, PrettyPrinterFlag.SHOW_CON_PARAMS, PrettyPrinterFlag.SHOW_BIN_OP_IMPLICIT_ARGS, PrettyPrinterFlag.SHOW_COERCE_DEFINITIONS, PrettyPrinterFlag.SHOW_GLOBAL_FIELD_INSTANCE, PrettyPrinterFlag.SHOW_IMPLICIT_ARGS, PrettyPrinterFlag.SHOW_LOCAL_FIELD_INSTANCE, PrettyPrinterFlag.SHOW_TUPLE_TYPE);
-            }
+    private static final class Converter {
+        private final PrettyPrinterConfig verboseConfig;
+        private final PrettyPrinterConfig emptyConfig;
+        private final Map<Variable, LocalReferable> freeVariableBindings;
 
-            @Override
-            public @Nullable DefinitionRenamer getDefinitionRenamer() {
-                return definitionRenamer;
-            }
-        }, new PrettyPrinterConfig() {
-            @Override
-            public @NotNull EnumSet<PrettyPrinterFlag> getExpressionFlags() {
-                return EnumSet.noneOf(PrettyPrinterFlag.class);
-            }
+        public Converter(@Nullable DefinitionRenamer definitionRenamer) {
+            verboseConfig = new PrettyPrinterConfig() {
+                @Override
+                public @NotNull EnumSet<PrettyPrinterFlag> getExpressionFlags() {
+                    return EnumSet.of(PrettyPrinterFlag.SHOW_TYPES_IN_LAM, PrettyPrinterFlag.SHOW_CASE_RESULT_TYPE, PrettyPrinterFlag.SHOW_CON_PARAMS, PrettyPrinterFlag.SHOW_BIN_OP_IMPLICIT_ARGS, PrettyPrinterFlag.SHOW_COERCE_DEFINITIONS, PrettyPrinterFlag.SHOW_GLOBAL_FIELD_INSTANCE, PrettyPrinterFlag.SHOW_IMPLICIT_ARGS, PrettyPrinterFlag.SHOW_LOCAL_FIELD_INSTANCE, PrettyPrinterFlag.SHOW_TUPLE_TYPE);
+                }
 
-            @Override
-            public @Nullable DefinitionRenamer getDefinitionRenamer() {
-                return definitionRenamer;
-            }
-        });
+                @Override
+                public @Nullable DefinitionRenamer getDefinitionRenamer() {
+                    return definitionRenamer;
+                }
+            };
+            emptyConfig = new PrettyPrinterConfig() {
+                @Override
+                public @NotNull EnumSet<PrettyPrinterFlag> getExpressionFlags() {
+                    return EnumSet.noneOf(PrettyPrinterFlag.class);
+                }
+
+                @Override
+                public @Nullable DefinitionRenamer getDefinitionRenamer() {
+                    return definitionRenamer;
+                }
+            };
+            freeVariableBindings = new LinkedHashMap<>();
+        }
+
+        Concrete.Expression coreToConcrete(Expression core, boolean verbose) {
+            var config = verbose ? verboseConfig : emptyConfig;
+            return ToAbstractVisitor.convert(core, config, freeVariableBindings);
+        }
+
     }
+
 
     private static boolean tryFixError(CheckTypeVisitor checkTypeVisitor, Concrete.Expression completeConcrete, Concrete.Expression minimizedConcrete, List<Concrete.LetClause> clauses, ConcreteFactoryImpl concreteFactory, List<GeneralError> errorsCollector) {
         var finalizedConcrete = (Concrete.LetExpression) concreteFactory.letExpr(false, false, clauses, minimizedConcrete);
@@ -221,7 +228,7 @@ class ErrorFixingConcreteExpressionVisitor extends BaseConcreteExpressionVisitor
                 );
     }
 
-    Concrete.AppExpression fixError(Concrete.AppExpression incomplete, Concrete.AppExpression complete, GeneralError error) {
+    private Concrete.AppExpression fixError(Concrete.AppExpression incomplete, Concrete.AppExpression complete, GeneralError error) {
         if (error instanceof InstanceInferenceError) {
             return fixInstanceInferenceError(incomplete, complete, (InstanceInferenceError) error);
         } else if (error instanceof FunctionArgInferenceError) {
@@ -233,14 +240,14 @@ class ErrorFixingConcreteExpressionVisitor extends BaseConcreteExpressionVisitor
 
     private Concrete.AppExpression fixUnknownError(Concrete.AppExpression incomplete, Concrete.AppExpression complete) {
         var args = new ArrayList<Concrete.Argument>();
-        var parentIterator = incomplete.getArguments().iterator();
-        var parentProperIterator = complete.getArguments().iterator();
-        var currentActualArg = parentIterator.next();
-        while (parentProperIterator.hasNext()) {
-            var currentProperArg = parentProperIterator.next();
+        var incompleteArgumentsIterator = incomplete.getArguments().iterator();
+        var completeArgumentsIterator = complete.getArguments().iterator();
+        var currentActualArg = incompleteArgumentsIterator.next();
+        while (completeArgumentsIterator.hasNext()) {
+            var currentProperArg = completeArgumentsIterator.next();
             if (currentActualArg == null || (currentProperArg.isExplicit() == currentActualArg.isExplicit())) {
                 args.add(currentActualArg);
-                currentActualArg = parentIterator.hasNext() ? parentIterator.next() : null;
+                currentActualArg = incompleteArgumentsIterator.hasNext() ? incompleteArgumentsIterator.next() : null;
             } else {
                 args.add(currentProperArg);
             }
