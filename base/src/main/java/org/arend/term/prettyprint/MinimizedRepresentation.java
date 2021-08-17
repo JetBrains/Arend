@@ -48,13 +48,36 @@ final public class MinimizedRepresentation {
             @Nullable DefinitionRenamer definitionRenamer) {
         Converter converter = new Converter(definitionRenamer);
         var verboseRepresentation = converter.coreToConcrete(expressionToPrint, true);
-        var emptyRepresentation = converter.coreToConcrete(expressionToPrint, false);
+        var incompleteRepresentation = converter.coreToConcrete(expressionToPrint, false);
+        processBindingTypes(converter);
+        List<GeneralError> errorsCollector = new ArrayList<>();
+
+        var groundExpr = generateGroundConcrete(expressionToPrint, converter, incompleteRepresentation);
+        var typechecker = generateTypechecker(instanceProvider, errorsCollector);
+
+        int limit = 50;
+        while (true) {
+            var hadError = tryFixError(typechecker, groundExpr, verboseRepresentation, incompleteRepresentation, errorsCollector);
+            if (!hadError) {
+                return incompleteRepresentation;
+            }
+            --limit;
+            if (limit == 0) {
+                throw new AssertionError("Minimization of expression (" + expressionToPrint + ") is likely diverged. Please report it to maintainers.");
+            }
+        }
+    }
+
+    private static void processBindingTypes(Converter converter) {
         for (Variable binding : converter.freeVariableBindings.keySet().toArray(new Variable[0])) {
             if (binding instanceof Binding && ((Binding) binding).getTypeExpr() != null) {
                 converter.coreToConcrete(((Binding) binding).getTypeExpr(), true);
             }
         }
-        List<GeneralError> errorsCollector = new ArrayList<>();
+    }
+
+    private static Concrete.Expression generateGroundConcrete(Expression expressionToPrint, Converter converter, Concrete.Expression incompleteRepresentation) {
+        var concreteFactory = new ConcreteFactoryImpl(null);
         Map<ArendRef, Expression> refToType = new LinkedHashMap<>();
         ExpressionVisitor<Void, Void> resolveVariablesVisitor = new VoidExpressionVisitor<>() {
             @Override
@@ -69,7 +92,6 @@ final public class MinimizedRepresentation {
         expressionToPrint.accept(resolveVariablesVisitor, null);
 
 
-        var concreteFactory = new ConcreteFactoryImpl(null);
         List<Concrete.LetClause> clauses =
                 refToType
                         .entrySet()
@@ -81,24 +103,7 @@ final public class MinimizedRepresentation {
                                 concreteFactory.goal())
                         )
                         .collect(Collectors.toList());
-
-        var checkTypeVisitor = new CheckTypeVisitor(error -> {
-            if (!(error instanceof GoalError))
-                errorsCollector.add(error);
-        }, null, null);
-        checkTypeVisitor.setInstancePool(new GlobalInstancePool(instanceProvider, checkTypeVisitor, new LocalInstancePool(checkTypeVisitor)));
-
-        int limit = 50;
-        while (true) {
-            var result = tryFixError(checkTypeVisitor, verboseRepresentation, emptyRepresentation, clauses, concreteFactory, errorsCollector);
-            if (result) {
-                return emptyRepresentation;
-            }
-            --limit;
-            if (limit == 0) {
-                throw new AssertionError("Minimization of expression (" + expressionToPrint + ") is likely diverged. Please report it to maintainers.");
-            }
-        }
+        return (Concrete.LetExpression) concreteFactory.letExpr(false, false, clauses, incompleteRepresentation);
     }
 
     private static final class Converter {
@@ -136,18 +141,24 @@ final public class MinimizedRepresentation {
             var config = verbose ? verboseConfig : emptyConfig;
             return ToAbstractVisitor.convert(core, config, freeVariableBindings);
         }
-
     }
 
 
-    private static boolean tryFixError(CheckTypeVisitor checkTypeVisitor, Concrete.Expression completeConcrete, Concrete.Expression minimizedConcrete, List<Concrete.LetClause> clauses, ConcreteFactoryImpl concreteFactory, List<GeneralError> errorsCollector) {
-        var finalizedConcrete = (Concrete.LetExpression) concreteFactory.letExpr(false, false, clauses, minimizedConcrete);
-        checkTypeVisitor.finalCheckExpr(finalizedConcrete, null);
+    private static CheckTypeVisitor generateTypechecker(InstanceProvider instanceProvider, List<GeneralError> errorsCollector) {
+        var checkTypeVisitor = new CheckTypeVisitor(error -> {
+            if (!(error instanceof GoalError)) errorsCollector.add(error);
+        }, null, null);
+        checkTypeVisitor.setInstancePool(new GlobalInstancePool(instanceProvider, checkTypeVisitor, new LocalInstancePool(checkTypeVisitor)));
+        return checkTypeVisitor;
+    }
+
+    private static boolean tryFixError(CheckTypeVisitor checkTypeVisitor, Concrete.Expression groundConcrete, Concrete.Expression completeConcrete, Concrete.Expression minimizedConcrete, List<GeneralError> errorsCollector) {
+        checkTypeVisitor.finalCheckExpr(groundConcrete, null);
         if (!errorsCollector.isEmpty()) {
-            minimizedConcrete.accept(new ErrorFixingConcreteExpressionVisitor(errorsCollector, concreteFactory), completeConcrete);
-            return false;
-        } else {
+            minimizedConcrete.accept(new ErrorFixingConcreteExpressionVisitor(errorsCollector, new ConcreteFactoryImpl(null)), completeConcrete);
             return true;
+        } else {
+            return false;
         }
     }
 }
