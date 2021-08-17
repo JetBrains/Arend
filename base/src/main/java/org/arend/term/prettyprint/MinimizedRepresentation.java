@@ -98,7 +98,7 @@ final public class MinimizedRepresentation {
                         .stream()
                         .map(entry -> (Concrete.LetClause) concreteFactory.letClause(
                                 entry.getKey(),
-                                List.of(),
+                                Collections.emptyList(),
                                 converter.coreToConcrete(entry.getValue(), true),
                                 concreteFactory.goal())
                         )
@@ -163,6 +163,12 @@ final public class MinimizedRepresentation {
     }
 }
 
+/**
+ * Simultaneously traverses both incomplete and complete concrete expressions, attempting to fix errors encountered during the traverse.
+ *
+ * This visitor is meant to fix only one error. I consider errors not to be independent,
+ * therefore, after fixing one error, the rest may become irrelevant for the newly built expression.
+ */
 class ErrorFixingConcreteExpressionVisitor extends BaseConcreteExpressionVisitor<Concrete.SourceNode> {
 
     private final List<GeneralError> myErrors;
@@ -173,9 +179,10 @@ class ErrorFixingConcreteExpressionVisitor extends BaseConcreteExpressionVisitor
         this.myFactory = myFactory;
     }
 
-    private <T extends Concrete.Parameter> void visitParameters(List<T> actualParameters, List<T> completeParameters) {
-        for (int i = 0; i < actualParameters.size(); ++i) {
-            var param = actualParameters.get(i);
+    private void visitParameters(List<? extends Concrete.Parameter> incompleteParameters,
+                                 List<? extends Concrete.Parameter> completeParameters) {
+        for (int i = 0; i < incompleteParameters.size(); ++i) {
+            var param = incompleteParameters.get(i);
             if (param instanceof Concrete.TypeParameter) {
                 ((Concrete.TypeParameter) param).type.accept(this, ((Concrete.TypeParameter) completeParameters.get(i)).type);
             }
@@ -183,29 +190,29 @@ class ErrorFixingConcreteExpressionVisitor extends BaseConcreteExpressionVisitor
     }
 
     @Override
-    public Concrete.Expression visitPi(Concrete.PiExpression expr, Concrete.SourceNode params) {
-        var verboseExpr = (Concrete.PiExpression) params;
+    public Concrete.Expression visitPi(Concrete.PiExpression expr, Concrete.SourceNode verbose) {
+        var verboseExpr = (Concrete.PiExpression) verbose;
         visitParameters(expr.getParameters(), verboseExpr.getParameters());
         expr.codomain.accept(this, verboseExpr.codomain);
         return expr;
     }
 
     @Override
-    public Concrete.Expression visitLam(Concrete.LamExpression expr, Concrete.SourceNode params) {
-        var verboseExpr = (Concrete.LamExpression) params;
+    public Concrete.Expression visitLam(Concrete.LamExpression expr, Concrete.SourceNode verbose) {
+        var verboseExpr = (Concrete.LamExpression) verbose;
         visitParameters(expr.getParameters(), verboseExpr.getParameters());
         expr.body.accept(this, verboseExpr.body);
         return expr;
     }
 
     @Override
-    public Concrete.Expression visitApp(Concrete.AppExpression expr, Concrete.SourceNode params) {
-        Concrete.AppExpression verboseExpr = (Concrete.AppExpression) params;
+    public Concrete.Expression visitApp(Concrete.AppExpression expr, Concrete.SourceNode verbose) {
+        Concrete.AppExpression verboseExpr = (Concrete.AppExpression) verbose;
         if (expr.getFunction() instanceof Concrete.ReferenceExpression) {
             var errorList = myErrors.stream().filter(err -> err.getCauseSourceNode() == expr.getFunction()).collect(Collectors.toList());
             if (!errorList.isEmpty()) {
                 GeneralError mostImportantError = findMostImportantError(errorList);
-                myErrors.clear();
+                myErrors.clear(); // no errors should be fixed afterwards
                 var fixed = fixError(expr, verboseExpr, mostImportantError);
                 expr.getArguments().clear();
                 expr.setFunction(fixed);
@@ -250,10 +257,10 @@ class ErrorFixingConcreteExpressionVisitor extends BaseConcreteExpressionVisitor
     }
 
     private Concrete.AppExpression fixUnknownError(Concrete.AppExpression incomplete, Concrete.AppExpression complete) {
-        var args = new ArrayList<Concrete.Argument>();
+        ArrayList<Concrete.Argument> args = new ArrayList<>();
         var incompleteArgumentsIterator = incomplete.getArguments().iterator();
         var completeArgumentsIterator = complete.getArguments().iterator();
-        var currentActualArg = incompleteArgumentsIterator.next();
+        Concrete.Argument currentActualArg = incompleteArgumentsIterator.next();
         while (completeArgumentsIterator.hasNext()) {
             var currentProperArg = completeArgumentsIterator.next();
             if (currentActualArg == null || (currentProperArg.isExplicit() == currentActualArg.isExplicit())) {
@@ -272,11 +279,11 @@ class ErrorFixingConcreteExpressionVisitor extends BaseConcreteExpressionVisitor
         var fullIterator = new ArgumentMappingIterator(definition, complete);
         var incompleteIterator = new ArgumentMappingIterator(definition, incomplete);
         var inserted = false;
-        var i = definition instanceof ClassField ? 0 : 1;
+        var startIndex = definition instanceof ClassField ? 0 : 1;
         while (fullIterator.hasNext()) {
             var fullArg = fullIterator.next().proj2;
             var incompleteArg = incompleteIterator.next().proj2;
-            if (i == targetError.index) {
+            if (startIndex == targetError.index) {
                 args.add((Concrete.Argument) fullArg);
                 inserted = true;
             } else if (incompleteArg != null) {
@@ -284,7 +291,7 @@ class ErrorFixingConcreteExpressionVisitor extends BaseConcreteExpressionVisitor
             } else if (!inserted) {
                 args.add((Concrete.Argument) myFactory.arg(myFactory.hole(), fullArg.isExplicit()));
             }
-            i += 1;
+            startIndex += 1;
         }
         return (Concrete.AppExpression) myFactory.app(incomplete.getFunction(), args);
     }
@@ -298,15 +305,15 @@ class ErrorFixingConcreteExpressionVisitor extends BaseConcreteExpressionVisitor
         var inserted = false;
         while (fullIterator.hasNext()) {
             var fullResult = fullIterator.next();
-            var incompleteResult = incompleteIterator.next();
+            var incompleteArg = incompleteIterator.next().proj2;
             var param = fullResult.proj1;
             if (param instanceof DependentLink && ((DependentLink) param).getType() instanceof DefCallExpression && ((DefCallExpression) ((DependentLink) param).getType()).getDefinition() == targetError.classRef.getTypechecked()) {
                 args.add((Concrete.Argument) fullResult.proj2);
                 inserted = true;
-            } else if (incompleteResult.proj2 != null) {
-                args.add((Concrete.Argument) incompleteResult.proj2);
+            } else if (incompleteArg != null) {
+                args.add((Concrete.Argument) incompleteArg);
             } else if (!inserted) {
-                args.add((Concrete.Argument) myFactory.arg(myFactory.hole(), fullResult.proj2.isExplicit()));
+                args.add((Concrete.Argument) myFactory.arg(myFactory.hole(), Objects.requireNonNull(fullResult.proj2).isExplicit()));
             }
         }
         return (Concrete.AppExpression) myFactory.app(function, args);
