@@ -86,6 +86,7 @@ public abstract class StreamBinarySource implements PersistableBinarySource {
 
       for (ModuleProtos.ModuleCallTargets moduleCallTargets : moduleProto.getModuleCallTargetsList()) {
         ModulePath module = new ModulePath(moduleCallTargets.getNameList());
+        sourceLoader.markDependency(modulePath, module);
         if (library.containsModule(module) && !sourceLoader.preloadBinary(module, myKeyRegistry, myDefinitionListener)) {
           return false;
         }
@@ -94,17 +95,19 @@ public abstract class StreamBinarySource implements PersistableBinarySource {
       ReferableConverter referableConverter = sourceLoader.getReferableConverter();
       myModuleDeserialization = new ModuleDeserialization(moduleProto, referableConverter, myKeyRegistry, myDefinitionListener);
 
-      if (referableConverter == null) {
-        group = myModuleDeserialization.readGroup(new ModuleLocation(library, ModuleLocation.LocationKind.SOURCE, modulePath));
-        library.groupLoaded(modulePath, group, false, false);
-      } else {
-        group = library.getModuleGroup(modulePath, false);
-        if (group == null) {
-          sourceLoader.getLibraryErrorReporter().report(LibraryError.moduleNotFound(modulePath, library.getName()));
-          library.groupLoaded(modulePath, null, false, false);
-          return false;
+      if (!sourceLoader.isInPreviewBinariesMode()) {
+        if (referableConverter == null) {
+          group = myModuleDeserialization.readGroup(new ModuleLocation(library, ModuleLocation.LocationKind.SOURCE, modulePath));
+          library.groupLoaded(modulePath, group, false, false);
+        } else {
+          group = library.getModuleGroup(modulePath, false);
+          if (group == null) {
+            sourceLoader.getLibraryErrorReporter().report(LibraryError.moduleNotFound(modulePath, library.getName()));
+            library.groupLoaded(modulePath, null, false, false);
+            return false;
+          }
+          myModuleDeserialization.readDefinitions(group);
         }
-        myModuleDeserialization.readDefinitions(group);
       }
 
       return true;
