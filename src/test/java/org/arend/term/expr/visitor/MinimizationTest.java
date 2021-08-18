@@ -78,4 +78,12 @@ public class MinimizationTest extends TypeCheckingTestCase {
                 "\\func test : \\Type => \\let (a, b) => foo \\in D {a} b", "D {a} b", false,
                 definition -> ((LetExpression) Objects.requireNonNull(definition.getBody())).getExpression());
     }
+
+    @Test
+    public void nestedProjections() {
+        selectiveCheck("\\func foo : \\Sigma (\\Sigma Nat Nat) Nat => ((1, 1), 1)" +
+                "\\data D {n : Nat} (m : Nat) | d\n" +
+                "\\func test : \\Type => \\let ((a, b), c) => foo \\in D {a} c", "D {a} c", false,
+                definition -> ((LetExpression) Objects.requireNonNull(definition.getBody())).getExpression());
+    }
 }

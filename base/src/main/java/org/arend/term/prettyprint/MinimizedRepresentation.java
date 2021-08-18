@@ -94,10 +94,20 @@ final public class MinimizedRepresentation {
                 return null;
             }
 
+            private Binding getBindingDeep(ProjExpression proj) {
+                if (proj.getExpression() instanceof ReferenceExpression) {
+                    return ((ReferenceExpression) proj.getExpression()).getBinding();
+                } else if (proj.getExpression() instanceof ProjExpression) {
+                    return getBindingDeep((ProjExpression) proj.getExpression());
+                } else {
+                    return null;
+                }
+            }
+
             @Override
             public Void visitProj(ProjExpression expr, Void params) {
-                if (expr.getExpression() instanceof ReferenceExpression &&
-                        converter.freeVariableBindings.containsKey(((ReferenceExpression) expr.getExpression()).getBinding())) {
+                Binding deepBinding = getBindingDeep(expr);
+                if (deepBinding != null && converter.freeVariableBindings.containsKey(deepBinding)) {
                     expr.getType().accept(this, null);
                     nameToType.putIfAbsent(expr.toString(), expr.getType());
                 }
