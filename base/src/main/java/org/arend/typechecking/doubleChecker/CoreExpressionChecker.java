@@ -5,10 +5,7 @@ import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.ParamLevelVariable;
 import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.context.binding.inference.InferenceVariable;
-import org.arend.core.context.param.DependentLink;
-import org.arend.core.context.param.SingleDependentLink;
-import org.arend.core.context.param.TypedDependentLink;
-import org.arend.core.context.param.UnusedIntervalDependentLink;
+import org.arend.core.context.param.*;
 import org.arend.core.definition.*;
 import org.arend.core.elimtree.ElimBody;
 import org.arend.core.elimtree.ElimClause;
@@ -641,16 +638,22 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       if (constructor != Prelude.EMPTY_ARRAY && constructor != Prelude.ARRAY_CONS) {
         throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Expected either '" + Prelude.EMPTY_ARRAY.getName() + "' or '" + Prelude.ARRAY_CONS.getName() + "'", mySourceNode), errorExpr));
       }
-      if (!(type instanceof ClassCallExpression && ((ClassCallExpression) type).getDefinition() == Prelude.ARRAY)) {
-        throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(new ClassCallExpression(Prelude.ARRAY, LevelPair.STD), type, mySourceNode), errorExpr));
+      if (!(type instanceof ClassCallExpression && ((ClassCallExpression) type).getDefinition() == Prelude.DEP_ARRAY)) {
+        throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(new ClassCallExpression(Prelude.DEP_ARRAY, LevelPair.STD), type, mySourceNode), errorExpr));
       }
       ClassCallExpression classCall = (ClassCallExpression) type;
       Boolean isEmpty = ConstructorExpressionPattern.isArrayEmpty(classCall);
       if (isEmpty != null && isEmpty != (constructor == Prelude.EMPTY_ARRAY)) {
-        throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(DocFactory.text(Prelude.ARRAY.getName() + " " + (isEmpty ? "0" : "(" + Prelude.SUC + " _)")), type, mySourceNode), errorExpr));
+        throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(DocFactory.text(Prelude.DEP_ARRAY.getName() + " " + (isEmpty ? "0" : "(" + Prelude.SUC + " _)")), type, mySourceNode), errorExpr));
       }
       DependentLink params = constructor.getParameters();
       Expression arrayElementsType = classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
+      if (arrayElementsType != null) {
+        arrayElementsType = arrayElementsType.removeConstLam();
+        if (arrayElementsType == null) {
+          throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Pattern matching on dependent arrays is not allowed", mySourceNode), errorExpr));
+        }
+      }
       if (arrayElementsType != null) {
         params = DependentLink.Helper.subst(params.getNext(), new ExprSubstitution(params, arrayElementsType));
       }
@@ -874,13 +877,24 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   @Override
   public Expression visitArray(ArrayExpression expr, Expression expectedType) {
-    checkLevels(expr.getLevels(), Prelude.ARRAY, expr);
-    expr.getElementsType().accept(this, new UniverseExpression(Sort.STD.subst(expr.getLevels())));
-    for (Expression element : expr.getElements()) {
-      element.accept(this, expr.getElementsType());
+    checkLevels(expr.getLevels(), Prelude.DEP_ARRAY, expr);
+    Expression length;
+    if (expr.getTail() == null) {
+      length = new SmallIntegerExpression(expr.getElements().size());
+    } else {
+      length = FieldCallExpression.make(Prelude.ARRAY_LENGTH, expr.getTail());
+      for (Expression ignored : expr.getElements()) {
+        length = Suc(length);
+      }
+    }
+    Sort sort = Sort.STD.subst(expr.getLevels());
+    expr.getElementsType().accept(this, new PiExpression(sort.succ(), new TypedSingleDependentLink(true, null, new DataCallExpression(Prelude.FIN, LevelPair.PROP, Collections.singletonList(length))), new UniverseExpression(sort)));
+    List<Expression> elements = expr.getElements();
+    for (int i = 0; i < elements.size(); i++) {
+      elements.get(i).accept(this, AppExpression.make(expr.getElementsType(), new SmallIntegerExpression(i), true));
     }
     if (expr.getTail() != null) {
-      expr.getTail().accept(this, new ClassCallExpression(Prelude.ARRAY, expr.getLevels(), Collections.singletonMap(Prelude.ARRAY_ELEMENTS_TYPE, expr.getElementsType()), new Sort(expr.getPLevel(), expr.getHLevel().max(new Level(0))), UniverseKind.NO_UNIVERSES));
+      expr.getTail().accept(this, new ClassCallExpression(Prelude.DEP_ARRAY, expr.getLevels(), Collections.singletonMap(Prelude.ARRAY_ELEMENTS_TYPE, expr.getElementsType()), new Sort(expr.getPLevel(), expr.getHLevel().max(new Level(0))), UniverseKind.NO_UNIVERSES));
     }
     return check(expectedType, expr.getType(), expr);
   }

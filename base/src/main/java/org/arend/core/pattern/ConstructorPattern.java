@@ -107,10 +107,13 @@ public abstract class ConstructorPattern<T> implements Pattern {
       return new ConstructorExpressionPattern(FunCallExpression.makeFunCall(Prelude.IDP, equality.getLevels(), Arrays.asList(equality.getDefCallArguments().get(0), equality.getDefCallArguments().get(1))), Collections.emptyList());
     } else if (type instanceof ClassCallExpression) {
       ClassCallExpression classCall = (ClassCallExpression) type;
-      if (classCall.getDefinition() == Prelude.ARRAY) {
+      if (classCall.getDefinition() == Prelude.DEP_ARRAY) {
         Definition def = getDefinition();
         if (def == Prelude.EMPTY_ARRAY || def == Prelude.ARRAY_CONS) {
           Expression elementsType = classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
+          if (elementsType != null) {
+            elementsType = elementsType.removeConstLam();
+          }
           return new ConstructorExpressionPattern(new FunCallExpression((DConstructor) def, classCall.getLevels(), elementsType), classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH), Pattern.toExpressionPatterns(mySubPatterns, ((DConstructor) def).getArrayParameters(classCall)));
         }
       }

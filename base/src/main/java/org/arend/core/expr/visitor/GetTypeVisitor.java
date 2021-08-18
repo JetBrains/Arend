@@ -250,7 +250,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
     } else {
       Expression tailType = expr.getTail().accept(this, null).getUnderlyingExpression();
       Expression length = null;
-      if (tailType instanceof ClassCallExpression && ((ClassCallExpression) tailType).getDefinition() == Prelude.ARRAY) {
+      if (tailType instanceof ClassCallExpression && ((ClassCallExpression) tailType).getDefinition() == Prelude.DEP_ARRAY) {
         length = ((ClassCallExpression) tailType).getImplementationHere(Prelude.ARRAY_LENGTH, expr.getTail());
       }
       if (length == null) {
@@ -266,7 +266,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
       }
       implementations.put(Prelude.ARRAY_LENGTH, length);
     }
-    return new ClassCallExpression(Prelude.ARRAY, expr.getLevels(), implementations, new Sort(expr.getPLevel(), expr.getHLevel().max(new Level(0))), UniverseKind.NO_UNIVERSES);
+    return new ClassCallExpression(Prelude.DEP_ARRAY, expr.getLevels(), implementations, new Sort(expr.getPLevel(), expr.getHLevel().max(new Level(0))), UniverseKind.NO_UNIVERSES);
   }
 
   @Override

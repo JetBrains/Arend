@@ -683,7 +683,7 @@ public class PatternTypechecking {
       Expression unfoldedExpr = TypeCoerceExpression.unfoldType(expr).getUnderlyingExpression();
       DataCallExpression dataCall = unfoldedExpr instanceof DataCallExpression ? (DataCallExpression) unfoldedExpr : null;
       ClassCallExpression classCall = unfoldedExpr instanceof ClassCallExpression ? (ClassCallExpression) unfoldedExpr : null;
-      if (!(dataCall != null || classCall != null && classCall.getDefinition() == Prelude.ARRAY)) {
+      if (!(dataCall != null || classCall != null && classCall.getDefinition() == Prelude.DEP_ARRAY)) {
         if (!expr.isError()) {
           myErrorReporter.report(new TypeMismatchError(DocFactory.text("a data type"), expr, pattern));
         }
@@ -785,7 +785,11 @@ public class PatternTypechecking {
         }
         result.add(new ConstructorExpressionPattern(conCall, conResult.patterns));
       } else {
-        FunCallExpression funCall = new FunCallExpression((DConstructor) constructor, classCall.getLevels(), classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE));
+        Expression elementsType = classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
+        if (elementsType != null) {
+          elementsType = elementsType.removeConstLam();
+        }
+        FunCallExpression funCall = new FunCallExpression((DConstructor) constructor, classCall.getLevels(), elementsType);
         if (!conResult.varSubst.isEmpty()) {
           funCall = (FunCallExpression) new SubstVisitor(conResult.varSubst, LevelSubstitution.EMPTY).visitFunCall(funCall, null);
         }
@@ -801,6 +805,9 @@ public class PatternTypechecking {
         } else {
           List<Expression> funCallArgs;
           Expression elementsType = classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
+          if (elementsType != null) {
+            elementsType = elementsType.removeConstLam();
+          }
           if (elementsType != null) {
             funCallArgs = new ArrayList<>();
             funCallArgs.add(elementsType);

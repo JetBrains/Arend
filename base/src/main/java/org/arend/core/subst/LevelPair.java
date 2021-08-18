@@ -3,6 +3,7 @@ package org.arend.core.subst;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.core.definition.Definition;
+import org.arend.core.sort.Sort;
 import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.variable.Variable;
@@ -60,6 +61,10 @@ public class LevelPair implements LevelSubstitution, Levels {
   @Override
   public boolean equals(Object other) {
     return other instanceof Levels && compare((Levels) other, CMP.EQ, DummyEquations.getInstance(), null);
+  }
+
+  public Sort toSort() {
+    return myHLevel.isProp() ? Sort.PROP : new Sort(myPLevel, myHLevel);
   }
 
   public static LevelPair generateInferVars(Equations equations, boolean isUniverseLike, Concrete.SourceNode sourceNode) {

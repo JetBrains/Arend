@@ -116,7 +116,7 @@ public class BranchElimTree extends ElimTree {
         ElimTree elimTree = myChildren.get(new ArrayConstructor(array.getElements().isEmpty(), true));
         if (elimTree != null) {
           newArguments = new ArrayList<>();
-          newArguments.add(array.getElementsType());
+          newArguments.add(array.getElementsType().removeConstLam());
           if (!array.getElements().isEmpty()) {
             newArguments.add(array.getElements().get(0));
             newArguments.add(array.drop(1));
@@ -297,7 +297,7 @@ public class BranchElimTree extends ElimTree {
         boolean withElementsType = withElementsType();
         List<Expression> args = new ArrayList<>();
         if (withElementsType) {
-          args.add(array.getElementsType());
+          args.add(array.getElementsType().removeConstLam());
         }
         if (!array.getElements().isEmpty()) {
           args.add(array.getElements().get(0));

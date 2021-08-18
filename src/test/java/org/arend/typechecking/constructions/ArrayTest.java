@@ -1,6 +1,7 @@
 package org.arend.typechecking.constructions;
 
 import org.arend.Matchers;
+import org.arend.core.context.param.TypedSingleDependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Definition;
 import org.arend.core.definition.FunctionDefinition;
@@ -11,6 +12,7 @@ import org.arend.core.subst.LevelPair;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.arend.typechecking.error.local.NotEqualExpressionsError;
+import org.arend.util.SingletonList;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -48,13 +50,13 @@ public class ArrayTest extends TypeCheckingTestCase {
   @Test
   public void indexTest() {
     typeCheckModule(
-      "\\open Array(!!)\n" +
+      "\\open DArray(!!)\n" +
       "\\func array : Array Nat 2 => 14 :: 22 :: nil\n" +
       "\\lemma test1 : array.at 0 = 14 => idp\n" +
       "\\lemma test2 : array.at 1 = 22 => idp\n" +
       "\\lemma test3 : array !! 0 = 14 => idp\n" +
       "\\lemma test4 : array !! 1 = 22 => idp\n" +
-      "\\func test5 (a : Array) (i : Fin a.len) : a.at i = a !! i => idp");
+      "\\func test5 {A : \\Type} (a : Array A) (i : Fin a.len) : a.at i = a !! i => idp");
   }
 
   @Test
@@ -67,13 +69,13 @@ public class ArrayTest extends TypeCheckingTestCase {
   public void nilEtaTest() {
     typeCheckModule(
       "\\lemma test1 (a b : Array Nat 0) : a = b => idp\n" +
-      "\\func test2 (a : Array { | len => 0 }) : a = nil => idp\n" +
-      "\\func test3 (a : Array { | len => 0 }) : nil = a => idp");
+      "\\func test2 (a : DArray { | len => 0 }) : a = nil => idp\n" +
+      "\\func test3 (a : DArray { | len => 0 }) : nil = a => idp");
   }
 
   @Test
   public void nilEtaError() {
-    typeCheckDef("\\func test (a b : Array { | len => 0 }) : a = b => idp", 1);
+    typeCheckDef("\\func test (a b : DArray { | len => 0 }) : a = b => idp", 1);
     assertThatErrorsAre(Matchers.typecheckingError(NotEqualExpressionsError.class));
   }
 
@@ -88,7 +90,7 @@ public class ArrayTest extends TypeCheckingTestCase {
   public void cowithIndexTest() {
     typeCheckModule(
       "\\func f (a : Array Nat) : Array Nat a.len (\\lam _ => 7) \\cowith\n" +
-      "\\lemma test (a : Array Nat) (i : Fin a.len) : f a Array.!! i = 7 => idp");
+      "\\lemma test (a : Array Nat) (i : Fin a.len) : f a DArray.!! i = 7 => idp");
   }
 
   @Test
@@ -105,14 +107,13 @@ public class ArrayTest extends TypeCheckingTestCase {
 
   @Test
   public void etaError() {
-    typeCheckDef("\\func test {A : \\Type} {n : Nat} (g : Fin n -> Array A 3) : (\\new Array (Array A) n g) = {Array} \\new Array (Array A 3) n g => idp", 1);
+    typeCheckDef("\\func test {A : \\Type} {n : Nat} (g : Fin n -> Array A 3) : (\\new Array (Array A) n g) = {DArray} \\new Array (Array A 3) n g => idp", 1);
     assertThatErrorsAre(Matchers.typecheckingError(NotEqualExpressionsError.class));
   }
 
   @Test
   public void disjointConstructorsTest() {
     typeCheckModule(
-      "\\open Array\n" +
       "\\lemma test1 (p : 1 :: 2 :: nil = 1 :: 2 :: 3 :: nil) : 0 = 1\n" +
       "\\lemma test2 (p : 1 :: 2 :: 3 :: nil = 1 :: 2 :: nil) : 0 = 1\n" +
       "\\lemma test3 (a : Array Nat 3) (p : 1 :: 2 :: nil = 1 :: 2 :: 3 :: a) : 0 = 1\n" +
@@ -202,19 +203,19 @@ public class ArrayTest extends TypeCheckingTestCase {
   @Test
   public void tuplePatternTest() {
     typeCheckModule(
-      "\\func test1 (x : Array) : \\Type\n" +
-      "  | (A, _, _) => A\n" +
-      "\\func test2 (x : Array) : Nat\n" +
-      "  | (_, n, _) => n\n" +
-      "\\func test3 (x : Array) : Fin x.len -> x.A\n" +
-      "  | (_, _, f) => f\n" +
-      "\\func test4 {A : \\Type} (x : Array A) : Nat\n" +
+      "\\func test1 (x : DArray) : Fin x.len -> \\Type\n" +
+      "  | (_, A, _) => A\n" +
+      "\\func test2 (x : DArray) : Nat\n" +
+      "  | (n, _, _) => n\n" +
+      "\\func test2' {A : \\Type} (x : Array A) : Nat\n" +
       "  | (n, _) => n\n" +
-      "\\func test5 {A : \\Type} (x : Array A) : Fin x.len -> A\n" +
+      "\\func test3 (x : DArray) : \\Pi (j : Fin x.len) -> x.A j\n" +
+      "  | (_, _, f) => f\n" +
+      "\\func test3' {A : \\Type} (x : Array A) : Fin x.len -> A\n" +
       "  | (_, f) => f\n" +
-      "\\func test6 {n : Nat} (x : Array { | len => n }) : \\Type\n" +
+      "\\func test6 {n : Nat} (x : DArray { | len => n }) : Fin n -> \\Type\n" +
       "  | (A, _) => A\n" +
-      "\\func test7 {n : Nat} (x : Array { | len => n }) : Fin n -> x.A\n" +
+      "\\func test7 {n : Nat} (x : DArray { | len => n }) : \\Pi (j : Fin n) -> x.A j\n" +
       "  | (_, f) => f");
   }
 
@@ -227,8 +228,7 @@ public class ArrayTest extends TypeCheckingTestCase {
   @Test
   public void extractType() {
     typeCheckModule(
-      "\\open Array\n" +
-      "\\func f (x : Array) : \\Type\n" +
+      "\\func f (x : DArray) : Fin x.len -> \\Type\n" +
       "  | nil {A} => A\n" +
       "  | :: {A} _ _ => A\n" +
       "\\func test : f (1 :: nil) = Nat => idp");
@@ -238,18 +238,20 @@ public class ArrayTest extends TypeCheckingTestCase {
   public void goalTest() {
     Definition def = typeCheckDef("\\func test (n : Nat) : Array Nat (suc n) => {?} :: {?}", 2);
     Map<ClassField, Expression> impls = new HashMap<>();
-    impls.put(Prelude.ARRAY_ELEMENTS_TYPE, Nat());
-    impls.put(Prelude.ARRAY_LENGTH, new ReferenceExpression(def.getParameters()));
-    assertThatErrorsAre(Matchers.goal(1), Matchers.goal(new ClassCallExpression(Prelude.ARRAY, LevelPair.SET0, impls, Sort.SET0, UniverseKind.NO_UNIVERSES)));
+    Expression length = new ReferenceExpression(def.getParameters());
+    impls.put(Prelude.ARRAY_ELEMENTS_TYPE, new LamExpression(Sort.SET0, new TypedSingleDependentLink(true, null, new DataCallExpression(Prelude.FIN, LevelPair.PROP, new SingletonList<>(length))), Nat()));
+    impls.put(Prelude.ARRAY_LENGTH, length);
+    assertThatErrorsAre(Matchers.goal(1), Matchers.goal(new ClassCallExpression(Prelude.DEP_ARRAY, LevelPair.SET0, impls, Sort.SET0, UniverseKind.NO_UNIVERSES)));
   }
 
   @Test
   public void goalTest2() {
     typeCheckDef("\\func test : Array Nat 7 => {?} :: {?} :: {?}", 3);
     Map<ClassField, Expression> impls = new HashMap<>();
-    impls.put(Prelude.ARRAY_ELEMENTS_TYPE, Nat());
-    impls.put(Prelude.ARRAY_LENGTH, new SmallIntegerExpression(5));
-    assertThatErrorsAre(Matchers.goal(0), Matchers.goal(0), Matchers.goal(new ClassCallExpression(Prelude.ARRAY, LevelPair.SET0, impls, Sort.SET0, UniverseKind.NO_UNIVERSES)));
+    Expression length = new SmallIntegerExpression(5);
+    impls.put(Prelude.ARRAY_ELEMENTS_TYPE, new LamExpression(Sort.SET0, new TypedSingleDependentLink(true, null, new DataCallExpression(Prelude.FIN, LevelPair.PROP, new SingletonList<>(length))), Nat()));
+    impls.put(Prelude.ARRAY_LENGTH, length);
+    assertThatErrorsAre(Matchers.goal(0), Matchers.goal(0), Matchers.goal(new ClassCallExpression(Prelude.DEP_ARRAY, LevelPair.SET0, impls, Sort.SET0, UniverseKind.NO_UNIVERSES)));
   }
 
   @Test
@@ -268,8 +270,8 @@ public class ArrayTest extends TypeCheckingTestCase {
   @Test
   public void inferTypeTest() {
     typeCheckModule(
-      "\\func test1 : Fin 2 -> Fin 7 => Array.at {3 :: 5 :: nil}\n" +
-      "\\func test2 : Fin 2 -> Fin 7 => (3 :: 5 :: nil) Array.!!\n" +
+      "\\func test1 : Fin 2 -> Fin 7 => DArray.at {3 :: 5 :: nil}\n" +
+      "\\func test2 : Fin 2 -> Fin 7 => (3 :: 5 :: nil) DArray.!!\n" +
       "\\func test3 : Fin 2 -> Fin 7 => 3 :: 5 :: nil");
   }
 
@@ -277,9 +279,9 @@ public class ArrayTest extends TypeCheckingTestCase {
   public void coerceTest2() {
     typeCheckModule(
       "\\func test1 (P : Array Nat -> \\Type) (x : Array Nat) (p : P x) : P x => p\n" +
-      "\\func test2 (P : Array Nat -> \\Type) (x : Array Nat) (p : P (x Array.!!)) : P x => p\n" +
+      "\\func test2 (P : Array Nat -> \\Type) (x : Array Nat) (p : P (x DArray.!!)) : P x => p\n" +
       "\\func test3 (P : Array Nat -> \\Type) (x : Array Nat) (p : P x.at) : P x => p\n" +
-      "\\func test4 (P : Array Nat -> \\Type) (x : Array Nat) (p : P (\\lam i => x Array.!! i)) : P x => p\n" +
+      "\\func test4 (P : Array Nat -> \\Type) (x : Array Nat) (p : P (\\lam i => x DArray.!! i)) : P x => p\n" +
       "\\func test5 (P : Array Nat -> \\Type) (x : Array Nat) (p : P (\\lam i => x.at i)) : P x => p");
   }
 

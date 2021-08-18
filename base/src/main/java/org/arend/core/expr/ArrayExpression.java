@@ -59,7 +59,8 @@ public class ArrayExpression extends Expression implements CoreArrayExpression {
   }
 
   public List<Expression> getConstructorArguments(boolean withElementsType) {
-    return myElements.isEmpty() ? (withElementsType ? Collections.singletonList(myElementsType) : Collections.emptyList()) : (withElementsType ? Arrays.asList(myElementsType, myElements.get(0), drop(1)) : Arrays.asList(myElements.get(0), drop(1)));
+    Expression elementsType = withElementsType ? myElementsType.removeConstLam() : null;
+    return myElements.isEmpty() ? (elementsType != null ? Collections.singletonList(elementsType) : Collections.emptyList()) : (elementsType != null ? Arrays.asList(elementsType, myElements.get(0), drop(1)) : Arrays.asList(myElements.get(0), drop(1)));
   }
 
   @Override

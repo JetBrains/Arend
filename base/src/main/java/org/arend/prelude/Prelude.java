@@ -21,12 +21,12 @@ import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.module.ModulePath;
 import org.arend.ext.reference.Precedence;
 import org.arend.module.ModuleLocation;
-import org.arend.naming.reference.GlobalReferable;
-import org.arend.naming.reference.LocatedReferableImpl;
-import org.arend.naming.reference.Referable;
-import org.arend.naming.reference.TCDefReferable;
+import org.arend.naming.reference.*;
 import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.naming.scope.Scope;
+import org.arend.term.concrete.ArrayMetaDefinition;
+import org.arend.term.concrete.Concrete;
+import org.arend.term.concrete.DefinableMetaDefinition;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
 import org.arend.typechecking.order.PartialComparator;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
@@ -34,10 +34,7 @@ import org.arend.typechecking.provider.ConcreteProvider;
 import org.arend.util.SingletonList;
 import org.arend.util.Version;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.function.Consumer;
 
 import static org.arend.core.expr.ExpressionFactory.Nat;
@@ -84,7 +81,9 @@ public class Prelude implements ArendPrelude {
   public static FunctionDefinition DIV_MOD_PROPERTY;
   public static SigmaExpression DIV_MOD_TYPE;
 
-  public static ClassDefinition ARRAY;
+  public static MetaReferable ARRAY;
+  public static String ARRAY_NAME = "Array";
+  public static ClassDefinition DEP_ARRAY;
   public static ClassField ARRAY_ELEMENTS_TYPE;
   public static ClassField ARRAY_LENGTH;
   public static ClassField ARRAY_AT;
@@ -225,11 +224,11 @@ public class Prelude implements ArendPrelude {
         DIV_MOD_PROPERTY = (FunctionDefinition) definition;
         DIV_MOD_PROPERTY.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         break;
-      case "Array":
-        ARRAY = (ClassDefinition) definition;
-        ARRAY_ELEMENTS_TYPE = ARRAY.getPersonalFields().get(0);
-        ARRAY_LENGTH = ARRAY.getPersonalFields().get(1);
-        ARRAY_AT = ARRAY.getPersonalFields().get(2);
+      case "DArray":
+        DEP_ARRAY = (ClassDefinition) definition;
+        ARRAY_ELEMENTS_TYPE = DEP_ARRAY.getPersonalFields().get(1);
+        ARRAY_LENGTH = DEP_ARRAY.getPersonalFields().get(0);
+        ARRAY_AT = DEP_ARRAY.getPersonalFields().get(2);
         break;
       case "nil":
         EMPTY_ARRAY = (DConstructor) definition;
@@ -280,7 +279,7 @@ public class Prelude implements ArendPrelude {
     consumer.accept(DIV);
     consumer.accept(MOD);
     consumer.accept(DIV_MOD_PROPERTY);
-    consumer.accept(ARRAY);
+    consumer.accept(DEP_ARRAY);
     consumer.accept(ARRAY_ELEMENTS_TYPE);
     consumer.accept(ARRAY_LENGTH);
     consumer.accept(ARRAY_AT);
@@ -289,14 +288,27 @@ public class Prelude implements ArendPrelude {
     consumer.accept(ARRAY_INDEX);
   }
 
+  public static void initializeArray(MetaReferable ref) {
+    ARRAY = ref;
+    DefinableMetaDefinition def = (DefinableMetaDefinition) ref.getDefinition();
+    if (def != null) {
+      ARRAY.setDefinition(new ArrayMetaDefinition(Collections.singletonList(def.getParameters().get(0)), def.body));
+    } else {
+      LocalReferable param = new LocalReferable("A");
+      ARRAY.setDefinition(new ArrayMetaDefinition(Collections.singletonList(new Concrete.NameParameter(null, true, param)), Concrete.ClassExtExpression.make(null, new Concrete.ReferenceExpression(null, DEP_ARRAY.getReferable()), new Concrete.Coclauses(null, Collections.singletonList(new Concrete.ClassFieldImpl(null, ARRAY_ELEMENTS_TYPE.getReferable(), new Concrete.LamExpression(null, Collections.singletonList(new Concrete.NameParameter(null, true, null)), new Concrete.ReferenceExpression(null, param)), null))))));
+    }
+  }
+
   public static void initialize(Scope scope) {
     for (Referable ref : scope.getElements()) {
       if (ref instanceof TCDefReferable && ((TCDefReferable) ref).getKind().isTypecheckable()) {
         update(((TCDefReferable) ref).getTypechecked());
+      } else if (ref instanceof MetaReferable) {
+        initializeArray((MetaReferable) ref);
       }
     }
 
-    for (String name : new String[] {"Nat", "Int", "Fin", "Path", "I", "Array"}) {
+    for (String name : new String[] { "Nat", "Int", "Fin", "Path", "I", "DArray" }) {
       Scope childScope = scope.resolveNamespace(name, true);
       assert childScope != null;
       for (Referable ref : childScope.getElements()) {
@@ -464,7 +476,12 @@ public class Prelude implements ArendPrelude {
   }
 
   @Override
-  public CoreClassDefinition getArray() {
+  public CoreClassDefinition getDArray() {
+    return DEP_ARRAY;
+  }
+
+  @Override
+  public MetaReferable getArray() {
     return ARRAY;
   }
 

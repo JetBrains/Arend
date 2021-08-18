@@ -10,6 +10,7 @@ import org.arend.frontend.library.PreludeFileLibrary;
 import org.arend.library.Library;
 import org.arend.library.LibraryManager;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
+import org.arend.naming.reference.MetaReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCDefReferable;
 import org.arend.naming.reference.TCReferable;
@@ -27,10 +28,7 @@ import org.hamcrest.Matchers;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.junit.Before;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 import static org.arend.ext.prettyprinting.doc.DocFactory.text;
 import static org.arend.ext.prettyprinting.doc.DocFactory.vList;
@@ -52,6 +50,7 @@ public abstract class ArendTestCase {
     moduleScopeProvider = preludeLibrary.getModuleScopeProvider();
     libraryManager.loadLibrary(preludeLibrary, null);
     new Prelude.PreludeTypechecking(new InstanceProviderSet(), ConcreteReferableProvider.INSTANCE, IdReferableConverter.INSTANCE, PositionComparator.INSTANCE).typecheckLibrary(preludeLibrary);
+    Prelude.initializeArray((MetaReferable) Objects.requireNonNull(PreludeLibrary.getPreludeScope().resolveName(Prelude.ARRAY_NAME)));
     errorList.clear();
   }
 

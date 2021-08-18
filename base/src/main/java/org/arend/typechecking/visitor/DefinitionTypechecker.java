@@ -850,7 +850,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
       ClassCallExpression classCall = (ClassCallExpression) resultExpr;
       typechecker.checkAllImplemented(classCall, pseudoImplemented, def);
-      if (classCall.getDefinition() == Prelude.ARRAY) {
+      if (classCall.getDefinition() == Prelude.DEP_ARRAY) {
         classCall.getImplementedHere().remove(Prelude.ARRAY_AT);
         LevelPair levels = classCall.getLevels().toLevelPair();
         classCall.setSort(new Sort(levels.get(LevelVariable.PVAR), levels.get(LevelVariable.HVAR).max(new Level(0))));
@@ -2199,7 +2199,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       if (superClass == null) {
         continue;
       }
-      if (superClass == Prelude.ARRAY) {
+      if (superClass == Prelude.DEP_ARRAY) {
         errorReporter.report(new TypecheckingError("Array cannot be extended", aSuperClass));
         continue;
       }

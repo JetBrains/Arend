@@ -82,7 +82,7 @@ public class ConcreteLocatedReferable extends LocatedReferableImpl implements So
     if (myDefinition instanceof Concrete.FunctionDefinition) {
       Concrete.FunctionDefinition function = (Concrete.FunctionDefinition) myDefinition;
       if (function.getBody() instanceof Concrete.TermFunctionBody) {
-        return visitor.getTypeReference(function.getParameters(), function.getBody().getTerm(), false);
+        return visitor.getTypeReference(function.getBody().getTerm(), false);
       }
     }
     return null;

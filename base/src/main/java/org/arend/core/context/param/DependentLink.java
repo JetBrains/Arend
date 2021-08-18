@@ -183,6 +183,10 @@ public interface DependentLink extends Binding, CoreParameter {
     public static DependentLink take(DependentLink link, int size) {
       return link.subst(new SubstVisitor(new ExprSubstitution(), LevelSubstitution.EMPTY), size, false);
     }
+
+    public static SingleDependentLink take(SingleDependentLink link, int size) {
+      return link.subst(new SubstVisitor(new ExprSubstitution(), LevelSubstitution.EMPTY), size, false);
+    }
   }
 
   static String toString(DependentLink binding) {

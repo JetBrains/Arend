@@ -1241,7 +1241,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
 
   private boolean compareClassInstances(Expression expr1, ClassCallExpression classCall1, Expression expr2, ClassCallExpression classCall2, Expression type) {
     if (expr1 instanceof ArrayExpression && expr2 instanceof ArrayExpression) return false;
-    if (classCall1.getDefinition() == Prelude.ARRAY && classCall2.getDefinition() == Prelude.ARRAY) {
+    if (classCall1.getDefinition() == Prelude.DEP_ARRAY && classCall2.getDefinition() == Prelude.DEP_ARRAY) {
       Expression length1 = classCall1.getImplementationHere(Prelude.ARRAY_LENGTH, expr1);
       Expression length2 = classCall2.getImplementationHere(Prelude.ARRAY_LENGTH, expr1);
       if (length1 != null && length2 != null) {
@@ -1252,22 +1252,19 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
           if (elemsType1 == null) elemsType1 = FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, expr1);
           Expression elemsType2 = classCall2.getImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE, expr2);
           if (elemsType2 == null) elemsType2 = FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, expr2);
-          return compare(elemsType1, elemsType2, ExpressionFactory.Nat(), false);
+          return compare(elemsType1, elemsType2, null, false);
         } else {
-          Expression at1 = classCall1.getImplementationHere(Prelude.ARRAY_AT, expr1);
-          Expression at2 = classCall2.getImplementationHere(Prelude.ARRAY_AT, expr2);
-          if (at1 == null && !(expr1 instanceof ArrayExpression) && at2 == null && !(expr2 instanceof ArrayExpression)) {
+          if (!classCall1.isImplemented(Prelude.ARRAY_AT) && !(expr1 instanceof ArrayExpression) && !classCall2.isImplemented(Prelude.ARRAY_AT) && !(expr2 instanceof ArrayExpression)) {
             return false;
           }
           var pair1 = getSucs(length1);
           var pair2 = getSucs(length2);
           BigInteger m = pair1.proj2.min(pair2.proj2);
           if (!m.equals(BigInteger.ZERO)) {
-            Expression elementsType = classCall1.getImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE, expr1);
-            if (elementsType == null) elementsType = classCall2.getImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE, expr2);
             for (BigInteger i = BigInteger.ZERO; i.compareTo(m) < 0; i = i.add(BigInteger.ONE)) {
               IntegerExpression index = new BigIntegerExpression(i);
-              if (!normalizedCompare(FunCallExpression.make(Prelude.ARRAY_INDEX, classCall1.getLevels(), Arrays.asList(expr1, index)).normalize(NormalizationMode.WHNF), FunCallExpression.make(Prelude.ARRAY_INDEX, classCall2.getLevels(), Arrays.asList(expr2, index)).normalize(NormalizationMode.WHNF), elementsType, true)) {
+              if (!normalizedCompare(FunCallExpression.make(Prelude.ARRAY_INDEX, classCall1.getLevels(), Arrays.asList(expr1, index)).normalize(NormalizationMode.WHNF),
+                                     FunCallExpression.make(Prelude.ARRAY_INDEX, classCall2.getLevels(), Arrays.asList(expr2, index)).normalize(NormalizationMode.WHNF), null, true)) {
                 return false;
               }
             }
@@ -1453,12 +1450,12 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     }
 
     ArrayExpression array2 = (ArrayExpression) other;
-    if (!(compare(expr.getElementsType(), array2.getElementsType(), Type.OMEGA, false) && expr.getElements().size() == array2.getElements().size() && (expr.getTail() == null) == (array2.getTail() == null))) {
+    if (!(compare(expr.getElementsType(), array2.getElementsType(), null, false) && expr.getElements().size() == array2.getElements().size() && (expr.getTail() == null) == (array2.getTail() == null))) {
       return false;
     }
 
     for (int i = 0; i < expr.getElements().size(); i++) {
-      if (!compare(expr.getElements().get(i), array2.getElements().get(i), expr.getElementsType(), true)) {
+      if (!compare(expr.getElements().get(i), array2.getElements().get(i), AppExpression.make(expr.getElementsType(), new SmallIntegerExpression(i), true), true)) {
         return false;
       }
     }

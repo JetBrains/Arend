@@ -95,7 +95,7 @@ public class NewExpression extends Expression implements CoreNewExpression {
 
   @Override
   public Decision isWHNF() {
-    if (myClassCall.getDefinition() != Prelude.ARRAY) {
+    if (myClassCall.getDefinition() != Prelude.DEP_ARRAY) {
       return Decision.YES;
     }
 
@@ -105,7 +105,7 @@ public class NewExpression extends Expression implements CoreNewExpression {
 
   @Override
   public Expression getStuckExpression() {
-    return myClassCall.getDefinition() == Prelude.ARRAY ? getImplementation(Prelude.ARRAY_LENGTH).getStuckExpression() : null;
+    return myClassCall.getDefinition() == Prelude.DEP_ARRAY ? getImplementation(Prelude.ARRAY_LENGTH).getStuckExpression() : null;
   }
 
   @NotNull

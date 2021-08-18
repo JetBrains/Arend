@@ -31,7 +31,6 @@ import org.arend.typechecking.error.local.SolveEquationError;
 import org.arend.typechecking.error.local.SolveEquationsError;
 import org.arend.typechecking.error.local.SolveLevelEquationsError;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
-import org.arend.typechecking.visitor.SearchVisitor;
 import org.arend.util.Pair;
 
 import java.util.*;
@@ -615,22 +614,6 @@ public class TwoStageEquations implements Equations {
     Map<ClassField, Expression> implementations = solution.getImplementedHere();
     Levels levels = solution.getLevels();
 
-    for (ClassField field : classDef.getFields()) {
-      if (!implementations.containsKey(field)) {
-        continue;
-      }
-      field.getType(solution.getLevels(field.getParentClass())).getCodomain().accept(new SearchVisitor<Void>() {
-        @Override
-        protected boolean processDefCall(DefCallExpression expression, Void param) {
-          if (expression instanceof FieldCallExpression && classDef.getFields().contains(((FieldCallExpression) expression).getDefinition()) && !solution.isImplemented((ClassField) expression.getDefinition())) {
-            implementations.remove(field);
-            return true;
-          }
-          return false;
-        }
-      }, null);
-    }
-
     ClassCallExpression sol = solution;
     if (originalSize != implementations.size()) {
       Sort newSort = classDef.computeSort(levels, implementations, solution.getThisBinding());
@@ -730,22 +713,35 @@ public class TwoStageEquations implements Equations {
         Map<ClassField, Expression> implementations = new HashMap<>();
         solution = new ClassCallExpression(classDef, levels, implementations, classDef.getSort(), universeKind);
         ReferenceExpression thisExpr = new ReferenceExpression(solution.getThisBinding());
-        boolean first = true;
-        for (ClassCallExpression bound : pair.proj2) {
-          if (first) {
-            for (Map.Entry<ClassField, Expression> entry : bound.getImplementedHere().entrySet()) {
-              implementations.put(entry.getKey(), entry.getValue().subst(bound.getThisBinding(), thisExpr));
-            }
-            first = false;
-            continue;
-          }
 
+        int minIndex = 0;
+        int minValue = Integer.MAX_VALUE;
+        List<ClassCallExpression> proj2 = pair.proj2;
+        for (int i = 0; i < proj2.size(); i++) {
+          ClassCallExpression classCall = proj2.get(i);
+          if (classCall.getImplementedHere().size() < minValue) {
+            minIndex = i;
+            minValue = classCall.getImplementedHere().size();
+          }
+        }
+
+        for (Map.Entry<ClassField, Expression> entry : pair.proj2.get(minIndex).getImplementedHere().entrySet()) {
+          implementations.put(entry.getKey(), entry.getValue().subst(pair.proj2.get(minIndex).getThisBinding(), thisExpr));
+        }
+        pair.proj2.remove(minIndex);
+
+        for (ClassCallExpression bound : pair.proj2) {
           for (Iterator<Map.Entry<ClassField, Expression>> iterator = implementations.entrySet().iterator(); iterator.hasNext(); ) {
             Map.Entry<ClassField, Expression> entry = iterator.next();
             boolean remove = !entry.getKey().isProperty();
             if (remove) {
               Expression other = bound.getAbsImplementationHere(entry.getKey());
-              remove = other == null || !CompareVisitor.compare(wrapper, CMP.EQ, entry.getValue(), other, solution.getDefinition().getFieldType(entry.getKey(), solution.getLevels(entry.getKey().getParentClass()), thisExpr), pair.proj1.getSourceNode());
+              if (other != null) {
+                Expression expr = entry.getValue().subst(solution.getThisBinding(), new ReferenceExpression(bound.getThisBinding()));
+                Expression type = expr.getType();
+                remove = !CompareVisitor.compare(wrapper, CMP.EQ, type, other.getType(), Type.OMEGA, pair.proj1.getSourceNode()) ||
+                         !CompareVisitor.compare(wrapper, CMP.EQ, expr, other, type, pair.proj1.getSourceNode());
+              }
             }
             if (remove) {
               iterator.remove();

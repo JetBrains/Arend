@@ -1,18 +1,18 @@
 package org.arend.naming.resolving.visitor;
 
 import org.arend.ext.reference.Precedence;
+import org.arend.ext.typechecking.MetaDefinition;
 import org.arend.naming.reference.*;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteReferableDefinitionVisitor;
+import org.arend.term.concrete.DefinableMetaDefinition;
 
 import java.util.*;
 
 public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefinitionVisitor<Void, ClassReferable> {
-  private int myArguments;
-
   @Override
   public ClassReferable visitFunction(Concrete.BaseFunctionDefinition def, Void params) {
-    return getTypeClassReference(def.getParameters(), def.getResultType());
+    return getTypeClassReference(def.getResultType());
   }
 
   @Override
@@ -32,15 +32,10 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
 
   @Override
   public ClassReferable visitClassField(Concrete.ClassField def, Void params) {
-    return getTypeClassReference(def.getParameters(), def.getResultType());
+    return getTypeClassReference(def.getResultType());
   }
 
-  public Referable getTypeReference(Collection<? extends Concrete.Parameter> parameters, Concrete.Expression expr, boolean isType) {
-    handleParameters(parameters);
-    if (myArguments < 0) {
-      return null;
-    }
-
+  public Referable getTypeReference(Concrete.Expression expr, boolean isType) {
     if (isType) {
       while (true) {
         if (expr instanceof Concrete.PiExpression) {
@@ -59,10 +54,6 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
     } else {
       while (true) {
         if (expr instanceof Concrete.LamExpression) {
-          handleParameters(((Concrete.LamExpression) expr).getParameters());
-          if (myArguments < 0) {
-            return null;
-          }
           expr = ((Concrete.LamExpression) expr).getBody();
         } else if (expr instanceof Concrete.ClassExtExpression) {
           expr = ((Concrete.ClassExtExpression) expr).getBaseClassExpression();
@@ -96,49 +87,33 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
         }
         if (index == -1) {
           expr = binOpSeq.get(0).expression;
-          myArguments += binOpSeq.size() - 1;
         } else {
-          if (index == 0 && myArguments == 0 && binOpSeq.get(index).isPostfixReference()) {
-            return null;
-          }
-          myArguments++;
           for (int i = index + 1; i < binOpSeq.size(); i++) {
             if (binOpSeq.get(i).isExplicit) {
-              myArguments++;
               break;
             }
           }
           expr = binOpSeq.get(index).expression;
         }
       } else if (expr instanceof Concrete.AppExpression) {
-        for (Concrete.Argument argument : ((Concrete.AppExpression) expr).getArguments()) {
-          if (argument.isExplicit()) {
-            myArguments++;
-          }
-        }
         expr = ((Concrete.AppExpression) expr).getFunction();
       } else {
         break;
       }
     }
 
-    return expr instanceof Concrete.ReferenceExpression ? RedirectingReferable.getOriginalReferable(((Concrete.ReferenceExpression) expr).getReferent()) : null;
-  }
+    if (!(expr instanceof Concrete.ReferenceExpression)) {
+      return null;
+    }
 
-  private void handleParameters(Collection<? extends Concrete.Parameter> parameters) {
-    for (Concrete.Parameter parameter : parameters) {
-      if (parameter.isExplicit()) {
-        myArguments -= parameter.getNumberOfParameters();
-        if (myArguments < 0) {
-          return;
-        }
+    Referable ref = RedirectingReferable.getOriginalReferable(((Concrete.ReferenceExpression) expr).getReferent());
+    if (ref instanceof MetaReferable) {
+      MetaDefinition def = ((MetaReferable) ref).getDefinition();
+      if (def instanceof DefinableMetaDefinition) {
+        return getTypeReference(((DefinableMetaDefinition) def).body, isType);
       }
     }
-  }
-
-  public boolean decrease(int count) {
-    myArguments -= count;
-    return myArguments >= 0;
+    return ref;
   }
 
   public ClassReferable findClassReference(Referable referent) {
@@ -170,12 +145,7 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
     }
   }
 
-  public ClassReferable getTypeClassReference(Collection<? extends Concrete.Parameter> parameters, Concrete.Expression type) {
-    if (type == null) {
-      return null;
-    }
-
-    myArguments = 0;
-    return findClassReference(getTypeReference(parameters, type, true));
+  public ClassReferable getTypeClassReference(Concrete.Expression type) {
+    return type == null ? null : findClassReference(getTypeReference(type, true));
   }
 }

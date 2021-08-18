@@ -709,7 +709,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
     }
     if (elimTree == null && branchElimTree.isArray()) {
       Expression type = argument.getType().normalize(NormalizationMode.WHNF);
-      if (type instanceof ClassCallExpression && ((ClassCallExpression) type).getDefinition() == Prelude.ARRAY) {
+      if (type instanceof ClassCallExpression && ((ClassCallExpression) type).getDefinition() == Prelude.DEP_ARRAY) {
         ClassCallExpression classCall = (ClassCallExpression) type;
         Expression length = classCall.getImplementationHere(Prelude.ARRAY_LENGTH, argument);
         if (length != null) {
@@ -729,7 +729,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
               impls.put(Prelude.ARRAY_LENGTH, length_1);
               TypedSingleDependentLink param = new TypedSingleDependentLink(true, "i", Fin(length_1));
               impls.put(Prelude.ARRAY_AT, new LamExpression(new Sort(levelPair.get(LevelVariable.PVAR), levelPair.get(LevelVariable.HVAR).max(new Level(0))), param, at != null ? AppExpression.make(at, Suc(new ReferenceExpression(param)), true) : FunCallExpression.make(Prelude.ARRAY_INDEX, classCall.getLevels(), Arrays.asList(argument, Suc(new ReferenceExpression(param))))));
-              array = ArrayExpression.makeArray(levelPair, elementsType, new SingletonList<>(at != null ? AppExpression.make(at, new SmallIntegerExpression(0), true) : FunCallExpression.make(Prelude.ARRAY_INDEX, classCall.getLevels(), Arrays.asList(argument, new SmallIntegerExpression(0)))), new NewExpression(null, new ClassCallExpression(Prelude.ARRAY, classCall.getLevels(), impls, Sort.PROP, UniverseKind.NO_UNIVERSES)));
+              array = ArrayExpression.makeArray(levelPair, elementsType, new SingletonList<>(at != null ? AppExpression.make(at, new SmallIntegerExpression(0), true) : FunCallExpression.make(Prelude.ARRAY_INDEX, classCall.getLevels(), Arrays.asList(argument, new SmallIntegerExpression(0)))), new NewExpression(null, new ClassCallExpression(Prelude.DEP_ARRAY, classCall.getLevels(), impls, Sort.PROP, UniverseKind.NO_UNIVERSES)));
               key = new ArrayConstructor(false, true);
             }
             elimTree = branchElimTree.getChild(key);

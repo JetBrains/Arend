@@ -71,7 +71,7 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
 
   public static Boolean isArrayEmpty(Expression type) {
     type = type.normalize(NormalizationMode.WHNF);
-    return type instanceof ClassCallExpression && ((ClassCallExpression) type).getDefinition() == Prelude.ARRAY ? isEqualToZero(((ClassCallExpression) type).getAbsImplementationHere(Prelude.ARRAY_LENGTH)) : null;
+    return type instanceof ClassCallExpression && ((ClassCallExpression) type).getDefinition() == Prelude.DEP_ARRAY ? isEqualToZero(((ClassCallExpression) type).getAbsImplementationHere(Prelude.ARRAY_LENGTH)) : null;
   }
 
   public Expression getDataExpression() {
@@ -419,7 +419,7 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
 
     if (data instanceof ArrayPair) {
       ArrayPair pair = (ArrayPair) data;
-      return new ConstructorExpressionPattern(new ArrayPair(new FunCallExpression((DConstructor) pair.funCall.getDefinition(), pair.funCall.getLevels().subst(levelSubst), pair.funCall.getDefCallArguments().get(0).subst(exprSubst, levelSubst)), pair.isEmpty), patterns);
+      return new ConstructorExpressionPattern(new ArrayPair((FunCallExpression) pair.funCall.subst(exprSubst, levelSubst), pair.isEmpty), patterns);
     } else {
       return new ConstructorExpressionPattern(getDataExpression().subst(exprSubst, levelSubst), patterns);
     }

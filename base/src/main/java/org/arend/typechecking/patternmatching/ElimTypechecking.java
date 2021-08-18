@@ -393,8 +393,11 @@ public class ElimTypechecking {
       for (ConCallExpression conCall : conCalls) {
         conPatterns.add(new ConstructorExpressionPattern(conCall, Collections.emptyList()));
       }
-    } else if (type instanceof ClassCallExpression && ((ClassCallExpression) type).getDefinition() == Prelude.ARRAY) {
+    } else if (type instanceof ClassCallExpression && ((ClassCallExpression) type).getDefinition() == Prelude.DEP_ARRAY) {
       Expression elementsType = ((ClassCallExpression) type).getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
+      if (elementsType != null) {
+        elementsType = elementsType.removeConstLam();
+      }
       Boolean isEmpty = ConstructorExpressionPattern.isArrayEmpty(type);
       conPatterns = new ArrayList<>(2);
       if (isEmpty == null || isEmpty.equals(true)) {

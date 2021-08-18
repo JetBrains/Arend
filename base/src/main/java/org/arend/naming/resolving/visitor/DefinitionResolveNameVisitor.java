@@ -314,7 +314,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
               if (enclosingFunction.getStage().ordinal() < Concrete.Stage.RESOLVED.ordinal()) {
                 resolveTypeClassReference(enclosingFunction.getParameters(), enclosingFunction.getResultType(), scope, true);
               }
-              classRef = new TypeClassReferenceExtractVisitor().getTypeClassReference(Collections.emptyList(), enclosingFunction.getResultType());
+              classRef = new TypeClassReferenceExtractVisitor().getTypeClassReference(enclosingFunction.getResultType());
               elements = enclosingFunction.getBody().getCoClauseElements();
             }
           } else if (enclosingDef instanceof Concrete.ClassDefinition) {
@@ -385,7 +385,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       ((Concrete.TermFunctionBody) body).setTerm(((Concrete.TermFunctionBody) body).getTerm().accept(exprVisitor, null));
     }
     if (body instanceof Concrete.CoelimFunctionBody) {
-      ClassReferable typeRef = def.getResultType() == null ? null : new TypeClassReferenceExtractVisitor().getTypeClassReference(Collections.emptyList(), def.getResultType());
+      ClassReferable typeRef = def.getResultType() == null ? null : new TypeClassReferenceExtractVisitor().getTypeClassReference(def.getResultType());
       if (typeRef != null) {
         if (def.getKind() == FunctionKind.INSTANCE && typeRef.isRecord()) {
           myLocalErrorReporter.report(new NameResolverError("Expected a class, got a record", def));
@@ -519,7 +519,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     Set<Referable> referables = eliminated.stream().map(Concrete.ReferenceExpression::getReferent).collect(Collectors.toSet());
     TypeClassReferenceExtractVisitor typeClassReferenceExtractVisitor = new TypeClassReferenceExtractVisitor();
     for (Concrete.Parameter parameter : parameters) {
-      ClassReferable classRef = typeClassReferenceExtractVisitor.getTypeClassReference(Collections.emptyList(), parameter.getType());
+      ClassReferable classRef = typeClassReferenceExtractVisitor.getTypeClassReference(parameter.getType());
       for (Referable referable : parameter.getReferableList()) {
         if (referable != null && !referable.textRepresentation().equals("_") && !referables.contains(referable)) {
           context.add(classRef == null ? referable : new TypedRedirectingReferable(referable, classRef));
@@ -626,7 +626,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     if (def.getSuperClasses().isEmpty()) {
       return;
     }
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myReferableConverter, new ElimScope(scope, Collections.singleton(Prelude.ARRAY.getRef())), null, myErrorReporter, myResolverListener, visitLevelParameters(def.getPLevelParameters()), visitLevelParameters(def.getHLevelParameters()));
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myReferableConverter, new ElimScope(scope, Collections.singleton(Prelude.DEP_ARRAY.getRef())), null, myErrorReporter, myResolverListener, visitLevelParameters(def.getPLevelParameters()), visitLevelParameters(def.getHLevelParameters()));
     for (int i = 0; i < def.getSuperClasses().size(); i++) {
       Concrete.ReferenceExpression superClass = def.getSuperClasses().get(i);
       Concrete.Expression resolved = exprVisitor.visitReference(superClass, true, resolveLevels);

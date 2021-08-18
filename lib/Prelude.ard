@@ -26,9 +26,9 @@
 \cons idp {A : \Type} {a : A} => path (\lam _ => a)
 
 \func \infixl 9 @ {A : I -> \Type} {a : A left} {a' : A right} (p : Path A a a') (i : I) : A i \elim p, i
+  | path f, i => f i
   | _, left => a
   | _, right => a'
-  | path f, i => f i
 
 \func coe (A : I -> \Type) (a : A left) (i : I) : A i \elim i
   | left => a
@@ -80,8 +80,10 @@
   | \coerce pos Nat
   | neg Nat \with { zero => pos zero }
 
-\record Array (A : \Type) (len : Nat) (\coerce at : Fin len -> A)
-  \where \func \infixl 9 !! (a : Array) (i : Fin a.len) => a.at i
+\record DArray {len : Nat} (A : Fin len -> \Type) (\coerce at : \Pi (j : Fin len) -> A j)
+  \where \func \infixl 9 !! (a : DArray) (i : Fin a.len) => a.at i
+
+\meta Array A => DArray { | A _ => A }
 
 \cons nil {A : \Type} : Array A \cowith
   | len => 0
@@ -91,5 +93,5 @@
   | len => suc arr.len
   | at => \case __ \with {
     | 0 => a
-    | suc i => arr i
+    | suc j => arr j
   }

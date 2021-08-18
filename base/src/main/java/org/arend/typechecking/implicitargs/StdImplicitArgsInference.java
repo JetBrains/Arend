@@ -334,11 +334,14 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
       } else if ((defCallResult.getDefinition() == Prelude.EMPTY_ARRAY || defCallResult.getDefinition() == Prelude.ARRAY_CONS) && defCallResult.getArguments().isEmpty()) {
         ClassCallExpression classCall = TypeCoerceExpression.unfoldType(expectedType).cast(ClassCallExpression.class);
         if (classCall != null) {
-          if (classCall.getDefinition() != Prelude.ARRAY) {
-            myVisitor.getErrorReporter().report(new TypeMismatchError(classCall, refDoc(Prelude.ARRAY.getRef()), fun));
+          if (classCall.getDefinition() != Prelude.DEP_ARRAY) {
+            myVisitor.getErrorReporter().report(new TypeMismatchError(classCall, refDoc(Prelude.DEP_ARRAY.getRef()), fun));
             return null;
           }
           Expression elementsType = classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
+          if (elementsType != null) {
+            elementsType = elementsType.removeConstLam();
+          }
           if (elementsType != null) {
             result = DefCallResult.makeTResult(defCallResult.getDefCall(), defCallResult.getDefinition(), classCall.getLevels()).applyExpression(elementsType, true, myVisitor.getErrorReporter(), fun);
           }
@@ -478,7 +481,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
                   if (length instanceof IntegerExpression && !((IntegerExpression) length).isZero() || length instanceof ConCallExpression && ((ConCallExpression) length).getDefinition() == Prelude.SUC) {
                     Map<ClassField, Expression> impls = new HashMap<>(classCall.getImplementedHere());
                     impls.put(Prelude.ARRAY_LENGTH, length instanceof IntegerExpression ? ((IntegerExpression) length).pred() : ((ConCallExpression) length).getDefCallArguments().get(0));
-                    classCall = new ClassCallExpression(Prelude.ARRAY, classCall.getLevels(), impls, classCall.getSort(), classCall.getUniverseKind());
+                    classCall = new ClassCallExpression(Prelude.DEP_ARRAY, classCall.getLevels(), impls, classCall.getSort(), classCall.getUniverseKind());
                   }
                 }
               }

@@ -12,7 +12,9 @@ import org.arend.naming.reference.*;
 import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.naming.scope.Scope;
 import org.arend.prelude.Prelude;
+import org.arend.term.concrete.ArrayMetaDefinition;
 import org.arend.term.concrete.Concrete;
+import org.arend.term.concrete.DefinableMetaDefinition;
 import org.arend.term.group.*;
 import org.arend.typechecking.order.dependency.DependencyListener;
 import org.arend.util.Pair;
@@ -27,12 +29,14 @@ public class ModuleDeserialization {
   private final List<Pair<DefinitionProtos.Definition, Definition>> myDefinitions = new ArrayList<>();
   private final SerializableKeyRegistryImpl myKeyRegistry;
   private final DefinitionListener myDefinitionListener;
+  private final boolean myPrelude;
 
-  public ModuleDeserialization(ModuleProtos.Module moduleProto, ReferableConverter referableConverter, SerializableKeyRegistryImpl keyRegistry, DefinitionListener definitionListener) {
+  public ModuleDeserialization(ModuleProtos.Module moduleProto, ReferableConverter referableConverter, SerializableKeyRegistryImpl keyRegistry, DefinitionListener definitionListener, boolean isPrelude) {
     myModuleProto = moduleProto;
     myReferableConverter = referableConverter;
     myKeyRegistry = keyRegistry;
     myDefinitionListener = definitionListener;
+    myPrelude = isPrelude;
   }
 
   public ModuleProtos.Module getModuleProto() {
@@ -235,7 +239,12 @@ public class ModuleDeserialization {
       if (parent == null) {
         referable = new FullModuleReferable(modulePath);
       } else {
-        referable = new LocatedReferableImpl(readPrecedence(referableProto.getPrecedence()), referableProto.getName(), parent.getReferable(), kind);
+        String name = referableProto.getName();
+        if (myPrelude && kind == GlobalReferable.Kind.OTHER && Prelude.ARRAY_NAME.equals(name)) {
+          referable = new MetaReferable(readPrecedence(referableProto.getPrecedence()), name, "", null, null, parent.getReferable());
+        } else {
+          referable = new LocatedReferableImpl(readPrecedence(referableProto.getPrecedence()), name, parent.getReferable(), kind);
+        }
       }
     }
 

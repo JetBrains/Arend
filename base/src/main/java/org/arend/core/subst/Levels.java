@@ -27,7 +27,7 @@ public interface Levels extends CoreLevels {
   }
 
   default LevelPair toLevelPair() {
-    LevelSubstitution levelSubst = makeSubstitution(Prelude.ARRAY);
+    LevelSubstitution levelSubst = makeSubstitution(Prelude.DEP_ARRAY);
     return new LevelPair((Level) levelSubst.get(LevelVariable.PVAR), (Level) levelSubst.get(LevelVariable.HVAR));
   }
 }

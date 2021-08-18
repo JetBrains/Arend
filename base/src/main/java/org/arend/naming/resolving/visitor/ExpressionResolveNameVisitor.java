@@ -477,7 +477,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       ((Concrete.TypeParameter) parameter).type = ((Concrete.TypeParameter) parameter).type.accept(this, null);
     }
 
-    ClassReferable classRef = new TypeClassReferenceExtractVisitor().getTypeClassReference(Collections.emptyList(), parameter.getType());
+    ClassReferable classRef = new TypeClassReferenceExtractVisitor().getTypeClassReference(parameter.getType());
     List<? extends Referable> referableList = parameter.getReferableList();
     for (int i = 0; i < referableList.size(); i++) {
       Referable referable = referableList.get(i);
@@ -592,7 +592,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       myErrorReporter.report(new DuplicateNameError(GeneralError.Level.WARNING, referable, prev));
     }
 
-    addLocalRef(referable, type == null ? null : new TypeClassReferenceExtractVisitor().getTypeClassReference(Collections.emptyList(), type));
+    addLocalRef(referable, type == null ? null : new TypeClassReferenceExtractVisitor().getTypeClassReference(type));
   }
 
   private GlobalReferable visitPattern(Concrete.Pattern pattern, Map<String, Referable> usedNames) {
@@ -705,7 +705,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     }
 
     TypeClassReferenceExtractVisitor visitor = new TypeClassReferenceExtractVisitor();
-    Referable ref = visitor.getTypeReference(Collections.emptyList(), baseExpr, true);
+    Referable ref = visitor.getTypeReference(baseExpr, true);
     ClassReferable classRef = visitor.findClassReference(ref);
     if (classRef == null && ref != null && !(ref instanceof TypedReferable)) {
       ref = ref.getUnderlyingReferable();
@@ -824,9 +824,9 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
         Concrete.Pattern pattern = clause.getPattern();
         if (pattern instanceof Concrete.NamePattern && ((Concrete.NamePattern) pattern).getRef() != null) {
           ClassReferable classRef = clause.resultType != null
-            ? new TypeClassReferenceExtractVisitor().getTypeClassReference(clause.getParameters(), clause.resultType)
+            ? new TypeClassReferenceExtractVisitor().getTypeClassReference(clause.resultType)
             : clause.term instanceof Concrete.NewExpression
-              ? new TypeClassReferenceExtractVisitor().getTypeClassReference(clause.getParameters(), ((Concrete.NewExpression) clause.term).expression)
+              ? new TypeClassReferenceExtractVisitor().getTypeClassReference(((Concrete.NewExpression) clause.term).expression)
               : null;
           addLocalRef(((Concrete.NamePattern) pattern).getRef(), classRef);
         } else {

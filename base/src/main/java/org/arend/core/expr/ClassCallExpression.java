@@ -479,10 +479,13 @@ public class ClassCallExpression extends LeveledDefCallExpression implements Typ
 
   @Override
   public @Nullable List<ConstructorWithDataArguments> computeMatchedConstructorsWithDataArguments() {
-    if (getDefinition() != Prelude.ARRAY) return null;
+    if (getDefinition() != Prelude.DEP_ARRAY) return null;
     List<ConstructorWithDataArguments> result = new ArrayList<>(2);
     Boolean isEmpty = ConstructorExpressionPattern.isArrayEmpty(this);
     Expression elementsType = getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
+    if (elementsType != null) {
+      elementsType = elementsType.removeConstLam();
+    }
     if (isEmpty == null || isEmpty.equals(true)) {
       result.add(new ConstructorWithDataArgumentsImpl(Prelude.EMPTY_ARRAY, elementsType));
     }
