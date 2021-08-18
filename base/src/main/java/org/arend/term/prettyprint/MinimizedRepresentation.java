@@ -55,6 +55,7 @@ final public class MinimizedRepresentation {
         var verboseRepresentation = converter.coreToConcrete(expressionToPrint, true);
         var incompleteRepresentation = converter.coreToConcrete(expressionToPrint, false);
         processBindingTypes(converter);
+        incompleteRepresentation = addTrailingImplicitArguments(verboseRepresentation, incompleteRepresentation);
         List<GeneralError> errorsCollector = new ArrayList<>();
 
         var groundExpr = generateFreeVariableClauses(expressionToPrint, converter, incompleteRepresentation, verboseRepresentation);
@@ -75,6 +76,22 @@ final public class MinimizedRepresentation {
                 incompleteRepresentation = fixedExpression;
             }
         }
+    }
+
+    private static Concrete.Expression addTrailingImplicitArguments(Concrete.Expression verboseRepresentation, Concrete.Expression incompleteRepresentation) {
+        if (!(verboseRepresentation instanceof Concrete.AppExpression)) {
+            return incompleteRepresentation;
+        }
+        List<Concrete.Argument> verboseArguments = ((Concrete.AppExpression) verboseRepresentation).getArguments();
+        List<Concrete.Argument> trailingImplicitArguments = new ArrayList<>();
+        for (var arg : verboseArguments) {
+            if (arg.isExplicit()) {
+                trailingImplicitArguments.clear();
+            } else {
+                trailingImplicitArguments.add(arg);
+            }
+        }
+        return Concrete.AppExpression.make(null, incompleteRepresentation, trailingImplicitArguments);
     }
 
     private static void processBindingTypes(Converter converter) {

@@ -20,10 +20,10 @@ public class MinimizationTest extends TypeCheckingTestCase {
         typeCheckModule(module);
         var selected = selector.apply((FunctionDefinition) getDefinition("test"));
         var minimizedConcrete = MinimizedRepresentation.generateMinimizedRepresentation(selected, null, null, useReturnType);
+        assertEquals(expected, minimizedConcrete.toString());
         if (isGround) {
             typeCheckExpr(minimizedConcrete, selected.getType());
         }
-        assertEquals(expected, minimizedConcrete.toString());
     }
 
     private void checkType(String module, String expected) {
@@ -99,5 +99,12 @@ public class MinimizationTest extends TypeCheckingTestCase {
     @Test
     public void lambdaWithoutKnownReturnType() {
         selectiveCheck("\\func test : Nat -> Nat => \\lam a => a", "\\lam (a : Nat) => a", false, false, definition -> (Expression) definition.getBody());
+    }
+
+    @Test
+    public void trailingImplicitArguments() {
+        checkType("\\data D (y : Nat) {x : Nat} | d\n"
+                        + "\\func test : D 2 {1} => d",
+                "D 2 {1}");
     }
 }
