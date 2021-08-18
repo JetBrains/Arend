@@ -26,6 +26,7 @@ import org.arend.typechecking.error.local.GoalError;
 import org.arend.typechecking.error.local.inference.ArgInferenceError;
 import org.arend.typechecking.error.local.inference.FunctionArgInferenceError;
 import org.arend.typechecking.error.local.inference.InstanceInferenceError;
+import org.arend.typechecking.error.local.inference.LambdaInferenceError;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.instance.pool.LocalInstancePool;
 import org.arend.typechecking.instance.provider.InstanceProvider;
@@ -251,6 +252,15 @@ class ErrorFixingConcreteExpressionVisitor extends BaseConcreteExpressionVisitor
     @Override
     public Concrete.Expression visitLam(Concrete.LamExpression expr, Concrete.SourceNode verbose) {
         var verboseExpr = (Concrete.LamExpression) verbose;
+        var errorList = getErrorsForNode(expr);
+        if (!errorList.isEmpty()) {
+            var error = errorList.get(0);
+            myErrors.clear();
+            var fixed = fixError(expr, verboseExpr, error);
+            expr.getParameters().clear();
+            expr.getParameters().addAll(fixed.getParameters());
+            return expr;
+        }
         visitParameters(expr.getParameters(), verboseExpr.getParameters());
         expr.body.accept(this, verboseExpr.body);
         return expr;
@@ -274,11 +284,15 @@ class ErrorFixingConcreteExpressionVisitor extends BaseConcreteExpressionVisitor
         return expr;
     }
 
+    private List<GeneralError> getErrorsForNode(Concrete.SourceNode node) {
+        return myErrors.stream().filter(err -> err.getCauseSourceNode() == node).collect(Collectors.toList());
+    }
+
     @Override
     public Concrete.Expression visitApp(Concrete.AppExpression expr, Concrete.SourceNode verbose) {
         Concrete.AppExpression verboseExpr = (Concrete.AppExpression) verbose;
         if (expr.getFunction() instanceof Concrete.ReferenceExpression) {
-            var errorList = myErrors.stream().filter(err -> err.getCauseSourceNode() == expr.getFunction()).collect(Collectors.toList());
+            var errorList = getErrorsForNode(expr.getFunction());
             if (!errorList.isEmpty()) {
                 GeneralError mostImportantError = findMostImportantError(errorList);
                 myErrors.clear(); // no errors should be fixed afterwards
@@ -334,6 +348,27 @@ class ErrorFixingConcreteExpressionVisitor extends BaseConcreteExpressionVisitor
         } else {
             return fixUnknownError(incomplete, complete);
         }
+    }
+
+    private Concrete.LamExpression fixError(Concrete.LamExpression incomplete, Concrete.LamExpression complete, GeneralError error) {
+        if (error instanceof LambdaInferenceError) {
+            return fixLambdaInferenceError(incomplete, complete, (LambdaInferenceError)error);
+        } else {
+            throw new AssertionError("No other errors should have case source node of this kind");
+        }
+    }
+
+    private Concrete.LamExpression fixLambdaInferenceError(Concrete.LamExpression incomplete, Concrete.LamExpression complete, LambdaInferenceError error) {
+        var newParams = new ArrayList<Concrete.Parameter>();
+        for (int i = 0; i < incomplete.getParameters().size(); ++i) {
+            var incompleteParam = incomplete.getParameters().get(i);
+            if (incompleteParam.getRefList().size() != 1) {
+                newParams.add(incompleteParam);
+            } else if (incompleteParam.getRefList().get(0).equals(error.parameter)) {
+                newParams.add(complete.getParameters().get(i));
+            }
+        }
+        return (Concrete.LamExpression) myFactory.lam(newParams, incomplete.body);
     }
 
     private Concrete.AppExpression fixUnknownError(Concrete.AppExpression incomplete, Concrete.AppExpression complete) {
