@@ -16,22 +16,22 @@ import static org.junit.Assert.assertEquals;
 
 public class MinimizationTest extends TypeCheckingTestCase {
 
-    private void selectiveCheck(String module, String expected, boolean isGround, Function<? super FunctionDefinition, ? extends Expression> selector) {
+    private void selectiveCheck(String module, String expected, boolean isGround, boolean useReturnType, Function<? super FunctionDefinition, ? extends Expression> selector) {
         typeCheckModule(module);
         var selected = selector.apply((FunctionDefinition) getDefinition("test"));
-        var minimizedConcrete = MinimizedRepresentation.generateMinimizedRepresentation(selected, null, null);
+        var minimizedConcrete = MinimizedRepresentation.generateMinimizedRepresentation(selected, null, null, useReturnType);
         if (isGround) {
-            typeCheckExpr(minimizedConcrete, null);
+            typeCheckExpr(minimizedConcrete, selected.getType());
         }
         assertEquals(expected, minimizedConcrete.toString());
     }
 
     private void checkType(String module, String expected) {
-        selectiveCheck(module, expected, true, definition -> definition.getTypeWithParams(new ArrayList<>(), LevelPair.STD));
+        selectiveCheck(module, expected, true, false, definition -> definition.getTypeWithParams(new ArrayList<>(), LevelPair.STD));
     }
 
     private void checkBody(String module, String expected) {
-        selectiveCheck(module, expected, false, definition -> (Expression) definition.getBody());
+        selectiveCheck(module, expected, false, true, definition -> (Expression) definition.getBody());
     }
 
     @Test
@@ -79,7 +79,7 @@ public class MinimizationTest extends TypeCheckingTestCase {
     public void projections() {
         selectiveCheck("\\func foo : \\Sigma Nat Nat => (1, 1)\n" +
                 "\\data D {n : Nat} (m : Nat) | d\n" +
-                "\\func test : \\Type => \\let (a, b) => foo \\in D {a} b", "D {a} b", false,
+                "\\func test : \\Type => \\let (a, b) => foo \\in D {a} b", "D {a} b", false, false,
                 definition -> ((LetExpression) Objects.requireNonNull(definition.getBody())).getExpression());
     }
 
@@ -87,12 +87,17 @@ public class MinimizationTest extends TypeCheckingTestCase {
     public void nestedProjections() {
         selectiveCheck("\\func foo : \\Sigma (\\Sigma Nat Nat) Nat => ((1, 1), 1)" +
                 "\\data D {n : Nat} (m : Nat) | d\n" +
-                "\\func test : \\Type => \\let ((a, b), c) => foo \\in D {a} c", "D {a} c", false,
+                "\\func test : \\Type => \\let ((a, b), c) => foo \\in D {a} c", "D {a} c", false, false,
                 definition -> ((LetExpression) Objects.requireNonNull(definition.getBody())).getExpression());
     }
 
     @Test
     public void lambda() {
-        checkBody("\\func test : Nat -> Nat => \\lam a => a", "\\lam (a : Nat) => a");
+        checkBody("\\func test : Nat -> Nat => \\lam a => a", "\\lam a => a");
+    }
+
+    @Test
+    public void lambdaWithoutKnownReturnType() {
+        selectiveCheck("\\func test : Nat -> Nat => \\lam a => a", "\\lam (a : Nat) => a", false, false, definition -> (Expression) definition.getBody());
     }
 }

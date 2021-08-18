@@ -49,7 +49,8 @@ final public class MinimizedRepresentation {
     public static @NotNull Concrete.Expression generateMinimizedRepresentation(
             @NotNull Expression expressionToPrint,
             @Nullable InstanceProvider instanceProvider,
-            @Nullable DefinitionRenamer definitionRenamer) {
+            @Nullable DefinitionRenamer definitionRenamer,
+            boolean mayUseReturnType) {
         Converter converter = new Converter(definitionRenamer);
         var verboseRepresentation = converter.coreToConcrete(expressionToPrint, true);
         var incompleteRepresentation = converter.coreToConcrete(expressionToPrint, false);
@@ -60,8 +61,9 @@ final public class MinimizedRepresentation {
         var typechecker = generateTypechecker(instanceProvider, errorsCollector);
 
         int limit = 50;
+        Expression returnType = mayUseReturnType ? expressionToPrint.getType() : null;
         while (true) {
-            var hadError = tryFixError(typechecker, groundExpr, verboseRepresentation, incompleteRepresentation, errorsCollector);
+            var hadError = tryFixError(typechecker, groundExpr, verboseRepresentation, incompleteRepresentation, errorsCollector, returnType);
             if (!hadError) {
                 return incompleteRepresentation;
             }
@@ -197,8 +199,8 @@ final public class MinimizedRepresentation {
         return checkTypeVisitor;
     }
 
-    private static boolean tryFixError(CheckTypeVisitor checkTypeVisitor, Concrete.Expression groundConcrete, Concrete.Expression completeConcrete, Concrete.Expression minimizedConcrete, List<GeneralError> errorsCollector) {
-        checkTypeVisitor.finalCheckExpr(groundConcrete, null);
+    private static boolean tryFixError(CheckTypeVisitor checkTypeVisitor, Concrete.Expression groundConcrete, Concrete.Expression completeConcrete, Concrete.Expression minimizedConcrete, List<GeneralError> errorsCollector, Expression type) {
+        checkTypeVisitor.finalCheckExpr(groundConcrete, type);
         if (!errorsCollector.isEmpty()) {
             minimizedConcrete.accept(new ErrorFixingConcreteExpressionVisitor(errorsCollector, new ConcreteFactoryImpl(null)), completeConcrete);
             return true;
