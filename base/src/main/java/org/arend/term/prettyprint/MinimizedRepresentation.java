@@ -5,6 +5,7 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.expr.DefCallExpression;
 import org.arend.core.expr.Expression;
+import org.arend.core.expr.ProjExpression;
 import org.arend.core.expr.ReferenceExpression;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.VoidExpressionVisitor;
@@ -17,6 +18,7 @@ import org.arend.ext.reference.ArendRef;
 import org.arend.ext.variable.Variable;
 import org.arend.extImpl.ConcreteFactoryImpl;
 import org.arend.naming.reference.LocalReferable;
+import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCDefReferable;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
@@ -33,6 +35,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 final public class MinimizedRepresentation {
     private MinimizedRepresentation() {
@@ -40,7 +43,7 @@ final public class MinimizedRepresentation {
 
     /**
      * Converts {@code expressionToPrint} to concrete, inserting as little additional information (like implicit arguments)
-     * as possible. Resulting concrete expression is intended to be type checkable.
+     * as possible. Resulting concrete expression is intended to be type checkable, but not ground.
      */
     public static @NotNull Concrete.Expression generateMinimizedRepresentation(
             @NotNull Expression expressionToPrint,
@@ -52,7 +55,7 @@ final public class MinimizedRepresentation {
         processBindingTypes(converter);
         List<GeneralError> errorsCollector = new ArrayList<>();
 
-        var groundExpr = generateGroundConcrete(expressionToPrint, converter, incompleteRepresentation);
+        var groundExpr = generateGroundConcrete(expressionToPrint, converter, incompleteRepresentation, verboseRepresentation);
         var typechecker = generateTypechecker(instanceProvider, errorsCollector);
 
         int limit = 50;
@@ -63,7 +66,8 @@ final public class MinimizedRepresentation {
             }
             --limit;
             if (limit == 0) {
-                throw new AssertionError("Minimization of expression (" + expressionToPrint + ") is likely diverged. Please report it to maintainers.");
+                throw new AssertionError("Minimization of expression (" + expressionToPrint + ") is likely diverged. Please report it to maintainers.\n " +
+                        "Errors: \n" + errorsCollector);
             }
         }
     }
@@ -76,9 +80,10 @@ final public class MinimizedRepresentation {
         }
     }
 
-    private static Concrete.Expression generateGroundConcrete(Expression expressionToPrint, Converter converter, Concrete.Expression incompleteRepresentation) {
+    private static Concrete.Expression generateGroundConcrete(Expression expressionToPrint, Converter converter, Concrete.Expression incompleteRepresentation, Concrete.Expression completeExpression) {
         var concreteFactory = new ConcreteFactoryImpl(null);
         Map<ArendRef, Expression> refToType = new LinkedHashMap<>();
+        Map<String, Expression> nameToType = new LinkedHashMap<>();
         ExpressionVisitor<Void, Void> resolveVariablesVisitor = new VoidExpressionVisitor<>() {
             @Override
             public Void visitReference(ReferenceExpression expr, Void params) {
@@ -88,24 +93,53 @@ final public class MinimizedRepresentation {
                 }
                 return null;
             }
+
+            @Override
+            public Void visitProj(ProjExpression expr, Void params) {
+                if (expr.getExpression() instanceof ReferenceExpression &&
+                        converter.freeVariableBindings.containsKey(((ReferenceExpression) expr.getExpression()).getBinding())) {
+                    expr.getType().accept(this, null);
+                    nameToType.putIfAbsent(expr.toString(), expr.getType());
+                }
+                return super.visitProj(expr, params);
+            }
         };
         expressionToPrint.accept(resolveVariablesVisitor, null);
 
+        Map<Referable, Expression> namedRefToExpression;
+        if (!nameToType.isEmpty()) {
+            namedRefToExpression = new LinkedHashMap<>();
+            Set<Referable> referables = new LinkedHashSet<>();
+            var freeReferablesVisitor = new FreeVariableCollectorConcrete(referables);
+            incompleteRepresentation.accept(freeReferablesVisitor, null);
+            completeExpression.accept(freeReferablesVisitor, null);
+            for (var entry : referables) {
+                if (nameToType.containsKey(entry.getRefName())) {
+                    namedRefToExpression.put(entry, nameToType.get(entry.getRefName()));
+                }
+            }
+        } else {
+            namedRefToExpression = new LinkedHashMap<>();
+        }
 
-        List<Concrete.LetClause> clauses =
-                refToType
-                        .entrySet()
-                        .stream()
-                        .map(entry -> (Concrete.LetClause) concreteFactory.letClause(
-                                entry.getKey(),
-                                Collections.emptyList(),
-                                converter.coreToConcrete(entry.getValue(), true),
-                                concreteFactory.goal())
-                        )
-                        .collect(Collectors.toList());
+        Stream<Map.Entry<? extends ArendRef, Expression>> entries = Stream.concat(refToType.entrySet().stream(), namedRefToExpression.entrySet().stream());
+
+        List<Concrete.LetClause> clauses = entries
+                .map(entry -> (Concrete.LetClause) concreteFactory.letClause(
+                        entry.getKey(),
+                        Collections.emptyList(),
+                        converter.coreToConcrete(entry.getValue(), true),
+                        concreteFactory.goal())
+                )
+                .collect(Collectors.toList());
+
         return (Concrete.LetExpression) concreteFactory.letExpr(false, false, clauses, incompleteRepresentation);
     }
 
+    // TODO: remove dependency on internals of ToAbstractVisitor.
+    // to do this, one should replace all reference expressions from incomplete concrete with corresponding identifiers from complete concrete.
+    // then, re-collect free variables in `expressionToPrint` as well as in `completeExpression` and finally generate all let clauses with proper type.
+    // it requires to abstract visitor on two concrete expressions
     private static final class Converter {
         private final PrettyPrinterConfig verboseConfig;
         private final PrettyPrinterConfig emptyConfig;
@@ -256,6 +290,17 @@ class ErrorFixingConcreteExpressionVisitor extends BaseConcreteExpressionVisitor
         expr.setFunction(expr.getFunction().accept(this, verboseExpr.getFunction()));
 
         return expr;
+    }
+
+    @Override
+    public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Concrete.SourceNode params) {
+        var errorList = myErrors.stream().filter(err -> err.getCauseSourceNode() == expr).collect(Collectors.toList());
+        if (!errorList.isEmpty()) {
+            var verboseExpr = (Concrete.Expression) params;
+            myErrors.clear();
+            return verboseExpr;
+        }
+        return super.visitReference(expr, params);
     }
 
     private static GeneralError findMostImportantError(List<GeneralError> errors) {

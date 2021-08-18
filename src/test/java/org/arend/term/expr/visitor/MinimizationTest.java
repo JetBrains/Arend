@@ -1,22 +1,33 @@
 package org.arend.term.expr.visitor;
 
+import org.arend.core.definition.FunctionDefinition;
+import org.arend.core.expr.Expression;
+import org.arend.core.expr.LetExpression;
 import org.arend.core.subst.LevelPair;
 import org.arend.term.prettyprint.MinimizedRepresentation;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Objects;
+import java.util.function.Function;
 
 import static org.junit.Assert.assertEquals;
 
 public class MinimizationTest extends TypeCheckingTestCase {
 
-    private void checkType(String module, String expected) {
+    private void selectiveCheck(String module, String expected, boolean isResultGround, Function<? super FunctionDefinition, ? extends Expression> selector) {
         typeCheckModule(module);
-        var type = getDefinition("test").getTypeWithParams(new ArrayList<>(), LevelPair.STD);
-        var minimizedConcrete = MinimizedRepresentation.generateMinimizedRepresentation(type, null, null);
-        typeCheckExpr(minimizedConcrete, null); // printed expression should be type checkable
+        var selected = selector.apply((FunctionDefinition) getDefinition("test"));
+        var minimizedConcrete = MinimizedRepresentation.generateMinimizedRepresentation(selected, null, null);
+        if (isResultGround) {
+            typeCheckExpr(minimizedConcrete, null); // printed expression should be type checkable
+        }
         assertEquals(expected, minimizedConcrete.toString());
+    }
+
+    private void checkType(String module, String expected) {
+        selectiveCheck(module, expected, true, definition -> definition.getTypeWithParams(new ArrayList<>(), LevelPair.STD));
     }
 
     @Test
@@ -58,5 +69,13 @@ public class MinimizationTest extends TypeCheckingTestCase {
         checkType("\\data D {A : \\Type} (x : A) | d\n" +
                 "\\func \\infixr 10 === {z : Nat} (x : Nat) (y : Nat) : \\Type => x = y\n" +
                 "\\func test : 1 === {2} 1 => idp", "1 === {2} 1");
+    }
+
+    @Test
+    public void projections() {
+        selectiveCheck("\\func foo : \\Sigma Nat Nat => (1, 1)\n" +
+                "\\data D {n : Nat} (m : Nat) | d\n" +
+                "\\func test : \\Type => \\let (a, b) => foo \\in D {a} b", "D {a} b", false,
+                definition -> ((LetExpression) Objects.requireNonNull(definition.getBody())).getExpression());
     }
 }
