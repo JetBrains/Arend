@@ -59,7 +59,7 @@ public class DConstructor extends FunctionDefinition {
         Map<ClassField, Expression> implementations = new HashMap<>();
         Expression newLength = arrayLength instanceof ConCallExpression ? ((ConCallExpression) arrayLength).getDefCallArguments().get(0) : ((IntegerExpression) arrayLength).isZero() ? arrayLength : ((IntegerExpression) arrayLength).pred();
         TypedSingleDependentLink lamParam = new TypedSingleDependentLink(true, "j", new DataCallExpression(Prelude.FIN, LevelPair.PROP, new SingletonList<>(newLength)));
-        implementations.put(Prelude.ARRAY_ELEMENTS_TYPE, new LamExpression(type.getLevels().toLevelPair().toSort().max(Sort.SET0), lamParam, AppExpression.make(arrayElementsType == null ? new ReferenceExpression(getParameters()) : arrayElementsType, new ReferenceExpression(lamParam), true)));
+        implementations.put(Prelude.ARRAY_ELEMENTS_TYPE, new LamExpression(type.getLevels().toLevelPair().toSort().max(Sort.SET0), lamParam, AppExpression.make(arrayElementsType == null ? new ReferenceExpression(newParameters) : arrayElementsType, new ReferenceExpression(lamParam), true)));
         implementations.put(Prelude.ARRAY_LENGTH, newLength);
         link.setType(new ClassCallExpression(Prelude.DEP_ARRAY, type.getLevels(), implementations, type.getSort(), UniverseKind.NO_UNIVERSES));
       }

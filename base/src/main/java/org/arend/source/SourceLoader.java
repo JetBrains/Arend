@@ -14,6 +14,7 @@ import org.arend.naming.scope.Scope;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -29,13 +30,61 @@ public final class SourceLoader {
   private final Map<ModulePath, Source> myLoadingRawModules = new HashMap<>();
   private ModuleScopeProvider myModuleScopeProvider;
   private ModuleScopeProvider myTestsModuleScopeProvider;
+  private final boolean myPreviewBinariesMode;
+  private final Map<ModulePath, HashSet<ModulePath>> myModuleDependencies = new HashMap<>();
 
   private enum SourceType { RAW, BINARY, BINARY_FAIL }
 
-  public SourceLoader(SourceLibrary library, LibraryManager libraryManager) {
+  public SourceLoader(SourceLibrary library, LibraryManager libraryManager, Boolean previewBinariesMode) {
     myLibrary = library;
     myLibraryManager = libraryManager;
     myReferableConverter = myLibrary.getReferableConverter();
+    myPreviewBinariesMode = previewBinariesMode;
+  }
+
+  public SourceLoader(SourceLibrary library, LibraryManager libraryManager) {
+    this(library, libraryManager, false);
+  }
+
+  public boolean isInPreviewBinariesMode() {
+    return myPreviewBinariesMode;
+  }
+
+  public HashSet<ModulePath> getFailingBinaries() {
+    HashSet<ModulePath> diff = new HashSet<>();
+    for (Map.Entry<ModulePath, SourceType> entry : myLoadedModules.entrySet()) if (entry.getValue() == SourceType.BINARY_FAIL) diff.add(entry.getKey());
+
+    HashSet<ModulePath> result = new HashSet<>(diff);
+
+    while (!diff.isEmpty()) {
+      HashSet<ModulePath> newDiff = new HashSet<>();
+      for (ModulePath path : diff) {
+        HashSet<ModulePath> dependents = myModuleDependencies.get(path);
+        if (dependents != null) for (ModulePath dependent : dependents) if (!result.contains(dependent)) newDiff.add(dependent);
+      }
+      result.addAll(newDiff);
+      diff = newDiff;
+    }
+
+    return result;
+  }
+
+  public void initializeLoader(SourceLoader previewLoader) {
+    myModuleScopeProvider = previewLoader.myModuleScopeProvider;
+
+    for (ModulePath module : previewLoader.myLoadedModules.keySet())
+      if (previewLoader.myLoadedModules.get(module) != SourceType.BINARY_FAIL)
+        myLoadedModules.put(module, SourceType.RAW);
+
+    for (ModulePath module : previewLoader.getFailingBinaries())
+      myLoadedModules.put(module, SourceType.BINARY_FAIL);
+  }
+
+  public void markDependency(ModulePath dependent, ModulePath dependency) {
+    if (myPreviewBinariesMode) {
+      HashSet<ModulePath> dependents = myModuleDependencies.computeIfAbsent(dependency, k -> new HashSet<>());
+      dependents.add(dependent);
+    }
   }
 
   public SourceLibrary getLibrary() {
@@ -161,7 +210,7 @@ public final class SourceLoader {
    * @param modulePath  a module to load.
    * @return true if the source was successfully loaded, false otherwise.
    */
-  boolean preloadBinary(ModulePath modulePath, SerializableKeyRegistryImpl keyRegistry, DefinitionListener definitionListener) {
+  public boolean preloadBinary(ModulePath modulePath, SerializableKeyRegistryImpl keyRegistry, DefinitionListener definitionListener) {
     SourceType sourceType = myLoadedModules.get(modulePath);
     if (sourceType == SourceType.BINARY || sourceType == SourceType.BINARY_FAIL) {
       return sourceType == SourceType.BINARY;

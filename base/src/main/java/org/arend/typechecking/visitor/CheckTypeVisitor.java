@@ -2477,8 +2477,11 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           return new TypecheckingResult(new ErrorExpression(type.getExpr()), type.getExpr());
         }
         ErrorExpression errorExpr = result.expression.cast(ErrorExpression.class);
-        if (errorExpr != null) {
-          result.expression = errorExpr.replaceExpression(type.getExpr());
+        if (errorExpr != null && !errorExpr.useExpression()) {
+          errorExpr = errorExpr.replaceExpression(type.getExpr());
+          if (!errorExpr.useExpression()) {
+            result.expression = errorExpr;
+          }
         }
         return useSpecifiedType ? new TypecheckingResult(result.expression, type.getExpr()) : result;
       } else {

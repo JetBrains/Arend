@@ -192,7 +192,7 @@ public class MetaBinOpParser {
     return args;
   }
 
-  private static PartialComparator.Result comparePrecedence(Precedence prec1, Precedence prec2) {
+  public static PartialComparator.Result comparePrecedence(Precedence prec1, Precedence prec2) {
     return prec1.priority < prec2.priority
       ? PartialComparator.Result.LESS
       : prec1.priority > prec2.priority
