@@ -210,7 +210,11 @@ final public class MinimizedRepresentation {
 
     private static CheckTypeVisitor generateTypechecker(InstanceProvider instanceProvider, List<GeneralError> errorsCollector) {
         var checkTypeVisitor = new CheckTypeVisitor(error -> {
-            if (!(error instanceof GoalError)) errorsCollector.add(error);
+            if (!(error instanceof GoalError) &&
+                // yes, a hack. I think it'd require rewriting long references a bit, so leave it like this for now.
+                !(error instanceof FunctionArgInferenceError && ((FunctionArgInferenceError) error).index == 1 && error.getCauseSourceNode() instanceof Concrete.LongReferenceExpression)) {
+                errorsCollector.add(error);
+            }
         }, null, null);
         checkTypeVisitor.setInstancePool(new GlobalInstancePool(instanceProvider, checkTypeVisitor, new LocalInstancePool(checkTypeVisitor)));
         return checkTypeVisitor;

@@ -30,6 +30,10 @@ public class MinimizationTest extends TypeCheckingTestCase {
         selectiveCheck(module, expected, true, false, definition -> definition.getTypeWithParams(new ArrayList<>(), LevelPair.STD));
     }
 
+    private void checkLet(String module, String expected) {
+        selectiveCheck(module, expected, false, true, definition -> ((LetExpression) Objects.requireNonNull(definition.getBody())).getExpression());
+    }
+
     private void checkBody(String module, String expected) {
         selectiveCheck(module, expected, false, true, definition -> (Expression) definition.getBody());
     }
@@ -37,7 +41,7 @@ public class MinimizationTest extends TypeCheckingTestCase {
     @Test
     public void minimizeImplicitNat() {
         checkType("\\data D {x : Nat} (y : Nat) | d \n"
-                + "\\func test : D {1} 2 => d",
+                        + "\\func test : D {1} 2 => d",
                 "D {1} 2");
 
     }
@@ -77,18 +81,16 @@ public class MinimizationTest extends TypeCheckingTestCase {
 
     @Test
     public void projections() {
-        selectiveCheck("\\func foo : \\Sigma Nat Nat => (1, 1)\n" +
+        checkLet("\\func foo : \\Sigma Nat Nat => (1, 1)\n" +
                 "\\data D {n : Nat} (m : Nat) | d\n" +
-                "\\func test : \\Type => \\let (a, b) => foo \\in D {a} b", "D {a} b", false, false,
-                definition -> ((LetExpression) Objects.requireNonNull(definition.getBody())).getExpression());
+                "\\func test : \\Type => \\let (a, b) => foo \\in D {a} b", "D {a} b");
     }
 
     @Test
     public void nestedProjections() {
-        selectiveCheck("\\func foo : \\Sigma (\\Sigma Nat Nat) Nat => ((1, 1), 1)" +
+        checkLet("\\func foo : \\Sigma (\\Sigma Nat Nat) Nat => ((1, 1), 1)" +
                 "\\data D {n : Nat} (m : Nat) | d\n" +
-                "\\func test : \\Type => \\let ((a, b), c) => foo \\in D {a} c", "D {a} c", false, false,
-                definition -> ((LetExpression) Objects.requireNonNull(definition.getBody())).getExpression());
+                "\\func test : \\Type => \\let ((a, b), c) => foo \\in D {a} c", "D {a} c");
     }
 
     @Test
@@ -106,5 +108,11 @@ public class MinimizationTest extends TypeCheckingTestCase {
         checkType("\\data D (y : Nat) {x : Nat} | d\n"
                         + "\\func test : D 2 {1} => d",
                 "D 2 {1}");
+    }
+
+    @Test
+    public void field() {
+        checkLet("\\record Cl | x : Nat\n" +
+                "\\func test : Nat => \\let ccl : Cl => \\new Cl { | x => 1} \\in ccl.x", "ccl.x");
     }
 }
