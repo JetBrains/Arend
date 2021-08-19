@@ -48,7 +48,7 @@ public class DConstructor extends FunctionDefinition {
         link = link.getNext();
       }
       Map<ClassField, Expression> implementations = new HashMap<>();
-      implementations.put(Prelude.ARRAY_ELEMENTS_TYPE, arrayElementsType == null ? new ReferenceExpression(getParameters()) : arrayElementsType);
+      implementations.put(Prelude.ARRAY_ELEMENTS_TYPE, arrayElementsType == null ? new ReferenceExpression(newParameters) : arrayElementsType);
       implementations.put(Prelude.ARRAY_LENGTH, arrayLength instanceof ConCallExpression ? ((ConCallExpression) arrayLength).getDefCallArguments().get(0) : ((IntegerExpression) arrayLength).isZero() ? arrayLength : ((IntegerExpression) arrayLength).pred());
       link.setType(new ClassCallExpression(Prelude.ARRAY, type.getLevels(), implementations, type.getSort(), UniverseKind.NO_UNIVERSES));
     }

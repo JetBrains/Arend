@@ -294,19 +294,16 @@ public class BranchElimTree extends ElimTree {
       ArrayExpression array = (ArrayExpression) argument;
       ElimTree elimTree = myChildren.get(new ArrayConstructor(array.getElements().isEmpty(), true));
       if (elimTree != null) {
-        boolean withElementsType = withElementsType();
         List<Expression> args = new ArrayList<>();
-        if (withElementsType) {
-          args.add(array.getElementsType());
-        }
+        args.add(array.getElementsType());
         if (!array.getElements().isEmpty()) {
           args.add(array.getElements().get(0));
           args.add(array.drop(1));
         }
         args.addAll(arguments.subList(index + 1, arguments.size()));
         List<Expression> newArgs = elimTree.normalizeArguments(args);
-        result.add(array.getElements().isEmpty() ? array : FunCallExpression.make(Prelude.ARRAY_CONS, array.getLevels(), newArgs.subList(0, withElementsType ? 2 : 3)));
-        result.addAll(newArgs.subList((array.getElements().isEmpty() ? 0 : 2) + (withElementsType ? 0 : 1), newArgs.size()));
+        result.add(array.getElements().isEmpty() ? array : FunCallExpression.make(Prelude.ARRAY_CONS, array.getLevels(), newArgs.subList(0, 3)));
+        result.addAll(newArgs.subList(array.getElements().isEmpty() ? 1 : 3, newArgs.size()));
         return result;
       }
     }
