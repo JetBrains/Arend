@@ -294,7 +294,7 @@ public abstract class SourceLibrary extends BaseLibrary {
           sourceLoader.preloadBinary(module, keyRegistry, definitionListener);
 
         SourceLoader newSourceLoader = new SourceLoader(this, libraryManager, false);
-        newSourceLoader.initalizeLoader(sourceLoader);
+        newSourceLoader.initializeLoader(sourceLoader);
         sourceLoader = newSourceLoader;
 
         for (ModulePath module : header.modules) {

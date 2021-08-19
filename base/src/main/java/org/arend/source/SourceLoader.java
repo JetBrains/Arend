@@ -30,7 +30,7 @@ public final class SourceLoader {
   private final Map<ModulePath, Source> myLoadingRawModules = new HashMap<>();
   private ModuleScopeProvider myModuleScopeProvider;
   private ModuleScopeProvider myTestsModuleScopeProvider;
-  private Boolean myPreviewBinariesMode = false;
+  private final boolean myPreviewBinariesMode;
   private final Map<ModulePath, HashSet<ModulePath>> myModuleDependencies = new HashMap<>();
 
   private enum SourceType { RAW, BINARY, BINARY_FAIL }
@@ -42,13 +42,17 @@ public final class SourceLoader {
     myPreviewBinariesMode = previewBinariesMode;
   }
 
-  public Boolean isInPreviewBinariesMode() {
+  public SourceLoader(SourceLibrary library, LibraryManager libraryManager) {
+    this(library, libraryManager, false);
+  }
+
+  public boolean isInPreviewBinariesMode() {
     return myPreviewBinariesMode;
   }
 
   public HashSet<ModulePath> getFailingBinaries() {
     HashSet<ModulePath> diff = new HashSet<>();
-    for (Map.Entry<ModulePath, SourceLoader.SourceType> entry : myLoadedModules.entrySet()) if (entry.getValue() == SourceLoader.SourceType.BINARY_FAIL) diff.add(entry.getKey());
+    for (Map.Entry<ModulePath, SourceType> entry : myLoadedModules.entrySet()) if (entry.getValue() == SourceType.BINARY_FAIL) diff.add(entry.getKey());
 
     HashSet<ModulePath> result = new HashSet<>(diff);
 
@@ -65,15 +69,15 @@ public final class SourceLoader {
     return result;
   }
 
-  public void initalizeLoader(SourceLoader previewLoader) {
+  public void initializeLoader(SourceLoader previewLoader) {
     myModuleScopeProvider = previewLoader.myModuleScopeProvider;
 
     for (ModulePath module : previewLoader.myLoadedModules.keySet())
-      if (previewLoader.myLoadedModules.get(module) != org.arend.source.SourceLoader.SourceType.BINARY_FAIL)
-        myLoadedModules.put(module, org.arend.source.SourceLoader.SourceType.RAW);
+      if (previewLoader.myLoadedModules.get(module) != SourceType.BINARY_FAIL)
+        myLoadedModules.put(module, SourceType.RAW);
 
     for (ModulePath module : previewLoader.getFailingBinaries())
-      myLoadedModules.put(module, SourceLoader.SourceType.BINARY_FAIL);
+      myLoadedModules.put(module, SourceType.BINARY_FAIL);
   }
 
   public void markDependency(ModulePath dependent, ModulePath dependency) {
