@@ -2,6 +2,12 @@ package org.arend.term.prettyprint;
 
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.LevelVariable;
+import org.arend.core.expr.let.HaveClause;
+import org.arend.core.expr.let.LetClause;
+import org.arend.core.expr.let.LetClausePattern;
+import org.arend.core.expr.visitor.BaseExpressionVisitor;
+import org.arend.extImpl.definitionRenamer.ConflictDefinitionRenamer;
+import org.arend.ext.variable.Variable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
@@ -12,10 +18,6 @@ import org.arend.core.definition.DConstructor;
 import org.arend.core.definition.Definition;
 import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.*;
-import org.arend.core.expr.let.HaveClause;
-import org.arend.core.expr.let.LetClause;
-import org.arend.core.expr.let.LetClausePattern;
-import org.arend.core.expr.visitor.BaseExpressionVisitor;
 import org.arend.core.pattern.*;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
@@ -24,8 +26,6 @@ import org.arend.ext.module.LongName;
 import org.arend.ext.prettyprinting.DefinitionRenamer;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.PrettyPrinterFlag;
-import org.arend.ext.variable.Variable;
-import org.arend.extImpl.definitionRenamer.ConflictDefinitionRenamer;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.LocalReferable;
 import org.arend.naming.reference.NamedUnresolvedReference;
@@ -98,8 +98,8 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     if (pattern instanceof ConstructorExpressionPattern) {
       Definition def = pattern.getDefinition();
       return def instanceof Constructor || def instanceof DConstructor
-              ? cConPattern(isExplicit, def.getReferable(), visitPatterns(pattern.getSubPatterns(), pattern.getParameters()))
-              : cTuplePattern(isExplicit, visitPatterns(pattern.getSubPatterns(), EmptyDependentLink.getInstance()));
+        ? cConPattern(isExplicit, def.getReferable(), visitPatterns(pattern.getSubPatterns(), pattern.getParameters()))
+        : cTuplePattern(isExplicit, visitPatterns(pattern.getSubPatterns(), EmptyDependentLink.getInstance()));
     }
     throw new IllegalStateException();
   }
