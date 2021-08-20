@@ -22,6 +22,8 @@ import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCDefReferable;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
+import org.arend.term.concrete.DefinableMetaDefinition;
+import org.arend.term.concrete.SubstConcreteExpressionVisitor;
 import org.arend.typechecking.error.local.GoalError;
 import org.arend.typechecking.error.local.inference.ArgInferenceError;
 import org.arend.typechecking.error.local.inference.FunctionArgInferenceError;
@@ -301,6 +303,16 @@ class ErrorFixingConcreteExpressionVisitor extends BaseConcreteExpressionVisitor
     }
 
     @Override
+    public Void visitMeta(DefinableMetaDefinition def, Concrete.SourceNode params) {
+        DefinableMetaDefinition verboseExpr = (DefinableMetaDefinition) params;
+        visitParameters(def.getParameters(), verboseExpr.getParameters());
+        if (def.body != null) {
+            def.body = def.body.accept(this, verboseExpr.body);
+        }
+        return super.visitMeta(def, params);
+    }
+
+    @Override
     public Concrete.Expression visitTuple(Concrete.TupleExpression expr, Concrete.SourceNode verbose) {
         var verboseExpr = (Concrete.TupleExpression) verbose;
         for (int i = 0; i < expr.getFields().size(); i++) {
@@ -391,6 +403,7 @@ class ErrorFixingConcreteExpressionVisitor extends BaseConcreteExpressionVisitor
                 newParams.add(incompleteParam);
             } else if (incompleteParam.getRefList().get(0).equals(error.parameter)) {
                 newParams.add(complete.getParameters().get(i));
+                incomplete.body = incomplete.body.accept(new SubstConcreteExpressionVisitor(Map.of(incompleteParam.getRefList().get(0), new Concrete.ReferenceExpression(null, complete.getParameters().get(i).getRefList().get(0))), null), null);
             }
         }
         return (Concrete.LamExpression) myFactory.lam(newParams, incomplete.body);
