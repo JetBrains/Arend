@@ -20,9 +20,7 @@ import org.arend.extImpl.ConcreteFactoryImpl;
 import org.arend.naming.reference.LocalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCDefReferable;
-import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
-import org.arend.term.concrete.DefinableMetaDefinition;
 import org.arend.term.concrete.SubstConcreteExpressionVisitor;
 import org.arend.typechecking.error.local.GoalError;
 import org.arend.typechecking.error.local.inference.ArgInferenceError;
@@ -226,7 +224,7 @@ final public class MinimizedRepresentation {
  * This visitor is meant to fix only one error. I consider errors not to be independent,
  * therefore, after fixing one error, the rest may become irrelevant for the newly built expression.
  */
-class ErrorFixingConcreteExpressionVisitor extends BaseConcreteExpressionVisitor<Concrete.SourceNode> {
+class ErrorFixingConcreteExpressionVisitor extends BiConcreteVisitor {
 
     private final List<GeneralError> myErrors;
     private final ConcreteFactory myFactory;
@@ -236,78 +234,19 @@ class ErrorFixingConcreteExpressionVisitor extends BaseConcreteExpressionVisitor
         this.myFactory = myFactory;
     }
 
-    private void visitParameters(List<? extends Concrete.Parameter> incompleteParameters,
-                                 List<? extends Concrete.Parameter> completeParameters) {
-        for (int i = 0; i < incompleteParameters.size(); ++i) {
-            var param = incompleteParameters.get(i);
-            if (param instanceof Concrete.TypeParameter) {
-                ((Concrete.TypeParameter) param).type.accept(this, ((Concrete.TypeParameter) completeParameters.get(i)).type);
-            }
-        }
-    }
-
-    @Override
-    public Concrete.Expression visitSigma(Concrete.SigmaExpression expr, Concrete.SourceNode verbose) {
-        var verboseExpr = (Concrete.SigmaExpression) verbose;
-        visitParameters(expr.getParameters(), verboseExpr.getParameters());
-        return expr;
-    }
-
-    @Override
-    public Concrete.Expression visitPi(Concrete.PiExpression expr, Concrete.SourceNode verbose) {
-        var verboseExpr = (Concrete.PiExpression) verbose;
-        visitParameters(expr.getParameters(), verboseExpr.getParameters());
-        expr.codomain.accept(this, verboseExpr.codomain);
-        return expr;
+    private List<GeneralError> getErrorsForNode(Concrete.SourceNode node) {
+        return myErrors.stream().filter(err -> err.getCauseSourceNode() == node).collect(Collectors.toList());
     }
 
     @Override
     public Concrete.Expression visitLam(Concrete.LamExpression expr, Concrete.SourceNode verbose) {
-        var verboseExpr = (Concrete.LamExpression) verbose;
         var errorList = getErrorsForNode(expr);
         if (!errorList.isEmpty()) {
             var error = errorList.get(0);
             myErrors.clear();
-            var fixed = fixError(expr, verboseExpr, error);
-            expr.getParameters().clear();
-            expr.getParameters().addAll(fixed.getParameters());
-            return expr;
+            return fixError(expr, (Concrete.LamExpression) verbose, error);
         }
-        visitParameters(expr.getParameters(), verboseExpr.getParameters());
-        expr.body.accept(this, verboseExpr.body);
-        return expr;
-    }
-
-    @Override
-    public Concrete.Expression visitGoal(Concrete.GoalExpression expr, Concrete.SourceNode params) {
-        if (expr.expression != null) {
-            var verboseExpr = (Concrete.GoalExpression) params;
-            expr.expression.accept(this, verboseExpr.expression);
-        }
-        return super.visitGoal(expr, params);
-    }
-
-    @Override
-    public Void visitMeta(DefinableMetaDefinition def, Concrete.SourceNode params) {
-        DefinableMetaDefinition verboseExpr = (DefinableMetaDefinition) params;
-        visitParameters(def.getParameters(), verboseExpr.getParameters());
-        if (def.body != null) {
-            def.body = def.body.accept(this, verboseExpr.body);
-        }
-        return super.visitMeta(def, params);
-    }
-
-    @Override
-    public Concrete.Expression visitTuple(Concrete.TupleExpression expr, Concrete.SourceNode verbose) {
-        var verboseExpr = (Concrete.TupleExpression) verbose;
-        for (int i = 0; i < expr.getFields().size(); i++) {
-            expr.getFields().set(i, expr.getFields().get(i).accept(this, verboseExpr.getFields().get(i)));
-        }
-        return expr;
-    }
-
-    private List<GeneralError> getErrorsForNode(Concrete.SourceNode node) {
-        return myErrors.stream().filter(err -> err.getCauseSourceNode() == node).collect(Collectors.toList());
+        return super.visitLam(expr, verbose);
     }
 
     @Override
@@ -318,24 +257,11 @@ class ErrorFixingConcreteExpressionVisitor extends BaseConcreteExpressionVisitor
             if (!errorList.isEmpty()) {
                 GeneralError mostImportantError = findMostImportantError(errorList);
                 myErrors.clear(); // no errors should be fixed afterwards
-                var fixed = fixError(expr, verboseExpr, mostImportantError);
-                expr.getArguments().clear();
-                expr.setFunction(fixed);
-                return expr;
+                return fixError(expr, verboseExpr, mostImportantError);
             }
         }
-        var allArguments = verboseExpr.getArguments().iterator();
-        for (var argument : expr.getArguments()) {
-            var currentArgument = allArguments.next();
-            while (currentArgument.isExplicit() != argument.isExplicit()) {
-                currentArgument = allArguments.next();
-            }
-            argument.expression = argument.expression.accept(this, currentArgument.expression);
-        }
 
-        expr.setFunction(expr.getFunction().accept(this, verboseExpr.getFunction()));
-
-        return expr;
+        return super.visitApp(expr, verboseExpr);
     }
 
     @Override
