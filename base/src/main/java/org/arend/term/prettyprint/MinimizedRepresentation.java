@@ -55,7 +55,9 @@ final public class MinimizedRepresentation {
         var verboseRepresentation = converter.coreToConcrete(expressionToPrint, true);
         var incompleteRepresentation = converter.coreToConcrete(expressionToPrint, false);
         processBindingTypes(converter);
-        incompleteRepresentation = addTrailingImplicitArguments(verboseRepresentation, incompleteRepresentation);
+        if (!mayUseReturnType) {
+            incompleteRepresentation = addTrailingImplicitArguments(verboseRepresentation, incompleteRepresentation);
+        }
         List<GeneralError> errorsCollector = new ArrayList<>();
 
         var groundExpr = generateFreeVariableClauses(expressionToPrint, converter, incompleteRepresentation, verboseRepresentation);
