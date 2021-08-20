@@ -15,9 +15,7 @@ import org.arend.ext.error.GeneralError;
 import org.arend.ext.prettyprinting.DefinitionRenamer;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.PrettyPrinterFlag;
-import org.arend.ext.variable.Variable;
 import org.arend.extImpl.ConcreteFactoryImpl;
-import org.arend.naming.reference.LocalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCDefReferable;
 import org.arend.term.concrete.Concrete;
@@ -31,6 +29,7 @@ import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.instance.pool.LocalInstancePool;
 import org.arend.typechecking.instance.provider.InstanceProvider;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
+import org.arend.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -51,19 +50,14 @@ final public class MinimizedRepresentation {
             @Nullable InstanceProvider instanceProvider,
             @Nullable DefinitionRenamer definitionRenamer,
             boolean mayUseReturnType) {
-        Converter converter = new Converter(definitionRenamer);
-        var verboseRepresentation = converter.coreToConcrete(expressionToPrint, true);
-        var incompleteRepresentation = converter.coreToConcrete(expressionToPrint, false);
-        processBindingTypes(converter);
-        if (!mayUseReturnType) {
-            incompleteRepresentation = addTrailingImplicitArguments(verboseRepresentation, incompleteRepresentation);
-        }
+        var pair = generateRepresentations(expressionToPrint, definitionRenamer, mayUseReturnType);
+        Concrete.Expression verboseRepresentation = pair.proj1;
+        Concrete.Expression incompleteRepresentation = pair.proj2;
         List<GeneralError> errorsCollector = new ArrayList<>();
         Map<String, List<Referable>> freeReferables = getFreeReferables(verboseRepresentation, incompleteRepresentation);
         Map<String, Binding> freeBindings = collectFreeBindings(expressionToPrint);
 
         var typechecker = generateTypechecker(instanceProvider, errorsCollector, freeBindings, freeReferables);
-
 
         int limit = 50;
         Expression returnType = mayUseReturnType ? expressionToPrint.getType() : null;
@@ -110,53 +104,51 @@ final public class MinimizedRepresentation {
         return Concrete.AppExpression.make(null, incompleteRepresentation, trailingImplicitArguments);
     }
 
-    private static void processBindingTypes(Converter converter) {
-        for (Variable binding : converter.freeVariableBindings.keySet().toArray(new Variable[0])) {
-            if (binding instanceof Binding && ((Binding) binding).getTypeExpr() != null) {
-                converter.coreToConcrete(((Binding) binding).getTypeExpr(), true);
+    private static Pair<Concrete.Expression, Concrete.Expression> generateRepresentations(Expression core, @Nullable DefinitionRenamer definitionRenamer, boolean mayUseReturnType) {
+        var verboseConfig = new PrettyPrinterConfig() {
+            @Override
+            public @NotNull EnumSet<PrettyPrinterFlag> getExpressionFlags() {
+                return EnumSet.of(PrettyPrinterFlag.SHOW_TYPES_IN_LAM, PrettyPrinterFlag.SHOW_CASE_RESULT_TYPE, PrettyPrinterFlag.SHOW_CON_PARAMS, PrettyPrinterFlag.SHOW_BIN_OP_IMPLICIT_ARGS, PrettyPrinterFlag.SHOW_COERCE_DEFINITIONS, PrettyPrinterFlag.SHOW_GLOBAL_FIELD_INSTANCE, PrettyPrinterFlag.SHOW_IMPLICIT_ARGS, PrettyPrinterFlag.SHOW_LOCAL_FIELD_INSTANCE, PrettyPrinterFlag.SHOW_TUPLE_TYPE);
             }
+
+            @Override
+            public @Nullable DefinitionRenamer getDefinitionRenamer() {
+                return definitionRenamer;
+            }
+        };
+        var emptyConfig = new PrettyPrinterConfig() {
+            @Override
+            public @NotNull EnumSet<PrettyPrinterFlag> getExpressionFlags() {
+                return EnumSet.of(PrettyPrinterFlag.SHOW_LOCAL_FIELD_INSTANCE);
+            }
+
+            @Override
+            public @Nullable DefinitionRenamer getDefinitionRenamer() {
+                return definitionRenamer;
+            }
+        };
+
+        var verboseRepresentation = ToAbstractVisitor.convert(core, verboseConfig);
+        var incompleteRepresentation = ToAbstractVisitor.convert(core, emptyConfig)
+                .accept(new BiConcreteVisitor() {
+                    @Override
+                    public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Concrete.SourceNode params) {
+                        return ((Concrete.ReferenceExpression) params);
+                    }
+
+                    @Override
+                    protected Concrete.Parameter visitParameter(Concrete.Parameter parameter, Concrete.Parameter wideParameter) {
+                        if (parameter.getType() == null && wideParameter.getType() != null) {
+                            return new Concrete.NameParameter(parameter.getData(), wideParameter.isExplicit(), wideParameter.getRefList().get(0));
+                        } else {
+                            return super.visitParameter(parameter, wideParameter);
+                        }
+                    }
+                }, verboseRepresentation);
+        if (!mayUseReturnType) {
+            incompleteRepresentation = addTrailingImplicitArguments(verboseRepresentation, incompleteRepresentation);
         }
-    }
-
-    // TODO: remove dependency on internals of ToAbstractVisitor.
-    // to do this, one should replace all reference expressions from incomplete concrete with corresponding identifiers from complete concrete.
-    // then, re-collect free variables in `expressionToPrint` as well as in `completeExpression` and finally generate all let clauses with proper type.
-    // it requires to abstract visitor on two concrete expressions
-    private static final class Converter {
-        private final PrettyPrinterConfig verboseConfig;
-        private final PrettyPrinterConfig emptyConfig;
-        private final Map<Variable, LocalReferable> freeVariableBindings;
-
-        public Converter(@Nullable DefinitionRenamer definitionRenamer) {
-            verboseConfig = new PrettyPrinterConfig() {
-                @Override
-                public @NotNull EnumSet<PrettyPrinterFlag> getExpressionFlags() {
-                    return EnumSet.of(PrettyPrinterFlag.SHOW_TYPES_IN_LAM, PrettyPrinterFlag.SHOW_CASE_RESULT_TYPE, PrettyPrinterFlag.SHOW_CON_PARAMS, PrettyPrinterFlag.SHOW_BIN_OP_IMPLICIT_ARGS, PrettyPrinterFlag.SHOW_COERCE_DEFINITIONS, PrettyPrinterFlag.SHOW_GLOBAL_FIELD_INSTANCE, PrettyPrinterFlag.SHOW_IMPLICIT_ARGS, PrettyPrinterFlag.SHOW_LOCAL_FIELD_INSTANCE, PrettyPrinterFlag.SHOW_TUPLE_TYPE);
-                }
-
-                @Override
-                public @Nullable DefinitionRenamer getDefinitionRenamer() {
-                    return definitionRenamer;
-                }
-            };
-            emptyConfig = new PrettyPrinterConfig() {
-                @Override
-                public @NotNull EnumSet<PrettyPrinterFlag> getExpressionFlags() {
-                    return EnumSet.of(PrettyPrinterFlag.SHOW_LOCAL_FIELD_INSTANCE);
-                }
-
-                @Override
-                public @Nullable DefinitionRenamer getDefinitionRenamer() {
-                    return definitionRenamer;
-                }
-            };
-            freeVariableBindings = new LinkedHashMap<>();
-        }
-
-        Concrete.Expression coreToConcrete(Expression core, boolean verbose) {
-            var config = verbose ? verboseConfig : emptyConfig;
-            return ToAbstractVisitor.convert(core, config, freeVariableBindings);
-        }
+        return new Pair<>(verboseRepresentation, incompleteRepresentation);
     }
 
     private static Map<String, Binding> collectFreeBindings(Expression expr) {

@@ -54,10 +54,6 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   }
 
   public static Concrete.Expression convert(Expression expression, PrettyPrinterConfig config) {
-    return convert(expression, config, new HashMap<>());
-  }
-
-  public static @NotNull Concrete.Expression convert(Expression expression, PrettyPrinterConfig config, @NotNull Map<Variable, LocalReferable> initialReferences) {
     DefinitionRenamer definitionRenamer = config.getDefinitionRenamer();
     if (definitionRenamer == null) {
       definitionRenamer = new ConflictDefinitionRenamer();
@@ -72,8 +68,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       expression = expression.normalize(mode);
     }
     expression.accept(collector, variables);
-    variables.removeAll(initialReferences.keySet());
-    ReferableRenamer renamer = new ReferableRenamer(initialReferences);
+    ReferableRenamer renamer = new ReferableRenamer();
     ToAbstractVisitor visitor = new ToAbstractVisitor(config, definitionRenamer, collector, renamer);
     renamer.generateFreshNames(variables);
     return expression.accept(visitor, null);
@@ -103,8 +98,8 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     if (pattern instanceof ConstructorExpressionPattern) {
       Definition def = pattern.getDefinition();
       return def instanceof Constructor || def instanceof DConstructor
-        ? cConPattern(isExplicit, def.getReferable(), visitPatterns(pattern.getSubPatterns(), pattern.getParameters()))
-        : cTuplePattern(isExplicit, visitPatterns(pattern.getSubPatterns(), EmptyDependentLink.getInstance()));
+              ? cConPattern(isExplicit, def.getReferable(), visitPatterns(pattern.getSubPatterns(), pattern.getParameters()))
+              : cTuplePattern(isExplicit, visitPatterns(pattern.getSubPatterns(), EmptyDependentLink.getInstance()));
     }
     throw new IllegalStateException();
   }

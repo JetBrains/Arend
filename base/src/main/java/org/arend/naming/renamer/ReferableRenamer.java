@@ -12,15 +12,7 @@ import java.util.Map;
 import static org.arend.term.concrete.ConcreteExpressionFactory.ref;
 
 public class ReferableRenamer extends Renamer {
-  private final Map<Variable, LocalReferable> myMap;
-
-  public ReferableRenamer() {
-    this(new HashMap<>());
-  }
-
-  public ReferableRenamer(Map<Variable, LocalReferable> map) {
-    myMap = map;
-  }
+  private final Map<Variable, LocalReferable> myMap = new HashMap<>();
 
   public void addNewName(Variable variable, LocalReferable referable) {
     myMap.put(variable, referable);
@@ -48,9 +40,5 @@ public class ReferableRenamer extends Renamer {
     LocalReferable referable = ref(newName);
     addNewName(var, referable);
     return referable;
-  }
-
-  public Map<Variable, LocalReferable> getMapping() {
-    return myMap;
   }
 }
