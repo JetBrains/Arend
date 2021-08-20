@@ -2,7 +2,9 @@ package org.arend.term.prettyprint;
 
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.UntypedDependentLink;
-import org.arend.core.definition.*;
+import org.arend.core.definition.ClassField;
+import org.arend.core.definition.Constructor;
+import org.arend.core.definition.Definition;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.PiExpression;
 import org.arend.core.expr.type.Type;
@@ -22,22 +24,22 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class ArgumentMappingIterator implements Iterator<Pair<CoreParameter, ConcreteArgument>> {
-    private final Iterator<DependentLink> coreParameter;
+    private final Iterator<DependentLink> coreParameterIterator;
     private final ListIterator<Concrete.Argument> argumentsIterator;
 
     public ArgumentMappingIterator(Definition definition, Concrete.AppExpression call) {
-        coreParameter = getParameters(definition).iterator();
+        coreParameterIterator = getParameters(definition).iterator();
         argumentsIterator = call.getArguments().listIterator();
     }
 
     @Override
     public boolean hasNext() {
-        return coreParameter.hasNext() || argumentsIterator.hasNext();
+        return coreParameterIterator.hasNext() || argumentsIterator.hasNext();
     }
 
     @Override
     public Pair<@Nullable CoreParameter, @Nullable ConcreteArgument> next() {
-        var currentParameter = coreParameter.hasNext() ? coreParameter.next() : null;
+        var currentParameter = coreParameterIterator.hasNext() ? coreParameterIterator.next() : null;
         var currentArgument = argumentsIterator.hasNext() ? argumentsIterator.next() : null;
         if (currentParameter == null) {
             return new Pair<>(null, currentArgument);

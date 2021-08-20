@@ -4,9 +4,11 @@ import org.arend.ext.concrete.expr.ConcreteArgument;
 import org.arend.extImpl.ConcreteFactoryImpl;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
-import org.arend.term.concrete.DefinableMetaDefinition;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -42,9 +44,9 @@ public abstract class BiConcreteVisitor extends BaseConcreteExpressionVisitor<Co
         return new Concrete.ReferenceExpression(expr.getData(), expr.getReferent());
     }
 
-    protected Concrete.Parameter doVisitParameter(Concrete.Parameter parameter, Concrete.SourceNode params) {
+    protected Concrete.Parameter visitParameter(Concrete.Parameter parameter, Concrete.Parameter wideParameter) {
         if (parameter instanceof Concrete.TypeParameter) {
-            return (Concrete.Parameter) myFactory.param(parameter.isExplicit(), ((Concrete.TypeParameter) parameter).type.accept(this, ((Concrete.TypeParameter) params).type));
+            return (Concrete.Parameter) myFactory.param(parameter.isExplicit(), ((Concrete.TypeParameter) parameter).type.accept(this, ((Concrete.TypeParameter) wideParameter).type));
         } else if (parameter.getRefList().size() != 1) {
             return (Concrete.Parameter) myFactory.param(parameter.isExplicit(), parameter.getRefList(), Objects.requireNonNull(parameter.getType()));
         } else {
@@ -56,7 +58,7 @@ public abstract class BiConcreteVisitor extends BaseConcreteExpressionVisitor<Co
         assert parameters.size() == wideParams.size();
         var newParams = new ArrayList<Concrete.Parameter>();
         for (int i = 0; i < parameters.size(); ++i) {
-            newParams.add(doVisitParameter(parameters.get(i), wideParams.get(i)));
+            newParams.add(visitParameter(parameters.get(i), wideParams.get(i)));
         }
         return newParams;
     }

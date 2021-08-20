@@ -54,10 +54,8 @@ final public class MinimizedRepresentation {
         Concrete.Expression verboseRepresentation = pair.proj1;
         Concrete.Expression incompleteRepresentation = pair.proj2;
         List<GeneralError> errorsCollector = new ArrayList<>();
-        Map<String, List<Referable>> freeReferables = getFreeReferables(verboseRepresentation, incompleteRepresentation);
-        Map<String, Binding> freeBindings = collectFreeBindings(expressionToPrint);
-
-        var typechecker = generateTypechecker(instanceProvider, errorsCollector, freeBindings, freeReferables);
+        var typechecker = generateTypechecker(instanceProvider, errorsCollector);
+        induceContext(typechecker, verboseRepresentation, incompleteRepresentation, expressionToPrint);
 
         int limit = 50;
         Expression returnType = mayUseReturnType ? expressionToPrint.getType() : null;
@@ -72,6 +70,21 @@ final public class MinimizedRepresentation {
                             "Errors: \n" + errorsCollector);
                 }
                 incompleteRepresentation = fixedExpression;
+            }
+        }
+    }
+
+    private static void induceContext(CheckTypeVisitor typechecker, Concrete.Expression verboseRepresentation, Concrete.Expression incompleteRepresentation, Expression expressionToPrint) {
+        Map<String, List<Referable>> freeReferables = getFreeReferables(verboseRepresentation, incompleteRepresentation);
+        Map<String, Binding> freeBindings = collectFreeBindings(expressionToPrint);
+
+        for (var nameToBinding : freeBindings.entrySet()) {
+            var referables = freeReferables.get(nameToBinding.getKey());
+            if (referables == null) {
+                continue;
+            }
+            for (var referable : referables) {
+                typechecker.addBinding(referable, nameToBinding.getValue());
             }
         }
     }
@@ -178,24 +191,13 @@ final public class MinimizedRepresentation {
         return freeBindings.stream().collect(Collectors.toMap(Binding::getName, Function.identity()));
     }
 
-    private static CheckTypeVisitor generateTypechecker(InstanceProvider instanceProvider, List<GeneralError> errorsCollector, Map<String, Binding> freeBindings, Map<String, List<Referable>> freeReferables) {
+    private static CheckTypeVisitor generateTypechecker(InstanceProvider instanceProvider, List<GeneralError> errorsCollector) {
         var checkTypeVisitor = new CheckTypeVisitor(error -> {
             if (!(error instanceof GoalError)) {
                 errorsCollector.add(error);
             }
         }, null, null);
         checkTypeVisitor.setInstancePool(new GlobalInstancePool(instanceProvider, checkTypeVisitor, new LocalInstancePool(checkTypeVisitor)));
-
-        for (var nameToBinding : freeBindings.entrySet()) {
-            var referables = freeReferables.get(nameToBinding.getKey());
-            if (referables == null) {
-                continue;
-            }
-            for (var referable : referables) {
-                checkTypeVisitor.addBinding(referable, nameToBinding.getValue());
-            }
-        }
-
         return checkTypeVisitor;
     }
 
