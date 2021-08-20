@@ -146,15 +146,22 @@ final public class MinimizedRepresentation {
                 .accept(new BiConcreteVisitor() {
                     @Override
                     public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Concrete.SourceNode params) {
-                        return ((Concrete.ReferenceExpression) params);
+                        if (params instanceof Concrete.AppExpression) {
+                            return ((Concrete.AppExpression) params).getFunction();
+                        } else {
+                            return (Concrete.Expression) params;
+                        }
                     }
 
                     @Override
                     protected Concrete.Parameter visitParameter(Concrete.Parameter parameter, Concrete.Parameter wideParameter) {
-                        if (parameter.getType() == null && wideParameter.getType() != null) {
-                            return new Concrete.NameParameter(parameter.getData(), wideParameter.isExplicit(), wideParameter.getRefList().get(0));
+                        //noinspection DuplicatedCode
+                        if (parameter.getType() == null) {
+                            return (Concrete.Parameter) myFactory.param(parameter.isExplicit(), wideParameter.getRefList().get(0));
+                        } else if (wideParameter.getRefList().stream().anyMatch(Objects::nonNull)) {
+                            return (Concrete.Parameter) myFactory.param(parameter.isExplicit(), wideParameter.getRefList(), ((Concrete.TypeParameter) parameter).type.accept(this, ((Concrete.TypeParameter) wideParameter).type));
                         } else {
-                            return super.visitParameter(parameter, wideParameter);
+                            return (Concrete.Parameter) myFactory.param(parameter.isExplicit(), ((Concrete.TypeParameter) parameter).type.accept(this, ((Concrete.TypeParameter) wideParameter).type));
                         }
                     }
                 }, verboseRepresentation);

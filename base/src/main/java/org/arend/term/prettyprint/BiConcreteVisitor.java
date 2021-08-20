@@ -45,12 +45,13 @@ public abstract class BiConcreteVisitor extends BaseConcreteExpressionVisitor<Co
     }
 
     protected Concrete.Parameter visitParameter(Concrete.Parameter parameter, Concrete.Parameter wideParameter) {
-        if (parameter instanceof Concrete.TypeParameter) {
-            return (Concrete.Parameter) myFactory.param(parameter.isExplicit(), ((Concrete.TypeParameter) parameter).type.accept(this, ((Concrete.TypeParameter) wideParameter).type));
-        } else if (parameter.getRefList().size() != 1) {
-            return (Concrete.Parameter) myFactory.param(parameter.isExplicit(), parameter.getRefList(), Objects.requireNonNull(parameter.getType()));
-        } else {
+        //noinspection DuplicatedCode
+        if (parameter.getType() == null) {
             return (Concrete.Parameter) myFactory.param(parameter.isExplicit(), parameter.getRefList().get(0));
+        } else if (wideParameter.getRefList().stream().anyMatch(Objects::nonNull)) {
+            return (Concrete.Parameter) myFactory.param(parameter.isExplicit(), parameter.getRefList(), ((Concrete.TypeParameter) parameter).type.accept(this, ((Concrete.TypeParameter) wideParameter).type));
+        } else {
+            return (Concrete.Parameter) myFactory.param(parameter.isExplicit(), ((Concrete.TypeParameter) parameter).type.accept(this, ((Concrete.TypeParameter) wideParameter).type));
         }
     }
 
@@ -111,7 +112,12 @@ public abstract class BiConcreteVisitor extends BaseConcreteExpressionVisitor<Co
 
     @Override
     public Concrete.Expression visitTuple(Concrete.TupleExpression expr, Concrete.SourceNode params) {
-        var wideExpr = (Concrete.TupleExpression) params;
+        Concrete.TupleExpression wideExpr;
+        if (params instanceof Concrete.TypedExpression) {
+            wideExpr = (Concrete.TupleExpression)((Concrete.TypedExpression) params).getExpression();
+        } else {
+            wideExpr = (Concrete.TupleExpression) params;
+        }
         var newFields = new ArrayList<Concrete.Expression>();
         for (int i = 0; i < expr.getFields().size(); ++i) {
             newFields.add(expr.getFields().get(i).accept(this, wideExpr.getFields().get(i)));
