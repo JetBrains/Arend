@@ -5,12 +5,14 @@ import org.arend.core.expr.DefCallExpression;
 import org.arend.core.expr.visitor.VoidExpressionVisitor;
 import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.ext.module.LongName;
+import org.arend.ext.module.LongReference;
 import org.arend.ext.module.ModulePath;
 import org.arend.ext.prettyprinting.DefinitionRenamer;
 import org.arend.ext.reference.ArendRef;
 import org.arend.module.ModuleLocation;
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.reference.ModuleReferable;
+import org.arend.naming.reference.TCDefReferable;
 import org.arend.naming.reference.TCReferable;
 import org.jetbrains.annotations.Nullable;
 
@@ -25,38 +27,27 @@ public class ConflictDefinitionRenamer extends VoidExpressionVisitor<Void> imple
   private final Map<String, CoreDefinition> myNotRenamedDefs = new HashMap<>();
 
   // The result map
-  private final Map<TCReferable, LongName> myDefLongNames = new HashMap<>();
+  private final Map<TCReferable, LongReference> myDefLongNames = new HashMap<>();
 
   @Override
-  public @Nullable LongName renameDefinition(ArendRef ref) {
+  public @Nullable LongReference renameDefinition(ArendRef ref) {
     return ref instanceof TCReferable ? myDefLongNames.get(ref) : null;
   }
 
   private void rename(Definition definition) {
-    LocatedReferable ref = definition.getRef().getLocatedReferableParent();
-    if (ref == null || ref instanceof ModuleReferable) {
-      ModulePath modulePath;
-      if (ref != null) {
-        modulePath = ((ModuleReferable) ref).path;
-      } else {
-        ModuleLocation location = definition.getRef().getLocation();
-        modulePath = location == null ? null : location.getModulePath();
-      }
-      if (modulePath != null) {
-        List<String> fullName = new ArrayList<>(modulePath.size() + 1);
-        fullName.addAll(modulePath.toList());
-        fullName.add(definition.getReferable().getRepresentableName());
-        myDefLongNames.put(definition.getRef(), new LongName(fullName));
-      }
-    } else {
-      List<String> list = new ArrayList<>();
+    TCDefReferable definitionReferent = definition.getRef();
+    LocatedReferable ref = definitionReferent.getLocatedReferableParent();
+    if (ref instanceof ModuleReferable) {
+      myDefLongNames.put(definitionReferent, new LongReference(ref, definitionReferent));
+    } else if (ref != null) {
+      List<ArendRef> list = new ArrayList<>();
       while (ref != null && !(ref instanceof ModuleReferable)) {
-        list.add(ref.getRefName());
+        list.add(ref);
         ref = ref.getLocatedReferableParent();
       }
       Collections.reverse(list);
-      list.add(definition.getReferable().getRepresentableName());
-      myDefLongNames.put(definition.getRef(), new LongName(list));
+      list.add(definition.getReferable());
+      myDefLongNames.put(definitionReferent, new LongReference(list));
     }
   }
 

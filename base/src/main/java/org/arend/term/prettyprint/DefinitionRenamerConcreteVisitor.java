@@ -1,6 +1,6 @@
 package org.arend.term.prettyprint;
 
-import org.arend.ext.module.LongName;
+import org.arend.ext.module.LongReference;
 import org.arend.ext.prettyprinting.DefinitionRenamer;
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
@@ -16,9 +16,9 @@ public class DefinitionRenamerConcreteVisitor extends BaseConcreteExpressionVisi
   @Override
   public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Void params) {
     if (expr.getReferent() instanceof LocatedReferable) {
-      LongName longName = myDefinitionRenamer.renameDefinition(expr.getReferent());
-      if (longName != null) {
-        return new Concrete.LongReferenceExpression(expr.getData(), longName, expr.getReferent(), expr.getPLevel(), expr.getHLevel());
+      LongReference longReference = myDefinitionRenamer.renameDefinition(expr.getReferent());
+      if (longReference != null) {
+        return new Concrete.LongReferenceExpression(expr.getData(), longReference, expr.getReferent(), expr.getPLevel(), expr.getHLevel());
       }
     }
     return expr;

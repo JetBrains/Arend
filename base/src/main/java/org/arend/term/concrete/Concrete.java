@@ -10,6 +10,7 @@ import org.arend.ext.concrete.pattern.ConcreteReferencePattern;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.error.LocalError;
 import org.arend.ext.module.LongName;
+import org.arend.ext.module.LongReference;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.ext.prettyprinting.doc.DocFactory;
@@ -553,20 +554,24 @@ public final class Concrete {
   }
 
   public static class LongReferenceExpression extends ReferenceExpression {
-    private final LongName myLongName;
+    private final LongReference myLongReference;
 
-    public LongReferenceExpression(Object data, LongName longName, Referable referable, LevelExpression pLevel, LevelExpression hLevel) {
+    public LongReferenceExpression(Object data, LongReference argument, Referable referable, LevelExpression pLevel, LevelExpression hLevel) {
       super(data, referable, pLevel, hLevel);
-      myLongName = longName;
+      myLongReference = argument;
     }
 
-    public LongReferenceExpression(Object data, LongName longName, Referable referable) {
+    public LongReferenceExpression(Object data, LongReference argument, Referable referable) {
       super(data, referable);
-      myLongName = longName;
+      myLongReference = argument;
     }
 
     public LongName getLongName() {
-      return myLongName;
+      return myLongReference.toLongName();
+    }
+
+    public LongReference getLongReference() {
+      return myLongReference;
     }
   }
 

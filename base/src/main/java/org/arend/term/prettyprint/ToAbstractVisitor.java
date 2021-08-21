@@ -6,6 +6,7 @@ import org.arend.core.expr.let.HaveClause;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.let.LetClausePattern;
 import org.arend.core.expr.visitor.BaseExpressionVisitor;
+import org.arend.ext.module.LongReference;
 import org.arend.extImpl.definitionRenamer.ConflictDefinitionRenamer;
 import org.arend.ext.variable.Variable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
@@ -22,7 +23,6 @@ import org.arend.core.pattern.*;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.ext.core.ops.NormalizationMode;
-import org.arend.ext.module.LongName;
 import org.arend.ext.prettyprinting.DefinitionRenamer;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.PrettyPrinterFlag;
@@ -230,11 +230,9 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     }
 
     boolean isGlobalInstance = argument instanceof FunCallExpression && !expr.getDefinition().getParentClass().isRecord();
-    String name = null;
     boolean ok = false;
     if (argument instanceof ReferenceExpression && hasFlag(PrettyPrinterFlag.SHOW_LOCAL_FIELD_INSTANCE)) {
       ok = true;
-      name = ((ReferenceExpression) argument).getBinding().getName();
     } else if (isGlobalInstance && hasFlag(PrettyPrinterFlag.SHOW_GLOBAL_FIELD_INSTANCE)) {
       ok = true;
       for (DependentLink param = ((FunCallExpression) argument).getDefinition().getParameters(); param.hasNext(); param = param.getNext()) {
@@ -244,11 +242,17 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
           break;
         }
       }
-      name = ((FunCallExpression) argument).getDefinition().getName();
     }
     if (ok) {
       GlobalReferable ref = expr.getDefinition().getReferable();
-      return cVar(new LongName(name == null ? "_" : name, ref.getRepresentableName()), ref);
+      var converted = argument.accept(this, null);
+      if (converted instanceof Concrete.LongReferenceExpression) {
+        return cVar(((Concrete.LongReferenceExpression) converted).getLongReference().withTrailing(ref), ref);
+      } else if (converted instanceof Concrete.ReferenceExpression) {
+        return cVar(new LongReference(((Concrete.ReferenceExpression) converted).getReferent(), ref), ref);
+      } else {
+        return Concrete.AppExpression.make(null, makeReference(ref), converted, false);
+      }
     }
 
     Concrete.ReferenceExpression result = makeReference(expr);

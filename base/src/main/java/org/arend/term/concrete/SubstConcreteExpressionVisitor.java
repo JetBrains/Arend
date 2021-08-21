@@ -66,7 +66,7 @@ public class SubstConcreteExpressionVisitor implements DataContainer, ConcreteEx
     var data = myData != null ? myData : expr.getData();
     if (Concrete.LongReferenceExpression.class.equals(expr.getClass())) {
       var longRef = (Concrete.LongReferenceExpression) expr;
-      return new Concrete.LongReferenceExpression(data, longRef.getLongName(), longRef.getReferent(), longRef.getPLevel(), longRef.getHLevel());
+      return new Concrete.LongReferenceExpression(data, longRef.getLongReference(), longRef.getReferent(), longRef.getPLevel(), longRef.getHLevel());
     } else if (Concrete.FixityReferenceExpression.class.equals(expr.getClass())) {
       var fixityRef = (Concrete.FixityReferenceExpression) expr;
       return new Concrete.FixityReferenceExpression(data, fixityRef.getReferent(), fixityRef.fixity);
