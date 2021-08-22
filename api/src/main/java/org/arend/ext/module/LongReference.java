@@ -35,14 +35,34 @@ public class LongReference {
         return myReferences.get(0);
     }
 
+    public ArendRef getLastRef() {
+        return myReferences.get(myReferences.size() - 1);
+    }
+
+    public List<ArendRef> getReferences() {
+        return myReferences;
+    }
+
     public int size() {
         return myReferences.size();
     }
 
     @Contract("_ -> new")
-    public LongReference withTrailing(ArendRef newRef) {
+    public LongReference push(ArendRef newRef) {
         var newList = new ArrayList<>(myReferences);
         newList.add(newRef);
         return new LongReference(newList);
+    }
+
+    @Contract("-> new")
+    public LongReference pop() {
+        var newList = new ArrayList<>(myReferences);
+        newList.remove(newList.size() - 1);
+        return new LongReference(newList);
+    }
+
+    @Override
+    public String toString() {
+        return toLongName().toString();
     }
 }

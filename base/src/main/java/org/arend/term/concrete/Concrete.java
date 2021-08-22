@@ -573,6 +573,16 @@ public final class Concrete {
     public LongReference getLongReference() {
       return myLongReference;
     }
+
+    public Concrete.ReferenceExpression getQualifier() {
+      var longReferences = myLongReference.getReferences();
+      if (longReferences.size() == 2) {
+        return new Concrete.ReferenceExpression(getData(), (Referable) longReferences.get(0), getPLevel(), getHLevel());
+      } else {
+        var newReferences = myLongReference.pop();
+        return new Concrete.LongReferenceExpression(getData(), newReferences, (Referable) newReferences.getLastRef(), getPLevel(), getHLevel());
+      }
+    }
   }
 
   public static class FixityReferenceExpression extends ReferenceExpression {

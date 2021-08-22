@@ -1,5 +1,6 @@
 package org.arend.typechecking.implicitargs;
 
+import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.context.binding.inference.ExpressionInferenceVariable;
 import org.arend.core.context.binding.inference.FunctionInferenceVariable;
 import org.arend.core.context.binding.inference.InferenceVariable;
@@ -22,7 +23,9 @@ import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.ArgumentExplicitnessError;
 import org.arend.ext.error.TypeMismatchError;
 import org.arend.ext.instance.SubclassSearchParameters;
+import org.arend.naming.reference.DataLocalReferable;
 import org.arend.naming.reference.Referable;
+import org.arend.naming.reference.TCDefReferable;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.NotPiType;
@@ -136,7 +139,12 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
         infVar = new FunctionInferenceVariable(definition, parameter, i + 1, type, expr, myVisitor.getAllBindings());
       }
 
-      Expression binding = InferenceReferenceExpression.make(infVar, myVisitor.getEquations());
+      Expression binding;
+      if (expr instanceof Concrete.LongReferenceExpression && i == 0 && !(((Concrete.LongReferenceExpression) expr).getLongReference().getFirstRef() instanceof TCDefReferable)) {
+        binding = ((Concrete.LongReferenceExpression) expr).getQualifier().accept(myVisitor, type).expression;
+      } else {
+        binding = InferenceReferenceExpression.make(infVar, myVisitor.getEquations());
+      }
       result = result.applyExpression(binding, parameter.isExplicit(), myVisitor.getErrorReporter(), expr);
       substitution.add(parameter, binding);
       i++;

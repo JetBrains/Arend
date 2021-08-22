@@ -247,7 +247,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       GlobalReferable ref = expr.getDefinition().getReferable();
       var converted = argument.accept(this, null);
       if (converted instanceof Concrete.LongReferenceExpression) {
-        return cVar(((Concrete.LongReferenceExpression) converted).getLongReference().withTrailing(ref), ref);
+        return cVar(((Concrete.LongReferenceExpression) converted).getLongReference().push(ref), ref);
       } else if (converted instanceof Concrete.ReferenceExpression) {
         return cVar(new LongReference(((Concrete.ReferenceExpression) converted).getReferent(), ref), ref);
       } else {
