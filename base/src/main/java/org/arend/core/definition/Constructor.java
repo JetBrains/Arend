@@ -8,6 +8,7 @@ import org.arend.core.expr.ConCallExpression;
 import org.arend.core.expr.DataCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.ReferenceExpression;
+import org.arend.core.pattern.ConstructorExpressionPattern;
 import org.arend.core.pattern.ExpressionPattern;
 import org.arend.core.pattern.Pattern;
 import org.arend.core.subst.ExprSubstitution;
@@ -84,8 +85,8 @@ public class Constructor extends Definition implements Function, BranchKey, Core
   }
 
   @Override
-  public int getNumberOfParameters() {
-    return DependentLink.Helper.size(myParameters);
+  public DependentLink getParameters(ConstructorExpressionPattern pattern) {
+    return myParameters;
   }
 
   public void setParameters(DependentLink parameters) {

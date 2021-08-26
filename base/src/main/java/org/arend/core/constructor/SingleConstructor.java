@@ -5,6 +5,7 @@ import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.elimtree.Body;
 import org.arend.core.expr.Expression;
 import org.arend.core.elimtree.BranchKey;
+import org.arend.core.pattern.ConstructorExpressionPattern;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.implicitargs.equations.Equations;
 
@@ -16,7 +17,7 @@ public abstract class SingleConstructor implements BranchKey {
   public abstract boolean compare(SingleConstructor other, Equations equations, Concrete.SourceNode sourceNode);
 
   @Override
-  public DependentLink getParameters() {
+  public DependentLink getParameters(ConstructorExpressionPattern pattern) {
     return EmptyDependentLink.getInstance();
   }
 

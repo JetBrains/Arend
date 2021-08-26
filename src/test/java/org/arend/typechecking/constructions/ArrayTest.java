@@ -48,6 +48,20 @@ public class ArrayTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void consTest1() {
+    FunctionDefinition def = (FunctionDefinition) typeCheckDef("\\func foo => 1 :: nil");
+    assertTrue(def.getBody() instanceof ArrayExpression);
+    assertEquals(Sort.SET0, ((ClassCallExpression) def.getResultType()).getSort());
+  }
+
+  @Test
+  public void consTest2() {
+    FunctionDefinition def = (FunctionDefinition) typeCheckDef("\\func foo => 1 :: 2 :: nil");
+    assertTrue(def.getBody() instanceof ArrayExpression);
+    assertEquals(Sort.SET0, ((ClassCallExpression) def.getResultType()).getSort());
+  }
+
+  @Test
   public void indexTest() {
     typeCheckModule(
       "\\open DArray(!!)\n" +
@@ -230,8 +244,26 @@ public class ArrayTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\func f (x : DArray) : Fin x.len -> \\Type\n" +
       "  | nil {A} => A\n" +
-      "  | :: {A} _ _ => A\n" +
-      "\\func test : f (1 :: nil) = Nat => idp");
+      "  | :: {_} {A} _ _ => A\n" +
+      "\\func test : f (1 :: nil) = (\\lam _ => Nat) => idp");
+  }
+
+  @Test
+  public void extractType2() {
+    typeCheckModule(
+      "\\func f (n : Nat) (x : DArray {n}) : Fin x.len -> \\Type\n" +
+      "  | 0, nil {A} => A\n" +
+      "  | suc _, :: {A} _ _ => A\n" +
+      "\\func test : f 1 (1 :: nil) = (\\lam _ => Nat) => idp");
+  }
+
+  @Test
+  public void extractType3() {
+    typeCheckModule(
+      "\\func f (n : Nat) (x : DArray {n}) : Fin n -> \\Type\n" +
+      "  | 0, nil {A} => A\n" +
+      "  | suc _, :: {A} _ _ => A\n" +
+      "\\func test : f 1 (1 :: nil) = (\\lam _ => Nat) => idp");
   }
 
   @Test

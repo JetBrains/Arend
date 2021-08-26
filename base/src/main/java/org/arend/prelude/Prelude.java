@@ -81,8 +81,8 @@ public class Prelude implements ArendPrelude {
   public static FunctionDefinition DIV_MOD_PROPERTY;
   public static SigmaExpression DIV_MOD_TYPE;
 
+  public static final String ARRAY_NAME = "Array";
   public static MetaReferable ARRAY;
-  public static String ARRAY_NAME = "Array";
   public static ClassDefinition DEP_ARRAY;
   public static ClassField ARRAY_ELEMENTS_TYPE;
   public static ClassField ARRAY_LENGTH;
@@ -237,7 +237,7 @@ public class Prelude implements ArendPrelude {
         break;
       case "::":
         ARRAY_CONS = (DConstructor) definition;
-        ARRAY_CONS.setPattern(new ConstructorExpressionPattern(FunCallExpression.makeFunCall(ARRAY_CONS, LevelPair.STD, Collections.emptyList()), Arrays.asList(new BindingPattern(ARRAY_CONS.getParameters()), new BindingPattern(ARRAY_CONS.getParameters().getNext()), new BindingPattern(ARRAY_CONS.getParameters().getNext().getNext()))));
+        ARRAY_CONS.setPattern(new ConstructorExpressionPattern(FunCallExpression.makeFunCall(ARRAY_CONS, LevelPair.STD, Collections.emptyList()), Arrays.asList(new BindingPattern(ARRAY_CONS.getParameters()), new BindingPattern(ARRAY_CONS.getParameters().getNext()), new BindingPattern(ARRAY_CONS.getParameters().getNext().getNext()), new BindingPattern(ARRAY_CONS.getParameters().getNext().getNext().getNext()))));
         ARRAY_CONS.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         break;
       case "!!":

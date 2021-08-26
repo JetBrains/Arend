@@ -1,5 +1,6 @@
 package org.arend.core.pattern;
 
+import org.arend.core.context.binding.Binding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.definition.*;
@@ -45,21 +46,23 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
     super(pattern.data, patterns);
   }
 
-  public ConstructorExpressionPattern(FunCallExpression funCall, Boolean isArrayEmpty, List<? extends ExpressionPattern> patterns) {
-    super(isArrayEmpty == null ? funCall : new ArrayPair(funCall, isArrayEmpty), patterns);
+  public ConstructorExpressionPattern(FunCallExpression funCall, Binding thisBinding, Boolean isArrayEmpty, List<? extends ExpressionPattern> patterns) {
+    super(isArrayEmpty == null && thisBinding == null ? funCall : new ArrayData(funCall, isArrayEmpty, thisBinding), patterns);
   }
 
-  public ConstructorExpressionPattern(FunCallExpression funCall, Expression arrayLength, List<? extends ExpressionPattern> patterns) {
-    this(funCall, isEqualToZero(arrayLength), patterns);
+  public ConstructorExpressionPattern(FunCallExpression funCall, Binding thisBinding, Expression arrayLength, List<? extends ExpressionPattern> patterns) {
+    this(funCall, thisBinding, isEqualToZero(arrayLength), patterns);
   }
 
-  private static class ArrayPair {
+  private static class ArrayData {
     final FunCallExpression funCall;
-    final boolean isEmpty;
+    final Boolean isEmpty;
+    final Binding thisBinding;
 
-    private ArrayPair(FunCallExpression funCall, boolean isEmpty) {
+    private ArrayData(FunCallExpression funCall, Boolean isEmpty, Binding thisBinding) {
       this.funCall = funCall;
       this.isEmpty = isEmpty;
+      this.thisBinding = thisBinding;
     }
   }
 
@@ -75,7 +78,7 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
   }
 
   public Expression getDataExpression() {
-    return data instanceof ArrayPair ? ((ArrayPair) data).funCall : (Expression) data;
+    return data instanceof ArrayData ? ((ArrayData) data).funCall : (Expression) data;
   }
 
   @Override
@@ -123,11 +126,22 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
 
   @Override
   public Definition getDefinition() {
-    return data instanceof DefCallExpression ? ((DefCallExpression) data).getDefinition() : data instanceof SmallIntegerExpression ? Prelude.ZERO : data instanceof ArrayPair ? ((ArrayPair) data).funCall.getDefinition() : null;
+    return data instanceof DefCallExpression ? ((DefCallExpression) data).getDefinition() : data instanceof SmallIntegerExpression ? Prelude.ZERO : data instanceof ArrayData ? ((ArrayData) data).funCall.getDefinition() : null;
   }
 
   public List<? extends Expression> getDataTypeArguments() {
     return data instanceof ConCallExpression ? ((ConCallExpression) data).getDataTypeArguments() : Collections.emptyList();
+  }
+
+  public Expression getArrayLength() {
+    Expression dataExpr = getDataExpression();
+    if (!(dataExpr instanceof FunCallExpression)) return null;
+    FunCallExpression funCall = (FunCallExpression) dataExpr;
+    return funCall.getDefinition() == Prelude.ARRAY_CONS && funCall.getDefCallArguments().size() >= 1 ? funCall.getDefCallArguments().get(0) : null;
+  }
+
+  public Binding getArrayThisBinding() {
+    return data instanceof ArrayData ? ((ArrayData) data).thisBinding : null;
   }
 
   public Expression getArrayElementsType() {
@@ -135,11 +149,12 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
     if (!(dataExpr instanceof FunCallExpression)) return null;
     FunCallExpression funCall = (FunCallExpression) dataExpr;
     Definition def = funCall.getDefinition();
-    return (def == Prelude.EMPTY_ARRAY || def == Prelude.ARRAY_CONS) && funCall.getDefCallArguments().size() >= 1 ? funCall.getDefCallArguments().get(0) : null;
+    return def == Prelude.EMPTY_ARRAY && funCall.getDefCallArguments().size() >= 1 ? funCall.getDefCallArguments().get(0) :
+           def == Prelude.ARRAY_CONS  && funCall.getDefCallArguments().size() >= 2 ? funCall.getDefCallArguments().get(1) : null;
   }
 
   public Boolean isArrayEmpty() {
-    return data instanceof ArrayPair ? ((ArrayPair) data).isEmpty : null;
+    return data instanceof ArrayData ? ((ArrayData) data).isEmpty : null;
   }
 
   public Levels getLevels() {
@@ -158,9 +173,12 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
       return ((SigmaExpression) dataExpr).getParameters();
     }
 
-    Expression elementsType = getArrayElementsType();
-    DependentLink params = ((DefCallExpression) dataExpr).getDefinition().getParameters();
-    return elementsType == null ? params : DependentLink.Helper.subst(params.getNext(), new ExprSubstitution(params, elementsType));
+    DefCallExpression defCall = (DefCallExpression) dataExpr;
+    if (defCall.getDefinition() == Prelude.EMPTY_ARRAY || defCall.getDefinition() == Prelude.ARRAY_CONS) {
+      return ((DConstructor) defCall.getDefinition()).getArrayParameters(getLevels().toLevelPair(), getArrayLength(), getArrayThisBinding(), getArrayElementsType());
+    } else {
+      return defCall.getDefinition().getParameters();
+    }
   }
 
   public int getLength() {
@@ -271,7 +289,7 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
           return null;
         }
         ArrayExpression array = (ArrayExpression) expression;
-        return array.getElements().isEmpty() == (function == Prelude.EMPTY_ARRAY) ? array.getConstructorArguments(((FunCallExpression) dataExpr).getDefCallArguments().isEmpty()) : null;
+        return array.getElements().isEmpty() == (function == Prelude.EMPTY_ARRAY) ? array.getConstructorArguments(getArrayElementsType() == null, getArrayLength() == null) : null;
       }
       if (function != Prelude.IDP) {
         return null;
@@ -417,9 +435,9 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
       patterns.add(pattern.subst(exprSubst, levelSubst, patternSubst));
     }
 
-    if (data instanceof ArrayPair) {
-      ArrayPair pair = (ArrayPair) data;
-      return new ConstructorExpressionPattern(new ArrayPair((FunCallExpression) pair.funCall.subst(exprSubst, levelSubst), pair.isEmpty), patterns);
+    if (data instanceof ArrayData) {
+      ArrayData arrayData = (ArrayData) data;
+      return new ConstructorExpressionPattern(new ArrayData((FunCallExpression) arrayData.funCall.subst(exprSubst, levelSubst), arrayData.isEmpty, arrayData.thisBinding), patterns);
     } else {
       return new ConstructorExpressionPattern(getDataExpression().subst(exprSubst, levelSubst), patterns);
     }

@@ -16,11 +16,6 @@ import java.util.List;
 
 public class IdpConstructor extends SingleConstructor {
   @Override
-  public int getNumberOfParameters() {
-    return 0;
-  }
-
-  @Override
   public List<Expression> getMatchedArguments(Expression argument, boolean normalizing) {
     argument = argument.getUnderlyingExpression();
     if (argument instanceof FunCallExpression) {

@@ -700,7 +700,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
     ConCallExpression conCall = argument instanceof ConCallExpression ? (ConCallExpression) argument : null;
     IntegerExpression intExpr = argument instanceof IntegerExpression ? (IntegerExpression) argument : null;
     ArrayExpression array = argument instanceof ArrayExpression ? (ArrayExpression) argument : null;
-    BranchKey key = conCall != null ? conCall.getDefinition() : intExpr != null ? (intExpr.isZero() ? Prelude.ZERO : Prelude.SUC) : array != null ? new ArrayConstructor(array.getElements().isEmpty(), true) : null;
+    BranchKey key = conCall != null ? conCall.getDefinition() : intExpr != null ? (intExpr.isZero() ? Prelude.ZERO : Prelude.SUC) : array != null ? new ArrayConstructor(array.getElements().isEmpty(), true, true) : null;
 
     ElimTree elimTree = key == null ? branchElimTree.getSingleConstructorChild() : branchElimTree.getChild(key);
     if (elimTree == null && key == Prelude.PATH_CON && branchElimTree.getSingleConstructorKey() instanceof IdpConstructor) {
@@ -720,17 +720,17 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
             LevelPair levelPair = classCall.getLevels().toLevelPair();
             if (length instanceof IntegerExpression && ((IntegerExpression) length).isZero()) {
               array = ArrayExpression.makeArray(levelPair, elementsType, Collections.emptyList(), null);
-              key = new ArrayConstructor(true, true);
+              key = new ArrayConstructor(true, true, true);
             } else {
               Expression at = classCall.getImplementationHere(Prelude.ARRAY_AT, argument);
               Map<ClassField, Expression> impls = new HashMap<>();
               impls.put(Prelude.ARRAY_ELEMENTS_TYPE, elementsType);
-              Expression length_1 = length instanceof IntegerExpression ? ((IntegerExpression) length).pred() : ((ConCallExpression) length).getDefCallArguments().get(0);
+              Expression length_1 = length.pred();
               impls.put(Prelude.ARRAY_LENGTH, length_1);
               TypedSingleDependentLink param = new TypedSingleDependentLink(true, "i", Fin(length_1));
               impls.put(Prelude.ARRAY_AT, new LamExpression(new Sort(levelPair.get(LevelVariable.PVAR), levelPair.get(LevelVariable.HVAR).max(new Level(0))), param, at != null ? AppExpression.make(at, Suc(new ReferenceExpression(param)), true) : FunCallExpression.make(Prelude.ARRAY_INDEX, classCall.getLevels(), Arrays.asList(argument, Suc(new ReferenceExpression(param))))));
               array = ArrayExpression.makeArray(levelPair, elementsType, new SingletonList<>(at != null ? AppExpression.make(at, new SmallIntegerExpression(0), true) : FunCallExpression.make(Prelude.ARRAY_INDEX, classCall.getLevels(), Arrays.asList(argument, new SmallIntegerExpression(0)))), new NewExpression(null, new ClassCallExpression(Prelude.DEP_ARRAY, classCall.getLevels(), impls, Sort.PROP, UniverseKind.NO_UNIVERSES)));
-              key = new ArrayConstructor(false, true);
+              key = new ArrayConstructor(false, true, true);
             }
             elimTree = branchElimTree.getChild(key);
           }
@@ -747,7 +747,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
         args = conCall != null
           ? conCall.getDefCallArguments()
           : array != null
-            ? array.getConstructorArguments(!branchElimTree.withElementsType())
+            ? array.getConstructorArguments(!branchElimTree.withArrayElementsType(), !branchElimTree.withArrayLength())
             : key == Prelude.ZERO
               ? Collections.emptyList()
               : Collections.singletonList(intExpr.pred());

@@ -49,6 +49,11 @@ public class ConCallExpression extends LeveledDefCallExpression implements CoreC
     return (ConCallExpression) conCall;
   }
 
+  @Override
+  public Expression pred() {
+    return getDefinition() == Prelude.SUC ? myArguments.get(0) : null;
+  }
+
   @NotNull
   @Override
   public List<Expression> getDataTypeArguments() {

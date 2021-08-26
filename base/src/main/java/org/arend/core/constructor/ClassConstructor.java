@@ -46,11 +46,6 @@ public final class ClassConstructor extends SingleConstructor {
   }
 
   @Override
-  public int getNumberOfParameters() {
-    return myClassDef.getNumberOfNotImplementedFields() - myImplementedFields.size();
-  }
-
-  @Override
   public List<Expression> getMatchedArguments(Expression argument, boolean normalizing) {
     List<Expression> args = new ArrayList<>();
     NewExpression newExpr = argument.cast(NewExpression.class);

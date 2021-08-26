@@ -8,6 +8,7 @@ import org.arend.core.subst.LevelPair;
 import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.core.expr.CoreArrayExpression;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
+import org.arend.prelude.Prelude;
 import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -58,9 +59,33 @@ public class ArrayExpression extends Expression implements CoreArrayExpression {
     }
   }
 
-  public List<Expression> getConstructorArguments(boolean withElementsType) {
-    Expression elementsType = withElementsType ? myElementsType.removeConstLam() : null;
-    return myElements.isEmpty() ? (elementsType != null ? Collections.singletonList(elementsType) : Collections.emptyList()) : (elementsType != null ? Arrays.asList(elementsType, myElements.get(0), drop(1)) : Arrays.asList(myElements.get(0), drop(1)));
+  public Expression getLength() {
+    if (myTail == null) {
+      return new SmallIntegerExpression(myElements.size());
+    }
+
+    Expression result = FieldCallExpression.make(Prelude.ARRAY_LENGTH, myTail);
+    for (Expression ignored : myElements) {
+      result = ExpressionFactory.Suc(result);
+    }
+    return result;
+  }
+
+  public List<Expression> getConstructorArguments(boolean withElementsType, boolean withLength) {
+    if (myElements.isEmpty()) {
+      return withElementsType ? Collections.singletonList(myElementsType) : Collections.emptyList();
+    }
+
+    List<Expression> result = new ArrayList<>(4);
+    if (withLength) result.add(getLength());
+    if (withElementsType) result.add(myElementsType);
+    result.add(myElements.get(0));
+    result.add(drop(1));
+    return result;
+  }
+
+  public boolean isEmpty() {
+    return myTail == null && myElements.isEmpty();
   }
 
   @Override

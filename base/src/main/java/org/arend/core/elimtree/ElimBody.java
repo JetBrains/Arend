@@ -116,11 +116,7 @@ public class ElimBody implements Body, CoreElimBody {
             throw new IllegalArgumentException();
           }
           ClassCallExpression classCall = (ClassCallExpression) type;
-          Expression elementsType = classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
-          if (elementsType != null) {
-            elementsType = elementsType.removeConstLam();
-          }
-          var elem = new Util.ArrayClauseElem(((ArrayConstructor) key).getConstructor(), elementsType, ConstructorExpressionPattern.isArrayEmpty(classCall));
+          var elem = new Util.ArrayClauseElem(((ArrayConstructor) key).getConstructor(), classCall.getLevels().toLevelPair(), classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH), classCall.getThisBinding(), classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE), ConstructorExpressionPattern.isArrayEmpty(classCall));
           conPattern = elem.getPattern(Collections.emptyList());
           clauseElems.add(elem);
           newParams.addAll(DependentLink.Helper.toList(elem.getParameters()));

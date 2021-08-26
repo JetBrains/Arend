@@ -66,12 +66,20 @@ public class BranchElimTree extends ElimTree {
     return myChildren.keySet();
   }
 
-  public boolean withElementsType() {
+  public boolean withArrayElementsType() {
     BranchKey key = myChildren.keySet().iterator().next();
     if (!(key instanceof ArrayConstructor)) {
       throw new IllegalStateException();
     }
     return ((ArrayConstructor) key).withElementsType();
+  }
+
+  public boolean withArrayLength() {
+    BranchKey key = myChildren.keySet().iterator().next();
+    if (!(key instanceof ArrayConstructor)) {
+      throw new IllegalStateException();
+    }
+    return ((ArrayConstructor) key).withLength();
   }
 
   private List<Expression> getNewArguments(List<? extends Expression> arguments, Expression argument, int index) {
@@ -113,10 +121,10 @@ public class BranchElimTree extends ElimTree {
         }
       } else if (argument instanceof ArrayExpression) {
         ArrayExpression array = (ArrayExpression) argument;
-        ElimTree elimTree = myChildren.get(new ArrayConstructor(array.getElements().isEmpty(), true));
+        ElimTree elimTree = myChildren.get(new ArrayConstructor(array.getElements().isEmpty(), true, true));
         if (elimTree != null) {
           newArguments = new ArrayList<>();
-          newArguments.add(array.getElementsType().removeConstLam());
+          newArguments.add(array.getElementsType());
           if (!array.getElements().isEmpty()) {
             newArguments.add(array.getElements().get(0));
             newArguments.add(array.drop(1));
@@ -137,7 +145,7 @@ public class BranchElimTree extends ElimTree {
     } else if (argument instanceof IntegerExpression) {
       return ((IntegerExpression) argument).isZero() ? Prelude.ZERO : Prelude.SUC;
     } else if (argument instanceof ArrayExpression) {
-      return new ArrayConstructor(((ArrayExpression) argument).getElements().isEmpty(), true);
+      return new ArrayConstructor(((ArrayExpression) argument).getElements().isEmpty(), true, true);
     } else {
       return null;
     }
@@ -292,18 +300,25 @@ public class BranchElimTree extends ElimTree {
       }
     } else if (argument instanceof ArrayExpression) {
       ArrayExpression array = (ArrayExpression) argument;
-      ElimTree elimTree = myChildren.get(new ArrayConstructor(array.getElements().isEmpty(), true));
+      ElimTree elimTree = myChildren.get(new ArrayConstructor(array.getElements().isEmpty(), true, true));
       if (elimTree != null) {
         List<Expression> args = new ArrayList<>();
-        args.add(array.getElementsType().removeConstLam());
+        boolean withElementsType = withArrayElementsType();
+        boolean withLength = withArrayLength();
+        if (!withLength) {
+          args.add(array.getLength());
+        }
+        if (!withElementsType) {
+          args.add(array.getElementsType());
+        }
         if (!array.getElements().isEmpty()) {
           args.add(array.getElements().get(0));
           args.add(array.drop(1));
         }
         args.addAll(arguments.subList(index + 1, arguments.size()));
         List<Expression> newArgs = elimTree.normalizeArguments(args);
-        result.add(array.getElements().isEmpty() ? array : FunCallExpression.make(Prelude.ARRAY_CONS, array.getLevels(), newArgs.subList(0, 3)));
-        result.addAll(newArgs.subList(array.getElements().isEmpty() ? 1 : 3, newArgs.size()));
+        result.add(array.getElements().isEmpty() ? array : FunCallExpression.make(Prelude.ARRAY_CONS, array.getLevels(), newArgs.subList(0, 2 + (withLength ? 0 : 1) + (withElementsType ? 0 : 1))));
+        result.addAll(newArgs.subList((array.getElements().isEmpty() ? 0 : 2) + (withElementsType ? 0 : 1) + (withLength ? 0 : 1), newArgs.size()));
         return result;
       }
     }

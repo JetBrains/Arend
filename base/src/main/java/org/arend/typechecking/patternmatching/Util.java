@@ -2,6 +2,7 @@ package org.arend.typechecking.patternmatching;
 
 import org.arend.core.constructor.ArrayConstructor;
 import org.arend.core.constructor.SingleConstructor;
+import org.arend.core.context.binding.Binding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.Constructor;
 import org.arend.core.definition.DConstructor;
@@ -12,7 +13,6 @@ import org.arend.core.expr.FunCallExpression;
 import org.arend.core.pattern.BindingPattern;
 import org.arend.core.pattern.ConstructorExpressionPattern;
 import org.arend.core.pattern.ExpressionPattern;
-import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.Levels;
 
@@ -41,7 +41,7 @@ public class Util {
     } else if (branchKey instanceof Constructor) {
       return new ConstructorClauseElem((Constructor) branchKey, pattern.getLevels(), pattern.getDataTypeArguments());
     } else if (branchKey instanceof ArrayConstructor) {
-      return new ArrayClauseElem(((ArrayConstructor) branchKey).getConstructor(), pattern.getArrayElementsType(), pattern.isArrayEmpty());
+      return new ArrayClauseElem(((ArrayConstructor) branchKey).getConstructor(), pattern.getLevels().toLevelPair(), pattern.getArrayLength(), pattern.getArrayThisBinding(), pattern.getArrayElementsType(), pattern.isArrayEmpty());
     } else {
       throw new IllegalStateException();
     }
@@ -89,23 +89,29 @@ public class Util {
 
   public static class ArrayClauseElem implements DataClauseElem {
     private final DConstructor myConstructor;
+    private final LevelPair myLevels;
+    private final Expression myLength;
+    private final Binding myThisBinding;
     private final Expression myElementsType;
     private final Boolean myEmpty;
 
-    public ArrayClauseElem(DConstructor constructor, Expression elementsType, Boolean isEmpty) {
+    public ArrayClauseElem(DConstructor constructor, LevelPair levels, Expression length, Binding thisBinding, Expression elementsType, Boolean isEmpty) {
       myConstructor = constructor;
+      myLevels = levels;
+      myLength = length;
+      myThisBinding = thisBinding;
       myElementsType = elementsType;
       myEmpty = isEmpty;
     }
 
     @Override
     public DependentLink getParameters() {
-      return myElementsType == null ? myConstructor.getParameters() : DependentLink.Helper.subst(myConstructor.getParameters().getNext(), new ExprSubstitution(myConstructor.getParameters(), myElementsType));
+      return myConstructor.getArrayParameters(myLevels, myLength, myThisBinding, myElementsType);
     }
 
     @Override
     public ConstructorExpressionPattern getPattern(List<ExpressionPattern> subPatterns) {
-      return new ConstructorExpressionPattern(new FunCallExpression(myConstructor, LevelPair.STD, myElementsType), myEmpty, subPatterns);
+      return new ConstructorExpressionPattern(new FunCallExpression(myConstructor, LevelPair.STD, myLength, myElementsType), myThisBinding, myEmpty, subPatterns);
     }
   }
 

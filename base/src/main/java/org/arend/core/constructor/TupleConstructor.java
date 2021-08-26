@@ -16,7 +16,6 @@ public final class TupleConstructor extends SingleConstructor {
     myLength = length;
   }
 
-  @Override
   public int getNumberOfParameters() {
     return myLength;
   }

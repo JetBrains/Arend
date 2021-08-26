@@ -43,7 +43,7 @@ public interface Pattern extends CorePattern {
   default DependentLink getParameters() {
     Definition def = getDefinition();
     List<? extends Pattern> subPatterns = getSubPatterns();
-    return def == Prelude.EMPTY_ARRAY && subPatterns.size() == 0 || def == Prelude.ARRAY_CONS && subPatterns.size() == 2 ? def.getParameters().getNext() : def != null ? def.getParameters() : EmptyDependentLink.getInstance();
+    return def == Prelude.ARRAY_CONS && subPatterns.size() == 2 ? def.getParameters().getNext().getNext() : def == Prelude.EMPTY_ARRAY && subPatterns.size() == 0 || def == Prelude.ARRAY_CONS && subPatterns.size() == 3 ? def.getParameters().getNext() : def != null ? def.getParameters() : EmptyDependentLink.getInstance();
   }
 
   @Override

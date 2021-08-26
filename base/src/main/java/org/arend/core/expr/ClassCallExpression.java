@@ -445,11 +445,18 @@ public class ClassCallExpression extends LeveledDefCallExpression implements Typ
   }
 
   private static class ConstructorWithDataArgumentsImpl implements ConstructorWithDataArguments {
-    private final Definition myConstructor;
+    private final DConstructor myConstructor;
+    private final LevelPair myLevels;
+    private final Expression myLength;
+    private final Binding myThisBinding;
     private final Expression myElementsType;
+    private DependentLink myParameters;
 
-    private ConstructorWithDataArgumentsImpl(Definition constructor, Expression elementsType) {
+    private ConstructorWithDataArgumentsImpl(DConstructor constructor, LevelPair levels, Expression length, Binding thisBinding, Expression elementsType) {
       myConstructor = constructor;
+      myLevels = levels;
+      myLength = length;
+      myThisBinding = thisBinding;
       myElementsType = elementsType;
     }
 
@@ -460,12 +467,15 @@ public class ClassCallExpression extends LeveledDefCallExpression implements Typ
 
     @Override
     public @NotNull List<? extends Expression> getDataTypeArguments() {
-      return myElementsType == null ? Collections.emptyList() : new SingletonList<>(myElementsType);
+      return myElementsType == null ? (myLength == null ? Collections.emptyList() : new SingletonList<>(myLength)) : myConstructor == Prelude.EMPTY_ARRAY ? new SingletonList<>(myElementsType) : Arrays.asList(myLength, myElementsType);
     }
 
     @Override
     public @NotNull DependentLink getParameters() {
-      return myElementsType == null ? myConstructor.getParameters() : DependentLink.Helper.subst(myConstructor.getParameters().getNext(), new ExprSubstitution(myConstructor.getParameters(), myElementsType));
+      if (myParameters == null) {
+        myParameters = myConstructor.getArrayParameters(myLevels, myLength, myThisBinding, myElementsType);
+      }
+      return myParameters;
     }
   }
 
@@ -482,15 +492,14 @@ public class ClassCallExpression extends LeveledDefCallExpression implements Typ
     if (getDefinition() != Prelude.DEP_ARRAY) return null;
     List<ConstructorWithDataArguments> result = new ArrayList<>(2);
     Boolean isEmpty = ConstructorExpressionPattern.isArrayEmpty(this);
+    LevelPair levels = getLevels().toLevelPair();
+    Expression length = getAbsImplementationHere(Prelude.ARRAY_LENGTH);
     Expression elementsType = getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
-    if (elementsType != null) {
-      elementsType = elementsType.removeConstLam();
-    }
     if (isEmpty == null || isEmpty.equals(true)) {
-      result.add(new ConstructorWithDataArgumentsImpl(Prelude.EMPTY_ARRAY, elementsType));
+      result.add(new ConstructorWithDataArgumentsImpl(Prelude.EMPTY_ARRAY, levels, length, myThisBinding, elementsType));
     }
     if (isEmpty == null || isEmpty.equals(false)) {
-      result.add(new ConstructorWithDataArgumentsImpl(Prelude.ARRAY_CONS, elementsType));
+      result.add(new ConstructorWithDataArgumentsImpl(Prelude.ARRAY_CONS, levels, length, myThisBinding, elementsType));
     }
     return result;
   }

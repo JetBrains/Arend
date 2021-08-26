@@ -97,6 +97,10 @@ public abstract class Expression implements Body, CoreExpression {
     return CompareVisitor.compare(equations, CMP.LE, this, type, Type.OMEGA, sourceNode);
   }
 
+  public Expression pred() {
+    return null;
+  }
+
   public Sort toSort() {
     UniverseExpression universe = normalize(NormalizationMode.WHNF).cast(UniverseExpression.class);
     return universe == null ? null : universe.getSort();

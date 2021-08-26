@@ -646,18 +646,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       if (isEmpty != null && isEmpty != (constructor == Prelude.EMPTY_ARRAY)) {
         throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(DocFactory.text(Prelude.DEP_ARRAY.getName() + " " + (isEmpty ? "0" : "(" + Prelude.SUC + " _)")), type, mySourceNode), errorExpr));
       }
-      DependentLink params = constructor.getParameters();
-      Expression arrayElementsType = classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
-      if (arrayElementsType != null) {
-        arrayElementsType = arrayElementsType.removeConstLam();
-        if (arrayElementsType == null) {
-          throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Pattern matching on dependent arrays is not allowed", mySourceNode), errorExpr));
-        }
-      }
-      if (arrayElementsType != null) {
-        params = DependentLink.Helper.subst(params.getNext(), new ExprSubstitution(params, arrayElementsType));
-      }
-      return checkElimPatterns(params, pattern.getSubPatterns(), new ExprSubstitution(), newBindings, idpSubst, patternSubst, reversePatternSubst, errorExpr, null);
+      return checkElimPatterns(constructor.getArrayParameters(classCall), pattern.getSubPatterns(), new ExprSubstitution(), newBindings, idpSubst, patternSubst, reversePatternSubst, errorExpr, null);
     }
 
     if (!(type instanceof DataCallExpression)) {

@@ -85,13 +85,11 @@
 
 \meta Array A => DArray { | A _ => A }
 
-\cons nil {A : \Type} : Array A \cowith
-  | len => 0
+\cons nil {A : Fin 0 -> \Type} : DArray A \cowith
   | at => \case __
 
-\cons \infixr 5 :: {A : \Type} (a : A) (arr : Array A) : Array A \cowith
-  | len => suc arr.len
-  | at => \case __ \with {
+\cons \infixr 5 :: {n : Nat} {A : Fin (suc n) -> \Type} (a : A 0) (arr : DArray (\lam j => A (suc j))) : DArray A \cowith
+  | at => \case \elim __ \with {
     | 0 => a
     | suc j => arr j
   }

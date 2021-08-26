@@ -1,16 +1,11 @@
 package org.arend.core.expr;
 
-import org.arend.core.context.binding.LevelVariable;
-import org.arend.core.context.param.TypedSingleDependentLink;
 import org.arend.core.definition.Constructor;
 import org.arend.core.definition.DConstructor;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
 import org.arend.core.expr.visitor.NormalizeVisitor;
-import org.arend.core.sort.Level;
-import org.arend.core.sort.Sort;
-import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.Levels;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CoreFunCallExpression;
@@ -20,11 +15,10 @@ import org.arend.util.SingletonList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-
-import static org.arend.core.expr.ExpressionFactory.Suc;
 
 public class FunCallExpression extends LeveledDefCallExpression implements CoreFunCallExpression {
   private final List<Expression> myArguments;
@@ -35,9 +29,10 @@ public class FunCallExpression extends LeveledDefCallExpression implements CoreF
   }
 
   // a fake funCall that can be used only in ConstructorExpressionPattern
-  public FunCallExpression(DConstructor function, Levels levels, Expression elementsType) {
+  public FunCallExpression(DConstructor function, Levels levels, Expression length, Expression elementsType) {
     super(function, levels);
-    myArguments = elementsType == null ? Collections.emptyList() : new SingletonList<>(elementsType);
+    myArguments = function == Prelude.EMPTY_ARRAY ? (elementsType == null ? Collections.emptyList() : new SingletonList<>(elementsType))
+      : elementsType == null && length == null ? Collections.emptyList() : elementsType == null ? new SingletonList<>(length) : Arrays.asList(length, elementsType);
   }
 
   public static Expression make(FunctionDefinition definition, Levels levels, List<Expression> arguments) {
@@ -65,12 +60,10 @@ public class FunCallExpression extends LeveledDefCallExpression implements CoreF
       }
     }
     if (definition == Prelude.EMPTY_ARRAY && arguments.size() == 1) {
-      LevelPair levelPair = levels.toLevelPair();
-      return ArrayExpression.make(levelPair, new LamExpression(levelPair.toSort().max(Sort.SET0), new TypedSingleDependentLink(true, null, new DataCallExpression(Prelude.FIN, LevelPair.PROP, new SingletonList<>(new SmallIntegerExpression(0)))), arguments.get(0)), Collections.emptyList(), null);
+      return ArrayExpression.make(levels.toLevelPair(), arguments.get(0), Collections.emptyList(), null);
     }
-    if (definition == Prelude.ARRAY_CONS && arguments.size() == 3) {
-      LevelPair levelPair = levels.toLevelPair();
-      return ArrayExpression.make(levelPair, new LamExpression(levelPair.toSort().max(Sort.SET0), new TypedSingleDependentLink(true, null, new DataCallExpression(Prelude.FIN, LevelPair.PROP, new SingletonList<>(Suc(FieldCallExpression.make(Prelude.ARRAY_LENGTH, arguments.get(2)))))), arguments.get(0)), new SingletonList<>(arguments.get(1)), arguments.get(2));
+    if (definition == Prelude.ARRAY_CONS && arguments.size() == 4) {
+      return ArrayExpression.make(levels.toLevelPair(), arguments.get(1), new SingletonList<>(arguments.get(2)), arguments.get(3));
     }
     return new FunCallExpression(definition, levels, arguments);
   }

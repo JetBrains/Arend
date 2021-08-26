@@ -226,7 +226,7 @@ public class DataCallExpression extends LeveledDefCallExpression implements Type
     @Override
     public @NotNull CoreParameter getParameters() {
       if (myParameters == null) {
-        myParameters = myConCall.getDataTypeArguments().isEmpty() ? myConCall.getDefinition().getParameters() : DependentLink.Helper.subst(myConCall.getDefinition().getParameters(), new ExprSubstitution().add(myConCall.getDefinition().getDataType().getParameters(), myConCall.getDataTypeArguments()));
+        myParameters = DependentLink.Helper.subst(myConCall.getDefinition().getParameters(), new ExprSubstitution().add(myConCall.getDefinition().getDataType().getParameters(), myConCall.getDataTypeArguments()), myConCall.getLevelSubstitution());
       }
       return myParameters;
     }

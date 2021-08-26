@@ -786,14 +786,13 @@ public class PatternTypechecking {
         result.add(new ConstructorExpressionPattern(conCall, conResult.patterns));
       } else {
         Expression elementsType = classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
-        if (elementsType != null) {
-          elementsType = elementsType.removeConstLam();
-        }
-        FunCallExpression funCall = new FunCallExpression((DConstructor) constructor, classCall.getLevels(), elementsType);
+        Expression length = classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH);
         if (!conResult.varSubst.isEmpty()) {
-          funCall = (FunCallExpression) new SubstVisitor(conResult.varSubst, LevelSubstitution.EMPTY).visitFunCall(funCall, null);
+          SubstVisitor visitor = new SubstVisitor(conResult.varSubst, LevelSubstitution.EMPTY);
+          if (elementsType != null) elementsType = elementsType.accept(visitor, null);
+          if (length != null) length = length.accept(visitor, null);
         }
-        result.add(new ConstructorExpressionPattern(funCall, classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH), conResult.patterns));
+        result.add(new ConstructorExpressionPattern(new FunCallExpression((DConstructor) constructor, classCall.getLevels(), length, elementsType), classCall.getThisBinding(), length, conResult.patterns));
       }
       if (conResult.exprs == null) {
         exprs = null;
@@ -805,12 +804,11 @@ public class PatternTypechecking {
         } else {
           List<Expression> funCallArgs;
           Expression elementsType = classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
-          if (elementsType != null) {
-            elementsType = elementsType.removeConstLam();
-          }
-          if (elementsType != null) {
+          Expression length = classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH);
+          if (elementsType != null || length != null) {
             funCallArgs = new ArrayList<>();
-            funCallArgs.add(elementsType);
+            if (length != null) funCallArgs.add(length);
+            if (elementsType != null) funCallArgs.add(elementsType);
             funCallArgs.addAll(conResult.exprs);
           } else {
             funCallArgs = conResult.exprs;

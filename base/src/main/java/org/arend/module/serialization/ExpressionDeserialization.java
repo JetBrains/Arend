@@ -265,10 +265,10 @@ class ExpressionDeserialization {
         if (branchProto.hasArrayClause()) {
           ExpressionProtos.ElimTree.Branch.ArrayClause arrayClause = branchProto.getArrayClause();
           if (arrayClause.hasEmptyElimTree()) {
-            result.addChild(new ArrayConstructor(true, arrayClause.getWithElementsType()), readElimTree(arrayClause.getEmptyElimTree()));
+            result.addChild(new ArrayConstructor(true, arrayClause.getWithElementsType(), arrayClause.getWithLength()), readElimTree(arrayClause.getEmptyElimTree()));
           }
           if (arrayClause.hasConsElimTree()) {
-            result.addChild(new ArrayConstructor(false, arrayClause.getWithElementsType()), readElimTree(arrayClause.getConsElimTree()));
+            result.addChild(new ArrayConstructor(false, arrayClause.getWithElementsType(), arrayClause.getWithLength()), readElimTree(arrayClause.getConsElimTree()));
           }
         }
         return result;

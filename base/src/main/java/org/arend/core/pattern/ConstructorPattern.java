@@ -110,11 +110,8 @@ public abstract class ConstructorPattern<T> implements Pattern {
       if (classCall.getDefinition() == Prelude.DEP_ARRAY) {
         Definition def = getDefinition();
         if (def == Prelude.EMPTY_ARRAY || def == Prelude.ARRAY_CONS) {
-          Expression elementsType = classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
-          if (elementsType != null) {
-            elementsType = elementsType.removeConstLam();
-          }
-          return new ConstructorExpressionPattern(new FunCallExpression((DConstructor) def, classCall.getLevels(), elementsType), classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH), Pattern.toExpressionPatterns(mySubPatterns, ((DConstructor) def).getArrayParameters(classCall)));
+          Expression length = classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH);
+          return new ConstructorExpressionPattern(new FunCallExpression((DConstructor) def, classCall.getLevels(), length, classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE)), classCall.getThisBinding(), length, Pattern.toExpressionPatterns(mySubPatterns, ((DConstructor) def).getArrayParameters(classCall)));
         }
       }
 

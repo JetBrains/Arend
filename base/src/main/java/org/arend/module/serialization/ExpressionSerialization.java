@@ -251,9 +251,11 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
       if (branchElimTree.isArray()) {
         ExpressionProtos.ElimTree.Branch.ArrayClause.Builder arrayBuilder = ExpressionProtos.ElimTree.Branch.ArrayClause.newBuilder();
         boolean withElementsType = true;
+        boolean withLength = true;
         for (Map.Entry<BranchKey, ElimTree> entry : branchElimTree.getChildren()) {
           if (entry.getKey() instanceof ArrayConstructor) {
             withElementsType = ((ArrayConstructor) entry.getKey()).withElementsType();
+            withLength = ((ArrayConstructor) entry.getKey()).withLength();
             if (((ArrayConstructor) entry.getKey()).getConstructor() == Prelude.EMPTY_ARRAY) {
               arrayBuilder.setEmptyElimTree(writeElimTree(entry.getValue()));
             } else {
@@ -262,6 +264,7 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
           }
         }
         arrayBuilder.setWithElementsType(withElementsType);
+        arrayBuilder.setWithLength(withLength);
         branchBuilder.setArrayClause(arrayBuilder.build());
       } else {
         for (Map.Entry<BranchKey, ElimTree> entry : branchElimTree.getChildren()) {
@@ -270,7 +273,7 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
           } else if (entry.getKey() instanceof SingleConstructor) {
             ExpressionProtos.ElimTree.Branch.SingleConstructorClause.Builder singleClauseBuilder = ExpressionProtos.ElimTree.Branch.SingleConstructorClause.newBuilder();
             if (entry.getKey() instanceof TupleConstructor) {
-              singleClauseBuilder.setTuple(ExpressionProtos.ElimTree.Branch.SingleConstructorClause.Tuple.newBuilder().setLength(entry.getKey().getNumberOfParameters()).build());
+              singleClauseBuilder.setTuple(ExpressionProtos.ElimTree.Branch.SingleConstructorClause.Tuple.newBuilder().setLength(((TupleConstructor) entry.getKey()).getNumberOfParameters()).build());
             } else if (entry.getKey() instanceof IdpConstructor) {
               singleClauseBuilder.setIdp(ExpressionProtos.ElimTree.Branch.SingleConstructorClause.Idp.newBuilder());
             } else if (entry.getKey() instanceof ClassConstructor) {

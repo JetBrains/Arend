@@ -266,6 +266,7 @@ message ElimTree {
         }
         message ArrayClause {
             bool with_elements_type = 1;
+            bool with_length = 4;
             ElimTree emptyElimTree = 2;
             ElimTree consElimTree = 3;
         }

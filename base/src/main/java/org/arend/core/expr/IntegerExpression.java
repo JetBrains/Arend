@@ -14,6 +14,7 @@ public abstract class IntegerExpression extends Expression implements CoreIntege
 
   public abstract IntegerExpression suc();
 
+  @Override
   public abstract IntegerExpression pred();
 
   public abstract boolean isZero();
