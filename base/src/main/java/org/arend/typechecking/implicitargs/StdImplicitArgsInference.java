@@ -1,6 +1,5 @@
 package org.arend.typechecking.implicitargs;
 
-import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.context.binding.inference.ExpressionInferenceVariable;
 import org.arend.core.context.binding.inference.FunctionInferenceVariable;
 import org.arend.core.context.binding.inference.InferenceVariable;
@@ -23,9 +22,7 @@ import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.ArgumentExplicitnessError;
 import org.arend.ext.error.TypeMismatchError;
 import org.arend.ext.instance.SubclassSearchParameters;
-import org.arend.naming.reference.DataLocalReferable;
 import org.arend.naming.reference.Referable;
-import org.arend.naming.reference.TCDefReferable;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.NotPiType;
@@ -102,7 +99,12 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
             // If the class does not have a classifying field, infer instance immediately
             if (classDef.getClassifyingField() == null) {
               InstancePool instancePool = kind == Definition.TypeClassParameterKind.ONLY_LOCAL ? myVisitor.getInstancePool().getLocalInstancePool() : myVisitor.getInstancePool();
-              TypecheckingResult instanceResult = instancePool.getInstance(null, defCallResult.getParameter().getTypeExpr(), new SubclassSearchParameters(classDef), expr, holeExpr);
+              TypecheckingResult instanceResult;
+              if (expr instanceof Concrete.LongReferenceExpression && i == 0) {
+                instanceResult = ((Concrete.LongReferenceExpression) expr).getQualifier().accept(myVisitor, type);
+              } else {
+                instanceResult = instancePool.getInstance(null, defCallResult.getParameter().getTypeExpr(), new SubclassSearchParameters(classDef), expr, holeExpr);
+              }
               Expression instance;
               if (instanceResult == null) {
                 ArgInferenceError error = new InstanceInferenceError(classDef.getReferable(), expr, holeExpr, new Expression[0]);
@@ -139,14 +141,14 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
         infVar = new FunctionInferenceVariable(definition, parameter, i + 1, type, expr, myVisitor.getAllBindings());
       }
 
-      Expression binding;
-      if (expr instanceof Concrete.LongReferenceExpression && i == 0 && !(((Concrete.LongReferenceExpression) expr).getLongReference().getFirstRef() instanceof TCDefReferable)) {
-        binding = ((Concrete.LongReferenceExpression) expr).getQualifier().accept(myVisitor, type).expression;
+      Expression argument;
+      if (expr instanceof Concrete.LongReferenceExpression && i == 0 && result instanceof DefCallResult && ((DefCallResult) result).getDefinition() instanceof ClassField) {
+        argument = ((Concrete.LongReferenceExpression) expr).getQualifier().accept(myVisitor, type).expression;
       } else {
-        binding = InferenceReferenceExpression.make(infVar, myVisitor.getEquations());
+        argument = InferenceReferenceExpression.make(infVar, myVisitor.getEquations());
       }
-      result = result.applyExpression(binding, parameter.isExplicit(), myVisitor.getErrorReporter(), expr);
-      substitution.add(parameter, binding);
+      result = result.applyExpression(argument, parameter.isExplicit(), myVisitor.getErrorReporter(), expr);
+      substitution.add(parameter, argument);
       i++;
     }
     return result;
