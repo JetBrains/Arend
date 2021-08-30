@@ -110,10 +110,15 @@ public class MinimizationTest extends TypeCheckingTestCase {
                 "D 2 {1}");
     }
 
-
-// TODO   @Test
+    @Test
     public void field() {
         checkLet("\\record Cl | x : Nat\n" +
+                "\\func test : Nat => \\let ccl : Cl => \\new Cl { | x => 1} \\in ccl.x", "ccl.x");
+    }
+
+    @Test
+    public void clazz() {
+        checkLet("\\class Cl | x : Nat\n" +
                 "\\func test : Nat => \\let ccl : Cl => \\new Cl { | x => 1} \\in ccl.x", "ccl.x");
     }
 }
