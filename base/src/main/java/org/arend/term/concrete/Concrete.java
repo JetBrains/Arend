@@ -554,26 +554,26 @@ public final class Concrete {
 
   public static class LongReferenceExpression extends ReferenceExpression {
     private final LongName myLongName;
-    private final @Nullable Concrete.ReferenceExpression qualifier;
+    private final @Nullable Concrete.ReferenceExpression myQualifier;
 
-    public LongReferenceExpression(Object data, Concrete.@Nullable ReferenceExpression qualifier, LongName longName, Referable referable, LevelExpression pLevel, LevelExpression hLevel) {
+    public LongReferenceExpression(Object data, @Nullable Concrete.ReferenceExpression qualifier, LongName longName, Referable referable, LevelExpression pLevel, LevelExpression hLevel) {
       super(data, referable, pLevel, hLevel);
       myLongName = longName;
-      this.qualifier = qualifier;
+      myQualifier = qualifier;
     }
 
-    public LongReferenceExpression(Object data, Concrete.@Nullable ReferenceExpression qualifier, LongName longName, Referable referable) {
+    public LongReferenceExpression(Object data, @Nullable Concrete.ReferenceExpression qualifier, LongName longName, Referable referable) {
       super(data, referable);
       myLongName = longName;
-      this.qualifier = qualifier;
+      myQualifier = qualifier;
     }
 
     public LongName getLongName() {
       return myLongName;
     }
 
-    public Concrete.@Nullable ReferenceExpression getQualifier() {
-      return qualifier;
+    public @Nullable Concrete.ReferenceExpression getQualifier() {
+      return myQualifier;
     }
   }
 
