@@ -100,8 +100,8 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
             if (classDef.getClassifyingField() == null) {
               InstancePool instancePool = kind == Definition.TypeClassParameterKind.ONLY_LOCAL ? myVisitor.getInstancePool().getLocalInstancePool() : myVisitor.getInstancePool();
               TypecheckingResult instanceResult;
-              if (expr instanceof Concrete.LongReferenceExpression && i == 0) {
-                instanceResult = ((Concrete.LongReferenceExpression) expr).getQualifier().accept(myVisitor, type);
+              if (expr instanceof Concrete.LongReferenceExpression && i == 0 && ((Concrete.LongReferenceExpression) expr).getQualifier() != null) {
+                instanceResult = Objects.requireNonNull(((Concrete.LongReferenceExpression) expr).getQualifier()).accept(myVisitor, type);
               } else {
                 instanceResult = instancePool.getInstance(null, defCallResult.getParameter().getTypeExpr(), new SubclassSearchParameters(classDef), expr, holeExpr);
               }
@@ -142,8 +142,11 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
       }
 
       Expression argument;
-      if (expr instanceof Concrete.LongReferenceExpression && i == 0 && result instanceof DefCallResult && ((DefCallResult) result).getDefinition() instanceof ClassField) {
-        argument = ((Concrete.LongReferenceExpression) expr).getQualifier().accept(myVisitor, type).expression;
+      if (expr instanceof Concrete.LongReferenceExpression &&
+              ((Concrete.LongReferenceExpression) expr).getQualifier() != null &&
+              i == 0 && result instanceof DefCallResult &&
+              ((DefCallResult) result).getDefinition() instanceof ClassField) {
+        argument = Objects.requireNonNull(((Concrete.LongReferenceExpression) expr).getQualifier()).accept(myVisitor, type).expression;
       } else {
         argument = InferenceReferenceExpression.make(infVar, myVisitor.getEquations());
       }
