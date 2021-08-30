@@ -34,7 +34,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 final public class MinimizedRepresentation {
@@ -195,7 +194,11 @@ final public class MinimizedRepresentation {
                 return super.visitProj(expr, params);
             }
         }, null);
-        return freeBindings.stream().collect(Collectors.toMap(Binding::getName, Function.identity()));
+        Map<String, Binding> bindings = new HashMap<>();
+        for (Binding binding : freeBindings) {
+            bindings.putIfAbsent(binding.getName(), binding);
+        }
+        return bindings;
     }
 
     private static CheckTypeVisitor generateTypechecker(InstanceProvider instanceProvider, List<GeneralError> errorsCollector) {
