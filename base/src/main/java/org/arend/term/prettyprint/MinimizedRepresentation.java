@@ -276,7 +276,7 @@ class ErrorFixingConcreteExpressionVisitor extends BiConcreteVisitor {
             myErrors.clear();
             return verboseExpr;
         }
-        return super.visitReference(expr, params);
+        return expr;
     }
 
     private static GeneralError findMostImportantError(List<GeneralError> errors) {
