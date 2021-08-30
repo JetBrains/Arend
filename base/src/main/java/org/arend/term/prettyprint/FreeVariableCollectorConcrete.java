@@ -5,6 +5,7 @@ import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -18,6 +19,9 @@ public class FreeVariableCollectorConcrete extends BaseConcreteExpressionVisitor
 
     @Override
     public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Void params) {
+        if (expr instanceof Concrete.LongReferenceExpression && ((Concrete.LongReferenceExpression) expr).getQualifier() != null) {
+            Objects.requireNonNull(((Concrete.LongReferenceExpression) expr).getQualifier()).accept(this, null);
+        }
         referables.add(expr.getReferent());
         return expr;
     }
