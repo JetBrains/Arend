@@ -10,7 +10,6 @@ import org.arend.ext.concrete.pattern.ConcreteReferencePattern;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.error.LocalError;
 import org.arend.ext.module.LongName;
-import org.arend.ext.module.LongReference;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.ext.prettyprinting.doc.DocFactory;
@@ -554,34 +553,27 @@ public final class Concrete {
   }
 
   public static class LongReferenceExpression extends ReferenceExpression {
-    private final LongReference myLongReference;
+    private final LongName myLongName;
+    private final @Nullable Concrete.ReferenceExpression qualifier;
 
-    public LongReferenceExpression(Object data, LongReference argument, Referable referable, LevelExpression pLevel, LevelExpression hLevel) {
+    public LongReferenceExpression(Object data, Concrete.@Nullable ReferenceExpression qualifier, LongName longName, Referable referable, LevelExpression pLevel, LevelExpression hLevel) {
       super(data, referable, pLevel, hLevel);
-      myLongReference = argument;
+      myLongName = longName;
+      this.qualifier = qualifier;
     }
 
-    public LongReferenceExpression(Object data, LongReference argument, Referable referable) {
+    public LongReferenceExpression(Object data, Concrete.@Nullable ReferenceExpression qualifier, LongName longName, Referable referable) {
       super(data, referable);
-      myLongReference = argument;
+      myLongName = longName;
+      this.qualifier = qualifier;
     }
 
     public LongName getLongName() {
-      return myLongReference.toLongName();
+      return myLongName;
     }
 
-    public LongReference getLongReference() {
-      return myLongReference;
-    }
-
-    public Concrete.ReferenceExpression getQualifier() {
-      var longReferences = myLongReference.getReferences();
-      if (longReferences.size() == 2) {
-        return new Concrete.ReferenceExpression(getData(), (Referable) longReferences.get(0), getPLevel(), getHLevel());
-      } else {
-        var newReferences = myLongReference.pop();
-        return new Concrete.LongReferenceExpression(getData(), newReferences, (Referable) newReferences.getLastRef(), getPLevel(), getHLevel());
-      }
+    public Concrete.@Nullable ReferenceExpression getQualifier() {
+      return qualifier;
     }
   }
 

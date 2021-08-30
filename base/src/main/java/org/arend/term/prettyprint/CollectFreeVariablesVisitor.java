@@ -3,7 +3,6 @@ package org.arend.term.prettyprint;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.expr.let.HaveClause;
 import org.arend.core.expr.visitor.VoidExpressionVisitor;
-import org.arend.ext.module.LongReference;
 import org.arend.ext.variable.Variable;
 import org.arend.ext.variable.VariableImpl;
 import org.arend.core.context.param.DependentLink;
@@ -122,9 +121,9 @@ public class CollectFreeVariablesVisitor extends VoidExpressionVisitor<Set<Varia
 
   @Override
   public Void visitDefCall(DefCallExpression expr, Set<Variable> variables) {
-    LongReference longName = myDefinitionRenamer.renameDefinition(expr.getDefinition().getRef());
+    LongName longName = myDefinitionRenamer.renameDefinition(expr.getDefinition().getRef());
     if (longName != null) {
-      variables.add(new VariableImpl(longName.getFirstRef().getRefName()));
+      variables.add(new VariableImpl(longName.getFirstName()));
     } else {
       String alias = expr.getDefinition().getReferable().getAliasName();
       variables.add(alias != null ? new VariableImpl(alias) : expr.getDefinition());

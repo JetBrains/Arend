@@ -6,7 +6,6 @@ import org.arend.core.expr.let.HaveClause;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.let.LetClausePattern;
 import org.arend.core.expr.visitor.BaseExpressionVisitor;
-import org.arend.ext.module.LongReference;
 import org.arend.extImpl.definitionRenamer.ConflictDefinitionRenamer;
 import org.arend.ext.variable.Variable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
@@ -23,6 +22,7 @@ import org.arend.core.pattern.*;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.ext.module.LongName;
 import org.arend.ext.prettyprinting.DefinitionRenamer;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.PrettyPrinterFlag;
@@ -230,9 +230,13 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     }
 
     boolean isGlobalInstance = argument instanceof FunCallExpression && !expr.getDefinition().getParentClass().isRecord();
+    String name = null;
+    Concrete.Expression qualifier = null;
     boolean ok = false;
     if (argument instanceof ReferenceExpression && hasFlag(PrettyPrinterFlag.SHOW_LOCAL_FIELD_INSTANCE)) {
       ok = true;
+      qualifier = visitReference((ReferenceExpression) argument, null);
+      name = ((ReferenceExpression) argument).getBinding().getName();
     } else if (isGlobalInstance && hasFlag(PrettyPrinterFlag.SHOW_GLOBAL_FIELD_INSTANCE)) {
       ok = true;
       for (DependentLink param = ((FunCallExpression) argument).getDefinition().getParameters(); param.hasNext(); param = param.getNext()) {
@@ -242,17 +246,12 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
           break;
         }
       }
+      qualifier = argument.getFunction().accept(this, null);
+      name = ((FunCallExpression) argument).getDefinition().getName();
     }
-    if (ok) {
+    if (ok && qualifier instanceof Concrete.ReferenceExpression) {
       GlobalReferable ref = expr.getDefinition().getReferable();
-      var converted = argument.accept(this, null);
-      if (converted instanceof Concrete.LongReferenceExpression) {
-        return cVar(((Concrete.LongReferenceExpression) converted).getLongReference().push(ref), ref);
-      } else if (converted instanceof Concrete.ReferenceExpression) {
-        return cVar(new LongReference(((Concrete.ReferenceExpression) converted).getReferent(), ref), ref);
-      } else {
-        return Concrete.AppExpression.make(null, makeReference(ref), converted, false);
-      }
+      return cVar((Concrete.ReferenceExpression) qualifier, new LongName(name == null ? "_" : name, ref.getRepresentableName()), ref);
     }
 
     Concrete.ReferenceExpression result = makeReference(expr);

@@ -1,6 +1,5 @@
 package org.arend.term.prettyprint;
 
-import org.arend.ext.reference.ArendRef;
 import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
@@ -19,12 +18,8 @@ public class FreeVariableCollectorConcrete extends BaseConcreteExpressionVisitor
 
     @Override
     public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Void params) {
-        if (expr instanceof Concrete.LongReferenceExpression) {
-            for (ArendRef reference : ((Concrete.LongReferenceExpression) expr).getLongReference().getReferences()) {
-                if (reference instanceof Referable) {
-                    referables.add((Referable) reference);
-                }
-            }
+        if (expr instanceof Concrete.LongReferenceExpression && ((Concrete.LongReferenceExpression) expr).getQualifier() != null) {
+            visitReference(((Concrete.LongReferenceExpression) expr).getQualifier(), null);
         }
         referables.add(expr.getReferent());
         return expr;
