@@ -12,10 +12,10 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * Simultaneously traverses two concrete expressions, assuming that second concrete expression in parameters
- * may contain some additional information regarding the first one.
+ * Simultaneously traverses two concrete expressions, assuming that the second concrete expression
+ * may contain some additional information while having the same "shape" as the first one.
  * <p>
- * With default behavior, constructs entirely new concrete expression that equal to concrete the visitor was invoked on.
+ * With the default behavior, constructs entirely new concrete expression that is equal to concrete the visitor was invoked on.
  */
 public abstract class BiConcreteVisitor extends BaseConcreteExpressionVisitor<Concrete.SourceNode> {
     final ConcreteFactoryImpl myFactory;
