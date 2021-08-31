@@ -253,95 +253,155 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
     pair.proj1.solve(myVisitor, argResultExpr);
   }
 
-  private TResult checkArrayCons(TResult result, List<Concrete.Argument> arguments, Expression expectedType, Concrete.Expression fun) {
-    DefCallResult defCallResult = result instanceof DefCallResult ? (DefCallResult) result : null;
-    Definition definition = defCallResult != null ? defCallResult.getDefinition() : null;
-    if (expectedType != null && (definition == Prelude.EMPTY_ARRAY || definition == Prelude.ARRAY_CONS) && (defCallResult != null && defCallResult.getArguments().isEmpty()) && arguments.get(0).isExplicit()) {
+  private InferenceVariable getInferenceVariableFromElementsType(Expression elementsType) {
+    if (elementsType == null) return null;
+    if (elementsType instanceof LamExpression) {
+      elementsType = ((LamExpression) elementsType).getBody().normalize(NormalizationMode.WHNF);
+      if (elementsType instanceof AppExpression && ((AppExpression) elementsType).isExplicit()) {
+        elementsType = elementsType.getFunction().normalize(NormalizationMode.WHNF);
+      }
+    }
+    return elementsType instanceof InferenceReferenceExpression ? elementsType.getInferenceVariable() : null;
+  }
+
+  private TResult checkArrayCons(DefCallResult defCallResult, List<Concrete.Argument> arguments, Expression expectedType, Concrete.Expression fun) {
+    int index = 0;
+    Expression length = null;
+    Definition definition = defCallResult.getDefinition();
+    if (definition == Prelude.ARRAY_CONS && !arguments.isEmpty() && !arguments.get(0).isExplicit()) {
+      TypecheckingResult result = myVisitor.checkExpr(arguments.get(0).expression, Nat());
+      if (result == null) return null;
+      length = result.expression;
+      index++;
+    }
+
+    Sort sort = defCallResult.getLevels().toLevelPair().toSort();
+    Sort sort0 = sort.max(Sort.SET0);
+    Expression elementsType = null;
+    if (index < arguments.size() && !arguments.get(index).isExplicit()) {
+      TypecheckingResult result = myVisitor.checkExpr(arguments.get(index).expression, length == null ? null : new PiExpression(sort.succ(), new TypedSingleDependentLink(true, null, Fin(length)), new UniverseExpression(sort)));
+      if (result == null) return null;
+      elementsType = result.expression;
+      index++;
+    }
+
+    for (; index < arguments.size() && !arguments.get(index).isExplicit(); index++) {
+      myVisitor.getErrorReporter().report(new ArgumentExplicitnessError(true, arguments.get(index).expression));
+    }
+
+    int index2 = index + 1;
+    for (; index2 < arguments.size() && !arguments.get(index2).isExplicit(); index2++) {
+      myVisitor.getErrorReporter().report(new ArgumentExplicitnessError(true, arguments.get(index2).expression));
+    }
+
+    TResult result = defCallResult;
+    if (expectedType != null) {
       ClassCallExpression expectedClassCall = TypeCoerceExpression.unfoldType(expectedType).cast(ClassCallExpression.class);
       if (expectedClassCall != null) {
-        if (expectedClassCall.getDefinition() != Prelude.DEP_ARRAY) {
+        if (expectedClassCall.getDefinition() != Prelude.DEP_ARRAY || !expectedClassCall.getLevels().compare(defCallResult.getLevels(), CMP.LE, myVisitor.getEquations(), fun)) {
           myVisitor.getErrorReporter().report(new TypeMismatchError(expectedClassCall, refDoc(Prelude.DEP_ARRAY.getRef()), fun));
           return null;
         }
-        Expression elementsType = expectedClassCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
-        if (elementsType != null) {
-          if (definition == Prelude.EMPTY_ARRAY) {
-            result = DefCallResult.makeTResult(defCallResult.getDefCall(), definition, expectedClassCall.getLevels())
-              .applyExpression(elementsType, false, myVisitor.getErrorReporter(), fun);
-          } else {
-            Expression length = expectedClassCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH);
+        if (elementsType == null) {
+          elementsType = expectedClassCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
+        }
+        if (definition == Prelude.EMPTY_ARRAY) {
+          if (elementsType != null) {
+            result = DefCallResult.makeTResult(defCallResult.getDefCall(), definition, expectedClassCall.getLevels());
+          }
+        } else {
+          if (length == null) {
+            length = expectedClassCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH);
             length = length == null ? null : length.normalize(NormalizationMode.WHNF).pred();
-            if (length != null) {
-              result = DefCallResult.makeTResult(defCallResult.getDefCall(), definition, expectedClassCall.getLevels())
-                .applyExpression(length, false, myVisitor.getErrorReporter(), fun)
-                .applyExpression(elementsType, false, myVisitor.getErrorReporter(), fun);
-            }
+          }
+          if (length != null) {
+            result = DefCallResult.makeTResult(defCallResult.getDefCall(), definition, expectedClassCall.getLevels());
           }
         }
       }
     }
 
+    if (definition == Prelude.EMPTY_ARRAY) {
+      if (elementsType != null) {
+        result = result.applyExpression(elementsType, false, myVisitor.getErrorReporter(), fun);
+      }
+    } else {
+      if (length != null) {
+        result = result.applyExpression(length, false, myVisitor.getErrorReporter(), fun);
+        if (elementsType != null) {
+          result = result.applyExpression(elementsType, false, myVisitor.getErrorReporter(), fun);
+        }
+      }
+    }
+
     defCallResult = result instanceof DefCallResult ? (DefCallResult) result : null;
-    if (defCallResult != null && defCallResult.getArguments().isEmpty() && arguments.size() >= 2 && arguments.get(0).isExplicit() && arguments.get(1).isExplicit()) {
-      TypecheckingResult result2 = myVisitor.checkExpr(arguments.get(1).expression, new ClassCallExpression(Prelude.DEP_ARRAY, defCallResult.getLevels()));
+    if (definition == Prelude.ARRAY_CONS && defCallResult != null && defCallResult.getArguments().isEmpty() && index2 < arguments.size()) {
+      InferenceVariable var = null;
+      Expression constType;
+      ClassCallExpression argClassCall = null;
+      if (elementsType != null) {
+        elementsType = elementsType.normalize(NormalizationMode.WHNF);
+        var = getInferenceVariableFromElementsType(elementsType);
+        if (var == null) {
+          constType = elementsType.removeConstLam();
+          if (constType != null && constType.getInferenceVariable() != null) {
+            constType = null;
+          }
+          if (constType != null) {
+            Map<ClassField, Expression> impls = new HashMap<>();
+            argClassCall = new ClassCallExpression(Prelude.DEP_ARRAY, defCallResult.getLevels(), impls, sort0, UniverseKind.NO_UNIVERSES);
+            impls.put(Prelude.ARRAY_ELEMENTS_TYPE, new LamExpression(sort0, new TypedSingleDependentLink(true, null, Fin(FieldCallExpression.make(Prelude.ARRAY_LENGTH, new ReferenceExpression(argClassCall.getThisBinding())))), constType));
+          }
+        }
+      }
+      if (argClassCall == null) {
+        argClassCall = new ClassCallExpression(Prelude.DEP_ARRAY, defCallResult.getLevels());
+      }
+      TypecheckingResult result2 = myVisitor.checkExpr(arguments.get(index2).expression, argClassCall);
       if (result2 == null) return null;
       ClassCallExpression classCall = result2.type.normalize(NormalizationMode.WHNF).cast(ClassCallExpression.class);
       if (classCall == null || classCall.getDefinition() != Prelude.DEP_ARRAY) {
-        myVisitor.getErrorReporter().report(new TypeMismatchError(refDoc(Prelude.DEP_ARRAY.getRef()), result2.type, arguments.get(1).expression));
+        myVisitor.getErrorReporter().report(new TypeMismatchError(refDoc(Prelude.DEP_ARRAY.getRef()), result2.type, arguments.get(index2).expression));
         return null;
-      }
-
-      InferenceVariable var = null;
-      Expression elementsType = classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
-      if (elementsType != null) {
-        elementsType = elementsType.normalize(NormalizationMode.WHNF);
-        Expression type = elementsType;
-        if (type instanceof LamExpression) {
-          Expression body = ((LamExpression) type).getBody().normalize(NormalizationMode.WHNF);
-          if (body instanceof AppExpression && ((AppExpression) body).isExplicit()) {
-            type = body.getFunction().normalize(NormalizationMode.WHNF);
-          }
-        }
-        if (type instanceof InferenceReferenceExpression) {
-          var = type.getInferenceVariable();
-        }
       }
 
       TypecheckingResult result1 = null;
       boolean checked = false;
+      if (elementsType == null || var != null) {
+        Expression elementsType1 = classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
+        if (elementsType1 != null) {
+          elementsType = elementsType1.normalize(NormalizationMode.WHNF);
+          var = getInferenceVariableFromElementsType(elementsType);
+        }
+      }
+
       if (var == null) {
-        Expression constType = elementsType == null ? null : elementsType.removeConstLam();
+        constType = elementsType == null ? null : elementsType.removeConstLam();
         if (constType != null && constType.getInferenceVariable() == null) {
-          result1 = myVisitor.checkExpr(arguments.get(0).expression, constType);
+          result1 = myVisitor.checkExpr(arguments.get(index).expression, constType);
           if (result1 == null) return null;
-          Sort sort = result1.type.getSortOfType();
-          if (sort != null) {
-            checked = true;
-            Expression length = classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH);
-            if (length == null) length = FieldCallExpression.make(Prelude.ARRAY_LENGTH, result2.expression);
-            result = result
-              .applyExpression(length, false, myVisitor.getErrorReporter(), fun)
-              .applyExpression(new LamExpression(sort.max(Sort.SET0), new TypedSingleDependentLink(true, null, new DataCallExpression(Prelude.FIN, LevelPair.PROP, new SingletonList<>(Suc(length)))), constType), false, myVisitor.getErrorReporter(), fun);
-          }
+          checked = true;
+          if (length == null) length = classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH);
+          if (length == null) length = FieldCallExpression.make(Prelude.ARRAY_LENGTH, result2.expression);
+          result = result
+            .applyExpression(length, false, myVisitor.getErrorReporter(), fun)
+            .applyExpression(new LamExpression(sort0, new TypedSingleDependentLink(true, null, new DataCallExpression(Prelude.FIN, LevelPair.PROP, new SingletonList<>(Suc(length)))), constType), false, myVisitor.getErrorReporter(), fun);
         }
       }
 
       if (!checked) {
-        result1 = myVisitor.checkExpr(arguments.get(0).expression, null);
+        result1 = myVisitor.checkExpr(arguments.get(index).expression, null);
         if (result1 == null) return null;
 
         if (var != null) {
-          Sort sort = result1.type.getSortOfType();
-          if (sort != null) {
-            Expression length = classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH);
-            if (length == null) length = FieldCallExpression.make(Prelude.ARRAY_LENGTH, result2.expression);
-            Expression actualElementsType = new LamExpression(sort.max(Sort.SET0), new TypedSingleDependentLink(true, null, new DataCallExpression(Prelude.FIN, LevelPair.PROP, new SingletonList<>(length))), result1.type);
-            if (new CompareVisitor(myVisitor.getEquations(), CMP.LE, fun).normalizedCompare(actualElementsType, elementsType, null, false)) {
-              checked = true;
-              result = result
-                .applyExpression(length, false, myVisitor.getErrorReporter(), fun)
-                .applyExpression(new LamExpression(sort.max(Sort.SET0), new TypedSingleDependentLink(true, null, new DataCallExpression(Prelude.FIN, LevelPair.PROP, new SingletonList<>(Suc(length)))), result1.type), false, myVisitor.getErrorReporter(), fun);
-            }
+          if (length == null) length = classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH);
+          if (length == null) length = FieldCallExpression.make(Prelude.ARRAY_LENGTH, result2.expression);
+          Expression actualElementsType = new LamExpression(sort0, new TypedSingleDependentLink(true, null, new DataCallExpression(Prelude.FIN, LevelPair.PROP, new SingletonList<>(length))), result1.type);
+          if (new CompareVisitor(myVisitor.getEquations(), CMP.LE, fun).normalizedCompare(actualElementsType, elementsType, null, false)) {
+            checked = true;
+            result = result
+              .applyExpression(length, false, myVisitor.getErrorReporter(), fun)
+              .applyExpression(new LamExpression(sort0, new TypedSingleDependentLink(true, null, new DataCallExpression(Prelude.FIN, LevelPair.PROP, new SingletonList<>(Suc(length)))), result1.type), false, myVisitor.getErrorReporter(), fun);
           }
         }
 
@@ -350,34 +410,31 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
           List<? extends Expression> args = ((DefCallResult) result).getArguments();
           Expression expected1 = AppExpression.make(args.get(1), Zero(), true);
           if (!new CompareVisitor(myVisitor.getEquations(), CMP.LE, fun).normalizedCompare(result1.type, expected1, null, false)) {
-            myVisitor.getErrorReporter().report(new TypeMismatchError(expected1, result1.type, arguments.get(0).expression));
+            myVisitor.getErrorReporter().report(new TypeMismatchError(expected1, result1.type, arguments.get(index).expression));
             return null;
           }
-          LevelPair levels = ((DefCallResult) result).getLevels().toLevelPair();
-          Sort sort = levels.toSort();
           Map<ClassField, Expression> impls = new HashMap<>();
           impls.put(Prelude.ARRAY_LENGTH, args.get(0));
           TypedSingleDependentLink lamParam = new TypedSingleDependentLink(true, "j", new DataCallExpression(Prelude.FIN, LevelPair.PROP, new SingletonList<>(args.get(0))));
-          impls.put(Prelude.ARRAY_ELEMENTS_TYPE, new LamExpression(sort.max(Sort.SET0), lamParam, AppExpression.make(args.get(1), Suc(new ReferenceExpression(lamParam)), true)));
-          Expression expected2 = new ClassCallExpression(Prelude.DEP_ARRAY, levels, impls, sort, UniverseKind.NO_UNIVERSES);
+          impls.put(Prelude.ARRAY_ELEMENTS_TYPE, new LamExpression(sort0, lamParam, AppExpression.make(args.get(1), Suc(new ReferenceExpression(lamParam)), true)));
+          Expression expected2 = new ClassCallExpression(Prelude.DEP_ARRAY, defCallResult.getLevels(), impls, sort, UniverseKind.NO_UNIVERSES);
           if (!new CompareVisitor(myVisitor.getEquations(), CMP.LE, fun).normalizedCompare(result2.type, expected2, null, false)) {
-            myVisitor.getErrorReporter().report(new TypeMismatchError(expected2, result2.type, arguments.get(1).expression));
+            myVisitor.getErrorReporter().report(new TypeMismatchError(expected2, result2.type, arguments.get(index2).expression));
             return null;
           }
         }
       }
 
       result = result
-        .applyExpression(result1.expression, true, myVisitor.getErrorReporter(), arguments.get(0).expression)
-        .applyExpression(result2.expression, true, myVisitor.getErrorReporter(), arguments.get(1).expression);
+        .applyExpression(result1.expression, true, myVisitor.getErrorReporter(), arguments.get(index).expression)
+        .applyExpression(result2.expression, true, myVisitor.getErrorReporter(), arguments.get(index2).expression);
+      index = index2 + 1;
+    } else if (index + 1 < index2) {
+      arguments.subList(index + 1, index2).clear();
+    }
 
-      for (int i = 2; i < arguments.size(); i++) {
-        result = inferArg(result, arguments.get(i).expression, arguments.get(i).isExplicit(), fun);
-      }
-    } else {
-      for (Concrete.Argument argument : arguments) {
-        result = inferArg(result, argument.expression, argument.isExplicit(), fun);
-      }
+    for (; index < arguments.size(); index++) {
+      result = inferArg(result, arguments.get(index).expression, arguments.get(index).isExplicit(), fun);
     }
 
     return result;
@@ -473,8 +530,8 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
     DefCallResult defCallResult = result instanceof DefCallResult ? (DefCallResult) result : null;
     Definition definition = defCallResult != null ? defCallResult.getDefinition() : null;
     List<Concrete.Argument> arguments = expr.getArguments();
-    if ((definition == Prelude.EMPTY_ARRAY || definition == Prelude.ARRAY_CONS) && (defCallResult != null && defCallResult.getArguments().isEmpty())) {
-      return checkArrayCons(result, arguments, expectedType, fun);
+    if ((definition == Prelude.EMPTY_ARRAY || definition == Prelude.ARRAY_CONS) && defCallResult != null && defCallResult.getArguments().isEmpty()) {
+      return checkArrayCons(defCallResult, arguments, expectedType, fun);
     }
 
     List<Integer> order = definition != null ? definition.getParametersTypecheckingOrder() : null;
