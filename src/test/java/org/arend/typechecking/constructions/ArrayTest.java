@@ -333,17 +333,17 @@ public class ArrayTest extends TypeCheckingTestCase {
   @Test
   public void fixedLength() {
     typeCheckModule(
-      "\\func f {n : Nat} (l : Array { | len => suc n }) : l.A \\elim l\n" +
+      "\\func f {n : Nat} (l : DArray { | len => suc n }) : l.A 0 \\elim l\n" +
       "  | :: a _ => a\n" +
-      "\\func test : f (1 :: 2 :: nil) = 1 => idp");
+      "\\func test : f (1 :: {_} {\\lam _ => Nat} 2 :: nil) = 1 => idp");
   }
 
   @Test
   public void fixedLength2() {
     typeCheckModule(
-      "\\func f (l : Array { | len => 0 }) : Nat \\elim l\n" +
+      "\\func f (l : DArray { | len => 0 }) : Nat \\elim l\n" +
       "  | nil => 1\n" +
-      "\\func test : f (nil {Nat}) = 1 => idp");
+      "\\func test : f (nil {\\lam _ => Nat}) = 1 => idp");
   }
 
   @Test
@@ -357,7 +357,7 @@ public class ArrayTest extends TypeCheckingTestCase {
   @Test
   public void fixedLength4() {
     typeCheckModule(
-      "\\func f {n : Nat} (l : Array { | len => n }) : Nat \\elim n, l\n" +
+      "\\func f {n : Nat} (l : DArray { | len => n }) : Nat \\elim n, l\n" +
       "  | 0, nil => 0\n" +
       "  | suc _, :: _ _ => 1\n" +
       "\\func test : f (3 :: nil) = 1 => idp");

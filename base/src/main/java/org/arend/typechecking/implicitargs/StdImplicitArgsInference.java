@@ -279,7 +279,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
     Sort sort0 = sort.max(Sort.SET0);
     Expression elementsType = null;
     if (index < arguments.size() && !arguments.get(index).isExplicit()) {
-      TypecheckingResult result = myVisitor.checkExpr(arguments.get(index).expression, length == null ? null : new PiExpression(sort.succ(), new TypedSingleDependentLink(true, null, Fin(length)), new UniverseExpression(sort)));
+      TypecheckingResult result = myVisitor.checkExpr(arguments.get(index).expression, definition == Prelude.EMPTY_ARRAY ? new PiExpression(sort.succ(), new TypedSingleDependentLink(true, null, Fin(Zero())), new UniverseExpression(sort)) : length == null ? null : new PiExpression(sort.succ(), new TypedSingleDependentLink(true, null, Fin(Suc(length))), new UniverseExpression(sort)));
       if (result == null) return null;
       elementsType = result.expression;
       index++;
@@ -305,18 +305,9 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
         if (elementsType == null) {
           elementsType = expectedClassCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
         }
-        if (definition == Prelude.EMPTY_ARRAY) {
-          if (elementsType != null) {
-            result = DefCallResult.makeTResult(defCallResult.getDefCall(), definition, expectedClassCall.getLevels());
-          }
-        } else {
-          if (length == null) {
-            length = expectedClassCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH);
-            length = length == null ? null : length.normalize(NormalizationMode.WHNF).pred();
-          }
-          if (length != null) {
-            result = DefCallResult.makeTResult(defCallResult.getDefCall(), definition, expectedClassCall.getLevels());
-          }
+        if (definition != Prelude.EMPTY_ARRAY && length == null) {
+          length = expectedClassCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH);
+          length = length == null ? null : length.normalize(NormalizationMode.WHNF).pred();
         }
       }
     }
