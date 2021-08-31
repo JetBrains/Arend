@@ -807,9 +807,15 @@ public class PatternTypechecking {
           Expression length = classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH);
           if (elementsType != null || length != null) {
             funCallArgs = new ArrayList<>();
-            if (length != null) funCallArgs.add(length);
-            if (elementsType != null) funCallArgs.add(elementsType);
-            funCallArgs.addAll(conResult.exprs);
+            if (length != null) {
+              funCallArgs.add(length);
+              if (elementsType != null) funCallArgs.add(elementsType);
+              funCallArgs.addAll(conResult.exprs);
+            } else {
+              if (!conResult.exprs.isEmpty()) funCallArgs.add(conResult.exprs.get(0));
+              funCallArgs.add(elementsType);
+              if (!conResult.exprs.isEmpty()) funCallArgs.addAll(conResult.exprs.subList(1, conResult.exprs.size()));
+            }
           } else {
             funCallArgs = conResult.exprs;
           }
