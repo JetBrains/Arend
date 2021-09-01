@@ -322,12 +322,12 @@ public final class Concrete {
     }
 
     @Override
-    public @NotNull ConcreteExpression getExpression() {
+    public @NotNull Concrete.Expression getExpression() {
       return expression;
     }
 
     @Override
-    public @NotNull ConcreteExpression getType() {
+    public @NotNull Concrete.Expression getType() {
       return type;
     }
   }
