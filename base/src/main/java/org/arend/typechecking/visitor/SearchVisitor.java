@@ -10,19 +10,24 @@ import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.HaveClause;
 import org.arend.core.expr.visitor.BaseExpressionVisitor;
+import org.arend.ext.core.expr.CoreExpression;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean> {
-  protected boolean processDefCall(DefCallExpression expression, P param) {
-    return false;
+  protected CoreExpression.FindAction processDefCall(DefCallExpression expression, P param) {
+    return CoreExpression.FindAction.CONTINUE;
   }
 
   @Override
   public Boolean visitDefCall(DefCallExpression expression, P param) {
-    return processDefCall(expression, param) || expression.getDefCallArguments().stream().anyMatch(arg -> arg.accept(this, param));
+    switch (processDefCall(expression, param)) {
+      case STOP: return true;
+      case SKIP: return false;
+      default: return expression.getDefCallArguments().stream().anyMatch(arg -> arg.accept(this, param));
+    }
   }
 
   protected boolean preserveOrder() {
@@ -38,6 +43,11 @@ public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean>
     if (preserveOrder() && expression.getDefinition().getRecursiveParameter() >= 0 && expression.getDefinition().getRecursiveParameter() < expression.getDefCallArguments().size() - 1) {
       List<ConCallExpression> stack = new ArrayList<>();
       while (true) {
+        switch (processDefCall(expression, param)) {
+          case STOP: return true;
+          case SKIP: break;
+        }
+
         for (Expression arg : expression.getDataTypeArguments()) {
           if (visitConCallArgument(arg, param)) {
             return true;
@@ -78,8 +88,9 @@ public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean>
     Expression it = expression;
     do {
       expression = (ConCallExpression) it;
-      if (processDefCall(expression, param)) {
-        return true;
+      switch (processDefCall(expression, param)) {
+        case STOP: return true;
+        case SKIP: return false;
       }
 
       for (Expression arg : expression.getDataTypeArguments()) {
@@ -142,8 +153,9 @@ public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean>
 
   @Override
   public Boolean visitClassCall(ClassCallExpression expression, P param) {
-    if (processDefCall(expression, param)) {
-      return true;
+    switch (processDefCall(expression, param)) {
+      case STOP: return true;
+      case SKIP: return false;
     }
 
     if (preserveOrder()) {

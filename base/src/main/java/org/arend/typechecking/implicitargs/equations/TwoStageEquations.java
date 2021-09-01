@@ -21,6 +21,7 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
+import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.LocalError;
@@ -619,12 +620,12 @@ public class TwoStageEquations implements Equations {
       }
       field.getType(levels).getCodomain().accept(new SearchVisitor<Void>() {
         @Override
-        protected boolean processDefCall(DefCallExpression expression, Void param) {
+        protected CoreExpression.FindAction processDefCall(DefCallExpression expression, Void param) {
           if (expression instanceof FieldCallExpression && classDef.getFields().contains(((FieldCallExpression) expression).getDefinition()) && !solution.isImplemented((ClassField) expression.getDefinition())) {
             implementations.remove(field);
-            return true;
+            return CoreExpression.FindAction.STOP;
           }
-          return false;
+          return CoreExpression.FindAction.CONTINUE;
         }
       }, null);
     }

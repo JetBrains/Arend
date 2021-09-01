@@ -5,6 +5,7 @@ import org.arend.core.elimtree.*;
 import org.arend.core.expr.DefCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.TypeCoerceExpression;
+import org.arend.ext.core.expr.CoreExpression;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -57,8 +58,8 @@ public class FindDefCallVisitor<T extends Definition> extends SearchVisitor<Void
   }
 
   @Override
-  protected boolean processDefCall(DefCallExpression expression, Void param) {
-    return checkDefinition(expression.getDefinition());
+  protected CoreExpression.FindAction processDefCall(DefCallExpression expression, Void param) {
+    return checkDefinition(expression.getDefinition()) ? CoreExpression.FindAction.STOP : CoreExpression.FindAction.CONTINUE;
   }
 
   @Override

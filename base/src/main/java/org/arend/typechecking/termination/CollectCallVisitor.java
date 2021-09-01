@@ -8,6 +8,7 @@ import org.arend.core.elimtree.ElimClause;
 import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.*;
 import org.arend.core.pattern.*;
+import org.arend.ext.core.expr.CoreExpression;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.visitor.SearchVisitor;
 import org.arend.util.Pair;
@@ -163,9 +164,9 @@ public class CollectCallVisitor extends SearchVisitor<Void> {
   }
 
   @Override
-  protected boolean processDefCall(DefCallExpression expression, Void param) {
+  protected CoreExpression.FindAction processDefCall(DefCallExpression expression, Void param) {
     if (!myCycle.contains(expression.getDefinition())) {
-      return false;
+      return CoreExpression.FindAction.CONTINUE;
     }
 
     CallMatrix cm = new CallMatrix(myDefinition, expression);
@@ -173,11 +174,15 @@ public class CollectCallVisitor extends SearchVisitor<Void> {
       expression.getDefinition().getParameters(), expression.getDefCallArguments());
 
     myCollectedCalls.add(cm);
-    return false;
+    return CoreExpression.FindAction.CONTINUE;
   }
 
   @Override
   public Boolean visitTypeCoerce(TypeCoerceExpression expr, Void params) {
-    return myCycle.contains(expr.getDefinition()) && processDefCall(expr.getLHSType(), null);
+    if (!myCycle.contains(expr.getDefinition())) {
+      return false;
+    }
+    processDefCall(expr.getLHSType(), null);
+    return false;
   }
 }

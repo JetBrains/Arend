@@ -7,6 +7,7 @@ import org.arend.core.definition.UniverseKind;
 import org.arend.core.expr.*;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Level;
+import org.arend.ext.core.expr.CoreExpression;
 
 public class CheckForUniversesVisitor extends SearchVisitor<Void> {
   public static boolean visitLevels(Level pLevel, Level hLevel) {
@@ -14,11 +15,11 @@ public class CheckForUniversesVisitor extends SearchVisitor<Void> {
   }
 
   @Override
-  public boolean processDefCall(DefCallExpression expression, Void param) {
+  public CoreExpression.FindAction processDefCall(DefCallExpression expression, Void param) {
     if (expression.getDefinition() instanceof ClassField) {
-      return false;
+      return CoreExpression.FindAction.CONTINUE;
     }
-    return expression.getUniverseKind() != UniverseKind.NO_UNIVERSES && visitLevels(expression.getPLevel(), expression.getHLevel());
+    return expression.getUniverseKind() != UniverseKind.NO_UNIVERSES && visitLevels(expression.getPLevel(), expression.getHLevel()) ? CoreExpression.FindAction.STOP : CoreExpression.FindAction.CONTINUE;
   }
 
   @Override
