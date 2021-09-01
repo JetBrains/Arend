@@ -351,14 +351,14 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
       TypecheckingResult result2 = myVisitor.checkExpr(arguments.get(index2).expression, argClassCall);
       if (result2 == null) return null;
       ClassCallExpression classCall = result2.type.normalize(NormalizationMode.WHNF).cast(ClassCallExpression.class);
-      if (classCall == null || classCall.getDefinition() != Prelude.DEP_ARRAY) {
+      if (classCall != null && classCall.getDefinition() != Prelude.DEP_ARRAY) {
         myVisitor.getErrorReporter().report(new TypeMismatchError(refDoc(Prelude.DEP_ARRAY.getRef()), result2.type, arguments.get(index2).expression));
         return null;
       }
 
       TypecheckingResult result1 = null;
       boolean checked = false;
-      if (elementsType == null || var != null) {
+      if (classCall != null && (elementsType == null || var != null)) {
         Expression elementsType1 = classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
         if (elementsType1 != null) {
           elementsType = elementsType1.normalize(NormalizationMode.WHNF);
@@ -372,7 +372,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
           result1 = myVisitor.checkExpr(arguments.get(index).expression, constType);
           if (result1 == null) return null;
           checked = true;
-          if (length == null) length = classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH);
+          if (length == null) length = classCall == null ? null : classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH);
           if (length == null) length = FieldCallExpression.make(Prelude.ARRAY_LENGTH, result2.expression);
           result = result
             .applyExpression(length, false, myVisitor.getErrorReporter(), fun)
@@ -385,7 +385,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
         if (result1 == null) return null;
 
         if (var != null) {
-          if (length == null) length = classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH);
+          if (length == null) length = classCall == null ? null : classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH);
           if (length == null) length = FieldCallExpression.make(Prelude.ARRAY_LENGTH, result2.expression);
           Expression actualElementsType = new LamExpression(sort0, new TypedSingleDependentLink(true, null, new DataCallExpression(Prelude.FIN, LevelPair.PROP, new SingletonList<>(length))), result1.type);
           if (new CompareVisitor(myVisitor.getEquations(), CMP.LE, fun).normalizedCompare(actualElementsType, elementsType, null, false)) {

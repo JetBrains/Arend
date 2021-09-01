@@ -142,13 +142,13 @@ public class TwoStageEquations implements Equations {
       InferenceVariable cInf = inf1 != null ? inf1 : inf2;
       Expression cType = inf1 != null ? expr2 : expr1;
 
-      // cType /= Pi, cType /= Type, cType /= Class, cType /= stuck on ?X
-      if (!(cType instanceof PiExpression) && !(cType instanceof UniverseExpression) && !(cType instanceof ClassCallExpression) && cType.getStuckInferenceVariable() == null) {
-        cmp = CMP.EQ;
-      }
-
       if (inf1 != null) {
         cmp = cmp.not();
+      }
+
+      // cType /= Pi, cType /= Type, cType /= Class, cType /= stuck on ?X
+      if (!(cType instanceof PiExpression) && !(cType instanceof UniverseExpression) && (!(cType instanceof ClassCallExpression) || cmp == CMP.GE && ((ClassCallExpression) cType).getNumberOfNotImplementedFields() == 0) && cType.getStuckInferenceVariable() == null) {
+        cmp = CMP.EQ;
       }
 
       if (cType instanceof UniverseExpression && ((UniverseExpression) cType).getSort().isProp()) {
