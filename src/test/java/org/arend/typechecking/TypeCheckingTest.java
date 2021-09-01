@@ -1,18 +1,25 @@
 package org.arend.typechecking;
 
 import org.arend.core.context.binding.LevelVariable;
+import org.arend.core.context.binding.TypedBinding;
+import org.arend.core.definition.Definition;
 import org.arend.core.definition.FunctionDefinition;
-import org.arend.core.expr.DataCallExpression;
-import org.arend.core.expr.FunCallExpression;
-import org.arend.core.expr.LamExpression;
-import org.arend.core.expr.UniverseExpression;
+import org.arend.core.expr.*;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.LevelPair;
 import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.frontend.reference.ConcreteLocatedReferable;
 import org.arend.prelude.Prelude;
+import org.arend.term.concrete.Concrete;
+import org.arend.term.prettyprint.ToAbstractVisitor;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.junit.Test;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 import static org.arend.ExpressionFactory.FunCall;
 import static org.arend.ExpressionFactory.Ref;
@@ -245,5 +252,25 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
       "\\func pair : \\Sigma (Nat -> Nat) Nat => (\\lam x => x, 1)\n" +
       "\\func test : \\Pi {n : Nat} -> Nat => pair.1", 1);
     assertThatErrorsAre(typeMismatchError());
+  }
+
+  @Test
+  public void longReference() {
+    typeCheckModule("\\record Cl | x : Nat\n" +
+            "\\func test : Nat => \\let ccl : Cl => \\new Cl { | x => 1 } \\in ccl.x");
+    LetExpression body = (LetExpression) Objects.requireNonNull(((FunctionDefinition) getDefinition("test")).getBody());
+    var let = body.getExpression();
+    var concrete = ToAbstractVisitor.convert(let, PrettyPrinterConfig.DEFAULT);
+    typeCheckExpr(Map.of(((Concrete.LongReferenceExpression) concrete).getQualifier().getReferent(), new TypedBinding("ccl", body.getClauses().get(0).getTypeExpr())), concrete, let.getType(), 0);
+  }
+
+  @Test
+  public void longReferenceClass() {
+    typeCheckModule("\\class Cl | x : Nat\n" +
+            "\\func test : Nat => \\let ccl : Cl => \\new Cl { | x => 1 } \\in ccl.x");
+    LetExpression body = (LetExpression) Objects.requireNonNull(((FunctionDefinition) getDefinition("test")).getBody());
+    var let = body.getExpression();
+    var concrete = ToAbstractVisitor.convert(let, PrettyPrinterConfig.DEFAULT);
+    typeCheckExpr(Map.of(((Concrete.LongReferenceExpression) concrete).getQualifier().getReferent(), new TypedBinding("ccl", body.getClauses().get(0).getTypeExpr())), concrete, let.getType(), 0);
   }
 }

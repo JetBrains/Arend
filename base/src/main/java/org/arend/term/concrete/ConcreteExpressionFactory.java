@@ -31,13 +31,19 @@ public class ConcreteExpressionFactory {
   public static Concrete.ReferenceExpression cVar(LongName longName, Referable referable) {
     return longName == null
       ? new Concrete.ReferenceExpression(null, referable)
-      : new Concrete.LongReferenceExpression(null, longName, referable);
+      : new Concrete.LongReferenceExpression(null, null, longName, referable);
+  }
+
+  public static Concrete.ReferenceExpression cVar(Concrete.ReferenceExpression qualifierExpression, LongName longName, Referable referable) {
+    return longName == null
+            ? new Concrete.ReferenceExpression(null, referable)
+            : new Concrete.LongReferenceExpression(null, qualifierExpression, longName, referable);
   }
 
   public static Concrete.ReferenceExpression cDefCall(LongName longName, Referable referable, List<Concrete.LevelExpression> pLevels, List<Concrete.LevelExpression> hLevels) {
     return longName == null
       ? new Concrete.ReferenceExpression(null, referable, pLevels, hLevels)
-      : new Concrete.LongReferenceExpression(null, longName, referable, pLevels, hLevels);
+      : new Concrete.LongReferenceExpression(null, null, longName, referable, pLevels, hLevels);
   }
 
   public static Concrete.ClassExtExpression cClassExt(Concrete.Expression expr, List<Concrete.ClassFieldImpl> definitions) {

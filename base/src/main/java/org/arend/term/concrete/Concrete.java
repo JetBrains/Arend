@@ -323,12 +323,12 @@ public final class Concrete {
     }
 
     @Override
-    public @NotNull ConcreteExpression getExpression() {
+    public @NotNull Concrete.Expression getExpression() {
       return expression;
     }
 
     @Override
-    public @NotNull ConcreteExpression getType() {
+    public @NotNull Concrete.Expression getType() {
       return type;
     }
   }
@@ -555,19 +555,26 @@ public final class Concrete {
 
   public static class LongReferenceExpression extends ReferenceExpression {
     private final LongName myLongName;
+    private final @Nullable Concrete.ReferenceExpression myQualifier;
 
-    public LongReferenceExpression(Object data, LongName longName, Referable referable, List<LevelExpression> pLevels, List<LevelExpression> hLevels) {
+    public LongReferenceExpression(Object data, @Nullable Concrete.ReferenceExpression qualifier, LongName longName, Referable referable, List<LevelExpression> pLevels, List<LevelExpression> hLevels) {
       super(data, referable, pLevels, hLevels);
       myLongName = longName;
+      myQualifier = qualifier;
     }
 
-    public LongReferenceExpression(Object data, LongName longName, Referable referable) {
+    public LongReferenceExpression(Object data, @Nullable Concrete.ReferenceExpression qualifier, LongName longName, Referable referable) {
       super(data, referable);
       myLongName = longName;
+      myQualifier = qualifier;
     }
 
     public LongName getLongName() {
       return myLongName;
+    }
+
+    public @Nullable Concrete.ReferenceExpression getQualifier() {
+      return myQualifier;
     }
   }
 

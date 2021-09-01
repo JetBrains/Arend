@@ -5,15 +5,16 @@ import org.arend.core.definition.ClassField;
 import org.arend.core.definition.UniverseKind;
 import org.arend.core.expr.*;
 import org.arend.core.expr.visitor.NormalizeVisitor;
+import org.arend.ext.core.expr.CoreExpression;
 
 public class CheckForUniversesVisitor extends SearchVisitor<Void> {
   @Override
-  public boolean processDefCall(DefCallExpression expression, Void param) {
+  public CoreExpression.FindAction processDefCall(DefCallExpression expression, Void param) {
     if (expression.getDefinition() instanceof ClassField) {
-      return false;
+      return CoreExpression.FindAction.CONTINUE;
     }
     assert expression instanceof LeveledDefCallExpression;
-    return expression.getUniverseKind() != UniverseKind.NO_UNIVERSES && !((LeveledDefCallExpression) expression).getLevels().isClosed();
+    return expression.getUniverseKind() != UniverseKind.NO_UNIVERSES && !((LeveledDefCallExpression) expression).getLevels().isClosed() ? CoreExpression.FindAction.STOP : CoreExpression.FindAction.CONTINUE;
   }
 
   @Override

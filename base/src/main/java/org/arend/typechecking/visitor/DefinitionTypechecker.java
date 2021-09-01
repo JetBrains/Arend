@@ -27,6 +27,7 @@ import org.arend.error.CountingErrorReporter;
 import org.arend.error.IncorrectExpressionException;
 import org.arend.ext.ArendExtension;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
+import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.*;
@@ -1905,8 +1906,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
     return !expr.accept(new SearchVisitor<Void>() {
       @Override
-      protected boolean processDefCall(DefCallExpression expression, Void param) {
-        return expression instanceof ConCallExpression && ((ConCallExpression) expression).getDefinition().getDataType() == dataDefinition;
+      protected CoreExpression.FindAction processDefCall(DefCallExpression expression, Void param) {
+        return expression instanceof ConCallExpression && ((ConCallExpression) expression).getDefinition().getDataType() == dataDefinition ? CoreExpression.FindAction.STOP : CoreExpression.FindAction.CONTINUE;
       }
     }, null);
   }

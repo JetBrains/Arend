@@ -98,7 +98,12 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
             // If the class does not have a classifying field, infer instance immediately
             if (classDef.getClassifyingField() == null) {
               InstancePool instancePool = kind == Definition.TypeClassParameterKind.ONLY_LOCAL ? myVisitor.getInstancePool().getLocalInstancePool() : myVisitor.getInstancePool();
-              TypecheckingResult instanceResult = instancePool.getInstance(null, defCallResult.getParameter().getTypeExpr(), new SubclassSearchParameters(classDef), expr, holeExpr);
+              TypecheckingResult instanceResult;
+              if (expr instanceof Concrete.LongReferenceExpression && i == 0 && ((Concrete.LongReferenceExpression) expr).getQualifier() != null) {
+                instanceResult = myVisitor.checkExpr(Objects.requireNonNull(((Concrete.LongReferenceExpression) expr).getQualifier()), type);
+              } else {
+                instanceResult = instancePool.getInstance(null, defCallResult.getParameter().getTypeExpr(), new SubclassSearchParameters(classDef), expr, holeExpr);
+              }
               Expression instance;
               if (instanceResult == null) {
                 ArgInferenceError error = new InstanceInferenceError(classDef.getReferable(), expr, holeExpr, new Expression[0]);
@@ -124,14 +129,28 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
         if (classVarsOnly) {
           return result;
         }
-        infVar = result instanceof DefCallResult
-          ? new FunctionInferenceVariable(((DefCallResult) result).getDefinition(), parameter, i + 1, type, expr, myVisitor.getAllBindings())
-          : new FunctionInferenceVariable(null, parameter, i + 1, type, expr, myVisitor.getAllBindings());
+        Definition definition;
+        if (result instanceof DefCallResult) {
+          definition = ((DefCallResult) result).getDefinition();
+        } else if (result instanceof TypecheckingResult && ((TypecheckingResult) result).getExpression() instanceof DefCallExpression) {
+          definition = ((DefCallExpression) ((TypecheckingResult) result).getExpression()).getDefinition();
+        } else {
+          definition = null;
+        }
+        infVar = new FunctionInferenceVariable(definition, parameter, i + 1, type, expr, myVisitor.getAllBindings());
       }
 
-      Expression binding = InferenceReferenceExpression.make(infVar, myVisitor.getEquations());
-      result = result.applyExpression(binding, parameter.isExplicit(), myVisitor.getErrorReporter(), expr);
-      substitution.add(parameter, binding);
+      Expression argument;
+      if (expr instanceof Concrete.LongReferenceExpression &&
+              ((Concrete.LongReferenceExpression) expr).getQualifier() != null &&
+              i == 0 && result instanceof DefCallResult &&
+              ((DefCallResult) result).getDefinition() instanceof ClassField) {
+        argument = myVisitor.checkExpr(Objects.requireNonNull(((Concrete.LongReferenceExpression) expr).getQualifier()), type).expression;
+      } else {
+        argument = InferenceReferenceExpression.make(infVar, myVisitor.getEquations());
+      }
+      result = result.applyExpression(argument, parameter.isExplicit(), myVisitor.getErrorReporter(), expr);
+      substitution.add(parameter, argument);
       i++;
     }
     return result;

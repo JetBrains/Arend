@@ -18,21 +18,8 @@ public class FindSubexpressionVisitor extends SearchVisitor<Void> {
   }
 
   @Override
-  public Boolean visitDefCall(DefCallExpression expression, Void param) {
-    switch (myFunction.apply(expression)) {
-      case STOP: return true;
-      case SKIP: return false;
-      default: return super.visitDefCall(expression, param);
-    }
-  }
-
-  @Override
-  public Boolean visitConCall(ConCallExpression expression, Void param) {
-    switch (myFunction.apply(expression)) {
-      case STOP: return true;
-      case SKIP: return false;
-      default: return super.visitConCall(expression, param);
-    }
+  protected CoreExpression.FindAction processDefCall(DefCallExpression expression, Void param) {
+    return myFunction.apply(expression);
   }
 
   @Override

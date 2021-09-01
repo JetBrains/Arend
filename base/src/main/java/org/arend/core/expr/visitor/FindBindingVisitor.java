@@ -5,6 +5,7 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.TypedDependentLink;
 import org.arend.core.elimtree.ElimBody;
 import org.arend.core.expr.let.HaveClause;
+import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.variable.Variable;
 import org.arend.core.expr.*;
 import org.arend.typechecking.visitor.SearchVisitor;
@@ -30,12 +31,12 @@ public class FindBindingVisitor extends SearchVisitor<Void> {
   }
 
   @Override
-  protected boolean processDefCall(DefCallExpression expression, Void param) {
+  protected CoreExpression.FindAction processDefCall(DefCallExpression expression, Void param) {
     if (myBindings.contains(expression.getDefinition())) {
       myResult = expression.getDefinition();
-      return true;
+      return CoreExpression.FindAction.STOP;
     } else {
-      return false;
+      return CoreExpression.FindAction.CONTINUE;
     }
   }
 

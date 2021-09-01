@@ -279,7 +279,7 @@ public abstract class SourceLibrary extends BaseLibrary {
     loadGeneratedModules();
 
     try {
-      SourceLoader sourceLoader = new SourceLoader(this, libraryManager);
+      SourceLoader sourceLoader = new SourceLoader(this, libraryManager, true);
       if (hasRawSources()) {
         for (ModulePath module : header.modules) {
           sourceLoader.preloadRaw(module, false);
@@ -289,6 +289,14 @@ public abstract class SourceLibrary extends BaseLibrary {
 
       if (!myFlags.contains(Flag.RECOMPILE) || isExternal()) {
         DefinitionListener definitionListener = ListDefinitionListener.join(libraryManager.getDefinitionListener(), myExtension.getDefinitionListener());
+
+        for (ModulePath module : header.modules)
+          sourceLoader.preloadBinary(module, keyRegistry, definitionListener);
+
+        SourceLoader newSourceLoader = new SourceLoader(this, libraryManager, false);
+        newSourceLoader.initializeLoader(sourceLoader);
+        sourceLoader = newSourceLoader;
+
         for (ModulePath module : header.modules) {
           if (!sourceLoader.loadBinary(module, keyRegistry, definitionListener) && isExternal()) {
             libraryManager.getLibraryErrorReporter().report(LibraryError.moduleLoading(module, getName()));
@@ -324,7 +332,7 @@ public abstract class SourceLibrary extends BaseLibrary {
       return true;
     }
 
-    SourceLoader sourceLoader = new SourceLoader(this, libraryManager);
+    SourceLoader sourceLoader = new SourceLoader(this, libraryManager, false);
     for (ModulePath module : getLoadedModules()) {
       sourceLoader.setModuleLoaded(module);
     }
