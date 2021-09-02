@@ -10,6 +10,7 @@ import org.arend.core.context.param.TypedSingleDependentLink;
 import org.arend.core.definition.*;
 import org.arend.core.expr.*;
 import org.arend.core.expr.type.Type;
+import org.arend.core.expr.type.TypeExpression;
 import org.arend.core.expr.visitor.CompareVisitor;
 import org.arend.core.expr.visitor.FreeVariablesCollector;
 import org.arend.core.sort.Sort;
@@ -420,6 +421,30 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
         .applyExpression(result1.expression, true, myVisitor.getErrorReporter(), arguments.get(index).expression)
         .applyExpression(result2.expression, true, myVisitor.getErrorReporter(), arguments.get(index2).expression);
       index = index2 + 1;
+    } else if (definition == Prelude.ARRAY_CONS && elementsType == null && index2 == arguments.size() && index < arguments.size() && defCallResult != null && defCallResult.getArguments().isEmpty()) {
+      TypecheckingResult result1 = myVisitor.checkExpr(arguments.get(index).expression, null);
+      if (result1 == null) return null;
+      Sort sort1 = result1.type.getSortOfType();
+      if (sort1 == null) return null;
+      if (!Sort.compare(sort1, sort, CMP.LE, myVisitor.getEquations(), arguments.get(index).expression)) {
+        return null;
+      }
+
+      Type type;
+      if (length == null) {
+        type = new TypeExpression(FunCallExpression.make(Prelude.ARRAY, defCallResult.getLevels(), new SingletonList<>(result1.type)), sort);
+      } else {
+        Map<ClassField, Expression> impls = new HashMap<>();
+        impls.put(Prelude.ARRAY_LENGTH, length);
+        impls.put(Prelude.ARRAY_ELEMENTS_TYPE, new LamExpression(sort0, new TypedSingleDependentLink(true, null, Fin(length)), result1.type));
+        type = new ClassCallExpression(Prelude.DEP_ARRAY, defCallResult.getLevels(), impls, sort, UniverseKind.NO_UNIVERSES);
+      }
+
+      TypedSingleDependentLink lamParam = new TypedSingleDependentLink(true, "l", type);
+      if (length == null) length = FieldCallExpression.make(Prelude.ARRAY_LENGTH, new ReferenceExpression(lamParam));
+      elementsType = new LamExpression(sort0, new TypedSingleDependentLink(true, null, Fin(Suc(length))), result1.type);
+      Expression resultExpr = new LamExpression(sort, lamParam, ArrayExpression.make(defCallResult.getLevels().toLevelPair(), elementsType, new SingletonList<>(result1.expression), new ReferenceExpression(lamParam)));
+      return new TypecheckingResult(resultExpr, resultExpr.getType());
     } else if (index + 1 < index2) {
       arguments.subList(index + 1, index2).clear();
     }

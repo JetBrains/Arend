@@ -67,6 +67,11 @@ public class ArrayTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void consTest3() {
+    typeCheckDef("\\func test => 7 ::");
+  }
+
+  @Test
   public void indexTest() {
     typeCheckModule(
       "\\open DArray(!!)\n" +
