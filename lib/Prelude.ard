@@ -83,7 +83,7 @@
 \record DArray {len : Nat} (A : Fin len -> \Type) (\coerce at : \Pi (j : Fin len) -> A j)
   \where \func \infixl 9 !! (a : DArray) (i : Fin a.len) => a.at i
 
-\meta Array A => DArray { | A _ => A }
+\func Array (A : \Type) => DArray { | A _ => A }
 
 \cons nil {A : Fin 0 -> \Type} : DArray A \cowith
   | at => \case __

@@ -37,7 +37,7 @@ public interface ArendPrelude {
   CoreFunctionDefinition getMod();
   CoreFunctionDefinition getDivModProp();
   CoreClassDefinition getDArray();
-  ArendRef getArray();
+  CoreFunctionDefinition getArray();
   CoreClassField getArrayElementsType();
   CoreClassField getArrayLength();
   CoreClassField getArrayAt();

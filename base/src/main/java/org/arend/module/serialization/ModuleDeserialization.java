@@ -12,9 +12,6 @@ import org.arend.naming.reference.*;
 import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.naming.scope.Scope;
 import org.arend.prelude.Prelude;
-import org.arend.term.concrete.ArrayMetaDefinition;
-import org.arend.term.concrete.Concrete;
-import org.arend.term.concrete.DefinableMetaDefinition;
 import org.arend.term.group.*;
 import org.arend.typechecking.order.dependency.DependencyListener;
 import org.arend.util.Pair;
@@ -240,8 +237,8 @@ public class ModuleDeserialization {
         referable = new FullModuleReferable(modulePath);
       } else {
         String name = referableProto.getName();
-        if (myPrelude && kind == GlobalReferable.Kind.OTHER && Prelude.ARRAY_NAME.equals(name)) {
-          referable = new MetaReferable(readPrecedence(referableProto.getPrecedence()), name, "", null, null, parent.getReferable());
+        if (myPrelude && kind == GlobalReferable.Kind.FUNCTION && Prelude.ARRAY_NAME.equals(name)) {
+          referable = new TypedLocatedReferable(readPrecedence(referableProto.getPrecedence()), name, parent.getReferable(), kind, null, null);
         } else {
           referable = new LocatedReferableImpl(readPrecedence(referableProto.getPrecedence()), name, parent.getReferable(), kind);
         }

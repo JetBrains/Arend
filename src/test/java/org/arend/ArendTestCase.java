@@ -50,7 +50,6 @@ public abstract class ArendTestCase {
     moduleScopeProvider = preludeLibrary.getModuleScopeProvider();
     libraryManager.loadLibrary(preludeLibrary, null);
     new Prelude.PreludeTypechecking(new InstanceProviderSet(), ConcreteReferableProvider.INSTANCE, IdReferableConverter.INSTANCE, PositionComparator.INSTANCE).typecheckLibrary(preludeLibrary);
-    Prelude.initializeArray((MetaReferable) Objects.requireNonNull(PreludeLibrary.getPreludeScope().resolveName(Prelude.ARRAY_NAME)));
     errorList.clear();
   }
 

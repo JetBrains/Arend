@@ -23,6 +23,11 @@ import static org.junit.Assert.*;
 
 public class ArrayTest extends TypeCheckingTestCase {
   @Test
+  public void resolveTest() {
+    typeCheckDef("\\func fold_<=_meet1 (l : Array Nat) => l.len");
+  }
+
+  @Test
   public void classExt() {
     typeCheckModule(
       "\\func test1 => \\new Array Nat 1 (\\lam _ => 3)\n" +
