@@ -8,6 +8,7 @@ import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.context.binding.inference.TypeClassInferenceVariable;
 import org.arend.core.context.param.SingleDependentLink;
+import org.arend.core.context.param.TypedSingleDependentLink;
 import org.arend.core.definition.ClassDefinition;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.UniverseKind;
@@ -35,6 +36,7 @@ import org.arend.util.Pair;
 
 import java.util.*;
 
+import static org.arend.core.expr.ExpressionFactory.Fin;
 import static org.arend.core.expr.ExpressionFactory.Nat;
 
 public class TwoStageEquations implements Equations {
@@ -668,11 +670,61 @@ public class TwoStageEquations implements Equations {
     solveClassCallLowerBounds(Collections.singletonList(new Pair<>(var, bounds)), true, false, CMP.LE, false);
   }
 
+  // removes implementations of at and len if possible
+  private void copyArray(ClassCallExpression classCall, InferenceVariable var, ClassCallExpression result) {
+    Map<ClassField, Expression> implementations = result.getImplementedHere();
+    Map<ClassField, Expression> impls = classCall.getImplementedHere();
+    Expression length = impls.get(Prelude.ARRAY_LENGTH);
+    Expression at = impls.get(Prelude.ARRAY_AT);
+    boolean needLength = false;
+    boolean needAt = false;
+    if (length != null || at != null) {
+      for (Equation equation : myEquations) {
+        Expression lower = equation.getLowerBound();
+        ClassCallExpression upper = equation.getLowerBound().cast(ClassCallExpression.class);
+        if (upper != null && lower.getInferenceVariable() == var) {
+          if (!needLength && upper.isImplemented(Prelude.ARRAY_LENGTH)) {
+            needLength = true;
+          }
+          if (!needAt && upper.isImplemented(Prelude.ARRAY_LENGTH)) {
+            needAt = true;
+          }
+          if (needLength && needAt) break;
+        }
+      }
+    }
+    if (length == null) needLength = false;
+    if (at == null) needAt = false;
+    Expression elementsType = impls.get(Prelude.ARRAY_ELEMENTS_TYPE);
+    if (elementsType != null) {
+      if (!needLength) {
+        Expression constType = elementsType.removeConstLam();
+        if (constType != null) {
+          elementsType = new LamExpression(result.getLevels().toLevelPair().toSort().max(Sort.SET0), new TypedSingleDependentLink(true, null, Fin(FieldCallExpression.make(Prelude.ARRAY_LENGTH, new ReferenceExpression(result.getThisBinding())))), constType);
+        } else {
+          needLength = true;
+        }
+      }
+      implementations.put(Prelude.ARRAY_ELEMENTS_TYPE, elementsType);
+    }
+    if (needLength) {
+      implementations.put(Prelude.ARRAY_LENGTH, length);
+    }
+    if (needAt) implementations.put(Prelude.ARRAY_AT, at);
+  }
+
   private boolean solveClassCallLowerBounds(List<Pair<InferenceVariable, List<ClassCallExpression>>> list, boolean allOK, boolean solved, CMP cmp, boolean useWrapper) {
     loop:
     for (Pair<InferenceVariable, List<ClassCallExpression>> pair : list) {
       if (pair.proj2.size() == 1) {
-        solve(pair.proj1, pair.proj2.get(0), true);
+        if (pair.proj2.get(0).getDefinition() == Prelude.DEP_ARRAY) {
+          ClassCallExpression classCall = pair.proj2.get(0);
+          ClassCallExpression solution = new ClassCallExpression(Prelude.DEP_ARRAY, classCall.getLevels(), new HashMap<>(), classCall.getSort(), classCall.getUniverseKind());
+          copyArray(classCall, pair.proj1, solution);
+          solve(pair.proj1, solution, true);
+        } else {
+          solve(pair.proj1, pair.proj2.get(0), true);
+        }
         solved = true;
         continue;
       }
@@ -725,8 +777,12 @@ public class TwoStageEquations implements Equations {
           }
         }
 
-        for (Map.Entry<ClassField, Expression> entry : pair.proj2.get(minIndex).getImplementedHere().entrySet()) {
-          implementations.put(entry.getKey(), entry.getValue().subst(pair.proj2.get(minIndex).getThisBinding(), thisExpr));
+        if (classDef == Prelude.DEP_ARRAY) {
+          copyArray(pair.proj2.get(minIndex), pair.proj1, solution);
+        } else {
+          for (Map.Entry<ClassField, Expression> entry : pair.proj2.get(minIndex).getImplementedHere().entrySet()) {
+            implementations.put(entry.getKey(), entry.getValue().subst(pair.proj2.get(minIndex).getThisBinding(), thisExpr));
+          }
         }
         pair.proj2.remove(minIndex);
 

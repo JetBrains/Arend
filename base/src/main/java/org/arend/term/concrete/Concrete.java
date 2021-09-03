@@ -400,6 +400,14 @@ public final class Concrete {
       result.addAll(myArguments);
       return result;
     }
+
+    public int getNumberOfExplicitArguments() {
+      int sum = 0;
+      for (Argument arg : myArguments) {
+        if (arg.myExplicit) sum++;
+      }
+      return sum;
+    }
   }
 
   public static class BinOpSequenceElem {

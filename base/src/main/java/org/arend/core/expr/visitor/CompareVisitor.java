@@ -952,6 +952,9 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       if (impl1 == null) {
         return false;
       }
+      if (field == Prelude.ARRAY_ELEMENTS_TYPE && !classCall2.isImplemented(Prelude.ARRAY_LENGTH) && classCall1.isImplemented(Prelude.ARRAY_LENGTH)) {
+        impl2 = impl2.subst(classCall2.getThisBinding(), new NewExpression(null, classCall1));
+      }
       if (!field.isCovariant()) {
         myCMP = CMP.EQ;
       }

@@ -1506,10 +1506,9 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         return null;
       }
 
-      typeCheckedBaseClass.expression = typeCheckedBaseClass.expression.normalize(NormalizationMode.WHNF);
-      ClassCallExpression classCall = typeCheckedBaseClass.expression.cast(ClassCallExpression.class);
+      ClassCallExpression classCall = TypeCoerceExpression.unfoldType(typeCheckedBaseClass.expression).cast(ClassCallExpression.class);
       if (classCall == null) {
-        classCall = typeCheckedBaseClass.type.normalize(NormalizationMode.WHNF).cast(ClassCallExpression.class);
+        classCall = TypeCoerceExpression.unfoldType(typeCheckedBaseClass.type).cast(ClassCallExpression.class);
         if (classCall == null) {
           errorReporter.report(new TypecheckingError("Expected a class or a class instance", baseClassExpr));
           return null;
@@ -2942,7 +2941,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       return checkResult(expectedType, new TypecheckingResult(FunCallExpression.make(isMod ? Prelude.MOD : Prelude.DIV_MOD, LevelPair.PROP, Arrays.asList(arg1.expression, arg2.expression)), type.getExpr()), expr);
     }
 
-    if (expectedType != null && (definition == Prelude.ARRAY_AT || definition == Prelude.ARRAY_INDEX || definition == Prelude.EMPTY_ARRAY || definition == Prelude.ARRAY_CONS)) {
+    if (expectedType != null && (definition == Prelude.ARRAY_AT && expr.getNumberOfExplicitArguments() == 0 || definition == Prelude.ARRAY_INDEX && expr.getNumberOfExplicitArguments() == 1 || definition == Prelude.ARRAY_CONS && expr.getNumberOfExplicitArguments() == 2)) {
       PiExpression piExpr = TypeCoerceExpression.unfoldType(expectedType).cast(PiExpression.class);
       if (piExpr != null && piExpr.getParameters().isExplicit()) {
         Referable lamParam = new LocalReferable("a");
