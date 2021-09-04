@@ -48,6 +48,9 @@ import org.jetbrains.annotations.TestOnly;
 
 import java.util.*;
 
+import static org.arend.core.expr.ExpressionFactory.Suc;
+import static org.arend.core.expr.ExpressionFactory.Zero;
+
 public class PatternTypechecking {
   private final ErrorReporter myErrorReporter;
   private final Mode myMode;
@@ -803,11 +806,14 @@ public class PatternTypechecking {
           newConCall = ConCallExpression.make(conCall.getDefinition(), conCall.getLevels(), conCall.getDataTypeArguments(), conResult.exprs);
         } else {
           List<Expression> funCallArgs;
-          Expression elementsType = classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
           Expression length = classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH);
-          if (elementsType != null || length != null) {
+          Expression elementsType = classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
+          if (elementsType != null) {
+            elementsType = elementsType.subst(classCall.getThisBinding(), new NewExpression(null, new ClassCallExpression(Prelude.DEP_ARRAY, classCall.getLevels(), Collections.singletonMap(Prelude.ARRAY_LENGTH, constructor == Prelude.EMPTY_ARRAY ? Zero() : length != null ? length : Suc(conResult.exprs.get(0))), classCall.getLevels().toLevelPair().toSort(), UniverseKind.NO_UNIVERSES)));
+          }
+          if (elementsType != null || length != null && constructor == Prelude.ARRAY_CONS) {
             funCallArgs = new ArrayList<>();
-            if (length != null) {
+            if (length != null && constructor == Prelude.ARRAY_CONS) {
               funCallArgs.add(length);
               if (elementsType != null) funCallArgs.add(elementsType);
               funCallArgs.addAll(conResult.exprs);

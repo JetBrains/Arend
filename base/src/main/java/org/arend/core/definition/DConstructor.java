@@ -49,7 +49,7 @@ public class DConstructor extends FunctionDefinition {
 
   public DependentLink getArrayParameters(LevelPair levels, Expression length, Binding thisBinding, Expression elementsType) {
     if (this == Prelude.EMPTY_ARRAY) {
-      return elementsType != null ? EmptyDependentLink.getInstance() : levels.isEmpty() ? getParameters() : DependentLink.Helper.subst(getParameters(), new ExprSubstitution(), levels);
+      return elementsType != null ? EmptyDependentLink.getInstance() : DependentLink.Helper.subst(getParameters(), new ExprSubstitution(thisBinding, new NewExpression(null, new ClassCallExpression(Prelude.DEP_ARRAY, levels, Collections.singletonMap(Prelude.ARRAY_LENGTH, Zero()), levels.toSort(), UniverseKind.NO_UNIVERSES))), levels);
     }
 
     if ((elementsType == null || thisBinding == null) && length == null) {
