@@ -464,6 +464,11 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
   }
 
   @Override
+  public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Void params) {
+    return Prelude.ARRAY != null && expr.getReferent() == Prelude.ARRAY.getRef() ? new Concrete.ReferenceExpression(expr.getData(), Prelude.DEP_ARRAY.getRef()) : super.visitReference(expr, params);
+  }
+
+  @Override
   public Concrete.Expression visitApp(Concrete.AppExpression expr, Void params) {
     if (expr.getFunction() instanceof Concrete.ReferenceExpression && Prelude.ARRAY != null && ((Concrete.ReferenceExpression) expr.getFunction()).getReferent() == Prelude.ARRAY.getRef() && expr.getArguments().size() > 1 && expr.getArguments().get(0).isExplicit() && expr.getArguments().get(1).isExplicit()) {
       List<Concrete.Argument> args = new ArrayList<>(expr.getArguments().size());
@@ -474,7 +479,11 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
         args.add(new Concrete.Argument(expr.getArguments().get(i).expression.accept(this, null), expr.getArguments().get(i).isExplicit()));
       }
       return Concrete.AppExpression.make(expr.getData(), new Concrete.ReferenceExpression(expr.getFunction().getData(), Prelude.DEP_ARRAY.getReferable()), args);
+    } else {
+      for (Concrete.Argument argument : expr.getArguments()) {
+        argument.expression = argument.expression.accept(this, params);
+      }
+      return expr;
     }
-    return super.visitApp(expr, params);
   }
 }
