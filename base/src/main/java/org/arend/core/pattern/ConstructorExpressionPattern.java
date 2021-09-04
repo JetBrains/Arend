@@ -212,8 +212,17 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
       List<Expression> newArgs;
       if (!funCall.getDefCallArguments().isEmpty()) {
         newArgs = new ArrayList<>(funCall.getDefCallArguments().size() + arguments.size());
-        newArgs.addAll(funCall.getDefCallArguments());
-        newArgs.addAll(arguments);
+        if (funCall.getDefinition() == Prelude.ARRAY_CONS) {
+          int index = 0;
+          newArgs.add(funCall.getDefCallArguments().get(0) != null ? funCall.getDefCallArguments().get(0) : arguments.get(index++));
+          newArgs.add(funCall.getDefCallArguments().size() > 1 && funCall.getDefCallArguments().get(1) != null ? funCall.getDefCallArguments().get(1) : arguments.get(index++));
+          for (; index < arguments.size(); index++) {
+            newArgs.add(arguments.get(index));
+          }
+        } else {
+          newArgs.addAll(funCall.getDefCallArguments());
+          newArgs.addAll(arguments);
+        }
       } else {
         newArgs = arguments;
       }
