@@ -397,6 +397,26 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   @Override
   public Concrete.Expression visitClassCall(ClassCallExpression expr, Void params) {
+    if (expr.getDefinition() == Prelude.DEP_ARRAY) {
+      Expression impl = expr.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
+      if (impl != null) {
+        Expression constType = impl.removeConstLam();
+        if (constType != null) {
+          List<Concrete.Argument> args = new ArrayList<>(3);
+          args.add(new Concrete.Argument(constType.accept(this, null), true));
+          Expression length = expr.getAbsImplementationHere(Prelude.ARRAY_LENGTH);
+          if (length != null) {
+            args.add(new Concrete.Argument(length.accept(this, null), true));
+          }
+          Expression at = expr.getAbsImplementationHere(Prelude.ARRAY_AT);
+          if (at != null) {
+            args.add(new Concrete.Argument(at.accept(this, null), true));
+          }
+          return Concrete.AppExpression.make(null, makeReference(FunCallExpression.makeFunCall(Prelude.ARRAY, expr.getLevels(), Collections.emptyList())), args);
+        }
+      }
+    }
+
     List<Concrete.Argument> arguments = new ArrayList<>();
     List<Concrete.ClassFieldImpl> statements = visitClassFieldImpls(expr, arguments);
     Concrete.Expression defCallExpr = checkApp(Concrete.AppExpression.make(null, makeReference(expr), arguments));
