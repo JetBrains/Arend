@@ -3,7 +3,7 @@ package org.arend.core.expr.visitor;
 import org.arend.core.definition.ClassField;
 import org.arend.core.expr.*;
 import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelSubstitution;
+import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.ops.ExpressionMapper;
 import org.arend.extImpl.UncheckedExpressionImpl;

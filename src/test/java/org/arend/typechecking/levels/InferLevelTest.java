@@ -1,11 +1,11 @@
-package org.arend.typechecking.implicitargs;
+package org.arend.typechecking.levels;
 
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.ConCallExpression;
 import org.arend.core.expr.UniverseExpression;
 import org.arend.core.sort.Level;
-import org.arend.core.sort.Sort;
 import org.arend.core.subst.LevelPair;
+import org.arend.core.subst.Levels;
 import org.arend.ext.core.ops.CMP;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
@@ -300,7 +300,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
 
   @Test
   public void funTest() {
-    LevelPair levels = ((ConCallExpression) Objects.requireNonNull(((FunctionDefinition) typeCheckDef("\\func pmap {A B : \\Type} (f : A -> B) {a a' : A} (p : a = a') : f a = f a' => path (\\lam i => f (p @ i))")).getBody())).getLevels();
+    Levels levels = ((ConCallExpression) Objects.requireNonNull(((FunctionDefinition) typeCheckDef("\\func pmap {A B : \\Type} (f : A -> B) {a a' : A} (p : a = a') : f a = f a' => path (\\lam i => f (p @ i))")).getBody())).getLevels();
     assertEquals(LevelPair.STD, levels);
   }
 

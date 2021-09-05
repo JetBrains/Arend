@@ -3,8 +3,7 @@ package org.arend.core.pattern;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.expr.Expression;
 import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelPair;
-import org.arend.core.subst.LevelSubstitution;
+import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.core.body.CoreExpressionPattern;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
@@ -63,11 +62,11 @@ public interface ExpressionPattern extends Pattern, CoreExpressionPattern {
     return decision;
   }
 
-  static List<Expression> applyClauseArguments(List<? extends ExpressionPattern> patterns, List<? extends Expression> clauseArguments, LevelPair levels) {
+  static List<Expression> applyClauseArguments(List<? extends ExpressionPattern> patterns, List<? extends Expression> clauseArguments, LevelSubstitution levelSubst) {
     ExprSubstitution substitution = new ExprSubstitution().add(Pattern.getFirstBinding(patterns), clauseArguments);
     List<Expression> result = new ArrayList<>(patterns.size());
     for (ExpressionPattern pattern : patterns) {
-      result.add(pattern.toExpression().subst(substitution, levels));
+      result.add(pattern.toExpression().subst(substitution, levelSubst));
     }
     return result;
   }

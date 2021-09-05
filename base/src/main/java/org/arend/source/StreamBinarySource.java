@@ -16,6 +16,7 @@ import org.arend.module.serialization.ModuleDeserialization;
 import org.arend.module.serialization.ModuleProtos;
 import org.arend.module.serialization.ModuleSerialization;
 import org.arend.naming.reference.converter.ReferableConverter;
+import org.arend.prelude.PreludeLibrary;
 import org.arend.source.error.LocationError;
 import org.arend.source.error.PersistingError;
 import org.arend.term.group.ChildGroup;
@@ -93,7 +94,7 @@ public abstract class StreamBinarySource implements PersistableBinarySource {
       }
 
       ReferableConverter referableConverter = sourceLoader.getReferableConverter();
-      myModuleDeserialization = new ModuleDeserialization(moduleProto, referableConverter, myKeyRegistry, myDefinitionListener);
+      myModuleDeserialization = new ModuleDeserialization(moduleProto, referableConverter, myKeyRegistry, myDefinitionListener, library instanceof PreludeLibrary);
 
       if (!sourceLoader.isInPreviewBinariesMode()) {
         if (referableConverter == null) {

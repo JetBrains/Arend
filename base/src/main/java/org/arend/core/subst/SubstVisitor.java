@@ -16,6 +16,7 @@ import org.arend.core.expr.let.HaveClause;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.visitor.ExpressionTransformer;
 import org.arend.core.pattern.Pattern;
+import org.arend.ext.core.level.LevelSubstitution;
 
 import java.util.*;
 
@@ -55,15 +56,16 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
 
   @Override
   public Expression visitDefCall(DefCallExpression expr, Void params) {
+    assert expr instanceof LeveledDefCallExpression;
     List<Expression> args = new ArrayList<>(expr.getDefCallArguments().size());
     for (Expression arg : expr.getDefCallArguments()) {
       args.add(arg.accept(this, null));
     }
-    return expr.getDefinition().getDefCall(expr.getLevels().subst(myLevelSubstitution), args);
+    return expr.getDefinition().getDefCall(((LeveledDefCallExpression) expr).getLevels().subst(myLevelSubstitution), args);
   }
 
   @Override
-  protected ConCallExpression makeConCall(Constructor constructor, LevelPair levels, List<Expression> dataTypeArguments, List<Expression> arguments) {
+  protected ConCallExpression makeConCall(Constructor constructor, Levels levels, List<Expression> dataTypeArguments, List<Expression> arguments) {
     return new ConCallExpression(constructor, levels.subst(myLevelSubstitution), dataTypeArguments, arguments);
   }
 
@@ -98,7 +100,7 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
 
   @Override
   public Expression visitFieldCall(FieldCallExpression expr, Void params) {
-    return FieldCallExpression.make(expr.getDefinition(), expr.getLevels().subst(myLevelSubstitution), expr.getArgument().accept(this, null));
+    return FieldCallExpression.make(expr.getDefinition(), expr.getArgument().accept(this, null));
   }
 
   @Override

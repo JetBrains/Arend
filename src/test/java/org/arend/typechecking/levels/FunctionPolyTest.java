@@ -1,4 +1,4 @@
-package org.arend.typechecking.definition;
+package org.arend.typechecking.levels;
 
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.definition.FunctionDefinition;

@@ -17,7 +17,8 @@ import org.arend.core.pattern.*;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelPair;
-import org.arend.core.subst.LevelSubstitution;
+import org.arend.core.subst.Levels;
+import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.concrete.pattern.ConcretePattern;
 import org.arend.ext.concrete.ConcreteSourceNode;
@@ -46,6 +47,9 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 import java.util.*;
+
+import static org.arend.core.expr.ExpressionFactory.Suc;
+import static org.arend.core.expr.ExpressionFactory.Zero;
 
 public class PatternTypechecking {
   private final ErrorReporter myErrorReporter;
@@ -459,7 +463,7 @@ public class PatternTypechecking {
           }
 
           DConstructor constructor = (DConstructor) def;
-          LevelPair levels;
+          Levels levels;
           DependentLink link = constructor.getParameters();
           ExprSubstitution substitution = new ExprSubstitution();
           List<Expression> args = new ArrayList<>();
@@ -564,7 +568,8 @@ public class PatternTypechecking {
             }
             listSubst(result, exprs, varSubst);
           } else {
-            levels = LevelPair.generateInferVars(myVisitor.getEquations(), def.getUniverseKind(), conPattern);
+            levels = def.generateInferVars(myVisitor.getEquations(), conPattern);
+            LevelSubstitution levelSubst = levels.makeSubstitution(def);
 
             FreeVariablesCollector collector = new FreeVariablesCollector();
             constructor.getResultType().accept(collector, null);
@@ -572,7 +577,7 @@ public class PatternTypechecking {
               Set<Binding> bindings = myVisitor.getAllBindings();
               int i = 0;
               for (; i < constructor.getNumberOfParameters(); i++) {
-                Expression arg = InferenceReferenceExpression.make(new FunctionInferenceVariable(constructor, link, i + 1, link.getTypeExpr().subst(substitution, levels), conPattern, bindings), myVisitor.getEquations());
+                Expression arg = InferenceReferenceExpression.make(new FunctionInferenceVariable(constructor, link, i + 1, link.getTypeExpr().subst(substitution, levelSubst), conPattern, bindings), myVisitor.getEquations());
                 args.add(arg);
                 substitution.add(link, arg);
                 collector.getResult().remove(link);
@@ -580,12 +585,12 @@ public class PatternTypechecking {
               }
               if (!collector.getResult().isEmpty()) {
                 for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext(), i++) {
-                  substitution.add(link1, InferenceReferenceExpression.make(new FunctionInferenceVariable(constructor, link1, i + 1, link1.getTypeExpr().subst(substitution, levels), conPattern, bindings), myVisitor.getEquations()));
+                  substitution.add(link1, InferenceReferenceExpression.make(new FunctionInferenceVariable(constructor, link1, i + 1, link1.getTypeExpr().subst(substitution, levelSubst), conPattern, bindings), myVisitor.getEquations()));
                 }
               }
             }
 
-            Expression actualType = constructor.getResultType().subst(substitution, levels).normalize(NormalizationMode.WHNF);
+            Expression actualType = constructor.getResultType().subst(substitution, levelSubst).normalize(NormalizationMode.WHNF);
             if (!CompareVisitor.compare(myVisitor.getEquations(), CMP.EQ, actualType, expr, Type.OMEGA, conPattern)) {
               myErrorReporter.report(new TypeMismatchError(expr, actualType, conPattern));
               return null;
@@ -681,7 +686,7 @@ public class PatternTypechecking {
       Expression unfoldedExpr = TypeCoerceExpression.unfoldType(expr).getUnderlyingExpression();
       DataCallExpression dataCall = unfoldedExpr instanceof DataCallExpression ? (DataCallExpression) unfoldedExpr : null;
       ClassCallExpression classCall = unfoldedExpr instanceof ClassCallExpression ? (ClassCallExpression) unfoldedExpr : null;
-      if (!(dataCall != null || classCall != null && classCall.getDefinition() == Prelude.ARRAY)) {
+      if (!(dataCall != null || classCall != null && classCall.getDefinition() == Prelude.DEP_ARRAY)) {
         if (!expr.isError()) {
           myErrorReporter.report(new TypeMismatchError(DocFactory.text("a data type"), expr, pattern));
         }
@@ -755,7 +760,7 @@ public class PatternTypechecking {
       ConCallExpression conCall = dataCall != null ? conCalls.get(0) : null;
       DependentLink newParameters;
       if (dataCall != null) {
-        newParameters = DependentLink.Helper.subst(constructor.getParameters(), new ExprSubstitution().add(((Constructor) constructor).getDataTypeParameters(), conCall.getDataTypeArguments()), dataCall.getLevels());
+        newParameters = DependentLink.Helper.subst(constructor.getParameters(), new ExprSubstitution().add(((Constructor) constructor).getDataTypeParameters(), conCall.getDataTypeArguments()), dataCall.getLevelSubstitution());
       } else {
         newParameters = ((DConstructor) constructor).getArrayParameters(classCall);
       }
@@ -783,11 +788,14 @@ public class PatternTypechecking {
         }
         result.add(new ConstructorExpressionPattern(conCall, conResult.patterns));
       } else {
-        FunCallExpression funCall = new FunCallExpression((DConstructor) constructor, classCall.getLevels(), classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE));
+        Expression elementsType = classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
+        Expression length = classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH);
         if (!conResult.varSubst.isEmpty()) {
-          funCall = (FunCallExpression) new SubstVisitor(conResult.varSubst, LevelSubstitution.EMPTY).visitFunCall(funCall, null);
+          SubstVisitor visitor = new SubstVisitor(conResult.varSubst, LevelSubstitution.EMPTY);
+          if (elementsType != null) elementsType = elementsType.accept(visitor, null);
+          if (length != null) length = length.accept(visitor, null);
         }
-        result.add(new ConstructorExpressionPattern(funCall, classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH), conResult.patterns));
+        result.add(new ConstructorExpressionPattern(new FunCallExpression((DConstructor) constructor, classCall.getLevels(), length, elementsType), classCall.getThisBinding(), length, conResult.patterns));
       }
       if (conResult.exprs == null) {
         exprs = null;
@@ -798,11 +806,22 @@ public class PatternTypechecking {
           newConCall = ConCallExpression.make(conCall.getDefinition(), conCall.getLevels(), conCall.getDataTypeArguments(), conResult.exprs);
         } else {
           List<Expression> funCallArgs;
+          Expression length = classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH);
           Expression elementsType = classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
           if (elementsType != null) {
+            elementsType = elementsType.subst(classCall.getThisBinding(), new NewExpression(null, new ClassCallExpression(Prelude.DEP_ARRAY, classCall.getLevels(), Collections.singletonMap(Prelude.ARRAY_LENGTH, constructor == Prelude.EMPTY_ARRAY ? Zero() : length != null ? length : Suc(conResult.exprs.get(0))), classCall.getLevels().toLevelPair().toSort(), UniverseKind.NO_UNIVERSES)));
+          }
+          if (elementsType != null || length != null && constructor == Prelude.ARRAY_CONS) {
             funCallArgs = new ArrayList<>();
-            funCallArgs.add(elementsType);
-            funCallArgs.addAll(conResult.exprs);
+            if (length != null && constructor == Prelude.ARRAY_CONS) {
+              funCallArgs.add(length);
+              if (elementsType != null) funCallArgs.add(elementsType);
+              funCallArgs.addAll(conResult.exprs);
+            } else {
+              if (!conResult.exprs.isEmpty()) funCallArgs.add(conResult.exprs.get(0));
+              funCallArgs.add(elementsType);
+              if (!conResult.exprs.isEmpty()) funCallArgs.addAll(conResult.exprs.subList(1, conResult.exprs.size()));
+            }
           } else {
             funCallArgs = conResult.exprs;
           }

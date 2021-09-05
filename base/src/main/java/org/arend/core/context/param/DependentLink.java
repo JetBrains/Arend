@@ -7,7 +7,7 @@ import org.arend.core.expr.ReferenceExpression;
 import org.arend.core.expr.UniverseExpression;
 import org.arend.core.expr.type.Type;
 import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelSubstitution;
+import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.context.CoreParameter;
@@ -181,6 +181,10 @@ public interface DependentLink extends Binding, CoreParameter {
     }
 
     public static DependentLink take(DependentLink link, int size) {
+      return link.subst(new SubstVisitor(new ExprSubstitution(), LevelSubstitution.EMPTY), size, false);
+    }
+
+    public static SingleDependentLink take(SingleDependentLink link, int size) {
       return link.subst(new SubstVisitor(new ExprSubstitution(), LevelSubstitution.EMPTY), size, false);
     }
   }

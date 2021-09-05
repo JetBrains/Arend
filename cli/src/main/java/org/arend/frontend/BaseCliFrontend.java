@@ -2,6 +2,7 @@ package org.arend.frontend;
 
 import org.apache.commons.cli.*;
 import org.arend.core.definition.Definition;
+import org.arend.core.expr.visitor.SizeExpressionVisitor;
 import org.arend.ext.error.ListErrorReporter;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
@@ -54,6 +55,7 @@ public abstract class BaseCliFrontend {
   private final Map<ModulePath, GeneralError.Level> myModuleResults = new LinkedHashMap<>();
   private final DependencyListener myDependencyCollector = new MetaDependencyCollector();
   private Map<TCDefReferable, Pair<Long,Long>> myTimes = null;
+  private Map<TCDefReferable, Integer> mySizes = null;
 
   // Status information
   private boolean myExitWithError = false;
@@ -95,6 +97,9 @@ public abstract class BaseCliFrontend {
     private void stopTimer(TCDefReferable ref) {
       if (myTimes != null) {
         myTimes.compute(ref, (r,pair) -> pair == null ? new Pair<>(0L, 0L) : new Pair<>(pair.proj1, pair.proj2 + (System.currentTimeMillis() - pair.proj1)));
+      }
+      if (mySizes != null) {
+        mySizes.put(ref, SizeExpressionVisitor.getSize(ref.getTypechecked()));
       }
     }
 
@@ -173,6 +178,7 @@ public abstract class BaseCliFrontend {
       cmdOptions.addOption("t", "test", false, "run tests");
       cmdOptions.addOption("v", "version", false, "print language version");
       cmdOptions.addOption(Option.builder().longOpt("show-times").build());
+      cmdOptions.addOption(Option.builder().longOpt("show-sizes").build());
       addCommandOptions(cmdOptions);
       CommandLine cmdLine = new DefaultParser().parse(cmdOptions, args);
 
@@ -222,6 +228,10 @@ public abstract class BaseCliFrontend {
 
     if (cmdLine.hasOption("show-times")) {
       myTimes = new HashMap<>();
+    }
+
+    if (cmdLine.hasOption("show-sizes")) {
+      mySizes = new HashMap<>();
     }
 
     String recompileString = cmdLine.getOptionValue("r");
@@ -461,6 +471,18 @@ public abstract class BaseCliFrontend {
           list.sort((o1, o2) -> Long.compare(o2.proj2, o1.proj2));
           for (Pair<TCDefReferable, Long> pair : list) {
             System.out.println(pair.proj1.getRefLongName() + ": " + timeToString(pair.proj2));
+          }
+        }
+
+        if (mySizes != null && !mySizes.isEmpty()) {
+          System.out.println();
+          List<Pair<TCDefReferable,Integer>> list = new ArrayList<>(mySizes.size());
+          for (Map.Entry<TCDefReferable, Integer> entry : mySizes.entrySet()) {
+            list.add(new Pair<>(entry.getKey(), entry.getValue()));
+          }
+          list.sort((o1, o2) -> Long.compare(o2.proj2, o1.proj2));
+          for (Pair<TCDefReferable, Integer> pair : list) {
+            System.out.println(pair.proj1.getRefLongName() + ": " + pair.proj2);
           }
         }
 

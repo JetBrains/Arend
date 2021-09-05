@@ -1,5 +1,6 @@
 package org.arend.core.subst;
 
+import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.variable.Variable;
 import org.arend.core.sort.Level;
 

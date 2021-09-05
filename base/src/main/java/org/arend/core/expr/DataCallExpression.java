@@ -12,7 +12,7 @@ import org.arend.core.pattern.ExpressionPattern;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.InPlaceLevelSubstVisitor;
-import org.arend.core.subst.LevelPair;
+import org.arend.core.subst.Levels;
 import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.core.definition.CoreConstructor;
 import org.arend.ext.core.expr.CoreDataCallExpression;
@@ -27,10 +27,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class DataCallExpression extends DefCallExpression implements Type, CoreDataCallExpression {
+public class DataCallExpression extends LeveledDefCallExpression implements Type, CoreDataCallExpression {
   private final List<Expression> myArguments;
 
-  public DataCallExpression(DataDefinition definition, LevelPair levels, List<Expression> arguments) {
+  public DataCallExpression(DataDefinition definition, Levels levels, List<Expression> arguments) {
     super(definition, levels);
     myArguments = arguments;
   }
@@ -69,7 +69,7 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
 
   @Override
   public Sort getSortOfType() {
-    return getDefinition().getSort().subst(getLevels());
+    return getDefinition().getSort().subst(getLevelSubstitution());
   }
 
   @Override
@@ -226,7 +226,7 @@ public class DataCallExpression extends DefCallExpression implements Type, CoreD
     @Override
     public @NotNull CoreParameter getParameters() {
       if (myParameters == null) {
-        myParameters = myConCall.getDataTypeArguments().isEmpty() ? myConCall.getDefinition().getParameters() : DependentLink.Helper.subst(myConCall.getDefinition().getParameters(), new ExprSubstitution().add(myConCall.getDefinition().getDataType().getParameters(), myConCall.getDataTypeArguments()));
+        myParameters = DependentLink.Helper.subst(myConCall.getDefinition().getParameters(), new ExprSubstitution().add(myConCall.getDefinition().getDataType().getParameters(), myConCall.getDataTypeArguments()), myConCall.getLevelSubstitution());
       }
       return myParameters;
     }

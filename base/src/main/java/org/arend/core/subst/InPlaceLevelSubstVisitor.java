@@ -9,6 +9,7 @@ import org.arend.core.elimtree.BranchKey;
 import org.arend.core.elimtree.ElimTree;
 import org.arend.core.expr.*;
 import org.arend.core.expr.visitor.VoidExpressionVisitor;
+import org.arend.ext.core.level.LevelSubstitution;
 
 import java.util.Map;
 
@@ -45,7 +46,9 @@ public class InPlaceLevelSubstVisitor extends VoidExpressionVisitor<Void> {
 
   @Override
   public Void visitDefCall(DefCallExpression expr, Void params) {
-    expr.substSort(mySubstitution);
+    if (expr instanceof LeveledDefCallExpression) {
+      ((LeveledDefCallExpression) expr).substSort(mySubstitution);
+    }
     super.visitDefCall(expr, null);
     return null;
   }
@@ -106,7 +109,7 @@ public class InPlaceLevelSubstVisitor extends VoidExpressionVisitor<Void> {
     if (elimTree instanceof BranchElimTree) {
       for (Map.Entry<BranchKey, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
         if (entry.getKey() instanceof ClassConstructor) {
-          ((ClassConstructor) entry.getKey()).substSort(mySubstitution);
+          ((ClassConstructor) entry.getKey()).substLevels(mySubstitution);
         }
         visitElimTree(entry.getValue(), null);
       }

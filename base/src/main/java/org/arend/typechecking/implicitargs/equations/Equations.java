@@ -6,7 +6,7 @@ import org.arend.core.context.binding.inference.TypeClassInferenceVariable;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.FieldCallExpression;
 import org.arend.core.sort.Level;
-import org.arend.core.subst.LevelSubstitution;
+import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.core.ops.CMP;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.TypecheckerState;

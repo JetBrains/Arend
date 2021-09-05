@@ -6,9 +6,9 @@ import org.arend.core.expr.let.HaveClause;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.let.LetClausePattern;
 import org.arend.core.expr.visitor.BaseExpressionVisitor;
+import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.extImpl.definitionRenamer.ConflictDefinitionRenamer;
 import org.arend.ext.variable.Variable;
-import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.context.param.SingleDependentLink;
@@ -34,6 +34,7 @@ import org.arend.naming.renamer.ReferableRenamer;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.visitor.VoidConcreteVisitor;
+import org.arend.util.SingletonList;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -189,8 +190,37 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   }
 
   private Concrete.ReferenceExpression makeReference(DefCallExpression defCall) {
-    Referable ref = defCall.getDefinition().getReferable();
-    return hasFlag(PrettyPrinterFlag.SHOW_LEVELS) ? cDefCall(myDefinitionRenamer.renameDefinition(defCall.getDefinition().getRef()), ref, visitLevelNull(defCall.getPLevel()), visitLevelNull(defCall.getHLevel())) : cVar(myDefinitionRenamer.renameDefinition(defCall.getDefinition().getRef()), ref);
+    Definition def = defCall.getDefinition();
+    Referable ref = def.getRef();
+    if (!hasFlag(PrettyPrinterFlag.SHOW_LEVELS)) {
+      return cVar(myDefinitionRenamer.renameDefinition(ref), ref);
+    }
+
+    List<Level> pLevels;
+    List<Level> hLevels;
+    if (defCall instanceof LeveledDefCallExpression) {
+      List<? extends LevelVariable> params = def.getLevelParameters();
+      LevelSubstitution subst = ((LeveledDefCallExpression) defCall).getLevelSubstitution();
+      if (params == null) {
+        pLevels = Collections.singletonList((Level) subst.get(LevelVariable.PVAR));
+        hLevels = Collections.singletonList((Level) subst.get(LevelVariable.HVAR));
+      } else {
+        int pNum = def.getNumberOfPLevelParameters();
+        pLevels = new ArrayList<>(pNum);
+        hLevels = new ArrayList<>(params.size() - pNum);
+        for (int i = 0; i < pNum; i++) {
+          pLevels.add((Level) subst.get(params.get(i)));
+        }
+        for (int i = pNum; i < params.size(); i++) {
+          hLevels.add((Level) subst.get(params.get(i)));
+        }
+      }
+    } else {
+      pLevels = Collections.singletonList(null);
+      hLevels = Collections.singletonList(null);
+    }
+
+    return cDefCall(myDefinitionRenamer.renameDefinition(ref), ref, visitLevelsNull(pLevels), visitLevelsNull(hLevels));
   }
 
   @Override
@@ -370,6 +400,26 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   @Override
   public Concrete.Expression visitClassCall(ClassCallExpression expr, Void params) {
+    if (expr.getDefinition() == Prelude.DEP_ARRAY) {
+      Expression impl = expr.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
+      if (impl != null) {
+        Expression constType = impl.removeConstLam();
+        if (constType != null) {
+          List<Concrete.Argument> args = new ArrayList<>(3);
+          args.add(new Concrete.Argument(constType.accept(this, null), true));
+          Expression length = expr.getAbsImplementationHere(Prelude.ARRAY_LENGTH);
+          if (length != null) {
+            args.add(new Concrete.Argument(length.accept(this, null), true));
+          }
+          Expression at = expr.getAbsImplementationHere(Prelude.ARRAY_AT);
+          if (at != null) {
+            args.add(new Concrete.Argument(at.accept(this, null), true));
+          }
+          return Concrete.AppExpression.make(null, makeReference(FunCallExpression.makeFunCall(Prelude.ARRAY, expr.getLevels(), Collections.emptyList())), args);
+        }
+      }
+    }
+
     List<Concrete.Argument> arguments = new ArrayList<>();
     List<Concrete.ClassFieldImpl> statements = visitClassFieldImpls(expr, arguments);
     Concrete.Expression defCallExpr = checkApp(Concrete.AppExpression.make(null, makeReference(expr), arguments));
@@ -549,7 +599,20 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   }
 
   private Concrete.LevelExpression visitLevelNull(Level level) {
-    return level.isClosed() || !level.isVarOnly() && hasFlag(PrettyPrinterFlag.SHOW_LEVELS) ? visitLevel(level) : null;
+    return level.isClosed() || (!level.isVarOnly() || level.getVar() != LevelVariable.PVAR && level.getVar() != LevelVariable.HVAR) && hasFlag(PrettyPrinterFlag.SHOW_LEVELS) ? visitLevel(level) : null;
+  }
+
+  private List<Concrete.LevelExpression> visitLevelsNull(List<Level> levels) {
+    if (levels.size() == 1) {
+      Concrete.LevelExpression result = visitLevelNull(levels.get(0));
+      return result == null ? null : new SingletonList<>(result);
+    }
+
+    List<Concrete.LevelExpression> result = new ArrayList<>(levels.size());
+    for (Level level : levels) {
+      result.add(visitLevel(level));
+    }
+    return result;
   }
 
   private Concrete.Expression visitSort(Sort sort) {
@@ -569,20 +632,18 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       result = new Concrete.PLevelExpression(null);
     } else if (level.getVar() == LevelVariable.HVAR) {
       result = new Concrete.HLevelExpression(null);
-    } else if (level.getVar() instanceof InferenceLevelVariable) {
+    } else {
       if (!hasFlag(PrettyPrinterFlag.SHOW_LEVELS)) {
         return null;
       }
-      result = new Concrete.InferVarLevelExpression(null, (InferenceLevelVariable) level.getVar());
-    } else {
-      throw new IllegalStateException();
+      result = new Concrete.VarLevelExpression(null, level.getVar());
     }
 
     for (int i = 0; i < level.getConstant(); i++) {
       result = new Concrete.SucLevelExpression(null, result);
     }
 
-    if (level.getMaxConstant() > 0 || level.getMaxConstant() == 0 && level.getVar() == LevelVariable.HVAR) {
+    if (level.getMaxConstant() > 0 || level.getMaxConstant() == 0 && level.getVar() != null && level.getVar().getType() == LevelVariable.LvlType.HLVL) {
       result = new Concrete.MaxLevelExpression(null, result, visitLevel(new Level(level.getMaxConstant())));
     }
 

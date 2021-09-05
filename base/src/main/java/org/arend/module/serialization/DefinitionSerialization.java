@@ -1,6 +1,9 @@
 package org.arend.module.serialization;
 
 import com.google.protobuf.ByteString;
+import org.arend.core.context.binding.FieldLevelVariable;
+import org.arend.core.context.binding.LevelVariable;
+import org.arend.core.context.binding.ParamLevelVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.*;
 import org.arend.core.elimtree.Body;
@@ -13,7 +16,7 @@ import org.arend.core.pattern.BindingPattern;
 import org.arend.core.pattern.ConstructorExpressionPattern;
 import org.arend.core.pattern.EmptyPattern;
 import org.arend.core.pattern.ExpressionPattern;
-import org.arend.core.subst.LevelPair;
+import org.arend.core.subst.Levels;
 import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.ext.reference.Precedence;
 import org.arend.ext.serialization.ArendSerializer;
@@ -78,13 +81,48 @@ public class DefinitionSerialization implements ArendSerializer {
     return result;
   }
 
+  private DefinitionProtos.Definition.LevelParameter writeLevelParameter(LevelVariable parameter) {
+    DefinitionProtos.Definition.LevelParameter.Builder builder = DefinitionProtos.Definition.LevelParameter.newBuilder();
+    builder.setIsPlevel(parameter.getType() == LevelVariable.LvlType.PLVL);
+    if (parameter instanceof ParamLevelVariable) {
+      builder.setName(parameter.getName());
+      builder.setIndex(((ParamLevelVariable) parameter).getIndex());
+      builder.setSize(((ParamLevelVariable) parameter).getSize());
+    } else {
+      builder.setSize(-1);
+    }
+    return builder.build();
+  }
+
+  private List<DefinitionProtos.Definition.LevelParameter> writeLevelParameters(List<LevelVariable> parameters) {
+    List<DefinitionProtos.Definition.LevelParameter> result = new ArrayList<>(parameters.size());
+    for (LevelVariable parameter : parameters) {
+      result.add(writeLevelParameter(parameter));
+    }
+    return result;
+  }
+
   private DefinitionProtos.Definition.ClassData writeClassDefinition(ExpressionSerialization defSerializer, ClassDefinition definition) {
     DefinitionProtos.Definition.ClassData.Builder builder = DefinitionProtos.Definition.ClassData.newBuilder();
+
+    builder.setIsStdLevels(definition.getLevelParameters() == null);
+    if (definition.getLevelParameters() != null) {
+      for (LevelVariable var : definition.getLevelParameters()) {
+        DefinitionProtos.Definition.LevelField.Builder fieldBuilder = DefinitionProtos.Definition.LevelField.newBuilder();
+        fieldBuilder.setParameter(writeLevelParameter(var));
+        fieldBuilder.setRef(var instanceof FieldLevelVariable ? myCallTargetIndexProvider.getDefIndex(((FieldLevelVariable) var).getLevelField()) : -1);
+        builder.addLevelField(fieldBuilder.build());
+      }
+    }
+
+    for (Map.Entry<ClassDefinition, Levels> entry : definition.getSuperLevels().entrySet()) {
+      builder.putSuperLevels(myCallTargetIndexProvider.getDefIndex(entry.getKey()), defSerializer.writeLevels(entry.getValue(), entry.getKey()));
+    }
 
     for (ClassField field : definition.getPersonalFields()) {
       DefinitionProtos.Definition.ClassData.Field.Builder fBuilder = DefinitionProtos.Definition.ClassData.Field.newBuilder();
       fBuilder.setReferable(writeReferable(field));
-      fBuilder.setType(defSerializer.visitPi(field.getType(LevelPair.STD)));
+      fBuilder.setType(defSerializer.visitPi(field.getType()));
       if (field.getTypeLevel() != null) {
         fBuilder.setTypeLevel(defSerializer.writeExpr(field.getTypeLevel()));
       }
@@ -192,6 +230,11 @@ public class DefinitionSerialization implements ArendSerializer {
 
   private DefinitionProtos.Definition.DataData writeDataDefinition(ExpressionSerialization defSerializer, DataDefinition definition) {
     DefinitionProtos.Definition.DataData.Builder builder = DefinitionProtos.Definition.DataData.newBuilder();
+
+    builder.setIsStdLevels(definition.getLevelParameters() == null);
+    if (definition.getLevelParameters() != null) {
+      builder.addAllLevelParam(writeLevelParameters(definition.getLevelParameters()));
+    }
 
     builder.setHasEnclosingClass(definition.getEnclosingClass() != null);
     builder.addAllParam(defSerializer.writeParameters(definition.getParameters()));
@@ -305,6 +348,11 @@ public class DefinitionSerialization implements ArendSerializer {
 
   private DefinitionProtos.Definition.FunctionData writeFunctionDefinition(ExpressionSerialization defSerializer, FunctionDefinition definition) {
     DefinitionProtos.Definition.FunctionData.Builder builder = DefinitionProtos.Definition.FunctionData.newBuilder();
+
+    builder.setIsStdLevels(definition.getLevelParameters() == null);
+    if (definition.getLevelParameters() != null) {
+      builder.addAllLevelParam(writeLevelParameters(definition.getLevelParameters()));
+    }
 
     builder.addAllStrictParameters(definition.getStrictParameters());
     builder.setHasEnclosingClass(definition.getEnclosingClass() != null);

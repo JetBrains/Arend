@@ -5,7 +5,6 @@ import org.arend.core.definition.ClassDefinition;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.*;
 import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelPair;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.instance.InstanceSearchParameters;
 import org.arend.naming.reference.TCDefReferable;
@@ -82,7 +81,7 @@ public class GlobalInstancePool implements InstancePool {
     }
 
     if (expectedType == null) {
-      ClassCallExpression classCall = classifyingExpression == null ? null : new ClassCallExpression(pair.proj2, LevelPair.generateInferVars(myCheckTypeVisitor.getEquations(), pair.proj2.getUniverseKind(), sourceNode));
+      ClassCallExpression classCall = classifyingExpression == null ? null : new ClassCallExpression(pair.proj2, pair.proj2.generateInferVars(myCheckTypeVisitor.getEquations(), sourceNode));
       if (classCall != null) {
         myCheckTypeVisitor.fixClassExtSort(classCall, sourceNode);
         expectedType = classCall;

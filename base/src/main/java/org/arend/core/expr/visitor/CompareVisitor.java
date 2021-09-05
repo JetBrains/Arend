@@ -2,6 +2,7 @@ package org.arend.core.expr.visitor;
 
 import org.arend.core.constructor.SingleConstructor;
 import org.arend.core.context.binding.Binding;
+import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.context.binding.inference.MetaInferenceVariable;
 import org.arend.core.context.binding.inference.TypeClassInferenceVariable;
@@ -16,8 +17,7 @@ import org.arend.core.pattern.Pattern;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelPair;
-import org.arend.core.subst.LevelSubstitution;
+import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.ops.CMP;
@@ -324,8 +324,21 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     if (!(n1 == n2 && e1 instanceof FieldCallExpression && e2 instanceof FieldCallExpression)) return null;
     FieldCallExpression fieldCall1 = (FieldCallExpression) e1;
     FieldCallExpression fieldCall2 = (FieldCallExpression) e2;
-    if (fieldCall1.getDefinition() == fieldCall2.getDefinition() && (fieldCall1.getArgument().getInferenceVariable() != null && isInstance(fieldCall2) || fieldCall2.getArgument().getInferenceVariable() != null && isInstance(fieldCall1)))
-      return expr1.accept(this, expr2, type);
+    if (fieldCall1.getDefinition() == fieldCall2.getDefinition() && (fieldCall1.getArgument().getInferenceVariable() != null && isInstance(fieldCall2) || fieldCall2.getArgument().getInferenceVariable() != null && isInstance(fieldCall1))) {
+      if (!expr1.accept(this, expr2, type)) {
+        return false;
+      }
+      e1 = expr1;
+      e2 = expr2;
+      while (e1 instanceof AppExpression && e2 instanceof AppExpression) {
+        if (!compare(((AppExpression) e1).getArgument(), ((AppExpression) e2).getArgument(), null, false)) {
+          return false;
+        }
+        e1 = e1.getFunction().getUnderlyingExpression();
+        e2 = e2.getFunction().getUnderlyingExpression();
+      }
+      return true;
+    }
     else return null;
   }
 
@@ -440,13 +453,13 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     }
     args.add(expr2);
     args.add(paramRef);
-    Sort sort = new Sort(conCall1.getPLevel(), Level.INFINITY);
+    Sort sort = new Sort(conCall1.getLevels().toLevelPair().get(LevelVariable.PVAR), Level.INFINITY);
     expr2 = new LamExpression(sort, param, FunCallExpression.make(Prelude.AT, conCall1.getLevels(), args));
     Expression type = new PiExpression(sort, param, AppExpression.make(conCall1.getDataTypeArguments().get(0), paramRef, true));
     return correctOrder ? compare(conCall1.getDefCallArguments().get(0), expr2, type, true) : compare(expr2, conCall1.getDefCallArguments().get(0), type, true);
   }
 
-  private boolean compareDef(DefCallExpression expr1, DefCallExpression expr2) {
+  private boolean compareDef(LeveledDefCallExpression expr1, LeveledDefCallExpression expr2) {
     if (expr2 == null || expr1.getDefinition() != expr2.getDefinition()) {
       return false;
     }
@@ -455,11 +468,11 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       return true;
     }
     CMP cmp = universeKind == UniverseKind.ONLY_COVARIANT ? myCMP : CMP.EQ;
-    return LevelPair.compare(expr1.getLevels(), expr2.getLevels(), cmp, myNormalCompare ? myEquations : DummyEquations.getInstance(), mySourceNode);
+    return expr1.getLevels().compare(expr2.getLevels(), cmp, myNormalCompare ? myEquations : DummyEquations.getInstance(), mySourceNode);
   }
 
-  private Boolean visitDefCall(DefCallExpression expr1, Expression expr2) {
-    DefCallExpression defCall2 = expr2.cast(DefCallExpression.class);
+  private Boolean visitDefCall(LeveledDefCallExpression expr1, Expression expr2) {
+    LeveledDefCallExpression defCall2 = expr2.cast(LeveledDefCallExpression.class);
     if (!compareDef(expr1, defCall2)) {
       return false;
     }
@@ -746,7 +759,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
   }
 
   private Boolean checkDefCallAndApp(Expression expr1, Expression expr2, boolean correctOrder) {
-    DefCallExpression defCall1 = expr1.cast(DefCallExpression.class);
+    LeveledDefCallExpression defCall1 = expr1.cast(LeveledDefCallExpression.class);
     if (!(defCall1 instanceof DataCallExpression || defCall1 instanceof ClassCallExpression || defCall1 instanceof FunCallExpression && ((FunCallExpression) defCall1).getDefinition().getKind() == CoreFunctionDefinition.Kind.TYPE)) return null;
     AppExpression app2 = expr2.cast(AppExpression.class);
     if (app2 == null) {
@@ -856,7 +869,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
               implementations.put(field, classCall1.getImplementationHere(field, new ReferenceExpression(classCall.getThisBinding())));
               i++;
             } else {
-              PiExpression piType = classCall1.getDefinition().getFieldType(field, classCall1.getLevels());
+              PiExpression piType = classCall1.getDefinition().getFieldType(field, classCall1.getLevels(field.getParentClass()));
               Expression type = piType.getCodomain();
               TypedSingleDependentLink link = new TypedSingleDependentLink(field.getReferable().isExplicitField(), field.getName(), type instanceof Type ? (Type) type : new TypeExpression(type, piType.getResultSort()));
               params.add(link);
@@ -933,17 +946,20 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       if (impl1 == null) {
         AbsExpression absImpl1 = classCall1.getDefinition().getImplementation(field);
         if (absImpl1 != null) {
-          impl1 = absImpl1.apply(new ReferenceExpression(binding), classCall1.getLevels());
+          impl1 = absImpl1.apply(new ReferenceExpression(binding), classCall1.getLevelSubstitution());
         }
       }
       if (impl1 == null) {
         return false;
       }
+      if (field == Prelude.ARRAY_ELEMENTS_TYPE && !classCall2.isImplemented(Prelude.ARRAY_LENGTH) && classCall1.isImplemented(Prelude.ARRAY_LENGTH)) {
+        impl2 = impl2.subst(classCall2.getThisBinding(), new NewExpression(null, classCall1));
+      }
       if (!field.isCovariant()) {
         myCMP = CMP.EQ;
       }
       mySubstitution.put(classCall2.getThisBinding(), binding);
-      boolean ok = compare(correctOrder ? impl1 : impl2, correctOrder ? impl2 : impl1, field.getType(classCall2.getLevels()).applyExpression(new ReferenceExpression(binding)), true);
+      boolean ok = compare(correctOrder ? impl1 : impl2, correctOrder ? impl2 : impl1, field.getType(classCall2.getLevels(field.getParentClass())).applyExpression(new ReferenceExpression(binding)), true);
       mySubstitution.remove(classCall2.getThisBinding());
       if (!ok) {
         return false;
@@ -953,19 +969,23 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     return true;
   }
 
+  private boolean compareClassCallLevelsLE(ClassCallExpression classCall1, ClassCallExpression classCall2, CMP cmp, Equations equations) {
+    return cmp == CMP.EQ ? classCall1.getLevels().compare(classCall2.getLevels(), cmp, equations, mySourceNode) : classCall1.getLevels(classCall2.getDefinition()).compare(classCall2.getLevels(), cmp, equations, mySourceNode);
+  }
+
   private boolean checkClassCallLevels(ClassCallExpression classCall1, ClassCallExpression classCall2, CMP onSuccess, CMP onFailure) {
     ReferenceExpression thisExpr = new ReferenceExpression(classCall1.getThisBinding());
     boolean ok = true;
     for (Map.Entry<ClassField, AbsExpression> entry : classCall1.getDefinition().getImplemented()) {
       if (!entry.getKey().isProperty() && entry.getKey().getUniverseKind() != UniverseKind.NO_UNIVERSES && classCall2.getDefinition().getFields().contains(entry.getKey()) && !classCall2.isImplemented(entry.getKey())) {
-        Expression type = entry.getValue().apply(thisExpr, classCall1.getLevels()).normalize(NormalizationMode.WHNF).getType();
+        Expression type = entry.getValue().apply(thisExpr, classCall1.getLevelSubstitution()).normalize(NormalizationMode.WHNF).getType();
         if (type == null) {
           ok = false;
           break;
         }
         CMP origCmp = myCMP;
         myCMP = CMP.LE;
-        ok = compare(type, classCall1.getDefinition().getFieldType(entry.getKey(), classCall2.getLevels(), thisExpr), Type.OMEGA, false);
+        ok = compare(type, classCall1.getDefinition().getFieldType(entry.getKey(), classCall2.getLevels(entry.getKey().getParentClass()), thisExpr), Type.OMEGA, false);
         myCMP = origCmp;
         if (!ok) {
           break;
@@ -982,7 +1002,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
           }
           CMP origCmp = myCMP;
           myCMP = CMP.LE;
-          ok = compare(type, classCall1.getDefinition().getFieldType(entry.getKey(), classCall2.getLevels(), thisExpr), Type.OMEGA, false);
+          ok = compare(type, classCall1.getDefinition().getFieldType(entry.getKey(), classCall2.getLevels(entry.getKey().getParentClass()), thisExpr), Type.OMEGA, false);
           myCMP = origCmp;
           if (!ok) {
             break;
@@ -992,10 +1012,14 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     }
 
     if (ok) {
-      return onSuccess == null || myNormalCompare && LevelPair.compare(classCall1.getLevels(), classCall2.getLevels(), onSuccess, myEquations, mySourceNode);
+      return onSuccess == null || myNormalCompare && compareClassCallLevelsLE(classCall1, classCall2, onSuccess, myEquations);
     } else {
-      return myNormalCompare && LevelPair.compare(classCall1.getLevels(), classCall2.getLevels(), onFailure, myEquations, mySourceNode);
+      return myNormalCompare && compareClassCallLevelsLE(classCall1, classCall2, onFailure, myEquations);
     }
+  }
+
+  private boolean compareClassCallLevels(ClassCallExpression classCall1, ClassCallExpression classCall2, CMP cmp, Equations equations) {
+    return cmp == CMP.GE ? compareClassCallLevelsLE(classCall2, classCall1, cmp.not(), equations) : compareClassCallLevelsLE(classCall1, classCall2, cmp, equations);
   }
 
   public boolean compareClassCallLevels(ClassCallExpression classCall1, ClassCallExpression classCall2) {
@@ -1005,9 +1029,9 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       return true;
     }
     if (myCMP == CMP.EQ || kind1 == kind2) {
-      return LevelPair.compare(classCall1.getLevels(), classCall2.getLevels(), kind1 == UniverseKind.ONLY_COVARIANT ? myCMP : CMP.EQ, myNormalCompare ? myEquations : DummyEquations.getInstance(), mySourceNode);
+      return compareClassCallLevels(classCall1, classCall2, kind1 == UniverseKind.ONLY_COVARIANT ? myCMP : CMP.EQ, myNormalCompare ? myEquations : DummyEquations.getInstance());
     }
-    if (!LevelPair.compare(classCall1.getLevels(), classCall2.getLevels(), myCMP, DummyEquations.getInstance(), mySourceNode)) {
+    if (!compareClassCallLevels(classCall1, classCall2, myCMP, DummyEquations.getInstance())) {
       CMP onSuccess = kind1 == UniverseKind.NO_UNIVERSES || kind2 == UniverseKind.NO_UNIVERSES ? null : CMP.LE;
       CMP onFailure = kind1 == UniverseKind.WITH_UNIVERSES || kind2 == UniverseKind.WITH_UNIVERSES ? CMP.EQ : CMP.LE;
       return myCMP == CMP.LE ? checkClassCallLevels(classCall1, classCall2, onSuccess, onFailure) : checkClassCallLevels(classCall2, classCall1, onSuccess, onFailure);
@@ -1022,25 +1046,29 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       return false;
     }
 
+    if (myCMP == CMP.LE && !expr1.getDefinition().isSubClassOf(classCall2.getDefinition())) {
+      return false;
+    }
+    if (myCMP == CMP.GE && !classCall2.getDefinition().isSubClassOf(expr1.getDefinition())) {
+      return false;
+    }
+    if (myCMP == CMP.EQ && expr1.getDefinition() != classCall2.getDefinition()) {
+      return false;
+    }
+
     if (!compareClassCallLevels(expr1, classCall2)) {
       return false;
     }
 
     if (myCMP == CMP.LE) {
-      if (!expr1.getDefinition().isSubClassOf(classCall2.getDefinition())) {
-        return false;
-      }
       return checkSubclassImpl(expr1, classCall2, true);
     }
 
     if (myCMP == CMP.GE) {
-      if (!classCall2.getDefinition().isSubClassOf(expr1.getDefinition())) {
-        return false;
-      }
       return checkSubclassImpl(classCall2, expr1, false);
     }
 
-    return expr1.getDefinition() == classCall2.getDefinition() && expr1.getImplementedHere().size() == classCall2.getImplementedHere().size() && checkSubclassImpl(expr1, classCall2, true);
+    return expr1.getImplementedHere().size() == classCall2.getImplementedHere().size() && checkSubclassImpl(expr1, classCall2, true);
   }
 
   private Binding substBinding(Binding binding) {
@@ -1221,7 +1249,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
 
   private boolean compareClassInstances(Expression expr1, ClassCallExpression classCall1, Expression expr2, ClassCallExpression classCall2, Expression type) {
     if (expr1 instanceof ArrayExpression && expr2 instanceof ArrayExpression) return false;
-    if (classCall1.getDefinition() == Prelude.ARRAY && classCall2.getDefinition() == Prelude.ARRAY) {
+    if (classCall1.getDefinition() == Prelude.DEP_ARRAY && classCall2.getDefinition() == Prelude.DEP_ARRAY) {
       Expression length1 = classCall1.getImplementationHere(Prelude.ARRAY_LENGTH, expr1);
       Expression length2 = classCall2.getImplementationHere(Prelude.ARRAY_LENGTH, expr1);
       if (length1 != null && length2 != null) {
@@ -1229,25 +1257,22 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
         length2 = length2.normalize(NormalizationMode.WHNF);
         if (length1 instanceof IntegerExpression && ((IntegerExpression) length1).isZero() && length2 instanceof IntegerExpression && ((IntegerExpression) length2).isZero()) {
           Expression elemsType1 = classCall1.getImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE, expr1);
-          if (elemsType1 == null) elemsType1 = FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, classCall1.getLevels(), expr1);
+          if (elemsType1 == null) elemsType1 = FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, expr1);
           Expression elemsType2 = classCall2.getImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE, expr2);
-          if (elemsType2 == null) elemsType2 = FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, classCall2.getLevels(), expr2);
-          return compare(elemsType1, elemsType2, ExpressionFactory.Nat(), false);
+          if (elemsType2 == null) elemsType2 = FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, expr2);
+          return compare(elemsType1, elemsType2, null, false);
         } else {
-          Expression at1 = classCall1.getImplementationHere(Prelude.ARRAY_AT, expr1);
-          Expression at2 = classCall2.getImplementationHere(Prelude.ARRAY_AT, expr2);
-          if (at1 == null && !(expr1 instanceof ArrayExpression) && at2 == null && !(expr2 instanceof ArrayExpression)) {
+          if (!classCall1.isImplemented(Prelude.ARRAY_AT) && !(expr1 instanceof ArrayExpression) && !classCall2.isImplemented(Prelude.ARRAY_AT) && !(expr2 instanceof ArrayExpression)) {
             return false;
           }
           var pair1 = getSucs(length1);
           var pair2 = getSucs(length2);
           BigInteger m = pair1.proj2.min(pair2.proj2);
           if (!m.equals(BigInteger.ZERO)) {
-            Expression elementsType = classCall1.getImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE, expr1);
-            if (elementsType == null) elementsType = classCall2.getImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE, expr2);
             for (BigInteger i = BigInteger.ZERO; i.compareTo(m) < 0; i = i.add(BigInteger.ONE)) {
               IntegerExpression index = new BigIntegerExpression(i);
-              if (!normalizedCompare(FunCallExpression.make(Prelude.ARRAY_INDEX, classCall1.getLevels(), Arrays.asList(expr1, index)).normalize(NormalizationMode.WHNF), FunCallExpression.make(Prelude.ARRAY_INDEX, classCall2.getLevels(), Arrays.asList(expr2, index)).normalize(NormalizationMode.WHNF), elementsType, true)) {
+              if (!normalizedCompare(FunCallExpression.make(Prelude.ARRAY_INDEX, classCall1.getLevels(), Arrays.asList(expr1, index)).normalize(NormalizationMode.WHNF),
+                                     FunCallExpression.make(Prelude.ARRAY_INDEX, classCall2.getLevels(), Arrays.asList(expr2, index)).normalize(NormalizationMode.WHNF), null, true)) {
                 return false;
               }
             }
@@ -1297,12 +1322,12 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       Expression impl1 = classCall1.getImplementation(field, expr1);
       Expression impl2 = classCall2.getImplementation(field, expr2);
       if (impl1 == null) {
-        impl1 = FieldCallExpression.make(field, classCall1.getLevels(), expr1);
+        impl1 = FieldCallExpression.make(field, expr1);
       }
       if (impl2 == null) {
-        impl2 = FieldCallExpression.make(field, classCall2.getLevels(), expr2);
+        impl2 = FieldCallExpression.make(field, expr2);
       }
-      if (!compare(impl1, impl2, field.getType(classCall1.getLevels()).applyExpression(expr1), true)) {
+      if (!compare(impl1, impl2, field.getType(classCall1.getLevels(field.getParentClass())).applyExpression(expr1), true)) {
         return false;
       }
     }
@@ -1433,12 +1458,12 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     }
 
     ArrayExpression array2 = (ArrayExpression) other;
-    if (!(compare(expr.getElementsType(), array2.getElementsType(), Type.OMEGA, false) && expr.getElements().size() == array2.getElements().size() && (expr.getTail() == null) == (array2.getTail() == null))) {
+    if (!(compare(expr.getElementsType(), array2.getElementsType(), null, false) && expr.getElements().size() == array2.getElements().size() && (expr.getTail() == null) == (array2.getTail() == null))) {
       return false;
     }
 
     for (int i = 0; i < expr.getElements().size(); i++) {
-      if (!compare(expr.getElements().get(i), array2.getElements().get(i), expr.getElementsType(), true)) {
+      if (!compare(expr.getElements().get(i), array2.getElements().get(i), AppExpression.make(expr.getElementsType(), new SmallIntegerExpression(i), true), true)) {
         return false;
       }
     }

@@ -5,6 +5,7 @@ import org.arend.core.constructor.IdpConstructor;
 import org.arend.core.constructor.SingleConstructor;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.EvaluatingBinding;
+import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.inference.TypeClassInferenceVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
@@ -18,7 +19,9 @@ import org.arend.core.pattern.Pattern;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelSubstitution;
+import org.arend.core.subst.LevelPair;
+import org.arend.core.subst.Levels;
+import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.computation.ComputationRunner;
@@ -53,8 +56,11 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
     }
 
     if (expr instanceof FieldCallExpression) {
-      return FieldCallExpression.make((ClassField) expr.getDefinition(), expr.getLevels(), ((FieldCallExpression) expr).getArgument().accept(this, mode));
+      return FieldCallExpression.make((ClassField) expr.getDefinition(), ((FieldCallExpression) expr).getArgument().accept(this, mode));
     }
+
+    assert expr instanceof LeveledDefCallExpression;
+    Levels levels = ((LeveledDefCallExpression) expr).getLevels();
 
     DependentLink link = expr.getDefinition().getParameters();
     List<Expression> args = new ArrayList<>(expr.getDefCallArguments().size());
@@ -66,21 +72,21 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
     }
 
     if (expr instanceof FunCallExpression) {
-      return FunCallExpression.make((FunctionDefinition) expr.getDefinition(), expr.getLevels(), args);
+      return FunCallExpression.make((FunctionDefinition) expr.getDefinition(), levels, args);
     }
 
     if (expr instanceof DataCallExpression) {
-      return new DataCallExpression((DataDefinition) expr.getDefinition(), expr.getLevels(), args);
+      return new DataCallExpression((DataDefinition) expr.getDefinition(), levels, args);
     }
 
     if (expr instanceof ConCallExpression) {
-      return ConCallExpression.make((Constructor) expr.getDefinition(), expr.getLevels(), ((ConCallExpression) expr).getDataTypeArguments(), args);
+      return ConCallExpression.make((Constructor) expr.getDefinition(), levels, ((ConCallExpression) expr).getDataTypeArguments(), args);
     }
 
     throw new IllegalStateException();
   }
 
-  private Expression normalizePlus(DefCallExpression expr, NormalizationMode mode) {
+  private Expression normalizePlus(FunCallExpression expr, NormalizationMode mode) {
     List<? extends Expression> defCallArgs = expr.getDefCallArguments();
     Expression arg1 = defCallArgs.get(0).accept(this, mode);
     Expression arg2 = defCallArgs.get(1).accept(this, mode);
@@ -122,7 +128,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
     return result;
   }
 
-  private Expression normalizeMinus(DefCallExpression expr, NormalizationMode mode) {
+  private Expression normalizeMinus(FunCallExpression expr, NormalizationMode mode) {
     List<? extends Expression> defCallArgs = expr.getDefCallArguments();
     Expression arg1 = defCallArgs.get(0).accept(this, NormalizationMode.WHNF);
     Expression arg2 = defCallArgs.get(1);
@@ -202,7 +208,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
     return FunCallExpression.make(Prelude.MINUS, expr.getLevels(), newDefCallArgs);
   }
 
-  private Expression visitFunctionDefCall(DefCallExpression expr, NormalizationMode mode) {
+  private Expression visitFunctionDefCall(LeveledDefCallExpression expr, NormalizationMode mode) {
     Definition definition = expr.getDefinition();
     if (definition == Prelude.COERCE || definition == Prelude.COERCE2) {
       LamExpression lamExpr = expr.getDefCallArguments().get(0).accept(this, NormalizationMode.WHNF).cast(LamExpression.class);
@@ -246,10 +252,10 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
     }
 
     if (definition == Prelude.MINUS) {
-      return normalizeMinus(expr, mode);
+      return normalizeMinus((FunCallExpression) expr, mode);
     }
     if (definition == Prelude.PLUS) {
-      return normalizePlus(expr, mode);
+      return normalizePlus((FunCallExpression) expr, mode);
     }
 
     List<? extends Expression> defCallArgs = expr.getDefCallArguments();
@@ -370,7 +376,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
     return result == null ? applyDefCall(expr, mode) : result;
   }
 
-  private Expression visitBody(Body body, List<? extends Expression> defCallArgs, DefCallExpression expr, NormalizationMode mode) {
+  private Expression visitBody(Body body, List<? extends Expression> defCallArgs, LeveledDefCallExpression expr, NormalizationMode mode) {
     ComputationRunner.checkCanceled();
     Definition definition = expr.getDefinition();
 
@@ -412,7 +418,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
             throw new IllegalStateException();
           }
           if (result != null) {
-            return result.subst(substitution, expr.getLevels()).accept(this, mode);
+            return result.subst(substitution, expr.getLevelSubstitution()).accept(this, mode);
           }
         }
       }
@@ -433,7 +439,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
 
     if (body instanceof Expression) {
       ExprSubstitution substitution = addArguments(getDataTypeArgumentsSubstitution(expr), defCallArgs, definition);
-      LevelSubstitution levelSubstitution = expr.getLevels();
+      LevelSubstitution levelSubstitution = expr.getLevelSubstitution();
       if (body instanceof CaseExpression && !((CaseExpression) body).isSCase()) {
         CaseExpression caseExpr = (CaseExpression) body;
         List<Expression> args = new ArrayList<>(caseExpr.getArguments().size());
@@ -446,7 +452,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
         return ((Expression) body).subst(substitution, levelSubstitution).accept(this, mode);
       }
     } else if (body instanceof ElimBody) {
-      return eval((ElimBody) body, defCallArgs, getDataTypeArgumentsSubstitution(expr), expr.getLevels(), expr, mode);
+      return eval((ElimBody) body, defCallArgs, getDataTypeArgumentsSubstitution(expr), expr.getLevelSubstitution(), expr, mode);
     } else {
       throw new IllegalStateException();
     }
@@ -474,9 +480,9 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
       FunCallExpression funCall = (FunCallExpression) expr;
       Body body = funCall.getDefinition().getActualBody();
       if (body instanceof Expression) {
-        return ((Expression) body).subst(new ExprSubstitution().add(funCall.getDefinition().getParameters(), funCall.getDefCallArguments()), funCall.getLevels());
+        return ((Expression) body).subst(new ExprSubstitution().add(funCall.getDefinition().getParameters(), funCall.getDefCallArguments()), funCall.getLevelSubstitution());
       } else if (body instanceof ElimBody) {
-        return eval((ElimBody) body, funCall.getDefCallArguments(), new ExprSubstitution(), funCall.getLevels(), expr, null);
+        return eval((ElimBody) body, funCall.getDefCallArguments(), new ExprSubstitution(), funCall.getLevelSubstitution(), expr, null);
       } else {
         return null;
       }
@@ -574,7 +580,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
             }
           } else if (resultExpr instanceof FunCallExpression && ((FunCallExpression) resultExpr).getDefinition().getBody() instanceof Expression) {
             FunCallExpression funCall = (FunCallExpression) resultExpr;
-            resultExpr = Objects.requireNonNull((Expression) funCall.getDefinition().getBody()).subst(addArguments(new ExprSubstitution(), funCall.getDefCallArguments(), funCall.getDefinition()), funCall.getLevels());
+            resultExpr = Objects.requireNonNull((Expression) funCall.getDefinition().getBody()).subst(addArguments(new ExprSubstitution(), funCall.getDefCallArguments(), funCall.getDefinition()), funCall.getLevelSubstitution());
           } else if (resultExpr instanceof ReferenceExpression && ((ReferenceExpression) resultExpr).getBinding() instanceof EvaluatingBinding) {
             resultExpr = ((EvaluatingBinding) ((ReferenceExpression) resultExpr).getBinding()).getExpression();
           } else if (resultExpr instanceof SubstExpression) {
@@ -617,7 +623,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
           resultExpr = SubstExpression.make(resultExpr, substitution, levelSubstitution);
           if (funCall != null) {
             substitution = new ExprSubstitution();
-            levelSubstitution = funCall.getLevels().subst(levelSubstitution);
+            levelSubstitution = funCall.getLevelSubstitution().subst(levelSubstitution);
           }
           continue;
         }
@@ -694,7 +700,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
     ConCallExpression conCall = argument instanceof ConCallExpression ? (ConCallExpression) argument : null;
     IntegerExpression intExpr = argument instanceof IntegerExpression ? (IntegerExpression) argument : null;
     ArrayExpression array = argument instanceof ArrayExpression ? (ArrayExpression) argument : null;
-    BranchKey key = conCall != null ? conCall.getDefinition() : intExpr != null ? (intExpr.isZero() ? Prelude.ZERO : Prelude.SUC) : array != null ? new ArrayConstructor(array.getElements().isEmpty(), true) : null;
+    BranchKey key = conCall != null ? conCall.getDefinition() : intExpr != null ? (intExpr.isZero() ? Prelude.ZERO : Prelude.SUC) : array != null ? new ArrayConstructor(array.getElements().isEmpty(), true, true) : null;
 
     ElimTree elimTree = key == null ? branchElimTree.getSingleConstructorChild() : branchElimTree.getChild(key);
     if (elimTree == null && key == Prelude.PATH_CON && branchElimTree.getSingleConstructorKey() instanceof IdpConstructor) {
@@ -703,27 +709,29 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
     }
     if (elimTree == null && branchElimTree.isArray()) {
       Expression type = argument.getType().normalize(NormalizationMode.WHNF);
-      if (type instanceof ClassCallExpression && ((ClassCallExpression) type).getDefinition() == Prelude.ARRAY) {
+      if (type instanceof ClassCallExpression && ((ClassCallExpression) type).getDefinition() == Prelude.DEP_ARRAY) {
         ClassCallExpression classCall = (ClassCallExpression) type;
         Expression length = classCall.getImplementationHere(Prelude.ARRAY_LENGTH, argument);
         if (length != null) {
           length = length.normalize(NormalizationMode.WHNF);
           if (length instanceof IntegerExpression || length instanceof ConCallExpression && ((ConCallExpression) length).getDefinition() == Prelude.SUC) {
             Expression elementsType = classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
-            if (elementsType == null) elementsType = FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, classCall.getLevels(), argument);
+            if (elementsType == null) elementsType = FieldCallExpression.make(Prelude.ARRAY_ELEMENTS_TYPE, argument);
+            LevelPair levelPair = classCall.getLevels().toLevelPair();
             if (length instanceof IntegerExpression && ((IntegerExpression) length).isZero()) {
-              array = ArrayExpression.makeArray(classCall.getLevels(), elementsType, Collections.emptyList(), null);
-              key = new ArrayConstructor(true, true);
+              array = ArrayExpression.makeArray(levelPair, elementsType, Collections.emptyList(), null);
+              key = new ArrayConstructor(true, true, true);
             } else {
+              Expression length_1 = length.pred();
+              TypedSingleDependentLink param = new TypedSingleDependentLink(true, "j", Fin(length_1));
+              Sort sort = levelPair.toSort().max(Sort.SET0);
               Expression at = classCall.getImplementationHere(Prelude.ARRAY_AT, argument);
               Map<ClassField, Expression> impls = new HashMap<>();
-              impls.put(Prelude.ARRAY_ELEMENTS_TYPE, elementsType);
-              Expression length_1 = length instanceof IntegerExpression ? ((IntegerExpression) length).pred() : ((ConCallExpression) length).getDefCallArguments().get(0);
+              impls.put(Prelude.ARRAY_ELEMENTS_TYPE, new LamExpression(sort, param, AppExpression.make(elementsType, Suc(new ReferenceExpression(param)), true)));
               impls.put(Prelude.ARRAY_LENGTH, length_1);
-              TypedSingleDependentLink param = new TypedSingleDependentLink(true, "i", Fin(length_1));
-              impls.put(Prelude.ARRAY_AT, new LamExpression(new Sort(classCall.getPLevel(), classCall.getHLevel().max(new Level(0))), param, at != null ? AppExpression.make(at, Suc(new ReferenceExpression(param)), true) : FunCallExpression.make(Prelude.ARRAY_INDEX, classCall.getLevels(), Arrays.asList(argument, Suc(new ReferenceExpression(param))))));
-              array = ArrayExpression.makeArray(classCall.getLevels(), elementsType, new SingletonList<>(at != null ? AppExpression.make(at, new SmallIntegerExpression(0), true) : FunCallExpression.make(Prelude.ARRAY_INDEX, classCall.getLevels(), Arrays.asList(argument, new SmallIntegerExpression(0)))), new NewExpression(null, new ClassCallExpression(Prelude.ARRAY, classCall.getLevels(), impls, Sort.PROP, UniverseKind.NO_UNIVERSES)));
-              key = new ArrayConstructor(false, true);
+              impls.put(Prelude.ARRAY_AT, new LamExpression(sort, param, at != null ? AppExpression.make(at, Suc(new ReferenceExpression(param)), true) : FunCallExpression.make(Prelude.ARRAY_INDEX, classCall.getLevels(), Arrays.asList(argument, Suc(new ReferenceExpression(param))))));
+              array = ArrayExpression.makeArray(levelPair, elementsType, new SingletonList<>(at != null ? AppExpression.make(at, new SmallIntegerExpression(0), true) : FunCallExpression.make(Prelude.ARRAY_INDEX, classCall.getLevels(), Arrays.asList(argument, new SmallIntegerExpression(0)))), new NewExpression(null, new ClassCallExpression(Prelude.DEP_ARRAY, classCall.getLevels(), impls, Sort.PROP, UniverseKind.NO_UNIVERSES)));
+              key = new ArrayConstructor(false, true, true);
             }
             elimTree = branchElimTree.getChild(key);
           }
@@ -740,7 +748,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
         args = conCall != null
           ? conCall.getDefCallArguments()
           : array != null
-            ? array.getConstructorArguments(!branchElimTree.withElementsType())
+            ? array.getConstructorArguments(!branchElimTree.withArrayElementsType(), !branchElimTree.withArrayLength())
             : key == Prelude.ZERO
               ? Collections.emptyList()
               : Collections.singletonList(intExpr.pred());
@@ -783,7 +791,8 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
     if (expr.getDefinition() instanceof FunctionDefinition && ((FunctionDefinition) expr.getDefinition()).isSFunc() || !(expr.getDefinition() instanceof Function) || ((Function) expr.getDefinition()).getBody() == null && expr.getDefinition() != Prelude.DIV_MOD && expr.getDefinition() != Prelude.ARRAY_INDEX) {
       return applyDefCall(expr, mode);
     } else {
-      return visitFunctionDefCall(expr, mode);
+      assert expr instanceof LeveledDefCallExpression;
+      return visitFunctionDefCall((LeveledDefCallExpression) expr, mode);
     }
   }
 
@@ -793,7 +802,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
       Expression impl = ((ClassCallExpression) funCall.getDefinition().getResultType()).getImplementation(field, arg);
       if (impl != null) {
         ExprSubstitution substitution = new ExprSubstitution().add(funCall.getDefinition().getParameters(), funCall.getDefCallArguments());
-        return impl.subst(substitution, funCall.getLevels());
+        return impl.subst(substitution, funCall.getLevelSubstitution());
       } else if (funCall.getDefinition().getBody() == null) {
         return null;
       }
@@ -811,8 +820,12 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
     }
 
     if (expr.getDefinition() == Prelude.ARRAY_AT) {
-      TypedSingleDependentLink lamParam = new TypedSingleDependentLink(true, "j", Fin(FieldCallExpression.make(Prelude.ARRAY_LENGTH, expr.getLevels(), expr.getArgument())));
-      return new LamExpression(new Sort(expr.getPLevel(), expr.getHLevel().max(new Level(0))), lamParam, FunCallExpression.make(Prelude.ARRAY_INDEX, expr.getLevels(), Arrays.asList(expr.getArgument(), new ReferenceExpression(lamParam))));
+      ClassCallExpression classCall = expr.getArgument().getType().normalize(NormalizationMode.WHNF).cast(ClassCallExpression.class);
+      if (classCall != null) {
+        LevelPair levelPair = classCall.getLevels().toLevelPair();
+        TypedSingleDependentLink lamParam = new TypedSingleDependentLink(true, "j", Fin(FieldCallExpression.make(Prelude.ARRAY_LENGTH, expr.getArgument())));
+        return new LamExpression(new Sort(levelPair.get(LevelVariable.PVAR), levelPair.get(LevelVariable.HVAR).max(new Level(0))), lamParam, FunCallExpression.make(Prelude.ARRAY_INDEX, levelPair, Arrays.asList(expr.getArgument(), new ReferenceExpression(lamParam))));
+      }
     }
 
     Expression thisExpr = expr.getArgument().accept(this, mode);
@@ -823,7 +836,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
       }
     }
 
-    return FieldCallExpression.make(expr.getDefinition(), expr.getLevels(), mode == NormalizationMode.NF ? thisExpr.accept(this, mode) : thisExpr);
+    return FieldCallExpression.make(expr.getDefinition(), mode == NormalizationMode.NF ? thisExpr.accept(this, mode) : thisExpr);
   }
 
   @Override

@@ -8,6 +8,7 @@ import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.context.binding.inference.TypeClassInferenceVariable;
 import org.arend.core.context.param.SingleDependentLink;
+import org.arend.core.context.param.TypedSingleDependentLink;
 import org.arend.core.definition.ClassDefinition;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.UniverseKind;
@@ -18,8 +19,8 @@ import org.arend.core.expr.visitor.ElimBindingVisitor;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelPair;
-import org.arend.core.subst.LevelSubstitution;
+import org.arend.core.subst.Levels;
+import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.core.ops.CMP;
@@ -32,11 +33,11 @@ import org.arend.typechecking.error.local.SolveEquationError;
 import org.arend.typechecking.error.local.SolveEquationsError;
 import org.arend.typechecking.error.local.SolveLevelEquationsError;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
-import org.arend.typechecking.visitor.SearchVisitor;
 import org.arend.util.Pair;
 
 import java.util.*;
 
+import static org.arend.core.expr.ExpressionFactory.Fin;
 import static org.arend.core.expr.ExpressionFactory.Nat;
 
 public class TwoStageEquations implements Equations {
@@ -144,13 +145,13 @@ public class TwoStageEquations implements Equations {
       InferenceVariable cInf = inf1 != null ? inf1 : inf2;
       Expression cType = inf1 != null ? expr2 : expr1;
 
-      // cType /= Pi, cType /= Type, cType /= Class, cType /= stuck on ?X
-      if (!(cType instanceof PiExpression) && !(cType instanceof UniverseExpression) && !(cType instanceof ClassCallExpression) && cType.getStuckInferenceVariable() == null) {
-        cmp = CMP.EQ;
-      }
-
       if (inf1 != null) {
         cmp = cmp.not();
+      }
+
+      // cType /= Pi, cType /= Type, cType /= Class, cType /= stuck on ?X
+      if (!(cType instanceof PiExpression) && !(cType instanceof UniverseExpression) && (!(cType instanceof ClassCallExpression) || cmp == CMP.GE && ((ClassCallExpression) cType).getNumberOfNotImplementedFields() == 0) && cType.getStuckInferenceVariable() == null) {
+        cmp = CMP.EQ;
       }
 
       if (cType instanceof UniverseExpression && ((UniverseExpression) cType).getSort().isProp()) {
@@ -266,14 +267,16 @@ public class TwoStageEquations implements Equations {
 
   private void addLevelEquation(final LevelVariable var1, LevelVariable var2, int constant, int maxConstant, Concrete.SourceNode sourceNode) {
     // _ <= max(-c, -d), _ <= max(l - c, -d) // 6
-    if (!(var2 instanceof InferenceLevelVariable) && maxConstant < 0 && (constant < 0 || constant == 0 && var2 == LevelVariable.HVAR && var1 == null) && !(var2 == null && var1 instanceof InferenceLevelVariable && var1.getType() == LevelVariable.LvlType.HLVL && constant >= -1 && maxConstant >= -1)) {
+    if (!(var2 instanceof InferenceLevelVariable) && maxConstant < 0 && (constant < 0 || constant == 0 && var2 != null && var2.getType() == LevelVariable.LvlType.HLVL && var1 == null) && !(var2 == null && var1 instanceof InferenceLevelVariable && var1.getType() == LevelVariable.LvlType.HLVL && constant >= -1 && maxConstant >= -1)) {
       myVisitor.getErrorReporter().report(new SolveLevelEquationsError(Collections.singletonList(new LevelEquation<>(var1, var2, constant)), sourceNode));
       return;
     }
 
-    // l <= max(l - c, +d), l <= max(+-c, +-d) // 4
-    if ((var1 == LevelVariable.PVAR || var1 == LevelVariable.HVAR) && !(var2 instanceof InferenceLevelVariable) && (var2 == null || constant < 0)) {
-      myVisitor.getErrorReporter().report(new SolveLevelEquationsError(Collections.singletonList(new LevelEquation<>(var1, var2, constant, maxConstant)), sourceNode));
+    // l <= max(l' +- c, +d), l <= max(+-c, +-d) // 6
+    if (var1 != null && !(var1 instanceof InferenceLevelVariable) && !(var2 instanceof InferenceLevelVariable)) {
+      if (!(var2 != null && constant >= 0 && var1.compare(var2, CMP.LE))) {
+        myVisitor.getErrorReporter().report(new SolveLevelEquationsError(Collections.singletonList(new LevelEquation<>(var1, var2, constant, maxConstant)), sourceNode));
+      }
       return;
     }
 
@@ -329,7 +332,7 @@ public class TwoStageEquations implements Equations {
 
   @Override
   public LevelEquationsSolver makeLevelEquationsSolver() {
-    return new LevelEquationsSolver(myLevelEquations, myLevelVariables, myBoundVariables, myVisitor.getErrorReporter());
+    return new LevelEquationsSolver(myLevelEquations, myLevelVariables, myBoundVariables, myVisitor.getErrorReporter(), myVisitor.isPBased(), myVisitor.isHBased());
   }
 
   @Override
@@ -612,23 +615,7 @@ public class TwoStageEquations implements Equations {
   private ClassCallExpression removeDependencies(ClassCallExpression solution, int originalSize) {
     ClassDefinition classDef = solution.getDefinition();
     Map<ClassField, Expression> implementations = solution.getImplementedHere();
-    LevelPair levels = solution.getLevels();
-
-    for (ClassField field : classDef.getFields()) {
-      if (!implementations.containsKey(field)) {
-        continue;
-      }
-      field.getType(levels).getCodomain().accept(new SearchVisitor<Void>() {
-        @Override
-        protected CoreExpression.FindAction processDefCall(DefCallExpression expression, Void param) {
-          if (expression instanceof FieldCallExpression && classDef.getFields().contains(((FieldCallExpression) expression).getDefinition()) && !solution.isImplemented((ClassField) expression.getDefinition())) {
-            implementations.remove(field);
-            return CoreExpression.FindAction.STOP;
-          }
-          return CoreExpression.FindAction.CONTINUE;
-        }
-      }, null);
-    }
+    Levels levels = solution.getLevels();
 
     ClassCallExpression sol = solution;
     if (originalSize != implementations.size()) {
@@ -684,11 +671,61 @@ public class TwoStageEquations implements Equations {
     solveClassCallLowerBounds(Collections.singletonList(new Pair<>(var, bounds)), true, false, CMP.LE, false);
   }
 
+  // removes implementations of at and len if possible
+  private void copyArray(ClassCallExpression classCall, InferenceVariable var, ClassCallExpression result) {
+    Map<ClassField, Expression> implementations = result.getImplementedHere();
+    Map<ClassField, Expression> impls = classCall.getImplementedHere();
+    Expression length = impls.get(Prelude.ARRAY_LENGTH);
+    Expression at = impls.get(Prelude.ARRAY_AT);
+    boolean needLength = false;
+    boolean needAt = false;
+    if (length != null || at != null) {
+      for (Equation equation : myEquations) {
+        Expression lower = equation.getLowerBound();
+        ClassCallExpression upper = equation.getLowerBound().cast(ClassCallExpression.class);
+        if (upper != null && lower.getInferenceVariable() == var) {
+          if (!needLength && upper.isImplemented(Prelude.ARRAY_LENGTH)) {
+            needLength = true;
+          }
+          if (!needAt && upper.isImplemented(Prelude.ARRAY_LENGTH)) {
+            needAt = true;
+          }
+          if (needLength && needAt) break;
+        }
+      }
+    }
+    if (length == null) needLength = false;
+    if (at == null) needAt = false;
+    Expression elementsType = impls.get(Prelude.ARRAY_ELEMENTS_TYPE);
+    if (elementsType != null) {
+      if (!needLength) {
+        Expression constType = elementsType.removeConstLam();
+        if (constType != null) {
+          elementsType = new LamExpression(result.getLevels().toLevelPair().toSort().max(Sort.SET0), new TypedSingleDependentLink(true, null, Fin(FieldCallExpression.make(Prelude.ARRAY_LENGTH, new ReferenceExpression(result.getThisBinding())))), constType);
+        } else {
+          needLength = true;
+        }
+      }
+      implementations.put(Prelude.ARRAY_ELEMENTS_TYPE, elementsType);
+    }
+    if (needLength) {
+      implementations.put(Prelude.ARRAY_LENGTH, length);
+    }
+    if (needAt) implementations.put(Prelude.ARRAY_AT, at);
+  }
+
   private boolean solveClassCallLowerBounds(List<Pair<InferenceVariable, List<ClassCallExpression>>> list, boolean allOK, boolean solved, CMP cmp, boolean useWrapper) {
     loop:
     for (Pair<InferenceVariable, List<ClassCallExpression>> pair : list) {
       if (pair.proj2.size() == 1) {
-        solve(pair.proj1, pair.proj2.get(0), true);
+        if (pair.proj2.get(0).getDefinition() == Prelude.DEP_ARRAY) {
+          ClassCallExpression classCall = pair.proj2.get(0);
+          ClassCallExpression solution = new ClassCallExpression(Prelude.DEP_ARRAY, classCall.getLevels(), new HashMap<>(), classCall.getSort(), classCall.getUniverseKind());
+          copyArray(classCall, pair.proj1, solution);
+          solve(pair.proj1, solution, true);
+        } else {
+          solve(pair.proj1, pair.proj2.get(0), true);
+        }
         solved = true;
         continue;
       }
@@ -725,26 +762,43 @@ public class TwoStageEquations implements Equations {
       ClassCallExpression solution;
       if (cmp == CMP.LE) {
         Equations wrapper = useWrapper ? new LevelEquationsWrapper(this) : this;
-        LevelPair levels = LevelPair.generateInferVars(this, universeKind, pair.proj1.getSourceNode());
+        Levels levels = classDef.generateInferVars(this, pair.proj1.getSourceNode());
         Map<ClassField, Expression> implementations = new HashMap<>();
         solution = new ClassCallExpression(classDef, levels, implementations, classDef.getSort(), universeKind);
         ReferenceExpression thisExpr = new ReferenceExpression(solution.getThisBinding());
-        boolean first = true;
-        for (ClassCallExpression bound : pair.proj2) {
-          if (first) {
-            for (Map.Entry<ClassField, Expression> entry : bound.getImplementedHere().entrySet()) {
-              implementations.put(entry.getKey(), entry.getValue().subst(bound.getThisBinding(), thisExpr));
-            }
-            first = false;
-            continue;
-          }
 
+        int minIndex = 0;
+        int minValue = Integer.MAX_VALUE;
+        List<ClassCallExpression> proj2 = pair.proj2;
+        for (int i = 0; i < proj2.size(); i++) {
+          ClassCallExpression classCall = proj2.get(i);
+          if (classCall.getImplementedHere().size() < minValue) {
+            minIndex = i;
+            minValue = classCall.getImplementedHere().size();
+          }
+        }
+
+        if (classDef == Prelude.DEP_ARRAY) {
+          copyArray(pair.proj2.get(minIndex), pair.proj1, solution);
+        } else {
+          for (Map.Entry<ClassField, Expression> entry : pair.proj2.get(minIndex).getImplementedHere().entrySet()) {
+            implementations.put(entry.getKey(), entry.getValue().subst(pair.proj2.get(minIndex).getThisBinding(), thisExpr));
+          }
+        }
+        pair.proj2.remove(minIndex);
+
+        for (ClassCallExpression bound : pair.proj2) {
           for (Iterator<Map.Entry<ClassField, Expression>> iterator = implementations.entrySet().iterator(); iterator.hasNext(); ) {
             Map.Entry<ClassField, Expression> entry = iterator.next();
             boolean remove = !entry.getKey().isProperty();
             if (remove) {
               Expression other = bound.getAbsImplementationHere(entry.getKey());
-              remove = other == null || !CompareVisitor.compare(wrapper, CMP.EQ, entry.getValue(), other, solution.getDefinition().getFieldType(entry.getKey(), solution.getLevels(), thisExpr), pair.proj1.getSourceNode());
+              if (other != null) {
+                Expression expr = entry.getValue().subst(solution.getThisBinding(), new ReferenceExpression(bound.getThisBinding()));
+                Expression type = expr.getType();
+                remove = !CompareVisitor.compare(wrapper, CMP.EQ, type, other.getType(), Type.OMEGA, pair.proj1.getSourceNode()) ||
+                         !CompareVisitor.compare(wrapper, CMP.EQ, expr, other, type, pair.proj1.getSourceNode());
+              }
             }
             if (remove) {
               iterator.remove();
@@ -755,7 +809,7 @@ public class TwoStageEquations implements Equations {
         solution.setSort(classDef.computeSort(solution.getLevels(), implementations, solution.getThisBinding()));
         solution.updateHasUniverses();
 
-        if (!LevelPair.compare(pair.proj2.get(0).getLevels(), levels, CMP.LE, this, pair.proj1.getSourceNode())) {
+        if (!pair.proj2.get(0).getLevels().compare(levels, CMP.LE, this, pair.proj1.getSourceNode())) {
           reportBoundsError(pair.proj1, pair.proj2, CMP.GE);
           allOK = false;
           continue;
@@ -797,7 +851,7 @@ public class TwoStageEquations implements Equations {
           for (Map.Entry<ClassField, Expression> entry : map.entrySet()) {
             if (entry.getKey().isProperty()) continue;
             Expression other = otherMap.get(entry.getKey());
-            if (other == null || !CompareVisitor.compare(this, CMP.EQ, entry.getValue(), other, solution.getDefinition().getFieldType(entry.getKey(), solution.getLevels(), thisExpr), pair.proj1.getSourceNode())) {
+            if (other == null || !CompareVisitor.compare(this, CMP.EQ, entry.getValue(), other, solution.getDefinition().getFieldType(entry.getKey(), solution.getLevels(entry.getKey().getParentClass()), thisExpr), pair.proj1.getSourceNode())) {
               reportBoundsError(pair.proj1, pair.proj2, CMP.LE);
               allOK = false;
               continue loop;

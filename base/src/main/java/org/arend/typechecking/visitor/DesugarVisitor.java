@@ -58,8 +58,17 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
     }
   }
 
-  private Concrete.Expression makeThisClassCall(Object data, Referable classRef) {
-    return Concrete.ClassExtExpression.make(data, new Concrete.ReferenceExpression(data, classRef), new Concrete.Coclauses(data, Collections.emptyList()));
+  private static List<Concrete.LevelExpression> makeIdLevels(Object data, Concrete.LevelParameters parameters) {
+    if (parameters == null) return null;
+    List<Concrete.LevelExpression> result = new ArrayList<>(parameters.referables.size());
+    for (LevelReferable ref : parameters.referables) {
+      result.add(new Concrete.IdLevelExpression(data, ref));
+    }
+    return result;
+  }
+
+  private static Concrete.Expression makeThisClassCall(Object data, Referable classRef, Concrete.Definition def) {
+    return Concrete.ClassExtExpression.make(data, new Concrete.ReferenceExpression(data, classRef, def != null && def.pOriginalDef == classRef ? makeIdLevels(data, def.getPLevelParameters()) : null, def != null && def.hOriginalDef == classRef ? makeIdLevels(data, def.getHLevelParameters()) : null), new Concrete.Coclauses(data, Collections.emptyList()));
   }
 
   @Override
@@ -73,7 +82,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
       if (def instanceof Concrete.CoClauseFunctionDefinition && def.getKind() == FunctionKind.FUNC_COCLAUSE) {
         ((Concrete.CoClauseFunctionDefinition) def).setNumberOfExternalParameters(((Concrete.CoClauseFunctionDefinition) def).getNumberOfExternalParameters() + 1);
       }
-      def.getParameters().add(0, new Concrete.TelescopeParameter(def.getData(), false, Collections.singletonList(thisParameter), makeThisClassCall(def.getData(), def.enclosingClass)));
+      def.getParameters().add(0, new Concrete.TelescopeParameter(def.getData(), false, Collections.singletonList(thisParameter), makeThisClassCall(def.getData(), def.enclosingClass, def)));
       if (def.getBody().getEliminatedReferences().isEmpty()) {
         for (Concrete.FunctionClause clause : def.getBody().getClauses()) {
           clause.getPatterns().add(0, new Concrete.NamePattern(clause.getData(), false, thisParameter, null));
@@ -92,7 +101,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
     // Add this parameter
     Referable thisParameter = checkDefinition(def);
     if (thisParameter != null) {
-      def.getParameters().add(0, new Concrete.TelescopeParameter(def.getData(), false, Collections.singletonList(thisParameter), makeThisClassCall(def.getData(), def.enclosingClass)));
+      def.getParameters().add(0, new Concrete.TelescopeParameter(def.getData(), false, Collections.singletonList(thisParameter), makeThisClassCall(def.getData(), def.enclosingClass, def)));
       if (def.getEliminatedReferences() != null && def.getEliminatedReferences().isEmpty()) {
         for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
           clause.getPatterns().add(0, new Concrete.NamePattern(clause.getData(), false, thisParameter, null));
@@ -150,7 +159,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
       } else {
         previousType = classField.getParameters().isEmpty() ? fieldType : null;
         classFieldChecker.visitParameters(classField.getParameters(), null);
-        classField.getParameters().add(0, new Concrete.TelescopeParameter(classField.getParameters().isEmpty() ? fieldType.getData() : classField.getParameters().get(0).getData(), false, Collections.singletonList(thisParameter), makeThisClassCall(fieldType.getData(), def.getData())));
+        classField.getParameters().add(0, new Concrete.TelescopeParameter(classField.getParameters().isEmpty() ? fieldType.getData() : classField.getParameters().get(0).getData(), false, Collections.singletonList(thisParameter), makeThisClassCall(fieldType.getData(), def.getData(), null)));
         classField.setResultType(fieldType.accept(classFieldChecker, null));
         if (classField.getResultTypeLevel() != null) {
           classField.setResultTypeLevel(classField.getResultTypeLevel().accept(classFieldChecker, null));
@@ -168,13 +177,13 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
         Concrete.Expression impl = ((Concrete.ClassFieldImpl) element).implementation;
         Referable thisParameter = new HiddenLocalReferable("this");
         classFieldChecker.setThisParameter(thisParameter);
-        ((Concrete.ClassFieldImpl) element).implementation = new Concrete.LamExpression(impl.getData(), Collections.singletonList(new Concrete.TelescopeParameter(impl.getData(), false, Collections.singletonList(thisParameter), makeThisClassCall(impl.getData(), def.getData()))), impl.accept(classFieldChecker, null));
+        ((Concrete.ClassFieldImpl) element).implementation = new Concrete.LamExpression(impl.getData(), Collections.singletonList(new Concrete.TelescopeParameter(impl.getData(), false, Collections.singletonList(thisParameter), makeThisClassCall(impl.getData(), def.getData(), null))), impl.accept(classFieldChecker, null));
       } else if (element instanceof Concrete.OverriddenField) {
         Concrete.OverriddenField field = (Concrete.OverriddenField) element;
         Referable thisParameter = new HiddenLocalReferable("this");
         classFieldChecker.setThisParameter(thisParameter);
         classFieldChecker.visitParameters(field.getParameters(), null);
-        field.getParameters().add(0, new Concrete.TelescopeParameter(field.getResultType().getData(), false, Collections.singletonList(thisParameter), makeThisClassCall(field.getResultType().getData(), def.getData())));
+        field.getParameters().add(0, new Concrete.TelescopeParameter(field.getResultType().getData(), false, Collections.singletonList(thisParameter), makeThisClassCall(field.getResultType().getData(), def.getData(), null)));
         field.setResultType(field.getResultType().accept(classFieldChecker, null));
         if (field.getResultTypeLevel() != null) {
           field.setResultTypeLevel(field.getResultTypeLevel().accept(classFieldChecker, null));
@@ -282,18 +291,51 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
     return false;
   }
 
+  private static boolean onlyTuples(List<? extends Concrete.Pattern> patterns) {
+    for (Concrete.Pattern pattern : patterns) {
+      if (pattern != null && (!(pattern instanceof Concrete.NamePattern) && !(pattern instanceof Concrete.TuplePattern) || !onlyTuples(pattern.getPatterns()))) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   @Override
   public Concrete.Expression visitLam(Concrete.LamExpression expr, Void params) {
     if (!(expr instanceof Concrete.PatternLamExpression)) {
       return super.visitLam(expr, params);
     }
 
-    boolean genLambda = !hasIdp(((Concrete.PatternLamExpression) expr).getPatterns());
-
     int i = 0;
     int j = 0;
-    List<Concrete.Pattern> newPatterns = new ArrayList<>();
     List<Concrete.Parameter> newParams = new ArrayList<>();
+    Concrete.Expression body = expr.body.accept(this, null);
+    if (onlyTuples(((Concrete.PatternLamExpression) expr).getPatterns())) {
+      List<Concrete.LetClause> clauses = new ArrayList<>();
+      for (Concrete.Pattern pattern : ((Concrete.PatternLamExpression) expr).getPatterns()) {
+        if (pattern == null) {
+          Concrete.Parameter param = expr.getParameters().get(i++);
+          visitParameter(param, null);
+          newParams.add(param);
+          continue;
+        }
+
+        Referable ref = pattern instanceof Concrete.NamePattern ? ((Concrete.NamePattern) pattern).getRef() : null;
+        if (ref == null && pattern.getAsReferable() != null) ref = pattern.getAsReferable().referable;
+        if (ref == null) ref = new LocalReferable("p" + j++);
+        Concrete.Expression type = pattern instanceof Concrete.NamePattern ? ((Concrete.NamePattern) pattern).type : pattern.getAsReferable() != null ? pattern.getAsReferable().type : null;
+        newParams.add(type != null ? new Concrete.TelescopeParameter(pattern.getData(), pattern.isExplicit(), Collections.singletonList(ref), type.accept(this, null)) : new Concrete.NameParameter(pattern.getData(), pattern.isExplicit(), ref));
+        pattern.setExplicit(true);
+        clauses.add(new Concrete.LetClause(pattern, null, new Concrete.ReferenceExpression(pattern.getData(), ref)));
+      }
+      Concrete.LetExpression let = new Concrete.LetExpression(expr.getData(), false, false, clauses, body);
+      let.isGeneratedFromLambda = true;
+      return new Concrete.LamExpression(expr.getData(), newParams, let);
+    }
+
+    boolean genLambda = !hasIdp(((Concrete.PatternLamExpression) expr).getPatterns());
+
+    List<Concrete.Pattern> newPatterns = new ArrayList<>();
     List<Concrete.CaseArgument> caseArgs = new ArrayList<>();
     for (Concrete.Pattern pat : ((Concrete.PatternLamExpression) expr).getPatterns()) {
       List<Concrete.Pattern> patterns;
@@ -324,7 +366,6 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
       }
     }
 
-    Concrete.Expression body = expr.body.accept(this, null);
     return caseArgs.isEmpty() ? new Concrete.LamExpression(expr.getData(), newParams, body) : new Concrete.LamExpression(expr.getData(), newParams, new Concrete.CaseExpression(expr.getData(), false, caseArgs, null, null, Collections.singletonList(new Concrete.FunctionClause(expr.getData(), newPatterns, body instanceof Concrete.IncompleteExpression ? null : body))));
   }
 
@@ -420,5 +461,29 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
       visitLetClause(clause, null);
     }
     return desugarLet(expr.getData(), expr.isHave(), expr.isStrict(), expr.getClauses(), expr.getExpression().accept(this, null));
+  }
+
+  @Override
+  public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Void params) {
+    return Prelude.ARRAY != null && expr.getReferent() == Prelude.ARRAY.getRef() ? new Concrete.ReferenceExpression(expr.getData(), Prelude.DEP_ARRAY.getRef()) : super.visitReference(expr, params);
+  }
+
+  @Override
+  public Concrete.Expression visitApp(Concrete.AppExpression expr, Void params) {
+    if (expr.getFunction() instanceof Concrete.ReferenceExpression && Prelude.ARRAY != null && ((Concrete.ReferenceExpression) expr.getFunction()).getReferent() == Prelude.ARRAY.getRef() && expr.getArguments().size() > 1 && expr.getArguments().get(0).isExplicit() && expr.getArguments().get(1).isExplicit()) {
+      List<Concrete.Argument> args = new ArrayList<>(expr.getArguments().size());
+      args.add(new Concrete.Argument(expr.getArguments().get(1).expression.accept(this, null), false));
+      Concrete.Expression arg0 = expr.getArguments().get(0).expression.accept(this, null);
+      args.add(new Concrete.Argument(new Concrete.LamExpression(arg0.getData(), Collections.singletonList(new Concrete.NameParameter(arg0.getData(), true, null)), arg0), true));
+      for (int i = 2; i < expr.getArguments().size(); i++) {
+        args.add(new Concrete.Argument(expr.getArguments().get(i).expression.accept(this, null), expr.getArguments().get(i).isExplicit()));
+      }
+      return Concrete.AppExpression.make(expr.getData(), new Concrete.ReferenceExpression(expr.getFunction().getData(), Prelude.DEP_ARRAY.getReferable()), args);
+    } else {
+      for (Concrete.Argument argument : expr.getArguments()) {
+        argument.expression = argument.expression.accept(this, params);
+      }
+      return expr;
+    }
   }
 }

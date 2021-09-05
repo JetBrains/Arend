@@ -14,10 +14,7 @@ import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.pattern.ConstructorExpressionPattern;
 import org.arend.core.sort.Sort;
-import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.InPlaceLevelSubstVisitor;
-import org.arend.core.subst.LevelPair;
-import org.arend.core.subst.SubstVisitor;
+import org.arend.core.subst.*;
 import org.arend.ext.core.definition.CoreClassField;
 import org.arend.ext.core.expr.CoreClassCallExpression;
 import org.arend.ext.core.expr.CoreExpression;
@@ -34,7 +31,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-public class ClassCallExpression extends DefCallExpression implements Type, CoreClassCallExpression {
+public class ClassCallExpression extends LeveledDefCallExpression implements Type, CoreClassCallExpression {
   private final ClassCallBinding myThisBinding = new ClassCallBinding();
   private final Map<ClassField, Expression> myImplementations;
   private Sort mySort;
@@ -73,14 +70,14 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
     }
   }
 
-  public ClassCallExpression(ClassDefinition definition, LevelPair levels) {
+  public ClassCallExpression(ClassDefinition definition, Levels levels) {
     super(definition, levels);
     myImplementations = Collections.emptyMap();
-    mySort = definition.getSort().subst(levels);
+    mySort = definition.getSort().subst(levels.makeSubstitution(definition));
     myUniverseKind = definition.getUniverseKind();
   }
 
-  public ClassCallExpression(ClassDefinition definition, LevelPair levels, Map<ClassField, Expression> implementations, Sort sort, UniverseKind universeKind) {
+  public ClassCallExpression(ClassDefinition definition, Levels levels, Map<ClassField, Expression> implementations, Sort sort, UniverseKind universeKind) {
     super(definition, levels);
     myImplementations = implementations;
     mySort = sort;
@@ -91,6 +88,11 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
   @Override
   public ClassCallBinding getThisBinding() {
     return myThisBinding;
+  }
+
+  @NotNull
+  public Levels getLevels(ClassDefinition superClass) {
+    return getDefinition().castLevels(superClass, getLevels());
   }
 
   public void updateHasUniverses() {
@@ -157,7 +159,7 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
       return expr.subst(myThisBinding, (Expression) thisExpr);
     }
     AbsExpression impl = getDefinition().getImplementation(field);
-    return impl == null ? null : impl.apply((Expression) thisExpr, getLevels());
+    return impl == null ? null : impl.apply((Expression) thisExpr, getLevelSubstitution());
   }
 
   private static void checkImplementation(CoreClassField field, Expression type) {
@@ -201,7 +203,7 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
       return null;
     }
     checkImplementation(field, result.type);
-    return impl.apply(result.expression, getLevels());
+    return impl.apply(result.expression, getLevelSubstitution());
   }
 
   @Override
@@ -215,7 +217,7 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
     }
     AbsExpression impl = getDefinition().getImplementation(field);
     Expression result = impl == null ? null : impl.getBinding() == null ? impl.getExpression() : impl.getExpression().removeUnusedBinding(impl.getBinding());
-    return result == null ? null : result.subst(getLevels());
+    return result == null ? null : result.subst(getLevelSubstitution());
   }
 
   @Override
@@ -276,14 +278,15 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
 
       PiExpression piExpr = getDefinition().getFieldType(field);
       Binding thisBindings = piExpr.getBinding();
-      Expression type = piExpr.getCodomain().accept(new SubstVisitor(new ExprSubstitution(thisBindings, newExpr), getLevels()) {
+      Expression type = piExpr.getCodomain().accept(new SubstVisitor(new ExprSubstitution(thisBindings, newExpr), getLevelSubstitution()) {
         private Expression makeNewExpression(Expression arg, Expression type) {
           arg = arg.getUnderlyingExpression();
           if (arg instanceof ReferenceExpression && ((ReferenceExpression) arg).getBinding() == thisBindings) {
             type = type.normalize(NormalizationMode.WHNF);
             if (type instanceof ClassCallExpression && getDefinition().isSubClassOf(((ClassCallExpression) type).getDefinition())) {
-              Map<ClassField, Expression> subImplementations = new HashMap<>(((ClassCallExpression) type).getImplementedHere());
-              ClassCallExpression newClassCall = new ClassCallExpression(((ClassCallExpression) type).getDefinition(), getLevels(), subImplementations, Sort.PROP, UniverseKind.NO_UNIVERSES);
+              ClassCallExpression classCall = (ClassCallExpression) type;
+              Map<ClassField, Expression> subImplementations = new HashMap<>(classCall.getImplementedHere());
+              ClassCallExpression newClassCall = new ClassCallExpression(classCall.getDefinition(), classCall.getLevels().subst(getLevelSubstitution()), subImplementations, Sort.PROP, UniverseKind.NO_UNIVERSES);
               for (Map.Entry<ClassField, Expression> entry : implementations.entrySet()) {
                 if (!newClassCall.isImplemented(entry.getKey())) {
                   subImplementations.put(entry.getKey(), entry.getValue());
@@ -310,8 +313,9 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
           if (expr instanceof FieldCallExpression) {
             return super.visitDefCall(expr, params);
           }
+          assert expr instanceof LeveledDefCallExpression;
           List<Expression> newArgs = visitArgs(expr.getDefCallArguments(), expr.getDefinition().getParameters());
-          return expr.getDefinition().getDefCall(expr.getLevels().subst(getLevelSubstitution()), newArgs);
+          return expr.getDefinition().getDefCall(((LeveledDefCallExpression) expr).getLevels().subst(getLevelSubstitution()), newArgs);
         }
 
         private Constructor constructor;
@@ -359,7 +363,7 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
           ClassCallExpression result = new ClassCallExpression(expr.getDefinition(), expr.getLevels().subst(getLevelSubstitution()), fieldSet, expr.getSort().subst(getLevelSubstitution()), expr.getUniverseKind());
           getExprSubstitution().add(expr.getThisBinding(), new ReferenceExpression(result.getThisBinding()));
           for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
-            Expression newArg = makeNewExpression(entry.getValue(), entry.getKey().getType(LevelPair.STD).getCodomain());
+            Expression newArg = makeNewExpression(entry.getValue(), entry.getKey().getType().getCodomain());
             fieldSet.put(entry.getKey(), newArg != null ? newArg : entry.getValue().accept(this, null));
           }
           getExprSubstitution().remove(expr.getThisBinding());
@@ -441,11 +445,18 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
   }
 
   private static class ConstructorWithDataArgumentsImpl implements ConstructorWithDataArguments {
-    private final Definition myConstructor;
+    private final DConstructor myConstructor;
+    private final LevelPair myLevels;
+    private final Expression myLength;
+    private final Binding myThisBinding;
     private final Expression myElementsType;
+    private DependentLink myParameters;
 
-    private ConstructorWithDataArgumentsImpl(Definition constructor, Expression elementsType) {
+    private ConstructorWithDataArgumentsImpl(DConstructor constructor, LevelPair levels, Expression length, Binding thisBinding, Expression elementsType) {
       myConstructor = constructor;
+      myLevels = levels;
+      myLength = length;
+      myThisBinding = thisBinding;
       myElementsType = elementsType;
     }
 
@@ -456,12 +467,15 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
 
     @Override
     public @NotNull List<? extends Expression> getDataTypeArguments() {
-      return myElementsType == null ? Collections.emptyList() : new SingletonList<>(myElementsType);
+      return myElementsType == null ? (myLength == null ? Collections.emptyList() : new SingletonList<>(myLength)) : myConstructor == Prelude.EMPTY_ARRAY ? new SingletonList<>(myElementsType) : Arrays.asList(myLength, myElementsType);
     }
 
     @Override
     public @NotNull DependentLink getParameters() {
-      return myElementsType == null ? myConstructor.getParameters() : DependentLink.Helper.subst(myConstructor.getParameters().getNext(), new ExprSubstitution(myConstructor.getParameters(), myElementsType));
+      if (myParameters == null) {
+        myParameters = myConstructor.getArrayParameters(myLevels, myLength, myThisBinding, myElementsType);
+      }
+      return myParameters;
     }
   }
 
@@ -475,15 +489,17 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
 
   @Override
   public @Nullable List<ConstructorWithDataArguments> computeMatchedConstructorsWithDataArguments() {
-    if (getDefinition() != Prelude.ARRAY) return null;
+    if (getDefinition() != Prelude.DEP_ARRAY) return null;
     List<ConstructorWithDataArguments> result = new ArrayList<>(2);
     Boolean isEmpty = ConstructorExpressionPattern.isArrayEmpty(this);
+    LevelPair levels = getLevels().toLevelPair();
+    Expression length = getAbsImplementationHere(Prelude.ARRAY_LENGTH);
     Expression elementsType = getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
     if (isEmpty == null || isEmpty.equals(true)) {
-      result.add(new ConstructorWithDataArgumentsImpl(Prelude.EMPTY_ARRAY, elementsType));
+      result.add(new ConstructorWithDataArgumentsImpl(Prelude.EMPTY_ARRAY, levels, length, myThisBinding, elementsType));
     }
     if (isEmpty == null || isEmpty.equals(false)) {
-      result.add(new ConstructorWithDataArgumentsImpl(Prelude.ARRAY_CONS, elementsType));
+      result.add(new ConstructorWithDataArgumentsImpl(Prelude.ARRAY_CONS, levels, length, myThisBinding, elementsType));
     }
     return result;
   }

@@ -1,15 +1,17 @@
 package org.arend.core.definition;
 
 import org.arend.core.context.binding.Binding;
+import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.expr.*;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelPair;
+import org.arend.core.subst.Levels;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.definition.CoreClassDefinition;
 import org.arend.ext.core.definition.CoreClassField;
+import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.naming.reference.TCDefReferable;
 import org.arend.util.Pair;
@@ -35,6 +37,8 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
   private Set<ClassField> myTypeClassParameters = Collections.emptySet();
   private final ParametersLevels<ParametersLevel> myParametersLevels = new ParametersLevels<>();
   private FunctionDefinition mySquasher;
+  private List<? extends LevelVariable> myLevelParameters;
+  private Map<ClassDefinition, Levels> mySuperLevels = Collections.emptyMap();
 
   public ClassDefinition(TCDefReferable referable) {
     super(referable, TypeCheckingStatus.NEEDS_TYPE_CHECKING);
@@ -116,6 +120,20 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
     mySquasher = squasher;
   }
 
+  public Map<ClassDefinition, Levels> getSuperLevels() {
+    return mySuperLevels;
+  }
+
+  public void setSuperLevels(Map<ClassDefinition, Levels> superLevels) {
+    mySuperLevels = superLevels;
+  }
+
+  public Levels castLevels(ClassDefinition superClass, Levels levels) {
+    if (superClass == this) return levels;
+    Levels result = mySuperLevels.get(superClass);
+    return result == null ? levels : result.subst(levels.makeSubstitution(this));
+  }
+
   public Integer getUseLevel(Map<ClassField,Expression> implemented, Binding thisBinding, boolean isStrict) {
     loop:
     for (ParametersLevel parametersLevel : myParametersLevels.getList()) {
@@ -138,13 +156,13 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
     return null;
   }
 
-  public Sort computeSort(LevelPair levels, Map<ClassField,Expression> implemented, Binding thisBinding) {
+  public Sort computeSort(Levels levels, Map<ClassField,Expression> implemented, Binding thisBinding) {
     Integer hLevel = getUseLevel(implemented, thisBinding, true);
     if (hLevel != null && hLevel == -1) {
       return Sort.PROP;
     }
 
-    ClassCallExpression thisClass = new ClassCallExpression(this, levels, Collections.emptyMap(), mySort.subst(levels), getUniverseKind());
+    ClassCallExpression thisClass = new ClassCallExpression(this, levels, Collections.emptyMap(), mySort.subst(levels.makeSubstitution(this)), getUniverseKind());
     Sort sort = Sort.PROP;
 
     for (ClassField field : myFields) {
@@ -152,7 +170,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
         continue;
       }
 
-      PiExpression fieldType = getFieldType(field, levels);
+      PiExpression fieldType = getFieldType(field, castLevels(field.getParentClass(), levels));
       if (fieldType.getCodomain().isInstance(ErrorExpression.class)) {
         continue;
       }
@@ -171,7 +189,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
   }
 
   public void updateSort() {
-    mySort = computeSort(LevelPair.STD, Collections.emptyMap(), null);
+    mySort = computeSort(makeIdLevels(), Collections.emptyMap(), null);
   }
 
   @NotNull
@@ -324,27 +342,31 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
     return myOverridden.entrySet();
   }
 
-  public PiExpression getOverriddenType(ClassField field, LevelPair levels) {
+  public PiExpression getOverriddenType(ClassField field, Levels levels) {
     PiExpression type = myOverridden.get(field);
-    return type == null || levels.isSTD() ? type : (PiExpression) new SubstVisitor(new ExprSubstitution(), levels).visitPi(type, null);
+    return type == null ? null : (PiExpression) new SubstVisitor(new ExprSubstitution(), levels.makeSubstitution(field)).visitPi(type, null);
   }
 
   public PiExpression getFieldType(ClassField field) {
     PiExpression type = myOverridden.get(field);
-    return type == null ? field.getType(LevelPair.STD) : type;
+    return type == null ? field.getType() : type;
   }
 
-  public PiExpression getFieldType(ClassField field, LevelPair levels) {
+  public PiExpression getFieldType(ClassField field, Levels levels) {
     PiExpression type = myOverridden.get(field);
-    return type == null ? field.getType(levels) : levels.isSTD() ? type : (PiExpression) new SubstVisitor(new ExprSubstitution(), levels).visitPi(type, null);
+    return type == null ? field.getType(levels) : (PiExpression) new SubstVisitor(new ExprSubstitution(), levels.makeSubstitution(field)).visitPi(type, null);
   }
 
-  public Expression getFieldType(ClassField field, LevelPair levels, Expression thisExpr) {
+  public Expression getFieldType(ClassField field, LevelSubstitution levels, Expression thisExpr) {
     PiExpression type = myOverridden.get(field);
     if (type == null) {
-      type = field.getType(LevelPair.STD);
+      type = field.getType();
     }
     return type.getCodomain().subst(new ExprSubstitution(type.getParameters(), thisExpr), levels);
+  }
+
+  public Expression getFieldType(ClassField field, Levels levels, Expression thisExpr) {
+    return getFieldType(field, levels.makeSubstitution(field), thisExpr);
   }
 
   @Nullable
@@ -397,13 +419,22 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
   }
 
   @Override
-  public Expression getTypeWithParams(List<? super DependentLink> params, LevelPair levels) {
-    return new UniverseExpression(mySort.subst(levels));
+  public List<? extends LevelVariable> getLevelParameters() {
+    return myLevelParameters;
+  }
+
+  public void setLevelParameters(List<? extends LevelVariable> parameters) {
+    myLevelParameters = parameters;
   }
 
   @Override
-  public ClassCallExpression getDefCall(LevelPair levels, List<Expression> args) {
-    return new ClassCallExpression(this, levels, Collections.emptyMap(), mySort.subst(levels), getUniverseKind());
+  public Expression getTypeWithParams(List<? super DependentLink> params, Levels levels) {
+    return new UniverseExpression(mySort.subst(levels.makeSubstitution(this)));
+  }
+
+  @Override
+  public ClassCallExpression getDefCall(Levels levels, List<Expression> args) {
+    return new ClassCallExpression(this, levels, Collections.emptyMap(), mySort.subst(levels.makeSubstitution(this)), getUniverseKind());
   }
 
   public void clear() {
@@ -413,12 +444,5 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
     myImplemented.clear();
     myOverridden.clear();
     myCoercingField = null;
-  }
-
-  @Override
-  public void fill() {
-    for (ClassField field : myPersonalFields) {
-      field.fill();
-    }
   }
 }

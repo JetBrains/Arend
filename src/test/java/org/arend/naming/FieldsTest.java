@@ -54,7 +54,7 @@ public class FieldsTest extends NameResolverTestCase {
     resolveNamesModule(
       "\\class A { | f : Nat | g : Nat }\n" +
       "\\func func (x : Nat) : A\n" +
-      "\\func test => func.f", 1);
+      "\\func test => func.f");
   }
 
   @Test
@@ -115,7 +115,7 @@ public class FieldsTest extends NameResolverTestCase {
     resolveNamesModule(
       "\\class A { | f : Nat | g : Nat }\n" +
       "\\func B (x : Nat) => A\n" +
-      "\\func test (a : B) => a.f", 1);
+      "\\func test (a : B) => a.f");
   }
 
   @Test

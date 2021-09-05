@@ -65,7 +65,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public UniverseExpression visitDataCall(DataCallExpression expr, Void params) {
-    return new UniverseExpression(expr.getDefinition().getSort().subst(expr.getLevels()));
+    return new UniverseExpression(expr.getDefinition().getSort().subst(expr.getLevelSubstitution()));
   }
 
   @Override
@@ -76,13 +76,25 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
         type = type.normalize(NormalizationMode.WHNF);
       }
       if (type instanceof ClassCallExpression) {
-        PiExpression fieldType = ((ClassCallExpression) type).getDefinition().getOverriddenType(expr.getDefinition(), expr.getLevels());
+        ClassCallExpression classCall = (ClassCallExpression) type;
+        if (!expr.getDefinition().isProperty()) {
+          Expression impl = classCall.getImplementation(expr.getDefinition(), expr.getArgument());
+          if (impl != null) {
+            return impl.getType();
+          }
+        }
+
+        PiExpression fieldType = classCall.getDefinition().getOverriddenType(expr.getDefinition(), classCall.getLevels());
         if (fieldType != null) {
           return fieldType.applyExpression(expr.getArgument());
         }
+        return expr.getDefinition().getType(classCall.getLevels(expr.getDefinition().getParentClass())).applyExpression(expr.getArgument());
       }
     }
-    return expr.getDefinition().getType(expr.getLevels()).applyExpression(expr.getArgument());
+    if (myNormalizing) {
+      throw new IncorrectExpressionException("Expression " + expr.getArgument() + " does not have a class type");
+    }
+    return null;
   }
 
   @Override
@@ -112,7 +124,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitClassCall(ClassCallExpression expr, Void params) {
-    return new UniverseExpression(expr.getSort().subst(expr.getLevels()));
+    return new UniverseExpression(expr.getSort());
   }
 
   @Override
@@ -238,11 +250,11 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
     } else {
       Expression tailType = expr.getTail().accept(this, null).getUnderlyingExpression();
       Expression length = null;
-      if (tailType instanceof ClassCallExpression && ((ClassCallExpression) tailType).getDefinition() == Prelude.ARRAY) {
+      if (tailType instanceof ClassCallExpression && ((ClassCallExpression) tailType).getDefinition() == Prelude.DEP_ARRAY) {
         length = ((ClassCallExpression) tailType).getImplementationHere(Prelude.ARRAY_LENGTH, expr.getTail());
       }
       if (length == null) {
-        length = FieldCallExpression.make(Prelude.ARRAY_LENGTH, expr.getLevels(), expr.getTail());
+        length = FieldCallExpression.make(Prelude.ARRAY_LENGTH, expr.getTail());
       }
       length = length.getUnderlyingExpression();
       if (length instanceof IntegerExpression) {
@@ -254,7 +266,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
       }
       implementations.put(Prelude.ARRAY_LENGTH, length);
     }
-    return new ClassCallExpression(Prelude.ARRAY, expr.getLevels(), implementations, new Sort(expr.getPLevel(), expr.getHLevel().max(new Level(0))), UniverseKind.NO_UNIVERSES);
+    return new ClassCallExpression(Prelude.DEP_ARRAY, expr.getLevels(), implementations, new Sort(expr.getPLevel(), expr.getHLevel().max(new Level(0))), UniverseKind.NO_UNIVERSES);
   }
 
   @Override

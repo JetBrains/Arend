@@ -3,12 +3,16 @@ package org.arend.module.serialization;
 import com.google.protobuf.ByteString;
 import org.arend.core.context.LinkList;
 import org.arend.core.context.binding.Binding;
+import org.arend.core.context.binding.FieldLevelVariable;
+import org.arend.core.context.binding.LevelVariable;
+import org.arend.core.context.binding.ParamLevelVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.*;
 import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
 import org.arend.core.pattern.*;
 import org.arend.core.subst.LevelPair;
+import org.arend.core.subst.Levels;
 import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.serialization.ArendDeserializer;
@@ -18,6 +22,7 @@ import org.arend.ext.typechecking.DefinitionListener;
 import org.arend.extImpl.SerializableKeyRegistryImpl;
 import org.arend.naming.reference.*;
 import org.arend.prelude.Prelude;
+import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.order.dependency.DependencyListener;
 import org.arend.util.Pair;
 import org.jetbrains.annotations.NotNull;
@@ -38,7 +43,7 @@ public class DefinitionDeserialization implements ArendDeserializer {
   }
 
   public void fillInDefinition(DefinitionProtos.Definition defProto, Definition def) throws DeserializationException {
-    final ExpressionDeserialization defDeserializer = new ExpressionDeserialization(myCallTargetProvider, myDependencyListener, def.getReferable());
+    final ExpressionDeserialization defDeserializer = new ExpressionDeserialization(myCallTargetProvider, myDependencyListener, def);
 
     switch (defProto.getDefinitionDataCase()) {
       case CLASS:
@@ -94,7 +99,51 @@ public class DefinitionDeserialization implements ArendDeserializer {
     throw new DeserializationException("Incorrect class field type");
   }
 
+  private List<LevelVariable> readLevelParameters(List<DefinitionProtos.Definition.LevelParameter> parameters, boolean isStd) {
+    if (isStd) return null;
+    List<LevelVariable> result = new ArrayList<>(parameters.size());
+    for (DefinitionProtos.Definition.LevelParameter parameter : parameters) {
+      LevelVariable base = parameter.getIsPlevel() ? LevelVariable.PVAR : LevelVariable.HVAR;
+      int size = parameter.getSize();
+      if (size == -1) {
+        result.add(base);
+      } else {
+        result.add(new ParamLevelVariable(base.getType(), parameter.getName(), parameter.getIndex(), size));
+      }
+    }
+    return result;
+  }
+
+  private Concrete.LevelParameters makeLevelParameters(List<? extends LevelVariable> variables) {
+    if (variables.isEmpty()) return null;
+    List<LevelReferable> refs = new ArrayList<>(variables.size());
+    for (LevelVariable variable : variables) {
+      refs.add(new DataLevelReferable(null, variable.getName()));
+    }
+    return new Concrete.LevelParameters(null, refs, variables.size() == 1 || variables.get(0).getStd() == variables.get(0) || variables.get(0) instanceof ParamLevelVariable && variables.get(1) instanceof ParamLevelVariable && ((ParamLevelVariable) variables.get(0)).getSize() <= ((ParamLevelVariable) variables.get(1)).getSize());
+  }
+
   private void fillInClassDefinition(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.ClassData classProto, ClassDefinition classDef) throws DeserializationException {
+    if (!classProto.getIsStdLevels()) {
+      List<LevelVariable> fieldLevels = new ArrayList<>();
+      for (DefinitionProtos.Definition.LevelField levelFieldProto : classProto.getLevelFieldList()) {
+        DefinitionProtos.Definition.LevelParameter parameter = levelFieldProto.getParameter();
+        int ref = levelFieldProto.getRef();
+        fieldLevels.add(ref == -1 ? (parameter.getIsPlevel() ? LevelVariable.PVAR : LevelVariable.HVAR) : new FieldLevelVariable(parameter.getIsPlevel() ? LevelVariable.LvlType.PLVL : LevelVariable.LvlType.HLVL, parameter.getName(), parameter.getIndex(), parameter.getSize(), myCallTargetProvider.getLevelCallTarget(ref)));
+      }
+      classDef.setLevelParameters(fieldLevels);
+    }
+
+    Map<Integer, LevelProtos.Levels> superLevelsProto = classProto.getSuperLevelsMap();
+    if (!superLevelsProto.isEmpty()) {
+      Map<ClassDefinition, Levels> superLevels = new HashMap<>();
+      for (Map.Entry<Integer, LevelProtos.Levels> entry : superLevelsProto.entrySet()) {
+        ClassDefinition superClass = myCallTargetProvider.getCallTarget(entry.getKey(), ClassDefinition.class);
+        superLevels.put(superClass, defDeserializer.readLevels(entry.getValue()));
+      }
+      classDef.setSuperLevels(superLevels);
+    }
+
     for (DefinitionProtos.Definition.ClassData.Field fieldProto : classProto.getPersonalFieldList()) {
       ClassField field = myCallTargetProvider.getCallTarget(fieldProto.getReferable().getIndex(), ClassField.class);
       if (!fieldProto.hasType()) {
@@ -141,16 +190,27 @@ public class DefinitionDeserialization implements ArendDeserializer {
       ClassDefinition superClass = myCallTargetProvider.getCallTarget(superClassRef, ClassDefinition.class);
       classDef.addSuperClass(superClass);
       myDependencyListener.dependsOn(classDef.getReferable(), superClass.getReferable());
-      TCReferable classRef = classDef.getReferable();
-      if (classRef instanceof ClassReferableImpl) {
-        Referable superRef = superClass.getReferable().getUnderlyingReferable();
-        if (superRef instanceof ClassReferable) {
-          ((ClassReferableImpl) classRef).getSuperClassReferences().add((ClassReferable) superRef);
-        }
-      }
 
       for (Map.Entry<ClassField, AbsExpression> entry : superClass.getImplemented()) {
         classDef.implementField(entry.getKey(), entry.getValue());
+      }
+    }
+
+    if (classDef.getReferable() instanceof ClassReferableImpl) {
+      ClassReferableImpl classRef = (ClassReferableImpl) classDef.getReferable();
+      for (ClassDefinition superClass : classDef.getSuperClasses()) {
+        Referable superRef = superClass.getReferable().getUnderlyingReferable();
+        if (superRef instanceof ClassReferable) {
+          classRef.getSuperClassReferences().add((ClassReferable) superRef);
+        }
+        if (!classDef.getSuperLevels().isEmpty()) {
+          classRef.addSuperLevels(classDef.getSuperLevels().get(superClass) != null);
+        }
+      }
+      if (classDef.getLevelParameters() != null && !classDef.getLevelParameters().isEmpty()) {
+        int n = classDef.getNumberOfPLevelParameters();
+        classRef.setPLevelParameters(makeLevelParameters(classDef.getLevelParameters().subList(0, n)));
+        classRef.setHLevelParameters(makeLevelParameters(classDef.getLevelParameters().subList(n, classDef.getLevelParameters().size())));
       }
     }
 
@@ -240,6 +300,7 @@ public class DefinitionDeserialization implements ArendDeserializer {
   }
 
   private void fillInDataDefinition(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.DataData dataProto, DataDefinition dataDef) throws DeserializationException {
+    dataDef.setLevelParameters(readLevelParameters(dataProto.getLevelParamList(), dataProto.getIsStdLevels()));
     if (dataProto.getHasEnclosingClass()) {
       dataDef.setHasEnclosingClass(true);
     }
@@ -381,6 +442,7 @@ public class DefinitionDeserialization implements ArendDeserializer {
   }
 
   private void fillInFunctionDefinition(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.FunctionData functionProto, FunctionDefinition functionDef) throws DeserializationException {
+    functionDef.setLevelParameters(readLevelParameters(functionProto.getLevelParamList(), functionProto.getIsStdLevels()));
     if (functionProto.getHasEnclosingClass()) {
       functionDef.setHasEnclosingClass(true);
     }

@@ -35,7 +35,7 @@ public class BigIntegerExpression extends IntegerExpression {
 
   @Override
   public IntegerExpression pred() {
-    return new BigIntegerExpression(myInteger.subtract(BigInteger.ONE));
+    return myInteger.compareTo(BigInteger.ZERO) > 0 ? new BigIntegerExpression(myInteger.subtract(BigInteger.ONE)) : null;
   }
 
   @Override

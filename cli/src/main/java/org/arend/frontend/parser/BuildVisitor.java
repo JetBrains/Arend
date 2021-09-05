@@ -15,6 +15,7 @@ import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.DefinableMetaDefinition;
 import org.arend.term.group.*;
 import org.arend.util.Pair;
+import org.arend.util.SingletonList;
 import org.arend.util.StringEscapeUtils;
 
 import java.math.BigInteger;
@@ -426,10 +427,68 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       : new ConcreteLocatedReferable(position, name, precedence, aliasName, aliasPrecedence, (TCReferable) parent.getReferable(), kind);
   }
 
+  private Concrete.LevelParameters parseLevelParameters(Token token, List<TerminalNode> ids) {
+    if (ids.isEmpty()) return new Concrete.LevelParameters(tokenPosition(token), Collections.emptyList(), true);
+    if (ids.size() % 2 == 0) {
+      myErrorReporter.report(new ParserError(tokenPosition(ids.get(0).getSymbol()), "Cannot parse level parameters"));
+      return null;
+    }
+    boolean linear = true;
+    List<LevelReferable> refs = new ArrayList<>();
+    Boolean increasing = null;
+    for (int i = -1; i < ids.size(); i += 2) {
+      if (i >= 0) {
+        String op = ids.get(i).getText();
+        Boolean inc = op.equals(">=") ? Boolean.FALSE : op.equals("<=") ? true : null;
+        if (inc == null) {
+          myErrorReporter.report(new ParserError(tokenPosition(ids.get(i).getSymbol()), "Expected either '<=' or '>='"));
+          return null;
+        }
+        if (increasing == null) {
+          increasing = inc;
+        } else if (linear && increasing != inc) {
+          myErrorReporter.report(new ParserError(tokenPosition(ids.get(i).getSymbol()), "Level parameters must be linearly ordered"));
+          linear = false;
+        }
+      }
+      refs.add(new DataLevelReferable(tokenPosition(ids.get(i + 1).getSymbol()), ids.get(i + 1).getText()));
+    }
+    return new Concrete.LevelParameters(tokenPosition(token), refs, increasing == null || increasing);
+  }
+
+  @Override
+  public Concrete.LevelParameters visitPlevelParams(PlevelParamsContext ctx) {
+    return ctx == null ? null : parseLevelParameters(ctx.start, ctx.ID());
+  }
+
+  @Override
+  public Concrete.LevelParameters visitHlevelParams(HlevelParamsContext ctx) {
+    return ctx == null ? null : parseLevelParameters(ctx.start, ctx.ID());
+  }
+
+  private List<LevelReferable> visitMetaLevels(List<TerminalNode> ids) {
+    List<LevelReferable> refs = new ArrayList<>();
+    for (TerminalNode id : ids) {
+      refs.add(new DataLevelReferable(tokenPosition(id.getSymbol()), id.getText()));
+    }
+    return refs;
+  }
+
+  @Override
+  public List<LevelReferable> visitMetaPLevels(MetaPLevelsContext ctx) {
+    return ctx == null ? null : visitMetaLevels(ctx.ID());
+  }
+
+  @Override
+  public List<LevelReferable> visitMetaHLevels(MetaHLevelsContext ctx) {
+    return ctx == null ? null : visitMetaLevels(ctx.ID());
+  }
+
   private StaticGroup visitDefInstance(DefInstanceContext ctx, ChildGroup parent, TCDefReferable enclosingClass) {
     boolean isInstance = ctx.instanceKw() instanceof FuncKwInstanceContext;
     List<Concrete.Parameter> parameters = visitLamTeles(ctx.tele(), true);
-    DefIdContext defId = ctx.defId();
+    TopDefIdContext topDefId = ctx.topDefId();
+    DefIdContext defId = topDefId.defId();
     Pair<String, Precedence> alias = visitAlias(defId.alias());
     ConcreteLocatedReferable reference = makeReferable(tokenPosition(defId.ID().getSymbol()), defId.ID().getText(), visitPrecedence(defId.precedence()), alias.proj1, alias.proj2, parent, isInstance ? LocatedReferableImpl.Kind.INSTANCE : GlobalReferable.Kind.DEFINED_CONSTRUCTOR);
     Pair<Concrete.Expression,Concrete.Expression> returnPair = visitReturnExpr(ctx.returnExpr2());
@@ -456,7 +515,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       throw new IllegalStateException();
     }
 
-    Concrete.FunctionDefinition funcDef = new Concrete.FunctionDefinition(isInstance ? FunctionKind.INSTANCE : FunctionKind.CONS, reference, parameters, returnPair.proj1, returnPair.proj2, body);
+    Concrete.FunctionDefinition funcDef = new Concrete.FunctionDefinition(isInstance ? FunctionKind.INSTANCE : FunctionKind.CONS, reference, visitPlevelParams(topDefId.plevelParams()), visitHlevelParams(topDefId.hlevelParams()), parameters, returnPair.proj1, returnPair.proj2, body);
     if (coClauses != null) {
       visitCoClauses(coClauses, subgroups, resultGroup, reference, enclosingClass, body.getCoClauseElements());
     }
@@ -541,7 +600,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   }
 
   private StaticGroup visitDefMeta(DefMetaContext ctx, ChildGroup parent, TCDefReferable enclosingClass) {
-    var defId = ctx.defId();
+    DefIdContext defId = ctx.defId();
     var where = ctx.where();
     List<Group> staticSubgroups = where == null ? Collections.emptyList() : new ArrayList<>();
     List<ChildNamespaceCommand> namespaceCommands = where == null ? Collections.emptyList() : new ArrayList<>();
@@ -555,8 +614,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       var params = ctx.ID().stream()
         .map(r -> new Concrete.NameParameter(tokenPosition(r.getSymbol()), true, new LocalReferable(r.getText())))
         .collect(Collectors.toList());
-      var metaDef = new DefinableMetaDefinition(reference, params, visitExpr(body));
-      reference.setDefinition(metaDef);
+      reference.setDefinition(new DefinableMetaDefinition(reference, visitMetaPLevels(ctx.metaPLevels()), visitMetaHLevels(ctx.metaHLevels()), params, visitExpr(body)));
     }
 
     var resultGroup = new StaticGroup(reference, staticSubgroups, namespaceCommands, parent);
@@ -567,7 +625,8 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   private StaticGroup visitDefFunction(DefFunctionContext ctx, ChildGroup parent, TCDefReferable enclosingClass) {
     Concrete.FunctionBody body;
     FunctionBodyContext functionBodyCtx = ctx.functionBody();
-    DefIdContext defId = ctx.defId();
+    TopDefIdContext topDefId = ctx.topDefId();
+    DefIdContext defId = topDefId.defId();
     Pair<String, Precedence> alias = visitAlias(defId.alias());
     ConcreteLocatedReferable referable = makeReferable(tokenPosition(defId.ID().getSymbol()), defId.ID().getText(), visitPrecedence(defId.precedence()), alias.proj1, alias.proj2, parent, GlobalReferable.Kind.FUNCTION);
     List<Group> subgroups = new ArrayList<>();
@@ -602,7 +661,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
             : funcKw instanceof FuncKwSFuncContext
               ? FunctionKind.SFUNC
               : FunctionKind.FUNC,
-        referable, visitLamTeles(ctx.tele(), true), returnPair.proj1, returnPair.proj2, body, parent.getReferable());
+        referable, visitPlevelParams(topDefId.plevelParams()), visitHlevelParams(topDefId.hlevelParams()), visitLamTeles(ctx.tele(), true), returnPair.proj1, returnPair.proj2, body, parent.getReferable());
       if (coClauses != null) {
         visitCoClauses(coClauses, subgroups, resultGroup, referable, enclosingClass, body.getCoClauseElements());
       }
@@ -642,10 +701,11 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     List<InternalConcreteLocatedReferable> constructors = new ArrayList<>();
     DataBodyContext dataBodyCtx = ctx.dataBody();
     List<Concrete.ReferenceExpression> eliminatedReferences = dataBodyCtx instanceof DataClausesContext ? visitElim(((DataClausesContext) dataBodyCtx).elim()) : null;
-    DefIdContext defId = ctx.defId();
+    TopDefIdContext topDefId = ctx.topDefId();
+    DefIdContext defId = topDefId.defId();
     Pair<String, Precedence> alias = visitAlias(defId.alias());
     ConcreteLocatedReferable referable = makeReferable(tokenPosition(defId.ID().getSymbol()), defId.ID().getText(), visitPrecedence(defId.precedence()), alias.proj1, alias.proj2, parent, LocatedReferableImpl.Kind.DATA);
-    Concrete.DataDefinition dataDefinition = new Concrete.DataDefinition(referable, visitTeles(ctx.tele(), true), eliminatedReferences, ctx.TRUNCATED() != null, universe, new ArrayList<>());
+    Concrete.DataDefinition dataDefinition = new Concrete.DataDefinition(referable, visitPlevelParams(topDefId.plevelParams()), visitHlevelParams(topDefId.hlevelParams()), visitTeles(ctx.tele(), true), eliminatedReferences, ctx.TRUNCATED() != null, universe, new ArrayList<>());
     dataDefinition.enclosingClass = enclosingClass;
     referable.setDefinition(dataDefinition);
     visitDataBody(dataBodyCtx, dataDefinition, constructors);
@@ -826,6 +886,19 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return resultGroup;
   }
 
+  @Override
+  public Concrete.ReferenceExpression visitSuperClass(SuperClassContext ctx) {
+    Concrete.ReferenceExpression result = visitLongNameRef(ctx.longName(), null, null);
+    List<MaybeLevelAtomsContext> levelCtxs = ctx.maybeLevelAtoms();
+    if (!levelCtxs.isEmpty()) {
+      result.setPLevels(visitLevels(levelCtxs.get(0)));
+    }
+    if (levelCtxs.size() >= 2) {
+      result.setHLevels(visitLevels(levelCtxs.get(1)));
+    }
+    return result;
+  }
+
   private ClassGroup visitDefClass(DefClassContext ctx, ChildGroup parent, TCDefReferable enclosingClass) {
     WhereContext where = ctx.where();
 
@@ -834,11 +907,12 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     List<ChildNamespaceCommand> namespaceCommands = where == null ? Collections.emptyList() : new ArrayList<>();
 
     List<Concrete.ReferenceExpression> superClasses = new ArrayList<>();
-    for (LongNameContext longNameCtx : ctx.longName()) {
-      superClasses.add(visitLongNameRef(longNameCtx, null, null));
+    for (SuperClassContext superClassCtx : ctx.superClass()) {
+      superClasses.add(visitSuperClass(superClassCtx));
     }
 
-    DefIdContext defId = ctx.defId();
+    TopDefIdContext topDefId = ctx.topDefId();
+    DefIdContext defId = topDefId.defId();
     Position pos = tokenPosition(defId.ID().getSymbol());
     String name = defId.ID().getText();
     Precedence prec = visitPrecedence(defId.precedence());
@@ -855,7 +929,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     List<ClassFieldOrImplContext> classFieldOrImplCtxs = classBodyCtx instanceof ClassBodyFieldOrImplContext ? ((ClassBodyFieldOrImplContext) classBodyCtx).classFieldOrImpl() : Collections.emptyList();
 
     List<Concrete.ClassElement> elements = new ArrayList<>();
-    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(reference, isRecord, ctx.NO_CLASSIFYING() != null, new ArrayList<>(superClasses), elements);
+    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(reference, visitPlevelParams(topDefId.plevelParams()), visitHlevelParams(topDefId.hlevelParams()), isRecord, ctx.NO_CLASSIFYING() != null, new ArrayList<>(superClasses), elements);
     reference.setDefinition(classDefinition);
     visitFieldTeles(ctx.fieldTele(), classDefinition, elements);
 
@@ -1092,7 +1166,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return visitArgumentAppExpr(ctx.argumentAppExpr());
   }
 
-  @SuppressWarnings("rawtypes")
+  @SuppressWarnings({"rawtypes", "unchecked"})
   @Override
   public Concrete.Expression visitArgumentAppExpr(ArgumentAppExprContext ctx) {
     Concrete.Expression expr = visitAtomFieldsAcc(ctx.atomFieldsAcc());
@@ -1105,17 +1179,17 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
           myErrorReporter.report(new ParserError(tokenPosition(onlyLevelAtoms.get(0).start), "too many level specifications"));
         }
 
-        Concrete.LevelExpression level1;
-        Concrete.LevelExpression level2;
+        List<Concrete.LevelExpression> levels1;
+        List<Concrete.LevelExpression> levels2;
         if (obj1 instanceof Pair) {
-          level1 = (Concrete.LevelExpression) ((Pair) obj1).proj1;
-          level2 = (Concrete.LevelExpression) ((Pair) obj1).proj2;
+          levels1 = (List<Concrete.LevelExpression>) ((Pair) obj1).proj1;
+          levels2 = (List<Concrete.LevelExpression>) ((Pair) obj1).proj2;
         } else {
-          level1 = (Concrete.LevelExpression) obj1;
-          level2 = obj2 instanceof Concrete.LevelExpression ? (Concrete.LevelExpression) obj2 : null;
+          levels1 = new SingletonList<>((Concrete.LevelExpression) obj1);
+          levels2 = obj2 instanceof Concrete.LevelExpression ? new SingletonList<>((Concrete.LevelExpression) obj2) : null;
         }
 
-        expr = new Concrete.ReferenceExpression(expr.getData(), ((Concrete.ReferenceExpression) expr).getReferent(), level1, level2);
+        expr = new Concrete.ReferenceExpression(expr.getData(), ((Concrete.ReferenceExpression) expr).getReferent(), levels1, levels2);
       } else {
         myErrorReporter.report(new ParserError(tokenPosition(onlyLevelAtoms.get(0).start), "Level annotations are allowed only after a reference"));
       }
@@ -1371,6 +1445,26 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return (Concrete.LevelExpression) visit(ctx);
   }
 
+  private List<Concrete.LevelExpression> visitLevels(MaybeLevelAtomsContext ctx) {
+    //noinspection unchecked
+    return (List<Concrete.LevelExpression>) visit(ctx);
+  }
+
+  @Override
+  public List<Concrete.LevelExpression> visitMultiLevel(MultiLevelContext ctx) {
+    List<Concrete.LevelExpression> result = new ArrayList<>();
+    for (LevelExprContext expr : ctx.levelExpr()) {
+      result.add((Concrete.LevelExpression) visit(expr));
+    }
+    return result;
+  }
+
+  @Override
+  public List<Concrete.LevelExpression> visitSingleLevel(SingleLevelContext ctx) {
+    MaybeLevelAtomContext level = ctx.maybeLevelAtom();
+    return level instanceof WithoutLevelAtomContext ? null : new SingletonList<>(visitLevel(level));
+  }
+
   @Override
   public Concrete.LevelExpression visitWithLevelAtom(WithLevelAtomContext ctx) {
     return visitLevel(ctx.levelAtom());
@@ -1399,6 +1493,17 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   @Override
   public Concrete.NumberLevelExpression visitNumLevel(NumLevelContext ctx) {
     return new Concrete.NumberLevelExpression(tokenPosition(ctx.start), Integer.parseInt(ctx.NUMBER().getText()));
+  }
+
+  @Override
+  public Concrete.NumberLevelExpression visitNegLevel(NegLevelContext ctx) {
+    return new Concrete.NumberLevelExpression(tokenPosition(ctx.start), Integer.parseInt(ctx.NEGATIVE_NUMBER().getText()));
+  }
+
+  @Override
+  public Concrete.IdLevelExpression visitIdLevel(IdLevelContext ctx) {
+    Position pos = tokenPosition(ctx.start);
+    return new Concrete.IdLevelExpression(pos, new NamedUnresolvedReference(pos, ctx.ID().getText()));
   }
 
   @Override
@@ -1447,10 +1552,9 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   }
 
   @Override
-  public Pair<Concrete.LevelExpression, Concrete.LevelExpression> visitLevelsOnlyLevel(LevelsOnlyLevelContext ctx) {
-    Position position = tokenPosition(ctx.start);
-    List<MaybeLevelAtomContext> maybeLevelAtomCtxs = ctx.maybeLevelAtom();
-    return maybeLevelAtomCtxs.isEmpty() ? new Pair<>(new Concrete.NumberLevelExpression(position, 0), new Concrete.NumberLevelExpression(position, -1)) : new Pair<>(visitLevel(maybeLevelAtomCtxs.get(0)), visitLevel(maybeLevelAtomCtxs.get(1)));
+  public Pair<List<Concrete.LevelExpression>, List<Concrete.LevelExpression>> visitLevelsOnlyLevel(LevelsOnlyLevelContext ctx) {
+    List<MaybeLevelAtomsContext> maybeLevelAtomsCtxs = ctx.maybeLevelAtoms();
+    return new Pair<>(visitLevels(maybeLevelAtomsCtxs.get(0)), visitLevels(maybeLevelAtomsCtxs.get(1)));
   }
 
   @Override

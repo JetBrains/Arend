@@ -1,30 +1,25 @@
 package org.arend.typechecking.visitor;
 
-import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.UniverseKind;
 import org.arend.core.expr.*;
 import org.arend.core.expr.visitor.NormalizeVisitor;
-import org.arend.core.sort.Level;
 import org.arend.ext.core.expr.CoreExpression;
 
 public class CheckForUniversesVisitor extends SearchVisitor<Void> {
-  public static boolean visitLevels(Level pLevel, Level hLevel) {
-    return !pLevel.isClosed() || !hLevel.isClosed();
-  }
-
   @Override
   public CoreExpression.FindAction processDefCall(DefCallExpression expression, Void param) {
     if (expression.getDefinition() instanceof ClassField) {
       return CoreExpression.FindAction.CONTINUE;
     }
-    return expression.getUniverseKind() != UniverseKind.NO_UNIVERSES && visitLevels(expression.getPLevel(), expression.getHLevel()) ? CoreExpression.FindAction.STOP : CoreExpression.FindAction.CONTINUE;
+    assert expression instanceof LeveledDefCallExpression;
+    return expression.getUniverseKind() != UniverseKind.NO_UNIVERSES && !((LeveledDefCallExpression) expression).getLevels().isClosed() ? CoreExpression.FindAction.STOP : CoreExpression.FindAction.CONTINUE;
   }
 
   @Override
   public Boolean visitUniverse(UniverseExpression expression, Void param) {
-    return visitLevels(expression.getSort().getPLevel(), expression.getSort().getHLevel());
+    return !expression.getSort().getPLevel().isClosed() || !expression.getSort().getHLevel().isClosed();
   }
 
   private boolean visitFieldCall(FieldCallExpression expr, int apps) {
@@ -70,6 +65,19 @@ public class CheckForUniversesVisitor extends SearchVisitor<Void> {
 
   @Override
   public Boolean visitTypeCoerce(TypeCoerceExpression expr, Void params) {
-    return expr.getDefinition().getUniverseKind() != UniverseKind.NO_UNIVERSES && visitLevels(expr.getLevels().get(LevelVariable.PVAR), expr.getLevels().get(LevelVariable.HVAR));
+    return expr.getDefinition().getUniverseKind() != UniverseKind.NO_UNIVERSES && !expr.getLevels().isClosed();
+  }
+
+  @Override
+  public Boolean visitNew(NewExpression expression, Void param) {
+    if (expression.getRenewExpression() != null && expression.getRenewExpression().accept(this, param)) {
+      return true;
+    }
+    for (Expression impl : expression.getClassCall().getImplementedHere().values()) {
+      if (impl.accept(this, param)) {
+        return true;
+      }
+    }
+    return false;
   }
 }

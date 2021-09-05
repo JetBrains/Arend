@@ -4,12 +4,13 @@ import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.ext.core.context.CoreInferenceVariable;
 import org.arend.term.prettyprint.ToAbstractVisitor;
-import org.arend.core.subst.LevelSubstitution;
+import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.core.level.CoreLevel;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.reference.Precedence;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
+import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.implicitargs.equations.Equations;
 
 public class Level implements CoreLevel {
@@ -100,8 +101,9 @@ public class Level implements CoreLevel {
     }
 
     if (myVar != null && level.myVar != null) {
-      if (myVar == level.myVar) {
-        return new Level(myVar, Math.max(myConstant, level.myConstant), Math.max(myMaxConstant, level.myMaxConstant));
+      LevelVariable var = myVar.max(level.myVar);
+      if (var != null) {
+        return new Level(var, Math.max(myConstant, level.myConstant), Math.max(myMaxConstant, level.myMaxConstant));
       } else {
         return null;
       }
@@ -120,7 +122,7 @@ public class Level implements CoreLevel {
     if (myVar == null || this == INFINITY) {
       return this;
     }
-    Level level = subst.get(myVar);
+    Level level = (Level) subst.get(myVar);
     if (level == null) {
       return this;
     }
@@ -141,6 +143,11 @@ public class Level implements CoreLevel {
     StringBuilder builder = new StringBuilder();
     ToAbstractVisitor.convert(this).accept(new PrettyPrintVisitor(builder, 0), new Precedence(Concrete.Expression.PREC));
     return builder.toString();
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    return this == obj || obj instanceof Level && compare(this, (Level) obj, CMP.EQ, DummyEquations.getInstance(), null);
   }
 
   public static boolean compare(Level level1, Level level2, CMP cmp, Equations equations, Concrete.SourceNode sourceNode) {
@@ -177,22 +184,22 @@ public class Level implements CoreLevel {
       }
     }
 
-    if (level1.myVar == level2.myVar) {
-      if (cmp == CMP.EQ && level1.myConstant != level2.myConstant || cmp == CMP.LE && level1.myConstant > level2.myConstant) {
-        return false;
-      }
-      if (level1.myMaxConstant == level2.myMaxConstant || cmp == CMP.LE && (level1.myMaxConstant <= level2.myMaxConstant || level1.myMaxConstant <= level2.myConstant + level2.myVar.getMinValue())) {
-        return true;
-      }
-      if (!(level1.myVar instanceof InferenceLevelVariable)) {
+    if (level1.myVar != null && level2.myVar != null) {
+      if (level1.myVar.compare(level2.myVar, cmp)) {
+        if (cmp == CMP.EQ && level1.myConstant != level2.myConstant || cmp == CMP.LE && level1.myConstant > level2.myConstant) {
+          return false;
+        }
+        if (level1.myMaxConstant == level2.myMaxConstant || cmp == CMP.LE && (level1.myMaxConstant <= level2.myMaxConstant || level1.myMaxConstant <= level2.myConstant + level2.myVar.getMinValue())) {
+          return true;
+        }
+        if (!(level1.myVar instanceof InferenceLevelVariable)) {
+          return false;
+        }
+      } else if (!(level1.myVar instanceof InferenceLevelVariable) && !(level2.myVar instanceof InferenceLevelVariable)) {
         return false;
       }
     }
 
-    if (equations == null) {
-      return level1.myVar instanceof InferenceLevelVariable || level2.myVar instanceof InferenceLevelVariable;
-    } else {
-      return equations.addEquation(level1, level2, cmp, sourceNode);
-    }
+    return equations == null || equations.addEquation(level1, level2, cmp, sourceNode);
   }
 }

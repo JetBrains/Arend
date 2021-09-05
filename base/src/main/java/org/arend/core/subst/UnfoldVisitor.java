@@ -5,6 +5,7 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.HaveClause;
 import org.arend.core.expr.visitor.NormalizeVisitor;
+import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.variable.Variable;
 
 import java.util.ArrayList;
@@ -53,7 +54,7 @@ public class UnfoldVisitor extends SubstVisitor {
 
       ExprSubstitution substitution = getExprSubstitution();
       substitution.add(expr.getDefinition().getParameters(), newArgs);
-      Expression result = ((Expression) expr.getDefinition().getBody()).accept(new SubstVisitor(substitution, expr.getLevels().subst(getLevelSubstitution())), null);
+      Expression result = ((Expression) expr.getDefinition().getBody()).accept(new SubstVisitor(substitution, expr.getLevelSubstitution().subst(getLevelSubstitution())), null);
       DependentLink.Helper.freeSubsts(expr.getDefinition().getParameters(), substitution);
       return result;
     } else {

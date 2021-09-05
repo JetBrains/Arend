@@ -167,7 +167,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
   @Test
   public void fieldCallTest() {
     ClassDefinition def = (ClassDefinition) typeCheckDef("\\record R (f : Nat)");
-    Expression expr = FieldCallExpression.make(def.getPersonalFields().get(0), LevelPair.STD, new ReferenceExpression(new TypedBinding("r", new ClassCallExpression(def, LevelPair.STD))));
+    Expression expr = FieldCallExpression.make(def.getPersonalFields().get(0), new ReferenceExpression(new TypedBinding("r", new ClassCallExpression(def, LevelPair.STD))));
     assertEquals("r.f", expr.toString());
   }
 

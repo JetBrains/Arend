@@ -1,12 +1,14 @@
 package org.arend.core.definition;
 
+import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.elimtree.Body;
 import org.arend.core.expr.*;
 import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelPair;
+import org.arend.core.subst.Levels;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
+import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.naming.reference.TCDefReferable;
 import org.jetbrains.annotations.NotNull;
 
@@ -29,6 +31,7 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
   private Set<Definition> myRecursiveDefinitions = Collections.emptySet();
   private boolean myHasEnclosingClass;
   private List<Boolean> myStrictParameters = Collections.emptyList();
+  private List<LevelVariable> myLevelParameters;
 
   public enum HiddenStatus { NOT_HIDDEN, HIDDEN, REALLY_HIDDEN }
 
@@ -88,6 +91,15 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
   @Override
   public @NotNull Set<? extends Definition> getRecursiveDefinitions() {
     return myRecursiveDefinitions;
+  }
+
+  @Override
+  public List<LevelVariable> getLevelParameters() {
+    return myLevelParameters;
+  }
+
+  public void setLevelParameters(List<LevelVariable> parameters) {
+    myLevelParameters = parameters;
   }
 
   public void setRecursiveDefinitions(Set<Definition> recursiveDefinitions) {
@@ -200,28 +212,19 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
   }
 
   @Override
-  public Expression getTypeWithParams(List<? super DependentLink> params, LevelPair levels) {
+  public Expression getTypeWithParams(List<? super DependentLink> params, Levels levels) {
     if (!status().headerIsOK()) {
       return null;
     }
 
     ExprSubstitution subst = new ExprSubstitution();
-    params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myParameters, subst, levels)));
-    return myResultType.subst(subst, levels);
+    LevelSubstitution levelSubst = levels.makeSubstitution(this);
+    params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myParameters, subst, levelSubst)));
+    return myResultType.subst(subst, levelSubst);
   }
 
   @Override
-  public Expression getDefCall(LevelPair levels, List<Expression> arguments) {
+  public Expression getDefCall(Levels levels, List<Expression> arguments) {
     return FunCallExpression.make(this, levels, arguments);
-  }
-
-  @Override
-  public void fill() {
-    if (myParameters == null) {
-      myParameters = EmptyDependentLink.getInstance();
-    }
-    if (myResultType == null) {
-      myResultType = new ErrorExpression();
-    }
   }
 }

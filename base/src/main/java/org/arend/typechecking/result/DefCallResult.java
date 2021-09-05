@@ -7,8 +7,8 @@ import org.arend.core.definition.Definition;
 import org.arend.core.expr.*;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelPair;
-import org.arend.core.subst.LevelSubstitution;
+import org.arend.core.subst.Levels;
+import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.prelude.Prelude;
@@ -22,12 +22,12 @@ import java.util.List;
 public class DefCallResult implements TResult {
   private final Concrete.ReferenceExpression myDefCall;
   private final Definition myDefinition;
-  private final LevelPair myLevels;
+  private final Levels myLevels;
   private final List<Expression> myArguments;
   private List<DependentLink> myParameters;
   private Expression myResultType;
 
-  private DefCallResult(Concrete.ReferenceExpression defCall, Definition definition, LevelPair levels, List<Expression> arguments, List<DependentLink> parameters, Expression resultType) {
+  private DefCallResult(Concrete.ReferenceExpression defCall, Definition definition, Levels levels, List<Expression> arguments, List<DependentLink> parameters, Expression resultType) {
     myDefCall = defCall;
     myDefinition = definition;
     myLevels = levels;
@@ -36,7 +36,7 @@ public class DefCallResult implements TResult {
     myResultType = resultType;
   }
 
-  public static TResult makeTResult(Concrete.ReferenceExpression defCall, Definition definition, LevelPair levels) {
+  public static TResult makeTResult(Concrete.ReferenceExpression defCall, Definition definition, Levels levels) {
     List<DependentLink> parameters = new ArrayList<>();
     Expression resultType = definition.getTypeWithParams(parameters, levels);
 
@@ -47,7 +47,7 @@ public class DefCallResult implements TResult {
     }
   }
 
-  public static TResult makePathType(Concrete.ReferenceExpression defCall, boolean isInfix, LevelPair levels, Sort resultSort) {
+  public static TResult makePathType(Concrete.ReferenceExpression defCall, boolean isInfix, Levels levels, Sort resultSort) {
     Definition definition = isInfix ? Prelude.PATH_INFIX : Prelude.PATH;
     List<DependentLink> parameters = new ArrayList<>();
     definition.getTypeWithParams(parameters, levels);
@@ -156,7 +156,7 @@ public class DefCallResult implements TResult {
     return myArguments;
   }
 
-  public LevelPair getLevels() {
+  public Levels getLevels() {
     return myLevels;
   }
 }

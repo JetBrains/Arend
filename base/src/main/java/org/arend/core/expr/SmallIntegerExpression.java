@@ -45,11 +45,7 @@ public class SmallIntegerExpression extends IntegerExpression {
 
   @Override
   public IntegerExpression pred() {
-    if (myInteger > 0) {
-      return new SmallIntegerExpression(myInteger - 1);
-    }
-    int newInt = myInteger - 1;
-    return newInt > 0 ? new BigIntegerExpression(BigInteger.valueOf(myInteger).subtract(BigInteger.ONE)) : new SmallIntegerExpression(newInt);
+    return myInteger > 0 ? new SmallIntegerExpression(myInteger - 1) : null;
   }
 
   @Override

@@ -1,12 +1,17 @@
 package org.arend.naming.reference;
 
+import org.arend.term.abs.Abstract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
 public interface ClassReferable extends LocatedReferable {
   boolean isRecord();
+  @Nullable Abstract.LevelParameters getPLevelParameters();
+  @Nullable Abstract.LevelParameters getHLevelParameters();
   @NotNull List<? extends ClassReferable> getSuperClassReferences();
+  boolean hasLevels(int index);
   @NotNull Collection<? extends FieldReferable> getFieldReferables();
   @NotNull Collection<? extends Referable> getImplementedFields();
   @NotNull Collection<? extends GlobalReferable> getDynamicReferables();

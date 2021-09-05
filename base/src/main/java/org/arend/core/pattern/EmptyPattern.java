@@ -9,7 +9,7 @@ import org.arend.core.expr.SigmaExpression;
 import org.arend.core.expr.TupleExpression;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelSubstitution;
+import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.core.body.CorePattern;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.error.ErrorReporter;

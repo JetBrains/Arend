@@ -3,8 +3,9 @@ package org.arend.typechecking.covariance;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.expr.*;
-import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
+import org.arend.core.subst.LevelPair;
+import org.arend.core.subst.Levels;
 import org.arend.prelude.Prelude;
 
 import java.util.Map;
@@ -20,7 +21,7 @@ public abstract class CovarianceChecker {
     return checkNonCovariant(expr);
   }
 
-  protected boolean checkLevels(Level pLevel, Level hLevel, DefCallExpression defCall) {
+  protected boolean checkLevels(Levels levels, DefCallExpression defCall) {
     return false;
   }
 
@@ -75,7 +76,7 @@ public abstract class CovarianceChecker {
 
     if (expr instanceof UniverseExpression) {
       Sort sort = ((UniverseExpression) expr).getSort();
-      return checkLevels(sort.getPLevel(), sort.getHLevel(), null);
+      return checkLevels(new LevelPair(sort.getPLevel(), sort.getHLevel()), null);
     }
 
     if (expr instanceof PiExpression) {
@@ -100,7 +101,7 @@ public abstract class CovarianceChecker {
 
     if (expr instanceof DataCallExpression && (allowData() || ((DataCallExpression) expr).getDefinition() == Prelude.PATH)) {
       DataCallExpression dataCall = (DataCallExpression) expr;
-      if (checkLevels(dataCall.getPLevel(), dataCall.getHLevel(), dataCall)) {
+      if (checkLevels(dataCall.getLevels(), dataCall)) {
         return true;
       }
       int i = 0;
@@ -121,7 +122,7 @@ public abstract class CovarianceChecker {
 
     if (expr instanceof ClassCallExpression) {
       ClassCallExpression classCall = (ClassCallExpression) expr;
-      if (checkLevels(classCall.getPLevel(), classCall.getHLevel(), classCall)) {
+      if (checkLevels(classCall.getLevels(), classCall)) {
         return true;
       }
       for (Map.Entry<ClassField, Expression> entry : classCall.getImplementedHere().entrySet()) {
@@ -140,7 +141,7 @@ public abstract class CovarianceChecker {
 
     if (expr instanceof FunCallExpression && ((FunCallExpression) expr).getDefinition() == Prelude.PATH_INFIX) {
       FunCallExpression funCall = (FunCallExpression) expr;
-      if (checkLevels(funCall.getPLevel(), funCall.getHLevel(), funCall)) {
+      if (checkLevels(funCall.getLevels(), funCall)) {
         return true;
       }
       if (check(funCall.getDefCallArguments().get(0))) {

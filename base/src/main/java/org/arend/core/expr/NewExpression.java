@@ -70,12 +70,12 @@ public class NewExpression extends Expression implements CoreNewExpression {
 
   public Expression getImplementationHere(ClassField field) {
     Expression impl = myClassCall.getImplementationHere(field, this);
-    return impl != null ? impl : FieldCallExpression.make(field, myClassCall.getLevels(), myRenewExpression);
+    return impl != null ? impl : FieldCallExpression.make(field, myRenewExpression);
   }
 
   public Expression getImplementation(ClassField field) {
     Expression impl = myClassCall.getImplementation(field, this);
-    return impl != null ? impl : FieldCallExpression.make(field, myClassCall.getLevels(), myRenewExpression);
+    return impl != null ? impl : FieldCallExpression.make(field, myRenewExpression);
   }
 
   @Override
@@ -95,7 +95,7 @@ public class NewExpression extends Expression implements CoreNewExpression {
 
   @Override
   public Decision isWHNF() {
-    if (myClassCall.getDefinition() != Prelude.ARRAY) {
+    if (myClassCall.getDefinition() != Prelude.DEP_ARRAY) {
       return Decision.YES;
     }
 
@@ -105,7 +105,7 @@ public class NewExpression extends Expression implements CoreNewExpression {
 
   @Override
   public Expression getStuckExpression() {
-    return myClassCall.getDefinition() == Prelude.ARRAY ? getImplementation(Prelude.ARRAY_LENGTH).getStuckExpression() : null;
+    return myClassCall.getDefinition() == Prelude.DEP_ARRAY ? getImplementation(Prelude.ARRAY_LENGTH).getStuckExpression() : null;
   }
 
   @NotNull
@@ -122,7 +122,7 @@ public class NewExpression extends Expression implements CoreNewExpression {
       }
       Expression impl = field.isProperty() ? null : myClassCall.getImplementationHere(field, this);
       if (impl == null) {
-        impl = FieldCallExpression.make(field, myClassCall.getLevels(), myRenewExpression, false);
+        impl = FieldCallExpression.make(field, myRenewExpression, false);
       }
       implementations.put(field, impl);
     }

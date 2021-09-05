@@ -8,7 +8,7 @@ import org.arend.core.expr.type.TypeExpression;
 import org.arend.core.expr.visitor.BaseExpressionVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelSubstitution;
+import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 
 public class MinimizeLevelVisitor extends BaseExpressionVisitor<Void, Type> {

@@ -2,7 +2,6 @@ package org.arend.naming.renamer;
 
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.param.UntypedDependentLink;
-import org.arend.core.subst.LevelPair;
 import org.arend.ext.variable.Variable;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Definition;
@@ -39,7 +38,7 @@ public class Renamer implements VariableRenamer {
     if (var instanceof Binding && !(var instanceof UntypedDependentLink))
       typeExpr = ((Binding) var).getTypeExpr();
     else if (var instanceof ClassField)
-      typeExpr = ((ClassField) var).getType(LevelPair.STD).getCodomain();
+      typeExpr = ((ClassField) var).getType().getCodomain();
 
     Character c = typeExpr != null ? getTypeStartingCharacter(typeExpr): null;
     if (c == null && name != null && !name.isEmpty() && !name.equals("_")) {

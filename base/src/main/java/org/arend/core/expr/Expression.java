@@ -19,7 +19,7 @@ import org.arend.core.expr.type.TypeExpression;
 import org.arend.core.expr.visitor.*;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelSubstitution;
+import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.error.IncorrectExpressionException;
 import org.arend.ext.core.context.CoreBinding;
@@ -97,6 +97,10 @@ public abstract class Expression implements Body, CoreExpression {
     return CompareVisitor.compare(equations, CMP.LE, this, type, Type.OMEGA, sourceNode);
   }
 
+  public Expression pred() {
+    return null;
+  }
+
   public Sort toSort() {
     UniverseExpression universe = normalize(NormalizationMode.WHNF).cast(UniverseExpression.class);
     return universe == null ? null : universe.getSort();
@@ -112,7 +116,7 @@ public abstract class Expression implements Body, CoreExpression {
       try {
         return accept(GetTypeVisitor.INSTANCE, null);
       } catch (IncorrectExpressionException e) {
-        return null;
+        return new ErrorExpression();
       }
     } else {
       return accept(GetTypeVisitor.NN_INSTANCE, null);

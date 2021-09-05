@@ -44,6 +44,7 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
 
   public boolean check(Definition definition) {
     myChecker.clear();
+    myChecker.setDefinition(definition);
     try {
       myChecker.checkDependentLink(definition.getParameters(), Type.OMEGA, null);
 
@@ -273,7 +274,7 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
         return false;
       }
 
-      PiExpression fieldType = definition.getFieldType(field, LevelPair.STD);
+      PiExpression fieldType = definition.getFieldType(field);
       myChecker.addBinding(fieldType.getParameters(), fieldType.getCodomain());
       Expression typeType = fieldType.getCodomain().accept(myChecker, Type.OMEGA);
       myChecker.removeBinding(fieldType.getParameters());

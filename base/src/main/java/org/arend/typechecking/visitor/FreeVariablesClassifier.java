@@ -58,7 +58,7 @@ public class FreeVariablesClassifier implements ExpressionVisitor<Boolean, FreeV
 
   @Override
   public Result visitFunCall(FunCallExpression expr, Boolean good) {
-    return visitList(expr.getDefCallArguments(), good && expr.getDefinition() == Prelude.PATH_INFIX);
+    return visitList(expr.getDefCallArguments(), good && (expr.getDefinition() == Prelude.PATH_INFIX || expr.getDefinition() == Prelude.ARRAY));
   }
 
   @Override

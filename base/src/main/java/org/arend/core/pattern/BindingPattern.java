@@ -5,7 +5,7 @@ import org.arend.core.definition.Definition;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.ReferenceExpression;
 import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelSubstitution;
+import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.core.body.CorePattern;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.error.ErrorReporter;

@@ -12,8 +12,8 @@ import java.util.Collections;
 import java.util.List;
 
 public class ExpressionFactory {
-  public static Expression FieldCall(ClassField definition, LevelPair levels, Expression thisExpr) {
-    return FieldCallExpression.make(definition, levels, thisExpr);
+  public static Expression FieldCall(ClassField definition, Expression thisExpr) {
+    return FieldCallExpression.make(definition, thisExpr);
   }
 
   public static DataCallExpression Interval() {

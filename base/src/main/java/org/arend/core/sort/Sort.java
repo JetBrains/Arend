@@ -2,10 +2,8 @@ package org.arend.core.sort;
 
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
-import org.arend.core.definition.UniverseKind;
 import org.arend.core.expr.UniverseExpression;
-import org.arend.core.subst.LevelSubstitution;
-import org.arend.core.subst.LevelPair;
+import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.core.level.CoreSort;
 import org.arend.ext.core.ops.CMP;
 import org.arend.term.concrete.Concrete;
@@ -19,12 +17,7 @@ public class Sort implements CoreSort {
 
   public static final Sort PROP = new Sort(new Level(0), new Level(-1));
   public static final Sort SET0 = new Sort(new Level(0), new Level(0));
-  public static final Sort STD = new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR)) {
-    @Override
-    public LevelSubstitution toLevelSubstitution() {
-      return LevelSubstitution.EMPTY;
-    }
-  };
+  public static final Sort STD = new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR));
 
   public static Sort SetOfLevel(int pLevel) {
     return new Sort(pLevel, 0);
@@ -71,18 +64,7 @@ public class Sort implements CoreSort {
   }
 
   public Sort max(Sort sort) {
-    if (isProp()) {
-      return sort;
-    }
-    if (sort.isProp()) {
-      return this;
-    }
-    if (myPLevel.getVar() != null && sort.myPLevel.getVar() != null && myPLevel.getVar() != sort.myPLevel.getVar() ||
-        myHLevel.getVar() != null && sort.myHLevel.getVar() != null && myHLevel.getVar() != sort.myHLevel.getVar()) {
-      return null;
-    } else {
-      return new Sort(myPLevel.max(sort.myPLevel), myHLevel.max(sort.myHLevel));
-    }
+    return isProp() ? sort : sort.isProp() ? this : new Sort(myPLevel.max(sort.myPLevel), myHLevel.max(sort.myHLevel));
   }
 
   @Override
@@ -96,11 +78,7 @@ public class Sort implements CoreSort {
   }
 
   public boolean isStd() {
-    return myPLevel.isVarOnly() && myPLevel.getVar() == LevelVariable.PVAR && myHLevel.isVarOnly() && myHLevel.getVar() == LevelVariable.HVAR;
-  }
-
-  public LevelSubstitution toLevelSubstitution() {
-    return isStd() ? LevelSubstitution.EMPTY : new LevelPair(myPLevel, myHLevel);
+    return myPLevel.isVarOnly() && myPLevel.getVar().equals(LevelVariable.PVAR) && myHLevel.isVarOnly() && myHLevel.getVar().equals(LevelVariable.HVAR);
   }
 
   private static boolean compareProp(Sort sort, Equations equations, Concrete.SourceNode sourceNode) {
@@ -146,10 +124,6 @@ public class Sort implements CoreSort {
     equations.addVariable(pl);
     equations.addVariable(hl);
     return new Sort(new Level(pl), new Level(hl));
-  }
-
-  public static Sort generateInferVars(Equations equations, UniverseKind universeKind, Concrete.SourceNode sourceNode) {
-    return generateInferVars(equations, universeKind != UniverseKind.NO_UNIVERSES, sourceNode);
   }
 
   @Override

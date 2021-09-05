@@ -216,7 +216,7 @@ public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean>
 
   @Override
   public Boolean visitNew(NewExpression expression, P param) {
-    return expression.getRenewExpression() != null && expression.getRenewExpression().accept(this, param) || expression.getClassCall().accept(this, param);
+    return expression.getRenewExpression() != null && expression.getRenewExpression().accept(this, param) || visitClassCall(expression.getClassCall(), param);
   }
 
   @Override

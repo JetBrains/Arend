@@ -1,5 +1,7 @@
 package org.arend.core.context.binding;
 
+import org.arend.core.context.binding.inference.InferenceLevelVariable;
+import org.arend.ext.core.ops.CMP;
 import org.arend.ext.variable.Variable;
 
 public interface LevelVariable extends Variable {
@@ -11,7 +13,11 @@ public interface LevelVariable extends Variable {
       return 0;
     }
   }
+
   LvlType getType();
+  LevelVariable max(LevelVariable other);
+  LevelVariable min(LevelVariable other);
+  boolean compare(LevelVariable other, CMP cmp);
 
   default int getMinValue() {
     return getType().getMinValue();
@@ -33,8 +39,28 @@ public interface LevelVariable extends Variable {
     }
 
     @Override
+    public LevelVariable max(LevelVariable other) {
+      return other instanceof InferenceLevelVariable || getType() != other.getType() ? null : other;
+    }
+
+    @Override
+    public LevelVariable min(LevelVariable other) {
+      return other instanceof InferenceLevelVariable || getType() != other.getType() ? null : this;
+    }
+
+    @Override
+    public boolean compare(LevelVariable other, CMP cmp) {
+      return this == other || other instanceof ParamLevelVariable && other.getType() == LvlType.PLVL && (cmp == CMP.LE || ((ParamLevelVariable) other).getSize() == 0);
+    }
+
+    @Override
     public String toString() {
       return "\\lp";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      return o instanceof LevelVariable && compare((LevelVariable) o, CMP.EQ);
     }
   };
 
@@ -45,8 +71,28 @@ public interface LevelVariable extends Variable {
     }
 
     @Override
+    public LevelVariable max(LevelVariable other) {
+      return other instanceof InferenceLevelVariable || getType() != other.getType() ? null : other;
+    }
+
+    @Override
+    public LevelVariable min(LevelVariable other) {
+      return other instanceof InferenceLevelVariable || getType() != other.getType() ? null : this;
+    }
+
+    @Override
+    public boolean compare(LevelVariable other, CMP cmp) {
+      return this == other || other instanceof ParamLevelVariable && other.getType() == LvlType.HLVL && (cmp == CMP.LE || ((ParamLevelVariable) other).getSize() == 0);
+    }
+
+    @Override
     public String toString() {
       return "\\lh";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      return o instanceof LevelVariable && compare((LevelVariable) o, CMP.EQ);
     }
   };
 }

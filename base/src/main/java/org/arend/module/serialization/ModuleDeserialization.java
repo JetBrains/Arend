@@ -26,12 +26,14 @@ public class ModuleDeserialization {
   private final List<Pair<DefinitionProtos.Definition, Definition>> myDefinitions = new ArrayList<>();
   private final SerializableKeyRegistryImpl myKeyRegistry;
   private final DefinitionListener myDefinitionListener;
+  private final boolean myPrelude;
 
-  public ModuleDeserialization(ModuleProtos.Module moduleProto, ReferableConverter referableConverter, SerializableKeyRegistryImpl keyRegistry, DefinitionListener definitionListener) {
+  public ModuleDeserialization(ModuleProtos.Module moduleProto, ReferableConverter referableConverter, SerializableKeyRegistryImpl keyRegistry, DefinitionListener definitionListener, boolean isPrelude) {
     myModuleProto = moduleProto;
     myReferableConverter = referableConverter;
     myKeyRegistry = keyRegistry;
     myDefinitionListener = definitionListener;
+    myPrelude = isPrelude;
   }
 
   public ModuleProtos.Module getModuleProto() {
@@ -226,14 +228,20 @@ public class ModuleDeserialization {
     if (groupProto.hasDefinition() && kind == GlobalReferable.Kind.CLASS) {
       dynamicReferables = new ArrayList<>();
       fieldReferables = new ArrayList<>();
-      referable = new ClassReferableImpl(readPrecedence(referableProto.getPrecedence()), referableProto.getName(), groupProto.getDefinition().getClass_().getIsRecord(), new ArrayList<>(), fieldReferables, dynamicReferables, modulePath);
+      DefinitionProtos.Definition.ClassData classProto = groupProto.getDefinition().getClass_();
+      referable = new ClassReferableImpl(readPrecedence(referableProto.getPrecedence()), referableProto.getName(), classProto.getIsRecord(), null, null, new ArrayList<>(), new ArrayList<>(), fieldReferables, dynamicReferables, modulePath);
     } else {
       dynamicReferables = null;
       fieldReferables = new ArrayList<>(0);
       if (parent == null) {
         referable = new FullModuleReferable(modulePath);
       } else {
-        referable = new LocatedReferableImpl(readPrecedence(referableProto.getPrecedence()), referableProto.getName(), parent.getReferable(), kind);
+        String name = referableProto.getName();
+        if (myPrelude && kind == GlobalReferable.Kind.FUNCTION && Prelude.ARRAY_NAME.equals(name)) {
+          referable = new TypedLocatedReferable(readPrecedence(referableProto.getPrecedence()), name, parent.getReferable(), kind, null, null);
+        } else {
+          referable = new LocatedReferableImpl(readPrecedence(referableProto.getPrecedence()), name, parent.getReferable(), kind);
+        }
       }
     }
 

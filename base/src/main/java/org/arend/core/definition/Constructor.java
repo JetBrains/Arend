@@ -1,5 +1,6 @@
 package org.arend.core.definition;
 
+import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.elimtree.Body;
@@ -7,13 +8,15 @@ import org.arend.core.expr.ConCallExpression;
 import org.arend.core.expr.DataCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.ReferenceExpression;
+import org.arend.core.pattern.ConstructorExpressionPattern;
 import org.arend.core.pattern.ExpressionPattern;
 import org.arend.core.pattern.Pattern;
 import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelPair;
+import org.arend.core.subst.Levels;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.definition.CoreConstructor;
 import org.arend.core.elimtree.BranchKey;
+import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.naming.reference.TCDefReferable;
 import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
@@ -62,6 +65,11 @@ public class Constructor extends Definition implements Function, BranchKey, Core
     return myDataType.getRecursiveDefinitions();
   }
 
+  @Override
+  public List<LevelVariable> getLevelParameters() {
+    return myDataType.getLevelParameters();
+  }
+
   public int getRecursiveParameter() {
     return mySingleRecursiveParameter;
   }
@@ -77,8 +85,8 @@ public class Constructor extends Definition implements Function, BranchKey, Core
   }
 
   @Override
-  public int getNumberOfParameters() {
-    return DependentLink.Helper.size(myParameters);
+  public DependentLink getParameters(ConstructorExpressionPattern pattern) {
+    return myParameters;
   }
 
   public void setParameters(DependentLink parameters) {
@@ -123,11 +131,11 @@ public class Constructor extends Definition implements Function, BranchKey, Core
     }
   }
 
-  public DataCallExpression getDataTypeExpression(LevelPair levels) {
+  public DataCallExpression getDataTypeExpression(Levels levels) {
     return getDataTypeExpression(levels, null);
   }
 
-  public DataCallExpression getDataTypeExpression(LevelPair levels, List<? extends Expression> dataTypeArguments) {
+  public DataCallExpression getDataTypeExpression(Levels levels, List<? extends Expression> dataTypeArguments) {
     assert myDataType.status().headerIsOK();
 
     List<Expression> arguments;
@@ -147,7 +155,7 @@ public class Constructor extends Definition implements Function, BranchKey, Core
           arguments.add(pattern.toExpression());
         }
       } else {
-        arguments = ExpressionPattern.applyClauseArguments(myPatterns, dataTypeArguments, levels);
+        arguments = ExpressionPattern.applyClauseArguments(myPatterns, dataTypeArguments, levels.makeSubstitution(getDataType()));
       }
     }
 
@@ -213,40 +221,34 @@ public class Constructor extends Definition implements Function, BranchKey, Core
   }
 
   @Override
-  public DataCallExpression getTypeWithParams(List<? super DependentLink> params, LevelPair levels) {
+  public DataCallExpression getTypeWithParams(List<? super DependentLink> params, Levels levels) {
     DataCallExpression resultType = getDataTypeExpression(levels);
     DependentLink parameters = getDataTypeParameters();
     ExprSubstitution substitution = new ExprSubstitution();
     List<DependentLink> paramList = null;
+    LevelSubstitution levelSubst = levels.makeSubstitution(getDataType());
     if (parameters.hasNext()) {
-      parameters = DependentLink.Helper.subst(parameters, substitution, levels);
+      parameters = DependentLink.Helper.subst(parameters, substitution, levelSubst);
       for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
         link.setExplicit(false);
       }
       paramList = DependentLink.Helper.toList(parameters);
       params.addAll(paramList);
     }
-    DependentLink conParams = DependentLink.Helper.subst(myParameters, substitution, levels);
+    DependentLink conParams = DependentLink.Helper.subst(myParameters, substitution, levelSubst);
     if (paramList != null && !paramList.isEmpty()) {
       paramList.get(paramList.size() - 1).setNext(conParams);
     }
     params.addAll(DependentLink.Helper.toList(conParams));
-    resultType = (DataCallExpression) resultType.accept(new SubstVisitor(substitution, levels), null);
+    resultType = (DataCallExpression) resultType.accept(new SubstVisitor(substitution, levelSubst), null);
     return resultType;
   }
 
   @Override
-  public Expression getDefCall(LevelPair levels, List<Expression> args) {
+  public Expression getDefCall(Levels levels, List<Expression> args) {
     int dataTypeArgsNumber = DependentLink.Helper.size(getDataTypeParameters());
     List<Expression> dataTypeArgs = new ArrayList<>(dataTypeArgsNumber);
     dataTypeArgs.addAll(args.subList(0, dataTypeArgsNumber));
     return ConCallExpression.make(this, levels, dataTypeArgs, args.subList(dataTypeArgsNumber, args.size()));
-  }
-
-  @Override
-  public void fill() {
-    if (myParameters == null) {
-      myParameters = EmptyDependentLink.getInstance();
-    }
   }
 }

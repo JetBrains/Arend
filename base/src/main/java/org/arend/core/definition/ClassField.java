@@ -1,11 +1,11 @@
 package org.arend.core.definition;
 
+import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
-import org.arend.core.context.param.TypedSingleDependentLink;
 import org.arend.core.expr.*;
 import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelPair;
+import org.arend.core.subst.Levels;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.definition.CoreClassField;
 import org.arend.naming.reference.TCFieldReferable;
@@ -40,6 +40,11 @@ public class ClassField extends Definition implements CoreClassField {
     return (TCFieldReferable) super.getReferable();
   }
 
+  @Override
+  public List<? extends LevelVariable> getLevelParameters() {
+    return myParentClass.getLevelParameters();
+  }
+
   @NotNull
   @Override
   public ClassDefinition getParentClass() {
@@ -50,8 +55,12 @@ public class ClassField extends Definition implements CoreClassField {
     myType = type;
   }
 
-  public PiExpression getType(LevelPair levels) {
-    return levels.isSTD() ? myType : (PiExpression) new SubstVisitor(new ExprSubstitution(), levels).visitPi(myType, null);
+  public PiExpression getType(Levels levels) {
+    return (PiExpression) new SubstVisitor(new ExprSubstitution(), levels.makeSubstitution(getParentClass())).visitPi(myType, null);
+  }
+
+  public PiExpression getType() {
+    return myType;
   }
 
   public void setNumberOfParameters(int numberOfParameters) {
@@ -145,22 +154,14 @@ public class ClassField extends Definition implements CoreClassField {
   }
 
   @Override
-  public Expression getTypeWithParams(List<? super DependentLink> params, LevelPair levels) {
+  public Expression getTypeWithParams(List<? super DependentLink> params, Levels levels) {
     PiExpression type = getType(levels);
     params.add(type.getParameters());
     return type.getCodomain();
   }
 
   @Override
-  public Expression getDefCall(LevelPair levels, List<Expression> args) {
-    return FieldCallExpression.make(this, levels, args.get(0));
-  }
-
-  @Override
-  public void fill() {
-    if (myType == null) {
-      ClassCallExpression classCall = new ClassCallExpression(myParentClass, LevelPair.STD);
-      myType = new PiExpression(classCall.getSort(), new TypedSingleDependentLink(false, "this", classCall), new ErrorExpression());
-    }
+  public Expression getDefCall(Levels levels, List<Expression> args) {
+    return FieldCallExpression.make(this, args.get(0));
   }
 }

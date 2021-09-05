@@ -4,6 +4,7 @@ import org.arend.core.context.binding.Binding;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelPair;
 import org.arend.ext.core.expr.CoreAbsExpression;
+import org.arend.ext.core.level.LevelSubstitution;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -28,7 +29,11 @@ public class AbsExpression implements CoreAbsExpression {
     return myExpression;
   }
 
-  public Expression apply(Expression argument, LevelPair levels) {
-    return myBinding == null ? myExpression : myExpression.subst(new ExprSubstitution(myBinding, argument), levels);
+  public Expression apply(Expression argument, LevelSubstitution levelSubst) {
+    return myExpression.subst(myBinding == null ? new ExprSubstitution() : new ExprSubstitution(myBinding, argument), levelSubst);
+  }
+
+  public AbsExpression subst(ExprSubstitution substitution, LevelSubstitution levelSubst) {
+    return new AbsExpression(myBinding, myExpression.subst(substitution, levelSubst));
   }
 }

@@ -5,7 +5,7 @@ import org.arend.core.expr.ConCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.ExpressionFactory;
 import org.arend.core.expr.IntegerExpression;
-import org.arend.core.subst.LevelPair;
+import org.arend.core.subst.Levels;
 import org.arend.prelude.Prelude;
 
 import java.util.ArrayList;
@@ -40,7 +40,7 @@ public abstract class ExpressionTransformer<P> extends BaseExpressionVisitor<P, 
     return null;
   }
 
-  protected ConCallExpression makeConCall(Constructor constructor, LevelPair levels, List<Expression> dataTypeArguments, List<Expression> arguments) {
+  protected ConCallExpression makeConCall(Constructor constructor, Levels levels, List<Expression> dataTypeArguments, List<Expression> arguments) {
     return new ConCallExpression(constructor, levels, dataTypeArguments, arguments);
   }
 

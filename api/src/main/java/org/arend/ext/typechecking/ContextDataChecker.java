@@ -102,8 +102,8 @@ public class ContextDataChecker {
   }
 
   protected boolean checkLevels(ConcreteReferenceExpression refExpr, ErrorReporter errorReporter) {
-    if (withoutLevels() && (refExpr.getPLevel() != null || refExpr.getHLevel() != null)) {
-      errorReporter.report(new IgnoredLevelsError(refExpr.getPLevel(), refExpr.getHLevel()));
+    if (withoutLevels() && (refExpr.getPLevels() != null || refExpr.getHLevels() != null)) {
+      errorReporter.report(new IgnoredLevelsError(refExpr));
       return false;
     } else {
       return true;

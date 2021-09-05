@@ -1,11 +1,10 @@
-package org.arend.core.subst;
+package org.arend.ext.core.level;
 
 import org.arend.ext.variable.Variable;
-import org.arend.core.sort.Level;
 
 public interface LevelSubstitution {
   boolean isEmpty();
-  Level get(Variable variable);
+  CoreLevel get(Variable variable);
   LevelSubstitution subst(LevelSubstitution substitution);
 
   LevelSubstitution EMPTY = new LevelSubstitution() {
@@ -15,7 +14,7 @@ public interface LevelSubstitution {
     }
 
     @Override
-    public Level get(Variable variable) {
+    public CoreLevel get(Variable variable) {
       return null;
     }
 

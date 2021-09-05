@@ -278,35 +278,51 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     }
   }
 
-  @Override
-  public Void visitReference(Concrete.ReferenceExpression expr, Precedence prec) {
-    boolean parens = expr.getReferent() instanceof GlobalReferable && ((GlobalReferable) expr.getReferent()).getRepresentablePrecedence().isInfix || expr.getPLevel() != null || expr.getHLevel() != null;
+  private void printLevels(List<Concrete.LevelExpression> levels) {
+    if (levels != null) {
+      if (levels.size() == 1) {
+        levels.get(0).accept(this, new Precedence((byte) (Concrete.AppExpression.PREC + 1)));
+      } else {
+        myBuilder.append('(');
+        boolean first = true;
+        for (Concrete.LevelExpression level : levels) {
+          if (first) {
+            first = false;
+          } else {
+            myBuilder.append(", ");
+          }
+          level.accept(this, new Precedence(Expression.PREC));
+        }
+        myBuilder.append(')');
+      }
+    } else {
+      myBuilder.append('_');
+    }
+  }
+
+  private void visitReference(Concrete.ReferenceExpression expr, Precedence prec, boolean printLevelsKeyword) {
+    boolean parens = expr.getReferent() instanceof GlobalReferable && ((GlobalReferable) expr.getReferent()).getRepresentablePrecedence().isInfix || ((expr.getPLevels() != null || expr.getHLevels() != null) && prec.priority > Concrete.AppExpression.PREC);
     if (parens) {
       myBuilder.append('(');
     }
     printReferenceName(expr, prec);
 
-    if (expr.getPLevel() != null || expr.getHLevel() != null) {
-      myBuilder.append(" \\levels ");
-      if (expr.getHLevel() instanceof Concrete.NumberLevelExpression && ((Concrete.NumberLevelExpression) expr.getHLevel()).getNumber() == -1) {
-        myBuilder.append("\\Prop");
-      } else {
-        if (expr.getPLevel() != null) {
-          expr.getPLevel().accept(this, new Precedence((byte) (Concrete.AppExpression.PREC + 1)));
-        } else {
-          myBuilder.append('_');
-        }
+    if (expr.getPLevels() != null || expr.getHLevels() != null) {
+      myBuilder.append(printLevelsKeyword ? " \\levels " : " ");
+      printLevels(expr.getPLevels());
+      if (printLevelsKeyword || expr.getHLevels() != null) {
         myBuilder.append(' ');
-        if (expr.getHLevel() != null) {
-          expr.getHLevel().accept(this, new Precedence((byte) (Concrete.AppExpression.PREC + 1)));
-        } else {
-          myBuilder.append('_');
-        }
+        printLevels(expr.getHLevels());
       }
     }
     if (parens) {
       myBuilder.append(')');
     }
+  }
+
+  @Override
+  public Void visitReference(Concrete.ReferenceExpression expr, Precedence prec) {
+    visitReference(expr, prec, true);
     return null;
   }
 
@@ -497,6 +513,12 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   }
 
   @Override
+  public Void visitId(Concrete.IdLevelExpression expr, Precedence param) {
+    myBuilder.append(expr.getReferent().getRefName());
+    return null;
+  }
+
+  @Override
   public Void visitSuc(Concrete.SucLevelExpression expr, Precedence prec) {
     if (prec.priority > Concrete.AppExpression.PREC) myBuilder.append('(');
     myBuilder.append("\\suc ");
@@ -516,8 +538,11 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     return null;
   }
 
-  public void prettyPrintInferLevelVar(InferenceLevelVariable variable) {
-    myBuilder.append(variable).append(getVariableNumber(variable));
+  public void prettyPrintLevelVar(LevelVariable variable) {
+    myBuilder.append(variable);
+    if (variable instanceof InferenceLevelVariable) {
+      myBuilder.append(getVariableNumber((InferenceLevelVariable) variable));
+    }
   }
 
   public String getInferLevelVarText(InferenceLevelVariable variable) {
@@ -525,9 +550,9 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   }
 
   @Override
-  public Void visitVar(Concrete.InferVarLevelExpression expr, Precedence param) {
-    InferenceLevelVariable variable = expr.getVariable();
-    prettyPrintInferLevelVar(variable);
+  public Void visitVar(Concrete.VarLevelExpression expr, Precedence param) {
+    LevelVariable variable = expr.getVariable();
+    prettyPrintLevelVar(variable);
     return null;
   }
 
@@ -1373,7 +1398,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
         } else {
           myBuilder.append(", ");
         }
-        visitReference(superClass, new Precedence(Concrete.Expression.PREC));
+        visitReference(superClass, new Precedence(Concrete.Expression.PREC), false);
       }
     }
   }

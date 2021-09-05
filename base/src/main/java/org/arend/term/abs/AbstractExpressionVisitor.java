@@ -9,7 +9,7 @@ import java.math.BigInteger;
 import java.util.Collection;
 
 public interface AbstractExpressionVisitor<P, R> {
-  R visitReference(@Nullable Object data, @NotNull Referable referent, @Nullable Fixity fixity, @Nullable Abstract.LevelExpression level1, @Nullable Abstract.LevelExpression level2, P params);
+  R visitReference(@Nullable Object data, @NotNull Referable referent, @Nullable Fixity fixity, @Nullable Collection<? extends Abstract.LevelExpression> pLevels, @Nullable Collection<? extends Abstract.LevelExpression> hLevels, P params);
   R visitReference(@Nullable Object data, @NotNull Referable referent, int lp, int lh, P params);
   R visitThis(@Nullable Object data, P params);
   R visitLam(@Nullable Object data, @NotNull Collection<? extends Abstract.LamParameter> parameters, /* @NotNull */ @Nullable Abstract.Expression body, P params);

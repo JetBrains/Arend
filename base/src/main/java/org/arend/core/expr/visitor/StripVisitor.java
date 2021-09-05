@@ -118,7 +118,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
         return newExpr.getImplementation(expr.getDefinition()).accept(this, null);
       }
     }
-    return FieldCallExpression.make(expr.getDefinition(), expr.getLevels(), expr.getArgument().accept(this, null));
+    return FieldCallExpression.make(expr.getDefinition(), expr.getArgument().accept(this, null));
   }
 
   @Override
@@ -176,12 +176,14 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public LamExpression visitLam(LamExpression expr, Void params) {
+    expr.setResultSort(visitSort(expr.getResultSort()));
     visitParameters(expr.getParameters());
     return new LamExpression(expr.getResultSort(), expr.getParameters(), expr.getBody().accept(this, null));
   }
 
   @Override
   public PiExpression visitPi(PiExpression expr, Void params) {
+    expr.setResultSort(visitSort(expr.getResultSort()));
     visitParameters(expr.getParameters());
     return new PiExpression(expr.getResultSort(), expr.getParameters(), expr.getCodomain().accept(this, null));
   }
@@ -192,9 +194,13 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
     return expr;
   }
 
+  private Sort visitSort(Sort sort) {
+    return sort.getHLevel().isProp() ? Sort.PROP : sort;
+  }
+
   @Override
   public UniverseExpression visitUniverse(UniverseExpression expr, Void params) {
-    return expr.getSort().getHLevel().isProp() ? new UniverseExpression(Sort.PROP) : expr;
+    return new UniverseExpression(visitSort(expr.getSort()));
   }
 
   @Override
