@@ -3,10 +3,7 @@ package org.arend.typechecking.subexpr;
 import org.arend.core.definition.*;
 import org.arend.core.elimtree.Body;
 import org.arend.core.elimtree.ElimBody;
-import org.arend.core.expr.AbsExpression;
-import org.arend.core.expr.ClassCallExpression;
-import org.arend.core.expr.Expression;
-import org.arend.core.expr.PiExpression;
+import org.arend.core.expr.*;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCFieldReferable;
 import org.arend.term.concrete.Concrete;
@@ -47,13 +44,17 @@ public class CorrespondedSubDefVisitor implements
     } else if (body instanceof Concrete.ElimFunctionBody && coreBody instanceof ElimBody) {
       // Assume they have the same order.
       return visitor.visitElimTree(body.getClauses(), ((ElimBody) coreBody).getClauses());
-    } else if (body instanceof Concrete.CoelimFunctionBody && coreBody == null && coreResultType instanceof ClassCallExpression) {
-      Map<ClassField, Expression> implementations = ((ClassCallExpression) coreResultType).getImplementedHere();
-      for (var coclause : body.getCoClauseElements())
-        if (coclause instanceof Concrete.ClassFieldImpl) {
-          var statementVisited = visitor.visitStatement(implementations, (Concrete.ClassFieldImpl) coclause);
-          if (statementVisited != null) return statementVisited;
+    } else if (body instanceof Concrete.CoelimFunctionBody) {
+      if (coreBody instanceof NewExpression) coreResultType = ((NewExpression) coreBody).getType();
+      if (coreResultType instanceof ClassCallExpression) {
+        Map<ClassField, Expression> implementations = ((ClassCallExpression) coreResultType).getImplementedHere();
+        for (var coclause : body.getCoClauseElements()) {
+          if (coclause instanceof Concrete.ClassFieldImpl) {
+            var statementVisited = visitor.visitStatement(implementations, (Concrete.ClassFieldImpl) coclause);
+            if (statementVisited != null) return statementVisited;
+          }
         }
+      }
     }
     return null;
   }
@@ -73,7 +74,7 @@ public class CorrespondedSubDefVisitor implements
     var parametersResult = visitor
         .visitSigmaParameters(def.getParameters(), coreDef.getParameters());
     if (parametersResult != null) return parametersResult;
-    return visitBody(def.getBody(), coreDef.getActualBody(), coreResultType);
+    return visitBody(def.getBody(), coreDef.getReallyActualBody(), coreResultType);
   }
 
   @Override

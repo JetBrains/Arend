@@ -62,10 +62,12 @@ public class CorrespondedSubDefTest extends TypeCheckingTestCase {
       "\\instance t : T\n" +
         "  | A => 114\n" +
         "  | B => 514\n" +
+        "  | p => idp\n" +
         "  \\where {\n" +
         "    \\class T {\n" +
         "      | A : Nat\n" +
         "      | B : Nat\n" +
+        "      | p : A = A\n" +
         "    }\n" +
         "  }");
     var def = (Concrete.FunctionDefinition) referable.getDefinition();
