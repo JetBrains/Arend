@@ -509,6 +509,11 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
       }
 
       result = myVisitor.visitReference(refExpr);
+    } else if (fun instanceof Concrete.GoalExpression) {
+      for (Concrete.Argument argument : expr.getArguments()) {
+        myVisitor.checkExpr(argument.expression, null);
+      }
+      return myVisitor.checkExpr(fun, null);
     } else {
       result = myVisitor.checkExpr(fun, null);
     }
