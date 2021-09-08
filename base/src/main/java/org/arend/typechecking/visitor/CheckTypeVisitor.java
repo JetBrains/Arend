@@ -96,6 +96,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   private final ArendExtension myArendExtension;
   private TypecheckerState mySavedState;
   private LevelContext myLevelContext;
+  private Definition myDefinition;
 
   private static class DeferredMeta {
     final MetaDefinition meta;
@@ -158,6 +159,10 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   public TypecheckingContext saveTypecheckingContext() {
     return new TypecheckingContext(new LinkedHashMap<>(context), myInstancePool.getInstanceProvider(), myInstancePool.getInstancePool(), myArendExtension, copyUserData(), myLevelContext);
+  }
+
+  public void setDefinition(Definition definition) {
+    myDefinition = definition;
   }
 
   public static CheckTypeVisitor loadTypecheckingContext(TypecheckingContext typecheckingContext, ErrorReporter errorReporter) {
@@ -1666,8 +1671,9 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   public Levels typecheckLevels(Definition def, Concrete.ReferenceExpression expr, Levels defaultLevels, boolean useMinAsDefault) {
     List<Concrete.LevelExpression> pLevels = expr.getPLevels();
     List<Concrete.LevelExpression> hLevels = expr.getHLevels();
+    boolean isUniverseLike = def == myDefinition || def.getUniverseKind() != UniverseKind.NO_UNIVERSES;
     if (pLevels == null && hLevels == null) {
-      return defaultLevels != null ? defaultLevels : useMinAsDefault ? def.makeMinLevels() : def.generateInferVars(myEquations, expr);
+      return defaultLevels != null ? defaultLevels : useMinAsDefault ? def.makeMinLevels() : def.generateInferVars(myEquations, isUniverseLike, expr);
     }
 
     List<? extends LevelVariable> params = def.getLevelParameters();
@@ -1685,7 +1691,6 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
     List<Level> result = new ArrayList<>();
     LevelSubstitution defaultSubst = defaultLevels == null ? null : defaultLevels.makeSubstitution(def);
-    boolean isUniverseLike = def.getUniverseKind() != UniverseKind.NO_UNIVERSES;
     typecheckLevels(pLevels, pParams, defaultSubst, useMinAsDefault, isUniverseLike, expr, result);
     typecheckLevels(hLevels, hParams, defaultSubst, useMinAsDefault, isUniverseLike, expr, result);
     return params == null ? new LevelPair(result.get(0), result.get(1)) : new ListLevels(result);
@@ -1700,7 +1705,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     Levels levels;
     boolean isMin = definition instanceof DataDefinition && !definition.getParameters().hasNext() && definition.getUniverseKind() == UniverseKind.NO_UNIVERSES;
     if (expr.getPLevels() == null && expr.getHLevels() == null) {
-      levels = isMin ? definition.makeMinLevels() : definition.generateInferVars(getEquations(), !withoutUniverses && definition.getUniverseKind() != UniverseKind.NO_UNIVERSES, expr);
+      levels = isMin ? definition.makeMinLevels() : definition.generateInferVars(getEquations(), !withoutUniverses && (definition == myDefinition || definition.getUniverseKind() != UniverseKind.NO_UNIVERSES), expr);
       if (definition == Prelude.PATH || definition == Prelude.PATH_INFIX) {
         LevelPair levelPair = (LevelPair) levels;
         InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, definition.getUniverseKind() != UniverseKind.NO_UNIVERSES, expr);

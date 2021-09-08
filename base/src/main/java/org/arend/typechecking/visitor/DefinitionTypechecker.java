@@ -167,6 +167,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     if (myNewDef) {
       myNewDef = typechecked == null || !typechecked.status().headerIsOK();
     }
+    typechecker.setDefinition(definition);
     if (definition.getResultType() == null) {
       definition.setResultType(new ErrorExpression());
     }
@@ -191,6 +192,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     typechecker.setInstancePool(myInstancePool);
 
     DataDefinition definition = typechecked != null ? (DataDefinition) typechecked : new DataDefinition(def.getData());
+    typechecker.setDefinition(definition);
     if (myNewDef) {
       myNewDef = typechecked == null || typechecked.status().needsTypeChecking();
     }
@@ -223,6 +225,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     ClassDefinition definition = typechecked != null ? (ClassDefinition) typechecked : new ClassDefinition(def.getData());
+    typechecker.setDefinition(definition);
     if (myNewDef) {
       myNewDef = typechecked == null || typechecked.status().needsTypeChecking();
     }
