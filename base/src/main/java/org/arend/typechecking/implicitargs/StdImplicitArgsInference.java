@@ -36,6 +36,8 @@ import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.arend.util.Pair;
 import org.arend.util.SingletonList;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -510,10 +512,25 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
 
       result = myVisitor.visitReference(refExpr);
     } else if (fun instanceof Concrete.GoalExpression) {
+      List<TypecheckingResult> argumentResults = new ArrayList<>();
       for (Concrete.Argument argument : expr.getArguments()) {
-        myVisitor.checkExpr(argument.expression, null);
+        var typecheckedArgument = myVisitor.checkExpr(argument.expression, null);
+        if (typecheckedArgument != null && typecheckedArgument.type instanceof Type) {
+          argumentResults.add(typecheckedArgument);
+        }
       }
-      return myVisitor.checkExpr(fun, null);
+      Expression expectedGoalType = null;
+      if (expectedType != null && argumentResults.size() == expr.getArguments().size()) {
+          expectedGoalType = generatePiExpressionByArguments(expectedType, argumentResults, expr.getArguments(), fun);
+      }
+      TypecheckingResult goalCheckingResult = myVisitor.checkExpr(fun, expectedGoalType);
+      Expression appExpr;
+      if (argumentResults.size() == expr.getArguments().size()) {
+        appExpr = generateAppExpressionByArguments(goalCheckingResult.expression, argumentResults, expr.getArguments());
+      } else {
+        appExpr = goalCheckingResult.expression;
+      }
+      return new TypecheckingResult(appExpr, expectedType);
     } else {
       result = myVisitor.checkExpr(fun, null);
     }
@@ -711,6 +728,28 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
     }
 
     return result;
+  }
+
+  private static Expression generateAppExpressionByArguments(Expression rootFunction, List<@NotNull TypecheckingResult> argumentResults, List<Concrete.@NotNull Argument> arguments) {
+    assert argumentResults.size() == arguments.size();
+    Expression actualFunction;
+    if (arguments.size() == 1) {
+      actualFunction = rootFunction;
+    } else {
+      actualFunction = generateAppExpressionByArguments(rootFunction, argumentResults.subList(0, argumentResults.size() - 1), arguments.subList(0, arguments.size() - 1));
+    }
+    return AppExpression.make(actualFunction, argumentResults.get(argumentResults.size() - 1).expression, arguments.get(argumentResults.size() - 1).isExplicit());
+  }
+
+  private PiExpression generatePiExpressionByArguments(@NotNull Expression codomain,  List<@NotNull TypecheckingResult> argumentResults, List<Concrete.@NotNull Argument> arguments, Concrete.SourceNode node) {
+    Expression actualCodomain;
+    if (argumentResults.size() == 1) {
+      actualCodomain = codomain;
+    } else {
+      actualCodomain = generatePiExpressionByArguments(codomain, argumentResults.subList(1, argumentResults.size()), arguments.subList(1, arguments.size()), node);
+    }
+    var domain = (Type)argumentResults.get(0).type;
+    return new PiExpression(PiExpression.generateUpperBound(domain.getSortOfType(), actualCodomain.getSortOfType(), myVisitor.getEquations(), node), new TypedSingleDependentLink(arguments.get(0).isExplicit(), null, (Type)argumentResults.get(0).type), actualCodomain);
   }
 
   /** Normalizes {@param type}
