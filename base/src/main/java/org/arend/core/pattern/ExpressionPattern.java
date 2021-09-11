@@ -80,4 +80,18 @@ public interface ExpressionPattern extends Pattern, CoreExpressionPattern {
     }
     return true;
   }
+
+  static boolean compare(List<? extends ExpressionPattern> patterns1, List<? extends ExpressionPattern> patterns2) {
+    if (patterns1.size() != patterns2.size()) return false;
+    for (int i = 0; i < patterns1.size(); i++) {
+      if (!compare(patterns1.get(i), patterns2.get(i))) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  static boolean compare(ExpressionPattern pattern1, ExpressionPattern pattern2) {
+    return pattern1.isAbsurd() == pattern2.isAbsurd() && pattern1.getBinding() == pattern2.getBinding() && pattern1.getDefinition() == pattern2.getDefinition() && compare(pattern1.getSubPatterns(), pattern2.getSubPatterns());
+  }
 }

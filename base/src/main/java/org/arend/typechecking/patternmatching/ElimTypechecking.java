@@ -365,7 +365,7 @@ public class ElimTypechecking {
           boolean ok = true;
           for (int j = 0; j < row.size(); j++) {
             Constructor constructor = pair.proj2.get(elimParams.get(elimParams.size() - 1 - j));
-            if (!(constructor == null || row.get(j).getDefinition() == constructor)) {
+            if (!(constructor == null || row.get(j).getBinding() != null || row.get(j).getDefinition() == constructor)) {
               ok = false;
               break;
             }
@@ -576,6 +576,13 @@ public class ElimTypechecking {
     }
 
     List<List<ExpressionPattern>> missingClauses = generateMissingClauses(elimParams.isEmpty() ? DependentLink.Helper.toList(parameters) : elimParams, 0, new ExprSubstitution(), paramSpec, paramSpec2);
+    for (int i = 0; i < missingClauses.size(); i++) {
+      for (int j = i + 1; j < missingClauses.size(); j++) {
+        if (ExpressionPattern.compare(missingClauses.get(i), missingClauses.get(j))) {
+          missingClauses.remove(j--);
+        }
+      }
+    }
 
     if (myLevel != null) {
       missingClauses.removeIf(clause -> numberOfIntervals(clause) > myLevel);

@@ -245,4 +245,27 @@ public class CoverageTest extends TypeCheckingTestCase {
     typeCheckDef("\\func test (p : \\Sigma Nat Nat) : Nat", 1);
     assertThatErrorsAre(missingClauses(1));
   }
+
+  @Test
+  public void varTest() {
+    typeCheckModule(
+      "\\data T (n : Nat) \\with\n" +
+      "  | 0 => conT\n" +
+      "\\data W (n : Nat) (y : T n) \\with\n" +
+      "  | 0, y => conW\n" +
+      "\\func test (n : Nat) (y : T n) (w : W n y) : Nat", 1);
+    assertThatErrorsAre(missingClauses(1));
+  }
+
+  @Test
+  public void varTest2() {
+    typeCheckModule(
+      "\\data T (n : Nat) \\with\n" +
+      "  | 0 => con1\n" +
+      "  | 0 => con2\n" +
+      "\\data W (n : Nat) (x y : T n) \\with\n" +
+      "  | 0, con1, y => con\n" +
+      "\\func test (n : Nat) (x y : T n) (w : W n x y) : Nat", 1);
+    assertThatErrorsAre(missingClauses(1));
+  }
 }
