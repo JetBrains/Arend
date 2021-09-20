@@ -23,7 +23,7 @@ class GenerateVersionTask extends DefaultTask {
             import org.jetbrains.annotations.NotNull;
             public class $className {
               public static final @NotNull String VERSION_STRING = "$taskVersion";
-              public static final @NotNull Version VERSION = new Version(VERSION_STRING);
+              public static final @NotNull Version VERSION = Version.fromString(VERSION_STRING);
             }""".stripIndent()
         outputDir.mkdirs()
         def outFile = new File(outputDir, "${className}.java")

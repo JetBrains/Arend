@@ -10,33 +10,26 @@ public class Version implements Comparable<Version> {
   public final BigInteger patch;
   public final String rest;
 
-  public static Version from(String version) {
-    return version == null ? null : new Version(version);
+  public static Version fromString(String version) {
+    if (version == null) return null;
+    String[] split = version.trim().split("\\.");
+    try {
+      switch (split.length) {
+        case 0: throw new IllegalArgumentException("Invalid version: " + version);
+        case 1: return new Version(new BigInteger(split[0]), BigInteger.ZERO, BigInteger.ZERO, "");
+        case 2: return new Version(new BigInteger(split[0]), new BigInteger(split[1]), BigInteger.ZERO, "");
+        default: return new Version(new BigInteger(split[0]), new BigInteger(split[1]), new BigInteger(split[2]), String.join(".", Arrays.asList(split).subList(3, split.length)));
+      }
+    } catch (NumberFormatException ignored) {
+      return null;
+    }
   }
 
-  public Version(String version) {
-    String[] split = version.trim().split("\\.");
-    switch (split.length) {
-      case 0:
-        throw new IllegalArgumentException("Invalid version: " + version);
-      case 1:
-        major = new BigInteger(split[0]);
-        minor = BigInteger.ZERO;
-        patch = BigInteger.ZERO;
-        rest = "";
-        break;
-      case 2:
-        major = new BigInteger(split[0]);
-        minor = new BigInteger(split[1]);
-        patch = BigInteger.ZERO;
-        rest = "";
-        break;
-      default:
-        major = new BigInteger(split[0]);
-        minor = new BigInteger(split[1]);
-        patch = new BigInteger(split[2]);
-        rest = String.join(".", Arrays.asList(split).subList(3, split.length));
-    }
+  public Version(BigInteger major, BigInteger minor, BigInteger patch, String rest) {
+    this.major = major;
+    this.minor = minor;
+    this.patch = patch;
+    this.rest = rest;
   }
 
   public String getLongString() {
