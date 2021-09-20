@@ -7,6 +7,7 @@ import org.arend.library.error.LibraryIOError;
 import org.arend.util.FileUtils;
 import org.arend.util.Range;
 import org.arend.util.Version;
+import org.arend.util.VersionRange;
 
 import java.util.*;
 
@@ -56,7 +57,7 @@ public class LibraryHeader {
 
     Range<Version> languageVersion = Range.unbound();
     if (config.getLangVersion() != null) {
-      Range<Version> range = Range.parseVersionRange(config.getLangVersion());
+      Range<Version> range = VersionRange.parseVersionRange(config.getLangVersion());
       if (range != null) {
         languageVersion = range;
       } else {
