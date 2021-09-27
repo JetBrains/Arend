@@ -55,8 +55,8 @@ public class FunCallExpression extends LeveledDefCallExpression implements CoreF
         if (constructor == Prelude.RIGHT) {
           return arguments.get(2);
         }
-      } else if (arguments.get(3) instanceof ConCallExpression && ((ConCallExpression) arguments.get(3)).getDefinition() == Prelude.PATH_CON) {
-        return AppExpression.make(((ConCallExpression) arguments.get(3)).getDefCallArguments().get(0), arguments.get(4), true);
+      } else if (arguments.get(3) instanceof PathExpression) {
+        return AppExpression.make(((PathExpression) arguments.get(3)).getArgument(), arguments.get(4), true);
       }
     }
     if (definition == Prelude.EMPTY_ARRAY && arguments.size() == 1) {

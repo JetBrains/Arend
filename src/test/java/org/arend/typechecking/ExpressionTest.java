@@ -204,7 +204,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
     Concrete.LetClause xClause = clet(x, cargs(cTele(cvars(y), cNat())), cZero());
     Concrete.Expression expr = cLet(clets(xClause), cVar(x));
     TypecheckingResult result = typeCheckExpr(expr, null);
-    assertEquals(result.type.normalize(NormalizationMode.WHNF), Pi(Nat(), Fin(1)));
+    assertEquals(result.type.normalize(NormalizationMode.WHNF), Pi(Nat(), Nat()));
   }
 
   @Test

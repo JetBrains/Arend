@@ -19,6 +19,7 @@ import org.arend.ext.core.definition.CoreClassDefinition;
 import org.arend.ext.core.definition.CoreClassField;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.module.ModulePath;
+import org.arend.ext.reference.ArendRef;
 import org.arend.ext.reference.Precedence;
 import org.arend.module.ModuleLocation;
 import org.arend.naming.reference.*;
@@ -174,9 +175,9 @@ public class Prelude implements ArendPrelude {
         IDP.setPattern(new ConstructorExpressionPattern(FunCallExpression.makeFunCall(IDP, LevelPair.STD, args), Collections.emptyList()));
         IDP.setNumberOfParameters(2);
         IDP.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-        ConCallExpression conCall = (ConCallExpression) IDP.getBody();
-        assert conCall != null;
-        IDP.setBody(ConCallExpression.make(conCall.getDefinition(), conCall.getLevels(), conCall.getDataTypeArguments(), new SingletonList<>(new LamExpression(new Sort(new Level(LevelVariable.PVAR), Level.INFINITY), UnusedIntervalDependentLink.INSTANCE, ((LamExpression) conCall.getDefCallArguments().get(0)).getBody()))));
+        PathExpression pathExpr = (PathExpression) IDP.getBody();
+        assert pathExpr != null;
+        IDP.setBody(new PathExpression(pathExpr.getLevels(), null, new LamExpression(new Sort(new Level(LevelVariable.PVAR), Level.INFINITY), UnusedIntervalDependentLink.INSTANCE, ((LamExpression) pathExpr.getArgument()).getBody())));
         break;
       }
       case "@": {
@@ -422,8 +423,8 @@ public class Prelude implements ArendPrelude {
   }
 
   @Override
-  public Constructor getPathCon() {
-    return PATH_CON;
+  public ArendRef getPathConRef() {
+    return PATH_CON.getRef();
   }
 
   @Override

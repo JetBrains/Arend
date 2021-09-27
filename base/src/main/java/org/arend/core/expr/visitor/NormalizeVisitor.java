@@ -697,10 +697,8 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
 
   private ElimTree updateStack(Deque<Expression> stack, List<Expression> argList, BranchElimTree branchElimTree) {
     Expression argument = TypeCoerceExpression.unfoldExpression(stack.pop());
-    ConCallExpression conCall = argument instanceof ConCallExpression ? (ConCallExpression) argument : null;
-    IntegerExpression intExpr = argument instanceof IntegerExpression ? (IntegerExpression) argument : null;
     ArrayExpression array = argument instanceof ArrayExpression ? (ArrayExpression) argument : null;
-    BranchKey key = conCall != null ? conCall.getDefinition() : intExpr != null ? (intExpr.isZero() ? Prelude.ZERO : Prelude.SUC) : array != null ? new ArrayConstructor(array.getElements().isEmpty(), true, true) : null;
+    BranchKey key = argument instanceof ConCallExpression ? ((ConCallExpression) argument).getDefinition() : argument instanceof IntegerExpression ? (((IntegerExpression) argument).isZero() ? Prelude.ZERO : Prelude.SUC) : array != null ? new ArrayConstructor(array.getElements().isEmpty(), true, true) : argument instanceof PathExpression ? Prelude.PATH_CON : null;
 
     ElimTree elimTree = key == null ? branchElimTree.getSingleConstructorChild() : branchElimTree.getChild(key);
     if (elimTree == null && key == Prelude.PATH_CON && branchElimTree.getSingleConstructorKey() instanceof IdpConstructor) {
@@ -745,13 +743,15 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
 
       List<? extends Expression> args;
       if (key != null) {
-        args = conCall != null
-          ? conCall.getDefCallArguments()
+        args = argument instanceof ConCallExpression
+          ? ((ConCallExpression) argument).getDefCallArguments()
           : array != null
             ? array.getConstructorArguments(!branchElimTree.withArrayElementsType(), !branchElimTree.withArrayLength())
-            : key == Prelude.ZERO
-              ? Collections.emptyList()
-              : Collections.singletonList(intExpr.pred());
+            : argument instanceof PathExpression
+              ? Collections.singletonList(((PathExpression) argument).getArgument())
+              : key == Prelude.ZERO
+                ? Collections.emptyList()
+                : Collections.singletonList(((IntegerExpression) argument).pred());
       } else {
         SingleConstructor singleConstructor = branchElimTree.getSingleConstructorKey();
         if (singleConstructor == null) {
@@ -1073,6 +1073,12 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
       elements.add(element.accept(this, mode));
     }
     return ArrayExpression.make(expr.getLevels(), mode == NormalizationMode.NF ? expr.getElementsType().accept(this, NormalizationMode.NF) : expr.getElementsType(), elements, expr.getTail() == null ? null : expr.getTail().accept(this, mode));
+  }
+
+  @Override
+  public Expression visitPath(PathExpression expr, NormalizationMode mode) {
+    if (mode == NormalizationMode.WHNF) return expr;
+    return new PathExpression(expr.getLevels(), expr.getArgumentType() == null ? null : expr.getArgumentType().accept(this, mode), expr.getArgument().accept(this, mode));
   }
 
   @Override

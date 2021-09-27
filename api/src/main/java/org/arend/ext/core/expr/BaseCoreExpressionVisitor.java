@@ -114,4 +114,9 @@ public abstract class BaseCoreExpressionVisitor<P, R> implements CoreExpressionV
   public R visitArray(@NotNull CoreArrayExpression expr, P params) {
     return visit(expr, params);
   }
+
+  @Override
+  public R visitPath(@NotNull CorePathExpression expr, P params) {
+    return visit(expr, params);
+  }
 }

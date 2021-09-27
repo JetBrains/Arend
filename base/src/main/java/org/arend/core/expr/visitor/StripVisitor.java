@@ -9,6 +9,8 @@ import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.HaveClause;
 import org.arend.core.expr.let.LetClause;
+import org.arend.core.expr.let.TypedHaveClause;
+import org.arend.core.expr.let.TypedLetClause;
 import org.arend.core.pattern.Pattern;
 import org.arend.core.sort.Sort;
 import org.arend.ext.error.ErrorReporter;
@@ -238,6 +240,11 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
   public LetExpression visitLet(LetExpression expr, Void params) {
     for (HaveClause clause : expr.getClauses()) {
       clause.setExpression(clause.getExpression().accept(this, null));
+      if (clause instanceof TypedLetClause) {
+        ((TypedLetClause) clause).type = null;
+      } else if (clause instanceof TypedHaveClause) {
+        ((TypedHaveClause) clause).type = null;
+      }
       if (clause instanceof LetClause) {
         myBoundEvaluatingBindings.add((LetClause) clause);
       }
@@ -294,6 +301,12 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
       elements.set(i, elements.get(i).accept(this, null));
     }
     return ArrayExpression.make(expr.getLevels(), expr.getElementsType().accept(this, null), elements, expr.getTail() == null ? null : expr.getTail().accept(this, null));
+  }
+
+  @Override
+  public Expression visitPath(PathExpression expr, Void params) {
+    Expression arg = expr.getArgument().accept(this, null);
+    return expr.getArgumentType() == null || expr.getArgumentType().removeConstLam() != null ? new PathExpression(expr.getLevels(), null, arg) : new PathExpression(expr.getLevels(), expr.getArgumentType().accept(this, null), arg);
   }
 
   @Override

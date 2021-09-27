@@ -14,6 +14,7 @@ import org.arend.ext.typechecking.GoalSolver;
 import org.arend.ext.typechecking.TypedExpression;
 import org.arend.ext.typechecking.MetaDefinition;
 import org.arend.naming.reference.*;
+import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.jetbrains.annotations.NotNull;
@@ -301,6 +302,14 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
       throw new IllegalArgumentException();
     }
     return new Concrete.ProjExpression(myData, (Concrete.Expression) expression, field);
+  }
+
+  @Override
+  public @NotNull ConcreteExpression path(@NotNull ConcreteExpression expression) {
+    if (!(expression instanceof Concrete.Expression)) {
+      throw new IllegalArgumentException();
+    }
+    return Concrete.AppExpression.make(myData, new Concrete.ReferenceExpression(myData, Prelude.PATH_CON.getRef()), (Concrete.Expression) expression, true);
   }
 
   private List<Concrete.ClassFieldImpl> classFieldImpls(ConcreteClassElement[] elements) {

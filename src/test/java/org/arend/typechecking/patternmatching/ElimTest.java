@@ -18,6 +18,7 @@ import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.arend.typechecking.error.local.ImpossibleEliminationError;
+import org.arend.typechecking.error.local.PathEndpointMismatchError;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -72,7 +73,8 @@ public class ElimTest extends TypeCheckingTestCase {
   public void elim4() {
     typeCheckModule(
         "\\func test (x : Nat) : Nat | zero => 0 | _ => 1\n" +
-        "\\func test2 (x : Nat) : 1 = 1 => path (\\lam _ => test x)", 1);
+        "\\func test2 (x : Nat) : 1 = 1 => path (\\lam _ => test x)", 2);
+    assertThatErrorsAre(Matchers.typecheckingError(PathEndpointMismatchError.class), Matchers.typecheckingError(PathEndpointMismatchError.class));
   }
 
   @Test

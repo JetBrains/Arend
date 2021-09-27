@@ -25,4 +25,5 @@ public interface CoreExpressionVisitor<P, R> {
   R visitInteger(@NotNull CoreIntegerExpression expr, P params);
   R visitTypeCoerce(@NotNull CoreTypeCoerceExpression expr, P params);
   R visitArray(@NotNull CoreArrayExpression expr, P params);
+  R visitPath(@NotNull CorePathExpression expr, P params);
 }

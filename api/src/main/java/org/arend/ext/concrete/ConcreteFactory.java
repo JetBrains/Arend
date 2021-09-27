@@ -46,6 +46,7 @@ public interface ConcreteFactory {
   @NotNull ConcreteExpression eval(@NotNull ConcreteExpression expression);
   @NotNull ConcreteExpression peval(@NotNull ConcreteExpression expression);
   @NotNull ConcreteExpression proj(@NotNull ConcreteExpression expression, int field);
+  @NotNull ConcreteExpression path(@NotNull ConcreteExpression expression);
   @NotNull ConcreteExpression classExt(@NotNull ConcreteExpression expression, @NotNull ConcreteClassElement... elements);
   @NotNull ConcreteExpression classExt(@NotNull ConcreteExpression expression, @NotNull Collection<? extends ConcreteClassElement> elements);
   @NotNull ConcreteExpression newExpr(@NotNull ConcreteExpression expression);

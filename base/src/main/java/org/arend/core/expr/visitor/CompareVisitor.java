@@ -219,7 +219,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
           }
         }
 
-        if (!myOnlySolveVars) {
+        if (!myOnlySolveVars && type1 != null) {
           Expression type2 = expr2.getType();
           if (type2 != null && type2.getStuckInferenceVariable() != null) {
             type2 = null;
@@ -234,7 +234,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
             }
           }
 
-          if (!myOnlySolveVars && type1 != null && type2 != null) {
+          if (!myOnlySolveVars && type2 != null) {
             ClassCallExpression classCall1 = type1.cast(ClassCallExpression.class);
             ClassCallExpression classCall2 = type2.cast(ClassCallExpression.class);
             if (classCall1 != null && classCall2 != null && compareClassInstances(expr1, classCall1, expr2, classCall2, normType)) {
@@ -279,8 +279,8 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     if (expr2 instanceof ErrorExpression) {
       return true;
     }
-    if (expr2 instanceof ConCallExpression && ((ConCallExpression) expr2).getDefinition() == Prelude.PATH_CON && !(expr1 instanceof ConCallExpression)) {
-      ok = comparePathEta((ConCallExpression) expr2, expr1, false);
+    if (expr2 instanceof PathExpression && !(expr1 instanceof PathExpression)) {
+      ok = comparePathEta((PathExpression) expr2, expr1, type, false);
     } else if (expr2 instanceof LamExpression) {
       ok = visitLam((LamExpression) expr2, expr1, type, false);
     } else if (expr2 instanceof TupleExpression) {
@@ -444,19 +444,20 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     return true;
   }
 
-  private Boolean comparePathEta(ConCallExpression conCall1, Expression expr2, boolean correctOrder) {
+  private Boolean comparePathEta(PathExpression pathExpr1, Expression expr2, Expression type, boolean correctOrder) {
     SingleDependentLink param = new TypedSingleDependentLink(true, "i", ExpressionFactory.Interval());
     ReferenceExpression paramRef = new ReferenceExpression(param);
-    List<Expression> args = new ArrayList<>(5);
-    for (Expression arg : conCall1.getDataTypeArguments()) {
-      args.add(correctOrder ? arg : substitute(arg));
+    Expression left = AppExpression.make(pathExpr1.getArgument(), ExpressionFactory.Left(), true);
+    Expression right = AppExpression.make(pathExpr1.getArgument(), ExpressionFactory.Right(), true);
+    Expression argumentType = pathExpr1.getArgumentType();
+    Sort sort = new Sort(pathExpr1.getLevels().toLevelPair().get(LevelVariable.PVAR), Level.INFINITY);
+    if (argumentType == null) {
+      argumentType = type instanceof DataCallExpression && ((DataCallExpression) type).getDefinition() == Prelude.PATH ? ((DataCallExpression) type).getDefCallArguments().get(0) : new LamExpression(sort, param, AppExpression.make(pathExpr1.getArgument(), paramRef, true).getType());
     }
-    args.add(expr2);
-    args.add(paramRef);
-    Sort sort = new Sort(conCall1.getLevels().toLevelPair().get(LevelVariable.PVAR), Level.INFINITY);
-    expr2 = new LamExpression(sort, param, FunCallExpression.make(Prelude.AT, conCall1.getLevels(), args));
-    Expression type = new PiExpression(sort, param, AppExpression.make(conCall1.getDataTypeArguments().get(0), paramRef, true));
-    return correctOrder ? compare(conCall1.getDefCallArguments().get(0), expr2, type, true) : compare(expr2, conCall1.getDefCallArguments().get(0), type, true);
+
+    expr2 = new LamExpression(sort, param, FunCallExpression.make(Prelude.AT, pathExpr1.getLevels(), Arrays.asList(argumentType, left, right, expr2, paramRef)));
+    Expression argType = new PiExpression(sort, param, AppExpression.make(argumentType, paramRef, true));
+    return correctOrder ? compare(pathExpr1.getArgument(), expr2, argType, true) : compare(expr2, pathExpr1.getArgument(), argType, true);
   }
 
   private boolean compareDef(LeveledDefCallExpression expr1, LeveledDefCallExpression expr2) {
@@ -516,11 +517,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
 
   @Override
   public Boolean visitConCall(ConCallExpression expr1, Expression expr2, Expression type) {
-    ConCallExpression conCall2 = expr2.cast(ConCallExpression.class);
-    if (expr1.getDefinition() == Prelude.PATH_CON && conCall2 == null) {
-      return comparePathEta(expr1, expr2, true);
-    }
-
+    ConCallExpression conCall2;
     Expression it = expr1;
     while (true) {
       expr1 = (ConCallExpression) it;
@@ -1355,7 +1352,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       if (definition instanceof DataDefinition) {
         myCMP = ((DataDefinition) definition).isCovariant(i) ? origCMP : CMP.EQ;
       }
-      if (!compare(list1.get(i), list2.get(i), substitution != null && link.hasNext() ? link.getTypeExpr().subst(substitution) : null, true)) {
+      if ((definition != Prelude.AT || i != 0) && !compare(list1.get(i), list2.get(i), substitution != null && link.hasNext() ? link.getTypeExpr().subst(substitution) : null, true)) {
         myCMP = origCMP;
         return false;
       }
@@ -1468,6 +1465,12 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       }
     }
     return expr.getTail() == null || compare(expr.getTail(), array2.getTail(), null, true);
+  }
+
+  @Override
+  public Boolean visitPath(PathExpression expr, Expression expr2, Expression type) {
+    PathExpression pathExpr2 = expr2.cast(PathExpression.class);
+    return pathExpr2 == null ? comparePathEta(expr, expr2, type, true) : compare(expr.getArgument(), pathExpr2.getArgument(), null, false);
   }
 
   @Override

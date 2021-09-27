@@ -2,7 +2,9 @@ package org.arend.typechecking;
 
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.param.SingleDependentLink;
+import org.arend.core.context.param.UnusedIntervalDependentLink;
 import org.arend.core.expr.Expression;
+import org.arend.core.expr.PathExpression;
 import org.arend.core.sort.Level;
 import org.arend.core.subst.LevelPair;
 import org.arend.ext.core.ops.NormalizationMode;
@@ -10,12 +12,9 @@ import org.arend.prelude.Prelude;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 
 import static org.arend.ExpressionFactory.*;
-import static org.arend.core.expr.ExpressionFactory.Interval;
 import static org.junit.Assert.assertEquals;
 
 public class PathsTest extends TypeCheckingTestCase {
@@ -29,12 +28,7 @@ public class PathsTest extends TypeCheckingTestCase {
     TypecheckingResult idp = typeCheckExpr("\\lam {A : \\Type0} (a : A) => path (\\lam _ => a)", null);
     SingleDependentLink A = singleParam(false, Collections.singletonList("A"), Universe(new Level(0), new Level(LevelVariable.HVAR)));
     SingleDependentLink a = singleParam("a", Ref(A));
-    SingleDependentLink C = singleParam(null, Interval());
-    List<Expression> pathArgs = new ArrayList<>();
-    pathArgs.add(Lam(C, Ref(A)));
-    pathArgs.add(Ref(a));
-    pathArgs.add(Ref(a));
-    Expression pathCall = ConCall(Prelude.PATH_CON, new LevelPair(new Level(0), Level.INFINITY), pathArgs, Lam(C, Ref(a)));
+    Expression pathCall = new PathExpression(new LevelPair(new Level(0), Level.INFINITY), null, Lam(UnusedIntervalDependentLink.INSTANCE, Ref(a)));
     assertEquals(Lam(A, Lam(a, pathCall)).normalize(NormalizationMode.NF), idp.expression);
     assertEquals(Pi(A, Pi(a, FunCall(Prelude.PATH_INFIX, new LevelPair(new Level(0), Level.INFINITY), Ref(A), Ref(a), Ref(a)))).normalize(NormalizationMode.NF), idp.type.normalize(NormalizationMode.NF));
   }

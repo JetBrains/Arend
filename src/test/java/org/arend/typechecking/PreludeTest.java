@@ -3,11 +3,15 @@ package org.arend.typechecking;
 import org.arend.Matchers;
 import org.arend.core.definition.Definition;
 import org.arend.ext.ArendPrelude;
+import org.arend.naming.reference.TCDefReferable;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.error.local.NotEqualExpressionsError;
 import org.junit.Test;
 
+import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.fail;
@@ -16,17 +20,16 @@ public class PreludeTest extends TypeCheckingTestCase {
   @Test
   public void testForEach() {
     var obj = new Prelude();
-    var fields = Arrays.stream(ArendPrelude.class.getDeclaredMethods())
-      .map(it -> {
-        try {
-          return it.invoke(obj);
-        } catch (Exception e) {
-          throw new RuntimeException(e);
-        }
-      })
-      .filter(it -> it instanceof Definition)
-      .map(it -> (Definition) it)
-      .collect(Collectors.toList());
+    List<Definition> fields = new ArrayList<>();
+    for (Method method : ArendPrelude.class.getDeclaredMethods()) {
+      try {
+        Object result = method.invoke(obj);
+        Definition def = result instanceof Definition ? (Definition) result : result instanceof TCDefReferable ? ((TCDefReferable) result).getTypechecked() : null;
+        if (def != null) fields.add(def);
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    }
     Prelude.forEach(it -> {
       if (!fields.remove(it)) {
         fail(it.getName() + " is traversed but is not a prelude definition!");

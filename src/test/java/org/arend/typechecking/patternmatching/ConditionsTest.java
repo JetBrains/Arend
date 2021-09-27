@@ -400,7 +400,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
       "\\func f (x : S1) : base = x => path (\\lam i => {?})", 1);
 
     FunctionDefinition f = (FunctionDefinition) getDefinition("f");
-    DependentLink binding = ((LamExpression) ((ConCallExpression) Objects.requireNonNull(f.getBody())).getDefCallArguments().get(0)).getParameters();
+    DependentLink binding = ((LamExpression) ((PathExpression) Objects.requireNonNull(f.getBody())).getArgument()).getParameters();
     Constructor base = (Constructor) getDefinition("S1.base");
     assertThatErrorsAre(goalError(
       new Condition(null, new ExprSubstitution(binding, Left()), ConCallExpression.make(base, LevelPair.STD, Collections.emptyList(), Collections.emptyList())),

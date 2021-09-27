@@ -896,4 +896,9 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
     return result;
   }
+
+  @Override
+  public Concrete.Expression visitPath(PathExpression expr, Void params) {
+    return Concrete.AppExpression.make(null, new Concrete.ReferenceExpression(null, Prelude.PATH_CON.getRef()), expr.getArgument().accept(this, null), true);
+  }
 }

@@ -16,10 +16,7 @@ import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
 import org.arend.util.SingletonList;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.arend.core.expr.ExpressionFactory.*;
 
@@ -267,6 +264,18 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
       implementations.put(Prelude.ARRAY_LENGTH, length);
     }
     return new ClassCallExpression(Prelude.DEP_ARRAY, expr.getLevels(), implementations, new Sort(expr.getPLevel(), expr.getHLevel().max(new Level(0))), UniverseKind.NO_UNIVERSES);
+  }
+
+  @Override
+  public Expression visitPath(PathExpression expr, Void params) {
+    Expression left = AppExpression.make(expr.getArgument(), ExpressionFactory.Left(), true);
+    Expression right = AppExpression.make(expr.getArgument(), ExpressionFactory.Right(), true);
+    if (expr.getArgumentType() != null) {
+      return new DataCallExpression(Prelude.PATH, expr.getLevels(), Arrays.asList(expr.getArgumentType(), left, right));
+    } else {
+      Expression type = left.accept(this, null);
+      return FunCallExpression.make(Prelude.PATH_INFIX, expr.getLevels(), Arrays.asList(type, left, right));
+    }
   }
 
   @Override
