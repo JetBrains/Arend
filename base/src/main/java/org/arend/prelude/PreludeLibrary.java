@@ -13,6 +13,7 @@ import org.arend.naming.scope.Scope;
 import org.arend.term.group.ChildGroup;
 import org.arend.term.group.Group;
 import org.arend.util.Range;
+import org.arend.util.Version;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -37,6 +38,11 @@ public abstract class PreludeLibrary extends SourceLibrary {
   }
 
   @Override
+  public @NotNull Version getVersion() {
+    return Prelude.VERSION;
+  }
+
+  @Override
   public void groupLoaded(ModulePath modulePath, @Nullable ChildGroup group, boolean isRaw, boolean inTests) {
     if (!modulePath.equals(Prelude.MODULE_PATH)) {
       throw new IllegalStateException();
@@ -48,7 +54,7 @@ public abstract class PreludeLibrary extends SourceLibrary {
   @Nullable
   @Override
   protected LibraryHeader loadHeader(ErrorReporter errorReporter) {
-    return new LibraryHeader(Collections.singletonList(Prelude.MODULE_PATH), Collections.emptyList(), Range.unbound(), null, null);
+    return new LibraryHeader(Collections.singletonList(Prelude.MODULE_PATH), Collections.emptyList(), Prelude.VERSION, Range.unbound(), null, null);
   }
 
   @Override

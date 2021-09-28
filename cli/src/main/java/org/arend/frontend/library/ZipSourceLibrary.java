@@ -11,6 +11,7 @@ import org.arend.module.error.ExceptionError;
 import org.arend.source.*;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.arend.util.FileUtils;
+import org.arend.util.Version;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -23,6 +24,7 @@ import java.util.zip.ZipFile;
 
 public class ZipSourceLibrary extends UnmodifiableSourceLibrary {
   private final File myFile;
+  private Version myVersion;
   private String mySourcesDir = "";
   private String myBinariesDir;
   private ZipFile myZipFile;
@@ -63,6 +65,11 @@ public class ZipSourceLibrary extends UnmodifiableSourceLibrary {
   @Override
   public @Nullable PersistableBinarySource getPersistableBinarySource(ModulePath modulePath) {
     return null;
+  }
+
+  @Override
+  public @Nullable Version getVersion() {
+    return myVersion;
   }
 
   @Override
@@ -125,6 +132,8 @@ public class ZipSourceLibrary extends UnmodifiableSourceLibrary {
       sourcesDir = sourcesDir.replace('\\', '/');
       mySourcesDir = sourcesDir.isEmpty() || sourcesDir.endsWith("/") ? sourcesDir : sourcesDir + "/";
     }
+
+    myVersion = Version.fromString(config.getVersion());
 
     myBinariesDir = config.getBinariesDir();
     if (myBinariesDir != null && !myBinariesDir.isEmpty()) {

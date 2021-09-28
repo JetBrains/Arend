@@ -346,7 +346,7 @@ public abstract class BaseCliFrontend {
         e.printStackTrace();
         outDir = null;
       }
-      requestedLibraries.add(new FileSourceLibrary("\\default", sourceDir, outDir, new LibraryHeader(requestedModules, libraryDependencies, Range.unbound(), new FileClassLoaderDelegate(extDir), extMainClass), myDependencyCollector));
+      requestedLibraries.add(new FileSourceLibrary("\\default", sourceDir, outDir, new LibraryHeader(requestedModules, libraryDependencies, null, Range.unbound(), new FileClassLoaderDelegate(extDir), extMainClass), myDependencyCollector));
     }
 
     if (requestedLibraries.isEmpty()) {

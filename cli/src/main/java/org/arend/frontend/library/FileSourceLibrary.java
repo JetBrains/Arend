@@ -10,6 +10,7 @@ import org.arend.library.LibraryHeader;
 import org.arend.library.PersistableSourceLibrary;
 import org.arend.source.*;
 import org.arend.typechecking.order.dependency.DependencyListener;
+import org.arend.util.Version;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -94,6 +95,11 @@ public class FileSourceLibrary extends PersistableSourceLibrary {
   @Override
   public @NotNull DependencyListener getDependencyListener() {
     return myDependencyListener;
+  }
+
+  @Override
+  public @Nullable Version getVersion() {
+    return myLibraryHeader == null ? null : myLibraryHeader.version;
   }
 
   @NotNull

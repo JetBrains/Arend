@@ -5,6 +5,7 @@ import org.arend.ext.module.ModulePath;
 import org.arend.source.Source;
 import org.arend.term.group.ChildGroup;
 import org.arend.util.Range;
+import org.arend.util.Version;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -37,7 +38,7 @@ public class MemoryLibrary extends PersistableSourceLibrary {
   @Nullable
   @Override
   protected LibraryHeader loadHeader(ErrorReporter errorReporter) {
-    return new LibraryHeader(myRawSources.keySet(), Collections.emptyList(), Range.unbound(), null, null);
+    return new LibraryHeader(myRawSources.keySet(), Collections.emptyList(), null, Range.unbound(), null, null);
   }
 
   public void addModule(ModulePath module, String text) {
@@ -61,6 +62,11 @@ public class MemoryLibrary extends PersistableSourceLibrary {
   @Override
   public List<? extends LibraryDependency> getDependencies() {
     return Collections.emptyList();
+  }
+
+  @Override
+  public @Nullable Version getVersion() {
+    return null;
   }
 
   @Override

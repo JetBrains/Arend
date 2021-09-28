@@ -18,6 +18,7 @@ public class LibraryConfig {
   private String myExtensionMainClass;
   private List<String> myModules;
   private List<String> myDependencies;
+  private String myVersion;
   private String myLangVersion;
 
   public String getName() {
@@ -84,6 +85,14 @@ public class LibraryConfig {
     myDependencies = dependencies;
   }
 
+  public String getVersion() {
+    return myVersion;
+  }
+
+  public void setVersion(String version) {
+    myVersion = version;
+  }
+
   public String getLangVersion() {
     return myLangVersion;
   }
@@ -118,6 +127,9 @@ public class LibraryConfig {
     }
     if (myDependencies != null) {
       docs.add(hList(text("dependencies: ["), hSep(text(", "), myDependencies.stream().map(DocFactory::text).collect(Collectors.toList())), text("]")));
+    }
+    if (myVersion != null) {
+      docs.add(text("version: " + myVersion));
     }
     if (myLangVersion != null) {
       docs.add(text("langVersion: " + myLangVersion));

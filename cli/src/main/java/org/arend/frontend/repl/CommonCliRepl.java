@@ -116,7 +116,7 @@ public abstract class CommonCliRepl extends Repl {
     myLibraryResolver = libraryResolver;
     myReplLibrary = Files.exists(pwd.resolve(FileUtils.LIBRARY_CONFIG_FILE))
         ? libraryResolver.registerLibrary(pwd)
-        : new FileSourceLibrary("Repl", pwd, null, new LibraryHeader(modules, new ArrayList<>(), Range.unbound(), null, null), DummyDependencyListener.INSTANCE);
+        : new FileSourceLibrary("Repl", pwd, null, new LibraryHeader(modules, new ArrayList<>(), null, Range.unbound(), null, null), DummyDependencyListener.INSTANCE);
     myModules = modules;
   }
   //endregion

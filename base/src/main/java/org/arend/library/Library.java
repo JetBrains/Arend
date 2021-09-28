@@ -6,6 +6,7 @@ import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.term.group.ChildGroup;
 import org.arend.typechecking.order.Ordering;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
+import org.arend.util.Version;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -23,6 +24,12 @@ public interface Library {
    */
   @NotNull
   String getName();
+
+  /**
+   * @return the version of this library.
+   */
+  @Nullable
+  Version getVersion();
 
   /**
    * Loads the library and its dependencies.

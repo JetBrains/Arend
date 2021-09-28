@@ -17,14 +17,16 @@ import java.util.*;
  */
 public class LibraryHeader {
   public Collection<ModulePath> modules;
-  public List<LibraryDependency> dependencies;
-  public Range<Version> languageVersionRange;
+  public final List<LibraryDependency> dependencies;
+  public final Version version;
+  public final Range<Version> languageVersionRange;
   public ClassLoaderDelegate classLoaderDelegate;
-  public String extMainClass;
+  public final String extMainClass;
 
-  public LibraryHeader(Collection<ModulePath> modules, List<LibraryDependency> dependencies, Range<Version> languageVersionRange, ClassLoaderDelegate classLoaderDelegate, String extMainClass) {
+  public LibraryHeader(Collection<ModulePath> modules, List<LibraryDependency> dependencies, Version version, Range<Version> languageVersionRange, ClassLoaderDelegate classLoaderDelegate, String extMainClass) {
     this.modules = modules;
     this.dependencies = dependencies;
+    this.version = version;
     this.languageVersionRange = languageVersionRange;
     this.classLoaderDelegate = classLoaderDelegate;
     this.extMainClass = extMainClass;
@@ -55,17 +57,24 @@ public class LibraryHeader {
       }
     }
 
+    Version version = null;
+    if (config.getVersion() != null) {
+      version = Version.fromString(config.getVersion());
+      if (version == null) {
+        errorReporter.report(new LibraryIOError(fileName, "Cannot parse version: " + config.getVersion()));
+        return null;
+      }
+    }
+
     Range<Version> languageVersion = Range.unbound();
     if (config.getLangVersion() != null) {
-      Range<Version> range = VersionRange.parseVersionRange(config.getLangVersion());
-      if (range != null) {
-        languageVersion = range;
-      } else {
+      languageVersion = VersionRange.parseVersionRange(config.getLangVersion());
+      if (languageVersion == null) {
         errorReporter.report(new LibraryIOError(fileName, "Cannot parse language version: " + config.getLangVersion()));
         return null;
       }
     }
 
-    return new LibraryHeader(modules, dependencies, languageVersion, null, config.getExtensionMainClass());
+    return new LibraryHeader(modules, dependencies, version, languageVersion, null, config.getExtensionMainClass());
   }
 }
