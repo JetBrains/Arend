@@ -30,7 +30,7 @@ public interface ArendPrelude {
   ArendRef getPathConRef();
   CoreFunctionDefinition getInProp();
   CoreFunctionDefinition getIdp();
-  CoreFunctionDefinition getAt();
+  ArendRef getAtRef();
   CoreFunctionDefinition getIso();
   CoreFunctionDefinition getDivMod();
   CoreFunctionDefinition getDiv();

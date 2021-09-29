@@ -438,8 +438,8 @@ public class Prelude implements ArendPrelude {
   }
 
   @Override
-  public FunctionDefinition getAt() {
-    return AT;
+  public TCDefReferable getAtRef() {
+    return AT.getRef();
   }
 
   @Override

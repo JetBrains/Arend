@@ -310,6 +310,11 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
   }
 
   @Override
+  public Expression visitAt(AtExpression expr, Void params) {
+    return AtExpression.make(expr.getLevels(), expr.getPathArgument().accept(this, null), expr.getIntervalArgument().accept(this, null), true);
+  }
+
+  @Override
   public Expression visitPEval(PEvalExpression expr, Void params) {
     return new PEvalExpression(expr.getExpression().accept(this, null));
   }

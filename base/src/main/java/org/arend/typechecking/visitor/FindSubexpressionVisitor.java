@@ -37,6 +37,15 @@ public class FindSubexpressionVisitor extends SearchVisitor<Void> {
   }
 
   @Override
+  public Boolean visitAt(AtExpression expr, Void params) {
+    switch (myFunction.apply(expr)) {
+      case STOP: return true;
+      case SKIP: return false;
+      default: return super.visitAt(expr, params);
+    }
+  }
+
+  @Override
   public Boolean visitApp(AppExpression expression, Void param) {
     switch (myFunction.apply(expression)) {
       case STOP: return true;

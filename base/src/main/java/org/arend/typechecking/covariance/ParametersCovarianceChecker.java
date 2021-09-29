@@ -4,9 +4,7 @@ import org.arend.ext.variable.Variable;
 import org.arend.core.elimtree.Body;
 import org.arend.core.expr.*;
 import org.arend.core.expr.visitor.VoidExpressionVisitor;
-import org.arend.prelude.Prelude;
 
-import java.util.List;
 import java.util.Set;
 
 public class ParametersCovarianceChecker extends CovarianceChecker {
@@ -54,14 +52,11 @@ public class ParametersCovarianceChecker extends CovarianceChecker {
         expr = ((ProjExpression) expr).getExpression();
       } else if (expr instanceof FieldCallExpression) {
         expr = ((FieldCallExpression) expr).getArgument();
-      } else if (expr instanceof FunCallExpression && ((FunCallExpression) expr).getDefinition() == Prelude.AT) {
-        List<? extends Expression> args = ((FunCallExpression) expr).getDefCallArguments();
-        for (int i = 0; i < args.size(); i++) {
-          if (i != 3 && checkNonCovariant(args.get(i))) {
-            return true;
-          }
+      } else if (expr instanceof AtExpression) {
+        if (checkNonCovariant(((AtExpression) expr).getIntervalArgument())) {
+          return true;
         }
-        expr = args.get(3);
+        expr = ((AtExpression) expr).getPathArgument();
       } else if (expr instanceof ReferenceExpression) {
         return false;
       } else {

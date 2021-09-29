@@ -9,7 +9,6 @@ import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.*;
 import org.arend.core.pattern.*;
 import org.arend.ext.core.expr.CoreExpression;
-import org.arend.prelude.Prelude;
 import org.arend.typechecking.visitor.SearchVisitor;
 import org.arend.util.Pair;
 
@@ -141,8 +140,8 @@ public class CollectCallVisitor extends SearchVisitor<Void> {
         expr = expr.getFunction();
       } else if (expr instanceof ProjExpression) {
         expr = ((ProjExpression) expr).getExpression();
-      } else if (expr instanceof FunCallExpression && ((FunCallExpression) expr).getDefinition() == Prelude.AT) {
-        expr = ((FunCallExpression) expr).getDefCallArguments().get(3);
+      } else if (expr instanceof AtExpression) {
+        expr = ((AtExpression) expr).getPathArgument();
       } else if (expr instanceof FieldCallExpression) {
         expr = ((FieldCallExpression) expr).getArgument();
       } else {

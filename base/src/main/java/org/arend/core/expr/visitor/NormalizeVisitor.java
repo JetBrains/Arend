@@ -1082,6 +1082,22 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
   }
 
   @Override
+  public Expression visitAt(AtExpression expr, NormalizationMode mode) {
+    Expression pathArg = expr.getPathArgument().normalize(NormalizationMode.WHNF);
+    if (pathArg instanceof PathExpression) {
+      return AppExpression.make(((PathExpression) pathArg).getArgument(), expr.getIntervalArgument(), true).accept(this, mode);
+    }
+    Expression intervalArg = expr.getIntervalArgument().normalize(NormalizationMode.WHNF);
+    if (intervalArg instanceof ConCallExpression && (((ConCallExpression) intervalArg).getDefinition() == Prelude.LEFT || ((ConCallExpression) intervalArg).getDefinition() == Prelude.RIGHT)) {
+      Expression pathType = pathArg.getType().normalize(NormalizationMode.WHNF);
+      if (pathType instanceof DataCallExpression && ((DataCallExpression) pathType).getDefinition() == Prelude.PATH) {
+        return (((ConCallExpression) intervalArg).getDefinition() == Prelude.LEFT ? ((DataCallExpression) pathType).getDefCallArguments().get(1) : ((DataCallExpression) pathType).getDefCallArguments().get(2)).accept(this, mode);
+      }
+    }
+    return mode == NormalizationMode.WHNF ? AtExpression.make(expr.getLevels(), pathArg, intervalArg, false) : AtExpression.make(expr.getLevels(), pathArg.accept(this, mode), intervalArg.accept(this, mode), false);
+  }
+
+  @Override
   public Expression visitPEval(PEvalExpression expr, NormalizationMode mode) {
     return mode == NormalizationMode.WHNF ? expr : new PEvalExpression(expr.getExpression().accept(this, mode));
   }

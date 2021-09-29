@@ -312,6 +312,14 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     return Concrete.AppExpression.make(myData, new Concrete.ReferenceExpression(myData, Prelude.PATH_CON.getRef()), (Concrete.Expression) expression, true);
   }
 
+  @Override
+  public @NotNull ConcreteExpression at(@NotNull ConcreteExpression path, @NotNull ConcreteExpression interval) {
+    if (!(path instanceof Concrete.Expression && interval instanceof Concrete.Expression)) {
+      throw new IllegalArgumentException();
+    }
+    return Concrete.AppExpression.make(myData, Concrete.AppExpression.make(myData, new Concrete.ReferenceExpression(myData, Prelude.AT.getRef()), (Concrete.Expression) path, true), (Concrete.Expression) interval, true);
+  }
+
   private List<Concrete.ClassFieldImpl> classFieldImpls(ConcreteClassElement[] elements) {
     List<Concrete.ClassFieldImpl> result = new ArrayList<>(elements.length);
     for (ConcreteClassElement element : elements) {

@@ -279,6 +279,20 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
   }
 
   @Override
+  public Expression visitAt(AtExpression expr, Void params) {
+    Expression type = expr.getPathArgument().accept(this, null);
+    type = myNormalizing ? type.normalize(NormalizationMode.WHNF) : type.getUnderlyingExpression();
+    if (!(type instanceof DataCallExpression && ((DataCallExpression) type).getDefinition() == Prelude.PATH)) {
+      if (myNormalizing) {
+        throw new IncorrectExpressionException("Expression " + expr.getPathArgument() + " should have a path type");
+      } else {
+        return null;
+      }
+    }
+    return AppExpression.make(((DataCallExpression) type).getDefCallArguments().get(0), expr.getIntervalArgument(), true);
+  }
+
+  @Override
   public Expression visitPEval(PEvalExpression expr, Void params) {
     Expression normExpr = expr.eval();
     if (normExpr == null) {

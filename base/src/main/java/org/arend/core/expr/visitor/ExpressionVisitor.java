@@ -28,4 +28,5 @@ public interface ExpressionVisitor<P, R> {
   R visitTypeCoerce(TypeCoerceExpression expr, P params);
   R visitArray(ArrayExpression expr, P params);
   R visitPath(PathExpression expr, P params);
+  R visitAt(AtExpression expr, P params);
 }

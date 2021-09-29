@@ -483,4 +483,12 @@ public class ElimBindingVisitor extends ExpressionTransformer<Void> {
     Expression argument = acceptSelf(expr.getArgument(), true);
     return argument == null ? null : new PathExpression(expr.getLevels(), argumentType, argument);
   }
+
+  @Override
+  public Expression visitAt(AtExpression expr, Void params) {
+    Expression pathArg = acceptSelf(expr.getPathArgument(), true);
+    if (pathArg == null) return null;
+    Expression intervalArg = acceptSelf(expr.getIntervalArgument(), true);
+    return intervalArg == null ? null : AtExpression.make(expr.getLevels(), pathArg, intervalArg, false);
+  }
 }

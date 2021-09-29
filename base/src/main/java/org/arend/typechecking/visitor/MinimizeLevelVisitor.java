@@ -160,4 +160,9 @@ public class MinimizeLevelVisitor extends BaseExpressionVisitor<Void, Type> {
   public Type visitPath(PathExpression expr, Void params) {
     return null;
   }
+
+  @Override
+  public Type visitAt(AtExpression expr, Void params) {
+    return null;
+  }
 }

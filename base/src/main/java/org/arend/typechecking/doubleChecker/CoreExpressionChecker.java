@@ -37,8 +37,7 @@ import org.arend.util.SingletonList;
 
 import java.util.*;
 
-import static org.arend.core.expr.ExpressionFactory.Nat;
-import static org.arend.core.expr.ExpressionFactory.Suc;
+import static org.arend.core.expr.ExpressionFactory.*;
 
 public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expression> {
   private final Set<Binding> myContext;
@@ -914,5 +913,21 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       }
     }
     return check(expectedType, expr.getType(), expr);
+  }
+
+  @Override
+  public Expression visitAt(AtExpression expr, Expression expectedType) {
+    Expression type = expr.getPathArgument().accept(this, null).normalize(NormalizationMode.WHNF);
+    if (!(type instanceof DataCallExpression && ((DataCallExpression) type).getDefinition() == Prelude.PATH)) {
+      throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(DocFactory.refDoc(Prelude.PATH.getRef()), type, mySourceNode), expr.getPathArgument()));
+    }
+    Expression fun = ((DataCallExpression) type).getDefCallArguments().get(0);
+    Expression actualSort = AppExpression.make(fun, new ReferenceExpression(new TypedBinding("i", Interval())), true).getType();
+    Expression expectedSort = new UniverseExpression(expr.getLevels().toSort());
+    if (!CompareVisitor.compare(myEquations, CMP.LE, actualSort, expectedSort, Type.OMEGA, mySourceNode)) {
+      throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError("Sort mismatch", expectedSort, actualSort, mySourceNode), expr));
+    }
+    expr.getIntervalArgument().accept(this, Interval());
+    return check(expectedType, AppExpression.make(fun, expr.getIntervalArgument(), true), expr);
   }
 }

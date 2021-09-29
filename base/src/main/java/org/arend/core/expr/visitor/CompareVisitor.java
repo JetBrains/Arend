@@ -447,15 +447,13 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
   private Boolean comparePathEta(PathExpression pathExpr1, Expression expr2, Expression type, boolean correctOrder) {
     SingleDependentLink param = new TypedSingleDependentLink(true, "i", ExpressionFactory.Interval());
     ReferenceExpression paramRef = new ReferenceExpression(param);
-    Expression left = AppExpression.make(pathExpr1.getArgument(), ExpressionFactory.Left(), true);
-    Expression right = AppExpression.make(pathExpr1.getArgument(), ExpressionFactory.Right(), true);
     Expression argumentType = pathExpr1.getArgumentType();
     Sort sort = new Sort(pathExpr1.getLevels().toLevelPair().get(LevelVariable.PVAR), Level.INFINITY);
     if (argumentType == null) {
       argumentType = type instanceof DataCallExpression && ((DataCallExpression) type).getDefinition() == Prelude.PATH ? ((DataCallExpression) type).getDefCallArguments().get(0) : new LamExpression(sort, param, AppExpression.make(pathExpr1.getArgument(), paramRef, true).getType());
     }
 
-    expr2 = new LamExpression(sort, param, FunCallExpression.make(Prelude.AT, pathExpr1.getLevels(), Arrays.asList(argumentType, left, right, expr2, paramRef)));
+    expr2 = new LamExpression(sort, param, AtExpression.make(pathExpr1.getLevels(), expr2, paramRef, false));
     Expression argType = new PiExpression(sort, param, AppExpression.make(argumentType, paramRef, true));
     return correctOrder ? compare(pathExpr1.getArgument(), expr2, argType, true) : compare(expr2, pathExpr1.getArgument(), argType, true);
   }
@@ -486,6 +484,12 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     }
     */
     return compareLists(expr1.getDefCallArguments(), defCall2.getDefCallArguments(), expr1.getDefinition().getParameters(), expr1.getDefinition(), substitution);
+  }
+
+  @Override
+  public Boolean visitAt(AtExpression expr1, Expression expr2, Expression type) {
+    AtExpression atExpr2 = expr2.cast(AtExpression.class);
+    return atExpr2 != null && compare(expr1.getPathArgument(), atExpr2.getPathArgument(), null, true) && compare(expr1.getIntervalArgument(), atExpr2.getIntervalArgument(), null, true);
   }
 
   /*
@@ -1352,7 +1356,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       if (definition instanceof DataDefinition) {
         myCMP = ((DataDefinition) definition).isCovariant(i) ? origCMP : CMP.EQ;
       }
-      if ((definition != Prelude.AT || i != 0) && !compare(list1.get(i), list2.get(i), substitution != null && link.hasNext() ? link.getTypeExpr().subst(substitution) : null, true)) {
+      if (!compare(list1.get(i), list2.get(i), substitution != null && link.hasNext() ? link.getTypeExpr().subst(substitution) : null, true)) {
         myCMP = origCMP;
         return false;
       }

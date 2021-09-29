@@ -131,6 +131,11 @@ public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean>
   }
 
   @Override
+  public Boolean visitAt(AtExpression expr, P params) {
+    return expr.getPathArgument().accept(this, params) || expr.getIntervalArgument().accept(this, params);
+  }
+
+  @Override
   public Boolean visitApp(AppExpression expression, P param) {
     return expression.getFunction().accept(this, param) || expression.getArgument().accept(this, param);
   }
