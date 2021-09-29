@@ -273,6 +273,17 @@ public class FreeVariablesClassifier implements ExpressionVisitor<Boolean, FreeV
   }
 
   @Override
+  public Result visitPath(PathExpression expr, Boolean good) {
+    return expr.getArgument().accept(this, good);
+  }
+
+  @Override
+  public Result visitAt(AtExpression expr, Boolean params) {
+    Result result = expr.getPathArgument().accept(this, false);
+    return result != Result.NONE ? result : expr.getIntervalArgument().accept(this, false);
+  }
+
+  @Override
   public Result visitPEval(PEvalExpression expr, Boolean good) {
     return expr.getExpression().accept(this, good);
   }

@@ -2673,14 +2673,6 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   // Other
 
-  private boolean compareExpressions(boolean isLeft, Expression expected, Expression actual, Expression type, Concrete.Expression expr) {
-    if (!CompareVisitor.compare(getEquations(), CMP.EQ, actual, expected, type, expr)) {
-      errorReporter.report(new PathEndpointMismatchError(isLeft, expected, actual, expr));
-      return false;
-    }
-    return true;
-  }
-
   @SuppressWarnings("BooleanMethodIsAlwaysInverted")
   private boolean checkPath(TResult result, Concrete.Expression expr) {
     if (result instanceof DefCallResult && ((DefCallResult) result).getDefinition() == Prelude.PATH_CON) {
@@ -2688,24 +2680,16 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       return false;
     }
     if (result instanceof TypecheckingResult) {
-      ConCallExpression conCall = ((TypecheckingResult) result).expression.cast(ConCallExpression.class);
-      if (conCall != null && conCall.getDefinition() == Prelude.PATH_CON) {
-        Expression arg = conCall.getDefCallArguments().get(0);
+      PathExpression pathExpr = ((TypecheckingResult) result).expression.cast(PathExpression.class);
+      if (pathExpr != null) {
+        Expression arg = pathExpr.getArgument();
         if (arg instanceof LamExpression && ((LamExpression) arg).getBody() instanceof GoalErrorExpression && !((LamExpression) arg).getParameters().getNext().hasNext()) {
           DependentLink param = ((LamExpression) arg).getParameters();
           GoalErrorExpression goalExpr = (GoalErrorExpression) ((LamExpression) arg).getBody();
           ExprSubstitution leftSubst = new ExprSubstitution(param, ExpressionFactory.Left());
           ExprSubstitution rightSubst = new ExprSubstitution(param, ExpressionFactory.Right());
-          goalExpr.goalError.addCondition(new Condition(null, leftSubst, conCall.getDataTypeArguments().get(1)));
-          goalExpr.goalError.addCondition(new Condition(null, rightSubst, conCall.getDataTypeArguments().get(2)));
-          if (goalExpr.useExpression()) {
-            return withErrorReporter(new ListErrorReporter(goalExpr.goalError.errors), tc ->
-                   compareExpressions(true,  conCall.getDataTypeArguments().get(1), goalExpr.getExpression().subst(leftSubst), AppExpression.make(conCall.getDataTypeArguments().get(0), ExpressionFactory.Left(), true),  expr)
-                && compareExpressions(false, conCall.getDataTypeArguments().get(2), goalExpr.getExpression().subst(rightSubst), AppExpression.make(conCall.getDataTypeArguments().get(0), ExpressionFactory.Right(), true), expr));
-          }
-        } else {
-          return compareExpressions(true,  conCall.getDataTypeArguments().get(1), AppExpression.make(arg, ExpressionFactory.Left(), true),  AppExpression.make(conCall.getDataTypeArguments().get(0), ExpressionFactory.Left(), true),  expr)
-              && compareExpressions(false, conCall.getDataTypeArguments().get(2), AppExpression.make(arg, ExpressionFactory.Right(), true), AppExpression.make(conCall.getDataTypeArguments().get(0), ExpressionFactory.Right(), true), expr);
+          goalExpr.goalError.addCondition(new Condition(null, leftSubst, AppExpression.make(arg, ExpressionFactory.Left(), true)));
+          goalExpr.goalError.addCondition(new Condition(null, rightSubst, AppExpression.make(arg, ExpressionFactory.Right(), true)));
         }
       }
     }
@@ -3311,7 +3295,10 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     Map<Binding, Expression> result = new HashMap<>();
     for (Binding binding : context.values()) {
       if (binding instanceof TypedHaveClause || binding instanceof TypedLetClause) {
-        result.put(binding, binding instanceof TypedHaveClause ? ((TypedHaveClause) binding).type : ((TypedLetClause) binding).type);
+        Expression type = binding instanceof TypedHaveClause ? ((TypedHaveClause) binding).type : ((TypedLetClause) binding).type;
+        if (type != null) {
+          result.put(binding, type);
+        }
       }
     }
     return result;

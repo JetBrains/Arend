@@ -1,5 +1,6 @@
 package org.arend.typechecking.implicitargs;
 
+import org.arend.Matchers;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.TypedBinding;
@@ -9,6 +10,7 @@ import org.arend.core.expr.PiExpression;
 import org.arend.core.sort.Level;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.typechecking.TypeCheckingTestCase;
+import org.arend.typechecking.error.local.PathEndpointMismatchError;
 import org.arend.typechecking.error.local.inference.ArgInferenceError;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.junit.Test;
@@ -317,27 +319,32 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
 
   @Test
   public void inferPathCon() {
-    typeCheckDef("\\func f : 1 = 1 => path (\\lam _ => 0)", 1);
+    typeCheckDef("\\func f : 1 = 1 => path (\\lam _ => 0)", 2);
+    assertThatErrorsAre(Matchers.typecheckingError(PathEndpointMismatchError.class), Matchers.typecheckingError(PathEndpointMismatchError.class));
   }
 
   @Test
   public void inferPathCon0() {
     typeCheckDef("\\func f : 1 = 1 => path {\\lam _ => Nat} (\\lam _ => 0)", 1);
+    assertThatErrorsAre(Matchers.typeMismatchError());
   }
 
   @Test
   public void inferPathCon1() {
-    typeCheckDef("\\func f : 1 = 1 => path {\\lam _ => Nat} {1} (\\lam _ => 0)", 1);
+    typeCheckDef("\\func f : 1 = 0 => path {\\lam _ => Nat} {1} (\\lam _ => 0)", 1);
+    assertThatErrorsAre(Matchers.typecheckingError(PathEndpointMismatchError.class));
   }
 
   @Test
   public void inferPathCon2() {
     typeCheckDef("\\func f : 1 = 1 => path {\\lam _ => Nat} {0} (\\lam _ => 0)", 1);
+    assertThatErrorsAre(Matchers.typeMismatchError());
   }
 
   @Test
   public void inferPathCon3() {
-    typeCheckDef("\\func f : 1 = 1 => path {\\lam _ => Nat} {1} {1} (\\lam _ => 0)", 1);
+    typeCheckDef("\\func f : 1 = 1 => path {\\lam _ => Nat} {1} {1} (\\lam _ => 0)", 2);
+    assertThatErrorsAre(Matchers.typecheckingError(PathEndpointMismatchError.class), Matchers.typecheckingError(PathEndpointMismatchError.class));
   }
 
   @Test

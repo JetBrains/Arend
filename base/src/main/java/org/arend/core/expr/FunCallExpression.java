@@ -1,6 +1,5 @@
 package org.arend.core.expr;
 
-import org.arend.core.definition.Constructor;
 import org.arend.core.definition.DConstructor;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.visitor.ExpressionVisitor;
@@ -45,19 +44,6 @@ public class FunCallExpression extends LeveledDefCallExpression implements CoreF
         : definition == Prelude.DIV ? expr1.div(expr2)
         : definition == Prelude.MOD ? expr1.mod(expr2)
         : expr1.divMod(expr2);
-    }
-    if (definition == Prelude.AT && arguments.size() == 5) {
-      if (arguments.get(4) instanceof ConCallExpression) {
-        Constructor constructor = ((ConCallExpression) arguments.get(4)).getDefinition();
-        if (constructor == Prelude.LEFT) {
-          return arguments.get(1);
-        }
-        if (constructor == Prelude.RIGHT) {
-          return arguments.get(2);
-        }
-      } else if (arguments.get(3) instanceof ConCallExpression && ((ConCallExpression) arguments.get(3)).getDefinition() == Prelude.PATH_CON) {
-        return AppExpression.make(((ConCallExpression) arguments.get(3)).getDefCallArguments().get(0), arguments.get(4), true);
-      }
     }
     if (definition == Prelude.EMPTY_ARRAY && arguments.size() == 1) {
       return ArrayExpression.make(levels.toLevelPair(), arguments.get(0), Collections.emptyList(), null);

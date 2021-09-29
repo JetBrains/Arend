@@ -1880,13 +1880,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
   private Expression addAts(Expression expression, DependentLink param, Expression type) {
     while (type instanceof DataCallExpression && ((DataCallExpression) type).getDefinition() == Prelude.PATH) {
-      List<Expression> args = new ArrayList<>(5);
-      args.addAll(((DataCallExpression) type).getDefCallArguments());
-      args.add(expression);
-      LamExpression lamExpr = (LamExpression) ((DataCallExpression) type).getDefCallArguments().get(0);
-      args.add(new ReferenceExpression(param));
-      expression = FunCallExpression.make(Prelude.AT, ((DataCallExpression) type).getLevels(), args);
-      type = lamExpr.getBody();
+      expression = AtExpression.make(((DataCallExpression) type).getLevels().toLevelPair(), expression, new ReferenceExpression(param), false);
+      type = ((LamExpression) ((DataCallExpression) type).getDefCallArguments().get(0)).getBody();
       param = param.getNext();
     }
     return expression;

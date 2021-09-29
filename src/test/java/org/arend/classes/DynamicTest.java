@@ -700,41 +700,29 @@ public class DynamicTest extends TypeCheckingTestCase {
     ConCallExpression arg2Fun = arguments.get(2).cast(ConCallExpression.class);
     assertEquals(2, arg2Fun.getDataTypeArguments().size());
     assertEquals(Ref(testFun.getParameters()), arg2Fun.getDataTypeArguments().get(0));
-    ConCallExpression expr1 = arg2Fun.getDataTypeArguments().get(1).cast(ConCallExpression.class);
-    assertEquals(Prelude.PATH_CON, expr1.getDefinition());
-    assertEquals(xCall, expr1.getDefCallArguments().get(0).cast(LamExpression.class).getBody());
+    PathExpression expr1 = arg2Fun.getDataTypeArguments().get(1).cast(PathExpression.class);
+    assertEquals(xCall, expr1.getArgument().cast(LamExpression.class).getBody());
 
     assertEquals(foo, arg2Fun.getDefinition());
-    ConCallExpression expr2 = arg2Fun.getDefCallArguments().get(0).cast(ConCallExpression.class);
-    assertEquals(Prelude.PATH_CON, expr2.getDefinition());
-    ConCallExpression expr3 = expr2.getDefCallArguments().get(0).cast(LamExpression.class).getBody().cast(ConCallExpression.class);
-    assertEquals(Prelude.PATH_CON, expr3.getDefinition());
-    assertEquals(xCall, expr3.getDefCallArguments().get(0).cast(LamExpression.class).getBody());
+    PathExpression expr2 = arg2Fun.getDefCallArguments().get(0).cast(PathExpression.class);
+    PathExpression expr3 = expr2.getArgument().cast(LamExpression.class).getBody().cast(PathExpression.class);
+    assertEquals(xCall, expr3.getArgument().cast(LamExpression.class).getBody());
 
     ConCallExpression arg1Fun = arguments.get(1).cast(ConCallExpression.class);
     assertEquals(2, arg1Fun.getDataTypeArguments().size());
     assertEquals(Ref(testFun.getParameters()), arg1Fun.getDataTypeArguments().get(0));
     assertEquals(expr1, arg1Fun.getDataTypeArguments().get(1));
     assertEquals(foo, arg1Fun.getDefinition());
-    ConCallExpression expr4 = arg1Fun.getDefCallArguments().get(0).cast(ConCallExpression.class);
-    assertEquals(Prelude.PATH_CON, expr4.getDefinition());
-    ConCallExpression expr5 = expr4.getDefCallArguments().get(0).cast(LamExpression.class).getBody().cast(ConCallExpression.class);
-    assertEquals(Prelude.PATH_CON, expr5.getDefinition());
-    assertEquals(xCall, expr5.getDefCallArguments().get(0).cast(LamExpression.class).getBody());
+    PathExpression expr4 = arg1Fun.getDefCallArguments().get(0).cast(PathExpression.class);
+    PathExpression expr5 = expr4.getArgument().cast(LamExpression.class).getBody().cast(PathExpression.class);
+    assertEquals(xCall, expr5.getArgument().cast(LamExpression.class).getBody());
 
     LamExpression arg0 = arguments.get(0).cast(LamExpression.class);
     assertEquals(Foo, arg0.getBody().cast(DataCallExpression.class).getDefinition());
     assertEquals(Ref(testFun.getParameters()), arg0.getBody().cast(DataCallExpression.class).getDefCallArguments().get(0));
-    ConCallExpression paramConCall = arg0.getBody().cast(DataCallExpression.class).getDefCallArguments().get(1).cast(ConCallExpression.class);
-    assertEquals(Prelude.PATH_CON, paramConCall.getDefinition());
-    assertEquals(1, paramConCall.getDefCallArguments().size());
-    assertEquals(xCall, paramConCall.getDefCallArguments().get(0).cast(LamExpression.class).getBody());
-
-    List<? extends Expression> parameters = paramConCall.getDataTypeArguments();
-    assertEquals(3, parameters.size());
-    assertEquals(Nat(), parameters.get(0).cast(LamExpression.class).getBody());
-    assertEquals(xCall, parameters.get(1).normalize(NormalizationMode.WHNF));
-    assertEquals(xCall, parameters.get(2).normalize(NormalizationMode.WHNF));
+    PathExpression paramConCall = arg0.getBody().cast(DataCallExpression.class).getDefCallArguments().get(1).cast(PathExpression.class);
+    assertEquals(xCall, paramConCall.getArgument().cast(LamExpression.class).getBody());
+    assertNull(paramConCall.getArgumentType());
   }
 
   @Test

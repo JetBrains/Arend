@@ -59,6 +59,18 @@ public class InPlaceLevelSubstVisitor extends VoidExpressionVisitor<Void> {
   }
 
   @Override
+  public Void visitPath(PathExpression expr, Void params) {
+    expr.substLevels(mySubstitution);
+    return super.visitPath(expr, params);
+  }
+
+  @Override
+  public Void visitAt(AtExpression expr, Void params) {
+    expr.substLevels(mySubstitution);
+    return super.visitAt(expr, params);
+  }
+
+  @Override
   public Void visitClassCall(ClassCallExpression expr, Void params) {
     expr.substSort(mySubstitution);
     expr.setSort(expr.getSort().subst(mySubstitution));

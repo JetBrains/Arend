@@ -31,6 +31,8 @@ message Expression {
         PEval pEval = 20;
         TypeCoerce type_coerce = 22;
         Array array = 23;
+        Path path = 24;
+        At at = 25;
     }
 
     message Abs {
@@ -133,6 +135,18 @@ message Expression {
       Expression elementsType = 2;
       repeated Expression element = 3;
       Expression tail = 4;
+    }
+    message Path {
+        Level pLevel = 1;
+        Level hLevel = 2;
+        Expression argumentType = 3;
+        Expression argument = 4;
+    }
+    message At {
+        Level pLevel = 1;
+        Level hLevel = 2;
+        Expression pathArgument = 3;
+        Expression intervalArgument = 4;
     }
     message New {
         ClassCall class_call = 1;

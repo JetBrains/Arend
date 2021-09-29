@@ -37,7 +37,6 @@ import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.arend.util.Pair;
 import org.arend.util.SingletonList;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -170,24 +169,20 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
     }
 
     if (isExplicit) {
-      if (result instanceof DefCallResult) {
+      if (result instanceof DefCallResult && ((DefCallResult) result).getDefinition() == Prelude.PATH_CON) {
         DefCallResult defCallResult = (DefCallResult) result;
-        if (defCallResult.getDefinition() == Prelude.PATH_CON && defCallResult.getArguments().isEmpty()) {
-          SingleDependentLink lamParam = new TypedSingleDependentLink(true, "i", Interval());
-          Sort sort0 = Sort.STD.subst(defCallResult.getLevels().toLevelPair());
+        SingleDependentLink lamParam = new TypedSingleDependentLink(true, "i", Interval());
+        Sort sort0 = Sort.STD.subst(defCallResult.getLevels().toLevelPair());
+        Sort sort = sort0.succ();
+        TypecheckingResult argResult;
+        if (defCallResult.getArguments().isEmpty()) {
           Expression binding = InferenceReferenceExpression.make(new FunctionInferenceVariable(Prelude.PATH_CON, Prelude.PATH_CON.getDataTypeParameters(), 1, new UniverseExpression(sort0), fun, myVisitor.getAllBindings()), myVisitor.getEquations());
-          Sort sort = sort0.succ();
           result = result.applyExpression(new LamExpression(sort, lamParam, binding), true, myVisitor.getErrorReporter(), fun);
-
-          TypecheckingResult argResult = myVisitor.checkArgument(arg, new PiExpression(sort, lamParam, binding), result, null);
-          if (argResult == null) {
-            return null;
-          }
-
-          Expression expr1 = AppExpression.make(argResult.expression, Left(), true);
-          Expression expr2 = AppExpression.make(argResult.expression, Right(), true);
-          return ((DefCallResult) result).applyExpressions(Arrays.asList(expr1, expr2, argResult.expression));
+          argResult = myVisitor.checkArgument(arg, new PiExpression(sort, lamParam, binding), result, null);
+        } else {
+          argResult = myVisitor.checkArgument(arg, new PiExpression(sort, lamParam, AppExpression.make(defCallResult.getArguments().get(0), new ReferenceExpression(lamParam), true)), result, null);
         }
+        return argResult == null ? null : ((DefCallResult) result).applyPathArgument(argResult.expression, myVisitor, arg);
       }
 
       result = fixImplicitArgs(result, result.getImplicitParameters(), fun, false, null);

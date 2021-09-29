@@ -628,6 +628,30 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
   }
 
   @Override
+  public ExpressionProtos.Expression visitPath(PathExpression expr, Void params) {
+    ExpressionProtos.Expression.Path.Builder builder = ExpressionProtos.Expression.Path.newBuilder();
+    LevelPair levelPair = expr.getLevels().toLevelPair();
+    builder.setPLevel(writeLevel(levelPair.get(LevelVariable.PVAR)));
+    builder.setHLevel(writeLevel(levelPair.get(LevelVariable.HVAR)));
+    if (expr.getArgumentType() != null) {
+      builder.setArgumentType(writeExpr(expr.getArgumentType()));
+    }
+    builder.setArgument(writeExpr(expr.getArgument()));
+    return ExpressionProtos.Expression.newBuilder().setPath(builder.build()).build();
+  }
+
+  @Override
+  public ExpressionProtos.Expression visitAt(AtExpression expr, Void params) {
+    ExpressionProtos.Expression.At.Builder builder = ExpressionProtos.Expression.At.newBuilder();
+    LevelPair levelPair = expr.getLevels().toLevelPair();
+    builder.setPLevel(writeLevel(levelPair.get(LevelVariable.PVAR)));
+    builder.setHLevel(writeLevel(levelPair.get(LevelVariable.HVAR)));
+    builder.setPathArgument(writeExpr(expr.getPathArgument()));
+    builder.setIntervalArgument(writeExpr(expr.getIntervalArgument()));
+    return ExpressionProtos.Expression.newBuilder().setAt(builder.build()).build();
+  }
+
+  @Override
   public ExpressionProtos.Expression visitFieldCall(FieldCallExpression expr, Void params) {
     ExpressionProtos.Expression.FieldCall.Builder builder = ExpressionProtos.Expression.FieldCall.newBuilder();
     builder.setFieldRef(myCallTargetIndexProvider.getDefIndex(expr.getDefinition()));

@@ -37,8 +37,7 @@ import org.arend.util.SingletonList;
 
 import java.util.*;
 
-import static org.arend.core.expr.ExpressionFactory.Nat;
-import static org.arend.core.expr.ExpressionFactory.Suc;
+import static org.arend.core.expr.ExpressionFactory.*;
 
 public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expression> {
   private final Set<Binding> myContext;
@@ -886,5 +885,49 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       expr.getTail().accept(this, new ClassCallExpression(Prelude.DEP_ARRAY, expr.getLevels(), Collections.singletonMap(Prelude.ARRAY_ELEMENTS_TYPE, expr.getElementsType()), new Sort(expr.getPLevel(), expr.getHLevel().max(new Level(0))), UniverseKind.NO_UNIVERSES));
     }
     return check(expectedType, expr.getType(), expr);
+  }
+
+  @Override
+  public Expression visitPath(PathExpression expr, Expression expectedType) {
+    Sort sort = new Sort(expr.getLevels().get(LevelVariable.PVAR).add(1), Level.INFINITY);
+    Expression argumentType;
+    if (expr.getArgumentType() != null) {
+      expr.getArgumentType().accept(this, new PiExpression(sort, UnusedIntervalDependentLink.INSTANCE, new UniverseExpression(expr.getLevels().toSort())));
+      TypedSingleDependentLink param = new TypedSingleDependentLink(true, "i", ExpressionFactory.Interval());
+      argumentType = new PiExpression(sort, param, AppExpression.make(expr.getArgumentType(), new ReferenceExpression(param), true));
+    } else {
+      argumentType = null;
+    }
+    argumentType = expr.getArgument().accept(this, argumentType);
+    if (expr.getArgumentType() == null) {
+      argumentType = argumentType.normalize(NormalizationMode.WHNF);
+      boolean ok = argumentType instanceof PiExpression;
+      if (ok) {
+        Expression paramType = ((PiExpression) argumentType).getParameters().getTypeExpr().normalize(NormalizationMode.WHNF);
+        if (!(paramType instanceof DataCallExpression && ((DataCallExpression) paramType).getDefinition() == Prelude.INTERVAL)) {
+          ok = false;
+        }
+      }
+      if (!ok) {
+        throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(DocFactory.text("I -> _"), argumentType, mySourceNode), expr.getArgument()));
+      }
+    }
+    return check(expectedType, expr.getType(), expr);
+  }
+
+  @Override
+  public Expression visitAt(AtExpression expr, Expression expectedType) {
+    Expression type = expr.getPathArgument().accept(this, null).normalize(NormalizationMode.WHNF);
+    if (!(type instanceof DataCallExpression && ((DataCallExpression) type).getDefinition() == Prelude.PATH)) {
+      throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(DocFactory.refDoc(Prelude.PATH.getRef()), type, mySourceNode), expr.getPathArgument()));
+    }
+    Expression fun = ((DataCallExpression) type).getDefCallArguments().get(0);
+    Expression actualSort = AppExpression.make(fun, new ReferenceExpression(new TypedBinding("i", Interval())), true).getType();
+    Expression expectedSort = new UniverseExpression(expr.getLevels().toSort());
+    if (!CompareVisitor.compare(myEquations, CMP.LE, actualSort, expectedSort, Type.OMEGA, mySourceNode)) {
+      throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError("Sort mismatch", expectedSort, actualSort, mySourceNode), expr));
+    }
+    expr.getIntervalArgument().accept(this, Interval());
+    return check(expectedType, AppExpression.make(fun, expr.getIntervalArgument(), true), expr);
   }
 }

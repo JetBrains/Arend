@@ -251,4 +251,20 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> {
     }
     return null;
   }
+
+  @Override
+  public Void visitPath(PathExpression expr, P params) {
+    if (expr.getArgumentType() != null) {
+      expr.getArgumentType().accept(this, params);
+    }
+    expr.getArgument().accept(this, params);
+    return null;
+  }
+
+  @Override
+  public Void visitAt(AtExpression expr, P params) {
+    expr.getPathArgument().accept(this, params);
+    expr.getIntervalArgument().accept(this, params);
+    return null;
+  }
 }

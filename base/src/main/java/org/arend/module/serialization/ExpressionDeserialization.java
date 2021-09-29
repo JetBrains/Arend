@@ -328,6 +328,10 @@ class ExpressionDeserialization {
         return readSmallInteger(proto.getSmallInteger());
       case BIG_INTEGER:
         return readBigInteger(proto.getBigInteger());
+      case PATH:
+        return readPath(proto.getPath());
+      case AT:
+        return readAt(proto.getAt());
       default:
         throw new DeserializationException("Unknown Expression kind: " + proto.getKindCase());
     }
@@ -482,6 +486,14 @@ class ExpressionDeserialization {
 
   private Expression readArray(ExpressionProtos.Expression.Array proto) throws DeserializationException {
     return ArrayExpression.make(new LevelPair(readLevel(proto.getPLevel(), LevelVariable.PVAR), readLevel(proto.getHLevel(), LevelVariable.HVAR)), readExpr(proto.getElementsType()), readExprList(proto.getElementList()), proto.hasTail() ? readExpr(proto.getTail()) : null);
+  }
+
+  private Expression readPath(ExpressionProtos.Expression.Path proto) throws DeserializationException {
+    return new PathExpression(new LevelPair(readLevel(proto.getPLevel(), LevelVariable.PVAR), readLevel(proto.getHLevel(), LevelVariable.HVAR)), proto.hasArgumentType() ? readExpr(proto.getArgumentType()) : null, readExpr(proto.getArgument()));
+  }
+
+  private Expression readAt(ExpressionProtos.Expression.At proto) throws DeserializationException {
+    return AtExpression.make(new LevelPair(readLevel(proto.getPLevel(), LevelVariable.PVAR), readLevel(proto.getHLevel(), LevelVariable.HVAR)), readExpr(proto.getPathArgument()), readExpr(proto.getIntervalArgument()), false);
   }
 
   private String validName(String name) {

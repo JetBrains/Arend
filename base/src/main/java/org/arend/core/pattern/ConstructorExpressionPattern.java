@@ -306,10 +306,10 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
       if (expression instanceof FunCallExpression && ((FunCallExpression) expression).getDefinition() == Prelude.IDP) {
         return Collections.emptyList();
       }
-      if (!(expression instanceof ConCallExpression && ((ConCallExpression) expression).getDefinition() == Prelude.PATH_CON)) {
+      if (!(expression instanceof PathExpression)) {
         return null;
       }
-      Expression arg = ((ConCallExpression) expression).getDefCallArguments().get(0);
+      Expression arg = ((PathExpression) expression).getArgument();
       if (normalize) {
         arg = arg.normalize(NormalizationMode.WHNF);
       }

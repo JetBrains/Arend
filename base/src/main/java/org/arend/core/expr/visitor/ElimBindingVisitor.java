@@ -141,6 +141,8 @@ public class ElimBindingVisitor extends ExpressionTransformer<Void> {
       }
       newFieldSet.put(entry.getKey(), newImpl.subst(expr.getThisBinding(), new ReferenceExpression(result.getThisBinding())));
     }
+    result.removeDependencies(expr.getImplementedHere().keySet());
+
     if (myKeepVisitor != null) {
       myKeepVisitor.getBindings().remove(expr.getThisBinding());
     }
@@ -469,5 +471,24 @@ public class ElimBindingVisitor extends ExpressionTransformer<Void> {
       tail = null;
     }
     return ArrayExpression.make(expr.getLevels(), elementsType, elements, tail);
+  }
+
+  @Override
+  public Expression visitPath(PathExpression expr, Void params) {
+    Expression argumentType = null;
+    if (expr.getArgumentType() != null) {
+      argumentType = acceptSelf(expr.getArgumentType(), true);
+      if (argumentType == null) return null;
+    }
+    Expression argument = acceptSelf(expr.getArgument(), true);
+    return argument == null ? null : new PathExpression(expr.getLevels(), argumentType, argument);
+  }
+
+  @Override
+  public Expression visitAt(AtExpression expr, Void params) {
+    Expression pathArg = acceptSelf(expr.getPathArgument(), true);
+    if (pathArg == null) return null;
+    Expression intervalArg = acceptSelf(expr.getIntervalArgument(), true);
+    return intervalArg == null ? null : AtExpression.make(expr.getLevels(), pathArg, intervalArg, false);
   }
 }

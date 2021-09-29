@@ -30,6 +30,10 @@ public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean>
     }
   }
 
+  protected boolean checkPathArgumentType() {
+    return true;
+  }
+
   protected boolean preserveOrder() {
     return false;
   }
@@ -119,6 +123,16 @@ public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean>
     } while (it instanceof ConCallExpression);
 
     return visitConCallArgument(it, param);
+  }
+
+  @Override
+  public Boolean visitPath(PathExpression expr, P params) {
+    return checkPathArgumentType() && expr.getArgumentType() != null && expr.getArgumentType().accept(this, params) || expr.getArgument().accept(this, params);
+  }
+
+  @Override
+  public Boolean visitAt(AtExpression expr, P params) {
+    return expr.getPathArgument().accept(this, params) || expr.getIntervalArgument().accept(this, params);
   }
 
   @Override

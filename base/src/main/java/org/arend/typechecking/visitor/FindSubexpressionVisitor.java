@@ -18,8 +18,31 @@ public class FindSubexpressionVisitor extends SearchVisitor<Void> {
   }
 
   @Override
+  protected boolean checkPathArgumentType() {
+    return false;
+  }
+
+  @Override
   protected CoreExpression.FindAction processDefCall(DefCallExpression expression, Void param) {
     return myFunction.apply(expression);
+  }
+
+  @Override
+  public Boolean visitPath(PathExpression expr, Void param) {
+    switch (myFunction.apply(expr)) {
+      case STOP: return true;
+      case SKIP: return false;
+      default: return super.visitPath(expr, param);
+    }
+  }
+
+  @Override
+  public Boolean visitAt(AtExpression expr, Void params) {
+    switch (myFunction.apply(expr)) {
+      case STOP: return true;
+      case SKIP: return false;
+      default: return super.visitAt(expr, params);
+    }
   }
 
   @Override

@@ -266,4 +266,22 @@ public class RecreateExpressionVisitor extends SubstVisitor {
     }
     return super.visitArray(expr, params);
   }
+
+  @Override
+  public Expression visitPath(PathExpression expr, Void params) {
+    Expression result = UncheckedExpressionImpl.extract(myMapper.map(expr));
+    if (result != null) {
+      return result;
+    }
+    return super.visitPath(expr, params);
+  }
+
+  @Override
+  public Expression visitAt(AtExpression expr, Void params) {
+    Expression result = UncheckedExpressionImpl.extract(myMapper.map(expr));
+    if (result != null) {
+      return result;
+    }
+    return super.visitAt(expr, params);
+  }
 }

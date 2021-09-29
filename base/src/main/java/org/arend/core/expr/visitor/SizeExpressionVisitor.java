@@ -68,6 +68,18 @@ public class SizeExpressionVisitor extends VoidExpressionVisitor<Void> {
   }
 
   @Override
+  public Void visitPath(PathExpression expr, Void params) {
+    mySize++;
+    return super.visitPath(expr, params);
+  }
+
+  @Override
+  public Void visitAt(AtExpression expr, Void params) {
+    mySize++;
+    return super.visitAt(expr, params);
+  }
+
+  @Override
   public Void visitReference(ReferenceExpression expr, Void params) {
     mySize++;
     return null;

@@ -5,14 +5,17 @@ import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.context.param.TypedDependentLink;
 import org.arend.core.definition.Definition;
 import org.arend.core.expr.*;
+import org.arend.core.expr.visitor.CompareVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.Levels;
 import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
+import org.arend.ext.core.ops.CMP;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
+import org.arend.typechecking.error.local.PathEndpointMismatchError;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 
 import java.util.ArrayList;
@@ -54,10 +57,18 @@ public class DefCallResult implements TResult {
     return new DefCallResult(defCall, definition, levels, new ArrayList<>(), parameters, new UniverseExpression(resultSort));
   }
 
+  private Expression getCoreDefCall() {
+    return myDefinition == Prelude.PATH_CON
+      ? new PathExpression(myLevels.toLevelPair(), myArguments.get(0).removeConstLam() == null ? myArguments.get(0) : null, myArguments.get(1))
+      : myDefinition == Prelude.AT
+        ? AtExpression.make(myLevels.toLevelPair(), myArguments.get(3), myArguments.get(4), true)
+        : myDefinition.getDefCall(myLevels, myArguments);
+  }
+
   @Override
   public TypecheckingResult toResult(CheckTypeVisitor typechecker) {
     if (myParameters.isEmpty()) {
-      return new TypecheckingResult(myDefinition.getDefCall(myLevels, myArguments), myResultType);
+      return new TypecheckingResult(getCoreDefCall(), myResultType);
     }
 
     List<SingleDependentLink> parameters = new ArrayList<>();
@@ -84,7 +95,7 @@ public class DefCallResult implements TResult {
       }
     }
 
-    Expression expression = myDefinition.getDefCall(myLevels, myArguments);
+    Expression expression = getCoreDefCall();
     Expression type = myResultType.subst(substitution, LevelSubstitution.EMPTY);
     Sort codSort = typechecker.getSortOfType(type, myDefCall);
     for (int i = parameters.size() - 1; i >= 0; i--) {
@@ -108,7 +119,7 @@ public class DefCallResult implements TResult {
     subst.add(myParameters.get(0), expression);
     myParameters = DependentLink.Helper.subst(myParameters.subList(1, size), subst, LevelSubstitution.EMPTY);
     myResultType = myResultType.subst(subst, LevelSubstitution.EMPTY);
-    return size > 1 ? this : new TypecheckingResult(myDefinition.getDefCall(myLevels, myArguments), myResultType);
+    return size > 1 ? this : new TypecheckingResult(getCoreDefCall(), myResultType);
   }
 
   public TResult applyExpressions(List<? extends Expression> expressions) {
@@ -123,7 +134,36 @@ public class DefCallResult implements TResult {
     myResultType = myResultType.subst(subst, LevelSubstitution.EMPTY);
 
     assert expressions.size() <= size;
-    return expressions.size() < size ? this : new TypecheckingResult(myDefinition.getDefCall(myLevels, myArguments), myResultType);
+    return expressions.size() < size ? this : new TypecheckingResult(getCoreDefCall(), myResultType);
+  }
+
+  public TResult applyPathArgument(Expression argument, CheckTypeVisitor visitor, Concrete.SourceNode sourceNode) {
+    assert myDefinition == Prelude.PATH_CON && !myArguments.isEmpty();
+    Expression leftExpr = AppExpression.make(argument, ExpressionFactory.Left(), true);
+    Expression rightExpr = AppExpression.make(argument, ExpressionFactory.Right(), true);
+    ExprSubstitution subst = new ExprSubstitution();
+    if (myArguments.size() >= 2) {
+      if (!CompareVisitor.compare(visitor.getEquations(), CMP.EQ, leftExpr, myArguments.get(1), AppExpression.make(myArguments.get(0), ExpressionFactory.Left(), true), sourceNode)) {
+        visitor.getErrorReporter().report(new PathEndpointMismatchError(true, myArguments.get(1), leftExpr, sourceNode));
+      }
+    } else {
+      subst.add(myParameters.get(0), leftExpr);
+    }
+    if (myArguments.size() >= 3) {
+      if (!CompareVisitor.compare(visitor.getEquations(), CMP.EQ, rightExpr, myArguments.get(2), AppExpression.make(myArguments.get(0), ExpressionFactory.Right(), true), sourceNode)) {
+        visitor.getErrorReporter().report(new PathEndpointMismatchError(false, myArguments.get(2), rightExpr, sourceNode));
+      }
+    } else {
+      subst.add(myParameters.get(myParameters.size() - 2), rightExpr);
+    }
+    if (myArguments.size() > 1) {
+      myArguments.subList(1, myArguments.size()).clear();
+    }
+    myArguments.add(argument);
+
+    myParameters = Collections.emptyList();
+    myResultType = myResultType.subst(subst, LevelSubstitution.EMPTY);
+    return new TypecheckingResult(getCoreDefCall(), myResultType);
   }
 
   @Override

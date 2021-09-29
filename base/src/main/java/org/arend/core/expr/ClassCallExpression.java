@@ -116,6 +116,27 @@ public class ClassCallExpression extends LeveledDefCallExpression implements Typ
     }
   }
 
+  public void removeDependencies(Set<? extends ClassField> originalSet) {
+    boolean updated = myImplementations.size() < originalSet.size();
+    if (!updated) {
+      return;
+    }
+
+    Set<ClassField> removed = new HashSet<>(originalSet);
+    removed.removeAll(myImplementations.keySet());
+    while (updated) {
+      updated = false;
+      for (Iterator<Map.Entry<ClassField, Expression>> iterator = myImplementations.entrySet().iterator(); iterator.hasNext(); ) {
+        Map.Entry<ClassField, Expression> entry = iterator.next();
+        if (entry.getKey().getResultType().findBinding(removed) != null) {
+          iterator.remove();
+          removed.add(entry.getKey());
+          updated = true;
+        }
+      }
+    }
+  }
+
   public Map<ClassField, Expression> getImplementedHere() {
     return myImplementations;
   }

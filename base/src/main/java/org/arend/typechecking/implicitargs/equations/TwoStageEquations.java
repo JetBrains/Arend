@@ -22,7 +22,6 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.Levels;
 import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
-import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.LocalError;
@@ -612,25 +611,6 @@ public class TwoStageEquations implements Equations {
     }
   }
 
-  private ClassCallExpression removeDependencies(ClassCallExpression solution, int originalSize) {
-    ClassDefinition classDef = solution.getDefinition();
-    Map<ClassField, Expression> implementations = solution.getImplementedHere();
-    Levels levels = solution.getLevels();
-
-    ClassCallExpression sol = solution;
-    if (originalSize != implementations.size()) {
-      Sort newSort = classDef.computeSort(levels, implementations, solution.getThisBinding());
-      if (!newSort.equals(sol.getSort())) {
-        sol = new ClassCallExpression(classDef, levels, implementations, newSort, classDef.getUniverseKind());
-        for (Map.Entry<ClassField, Expression> entry : implementations.entrySet()) {
-          entry.setValue(entry.getValue().subst(solution.getThisBinding(), new ReferenceExpression(sol.getThisBinding())));
-        }
-      }
-    }
-    sol.updateHasUniverses();
-    return sol;
-  }
-
   @Override
   public boolean solve(InferenceVariable var, Expression expr) {
     return solve(var, expr, false, false, false) == SolveResult.SOLVED;
@@ -778,14 +758,15 @@ public class TwoStageEquations implements Equations {
           }
         }
 
+        ClassCallExpression minClassCall = pair.proj2.get(minIndex);
+        pair.proj2.remove(minIndex);
         if (classDef == Prelude.DEP_ARRAY) {
-          copyArray(pair.proj2.get(minIndex), pair.proj1, solution);
+          copyArray(minClassCall, pair.proj1, solution);
         } else {
-          for (Map.Entry<ClassField, Expression> entry : pair.proj2.get(minIndex).getImplementedHere().entrySet()) {
-            implementations.put(entry.getKey(), entry.getValue().subst(pair.proj2.get(minIndex).getThisBinding(), thisExpr));
+          for (Map.Entry<ClassField, Expression> entry : minClassCall.getImplementedHere().entrySet()) {
+            implementations.put(entry.getKey(), entry.getValue().subst(minClassCall.getThisBinding(), thisExpr));
           }
         }
-        pair.proj2.remove(minIndex);
 
         for (ClassCallExpression bound : pair.proj2) {
           for (Iterator<Map.Entry<ClassField, Expression>> iterator = implementations.entrySet().iterator(); iterator.hasNext(); ) {
@@ -806,6 +787,9 @@ public class TwoStageEquations implements Equations {
           }
         }
 
+        if (classDef != Prelude.DEP_ARRAY) {
+          solution.removeDependencies(minClassCall.getImplementedHere().keySet());
+        }
         solution.setSort(classDef.computeSort(solution.getLevels(), implementations, solution.getThisBinding()));
         solution.updateHasUniverses();
 
@@ -893,12 +877,6 @@ public class TwoStageEquations implements Equations {
 
     Expression expectedType = var.getType().normalize(NormalizationMode.WHNF);
     Expression result = ElimBindingVisitor.keepBindings(expr, var.getBounds(), isLowerBound);
-    if (isLowerBound && result != null) {
-      ClassCallExpression classCall = result.cast(ClassCallExpression.class);
-      if (classCall != null) {
-        result = removeDependencies(classCall, classCall.getImplementedHere().size());
-      }
-    }
 
     Expression actualType;
     if (result == null) {

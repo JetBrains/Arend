@@ -319,4 +319,15 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
     }
     return ArrayExpression.make(expr.getLevels().subst(myLevelSubstitution), expr.getElementsType().accept(this, null), elements, expr.getTail() == null ? null : expr.getTail().accept(this, null));
   }
+
+  @Override
+  public Expression visitPath(PathExpression expr, Void params) {
+    return new PathExpression(expr.getLevels().subst(myLevelSubstitution), expr.getArgumentType() == null ? null : expr.getArgumentType().accept(this, null), expr.getArgument().accept(this, null));
+  }
+
+  @Override
+  public Expression visitAt(AtExpression expr, Void params) {
+    Expression intervalArg = expr.getIntervalArgument().accept(this, null);
+    return AtExpression.make(expr.getLevels().subst(myLevelSubstitution), expr.getPathArgument().accept(this, null), intervalArg, !expr.getIntervalArgument().getClass().equals(intervalArg.getClass()));
+  }
 }

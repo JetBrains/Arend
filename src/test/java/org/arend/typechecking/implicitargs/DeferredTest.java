@@ -12,7 +12,6 @@ import static org.hamcrest.CoreMatchers.is;
 public class DeferredTest extends TypeCheckingTestCase {
   @Test
   public void preludeTest() {
-    assertThat(Prelude.AT.getParametersTypecheckingOrder(), is(nullValue()));
     assertThat(Prelude.ISO.getParametersTypecheckingOrder(), is(nullValue()));
   }
 

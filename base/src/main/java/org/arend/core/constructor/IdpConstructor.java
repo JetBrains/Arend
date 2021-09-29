@@ -1,10 +1,7 @@
 package org.arend.core.constructor;
 
 import org.arend.core.context.param.UnusedIntervalDependentLink;
-import org.arend.core.expr.ConCallExpression;
-import org.arend.core.expr.Expression;
-import org.arend.core.expr.FunCallExpression;
-import org.arend.core.expr.LamExpression;
+import org.arend.core.expr.*;
 import org.arend.core.expr.visitor.NormalizingFindBindingVisitor;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
@@ -22,11 +19,11 @@ public class IdpConstructor extends SingleConstructor {
       return ((FunCallExpression) argument).getDefinition() == Prelude.IDP ? Collections.emptyList() : null;
     }
 
-    if (!normalizing || !(argument instanceof ConCallExpression && ((ConCallExpression) argument).getDefinition() == Prelude.PATH_CON)) {
+    if (!normalizing || !(argument instanceof PathExpression)) {
       return null;
     }
 
-    LamExpression lamExpr = ((ConCallExpression) argument).getDefCallArguments().get(0).normalize(NormalizationMode.WHNF).cast(LamExpression.class);
+    LamExpression lamExpr = ((PathExpression) argument).getArgument().normalize(NormalizationMode.WHNF).cast(LamExpression.class);
     if (lamExpr == null) {
       return null;
     }
