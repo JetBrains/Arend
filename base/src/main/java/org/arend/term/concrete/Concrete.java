@@ -1071,7 +1071,7 @@ public final class Concrete {
     }
   }
 
-  public static class SigmaExpression extends Expression {
+  public static class SigmaExpression extends Expression implements ConcreteSigmaExpression {
     public static final byte PREC = -3;
     private final List<TypeParameter> myParameters;
 
@@ -1080,6 +1080,7 @@ public final class Concrete {
       myParameters = parameters;
     }
 
+    @Override
     @NotNull
     public List<TypeParameter> getParameters() {
       return myParameters;
