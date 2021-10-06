@@ -95,4 +95,9 @@ public class TypecheckingResult implements TResult, TypedExpression {
     }
     return this.type.isError() ? this : CompareVisitor.compare(DummyEquations.getInstance(), CMP.LE, this.type, (Expression) type, Type.OMEGA, null) ? new TypecheckingResult(expression, (Expression) type) : null;
   }
+
+  @Override
+  public @NotNull TypedExpression normalizeType() {
+    return new TypecheckingResult(expression, type.normalize(NormalizationMode.WHNF));
+  }
 }

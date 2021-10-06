@@ -32,7 +32,7 @@ import org.arend.typechecking.error.local.LocalErrorReporter;
 import org.arend.typechecking.order.DFS;
 import org.arend.typechecking.provider.ConcreteProvider;
 import org.arend.typechecking.visitor.SyntacticDesugarVisitor;
-import org.arend.util.Pair;
+import org.arend.ext.util.Pair;
 import org.arend.util.SingletonList;
 import org.jetbrains.annotations.NotNull;
 

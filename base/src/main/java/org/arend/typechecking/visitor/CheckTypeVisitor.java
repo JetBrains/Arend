@@ -73,7 +73,7 @@ import org.arend.typechecking.patternmatching.*;
 import org.arend.typechecking.result.DefCallResult;
 import org.arend.typechecking.result.TResult;
 import org.arend.typechecking.result.TypecheckingResult;
-import org.arend.util.Pair;
+import org.arend.ext.util.Pair;
 import org.arend.util.SingletonList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -468,11 +468,11 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     return null;
   }
 
-  public boolean checkCoerceResult(Expression expectedType, TypecheckingResult result, Concrete.Expression expr, boolean strict) {
+  public boolean checkCoerceResult(Expression expectedType, TypecheckingResult result, Concrete.SourceNode marker, boolean strict) {
     boolean isOmega = expectedType instanceof Type && ((Type) expectedType).isOmega();
     boolean ok = isOmega && result.type.isInstance(UniverseExpression.class);
     if (!ok && expectedType != null && !isOmega) {
-      CompareVisitor visitor = new CompareVisitor(strict ? new LevelEquationsWrapper(myEquations) : myEquations, CMP.LE, expr);
+      CompareVisitor visitor = new CompareVisitor(strict ? new LevelEquationsWrapper(myEquations) : myEquations, CMP.LE, marker);
       FieldCallExpression actualType = result.type.cast(FieldCallExpression.class);
       if (actualType != null && expectedType instanceof FieldCallExpression && actualType.getDefinition() == ((FieldCallExpression) expectedType).getDefinition() && (actualType.getArgument().getUnderlyingExpression() instanceof InferenceReferenceExpression || ((FieldCallExpression) expectedType).getArgument().getUnderlyingExpression() instanceof InferenceReferenceExpression)) {
         ok = visitor.normalizedCompare(result.type, expectedType, Type.OMEGA, false);
@@ -488,7 +488,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
 
     if (!strict && !result.type.isError()) {
-      errorReporter.report(new TypeMismatchError(expectedType, result.type, expr));
+      errorReporter.report(new TypeMismatchError(expectedType, result.type, marker));
     }
 
     return false;
@@ -512,11 +512,61 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     TypecheckingResult result = checkExpr(expr, type);
     if (result == null || result.expression.isError()) {
       if (result == null) {
-        result = new TypecheckingResult(null, type == null ? new ErrorExpression() : type);
+        result = new TypecheckingResult(null, type == null || type == Type.OMEGA ? new ErrorExpression() : type);
       }
       result.expression = new ErrorWithConcreteExpression(expr);
     }
     return result;
+  }
+
+  @Override
+  public @Nullable TypedExpression typecheckType(@NotNull ConcreteExpression expression) {
+    return typecheck(expression, Type.OMEGA);
+  }
+
+  @Override
+  public @Nullable Pair<AbstractedExpression,TypedExpression> typecheckAbstracted(@NotNull ConcreteExpression expression, @Nullable CoreExpression expectedType, int abstracted, @Nullable Function<TypedExpression,TypedExpression> transform) {
+    TypecheckingResult result = typecheck(expression, expectedType);
+    if (result == null) return null;
+
+    List<Binding> bindings = new ArrayList<>(abstracted);
+    if (!context.isEmpty() && abstracted > 0) {
+      List<Binding> allBindings = new ArrayList<>(context.values());
+      for (int i = allBindings.size() - 1; i >= 0 && bindings.size() < abstracted; i--) {
+        if (!(allBindings.get(i) instanceof EvaluatingBinding)) {
+          bindings.add(allBindings.get(i));
+        }
+      }
+      Collections.reverse(bindings);
+    }
+
+    if (transform != null) {
+      TypedExpression typed = transform.apply(result);
+      if (typed == null) {
+        return null;
+      }
+      if (!(typed instanceof TypecheckingResult)) {
+        throw new IllegalArgumentException();
+      }
+      result = (TypecheckingResult) typed;
+    }
+
+    return new Pair<>(AbstractedExpressionImpl.make(bindings, result.expression), result);
+  }
+
+  @Override
+  public @Nullable TypedExpression coerce(@NotNull TypedExpression expr, @NotNull CoreExpression expectedType, @NotNull ConcreteSourceNode marker) {
+    if (!(expr instanceof TypecheckingResult && expectedType instanceof Expression && marker instanceof Concrete.SourceNode)) {
+      throw new IllegalArgumentException();
+    }
+    TypecheckingResult result = (TypecheckingResult) expr;
+    result.type = result.type.normalize(NormalizationMode.WHNF);
+    return CoerceData.coerce(result, ((Expression) expectedType).normalize(NormalizationMode.WHNF), (Concrete.SourceNode) marker, this);
+  }
+
+  @Override
+  public @Nullable TypedExpression coerceToType(@NotNull TypedExpression expr, @NotNull ConcreteSourceNode marker) {
+    return coerce(expr, Type.OMEGA, marker);
   }
 
   @Nullable
@@ -689,21 +739,22 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   @Override
-  public @Nullable AbstractedExpression substituteAbstractedExpression(@NotNull AbstractedExpression expression, @NotNull LevelSubstitution levelSubst, @NotNull List<? extends ConcreteExpression> arguments) {
+  public @Nullable AbstractedExpression substituteAbstractedExpression(@NotNull AbstractedExpression expression, @NotNull LevelSubstitution levelSubst, @NotNull List<? extends ConcreteExpression> arguments, ConcreteSourceNode marker) {
     if (arguments.isEmpty()) {
       return expression;
     }
 
+    Set<Binding> skipped = new HashSet<>();
     int i = 0;
     ExprSubstitution substitution = new ExprSubstitution();
     SubstVisitor substVisitor = new SubstVisitor(substitution, levelSubst);
     while (i < arguments.size()) {
-      DependentLink link;
+      List<? extends Binding> bindings;
       int drop = 0;
       if (expression instanceof AbstractedExpressionImpl) {
-        link = ((AbstractedExpressionImpl) expression).getParameters();
+        bindings = ((AbstractedExpressionImpl) expression).getParameters();
       } else if (expression instanceof AbstractedDependentLinkType) {
-        link = ((AbstractedDependentLinkType) expression).getParameters();
+        bindings = DependentLink.Helper.toList(((AbstractedDependentLinkType) expression).getParameters());
         drop = arguments.size() - i;
         if (drop > ((AbstractedDependentLinkType) expression).getSize()) {
           throw new IllegalArgumentException();
@@ -712,25 +763,42 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         throw new IllegalArgumentException();
       }
 
-      for (; i < arguments.size(); i++, link = link.getNext()) {
-        TypecheckingResult arg = typecheck(arguments.get(i), link.getTypeExpr().accept(substVisitor, null));
-        if (arg == null || arg.expression.isError()) {
-          return null;
+      int j = 0;
+      for (; i < arguments.size(); i++, j++) {
+        Binding binding = bindings.get(j);
+        if (arguments.get(i) == null) {
+          skipped.add(binding);
+        } else {
+          TypecheckingResult arg = typecheck(arguments.get(i), binding.getTypeExpr().accept(substVisitor, null));
+          if (arg == null || arg.expression.isError()) {
+            return null;
+          }
+          substitution.add(binding, arg.expression);
         }
-        substitution.add(link, arg.expression);
       }
 
       if (expression instanceof AbstractedDependentLinkType) {
         AbstractedDependentLinkType abs = (AbstractedDependentLinkType) expression;
-        return AbstractedExpressionImpl.subst(AbstractedDependentLinkType.make(DependentLink.Helper.get(abs.getParameters(), drop), abs.getSize() - drop), substVisitor);
+        expression = AbstractedDependentLinkType.make(DependentLink.Helper.get(abs.getParameters(), drop), abs.getSize() - drop);
+        break;
       }
 
       AbstractedExpressionImpl abs = (AbstractedExpressionImpl) expression;
-      if (link.hasNext()) {
-        return AbstractedExpressionImpl.subst(AbstractedExpressionImpl.make(link, abs.getExpression()), substVisitor);
+      if (j < bindings.size()) {
+        expression = AbstractedExpressionImpl.make(bindings.subList(j, bindings.size()), abs.getExpression());
+        break;
       }
       expression = abs.getExpression();
     }
+
+    if (expression.findFreeBinding(skipped) != null) {
+      if (marker == null) {
+        throw new IllegalArgumentException();
+      }
+      errorReporter.report(new TypecheckingError("Cannot perform substitution", marker));
+      return null;
+    }
+
     return AbstractedExpressionImpl.subst(expression, substVisitor);
   }
 
@@ -983,7 +1051,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       Expression stuck = type.getStuckExpression();
       if (stuck == null || !stuck.isInstance(InferenceReferenceExpression.class) && !stuck.isError()) {
         if (stuck == null || !stuck.isError()) {
-          errorReporter.report(new TypeMismatchError(DocFactory.text("a universe"), type, expr));
+          errorReporter.report(new TypeMismatchError(DocFactory.text("\\Type"), type, expr));
         }
         return null;
       }
@@ -1758,6 +1826,9 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       TypecheckingResult result = ((CoreReferable) ref).result;
       fixCheckedExpression(result, ref, expr);
       return new TypecheckingResult(result.expression, result.type);
+    } else if (ref instanceof AbstractedReferable) {
+      Expression core = (Expression) substituteAbstractedExpression(((AbstractedReferable) ref).expression, LevelSubstitution.EMPTY, ((AbstractedReferable) ref).arguments, expr);
+      return core == null ? null : new TypecheckingResult(core, core.getType());
     }
 
     if (!(ref instanceof GlobalReferable) && (expr.getPLevels() != null || expr.getHLevels() != null)) {
@@ -1811,7 +1882,10 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       return expectedType != null && !isOmega ? new TypecheckingResult(new ErrorExpression(expr.getError()), expectedType) : null;
     }
 
-    if (expectedType != null && !isOmega) {
+    if (isOmega) {
+      Expression type = new UniverseExpression(Sort.generateInferVars(getEquations(), false, expr));
+      return new TypecheckingResult(InferenceReferenceExpression.make(myArgsInference.newInferenceVariable(type, expr), getEquations()), type);
+    } else if (expectedType != null) {
       return new TypecheckingResult(InferenceReferenceExpression.make(myArgsInference.newInferenceVariable(expectedType, expr), getEquations()), expectedType);
     } else {
       errorReporter.report(new ArgInferenceError(expression(), expr, new Expression[0]));
@@ -2016,6 +2090,30 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
   }
 
+  private boolean visitParameter(Concrete.Parameter arg, Expression expectedType, List<Sort> resultSorts, LinkList list) {
+    Type result = checkType(arg.getType(), expectedType == null ? Type.OMEGA : expectedType);
+    if (result == null) return false;
+
+    if (arg instanceof Concrete.TelescopeParameter) {
+      List<? extends Referable> referableList = arg.getReferableList();
+      DependentLink link = ExpressionFactory.parameter(arg.isExplicit(), arg.getNames(), result);
+      list.append(link);
+      int i = 0;
+      for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext(), i++) {
+        addBinding(referableList.get(i), link1);
+      }
+    } else {
+      DependentLink link = ExpressionFactory.parameter(arg.isExplicit(), (String) null, result);
+      list.append(link);
+      addBinding(null, link);
+    }
+
+    if (resultSorts != null) {
+      resultSorts.add(result.getSortOfType());
+    }
+    return true;
+  }
+
   private DependentLink visitParameters(Collection<? extends ConcreteParameter> parameters, Expression expectedType, List<Sort> resultSorts) {
     LinkList list = new LinkList();
 
@@ -2024,24 +2122,8 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         if (!(parameter instanceof Concrete.TypeParameter)) {
           throw new IllegalArgumentException();
         }
-        Concrete.TypeParameter arg = (Concrete.TypeParameter) parameter;
-        Type result = checkType(arg.getType(), expectedType == null ? Type.OMEGA : expectedType);
-        if (result == null) return null;
-
-        if (arg instanceof Concrete.TelescopeParameter) {
-          List<? extends Referable> referableList = arg.getReferableList();
-          DependentLink link = ExpressionFactory.parameter(arg.isExplicit(), arg.getNames(), result);
-          list.append(link);
-          int i = 0;
-          for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext(), i++) {
-            addBinding(referableList.get(i), link1);
-          }
-        } else {
-          list.append(ExpressionFactory.parameter(arg.isExplicit(), (String) null, result));
-        }
-
-        if (resultSorts != null) {
-          resultSorts.add(result.getSortOfType());
+        if (!visitParameter((Concrete.TypeParameter) parameter, expectedType, resultSorts, list)) {
+          return null;
         }
       }
     }
@@ -3102,12 +3184,31 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         switch (command.kind) {
           case ADD:
             for (Object binding : (Collection<?>) command.bindings) {
-              if (!(binding instanceof Binding)) {
+              if (binding instanceof Binding) {
+                addBinding(null, (Binding) binding);
+              } else if (binding instanceof Pair) {
+                Pair<?,?> pair = (Pair<?,?>) binding;
+                if (!((pair.proj1 == null || pair.proj1 instanceof Referable) && pair.proj2 instanceof Binding)) {
+                  throw new IllegalArgumentException();
+                }
+                addBinding((Referable) pair.proj1, (Binding) pair.proj2);
+              } else {
                 throw new IllegalArgumentException();
               }
-              addBinding(null, (Binding) binding);
             }
             break;
+          case ADD_PARAM: {
+            LinkList list = new LinkList();
+            for (Object param : (Collection<?>) command.bindings) {
+              if (!(param instanceof Concrete.Parameter)) {
+                throw new IllegalArgumentException();
+              }
+              if (!visitParameter((Concrete.Parameter) param, null, null, list)) {
+                return null;
+              }
+            }
+            break;
+          }
           case CLEAR:
             context.clear();
             break;

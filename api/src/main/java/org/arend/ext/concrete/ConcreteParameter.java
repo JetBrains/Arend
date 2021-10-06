@@ -13,4 +13,5 @@ public interface ConcreteParameter extends ConcreteSourceNode {
   @Nullable ConcreteExpression getType();
 
   @NotNull ConcreteParameter implicit();
+  int getNumberOfParameters();
 }

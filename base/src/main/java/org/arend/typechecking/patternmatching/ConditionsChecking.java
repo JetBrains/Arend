@@ -29,7 +29,7 @@ import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.ConditionsError;
 import org.arend.typechecking.implicitargs.equations.Equations;
-import org.arend.util.Pair;
+import org.arend.ext.util.Pair;
 
 import java.util.ArrayList;
 import java.util.Collections;

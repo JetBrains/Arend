@@ -92,8 +92,6 @@ public final class Concrete {
       return getReferableList();
     }
 
-    public abstract int getNumberOfParameters();
-
     public List<String> getNames() {
       List<? extends Referable> referableList = getReferableList();
       List<String> names = new ArrayList<>(referableList.size());

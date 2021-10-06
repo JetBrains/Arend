@@ -1,4 +1,4 @@
-package org.arend.util;
+package org.arend.ext.util;
 
 import java.util.Objects;
 

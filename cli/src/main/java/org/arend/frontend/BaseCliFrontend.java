@@ -35,7 +35,7 @@ import org.arend.typechecking.order.dependency.DependencyListener;
 import org.arend.typechecking.order.dependency.MetaDependencyCollector;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.arend.util.FileUtils;
-import org.arend.util.Pair;
+import org.arend.ext.util.Pair;
 import org.arend.util.Range;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

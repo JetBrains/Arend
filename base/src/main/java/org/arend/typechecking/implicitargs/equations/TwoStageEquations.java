@@ -32,7 +32,7 @@ import org.arend.typechecking.error.local.SolveEquationError;
 import org.arend.typechecking.error.local.SolveEquationsError;
 import org.arend.typechecking.error.local.SolveLevelEquationsError;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
-import org.arend.util.Pair;
+import org.arend.ext.util.Pair;
 
 import java.util.*;
 

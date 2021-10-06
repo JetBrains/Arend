@@ -2,7 +2,7 @@ package org.arend.repl;
 
 import org.arend.repl.action.AliasableCommand;
 import org.arend.repl.action.ReplCommand;
-import org.arend.util.Pair;
+import org.arend.ext.util.Pair;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -22,7 +22,7 @@ public final class CommandHandler implements ReplHandler {
   }
 
   @Override
-  public final boolean isApplicable(@NotNull String line) {
+  public boolean isApplicable(@NotNull String line) {
     return line.startsWith(":");
   }
 
@@ -40,7 +40,7 @@ public final class CommandHandler implements ReplHandler {
   }
 
   @Override
-  public final void invoke(@NotNull String line, @NotNull Repl api, @NotNull Supplier<@NotNull String> lineSupplier) throws QuitReplException {
+  public void invoke(@NotNull String line, @NotNull Repl api, @NotNull Supplier<@NotNull String> lineSupplier) throws QuitReplException {
     var command = splitCommand(line);
     if (command.proj1 == null) return;
     var replCommand = commandMap.get(command.proj1);

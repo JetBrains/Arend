@@ -28,7 +28,6 @@ import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.PrettyPrinterFlag;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.LocalReferable;
-import org.arend.naming.reference.NamedUnresolvedReference;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.renamer.ReferableRenamer;
 import org.arend.prelude.Prelude;
@@ -55,6 +54,10 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   }
 
   public static Concrete.Expression convert(Expression expression, PrettyPrinterConfig config) {
+    return convert(expression, config, new ReferableRenamer());
+  }
+
+  public static Concrete.Expression convert(Expression expression, PrettyPrinterConfig config, ReferableRenamer renamer) {
     DefinitionRenamer definitionRenamer = config.getDefinitionRenamer();
     if (definitionRenamer == null) {
       definitionRenamer = new ConflictDefinitionRenamer();
@@ -69,7 +72,6 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       expression = expression.normalize(mode);
     }
     expression.accept(collector, variables);
-    ReferableRenamer renamer = new ReferableRenamer();
     ToAbstractVisitor visitor = new ToAbstractVisitor(config, definitionRenamer, collector, renamer);
     renamer.generateFreshNames(variables);
     return expression.accept(visitor, null);
@@ -183,10 +185,6 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       }
     }
     return checkApp(Concrete.AppExpression.make(null, expr, concreteArguments));
-  }
-
-  private static Concrete.ReferenceExpression makeReference(Referable referable) {
-    return cVar(referable == null ? new NamedUnresolvedReference(null, "\\this") : referable);
   }
 
   private Concrete.ReferenceExpression makeReference(DefCallExpression defCall) {
@@ -431,8 +429,8 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   }
 
   @Override
-  public Concrete.ReferenceExpression visitReference(ReferenceExpression expr, Void params) {
-    return makeReference(myRenamer.getNewReferable(expr.getBinding()));
+  public Concrete.Expression visitReference(ReferenceExpression expr, Void params) {
+    return myRenamer.getConcreteExpression(expr.getBinding());
   }
 
   @Override

@@ -14,7 +14,7 @@ import org.arend.naming.scope.Scope;
 import org.arend.prelude.Prelude;
 import org.arend.term.group.*;
 import org.arend.typechecking.order.dependency.DependencyListener;
-import org.arend.util.Pair;
+import org.arend.ext.util.Pair;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;

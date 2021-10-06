@@ -1,12 +1,16 @@
 package org.arend.term.prettyprint;
 
+import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.Constructor;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.reference.Precedence;
+import org.arend.ext.variable.Variable;
+import org.arend.extImpl.AbstractedExpressionImpl;
 import org.arend.naming.reference.*;
+import org.arend.naming.renamer.MapReferableRenamer;
 import org.arend.term.Fixity;
 import org.arend.term.FunctionKind;
 import org.arend.term.concrete.*;
@@ -256,6 +260,17 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     Referable ref = expr.getReferent();
     if (ref instanceof CoreReferable && ((CoreReferable) ref).printExpression()) {
       ToAbstractVisitor.convert(((CoreReferable) ref).result.expression, PrettyPrinterConfig.DEFAULT).accept(this, prec == null ? new Precedence(ReferenceExpression.PREC) : prec);
+    } else if (ref instanceof AbstractedReferable) {
+      AbstractedReferable abs = (AbstractedReferable) ref;
+      List<Binding> bindings = new ArrayList<>();
+      org.arend.core.expr.Expression core = AbstractedExpressionImpl.getExpression(abs.expression, bindings);
+      Map<Variable, Concrete.Expression> mapper = new HashMap<>();
+      for (int i = 0; i < bindings.size() && i < abs.arguments.size(); i++) {
+        if (abs.arguments.get(i) instanceof Concrete.Expression) {
+          mapper.put(bindings.get(i), (Concrete.Expression) abs.arguments.get(i));
+        }
+      }
+      ToAbstractVisitor.convert(core, PrettyPrinterConfig.DEFAULT, new MapReferableRenamer(mapper)).accept(this, prec == null ? new Precedence(ReferenceExpression.PREC) : prec);
     } else {
       String name = null;
       if (expr instanceof Concrete.LongReferenceExpression) {

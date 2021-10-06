@@ -41,7 +41,7 @@ import org.arend.typechecking.instance.pool.InstancePool;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.arend.typechecking.visitor.DesugarVisitor;
-import org.arend.util.Pair;
+import org.arend.ext.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;

@@ -29,7 +29,7 @@ import org.arend.typechecking.error.local.*;
 import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.arend.typechecking.visitor.DumbTypechecker;
-import org.arend.util.Pair;
+import org.arend.ext.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

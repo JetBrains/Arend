@@ -28,7 +28,11 @@ public interface DependentLink extends Binding, CoreParameter {
   void setName(String name);
   DependentLink subst(SubstVisitor substVisitor, int size, boolean updateSubst);
   TypedDependentLink getNextTyped(List<String> names);
-  @Override Type getType();
+
+  @Override
+  default Binding subst(SubstVisitor visitor) {
+    return visitor.isEmpty() ? this : Helper.subst(this, visitor);
+  }
 
   @NotNull
   @Override

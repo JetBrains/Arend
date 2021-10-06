@@ -3,6 +3,7 @@ package org.arend.ext.concrete;
 import org.arend.ext.concrete.expr.*;
 import org.arend.ext.concrete.pattern.ConcretePattern;
 import org.arend.ext.core.context.CoreBinding;
+import org.arend.ext.core.expr.AbstractedExpression;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.reference.ArendRef;
 import org.arend.ext.reference.Precedence;
@@ -25,6 +26,7 @@ public interface ConcreteFactory {
   @NotNull ConcreteReferenceExpression ref(@NotNull CoreBinding ref);
   @NotNull ConcreteExpression core(@NotNull TypedExpression expr);
   @NotNull ConcreteExpression core(@Nullable String name, @NotNull TypedExpression expr);
+  @NotNull ConcreteExpression abstracted(@NotNull AbstractedExpression expr, @NotNull List<? extends ConcreteExpression> arguments);
   @NotNull ConcreteExpression meta(@NotNull String name, @NotNull MetaDefinition meta);
   @NotNull ConcreteExpression thisExpr();
   @NotNull ConcreteExpression lam(@NotNull Collection<? extends ConcreteParameter> parameters, @NotNull ConcreteExpression body);

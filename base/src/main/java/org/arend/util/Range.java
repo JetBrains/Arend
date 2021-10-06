@@ -1,5 +1,7 @@
 package org.arend.util;
 
+import org.arend.ext.util.Pair;
+
 import java.util.ArrayList;
 import java.util.List;
 

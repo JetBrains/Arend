@@ -10,7 +10,7 @@ import org.arend.core.expr.*;
 import org.arend.core.pattern.*;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.typechecking.visitor.SearchVisitor;
-import org.arend.util.Pair;
+import org.arend.ext.util.Pair;
 
 import java.util.*;
 

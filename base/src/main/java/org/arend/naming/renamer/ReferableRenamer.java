@@ -2,13 +2,16 @@ package org.arend.naming.renamer;
 
 import org.arend.ext.variable.Variable;
 import org.arend.naming.reference.LocalReferable;
+import org.arend.naming.reference.NamedUnresolvedReference;
 import org.arend.naming.reference.Referable;
+import org.arend.term.concrete.Concrete;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.arend.term.concrete.ConcreteExpressionFactory.cVar;
 import static org.arend.term.concrete.ConcreteExpressionFactory.ref;
 
 public class ReferableRenamer extends Renamer {
@@ -33,6 +36,14 @@ public class ReferableRenamer extends Renamer {
 
   public LocalReferable getNewReferable(Variable variable) {
     return myMap.get(variable);
+  }
+
+  public Concrete.Expression getConcreteExpression(Variable variable) {
+    return makeReference(myMap.get(variable));
+  }
+
+  private static Concrete.ReferenceExpression makeReference(Referable referable) {
+    return cVar(referable == null ? new NamedUnresolvedReference(null, "\\this") : referable);
   }
 
   public LocalReferable generateFreshReferable(Variable var, Collection<? extends Variable> variables) {

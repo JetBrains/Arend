@@ -39,7 +39,7 @@ import org.arend.typechecking.provider.ConcreteProvider;
 import org.arend.typechecking.termination.DefinitionCallGraph;
 import org.arend.typechecking.termination.RecursiveBehavior;
 import org.arend.typechecking.visitor.*;
-import org.arend.util.Pair;
+import org.arend.ext.util.Pair;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;

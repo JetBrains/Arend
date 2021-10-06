@@ -5,7 +5,7 @@ import org.arend.core.elimtree.*;
 import org.arend.core.expr.DefCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.subst.Levels;
-import org.arend.util.Pair;
+import org.arend.ext.util.Pair;
 
 public class UniverseKindChecker extends UniverseInParametersChecker {
   private UniverseKind myResult = UniverseKind.NO_UNIVERSES;

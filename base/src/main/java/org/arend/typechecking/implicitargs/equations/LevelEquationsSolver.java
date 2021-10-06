@@ -11,7 +11,7 @@ import org.arend.typechecking.error.local.ConstantSolveLevelEquationError;
 import org.arend.typechecking.error.local.SolveLevelEquationsError;
 import org.arend.typechecking.order.DFS;
 import org.arend.typechecking.order.MapDFS;
-import org.arend.util.Pair;
+import org.arend.ext.util.Pair;
 
 import java.util.*;
 

@@ -9,7 +9,7 @@ import org.arend.core.expr.SigmaExpression;
 import org.arend.core.expr.TupleExpression;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.Doc;
-import org.arend.util.Pair;
+import org.arend.ext.util.Pair;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;

@@ -18,7 +18,7 @@ import org.arend.typechecking.error.local.CoerceCycleError;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.order.DFS;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
-import org.arend.util.Pair;
+import org.arend.ext.util.Pair;
 
 import java.util.*;
 

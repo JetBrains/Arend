@@ -97,6 +97,11 @@ public abstract class Expression implements Body, CoreExpression {
     return CompareVisitor.compare(equations, CMP.LE, this, type, Type.OMEGA, sourceNode);
   }
 
+  @Override
+  public int getNumberOfAbstractedBindings() {
+    return 0;
+  }
+
   public Expression pred() {
     return null;
   }
@@ -148,6 +153,13 @@ public abstract class Expression implements Body, CoreExpression {
       return false;
     }
     return accept(new FindBindingVisitor(Collections.singleton((Binding) binding)), null);
+  }
+
+  @Override
+  public @Nullable CoreBinding findFreeBinding(@NotNull Set<? extends CoreBinding> bindings) {
+    if (bindings.isEmpty()) return null;
+    FindBindingVisitor visitor = new FindBindingVisitor(bindings);
+    return accept(visitor, null) ? (CoreBinding) visitor.getResult() : null;
   }
 
   public Variable findBinding(Set<? extends Variable> bindings) {

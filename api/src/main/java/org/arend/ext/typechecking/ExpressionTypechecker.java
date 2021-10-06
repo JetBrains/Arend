@@ -28,6 +28,7 @@ import org.arend.ext.instance.InstanceSearchParameters;
 import org.arend.ext.instance.SubclassSearchParameters;
 import org.arend.ext.reference.ArendRef;
 import org.arend.ext.userData.UserDataHolder;
+import org.arend.ext.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -65,6 +66,31 @@ public interface ExpressionTypechecker extends UserDataHolder {
   @Nullable TypedExpression typecheck(@NotNull ConcreteExpression expression, @Nullable CoreExpression expectedType);
 
   /**
+   * Invokes {@link #typecheck} and checks that the result is a type.
+   *
+   * @param expression    a concrete expression that should be checked
+   * @return              the typed core expression corresponding to the given concrete expression
+   */
+  @Nullable TypedExpression typecheckType(@NotNull ConcreteExpression expression);
+
+  /**
+   * Checks the specified concrete expression and returns the result with {@code abstracted} bindings from the context abstracted.
+   *
+   * @param expression    a concrete expression that should be checked
+   * @param expectedType  the type of the concrete expression or {@code null} if the expected type is unknown
+   * @param abstracted    the number of bindings from the context to abstract in the resulting expression.
+   *                      If the context contains less than {@code abstracted} bindings, then only that number of bindings will be abstracted.
+   *                      Evaluating bindings are ignored
+   * @param transform     a transformation which is applied to the result (in both components of the resulting pair)
+   * @return              a pair consisting of the abstracted expression and the typed core expression corresponding to the given concrete expression
+   */
+  @Nullable Pair<AbstractedExpression,TypedExpression> typecheckAbstracted(@NotNull ConcreteExpression expression, @Nullable CoreExpression expectedType, int abstracted, @Nullable Function<TypedExpression,TypedExpression> transform);
+
+  @Nullable TypedExpression coerce(@NotNull TypedExpression expr, @NotNull CoreExpression expectedType, @NotNull ConcreteSourceNode marker);
+
+  @Nullable TypedExpression coerceToType(@NotNull TypedExpression expr, @NotNull ConcreteSourceNode marker);
+
+  /**
    * Checks the specified unchecked core expression.
    *
    * @param expression    a core expression that should be checked
@@ -84,7 +110,7 @@ public interface ExpressionTypechecker extends UserDataHolder {
    * Checks the specified concrete typed parameters.
    *
    * @param parameters  a list of parameters.
-   *                    All parameters in the list must by typed.
+   *                    All parameters in the list must be typed.
    */
   @Nullable CoreParameter typecheckParameters(@NotNull Collection<? extends ConcreteParameter> parameters);
 
@@ -129,7 +155,7 @@ public interface ExpressionTypechecker extends UserDataHolder {
    * Also, applies {@code levelSubst}.
    * The number of {@code arguments} should be less than or equal to the length of the context of {@code expression}.
    */
-  @Nullable AbstractedExpression substituteAbstractedExpression(@NotNull AbstractedExpression expression, @NotNull LevelSubstitution levelSubst, @NotNull List<? extends ConcreteExpression> arguments);
+  @Nullable AbstractedExpression substituteAbstractedExpression(@NotNull AbstractedExpression expression, @NotNull LevelSubstitution levelSubst, @NotNull List<? extends ConcreteExpression> arguments, ConcreteSourceNode marker);
 
   /**
    * Typechecks {@code arguments} and substitutes them into {@code expression}.

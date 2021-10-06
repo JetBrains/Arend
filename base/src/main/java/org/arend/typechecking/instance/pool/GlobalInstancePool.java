@@ -12,7 +12,7 @@ import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.instance.provider.InstanceProvider;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
-import org.arend.util.Pair;
+import org.arend.ext.util.Pair;
 
 import java.util.ArrayList;
 import java.util.Collections;

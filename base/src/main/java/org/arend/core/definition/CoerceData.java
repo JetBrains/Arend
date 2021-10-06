@@ -91,7 +91,7 @@ public class CoerceData {
     return defs != null ? coerceResult(result, defs, null, sourceNode, visitor, false, false) : null;
   }
 
-  public static TypecheckingResult coerce(TypecheckingResult result, Expression expectedType, Concrete.Expression sourceNode, CheckTypeVisitor visitor) {
+  public static TypecheckingResult coerce(TypecheckingResult result, Expression expectedType, Concrete.SourceNode sourceNode, CheckTypeVisitor visitor) {
     DefCallExpression actualDefCall = result.type.cast(DefCallExpression.class);
     DefCallExpression expectedDefCall = expectedType.cast(DefCallExpression.class);
     if (actualDefCall != null && expectedDefCall != null && (actualDefCall.getDefinition() == expectedDefCall.getDefinition() || actualDefCall.getDefinition() instanceof ClassDefinition && expectedDefCall.getDefinition() instanceof ClassDefinition && ((ClassDefinition) actualDefCall.getDefinition()).isSubClassOf((ClassDefinition) expectedDefCall.getDefinition()))) {
@@ -128,7 +128,7 @@ public class CoerceData {
       }
     }
 
-    // Can't coerce neither from nor to a definition
+    // Can't coerce from or to a definition
     if (expectedCoerceData != null && !(actualKey instanceof AnyKey)) {
       actualKey = new AnyKey();
     }
@@ -156,7 +156,7 @@ public class CoerceData {
     return null;
   }
 
-  private static TypecheckingResult coerceResult(TypecheckingResult result, Collection<? extends Definition> defs, Expression expectedType, Concrete.Expression sourceNode, CheckTypeVisitor visitor, boolean argStrict, boolean resultStrict) {
+  private static TypecheckingResult coerceResult(TypecheckingResult result, Collection<? extends Definition> defs, Expression expectedType, Concrete.SourceNode sourceNode, CheckTypeVisitor visitor, boolean argStrict, boolean resultStrict) {
     for (Definition def : defs) {
       if (def instanceof ClassField) {
         Expression resultExpr = FieldCallExpression.make((ClassField) def, result.expression);

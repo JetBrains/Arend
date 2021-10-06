@@ -21,7 +21,7 @@ import org.arend.term.group.Group;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.arend.typechecking.error.local.LocalErrorReporter;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
-import org.arend.util.Pair;
+import org.arend.ext.util.Pair;
 import org.junit.Test;
 
 import java.util.*;

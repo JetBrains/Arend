@@ -25,7 +25,7 @@ import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.computation.ComputationRunner;
-import org.arend.util.Pair;
+import org.arend.ext.util.Pair;
 import org.arend.util.SingletonList;
 
 import java.math.BigInteger;

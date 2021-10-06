@@ -10,7 +10,7 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.util.Decision;
-import org.arend.util.Pair;
+import org.arend.ext.util.Pair;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;

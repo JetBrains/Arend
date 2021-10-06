@@ -12,7 +12,7 @@ import org.arend.core.subst.LevelPair;
 import org.arend.ext.concrete.expr.ConcreteArgument;
 import org.arend.ext.core.context.CoreParameter;
 import org.arend.term.concrete.Concrete;
-import org.arend.util.Pair;
+import org.arend.ext.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

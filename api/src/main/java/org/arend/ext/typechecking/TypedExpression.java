@@ -23,4 +23,5 @@ public interface TypedExpression {
    * Otherwise, {@code null} is returned.
    */
   @Nullable TypedExpression replaceType(@NotNull CoreExpression type);
+  @NotNull TypedExpression normalizeType();
 }

@@ -62,7 +62,7 @@ import org.arend.typechecking.patternmatching.ExtElimClause;
 import org.arend.typechecking.patternmatching.PatternTypechecking;
 import org.arend.typechecking.result.DefCallResult;
 import org.arend.typechecking.result.TypecheckingResult;
-import org.arend.util.Pair;
+import org.arend.ext.util.Pair;
 
 import java.util.*;
 

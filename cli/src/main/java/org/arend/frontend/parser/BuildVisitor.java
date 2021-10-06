@@ -14,7 +14,7 @@ import org.arend.term.*;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.DefinableMetaDefinition;
 import org.arend.term.group.*;
-import org.arend.util.Pair;
+import org.arend.ext.util.Pair;
 import org.arend.util.SingletonList;
 import org.arend.util.StringEscapeUtils;
 

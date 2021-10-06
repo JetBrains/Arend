@@ -6,7 +6,7 @@ import org.arend.core.definition.ClassField;
 import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.HaveClause;
-import org.arend.util.Pair;
+import org.arend.ext.util.Pair;
 
 import java.util.Map;
 

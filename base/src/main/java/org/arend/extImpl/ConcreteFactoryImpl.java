@@ -6,6 +6,7 @@ import org.arend.ext.concrete.*;
 import org.arend.ext.concrete.expr.*;
 import org.arend.ext.concrete.pattern.ConcretePattern;
 import org.arend.ext.core.context.CoreBinding;
+import org.arend.ext.core.expr.AbstractedExpression;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.error.LocalError;
 import org.arend.ext.reference.ArendRef;
@@ -76,6 +77,14 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
   @Override
   public ConcreteExpression core(@Nullable String name, @NotNull TypedExpression expr) {
     return new Concrete.ReferenceExpression(myData, new CoreReferable(name, TypecheckingResult.fromChecked(Objects.requireNonNull(expr))));
+  }
+
+  @Override
+  public @NotNull ConcreteExpression abstracted(@NotNull AbstractedExpression expr, @NotNull List<? extends ConcreteExpression> arguments) {
+    if (expr.getNumberOfAbstractedBindings() != arguments.size()) {
+      throw new IllegalArgumentException();
+    }
+    return new Concrete.ReferenceExpression(myData, new AbstractedReferable(expr, arguments));
   }
 
   @NotNull

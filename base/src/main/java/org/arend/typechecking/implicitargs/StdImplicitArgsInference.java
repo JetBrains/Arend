@@ -34,7 +34,7 @@ import org.arend.typechecking.result.DefCallResult;
 import org.arend.typechecking.result.TResult;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
-import org.arend.util.Pair;
+import org.arend.ext.util.Pair;
 import org.arend.util.SingletonList;
 import org.jetbrains.annotations.NotNull;
 

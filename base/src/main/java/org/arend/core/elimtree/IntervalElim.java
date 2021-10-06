@@ -8,7 +8,7 @@ import org.arend.ext.core.body.CoreIntervalElim;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.prelude.Prelude;
 import org.arend.util.Decision;
-import org.arend.util.Pair;
+import org.arend.ext.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

@@ -24,7 +24,7 @@ import org.arend.naming.reference.*;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.order.dependency.DependencyListener;
-import org.arend.util.Pair;
+import org.arend.ext.util.Pair;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
