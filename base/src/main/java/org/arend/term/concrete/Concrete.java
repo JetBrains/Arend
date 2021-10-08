@@ -1042,7 +1042,7 @@ public final class Concrete {
     }
   }
 
-  public static class PiExpression extends Expression {
+  public static class PiExpression extends Expression implements ConcretePiExpression {
     public static final byte PREC = -4;
     private final List<TypeParameter> myParameters;
     public Expression codomain;
@@ -1053,11 +1053,13 @@ public final class Concrete {
       this.codomain = codomain;
     }
 
+    @Override
     @NotNull
     public List<TypeParameter> getParameters() {
       return myParameters;
     }
 
+    @Override
     @NotNull
     public Expression getCodomain() {
       return codomain;
