@@ -446,6 +446,10 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           return checkResultExpr(expectedType, new TypecheckingResult(new NewExpression(null, resultClassCall), resultClassCall), expr);
         }
       }
+    } else if (expectedType instanceof DataCallExpression && ((DataCallExpression) expectedType).getDefinition() == Prelude.PATH && result.type instanceof PiExpression) {
+      return checkExpr(Concrete.AppExpression.make(expr.getData(), new Concrete.ReferenceExpression(expr.getData(), Prelude.PATH_CON.getRef()), new Concrete.ReferenceExpression(expr.getData(), new CoreReferable(null, result)), true), expectedType);
+    } else if (expectedType instanceof PiExpression && result.type instanceof DataCallExpression && ((DataCallExpression) result.type).getDefinition() == Prelude.PATH) {
+      return checkExpr(Concrete.AppExpression.make(expr.getData(), new Concrete.ReferenceExpression(expr.getData(), Prelude.AT.getRef()), new Concrete.ReferenceExpression(expr.getData(), new CoreReferable(null, result)), true), expectedType);
     }
 
     TypecheckingResult coercedResult = CoerceData.coerce(result, expectedType, expr, this);

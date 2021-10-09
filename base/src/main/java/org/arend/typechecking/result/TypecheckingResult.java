@@ -97,7 +97,7 @@ public class TypecheckingResult implements TResult, TypedExpression {
   }
 
   @Override
-  public @NotNull TypedExpression normalizeType() {
+  public @NotNull TypecheckingResult normalizeType() {
     return new TypecheckingResult(expression, type.normalize(NormalizationMode.WHNF));
   }
 }

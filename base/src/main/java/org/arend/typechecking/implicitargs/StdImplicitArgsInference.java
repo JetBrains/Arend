@@ -190,7 +190,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
 
     DependentLink param = result.getParameter();
     if (!param.hasNext() && result instanceof TypecheckingResult) {
-      TypecheckingResult coercedResult = CheckTypeVisitor.coerceFromType((TypecheckingResult) result);
+      TResult coercedResult = CheckTypeVisitor.coerceFromType((TypecheckingResult) result);
       if (coercedResult != null) {
         result = coercedResult;
         if (isExplicit) {
@@ -199,13 +199,25 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
         param = result.getParameter();
       }
       if (!param.hasNext()) {
-        coercedResult = CoerceData.coerceToKey(((TypecheckingResult) result), new CoerceData.PiKey(), fun, myVisitor);
-        if (coercedResult != null) {
-          result = coercedResult;
-          if (isExplicit) {
-            result = fixImplicitArgs(result, result.getImplicitParameters(), fun, false, null);
-          }
+        TypecheckingResult tcResult = ((TypecheckingResult) result).normalizeType();
+        result = tcResult;
+        if (tcResult.type instanceof DataCallExpression && ((DataCallExpression) tcResult.type).getDefinition() == Prelude.PATH) {
+          List<Expression> args = ((DataCallExpression) tcResult.type).getDefCallArguments();
+          result = DefCallResult.makeTResult(new Concrete.ReferenceExpression(fun.getData(), Prelude.AT.getRef()), Prelude.AT, ((DataCallExpression) tcResult.type).getLevels())
+            .applyExpression(args.get(0), false, myVisitor.getErrorReporter(), fun)
+            .applyExpression(args.get(1), false, myVisitor.getErrorReporter(), fun)
+            .applyExpression(args.get(2), false, myVisitor.getErrorReporter(), fun)
+            .applyExpression(tcResult.expression, true, myVisitor.getErrorReporter(), fun);
           param = result.getParameter();
+        } else {
+          coercedResult = CoerceData.coerceToKey(tcResult, new CoerceData.PiKey(), fun, myVisitor);
+          if (coercedResult != null) {
+            result = coercedResult;
+            if (isExplicit) {
+              result = fixImplicitArgs(result, result.getImplicitParameters(), fun, false, null);
+            }
+            param = result.getParameter();
+          }
         }
       }
     }

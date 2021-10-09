@@ -81,4 +81,24 @@ public class PathsTest extends TypeCheckingTestCase {
   public void idpTypeTest() {
     typeCheckDef("\\func f : 3 = 3 => idp");
   }
+
+  @Test
+  public void coerceToPath() {
+    typeCheckDef("\\func f : 3 = 3 => \\lam _ => 3");
+  }
+
+  @Test
+  public void coerceFromPath() {
+    typeCheckDef("\\func f (p : 1 = 2) : I -> Nat => p");
+  }
+
+  @Test
+  public void coerceFromPathApp() {
+    typeCheckDef("\\func f (p : 1 = 2) (i : I) => p i");
+  }
+
+  @Test
+  public void coerceBoth() {
+    typeCheckDef("\\func pmap {A B : \\Type} (f : A -> B) {a a' : A} (p : a = a') : f a = f a' => \\lam i => f (p i)");
+  }
 }
