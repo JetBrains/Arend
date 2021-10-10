@@ -3052,6 +3052,12 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       }
     }
 
+    if (result instanceof TypecheckingResult) {
+      TypecheckingResult tcResult = (TypecheckingResult) result;
+      if (tcResult.expression instanceof DefCallExpression && !(tcResult.expression instanceof FieldCallExpression)) {
+        return checkResult(expectedType, tcResult, expr);
+      }
+    }
     return tResultToResult(expectedType, result, expr);
   }
 
