@@ -32,10 +32,16 @@ public class LocalInstancePool implements InstancePool {
   }
 
   private final CheckTypeVisitor myTypechecker;
-  private final List<InstanceData> myPool = new ArrayList<>();
+  private final List<InstanceData> myPool;
+
+  private LocalInstancePool(CheckTypeVisitor typechecker, List<InstanceData> pool) {
+    myTypechecker = typechecker;
+    myPool = pool;
+  }
 
   public LocalInstancePool(CheckTypeVisitor typechecker) {
     myTypechecker = typechecker;
+    myPool = new ArrayList<>();
   }
 
   @Override
@@ -108,5 +114,10 @@ public class LocalInstancePool implements InstancePool {
   @Override
   public List<?> getLocalInstances() {
     return myPool;
+  }
+
+  @Override
+  public InstancePool copy(CheckTypeVisitor typechecker) {
+    return new LocalInstancePool(typechecker, myPool);
   }
 }

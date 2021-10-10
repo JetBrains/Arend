@@ -158,7 +158,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   public TypecheckingContext saveTypecheckingContext() {
-    return new TypecheckingContext(new LinkedHashMap<>(context), myInstancePool.getInstanceProvider(), myInstancePool.getInstancePool(), myArendExtension, copyUserData(), myLevelContext);
+    return new TypecheckingContext(new LinkedHashMap<>(context), myInstancePool, myArendExtension, copyUserData(), myLevelContext);
   }
 
   public void setDefinition(Definition definition) {
@@ -167,7 +167,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   public static CheckTypeVisitor loadTypecheckingContext(TypecheckingContext typecheckingContext, ErrorReporter errorReporter) {
     CheckTypeVisitor visitor = new CheckTypeVisitor(typecheckingContext.localContext, errorReporter, null, typecheckingContext.arendExtension, typecheckingContext.userDataHolder);
-    visitor.setInstancePool(new GlobalInstancePool(typecheckingContext.instanceProvider, visitor, typecheckingContext.localInstancePool));
+    visitor.setInstancePool(typecheckingContext.instancePool.copy(visitor));
     visitor.setLevelContext(typecheckingContext.levelContext);
     return visitor;
   }
@@ -949,7 +949,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           if (bindingType != null) bindingType.subst(substVisitor);
         }
         checkTypeVisitor = new CheckTypeVisitor(deferredMeta.context, deferredMeta.errorReporter, null, myArendExtension, this);
-        checkTypeVisitor.setInstancePool(new GlobalInstancePool(myInstancePool.getInstanceProvider(), checkTypeVisitor, myInstancePool.getInstancePool()));
+        checkTypeVisitor.setInstancePool(myInstancePool.copy(checkTypeVisitor));
         checkTypeVisitor.setLevelContext(myLevelContext);
       } else {
         checkTypeVisitor = this;

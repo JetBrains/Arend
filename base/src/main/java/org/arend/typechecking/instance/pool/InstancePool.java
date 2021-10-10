@@ -6,6 +6,7 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.ext.instance.InstanceSearchParameters;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.result.TypecheckingResult;
+import org.arend.typechecking.visitor.CheckTypeVisitor;
 
 import java.util.List;
 
@@ -16,4 +17,5 @@ public interface InstancePool {
   InstancePool getLocalInstancePool();
   Expression addLocalInstance(Expression classifyingExpression, ClassDefinition classDef, Expression instance);
   List<?> getLocalInstances();
+  InstancePool copy(CheckTypeVisitor typechecker);
 }

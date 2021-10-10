@@ -63,6 +63,11 @@ public class GlobalInstancePool implements InstancePool {
   }
 
   @Override
+  public GlobalInstancePool copy(CheckTypeVisitor typechecker) {
+    return new GlobalInstancePool(myInstanceProvider, typechecker, myInstancePool.copy(typechecker));
+  }
+
+  @Override
   public TypecheckingResult getInstance(Expression classifyingExpression, Expression expectedType, InstanceSearchParameters parameters, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveHoleExpression) {
     if (myInstancePool != null) {
       TypecheckingResult result = myInstancePool.getInstance(classifyingExpression, expectedType, parameters, sourceNode, recursiveHoleExpression);
