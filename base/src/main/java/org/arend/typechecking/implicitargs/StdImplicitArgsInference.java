@@ -651,7 +651,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
           }
           InferenceVariable var = new ExpressionInferenceVariable(parameter.getTypeExpr(), argument.getExpression(), myVisitor.getAllBindings(), false);
           deferredArguments.put(current + numberOfImplicitArguments, new Pair<>(var, argument.getExpression()));
-          result = result.applyExpression(InferenceReferenceExpression.make(var, myVisitor.getEquations()), parameter.isExplicit(), myVisitor.getErrorReporter(), fun);
+          result = result.applyExpression(new InferenceReferenceExpression(var), parameter.isExplicit(), myVisitor.getErrorReporter(), fun);
           current++;
         }
 

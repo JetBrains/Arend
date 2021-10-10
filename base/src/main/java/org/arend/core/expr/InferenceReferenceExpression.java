@@ -12,6 +12,7 @@ import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -21,6 +22,13 @@ public class InferenceReferenceExpression extends Expression implements CoreInfe
   private Expression mySubstExpression;
 
   public static Expression make(InferenceVariable binding, Equations equations) {
+    Expression type = binding.getType().normalize(NormalizationMode.WHNF);
+    if (type instanceof SigmaExpression && !((SigmaExpression) type).getParameters().hasNext()) {
+      return new TupleExpression(Collections.emptyList(), (SigmaExpression) type);
+    } else if (type instanceof ClassCallExpression && ((ClassCallExpression) type).getNumberOfNotImplementedFields() == 0) {
+      return new NewExpression(null, (ClassCallExpression) type);
+    }
+
     InferenceReferenceExpression result = new InferenceReferenceExpression(binding);
     if (!equations.supportsExpressions()) {
       return result;
@@ -30,7 +38,6 @@ public class InferenceReferenceExpression extends Expression implements CoreInfe
       return result;
     }
 
-    Expression type = binding.getType().normalize(NormalizationMode.WHNF);
     ClassCallExpression classCall = type.cast(ClassCallExpression.class);
     if (classCall != null && !classCall.getDefinition().getFields().isEmpty()) {
       type = new ClassCallExpression(classCall.getDefinition(), classCall.getLevels());

@@ -122,4 +122,19 @@ public class InferenceTest extends TypeCheckingTestCase {
       "\\func f {A : \\Type} {B : A -> \\Type} {C : \\Pi (a : A) -> B a -> \\Type} (p : \\Sigma (x : A) (y : B x) (C x y)) => p.1\n" +
       "\\func test {A : \\Type} {B : A -> \\Type} {C : \\Pi (a : A) -> B a -> \\Type} (p : \\Sigma (x : A) (y : B x) (C x y)) => f p");
   }
+
+  @Test
+  public void uniqueInference() {
+    typeCheckModule(
+      "\\func f {x : \\Sigma} (y : Nat) => y\n" +
+      "\\func test => f 0");
+  }
+
+  @Test
+  public void uniqueInference2() {
+    typeCheckModule(
+      "\\record R (a b : Nat)\n" +
+      "\\func f {x : R 3 4} (y : Nat) => y\n" +
+      "\\func test => f 0");
+  }
 }
