@@ -5,7 +5,10 @@ import org.arend.core.context.binding.EvaluatingBinding;
 import org.arend.core.context.binding.inference.MetaInferenceVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
+import org.arend.core.elimtree.Body;
+import org.arend.core.elimtree.ElimBody;
 import org.arend.core.elimtree.ElimClause;
+import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.HaveClause;
 import org.arend.core.expr.let.LetClause;
@@ -16,7 +19,9 @@ import org.arend.core.sort.Sort;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.ListErrorReporter;
 import org.arend.ext.error.LocalError;
+import org.arend.ext.util.Pair;
 import org.arend.prelude.Prelude;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -265,13 +270,39 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
       expr.getArguments().set(i, expr.getArguments().get(i).accept(this, null));
     }
     visitParameters(expr.getParameters());
-    for (ElimClause<Pattern> clause : expr.getElimBody().getClauses()) {
+    visitElimBody(expr.getElimBody());
+    return new CaseExpression(expr.isSCase(), expr.getParameters(), expr.getResultType().accept(this, null), expr.getResultTypeLevel() == null ? null : expr.getResultTypeLevel().accept(this, null), expr.getElimBody(), expr.getArguments());
+  }
+
+  private void visitElimBody(ElimBody body) {
+    for (ElimClause<Pattern> clause : body.getClauses()) {
       visitParameters(clause.getParameters());
       if (clause.getExpression() != null) {
         clause.setExpression(clause.getExpression().accept(this, null));
       }
     }
-    return new CaseExpression(expr.isSCase(), expr.getParameters(), expr.getResultType().accept(this, null), expr.getResultTypeLevel() == null ? null : expr.getResultTypeLevel().accept(this, null), expr.getElimBody(), expr.getArguments());
+  }
+
+  public Body visitBody(Body body) {
+    if (body instanceof IntervalElim) {
+      IntervalElim intervalElim = (IntervalElim) body;
+      List<IntervalElim.CasePair> cases = intervalElim.getCases();
+      for (int i = 0; i < cases.size(); i++) {
+        Pair<Expression, Expression> pair = cases.get(i);
+        cases.set(i, new IntervalElim.CasePair(pair.proj1 == null ? null : pair.proj1.accept(this, null), pair.proj2 == null ? null : pair.proj2.accept(this, null)));
+      }
+      if (intervalElim.getOtherwise() != null) {
+        visitElimBody(intervalElim.getOtherwise());
+      }
+    } else if (body instanceof Expression) {
+      return ((Expression) body).accept(this, null);
+    } else if (body instanceof ElimBody) {
+      visitElimBody((ElimBody) body);
+    } else {
+      assert body == null;
+    }
+
+    return body;
   }
 
   @Override

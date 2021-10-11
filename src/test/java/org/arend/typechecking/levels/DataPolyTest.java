@@ -115,4 +115,41 @@ public class DataPolyTest extends TypeCheckingTestCase {
   public void recursiveDataError() {
     typeCheckDef("\\data D | con (D \\levels 0 \\lh)");
   }
+
+  @Test
+  public void recursiveDataWithClass() {
+    typeCheckModule(
+      "\\record R (A : \\Type)\n" +
+      "\\data D | con (R D) | con2");
+  }
+
+  @Test
+  public void recursiveDataWithLam() {
+    typeCheckModule(
+      "\\record R (A : Nat -> \\Type)\n" +
+      "\\data D | con (R (\\lam _ => D)) | con2");
+  }
+
+  @Test
+  public void recursiveDataWithTuple() {
+    typeCheckModule(
+      "\\record R (A : \\Sigma \\Type \\Type)\n" +
+      "\\data D | con (R (\\Sigma,D)) | con2 (R (D,\\Sigma))");
+  }
+
+  @Test
+  public void recursiveDataWithConstructor() {
+    typeCheckModule(
+      "\\data Data | cons \\Type \\Type\n" +
+      "\\record R (A : Data)\n" +
+      "\\data D | con1 (R (cons (\\Sigma) D)) | con2 (R (cons D (\\Sigma)))");
+  }
+
+  @Test
+  public void recursiveDataWithNew() {
+    typeCheckModule(
+      "\\record C (X Y : \\Type)\n" +
+      "\\record R (A : C)\n" +
+      "\\data D | con1 (R (\\new C (\\Sigma) D)) | con2 (R (\\new C D (\\Sigma)))");
+  }
 }

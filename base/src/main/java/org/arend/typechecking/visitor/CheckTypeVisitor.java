@@ -907,7 +907,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     return finalize(checkExpr(expr, expectedType), expr, false);
   }
 
-  private void invokeDeferredMetas(InPlaceLevelSubstVisitor substVisitor, StripVisitor stripVisitor, boolean afterLevels) {
+  public void invokeDeferredMetas(InPlaceLevelSubstVisitor substVisitor, StripVisitor stripVisitor, boolean afterLevels) {
     List<DeferredMeta> deferredMetas = afterLevels ? myDeferredMetasAfterLevels : myDeferredMetasBeforeSolver;
     // Indexed loop is required since deferredMetas can be modified during the loop
     //noinspection ForLoopReplaceableByForEach
