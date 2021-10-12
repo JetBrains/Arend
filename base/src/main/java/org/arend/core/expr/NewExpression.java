@@ -13,6 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class NewExpression extends Expression implements CoreNewExpression {
@@ -30,7 +31,7 @@ public class NewExpression extends Expression implements CoreNewExpression {
       NewExpression newExpr = renewExpression == null ? null : renewExpression.cast(NewExpression.class);
       if (newExpr != null) {
         myRenewExpression = newExpr.myRenewExpression;
-        Map<ClassField, Expression> implementations = new HashMap<>();
+        Map<ClassField, Expression> implementations = new LinkedHashMap<>();
         NewExpression myNewExpr = new NewExpression(newExpr, classCall);
         for (ClassField field : classCall.getDefinition().getFields()) {
           if (classCall.getDefinition().isImplemented(field)) {
@@ -115,7 +116,7 @@ public class NewExpression extends Expression implements CoreNewExpression {
       return myClassCall;
     }
 
-    Map<ClassField, Expression> implementations = new HashMap<>();
+    Map<ClassField, Expression> implementations = new LinkedHashMap<>();
     for (ClassField field : myClassCall.getDefinition().getFields()) {
       if (myClassCall.getDefinition().isImplemented(field)) {
         continue;

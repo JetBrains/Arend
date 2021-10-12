@@ -258,7 +258,7 @@ public class BranchElimTree extends ElimTree {
         }
         args.addAll(arguments.subList(index + 1, arguments.size()));
         List<Expression> newArgs = getSingleConstructorChild().normalizeArguments(args);
-        Map<ClassField, Expression> implementations = new HashMap<>();
+        Map<ClassField, Expression> implementations = new LinkedHashMap<>();
         int i = 0;
         for (ClassField field : classCon.getClassDefinition().getFields()) {
           if (!classCon.getClassDefinition().isImplemented(field)) {

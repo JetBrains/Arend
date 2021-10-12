@@ -686,10 +686,12 @@ public class TwoStageEquations implements Equations {
           needLength = true;
         }
       }
-      implementations.put(Prelude.ARRAY_ELEMENTS_TYPE, elementsType);
     }
     if (needLength) {
       implementations.put(Prelude.ARRAY_LENGTH, length);
+    }
+    if (elementsType != null) {
+      implementations.put(Prelude.ARRAY_ELEMENTS_TYPE, elementsType);
     }
     if (needAt) implementations.put(Prelude.ARRAY_AT, at);
   }
@@ -700,7 +702,7 @@ public class TwoStageEquations implements Equations {
       if (pair.proj2.size() == 1) {
         if (pair.proj2.get(0).getDefinition() == Prelude.DEP_ARRAY) {
           ClassCallExpression classCall = pair.proj2.get(0);
-          ClassCallExpression solution = new ClassCallExpression(Prelude.DEP_ARRAY, classCall.getLevels(), new HashMap<>(), classCall.getSort(), classCall.getUniverseKind());
+          ClassCallExpression solution = new ClassCallExpression(Prelude.DEP_ARRAY, classCall.getLevels(), new LinkedHashMap<>(), classCall.getSort(), classCall.getUniverseKind());
           copyArray(classCall, pair.proj1, solution);
           solve(pair.proj1, solution, true);
         } else {
@@ -743,7 +745,7 @@ public class TwoStageEquations implements Equations {
       if (cmp == CMP.LE) {
         Equations wrapper = useWrapper ? new LevelEquationsWrapper(this) : this;
         Levels levels = classDef.generateInferVars(this, pair.proj1.getSourceNode());
-        Map<ClassField, Expression> implementations = new HashMap<>();
+        Map<ClassField, Expression> implementations = new LinkedHashMap<>();
         solution = new ClassCallExpression(classDef, levels, implementations, classDef.getSort(), universeKind);
         ReferenceExpression thisExpr = new ReferenceExpression(solution.getThisBinding());
 

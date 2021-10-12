@@ -240,8 +240,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitArray(ArrayExpression expr, Void params) {
-    Map<ClassField, Expression> implementations = new HashMap<>();
-    implementations.put(Prelude.ARRAY_ELEMENTS_TYPE, expr.getElementsType());
+    Map<ClassField, Expression> implementations = new LinkedHashMap<>();
     if (expr.getTail() == null) {
       implementations.put(Prelude.ARRAY_LENGTH, new SmallIntegerExpression(expr.getElements().size()));
     } else {
@@ -263,6 +262,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
       }
       implementations.put(Prelude.ARRAY_LENGTH, length);
     }
+    implementations.put(Prelude.ARRAY_ELEMENTS_TYPE, expr.getElementsType());
     return new ClassCallExpression(Prelude.DEP_ARRAY, expr.getLevels(), implementations, new Sort(expr.getPLevel(), expr.getHLevel().max(new Level(0))), UniverseKind.NO_UNIVERSES);
   }
 

@@ -79,6 +79,7 @@ public class ClassCallExpression extends LeveledDefCallExpression implements Typ
 
   public ClassCallExpression(ClassDefinition definition, Levels levels, Map<ClassField, Expression> implementations, Sort sort, UniverseKind universeKind) {
     super(definition, levels);
+    assert implementations instanceof LinkedHashMap || implementations.size() <= 1;
     myImplementations = implementations;
     mySort = sort;
     myUniverseKind = universeKind;
@@ -93,6 +94,19 @@ public class ClassCallExpression extends LeveledDefCallExpression implements Typ
   @NotNull
   public Levels getLevels(ClassDefinition superClass) {
     return getDefinition().castLevels(superClass, getLevels());
+  }
+
+  public void fixOrderOfImplementations() {
+    if (myImplementations.size() <= 1) return;
+    Map<ClassField, Expression> newImpls = new LinkedHashMap<>();
+    for (ClassField field : getDefinition().getFields()) {
+      Expression impl = myImplementations.get(field);
+      if (impl != null) {
+        newImpls.put(field, impl);
+      }
+    }
+    myImplementations.clear();
+    myImplementations.putAll(newImpls);
   }
 
   public void updateHasUniverses() {
@@ -282,7 +296,7 @@ public class ClassCallExpression extends LeveledDefCallExpression implements Typ
 
   @Override
   public @NotNull DependentLink getClassFieldParameters() {
-    Map<ClassField, Expression> implementations = new HashMap<>();
+    Map<ClassField, Expression> implementations = new LinkedHashMap<>();
     NewExpression newExpr = new NewExpression(null, new ClassCallExpression(getDefinition(), getLevels(), implementations, Sort.PROP, UniverseKind.NO_UNIVERSES));
     newExpr.getClassCall().copyImplementationsFrom(this);
 
@@ -306,14 +320,19 @@ public class ClassCallExpression extends LeveledDefCallExpression implements Typ
             type = type.normalize(NormalizationMode.WHNF);
             if (type instanceof ClassCallExpression && getDefinition().isSubClassOf(((ClassCallExpression) type).getDefinition())) {
               ClassCallExpression classCall = (ClassCallExpression) type;
-              Map<ClassField, Expression> subImplementations = new HashMap<>(classCall.getImplementedHere());
-              ClassCallExpression newClassCall = new ClassCallExpression(classCall.getDefinition(), classCall.getLevels().subst(getLevelSubstitution()), subImplementations, Sort.PROP, UniverseKind.NO_UNIVERSES);
-              for (Map.Entry<ClassField, Expression> entry : implementations.entrySet()) {
-                if (!newClassCall.isImplemented(entry.getKey())) {
-                  subImplementations.put(entry.getKey(), entry.getValue());
+              Map<ClassField, Expression> subImplementations = new LinkedHashMap<>(classCall.getImplementedHere());
+              for (ClassField field : classCall.getDefinition().getFields()) {
+                Expression impl = myImplementations.get(field);
+                if (impl != null) {
+                  subImplementations.put(field, impl);
+                } else if (!classCall.getDefinition().isImplemented(field)) {
+                  impl = implementations.get(field);
+                  if (impl != null) {
+                    subImplementations.put(field, impl);
+                  }
                 }
               }
-              return new NewExpression(null, newClassCall);
+              return new NewExpression(null, new ClassCallExpression(classCall.getDefinition(), classCall.getLevels().subst(getLevelSubstitution()), subImplementations, Sort.PROP, UniverseKind.NO_UNIVERSES));
             }
           }
           return null;
@@ -380,7 +399,7 @@ public class ClassCallExpression extends LeveledDefCallExpression implements Typ
 
         @Override
         public Expression visitClassCall(ClassCallExpression expr, Void params) {
-          Map<ClassField, Expression> fieldSet = new HashMap<>();
+          Map<ClassField, Expression> fieldSet = new LinkedHashMap<>();
           ClassCallExpression result = new ClassCallExpression(expr.getDefinition(), expr.getLevels().subst(getLevelSubstitution()), fieldSet, expr.getSort().subst(getLevelSubstitution()), expr.getUniverseKind());
           getExprSubstitution().add(expr.getThisBinding(), new ReferenceExpression(result.getThisBinding()));
           for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {

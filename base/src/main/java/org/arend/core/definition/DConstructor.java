@@ -18,6 +18,7 @@ import org.arend.util.SingletonList;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static org.arend.core.expr.ExpressionFactory.Suc;
@@ -68,7 +69,7 @@ public class DConstructor extends FunctionDefinition {
     ReferenceExpression natRef = new ReferenceExpression(nat);
     Sort sort = levels.toSort();
     Expression newElementsType = elementsType.subst(thisBinding, new NewExpression(null, new ClassCallExpression(Prelude.DEP_ARRAY, levels, Collections.singletonMap(Prelude.ARRAY_LENGTH, natRef), sort, UniverseKind.ONLY_COVARIANT)));
-    Map<ClassField, Expression> impls = new HashMap<>();
+    Map<ClassField, Expression> impls = new LinkedHashMap<>();
     impls.put(Prelude.ARRAY_LENGTH, natRef);
     TypedSingleDependentLink lamParam = new TypedSingleDependentLink(true, "j", new DataCallExpression(Prelude.FIN, LevelPair.PROP, new SingletonList<>(natRef)));
     impls.put(Prelude.ARRAY_ELEMENTS_TYPE, new LamExpression(sort.max(Sort.SET0), lamParam, AppExpression.make(newElementsType, Suc(new ReferenceExpression(lamParam)), true)));

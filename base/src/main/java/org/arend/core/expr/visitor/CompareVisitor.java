@@ -860,7 +860,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
           }
         }
       } else {
-        Map<ClassField, Expression> implementations = new HashMap<>();
+        Map<ClassField, Expression> implementations = new LinkedHashMap<>();
         codSort = classCall1.getSort();
         ClassCallExpression classCall = new ClassCallExpression(classCall1.getDefinition(), classCall1.getLevels(), implementations, codSort, classCall1.getUniverseKind());
         int i = 0;

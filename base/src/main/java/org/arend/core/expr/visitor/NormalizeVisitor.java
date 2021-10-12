@@ -724,9 +724,9 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
               TypedSingleDependentLink param = new TypedSingleDependentLink(true, "j", Fin(length_1));
               Sort sort = levelPair.toSort().max(Sort.SET0);
               Expression at = classCall.getImplementationHere(Prelude.ARRAY_AT, argument);
-              Map<ClassField, Expression> impls = new HashMap<>();
-              impls.put(Prelude.ARRAY_ELEMENTS_TYPE, new LamExpression(sort, param, AppExpression.make(elementsType, Suc(new ReferenceExpression(param)), true)));
+              Map<ClassField, Expression> impls = new LinkedHashMap<>();
               impls.put(Prelude.ARRAY_LENGTH, length_1);
+              impls.put(Prelude.ARRAY_ELEMENTS_TYPE, new LamExpression(sort, param, AppExpression.make(elementsType, Suc(new ReferenceExpression(param)), true)));
               impls.put(Prelude.ARRAY_AT, new LamExpression(sort, param, at != null ? AppExpression.make(at, Suc(new ReferenceExpression(param)), true) : FunCallExpression.make(Prelude.ARRAY_INDEX, classCall.getLevels(), Arrays.asList(argument, Suc(new ReferenceExpression(param))))));
               array = ArrayExpression.makeArray(levelPair, elementsType, new SingletonList<>(at != null ? AppExpression.make(at, new SmallIntegerExpression(0), true) : FunCallExpression.make(Prelude.ARRAY_INDEX, classCall.getLevels(), Arrays.asList(argument, new SmallIntegerExpression(0)))), new NewExpression(null, new ClassCallExpression(Prelude.DEP_ARRAY, classCall.getLevels(), impls, Sort.PROP, UniverseKind.NO_UNIVERSES)));
               key = new ArrayConstructor(false, true, true);
@@ -863,7 +863,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
   public ClassCallExpression visitClassCall(ClassCallExpression expr, NormalizationMode mode) {
     if (mode == NormalizationMode.WHNF) return expr;
 
-    Map<ClassField, Expression> fieldSet = new HashMap<>();
+    Map<ClassField, Expression> fieldSet = new LinkedHashMap<>();
     ClassCallExpression result = new ClassCallExpression(expr.getDefinition(), expr.getLevels(), fieldSet, expr.getSort(), expr.getUniverseKind());
     for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
       fieldSet.put(entry.getKey(), entry.getValue().accept(this, mode).subst(expr.getThisBinding(), new ReferenceExpression(result.getThisBinding())));

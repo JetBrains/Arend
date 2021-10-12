@@ -197,15 +197,12 @@ public class UseTypechecking {
           levelFields = new ArrayList<>();
           strictList = new ArrayList<>();
           Expression thisExpr = new ReferenceExpression(classCallLink);
-          for (ClassField classField : classCall.getDefinition().getFields()) {
+          for (Map.Entry<ClassField, Expression> entry : classCall.getImplementedHere().entrySet()) {
+            ClassField classField = entry.getKey();
             if (classField.isProperty()) {
               continue;
             }
-            Expression impl = classCall.getImplementationHere(classField, thisExpr);
-            if (impl == null) {
-              continue;
-            }
-            if (!(link.hasNext() && impl instanceof ReferenceExpression && ((ReferenceExpression) impl).getBinding() == link)) {
+            if (!(link.hasNext() && entry.getValue() instanceof ReferenceExpression && ((ReferenceExpression) entry.getValue()).getBinding() == link)) {
               ok = false;
               break;
             }

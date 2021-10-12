@@ -216,6 +216,9 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   @Override
   public Expression visitClassCall(ClassCallExpression expr, Expression expectedType) {
+    if (!(expr.getImplementedHere().size() <= 1 || expr.getImplementedHere() instanceof LinkedHashMap)) {
+      throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Implementations in a classCall have wrong type: " + expr.getImplementedHere().getClass(), mySourceNode), expr));
+    }
     checkLevels(expr.getLevels(), expr.getDefinition(), expr);
     addBinding(expr.getThisBinding(), expr);
     Expression thisExpr = new ReferenceExpression(expr.getThisBinding());

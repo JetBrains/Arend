@@ -45,7 +45,7 @@ public class ExpressionMatcher {
     }
 
     int i = 0;
-    Map<ClassField, Expression> newImpls = new HashMap<>();
+    Map<ClassField, Expression> newImpls = new LinkedHashMap<>();
     for (ClassField field : ((ClassCallExpression) data).getDefinition().getFields()) {
       if (((ClassCallExpression) data).isImplemented(field)) {
         newImpls.put(field, newExpr.getImplementation(field));

@@ -8,7 +8,7 @@ import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.ops.ExpressionMapper;
 import org.arend.extImpl.UncheckedExpressionImpl;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class RecreateExpressionVisitor extends SubstVisitor {
@@ -61,18 +61,15 @@ public class RecreateExpressionVisitor extends SubstVisitor {
       return result;
     }
 
-    Map<ClassField, Expression> fieldSet = new HashMap<>();
+    Map<ClassField, Expression> fieldSet = new LinkedHashMap<>();
     ClassCallExpression classCall = new ClassCallExpression(expr.getDefinition(), expr.getLevels().subst(getLevelSubstitution()), fieldSet, expr.getSort().subst(getLevelSubstitution()), expr.getUniverseKind());
     if (expr.getImplementedHere().isEmpty()) {
       return classCall;
     }
 
     getExprSubstitution().add(expr.getThisBinding(), new ReferenceExpression(classCall.getThisBinding()));
-    for (ClassField field : classCall.getDefinition().getFields()) {
-      Expression impl = expr.getAbsImplementationHere(field);
-      if (impl != null) {
-        fieldSet.put(field, impl.accept(this, null));
-      }
+    for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
+      fieldSet.put(entry.getKey(), entry.getValue().accept(this, null));
     }
     getExprSubstitution().remove(expr.getThisBinding());
     return classCall;

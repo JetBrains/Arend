@@ -45,9 +45,13 @@ message Expression {
         bool is_explicit = 3;
     }
     message ClassCall {
+        message ImplEntry {
+            int32 field = 1;
+            Expression impl = 2;
+        }
         int32 class_ref = 1;
         Levels levels = 7;
-        map<int32, Expression> field_set = 4;
+        repeated ImplEntry field_impl = 8;
         Sort sort = 5;
         UniverseKind universe_kind = 6;
     }

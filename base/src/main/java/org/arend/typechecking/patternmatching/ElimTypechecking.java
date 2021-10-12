@@ -985,7 +985,7 @@ public class ElimTypechecking {
               Expression someExpr = someConPattern.getDataExpression();
               if (someExpr instanceof ClassCallExpression) {
                 ClassCallExpression classCall = (ClassCallExpression) someExpr;
-                Map<ClassField, Expression> implementations = new HashMap<>();
+                Map<ClassField, Expression> implementations = new LinkedHashMap<>();
                 DependentLink link = conParameters;
                 for (ClassField field : classCall.getDefinition().getFields()) {
                   if (!classCall.isImplemented(field)) {

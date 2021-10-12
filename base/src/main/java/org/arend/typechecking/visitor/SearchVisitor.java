@@ -2,7 +2,6 @@ package org.arend.typechecking.visitor;
 
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.param.DependentLink;
-import org.arend.core.definition.ClassField;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.elimtree.Body;
 import org.arend.core.elimtree.ElimBody;
@@ -172,21 +171,9 @@ public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean>
       case SKIP: return false;
     }
 
-    if (preserveOrder()) {
-      if (expression.getImplementedHere().isEmpty()) {
-        return false;
-      }
-      for (ClassField field : expression.getDefinition().getFields()) {
-        Expression impl = expression.getAbsImplementationHere(field);
-        if (impl != null && impl.accept(this, param)) {
-          return true;
-        }
-      }
-    } else {
-      for (Expression impl : expression.getImplementedHere().values()) {
-        if (impl.accept(this, param)) {
-          return true;
-        }
+    for (Expression impl : expression.getImplementedHere().values()) {
+      if (impl.accept(this, param)) {
+        return true;
       }
     }
 

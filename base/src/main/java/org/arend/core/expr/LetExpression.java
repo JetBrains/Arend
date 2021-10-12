@@ -15,10 +15,7 @@ import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class LetExpression extends Expression implements CoreLetExpression {
   private final boolean myStrict;
@@ -63,7 +60,7 @@ public class LetExpression extends Expression implements CoreLetExpression {
     NewExpression newExpr = expression.cast(NewExpression.class);
     if (newExpr != null && pattern.getFields() != null && pattern.getFields().size() == pattern.getPatterns().size()) {
       ClassCallExpression classCall = newExpr.getClassCall();
-      Map<ClassField, Expression> implementations = new HashMap<>();
+      Map<ClassField, Expression> implementations = new LinkedHashMap<>();
       ClassCallExpression resultClassCall = new ClassCallExpression(classCall.getDefinition(), classCall.getLevels(), implementations, Sort.PROP, UniverseKind.NO_UNIVERSES);
 
       boolean someNotImplemented = false;

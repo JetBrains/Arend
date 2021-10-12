@@ -14,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 public class InferenceReferenceExpression extends Expression implements CoreInferenceReferenceExpression {
@@ -43,20 +44,17 @@ public class InferenceReferenceExpression extends Expression implements CoreInfe
       type = new ClassCallExpression(classCall.getDefinition(), classCall.getLevels());
       binding.setType(type);
       result.myImplementedFields = new HashSet<>();
-      for (ClassField field : classCall.getDefinition().getFields()) {
-        if (!field.isProperty()) {
-          Expression impl = classCall.getImplementationHere(field, result);
-          if (impl != null) {
-            equations.addEquation(FieldCallExpression.make(field, result), impl.normalize(NormalizationMode.WHNF), classCall.getDefinition().getFieldType(field, classCall.getLevels(), result), CMP.EQ, binding.getSourceNode(), binding, impl.getStuckInferenceVariable(), false);
-            if (result.getSubstExpression() != null) {
-              Expression solution = result.getSubstExpression();
-              binding.setType(classCall);
-              binding.unsolve();
-              return equations.solve(binding, solution) ? solution : result;
-            }
-            result.myImplementedFields.add(field);
-          }
+      for (Map.Entry<ClassField, Expression> entry : classCall.getImplementedHere().entrySet()) {
+        ClassField field = entry.getKey();
+        if (field.isProperty()) continue;
+        equations.addEquation(FieldCallExpression.make(field, result), entry.getValue().normalize(NormalizationMode.WHNF), classCall.getDefinition().getFieldType(field, classCall.getLevels(), result), CMP.EQ, binding.getSourceNode(), binding, entry.getValue().getStuckInferenceVariable(), false);
+        if (result.getSubstExpression() != null) {
+          Expression solution = result.getSubstExpression();
+          binding.setType(classCall);
+          binding.unsolve();
+          return equations.solve(binding, solution) ? solution : result;
         }
+        result.myImplementedFields.add(field);
       }
     }
     return result;

@@ -16,6 +16,7 @@ import org.arend.util.SingletonList;
 import org.junit.Test;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static org.arend.core.expr.ExpressionFactory.Nat;
@@ -279,20 +280,20 @@ public class ArrayTest extends TypeCheckingTestCase {
   @Test
   public void goalTest() {
     Definition def = typeCheckDef("\\func test (n : Nat) : Array Nat (suc n) => {?} :: {?}", 2);
-    Map<ClassField, Expression> impls = new HashMap<>();
+    Map<ClassField, Expression> impls = new LinkedHashMap<>();
     Expression length = new ReferenceExpression(def.getParameters());
-    impls.put(Prelude.ARRAY_ELEMENTS_TYPE, new LamExpression(Sort.SET0, new TypedSingleDependentLink(true, null, new DataCallExpression(Prelude.FIN, LevelPair.PROP, new SingletonList<>(length))), Nat()));
     impls.put(Prelude.ARRAY_LENGTH, length);
+    impls.put(Prelude.ARRAY_ELEMENTS_TYPE, new LamExpression(Sort.SET0, new TypedSingleDependentLink(true, null, new DataCallExpression(Prelude.FIN, LevelPair.PROP, new SingletonList<>(length))), Nat()));
     assertThatErrorsAre(Matchers.goal(1), Matchers.goal(new ClassCallExpression(Prelude.DEP_ARRAY, LevelPair.SET0, impls, Sort.SET0, UniverseKind.NO_UNIVERSES)));
   }
 
   @Test
   public void goalTest2() {
     typeCheckDef("\\func test : Array Nat 7 => {?} :: {?} :: {?}", 3);
-    Map<ClassField, Expression> impls = new HashMap<>();
+    Map<ClassField, Expression> impls = new LinkedHashMap<>();
     Expression length = new SmallIntegerExpression(5);
-    impls.put(Prelude.ARRAY_ELEMENTS_TYPE, new LamExpression(Sort.SET0, new TypedSingleDependentLink(true, null, new DataCallExpression(Prelude.FIN, LevelPair.PROP, new SingletonList<>(length))), Nat()));
     impls.put(Prelude.ARRAY_LENGTH, length);
+    impls.put(Prelude.ARRAY_ELEMENTS_TYPE, new LamExpression(Sort.SET0, new TypedSingleDependentLink(true, null, new DataCallExpression(Prelude.FIN, LevelPair.PROP, new SingletonList<>(length))), Nat()));
     assertThatErrorsAre(Matchers.goal(0), Matchers.goal(0), Matchers.goal(new ClassCallExpression(Prelude.DEP_ARRAY, LevelPair.SET0, impls, Sort.SET0, UniverseKind.NO_UNIVERSES)));
   }
 

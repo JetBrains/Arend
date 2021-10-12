@@ -427,7 +427,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
             myVisitor.getErrorReporter().report(new TypeMismatchError(expected1, result1.type, arguments.get(index).expression));
             return null;
           }
-          Map<ClassField, Expression> impls = new HashMap<>();
+          Map<ClassField, Expression> impls = new LinkedHashMap<>();
           impls.put(Prelude.ARRAY_LENGTH, args.get(0));
           TypedSingleDependentLink lamParam = new TypedSingleDependentLink(true, "j", new DataCallExpression(Prelude.FIN, LevelPair.PROP, new SingletonList<>(args.get(0))));
           impls.put(Prelude.ARRAY_ELEMENTS_TYPE, new LamExpression(sort0, lamParam, AppExpression.make(args.get(1), Suc(new ReferenceExpression(lamParam)), true)));
@@ -456,7 +456,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
       if (length == null) {
         type = new TypeExpression(FunCallExpression.make(Prelude.ARRAY, defCallResult.getLevels(), new SingletonList<>(result1.type)), sort);
       } else {
-        Map<ClassField, Expression> impls = new HashMap<>();
+        Map<ClassField, Expression> impls = new LinkedHashMap<>();
         impls.put(Prelude.ARRAY_LENGTH, length);
         impls.put(Prelude.ARRAY_ELEMENTS_TYPE, new LamExpression(sort0, new TypedSingleDependentLink(true, null, Fin(length)), result1.type));
         type = new ClassCallExpression(Prelude.DEP_ARRAY, defCallResult.getLevels(), impls, sort, UniverseKind.NO_UNIVERSES);

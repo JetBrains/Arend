@@ -1139,7 +1139,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
                   }
                 }
                 if (hasProperties) {
-                  Map<ClassField, Expression> resultTypeImpls = new HashMap<>();
+                  Map<ClassField, Expression> resultTypeImpls = new LinkedHashMap<>();
                   resultType = new ClassCallExpression(result.proj2.getDefinition(), result.proj2.getLevels(), resultTypeImpls, Sort.PROP, UniverseKind.NO_UNIVERSES);
                   ExprSubstitution substitution = new ExprSubstitution(result.proj2.getThisBinding(), new ReferenceExpression(resultType.getThisBinding()));
                   for (Map.Entry<ClassField, Expression> entry : result.proj2.getImplementedHere().entrySet()) {
@@ -1391,12 +1391,15 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       Definition fieldDef = fieldRef instanceof TCDefReferable ? ((TCDefReferable) fieldRef).getTypechecked() : null;
       Definition useParent = def.getUseParent().getTypechecked();
       if (fieldDef instanceof ClassField && useParent instanceof ClassDefinition) {
-        Map<ClassField, Expression> defaultImpl = new HashMap<>();
+        Map<ClassField, Expression> defaultImpl = new LinkedHashMap<>();
         ClassDefinition classDef = (ClassDefinition) useParent;
         Levels levels = classDef.makeIdLevels();
         ClassCallExpression thisType = new ClassCallExpression(classDef, levels, defaultImpl, classDef.getSort(), classDef.getUniverseKind());
-        for (Map.Entry<ClassField, AbsExpression> entry : classDef.getDefaults()) {
-          defaultImpl.put(entry.getKey(), entry.getValue().apply(new ReferenceExpression(thisType.getThisBinding()), LevelSubstitution.EMPTY));
+        for (ClassField field : classDef.getFields()) {
+          AbsExpression defaultExpr = classDef.getDefault(field);
+          if (defaultExpr != null) {
+            defaultImpl.put(field, defaultExpr.apply(new ReferenceExpression(thisType.getThisBinding()), LevelSubstitution.EMPTY));
+          }
         }
         TypedSingleDependentLink thisBinding = new TypedSingleDependentLink(false, "this", thisType, true);
         thisType.setSort(classDef.computeSort(levels, defaultImpl, thisBinding));

@@ -84,7 +84,7 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
 
   @Override
   public Expression visitClassCall(ClassCallExpression expr, Void params) {
-    Map<ClassField, Expression> fieldSet = new HashMap<>();
+    Map<ClassField, Expression> fieldSet = new LinkedHashMap<>();
     ClassCallExpression result = new ClassCallExpression(expr.getDefinition(), expr.getLevels().subst(myLevelSubstitution), fieldSet, expr.getSort().subst(myLevelSubstitution), expr.getUniverseKind());
     if (expr.getImplementedHere().isEmpty()) {
       return result;

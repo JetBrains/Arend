@@ -432,7 +432,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           length = ((DataCallExpression) dom).getDefCallArguments().get(0);
         }
         if (length != null) {
-          Map<ClassField, Expression> impls = new HashMap<>();
+          Map<ClassField, Expression> impls = new LinkedHashMap<>();
           ClassCallExpression resultClassCall = new ClassCallExpression(Prelude.DEP_ARRAY, classCall.getLevels(), impls, Sort.PROP, UniverseKind.NO_UNIVERSES);
           Expression elementsType = classCall.getAbsImplementationHere(Prelude.ARRAY_ELEMENTS_TYPE);
           if (elementsType == null) {
@@ -440,8 +440,8 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           } else {
             elementsType = elementsType.subst(classCall.getThisBinding(), new ReferenceExpression(resultClassCall.getThisBinding()));
           }
-          impls.put(Prelude.ARRAY_ELEMENTS_TYPE, elementsType);
           impls.put(Prelude.ARRAY_LENGTH, length);
+          impls.put(Prelude.ARRAY_ELEMENTS_TYPE, elementsType);
           impls.put(Prelude.ARRAY_AT, result.expression);
           return checkResultExpr(expectedType, new TypecheckingResult(new NewExpression(null, resultClassCall), resultClassCall), expr);
         }
@@ -1244,7 +1244,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   private TypecheckingResult typecheckClassExt(List<? extends Concrete.ClassFieldImpl> classFieldImpls, Expression expectedType, Expression renewExpr, ClassCallExpression classCallExpr, Set<ClassField> pseudoImplemented, Concrete.Expression expr, boolean useDefaults) {
     ClassDefinition baseClass = classCallExpr.getDefinition();
-    Map<ClassField, Expression> fieldSet = new HashMap<>();
+    Map<ClassField, Expression> fieldSet = new LinkedHashMap<>();
     ClassCallExpression resultClassCall = new ClassCallExpression(baseClass, classCallExpr.getLevels(), fieldSet, Sort.PROP, baseClass.getUniverseKind());
     resultClassCall.copyImplementationsFrom(classCallExpr);
     resultClassCall.updateHasUniverses();
@@ -1419,6 +1419,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       context.remove(thisRef);
     }
 
+    resultClassCall.fixOrderOfImplementations();
     fixClassExtSort(resultClassCall, expr);
     resultClassCall.updateHasUniverses();
     return checkResult(expectedType, new TypecheckingResult(resultClassCall, new UniverseExpression(resultClassCall.getSort())), expr);
@@ -1543,7 +1544,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
                 break;
               }
             }
-            actualClassCall = new ClassCallExpression((ClassDefinition) actualDef, typecheckLevels(actualDef, baseRefExpr, expectedClassCall.getLevels((ClassDefinition) actualDef), false), new HashMap<>(), expectedClassCall.getSort(), actualDef.getUniverseKind());
+            actualClassCall = new ClassCallExpression((ClassDefinition) actualDef, typecheckLevels(actualDef, baseRefExpr, expectedClassCall.getLevels((ClassDefinition) actualDef), false), new LinkedHashMap<>(), expectedClassCall.getSort(), actualDef.getUniverseKind());
             if (fieldsOK) {
               actualClassCall.copyImplementationsFrom(expectedClassCall);
             }
