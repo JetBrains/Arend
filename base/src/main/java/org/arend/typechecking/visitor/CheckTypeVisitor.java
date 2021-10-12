@@ -2382,7 +2382,32 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   @Override
   public TypecheckingResult visitLam(Concrete.LamExpression expr, Expression expectedType) {
     try (var ignored = new Utils.SetContextSaver<>(context)) {
-      return visitLam(expr.getParameters(), expr, expectedType == null ? NULL_PARAMETERS_PROVIDER : new ExpressionParametersProvider(expectedType));
+      if (expectedType == null) {
+        return visitLam(expr.getParameters(), expr, NULL_PARAMETERS_PROVIDER);
+      }
+
+      expectedType = expectedType.normalize(NormalizationMode.WHNF);
+      Expression type = expectedType;
+      ClassCallExpression classCall = expectedType.cast(ClassCallExpression.class);
+      if (classCall != null && classCall.getDefinition() == Prelude.DEP_ARRAY) {
+        Expression length = classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH);
+        if (length != null) {
+          Expression elementsType = classCall.getImplementation(Prelude.ARRAY_ELEMENTS_TYPE, new NewExpression(null, classCall));
+          if (elementsType != null) {
+            TypedSingleDependentLink param = new TypedSingleDependentLink(true, "j", ExpressionFactory.Fin(length));
+            type = new PiExpression(classCall.getSort().max(Sort.SET0), param, AppExpression.make(elementsType, new ReferenceExpression(param), true));
+          }
+        }
+      }
+
+      TypecheckingResult result = visitLam(expr.getParameters(), expr, new ExpressionParametersProvider(type));
+      if (result == null || type == expectedType) {
+        return result;
+      }
+
+      Map<ClassField, Expression> impls = new LinkedHashMap<>(classCall.getImplementedHere());
+      impls.put(Prelude.ARRAY_AT, result.expression);
+      return new TypecheckingResult(new NewExpression(null, new ClassCallExpression(Prelude.DEP_ARRAY, classCall.getLevels(), impls, Sort.PROP, UniverseKind.NO_UNIVERSES)), expectedType);
     }
   }
 
