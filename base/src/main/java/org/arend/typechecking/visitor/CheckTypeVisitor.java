@@ -173,7 +173,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   public Referable addBinding(@Nullable Referable referable, Binding binding) {
-    Referable ref = referable != null ? referable : new FakeLocalReferable(binding.getName());
+    Referable ref = referable != null ? referable : new FakeLocalReferable(binding.getName() != null ? binding.getName() : "_");
     context.put(ref, binding);
     return ref;
   }
