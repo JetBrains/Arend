@@ -447,9 +447,17 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
     if (data instanceof ArrayData) {
       ArrayData arrayData = (ArrayData) data;
       return new ConstructorExpressionPattern(new ArrayData((FunCallExpression) arrayData.funCall.subst(exprSubst, levelSubst), arrayData.isEmpty, arrayData.thisBinding), patterns);
-    } else {
-      return new ConstructorExpressionPattern(getDataExpression().subst(exprSubst, levelSubst), patterns);
+    } else if (data instanceof ConCallExpression) {
+      ConCallExpression conCall = (ConCallExpression) data;
+      if (conCall.getDefinition() == Prelude.FIN_ZERO || conCall.getDefinition() == Prelude.FIN_SUC) {
+        List<Expression> dataArgs = new ArrayList<>(conCall.getDataTypeArguments().size());
+        for (Expression arg : conCall.getDataTypeArguments()) {
+          dataArgs.add(arg.subst(exprSubst));
+        }
+        return new ConstructorExpressionPattern(new ConCallExpression(conCall.getDefinition(), conCall.getLevels().subst(levelSubst), dataArgs, Collections.emptyList()), patterns);
+      }
     }
+    return new ConstructorExpressionPattern(getDataExpression().subst(exprSubst, levelSubst), patterns);
   }
 
   @Override

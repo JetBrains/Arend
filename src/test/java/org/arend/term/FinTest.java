@@ -10,6 +10,7 @@ import org.arend.core.expr.SmallIntegerExpression;
 import org.arend.core.expr.type.Type;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
+import org.arend.ext.error.RedundantClauseError;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
@@ -304,5 +305,39 @@ public class FinTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\class C (A : \\Type) | f : A -> A\n" +
       "\\func test (c : C Nat) (x : Fin 3) => f (x : Nat)");
+  }
+
+  @Test
+  public void finMatchTest() {
+    typeCheckDef(
+      "\\func test (x : Fin 1) (j : Fin 1) (p : j = x) : Nat\n" +
+      "  | x, 0, idp => 1");
+  }
+
+  @Test
+  public void finMatchTest2() {
+    typeCheckDef(
+      "\\func test (x : Fin 2) (j : Fin 2) (p : j = x) : Nat\n" +
+      "  | x, 0, idp => 0\n" +
+      "  | x, 1, idp => 1");
+  }
+
+  @Test
+  public void finMatchTest3() {
+    typeCheckDef(
+      "\\func test (x : Fin 2) (j : Fin 2) (p : j = x) : Nat\n" +
+      "  | x, 0, idp => 0\n" +
+      "  | x, 1, idp => 1\n" +
+      "  | x, suc _, idp => 2", 1);
+    assertThatErrorsAre(Matchers.typecheckingError(RedundantClauseError.class));
+  }
+
+  @Test
+  public void finMatchTest4() {
+    typeCheckDef(
+      "\\func test (x : Fin 3) (j : Fin 3) (p : j = x) : Nat\n" +
+      "  | x, 0, idp => 0\n" +
+      "  | x, 1, idp => 1\n" +
+      "  | x, suc _, idp => 2");
   }
 }
