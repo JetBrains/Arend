@@ -718,6 +718,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
   @NotNull
   @Override
   public ConcreteFactory withData(@Nullable Object data) {
-    return new ConcreteFactoryImpl(data instanceof ConcreteSourceNode ? ((ConcreteSourceNode) data).getData() : data);
+    Object actualData = data instanceof ConcreteSourceNode ? ((ConcreteSourceNode) data).getData() : data;
+    return actualData == myData ? this : new ConcreteFactoryImpl(actualData);
   }
 }
