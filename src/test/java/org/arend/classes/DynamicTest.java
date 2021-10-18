@@ -773,4 +773,15 @@ public class DynamicTest extends TypeCheckingTestCase {
       "\\func x : X => \\new X\n" +
       "\\class B \\extends x.A");
   }
+
+  @Test
+  public void dynamicFunctionInExtends() {
+    typeCheckModule(
+      "\\record R {\n" +
+      "  \\func f => 0\n" +
+      "}\n" +
+      "\\record S \\extends R {\n" +
+      "  \\func g => f\n" +
+      "}");
+  }
 }

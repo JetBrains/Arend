@@ -11,7 +11,7 @@ public class ClassFieldImplScope implements Scope {
   private final ClassReferable myReferable;
   private final Extent myExtent;
 
-  public enum Extent { WITH_SUPER_CLASSES, WITH_DYNAMIC, ONLY_FIELDS }
+  public enum Extent { WITH_SUPER_CLASSES, WITH_DYNAMIC, WITH_SUPER_DYNAMIC, ONLY_FIELDS }
 
   public ClassReferable getClassReference() {
     return myReferable;
@@ -37,6 +37,7 @@ public class ClassFieldImplScope implements Scope {
     Set<ClassReferable> visitedClasses = new HashSet<>();
     Deque<ClassReferable> toVisit = new ArrayDeque<>();
     toVisit.add(myReferable);
+    Extent extent = myExtent;
 
     while (!toVisit.isEmpty()) {
       ClassReferable classRef = toVisit.removeLast();
@@ -56,7 +57,7 @@ public class ClassFieldImplScope implements Scope {
         }
       }
 
-      if (myExtent == Extent.WITH_DYNAMIC) {
+      if (extent == Extent.WITH_DYNAMIC) {
         for (GlobalReferable referable : classRef.getDynamicReferables()) {
           if (pred.test(referable)) {
             return referable;
@@ -68,6 +69,8 @@ public class ClassFieldImplScope implements Scope {
             }
           }
         }
+      } else if (extent == Extent.WITH_SUPER_DYNAMIC) {
+        extent = Extent.WITH_DYNAMIC;
       }
 
       List<? extends ClassReferable> superClasses = classRef.getSuperClassReferences();

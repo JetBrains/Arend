@@ -50,7 +50,10 @@ public class ConcreteClassReferable extends ConcreteLocatedReferable implements 
     if (!subgroups.isEmpty()) {
       myDynamicReferables = new ArrayList<>();
       for (Group subgroup : subgroups) {
-        myDynamicReferables.add(subgroup.getReferable());
+        LocatedReferable ref = subgroup.getReferable();
+        if (!(ref instanceof ConcreteLocatedReferable && ((ConcreteLocatedReferable) ref).getDefinition() instanceof Concrete.CoClauseFunctionDefinition)) {
+          myDynamicReferables.add(ref);
+        }
       }
     }
   }
