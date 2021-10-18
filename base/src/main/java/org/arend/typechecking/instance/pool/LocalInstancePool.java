@@ -118,6 +118,6 @@ public class LocalInstancePool implements InstancePool {
 
   @Override
   public InstancePool copy(CheckTypeVisitor typechecker) {
-    return new LocalInstancePool(typechecker, myPool);
+    return typechecker == myTypechecker ? this : new LocalInstancePool(typechecker, myPool);
   }
 }

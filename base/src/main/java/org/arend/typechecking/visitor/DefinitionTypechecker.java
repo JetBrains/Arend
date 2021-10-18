@@ -70,19 +70,16 @@ import static org.arend.core.expr.ExpressionFactory.*;
 
 public class DefinitionTypechecker extends BaseDefinitionTypechecker implements ConcreteDefinitionVisitor<Void, List<ExtElimClause>> {
   protected CheckTypeVisitor typechecker;
-  private GlobalInstancePool myInstancePool;
   private boolean myNewDef = true;
 
   public DefinitionTypechecker(CheckTypeVisitor typechecker) {
     super(typechecker == null ? null : typechecker.getErrorReporter());
     this.typechecker = typechecker;
-    myInstancePool = typechecker == null ? null : typechecker.getInstancePool();
   }
 
   public void setTypechecker(CheckTypeVisitor typechecker) {
     this.typechecker = typechecker;
     this.errorReporter = typechecker.getErrorReporter();
-    myInstancePool = typechecker.getInstancePool();
   }
 
   public void updateState(boolean update) {
@@ -160,8 +157,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   public List<ExtElimClause> visitFunction(Concrete.BaseFunctionDefinition def, Void params) {
     Definition typechecked = def.getData().getTypechecked();
     LocalInstancePool localInstancePool = new LocalInstancePool(typechecker);
-    myInstancePool.setInstancePool(localInstancePool);
-    typechecker.setInstancePool(myInstancePool);
+    typechecker.getInstancePool().setInstancePool(localInstancePool);
 
     FunctionDefinition definition = typechecked != null ? (FunctionDefinition) typechecked : def.getKind() == FunctionKind.CONS ? new DConstructor(def.getData()) : new FunctionDefinition(def.getData());
     if (myNewDef) {
@@ -188,8 +184,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   public List<ExtElimClause> visitData(Concrete.DataDefinition def, Void params) {
     Definition typechecked = def.getData().getTypechecked();
     LocalInstancePool localInstancePool = new LocalInstancePool(typechecker);
-    myInstancePool.setInstancePool(localInstancePool);
-    typechecker.setInstancePool(myInstancePool);
+    typechecker.getInstancePool().setInstancePool(localInstancePool);
 
     DataDefinition definition = typechecked != null ? (DataDefinition) typechecked : new DataDefinition(def.getData());
     typechecker.setDefinition(definition);
@@ -2409,14 +2404,15 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           typechecker.addBinding(lamImpl.getParameters().get(0).getReferableList().get(0), thisBinding);
           LocalInstancePool localInstancePool = new LocalInstancePool(typechecker);
           addLocalInstances(localInstances, thisBinding, typedDef, !typedDef.isRecord() && typedDef.getClassifyingField() == null, localInstancePool);
-          myInstancePool.setInstancePool(localInstancePool);
+          GlobalInstancePool instancePool = typechecker.getInstancePool().copy(typechecker);
+          instancePool.setInstancePool(localInstancePool);
+          typechecker.setInstancePool(instancePool);
           if (field.isProperty()) {
             CheckTypeVisitor.setCaseLevel(lamImpl.body, -1);
           }
           Levels superLevels = typedDef.getSuperLevels().get(field.getParentClass());
           Expression type = typedDef.getFieldType(field, superLevels == null ? idLevels.makeSubstitution(field) : superLevels.makeSubstitution(field), new ReferenceExpression(thisBinding));
           result = typechecker.finalCheckExpr(CheckTypeVisitor.addImplicitLamParams(lamImpl.body, type), type);
-          myInstancePool.setInstancePool(null);
         } else {
           result = null;
         }
@@ -2683,10 +2679,11 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
       LocalInstancePool localInstancePool = new LocalInstancePool(typechecker);
       addLocalInstances(localInstances, thisParam, parentClass, !parentClass.isRecord() && !hasClassifyingField, localInstancePool);
-      myInstancePool.setInstancePool(localInstancePool);
+      GlobalInstancePool instancePool = typechecker.getInstancePool().copy(typechecker);
+      instancePool.setInstancePool(localInstancePool);
+      typechecker.setInstancePool(instancePool);
       ClassFieldKind kind = def instanceof Concrete.ClassField ? ((Concrete.ClassField) def).getKind() : typedDef == null ? ClassFieldKind.ANY : typedDef.isProperty() ? ClassFieldKind.PROPERTY : ClassFieldKind.FIELD;
       Type typeResult = typechecker.finalCheckType(codomain, Type.OMEGA, kind == ClassFieldKind.PROPERTY && def.getResultTypeLevel() == null);
-      myInstancePool.setInstancePool(null);
       ok = typeResult != null;
       Expression typeExpr = ok ? typeResult.getExpr() : new ErrorExpression();
       piType = new PiExpression(ok ? Sort.STD.max(typeResult.getSortOfType()) : Sort.STD, thisParam, typeExpr);

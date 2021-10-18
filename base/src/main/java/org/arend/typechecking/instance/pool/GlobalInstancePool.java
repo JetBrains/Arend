@@ -64,7 +64,7 @@ public class GlobalInstancePool implements InstancePool {
 
   @Override
   public GlobalInstancePool copy(CheckTypeVisitor typechecker) {
-    return new GlobalInstancePool(myInstanceProvider, typechecker, myInstancePool.copy(typechecker));
+    return new GlobalInstancePool(myInstanceProvider, typechecker, myInstancePool == null ? null : myInstancePool.copy(typechecker));
   }
 
   @Override
