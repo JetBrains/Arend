@@ -165,21 +165,21 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     return arg != null ? checkApp(Concrete.AppExpression.make(null, function, arg, expr.isExplicit())) : function;
   }
 
-  private void visitArgument(Expression arg, boolean isExplicit, List<Concrete.Argument> arguments) {
+  private void visitArgument(Expression arg, boolean isExplicit, List<Concrete.Argument> arguments, boolean genGoal) {
     ReferenceExpression refExpr = arg.cast(ReferenceExpression.class);
     if (refExpr != null && refExpr.getBinding().isHidden()) {
       if (isExplicit) {
         arguments.add(new Concrete.Argument(new Concrete.ThisExpression(null, null), true));
       }
     } else if (isExplicit || hasFlag(PrettyPrinterFlag.SHOW_IMPLICIT_ARGS)) {
-      arguments.add(new Concrete.Argument(arg.accept(this, null), isExplicit));
+      arguments.add(new Concrete.Argument(genGoal ? generateHiddenGoal() : arg.accept(this, null), isExplicit));
     }
   }
 
   private Concrete.Expression visitParameters(Concrete.Expression expr, DependentLink parameters, List<? extends Expression> arguments) {
     List<Concrete.Argument> concreteArguments = new ArrayList<>(arguments.size());
     for (Expression arg : arguments) {
-      visitArgument(arg, parameters.isExplicit(), concreteArguments);
+      visitArgument(arg, parameters.isExplicit(), concreteArguments, false);
       if (parameters.hasNext()) {
         parameters = parameters.getNext();
       }
@@ -302,7 +302,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       if (showImplicitArgs && expr.getDefinition().status().headerIsOK() && hasFlag(PrettyPrinterFlag.SHOW_CON_PARAMS)) {
         List<Concrete.Argument> arguments = new ArrayList<>(expr.getDataTypeArguments().size());
         for (Expression arg : expr.getDataTypeArguments()) {
-          visitArgument(arg, false, arguments);
+          visitArgument(arg, false, arguments, false);
         }
         cExpr = Concrete.AppExpression.make(null, cExpr, arguments);
       }
@@ -325,7 +325,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       for (int i = 0; i < expr.getDefCallArguments().size(); i++) {
         if (i != recursiveParam) {
           if (showImplicitArgs || parameters.isExplicit()) {
-            visitArgument(expr.getDefCallArguments().get(i), parameters.isExplicit(), newArgs);
+            visitArgument(expr.getDefCallArguments().get(i), parameters.isExplicit(), newArgs, false);
           }
         } else {
           if (parameters.isExplicit() || showImplicitArgs && hasFlag(PrettyPrinterFlag.SHOW_IMPLICIT_ARGS)) {
@@ -377,16 +377,21 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     return result != null ? result : visitDefCall(expr, params);
   }
 
+  private Concrete.Expression generateHiddenGoal() {
+    return new Concrete.GoalExpression(null, "hidden", null);
+  }
+
   private List<Concrete.ClassFieldImpl> visitClassFieldImpls(ClassCallExpression expr, List<Concrete.Argument> arguments) {
     List<Concrete.ClassFieldImpl> statements = new ArrayList<>();
     boolean canBeArgument = arguments != null;
     for (ClassField field : expr.getDefinition().getFields()) {
       Expression implementation = expr.getAbsImplementationHere(field);
       if (implementation != null) {
+        boolean genGoal = !hasFlag(PrettyPrinterFlag.SHOW_PROOFS) && field.isProperty();
         if (canBeArgument && field.getReferable().isParameterField()) {
-          visitArgument(implementation, field.getReferable().isExplicitField(), arguments);
+          visitArgument(implementation, field.getReferable().isExplicitField(), arguments, genGoal);
         } else {
-          statements.add(cImplStatement(field.getReferable(), implementation.accept(this, null)));
+          statements.add(cImplStatement(field.getReferable(), genGoal ? generateHiddenGoal() : implementation.accept(this, null)));
           canBeArgument = false;
         }
       } else if (canBeArgument && !expr.getDefinition().isImplemented(field)) {
