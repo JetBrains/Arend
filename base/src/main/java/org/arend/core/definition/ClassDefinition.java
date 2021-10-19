@@ -162,7 +162,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
       return Sort.PROP;
     }
 
-    ClassCallExpression thisClass = new ClassCallExpression(this, levels, Collections.emptyMap(), mySort.subst(levels.makeSubstitution(this)), getUniverseKind());
+    ReferenceExpression thisExpr = new ReferenceExpression(ExpressionFactory.parameter("this", new ClassCallExpression(this, levels, Collections.emptyMap(), mySort.subst(levels.makeSubstitution(this)), getUniverseKind())));
     Sort sort = Sort.PROP;
 
     for (ClassField field : myFields) {
@@ -175,13 +175,11 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
         continue;
       }
 
-      Expression type = fieldType
-        .applyExpression(new ReferenceExpression(ExpressionFactory.parameter("this", thisClass)))
-        .normalize(NormalizationMode.WHNF)
-        .getType();
+      Expression type = fieldType.applyExpression(thisExpr).normalize(NormalizationMode.WHNF).getType();
       Sort sort1 = type == null ? null : type.toSort();
       if (sort1 != null) {
         sort = sort.max(sort1);
+        if (sort == null) return null;
       }
     }
 

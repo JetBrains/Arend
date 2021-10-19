@@ -64,7 +64,11 @@ public class Sort implements CoreSort {
   }
 
   public Sort max(Sort sort) {
-    return isProp() ? sort : sort.isProp() ? this : new Sort(myPLevel.max(sort.myPLevel), myHLevel.max(sort.myHLevel));
+    if (isProp()) return sort;
+    if (sort.isProp()) return this;
+    Level pLevel = myPLevel.max(sort.myPLevel);
+    Level hLevel = myHLevel.max(sort.myHLevel);
+    return pLevel == null || hLevel == null ? null : new Sort(pLevel, hLevel);
   }
 
   @Override
