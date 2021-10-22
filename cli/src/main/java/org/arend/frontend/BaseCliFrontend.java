@@ -1,7 +1,10 @@
 package org.arend.frontend;
 
 import org.apache.commons.cli.*;
+import org.arend.core.definition.ClassDefinition;
+import org.arend.core.definition.DataDefinition;
 import org.arend.core.definition.Definition;
+import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.visitor.SizeExpressionVisitor;
 import org.arend.ext.error.ListErrorReporter;
 import org.arend.ext.error.ErrorReporter;
@@ -26,7 +29,9 @@ import org.arend.prelude.Prelude;
 import org.arend.prelude.PreludeResourceLibrary;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.Group;
+import org.arend.term.prettyprint.PrettyPrintVisitor;
 import org.arend.term.prettyprint.PrettyPrinterConfigWithRenamer;
+import org.arend.term.prettyprint.ToAbstractVisitor;
 import org.arend.typechecking.LibraryArendExtensionProvider;
 import org.arend.typechecking.doubleChecker.CoreModuleChecker;
 import org.arend.typechecking.error.local.GoalError;
@@ -56,6 +61,9 @@ public abstract class BaseCliFrontend {
   private final DependencyListener myDependencyCollector = new MetaDependencyCollector();
   private Map<TCDefReferable, Pair<Long,Long>> myTimes = null;
   private Map<TCDefReferable, Integer> mySizes = null;
+  private ModulePath myPrintModule;
+  private LongName myPrintDefinition;
+  private final List<Definition> myPrintDefinitions = new ArrayList<>();
 
   // Status information
   private boolean myExitWithError = false;
@@ -72,6 +80,36 @@ public abstract class BaseCliFrontend {
     protected void afterLibraryLoading(@NotNull Library library, boolean successful) {
       super.afterLibraryLoading(library, successful);
       flushErrors();
+
+      if (mySizes != null) {
+        for (ModulePath module : library.getLoadedModules()) {
+          Scope scope = library.getModuleScopeProvider().forModule(module);
+          if (scope == null) continue;
+          Scope.traverse(scope, ref -> {
+            if (ref instanceof TCDefReferable) {
+              Definition def = ((TCDefReferable) ref).getTypechecked();
+              if (def instanceof FunctionDefinition || def instanceof DataDefinition || def instanceof ClassDefinition) {
+                mySizes.put(def.getRef(), SizeExpressionVisitor.getSize(def));
+              }
+            }
+          });
+        }
+      }
+
+      if (myPrintModule != null) {
+        Scope scope = library.getModuleScopeProvider().forModule(myPrintModule);
+        if (myPrintDefinition != null) {
+          addPrintDefinition(Scope.resolveName(scope, myPrintDefinition.toList()));
+        } else {
+          Scope.traverse(scope, this::addPrintDefinition);
+        }
+      }
+    }
+
+    private void addPrintDefinition(Referable ref) {
+      if (!(ref instanceof TCDefReferable)) return;
+      Definition def = ((TCDefReferable) ref).getTypechecked();
+      if (def instanceof FunctionDefinition || def instanceof DataDefinition || def instanceof ClassDefinition) myPrintDefinitions.add(def);
     }
   };
 
@@ -121,13 +159,13 @@ public abstract class BaseCliFrontend {
     @Override
     public void typecheckingBodyFinished(TCDefReferable referable, Definition definition) {
       stopTimer(referable);
-      update(definition);
+      handleDef(definition);
     }
 
     @Override
     public void typecheckingUnitFinished(TCDefReferable referable, Definition definition) {
       stopTimer(referable);
-      update(definition);
+      handleDef(definition);
     }
 
     @Override
@@ -140,7 +178,7 @@ public abstract class BaseCliFrontend {
       stopTimer(definition);
     }
 
-    private void update(Definition definition) {
+    private void handleDef(Definition definition) {
       flushErrors();
 
       LocatedReferable parent = definition.getRef().getLocatedReferableParent();
@@ -148,6 +186,14 @@ public abstract class BaseCliFrontend {
         total++;
         if (definition.status().hasErrors()) {
           failed++;
+        }
+      }
+
+      if (myPrintModule != null) {
+        TCDefReferable ref = definition.getRef();
+        ModuleLocation location = ref.getLocation();
+        if (location != null && location.getModulePath().equals(myPrintModule) && (myPrintDefinition == null || myPrintDefinition.equals(ref.getRefLongName()))) {
+          myPrintDefinitions.add(definition);
         }
       }
     }
@@ -175,6 +221,7 @@ public abstract class BaseCliFrontend {
       cmdOptions.addOption(Option.builder("r").longOpt("recompile").hasArg().optionalArg(true).argName("target").desc("recompile files").build());
       cmdOptions.addOption(Option.builder("c").longOpt("double-check").desc("double check correctness of the result").build());
       cmdOptions.addOption(Option.builder("i").longOpt("interactive").hasArg().optionalArg(true).argName("type").desc("start an interactive REPL, type can be plain or jline (default)").build());
+      cmdOptions.addOption(Option.builder("p").longOpt("print").hasArg().argName("target").desc("print a definition or a module").build());
       cmdOptions.addOption("t", "test", false, "run tests");
       cmdOptions.addOption("v", "version", false, "print language version");
       cmdOptions.addOption(Option.builder().longOpt("show-times").build());
@@ -201,6 +248,26 @@ public abstract class BaseCliFrontend {
   }
 
   protected void addCommandOptions(Options cmdOptions) {}
+
+  private Pair<ModulePath, LongName> parseFullName(String fullName) {
+    ModulePath modulePath;
+    LongName longName = null;
+    int index = fullName.indexOf(':');
+    if (index >= 0) {
+      longName = LongName.fromString(fullName.substring(index + 1));
+      if (!FileUtils.isCorrectDefinitionName(longName)) {
+        System.err.println(FileUtils.illegalDefinitionName(longName.toString()));
+        longName = null;
+      }
+      fullName = fullName.substring(0, index);
+    }
+    modulePath = ModulePath.fromString(fullName);
+    if (!FileUtils.isCorrectModulePath(modulePath)) {
+      System.err.println(FileUtils.illegalModuleName(modulePath.toString()));
+      modulePath = null;
+    }
+    return new Pair<>(modulePath, longName);
+  }
 
   public CommandLine run(String[] args) {
     CommandLine cmdLine = parseArgs(args);
@@ -234,24 +301,20 @@ public abstract class BaseCliFrontend {
       mySizes = new HashMap<>();
     }
 
+    String printString = cmdLine.getOptionValue("p");
+    if (printString != null) {
+      Pair<ModulePath, LongName> pair = parseFullName(printString);
+      myPrintModule = pair.proj1;
+      myPrintDefinition = pair.proj2;
+    }
+
     String recompileString = cmdLine.getOptionValue("r");
     ModulePath recompileModule = null;
     LongName recompileDef = null;
     if (recompileString != null) {
-      int index = recompileString.indexOf(':');
-      if (index >= 0) {
-        recompileDef = LongName.fromString(recompileString.substring(index + 1));
-        if (!FileUtils.isCorrectDefinitionName(recompileDef)) {
-          System.err.println(FileUtils.illegalDefinitionName(recompileDef.toString()));
-          recompileDef = null;
-        }
-        recompileString = recompileString.substring(0, index);
-      }
-      recompileModule = ModulePath.fromString(recompileString);
-      if (!FileUtils.isCorrectModulePath(recompileModule)) {
-        System.err.println(FileUtils.illegalModuleName(recompileModule.toString()));
-        recompileModule = null;
-      }
+      Pair<ModulePath, LongName> pair = parseFullName(recompileString);
+      recompileModule = pair.proj1;
+      recompileDef = pair.proj2;
     }
 
     boolean recompile = recompileString == null && cmdLine.hasOption("r");
@@ -385,7 +448,7 @@ public abstract class BaseCliFrontend {
           if (scope == null) {
             System.err.println("[ERROR] Cannot find module '" + recompileModule + "' in library '" + library.getName() + "'");
           } else {
-            Referable ref = Scope.Utils.resolveName(scope, recompileDef.toList());
+            Referable ref = Scope.resolveName(scope, recompileDef.toList());
             if (!(ref instanceof TCDefReferable)) {
               System.err.println("[ERROR] Cannot find definition '" + recompileDef + "' in module '" + recompileModule + "' in library '" + library.getName() + "'");
             } else {
@@ -462,34 +525,44 @@ public abstract class BaseCliFrontend {
         }
         System.out.println("--- Done (" + timeToString(time) + ") ---");
 
-        if (myTimes != null && !myTimes.isEmpty()) {
-          System.out.println();
-          List<Pair<TCDefReferable,Long>> list = new ArrayList<>(myTimes.size());
-          for (Map.Entry<TCDefReferable, Pair<Long, Long>> entry : myTimes.entrySet()) {
-            list.add(new Pair<>(entry.getKey(), entry.getValue().proj2));
-          }
-          list.sort((o1, o2) -> Long.compare(o2.proj2, o1.proj2));
-          for (Pair<TCDefReferable, Long> pair : list) {
-            System.out.println(pair.proj1.getRefLongName() + ": " + timeToString(pair.proj2));
-          }
-        }
-
-        if (mySizes != null && !mySizes.isEmpty()) {
-          System.out.println();
-          List<Pair<TCDefReferable,Integer>> list = new ArrayList<>(mySizes.size());
-          for (Map.Entry<TCDefReferable, Integer> entry : mySizes.entrySet()) {
-            list.add(new Pair<>(entry.getKey(), entry.getValue()));
-          }
-          list.sort((o1, o2) -> Long.compare(o2.proj2, o1.proj2));
-          for (Pair<TCDefReferable, Integer> pair : list) {
-            System.out.println(pair.proj1.getRefLongName() + ": " + pair.proj2);
-          }
-        }
-
         // Persist updated modules
         if (library.supportsPersisting()) {
           library.persistUpdatedModules(mySystemErrErrorReporter);
         }
+      }
+
+      if (myTimes != null && !myTimes.isEmpty()) {
+        System.out.println();
+        List<Pair<TCDefReferable,Long>> list = new ArrayList<>(myTimes.size());
+        for (Map.Entry<TCDefReferable, Pair<Long, Long>> entry : myTimes.entrySet()) {
+          list.add(new Pair<>(entry.getKey(), entry.getValue().proj2));
+        }
+        list.sort((o1, o2) -> Long.compare(o2.proj2, o1.proj2));
+        for (Pair<TCDefReferable, Long> pair : list) {
+          System.out.println(pair.proj1.getRefLongName() + ": " + timeToString(pair.proj2));
+        }
+      }
+
+      if (mySizes != null && !mySizes.isEmpty()) {
+        System.out.println();
+        List<Pair<TCDefReferable,Integer>> list = new ArrayList<>(mySizes.size());
+        for (Map.Entry<TCDefReferable, Integer> entry : mySizes.entrySet()) {
+          list.add(new Pair<>(entry.getKey(), entry.getValue()));
+        }
+        list.sort((o1, o2) -> Long.compare(o2.proj2, o1.proj2));
+        for (Pair<TCDefReferable, Integer> pair : list) {
+          System.out.println(pair.proj1.getRefLongName() + ": " + pair.proj2);
+        }
+      }
+
+      for (Definition definition : myPrintDefinitions) {
+        System.out.println();
+        if (myPrintDefinition == null) {
+          System.out.println(definition.getRef().getRefLongName() + ":");
+        }
+        StringBuilder builder = new StringBuilder();
+        PrettyPrintVisitor.prettyPrint(builder, ToAbstractVisitor.convert(definition));
+        System.out.println(builder);
       }
 
       if (doubleCheck && numWithErrors == 0) {

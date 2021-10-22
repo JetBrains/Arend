@@ -214,6 +214,11 @@ public class DataDefinition extends Definition implements CoreDataDefinition {
     return myParametersLevels.getList();
   }
 
+  @Override
+  public <P, R> R accept(DefinitionVisitor<? super P, ? extends R> visitor, P params) {
+    return visitor.visitData(this, params);
+  }
+
   public void addParametersLevel(ParametersLevel parametersLevel) {
     myParametersLevels.add(parametersLevel);
   }

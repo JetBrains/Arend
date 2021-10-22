@@ -1258,7 +1258,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       return;
     }
     if (references.isEmpty()) {
-      if (printWith) myBuilder.append("\\with\n");
+      if (printWith) myBuilder.append("\\with");
       return;
     }
 

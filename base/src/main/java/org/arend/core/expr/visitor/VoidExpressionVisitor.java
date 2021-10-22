@@ -2,7 +2,7 @@ package org.arend.core.expr.visitor;
 
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.param.DependentLink;
-import org.arend.core.definition.ClassField;
+import org.arend.core.definition.*;
 import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.HaveClause;
@@ -10,7 +10,7 @@ import org.arend.ext.util.Pair;
 
 import java.util.Map;
 
-public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> {
+public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> implements DefinitionVisitor<P,Void> {
   @Override
   public Void visitApp(AppExpression expr, P params) {
     expr.getFunction().accept(this, params);
@@ -265,6 +265,44 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> {
   public Void visitAt(AtExpression expr, P params) {
     expr.getPathArgument().accept(this, params);
     expr.getIntervalArgument().accept(this, params);
+    return null;
+  }
+
+  @Override
+  public Void visitFunction(FunctionDefinition def, P params) {
+    visitParameters(def.getParameters(), params);
+    def.getResultType().accept(this, params);
+    visitBody(def.getReallyActualBody(), params);
+    return null;
+  }
+
+  @Override
+  public Void visitData(DataDefinition def, P params) {
+    visitParameters(def.getParameters(), params);
+    for (Constructor constructor : def.getConstructors()) {
+      visitConstructor(constructor, params);
+    }
+    return null;
+  }
+
+  @Override
+  public Void visitClass(ClassDefinition def, P params) {
+    for (ClassField field : def.getPersonalFields()) {
+      visitField(field, params);
+    }
+    return null;
+  }
+
+  @Override
+  public Void visitConstructor(Constructor constructor, P params) {
+    visitParameters(constructor.getParameters(), params);
+    visitBody(constructor.getBody(), params);
+    return null;
+  }
+
+  @Override
+  public Void visitField(ClassField field, P params) {
+    visitPi(field.getType(), params);
     return null;
   }
 }

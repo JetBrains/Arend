@@ -2,20 +2,21 @@ package org.arend.term.prettyprint;
 
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.LevelVariable;
+import org.arend.core.definition.*;
+import org.arend.core.elimtree.Body;
+import org.arend.core.elimtree.ElimBody;
+import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.let.HaveClause;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.let.LetClausePattern;
 import org.arend.core.expr.visitor.BaseExpressionVisitor;
+import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.level.LevelSubstitution;
+import org.arend.ext.util.Pair;
 import org.arend.extImpl.definitionRenamer.ConflictDefinitionRenamer;
 import org.arend.ext.variable.Variable;
 import org.arend.core.context.param.DependentLink;
-import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.context.param.SingleDependentLink;
-import org.arend.core.definition.ClassField;
-import org.arend.core.definition.Constructor;
-import org.arend.core.definition.DConstructor;
-import org.arend.core.definition.Definition;
 import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.*;
 import org.arend.core.pattern.*;
@@ -31,6 +32,8 @@ import org.arend.naming.reference.LocalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.renamer.ReferableRenamer;
 import org.arend.prelude.Prelude;
+import org.arend.term.ClassFieldKind;
+import org.arend.term.FunctionKind;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.visitor.VoidConcreteVisitor;
 import org.arend.util.SingletonList;
@@ -40,7 +43,7 @@ import java.util.*;
 
 import static org.arend.term.concrete.ConcreteExpressionFactory.*;
 
-public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expression> {
+public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expression> implements DefinitionVisitor<Void, Concrete.ReferableDefinition> {
   private final PrettyPrinterConfig myConfig;
   private final DefinitionRenamer myDefinitionRenamer;
   private final CollectFreeVariablesVisitor myFreeVariablesCollector;
@@ -87,35 +90,20 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       }, null, null, new ReferableRenamer()).visitLevel(level);
   }
 
+  public static Concrete.ReferableDefinition convert(Definition definition) {
+    ConflictDefinitionRenamer definitionRenamer = new ConflictDefinitionRenamer();
+    definition.accept(definitionRenamer, null);
+    CollectFreeVariablesVisitor collector = new CollectFreeVariablesVisitor(definitionRenamer);
+    Set<Variable> variables = new HashSet<>();
+    definition.accept(collector, variables);
+    ReferableRenamer renamer = new ReferableRenamer();
+    ToAbstractVisitor visitor = new ToAbstractVisitor(PrettyPrinterConfig.DEFAULT, definitionRenamer, collector, renamer);
+    renamer.generateFreshNames(variables);
+    return definition.accept(visitor, null);
+  }
+
   private boolean hasFlag(PrettyPrinterFlag flag) {
     return myConfig.getExpressionFlags().contains(flag);
-  }
-
-  private Concrete.Pattern visitPattern(ExpressionPattern pattern, boolean isExplicit) {
-    if (pattern instanceof BindingPattern) {
-      return cNamePattern(isExplicit, makeLocalReference(((BindingPattern) pattern).getBinding(), myFreeVariablesCollector.getFreeVariables(((BindingPattern) pattern).getBinding().getNextTyped(null)), false));
-    }
-    if (pattern instanceof EmptyPattern) {
-      return cEmptyPattern(isExplicit);
-    }
-    if (pattern instanceof ConstructorExpressionPattern) {
-      Definition def = pattern.getDefinition();
-      return def instanceof Constructor || def instanceof DConstructor
-        ? cConPattern(isExplicit, def.getReferable(), visitPatterns(pattern.getSubPatterns(), pattern.getParameters()))
-        : cTuplePattern(isExplicit, visitPatterns(pattern.getSubPatterns(), EmptyDependentLink.getInstance()));
-    }
-    throw new IllegalStateException();
-  }
-
-  private List<Concrete.Pattern> visitPatterns(List<? extends ExpressionPattern> patterns, DependentLink parameters) {
-    List<Concrete.Pattern> result = new ArrayList<>(patterns.size());
-    for (ExpressionPattern pattern : patterns) {
-      result.add(visitPattern(pattern, !parameters.hasNext() || parameters.isExplicit()));
-      if (parameters.hasNext()) {
-        parameters = parameters.getNext();
-      }
-    }
-    return result;
   }
 
   private Concrete.Expression checkPath(DataCallExpression expr) {
@@ -618,7 +606,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     return result;
   }
 
-  private Concrete.Expression visitSort(Sort sort) {
+  private Concrete.UniverseExpression visitSort(Sort sort) {
     return cUniverse(sort.isOmega() ? new Concrete.PLevelExpression(null) : visitLevelNull(sort.getPLevel()), visitLevelNull(sort.getHLevel()));
   }
 
@@ -816,17 +804,25 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       }
     }
 
+    return cCase(expr.isSCase(), arguments, resultType, resultTypeLevel, visitElimBody(expr.getParameters(), expr.getElimBody()));
+  }
+
+  private List<Concrete.FunctionClause> visitElimBody(DependentLink parameters, ElimBody body) {
     List<Concrete.FunctionClause> clauses = new ArrayList<>();
-    for (ElimClause<Pattern> clause : expr.getElimBody().getClauses()) {
-      List<Concrete.Pattern> patterns = new ArrayList<>();
-      DependentLink link = expr.getParameters();
-      for (Pattern pattern : clause.getPatterns()) {
-        visitElimPattern(pattern, link.isExplicit(), patterns);
-        link = link.getNext();
-      }
-      clauses.add(cClause(patterns, clause.getExpression() == null ? null : clause.getExpression().accept(this, null)));
+    for (ElimClause<Pattern> clause : body.getClauses()) {
+      clauses.add(cClause(visitPatterns(parameters, clause.getPatterns()), clause.getExpression() == null ? null : clause.getExpression().accept(this, null)));
     }
-    return cCase(expr.isSCase(), arguments, resultType, resultTypeLevel, clauses);
+    return clauses;
+  }
+
+  private List<Concrete.Pattern> visitPatterns(DependentLink parameters, List<? extends Pattern> patterns) {
+    if (patterns == null) return null;
+    List<Concrete.Pattern> result = new ArrayList<>();
+    for (Pattern pattern : patterns) {
+      visitElimPattern(pattern, parameters.isExplicit(), result);
+      parameters = parameters.getNext();
+    }
+    return result;
   }
 
   private void visitElimPattern(Pattern pattern, boolean isExplicit, List<Concrete.Pattern> patterns) {
@@ -908,5 +904,135 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   @Override
   public Concrete.Expression visitAt(AtExpression expr, Void params) {
     return Concrete.AppExpression.make(null, Concrete.AppExpression.make(null, new Concrete.ReferenceExpression(null, Prelude.AT.getRef()), expr.getPathArgument().accept(this, null), true), expr.getIntervalArgument().accept(this, null), true);
+  }
+
+  private FunctionKind visitFunctionKind(CoreFunctionDefinition.Kind kind) {
+    switch (kind) {
+      case FUNC: return FunctionKind.FUNC;
+      case SFUNC: return FunctionKind.SFUNC;
+      case TYPE: return FunctionKind.TYPE;
+      case LEMMA: return FunctionKind.LEMMA;
+      case INSTANCE: return FunctionKind.INSTANCE;
+      default: throw new IllegalStateException();
+    }
+  }
+
+  private Pair<Concrete.LevelParameters, Concrete.LevelParameters> visitLevelParameters(List<? extends LevelVariable> parameters) {
+    // TODO
+    return new Pair<>(null, null);
+  }
+
+  private List<Concrete.FunctionClause> visitIntervalElim(DependentLink parameters, Body body) {
+    if (body instanceof ElimBody) {
+      return visitElimBody(parameters, (ElimBody) body);
+    } else if (body instanceof IntervalElim) {
+      IntervalElim elim = (IntervalElim) body;
+      // TODO: Add interval clauses
+      return elim.getOtherwise() == null ? new ArrayList<>() : visitElimBody(parameters, elim.getOtherwise());
+    } else if (body == null) {
+      return null;
+    } else {
+      throw new IllegalStateException();
+    }
+  }
+
+  @Override
+  public Concrete.FunctionDefinition visitFunction(FunctionDefinition def, Void params) {
+    List<Concrete.Parameter> parameters = new ArrayList<>();
+    visitDependentLink(def.getParameters(), parameters, true);
+    Pair<Concrete.LevelParameters, Concrete.LevelParameters> pair = visitLevelParameters(def.getLevelParameters());
+    Body body = def.getReallyActualBody();
+    Concrete.FunctionBody cBody;
+    if (body instanceof Expression) {
+      cBody = new Concrete.TermFunctionBody(null, ((Expression) body).accept(this, null));
+    } else if (body == null) {
+      ClassCallExpression classCall = def.getResultType().normalize(NormalizationMode.WHNF).cast(ClassCallExpression.class);
+      if (classCall != null && classCall.getNumberOfNotImplementedFields() == 0) {
+        cBody = new Concrete.TermFunctionBody(null, new Concrete.NewExpression(null, new Concrete.ReferenceExpression(null, classCall.getDefinition().getRef())));
+      } else {
+        cBody = new Concrete.ElimFunctionBody(null, Collections.emptyList(), Collections.emptyList());
+      }
+    } else {
+      cBody = new Concrete.ElimFunctionBody(null, Collections.emptyList(), visitIntervalElim(def.getParameters(), body));
+    }
+    return new Concrete.FunctionDefinition(visitFunctionKind(def.getKind()), def.getRef(), pair.proj1, pair.proj2, parameters, def.getResultType().accept(this, null), def.getResultTypeLevel() == null ? null : def.getResultTypeLevel().accept(this, null), cBody);
+  }
+
+  @Override
+  public Concrete.DataDefinition visitData(DataDefinition def, Void params) {
+    Pair<Concrete.LevelParameters, Concrete.LevelParameters> pair = visitLevelParameters(def.getLevelParameters());
+    List<Concrete.TypeParameter> parameters = new ArrayList<>();
+    visitDependentLink(def.getParameters(), parameters, false);
+    boolean hasPatterns = !def.getConstructors().isEmpty() && def.getConstructors().get(0).getPatterns() != null;
+    List<Concrete.ConstructorClause> constructors = new ArrayList<>();
+    Concrete.DataDefinition result = new Concrete.DataDefinition(def.getRef(), pair.proj1, pair.proj2, parameters, hasPatterns ? Collections.emptyList() : null, def.isTruncated(), def.isTruncated() ? visitSort(def.getSort()) : null, constructors);
+    for (Constructor constructor : def.getConstructors()) {
+      constructors.add(new Concrete.ConstructorClause(null, visitPatterns(def.getParameters(), constructor.getPatterns()), Collections.singletonList(visitConstructor(constructor, result))));
+    }
+    return result;
+  }
+
+  private Concrete.Constructor visitConstructor(Constructor constructor, Concrete.DataDefinition dataDef) {
+    List<Concrete.TypeParameter> parameters = new ArrayList<>();
+    visitDependentLink(constructor.getParameters(), parameters, false);
+    List<Concrete.FunctionClause> clauses = visitIntervalElim(constructor.getParameters(), constructor.getBody());
+    return new Concrete.Constructor(constructor.getRef(), dataDef, parameters, Collections.emptyList(), clauses == null ? Collections.emptyList() : clauses, false);
+  }
+
+  @Override
+  public Concrete.Constructor visitConstructor(Constructor constructor, Void params) {
+    return visitConstructor(constructor, (Concrete.DataDefinition) null);
+  }
+
+  @Override
+  public Concrete.ClassDefinition visitClass(ClassDefinition def, Void params) {
+    Pair<Concrete.LevelParameters, Concrete.LevelParameters> pair = visitLevelParameters(def.getLevelParameters());
+    List<Concrete.ReferenceExpression> superClasses = new ArrayList<>(def.getSuperClasses().size());
+    for (ClassDefinition superClass : def.getSuperClasses()) {
+      superClasses.add(new Concrete.ReferenceExpression(null, superClass.getRef()));
+    }
+
+    List<Concrete.ClassElement> elements = new ArrayList<>();
+    Concrete.ClassDefinition result = new Concrete.ClassDefinition(def.getRef(), pair.proj1, pair.proj2, def.isRecord(), false, superClasses, elements);
+    for (ClassField field : def.getPersonalFields()) {
+      elements.add(visitField(field, result));
+    }
+    for (Map.Entry<ClassField, AbsExpression> entry : def.getImplemented()) {
+      boolean implementedHere = true;
+      for (ClassDefinition superClass : def.getSuperClasses()) {
+        if (superClass.isImplemented(entry.getKey())) {
+          implementedHere = false;
+          break;
+        }
+      }
+      if (!implementedHere) continue;
+      elements.add(new Concrete.ClassFieldImpl(null, entry.getKey().getRef(), entry.getValue().getExpression().accept(this, null), null));
+    }
+    // TODO: Add other elements of the class
+    return result;
+  }
+
+  private Concrete.ClassField visitField(ClassField field, Concrete.ClassDefinition classDef) {
+    ClassFieldKind kind;
+    if (field.isProperty()) {
+      kind = ClassFieldKind.ANY;
+    } else {
+      Sort sort = field.getType().getCodomain().getSortOfType();
+      kind = sort == null || sort.isProp() ? ClassFieldKind.FIELD : ClassFieldKind.ANY;
+    }
+
+    List<Concrete.TypeParameter> parameters = new ArrayList<>();
+    Concrete.Expression type = field.getType().getCodomain().accept(this, null);
+    while (type instanceof Concrete.PiExpression) {
+      parameters.addAll(((Concrete.PiExpression) type).getParameters());
+      type = ((Concrete.PiExpression) type).getCodomain();
+    }
+
+    return new Concrete.ClassField(field.getReferable(), classDef, field.getReferable().isExplicitField(), kind, parameters, type, field.getTypeLevel() == null ? null : field.getTypeLevel().accept(this, null), false);
+  }
+
+  @Override
+  public Concrete.ClassField visitField(ClassField field, Void params) {
+    return visitField(field, (Concrete.ClassDefinition) null);
   }
 }

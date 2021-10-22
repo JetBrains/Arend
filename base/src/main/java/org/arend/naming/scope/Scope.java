@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 // Minimal definition: (find or getElements) and resolveNamespace
@@ -61,32 +62,38 @@ public interface Scope {
     return scope;
   }
 
-  class Utils {
-    public static Referable resolveName(Scope scope, List<? extends String> path) {
-      return resolveName(scope, path, false);
-    }
+  static Referable resolveName(Scope scope, List<? extends String> path) {
+    return resolveName(scope, path, false);
+  }
 
-    public static Referable resolveName(Scope scope, List<? extends String> path, boolean withSuperClasses) {
-      for (int i = 0; i < path.size(); i++) {
-        if (scope == null) {
-          return null;
-        }
-        if (withSuperClasses && i == path.size() - 2) {
-          Referable parentRef = scope.resolveName(path.get(i));
-          if (parentRef instanceof ClassReferable) {
-            Referable result = new ClassFieldImplScope((ClassReferable) parentRef, false).resolveName(path.get(i + 1));
-            if (result != null) {
-              return result;
-            }
+  static Referable resolveName(Scope scope, List<? extends String> path, boolean withSuperClasses) {
+    for (int i = 0; i < path.size(); i++) {
+      if (scope == null) {
+        return null;
+      }
+      if (withSuperClasses && i == path.size() - 2) {
+        Referable parentRef = scope.resolveName(path.get(i));
+        if (parentRef instanceof ClassReferable) {
+          Referable result = new ClassFieldImplScope((ClassReferable) parentRef, false).resolveName(path.get(i + 1));
+          if (result != null) {
+            return result;
           }
         }
-        if (i == path.size() - 1) {
-          return scope.resolveName(path.get(i));
-        } else {
-          scope = scope.resolveNamespace(path.get(i), i < path.size() - 2);
-        }
       }
-      return null;
+      if (i == path.size() - 1) {
+        return scope.resolveName(path.get(i));
+      } else {
+        scope = scope.resolveNamespace(path.get(i), i < path.size() - 2);
+      }
+    }
+    return null;
+  }
+
+  static void traverse(Scope scope, Consumer<Referable> consumer) {
+    if (scope == null) return;
+    for (Referable ref : scope.getElements()) {
+      consumer.accept(ref);
+      traverse(scope.resolveNamespace(ref.getRefName(), false), consumer);
     }
   }
 }

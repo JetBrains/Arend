@@ -36,7 +36,7 @@ public class ArendDependencyProviderImpl extends Disableable implements ArendDep
   public <T extends CoreDefinition> T getDefinition(@NotNull ModulePath module, @NotNull LongName name, Class<T> clazz) {
     checkEnabled();
     Scope scope = myModuleScopeProvider.forModule(module);
-    Referable ref = scope == null ? null : Scope.Utils.resolveName(scope, name.toList(), true);
+    Referable ref = scope == null ? null : Scope.resolveName(scope, name.toList(), true);
     Concrete.ReferableDefinition def;
     var generalDef = ref instanceof GlobalReferable ? myTypechecking.getConcreteProvider().getConcrete((GlobalReferable) ref) : null;
     if (generalDef instanceof Concrete.ReferableDefinition) {

@@ -108,6 +108,11 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
     return myParametersLevels.getList();
   }
 
+  @Override
+  public <P, R> R accept(DefinitionVisitor<? super P, ? extends R> visitor, P params) {
+    return visitor.visitClass(this, params);
+  }
+
   public void addParametersLevel(ParametersLevel parametersLevel) {
     myParametersLevels.add(parametersLevel);
   }

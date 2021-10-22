@@ -10,7 +10,6 @@ import org.arend.frontend.library.PreludeFileLibrary;
 import org.arend.library.Library;
 import org.arend.library.LibraryManager;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
-import org.arend.naming.reference.MetaReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCDefReferable;
 import org.arend.naming.reference.TCReferable;
@@ -58,12 +57,12 @@ public abstract class ArendTestCase {
   }
 
   public TCReferable get(Scope scope, String path) {
-    Referable referable = Scope.Utils.resolveName(scope, Arrays.asList(path.split("\\.")));
+    Referable referable = Scope.resolveName(scope, Arrays.asList(path.split("\\.")));
     return referable instanceof TCReferable ? (TCReferable) referable : null;
   }
 
   public TCDefReferable getDef(Scope scope, String path) {
-    Referable referable = Scope.Utils.resolveName(scope, Arrays.asList(path.split("\\.")));
+    Referable referable = Scope.resolveName(scope, Arrays.asList(path.split("\\.")));
     return referable instanceof TCDefReferable ? (TCDefReferable) referable : null;
   }
 

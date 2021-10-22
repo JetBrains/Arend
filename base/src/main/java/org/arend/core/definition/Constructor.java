@@ -221,6 +221,11 @@ public class Constructor extends Definition implements Function, BranchKey, Core
   }
 
   @Override
+  public <P, R> R accept(DefinitionVisitor<? super P, ? extends R> visitor, P params) {
+    return visitor.visitConstructor(this, params);
+  }
+
+  @Override
   public DataCallExpression getTypeWithParams(List<? super DependentLink> params, Levels levels) {
     DataCallExpression resultType = getDataTypeExpression(levels);
     DependentLink parameters = getDataTypeParameters();

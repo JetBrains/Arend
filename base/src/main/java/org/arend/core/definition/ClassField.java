@@ -147,6 +147,11 @@ public class ClassField extends Definition implements CoreClassField {
     return index == 0 && !myParentClass.isRecord() ? TypeClassParameterKind.YES : TypeClassParameterKind.NO;
   }
 
+  @Override
+  public <P, R> R accept(DefinitionVisitor<? super P, ? extends R> visitor, P params) {
+    return visitor.visitField(this, params);
+  }
+
   @NotNull
   @Override
   public DependentLink getParameters() {

@@ -6,6 +6,7 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.expr.ClassCallExpression;
 import org.arend.core.expr.Expression;
+import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.sort.Level;
 import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.Levels;
@@ -262,6 +263,8 @@ public abstract class Definition extends UserDataHolderImpl implements CoreDefin
   public void addStatus(TypeCheckingStatus status) {
     myStatus = myStatus.needsTypeChecking() && !status.needsTypeChecking() ? status : myStatus.max(status);
   }
+
+  public abstract <P, R> R accept(DefinitionVisitor<? super P, ? extends R> visitor, P params);
 
   @Override
   public String toString() {
