@@ -1069,7 +1069,13 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       return checkSubclassImpl(classCall2, expr1, false);
     }
 
-    return expr1.getImplementedHere().size() == classCall2.getImplementedHere().size() && checkSubclassImpl(expr1, classCall2, true);
+    for (ClassField field : classCall2.getImplementedHere().keySet()) {
+      if (!field.isProperty() && !expr1.isImplemented(field)) {
+        return false;
+      }
+    }
+
+    return checkSubclassImpl(expr1, classCall2, true);
   }
 
   private Binding substBinding(Binding binding) {
