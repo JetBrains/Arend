@@ -557,9 +557,6 @@ public abstract class BaseCliFrontend {
 
       for (Definition definition : myPrintDefinitions) {
         System.out.println();
-        if (myPrintDefinition == null) {
-          System.out.println(definition.getRef().getRefLongName() + ":");
-        }
         StringBuilder builder = new StringBuilder();
         PrettyPrintVisitor.prettyPrint(builder, ToAbstractVisitor.convert(definition));
         System.out.println(builder);
