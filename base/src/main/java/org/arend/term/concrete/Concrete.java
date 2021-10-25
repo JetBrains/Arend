@@ -32,6 +32,7 @@ public final class Concrete {
   private Concrete() {}
 
   public interface SourceNode extends ConcreteSourceNode {
+    void prettyPrint(PrettyPrintVisitor visitor, Precedence prec);
   }
 
   public static abstract class SourceNodeImpl implements SourceNode {
@@ -49,7 +50,7 @@ public final class Concrete {
 
     @Override
     public void prettyPrint(StringBuilder builder, PrettyPrinterConfig ppConfig) {
-      PrettyPrintVisitor.prettyPrint(builder, this); // TODO[pretty]: implement this properly
+      prettyPrint(new PrettyPrintVisitor(builder, 0), new Precedence(Expression.PREC));
     }
   }
 
@@ -104,6 +105,11 @@ public final class Concrete {
     @Nullable
     public Expression getType() {
       return null;
+    }
+
+    @Override
+    public void prettyPrint(PrettyPrintVisitor visitor, Precedence prec) {
+      visitor.prettyPrintParameter(this);
     }
   }
 
@@ -280,6 +286,11 @@ public final class Concrete {
       StringBuilder builder = new StringBuilder();
       accept(new PrettyPrintVisitor(builder, 0), new Precedence(Expression.PREC));
       return builder.toString();
+    }
+
+    @Override
+    public void prettyPrint(PrettyPrintVisitor visitor, Precedence prec) {
+      accept(visitor, prec);
     }
   }
 
@@ -467,6 +478,11 @@ public final class Concrete {
     public List<FunctionClause> getClauseList() {
       return myClauses;
     }
+
+    @Override
+    public void prettyPrint(PrettyPrintVisitor visitor, Precedence prec) {
+      visitor.prettyPrintFunctionClauses(this);
+    }
   }
 
   public static class BinOpSequenceExpression extends Expression {
@@ -649,6 +665,11 @@ public final class Concrete {
     public List<ClassFieldImpl> getCoclauseList() {
       return myCoclauses;
     }
+
+    @Override
+    public void prettyPrint(PrettyPrintVisitor visitor, Precedence prec) {
+      visitor.prettyprintCoclauses(this);
+    }
   }
 
   public static class ClassExtExpression extends Expression implements ConcreteClassExtExpression {
@@ -781,6 +802,11 @@ public final class Concrete {
 
     public boolean isDefault() {
       return myDefault;
+    }
+
+    @Override
+    public void prettyPrint(PrettyPrintVisitor visitor, Precedence prec) {
+      visitor.prettyPrintClassFieldImpl(this);
     }
   }
 
@@ -995,6 +1021,11 @@ public final class Concrete {
     @Override
     public void prettyPrint(StringBuilder builder, PrettyPrinterConfig ppConfig) {
       new PrettyPrintVisitor(builder, 0, !ppConfig.isSingleLine()).prettyPrintLetClause(this, false);
+    }
+
+    @Override
+    public void prettyPrint(PrettyPrintVisitor visitor, Precedence prec) {
+      visitor.prettyPrintLetClause(this, false);
     }
   }
 
@@ -1328,6 +1359,11 @@ public final class Concrete {
     public Expression getExpression() {
       return expression;
     }
+
+    @Override
+    public void prettyPrint(PrettyPrintVisitor visitor, Precedence prec) {
+      visitor.prettyPrintFunctionClause(this);
+    }
   }
 
   public static class NumericLiteral extends Expression implements ConcreteNumberExpression {
@@ -1377,6 +1413,11 @@ public final class Concrete {
     }
 
     public abstract <P, R> R accept(ConcreteLevelExpressionVisitor<? super P, ? extends R> visitor, P params);
+
+    @Override
+    public void prettyPrint(PrettyPrintVisitor visitor, Precedence prec) {
+      accept(visitor, prec);
+    }
   }
 
   public static class VarLevelExpression extends LevelExpression {
@@ -1707,6 +1748,11 @@ public final class Concrete {
       }
       return result;
     }
+
+    @Override
+    public void prettyPrint(PrettyPrintVisitor visitor, Precedence prec) {
+      visitor.prettyPrintLevelParameters(this);
+    }
   }
 
   public static abstract class Definition extends ResolvableDefinition implements ReferableDefinition {
@@ -1800,6 +1846,11 @@ public final class Concrete {
     @Override
     public <P, R> R accept(ConcreteResolvableDefinitionVisitor<? super P, ? extends R> visitor, P params) {
       return accept((ConcreteDefinitionVisitor<? super P, ? extends R>) visitor, params);
+    }
+
+    @Override
+    public void prettyPrint(PrettyPrintVisitor visitor, Precedence prec) {
+      accept(visitor, null);
     }
   }
 
@@ -1918,11 +1969,6 @@ public final class Concrete {
     public int hashCode() {
       return hashCodeImpl();
     }
-
-    @Override
-    public void prettyPrint(StringBuilder builder, PrettyPrinterConfig ppConfig) {
-      builder.append(getData()); // TODO[pretty]: implement this properly
-    }
   }
 
   public static class ClassField extends ReferableDefinitionBase implements BaseClassField {
@@ -2002,6 +2048,16 @@ public final class Concrete {
     public <P, R> R accept(ConcreteReferableDefinitionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitClassField(this, params);
     }
+
+    @Override
+    public void prettyPrint(PrettyPrintVisitor visitor, Precedence prec) {
+      visitor.prettyPrintClassField(this);
+    }
+
+    @Override
+    public void prettyPrint(StringBuilder builder, PrettyPrinterConfig ppConfig) {
+      new PrettyPrintVisitor(builder, 0).prettyPrintClassField(this);
+    }
   }
 
   public static class OverriddenField extends SourceNodeImpl implements BaseClassField {
@@ -2059,6 +2115,11 @@ public final class Concrete {
     public Doc prettyPrint(PrettyPrinterConfig ppConfig) {
       return DocFactory.refDoc(myOverriddenField);
     }
+
+    @Override
+    public void prettyPrint(PrettyPrintVisitor visitor, Precedence prec) {
+      visitor.prettyPrintOverridden(this);
+    }
   }
 
   public static abstract class FunctionBody extends SourceNodeImpl {
@@ -2084,6 +2145,11 @@ public final class Concrete {
     @NotNull
     public List<FunctionClause> getClauses() {
       return Collections.emptyList();
+    }
+
+    @Override
+    public void prettyPrint(PrettyPrintVisitor visitor, Precedence prec) {
+      visitor.prettyPrintBody(this, false);
     }
   }
 
@@ -2324,6 +2390,11 @@ public final class Concrete {
     public Expression getExpression() {
       return null;
     }
+
+    @Override
+    public void prettyPrint(PrettyPrintVisitor visitor, Precedence prec) {
+      visitor.prettyPrintClause(this);
+    }
   }
 
   public static class ConstructorClause extends Clause {
@@ -2337,6 +2408,11 @@ public final class Concrete {
     @NotNull
     public List<Constructor> getConstructors() {
       return myConstructors;
+    }
+
+    @Override
+    public void prettyPrint(PrettyPrintVisitor visitor, Precedence prec) {
+      visitor.prettyPrintConstructorClause(this);
     }
   }
 
@@ -2399,6 +2475,16 @@ public final class Concrete {
     @Override
     public <P, R> R accept(ConcreteReferableDefinitionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitConstructor(this, params);
+    }
+
+    @Override
+    public void prettyPrint(PrettyPrintVisitor visitor, Precedence prec) {
+      visitor.prettyPrintConstructor(this);
+    }
+
+    @Override
+    public void prettyPrint(StringBuilder builder, PrettyPrinterConfig ppConfig) {
+      new PrettyPrintVisitor(builder, 0).prettyPrintConstructor(this);
     }
   }
 
@@ -2463,6 +2549,11 @@ public final class Concrete {
 
     public @NotNull List<? extends Pattern> getPatterns() {
       return Collections.emptyList();
+    }
+
+    @Override
+    public void prettyPrint(PrettyPrintVisitor visitor, Precedence prec) {
+      visitor.prettyPrintPattern(this, prec.priority, false);
     }
   }
 
@@ -2543,6 +2634,11 @@ public final class Concrete {
     @Override
     public void prettyPrint(StringBuilder builder, PrettyPrinterConfig ppConfig) {
       new PrettyPrintVisitor(builder, 0, !ppConfig.isSingleLine()).prettyPrintTypedReferable(this);
+    }
+
+    @Override
+    public void prettyPrint(PrettyPrintVisitor visitor, Precedence prec) {
+      visitor.prettyPrintTypedReferable(this);
     }
   }
 

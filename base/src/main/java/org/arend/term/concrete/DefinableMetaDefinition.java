@@ -8,12 +8,14 @@ import org.arend.ext.concrete.expr.ConcreteReferenceExpression;
 import org.arend.ext.error.ArgumentExplicitnessError;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.TypecheckingError;
+import org.arend.ext.reference.Precedence;
 import org.arend.ext.typechecking.ContextData;
 import org.arend.ext.typechecking.ExpressionTypechecker;
 import org.arend.ext.typechecking.MetaDefinition;
 import org.arend.ext.typechecking.TypedExpression;
 import org.arend.naming.reference.LevelReferable;
 import org.arend.naming.reference.MetaReferable;
+import org.arend.term.prettyprint.PrettyPrintVisitor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -129,5 +131,10 @@ public class DefinableMetaDefinition extends Concrete.ResolvableDefinition imple
   @Override
   public <P, R> R accept(ConcreteResolvableDefinitionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitMeta(this, params);
+  }
+
+  @Override
+  public void prettyPrint(PrettyPrintVisitor visitor, Precedence prec) {
+    visitor.visitMeta(this, null);
   }
 }

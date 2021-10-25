@@ -11,6 +11,7 @@ import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.module.LongName;
 import org.arend.ext.module.ModulePath;
+import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.PrettyPrinterFlag;
 import org.arend.extImpl.DefinitionRequester;
 import org.arend.frontend.library.FileSourceLibrary;
@@ -558,7 +559,7 @@ public abstract class BaseCliFrontend {
       for (Definition definition : myPrintDefinitions) {
         System.out.println();
         StringBuilder builder = new StringBuilder();
-        PrettyPrintVisitor.prettyPrint(builder, ToAbstractVisitor.convert(definition));
+        ToAbstractVisitor.convert(definition).prettyPrint(builder, PrettyPrinterConfig.DEFAULT);
         System.out.println(builder);
       }
 
