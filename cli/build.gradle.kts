@@ -6,7 +6,7 @@ dependencies {
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:$jacksonVersion")
     implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
 
-    val jlineVersion = "3.16.0"
+    val jlineVersion = "3.21.0"
     implementation("org.jline:jline-terminal:$jlineVersion")
     implementation("org.jline:jline-terminal-jansi:$jlineVersion")
     implementation("org.jline:jline-reader:$jlineVersion")
