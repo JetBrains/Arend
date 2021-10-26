@@ -84,6 +84,7 @@ public class JLineCliRepl extends CommonCliRepl {
       .appName(APP_NAME)
       .variable(LineReader.HISTORY_FILE, history)
       .history(new DefaultHistory())
+      .parser(new ArendReplParser())
       .completer(new AggregateCompleter(
         new SpecialCommandCompleter(DirectoryArgumentCommand.class, new Completers.DirectoriesCompleter(() -> pwd)),
         new SpecialCommandCompleter(FileArgumentCommand.class, new Completers.FilesCompleter(() -> pwd)),
@@ -95,7 +96,6 @@ public class JLineCliRepl extends CommonCliRepl {
         CommandsCompleter.INSTANCE
       ))
       .terminal(myTerminal)
-      .parser(new DefaultParser().escapeChars(new char[]{}))
       .build();
     while (true) try {
       if (repl(reader.readLine(prompt()), reader::readLine)) break;

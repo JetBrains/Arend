@@ -1,6 +1,7 @@
 package org.arend.frontend.repl;
 
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.arend.ext.error.ErrorReporter;
@@ -175,7 +176,7 @@ public abstract class CommonCliRepl extends Repl {
     return parser;
   }
 
-  public static @NotNull ArendLexer createLexer(@NotNull String text, ReporterErrorListener errorListener) {
+  public static @NotNull ArendLexer createLexer(@NotNull String text, BaseErrorListener errorListener) {
     var input = CharStreams.fromString(text);
     var lexer = new ArendLexer(input);
     lexer.removeErrorListeners();
