@@ -16,10 +16,17 @@ import java.util.Set;
 public class FindBindingVisitor extends SearchVisitor<Void> {
   private final Set<? extends Variable> myBindings;
   private final Set<Binding> myAllowedBindings = new HashSet<>();
+  private final boolean myNormalizeClassCallBindings;
   private Variable myResult = null;
+
+  public FindBindingVisitor(Set<? extends Variable> binding, boolean normalizeClassCallBindings) {
+    myBindings = binding;
+    myNormalizeClassCallBindings = normalizeClassCallBindings;
+  }
 
   public FindBindingVisitor(Set<? extends Variable> binding) {
     myBindings = binding;
+    myNormalizeClassCallBindings = false;
   }
 
   Set<? extends Variable> getBindings() {
@@ -38,6 +45,31 @@ public class FindBindingVisitor extends SearchVisitor<Void> {
     } else {
       return CoreExpression.FindAction.CONTINUE;
     }
+  }
+
+  @Override
+  public Boolean visitFieldCall(FieldCallExpression expr, Void params) {
+    if (myBindings.contains(expr.getDefinition())) {
+      myResult = expr.getDefinition();
+      return true;
+    }
+
+    if (myNormalizeClassCallBindings && expr.getArgument() instanceof ReferenceExpression) {
+      Binding binding = ((ReferenceExpression) expr.getArgument()).getBinding();
+      if (!myBindings.contains(binding)) {
+        return false;
+      }
+      if (binding instanceof ClassCallExpression.ClassCallBinding) {
+        Expression impl = ((ClassCallExpression.ClassCallBinding) binding).getTypeExpr().getImplementation(expr.getDefinition(), expr.getArgument());
+        if (impl != null) {
+          return impl.accept(this, null);
+        }
+      }
+      myResult = binding;
+      return true;
+    }
+
+    return expr.getArgument().accept(this, null);
   }
 
   @Override

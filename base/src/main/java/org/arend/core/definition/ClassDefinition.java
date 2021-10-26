@@ -4,6 +4,7 @@ import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.expr.*;
+import org.arend.core.expr.visitor.FindBindingVisitor;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
@@ -148,7 +149,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
       List<Expression> expressions = new ArrayList<>();
       for (ClassField field : parametersLevel.fields) {
         Expression expr = implemented.get(field);
-        if (expr == null || expr.findBinding(thisBinding)) {
+        if (expr == null || expr.accept(new FindBindingVisitor(Collections.singleton(thisBinding), true), null)) {
           continue loop;
         }
         expressions.add(expr);

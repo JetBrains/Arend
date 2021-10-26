@@ -799,10 +799,10 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
   public Expression evalFieldCall(ClassField field, Expression arg) {
     if (arg instanceof FunCallExpression && ((FunCallExpression) arg).getDefinition().getResultType() instanceof ClassCallExpression) {
       FunCallExpression funCall = (FunCallExpression) arg;
-      Expression impl = ((ClassCallExpression) funCall.getDefinition().getResultType()).getImplementation(field, arg);
+      AbsExpression impl = ((ClassCallExpression) funCall.getDefinition().getResultType()).getAbsImplementation(field);
       if (impl != null) {
-        ExprSubstitution substitution = new ExprSubstitution().add(funCall.getDefinition().getParameters(), funCall.getDefCallArguments());
-        return impl.subst(substitution, funCall.getLevelSubstitution());
+        ExprSubstitution substitution = new ExprSubstitution(impl.getBinding(), arg).add(funCall.getDefinition().getParameters(), funCall.getDefCallArguments());
+        return impl.getExpression().subst(substitution, funCall.getLevelSubstitution());
       } else if (funCall.getDefinition().getBody() == null) {
         return null;
       }
@@ -831,6 +831,13 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
     Expression thisExpr = expr.getArgument().accept(this, mode);
     if (!(thisExpr.getInferenceVariable() instanceof TypeClassInferenceVariable) && (!(mode == NormalizationMode.RNF || mode == NormalizationMode.RNF_EXP) || thisExpr instanceof NewExpression)) {
       Expression impl = evalFieldCall(expr.getDefinition(), thisExpr);
+      if (impl != null) {
+        return impl.accept(this, mode);
+      }
+    }
+
+    if ((mode == NormalizationMode.RNF || mode == NormalizationMode.RNF_EXP) && thisExpr instanceof ReferenceExpression && ((ReferenceExpression) thisExpr).getBinding() instanceof ClassCallExpression.ClassCallBinding) {
+      Expression impl = ((ClassCallExpression.ClassCallBinding) ((ReferenceExpression) thisExpr).getBinding()).getTypeExpr().getImplementation(expr.getDefinition(), thisExpr);
       if (impl != null) {
         return impl.accept(this, mode);
       }

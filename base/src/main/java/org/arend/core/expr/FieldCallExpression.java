@@ -36,7 +36,7 @@ public class FieldCallExpression extends DefCallExpression implements CoreFieldC
       Expression impl = ((NewExpression) thisExpr).getImplementation(definition);
       assert impl != null;
       return impl;
-    } else if (unfoldRefs && thisExpr instanceof ReferenceExpression && ((ReferenceExpression) thisExpr).getBinding() instanceof ClassCallExpression.ClassCallBinding) {
+    } else if (unfoldRefs && thisExpr instanceof ReferenceExpression && ((ReferenceExpression) thisExpr).getBinding() instanceof ClassCallExpression.ClassCallBinding && ((ClassCallExpression.ClassCallBinding) ((ReferenceExpression) thisExpr).getBinding()).getTypeExpr().getDefinition() == Prelude.DEP_ARRAY) {
       Expression impl = ((ClassCallExpression.ClassCallBinding) ((ReferenceExpression) thisExpr).getBinding()).getTypeExpr().getImplementation(definition, thisExpr);
       if (impl != null) {
         return impl;

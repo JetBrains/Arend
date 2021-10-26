@@ -3531,6 +3531,27 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       return expr;
     }
 
+    expr = expr.accept(new SubstVisitor(new ExprSubstitution(), LevelSubstitution.EMPTY) {
+      @Override
+      public boolean isEmpty() {
+        return false;
+      }
+
+      @Override
+      public Expression visitFieldCall(FieldCallExpression expr, Void params) {
+        if (expr.getArgument() instanceof ReferenceExpression) {
+          Binding binding = ((ReferenceExpression) expr.getArgument()).getBinding();
+          if (binding instanceof ClassCallExpression.ClassCallBinding) {
+            Expression impl = ((ClassCallExpression.ClassCallBinding) binding).getTypeExpr().getImplementation(expr.getDefinition(), expr.getArgument());
+            if (impl != null) {
+              return impl.accept(this, null);
+            }
+          }
+        }
+        return super.visitFieldCall(expr, params);
+      }
+    }, null);
+
     Set<Object> foundVars = new LinkedHashSet<>();
     Expression result = CompareVisitor.checkedSubst(expr, substitution, allowedBindings, foundVars);
     if (result == null) {
