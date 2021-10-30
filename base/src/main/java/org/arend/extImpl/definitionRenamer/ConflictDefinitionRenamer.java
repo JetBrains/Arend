@@ -1,7 +1,9 @@
 package org.arend.extImpl.definitionRenamer;
 
+import org.arend.core.context.binding.PersistentEvaluatingBinding;
 import org.arend.core.definition.Definition;
 import org.arend.core.expr.DefCallExpression;
+import org.arend.core.expr.ReferenceExpression;
 import org.arend.core.expr.visitor.VoidExpressionVisitor;
 import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.ext.module.LongName;
@@ -58,6 +60,14 @@ public class ConflictDefinitionRenamer extends VoidExpressionVisitor<Void> imple
       list.add(definition.getReferable().getRepresentableName());
       myDefLongNames.put(definition.getRef(), new LongName(list));
     }
+  }
+
+  @Override
+  public Void visitReference(ReferenceExpression expr, Void params) {
+    if (expr.getBinding() instanceof PersistentEvaluatingBinding) {
+      ((PersistentEvaluatingBinding) expr.getBinding()).getExpression().accept(this, null);
+    }
+    return null;
   }
 
   @Override

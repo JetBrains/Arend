@@ -2,6 +2,7 @@ package org.arend.term.prettyprint;
 
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.LevelVariable;
+import org.arend.core.context.binding.PersistentEvaluatingBinding;
 import org.arend.core.definition.*;
 import org.arend.core.elimtree.Body;
 import org.arend.core.elimtree.ElimBody;
@@ -423,7 +424,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   @Override
   public Concrete.Expression visitReference(ReferenceExpression expr, Void params) {
-    return myRenamer.getConcreteExpression(expr.getBinding());
+    return expr.getBinding() instanceof PersistentEvaluatingBinding ? ((PersistentEvaluatingBinding) expr.getBinding()).getExpression().accept(this, null) : myRenamer.getConcreteExpression(expr.getBinding());
   }
 
   @Override

@@ -23,6 +23,7 @@ message Expression {
         Pi pi = 12;
         Proj proj = 13;
         Reference reference = 14;
+        EvaluatingReference evaluating_reference = 26;
         Sigma sigma = 15;
         Tuple tuple = 16;
         Universe universe = 17;
@@ -167,6 +168,10 @@ message Expression {
     }
     message Reference {
         int32 binding_ref = 1;
+    }
+    message EvaluatingReference {
+        string name = 1;
+        Expression expression = 2;
     }
     message Sigma {
         Level pLevel = 1;

@@ -7,6 +7,7 @@ import org.arend.core.constructor.TupleConstructor;
 import org.arend.core.context.LinkList;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.LevelVariable;
+import org.arend.core.context.binding.PersistentEvaluatingBinding;
 import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.context.param.*;
 import org.arend.core.definition.*;
@@ -296,6 +297,8 @@ class ExpressionDeserialization {
         return readClassCall(proto.getClassCall());
       case REFERENCE:
         return readReference(proto.getReference());
+      case EVALUATING_REFERENCE:
+        return readEvaluatingReference(proto.getEvaluatingReference());
       case LAM:
         return readLam(proto.getLam());
       case PI:
@@ -434,6 +437,13 @@ class ExpressionDeserialization {
 
   private ReferenceExpression readReference(ExpressionProtos.Expression.Reference proto) throws DeserializationException {
     return new ReferenceExpression(readBindingRef(proto.getBindingRef()));
+  }
+
+  private ReferenceExpression readEvaluatingReference(ExpressionProtos.Expression.EvaluatingReference proto) throws DeserializationException {
+    PersistentEvaluatingBinding binding = new PersistentEvaluatingBinding(proto.getName(), null);
+    registerBinding(binding);
+    binding.setExpression(readExpr(proto.getExpression()));
+    return new ReferenceExpression(binding);
   }
 
   private LamExpression readLam(ExpressionProtos.Expression.Lam proto) throws DeserializationException {

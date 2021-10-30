@@ -1,9 +1,6 @@
 package org.arend.typechecking.doubleChecker;
 
-import org.arend.core.context.binding.Binding;
-import org.arend.core.context.binding.LevelVariable;
-import org.arend.core.context.binding.ParamLevelVariable;
-import org.arend.core.context.binding.TypedBinding;
+import org.arend.core.context.binding.*;
 import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.context.param.*;
 import org.arend.core.definition.*;
@@ -284,6 +281,9 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   @Override
   public Expression visitReference(ReferenceExpression expr, Expression expectedType) {
+    if (expr.getBinding() instanceof PersistentEvaluatingBinding) {
+      return ((PersistentEvaluatingBinding) expr.getBinding()).getExpression().accept(this, expectedType);
+    }
     if (myContext != null && !myContext.contains(expr.getBinding())) {
       throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Variable '" + expr.getBinding().getName() + "' is not bound", mySourceNode), expr));
     }

@@ -5,6 +5,7 @@ import org.arend.core.constructor.*;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.ParamLevelVariable;
+import org.arend.core.context.binding.PersistentEvaluatingBinding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.TypedDependentLink;
 import org.arend.core.definition.ClassField;
@@ -417,8 +418,20 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
 
   @Override
   public ExpressionProtos.Expression visitReference(ReferenceExpression expr, Void params) {
+    Integer ref = myBindingsMap.get(expr.getBinding());
+    if (ref == null) {
+      if (!(expr.getBinding() instanceof PersistentEvaluatingBinding)) {
+        throw new IllegalStateException();
+      }
+      registerBinding(expr.getBinding());
+      ExpressionProtos.Expression.EvaluatingReference.Builder builder = ExpressionProtos.Expression.EvaluatingReference.newBuilder();
+      builder.setName(expr.getBinding().getName());
+      builder.setExpression(((PersistentEvaluatingBinding) expr.getBinding()).getExpression().accept(this, null));
+      return ExpressionProtos.Expression.newBuilder().setEvaluatingReference(builder).build();
+    }
+
     ExpressionProtos.Expression.Reference.Builder builder = ExpressionProtos.Expression.Reference.newBuilder();
-    builder.setBindingRef(writeBindingRef(expr.getBinding()));
+    builder.setBindingRef(ref + 1);
     return ExpressionProtos.Expression.newBuilder().setReference(builder).build();
   }
 

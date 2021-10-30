@@ -2,6 +2,7 @@ package org.arend.core.expr.visitor;
 
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.EvaluatingBinding;
+import org.arend.core.context.binding.PersistentEvaluatingBinding;
 import org.arend.core.context.binding.inference.MetaInferenceVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
@@ -21,7 +22,6 @@ import org.arend.ext.error.ListErrorReporter;
 import org.arend.ext.error.LocalError;
 import org.arend.ext.util.Pair;
 import org.arend.prelude.Prelude;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -139,7 +139,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
   @Override
   public Expression visitReference(ReferenceExpression expr, Void params) {
     Binding binding = expr.getBinding();
-    if (binding instanceof EvaluatingBinding && !myBoundEvaluatingBindings.contains(binding)) {
+    if (binding instanceof EvaluatingBinding && !(binding instanceof PersistentEvaluatingBinding) && !myBoundEvaluatingBindings.contains(binding)) {
       return ((EvaluatingBinding) binding).getExpression().accept(this, null);
     }
     return expr;

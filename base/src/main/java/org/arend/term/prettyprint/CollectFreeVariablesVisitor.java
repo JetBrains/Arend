@@ -1,6 +1,7 @@
 package org.arend.term.prettyprint;
 
 import org.arend.core.context.binding.Binding;
+import org.arend.core.context.binding.PersistentEvaluatingBinding;
 import org.arend.core.expr.let.HaveClause;
 import org.arend.core.expr.visitor.VoidExpressionVisitor;
 import org.arend.ext.variable.Variable;
@@ -34,7 +35,11 @@ public class CollectFreeVariablesVisitor extends VoidExpressionVisitor<Set<Varia
 
   @Override
   public Void visitReference(ReferenceExpression expr, Set<Variable> variables) {
-    variables.add(expr.getBinding());
+    if (expr.getBinding() instanceof PersistentEvaluatingBinding) {
+      ((PersistentEvaluatingBinding) expr.getBinding()).getExpression().accept(this, variables);
+    } else {
+      variables.add(expr.getBinding());
+    }
     return null;
   }
 

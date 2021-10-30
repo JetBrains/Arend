@@ -2,16 +2,14 @@ package org.arend.typechecking.visitor;
 
 import org.arend.core.context.LinkList;
 import org.arend.core.context.Utils;
-import org.arend.core.context.binding.Binding;
-import org.arend.core.context.binding.FieldLevelVariable;
-import org.arend.core.context.binding.LevelVariable;
-import org.arend.core.context.binding.ParamLevelVariable;
+import org.arend.core.context.binding.*;
 import org.arend.core.context.param.*;
 import org.arend.core.definition.*;
 import org.arend.core.elimtree.Body;
 import org.arend.core.elimtree.ElimBody;
 import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.*;
+import org.arend.core.expr.let.HaveClause;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.type.TypeExpression;
 import org.arend.core.expr.visitor.*;
@@ -1178,6 +1176,29 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
       if (termResult != null) {
         if (myNewDef) {
+          Expression expr = termResult.expression;
+          while (expr instanceof LetExpression) {
+            expr = ((LetExpression) expr).getExpression();
+          }
+          if (expr instanceof NewExpression) {
+            ExprSubstitution substitution = new ExprSubstitution();
+            expr = termResult.expression;
+            while (expr instanceof LetExpression) {
+              for (HaveClause clause : ((LetExpression) expr).getClauses()) {
+                substitution.add(clause, new ReferenceExpression(new PersistentEvaluatingBinding(clause.getName(), clause.getExpression().subst(substitution))));
+              }
+              expr = ((LetExpression) expr).getExpression();
+            }
+            termResult.expression = expr.subst(substitution);
+            if (termResult.type instanceof LetExpression) {
+              expr = termResult.type;
+              while (expr instanceof LetExpression) {
+                expr = ((LetExpression) expr).getExpression();
+              }
+              termResult.type = expr.subst(substitution);
+            }
+          }
+
           if (!def.isRecursive()) {
             typedDef.setResultType(termResult.type);
           }

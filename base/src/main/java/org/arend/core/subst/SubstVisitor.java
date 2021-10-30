@@ -3,6 +3,7 @@ package org.arend.core.subst;
 import org.arend.core.constructor.ClassConstructor;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.EvaluatingBinding;
+import org.arend.core.context.binding.PersistentEvaluatingBinding;
 import org.arend.core.context.binding.inference.LambdaInferenceVariable;
 import org.arend.core.context.binding.inference.MetaInferenceVariable;
 import org.arend.core.context.param.DependentLink;
@@ -111,7 +112,13 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
     }
     if (expr.getBinding() instanceof EvaluatingBinding) {
       Expression e = ((EvaluatingBinding) expr.getBinding()).getExpression();
-      return e.findFreeBindings(myExprSubstitution.getKeys()) == null ? expr : e.accept(this, null);
+      boolean hasFreeVars = e.findFreeBindings(myExprSubstitution.getKeys()) != null;
+      if (expr.getBinding() instanceof PersistentEvaluatingBinding) {
+        Expression newExpr = hasFreeVars ? new ReferenceExpression(new PersistentEvaluatingBinding(expr.getBinding().getName(), e.accept(this, null))) : expr;
+        myExprSubstitution.add(expr.getBinding(), newExpr);
+        return newExpr;
+      }
+      return hasFreeVars ? e.accept(this, null) : expr;
     }
     return expr;
   }

@@ -1,12 +1,16 @@
 package org.arend.core.expr.visitor;
 
+import org.arend.core.context.binding.PersistentEvaluatingBinding;
 import org.arend.core.definition.*;
 import org.arend.core.expr.*;
 
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class SizeExpressionVisitor extends VoidExpressionVisitor<Void> {
   private int mySize;
+  private final Set<PersistentEvaluatingBinding> myVisited = new HashSet<>();
 
   private SizeExpressionVisitor() {
   }
@@ -82,6 +86,12 @@ public class SizeExpressionVisitor extends VoidExpressionVisitor<Void> {
   @Override
   public Void visitReference(ReferenceExpression expr, Void params) {
     mySize++;
+    if (expr.getBinding() instanceof PersistentEvaluatingBinding) {
+      PersistentEvaluatingBinding binding = (PersistentEvaluatingBinding) expr.getBinding();
+      if (myVisited.add(binding)) {
+        binding.getExpression().accept(this, null);
+      }
+    }
     return null;
   }
 
