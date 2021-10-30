@@ -1193,8 +1193,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           }
         }
         if (termResult.expression instanceof NewExpression && myNewDef && def.getData().getKind() != GlobalReferable.Kind.DEFINED_CONSTRUCTOR && (expectedType.isError() || !typedDef.isSFunc()) && !def.isRecursive()) {
-          bodyIsOK = true;
-          typedDef.setBody(null);
           typedDef.setResultType(((NewExpression) termResult.expression).getType());
         }
       }
@@ -1203,22 +1201,38 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     if (myNewDef) {
-      ClassCallExpression resultClassCall = typedDef.getResultType().cast(ClassCallExpression.class);
-      if (resultClassCall != null) {
-        if (resultClassCall.getNumberOfNotImplementedFields() == 0) {
-          bodyIsOK = true;
-          typedDef.setBody(null);
-        } else {
-          boolean allImpl = true;
-          for (ClassField field : resultClassCall.getDefinition().getFields()) {
-            if (!field.isProperty() && !resultClassCall.isImplemented(field)) {
+      ClassCallExpression typeClassCall = typedDef.getResultType().cast(ClassCallExpression.class);
+      if (typeClassCall != null) {
+        Map<ClassField, Expression> newImpls = new LinkedHashMap<>();
+        ClassCallExpression newClassCall = new ClassCallExpression(typeClassCall.getDefinition(), typeClassCall.getLevels(), newImpls, typeClassCall.getSort(), typeClassCall.getUniverseKind());
+        Expression newThisBinding = new ReferenceExpression(newClassCall.getThisBinding());
+        boolean allImpl = true;
+        for (ClassField field : typeClassCall.getDefinition().getFields()) {
+          if (!field.isProperty()) {
+            Expression impl = typeClassCall.getAbsImplementationHere(field);
+            if (impl != null) {
+              newImpls.put(field, impl.subst(typeClassCall.getThisBinding(), newThisBinding));
+            } else if (!typeClassCall.getDefinition().isImplemented(field)) {
               allImpl = false;
-              break;
             }
           }
-          if (allImpl) {
-            bodyIsOK = true;
-            typedDef.hideBody();
+        }
+        if (typedDef.getResultTypeLevel() == null) {
+          typedDef.setResultType(newClassCall);
+        }
+        if (allImpl) {
+          bodyIsOK = true;
+          if (typedDef.getResultTypeLevel() == null) {
+            typedDef.reallyHideBody();
+            if (typedDef.getReallyActualBody() instanceof NewExpression && ((NewExpression) typedDef.getReallyActualBody()).getRenewExpression() == null) {
+              ClassCallExpression bodyClassCall = ((NewExpression) typedDef.getReallyActualBody()).getClassCall();
+              bodyClassCall.getImplementedHere().keySet().removeIf(field -> !field.isProperty());
+              if (bodyClassCall.getImplementedHere().isEmpty()) {
+                typedDef.setBody(null);
+              }
+            }
+          } else {
+            typedDef.setBody(null);
           }
         }
       }

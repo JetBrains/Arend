@@ -68,13 +68,39 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
   }
 
   private boolean check(FunctionDefinition definition) {
-    Expression typeType = definition.getResultType().accept(myChecker, Type.OMEGA);
+    Body body = definition.getReallyActualBody();
+    boolean checkType = true;
+    if (body instanceof NewExpression && ((NewExpression) body).getRenewExpression() == null && definition.getResultType() instanceof ClassCallExpression && definition.getResultTypeLevel() == null) {
+      Map<ClassField, Expression> newImpls = new LinkedHashMap<>();
+      ClassCallExpression typeClassCall = (ClassCallExpression) definition.getResultType();
+      ClassCallExpression bodyClassCall = ((NewExpression) body).getClassCall();
+      ClassCallExpression newClassCall = new ClassCallExpression(typeClassCall.getDefinition(), typeClassCall.getLevels(), newImpls, Sort.PROP, UniverseKind.NO_UNIVERSES);
+      Expression newThisBinding = new ReferenceExpression(newClassCall.getThisBinding());
+      boolean ok = true;
+      for (ClassField field : typeClassCall.getDefinition().getFields()) {
+        Expression typeImpl = typeClassCall.getAbsImplementationHere(field);
+        Expression bodyImpl = bodyClassCall.getAbsImplementationHere(field);
+        if (typeImpl != null && bodyImpl != null) {
+          ok = false;
+          break;
+        }
+        if (typeImpl != null || bodyImpl != null) {
+          newImpls.put(field, typeImpl != null ? typeImpl.subst(typeClassCall.getThisBinding(), newThisBinding) : bodyImpl.subst(bodyClassCall.getThisBinding(), newThisBinding));
+        }
+      }
+      if (ok) {
+        checkType = false;
+        body = new NewExpression(null, newClassCall);
+      }
+    }
+
+    Expression typeType = checkType ? definition.getResultType().accept(myChecker, Type.OMEGA) : null;
     Integer level = definition.getResultTypeLevel() == null ? null : myChecker.checkLevelProof(definition.getResultTypeLevel(), definition.getResultType());
 
     if (definition.getKind() == CoreFunctionDefinition.Kind.LEMMA && (level == null || level != -1)) {
       DefCallExpression resultDefCall = definition.getResultType().cast(DefCallExpression.class);
       if (resultDefCall == null || !Objects.equals(resultDefCall.getUseLevel(), -1)) {
-        Sort sort = typeType.toSort();
+        Sort sort = typeType == null ? definition.getResultType().getSortOfType() : typeType.toSort();
         if (sort == null) {
           errorReporter.report(CoreErrorWrapper.make(new TypecheckingError("Cannot infer the sort of the type", null), definition.getResultType()));
           return false;
@@ -86,12 +112,11 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
       }
     }
 
-    Body body = definition.getReallyActualBody();
     if (body instanceof Expression) {
       if (body instanceof CaseExpression) {
         myChecker.checkCase((CaseExpression) body, definition.getResultType(), level);
       } else {
-        ((Expression) body).accept(myChecker, definition.getResultType());
+        ((Expression) body).accept(myChecker, checkType ? definition.getResultType() : null);
       }
       return true;
     }
