@@ -45,14 +45,17 @@ public class CorrespondedSubDefVisitor implements
       // Assume they have the same order.
       return visitor.visitElimTree(body.getClauses(), ((ElimBody) coreBody).getClauses());
     } else if (body instanceof Concrete.CoelimFunctionBody) {
-      if (coreBody instanceof NewExpression) coreResultType = ((NewExpression) coreBody).getType();
+      Map<ClassField, Expression> implementations = new HashMap<>();
       if (coreResultType instanceof ClassCallExpression) {
-        Map<ClassField, Expression> implementations = ((ClassCallExpression) coreResultType).getImplementedHere();
-        for (var coclause : body.getCoClauseElements()) {
-          if (coclause instanceof Concrete.ClassFieldImpl) {
-            var statementVisited = visitor.visitStatement(implementations, (Concrete.ClassFieldImpl) coclause);
-            if (statementVisited != null) return statementVisited;
-          }
+        implementations.putAll(((ClassCallExpression) coreResultType).getImplementedHere());
+      }
+      if (coreBody instanceof NewExpression) {
+        implementations.putAll(((NewExpression) coreBody).getClassCall().getImplementedHere());
+      }
+      for (var coclause : body.getCoClauseElements()) {
+        if (coclause instanceof Concrete.ClassFieldImpl) {
+          var statementVisited = visitor.visitStatement(implementations, (Concrete.ClassFieldImpl) coclause);
+          if (statementVisited != null) return statementVisited;
         }
       }
     }
