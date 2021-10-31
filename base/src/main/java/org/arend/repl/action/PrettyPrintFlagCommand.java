@@ -37,7 +37,7 @@ public class PrettyPrintFlagCommand implements ReplCommand {
 
   @Override
   public @Nls @NotNull String help(@NotNull Repl api) {
-    return "Toggle a certain pretty printing flag (currently " + api.prettyPrinterFlags + ".\n" +
+    return "Toggle a certain pretty printing flag.\n" +
       "Options available (case insensitive):\n" +
       Arrays.stream(PrettyPrinterFlag.values())
         .map(Enum::name)
@@ -48,16 +48,17 @@ public class PrettyPrintFlagCommand implements ReplCommand {
   @Override
   public void invoke(@NotNull String line, @NotNull Repl api, @NotNull Supplier<@NotNull String> scanner) {
     if (line.isBlank()) {
-      api.println("Flags: " + api.prettyPrinterFlags);
+      api.println("Flags: " + api.getPrettyPrinterFlags());
       return;
     }
     try {
       var flag = PrettyPrinterFlag.valueOf(line.toUpperCase(Locale.ROOT));
-      if (api.prettyPrinterFlags.contains(flag)) {
-        api.prettyPrinterFlags.remove(flag);
+      var flags = api.getPrettyPrinterFlags();
+      if (flags.contains(flag)) {
+        flags.remove(flag);
         api.println("[INFO] Disabled " + flag + ".");
       } else {
-        api.prettyPrinterFlags.add(flag);
+        flags.add(flag);
         api.println("[INFO] Enabled " + flag + ".");
       }
     } catch (IllegalArgumentException e) {

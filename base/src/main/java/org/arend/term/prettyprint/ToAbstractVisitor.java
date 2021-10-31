@@ -91,14 +91,19 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       }, null, null, new ReferableRenamer()).visitLevel(level);
   }
 
-  public static Concrete.ReferableDefinition convert(Definition definition) {
-    ConflictDefinitionRenamer definitionRenamer = new ConflictDefinitionRenamer();
-    definition.accept(definitionRenamer, null);
+  public static Concrete.ReferableDefinition convert(Definition definition, PrettyPrinterConfig config) {
+    DefinitionRenamer definitionRenamer = config.getDefinitionRenamer();
+    if (definitionRenamer == null) {
+      definitionRenamer = new ConflictDefinitionRenamer();
+    }
+    if (definitionRenamer instanceof ConflictDefinitionRenamer) {
+      definition.accept((ConflictDefinitionRenamer) definitionRenamer, null);
+    }
     CollectFreeVariablesVisitor collector = new CollectFreeVariablesVisitor(definitionRenamer);
     Set<Variable> variables = new HashSet<>();
     definition.accept(collector, variables);
     ReferableRenamer renamer = new ReferableRenamer();
-    ToAbstractVisitor visitor = new ToAbstractVisitor(PrettyPrinterConfig.DEFAULT, definitionRenamer, collector, renamer);
+    ToAbstractVisitor visitor = new ToAbstractVisitor(config, definitionRenamer, collector, renamer);
     renamer.generateFreshNames(variables);
     return definition.accept(visitor, null);
   }

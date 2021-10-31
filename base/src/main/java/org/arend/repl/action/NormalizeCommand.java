@@ -21,7 +21,7 @@ public final class NormalizeCommand implements ReplCommand {
 
   @Override
   public @Nls @NotNull String help(@NotNull Repl api) {
-    return "Modify the normalization level of printed expressions (currently " + api.normalizationMode + ").\n" +
+    return "Modify the normalization level of printed expressions.\n" +
         "Available options (case insensitive) are:\n" +
         " NULL (do not normalize)\n" +
         " WHNF (weak head normal form)\n" +
@@ -38,23 +38,23 @@ public final class NormalizeCommand implements ReplCommand {
         api.eprintln("[ERROR] Unrecognized normalization level `" + line + "`, see `:? normalize`");
         break;
       case "":
-        api.println("Normalization mode: " + api.normalizationMode + " (:? normalize for further instruction)");
+        api.println("Normalization mode: " + api.getNormalizationMode());
         break;
       case "NULL":
         api.println("[INFO] Unset normalization mode.");
-        api.normalizationMode = null;
+        api.setNormalizationMode(null);
         break;
       case "WHNF":
-        api.normalizationMode = NormalizationMode.WHNF;
+        api.setNormalizationMode(NormalizationMode.WHNF);
         break;
       case "NF":
-        api.normalizationMode = NormalizationMode.NF;
+        api.setNormalizationMode(NormalizationMode.NF);
         break;
       case "ENF":
-        api.normalizationMode = NormalizationMode.ENF;
+        api.setNormalizationMode(NormalizationMode.ENF);
         break;
       case "RNF":
-        api.normalizationMode = NormalizationMode.RNF;
+        api.setNormalizationMode(NormalizationMode.RNF);
         break;
     }
   }

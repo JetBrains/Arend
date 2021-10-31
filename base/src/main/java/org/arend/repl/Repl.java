@@ -40,8 +40,6 @@ import java.util.function.Supplier;
 
 public abstract class Repl {
   public static final @NotNull ModuleLocation replModulePath = new ModuleLocation("Repl", true, ModuleLocation.LocationKind.SOURCE, ModulePath.fromString("Repl"));
-  public @Nullable NormalizationMode normalizationMode = NormalizationMode.ENF;
-  public final @NotNull EnumSet<@NotNull PrettyPrinterFlag> prettyPrinterFlags = EnumSet.of(PrettyPrinterFlag.SHOW_LOCAL_FIELD_INSTANCE);
 
   protected final List<Scope> myMergedScopes = new LinkedList<>();
   private final List<ReplHandler> myHandlers = new ArrayList<>();
@@ -56,16 +54,14 @@ public abstract class Repl {
       return new CachingDefinitionRenamer(new ScopeDefinitionRenamer(myScope));
     }
 
-    @Contract(pure = true)
     @Override
     public @NotNull EnumSet<PrettyPrinterFlag> getExpressionFlags() {
-      return prettyPrinterFlags;
+      return getPrettyPrinterFlags();
     }
 
-    @Contract(pure = true)
     @Override
     public @Nullable NormalizationMode getNormalizationMode() {
-      return null;
+      return Repl.this.getNormalizationMode();
     }
   };
   protected final @NotNull ListErrorReporter myErrorReporter;
@@ -92,9 +88,15 @@ public abstract class Repl {
     checkErrors();
   }
 
-  public PrettyPrinterConfig getPrettyPrinterConfig() {
+  public @NotNull PrettyPrinterConfig getPrettyPrinterConfig() {
     return myPpConfig;
   }
+
+  public abstract @NotNull EnumSet<PrettyPrinterFlag> getPrettyPrinterFlags();
+
+  public abstract @Nullable NormalizationMode getNormalizationMode();
+
+  public abstract void setNormalizationMode(@Nullable NormalizationMode mode);
 
   /**
    * The function executed per main-loop of the REPL.
@@ -188,8 +190,9 @@ public abstract class Repl {
     registerAction("quit", QuitCommand.INSTANCE);
     registerAction("type", ShowTypeCommand.INSTANCE);
     registerAction("print", PrintCommand.INSTANCE);
+    registerAction("print_flags", PrettyPrintFlagCommand.INSTANCE);
     registerAction("size", SizeCommand.INSTANCE);
-    registerAction("normalize", NormalizeCommand.INSTANCE);
+    registerAction("normalize_mode", NormalizeCommand.INSTANCE);
     registerAction("libraries", ShowLoadedLibrariesCommand.INSTANCE);
     registerAction("?", CommandHandler.HELP_COMMAND_INSTANCE);
     registerAction("help", CommandHandler.HELP_COMMAND_INSTANCE);
@@ -271,7 +274,8 @@ public abstract class Repl {
   public abstract void eprintln(Object anything);
 
   public Expression normalize(Expression expr) {
-    return normalizationMode == null ? expr : expr.normalize(normalizationMode);
+    NormalizationMode mode = getNormalizationMode();
+    return mode == null ? expr : expr.normalize(mode);
   }
 
   @Contract("_, _ -> param1")

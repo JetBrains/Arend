@@ -31,7 +31,7 @@ public class PrintCommand implements ExpressionArgumentCommand {
         return;
       }
       StringBuilder builder = new StringBuilder();
-      ToAbstractVisitor.convert(def).prettyPrint(builder, api.getPrettyPrinterConfig());
+      ToAbstractVisitor.convert(def, api.getPrettyPrinterConfig()).prettyPrint(builder, api.getPrettyPrinterConfig());
       api.println(builder);
     } else {
       api.checkExpr(expr, null, result -> {

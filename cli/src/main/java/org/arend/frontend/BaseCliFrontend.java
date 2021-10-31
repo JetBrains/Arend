@@ -559,7 +559,7 @@ public abstract class BaseCliFrontend {
       for (Definition definition : myPrintDefinitions) {
         System.out.println();
         StringBuilder builder = new StringBuilder();
-        ToAbstractVisitor.convert(definition).prettyPrint(builder, PrettyPrinterConfig.DEFAULT);
+        ToAbstractVisitor.convert(definition, PrettyPrinterConfig.DEFAULT).prettyPrint(builder, PrettyPrinterConfig.DEFAULT);
         System.out.println(builder);
       }
 

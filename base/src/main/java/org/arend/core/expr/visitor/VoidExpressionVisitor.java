@@ -272,6 +272,7 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> impl
   public Void visitFunction(FunctionDefinition def, P params) {
     visitParameters(def.getParameters(), params);
     def.getResultType().accept(this, params);
+    if (def.getResultTypeLevel() != null) def.getResultTypeLevel().accept(this, params);
     visitBody(def.getReallyActualBody(), params);
     return null;
   }
@@ -291,13 +292,13 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> impl
       visitField(field, params);
     }
     for (Map.Entry<ClassField, AbsExpression> entry : def.getImplemented()) {
-      entry.getValue().getExpression().accept(this, null);
+      entry.getValue().getExpression().accept(this, params);
     }
     for (Map.Entry<ClassField, AbsExpression> entry : def.getDefaults()) {
-      entry.getValue().getExpression().accept(this, null);
+      entry.getValue().getExpression().accept(this, params);
     }
     for (Map.Entry<ClassField, PiExpression> entry : def.getOverriddenFields()) {
-      entry.getValue().getCodomain().accept(this, null);
+      entry.getValue().getCodomain().accept(this, params);
     }
     return null;
   }

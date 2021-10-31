@@ -4,10 +4,12 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.error.ListErrorReporter;
 import org.arend.ext.module.ModulePath;
+import org.arend.ext.prettyprinting.PrettyPrinterFlag;
 import org.arend.extImpl.DefinitionRequester;
 import org.arend.frontend.ConcreteReferableProvider;
 import org.arend.frontend.FileLibraryResolver;
@@ -30,7 +32,6 @@ import org.arend.prelude.GeneratedVersion;
 import org.arend.prelude.PreludeLibrary;
 import org.arend.prelude.PreludeResourceLibrary;
 import org.arend.repl.Repl;
-import org.arend.repl.action.PrettyPrintFlagCommand;
 import org.arend.repl.action.ReplCommand;
 import org.arend.term.NamespaceCommand;
 import org.arend.term.concrete.Concrete;
@@ -55,6 +56,8 @@ import java.util.function.Supplier;
 
 public abstract class CommonCliRepl extends Repl {
   public static final @NotNull String APP_NAME = "Arend REPL";
+  private final @NotNull EnumSet<@NotNull PrettyPrinterFlag> myPrettyPrinterFlags = EnumSet.of(PrettyPrinterFlag.SHOW_LOCAL_FIELD_INSTANCE);
+  private @Nullable NormalizationMode myNormalizationMode = NormalizationMode.ENF;
 
   public @NotNull Path pwd = Paths.get("").toAbsolutePath();
   /**
@@ -124,10 +127,10 @@ public abstract class CommonCliRepl extends Repl {
     try {
       if (Files.exists(config)) {
         var properties = new YAMLMapper().readValue(config.toFile(), ReplConfig.class);
-        normalizationMode = properties.normalizationMode;
+        myNormalizationMode = properties.normalizationMode;
         if (properties.prompt != null) prompt = properties.prompt;
-        prettyPrinterFlags.clear();
-        prettyPrinterFlags.addAll(properties.prettyPrinterFlags);
+        myPrettyPrinterFlags.clear();
+        myPrettyPrinterFlags.addAll(properties.prettyPrinterFlags);
       }
     } catch (IOException e) {
       libraryManager.getLibraryErrorReporter().report(new GeneralError(GeneralError.Level.ERROR, "Failed to load repl config: " + e.getLocalizedMessage()));
@@ -138,15 +141,30 @@ public abstract class CommonCliRepl extends Repl {
   public static final @NotNull String REPL_CONFIG_FILE = "repl-config.yaml";
   private static final Path config = FileUtils.USER_HOME.resolve(FileUtils.USER_CONFIG_DIR).resolve(REPL_CONFIG_FILE);
 
+  @Override
+  public @NotNull EnumSet<PrettyPrinterFlag> getPrettyPrinterFlags() {
+    return myPrettyPrinterFlags;
+  }
+
+  @Override
+  public @Nullable NormalizationMode getNormalizationMode() {
+    return myNormalizationMode;
+  }
+
+  @Override
+  public void setNormalizationMode(@Nullable NormalizationMode mode) {
+    myNormalizationMode = mode;
+  }
+
   public final void saveUserConfig() {
     try {
       if (Files.notExists(config)) {
         Files.createFile(config);
       }
       var properties = new ReplConfig();
-      properties.normalizationMode = normalizationMode;
+      properties.normalizationMode = myNormalizationMode;
       properties.prompt = prompt;
-      properties.prettyPrinterFlags = new ArrayList<>(prettyPrinterFlags);
+      properties.prettyPrinterFlags = new ArrayList<>(myPrettyPrinterFlags);
       try (var out = Files.newOutputStream(config)) {
         new YAMLMapper().writeValue(out, properties);
       }
@@ -203,7 +221,6 @@ public abstract class CommonCliRepl extends Repl {
     registerAction("lib", LoadLibraryCommand.INSTANCE);
     registerAction("pwd", new PwdCommand());
     registerAction("cd", new CdCommand());
-    registerAction("prettyprint", PrettyPrintFlagCommand.INSTANCE);
   }
 
   public @Nullable Library createLibrary(@NotNull String path) {
