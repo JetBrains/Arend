@@ -5,14 +5,13 @@ import org.arend.core.definition.*;
 import org.arend.core.expr.*;
 
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 public class SizeExpressionVisitor extends VoidExpressionVisitor<Void> {
   private int mySize;
   private final Set<PersistentEvaluatingBinding> myVisited = new HashSet<>();
 
-  private SizeExpressionVisitor() {
+  public SizeExpressionVisitor() {
   }
 
   public static int getSize(Expression expr) {
@@ -23,34 +22,7 @@ public class SizeExpressionVisitor extends VoidExpressionVisitor<Void> {
 
   public static int getSize(Definition def) {
     SizeExpressionVisitor visitor = new SizeExpressionVisitor();
-    visitor.visitParameters(def.getParameters(), null);
-    if (def instanceof FunctionDefinition) {
-      FunctionDefinition funDef = (FunctionDefinition) def;
-      funDef.getResultType().accept(visitor, null);
-      if (funDef.getResultTypeLevel() != null) funDef.getResultTypeLevel().accept(visitor, null);
-      visitor.visitBody(funDef.getReallyActualBody(), null);
-    } else if (def instanceof DataDefinition) {
-      for (Constructor constructor : ((DataDefinition) def).getConstructors()) {
-        visitor.visitParameters(constructor.getParameters(), null);
-      }
-    } else if (def instanceof ClassDefinition) {
-      ClassDefinition classDef = (ClassDefinition) def;
-      for (ClassField field : classDef.getPersonalFields()) {
-        field.getResultType().accept(visitor, null);
-        if (field.getTypeLevel() != null) field.getTypeLevel().accept(visitor, null);
-      }
-      for (Map.Entry<ClassField, AbsExpression> entry : classDef.getImplemented()) {
-        entry.getValue().getExpression().accept(visitor, null);
-      }
-      for (Map.Entry<ClassField, AbsExpression> entry : classDef.getDefaults()) {
-        entry.getValue().getExpression().accept(visitor, null);
-      }
-      for (Map.Entry<ClassField, PiExpression> entry : classDef.getOverriddenFields()) {
-        entry.getValue().getCodomain().accept(visitor, null);
-      }
-    } else {
-      throw new IllegalStateException();
-    }
+    def.accept(visitor, null);
     return visitor.mySize;
   }
 

@@ -92,6 +92,10 @@ public abstract class Repl {
     checkErrors();
   }
 
+  public PrettyPrinterConfig getPrettyPrinterConfig() {
+    return myPpConfig;
+  }
+
   /**
    * The function executed per main-loop of the REPL.
    *
@@ -183,6 +187,8 @@ public abstract class Repl {
     myHandlers.add(CommandHandler.INSTANCE);
     registerAction("quit", QuitCommand.INSTANCE);
     registerAction("type", ShowTypeCommand.INSTANCE);
+    registerAction("print", PrintCommand.INSTANCE);
+    registerAction("size", SizeCommand.INSTANCE);
     registerAction("normalize", NormalizeCommand.INSTANCE);
     registerAction("libraries", ShowLoadedLibrariesCommand.INSTANCE);
     registerAction("?", CommandHandler.HELP_COMMAND_INSTANCE);

@@ -290,6 +290,15 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> impl
     for (ClassField field : def.getPersonalFields()) {
       visitField(field, params);
     }
+    for (Map.Entry<ClassField, AbsExpression> entry : def.getImplemented()) {
+      entry.getValue().getExpression().accept(this, null);
+    }
+    for (Map.Entry<ClassField, AbsExpression> entry : def.getDefaults()) {
+      entry.getValue().getExpression().accept(this, null);
+    }
+    for (Map.Entry<ClassField, PiExpression> entry : def.getOverriddenFields()) {
+      entry.getValue().getCodomain().accept(this, null);
+    }
     return null;
   }
 
