@@ -5,6 +5,7 @@ import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.arend.ext.error.ErrorReporter;
+import org.arend.ext.error.GeneralError;
 import org.arend.ext.error.ListErrorReporter;
 import org.arend.ext.module.ModulePath;
 import org.arend.extImpl.DefinitionRequester;
@@ -119,13 +120,7 @@ public abstract class CommonCliRepl extends Repl {
         ? libraryResolver.registerLibrary(pwd)
         : new FileSourceLibrary("Repl", pwd, null, new LibraryHeader(modules, new ArrayList<>(), null, Range.unbound(), null, null), DummyDependencyListener.INSTANCE);
     myModules = modules;
-  }
-  //endregion
 
-  public static final @NotNull String REPL_CONFIG_FILE = "repl-config.yaml";
-  private static final Path config = FileUtils.USER_HOME.resolve(FileUtils.USER_CONFIG_DIR).resolve(REPL_CONFIG_FILE);
-
-  {
     try {
       if (Files.exists(config)) {
         var properties = new YAMLMapper().readValue(config.toFile(), ReplConfig.class);
@@ -135,9 +130,13 @@ public abstract class CommonCliRepl extends Repl {
         prettyPrinterFlags.addAll(properties.prettyPrinterFlags);
       }
     } catch (IOException e) {
-      eprintln("[ERROR] Failed to load repl config: " + e.getLocalizedMessage());
+      libraryManager.getLibraryErrorReporter().report(new GeneralError(GeneralError.Level.ERROR, "Failed to load repl config: " + e.getLocalizedMessage()));
     }
   }
+  //endregion
+
+  public static final @NotNull String REPL_CONFIG_FILE = "repl-config.yaml";
+  private static final Path config = FileUtils.USER_HOME.resolve(FileUtils.USER_CONFIG_DIR).resolve(REPL_CONFIG_FILE);
 
   public final void saveUserConfig() {
     try {
