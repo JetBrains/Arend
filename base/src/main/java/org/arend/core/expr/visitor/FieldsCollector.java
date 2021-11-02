@@ -38,19 +38,7 @@ public class FieldsCollector extends VoidExpressionVisitor<Void> {
   public static Set<ClassField> getFields(Body body, Binding thisBinding, Set<? extends ClassField> fields) {
     Set<ClassField> result = new HashSet<>();
     if (!fields.isEmpty()) {
-      FieldsCollector collector = new FieldsCollector(thisBinding, fields, result);
-      if (body instanceof IntervalElim) {
-        for (IntervalElim.CasePair pair : ((IntervalElim) body).getCases()) {
-          pair.proj1.accept(collector, null);
-          pair.proj2.accept(collector, null);
-        }
-        body = ((IntervalElim) body).getOtherwise();
-      }
-      if (body instanceof Expression) {
-        ((Expression) body).accept(collector, null);
-      } else if (body instanceof ElimBody) {
-        collector.visitElimBody((ElimBody) body, null);
-      }
+      new FieldsCollector(thisBinding, fields, result).visitBody(body, null);
     }
     return result;
   }
@@ -125,7 +113,8 @@ public class FieldsCollector extends VoidExpressionVisitor<Void> {
 
   @Override
   public Void visitFieldCall(FieldCallExpression expr, Void params) {
-    if (expr.getArgument() instanceof ReferenceExpression && ((ReferenceExpression) expr.getArgument()).getBinding() == myThisBinding && (myFields == null || myFields.contains(expr.getDefinition()))) {
+    ReferenceExpression refExpr = expr.getArgument().cast(ReferenceExpression.class);
+    if (refExpr != null && refExpr.getBinding() == myThisBinding && (myFields == null || myFields.contains(expr.getDefinition()))) {
       myResult.add(expr.getDefinition());
     }
     expr.getArgument().accept(this, null);
