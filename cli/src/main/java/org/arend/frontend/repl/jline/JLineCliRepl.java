@@ -1,6 +1,7 @@
 package org.arend.frontend.repl.jline;
 
 import org.arend.frontend.repl.CommonCliRepl;
+import org.arend.repl.CommandHandler;
 import org.arend.repl.action.PrettyPrintFlagCommand;
 import org.arend.library.SourceLibrary;
 import org.arend.repl.action.DirectoryArgumentCommand;
@@ -90,6 +91,7 @@ public class JLineCliRepl extends CommonCliRepl {
         new SpecialCommandCompleter(FileArgumentCommand.class, new Completers.FilesCompleter(() -> pwd)),
         new SpecialCommandCompleter(NormalizeCommand.class, new StringsCompleter(NormalizeCommand.AVAILABLE_OPTIONS)),
         new SpecialCommandCompleter(PrettyPrintFlagCommand.class, new StringsCompleter(PrettyPrintFlagCommand.AVAILABLE_OPTIONS)),
+        new SpecialCommandCompleter(CommandHandler.HelpCommand.class, new StringsCompleter(CommandHandler.INSTANCE.commandMap.keySet())),
         new ScopeCompleter(this::getInScopeElements),
         new ImportCompleter(this::modulePaths),
         KeywordCompleter.INSTANCE,
