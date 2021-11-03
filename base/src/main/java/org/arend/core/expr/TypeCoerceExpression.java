@@ -16,6 +16,7 @@ import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CoreTypeCoerceExpression;
 import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
 
@@ -81,6 +82,21 @@ public class TypeCoerceExpression extends Expression implements CoreTypeCoerceEx
       expr = ((TypeCoerceExpression) expr).getArgument().normalize(NormalizationMode.WHNF);
     }
     return expr;
+  }
+
+  public static TypecheckingResult unfoldResult(TypecheckingResult result) {
+    Expression expr = result.expression;
+    Expression type = result.type;
+    Expression typeNorm = type.normalize(NormalizationMode.WHNF);
+    while (typeNorm instanceof FunCallExpression && ((FunCallExpression) typeNorm).getDefinition().getKind() == CoreFunctionDefinition.Kind.TYPE) {
+      FunCallExpression funCall = (FunCallExpression) typeNorm;
+      Expression next = TypeCoerceExpression.match(funCall, null, false);
+      if (next == null) break;
+      type = ((TypeCoerceExpression) next).getRHSType();
+      expr = TypeCoerceExpression.match(funCall, expr, true);
+      typeNorm = type.normalize(NormalizationMode.WHNF);
+    }
+    return new TypecheckingResult(expr, type);
   }
 
   public Expression getArgumentType() {

@@ -194,4 +194,11 @@ public class TypeTest extends TypeCheckingTestCase {
       "\\func test (x : MyNat) : Nat", 1);
     assertThatErrorsAre(Matchers.missingClauses(2));
   }
+
+  @Test
+  public void letPatternTest() {
+    typeCheckModule(
+      "\\type E => \\Sigma Nat Nat\n" +
+      "\\func test (x : E) => \\let (a,_) => x \\in a");
+  }
 }

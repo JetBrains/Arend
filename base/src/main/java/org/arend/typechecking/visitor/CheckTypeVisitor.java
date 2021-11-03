@@ -2651,6 +2651,9 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         getLetClauseName(clause.getPattern(), builder);
         name = Renamer.getValidName(builder.toString(), Renamer.UNNAMED);
       }
+      if (!(clause.getPattern() instanceof Concrete.NamePattern)) {
+        result = TypeCoerceExpression.unfoldResult(result);
+      }
       if (result.expression.isInstance(ErrorExpression.class)) {
         result.expression = new OfTypeExpression(result.expression, result.type);
       }
