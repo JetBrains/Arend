@@ -2693,27 +2693,25 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
     List<LetClausePattern> patterns = new ArrayList<>();
     DependentLink link = sigma == null ? null : sigma.getParameters();
+    ExprSubstitution substitution = new ExprSubstitution();
     for (int i = 0; i < numberOfPatterns; i++) {
       assert link != null || notImplementedFields != null;
       Concrete.Pattern subPattern = pattern.getPatterns().get(i);
       Expression newType;
       if (link != null) {
-        ExprSubstitution substitution = new ExprSubstitution();
-        int j = 0;
-        for (DependentLink link1 = sigma.getParameters(); link1 != link; link1 = link1.getNext(), j++) {
-          substitution.add(link1, ProjExpression.make(expression, j));
-        }
         newType = link.getTypeExpr().subst(substitution);
       } else {
         ClassField field = notImplementedFields.get(i);
         newType = classCall.getDefinition().getFieldType(field, classCall.getLevels(field.getParentClass()), expression);
       }
-      LetClausePattern letClausePattern = typecheckLetClausePattern(subPattern, link != null ? ProjExpression.make(expression, i) : FieldCallExpression.make(notImplementedFields.get(i), expression), newType, bindings);
+      TypecheckingResult unfolded = TypeCoerceExpression.unfoldResult(new TypecheckingResult(link != null ? ProjExpression.make(expression, i) : FieldCallExpression.make(notImplementedFields.get(i), expression), newType));
+      LetClausePattern letClausePattern = typecheckLetClausePattern(subPattern, unfolded.expression, unfolded.type, bindings);
       if (letClausePattern == null) {
         return null;
       }
       patterns.add(letClausePattern);
       if (link != null) {
+        substitution.add(link, ProjExpression.make(expression, i));
         link = link.getNext();
       }
     }

@@ -201,4 +201,12 @@ public class TypeTest extends TypeCheckingTestCase {
       "\\type E => \\Sigma Nat Nat\n" +
       "\\func test (x : E) => \\let (a,_) => x \\in a");
   }
+
+  @Test
+  public void letPatternRecursiveTest() {
+    typeCheckModule(
+      "\\type E => \\Sigma Nat Nat\n" +
+      "\\type F => \\Sigma E Nat\n" +
+      "\\func test (x : F) => \\let ((_,a),_) => x \\in a");
+  }
 }
