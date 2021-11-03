@@ -15,6 +15,7 @@ import org.arend.ext.error.GeneralError;
 import org.arend.ext.prettyprinting.DefinitionRenamer;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.PrettyPrinterFlag;
+import org.arend.ext.util.Pair;
 import org.arend.extImpl.ConcreteFactoryImpl;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCDefReferable;
@@ -29,7 +30,6 @@ import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.instance.pool.LocalInstancePool;
 import org.arend.typechecking.instance.provider.InstanceProvider;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
-import org.arend.ext.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -56,18 +56,15 @@ final public class MinimizedRepresentation {
         var typechecker = generateTypechecker(instanceProvider, errorsCollector);
         induceContext(typechecker, verboseRepresentation, incompleteRepresentation, expressionToPrint);
 
-        int limit = 50;
         Expression returnType = mayUseReturnType ? expressionToPrint.getType() : null;
         while (true) {
             var fixedExpression = tryFixError(typechecker, verboseRepresentation, incompleteRepresentation, errorsCollector, returnType);
             if (fixedExpression == null) {
                 return incompleteRepresentation;
+            } else if (incompleteRepresentation == fixedExpression) {
+                throw new IllegalStateException("Minimization of expression (" + expressionToPrint + ") is likely diverged. Please report it to maintainers.\n " +
+                        "Errors: \n" + errorsCollector);
             } else {
-                --limit;
-                if (limit == 0) {
-                    throw new IllegalStateException("Minimization of expression (" + expressionToPrint + ") is likely diverged. Please report it to maintainers.\n " +
-                            "Errors: \n" + errorsCollector);
-                }
                 incompleteRepresentation = fixedExpression;
             }
         }
