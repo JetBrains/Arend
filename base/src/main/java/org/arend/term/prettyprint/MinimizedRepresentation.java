@@ -11,10 +11,12 @@ import org.arend.core.expr.ReferenceExpression;
 import org.arend.core.expr.visitor.FreeVariablesCollector;
 import org.arend.core.expr.visitor.VoidExpressionVisitor;
 import org.arend.ext.concrete.ConcreteFactory;
+import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.prettyprinting.DefinitionRenamer;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.PrettyPrinterFlag;
+import org.arend.ext.util.Pair;
 import org.arend.extImpl.ConcreteFactoryImpl;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCDefReferable;
@@ -29,7 +31,6 @@ import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.instance.pool.LocalInstancePool;
 import org.arend.typechecking.instance.provider.InstanceProvider;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
-import org.arend.ext.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -49,15 +50,16 @@ final public class MinimizedRepresentation {
             @Nullable InstanceProvider instanceProvider,
             @Nullable DefinitionRenamer definitionRenamer,
             boolean mayUseReturnType) {
-        var pair = generateRepresentations(expressionToPrint, definitionRenamer, mayUseReturnType);
+        Expression actualExpression = expressionToPrint.normalize(NormalizationMode.RNF);
+        var pair = generateRepresentations(actualExpression, definitionRenamer, mayUseReturnType);
         Concrete.Expression verboseRepresentation = pair.proj1;
         Concrete.Expression incompleteRepresentation = pair.proj2;
         List<GeneralError> errorsCollector = new ArrayList<>();
         var typechecker = generateTypechecker(instanceProvider, errorsCollector);
-        induceContext(typechecker, verboseRepresentation, incompleteRepresentation, expressionToPrint);
+        induceContext(typechecker, verboseRepresentation, incompleteRepresentation, actualExpression);
 
         int limit = 50;
-        Expression returnType = mayUseReturnType ? expressionToPrint.getType() : null;
+        Expression returnType = mayUseReturnType ? actualExpression.getType() : null;
         while (true) {
             var fixedExpression = tryFixError(typechecker, verboseRepresentation, incompleteRepresentation, errorsCollector, returnType);
             if (fixedExpression == null) {
@@ -65,7 +67,7 @@ final public class MinimizedRepresentation {
             } else {
                 --limit;
                 if (limit == 0) {
-                    throw new IllegalStateException("Minimization of expression (" + expressionToPrint + ") is likely diverged. Please report it to maintainers.\n " +
+                    throw new IllegalStateException("Minimization of expression (" + actualExpression + ") is likely diverged. Please report it to maintainers.\n " +
                             "Errors: \n" + errorsCollector);
                 }
                 incompleteRepresentation = fixedExpression;
