@@ -131,7 +131,7 @@ final public class MinimizedRepresentation {
         var emptyConfig = new PrettyPrinterConfig() {
             @Override
             public @NotNull EnumSet<PrettyPrinterFlag> getExpressionFlags() {
-                return EnumSet.of(PrettyPrinterFlag.SHOW_LOCAL_FIELD_INSTANCE);
+                return EnumSet.of(PrettyPrinterFlag.SHOW_LOCAL_FIELD_INSTANCE, PrettyPrinterFlag.SHOW_COERCE_DEFINITIONS);
             }
 
             @Override
