@@ -40,23 +40,35 @@ public class CorrespondedSubDefVisitor implements
   ) {
     if (body instanceof Concrete.TermFunctionBody && coreBody instanceof Expression) {
       Concrete.Expression term = body.getTerm();
-      if (term != null) return term.accept(visitor, (Expression) coreBody);
+      if (term instanceof Concrete.NewExpression) {
+        Concrete.Expression classExpr = ((Concrete.NewExpression) term).getExpression();
+        if (classExpr instanceof Concrete.ClassExtExpression) {
+          return visitCoclauses(((Concrete.ClassExtExpression) classExpr).getCoclauses().getCoclauseList(), coreBody, coreResultType);
+        }
+      }
+      return term == null ? null : term.accept(visitor, (Expression) coreBody);
     } else if (body instanceof Concrete.ElimFunctionBody && coreBody instanceof ElimBody) {
       // Assume they have the same order.
       return visitor.visitElimTree(body.getClauses(), ((ElimBody) coreBody).getClauses());
     } else if (body instanceof Concrete.CoelimFunctionBody) {
-      Map<ClassField, Expression> implementations = new HashMap<>();
-      if (coreResultType instanceof ClassCallExpression) {
-        implementations.putAll(((ClassCallExpression) coreResultType).getImplementedHere());
-      }
-      if (coreBody instanceof NewExpression) {
-        implementations.putAll(((NewExpression) coreBody).getClassCall().getImplementedHere());
-      }
-      for (var coclause : body.getCoClauseElements()) {
-        if (coclause instanceof Concrete.ClassFieldImpl) {
-          var statementVisited = visitor.visitStatement(implementations, (Concrete.ClassFieldImpl) coclause);
-          if (statementVisited != null) return statementVisited;
-        }
+      return visitCoclauses(body.getCoClauseElements(), coreBody, coreResultType);
+    } else {
+      return null;
+    }
+  }
+
+  private Pair<Expression, Concrete.Expression> visitCoclauses(List<? extends Concrete.CoClauseElement> coclauses, Body coreBody, Expression coreResultType) {
+    Map<ClassField, Expression> implementations = new HashMap<>();
+    if (coreResultType instanceof ClassCallExpression) {
+      implementations.putAll(((ClassCallExpression) coreResultType).getImplementedHere());
+    }
+    if (coreBody instanceof NewExpression) {
+      implementations.putAll(((NewExpression) coreBody).getClassCall().getImplementedHere());
+    }
+    for (var coclause : coclauses) {
+      if (coclause instanceof Concrete.ClassFieldImpl) {
+        var statementVisited = visitor.visitStatement(implementations, (Concrete.ClassFieldImpl) coclause);
+        if (statementVisited != null) return statementVisited;
       }
     }
     return null;
