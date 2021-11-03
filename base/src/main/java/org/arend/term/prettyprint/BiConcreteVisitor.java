@@ -2,6 +2,7 @@ package org.arend.term.prettyprint;
 
 import org.arend.ext.concrete.expr.ConcreteArgument;
 import org.arend.extImpl.ConcreteFactoryImpl;
+import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
 
@@ -56,10 +57,12 @@ public abstract class BiConcreteVisitor extends BaseConcreteExpressionVisitor<Co
     }
 
     private List<Concrete.Parameter> visitParameters(List<? extends Concrete.Parameter> parameters, List<? extends Concrete.Parameter> wideParams) {
-        assert parameters.size() == wideParams.size();
+        List<Concrete.Parameter> actualParameters = flattenTelescopes(parameters);
+        List<Concrete.Parameter> actualWideParameters = flattenTelescopes(wideParams);
+        assert actualParameters.size() == actualWideParameters.size();
         var newParams = new ArrayList<Concrete.Parameter>();
-        for (int i = 0; i < parameters.size(); ++i) {
-            newParams.add(visitParameter(parameters.get(i), wideParams.get(i)));
+        for (int i = 0; i < actualParameters.size(); ++i) {
+            newParams.add(visitParameter(actualParameters.get(i), actualWideParameters.get(i)));
         }
         return newParams;
     }
@@ -78,6 +81,20 @@ public abstract class BiConcreteVisitor extends BaseConcreteExpressionVisitor<Co
             }
         }
         return Concrete.PatternLamExpression.make(expr.getData(), newParams, newPatterns, expr.getBody().accept(this, wideExpr.getBody()));
+    }
+
+    private static List<Concrete.Parameter> flattenTelescopes(List<? extends Concrete.Parameter> parameters) {
+        var flattenedParameters = new ArrayList<Concrete.Parameter>();
+        for (var existingParameter : parameters) {
+            if (existingParameter instanceof Concrete.TelescopeParameter) {
+                for (Referable innerParameter : existingParameter.getReferableList()) {
+                    flattenedParameters.add(new Concrete.TelescopeParameter(null, existingParameter.isExplicit(), List.of(innerParameter), existingParameter.getType()));
+                }
+            } else {
+                flattenedParameters.add(existingParameter);
+            }
+        }
+        return flattenedParameters;
     }
 
     @Override
