@@ -38,7 +38,7 @@ public class CorrespondedSubDefVisitor implements
       @Nullable Body coreBody,
       @Nullable Expression coreResultType
   ) {
-    if (body instanceof Concrete.TermFunctionBody && coreBody instanceof Expression) {
+    if (body instanceof Concrete.TermFunctionBody) {
       Concrete.Expression term = body.getTerm();
       if (term instanceof Concrete.NewExpression) {
         Concrete.Expression classExpr = ((Concrete.NewExpression) term).getExpression();
@@ -46,7 +46,7 @@ public class CorrespondedSubDefVisitor implements
           return visitCoclauses(((Concrete.ClassExtExpression) classExpr).getCoclauses().getCoclauseList(), coreBody, coreResultType);
         }
       }
-      return term == null ? null : term.accept(visitor, (Expression) coreBody);
+      return term != null && coreBody instanceof Expression ? term.accept(visitor, (Expression) coreBody) : null;
     } else if (body instanceof Concrete.ElimFunctionBody && coreBody instanceof ElimBody) {
       // Assume they have the same order.
       return visitor.visitElimTree(body.getClauses(), ((ElimBody) coreBody).getClauses());
