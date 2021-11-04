@@ -2,6 +2,7 @@ package org.arend.term.prettyprint;
 
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.PersistentEvaluatingBinding;
+import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.let.HaveClause;
 import org.arend.core.expr.visitor.VoidExpressionVisitor;
 import org.arend.ext.variable.Variable;
@@ -65,6 +66,11 @@ public class CollectFreeVariablesVisitor extends VoidExpressionVisitor<Set<Varia
   }
 
   @Override
+  public void visitParameters(DependentLink link, Set<Variable> variables) {
+    visitParameters(link, null, variables);
+  }
+
+  @Override
   public Void visitLam(LamExpression expr, Set<Variable> variables) {
     visitParameters(expr.getParameters(), vars -> expr.getBody().accept(this, vars), variables);
     return null;
@@ -73,12 +79,6 @@ public class CollectFreeVariablesVisitor extends VoidExpressionVisitor<Set<Varia
   @Override
   public Void visitPi(PiExpression expr, Set<Variable> variables) {
     visitParameters(expr.getParameters(), vars -> expr.getCodomain().accept(this, vars), variables);
-    return null;
-  }
-
-  @Override
-  public Void visitSigma(SigmaExpression expr, Set<Variable> variables) {
-    visitParameters(expr.getParameters(), null, variables);
     return null;
   }
 
@@ -134,5 +134,15 @@ public class CollectFreeVariablesVisitor extends VoidExpressionVisitor<Set<Varia
       variables.add(alias != null ? new VariableImpl(alias) : expr.getDefinition());
     }
     return super.visitDefCall(expr, variables);
+  }
+
+  @Override
+  public Void visitFunction(FunctionDefinition def, Set<Variable> variables) {
+    visitParameters(def.getParameters(), vars -> {
+      def.getResultType().accept(this, vars);
+      if (def.getResultTypeLevel() != null) def.getResultTypeLevel().accept(this, vars);
+      visitBody(def.getReallyActualBody(), vars);
+    }, variables);
+    return null;
   }
 }
