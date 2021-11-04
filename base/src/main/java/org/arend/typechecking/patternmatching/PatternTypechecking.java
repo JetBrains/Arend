@@ -683,7 +683,7 @@ public class PatternTypechecking {
       }
 
       // Constructor patterns
-      Expression unfoldedExpr = TypeCoerceExpression.unfoldType(expr).getUnderlyingExpression();
+      Expression unfoldedExpr = TypeConstructorExpression.unfoldType(expr).getUnderlyingExpression();
       DataCallExpression dataCall = unfoldedExpr instanceof DataCallExpression ? (DataCallExpression) unfoldedExpr : null;
       ClassCallExpression classCall = unfoldedExpr instanceof ClassCallExpression ? (ClassCallExpression) unfoldedExpr : null;
       if (!(dataCall != null || classCall != null && classCall.getDefinition() == Prelude.DEP_ARRAY)) {

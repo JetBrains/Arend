@@ -232,10 +232,16 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> impl
   }
 
   @Override
-  public Void visitTypeCoerce(TypeCoerceExpression expr, P params) {
+  public Void visitTypeConstructor(TypeConstructorExpression expr, P params) {
     for (Expression argument : expr.getClauseArguments()) {
       argument.accept(this, params);
     }
+    expr.getArgument().accept(this, params);
+    return null;
+  }
+
+  @Override
+  public Void visitTypeDestructor(TypeDestructorExpression expr, P params) {
     expr.getArgument().accept(this, params);
     return null;
   }

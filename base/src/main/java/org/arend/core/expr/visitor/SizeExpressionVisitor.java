@@ -158,9 +158,15 @@ public class SizeExpressionVisitor extends VoidExpressionVisitor<Void> {
   }
 
   @Override
-  public Void visitTypeCoerce(TypeCoerceExpression expr, Void params) {
+  public Void visitTypeConstructor(TypeConstructorExpression expr, Void params) {
     mySize++;
-    return super.visitTypeCoerce(expr, params);
+    return super.visitTypeConstructor(expr, params);
+  }
+
+  @Override
+  public Void visitTypeDestructor(TypeDestructorExpression expr, Void params) {
+    mySize++;
+    return super.visitTypeDestructor(expr, params);
   }
 
   @Override

@@ -273,7 +273,7 @@ public class ElimTypechecking {
       if (elimParams.isEmpty()) {
         for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
           link = link.getNextTyped(null);
-          List<ConCallExpression> conCalls = getMatchedConstructors(TypeCoerceExpression.unfoldType(link.getTypeExpr()));
+          List<ConCallExpression> conCalls = getMatchedConstructors(TypeConstructorExpression.unfoldType(link.getTypeExpr()));
           if (conCalls != null && conCalls.isEmpty()) {
             emptyLink = link;
             break;
@@ -281,7 +281,7 @@ public class ElimTypechecking {
         }
       } else {
         for (DependentLink link : elimParams) {
-          List<ConCallExpression> conCalls = getMatchedConstructors(TypeCoerceExpression.unfoldType(link.getTypeExpr()));
+          List<ConCallExpression> conCalls = getMatchedConstructors(TypeConstructorExpression.unfoldType(link.getTypeExpr()));
           if (conCalls != null && conCalls.isEmpty()) {
             emptyLink = link;
             break;
@@ -383,7 +383,7 @@ public class ElimTypechecking {
     List<ConCallExpression> conCalls = paramSpec2.get(link);
     Expression type = null;
     if (conCalls == null) {
-      type = TypeCoerceExpression.unfoldType(link.getTypeExpr().subst(substitution));
+      type = TypeConstructorExpression.unfoldType(link.getTypeExpr().subst(substitution));
       conCalls = type instanceof DataCallExpression ? ((DataCallExpression) type).getMatchedConstructors() : null;
     }
 

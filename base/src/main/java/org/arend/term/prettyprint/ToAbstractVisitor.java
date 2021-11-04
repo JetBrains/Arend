@@ -871,7 +871,12 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   }
 
   @Override
-  public Concrete.Expression visitTypeCoerce(TypeCoerceExpression expr, Void params) {
+  public Concrete.Expression visitTypeConstructor(TypeConstructorExpression expr, Void params) {
+    return expr.getArgument().accept(this, null);
+  }
+
+  @Override
+  public Concrete.Expression visitTypeDestructor(TypeDestructorExpression expr, Void params) {
     return expr.getArgument().accept(this, null);
   }
 

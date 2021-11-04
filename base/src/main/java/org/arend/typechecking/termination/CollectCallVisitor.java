@@ -177,11 +177,11 @@ public class CollectCallVisitor extends SearchVisitor<Void> {
   }
 
   @Override
-  public Boolean visitTypeCoerce(TypeCoerceExpression expr, Void params) {
+  public Boolean visitTypeConstructor(TypeConstructorExpression expr, Void params) {
     if (!myCycle.contains(expr.getDefinition())) {
       return false;
     }
-    processDefCall(expr.getLHSType(), null);
+    processDefCall(expr.getType(), null);
     return false;
   }
 }

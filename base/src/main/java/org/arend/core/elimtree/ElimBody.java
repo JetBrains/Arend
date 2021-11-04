@@ -86,7 +86,7 @@ public class ElimBody implements Body, CoreElimBody {
       int originalSize1 = clauseElems.size();
       BranchElimTree branchElimTree = (BranchElimTree) elimTree;
       for (BranchKey key : branchElimTree.getKeys()) {
-        Expression type = TypeCoerceExpression.unfoldType(param.getTypeExpr().subst(substitution));
+        Expression type = TypeConstructorExpression.unfoldType(param.getTypeExpr().subst(substitution));
         List<DependentLink> newParams = new ArrayList<>();
 
         ConstructorExpressionPattern conPattern;

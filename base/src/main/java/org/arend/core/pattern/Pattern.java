@@ -7,7 +7,7 @@ import org.arend.core.definition.Constructor;
 import org.arend.core.definition.DConstructor;
 import org.arend.core.definition.Definition;
 import org.arend.core.expr.Expression;
-import org.arend.core.expr.TypeCoerceExpression;
+import org.arend.core.expr.TypeConstructorExpression;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.ext.core.body.CorePattern;
 import org.arend.ext.core.context.CoreBinding;
@@ -106,7 +106,7 @@ public interface Pattern extends CorePattern {
       if (pattern instanceof ExpressionPattern) {
         exprPattern = (ExpressionPattern) pattern;
       } else if (pattern instanceof ConstructorPattern) {
-        exprPattern = pattern.toExpressionPattern(TypeCoerceExpression.unfoldType(link.getTypeExpr().subst(substitution)));
+        exprPattern = pattern.toExpressionPattern(TypeConstructorExpression.unfoldType(link.getTypeExpr().subst(substitution)));
         if (exprPattern == null) {
           return null;
         }

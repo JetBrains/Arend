@@ -146,8 +146,8 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       check = expr2 instanceof FieldCallExpression && ((FieldCallExpression) expr1).getDefinition() == ((FieldCallExpression) expr2).getDefinition() && (check || !((FieldCallExpression) expr1).getDefinition().isProperty());
     } else if (expr1 instanceof ProjExpression) {
       check = expr2 instanceof ProjExpression && ((ProjExpression) expr1).getField() == ((ProjExpression) expr2).getField();
-    } else if (expr1 instanceof TypeCoerceExpression) {
-      check = expr2 instanceof TypeCoerceExpression;
+    } else if (expr1 instanceof TypeDestructorExpression) {
+      check = expr2 instanceof TypeDestructorExpression;
     }
 
     if (check) {
@@ -285,8 +285,8 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       ok = visitLam((LamExpression) expr2, expr1, type, false);
     } else if (expr2 instanceof TupleExpression) {
       ok = visitTuple((TupleExpression) expr2, expr1, false);
-    } else if (expr2 instanceof TypeCoerceExpression && !((TypeCoerceExpression) expr2).isFromLeftToRight()) {
-      ok = visitTypeCoerce((TypeCoerceExpression) expr2, expr1, false);
+    } else if (expr2 instanceof TypeConstructorExpression) {
+      ok = visitTypeConstructor((TypeConstructorExpression) expr2, expr1, false);
     } else {
       ok = expr1.accept(this, expr2, type);
     }
@@ -1433,10 +1433,10 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     return visitInteger(expr, expr2);
   }
 
-  private Boolean visitTypeCoerce(TypeCoerceExpression expr1, Expression expr2, boolean correctOrder) {
-    TypeCoerceExpression typeCoerce2 = expr2.cast(TypeCoerceExpression.class);
-    if (typeCoerce2 == null || typeCoerce2.isFromLeftToRight()) {
-      Expression arg = TypeCoerceExpression.make(expr1.getDefinition(), expr1.getLevels(), expr1.getClauseIndex(), expr1.getClauseArguments(), expr2, true);
+  private Boolean visitTypeConstructor(TypeConstructorExpression expr1, Expression expr2, boolean correctOrder) {
+    TypeConstructorExpression typeCoerce2 = expr2.cast(TypeConstructorExpression.class);
+    if (typeCoerce2 == null) {
+      Expression arg = TypeDestructorExpression.make(expr1.getDefinition(), expr2);
       return compare(correctOrder ? expr1.getArgument() : arg, correctOrder ? arg : expr1.getArgument(), expr1.getArgumentType(), true);
     } else {
       return compare((correctOrder ? expr1 : typeCoerce2).getArgument(), (correctOrder ? typeCoerce2 : expr1).getArgument(), (correctOrder ? expr1 : typeCoerce2).getArgumentType(), true);
@@ -1444,18 +1444,14 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
   }
 
   @Override
-  public Boolean visitTypeCoerce(TypeCoerceExpression expr, Expression other, Expression type) {
-    if (expr.isFromLeftToRight()) {
-      TypeCoerceExpression typeCoerce2 = other.cast(TypeCoerceExpression.class);
-      if (typeCoerce2 == null) return false;
-      if (typeCoerce2.isFromLeftToRight()) {
-        return compare(expr.getArgumentType(), typeCoerce2.getArgumentType(), Type.OMEGA, false) && compare(expr.getArgument(), typeCoerce2.getArgument(), expr.getArgumentType(), true);
-      } else {
-        return compare(TypeCoerceExpression.make(typeCoerce2.getDefinition(), typeCoerce2.getLevels(), typeCoerce2.getClauseIndex(), typeCoerce2.getClauseArguments(), expr, true), typeCoerce2.getArgument(), expr.getArgumentType(), true);
-      }
-    } else {
-      return visitTypeCoerce(expr, other, true);
-    }
+  public Boolean visitTypeConstructor(TypeConstructorExpression expr, Expression other, Expression type) {
+    return visitTypeConstructor(expr, other, true);
+  }
+
+  @Override
+  public Boolean visitTypeDestructor(TypeDestructorExpression expr, Expression other, Expression type) {
+    TypeDestructorExpression typeCoerce2 = other.cast(TypeDestructorExpression.class);
+    return typeCoerce2 != null && compare(expr.getArgument(), typeCoerce2.getArgument(), null, false);
   }
 
   @Override

@@ -2,9 +2,7 @@ package org.arend.typechecking.visitor;
 
 import org.arend.core.definition.Definition;
 import org.arend.core.elimtree.*;
-import org.arend.core.expr.DefCallExpression;
-import org.arend.core.expr.Expression;
-import org.arend.core.expr.TypeCoerceExpression;
+import org.arend.core.expr.*;
 import org.arend.ext.core.expr.CoreExpression;
 
 import java.util.HashSet;
@@ -73,7 +71,12 @@ public class FindDefCallVisitor<T extends Definition> extends SearchVisitor<Void
   }
 
   @Override
-  public Boolean visitTypeCoerce(TypeCoerceExpression expr, Void params) {
+  public Boolean visitTypeConstructor(TypeConstructorExpression expr, Void params) {
+    return checkDefinition(expr.getDefinition());
+  }
+
+  @Override
+  public Boolean visitTypeDestructor(TypeDestructorExpression expr, Void params) {
     return checkDefinition(expr.getDefinition());
   }
 }

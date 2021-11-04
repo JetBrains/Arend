@@ -284,7 +284,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     Expression curExpr = result.expression;
     Expression curType = result.type;
     while (curType instanceof FunCallExpression && ((FunCallExpression) curType).getDefinition().getKind() == CoreFunctionDefinition.Kind.TYPE) {
-      curExpr = TypeCoerceExpression.match((FunCallExpression) curType, curExpr, true);
+      curExpr = TypeDestructorExpression.match((FunCallExpression) curType, curExpr);
       if (curExpr == null) {
         return null;
       }
@@ -294,10 +294,10 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   private static <T> Pair<TypecheckingResult,T> coerceToType(Expression expectedType, Function<Expression, Pair<Expression,T>> checker) {
-    List<TypeCoerceExpression> stack = new ArrayList<>();
+    List<TypeConstructorExpression> stack = new ArrayList<>();
     Expression curType = expectedType;
     while (curType instanceof FunCallExpression && ((FunCallExpression) curType).getDefinition().getKind() == CoreFunctionDefinition.Kind.TYPE) {
-      TypeCoerceExpression typeCoerce = (TypeCoerceExpression) TypeCoerceExpression.match((FunCallExpression) curType, null, false);
+      TypeConstructorExpression typeCoerce = (TypeConstructorExpression) TypeConstructorExpression.match((FunCallExpression) curType, null);
       if (typeCoerce == null) {
         break;
       }
@@ -1584,9 +1584,9 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         return null;
       }
 
-      ClassCallExpression classCall = TypeCoerceExpression.unfoldType(typeCheckedBaseClass.expression).cast(ClassCallExpression.class);
+      ClassCallExpression classCall = TypeConstructorExpression.unfoldType(typeCheckedBaseClass.expression).cast(ClassCallExpression.class);
       if (classCall == null) {
-        classCall = TypeCoerceExpression.unfoldType(typeCheckedBaseClass.type).cast(ClassCallExpression.class);
+        classCall = TypeConstructorExpression.unfoldType(typeCheckedBaseClass.type).cast(ClassCallExpression.class);
         if (classCall == null) {
           errorReporter.report(new TypecheckingError("Expected a class or a class instance", baseClassExpr));
           return null;
@@ -2652,7 +2652,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         name = Renamer.getValidName(builder.toString(), Renamer.UNNAMED);
       }
       if (!(clause.getPattern() instanceof Concrete.NamePattern)) {
-        result = TypeCoerceExpression.unfoldResult(result);
+        result = TypeConstructorExpression.unfoldResult(result);
       }
       if (result.expression.isInstance(ErrorExpression.class)) {
         result.expression = new OfTypeExpression(result.expression, result.type);
@@ -2704,7 +2704,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         ClassField field = notImplementedFields.get(i);
         newType = classCall.getDefinition().getFieldType(field, classCall.getLevels(field.getParentClass()), expression);
       }
-      TypecheckingResult unfolded = TypeCoerceExpression.unfoldResult(new TypecheckingResult(link != null ? ProjExpression.make(expression, i) : FieldCallExpression.make(notImplementedFields.get(i), expression), newType));
+      TypecheckingResult unfolded = TypeConstructorExpression.unfoldResult(new TypecheckingResult(link != null ? ProjExpression.make(expression, i) : FieldCallExpression.make(notImplementedFields.get(i), expression), newType));
       LetClausePattern letClausePattern = typecheckLetClausePattern(subPattern, unfolded.expression, unfolded.type, bindings);
       if (letClausePattern == null) {
         return null;
@@ -3044,7 +3044,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
 
     if (expectedType != null && (definition == Prelude.ARRAY_AT && expr.getNumberOfExplicitArguments() == 0 || definition == Prelude.ARRAY_INDEX && expr.getNumberOfExplicitArguments() == 1 || definition == Prelude.ARRAY_CONS && expr.getNumberOfExplicitArguments() == 2)) {
-      PiExpression piExpr = TypeCoerceExpression.unfoldType(expectedType).cast(PiExpression.class);
+      PiExpression piExpr = TypeConstructorExpression.unfoldType(expectedType).cast(PiExpression.class);
       if (piExpr != null && piExpr.getParameters().isExplicit()) {
         Referable lamParam = new LocalReferable("a");
         return visitLam(new Concrete.LamExpression(expr.getData(), Collections.singletonList(new Concrete.NameParameter(expr.getData(), true, lamParam)), Concrete.AppExpression.make(expr.getData(), expr, new Concrete.ReferenceExpression(expr.getData(), lamParam), true)), expectedType);

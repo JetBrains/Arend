@@ -297,12 +297,17 @@ public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean>
   }
 
   @Override
-  public Boolean visitTypeCoerce(TypeCoerceExpression expr, P params) {
+  public Boolean visitTypeConstructor(TypeConstructorExpression expr, P params) {
     for (Expression argument : expr.getClauseArguments()) {
       if (argument.accept(this, params)) {
         return true;
       }
     }
+    return expr.getArgument().accept(this, params);
+  }
+
+  @Override
+  public Boolean visitTypeDestructor(TypeDestructorExpression expr, P params) {
     return expr.getArgument().accept(this, params);
   }
 

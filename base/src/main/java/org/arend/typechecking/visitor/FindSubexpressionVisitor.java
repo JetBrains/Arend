@@ -199,11 +199,20 @@ public class FindSubexpressionVisitor extends SearchVisitor<Void> {
   }
 
   @Override
-  public Boolean visitTypeCoerce(TypeCoerceExpression expr, Void param) {
+  public Boolean visitTypeConstructor(TypeConstructorExpression expr, Void param) {
     switch (myFunction.apply(expr)) {
       case STOP: return true;
       case SKIP: return false;
-      default: return super.visitTypeCoerce(expr, param);
+      default: return super.visitTypeConstructor(expr, param);
+    }
+  }
+
+  @Override
+  public Boolean visitTypeDestructor(TypeDestructorExpression expr, Void param) {
+    switch (myFunction.apply(expr)) {
+      case STOP: return true;
+      case SKIP: return false;
+      default: return super.visitTypeDestructor(expr, param);
     }
   }
 

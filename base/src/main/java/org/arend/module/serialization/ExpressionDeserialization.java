@@ -317,8 +317,10 @@ class ExpressionDeserialization {
         return readNew(proto.getNew());
       case PEVAL:
         return readPEval(proto.getPEval());
-      case TYPE_COERCE:
-        return readTypeCoerce(proto.getTypeCoerce());
+      case TYPE_CONSTRUCTOR:
+        return readTypeConstructor(proto.getTypeConstructor());
+      case TYPE_DESTRUCTOR:
+        return readTypeDestructor(proto.getTypeDestructor());
       case ARRAY:
         return readArray(proto.getArray());
       case LET:
@@ -488,10 +490,16 @@ class ExpressionDeserialization {
     return new PEvalExpression(readExpr(proto.getExpression()));
   }
 
-  private Expression readTypeCoerce(ExpressionProtos.Expression.TypeCoerce proto) throws DeserializationException {
+  private Expression readTypeConstructor(ExpressionProtos.Expression.TypeConstructor proto) throws DeserializationException {
     FunctionDefinition function = myCallTargetProvider.getCallTarget(proto.getFunRef(), FunctionDefinition.class);
     myDependencyListener.dependsOn(myDefinition.getRef(), function.getReferable());
-    return TypeCoerceExpression.make(function, readLevels(proto.getLevels()), proto.getClauseIndex(), readExprList(proto.getClauseArgumentList()), readExpr(proto.getArgument()), proto.getFromLeftToRight());
+    return TypeConstructorExpression.make(function, readLevels(proto.getLevels()), proto.getClauseIndex(), readExprList(proto.getClauseArgumentList()), readExpr(proto.getArgument()));
+  }
+
+  private Expression readTypeDestructor(ExpressionProtos.Expression.TypeDestructor proto) throws DeserializationException {
+    FunctionDefinition function = myCallTargetProvider.getCallTarget(proto.getFunRef(), FunctionDefinition.class);
+    myDependencyListener.dependsOn(myDefinition.getRef(), function.getReferable());
+    return TypeDestructorExpression.make(function, readExpr(proto.getArgument()));
   }
 
   private Expression readArray(ExpressionProtos.Expression.Array proto) throws DeserializationException {

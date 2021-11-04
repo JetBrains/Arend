@@ -30,7 +30,8 @@ message Expression {
         SmallInteger small_integer = 18;
         BigInteger big_integer = 19;
         PEval pEval = 20;
-        TypeCoerce type_coerce = 22;
+        TypeConstructor type_constructor = 27;
+        TypeDestructor type_destructor = 28;
         Array array = 23;
         Path path = 24;
         At at = 25;
@@ -126,13 +127,16 @@ message Expression {
     message PEval {
         Expression expression = 1;
     }
-    message TypeCoerce {
+    message TypeConstructor {
         int32 fun_ref = 1;
         Levels levels = 8;
         int32 clause_index = 4;
         repeated Expression clause_argument = 5;
         Expression argument = 6;
-        bool from_left_to_right = 7;
+    }
+    message TypeDestructor {
+        int32 fun_ref = 1;
+        Expression argument = 6;
     }
     message Array {
       Level pLevel = 5;

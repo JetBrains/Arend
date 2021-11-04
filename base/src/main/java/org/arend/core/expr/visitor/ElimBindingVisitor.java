@@ -450,11 +450,17 @@ public class ElimBindingVisitor extends ExpressionTransformer<Void> {
   }
 
   @Override
-  public Expression visitTypeCoerce(TypeCoerceExpression expr, Void params) {
+  public Expression visitTypeConstructor(TypeConstructorExpression expr, Void params) {
     List<Expression> newArgs = visitDefCallArguments(expr.getClauseArguments());
     if (newArgs == null) return null;
     Expression newArg = acceptSelf(expr.getArgument(), true);
-    return newArg == null ? null : TypeCoerceExpression.make(expr.getDefinition(), expr.getLevels(), expr.getClauseIndex(), newArgs, newArg, expr.isFromLeftToRight());
+    return newArg == null ? null : TypeConstructorExpression.make(expr.getDefinition(), expr.getLevels(), expr.getClauseIndex(), newArgs, newArg);
+  }
+
+  @Override
+  public Expression visitTypeDestructor(TypeDestructorExpression expr, Void params) {
+    Expression newArg = acceptSelf(expr.getArgument(), true);
+    return newArg == null ? null : TypeDestructorExpression.make(expr.getDefinition(), newArg);
   }
 
   @Override

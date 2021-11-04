@@ -247,12 +247,21 @@ public class RecreateExpressionVisitor extends SubstVisitor {
   }
 
   @Override
-  public Expression visitTypeCoerce(TypeCoerceExpression expr, Void params) {
+  public Expression visitTypeConstructor(TypeConstructorExpression expr, Void params) {
     Expression result = UncheckedExpressionImpl.extract(myMapper.map(expr));
     if (result != null) {
       return result;
     }
-    return super.visitTypeCoerce(expr, params);
+    return super.visitTypeConstructor(expr, params);
+  }
+
+  @Override
+  public Expression visitTypeDestructor(TypeDestructorExpression expr, Void params) {
+    Expression result = UncheckedExpressionImpl.extract(myMapper.map(expr));
+    if (result != null) {
+      return result;
+    }
+    return super.visitTypeDestructor(expr, params);
   }
 
   @Override

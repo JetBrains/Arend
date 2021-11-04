@@ -181,9 +181,16 @@ public class GoodThisParametersVisitor extends VoidExpressionVisitor<Void> {
   }
 
   @Override
-  public Void visitTypeCoerce(TypeCoerceExpression expr, Void params) {
+  public Void visitTypeConstructor(TypeConstructorExpression expr, Void params) {
     visitArguments(expr.getClauseArguments(), expr.getDefinition().getGoodThisParameters());
     expr.getArgument().accept(this, null);
     return null;
   }
+
+  @Override
+  public Void visitTypeDestructor(TypeDestructorExpression expr, Void params) {
+    expr.getArgument().accept(this, null);
+    return null;
+  }
+
 }

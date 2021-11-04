@@ -310,12 +310,17 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
   }
 
   @Override
-  public Expression visitTypeCoerce(TypeCoerceExpression expr, Void params) {
+  public Expression visitTypeConstructor(TypeConstructorExpression expr, Void params) {
     List<Expression> args = new ArrayList<>(expr.getClauseArguments().size());
     for (Expression arg : expr.getClauseArguments()) {
       args.add(arg.accept(this, null));
     }
-    return TypeCoerceExpression.make(expr.getDefinition(), expr.getLevels().subst(myLevelSubstitution), expr.getClauseIndex(), args, expr.getArgument().accept(this, null), expr.isFromLeftToRight());
+    return TypeConstructorExpression.make(expr.getDefinition(), expr.getLevels().subst(myLevelSubstitution), expr.getClauseIndex(), args, expr.getArgument().accept(this, null));
+  }
+
+  @Override
+  public Expression visitTypeDestructor(TypeDestructorExpression expr, Void params) {
+    return TypeDestructorExpression.make(expr.getDefinition(), expr.getArgument().accept(this, null));
   }
 
   @Override

@@ -234,8 +234,31 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
   }
 
   @Override
-  public Expression visitTypeCoerce(TypeCoerceExpression expr, Void params) {
+  public Expression visitTypeConstructor(TypeConstructorExpression expr, Void params) {
     return expr.getType();
+  }
+
+  @Override
+  public Expression visitTypeDestructor(TypeDestructorExpression expr, Void params) {
+    Expression type = expr.getArgument().accept(this, null);
+    if (myNormalizing) {
+      type = type.normalize(NormalizationMode.WHNF);
+    }
+    type = type.getUnderlyingExpression();
+    if (type instanceof ErrorExpression) {
+      return type;
+    }
+
+    if (!(type instanceof FunCallExpression && ((FunCallExpression) type).getDefinition() == expr.getDefinition())) {
+      if (myNormalizing) {
+        throw new IncorrectExpressionException("Expression " + expr + " should have a sigma type");
+      } else {
+        return null;
+      }
+    }
+
+    FunCallExpression funCall = (FunCallExpression) type;
+    return NormalizeVisitor.INSTANCE.visitBody(funCall.getDefinition().getActualBody(), funCall.getDefCallArguments(), funCall, NormalizationMode.WHNF);
   }
 
   @Override

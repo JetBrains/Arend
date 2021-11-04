@@ -693,7 +693,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       }
       Expression type = parameters.getTypeExpr().subst(substitution);
       if (pattern instanceof ConstructorPattern) {
-        type = TypeCoerceExpression.unfoldType(type);
+        type = TypeConstructorExpression.unfoldType(type);
       } else {
         type = type.normalize(NormalizationMode.WHNF);
       }
@@ -852,17 +852,26 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
   }
 
   @Override
-  public Expression visitTypeCoerce(TypeCoerceExpression expr, Expression expectedType) {
+  public Expression visitTypeConstructor(TypeConstructorExpression expr, Expression expectedType) {
     if (expr.getDefinition().getReallyActualBody() instanceof ElimBody) {
       List<? extends ElimClause<Pattern>> clauses = ((ElimBody) expr.getDefinition().getReallyActualBody()).getClauses();
       if (expr.getClauseIndex() >= clauses.size()) {
         throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Index " + expr.getClauseIndex() + " is too big. The number of clauses is " + clauses.size(), mySourceNode), expr));
       }
     }
-    LevelSubstitution levelSubst = expr.getLHSType().getLevelSubstitution();
+    LevelSubstitution levelSubst = expr.getType().getLevelSubstitution();
     ExprSubstitution substitution = new ExprSubstitution();
     checkList(expr.getClauseArguments(), expr.getParameters(), substitution, levelSubst);
     expr.getArgument().accept(this, expr.getArgumentType());
+    return check(expectedType, expr.getType(), expr);
+  }
+
+  @Override
+  public Expression visitTypeDestructor(TypeDestructorExpression expr, Expression expectedType) {
+    Expression argType = expr.getArgument().getType().normalize(NormalizationMode.WHNF);
+    if (!(argType instanceof FunCallExpression && ((FunCallExpression) argType).getDefinition() == expr.getDefinition())) {
+      throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(DocFactory.refDoc(expr.getDefinition().getRef()), argType, mySourceNode), expr));
+    }
     return check(expectedType, expr.getType(), expr);
   }
 

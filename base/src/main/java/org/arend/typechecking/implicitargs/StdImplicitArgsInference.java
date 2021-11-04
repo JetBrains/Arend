@@ -319,7 +319,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
 
     TResult result = defCallResult;
     if (expectedType != null) {
-      ClassCallExpression expectedClassCall = TypeCoerceExpression.unfoldType(expectedType).cast(ClassCallExpression.class);
+      ClassCallExpression expectedClassCall = TypeConstructorExpression.unfoldType(expectedType).cast(ClassCallExpression.class);
       if (expectedClassCall != null) {
         if (expectedClassCall.getDefinition() != Prelude.DEP_ARRAY || !expectedClassCall.getLevels().compare(defCallResult.getLevels(), CMP.LE, myVisitor.getEquations(), fun)) {
           myVisitor.getErrorReporter().report(new TypeMismatchError(expectedClassCall, refDoc(Prelude.DEP_ARRAY.getRef()), fun));
@@ -552,7 +552,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
     if (result instanceof DefCallResult && expr.getArguments().get(0).isExplicit() && expectedType != null) {
       DefCallResult defCallResult = (DefCallResult) result;
       if (defCallResult.getDefinition() instanceof Constructor && defCallResult.getArguments().size() < DependentLink.Helper.size(((Constructor) defCallResult.getDefinition()).getDataTypeParameters())) {
-        DataCallExpression dataCall = TypeCoerceExpression.unfoldType(expectedType).cast(DataCallExpression.class);
+        DataCallExpression dataCall = TypeConstructorExpression.unfoldType(expectedType).cast(DataCallExpression.class);
         if (dataCall != null) {
           if (((Constructor) defCallResult.getDefinition()).getDataType() != dataCall.getDefinition()) {
             myVisitor.getErrorReporter().report(new TypeMismatchError(dataCall, refDoc(((Constructor) defCallResult.getDefinition()).getDataType().getReferable()), fun));

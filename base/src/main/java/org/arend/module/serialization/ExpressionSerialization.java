@@ -611,8 +611,8 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
   }
 
   @Override
-  public ExpressionProtos.Expression visitTypeCoerce(TypeCoerceExpression expr, Void params) {
-    ExpressionProtos.Expression.TypeCoerce.Builder builder = ExpressionProtos.Expression.TypeCoerce.newBuilder();
+  public ExpressionProtos.Expression visitTypeConstructor(TypeConstructorExpression expr, Void params) {
+    ExpressionProtos.Expression.TypeConstructor.Builder builder = ExpressionProtos.Expression.TypeConstructor.newBuilder();
     builder.setFunRef(myCallTargetIndexProvider.getDefIndex(expr.getDefinition()));
     builder.setLevels(writeLevels(expr.getLevels(), expr.getDefinition()));
     builder.setClauseIndex(expr.getClauseIndex());
@@ -620,8 +620,15 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
       builder.addClauseArgument(arg.accept(this, null));
     }
     builder.setArgument(expr.getArgument().accept(this, null));
-    builder.setFromLeftToRight(expr.isFromLeftToRight());
-    return ExpressionProtos.Expression.newBuilder().setTypeCoerce(builder.build()).build();
+    return ExpressionProtos.Expression.newBuilder().setTypeConstructor(builder.build()).build();
+  }
+
+  @Override
+  public ExpressionProtos.Expression visitTypeDestructor(TypeDestructorExpression expr, Void params) {
+    ExpressionProtos.Expression.TypeDestructor.Builder builder = ExpressionProtos.Expression.TypeDestructor.newBuilder();
+    builder.setFunRef(myCallTargetIndexProvider.getDefIndex(expr.getDefinition()));
+    builder.setArgument(expr.getArgument().accept(this, null));
+    return ExpressionProtos.Expression.newBuilder().setTypeDestructor(builder.build()).build();
   }
 
   @Override

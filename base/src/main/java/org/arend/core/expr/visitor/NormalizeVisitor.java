@@ -376,7 +376,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
     return result == null ? applyDefCall(expr, mode) : result;
   }
 
-  private Expression visitBody(Body body, List<? extends Expression> defCallArgs, LeveledDefCallExpression expr, NormalizationMode mode) {
+  public Expression visitBody(Body body, List<? extends Expression> defCallArgs, LeveledDefCallExpression expr, NormalizationMode mode) {
     ComputationRunner.checkCanceled();
     Definition definition = expr.getDefinition();
 
@@ -689,14 +689,14 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
         if (!might) {
           return false;
         }
-        Expression top = stack.isEmpty() ? null : TypeCoerceExpression.unfoldExpression(stack.peek());
+        Expression top = stack.isEmpty() ? null : TypeConstructorExpression.unfoldExpression(stack.peek());
         return !(top instanceof ConCallExpression || top instanceof IntegerExpression || top instanceof ArrayExpression);
       }
     }
   }
 
   private ElimTree updateStack(Deque<Expression> stack, List<Expression> argList, BranchElimTree branchElimTree) {
-    Expression argument = TypeCoerceExpression.unfoldExpression(stack.pop());
+    Expression argument = TypeConstructorExpression.unfoldExpression(stack.pop());
     ArrayExpression array = argument instanceof ArrayExpression ? (ArrayExpression) argument : null;
     BranchKey key = argument instanceof ConCallExpression ? ((ConCallExpression) argument).getDefinition() : argument instanceof IntegerExpression ? (((IntegerExpression) argument).isZero() ? Prelude.ZERO : Prelude.SUC) : array != null ? new ArrayConstructor(array.getElements().isEmpty(), true, true) : argument instanceof PathExpression ? Prelude.PATH_CON : null;
 
@@ -1053,13 +1053,9 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
   }
 
   @Override
-  public Expression visitTypeCoerce(TypeCoerceExpression expr, NormalizationMode mode) {
+  public Expression visitTypeConstructor(TypeConstructorExpression expr, NormalizationMode mode) {
+    if (mode == NormalizationMode.WHNF) return expr;
     Expression arg = expr.getArgument().accept(this, mode);
-    if (arg instanceof TypeCoerceExpression && ((TypeCoerceExpression) arg).getDefinition() == expr.getDefinition() && ((TypeCoerceExpression) arg).isFromLeftToRight() != expr.isFromLeftToRight()) {
-      Expression result = ((TypeCoerceExpression) arg).getArgument();
-      return mode == NormalizationMode.WHNF ? result.accept(this, mode) : result;
-    }
-
     List<Expression> args;
     if (mode == NormalizationMode.NF) {
       args = new ArrayList<>(expr.getClauseArguments().size());
@@ -1069,7 +1065,18 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
     } else {
       args = expr.getClauseArguments();
     }
-    return TypeCoerceExpression.make(expr.getDefinition(), expr.getLevels(), expr.getClauseIndex(), args, arg, expr.isFromLeftToRight());
+    return TypeConstructorExpression.make(expr.getDefinition(), expr.getLevels(), expr.getClauseIndex(), args, arg);
+  }
+
+  @Override
+  public Expression visitTypeDestructor(TypeDestructorExpression expr, NormalizationMode mode) {
+    Expression arg = expr.getArgument().accept(this, mode);
+    if (arg instanceof TypeConstructorExpression && ((TypeConstructorExpression) arg).getDefinition() == expr.getDefinition()) {
+      Expression result = ((TypeConstructorExpression) arg).getArgument();
+      return mode == NormalizationMode.WHNF ? result.accept(this, mode) : result;
+    } else {
+      return TypeDestructorExpression.make(expr.getDefinition(), arg);
+    }
   }
 
   @Override
