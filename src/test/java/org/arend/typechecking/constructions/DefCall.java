@@ -7,7 +7,7 @@ import org.arend.core.definition.*;
 import org.arend.core.expr.ClassCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.subst.LevelPair;
-import org.arend.frontend.reference.ConcreteLocatedReferable;
+import org.arend.naming.reference.ConcreteLocatedReferable;
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.ChildGroup;

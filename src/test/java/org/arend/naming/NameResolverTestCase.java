@@ -5,7 +5,7 @@ import org.arend.ext.reference.Precedence;
 import org.arend.ext.typechecking.MetaDefinition;
 import org.arend.ext.typechecking.MetaResolver;
 import org.arend.frontend.ConcreteReferableProvider;
-import org.arend.frontend.reference.ConcreteLocatedReferable;
+import org.arend.naming.reference.ConcreteLocatedReferable;
 import org.arend.naming.reference.FullModuleReferable;
 import org.arend.naming.reference.MetaReferable;
 import org.arend.naming.reference.Referable;

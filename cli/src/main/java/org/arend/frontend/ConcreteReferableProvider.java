@@ -1,8 +1,8 @@
 package org.arend.frontend;
 
-import org.arend.frontend.reference.ConcreteLocatedReferable;
+import org.arend.naming.reference.ConcreteLocatedReferable;
 import org.arend.naming.reference.GlobalReferable;
-import org.arend.term.FunctionKind;
+import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.provider.ConcreteProvider;
 import org.jetbrains.annotations.Nullable;

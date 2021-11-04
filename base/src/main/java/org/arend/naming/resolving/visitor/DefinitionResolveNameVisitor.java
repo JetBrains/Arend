@@ -21,7 +21,7 @@ import org.arend.naming.scope.*;
 import org.arend.naming.scope.local.ElimScope;
 import org.arend.prelude.Prelude;
 import org.arend.term.ClassFieldKind;
-import org.arend.term.FunctionKind;
+import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.term.NameRenaming;
 import org.arend.term.NamespaceCommand;
 import org.arend.term.abs.Abstract;

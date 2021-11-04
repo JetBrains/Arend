@@ -1,40 +1,30 @@
-package org.arend.frontend.reference;
+package org.arend.naming.reference;
 
-import org.arend.ext.error.SourceInfo;
 import org.arend.ext.reference.DataContainer;
 import org.arend.ext.reference.Precedence;
-import org.arend.frontend.parser.Position;
-import org.arend.module.ModuleLocation;
-import org.arend.naming.reference.*;
 import org.arend.naming.resolving.visitor.TypeClassReferenceExtractVisitor;
 import org.arend.term.concrete.Concrete;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class ConcreteLocatedReferable extends LocatedReferableImpl implements SourceInfo, DataContainer, TypedReferable {
-  private final Position myPosition;
+public class ConcreteLocatedReferable extends LocatedReferableImpl implements DataContainer, TypedReferable {
+  private final Object myData;
   private final String myAliasName;
   private final Precedence myAliasPrecedence;
   private Concrete.ReferableDefinition myDefinition;
+  private String myDescription = "";
 
-  public ConcreteLocatedReferable(Position position, @NotNull String name, Precedence precedence, @Nullable String aliasName, Precedence aliasPrecedence, TCReferable parent, Kind kind) {
+  public ConcreteLocatedReferable(Object data, @NotNull String name, Precedence precedence, @Nullable String aliasName, Precedence aliasPrecedence, LocatedReferable parent, Kind kind) {
     super(precedence, name, parent, kind);
-    myPosition = position;
-    myAliasName = aliasName;
-    myAliasPrecedence = aliasPrecedence;
-  }
-
-  public ConcreteLocatedReferable(Position position, @NotNull String name, Precedence precedence, @Nullable String aliasName, Precedence aliasPrecedence, ModuleLocation modulePath, Kind kind) {
-    super(precedence, name, modulePath, kind);
-    myPosition = position;
+    myData = data;
     myAliasName = aliasName;
     myAliasPrecedence = aliasPrecedence;
   }
 
   @Nullable
   @Override
-  public Position getData() {
-    return myPosition;
+  public Object getData() {
+    return myData;
   }
 
   @Override
@@ -52,6 +42,15 @@ public class ConcreteLocatedReferable extends LocatedReferableImpl implements So
   }
 
   @Override
+  public @NotNull String getDescription() {
+    return myDescription;
+  }
+
+  public void setDescription(String description) {
+    myDescription = description;
+  }
+
+  @Override
   public @NotNull TCDefReferable getTypecheckable() {
     return myDefinition == null ? this : myDefinition.getRelatedDefinition().getData();
   }
@@ -59,16 +58,6 @@ public class ConcreteLocatedReferable extends LocatedReferableImpl implements So
   public void setDefinition(Concrete.ReferableDefinition definition) {
     assert myDefinition == null;
     myDefinition = definition;
-  }
-
-  @Override
-  public String moduleTextRepresentation() {
-    return myPosition == null ? null : myPosition.moduleTextRepresentation();
-  }
-
-  @Override
-  public String positionTextRepresentation() {
-    return myPosition == null ? null : myPosition.positionTextRepresentation();
   }
 
   @Nullable

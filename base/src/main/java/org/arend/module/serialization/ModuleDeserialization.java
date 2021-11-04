@@ -229,7 +229,7 @@ public class ModuleDeserialization {
       dynamicReferables = new ArrayList<>();
       fieldReferables = new ArrayList<>();
       DefinitionProtos.Definition.ClassData classProto = groupProto.getDefinition().getClass_();
-      referable = new ClassReferableImpl(readPrecedence(referableProto.getPrecedence()), referableProto.getName(), classProto.getIsRecord(), null, null, new ArrayList<>(), new ArrayList<>(), fieldReferables, dynamicReferables, modulePath);
+      referable = new ClassReferableImpl(readPrecedence(referableProto.getPrecedence()), referableProto.getName(), classProto.getIsRecord(), null, null, new ArrayList<>(), new ArrayList<>(), fieldReferables, dynamicReferables, parent.getReferable());
     } else {
       dynamicReferables = null;
       fieldReferables = new ArrayList<>(0);

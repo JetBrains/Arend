@@ -61,14 +61,16 @@ public class SolveLevelEquationsError extends TypecheckingError {
       InferenceLevelVariable variable = variables.iterator().next();
       Concrete.SourceNode sourceNode = variable.getSourceNode();
       if (sourceNode.getData() != getCause()) {
-        String position = sourceNode.getData() instanceof SourceInfo ? ((SourceInfo) sourceNode.getData()).positionTextRepresentation() : null;
+        SourceInfo sourceInfo = SourceInfo.getSourceInfo(sourceNode.getData());
+        String position = sourceInfo != null ? sourceInfo.positionTextRepresentation() : null;
         docs.add(hang(hList(text("where " + ppv.getInferLevelVarText(variable) + " is defined"), position != null ? text(" at " + position) : empty(), text(" for")), ppDoc(sourceNode, src)));
       }
     } else {
       List<Doc> varDocs = new ArrayList<>(variables.size());
       for (InferenceLevelVariable variable : variables) {
         Concrete.SourceNode sourceNode = variable.getSourceNode();
-        String position = sourceNode.getData() instanceof SourceInfo ? ((SourceInfo) sourceNode.getData()).positionTextRepresentation() : null;
+        SourceInfo sourceInfo = SourceInfo.getSourceInfo(sourceNode.getData());
+        String position = sourceInfo != null ? sourceInfo.positionTextRepresentation() : null;
         varDocs.add(hang(hList(text(ppv.getInferLevelVarText(variable)), position != null ? text(" at " + position) : empty(), text(" for")), ppDoc(sourceNode, src)));
       }
       docs.add(hang(text("where variables are defined as follows:"), vList(varDocs)));

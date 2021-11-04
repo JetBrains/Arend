@@ -18,7 +18,7 @@ public class MetaReferable implements TCReferable, MetaRef {
   private final String myName;
   private MetaDefinition myDefinition;
   private final MetaResolver myResolver;
-  public final String description;
+  private final String myDescription;
   private final String myAliasName;
   private final Precedence myAliasPrecedence;
   public Supplier<GlobalReferable> underlyingReferable;
@@ -29,7 +29,7 @@ public class MetaReferable implements TCReferable, MetaRef {
     myName = name;
     myAliasName = aliasName;
     myAliasPrecedence = aliasPrec == null ? Precedence.DEFAULT : aliasPrec;
-    this.description = description;
+    myDescription = description;
     myDefinition = definition;
     myResolver = resolver;
     myParent = parent;
@@ -64,6 +64,11 @@ public class MetaReferable implements TCReferable, MetaRef {
 
   public void setDefinition(@NotNull MetaDefinition definition) {
     myDefinition = definition;
+  }
+
+  @Override
+  public @NotNull String getDescription() {
+    return myDescription;
   }
 
   @Override

@@ -2,6 +2,7 @@ package org.arend.ext;
 
 import org.arend.ext.concrete.ConcreteFactory;
 import org.arend.ext.dependency.ArendDependencyProvider;
+import org.arend.ext.dependency.ArendReferenceProvider;
 import org.arend.ext.serialization.SerializableKeyRegistry;
 import org.arend.ext.typechecking.GoalSolver;
 import org.arend.ext.typechecking.LevelProver;
@@ -17,13 +18,6 @@ import java.util.Map;
  * The main class of the extension should implement this interface.
  */
 public interface ArendExtension {
-  /**
-   * Declares meta definitions defined in this extension.
-   * This method is invoked first, so it does not have access to the library itself.
-   * All definitions must be declared in this method, that is {@code contributor} cannot be stored and invoked later.
-   */
-  default void declareDefinitions(@NotNull DefinitionContributor contributor) {}
-
   /**
    * All serializable keys must be registered in this method.
    */
@@ -49,11 +43,6 @@ public interface ArendExtension {
   default void setConcreteFactory(@NotNull ConcreteFactory factory) {}
 
   /**
-   * Can be used to get access to definitions.
-   */
-  default void setDefinitionProvider(@NotNull DefinitionProvider definitionProvider) {}
-
-  /**
    * Can be used to get access to a {@link org.arend.ext.variable.VariableRenamer}.
    */
   default void setVariableRenamerFactory(@NotNull VariableRenamerFactory factory) {}
@@ -64,11 +53,16 @@ public interface ArendExtension {
   default void setUI(@NotNull ArendUI ui) {}
 
   /**
-   * @return a listener which is invoked after typechecking of a definition is finished.
+   * Declares meta definitions defined in this extension.
+   * This method is invoked first, so it does not have access to the library itself.
+   * All definitions must be declared in this method, that is {@code contributor} cannot be stored and invoked later.
    */
-  default @Nullable DefinitionListener getDefinitionListener() {
-    return null;
-  }
+  default void declareDefinitions(@NotNull ArendReferenceProvider provider, @NotNull DefinitionContributor contributor) {}
+
+  /**
+   * Can be used to get access to definitions.
+   */
+  default void setDefinitionProvider(@NotNull DefinitionProvider definitionProvider) {}
 
   /**
    * This method is invoked last and can be used to initialize the extension.
@@ -80,6 +74,14 @@ public interface ArendExtension {
    */
   default void load(@NotNull ArendDependencyProvider dependencyProvider) {
     dependencyProvider.load(this);
+  }
+
+
+  /**
+   * @return a listener which is invoked after typechecking of a definition is finished.
+   */
+  default @Nullable DefinitionListener getDefinitionListener() {
+    return null;
   }
 
   /**

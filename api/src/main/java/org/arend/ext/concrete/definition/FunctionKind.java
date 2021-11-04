@@ -1,4 +1,4 @@
-package org.arend.term;
+package org.arend.ext.concrete.definition;
 
 public enum FunctionKind {
   COERCE { @Override public boolean isUse() { return true; } },

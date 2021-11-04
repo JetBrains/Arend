@@ -6,7 +6,7 @@ import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCDefReferable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.naming.reference.converter.ReferableConverter;
-import org.arend.term.FunctionKind;
+import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.Group;
 import org.arend.typechecking.computation.ComputationRunner;

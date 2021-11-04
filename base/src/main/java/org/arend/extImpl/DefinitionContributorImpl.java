@@ -1,12 +1,12 @@
 package org.arend.extImpl;
 
 import org.arend.ext.DefinitionContributor;
+import org.arend.ext.concrete.definition.ConcreteDefinition;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.module.LongName;
 import org.arend.ext.module.ModulePath;
 import org.arend.ext.reference.MetaRef;
 import org.arend.ext.reference.Precedence;
-import org.arend.ext.typechecking.DeferredMetaDefinition;
 import org.arend.ext.typechecking.MetaDefinition;
 import org.arend.ext.typechecking.MetaResolver;
 import org.arend.library.Library;
@@ -15,10 +15,12 @@ import org.arend.module.ModuleLocation;
 import org.arend.module.scopeprovider.SimpleModuleScopeProvider;
 import org.arend.naming.reference.*;
 import org.arend.naming.scope.SimpleScope;
+import org.arend.term.concrete.Concrete;
 import org.arend.util.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class DefinitionContributorImpl extends Disableable implements DefinitionContributor {
@@ -32,18 +34,11 @@ public class DefinitionContributorImpl extends Disableable implements Definition
     myModuleScopeProvider = moduleScopeProvider;
   }
 
-  @Override
-  public MetaRef declare(@NotNull ModulePath module, @NotNull LongName longName, @NotNull String description, @NotNull Precedence precedence, @Nullable MetaDefinition meta) {
-    return declare(module, longName, description, precedence, null, null, meta);
+  private interface Cont<T> {
+    T apply(LocatedReferable locationRef, Referable prevRef, String name);
   }
 
-  @Override
-  public MetaRef declare(@NotNull ModulePath module, @NotNull LongName longName, @NotNull String description, @NotNull Precedence precedence, @Nullable String alias, @Nullable Precedence aliasPrecedence, @Nullable MetaDefinition meta) {
-    return declare(module, longName, description, precedence, alias, aliasPrecedence, meta, meta instanceof MetaResolver ? (MetaResolver) meta : meta instanceof DeferredMetaDefinition && ((DeferredMetaDefinition) meta).deferredMeta instanceof MetaResolver ? (MetaResolver) ((DeferredMetaDefinition) meta).deferredMeta : null);
-  }
-
-  @Override
-  public MetaRef declare(@NotNull ModulePath module, @NotNull LongName longName, @NotNull String description, @NotNull Precedence precedence, @Nullable String alias, @Nullable Precedence aliasPrecedence, @Nullable MetaDefinition meta, @Nullable MetaResolver resolver) {
+  private <T extends GlobalReferable> T declare(ModulePath module, LongName longName, String alias, Cont<T> cont) {
     checkEnabled();
 
     if (!FileUtils.isCorrectModulePath(module)) {
@@ -73,10 +68,10 @@ public class DefinitionContributorImpl extends Disableable implements Definition
           myErrorReporter.report(LibraryError.duplicateExtensionDefinition(myLibrary.getName(), module, longName));
           return null;
         }
-        MetaReferable metaRef = new MetaReferable(precedence, name, aliasPrecedence, alias, description, meta, resolver, prevRef instanceof LocatedReferable ? (LocatedReferable) prevRef : locationRef);
-        scope.names.put(name, metaRef);
+        T curRef = cont.apply(locationRef, prevRef, name);
+        scope.names.put(name, curRef);
         if (alias != null) {
-          scope.names.putIfAbsent(alias, new AliasReferable(metaRef));
+          scope.names.putIfAbsent(alias, new AliasReferable(curRef));
           SimpleScope namespace = scope.namespaces.get(name);
           if (namespace != null) {
             scope.namespaces.putIfAbsent(alias, namespace);
@@ -86,21 +81,40 @@ public class DefinitionContributorImpl extends Disableable implements Definition
             scope.namespaces.putIfAbsent(name, namespace);
           }
         }
-        return metaRef;
+        return curRef;
       } else {
         prevRef = scope.names.putIfAbsent(name, new EmptyLocatedReferable(name, prevRef instanceof LocatedReferable ? (LocatedReferable) prevRef : locationRef));
-        scope = scope.namespaces.computeIfAbsent(name, k -> new SimpleScope());
+        SimpleScope newScope = scope.namespaces.computeIfAbsent(name, k -> new SimpleScope());
         if (prevRef instanceof AliasReferable) {
-          scope.namespaces.putIfAbsent(((AliasReferable) prevRef).getOriginalReferable().getRefName(), scope);
+          scope.namespaces.putIfAbsent(((AliasReferable) prevRef).getOriginalReferable().getRefName(), newScope);
         } else if (prevRef instanceof MetaReferable) {
           String aliasName = ((MetaReferable) prevRef).getAliasName();
           if (aliasName != null) {
-            scope.namespaces.putIfAbsent(aliasName, scope);
+            scope.namespaces.putIfAbsent(aliasName, newScope);
           }
         }
+        scope = newScope;
       }
     }
 
     return null;
+  }
+
+  @Override
+  public MetaRef declare(@NotNull ModulePath module, @NotNull LongName longName, @NotNull String description, @NotNull Precedence precedence, @Nullable String alias, @Nullable Precedence aliasPrec, @Nullable MetaDefinition meta, @Nullable MetaResolver resolver) {
+    return declare(module, longName, alias, ((locationRef, prevRef, name) -> new MetaReferable(precedence, name, aliasPrec, alias, description, meta, resolver, prevRef instanceof LocatedReferable ? (LocatedReferable) prevRef : locationRef)));
+  }
+
+  @Override
+  public void declare(@NotNull ConcreteDefinition definition) {
+    if (!(definition instanceof Concrete.Definition)) {
+      throw new IllegalArgumentException();
+    }
+
+    Concrete.Definition def = (Concrete.Definition) definition;
+    List<String> longName = new ArrayList<>();
+    ModulePath module = LocatedReferable.Helper.getLocation(def.getData(), longName).getModulePath();
+    longName.add(def.getData().getRefName());
+    declare(module, new LongName(longName), def.getData().getAliasName(), (locationRef, prevRef, name) -> def.getData());
   }
 }

@@ -1,5 +1,6 @@
 package org.arend.naming.reference;
 
+import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.ext.reference.Precedence;
 import org.arend.term.concrete.Concrete;
 import org.jetbrains.annotations.NotNull;
@@ -57,5 +58,14 @@ public interface GlobalReferable extends Referable {
   @Override
   default boolean isLocalRef() {
     return false;
+  }
+
+  static Kind kindFromFunction(FunctionKind kind) {
+    switch (kind) {
+      case FUNC_COCLAUSE: case CLASS_COCLAUSE: return Kind.COCLAUSE_FUNCTION;
+      case CONS: return Kind.DEFINED_CONSTRUCTOR;
+      case INSTANCE: return Kind.INSTANCE;
+      default: return Kind.FUNCTION;
+    }
   }
 }

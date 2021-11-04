@@ -3,11 +3,15 @@ package org.arend.extImpl;
 import org.arend.core.definition.Definition;
 import org.arend.ext.dependency.ArendDependencyProvider;
 import org.arend.ext.core.definition.CoreDefinition;
+import org.arend.ext.dependency.ArendReferenceProvider;
 import org.arend.ext.dependency.Dependency;
 import org.arend.ext.module.LongName;
 import org.arend.ext.module.ModulePath;
+import org.arend.ext.reference.ArendRef;
 import org.arend.library.Library;
+import org.arend.module.ModuleLocation;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
+import org.arend.naming.reference.FullModuleReferable;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.scope.Scope;
@@ -18,7 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import java.lang.reflect.Field;
 import java.util.Collections;
 
-public class ArendDependencyProviderImpl extends Disableable implements ArendDependencyProvider {
+public class ArendDependencyProviderImpl extends Disableable implements ArendDependencyProvider, ArendReferenceProvider {
   private final TypecheckingOrderingListener myTypechecking;
   private final ModuleScopeProvider myModuleScopeProvider;
   private final DefinitionRequester myDefinitionRequester;
@@ -29,6 +33,22 @@ public class ArendDependencyProviderImpl extends Disableable implements ArendDep
     myModuleScopeProvider = moduleScopeProvider;
     myDefinitionRequester = definitionRequester;
     myLibrary = library;
+  }
+
+  @Override
+  public @NotNull ArendRef getGeneratedModuleReference(@NotNull ModulePath module) {
+    return new FullModuleReferable(new ModuleLocation(myLibrary, ModuleLocation.LocationKind.GENERATED, module));
+  }
+
+  @Override
+  public @NotNull ArendRef getReference(@NotNull ModulePath module, @NotNull LongName name) {
+    checkEnabled();
+    Scope scope = myModuleScopeProvider.forModule(module);
+    Referable ref = scope == null ? null : Scope.resolveName(scope, name.toList(), true);
+    if (ref == null) {
+      throw new IllegalArgumentException("Cannot find definition '" + name + "'");
+    }
+    return ref;
   }
 
   @NotNull
@@ -47,7 +67,7 @@ public class ArendDependencyProviderImpl extends Disableable implements ArendDep
     myTypechecking.typecheckDefinitions(Collections.singletonList(def.getRelatedDefinition()), null);
     Definition result = def.getData().getTypechecked();
     if (!clazz.isInstance(result)) {
-      throw new IllegalArgumentException(result == null ? "Cannot find definition '" + ref.getRefName() + "'" : "Cannot cast definition '" + ref.getRefName() + "' of type '" + result.getClass() + "' to '" + clazz + "'");
+      throw new IllegalArgumentException(result == null ? "Cannot find definition '" + name + "'" : "Cannot cast definition '" + name + "' of type '" + result.getClass() + "' to '" + clazz + "'");
     }
     myDefinitionRequester.request(result, myLibrary);
     return clazz.cast(result);

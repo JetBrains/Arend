@@ -2,15 +2,12 @@ package org.arend.naming;
 
 import org.arend.ext.module.ModulePath;
 import org.arend.ext.reference.Precedence;
-import org.arend.frontend.reference.ConcreteLocatedReferable;
 import org.arend.module.ModuleLocation;
-import org.arend.naming.reference.GlobalReferable;
-import org.arend.naming.reference.LocatedReferableImpl;
-import org.arend.naming.reference.Referable;
+import org.arend.naming.reference.*;
 import org.arend.naming.scope.EmptyScope;
 import org.arend.naming.scope.ListScope;
 import org.arend.naming.scope.SingletonScope;
-import org.arend.term.FunctionKind;
+import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.ChildGroup;
 import org.junit.Ignore;
@@ -78,10 +75,10 @@ public class NameResolverTest extends NameResolverTestCase {
 
   @Test
   public void parserInfix() {
-    ConcreteLocatedReferable plusRef = new ConcreteLocatedReferable(null, "+", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6, true), null, Precedence.DEFAULT, MODULE_PATH, GlobalReferable.Kind.FUNCTION);
+    ConcreteLocatedReferable plusRef = new ConcreteLocatedReferable(null, "+", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6, true), null, Precedence.DEFAULT, MODULE_REF, GlobalReferable.Kind.FUNCTION);
     Concrete.Definition plus = new Concrete.FunctionDefinition(FunctionKind.FUNC, plusRef, Collections.emptyList(), null, null, null);
     plusRef.setDefinition(plus);
-    ConcreteLocatedReferable mulRef = new ConcreteLocatedReferable(null, "*", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 7, true), null, Precedence.DEFAULT, MODULE_PATH, GlobalReferable.Kind.FUNCTION);
+    ConcreteLocatedReferable mulRef = new ConcreteLocatedReferable(null, "*", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 7, true), null, Precedence.DEFAULT, MODULE_REF, GlobalReferable.Kind.FUNCTION);
     Concrete.Definition mul = new Concrete.FunctionDefinition(FunctionKind.FUNC, mulRef, Collections.emptyList(), null, null, null);
     mulRef.setDefinition(mul);
 
@@ -92,10 +89,10 @@ public class NameResolverTest extends NameResolverTestCase {
 
   @Test
   public void parserInfixError() {
-    ConcreteLocatedReferable plusRef = new ConcreteLocatedReferable(null, "+", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6, true), null, Precedence.DEFAULT, MODULE_PATH, GlobalReferable.Kind.FUNCTION);
+    ConcreteLocatedReferable plusRef = new ConcreteLocatedReferable(null, "+", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6, true), null, Precedence.DEFAULT, MODULE_REF, GlobalReferable.Kind.FUNCTION);
     Concrete.Definition plus = new Concrete.FunctionDefinition(FunctionKind.FUNC, plusRef, Collections.emptyList(), null, null, null);
     plusRef.setDefinition(plus);
-    ConcreteLocatedReferable mulRef = new ConcreteLocatedReferable(null, "*", new Precedence(Precedence.Associativity.RIGHT_ASSOC, (byte) 6, true), null, Precedence.DEFAULT, MODULE_PATH, GlobalReferable.Kind.FUNCTION);
+    ConcreteLocatedReferable mulRef = new ConcreteLocatedReferable(null, "*", new Precedence(Precedence.Associativity.RIGHT_ASSOC, (byte) 6, true), null, Precedence.DEFAULT, MODULE_REF, GlobalReferable.Kind.FUNCTION);
     Concrete.Definition mul = new Concrete.FunctionDefinition(FunctionKind.FUNC, mulRef, Collections.emptyList(), null, null, null);
     mulRef.setDefinition(mul);
     resolveNamesExpr(new ListScope(plusRef, mulRef), "11 + 2 * 3", 1);
@@ -660,7 +657,7 @@ public class NameResolverTest extends NameResolverTestCase {
   public void importOrder() {
     setModuleScopeProvider(module ->
       module.equals(new ModulePath("Mod"))
-        ? new SingletonScope(new LocatedReferableImpl(Precedence.DEFAULT, "foo", new ModuleLocation(null, false, null, module), GlobalReferable.Kind.FUNCTION))
+        ? new SingletonScope(new LocatedReferableImpl(Precedence.DEFAULT, "foo", new FullModuleReferable(new ModuleLocation(null, false, null, module)), GlobalReferable.Kind.FUNCTION))
         : EmptyScope.INSTANCE);
     /*
     resolveNamesModule(

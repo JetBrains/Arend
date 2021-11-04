@@ -23,8 +23,9 @@ public class ConstantSolveLevelEquationError extends TypecheckingError {
     if (variable instanceof InferenceLevelVariable) {
       Concrete.SourceNode sourceNode = ((InferenceLevelVariable) variable).getSourceNode();
       if (sourceNode.getData() != getCause()) {
-        String position = sourceNode.getData() instanceof SourceInfo ? ((SourceInfo) sourceNode.getData()).positionTextRepresentation() : null;
-        return hang(hList(text("where " + variable.toString() + " is defined"), position != null ? text(" at " + position) : empty(), text(" for")), ppDoc(sourceNode, src));
+        SourceInfo sourceInfo = SourceInfo.getSourceInfo(sourceNode.getData());
+        String position = sourceInfo != null ? sourceInfo.positionTextRepresentation() : null;
+        return hang(hList(text("where " + variable + " is defined"), position != null ? text(" at " + position) : empty(), text(" for")), ppDoc(sourceNode, src));
       }
     }
     return nullDoc();

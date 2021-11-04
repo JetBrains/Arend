@@ -1,6 +1,6 @@
 package org.arend.naming;
 
-import org.arend.frontend.reference.ConcreteLocatedReferable;
+import org.arend.naming.reference.ConcreteLocatedReferable;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.LocalReferable;
 import org.arend.naming.reference.Referable;

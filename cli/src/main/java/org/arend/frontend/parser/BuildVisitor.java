@@ -3,12 +3,14 @@ package org.arend.frontend.parser;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
+import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.reference.Precedence;
 import org.arend.frontend.group.SimpleNamespaceCommand;
 import org.arend.frontend.reference.*;
 import org.arend.module.ModuleLocation;
+import org.arend.naming.reference.InternalConcreteLocatedReferable;
 import org.arend.naming.reference.*;
 import org.arend.term.*;
 import org.arend.term.concrete.Concrete;
@@ -423,8 +425,8 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
 
   private ConcreteLocatedReferable makeReferable(Position position, String name, Precedence precedence, String aliasName, Precedence aliasPrecedence, ChildGroup parent, GlobalReferable.Kind kind) {
     return parent instanceof FileGroup
-      ? new ConcreteLocatedReferable(position, name, precedence, aliasName, aliasPrecedence, myModule, kind)
-      : new ConcreteLocatedReferable(position, name, precedence, aliasName, aliasPrecedence, (TCReferable) parent.getReferable(), kind);
+      ? new ConcreteLocatedReferable(position, name, precedence, aliasName, aliasPrecedence, new FullModuleReferable(myModule), kind)
+      : new ConcreteLocatedReferable(position, name, precedence, aliasName, aliasPrecedence, parent.getReferable(), kind);
   }
 
   private Concrete.LevelParameters parseLevelParameters(Token token, List<TerminalNode> ids) {
@@ -920,8 +922,8 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     List<ConcreteClassFieldReferable> fieldReferables = new ArrayList<>();
     Pair<String, Precedence> alias = visitAlias(defId.alias());
     reference = parent instanceof FileGroup
-      ? new ConcreteClassReferable(pos, name, prec, alias.proj1, alias.proj2, fieldReferables, superClasses, myModule)
-      : new ConcreteClassReferable(pos, name, prec, alias.proj1, alias.proj2, fieldReferables, superClasses, (TCReferable) parent.getReferable());
+      ? new ConcreteClassReferable(pos, name, prec, alias.proj1, alias.proj2, fieldReferables, superClasses, new FullModuleReferable(myModule))
+      : new ConcreteClassReferable(pos, name, prec, alias.proj1, alias.proj2, fieldReferables, superClasses, parent.getReferable());
     ClassGroup resultGroup = new ClassGroup(reference, fieldReferables, dynamicSubgroups, staticSubgroups, namespaceCommands, parent);
     boolean isRecord = ctx.classKw() instanceof ClassKwRecordContext;
     ClassBodyContext classBodyCtx = ctx.classBody();
@@ -1650,7 +1652,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
 
   private void setClassifyingField(Concrete.ClassDefinition classDef, ConcreteClassFieldReferable field, boolean isForced) {
     if (isForced && classDef.isForcedClassifyingField()) {
-      myErrorReporter.report(new ParserError(field.getData(), "Class can have at most one classifying field"));
+      myErrorReporter.report(new ParserError((Position) field.getData(), "Class can have at most one classifying field"));
     } else if (isForced && !classDef.isForcedClassifyingField() || classDef.getClassifyingField() == null) {
       classDef.setClassifyingField(field, isForced);
     }

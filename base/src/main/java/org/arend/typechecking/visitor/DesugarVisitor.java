@@ -9,7 +9,7 @@ import org.arend.ext.error.LocalError;
 import org.arend.ext.error.RedundantCoclauseError;
 import org.arend.naming.reference.*;
 import org.arend.prelude.Prelude;
-import org.arend.term.FunctionKind;
+import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.LocalFreeReferableVisitor;

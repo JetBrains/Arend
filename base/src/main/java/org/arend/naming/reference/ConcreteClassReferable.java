@@ -1,10 +1,7 @@
-package org.arend.frontend.reference;
+package org.arend.naming.reference;
 
 import org.arend.ext.reference.Precedence;
-import org.arend.frontend.parser.Position;
-import org.arend.module.ModuleLocation;
 import org.arend.module.scopeprovider.EmptyModuleScopeProvider;
-import org.arend.naming.reference.*;
 import org.arend.naming.resolving.visitor.ExpressionResolveNameVisitor;
 import org.arend.naming.scope.CachingScope;
 import org.arend.naming.scope.LexicalScope;
@@ -30,15 +27,8 @@ public class ConcreteClassReferable extends ConcreteLocatedReferable implements 
   private final List<ClassReferable> mySuperClasses;
   private boolean myResolved = false;
 
-  public ConcreteClassReferable(Position position, @NotNull String name, Precedence precedence, @Nullable String aliasName, Precedence aliasPrecedence, Collection<? extends ConcreteClassFieldReferable> fields, List<? extends Reference> superClasses, TCReferable parent) {
-    super(position, name, precedence, aliasName, aliasPrecedence, parent, Kind.CLASS);
-    myFields = fields;
-    myUnresolvedSuperClasses = superClasses;
-    mySuperClasses = new ArrayList<>(superClasses.size());
-  }
-
-  public ConcreteClassReferable(Position position, @NotNull String name, Precedence precedence, @Nullable String aliasName, Precedence aliasPrecedence, Collection<? extends ConcreteClassFieldReferable> fields, List<? extends Reference> superClasses, ModuleLocation parent) {
-    super(position, name, precedence, aliasName, aliasPrecedence, parent, Kind.CLASS);
+  public ConcreteClassReferable(Object data, @NotNull String name, Precedence precedence, @Nullable String aliasName, Precedence aliasPrecedence, Collection<? extends ConcreteClassFieldReferable> fields, List<? extends Reference> superClasses, LocatedReferable parent) {
+    super(data, name, precedence, aliasName, aliasPrecedence, parent, Kind.CLASS);
     myFields = fields;
     myUnresolvedSuperClasses = superClasses;
     mySuperClasses = new ArrayList<>(superClasses.size());

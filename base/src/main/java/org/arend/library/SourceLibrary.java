@@ -271,8 +271,9 @@ public abstract class SourceLibrary extends BaseLibrary {
     }
 
     DefinitionContributorImpl contributor = new DefinitionContributorImpl(this, libraryManager.getLibraryErrorReporter(), myAdditionalModuleScopeProvider);
+    ArendDependencyProviderImpl provider = new ArendDependencyProviderImpl(typechecking, libraryManager.getAvailableModuleScopeProvider(this), libraryManager.getDefinitionRequester(), this);
     try {
-      myExtension.declareDefinitions(contributor);
+      myExtension.declareDefinitions(provider, contributor);
     } finally {
       contributor.disable();
     }
@@ -312,14 +313,11 @@ public abstract class SourceLibrary extends BaseLibrary {
       throw e;
     }
 
-    if (myExtension != null) {
-      myExtension.setDefinitionProvider(DefinitionProviderImpl.INSTANCE);
-      ArendDependencyProviderImpl provider = new ArendDependencyProviderImpl(typechecking, libraryManager.getAvailableModuleScopeProvider(this), libraryManager.getDefinitionRequester(), this);
-      try {
-        myExtension.load(provider);
-      } finally {
-        provider.disable();
-      }
+    myExtension.setDefinitionProvider(DefinitionProviderImpl.INSTANCE);
+    try {
+      myExtension.load(provider);
+    } finally {
+      provider.disable();
     }
 
     libraryManager.afterLibraryLoading(this, true);

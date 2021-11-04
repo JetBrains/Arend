@@ -6,7 +6,7 @@ import org.arend.core.expr.Expression;
 import org.arend.core.expr.type.Type;
 import org.arend.frontend.ConcreteReferableProvider;
 import org.arend.frontend.PositionComparator;
-import org.arend.frontend.reference.ConcreteLocatedReferable;
+import org.arend.naming.reference.ConcreteLocatedReferable;
 import org.arend.naming.NameResolverTestCase;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCDefReferable;

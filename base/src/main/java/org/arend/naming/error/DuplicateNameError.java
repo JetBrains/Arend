@@ -21,19 +21,21 @@ public class DuplicateNameError extends ReferenceError {
 
   static Doc getBodyDoc(Referable referable, Referable previous) {
     String text = "Previous occurrence";
-    if (!(previous instanceof SourceInfo)) {
+    SourceInfo sourceInfo = SourceInfo.getSourceInfo(previous);
+    if (sourceInfo == null) {
       return DocFactory.hList(DocFactory.text(text + ": "), DocFactory.refDoc(previous));
     }
 
-    String module = ((SourceInfo) previous).moduleTextRepresentation();
+    String module = sourceInfo.moduleTextRepresentation();
     if (module != null) {
-      String module1 = referable instanceof SourceInfo ? ((SourceInfo) referable).moduleTextRepresentation() : null;
+      SourceInfo sourceInfo1 = SourceInfo.getSourceInfo(referable);
+      String module1 = sourceInfo1 != null ? sourceInfo1.moduleTextRepresentation() : null;
       if (module.equals(module1)) {
         module = null;
       }
     }
 
-    String position = ((SourceInfo) previous).positionTextRepresentation();
+    String position = sourceInfo.positionTextRepresentation();
     if (module == null && position == null) {
       return DocFactory.text(text);
     }

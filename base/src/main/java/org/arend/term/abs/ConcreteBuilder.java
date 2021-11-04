@@ -10,7 +10,7 @@ import org.arend.naming.reference.*;
 import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.term.ClassFieldKind;
 import org.arend.term.Fixity;
-import org.arend.term.FunctionKind;
+import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.DefinableMetaDefinition;
 import org.arend.typechecking.error.local.LocalErrorReporter;

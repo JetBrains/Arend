@@ -6,6 +6,7 @@ import org.arend.frontend.parser.*;
 import org.arend.frontend.repl.CommonCliRepl;
 import org.arend.module.ModuleLocation;
 import org.arend.naming.reference.FullModuleReferable;
+import org.arend.naming.reference.LocatedReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.expr.ConcreteCompareVisitor;
 import org.arend.term.group.ChildGroup;
@@ -20,6 +21,7 @@ import static org.junit.Assert.assertThat;
 
 public abstract class ParserTestCase extends ArendTestCase {
   protected static final ModuleLocation MODULE_PATH = new ModuleLocation(null, false, null, new ModulePath("$TestCase$"));
+  protected static final LocatedReferable MODULE_REF = new FullModuleReferable(MODULE_PATH);
 
   private ArendParser _parse(String text) {
     return CommonCliRepl.createParser(text, MODULE_PATH, errorReporter);

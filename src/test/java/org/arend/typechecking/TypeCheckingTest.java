@@ -2,7 +2,6 @@ package org.arend.typechecking;
 
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.TypedBinding;
-import org.arend.core.definition.Definition;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.*;
 import org.arend.core.sort.Level;
@@ -10,14 +9,12 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.LevelPair;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
-import org.arend.frontend.reference.ConcreteLocatedReferable;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.prettyprint.ToAbstractVisitor;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.junit.Test;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -261,7 +258,7 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
     LetExpression body = (LetExpression) Objects.requireNonNull(((FunctionDefinition) getDefinition("test")).getBody());
     var let = body.getExpression();
     var concrete = ToAbstractVisitor.convert(let, PrettyPrinterConfig.DEFAULT);
-    typeCheckExpr(Map.of(((Concrete.LongReferenceExpression) concrete).getQualifier().getReferent(), new TypedBinding("ccl", body.getClauses().get(0).getTypeExpr())), concrete, let.getType(), 0);
+    typeCheckExpr(Map.of(Objects.requireNonNull(((Concrete.LongReferenceExpression) concrete).getQualifier()).getReferent(), new TypedBinding("ccl", body.getClauses().get(0).getTypeExpr())), concrete, let.getType(), 0);
   }
 
   @Test
@@ -271,6 +268,6 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
     LetExpression body = (LetExpression) Objects.requireNonNull(((FunctionDefinition) getDefinition("test")).getBody());
     var let = body.getExpression();
     var concrete = ToAbstractVisitor.convert(let, PrettyPrinterConfig.DEFAULT);
-    typeCheckExpr(Map.of(((Concrete.LongReferenceExpression) concrete).getQualifier().getReferent(), new TypedBinding("ccl", body.getClauses().get(0).getTypeExpr())), concrete, let.getType(), 0);
+    typeCheckExpr(Map.of(Objects.requireNonNull(((Concrete.LongReferenceExpression) concrete).getQualifier()).getReferent(), new TypedBinding("ccl", body.getClauses().get(0).getTypeExpr())), concrete, let.getType(), 0);
   }
 }

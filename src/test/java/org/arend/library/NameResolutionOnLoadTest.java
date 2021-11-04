@@ -1,7 +1,7 @@
 package org.arend.library;
 
 import org.arend.ext.module.ModulePath;
-import org.arend.frontend.reference.ConcreteLocatedReferable;
+import org.arend.naming.reference.ConcreteLocatedReferable;
 import org.arend.naming.scope.Scope;
 import org.arend.source.SourceLoader;
 import org.arend.term.concrete.Concrete;

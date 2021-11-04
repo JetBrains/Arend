@@ -5,7 +5,7 @@ import org.arend.core.definition.Constructor;
 import org.arend.core.definition.DataDefinition;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.TypecheckingError;
-import org.arend.term.FunctionKind;
+import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.covariance.ParametersCovarianceChecker;
 import org.arend.typechecking.error.local.CertainTypecheckingError;

@@ -12,7 +12,7 @@ import org.arend.extImpl.AbstractedExpressionImpl;
 import org.arend.naming.reference.*;
 import org.arend.naming.renamer.MapReferableRenamer;
 import org.arend.term.Fixity;
-import org.arend.term.FunctionKind;
+import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.term.concrete.*;
 import org.arend.term.concrete.Concrete.BinOpSequenceElem;
 import org.arend.term.concrete.Concrete.Expression;

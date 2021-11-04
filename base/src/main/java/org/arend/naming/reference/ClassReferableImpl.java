@@ -1,7 +1,6 @@
 package org.arend.naming.reference;
 
 import org.arend.ext.reference.Precedence;
-import org.arend.module.ModuleLocation;
 import org.arend.term.abs.Abstract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -19,7 +18,7 @@ public class ClassReferableImpl extends LocatedReferableImpl implements ClassRef
   private final List<? extends TCFieldReferable> myFieldReferables;
   private final List<GlobalReferable> myDynamicReferables;
 
-  public ClassReferableImpl(Precedence precedence, String name, boolean isRecord, Abstract.LevelParameters pLevelParameters, Abstract.LevelParameters hLevelParameters, List<ClassReferable> superClassReferences, List<Boolean> superLevels, List<? extends TCFieldReferable> fieldReferables, List<GlobalReferable> dynamicReferables, ModuleLocation parent) {
+  public ClassReferableImpl(Precedence precedence, String name, boolean isRecord, Abstract.LevelParameters pLevelParameters, Abstract.LevelParameters hLevelParameters, List<ClassReferable> superClassReferences, List<Boolean> superLevels, List<? extends TCFieldReferable> fieldReferables, List<GlobalReferable> dynamicReferables, LocatedReferable parent) {
     super(precedence, name, parent, Kind.CLASS);
     myRecord = isRecord;
     myPLevelParameters = pLevelParameters;

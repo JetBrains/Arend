@@ -29,11 +29,13 @@ public class DataLocalReferable extends LocalReferable implements DataContainer,
 
   @Override
   public String moduleTextRepresentation() {
-    return myData instanceof SourceInfo ? ((SourceInfo) myData).moduleTextRepresentation() : null;
+    SourceInfo sourceInfo = SourceInfo.getSourceInfo(myData);
+    return sourceInfo != null ? sourceInfo.moduleTextRepresentation() : null;
   }
 
   @Override
   public String positionTextRepresentation() {
-    return myData instanceof SourceInfo ? ((SourceInfo) myData).positionTextRepresentation() : null;
+    SourceInfo sourceInfo = SourceInfo.getSourceInfo(myData);
+    return sourceInfo != null ? sourceInfo.positionTextRepresentation() : null;
   }
 }

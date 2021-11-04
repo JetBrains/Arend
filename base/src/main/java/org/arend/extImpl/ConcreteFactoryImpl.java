@@ -3,6 +3,7 @@ package org.arend.extImpl;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.expr.ReferenceExpression;
 import org.arend.ext.concrete.*;
+import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.ext.concrete.expr.*;
 import org.arend.ext.concrete.pattern.ConcretePattern;
 import org.arend.ext.core.context.CoreBinding;
@@ -271,8 +272,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     return caseExprC(isSCase, arguments, resultType, resultTypeLevel, cClauses);
   }
 
-  @Override
-  public @NotNull ConcreteExpression caseExpr(boolean isSCase, Collection<? extends ConcreteCaseArgument> arguments, @Nullable ConcreteExpression resultType, @Nullable ConcreteExpression resultTypeLevel, @NotNull Collection<? extends ConcreteClause> clauses) {
+  private List<Concrete.FunctionClause> functionClauses(Collection<? extends ConcreteClause> clauses) {
     List<Concrete.FunctionClause> cClauses = new ArrayList<>(clauses.size());
     for (ConcreteClause clause : clauses) {
       if (!(clause instanceof Concrete.Clause)) {
@@ -283,7 +283,12 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
       }
       cClauses.add((Concrete.FunctionClause) clause);
     }
-    return caseExprC(isSCase, arguments, resultType, resultTypeLevel, cClauses);
+    return cClauses;
+  }
+
+  @Override
+  public @NotNull ConcreteExpression caseExpr(boolean isSCase, Collection<? extends ConcreteCaseArgument> arguments, @Nullable ConcreteExpression resultType, @Nullable ConcreteExpression resultTypeLevel, @NotNull Collection<? extends ConcreteClause> clauses) {
+    return caseExprC(isSCase, arguments, resultType, resultTypeLevel, functionClauses(clauses));
   }
 
   @NotNull
@@ -484,6 +489,57 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
     return new ConcreteAppBuilderImpl(myData, (Concrete.Expression) function);
   }
 
+  @Override
+  public @NotNull Concrete.FunctionDefinition function(@NotNull ArendRef ref, @NotNull FunctionKind kind, @NotNull Collection<? extends ConcreteParameter> parameters, @Nullable ConcreteExpression resultType, @Nullable ConcreteExpression resultTypeLevel, @NotNull ConcreteFunctionBody body) {
+    if (!(ref instanceof ConcreteLocatedReferable)) {
+      throw new IllegalArgumentException("The reference must be a global reference with a parent");
+    }
+    if (kind.isUse() || kind.isCoclause()) {
+      throw new IllegalArgumentException("\\use definitions and coclause functions are not supported yet");
+    }
+    if (!((resultType == null || resultType instanceof Concrete.Expression) && (resultTypeLevel == null || resultTypeLevel instanceof Concrete.Expression) && body instanceof Concrete.FunctionBody)) {
+      throw new IllegalArgumentException();
+    }
+
+    ConcreteLocatedReferable cRef = (ConcreteLocatedReferable) ref;
+    cRef.setKind(GlobalReferable.kindFromFunction(kind));
+    Concrete.FunctionDefinition result = new Concrete.FunctionDefinition(kind, cRef, parameters(parameters), (Concrete.Expression) resultType, (Concrete.Expression) resultTypeLevel, (Concrete.FunctionBody) body);
+    cRef.setDefinition(result);
+    return result;
+  }
+
+  @Override
+  public @NotNull ConcreteFunctionBody body(@NotNull ConcreteExpression term) {
+    if (!(term instanceof Concrete.Expression)) {
+      throw new IllegalArgumentException();
+    }
+    return new Concrete.TermFunctionBody(myData, (Concrete.Expression) term);
+  }
+
+  @Override
+  public @NotNull ConcreteFunctionBody body(@NotNull Collection<? extends ConcreteReferenceExpression> elim, @NotNull Collection<? extends ConcreteClause> clauses) {
+    List<Concrete.ReferenceExpression> refs = new ArrayList<>(elim.size());
+    for (ConcreteReferenceExpression ref : elim) {
+      if (!(ref instanceof Concrete.ReferenceExpression)) {
+        throw new IllegalArgumentException();
+      }
+      refs.add((Concrete.ReferenceExpression) ref);
+    }
+    return new Concrete.ElimFunctionBody(myData, refs, functionClauses(clauses));
+  }
+
+  @Override
+  public @NotNull ConcreteFunctionBody body(@NotNull Collection<? extends ConcreteClassElement> coclauses) {
+    List<Concrete.CoClauseElement> elements = new ArrayList<>(coclauses.size());
+    for (ConcreteClassElement coclause : coclauses) {
+      if (!(coclause instanceof Concrete.CoClauseElement)) {
+        throw new IllegalArgumentException();
+      }
+      elements.add((Concrete.CoClauseElement) coclause);
+    }
+    return new Concrete.CoelimFunctionBody(myData, elements);
+  }
+
   @NotNull
   @Override
   public ArendRef local(@NotNull String name) {
@@ -498,6 +554,14 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
   @Override
   public @NotNull ArendRef global(@NotNull String name, @NotNull Precedence precedence) {
     return new GlobalReferableImpl(name, precedence);
+  }
+
+  @Override
+  public @NotNull ArendRef global(@NotNull ArendRef parent, @NotNull String name, @NotNull Precedence precedence, @Nullable String alias, @Nullable Precedence aliasPrec) {
+    if (!(parent instanceof LocatedReferable)) {
+      throw new IllegalArgumentException();
+    }
+    return new ConcreteLocatedReferable(myData, name, precedence, alias, aliasPrec, (LocatedReferable) parent, GlobalReferable.Kind.OTHER);
   }
 
   private static Referable makeLocalRef(ArendRef ref) {

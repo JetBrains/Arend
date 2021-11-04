@@ -15,7 +15,7 @@ public interface ArendDependencyProvider {
   @NotNull <T extends CoreDefinition> T getDefinition(@NotNull ModulePath module, @NotNull LongName name, Class<T> clazz);
 
   /**
-   * Fills all fields of {@code dependencyContainer} annotated with {@link Dependency} annotation.
+   * Fills all the fields of {@code dependencyContainer} annotated with {@link Dependency} annotation.
    */
   void load(@NotNull Object dependencyContainer);
 }

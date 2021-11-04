@@ -10,21 +10,13 @@ public class LocatedReferableImpl implements TCDefReferable {
   private Precedence myPrecedence;
   private final String myName;
   private final LocatedReferable myParent;
-  private final Kind myKind;
+  private Kind myKind;
   private Definition myTypechecked;
 
   public LocatedReferableImpl(Precedence precedence, String name, @Nullable LocatedReferable parent, Kind kind) {
-    assert kind.isTypecheckable() || kind == Kind.OTHER || parent instanceof TCReferable;
     myPrecedence = precedence;
     myName = name;
     myParent = parent;
-    myKind = kind;
-  }
-
-  public LocatedReferableImpl(Precedence precedence, String name, @NotNull ModuleLocation parent, Kind kind) {
-    myPrecedence = precedence;
-    myName = name;
-    myParent = new FullModuleReferable(parent);
     myKind = kind;
   }
 
@@ -67,6 +59,10 @@ public class LocatedReferableImpl implements TCDefReferable {
   @Override
   public Kind getKind() {
     return myKind;
+  }
+
+  public void setKind(Kind kind) {
+    myKind = kind;
   }
 
   @Nullable

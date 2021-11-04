@@ -17,4 +17,8 @@ public interface TCReferable extends LocatedReferable, DataContainer {
   default boolean isLocalFunction() {
     return false;
   }
+
+  default @NotNull String getDescription() {
+    return "";
+  }
 }

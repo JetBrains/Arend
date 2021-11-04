@@ -1,5 +1,7 @@
 package org.arend.ext.concrete;
 
+import org.arend.ext.concrete.definition.ConcreteDefinition;
+import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.ext.concrete.expr.*;
 import org.arend.ext.concrete.pattern.ConcretePattern;
 import org.arend.ext.core.context.CoreBinding;
@@ -64,9 +66,15 @@ public interface ConcreteFactory {
   @NotNull ConcreteArgument arg(@NotNull ConcreteExpression expression, boolean isExplicit);
   @NotNull ConcreteAppBuilder appBuilder(@NotNull ConcreteExpression function);
 
+  @NotNull ConcreteDefinition function(@NotNull ArendRef ref, @NotNull FunctionKind kind, @NotNull Collection<? extends ConcreteParameter> parameters, @Nullable ConcreteExpression resultType, @Nullable ConcreteExpression resultTypeLevel, @NotNull ConcreteFunctionBody body);
+  @NotNull ConcreteFunctionBody body(@NotNull ConcreteExpression term);
+  @NotNull ConcreteFunctionBody body(@NotNull Collection<? extends ConcreteReferenceExpression> elim, @NotNull Collection<? extends ConcreteClause> clauses);
+  @NotNull ConcreteFunctionBody body(@NotNull Collection<? extends ConcreteClassElement> coclauses);
+
   @NotNull ArendRef local(@NotNull String name);
   @NotNull ArendRef localDeclaration(@NotNull ArendRef ref);
   @NotNull ArendRef global(@NotNull String name, @NotNull Precedence precedence);
+  @NotNull ArendRef global(@NotNull ArendRef parent, @NotNull String name, @NotNull Precedence precedence, @Nullable String alias, @Nullable Precedence aliasPrec);
   @NotNull ConcreteParameter param(boolean explicit, @Nullable ArendRef ref);
   @NotNull ConcreteParameter param(boolean explicit, @NotNull Collection<? extends ArendRef> refs, @NotNull ConcreteExpression type);
   @NotNull ConcreteParameter param(boolean explicit, @NotNull ConcreteExpression type);

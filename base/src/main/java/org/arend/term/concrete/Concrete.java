@@ -2,6 +2,7 @@ package org.arend.term.concrete;
 
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.ext.concrete.*;
+import org.arend.ext.concrete.definition.ConcreteDefinition;
 import org.arend.ext.concrete.expr.*;
 import org.arend.ext.concrete.pattern.ConcreteConstructorPattern;
 import org.arend.ext.concrete.pattern.ConcreteNumberPattern;
@@ -19,7 +20,7 @@ import org.arend.ext.typechecking.GoalSolver;
 import org.arend.naming.reference.*;
 import org.arend.term.ClassFieldKind;
 import org.arend.term.Fixity;
-import org.arend.term.FunctionKind;
+import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.term.abs.Abstract;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
 import org.jetbrains.annotations.NotNull;
@@ -1755,7 +1756,7 @@ public final class Concrete {
     }
   }
 
-  public static abstract class Definition extends ResolvableDefinition implements ReferableDefinition {
+  public static abstract class Definition extends ResolvableDefinition implements ReferableDefinition, ConcreteDefinition {
     private final TCDefReferable myReferable;
     private LevelParameters myPLevelParameters;
     private LevelParameters myHLevelParameters;
@@ -2122,7 +2123,7 @@ public final class Concrete {
     }
   }
 
-  public static abstract class FunctionBody extends SourceNodeImpl {
+  public static abstract class FunctionBody extends SourceNodeImpl implements ConcreteFunctionBody {
     FunctionBody(Object data) {
       super(data);
     }
