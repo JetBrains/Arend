@@ -3,6 +3,7 @@ package org.arend.extImpl;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.expr.ReferenceExpression;
 import org.arend.ext.concrete.*;
+import org.arend.ext.concrete.definition.ConcreteLevelParameters;
 import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.ext.concrete.expr.*;
 import org.arend.ext.concrete.pattern.ConcretePattern;
@@ -538,6 +539,15 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
       elements.add((Concrete.CoClauseElement) coclause);
     }
     return new Concrete.CoelimFunctionBody(myData, elements);
+  }
+
+  @Override
+  public @NotNull ConcreteLevelParameters levelParameters(@NotNull List<String> names, boolean isIncreasing) {
+    List<LevelReferable> refs = new ArrayList<>(names.size());
+    for (String name : names) {
+      refs.add(new DataLevelReferable(myData, name));
+    }
+    return new Concrete.LevelParameters(myData, refs, isIncreasing);
   }
 
   @NotNull

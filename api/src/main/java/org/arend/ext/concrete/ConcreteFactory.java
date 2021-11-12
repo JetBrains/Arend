@@ -1,6 +1,7 @@
 package org.arend.ext.concrete;
 
 import org.arend.ext.concrete.definition.ConcreteDefinition;
+import org.arend.ext.concrete.definition.ConcreteLevelParameters;
 import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.ext.concrete.expr.*;
 import org.arend.ext.concrete.pattern.ConcretePattern;
@@ -70,6 +71,7 @@ public interface ConcreteFactory {
   @NotNull ConcreteFunctionBody body(@NotNull ConcreteExpression term);
   @NotNull ConcreteFunctionBody body(@NotNull Collection<? extends ConcreteReferenceExpression> elim, @NotNull Collection<? extends ConcreteClause> clauses);
   @NotNull ConcreteFunctionBody body(@NotNull Collection<? extends ConcreteClassElement> coclauses);
+  @NotNull ConcreteLevelParameters levelParameters(@NotNull List<String> names, boolean isIncreasing);
 
   @NotNull ArendRef local(@NotNull String name);
   @NotNull ArendRef localDeclaration(@NotNull ArendRef ref);

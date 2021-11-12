@@ -3,6 +3,7 @@ package org.arend.term.concrete;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.ext.concrete.*;
 import org.arend.ext.concrete.definition.ConcreteDefinition;
+import org.arend.ext.concrete.definition.ConcreteLevelParameters;
 import org.arend.ext.concrete.expr.*;
 import org.arend.ext.concrete.pattern.ConcreteConstructorPattern;
 import org.arend.ext.concrete.pattern.ConcreteNumberPattern;
@@ -1707,7 +1708,7 @@ public final class Concrete {
     }
   }
 
-  public static class LevelParameters extends SourceNodeImpl implements Abstract.LevelParameters {
+  public static class LevelParameters extends SourceNodeImpl implements Abstract.LevelParameters, ConcreteLevelParameters {
     public final List<LevelReferable> referables;
     public final boolean isIncreasing;
 
@@ -1718,7 +1719,7 @@ public final class Concrete {
     }
 
     @Override
-    public @NotNull Collection<? extends Referable> getReferables() {
+    public @NotNull List<? extends Referable> getReferables() {
       return referables;
     }
 
@@ -1821,20 +1822,30 @@ public final class Concrete {
       return this;
     }
 
+    @Override
     public LevelParameters getPLevelParameters() {
       return myPLevelParameters;
     }
 
-    public void setPLevelParameters(LevelParameters parameters) {
-      myPLevelParameters = parameters;
+    @Override
+    public void setPLevelParameters(ConcreteLevelParameters parameters) {
+      if (!(parameters instanceof LevelParameters)) {
+        throw new IllegalArgumentException();
+      }
+      myPLevelParameters = (LevelParameters) parameters;
     }
 
+    @Override
     public LevelParameters getHLevelParameters() {
       return myHLevelParameters;
     }
 
-    public void setHLevelParameters(LevelParameters parameters) {
-      myHLevelParameters = parameters;
+    @Override
+    public void setHLevelParameters(ConcreteLevelParameters parameters) {
+      if (!(parameters instanceof LevelParameters)) {
+        throw new IllegalArgumentException();
+      }
+      myHLevelParameters = (LevelParameters) parameters;
     }
 
     public abstract <P, R> R accept(ConcreteDefinitionVisitor<? super P, ? extends R> visitor, P params);
