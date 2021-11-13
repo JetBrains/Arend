@@ -20,7 +20,7 @@ import org.arend.naming.resolving.ResolverListener;
 import org.arend.naming.scope.*;
 import org.arend.naming.scope.local.ElimScope;
 import org.arend.prelude.Prelude;
-import org.arend.term.ClassFieldKind;
+import org.arend.ext.concrete.definition.ClassFieldKind;
 import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.term.NameRenaming;
 import org.arend.term.NamespaceCommand;

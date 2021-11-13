@@ -33,7 +33,7 @@ import org.arend.ext.prettyprinting.doc.DocFactory;
 import org.arend.ext.typechecking.LevelProver;
 import org.arend.naming.reference.*;
 import org.arend.prelude.Prelude;
-import org.arend.term.ClassFieldKind;
+import org.arend.ext.concrete.definition.ClassFieldKind;
 import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteDefinitionVisitor;

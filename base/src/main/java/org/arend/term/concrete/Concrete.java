@@ -2,8 +2,7 @@ package org.arend.term.concrete;
 
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.ext.concrete.*;
-import org.arend.ext.concrete.definition.ConcreteDefinition;
-import org.arend.ext.concrete.definition.ConcreteLevelParameters;
+import org.arend.ext.concrete.definition.*;
 import org.arend.ext.concrete.expr.*;
 import org.arend.ext.concrete.pattern.ConcreteConstructorPattern;
 import org.arend.ext.concrete.pattern.ConcreteNumberPattern;
@@ -19,9 +18,8 @@ import org.arend.ext.reference.ArendRef;
 import org.arend.ext.reference.Precedence;
 import org.arend.ext.typechecking.GoalSolver;
 import org.arend.naming.reference.*;
-import org.arend.term.ClassFieldKind;
+import org.arend.ext.concrete.definition.ClassFieldKind;
 import org.arend.term.Fixity;
-import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.term.abs.Abstract;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
 import org.jetbrains.annotations.NotNull;
@@ -1848,6 +1846,15 @@ public final class Concrete {
       myHLevelParameters = (LevelParameters) parameters;
     }
 
+    @Override
+    public void setDynamic() {
+      LocatedReferable parent = myReferable.getLocatedReferableParent();
+      if (!(parent instanceof ConcreteResolvedClassReferable)) {
+        throw new IllegalStateException();
+      }
+      ((ConcreteResolvedClassReferable) parent).addDynamicReferable(myReferable);
+    }
+
     public abstract <P, R> R accept(ConcreteDefinitionVisitor<? super P, ? extends R> visitor, P params);
 
     @Override
@@ -1985,7 +1992,7 @@ public final class Concrete {
 
   public static class ClassField extends ReferableDefinitionBase implements BaseClassField {
     private final TCFieldReferable myReferable;
-    private final ClassDefinition myParentClass;
+    private ClassDefinition myParentClass;
     private final boolean myExplicit;
     private final ClassFieldKind myKind;
     private final List<TypeParameter> myParameters;
@@ -2050,6 +2057,10 @@ public final class Concrete {
     @Override
     public ClassDefinition getRelatedDefinition() {
       return myParentClass;
+    }
+
+    public void setParentClass(Concrete.ClassDefinition parentClass) {
+      myParentClass = parentClass;
     }
 
     public boolean isCoerce() {
@@ -2409,7 +2420,7 @@ public final class Concrete {
     }
   }
 
-  public static class ConstructorClause extends Clause {
+  public static class ConstructorClause extends Clause implements ConcreteConstructorClause {
     private final List<Constructor> myConstructors;
 
     public ConstructorClause(Object data, List<Pattern> patterns, List<Constructor> constructors) {
@@ -2428,9 +2439,9 @@ public final class Concrete {
     }
   }
 
-  public static class Constructor extends ReferableDefinitionBase {
+  public static class Constructor extends ReferableDefinitionBase implements ConcreteConstructor {
     private final TCDefReferable myReferable;
-    private final DataDefinition myDataType;
+    private DataDefinition myDataType;
     private final List<TypeParameter> myParameters;
     private final List<ReferenceExpression> myEliminatedReferences;
     private final List<FunctionClause> myClauses;
@@ -2470,6 +2481,10 @@ public final class Concrete {
     @Override
     public DataDefinition getRelatedDefinition() {
       return myDataType;
+    }
+
+    public void setDataType(DataDefinition dataType) {
+      myDataType = dataType;
     }
 
     public Expression getResultType() {

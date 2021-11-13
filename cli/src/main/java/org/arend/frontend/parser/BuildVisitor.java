@@ -3,6 +3,7 @@ package org.arend.frontend.parser;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
+import org.arend.ext.concrete.definition.ClassFieldKind;
 import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
@@ -818,7 +819,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     Pair<Concrete.Expression,Concrete.Expression> returnPair = visitReturnExpr(ctx.returnExpr());
     DefIdContext defId = ctx.defId();
     Pair<String, Precedence> alias = visitAlias(defId.alias());
-    ConcreteClassFieldReferable reference = new ConcreteClassFieldReferable(tokenPosition(defId.ID().getSymbol()), defId.ID().getText(), visitPrecedence(defId.precedence()), alias.proj1, alias.proj2, true, true, false, parentClass.getData(), LocatedReferableImpl.Kind.FIELD);
+    ConcreteClassFieldReferable reference = new ConcreteClassFieldReferable(tokenPosition(defId.ID().getSymbol()), defId.ID().getText(), visitPrecedence(defId.precedence()), alias.proj1, alias.proj2, true, true, false, parentClass.getData());
     Concrete.ClassField field = new Concrete.ClassField(reference, parentClass, true, kind, parameters, returnPair.proj1, returnPair.proj2, ctx.COERCE() != null);
     reference.setDefinition(field);
     if (ctx.CLASSIFYING() != null) {
@@ -1639,7 +1640,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
 
       Concrete.Expression type = visitExpr(exprCtx);
       for (TerminalNode var : vars) {
-        ConcreteClassFieldReferable fieldRef = new ConcreteClassFieldReferable(tokenPosition(var.getSymbol()), var.getText(), Precedence.DEFAULT, null, Precedence.DEFAULT, false, explicit, true, classDef.getData(), LocatedReferableImpl.Kind.FIELD);
+        ConcreteClassFieldReferable fieldRef = new ConcreteClassFieldReferable(tokenPosition(var.getSymbol()), var.getText(), Precedence.DEFAULT, null, Precedence.DEFAULT, false, explicit, true, classDef.getData());
         Concrete.ClassField field = new Concrete.ClassField(fieldRef, classDef, explicit, ClassFieldKind.ANY, new ArrayList<>(), type, null, coerced);
         fieldRef.setDefinition(field);
         fields.add(field);

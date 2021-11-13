@@ -8,8 +8,8 @@ public class ConcreteClassFieldReferable extends InternalConcreteLocatedReferabl
   private final boolean myExplicit;
   private final boolean myParameter;
 
-  public ConcreteClassFieldReferable(Object data, @NotNull String name, Precedence precedence, @Nullable String aliasName, Precedence aliasPrecedence, boolean isVisible, boolean isExplicit, boolean isParameter, TCDefReferable parent, Kind kind) {
-    super(data, name, precedence, aliasName, aliasPrecedence, isVisible, parent, kind);
+  public ConcreteClassFieldReferable(Object data, @NotNull String name, Precedence precedence, @Nullable String aliasName, Precedence aliasPrecedence, boolean isVisible, boolean isExplicit, boolean isParameter, TCDefReferable parent) {
+    super(data, name, precedence, aliasName, aliasPrecedence, isVisible, parent, Kind.FIELD);
     myExplicit = isExplicit;
     myParameter = isParameter;
   }

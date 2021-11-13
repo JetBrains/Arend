@@ -3,8 +3,7 @@ package org.arend.extImpl;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.expr.ReferenceExpression;
 import org.arend.ext.concrete.*;
-import org.arend.ext.concrete.definition.ConcreteLevelParameters;
-import org.arend.ext.concrete.definition.FunctionKind;
+import org.arend.ext.concrete.definition.*;
 import org.arend.ext.concrete.expr.*;
 import org.arend.ext.concrete.pattern.ConcretePattern;
 import org.arend.ext.core.context.CoreBinding;
@@ -154,7 +153,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
 
   @NotNull
   @Override
-  public ConcreteExpression universe(@Nullable ConcreteLevel pLevel, @Nullable ConcreteLevel hLevel) {
+  public Concrete.UniverseExpression universe(@Nullable ConcreteLevel pLevel, @Nullable ConcreteLevel hLevel) {
     if (!((pLevel == null || pLevel instanceof Concrete.LevelExpression) && (hLevel == null || hLevel instanceof Concrete.LevelExpression))) {
       throw new IllegalArgumentException();
     }
@@ -260,17 +259,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
   @NotNull
   @Override
   public ConcreteExpression caseExpr(boolean isSCase, Collection<? extends ConcreteCaseArgument> arguments, @Nullable ConcreteExpression resultType, @Nullable ConcreteExpression resultTypeLevel, @NotNull ConcreteClause... clauses) {
-    List<Concrete.FunctionClause> cClauses = new ArrayList<>(clauses.length);
-    for (ConcreteClause clause : clauses) {
-      if (!(clause instanceof Concrete.Clause)) {
-        throw new IllegalArgumentException();
-      }
-      if (!(clause instanceof Concrete.FunctionClause)) {
-        throw new IllegalArgumentException("Expected a function clause");
-      }
-      cClauses.add((Concrete.FunctionClause) clause);
-    }
-    return caseExprC(isSCase, arguments, resultType, resultTypeLevel, cClauses);
+    return caseExprC(isSCase, arguments, resultType, resultTypeLevel, functionClauses(Arrays.asList(clauses)));
   }
 
   private List<Concrete.FunctionClause> functionClauses(Collection<? extends ConcreteClause> clauses) {
@@ -519,6 +508,10 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
 
   @Override
   public @NotNull ConcreteFunctionBody body(@NotNull Collection<? extends ConcreteReferenceExpression> elim, @NotNull Collection<? extends ConcreteClause> clauses) {
+    return new Concrete.ElimFunctionBody(myData, refExprs(elim), functionClauses(clauses));
+  }
+
+  private List<Concrete.ReferenceExpression> refExprs(@NotNull Collection<? extends ConcreteReferenceExpression> elim) {
     List<Concrete.ReferenceExpression> refs = new ArrayList<>(elim.size());
     for (ConcreteReferenceExpression ref : elim) {
       if (!(ref instanceof Concrete.ReferenceExpression)) {
@@ -526,7 +519,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
       }
       refs.add((Concrete.ReferenceExpression) ref);
     }
-    return new Concrete.ElimFunctionBody(myData, refs, functionClauses(clauses));
+    return refs;
   }
 
   @Override
@@ -539,6 +532,101 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
       elements.add((Concrete.CoClauseElement) coclause);
     }
     return new Concrete.CoelimFunctionBody(myData, elements);
+  }
+
+  @Override
+  public @NotNull Concrete.DataDefinition data(@NotNull ArendRef ref, @NotNull Collection<? extends ConcreteParameter> parameters, boolean isTruncated, @Nullable ConcreteLevel pLevel, @Nullable ConcreteLevel hLevel, @NotNull Collection<? extends ConcreteConstructorClause> clauses) {
+    if (!(ref instanceof ConcreteLocatedReferable)) {
+      throw new IllegalArgumentException("The reference must be a global reference with a parent");
+    }
+
+    List<Concrete.ConstructorClause> constructorClauses = new ArrayList<>(clauses.size());
+    for (ConcreteConstructorClause clause : clauses) {
+      if (!(clause instanceof Concrete.ConstructorClause)) {
+        throw new IllegalArgumentException();
+      }
+      constructorClauses.add((Concrete.ConstructorClause) clause);
+    }
+
+    ConcreteLocatedReferable cRef = (ConcreteLocatedReferable) ref;
+    cRef.setKind(GlobalReferable.Kind.DATA);
+    Concrete.DataDefinition result = new Concrete.DataDefinition(cRef, null, null, typeParameters(parameters), null, isTruncated, pLevel == null && hLevel == null ? null : universe(pLevel, hLevel), constructorClauses);
+    cRef.setDefinition(result);
+    for (Concrete.ConstructorClause clause : constructorClauses) {
+      for (Concrete.Constructor constructor : clause.getConstructors()) {
+        constructor.setDataType(result);
+      }
+    }
+    return result;
+  }
+
+  @Override
+  public @NotNull ConcreteConstructorClause clause(@Nullable Collection<? extends ConcretePattern> patterns, @NotNull Collection<? extends ConcreteConstructor> constructors) {
+    List<Concrete.Constructor> cons = new ArrayList<>(constructors.size());
+    for (ConcreteConstructor constructor : constructors) {
+      if (!(constructor instanceof Concrete.Constructor)) {
+        throw new IllegalArgumentException();
+      }
+      cons.add((Concrete.Constructor) constructor);
+    }
+    return new Concrete.ConstructorClause(myData, patterns(patterns), cons);
+  }
+
+  @Override
+  public @NotNull ConcreteConstructor constructor(@NotNull ArendRef ref, @NotNull Collection<? extends ConcreteParameter> parameters, @NotNull Collection<? extends ConcreteReferenceExpression> elimRefs, @NotNull Collection<? extends ConcreteClause> clauses, boolean isCoerce) {
+    if (!(ref instanceof ConcreteLocatedReferable)) {
+      throw new IllegalArgumentException("The reference must be a global reference with a parent");
+    }
+
+    ConcreteLocatedReferable cRef = (ConcreteLocatedReferable) ref;
+    cRef.setKind(GlobalReferable.Kind.CONSTRUCTOR);
+    Concrete.Constructor result = new Concrete.Constructor(cRef, null, typeParameters(parameters), refExprs(elimRefs), functionClauses(clauses), isCoerce);
+    cRef.setDefinition(result);
+    return result;
+  }
+
+  @Override
+  public @NotNull ConcreteDefinition classDef(@NotNull ArendRef ref, boolean isRecord, boolean withoutClassifying, @NotNull Collection<? extends ConcreteReferenceExpression> superClasses, @NotNull Collection<? extends ConcreteClassElement> elements) {
+    if (!(ref instanceof ConcreteResolvedClassReferable)) {
+      throw new IllegalArgumentException("The reference must be a class reference");
+    }
+
+    List<Concrete.ClassElement> cElements = new ArrayList<>(elements.size());
+    ConcreteResolvedClassReferable cRef = (ConcreteResolvedClassReferable) ref;
+    Concrete.ClassDefinition result = new Concrete.ClassDefinition(cRef, null, null, isRecord, withoutClassifying, refExprs(superClasses), cElements);
+
+    for (ConcreteClassElement element : elements) {
+      if (!(element instanceof Concrete.ClassElement)) {
+        throw new IllegalArgumentException();
+      }
+      if (element instanceof Concrete.ClassField) {
+        ((Concrete.ClassField) element).setParentClass(result);
+      }
+      cElements.add((Concrete.ClassElement) element);
+    }
+
+    cRef.setDefinition(result);
+    return result;
+  }
+
+  @Override
+  public @NotNull ConcreteClassElement field(@NotNull ArendRef ref, @NotNull ClassFieldKind kind, @NotNull Collection<? extends ConcreteParameter> parameters, @NotNull ConcreteExpression resultType, @Nullable ConcreteExpression resultTypeLevel, boolean isCoerce) {
+    if (!(ref instanceof ConcreteClassFieldReferable && resultType instanceof Concrete.Expression && (resultTypeLevel == null || resultTypeLevel instanceof Concrete.Expression))) {
+      throw new IllegalArgumentException("The reference must be a global reference with a parent");
+    }
+
+    ConcreteClassFieldReferable cRef = (ConcreteClassFieldReferable) ref;
+    Concrete.ClassField result = new Concrete.ClassField(cRef, null, cRef.isExplicitField(), kind, typeParameters(parameters), (Concrete.Expression) resultType, (Concrete.Expression) resultTypeLevel, isCoerce);
+    cRef.setDefinition(result);
+    return result;
+  }
+
+  @Override
+  public @NotNull ConcreteClassElement override(@NotNull ArendRef ref, @NotNull Collection<? extends ConcreteParameter> parameters, @NotNull ConcreteExpression resultType, @Nullable ConcreteExpression resultTypeLevel) {
+    if (!(ref instanceof Referable && resultType instanceof Concrete.Expression && (resultTypeLevel == null || resultTypeLevel instanceof Concrete.Expression))) {
+      throw new IllegalArgumentException();
+    }
+    return new Concrete.OverriddenField(myData, (Referable) ref, typeParameters(parameters), (Concrete.Expression) resultType, (Concrete.Expression) resultTypeLevel);
   }
 
   @Override
@@ -572,6 +660,22 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
       throw new IllegalArgumentException();
     }
     return new ConcreteLocatedReferable(myData, name, precedence, alias, aliasPrec, (LocatedReferable) parent, GlobalReferable.Kind.OTHER);
+  }
+
+  @Override
+  public @NotNull ArendRef classRef(@NotNull ArendRef parent, @NotNull String name, @NotNull Precedence precedence, @Nullable String alias, @Nullable Precedence aliasPrec) {
+    if (!(parent instanceof LocatedReferable)) {
+      throw new IllegalArgumentException();
+    }
+    return new ConcreteResolvedClassReferable(myData, name, precedence, alias, aliasPrec, (LocatedReferable) parent, new ArrayList<>());
+  }
+
+  @Override
+  public @NotNull ArendRef fieldRef(@NotNull ArendRef parent, @NotNull String name, @NotNull Precedence precedence, @Nullable String alias, @Nullable Precedence aliasPrec, boolean isExplicit, boolean isParameter) {
+    if (!(parent instanceof TCDefReferable)) {
+      throw new IllegalArgumentException();
+    }
+    return new ConcreteClassFieldReferable(myData, name, precedence, alias, aliasPrec, !isParameter, isExplicit, isParameter, (TCDefReferable) parent);
   }
 
   private static Referable makeLocalRef(ArendRef ref) {
@@ -677,6 +781,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
   }
 
   private List<Concrete.Pattern> patterns(Collection<? extends ConcretePattern> patterns) {
+    if (patterns == null) return null;
     List<Concrete.Pattern> result = new ArrayList<>(patterns.size());
     for (ConcretePattern pattern : patterns) {
       if (!(pattern instanceof Concrete.Pattern)) {

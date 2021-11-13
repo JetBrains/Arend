@@ -33,7 +33,7 @@ import org.arend.naming.reference.LocalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.renamer.ReferableRenamer;
 import org.arend.prelude.Prelude;
-import org.arend.term.ClassFieldKind;
+import org.arend.ext.concrete.definition.ClassFieldKind;
 import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.visitor.VoidConcreteVisitor;

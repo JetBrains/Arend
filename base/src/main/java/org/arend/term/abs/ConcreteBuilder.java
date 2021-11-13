@@ -8,7 +8,7 @@ import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
 import org.arend.naming.reference.*;
 import org.arend.naming.reference.converter.ReferableConverter;
-import org.arend.term.ClassFieldKind;
+import org.arend.ext.concrete.definition.ClassFieldKind;
 import org.arend.term.Fixity;
 import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.term.concrete.Concrete;

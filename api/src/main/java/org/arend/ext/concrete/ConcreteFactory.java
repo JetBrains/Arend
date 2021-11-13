@@ -1,8 +1,6 @@
 package org.arend.ext.concrete;
 
-import org.arend.ext.concrete.definition.ConcreteDefinition;
-import org.arend.ext.concrete.definition.ConcreteLevelParameters;
-import org.arend.ext.concrete.definition.FunctionKind;
+import org.arend.ext.concrete.definition.*;
 import org.arend.ext.concrete.expr.*;
 import org.arend.ext.concrete.pattern.ConcretePattern;
 import org.arend.ext.core.context.CoreBinding;
@@ -71,12 +69,20 @@ public interface ConcreteFactory {
   @NotNull ConcreteFunctionBody body(@NotNull ConcreteExpression term);
   @NotNull ConcreteFunctionBody body(@NotNull Collection<? extends ConcreteReferenceExpression> elim, @NotNull Collection<? extends ConcreteClause> clauses);
   @NotNull ConcreteFunctionBody body(@NotNull Collection<? extends ConcreteClassElement> coclauses);
+  @NotNull ConcreteDefinition data(@NotNull ArendRef ref, @NotNull Collection<? extends ConcreteParameter> parameters, boolean isTruncated, @Nullable ConcreteLevel pLevel, @Nullable ConcreteLevel hLevel, @NotNull Collection<? extends ConcreteConstructorClause> clauses);
+  @NotNull ConcreteConstructorClause clause(@Nullable Collection<? extends ConcretePattern> patterns, @NotNull Collection<? extends ConcreteConstructor> constructors);
+  @NotNull ConcreteConstructor constructor(@NotNull ArendRef ref, @NotNull Collection<? extends ConcreteParameter> parameters, @NotNull Collection<? extends ConcreteReferenceExpression> elimRefs, @NotNull Collection<? extends ConcreteClause> clauses, boolean isCoerce);
+  @NotNull ConcreteDefinition classDef(@NotNull ArendRef ref, boolean isRecord, boolean withoutClassifying, @NotNull Collection<? extends ConcreteReferenceExpression> superClasses, @NotNull Collection<? extends ConcreteClassElement> elements);
+  @NotNull ConcreteClassElement field(@NotNull ArendRef ref, @NotNull ClassFieldKind kind, @NotNull Collection<? extends ConcreteParameter> parameters, @NotNull ConcreteExpression resultType, @Nullable ConcreteExpression resultTypeLevel, boolean isCoerce);
+  @NotNull ConcreteClassElement override(@NotNull ArendRef ref, @NotNull Collection<? extends ConcreteParameter> parameters, @NotNull ConcreteExpression resultType, @Nullable ConcreteExpression resultTypeLevel);
   @NotNull ConcreteLevelParameters levelParameters(@NotNull List<String> names, boolean isIncreasing);
 
   @NotNull ArendRef local(@NotNull String name);
   @NotNull ArendRef localDeclaration(@NotNull ArendRef ref);
   @NotNull ArendRef global(@NotNull String name, @NotNull Precedence precedence);
   @NotNull ArendRef global(@NotNull ArendRef parent, @NotNull String name, @NotNull Precedence precedence, @Nullable String alias, @Nullable Precedence aliasPrec);
+  @NotNull ArendRef classRef(@NotNull ArendRef parent, @NotNull String name, @NotNull Precedence precedence, @Nullable String alias, @Nullable Precedence aliasPrec);
+  @NotNull ArendRef fieldRef(@NotNull ArendRef parent, @NotNull String name, @NotNull Precedence precedence, @Nullable String alias, @Nullable Precedence aliasPrec, boolean isExplicit, boolean isParameter);
   @NotNull ConcreteParameter param(boolean explicit, @Nullable ArendRef ref);
   @NotNull ConcreteParameter param(boolean explicit, @NotNull Collection<? extends ArendRef> refs, @NotNull ConcreteExpression type);
   @NotNull ConcreteParameter param(boolean explicit, @NotNull ConcreteExpression type);
