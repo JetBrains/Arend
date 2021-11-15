@@ -1,9 +1,13 @@
 package org.arend.typechecking.instance.pool;
 
+import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassDefinition;
+import org.arend.core.definition.ClassField;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.*;
+import org.arend.core.sort.Level;
+import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.instance.InstanceSearchParameters;
@@ -17,6 +21,7 @@ import org.arend.ext.util.Pair;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Predicate;
 
 public class GlobalInstancePool implements InstancePool {
@@ -117,6 +122,62 @@ public class GlobalInstancePool implements InstancePool {
     return pair == null ? null : pair.proj1;
   }
 
+  private boolean compareLevel(Level instanceLevel, Level inferredLevel) {
+    return !(instanceLevel.isClosed() && (inferredLevel.isClosed() && instanceLevel.getConstant() != inferredLevel.getConstant() || !inferredLevel.isClosed() && !(inferredLevel.getVar() instanceof InferenceLevelVariable) || inferredLevel.getConstant() > instanceLevel.getConstant() || inferredLevel.getMaxConstant() > instanceLevel.getConstant()));
+  }
+
+  private boolean compareClassifying(Expression instanceExpr, Expression inferredExpr, boolean topLevel) {
+    if (instanceExpr instanceof UniverseExpression) {
+      if (!(inferredExpr instanceof UniverseExpression)) return false;
+      Sort instanceSort = ((UniverseExpression) instanceExpr).getSort();
+      Sort inferredSort = ((UniverseExpression) inferredExpr).getSort();
+      return compareLevel(instanceSort.getPLevel(), inferredSort.getPLevel()) && compareLevel(instanceSort.getHLevel(), inferredSort.getHLevel());
+    } else if (instanceExpr instanceof SigmaExpression) {
+      if (!(inferredExpr instanceof SigmaExpression)) return false;
+      DependentLink instanceParams = ((SigmaExpression) instanceExpr).getParameters();
+      DependentLink inferredParams = ((SigmaExpression) inferredExpr).getParameters();
+      if (DependentLink.Helper.size(instanceParams) != DependentLink.Helper.size(inferredParams)) return false;
+      for (; instanceParams.hasNext(); instanceParams = instanceParams.getNext(), inferredParams = inferredParams.getNext()) {
+        if (!compareClassifying(instanceParams.getTypeExpr(), inferredParams.getTypeExpr(), false)) return false;
+      }
+      return true;
+    } else if (instanceExpr instanceof PiExpression) {
+      if (!(inferredExpr instanceof PiExpression)) return false;
+      PiExpression instancePi = (PiExpression) instanceExpr;
+      PiExpression inferredPi = (PiExpression) inferredExpr;
+      if (DependentLink.Helper.size(instancePi.getParameters()) != DependentLink.Helper.size(inferredPi.getParameters())) return false;
+      for (DependentLink instanceParams = instancePi.getParameters(), inferredParams = inferredPi.getParameters(); instanceParams.hasNext(); instanceParams = instanceParams.getNext(), inferredParams = inferredParams.getNext()) {
+        if (!compareClassifying(instanceParams.getTypeExpr(), inferredParams.getTypeExpr(), false)) return false;
+      }
+      return compareClassifying(instancePi.getCodomain(), inferredPi.getCodomain(), false);
+    } else if (instanceExpr instanceof IntegerExpression) {
+      IntegerExpression instanceIntExpr = (IntegerExpression) instanceExpr;
+      return inferredExpr instanceof IntegerExpression && instanceIntExpr.isEqual((IntegerExpression) inferredExpr) || inferredExpr instanceof ConCallExpression && instanceIntExpr.match(((ConCallExpression) inferredExpr).getDefinition());
+    } else if (instanceExpr instanceof DefCallExpression && !(instanceExpr instanceof FieldCallExpression)) {
+      if (!(inferredExpr instanceof DefCallExpression)) return false;
+      DefCallExpression instanceDefCall = (DefCallExpression) instanceExpr;
+      DefCallExpression inferredDefCall = (DefCallExpression) inferredExpr;
+      if (instanceDefCall.getDefinition() != inferredDefCall.getDefinition()) return false;
+      for (int i = 0; i < instanceDefCall.getDefCallArguments().size(); i++) {
+        if (!compareClassifying(instanceDefCall.getDefCallArguments().get(i), inferredDefCall.getDefCallArguments().get(i), false)) return false;
+      }
+      if (instanceDefCall instanceof ConCallExpression) {
+        ConCallExpression instanceConCall = (ConCallExpression) instanceDefCall;
+        for (int i = 0; i < instanceConCall.getDataTypeArguments().size(); i++) {
+          if (!compareClassifying(instanceConCall.getDataTypeArguments().get(i), ((ConCallExpression) inferredDefCall).getDataTypeArguments().get(i), false)) return false;
+        }
+      } else if (instanceDefCall instanceof ClassCallExpression) {
+        for (Map.Entry<ClassField, Expression> entry : ((ClassCallExpression) instanceDefCall).getImplementedHere().entrySet()) {
+          Expression impl = ((ClassCallExpression) instanceDefCall).getAbsImplementationHere(entry.getKey());
+          if (impl == null || !compareClassifying(entry.getValue(), impl, false)) return false;
+        }
+      }
+      return true;
+    } else {
+      return !topLevel;
+    }
+  }
+
   private Pair<Concrete.Expression, ClassDefinition> getInstancePair(Expression classifyingExpression, InstanceSearchParameters parameters, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveHoleExpression) {
     if (!parameters.searchGlobal()) {
       return null;
@@ -156,13 +217,7 @@ public class GlobalInstancePool implements InstancePool {
         while (instanceClassifyingExpr instanceof LamExpression) {
           instanceClassifyingExpr = ((LamExpression) instanceClassifyingExpr).getBody();
         }
-        return
-          instanceClassifyingExpr instanceof UniverseExpression && finalClassifyingExpression instanceof UniverseExpression ||
-            instanceClassifyingExpr instanceof SigmaExpression && finalClassifyingExpression instanceof SigmaExpression ||
-            instanceClassifyingExpr instanceof PiExpression && finalClassifyingExpression instanceof PiExpression ||
-            instanceClassifyingExpr instanceof IntegerExpression && (finalClassifyingExpression instanceof IntegerExpression && ((IntegerExpression) instanceClassifyingExpr).isEqual((IntegerExpression) finalClassifyingExpression) ||
-              finalClassifyingExpression instanceof ConCallExpression && ((IntegerExpression) instanceClassifyingExpr).match(((ConCallExpression) finalClassifyingExpression).getDefinition())) ||
-            instanceClassifyingExpr instanceof DefCallExpression && finalClassifyingExpression instanceof DefCallExpression && ((DefCallExpression) instanceClassifyingExpr).getDefinition() == ((DefCallExpression) finalClassifyingExpression).getDefinition();
+        return compareClassifying(instanceClassifyingExpr, finalClassifyingExpression, true);
       }
     }
 

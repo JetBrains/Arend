@@ -1,5 +1,6 @@
 package org.arend.typechecking.typeclass;
 
+import org.arend.Matchers;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
@@ -42,6 +43,7 @@ public class TypeClassesTypes extends TypeCheckingTestCase {
       "\\instance inst : C \\Type0\n" +
       "  | idf A => A\n" +
       "\\func foo (P : \\Set1) => idf P", 1);
+    assertThatErrorsAre(Matchers.argInferenceError());
   }
 
   @Test
@@ -52,6 +54,7 @@ public class TypeClassesTypes extends TypeCheckingTestCase {
       "\\instance inst : C \\Set\n" +
       "  | idf A => A\n" +
       "\\func foo (P : \\1-Type) => idf P", 1);
+    assertThatErrorsAre(Matchers.argInferenceError());
   }
 
   @Test
@@ -61,6 +64,7 @@ public class TypeClassesTypes extends TypeCheckingTestCase {
       "  | idf : X -> X\n" +
       "\\instance inst : C \\1-Type\n" +
       "  | idf A => A\n" +
-      "\\func foo (P : \\Set) => idf P");
+      "\\func foo (P : \\Set) => idf P", 1);
+    assertThatErrorsAre(Matchers.argInferenceError());
   }
 }

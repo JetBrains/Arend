@@ -155,7 +155,7 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
       "\\class B (X : \\Set) { | foo : X -> X }\n" +
       "\\instance B-inst : B (Data D) | foo => \\lam x => x\n" +
       "\\func f (x : Data D') => foo x", 1);
-    assertThatErrorsAre(typeMismatchError());
+    assertThatErrorsAre(argInferenceError());
   }
 
   @Test
@@ -200,9 +200,27 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
       "\\class A (C : \\Type) { | c : C }\n" +
       "\\data D : \\Prop\n" +
       "\\instance aaa : A \\Prop | c => D\n" +
-      "\\func f1 : \\Prop => c\n" +
-      "\\func f2 : \\Set => c\n" +
-      "\\func f3 : \\Type => c");
+      "\\func test : \\Prop => c");
+  }
+
+  @Test
+  public void instancePropError() {
+    typeCheckModule(
+      "\\class A (C : \\Type) { | c : C }\n" +
+      "\\data D : \\Prop\n" +
+      "\\instance aaa : A \\Prop | c => D\n" +
+      "\\func test : \\Set => c", 1);
+    assertThatErrorsAre(argInferenceError());
+  }
+
+  @Test
+  public void instancePropError2() {
+    typeCheckModule(
+      "\\class A (C : \\Type) { | c : C }\n" +
+      "\\data D : \\Prop\n" +
+      "\\instance aaa : A \\Prop | c => D\n" +
+      "\\func test : \\Type => c", 1);
+    assertThatErrorsAre(argInferenceError());
   }
 
   @Test
@@ -229,7 +247,7 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
       "\\class A (C : \\Type) { | c : C }\n" +
       "\\instance a : A \\Set | c => Nat\n" +
       "\\func f : \\Prop => c", 1);
-    assertThatErrorsAre(typeMismatchError());
+    assertThatErrorsAre(argInferenceError());
   }
 
   @Test
@@ -248,7 +266,7 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
       "\\data D | con \\Set0\n" +
       "\\instance a : A \\1-Type1 | c => D\n" +
       "\\func f : \\1-Type0 => c", 1);
-    assertThatErrorsAre(typeMismatchError());
+    assertThatErrorsAre(argInferenceError());
   }
 
   @Test
@@ -378,11 +396,11 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
   public void changeClassifying() {
     typeCheckModule(
       "\\class C (A : \\Type)\n" +
-        "\\class D (\\classifying B : \\Type) \\extends C | b : B\n" +
-        "\\instance inst1 : D Int Nat | b => 1\n" +
-        "\\instance inst2 : D Int (\\Sigma Nat Nat) | b => (2,2)\n" +
-        "\\func test1 : Nat => b\n" +
-        "\\func test2 : \\Sigma Nat Nat => b");
+      "\\class D (\\classifying B : \\Type) \\extends C | b : B\n" +
+      "\\instance inst1 : D Int Nat | b => 1\n" +
+      "\\instance inst2 : D Int (\\Sigma Nat Nat) | b => (2,2)\n" +
+      "\\func test1 : Nat => b\n" +
+      "\\func test2 : \\Sigma Nat Nat => b");
     ClassDefinition classD = (ClassDefinition) getDefinition("D");
     ClassField fieldB = (ClassField) getDefinition("D.B");
     assertEquals(classD.getClassifyingField(), fieldB);
@@ -392,12 +410,12 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
   public void implementClassifying() {
     typeCheckModule(
       "\\class C (A : \\Set)\n" +
-        "\\class D (\\classifying B : \\Set) \\extends C | b : B\n" +
-        "\\class E \\extends D | B => Nat | a : A\n" +
-        "\\instance inst1 : E Nat 0 | a => 1\n" +
-        "\\instance inst2 : E (\\Sigma Nat Nat) 0 | a => (2,2)\n" +
-        "\\func test1 : Nat => a\n" +
-        "\\func test2 : \\Sigma Nat Nat => a");
+      "\\class D (\\classifying B : \\Set) \\extends C | b : B\n" +
+      "\\class E \\extends D | B => Nat | a : A\n" +
+      "\\instance inst1 : E Nat 0 | a => 1\n" +
+      "\\instance inst2 : E (\\Sigma Nat Nat) 0 | a => (2,2)\n" +
+      "\\func test1 : Nat => a\n" +
+      "\\func test2 : \\Sigma Nat Nat => a");
     ClassDefinition classE = (ClassDefinition) getDefinition("E");
     ClassField fieldA = (ClassField) getDefinition("E.A");
     assertEquals(classE.getClassifyingField(), fieldA);
