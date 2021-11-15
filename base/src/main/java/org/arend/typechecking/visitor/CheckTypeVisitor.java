@@ -1891,6 +1891,18 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       Expression type = new UniverseExpression(Sort.generateInferVars(getEquations(), false, expr));
       return new TypecheckingResult(InferenceReferenceExpression.make(myArgsInference.newInferenceVariable(type, expr), getEquations()), type);
     } else if (expectedType != null) {
+      Expression norm = expectedType.normalize(NormalizationMode.WHNF);
+      if (norm instanceof ClassCallExpression) {
+        ClassCallExpression classCall = (ClassCallExpression) norm;
+        if (!classCall.getDefinition().isRecord()) {
+          ClassField field = classCall.getDefinition().getClassifyingField();
+          AbsExpression classExpr = field == null ? null : classCall.getAbsImplementation(field);
+          if (field == null || classExpr != null) {
+            TypecheckingResult result = myInstancePool.getInstance(classExpr == null ? null : classExpr.getExpression(), expectedType, new SubclassSearchParameters(classCall.getDefinition()), expr, expr instanceof RecursiveInstanceHoleExpression ? (RecursiveInstanceHoleExpression) expr : null);
+            if (result != null) return result;
+          }
+        }
+      }
       return new TypecheckingResult(InferenceReferenceExpression.make(myArgsInference.newInferenceVariable(expectedType, expr), getEquations()), expectedType);
     } else {
       errorReporter.report(new ArgInferenceError(expression(), expr, new Expression[0]));
