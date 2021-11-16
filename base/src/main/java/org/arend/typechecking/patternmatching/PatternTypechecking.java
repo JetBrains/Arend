@@ -753,7 +753,7 @@ public class PatternTypechecking {
       if (constructor == null || dataCall != null && (!(constructor instanceof Constructor) || !dataCall.getMatchedConCall((Constructor) constructor, conCalls) || conCalls.isEmpty()) || classCall != null && constructor != Prelude.EMPTY_ARRAY && constructor != Prelude.ARRAY_CONS) {
         Referable conRef = conPattern.getConstructor();
         if (constructor != null || conRef instanceof TCDefReferable && ((TCDefReferable) conRef).getKind() == GlobalReferable.Kind.CONSTRUCTOR) {
-          myErrorReporter.report(new ExpectedConstructorError((GlobalReferable) conRef, dataCall, parameters, conPattern, myCaseArguments, myLinkList.getFirst(), clausesParameters));
+          myErrorReporter.report(new ExpectedConstructorError((GlobalReferable) conRef, dataCall != null ? dataCall : classCall, parameters, conPattern, myCaseArguments, myLinkList.getFirst(), clausesParameters));
         }
         return null;
       }
