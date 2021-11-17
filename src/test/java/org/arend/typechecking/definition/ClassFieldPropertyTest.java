@@ -10,6 +10,7 @@ import org.arend.typechecking.error.local.LevelMismatchError;
 import org.arend.typechecking.error.local.NotEqualExpressionsError;
 import org.junit.Test;
 
+import static org.arend.Matchers.typeMismatchError;
 import static org.arend.Matchers.typecheckingError;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -74,7 +75,7 @@ public class ClassFieldPropertyTest extends TypeCheckingTestCase {
       "\\class A {\n" +
       "  \\property f : \\level Nat (\\lam (x y : Nat) (p q : x = y) => Path.inProp p q)\n" +
       "}", 1);
-    assertThatErrorsAre(typecheckingError(LevelMismatchError.class));
+    assertThatErrorsAre(typeMismatchError());
   }
 
   @Test

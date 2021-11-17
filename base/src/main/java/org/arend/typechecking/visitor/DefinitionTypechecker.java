@@ -410,7 +410,34 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   }
 
   private Integer typecheckResultTypeLevel(Concrete.Expression resultTypeLevel, boolean isLemma, boolean isProperty, Expression resultType, FunctionDefinition funDef, ClassField classField, boolean isOverridden) {
-    return resultTypeLevel == null ? null : checkResultTypeLevel(typechecker.finalCheckExpr(resultTypeLevel, null), isLemma, isProperty, resultType, funDef, classField, isOverridden, resultTypeLevel);
+    if (resultTypeLevel == null) return null;
+    if (isLemma || isProperty) {
+      Sort sort;
+      Type type;
+      if (resultType instanceof Type) {
+        type = (Type) resultType;
+        sort = type.getSortOfType();
+      } else {
+        sort = resultType.getSortOfType();
+        type = sort == null ? null : new TypeExpression(resultType, sort);
+      }
+      if (type != null) {
+        TypedSingleDependentLink y = new TypedSingleDependentLink(true, "y", type);
+        UntypedSingleDependentLink x = new UntypedSingleDependentLink("x", y);
+        TypecheckingResult result = typechecker.finalCheckExpr(resultTypeLevel, new PiExpression(sort, x, FunCallExpression.make(Prelude.PATH_INFIX, new LevelPair(sort.getPLevel(), sort.getHLevel()), Arrays.asList(resultType, new ReferenceExpression(x), new ReferenceExpression(y)))));
+        if (result == null) return null;
+        if (myNewDef) {
+          if (funDef != null) {
+            funDef.setResultTypeLevel(result.expression);
+          }
+          if (!isOverridden && classField != null) {
+            classField.setTypeLevel(result.expression);
+          }
+        }
+        return -1;
+      }
+    }
+    return checkResultTypeLevel(typechecker.finalCheckExpr(resultTypeLevel, null), isLemma, isProperty, resultType, funDef, classField, isOverridden, resultTypeLevel);
   }
 
   private void calculateGoodThisParameters(Constructor definition) {

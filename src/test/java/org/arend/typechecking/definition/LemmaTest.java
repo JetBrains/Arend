@@ -5,6 +5,7 @@ import org.arend.typechecking.error.local.LevelMismatchError;
 import org.arend.typechecking.error.local.NotEqualExpressionsError;
 import org.junit.Test;
 
+import static org.arend.Matchers.typeMismatchError;
 import static org.arend.Matchers.typecheckingError;
 
 public class LemmaTest extends TypeCheckingTestCase {
@@ -89,6 +90,7 @@ public class LemmaTest extends TypeCheckingTestCase {
 
   @Test
   public void lemmaLevelError() {
-    typeCheckModule("\\lemma f (x : Nat) : \\level Nat (\\lam (x y : Nat) (p q : x = y) => Path.inProp p q) => x", 1);
+    typeCheckModule("\\lemma f (x : Nat) : \\level Nat (\\lam (x y : Nat) (p q : x = y) => Path.inProp p q) => x", 2);
+    assertThatErrorsAre(typeMismatchError(), typecheckingError(LevelMismatchError.class));
   }
 }
