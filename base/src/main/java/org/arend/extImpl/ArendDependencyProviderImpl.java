@@ -64,7 +64,7 @@ public class ArendDependencyProviderImpl extends Disableable implements ArendDep
     } else {
       throw new IllegalArgumentException("Cannot find definition '" + name + "'");
     }
-    myTypechecking.typecheckDefinitions(Collections.singletonList(def.getRelatedDefinition()), null);
+    myTypechecking.typecheckDefinitions(Collections.singletonList(def.getRelatedDefinition()), null, false);
     Definition result = def.getData().getTypechecked();
     if (!clazz.isInstance(result)) {
       throw new IllegalArgumentException(result == null ? "Cannot find definition '" + name + "'" : "Cannot cast definition '" + name + "' of type '" + result.getClass() + "' to '" + clazz + "'");

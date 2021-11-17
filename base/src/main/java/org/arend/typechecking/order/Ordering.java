@@ -48,8 +48,12 @@ public class Ordering extends BellmanFord<Concrete.ResolvableDefinition> {
     this(ordering.myInstanceProviderSet, ordering.myConcreteProvider, ordering.myOrderingListener, ordering.myDependencyListener, ordering.myReferableConverter, ordering.myComparator, allowedDependencies, stage);
   }
 
+  public Ordering(InstanceProviderSet instanceProviderSet, ConcreteProvider concreteProvider, OrderingListener orderingListener, DependencyListener dependencyListener, ReferableConverter referableConverter, PartialComparator<TCDefReferable> comparator, boolean withInstances) {
+    this(instanceProviderSet, concreteProvider, orderingListener, dependencyListener, referableConverter, comparator, null, withInstances ? Stage.EVERYTHING : Stage.WITHOUT_INSTANCES);
+  }
+
   public Ordering(InstanceProviderSet instanceProviderSet, ConcreteProvider concreteProvider, OrderingListener orderingListener, DependencyListener dependencyListener, ReferableConverter referableConverter, PartialComparator<TCDefReferable> comparator) {
-    this(instanceProviderSet, concreteProvider, orderingListener, dependencyListener, referableConverter, comparator, null, Stage.EVERYTHING);
+    this(instanceProviderSet, concreteProvider, orderingListener, dependencyListener, referableConverter, comparator, true);
   }
 
   public ConcreteProvider getConcreteProvider() {
