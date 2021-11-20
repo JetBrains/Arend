@@ -1581,6 +1581,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
       }
     }
+
+    dataDefinition.setGoodThisParameters(new GoodThisParametersVisitor(dataDefinition.getParameters()).getGoodParameters());
   }
 
   private boolean typecheckDataBody(DataDefinition dataDefinition, Concrete.DataDefinition def, Set<DataDefinition> dataDefinitions) {
@@ -1588,8 +1590,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       dataDefinition.setUniverseKind(UniverseKind.WITH_UNIVERSES);
       dataDefinition.getConstructors().clear();
     }
-    GoodThisParametersVisitor goodThisParametersVisitor = new GoodThisParametersVisitor(dataDefinition.getParameters());
-    dataDefinition.setGoodThisParameters(goodThisParametersVisitor.getGoodParameters());
 
     Sort userSort = dataDefinition.getSort();
     Sort inferredSort = def.getConstructorClauses().isEmpty() ? Sort.PROP : Sort.generateInferVars(typechecker.getEquations(), false, def);
@@ -1810,6 +1810,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     if (myNewDef) {
+      GoodThisParametersVisitor goodThisParametersVisitor = new GoodThisParametersVisitor(dataDefinition.getGoodThisParameters(), dataDefinition.getParameters());
       for (Constructor constructor : dataDefinition.getConstructors()) {
         goodThisParametersVisitor.visitParameters(constructor.getParameters(), null);
         goodThisParametersVisitor.visitBody(constructor.getBody(), null);
