@@ -1861,27 +1861,42 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     return expression;
   }
 
-  private boolean checkConstructorsOnlyOnTop(Expression expr, DataDefinition dataDefinition) {
-    if (expr instanceof ConCallExpression && ((ConCallExpression) expr).getDefinition().getDataType() == dataDefinition) {
-      for (Expression argument : ((ConCallExpression) expr).getDataTypeArguments()) {
-        if (!checkConstructorsOnlyOnTop(argument, dataDefinition)) {
-          return false;
-        }
-      }
-      for (Expression argument : ((ConCallExpression) expr).getDefCallArguments()) {
-        if (!checkConstructorsOnlyOnTop(argument, dataDefinition)) {
-          return false;
-        }
-      }
-      return true;
-    }
-
+  private boolean checkNoConstructors(Expression expr, DataDefinition dataDefinition) {
     return !expr.accept(new SearchVisitor<Void>() {
       @Override
       protected CoreExpression.FindAction processDefCall(DefCallExpression expression, Void param) {
         return expression instanceof ConCallExpression && ((ConCallExpression) expression).getDefinition().getDataType() == dataDefinition ? CoreExpression.FindAction.STOP : CoreExpression.FindAction.CONTINUE;
       }
     }, null);
+  }
+
+  private boolean checkConstructorsOnlyOnTop(Expression expr, DataDefinition dataDefinition) {
+    if (expr instanceof ConCallExpression && ((ConCallExpression) expr).getDefinition().getDataType() == dataDefinition) {
+      for (Expression argument : ((ConCallExpression) expr).getDataTypeArguments()) {
+        if (!checkConstructorsOnlyOnTop(argument, dataDefinition)) return false;
+      }
+      for (Expression argument : ((ConCallExpression) expr).getDefCallArguments()) {
+        if (!checkConstructorsOnlyOnTop(argument, dataDefinition)) return false;
+      }
+      return true;
+    } else if (expr instanceof LamExpression) {
+      return checkNoConstructors(((LamExpression) expr).getParameters().getTypeExpr(), dataDefinition) && checkConstructorsOnlyOnTop(((LamExpression) expr).getBody(), dataDefinition);
+    } else if (expr instanceof TupleExpression) {
+      if (!checkNoConstructors(((TupleExpression) expr).getSigmaType(), dataDefinition)) return false;
+      for (Expression field : ((TupleExpression) expr).getFields()) {
+        if (!checkConstructorsOnlyOnTop(field, dataDefinition)) return false;
+      }
+      return true;
+    } else if (expr instanceof NewExpression) {
+      NewExpression newExpr = (NewExpression) expr;
+      if (newExpr.getRenewExpression() != null && !checkConstructorsOnlyOnTop(newExpr.getRenewExpression(), dataDefinition)) return false;
+      for (Expression impl : newExpr.getClassCall().getImplementedHere().values()) {
+        if (!checkConstructorsOnlyOnTop(impl, dataDefinition)) return false;
+      }
+      return true;
+    }
+
+    return checkNoConstructors(expr, dataDefinition);
   }
 
   private void checkConstructorsOnlyOnTop(Expression expr, DataDefinition dataDefinition, Concrete.SourceNode sourceNode) {
