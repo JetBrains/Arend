@@ -53,8 +53,7 @@ public class InstanceProviderSet {
       return tcRef;
     }
 
-    @Override
-    public boolean test(Referable ref) {
+    void test(int index, Referable ref) {
       if (ref instanceof LocatedReferable) {
         TCReferable instance = referableConverter.toDataLocatedReferable((LocatedReferable) ref);
         if (instance instanceof TCDefReferable && instance.getKind() == GlobalReferable.Kind.INSTANCE) {
@@ -62,9 +61,14 @@ public class InstanceProviderSet {
             instanceProvider = new SimpleInstanceProvider(instanceProvider);
             used = false;
           }
-          instanceProvider.put((TCDefReferable) instance);
+          instanceProvider.add(index, (TCDefReferable) instance);
         }
       }
+    }
+
+    @Override
+    public boolean test(Referable ref) {
+      test(-1, ref);
       return false;
     }
   }
@@ -76,6 +80,7 @@ public class InstanceProviderSet {
 
     var predicate = new MyPredicate(referableConverter);
     parentScope.find(predicate);
+    predicate.instanceProvider.reverseFrom(0);
     processGroup(group, parentScope, predicate);
     predicate.recordInstances(referable);
     return true;
@@ -95,19 +100,22 @@ public class InstanceProviderSet {
 
     parentScope = CachingScope.make(LexicalScope.insideOf(group, parentScope));
     for (NamespaceCommand command : namespaceCommands) {
+      int size = predicate.instanceProvider.getInstances().size();
       NamespaceCommandNamespace.resolveNamespace(command.getKind() == NamespaceCommand.Kind.IMPORT ? parentScope.getImportedSubscope() : parentScope, command).find(predicate);
+      predicate.instanceProvider.reverseFrom(size);
     }
     processSubgroups(parentScope, predicate, dynamicSubgroups);
     processSubgroups(parentScope, predicate, subgroups);
   }
 
   private void processSubgroups(Scope parentScope, MyPredicate predicate, Collection<? extends Group> subgroups) {
+    int size = predicate.instanceProvider.getInstances().size();
     for (Group subgroup : subgroups) {
       LocatedReferable groupRef = subgroup.getReferable();
       if (groupRef.getKind() == GlobalReferable.Kind.COCLAUSE_FUNCTION) continue;
       predicate.used = true;
       SimpleInstanceProvider instanceProvider = predicate.instanceProvider;
-      predicate.test(groupRef);
+      predicate.test(size, groupRef);
       processGroup(subgroup, parentScope, predicate);
 
       if (!predicate.instanceProvider.isEmpty()) {
@@ -125,7 +133,7 @@ public class InstanceProviderSet {
       LocatedReferable ref = predicate.recordInstances(groupRef);
       predicate.used = true;
       predicate.instanceProvider = instanceProvider;
-      predicate.test(ref);
+      predicate.test(size, ref);
     }
   }
 }

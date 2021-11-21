@@ -3,17 +3,18 @@ package org.arend.typechecking.instance.provider;
 import org.arend.naming.reference.TCDefReferable;
 
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.Predicate;
 
 public class SimpleInstanceProvider implements InstanceProvider {
-  private final Collection<TCDefReferable> myInstances;
+  private final List<TCDefReferable> myInstances;
 
   public SimpleInstanceProvider() {
     myInstances = new ArrayList<>();
   }
 
-  public SimpleInstanceProvider(Collection<TCDefReferable> instances) {
+  public SimpleInstanceProvider(List<TCDefReferable> instances) {
     myInstances = instances;
   }
 
@@ -21,8 +22,12 @@ public class SimpleInstanceProvider implements InstanceProvider {
     myInstances = new ArrayList<>(another.myInstances);
   }
 
-  public void put(TCDefReferable instance) {
-    myInstances.add(instance);
+  public void add(int index, TCDefReferable instance) {
+    if (index < 0) {
+      myInstances.add(instance);
+    } else {
+      myInstances.add(index, instance);
+    }
   }
 
   public boolean isEmpty() {
@@ -33,11 +38,21 @@ public class SimpleInstanceProvider implements InstanceProvider {
     return myInstances.remove(instance);
   }
 
+  public List<TCDefReferable> getInstances() {
+    return myInstances;
+  }
+
+  public void reverseFrom(int n) {
+    if (myInstances.size() > n + 1) {
+      Collections.reverse(myInstances.subList(n, myInstances.size()));
+    }
+  }
+
   @Override
   public TCDefReferable findInstance(Predicate<TCDefReferable> pred) {
-    for (TCDefReferable instance : myInstances) {
-      if (pred.test(instance)) {
-        return instance;
+    for (int i = myInstances.size() - 1; i >= 0; i--) {
+      if (pred.test(myInstances.get(i))) {
+        return myInstances.get(i);
       }
     }
     return null;

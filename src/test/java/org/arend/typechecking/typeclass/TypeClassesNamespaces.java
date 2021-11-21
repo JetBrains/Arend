@@ -77,7 +77,7 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
       "\\instance a0 : A | n => 0\n" +
       "\\class M \\where {\n" +
       "  \\instance a1 : A | n => 1\n" +
-      "  \\func f : n = n => path (\\lam _ => 0)\n" +
+      "  \\func f : n = n => path (\\lam _ => 1)\n" +
       "}");
   }
 
