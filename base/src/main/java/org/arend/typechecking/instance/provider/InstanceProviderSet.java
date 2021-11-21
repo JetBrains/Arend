@@ -92,9 +92,8 @@ public class InstanceProviderSet {
 
   private void processGroup(Group group, Scope parentScope, MyPredicate predicate) {
     Collection<? extends NamespaceCommand> namespaceCommands = group.getNamespaceCommands();
-    Collection<? extends Group> dynamicSubgroups = group.getDynamicSubgroups();
     Collection<? extends Group> subgroups = group.getSubgroups();
-    if (namespaceCommands.isEmpty() && dynamicSubgroups.isEmpty() && subgroups.isEmpty()) {
+    if (namespaceCommands.isEmpty() && subgroups.isEmpty()) {
       return;
     }
 
@@ -104,7 +103,6 @@ public class InstanceProviderSet {
       NamespaceCommandNamespace.resolveNamespace(command.getKind() == NamespaceCommand.Kind.IMPORT ? parentScope.getImportedSubscope() : parentScope, command).find(predicate);
       predicate.instanceProvider.reverseFrom(size);
     }
-    processSubgroups(parentScope, predicate, dynamicSubgroups);
     processSubgroups(parentScope, predicate, subgroups);
   }
 
@@ -134,6 +132,8 @@ public class InstanceProviderSet {
       predicate.used = true;
       predicate.instanceProvider = instanceProvider;
       predicate.test(size, ref);
+
+      processSubgroups(parentScope, predicate, subgroup.getDynamicSubgroups());
     }
   }
 }
