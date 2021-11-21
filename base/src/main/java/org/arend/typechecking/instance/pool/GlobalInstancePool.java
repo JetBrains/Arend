@@ -4,6 +4,7 @@ import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassDefinition;
 import org.arend.core.definition.ClassField;
+import org.arend.core.definition.Definition;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.*;
 import org.arend.core.sort.Level;
@@ -11,6 +12,7 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.instance.InstanceSearchParameters;
+import org.arend.naming.reference.CoreReferable;
 import org.arend.naming.reference.TCDefReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.instance.provider.InstanceProvider;
@@ -18,33 +20,26 @@ import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.arend.ext.util.Pair;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Predicate;
 
 public class GlobalInstancePool implements InstancePool {
   private final InstanceProvider myInstanceProvider;
   private final CheckTypeVisitor myCheckTypeVisitor;
-  private InstancePool myInstancePool;
+  private LocalInstancePool myInstancePool;
 
   public GlobalInstancePool(InstanceProvider instanceProvider, CheckTypeVisitor checkTypeVisitor) {
     myInstanceProvider = instanceProvider;
     myCheckTypeVisitor = checkTypeVisitor;
   }
 
-  public GlobalInstancePool(InstanceProvider instanceProvider, CheckTypeVisitor checkTypeVisitor, InstancePool instancePool) {
+  public GlobalInstancePool(InstanceProvider instanceProvider, CheckTypeVisitor checkTypeVisitor, LocalInstancePool instancePool) {
     myInstanceProvider = instanceProvider;
     myCheckTypeVisitor = checkTypeVisitor;
     myInstancePool = instancePool;
   }
 
-  public InstancePool getInstancePool() {
-    return myInstancePool;
-  }
-
-  public void setInstancePool(InstancePool instancePool) {
+  public void setInstancePool(LocalInstancePool instancePool) {
     myInstancePool = instancePool;
   }
 
@@ -53,8 +48,8 @@ public class GlobalInstancePool implements InstancePool {
   }
 
   @Override
-  public InstancePool getLocalInstancePool() {
-    return myInstancePool.getLocalInstancePool();
+  public LocalInstancePool getLocalInstancePool() {
+    return myInstancePool;
   }
 
   @Override
@@ -73,53 +68,47 @@ public class GlobalInstancePool implements InstancePool {
   }
 
   @Override
-  public TypecheckingResult getInstance(Expression classifyingExpression, Expression expectedType, InstanceSearchParameters parameters, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveHoleExpression) {
+  public TypecheckingResult findInstance(Expression classifyingExpression, Expression expectedType, InstanceSearchParameters parameters, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveHoleExpression, Definition currentDef) {
     if (myInstancePool != null) {
-      TypecheckingResult result = myInstancePool.getInstance(classifyingExpression, expectedType, parameters, sourceNode, recursiveHoleExpression);
+      TypecheckingResult result = myInstancePool.findInstance(classifyingExpression, expectedType, parameters, sourceNode, currentDef, currentDef instanceof ClassDefinition ? LocalInstancePool.FieldSearchParameters.ALL : LocalInstancePool.FieldSearchParameters.NOT_FIELDS);
       if (result != null) {
         return result;
       }
     }
 
-    if (myInstanceProvider == null) {
-      return null;
-    }
-
-    Pair<Concrete.Expression, ClassDefinition> pair = getInstancePair(classifyingExpression, parameters, sourceNode, recursiveHoleExpression);
-    if (pair == null) {
-      return null;
-    }
-
-    if (expectedType == null) {
-      ClassCallExpression classCall = classifyingExpression == null ? null : new ClassCallExpression(pair.proj2, pair.proj2.generateInferVars(myCheckTypeVisitor.getEquations(), sourceNode));
-      if (classCall != null) {
-        myCheckTypeVisitor.fixClassExtSort(classCall, sourceNode);
-        expectedType = classCall;
+    if (myInstanceProvider != null) {
+      Pair<Concrete.Expression, ClassDefinition> pair = getInstancePair(classifyingExpression, parameters, sourceNode, recursiveHoleExpression, currentDef);
+      if (pair != null) {
+        if (expectedType == null) {
+          ClassCallExpression classCall = classifyingExpression == null ? null : new ClassCallExpression(pair.proj2, pair.proj2.generateInferVars(myCheckTypeVisitor.getEquations(), sourceNode));
+          if (classCall != null) {
+            myCheckTypeVisitor.fixClassExtSort(classCall, sourceNode);
+            expectedType = classCall;
+          }
+        }
+        TypecheckingResult result = myCheckTypeVisitor.checkExpr(pair.proj1, expectedType);
+        if (result == null) {
+          ErrorExpression errorExpr = new ErrorExpression();
+          return new TypecheckingResult(errorExpr, errorExpr);
+        }
+        return result;
       }
     }
-    TypecheckingResult result = myCheckTypeVisitor.checkExpr(pair.proj1, expectedType);
-    if (result == null) {
-      ErrorExpression errorExpr = new ErrorExpression();
-      return new TypecheckingResult(errorExpr, errorExpr);
-    }
-    return result;
+
+    return myInstancePool != null && !(currentDef instanceof ClassDefinition) ? myInstancePool.findInstance(classifyingExpression, expectedType, parameters, sourceNode, currentDef, LocalInstancePool.FieldSearchParameters.FIELDS_ONLY) : null;
   }
 
   @Override
-  public Concrete.Expression getInstance(Expression classifyingExpression, InstanceSearchParameters parameters, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveHoleExpression) {
+  public Concrete.Expression findInstance(Expression classifyingExpression, InstanceSearchParameters parameters, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveHoleExpression, Definition currentDef) {
     if (myInstancePool != null) {
-      Concrete.Expression result = myInstancePool.getInstance(classifyingExpression, parameters, sourceNode, recursiveHoleExpression);
+      Concrete.Expression result = myInstancePool.findInstance(classifyingExpression, parameters, sourceNode, currentDef, currentDef instanceof ClassDefinition ? LocalInstancePool.FieldSearchParameters.ALL : LocalInstancePool.FieldSearchParameters.NOT_FIELDS);
       if (result != null) {
         return result;
       }
     }
 
-    if (myInstanceProvider == null) {
-      return null;
-    }
-
-    Pair<Concrete.Expression, ClassDefinition> pair = getInstancePair(classifyingExpression, parameters, sourceNode, recursiveHoleExpression);
-    return pair == null ? null : pair.proj1;
+    Pair<Concrete.Expression, ClassDefinition> pair = myInstanceProvider == null ? null : getInstancePair(classifyingExpression, parameters, sourceNode, recursiveHoleExpression, currentDef);
+    return pair != null ? pair.proj1 : myInstancePool != null && !(currentDef instanceof ClassDefinition) ? myInstancePool.findInstance(classifyingExpression, parameters, sourceNode, currentDef, LocalInstancePool.FieldSearchParameters.FIELDS_ONLY) : null;
   }
 
   private boolean compareLevel(Level instanceLevel, Level inferredLevel) {
@@ -178,7 +167,7 @@ public class GlobalInstancePool implements InstancePool {
     }
   }
 
-  private Pair<Concrete.Expression, ClassDefinition> getInstancePair(Expression classifyingExpression, InstanceSearchParameters parameters, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveHoleExpression) {
+  private Pair<Concrete.Expression, ClassDefinition> getInstancePair(Expression classifyingExpression, InstanceSearchParameters parameters, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveHoleExpression, Definition currentDef) {
     if (!parameters.searchGlobal()) {
       return null;
     }
@@ -230,7 +219,13 @@ public class GlobalInstancePool implements InstancePool {
     ClassDefinition actualClass = ((ClassCallExpression) predicate.instanceDef.getResultType()).getDefinition();
     Object data = sourceNode == null ? null : sourceNode.getData();
     Concrete.Expression instanceExpr = new Concrete.ReferenceExpression(data, instance);
-    for (DependentLink link = predicate.instanceDef.getParameters(); link.hasNext(); link = link.getNext()) {
+    DependentLink link = predicate.instanceDef.getParameters();
+    ClassDefinition enclosingClass = currentDef != null ? currentDef.getEnclosingClass() : null;
+    if (!myInstancePool.getLocalInstances().isEmpty() && myInstancePool.getLocalInstances().get(0).classDef == enclosingClass && predicate.instanceDef.getEnclosingClass() == enclosingClass) {
+      instanceExpr = Concrete.AppExpression.make(data, instanceExpr, new Concrete.ReferenceExpression(data, new CoreReferable(null, myInstancePool.getLocalInstances().get(0).value.computeTyped())), link.isExplicit());
+      link = link.getNext();
+    }
+    for (; link.hasNext(); link = link.getNext()) {
       List<RecursiveInstanceData> newRecursiveData = new ArrayList<>((recursiveHoleExpression == null ? 0 : recursiveHoleExpression.recursiveData.size()) + 1);
       if (recursiveHoleExpression != null) {
         newRecursiveData.addAll(recursiveHoleExpression.recursiveData);

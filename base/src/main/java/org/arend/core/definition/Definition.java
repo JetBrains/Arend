@@ -131,6 +131,10 @@ public abstract class Definition extends UserDataHolderImpl implements CoreDefin
     return EmptyDependentLink.getInstance();
   }
 
+  public void setParameters(DependentLink parameters) {
+
+  }
+
   public boolean hasStrictParameters() {
     return false;
   }

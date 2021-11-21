@@ -104,7 +104,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
               if (expr instanceof Concrete.LongReferenceExpression && i == 0 && ((Concrete.LongReferenceExpression) expr).getQualifier() != null) {
                 instanceResult = myVisitor.checkExpr(Objects.requireNonNull(((Concrete.LongReferenceExpression) expr).getQualifier()), type);
               } else {
-                instanceResult = instancePool.getInstance(null, defCallResult.getParameter().getTypeExpr(), new SubclassSearchParameters(classDef), expr, holeExpr);
+                instanceResult = instancePool.findInstance(null, defCallResult.getParameter().getTypeExpr(), new SubclassSearchParameters(classDef), expr, holeExpr, myVisitor.getDefinition());
               }
               Expression instance;
               if (instanceResult == null) {
@@ -121,7 +121,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
             }
 
             // Otherwise, generate type class inference variable
-            infVar = new TypeClassInferenceVariable(parameter.getName(), type, classDef, kind == Definition.TypeClassParameterKind.ONLY_LOCAL, defCallResult.getDefCall(), holeExpr, myVisitor.getAllBindings());
+            infVar = new TypeClassInferenceVariable(parameter.getName(), type, classDef, kind == Definition.TypeClassParameterKind.ONLY_LOCAL, defCallResult.getDefCall(), holeExpr, myVisitor.getDefinition(), myVisitor.getAllBindings());
           }
         }
       }

@@ -82,6 +82,16 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
   }
 
   @Test
+  public void overriddenFieldInstance() {
+    typeCheckModule(
+      "\\class A { | n : Nat }\n" +
+      "\\class M (a0 : A) {\n" +
+      "  \\instance a1 : A | n => 1\n" +
+      "  \\func f : n = n => path (\\lam _ => 1)\n" +
+      "}");
+  }
+
+  @Test
   public void dotReference() {
     typeCheckModule(
       "\\class X (A : \\Type) | xxx : A\n" +

@@ -1,8 +1,10 @@
 package org.arend.typechecking.instance.pool;
 
 import org.arend.core.definition.ClassDefinition;
+import org.arend.core.definition.Definition;
 import org.arend.core.expr.ErrorExpression;
 import org.arend.core.expr.Expression;
+import org.arend.core.expr.FieldCallExpression;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.visitor.CompareVisitor;
 import org.arend.core.subst.ExprSubstitution;
@@ -19,7 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class LocalInstancePool implements InstancePool {
-  static private class InstanceData {
+  static class InstanceData {
     final Expression key;
     final ClassDefinition classDef;
     final Expression value;
@@ -44,9 +46,15 @@ public class LocalInstancePool implements InstancePool {
     myPool = new ArrayList<>();
   }
 
+  enum FieldSearchParameters { ALL, FIELDS_ONLY, NOT_FIELDS }
+
   @Override
-  public TypecheckingResult getInstance(Expression classifyingExpression, Expression expectedType, InstanceSearchParameters parameters, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveData) {
-    Expression result = getInstance(classifyingExpression, parameters);
+  public TypecheckingResult findInstance(Expression classifyingExpression, Expression expectedType, InstanceSearchParameters parameters, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveData, Definition currentDef) {
+    return findInstance(classifyingExpression, expectedType, parameters, sourceNode, currentDef, FieldSearchParameters.ALL);
+  }
+
+  TypecheckingResult findInstance(Expression classifyingExpression, Expression expectedType, InstanceSearchParameters parameters, Concrete.SourceNode sourceNode, Definition currentDef, FieldSearchParameters fieldSearch) {
+    Expression result = findInstance(classifyingExpression, parameters, currentDef, fieldSearch);
     if (result == null) {
       return null;
     }
@@ -73,8 +81,12 @@ public class LocalInstancePool implements InstancePool {
   }
 
   @Override
-  public Concrete.Expression getInstance(Expression classifyingExpression, InstanceSearchParameters parameters, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveData) {
-    Expression result = getInstance(classifyingExpression, parameters);
+  public Concrete.Expression findInstance(Expression classifyingExpression, InstanceSearchParameters parameters, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveData, Definition currentDef) {
+    return findInstance(classifyingExpression, parameters, sourceNode, currentDef, FieldSearchParameters.ALL);
+  }
+
+  Concrete.Expression findInstance(Expression classifyingExpression, InstanceSearchParameters parameters, Concrete.SourceNode sourceNode, Definition currentDef, FieldSearchParameters fieldSearch) {
+    Expression result = findInstance(classifyingExpression, parameters, currentDef, fieldSearch);
     return result == null ? null : new Concrete.ReferenceExpression(sourceNode, new CoreReferable(null, new TypecheckingResult(result, null)));
   }
 
@@ -92,12 +104,18 @@ public class LocalInstancePool implements InstancePool {
     return this;
   }
 
-  private Expression getInstance(Expression classifyingExpression, InstanceSearchParameters parameters) {
+  private Expression findInstance(Expression classifyingExpression, InstanceSearchParameters parameters, Definition currentDef, FieldSearchParameters fieldSearch) {
     if (!parameters.searchLocal()) {
       return null;
     }
     for (int i = myPool.size() - 1; i >= 0; i--) {
       InstanceData instanceData = myPool.get(i);
+      if (fieldSearch != FieldSearchParameters.ALL) {
+        boolean isField = instanceData.value instanceof FieldCallExpression && (!(currentDef instanceof ClassDefinition) || ((FieldCallExpression) instanceData.value).getDefinition().getParentClass() != currentDef);
+        if (fieldSearch == FieldSearchParameters.FIELDS_ONLY && !isField || fieldSearch == FieldSearchParameters.NOT_FIELDS && isField) {
+          continue;
+        }
+      }
       if (parameters.testClass(instanceData.classDef) && (instanceData.key == classifyingExpression || instanceData.key != null && classifyingExpression != null && Expression.compare(instanceData.key, classifyingExpression, null, CMP.EQ)) && parameters.testLocalInstance(instanceData.value)) {
         return instanceData.value;
       }
@@ -112,12 +130,12 @@ public class LocalInstancePool implements InstancePool {
   }
 
   @Override
-  public List<?> getLocalInstances() {
+  public List<InstanceData> getLocalInstances() {
     return myPool;
   }
 
   @Override
-  public InstancePool copy(CheckTypeVisitor typechecker) {
+  public LocalInstancePool copy(CheckTypeVisitor typechecker) {
     return typechecker == myTypechecker ? this : new LocalInstancePool(typechecker, myPool);
   }
 }

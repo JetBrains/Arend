@@ -161,6 +161,10 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     return new TypecheckingContext(new LinkedHashMap<>(context), myInstancePool, myArendExtension, copyUserData(), myLevelContext);
   }
 
+  public Definition getDefinition() {
+    return myDefinition;
+  }
+
   public void setDefinition(Definition definition) {
     myDefinition = definition;
   }
@@ -1448,7 +1452,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       ClassDefinition classDef = ((ClassCallExpression) type).getDefinition();
       RecursiveInstanceHoleExpression holeExpr = implBody instanceof RecursiveInstanceHoleExpression ? (RecursiveInstanceHoleExpression) implBody : null;
       if (classDef.getClassifyingField() == null) {
-        TypecheckingResult instance = myInstancePool.getInstance(null, type, new SubclassSearchParameters(classDef), implBody, holeExpr);
+        TypecheckingResult instance = myInstancePool.findInstance(null, type, new SubclassSearchParameters(classDef), implBody, holeExpr, myDefinition);
         if (instance == null) {
           ArgInferenceError error = new InstanceInferenceError(classDef.getReferable(), implBody, holeExpr, new Expression[0]);
           errorReporter.report(error);
@@ -1460,7 +1464,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           }
         }
       } else {
-        result = new TypecheckingResult(InferenceReferenceExpression.make(new TypeClassInferenceVariable(field.getName(), type, classDef, false, implBody, holeExpr, getAllBindings()), myEquations), type);
+        result = new TypecheckingResult(InferenceReferenceExpression.make(new TypeClassInferenceVariable(field.getName(), type, classDef, false, implBody, holeExpr, myDefinition, getAllBindings()), myEquations), type);
       }
       return result;
     }
@@ -1898,7 +1902,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           ClassField field = classCall.getDefinition().getClassifyingField();
           AbsExpression classExpr = field == null ? null : classCall.getAbsImplementation(field);
           if (field == null || classExpr != null) {
-            TypecheckingResult result = myInstancePool.getInstance(classExpr == null ? null : classExpr.getExpression(), expectedType, new SubclassSearchParameters(classCall.getDefinition()), expr, expr instanceof RecursiveInstanceHoleExpression ? (RecursiveInstanceHoleExpression) expr : null);
+            TypecheckingResult result = myInstancePool.findInstance(classExpr == null ? null : classExpr.getExpression(), expectedType, new SubclassSearchParameters(classCall.getDefinition()), expr, expr instanceof RecursiveInstanceHoleExpression ? (RecursiveInstanceHoleExpression) expr : null, myDefinition);
             if (result != null) return result;
           }
         }
@@ -3399,7 +3403,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     if (!(sourceNode instanceof Concrete.SourceNode)) {
       throw new IllegalArgumentException();
     }
-    return myInstancePool.getInstance(UncheckedExpressionImpl.extract(classifyingExpression), parameters, (Concrete.SourceNode) sourceNode, null);
+    return myInstancePool.findInstance(UncheckedExpressionImpl.extract(classifyingExpression), parameters, (Concrete.SourceNode) sourceNode, null, myDefinition);
   }
 
   @Override
@@ -3407,7 +3411,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     if (!((expectedType == null || expectedType instanceof Expression) && sourceNode instanceof Concrete.SourceNode)) {
       throw new IllegalArgumentException();
     }
-    return myInstancePool.getInstance(UncheckedExpressionImpl.extract(classifyingExpression), expectedType == null ? null : (Expression) expectedType, parameters, (Concrete.SourceNode) sourceNode, null);
+    return myInstancePool.findInstance(UncheckedExpressionImpl.extract(classifyingExpression), expectedType == null ? null : (Expression) expectedType, parameters, (Concrete.SourceNode) sourceNode, null, myDefinition);
   }
 
   @Override

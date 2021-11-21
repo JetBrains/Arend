@@ -2,6 +2,7 @@ package org.arend.core.context.binding.inference;
 
 import org.arend.core.context.binding.Binding;
 import org.arend.core.definition.ClassDefinition;
+import org.arend.core.definition.Definition;
 import org.arend.core.expr.Expression;
 import org.arend.ext.error.LocalError;
 import org.arend.ext.instance.SubclassSearchParameters;
@@ -18,12 +19,14 @@ public class TypeClassInferenceVariable extends InferenceVariable {
   private final boolean myOnlyLocal;
   private Expression myClassifyingExpression;
   private final RecursiveInstanceHoleExpression myRecursiveInstanceHoleExpression;
+  private final Definition myDefinition;
 
-  public TypeClassInferenceVariable(String name, Expression type, ClassDefinition classDef, boolean onlyLocal, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveInstanceHoleExpression, Set<Binding> bounds) {
+  public TypeClassInferenceVariable(String name, Expression type, ClassDefinition classDef, boolean onlyLocal, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveInstanceHoleExpression, Definition definition, Set<Binding> bounds) {
     super(name, type, sourceNode, bounds);
     myClassDef = classDef;
     myOnlyLocal = onlyLocal;
     myRecursiveInstanceHoleExpression = recursiveInstanceHoleExpression;
+    myDefinition = definition;
   }
 
   public ClassDefinition getClassDefinition() {
@@ -41,7 +44,7 @@ public class TypeClassInferenceVariable extends InferenceVariable {
   }
 
   public Expression getInstance(InstancePool pool, Expression classifyingExpression, Expression expectedType, Concrete.SourceNode sourceNode) {
-    TypecheckingResult result = (myOnlyLocal ? pool.getLocalInstancePool() : pool).getInstance(classifyingExpression, expectedType, new SubclassSearchParameters(myClassDef), sourceNode, myRecursiveInstanceHoleExpression);
+    TypecheckingResult result = (myOnlyLocal ? pool.getLocalInstancePool() : pool).findInstance(classifyingExpression, expectedType, new SubclassSearchParameters(myClassDef), sourceNode, myRecursiveInstanceHoleExpression, myDefinition);
     if (result == null && myClassifyingExpression == null) {
       myClassifyingExpression = classifyingExpression;
     }

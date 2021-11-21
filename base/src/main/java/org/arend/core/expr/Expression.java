@@ -139,7 +139,7 @@ public abstract class Expression implements Body, CoreExpression {
   }
 
   @Override
-  public @NotNull TypedExpression computeTyped() {
+  public @NotNull TypecheckingResult computeTyped() {
     return new TypecheckingResult(this, computeType());
   }
 

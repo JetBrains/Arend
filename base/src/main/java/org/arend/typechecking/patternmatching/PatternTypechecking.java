@@ -38,6 +38,7 @@ import org.arend.typechecking.error.local.*;
 import org.arend.typechecking.implicitargs.equations.LevelEquationsSolver;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.instance.pool.InstancePool;
+import org.arend.typechecking.instance.pool.LocalInstancePool;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.arend.typechecking.visitor.DesugarVisitor;
@@ -175,7 +176,7 @@ public class PatternTypechecking {
       expectedType = expectedType.subst(substitution);
 
       GlobalInstancePool globalInstancePool = myVisitor.getInstancePool();
-      InstancePool instancePool = globalInstancePool == null ? null : globalInstancePool.getInstancePool();
+      LocalInstancePool instancePool = globalInstancePool == null ? null : globalInstancePool.getLocalInstancePool();
       if (instancePool != null) {
         globalInstancePool.setInstancePool(instancePool.subst(substitution));
       }

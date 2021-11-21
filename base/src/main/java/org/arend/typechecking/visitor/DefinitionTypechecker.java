@@ -50,7 +50,6 @@ import org.arend.typechecking.error.local.*;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.implicitargs.equations.LevelEquationsSolver;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
-import org.arend.typechecking.instance.pool.InstancePool;
 import org.arend.typechecking.instance.pool.LocalInstancePool;
 import org.arend.typechecking.order.DFS;
 import org.arend.typechecking.order.MapDFS;
@@ -508,7 +507,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     return typeDef instanceof ClassDefinition && !((ClassDefinition) typeDef).isRecord();
   }
 
-  private Pair<Sort,Expression> typecheckParameters(Concrete.ReferableDefinition def, LinkList list, LocalInstancePool localInstancePool, Sort expectedSort, DependentLink oldParameters, PiExpression fieldType) {
+  private Pair<Sort,Expression> typecheckParameters(Concrete.ReferableDefinition def, Definition typedDef, LinkList list, LocalInstancePool localInstancePool, Sort expectedSort, DependentLink oldParameters, PiExpression fieldType) {
     Sort sort = Sort.PROP;
 
     if (oldParameters != null) {
@@ -660,6 +659,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         list.append(param);
       }
 
+      if (first && myNewDef && typedDef != null) {
+        typedDef.setParameters(param);
+      }
+
       first = false;
       if (skip > 0) skip--;
     }
@@ -779,7 +782,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     LinkList list = new LinkList();
-    Pair<Sort, Expression> pair = typecheckParameters(def, list, localInstancePool, null, myNewDef ? null : typedDef.getParameters(), implementedField == null ? null : implementedField.getType());
+    Pair<Sort, Expression> pair = typecheckParameters(def, typedDef, list, localInstancePool, null, myNewDef ? null : typedDef.getParameters(), implementedField == null ? null : implementedField.getType());
     if (def.getBody() instanceof Concrete.CoelimFunctionBody || def.getBody() instanceof Concrete.ElimFunctionBody && def.getBody().getClauses().isEmpty()) {
       checkNoStrictParameters(def.getParameters());
     } else if (myNewDef) {
@@ -817,7 +820,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         expectedType = new ErrorExpression();
       }
 
-      typedDef.setParameters(list.getFirst());
       typedDef.setResultType(expectedType);
       typedDef.setKind(kind.isSFunc() ? (kind == FunctionKind.LEMMA ? CoreFunctionDefinition.Kind.LEMMA : kind == FunctionKind.TYPE ? CoreFunctionDefinition.Kind.TYPE : CoreFunctionDefinition.Kind.SFUNC) : kind == FunctionKind.INSTANCE ? CoreFunctionDefinition.Kind.INSTANCE : CoreFunctionDefinition.Kind.FUNC);
 
@@ -1552,7 +1554,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
     LinkList list = new LinkList();
     Sort userSort = null;
-    boolean paramsOk = typecheckParameters(def, list, localInstancePool, null, myNewDef ? null : dataDefinition.getParameters(), null) != null;
+    boolean paramsOk = typecheckParameters(def, dataDefinition, list, localInstancePool, null, myNewDef ? null : dataDefinition.getParameters(), null) != null;
     checkNoStrictParameters(def.getParameters());
 
     if (def.getUniverse() != null) {
@@ -1569,7 +1571,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       return;
     }
 
-    dataDefinition.setParameters(list.getFirst());
     dataDefinition.setSort(userSort);
     calculateTypeClassParameters(def, dataDefinition);
     calculateParametersTypecheckingOrder(dataDefinition);
@@ -1621,7 +1622,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
       }
 
-      InstancePool instancePool = typechecker.getInstancePool().getInstancePool();
+      LocalInstancePool instancePool = typechecker.getInstancePool().getLocalInstancePool();
       for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
         typechecker.copyContextFrom(context);
 
@@ -1923,7 +1924,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         dataDefinition.addConstructor(constructor);
       }
 
-      ok = typecheckParameters(def, list, null, dataDefinition.getSort(), myNewDef ? null : oldConstructor.getParameters(), null) != null;
+      ok = typecheckParameters(def, constructor, list, null, dataDefinition.getSort(), myNewDef ? null : oldConstructor.getParameters(), null) != null;
       if (constructor != null) {
         constructor.setStrictParameters(getStrictParameters(def.getParameters()));
       }
@@ -1945,10 +1946,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           constructorType = normalizePathExpression(resultType.getExpr(), oldConstructor, def.getResultType());
         }
         def.setResultType(null);
-      }
-
-      if (constructor != null) {
-        constructor.setParameters(list.getFirst());
       }
 
       if (!def.getClauses().isEmpty()) {
