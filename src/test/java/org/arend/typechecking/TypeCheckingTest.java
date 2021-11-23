@@ -284,7 +284,28 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
     GoalErrorExpression goal = Objects.requireNonNull(((ElimBody)
             Objects.requireNonNull(
                     Objects.requireNonNull((
-                            (FunctionDefinition) getDefinition("insert-comm")))
+                                    (FunctionDefinition) getDefinition("insert-comm")))
+                            .getBody()))
+            .getClauses().get(0).getExpression()).cast(AppExpression.class).getFunction().cast(GoalErrorExpression.class);
+    Assert.assertNotNull(goal.getType());
+  }
+
+  @Test
+  public void testGoalWithArgsUnderElimAndClass() {
+    typeCheckModule(
+            "\\class StrictPoset (E : \\Set) {\n" +
+                    "  | \\infix 4 < : E -> E -> \\Prop\n" +
+                    "}\n" +
+                    "\n" +
+                    "\\data Tri' {A : StrictPoset} (a a' : A)\n" +
+                    "  | less (a < a')\n" +
+                    "\n" +
+                    "\\func insert-comm {A : StrictPoset} (a a' : A) (x : Tri' a a')\n" +
+                    "  : Nat \\elim x | less a<a' => {?} a<a'", 1);
+    GoalErrorExpression goal = Objects.requireNonNull(((ElimBody)
+            Objects.requireNonNull(
+                    Objects.requireNonNull((
+                                    (FunctionDefinition) getDefinition("insert-comm")))
                             .getBody()))
             .getClauses().get(0).getExpression()).cast(AppExpression.class).getFunction().cast(GoalErrorExpression.class);
     Assert.assertNotNull(goal.getType());

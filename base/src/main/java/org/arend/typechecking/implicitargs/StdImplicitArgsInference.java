@@ -524,9 +524,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
         var typecheckedArgument = myVisitor.checkExpr(argument.expression, null);
         if (typecheckedArgument != null) {
           TypecheckingResult normalized = typecheckedArgument.normalizeType();
-          if (normalized.type instanceof Type) {
-            argumentResults.add(normalized);
-          }
+          argumentResults.add(normalized);
         }
       }
       Expression expectedGoalType = null;
@@ -758,8 +756,9 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
     } else {
       actualCodomain = generatePiExpressionByArguments(codomain, argumentResults.subList(1, argumentResults.size()), arguments.subList(1, arguments.size()), node);
     }
-    var domain = (Type)argumentResults.get(0).type;
-    return new PiExpression(PiExpression.generateUpperBound(domain.getSortOfType(), actualCodomain.getSortOfType(), myVisitor.getEquations(), node), new TypedSingleDependentLink(arguments.get(0).isExplicit(), null, (Type)argumentResults.get(0).type), actualCodomain);
+    var domain = argumentResults.get(0).type;
+    Type type = domain instanceof Type ? (Type) domain : new TypeExpression(domain, domain.getSortOfType());
+    return new PiExpression(PiExpression.generateUpperBound(domain.getSortOfType(), actualCodomain.getSortOfType(), myVisitor.getEquations(), node), new TypedSingleDependentLink(arguments.get(0).isExplicit(), null, type), actualCodomain);
   }
 
   /** Normalizes {@param type}
