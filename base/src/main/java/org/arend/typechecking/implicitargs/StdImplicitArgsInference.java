@@ -522,8 +522,11 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
       List<TypecheckingResult> argumentResults = new ArrayList<>();
       for (Concrete.Argument argument : expr.getArguments()) {
         var typecheckedArgument = myVisitor.checkExpr(argument.expression, null);
-        if (typecheckedArgument != null && typecheckedArgument.type instanceof Type) {
-          argumentResults.add(typecheckedArgument);
+        if (typecheckedArgument != null) {
+          TypecheckingResult normalized = typecheckedArgument.normalizeType();
+          if (normalized.type instanceof Type) {
+            argumentResults.add(normalized);
+          }
         }
       }
       Expression expectedGoalType = null;

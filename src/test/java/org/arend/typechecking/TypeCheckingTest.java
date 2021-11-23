@@ -3,6 +3,7 @@ package org.arend.typechecking;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.definition.FunctionDefinition;
+import org.arend.core.elimtree.ElimBody;
 import org.arend.core.expr.*;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
@@ -13,6 +14,7 @@ import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.prettyprint.ToAbstractVisitor;
 import org.arend.typechecking.result.TypecheckingResult;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Map;
@@ -269,5 +271,22 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
     var let = body.getExpression();
     var concrete = ToAbstractVisitor.convert(let, PrettyPrinterConfig.DEFAULT);
     typeCheckExpr(Map.of(Objects.requireNonNull(((Concrete.LongReferenceExpression) concrete).getQualifier()).getReferent(), new TypedBinding("ccl", body.getClauses().get(0).getTypeExpr())), concrete, let.getType(), 0);
+  }
+
+  @Test
+  public void testGoalWithArgsUnderElim() {
+    typeCheckModule(
+            "\\data sample\n" +
+                    "  | cons (1 = 1)\n" +
+                    "\n" +
+                    "\\func insert-comm (x : sample) : Nat \\elim x\n" +
+                    "  | cons e => {?} e", 1);
+    GoalErrorExpression goal = Objects.requireNonNull(((ElimBody)
+            Objects.requireNonNull(
+                    Objects.requireNonNull((
+                            (FunctionDefinition) getDefinition("insert-comm")))
+                            .getBody()))
+            .getClauses().get(0).getExpression()).cast(AppExpression.class).getFunction().cast(GoalErrorExpression.class);
+    Assert.assertNotNull(goal.getType());
   }
 }
