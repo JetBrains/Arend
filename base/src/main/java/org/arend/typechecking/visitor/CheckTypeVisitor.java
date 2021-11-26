@@ -3750,7 +3750,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           "Expected a function or an \\scase expression", expr.getExpression()));
       return null;
     }
-    if (funCall != null && !(funCall.getDefinition().getActualBody() instanceof ElimBody)) {
+    if (funCall != null && !(funCall.getDefinition().getActualBody() instanceof ElimBody || funCall.getDefinition().getActualBody() instanceof Expression)) {
       errorReporter.report(new FunctionWithoutBodyError(funCall.getDefinition(), expr.getExpression()));
       return null;
     }

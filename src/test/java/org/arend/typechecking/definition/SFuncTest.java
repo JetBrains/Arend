@@ -272,4 +272,22 @@ public class SFuncTest extends TypeCheckingTestCase {
       "\\func test : (\\peval \\scase true \\return Nat \\with { | true => 0 | false => 0 }) = (\\peval \\scase false \\return Nat \\with { | true => 0 | false => 0 }) => idp", 1);
     assertThatErrorsAre(typeMismatchError());
   }
+
+  @Test
+  public void arrowTest() {
+    typeCheckModule(
+      "\\sfunc c => 3\n" +
+      "\\func test : c = 3 => \\peval c\n" +
+      "\\func test1 : c = \\eval c => \\peval c\n" +
+      "\\func test2 : (\\eval c) = 3 => idp");
+  }
+
+  @Test
+  public void intervalTest() {
+    typeCheckModule(
+      "\\sfunc f (i : I) : Nat\n" +
+      "  | _ => 0\n" +
+      "  | left => 0\n" +
+      "  | right => 0", 1);
+  }
 }

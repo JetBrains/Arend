@@ -1250,6 +1250,11 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       throw new IllegalStateException();
     }
 
+    if (typedDef.getKind() == CoreFunctionDefinition.Kind.SFUNC && typedDef.getActualBody() instanceof IntervalElim) {
+      errorReporter.report(new TypecheckingError("\\sfunc cannot be defined by pattern matching on the interval", def));
+      typedDef.setKind(CoreFunctionDefinition.Kind.FUNC);
+    }
+
     if (myNewDef) {
       ClassCallExpression typeClassCall = typedDef.getResultType().cast(ClassCallExpression.class);
       if (typeClassCall != null) {
