@@ -440,13 +440,13 @@ public class PatternTypechecking {
           continue;
         } else {
           if (!patternArgs.isEmpty()) {
-            if (!expr.isError()) {
+            if (!expr.reportIfError(myErrorReporter, pattern)) {
               myErrorReporter.report(new TypeMismatchError(DocFactory.text("a sigma type or a class"), expr, pattern));
             }
             return null;
           }
           if (!expr.isInstance(DataCallExpression.class)) {
-            if (!expr.isError()) {
+            if (!expr.reportIfError(myErrorReporter, pattern)) {
               myErrorReporter.report(new TypeMismatchError(DocFactory.text("a data type, a sigma type, or a class"), expr, pattern));
             }
             return null;
@@ -688,7 +688,7 @@ public class PatternTypechecking {
       DataCallExpression dataCall = unfoldedExpr instanceof DataCallExpression ? (DataCallExpression) unfoldedExpr : null;
       ClassCallExpression classCall = unfoldedExpr instanceof ClassCallExpression ? (ClassCallExpression) unfoldedExpr : null;
       if (!(dataCall != null || classCall != null && classCall.getDefinition() == Prelude.DEP_ARRAY)) {
-        if (!expr.isError()) {
+        if (!expr.reportIfError(myErrorReporter, pattern)) {
           myErrorReporter.report(new TypeMismatchError(DocFactory.text("a data type"), expr, pattern));
         }
         return null;

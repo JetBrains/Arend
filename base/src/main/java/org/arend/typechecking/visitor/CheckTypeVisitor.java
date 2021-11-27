@@ -415,7 +415,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       if (expectedIsType && result.type.getStuckInferenceVariable() == null) {
         Pair<TypecheckingResult, Boolean> coerceResult = coerceToType(expectedType, argType -> {
           if (!CompareVisitor.compare(myEquations, CMP.LE, result.type, argType, Type.OMEGA, expr)) {
-            if (!result.type.isError()) {
+            if (!result.type.reportIfError(errorReporter, expr)) {
               errorReporter.report(new TypeMismatchError(argType, result.type, expr));
             }
             return new Pair<>(null, false);
@@ -470,7 +470,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       return result;
     }
 
-    if (!result.type.isError()) {
+    if (!result.type.reportIfError(errorReporter, expr)) {
       errorReporter.report(new TypeMismatchError(expectedType, result.type, expr));
     }
     return null;
@@ -495,7 +495,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       return true;
     }
 
-    if (!strict && !result.type.isError()) {
+    if (!strict && !result.type.reportIfError(errorReporter, marker)) {
       errorReporter.report(new TypeMismatchError(expectedType, result.type, marker));
     }
 
@@ -778,7 +778,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           skipped.add(binding);
         } else {
           TypecheckingResult arg = typecheck(arguments.get(i), binding.getTypeExpr().accept(substVisitor, null));
-          if (arg == null || arg.expression.isError()) {
+          if (arg == null || arg.expression.reportIfError(errorReporter, arguments.get(i))) {
             return null;
           }
           substitution.add(binding, arg.expression);
@@ -1057,7 +1057,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     UniverseExpression universe = type.cast(UniverseExpression.class);
     if (universe == null) {
       Expression stuck = type.getStuckExpression();
-      if (stuck == null || !stuck.isInstance(InferenceReferenceExpression.class) && !stuck.isError()) {
+      if (stuck == null || !stuck.isInstance(InferenceReferenceExpression.class) && !stuck.reportIfError(errorReporter, expr)) {
         if (stuck == null || !stuck.isError()) {
           errorReporter.report(new TypeMismatchError(DocFactory.text("\\Type"), type, expr));
         }
@@ -1374,7 +1374,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
               Expression type = result.type.normalize(NormalizationMode.WHNF);
               ClassCallExpression classCall = type.cast(ClassCallExpression.class);
               if (classCall == null) {
-                if (!type.isInstance(ErrorExpression.class)) {
+                if (!type.reportIfError(errorReporter, pair.proj2.implementation) && !type.isInstance(ErrorExpression.class)) {
                   InferenceVariable var = type instanceof InferenceReferenceExpression ? ((InferenceReferenceExpression) type).getVariable() : null;
                   errorReporter.report(var != null && !(var instanceof MetaInferenceVariable) ? var.getErrorInfer() : new TypeMismatchError(DocFactory.text("a class"), type, pair.proj2.implementation));
                 }
@@ -1609,7 +1609,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     Expression normExpr = result.expression.normalize(NormalizationMode.WHNF);
     ClassCallExpression classCallExpr = normExpr.cast(ClassCallExpression.class);
     if (classCallExpr == null) {
-      if (!normExpr.isError()) {
+      if (!normExpr.reportIfError(errorReporter, expr.getExpression())) {
         errorReporter.report(new TypecheckingError("Expected a class", expr.getExpression()));
       }
       return new TypecheckingResult(new ErrorExpression(), normExpr);
@@ -2342,7 +2342,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
               errorReporter.report(new ImplicitLambdaError(param.getReferableList().get(i), namesCount > 1 ? i : -1, param));
             }
             if (!CompareVisitor.compare(myEquations, CMP.EQ, argType, piParam.getTypeExpr(), Type.OMEGA, param.getType())) {
-              if (!argType.isError()) {
+              if (!argType.reportIfError(errorReporter, param.getType())) {
                 errorReporter.report(new TypeMismatchError("Type mismatch in an argument of the lambda", piParam.getTypeExpr(), argType, param.getType()));
                 return new Pair<>(null, true);
               }
@@ -2566,7 +2566,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     SigmaExpression sigmaExpr = exprResult.type.cast(SigmaExpression.class);
     if (sigmaExpr == null) {
       Expression stuck = exprResult.type.getStuckExpression();
-      if (stuck == null || !stuck.isError()) {
+      if (stuck == null || !stuck.reportIfError(errorReporter, expr)) {
         errorReporter.report(new TypeMismatchError(DocFactory.text("A sigma type"), exprResult.type, expr));
       }
       return null;

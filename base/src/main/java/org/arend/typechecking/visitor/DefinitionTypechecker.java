@@ -544,7 +544,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           } else {
             paramResult = paramType.subst(new SubstVisitor(substitution, LevelSubstitution.EMPTY));
           }
-        } else if (resultType == null || !resultType.isError()) {
+        } else if (resultType == null || !resultType.reportIfError(errorReporter, parameter)) {
           if (resultType == null) {
             errorReporter.report(new TypecheckingError("Expected a typed parameter", parameter));
           } else {
@@ -618,7 +618,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       if (resultType != null && skip == 0) {
         for (DependentLink link = param; link.hasNext(); link = link.getNext()) {
           if (!(resultType instanceof PiExpression)) {
-            if (!resultType.isError()) {
+            if (!resultType.reportIfError(errorReporter, parameter)) {
               errorReporter.report(new FieldTypeParameterError(fieldType, parameter));
               resultType = new ErrorExpression();
             }
@@ -1445,7 +1445,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
     } else if (kind == FunctionKind.TYPE) {
       if (!(typedDef.getResultType() instanceof UniverseExpression)) {
-        if (!typedDef.getResultType().isError()) {
+        if (!typedDef.getResultType().reportIfError(errorReporter, def.getResultType())) {
           errorReporter.report(new TypeMismatchError(new UniverseExpression(Sort.STD), typedDef.getResultType(), def.getResultType()));
         }
         typedDef.setKind(CoreFunctionDefinition.Kind.SFUNC);
@@ -1522,7 +1522,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
               break;
             }
             if (!typedDef.getResultType().findBinding(link)) {
-              if (!typedDef.getResultType().isError()) {
+              if (!typedDef.getResultType().reportIfError(errorReporter, def)) {
                 errorReporter.report(new TypecheckingError("Parameters of \\cons that do not occur in patterns must occur in the result type", def));
               }
               pattern = null;
@@ -2386,7 +2386,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
               type = new PiExpression(superType.getResultSort(), thisParam, superType.applyExpression(new ReferenceExpression(thisParam)));
             } else {
               if (!CompareVisitor.compare(DummyEquations.getInstance(), CMP.EQ, type.getCodomain(), superType.applyExpression(new ReferenceExpression(type.getParameters())), Type.OMEGA, def)) {
-                if (!type.getCodomain().isError() && !superType.getCodomain().isError()) {
+                if (!type.getCodomain().reportIfError(errorReporter, def) && !superType.getCodomain().reportIfError(errorReporter, def)) {
                   errorReporter.report(new TypecheckingError("The types of the field '" + field.getName() + "' differ in super classes '" + originalSuperClass.getName() + "' and '" + superClass.getName() + "'", def));
                 }
                 type = new PiExpression(type.getResultSort(), type.getParameters(), new ErrorExpression());
@@ -2849,7 +2849,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
     if (def instanceof Concrete.OverriddenField) {
       if (!CompareVisitor.compare(DummyEquations.getInstance(), CMP.LE, piType.getCodomain(), typedDef.getType().applyExpression(new ReferenceExpression(piType.getParameters())), Type.OMEGA, def)) {
-        if (!piType.getCodomain().isError() && !typedDef.getType().getCodomain().isError()) {
+        if (!piType.getCodomain().reportIfError(errorReporter, def) && !typedDef.getType().getCodomain().reportIfError(errorReporter, def)) {
           errorReporter.report(new TypecheckingError("The type of the overridden field is not compatible with the specified type", def));
         }
         ok = false;
@@ -2860,7 +2860,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
         PiExpression superType = superClass.getOverriddenType(typedDef);
         if (superType != null && !CompareVisitor.compare(DummyEquations.getInstance(), CMP.LE, piType.getCodomain(), superType.applyExpression(new ReferenceExpression(piType.getParameters())), Type.OMEGA, def)) {
-          if (!piType.getCodomain().isError() && !superType.getCodomain().isError()) {
+          if (!piType.getCodomain().reportIfError(errorReporter, def) && !superType.getCodomain().reportIfError(errorReporter, def)) {
             errorReporter.report(new TypecheckingError("The type of the field in super class '" + superClass.getName() + "' is not compatible with the specified type", def));
           }
           ok = false;

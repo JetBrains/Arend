@@ -163,7 +163,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
       myVisitor.checkExpr(arg, null);
       return null;
     }
-    if (arg == null || result instanceof TypecheckingResult && ((TypecheckingResult) result).expression.isError()) {
+    if (arg == null || result instanceof TypecheckingResult && ((TypecheckingResult) result).expression.reportIfError(myVisitor.getErrorReporter(), fun)) {
       myVisitor.checkArgument(arg, null, result, null);
       return result;
     }
@@ -235,7 +235,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
 
     if (!param.hasNext()) {
       TypecheckingResult result1 = result.toResult(myVisitor);
-      if (!result1.type.isError()) {
+      if (!result1.type.reportIfError(myVisitor.getErrorReporter(), fun)) {
         myVisitor.getErrorReporter().report(new NotPiType(argResult.expression, result1.type, fun));
       }
       return null;
@@ -927,7 +927,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
       expectedType.getPiParameters(expectedParams, true);
       if (expectedParams.size() > actualParams.size()) {
         TypecheckingResult result1 = result.toResult(myVisitor);
-        if (!result1.type.isError()) {
+        if (!result1.type.reportIfError(myVisitor.getErrorReporter(), expr)) {
           myVisitor.getErrorReporter().report(new TypeMismatchError(expectedType, result1.type, expr));
         }
         return null;

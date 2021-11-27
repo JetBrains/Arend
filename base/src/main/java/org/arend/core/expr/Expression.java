@@ -8,7 +8,9 @@ import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.pattern.ConstructorExpressionPattern;
 import org.arend.core.pattern.Pattern;
 import org.arend.core.subst.UnfoldVisitor;
+import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.core.expr.*;
+import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.variable.Variable;
 import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.context.param.DependentLink;
@@ -84,6 +86,12 @@ public abstract class Expression implements Body, CoreExpression {
   }
 
   @Override
+  public boolean reportIfError(@NotNull ErrorReporter errorReporter, @Nullable ConcreteSourceNode marker) {
+    ErrorExpression errorExpr = cast(ErrorExpression.class);
+    return errorExpr != null && errorExpr.reportIfError(errorReporter, marker);
+  }
+
+  @Override
   public void prettyPrint(StringBuilder builder, PrettyPrinterConfig config) {
     ToAbstractVisitor.convert(this, config).accept(new PrettyPrintVisitor(builder, 0, !config.isSingleLine()), new Precedence(Concrete.Expression.PREC));
   }
@@ -121,7 +129,7 @@ public abstract class Expression implements Body, CoreExpression {
       try {
         return accept(GetTypeVisitor.INSTANCE, null);
       } catch (IncorrectExpressionException e) {
-        return new ErrorExpression();
+        return new ErrorExpression(new TypeComputationError(null, this, null));
       }
     } else {
       return accept(GetTypeVisitor.NN_INSTANCE, null);

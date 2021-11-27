@@ -6,24 +6,30 @@ import org.arend.core.expr.visitor.ExpressionVisitor2;
 import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.InPlaceLevelSubstVisitor;
+import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.core.expr.CoreErrorExpression;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.error.LocalError;
+import org.arend.ext.error.TypecheckingError;
 import org.arend.typechecking.error.local.GoalError;
 import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class ErrorExpression extends Expression implements CoreErrorExpression, Type {
   private final Expression myExpression;
   private final boolean myGoal;
   private final boolean myUseExpression;
+  private LocalError myError;
 
   public ErrorExpression(Expression expression, LocalError error) {
     myExpression = expression;
     myGoal = error != null && error.level == GeneralError.Level.GOAL;
     myUseExpression = expression != null && error instanceof GoalError && ((GoalError) error).errors.isEmpty();
+    myError = error;
   }
 
   public ErrorExpression(LocalError error) {
@@ -34,18 +40,21 @@ public class ErrorExpression extends Expression implements CoreErrorExpression, 
     myExpression = expression;
     myGoal = isGoal;
     myUseExpression = useExpression && expression != null;
+    myError = null;
   }
 
   public ErrorExpression(Expression expression) {
     myExpression = expression;
     myGoal = false;
     myUseExpression = false;
+    myError = null;
   }
 
   public ErrorExpression() {
     myExpression = null;
     myGoal = false;
     myUseExpression = false;
+    myError = null;
   }
 
   public Expression getExpression() {
@@ -61,8 +70,21 @@ public class ErrorExpression extends Expression implements CoreErrorExpression, 
     return myGoal;
   }
 
+  @Override
   public boolean isError() {
     return !myGoal;
+  }
+
+  @Override
+  public boolean reportIfError(@NotNull ErrorReporter errorReporter, @Nullable ConcreteSourceNode marker) {
+    if (myError != null) {
+      if (myError instanceof TypecheckingError && ((TypecheckingError) myError).cause == null) {
+        ((TypecheckingError) myError).cause = marker;
+      }
+      errorReporter.report(myError);
+      myError = null;
+    }
+    return isError();
   }
 
   public boolean useExpression() {

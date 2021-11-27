@@ -2,11 +2,13 @@ package org.arend.extImpl;
 
 import org.arend.core.expr.Expression;
 import org.arend.core.subst.UnfoldVisitor;
+import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.expr.UncheckedExpression;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.ExpressionMapper;
 import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.variable.Variable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -38,6 +40,11 @@ public class UncheckedExpressionImpl implements UncheckedExpression {
   @Override
   public boolean isError() {
     return myExpression.isError();
+  }
+
+  @Override
+  public boolean reportIfError(@NotNull ErrorReporter errorReporter, @Nullable ConcreteSourceNode marker) {
+    return myExpression.reportIfError(errorReporter, marker);
   }
 
   @Override
