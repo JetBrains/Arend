@@ -329,4 +329,20 @@ public class ClassParametersTest extends TypeCheckingTestCase {
       "\\func f : Nat -> \\Type => R 0\n" +
       "\\func g : f 1 => \\new R");
   }
+
+  @Test
+  public void implicitParameter() {
+    typeCheckModule(
+      "\\class C (nn : Nat)\n" +
+      "\\record R {x : C} (y : Nat)\n" +
+      "\\func test => R {\\new C 3} 1");
+  }
+
+  @Test
+  public void implicitParameterNew() {
+    typeCheckModule(
+      "\\class C (nn : Nat)\n" +
+      "\\record R {x : C} (y : Nat)\n" +
+      "\\func test => \\new R {\\new C 3} 1");
+  }
 }

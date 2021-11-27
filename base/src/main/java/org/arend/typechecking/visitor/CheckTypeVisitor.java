@@ -1183,7 +1183,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       return checkMeta((Concrete.ReferenceExpression) baseClassExpr, expr.getBaseClassExpression() instanceof Concrete.AppExpression ? ((Concrete.AppExpression) expr.getBaseClassExpression()).getArguments() : Collections.emptyList(), expr.getCoclauses(), expectedType);
     }
 
-    baseClassExpr = desugarClassApp(expr.getBaseClassExpression(), false);
+    baseClassExpr = desugarClassApp(expr.getBaseClassExpression(), false, Collections.emptySet());
     if (baseClassExpr instanceof Concrete.ClassExtExpression) {
       Concrete.ClassExtExpression classExt = (Concrete.ClassExtExpression) baseClassExpr;
       classExt.getStatements().addAll(expr.getStatements());
@@ -1515,15 +1515,16 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
     TypecheckingResult exprResult = null;
     Set<ClassField> pseudoImplemented = Collections.emptySet();
-    Concrete.Expression classExpr = desugarClassApp(expr.getExpression() instanceof Concrete.ClassExtExpression ? ((Concrete.ClassExtExpression) expr.getExpression()).getBaseClassExpression() : expr.getExpression(), !(expr.getExpression() instanceof Concrete.ClassExtExpression));
-    if (classExpr instanceof Concrete.ClassExtExpression || classExpr instanceof Concrete.ReferenceExpression) {
-      if (expr.getExpression() instanceof Concrete.ClassExtExpression) {
-        if (classExpr instanceof Concrete.ClassExtExpression) {
-          ((Concrete.ClassExtExpression) classExpr).getStatements().addAll(((Concrete.ClassExtExpression) expr.getExpression()).getStatements());
-        } else {
-          classExpr = expr.getExpression();
-        }
+    Concrete.Expression classExpr = desugarClassApp(expr.getExpression() instanceof Concrete.ClassExtExpression ? ((Concrete.ClassExtExpression) expr.getExpression()).getBaseClassExpression() : expr.getExpression(), !(expr.getExpression() instanceof Concrete.ClassExtExpression), Collections.emptySet());
+    boolean isClassExtOrRef = classExpr instanceof Concrete.ClassExtExpression || classExpr instanceof Concrete.ReferenceExpression;
+    if (expr.getExpression() instanceof Concrete.ClassExtExpression) {
+      if (classExpr instanceof Concrete.ClassExtExpression) {
+        ((Concrete.ClassExtExpression) classExpr).getStatements().addAll(((Concrete.ClassExtExpression) expr.getExpression()).getStatements());
+      } else {
+        classExpr = expr.getExpression();
       }
+    }
+    if (isClassExtOrRef) {
       if (expectedType != null) {
         expectedType = expectedType.normalize(NormalizationMode.WHNF);
       }
@@ -1575,15 +1576,21 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     if (exprResult == null) {
       Concrete.Expression baseClassExpr;
       List<Concrete.ClassFieldImpl> classFieldImpls;
-      if (expr.getExpression() instanceof Concrete.ClassExtExpression) {
-        baseClassExpr = ((Concrete.ClassExtExpression) expr.getExpression()).getBaseClassExpression();
-        classFieldImpls = ((Concrete.ClassExtExpression) expr.getExpression()).getStatements();
+      if (classExpr instanceof Concrete.ClassExtExpression) {
+        baseClassExpr = ((Concrete.ClassExtExpression) classExpr).getBaseClassExpression();
+        classFieldImpls = ((Concrete.ClassExtExpression) classExpr).getStatements();
       } else {
-        baseClassExpr = expr.getExpression();
+        baseClassExpr = classExpr;
         classFieldImpls = Collections.emptyList();
       }
 
-      TypecheckingResult typeCheckedBaseClass = baseClassExpr instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) baseClassExpr).getReferent() == Prelude.DEP_ARRAY.getRef() ? tResultToResult(null, visitReference((Concrete.ReferenceExpression) baseClassExpr, true), baseClassExpr) : checkExpr(baseClassExpr, null);
+      TypecheckingResult typeCheckedBaseClass = baseClassExpr instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) baseClassExpr).getReferent() == Prelude.DEP_ARRAY.getRef()
+        ? tResultToResult(null, visitReference((Concrete.ReferenceExpression) baseClassExpr, true), baseClassExpr)
+        : baseClassExpr instanceof Concrete.ReferenceExpression
+          ? visitReference((Concrete.ReferenceExpression) baseClassExpr, null, false)
+          : baseClassExpr instanceof Concrete.AppExpression
+            ? visitApp((Concrete.AppExpression) baseClassExpr, null, false)
+            : checkExpr(baseClassExpr, null);
       if (typeCheckedBaseClass == null) {
         return null;
       }
@@ -1848,6 +1855,10 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   @Override
   public TypecheckingResult visitReference(Concrete.ReferenceExpression expr, Expression expectedType) {
+    return visitReference(expr, expectedType, true);
+  }
+
+  private TypecheckingResult visitReference(Concrete.ReferenceExpression expr, Expression expectedType, boolean inferTailImplicits) {
     if (expr.getReferent() instanceof MetaReferable) {
       return checkMeta(expr, Collections.emptyList(), null, expectedType);
     }
@@ -1857,7 +1868,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       if (expectedType != null) {
         expectedType = expectedType.normalizePi(parameters);
       }
-      Concrete.Expression dExpr = desugarClassApp(expr, Collections.emptyList(), expr, parameters, true);
+      Concrete.Expression dExpr = desugarClassApp(expr, Collections.emptyList(), expr, parameters, inferTailImplicits, Collections.emptySet());
       if (dExpr != expr) {
         return checkExpr(dExpr, expectedType);
       }
@@ -2892,32 +2903,17 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     return null;
   }
 
-  private void getNotImplementedFields(ClassDefinition origClassDef, ClassDefinition classDef, List<ClassField> result, Set<ClassDefinition> visited) {
-    if (!visited.add(classDef)) {
-      return;
-    }
-
-    for (ClassDefinition superClass : classDef.getSuperClasses()) {
-      getNotImplementedFields(origClassDef, superClass, result, visited);
-    }
-    for (ClassField field : classDef.getPersonalFields()) {
-      if (!origClassDef.isImplemented(field)) {
-        result.add(field);
-      }
-    }
-  }
-
-  Concrete.Expression desugarClassApp(Concrete.Expression expr, boolean inferTailImplicits) {
+  Concrete.Expression desugarClassApp(Concrete.Expression expr, boolean inferTailImplicits, Set<ClassField> implemented) {
     if (expr instanceof Concrete.AppExpression && ((Concrete.AppExpression) expr).getFunction() instanceof Concrete.ReferenceExpression) {
-      return desugarClassApp((Concrete.ReferenceExpression) ((Concrete.AppExpression) expr).getFunction(), ((Concrete.AppExpression) expr).getArguments(), expr, null, inferTailImplicits);
+      return desugarClassApp((Concrete.ReferenceExpression) ((Concrete.AppExpression) expr).getFunction(), ((Concrete.AppExpression) expr).getArguments(), expr, null, inferTailImplicits, implemented);
     } else if (inferTailImplicits && expr instanceof Concrete.ReferenceExpression) {
-      return desugarClassApp((Concrete.ReferenceExpression) expr, Collections.emptyList(), expr, null, true);
+      return desugarClassApp((Concrete.ReferenceExpression) expr, Collections.emptyList(), expr, null, true, implemented);
     } else {
       return expr;
     }
   }
 
-  private Concrete.Expression desugarClassApp(Concrete.ReferenceExpression fun, List<Concrete.Argument> arguments, Concrete.Expression expr, List<SingleDependentLink> expectedParams, boolean inferTailImplicits) {
+  private Concrete.Expression desugarClassApp(Concrete.ReferenceExpression fun, List<Concrete.Argument> arguments, Concrete.Expression expr, List<SingleDependentLink> expectedParams, boolean inferTailImplicits, Set<ClassField> implemented) {
     Referable ref = fun.getReferent();
     if (!(ref instanceof TCDefReferable)) {
       return expr;
@@ -2931,7 +2927,12 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     // Convert class call with arguments to class extension.
     List<Concrete.ClassFieldImpl> classFieldImpls = new ArrayList<>();
     List<ClassField> notImplementedFields = new ArrayList<>();
-    getNotImplementedFields(classDef, classDef, notImplementedFields, new HashSet<>());
+    for (ClassField field : classDef.getFields()) {
+      if (!classDef.isImplemented(field)) {
+        notImplementedFields.add(field);
+      }
+    }
+
     int j = 0;
     for (int i = 0; i < arguments.size(); i++, j++) {
       if (j >= notImplementedFields.size()) {
@@ -2962,6 +2963,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
     Object data = arguments.isEmpty() ? fun.getData() : arguments.get(arguments.size() - 1).getExpression().getData();
     if (inferTailImplicits) {
+      notImplementedFields.removeAll(implemented);
       int maxIndex;
       if (expectedParams != null) {
         int numberOfImplicitParams = 0;
@@ -3016,6 +3018,10 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   @Override
   public TypecheckingResult visitApp(Concrete.AppExpression expr, Expression expectedType) {
+    return visitApp(expr, expectedType, true);
+  }
+
+  private TypecheckingResult visitApp(Concrete.AppExpression expr, Expression expectedType, boolean inferTailImplicits) {
     if (expr.getFunction() instanceof Concrete.ReferenceExpression) {
       Concrete.ReferenceExpression refExpr = (Concrete.ReferenceExpression) expr.getFunction();
       if (refExpr.getReferent() instanceof TCDefReferable && ((TCDefReferable) refExpr.getReferent()).getTypechecked() instanceof ClassDefinition) {
@@ -3023,7 +3029,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         if (expectedType != null) {
           expectedType = expectedType.normalizePi(params);
         }
-        Concrete.Expression dExpr = desugarClassApp(refExpr, expr.getArguments(), expr, params, true);
+        Concrete.Expression dExpr = desugarClassApp(refExpr, expr.getArguments(), expr, params, inferTailImplicits, Collections.emptySet());
         if (dExpr != expr) {
           return checkExpr(dExpr, expectedType);
         }

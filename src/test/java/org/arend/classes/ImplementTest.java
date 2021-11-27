@@ -649,18 +649,19 @@ public class ImplementTest extends TypeCheckingTestCase {
       "\\instance I : C 0\n" +
       "\\class D {c : C}\n" +
       "\\func f : D \\cowith\n" +
-      "  | c => \\new C 0");
+      "  | c => \\new C 1\n" +
+      "\\func test : f.c.nn = 1 => idp");
   }
 
   @Test
-  public void implicitArgumentError() {
+  public void implicitArgumentTest3() {
     typeCheckModule(
       "\\class C\n" +
       "  | nn : Nat\n" +
       "\\instance I : C 0\n" +
       "\\class D {c : C}\n" +
-      "\\func f : D \\cowith\n" +
-      "  | c => \\new C 1", 1);
+      "\\func f : D {\\new C 1} \\cowith\n" +
+      "\\func test : f.c.nn = 1 => idp");
   }
 
   @Ignore

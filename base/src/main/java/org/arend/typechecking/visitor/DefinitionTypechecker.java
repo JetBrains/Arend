@@ -886,7 +886,18 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
       return new Pair<>(new NewExpression(null, classCall), type);
     } else {
-      TypecheckingResult result = typechecker.finalCheckExpr(new Concrete.NewExpression(def.getData(), Concrete.ClassExtExpression.make(def.getData(), typechecker.desugarClassApp(resultType, true), new Concrete.Coclauses(def.getData(), classFieldImpls))), null);
+      Set<ClassField> implemented = new HashSet<>();
+      for (Concrete.ClassFieldImpl impl : classFieldImpls) {
+        Referable ref = impl.getImplementedField();
+        Definition implDef = ref instanceof TCDefReferable ? ((TCDefReferable) ref).getTypechecked() : null;
+        if (implDef instanceof ClassField) {
+          implemented.add((ClassField) implDef);
+        } else if (implDef instanceof ClassDefinition) {
+          implemented.addAll(((ClassDefinition) implDef).getFields());
+        }
+      }
+
+      TypecheckingResult result = typechecker.finalCheckExpr(new Concrete.NewExpression(def.getData(), Concrete.ClassExtExpression.make(def.getData(), typechecker.desugarClassApp(resultType, true, implemented), new Concrete.Coclauses(def.getData(), classFieldImpls))), null);
       if (result == null) return null;
       if (!(result.type instanceof ClassCallExpression)) {
         throw new IllegalStateException();
