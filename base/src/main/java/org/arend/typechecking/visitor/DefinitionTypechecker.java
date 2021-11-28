@@ -706,9 +706,12 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     return def.getBody() instanceof Concrete.TermFunctionBody && !def.isRecursive() && def.getKind() != FunctionKind.LEVEL && (!(def.getBody().getTerm() instanceof Concrete.CaseExpression) || ((Concrete.CaseExpression) def.getBody().getTerm()).getResultType() != null);
   }
 
-  private static void addFieldInstance(ClassField field, List<LocalInstance> instances) {
-    if (field.getResultType() instanceof ClassCallExpression) {
-      ClassCallExpression classCall = (ClassCallExpression) field.getResultType();
+  private static void addFieldInstance(ClassField field, ClassDefinition classDef, List<LocalInstance> instances, boolean onlyOverridden) {
+    PiExpression overriddenType = classDef.getOverriddenType(field);
+    if (onlyOverridden && overriddenType == null) return;
+    Expression fieldType = overriddenType != null ? overriddenType.getCodomain() : field.getResultType();
+    if (fieldType instanceof ClassCallExpression) {
+      ClassCallExpression classCall = (ClassCallExpression) fieldType;
       if (!classCall.getDefinition().isRecord()) {
         instances.add(new LocalInstance(classCall, field));
       }
@@ -723,7 +726,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
     List<LocalInstance> instances = new ArrayList<>();
     for (ClassField field : ((ClassDefinition) classDef).getFields()) {
-      addFieldInstance(field, instances);
+      addFieldInstance(field, (ClassDefinition) classDef, instances, false);
     }
 
     addLocalInstances(instances, thisParam, (ClassDefinition) classDef, false, localInstancePool);
@@ -2414,7 +2417,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
     List<LocalInstance> localInstances = new ArrayList<>();
     for (ClassField field : typedDef.getFields()) {
-      addFieldInstance(field, localInstances);
+      addFieldInstance(field, typedDef, localInstances, false);
     }
 
     // Process fields and implementations
@@ -2443,7 +2446,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             previousField.setNumberOfParameters(Concrete.getNumberOfParameters(field.getParameters()));
           }
 
-          addFieldInstance(previousField != null ? previousField : (ClassField) field.getData().getTypechecked(), localInstances);
+          addFieldInstance(previousField != null ? previousField : (ClassField) field.getData().getTypechecked(), typedDef, localInstances, false);
         }
         if (field.isCoerce()) {
           ClassField classField = (ClassField) field.getData().getTypechecked();
@@ -2537,6 +2540,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         ClassField field = typecheckClassField((Concrete.OverriddenField) element, typedDef, localInstances, hasClassifyingField);
         if (field == null) {
           classOk = false;
+        } else if (myNewDef) {
+          addFieldInstance(field, typedDef, localInstances, true);
         }
       } else {
         throw new IllegalStateException();
