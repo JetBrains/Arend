@@ -441,6 +441,6 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
       "\\instance c : C\n" +
       "  | f => 0\n" +
       "  \\where\n" +
-      "    \\func test => f");
+      "    \\func test => f", 1);
   }
 }

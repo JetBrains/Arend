@@ -113,7 +113,6 @@ public class InstanceProviderSet {
       if (groupRef.getKind() == GlobalReferable.Kind.COCLAUSE_FUNCTION) continue;
       predicate.used = true;
       SimpleInstanceProvider instanceProvider = predicate.instanceProvider;
-      predicate.test(size, groupRef);
       processGroup(subgroup, parentScope, predicate);
 
       if (!predicate.instanceProvider.isEmpty()) {
