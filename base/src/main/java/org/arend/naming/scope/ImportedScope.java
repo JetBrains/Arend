@@ -1,6 +1,7 @@
 package org.arend.naming.scope;
 
 import org.arend.ext.module.ModulePath;
+import org.arend.module.ModuleLocation;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.reference.ModuleReferable;
 import org.arend.naming.reference.Referable;
@@ -21,6 +22,11 @@ public class ImportedScope implements Scope {
     myExpectedNamesTree = new Tree();
     myProvider = provider;
     myElementsScope = null;
+
+    ModuleLocation location = group.getReferable().getLocation();
+    if (location != null) {
+      myExpectedNamesTree.addPath(location.getModulePath().toList());
+    }
 
     for (NamespaceCommand command : group.getNamespaceCommands()) {
       if (command.getKind() == NamespaceCommand.Kind.IMPORT) {
