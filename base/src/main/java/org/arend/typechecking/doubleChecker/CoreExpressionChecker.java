@@ -879,13 +879,19 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
   public Expression visitArray(ArrayExpression expr, Expression expectedType) {
     checkLevels(expr.getLevels(), Prelude.DEP_ARRAY, expr);
     Expression length;
+    Expression tailLength = null;
     if (expr.getTail() == null) {
       length = new SmallIntegerExpression(expr.getElements().size());
     } else {
-      length = FieldCallExpression.make(Prelude.ARRAY_LENGTH, expr.getTail());
-      for (Expression ignored : expr.getElements()) {
-        length = Suc(length);
+      if (expr.getElements().isEmpty()) {
+        throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Empty array with a tail", mySourceNode), expr));
       }
+      tailLength = FieldCallExpression.make(Prelude.ARRAY_LENGTH, expr.getTail());
+      int s = expr.getElements().size() - 1;
+      for (int i = 0; i < s; i++) {
+        tailLength = Suc(tailLength);
+      }
+      length = Suc(tailLength);
     }
     Sort sort = Sort.STD.subst(expr.getLevels());
     expr.getElementsType().accept(this, new PiExpression(sort.succ(), new TypedSingleDependentLink(true, null, new DataCallExpression(Prelude.FIN, LevelPair.PROP, Collections.singletonList(length))), new UniverseExpression(sort)));
@@ -894,7 +900,8 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       elements.get(i).accept(this, AppExpression.make(expr.getElementsType(), new SmallIntegerExpression(i), true));
     }
     if (expr.getTail() != null) {
-      expr.getTail().accept(this, new ClassCallExpression(Prelude.DEP_ARRAY, expr.getLevels(), Collections.singletonMap(Prelude.ARRAY_ELEMENTS_TYPE, expr.getElementsType()), new Sort(expr.getPLevel(), expr.getHLevel().max(new Level(0))), UniverseKind.NO_UNIVERSES));
+      TypedSingleDependentLink lamParam = new TypedSingleDependentLink(true, "j", new DataCallExpression(Prelude.FIN, LevelPair.PROP, Collections.singletonList(tailLength)));
+      expr.getTail().accept(this, new ClassCallExpression(Prelude.DEP_ARRAY, expr.getLevels(), Collections.singletonMap(Prelude.ARRAY_ELEMENTS_TYPE, new LamExpression(sort.succ(), lamParam, AppExpression.make(expr.getElementsType(), Suc(new ReferenceExpression(lamParam)), true))), new Sort(expr.getPLevel(), expr.getHLevel().max(new Level(0))), UniverseKind.NO_UNIVERSES));
     }
     return check(expectedType, expr.getType(), expr);
   }
