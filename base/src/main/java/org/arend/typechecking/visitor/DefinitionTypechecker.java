@@ -1482,7 +1482,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         TypedSingleDependentLink thisBinding = new TypedSingleDependentLink(false, "this", thisType, true);
         thisType.setSort(classDef.computeSort(levels, defaultImpl, thisBinding));
         thisType.updateHasUniverses();
-        Expression result = DefCallResult.makeTResult(new Concrete.ReferenceExpression(def.getData().getData(), def.getData()), typedDef, levels).applyExpression(new ReferenceExpression(thisBinding), false, errorReporter, def).toResult(typechecker).expression;
+        Expression result = DefCallResult.makeTResult(new Concrete.ReferenceExpression(def.getData().getData(), def.getData()), typedDef, levels).applyExpression(new ReferenceExpression(thisBinding), false, typechecker, def).toResult(typechecker).expression;
         Expression actualType = result.getType();
         Expression fieldType = ((ClassField) fieldDef).getType().applyExpression(new ReferenceExpression(thisBinding));
         if (actualType.isLessOrEquals(fieldType, DummyEquations.getInstance(), def)) {

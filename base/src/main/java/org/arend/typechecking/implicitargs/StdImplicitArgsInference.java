@@ -114,14 +114,14 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
               } else {
                 instance = instanceResult.expression;
               }
-              result = result.applyExpression(instance, defCallResult.getParameter().isExplicit(), myVisitor.getErrorReporter(), expr);
+              result = result.applyExpression(instance, defCallResult.getParameter().isExplicit(), myVisitor, expr);
               substitution.add(parameter, instance);
               i++;
               continue;
             }
 
             // Otherwise, generate type class inference variable
-            infVar = new TypeClassInferenceVariable(parameter.getName(), type, classDef, kind == Definition.TypeClassParameterKind.ONLY_LOCAL, defCallResult.getDefCall(), holeExpr, myVisitor.getDefinition(), myVisitor.getAllBindings());
+            infVar = new TypeClassInferenceVariable(parameter.getName(), type, classDef, defCallResult.getDefinition() instanceof ClassField, kind == Definition.TypeClassParameterKind.ONLY_LOCAL, defCallResult.getDefCall(), holeExpr, myVisitor.getDefinition(), myVisitor.getAllBindings());
           }
         }
       }
@@ -151,7 +151,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
       } else {
         argument = InferenceReferenceExpression.make(infVar, myVisitor.getEquations());
       }
-      result = result.applyExpression(argument, parameter.isExplicit(), myVisitor.getErrorReporter(), expr);
+      result = result.applyExpression(argument, parameter.isExplicit(), myVisitor, expr);
       substitution.add(parameter, argument);
       i++;
     }
@@ -177,7 +177,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
         TypecheckingResult argResult;
         if (defCallResult.getArguments().isEmpty()) {
           Expression binding = InferenceReferenceExpression.make(new FunctionInferenceVariable(Prelude.PATH_CON, Prelude.PATH_CON.getDataTypeParameters(), 1, new UniverseExpression(sort0), fun, myVisitor.getAllBindings()), myVisitor.getEquations());
-          result = result.applyExpression(new LamExpression(sort, lamParam, binding), true, myVisitor.getErrorReporter(), fun);
+          result = result.applyExpression(new LamExpression(sort, lamParam, binding), true, myVisitor, fun);
           argResult = myVisitor.checkArgument(arg, new PiExpression(sort, lamParam, binding), result, null);
         } else {
           argResult = myVisitor.checkArgument(arg, new PiExpression(sort, lamParam, AppExpression.make(defCallResult.getArguments().get(0), new ReferenceExpression(lamParam), true)), result, null);
@@ -204,10 +204,10 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
         if (tcResult.type instanceof DataCallExpression && ((DataCallExpression) tcResult.type).getDefinition() == Prelude.PATH) {
           List<Expression> args = ((DataCallExpression) tcResult.type).getDefCallArguments();
           result = DefCallResult.makeTResult(new Concrete.ReferenceExpression(fun.getData(), Prelude.AT.getRef()), Prelude.AT, ((DataCallExpression) tcResult.type).getLevels())
-            .applyExpression(args.get(0), false, myVisitor.getErrorReporter(), fun)
-            .applyExpression(args.get(1), false, myVisitor.getErrorReporter(), fun)
-            .applyExpression(args.get(2), false, myVisitor.getErrorReporter(), fun)
-            .applyExpression(tcResult.expression, true, myVisitor.getErrorReporter(), fun);
+            .applyExpression(args.get(0), false, myVisitor, fun)
+            .applyExpression(args.get(1), false, myVisitor, fun)
+            .applyExpression(args.get(2), false, myVisitor, fun)
+            .applyExpression(tcResult.expression, true, myVisitor, fun);
           param = result.getParameter();
         } else {
           coercedResult = CoerceData.coerceToKey(tcResult, new CoerceData.PiKey(), fun, myVisitor);
@@ -250,6 +250,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
       DefCallResult defCallResult = (DefCallResult) result;
       ClassField field = (ClassField) defCallResult.getDefinition();
       ClassCallExpression classCall = argResult.type.normalize(NormalizationMode.WHNF).cast(ClassCallExpression.class);
+      defCallResult.checkField(myVisitor, argResult.expression, classCall);
       PiExpression piType = null;
       if (classCall != null) {
         piType = classCall.getDefinition().getOverriddenType(field, defCallResult.getLevels());
@@ -267,7 +268,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
       }
     }
 
-    return result.applyExpression(argResult.expression, isExplicit, myVisitor.getErrorReporter(), fun);
+    return result.applyExpression(argResult.expression, isExplicit, myVisitor, fun);
   }
 
   private void typecheckDeferredArgument(Pair<InferenceVariable, Concrete.Expression> pair, TResult result) {
@@ -337,13 +338,13 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
 
     if (definition == Prelude.EMPTY_ARRAY) {
       if (elementsType != null) {
-        result = result.applyExpression(elementsType, false, myVisitor.getErrorReporter(), fun);
+        result = result.applyExpression(elementsType, false, myVisitor, fun);
       }
     } else {
       if (length != null) {
-        result = result.applyExpression(length, false, myVisitor.getErrorReporter(), fun);
+        result = result.applyExpression(length, false, myVisitor, fun);
         if (elementsType != null) {
-          result = result.applyExpression(elementsType, false, myVisitor.getErrorReporter(), fun);
+          result = result.applyExpression(elementsType, false, myVisitor, fun);
         }
       }
     }
@@ -398,8 +399,8 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
           if (length == null) length = classCall == null ? null : classCall.getAbsImplementationHere(Prelude.ARRAY_LENGTH);
           if (length == null) length = FieldCallExpression.make(Prelude.ARRAY_LENGTH, result2.expression);
           result = result
-            .applyExpression(length, false, myVisitor.getErrorReporter(), fun)
-            .applyExpression(new LamExpression(sort0, new TypedSingleDependentLink(true, null, new DataCallExpression(Prelude.FIN, LevelPair.PROP, new SingletonList<>(Suc(length)))), constType), false, myVisitor.getErrorReporter(), fun);
+            .applyExpression(length, false, myVisitor, fun)
+            .applyExpression(new LamExpression(sort0, new TypedSingleDependentLink(true, null, new DataCallExpression(Prelude.FIN, LevelPair.PROP, new SingletonList<>(Suc(length)))), constType), false, myVisitor, fun);
         }
       }
 
@@ -414,8 +415,8 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
           if (new CompareVisitor(myVisitor.getEquations(), CMP.LE, fun).normalizedCompare(actualElementsType, elementsType, null, false)) {
             checked = true;
             result = result
-              .applyExpression(length, false, myVisitor.getErrorReporter(), fun)
-              .applyExpression(new LamExpression(sort0, new TypedSingleDependentLink(true, null, new DataCallExpression(Prelude.FIN, LevelPair.PROP, new SingletonList<>(Suc(length)))), result1.type), false, myVisitor.getErrorReporter(), fun);
+              .applyExpression(length, false, myVisitor, fun)
+              .applyExpression(new LamExpression(sort0, new TypedSingleDependentLink(true, null, new DataCallExpression(Prelude.FIN, LevelPair.PROP, new SingletonList<>(Suc(length)))), result1.type), false, myVisitor, fun);
           }
         }
 
@@ -440,8 +441,8 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
       }
 
       result = result
-        .applyExpression(result1.expression, true, myVisitor.getErrorReporter(), arguments.get(index).expression)
-        .applyExpression(result2.expression, true, myVisitor.getErrorReporter(), arguments.get(index2).expression);
+        .applyExpression(result1.expression, true, myVisitor, arguments.get(index).expression)
+        .applyExpression(result2.expression, true, myVisitor, arguments.get(index2).expression);
       index = index2 + 1;
     } else if (definition == Prelude.ARRAY_CONS && elementsType == null && index2 == arguments.size() && index < arguments.size() && defCallResult != null && defCallResult.getArguments().isEmpty()) {
       TypecheckingResult result1 = myVisitor.checkExpr(arguments.get(index).expression, null);
@@ -579,7 +580,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
 
             result = DefCallResult.makeTResult(defCallResult.getDefCall(), defCallResult.getDefinition(), dataCall.getLevels());
             if (!args1.isEmpty()) {
-              result = ((DefCallResult) result).applyExpressions(args1);
+              result = ((DefCallResult) result).applyExpressions(args1, myVisitor);
             }
           }
         }
@@ -652,7 +653,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
           }
           InferenceVariable var = new ExpressionInferenceVariable(parameter.getTypeExpr(), argument.getExpression(), myVisitor.getAllBindings(), false);
           deferredArguments.put(current + numberOfImplicitArguments, new Pair<>(var, argument.getExpression()));
-          result = result.applyExpression(new InferenceReferenceExpression(var), parameter.isExplicit(), myVisitor.getErrorReporter(), fun);
+          result = result.applyExpression(new InferenceReferenceExpression(var), parameter.isExplicit(), myVisitor, fun);
           current++;
         }
 

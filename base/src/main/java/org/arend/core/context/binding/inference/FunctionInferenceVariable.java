@@ -2,6 +2,7 @@ package org.arend.core.context.binding.inference;
 
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.param.DependentLink;
+import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Definition;
 import org.arend.core.expr.Expression;
 import org.arend.term.concrete.Concrete;
@@ -20,6 +21,11 @@ public class FunctionInferenceVariable extends InferenceVariable {
     myDefinition = definition;
     myParameter = parameter;
     myIndex = index;
+  }
+
+  @Override
+  public boolean compareClassCallsExactly() {
+    return myDefinition instanceof ClassField;
   }
 
   @Override

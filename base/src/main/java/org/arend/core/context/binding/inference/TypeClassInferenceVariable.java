@@ -16,14 +16,16 @@ import java.util.Set;
 
 public class TypeClassInferenceVariable extends InferenceVariable {
   private final ClassDefinition myClassDef;
+  private final boolean myExactCompare;
   private final boolean myOnlyLocal;
   private Expression myClassifyingExpression;
   private final RecursiveInstanceHoleExpression myRecursiveInstanceHoleExpression;
   private final Definition myDefinition;
 
-  public TypeClassInferenceVariable(String name, Expression type, ClassDefinition classDef, boolean onlyLocal, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveInstanceHoleExpression, Definition definition, Set<Binding> bounds) {
+  public TypeClassInferenceVariable(String name, Expression type, ClassDefinition classDef, boolean exactCompare, boolean onlyLocal, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveInstanceHoleExpression, Definition definition, Set<Binding> bounds) {
     super(name, type, sourceNode, bounds);
     myClassDef = classDef;
+    myExactCompare = exactCompare;
     myOnlyLocal = onlyLocal;
     myRecursiveInstanceHoleExpression = recursiveInstanceHoleExpression;
     myDefinition = definition;
@@ -31,6 +33,11 @@ public class TypeClassInferenceVariable extends InferenceVariable {
 
   public ClassDefinition getClassDefinition() {
     return myClassDef;
+  }
+
+  @Override
+  public boolean compareClassCallsExactly() {
+    return myExactCompare;
   }
 
   @Override

@@ -34,6 +34,10 @@ public abstract class InferenceVariable implements Variable, CoreInferenceVariab
     myListeners = Collections.emptyList();
   }
 
+  public boolean compareClassCallsExactly() {
+    return false;
+  }
+
   @NotNull
   @Override
   public String getName() {

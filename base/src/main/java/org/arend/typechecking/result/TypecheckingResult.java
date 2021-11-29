@@ -13,7 +13,6 @@ import org.arend.ext.core.context.CoreEvaluatingBinding;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
-import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.typechecking.TypedExpression;
 import org.arend.term.concrete.Concrete;
@@ -53,11 +52,11 @@ public class TypecheckingResult implements TResult, TypedExpression {
   }
 
   @Override
-  public TypecheckingResult applyExpression(Expression expr, boolean isExplicit, ErrorReporter errorReporter, Concrete.SourceNode sourceNode) {
+  public TypecheckingResult applyExpression(Expression expr, boolean isExplicit, CheckTypeVisitor typechecker, Concrete.SourceNode sourceNode) {
     expression = AppExpression.make(expression, expr, isExplicit);
     Expression newType = type.applyExpression(expr);
     if (newType == null) {
-      errorReporter.report(new TypecheckingError("Expected an expression of a pi type", sourceNode));
+      typechecker.getErrorReporter().report(new TypecheckingError("Expected an expression of a pi type", sourceNode));
     } else {
       type = newType;
     }

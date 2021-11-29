@@ -3,6 +3,7 @@ package org.arend.typechecking.result;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.context.param.TypedDependentLink;
+import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Definition;
 import org.arend.core.expr.*;
 import org.arend.core.expr.visitor.CompareVisitor;
@@ -12,7 +13,8 @@ import org.arend.core.subst.Levels;
 import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.ops.CMP;
-import org.arend.ext.error.ErrorReporter;
+import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.ext.error.TypecheckingError;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.PathEndpointMismatchError;
@@ -65,9 +67,32 @@ public class DefCallResult implements TResult {
         : myDefinition.getDefCall(myLevels, myArguments);
   }
 
+  public boolean checkField(CheckTypeVisitor typechecker, Expression expr, Expression type) {
+    if (!(type instanceof ClassCallExpression)) {
+      // typechecker.getErrorReporter().report(new TypeComputationError(null, expr, myDefCall));
+      return true;
+    }
+    if (!myLevels.compare(((ClassCallExpression) type).getLevels(((ClassField) myDefinition).getParentClass()), CMP.LE, typechecker.getEquations(), myDefCall)) {
+      typechecker.getErrorReporter().report(new TypecheckingError("Cannot compare the type of the argument", myDefCall));
+      return false;
+    } else {
+      return true;
+    }
+  }
+
+  private boolean checkField(CheckTypeVisitor typechecker) {
+    if (!(myDefinition instanceof ClassField)) return true;
+    Expression type = myArguments.get(0).getType();
+    if (type != null) {
+      type = type.normalize(NormalizationMode.WHNF);
+    }
+    return checkField(typechecker, myArguments.get(0), type);
+  }
+
   @Override
   public TypecheckingResult toResult(CheckTypeVisitor typechecker) {
     if (myParameters.isEmpty()) {
+      checkField(typechecker);
       return new TypecheckingResult(getCoreDefCall(), myResultType);
     }
 
@@ -103,6 +128,7 @@ public class DefCallResult implements TResult {
       expression = new LamExpression(codSort, parameters.get(i), expression);
       type = new PiExpression(codSort, parameters.get(i), type);
     }
+    checkField(typechecker);
     return new TypecheckingResult(expression, type);
   }
 
@@ -112,17 +138,19 @@ public class DefCallResult implements TResult {
   }
 
   @Override
-  public TResult applyExpression(Expression expression, boolean isExplicit, ErrorReporter errorReporter, Concrete.SourceNode sourceNode) {
+  public TResult applyExpression(Expression expression, boolean isExplicit, CheckTypeVisitor typechecker, Concrete.SourceNode sourceNode) {
     int size = myParameters.size();
     myArguments.add(expression);
     ExprSubstitution subst = new ExprSubstitution();
     subst.add(myParameters.get(0), expression);
     myParameters = DependentLink.Helper.subst(myParameters.subList(1, size), subst, LevelSubstitution.EMPTY);
     myResultType = myResultType.subst(subst, LevelSubstitution.EMPTY);
-    return size > 1 ? this : new TypecheckingResult(getCoreDefCall(), myResultType);
+    if (size > 1) return this;
+    checkField(typechecker);
+    return new TypecheckingResult(getCoreDefCall(), myResultType);
   }
 
-  public TResult applyExpressions(List<? extends Expression> expressions) {
+  public TResult applyExpressions(List<? extends Expression> expressions, CheckTypeVisitor typechecker) {
     int size = myParameters.size();
     List<? extends Expression> args = expressions.size() <= size ? expressions : expressions.subList(0, size);
     myArguments.addAll(args);
@@ -134,7 +162,9 @@ public class DefCallResult implements TResult {
     myResultType = myResultType.subst(subst, LevelSubstitution.EMPTY);
 
     assert expressions.size() <= size;
-    return expressions.size() < size ? this : new TypecheckingResult(getCoreDefCall(), myResultType);
+    if (expressions.size() < size) return this;
+    checkField(typechecker);
+    return new TypecheckingResult(getCoreDefCall(), myResultType);
   }
 
   public TResult applyPathArgument(Expression argument, CheckTypeVisitor visitor, Concrete.SourceNode sourceNode) {

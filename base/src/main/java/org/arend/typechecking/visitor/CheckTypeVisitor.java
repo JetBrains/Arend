@@ -1464,7 +1464,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           }
         }
       } else {
-        result = new TypecheckingResult(InferenceReferenceExpression.make(new TypeClassInferenceVariable(field.getName(), type, classDef, false, implBody, holeExpr, myDefinition, getAllBindings()), myEquations), type);
+        result = new TypecheckingResult(InferenceReferenceExpression.make(new TypeClassInferenceVariable(field.getName(), type, classDef, false, false, implBody, holeExpr, myDefinition, getAllBindings()), myEquations), type);
       }
       return result;
     }
