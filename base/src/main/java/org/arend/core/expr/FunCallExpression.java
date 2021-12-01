@@ -6,6 +6,7 @@ import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.subst.Levels;
+import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CoreFunCallExpression;
 import org.arend.prelude.Prelude;
@@ -87,6 +88,11 @@ public class FunCallExpression extends LeveledDefCallExpression implements CoreF
   @Override
   public boolean canBeConstructor() {
     return !(getDefinition().isSFunc() || getDefinition().getBody() == null && getDefinition().status().isOK());
+  }
+
+  @Override
+  public boolean isBoxed() {
+    return getDefinition().getKind() == CoreFunctionDefinition.Kind.LEMMA;
   }
 
   @Override

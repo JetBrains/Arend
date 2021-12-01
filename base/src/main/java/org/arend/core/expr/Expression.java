@@ -559,6 +559,10 @@ public abstract class Expression implements Body, CoreExpression {
     return true;
   }
 
+  public boolean isBoxed() {
+    return false;
+  }
+
   @NotNull
   @Override
   public Expression getUnderlyingExpression() {

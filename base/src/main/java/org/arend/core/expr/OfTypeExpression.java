@@ -46,6 +46,11 @@ public class OfTypeExpression extends Expression {
   }
 
   @Override
+  public boolean isBoxed() {
+    return myExpression.isBoxed();
+  }
+
+  @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitOfType(this, params);
   }

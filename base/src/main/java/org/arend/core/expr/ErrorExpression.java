@@ -97,6 +97,11 @@ public class ErrorExpression extends Expression implements CoreErrorExpression, 
   }
 
   @Override
+  public boolean isBoxed() {
+    return !myGoal;
+  }
+
+  @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitError(this, params);
   }

@@ -84,6 +84,11 @@ public class FieldCallExpression extends DefCallExpression implements CoreFieldC
   }
 
   @Override
+  public boolean isBoxed() {
+    return getDefinition().isProperty();
+  }
+
+  @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitFieldCall(this, params);
   }

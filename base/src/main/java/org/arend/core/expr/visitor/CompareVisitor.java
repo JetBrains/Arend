@@ -195,6 +195,9 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     }
 
     boolean onlySolveVars = myOnlySolveVars;
+    if (myNormalCompare && !myOnlySolveVars && expr1.isBoxed() && expr2.isBoxed()) {
+      myOnlySolveVars = true;
+    }
     if (useType && myNormalCompare && !myOnlySolveVars) {
       Expression normType = type == null ? null : type.getUnderlyingExpression();
       boolean allowProp = normType instanceof DataCallExpression && ((DataCallExpression) normType).getDefinition().getConstructors().isEmpty() || !expr1.canBeConstructor() && !expr2.canBeConstructor();

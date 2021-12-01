@@ -98,6 +98,11 @@ public class InferenceReferenceExpression extends Expression implements CoreInfe
   }
 
   @Override
+  public boolean isBoxed() {
+    return mySubstExpression != null && mySubstExpression.isBoxed();
+  }
+
+  @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitInferenceReference(this, params);
   }
