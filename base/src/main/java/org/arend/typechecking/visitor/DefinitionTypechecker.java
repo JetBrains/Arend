@@ -1030,7 +1030,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
   }
 
-  private boolean isBoxed(FunctionDefinition def) {
+  public static boolean isBoxed(FunctionDefinition def) {
     Body body = def.getActualBody();
     if (!(body instanceof Expression || body == null && def.getBodyHiddenStatus() == FunctionDefinition.HiddenStatus.REALLY_HIDDEN)) return false;
     Expression expr = (Expression) body;

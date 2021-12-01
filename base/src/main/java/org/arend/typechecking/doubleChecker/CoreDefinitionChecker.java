@@ -27,6 +27,7 @@ import org.arend.typechecking.error.local.inference.ArgInferenceError;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.patternmatching.PatternTypechecking;
 import org.arend.typechecking.visitor.BaseDefinitionTypechecker;
+import org.arend.typechecking.visitor.DefinitionTypechecker;
 
 import java.util.*;
 
@@ -98,16 +99,18 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
     Integer level = definition.getResultTypeLevel() == null ? null : myChecker.checkLevelProof(definition.getResultTypeLevel(), definition.getResultType());
 
     if (definition.getKind() == CoreFunctionDefinition.Kind.LEMMA && (level == null || level != -1)) {
-      DefCallExpression resultDefCall = definition.getResultType().cast(DefCallExpression.class);
-      if (resultDefCall == null || !Objects.equals(resultDefCall.getUseLevel(), -1)) {
-        Sort sort = typeType == null ? definition.getResultType().getSortOfType() : typeType.toSort();
-        if (sort == null) {
-          errorReporter.report(CoreErrorWrapper.make(new TypecheckingError("Cannot infer the sort of the type", null), definition.getResultType()));
-          return false;
-        }
-        if (!sort.isProp()) {
-          errorReporter.report(CoreErrorWrapper.make(new TypeMismatchError(new UniverseExpression(Sort.PROP), new UniverseExpression(sort), null), definition.getResultType()));
-          return false;
+      if (!DefinitionTypechecker.isBoxed(definition)) {
+        DefCallExpression resultDefCall = definition.getResultType().cast(DefCallExpression.class);
+        if (resultDefCall == null || !Objects.equals(resultDefCall.getUseLevel(), -1)) {
+          Sort sort = typeType == null ? definition.getResultType().getSortOfType() : typeType.toSort();
+          if (sort == null) {
+            errorReporter.report(CoreErrorWrapper.make(new TypecheckingError("Cannot infer the sort of the type", null), definition.getResultType()));
+            return false;
+          }
+          if (!sort.isProp()) {
+            errorReporter.report(CoreErrorWrapper.make(new TypeMismatchError(new UniverseExpression(Sort.PROP), new UniverseExpression(sort), null), definition.getResultType()));
+            return false;
+          }
         }
       }
     }
