@@ -40,7 +40,7 @@ public class StrictPropTest extends TypeCheckingTestCase {
 
   @Test
   public void setPiTest() {
-    typeCheckDef("\\func f {A : \\Set} (x y : A) : \\Pi (p q : x = y) -> p = q => Path.inProp");
+    typeCheckDef("\\lemma f {A : \\Set} (x y : A) : \\Pi (p q : x = y) -> p = q => Path.inProp");
   }
 
   @Test

@@ -17,7 +17,7 @@ public class TypeClassesClassifiers extends TypeCheckingTestCase {
       "\\data D | con1 | con2\n" +
       "\\class C (d : D) | p : d = d\n" +
       "\\instance f : C con1 | p => idp\n" +
-      "\\func g : con1 = con1 => p");
+      "\\lemma g : con1 = con1 => p");
   }
 
   @Test
@@ -26,7 +26,7 @@ public class TypeClassesClassifiers extends TypeCheckingTestCase {
       "\\data D | con1 | con2\n" +
       "\\class C (d : D) | p : d = d\n" +
       "\\instance f : C con1 | p => idp\n" +
-      "\\func g : con2 = con2 => p", 1);
+      "\\lemma g : con2 = con2 => p", 1);
     assertThatErrorsAre(Matchers.instanceInference(get("C"), ConCall((Constructor) getDefinition("D.con2"), LevelPair.STD, Collections.emptyList())));
   }
 
@@ -36,7 +36,7 @@ public class TypeClassesClassifiers extends TypeCheckingTestCase {
       "\\data D | con1 (x y : Nat) | con2\n" +
       "\\class C (d : Nat -> D) | p : d = d\n" +
       "\\instance f : C (con1 0) | p => idp\n" +
-      "\\func g : con1 0 = con1 0 => p");
+      "\\lemma g : con1 0 = con1 0 => p");
   }
 
   @Test

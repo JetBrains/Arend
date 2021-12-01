@@ -105,7 +105,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
         "\\class D \\extends B, C {\n" +
         "  | p : b = c\n" +
         "}\n" +
-        "\\func f (d : D { | S => Nat | c => 4 | b => 6 }) : 6 = 4 => d.p\n" +
+        "\\lemma f (d : D { | S => Nat | c => 4 | b => 6 }) : 6 = 4 => d.p\n" +
         "\\func g => \\new D { | S => Nat | b => 3 | c => 3 | p => idp }");
   }
 

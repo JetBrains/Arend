@@ -49,7 +49,7 @@ public class ClassFieldPropertyTest extends TypeCheckingTestCase {
       "\\class C {\n" +
       "  | p : 0 = 0\n" +
       "}\n" +
-      "\\func inst : C \\cowith | p => idp\n" +
+      "\\lemma inst : C \\cowith | p => idp\n" +
       "\\func foo : p {inst} = idp => idp", 1);
     assertThatErrorsAre(typecheckingError(NotEqualExpressionsError.class));
   }

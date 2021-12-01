@@ -102,7 +102,7 @@ public class CoClauseFunctionTest extends TypeCheckingTestCase {
   public void parameterSubtypeError() {
     typeCheckModule(
       "\\record C (f : \\Pi (A : \\Prop) (x : Nat) -> A -> A)\n" +
-      "\\func test : C \\cowith\n" +
+      "\\lemma test : C \\cowith\n" +
       "  | f (A : \\Set0) x a \\elim x {\n" +
       "    | 0 => a\n" +
       "    | suc n => a\n" +

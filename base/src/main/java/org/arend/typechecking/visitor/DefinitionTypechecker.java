@@ -989,7 +989,70 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     return new ConstructorExpressionPattern(type, patterns);
   }
 
-  private Integer checkTypeLevel(Concrete.BaseFunctionDefinition def, FunctionDefinition typedDef) {
+  private void checkCanBeLemma(FunctionDefinition typedDef, Concrete.BaseFunctionDefinition def) {
+    if (!((def.getKind() == FunctionKind.FUNC || def.getKind() == FunctionKind.SFUNC) && isBoxed(typedDef))) return;
+    Expression type = typedDef.getResultType().normalize(NormalizationMode.WHNF);
+    boolean ok = true;
+    if (type instanceof ClassCallExpression) {
+      List<ClassField> implemented = new ArrayList<>();
+      for (ClassField field : ((ClassCallExpression) type).getImplementedHere().keySet()) {
+        if (!field.isProperty()) {
+          implemented.add(field);
+        }
+      }
+      if (!implemented.isEmpty()) {
+        if (def.getResultType() instanceof Concrete.ClassExtExpression) {
+          Set<ClassField> concreteImpl = new HashSet<>();
+          for (Concrete.ClassFieldImpl fieldImpl : ((Concrete.ClassExtExpression) def.getResultType()).getCoclauses().getCoclauseList()) {
+            Referable ref = fieldImpl.getImplementedField();
+            if (ref instanceof TCDefReferable) {
+              Definition refDef = ((TCDefReferable) ref).getTypechecked();
+              if (refDef instanceof ClassField) {
+                concreteImpl.add((ClassField) refDef);
+              } else if (refDef instanceof ClassDefinition) {
+                concreteImpl.addAll(((ClassDefinition) refDef).getFields());
+              }
+            }
+          }
+          for (ClassField field : implemented) {
+            if (!concreteImpl.contains(field)) {
+              ok = false;
+              break;
+            }
+          }
+        } else {
+          ok = false;
+        }
+      }
+    }
+    if (ok) {
+      errorReporter.report(new CertainTypecheckingError(CertainTypecheckingError.Kind.COULD_BE_LEMMA, def));
+    }
+  }
+
+  private boolean isBoxed(FunctionDefinition def) {
+    Body body = def.getActualBody();
+    if (!(body instanceof Expression || body == null && def.getBodyHiddenStatus() == FunctionDefinition.HiddenStatus.REALLY_HIDDEN)) return false;
+    Expression expr = (Expression) body;
+    Expression type = def.getResultType();
+    if (type != null && !type.isError() && (expr == null || expr.isBoxed() && !expr.isError())) {
+      type = type.normalize(NormalizationMode.WHNF);
+      if (expr != null) {
+        return !(type instanceof ClassCallExpression) || ((ClassCallExpression) type).getSort().isProp();
+      } else {
+        Sort sort = type.getSortOfType();
+        return sort != null && sort.isProp();
+      }
+    } else {
+      return false;
+    }
+  }
+
+  private Integer checkTypeLevel(Concrete.BaseFunctionDefinition def, FunctionDefinition typedDef, boolean checked) {
+    if (checked && isBoxed(typedDef)) {
+      return -1;
+    }
+
     Expression type = typedDef.getResultType();
     Integer resultTypeLevel = type.isError() ? null : typecheckResultTypeLevel(def.getResultTypeLevel(), def.getKind() == FunctionKind.LEMMA, false, type, typedDef, null, false);
     if (resultTypeLevel == null && !type.isError()) {
@@ -1078,7 +1141,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     List<ExtElimClause> clauses = null;
     Concrete.FunctionBody body = def.getBody();
     boolean checkLevelNow = (body instanceof Concrete.ElimFunctionBody || body.getTerm() instanceof Concrete.CaseExpression && def.getKind() != FunctionKind.LEVEL) && !checkResultTypeLater(def);
-    Integer typeLevel = checkLevelNow ? checkTypeLevel(def, typedDef) : null;
+    Integer typeLevel = checkLevelNow ? checkTypeLevel(def, typedDef, false) : null;
     if (typeLevel != null && typedDef.isSFunc()) {
       if (body instanceof Concrete.ElimFunctionBody) {
         for (Concrete.FunctionClause clause : body.getClauses()) {
@@ -1262,6 +1325,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       typedDef.setKind(CoreFunctionDefinition.Kind.FUNC);
     }
 
+    checkCanBeLemma(typedDef, def);
+
     if (myNewDef) {
       ClassCallExpression typeClassCall = typedDef.getResultType().cast(ClassCallExpression.class);
       if (typeClassCall != null) {
@@ -1336,7 +1401,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     if (!checkLevelNow) {
-      checkTypeLevel(def, typedDef);
+      checkTypeLevel(def, typedDef, true);
     }
 
     if (kind == FunctionKind.INSTANCE) {
