@@ -87,8 +87,8 @@ public class DefinitionContributorImpl extends Disableable implements Definition
         SimpleScope newScope = scope.namespaces.computeIfAbsent(name, k -> new SimpleScope());
         if (prevRef instanceof AliasReferable) {
           scope.namespaces.putIfAbsent(((AliasReferable) prevRef).getOriginalReferable().getRefName(), newScope);
-        } else if (prevRef instanceof MetaReferable) {
-          String aliasName = ((MetaReferable) prevRef).getAliasName();
+        } else if (prevRef instanceof GlobalReferable) {
+          String aliasName = ((GlobalReferable) prevRef).getAliasName();
           if (aliasName != null) {
             scope.namespaces.putIfAbsent(aliasName, newScope);
           }
