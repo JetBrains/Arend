@@ -134,11 +134,11 @@ public class ArrayExpression extends Expression implements CoreArrayExpression {
 
   @Override
   public Decision isWHNF() {
-    return Decision.YES;
+    return myTail == null ? Decision.YES : myTail.isWHNF();
   }
 
   @Override
   public Expression getStuckExpression() {
-    return null;
+    return myTail == null ? null : myTail.getStuckExpression();
   }
 }

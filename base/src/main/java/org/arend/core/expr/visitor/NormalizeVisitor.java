@@ -1081,12 +1081,23 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
 
   @Override
   public Expression visitArray(ArrayExpression expr, NormalizationMode mode) {
-    if (mode == NormalizationMode.WHNF) return expr;
-    List<Expression> elements = new ArrayList<>(expr.getElements().size());
-    for (Expression element : expr.getElements()) {
-      elements.add(element.accept(this, mode));
+    if (expr.getTail() == null && mode == NormalizationMode.WHNF) return expr;
+    List<Expression> elements;
+    if (mode == NormalizationMode.WHNF) {
+      elements = expr.getElements();
+    } else {
+      elements = new ArrayList<>(expr.getElements().size());
+      for (Expression element : expr.getElements()) {
+        elements.add(element.accept(this, mode));
+      }
     }
-    return ArrayExpression.make(expr.getLevels(), mode == NormalizationMode.NF ? expr.getElementsType().accept(this, NormalizationMode.NF) : expr.getElementsType(), elements, expr.getTail() == null ? null : expr.getTail().accept(this, mode));
+    Expression tail = expr.getTail() == null ? null : expr.getTail().normalize(NormalizationMode.WHNF);
+    if (tail instanceof ArrayExpression) {
+      if (mode == NormalizationMode.WHNF) elements = new ArrayList<>(elements);
+      elements.addAll(((ArrayExpression) tail).getElements());
+      return ArrayExpression.make(expr.getLevels(), mode == NormalizationMode.NF ? expr.getElementsType().accept(this, NormalizationMode.NF) : expr.getElementsType(), elements, ((ArrayExpression) tail).getTail());
+    }
+    return ArrayExpression.make(expr.getLevels(), mode == NormalizationMode.NF ? expr.getElementsType().accept(this, NormalizationMode.NF) : expr.getElementsType(), elements, tail);
   }
 
   @Override

@@ -373,4 +373,11 @@ public class ArrayTest extends TypeCheckingTestCase {
       "  | suc _, :: _ _ => 1\n" +
       "\\func test : f (3 :: nil) = 1 => idp");
   }
+
+  @Test
+  public void normalizationTest() {
+    typeCheckModule(
+      "\\func arr => 1 :: nil\n" +
+      "\\func test : 0 :: arr = 0 :: 1 :: nil => idp");
+  }
 }
