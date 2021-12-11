@@ -49,14 +49,6 @@ public class TypeClassesClassifiers extends TypeCheckingTestCase {
   }
 
   @Test
-  public void partialConTestError() {
-    typeCheckModule(
-      "\\data D | con1 (x y : Nat) | con2\n" +
-      "\\class C (d : Nat -> D) | p (n : Nat) : d n = d n\n" +
-      "\\instance f : C (\\lam x => con1 x x) | p n => idp", 1);
-  }
-
-  @Test
   public void sigmaTest() {
     typeCheckModule(
       "\\class C (A : \\Type) | a : A\n" +

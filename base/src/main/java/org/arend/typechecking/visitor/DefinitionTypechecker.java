@@ -1422,67 +1422,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             classifyingExpr = classifyingExpr.normalize(NormalizationMode.WHNF);
           }
 
-          boolean ok = classifyingExpr == null || classifyingExpr instanceof ErrorExpression || classifyingExpr instanceof DataCallExpression || classifyingExpr instanceof ConCallExpression || classifyingExpr instanceof FunCallExpression && ((FunCallExpression) classifyingExpr).getDefinition().getKind() == CoreFunctionDefinition.Kind.TYPE || classifyingExpr instanceof ClassCallExpression || params.isEmpty() && (classifyingExpr instanceof UniverseExpression || classifyingExpr instanceof SigmaExpression || classifyingExpr instanceof PiExpression || classifyingExpr instanceof IntegerExpression);
-          if (classifyingExpr instanceof ClassCallExpression) {
-            Map<ClassField, Expression> implemented = ((ClassCallExpression) classifyingExpr).getImplementedHere();
-            if (implemented.size() < params.size()) {
-              ok = false;
-            } else {
-              int i = 0;
-              ClassDefinition classDef = ((ClassCallExpression) classifyingExpr).getDefinition();
-              Iterator<SingleDependentLink> it = params.iterator();
-              Set<Binding> forbiddenBindings = new HashSet<>(params);
-              forbiddenBindings.add(((ClassCallExpression) classifyingExpr).getThisBinding());
-              for (ClassField field : classDef.getFields()) {
-                Expression implementation = implemented.get(field);
-                if (implementation != null) {
-                  if (i < implemented.size() - params.size()) {
-                    if (implementation.findBinding(forbiddenBindings) != null) {
-                      ok = false;
-                      break;
-                    }
-                    i++;
-                  } else {
-                    if (!(implementation instanceof ReferenceExpression && it.hasNext() && ((ReferenceExpression) implementation).getBinding() == it.next())) {
-                      ok = false;
-                      break;
-                    }
-                  }
-                } else {
-                  if (i >= implemented.size() - params.size()) {
-                    break;
-                  }
-                  if (!classDef.isImplemented(field)) {
-                    ok = false;
-                    break;
-                  }
-                }
-              }
-            }
-          } else if (classifyingExpr instanceof DefCallExpression) {
-            DefCallExpression defCall = (DefCallExpression) classifyingExpr;
-            if (defCall.getDefCallArguments().size() < params.size()) {
-              ok = false;
-            } else {
-              int i = defCall.getDefCallArguments().size() - params.size();
-              for (SingleDependentLink param : params) {
-                if (!(defCall.getDefCallArguments().get(i) instanceof ReferenceExpression && ((ReferenceExpression) defCall.getDefCallArguments().get(i)).getBinding() == param)) {
-                  ok = false;
-                  break;
-                }
-                i++;
-              }
-              if (ok && !params.isEmpty()) {
-                for (i = 0; i < defCall.getDefCallArguments().size() - params.size(); i++) {
-                  if (defCall.getDefCallArguments().get(i).findBinding(params) != null) {
-                    ok = false;
-                    break;
-                  }
-                }
-              }
-            }
-          }
-          if (!ok) {
+          if (!(classifyingExpr == null || classifyingExpr instanceof ErrorExpression || classifyingExpr instanceof DataCallExpression || classifyingExpr instanceof ConCallExpression || classifyingExpr instanceof FunCallExpression && ((FunCallExpression) classifyingExpr).getDefinition().getKind() == CoreFunctionDefinition.Kind.TYPE || classifyingExpr instanceof ClassCallExpression || params.isEmpty() && (classifyingExpr instanceof UniverseExpression || classifyingExpr instanceof SigmaExpression || classifyingExpr instanceof PiExpression || classifyingExpr instanceof IntegerExpression))) {
             errorReporter.report(new TypecheckingError("Classifying field must be either a universe, a sigma type, a record, or a partially applied data or constructor", def.getResultType() == null ? def : def.getResultType()));
           }
         } else {
