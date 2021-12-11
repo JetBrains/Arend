@@ -30,6 +30,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
   private final Map<ClassField, Set<ClassField>> myDefaultDependencies = new HashMap<>();
   private final Map<ClassField, Set<ClassField>> myDefaultImplDependencies = new HashMap<>();
   private final Map<ClassField, PiExpression> myOverridden = new HashMap<>();
+  private final Set<ClassField> myCovariantFields = new HashSet<>();
   private ClassField myCoercingField;
   private Sort mySort = Sort.PROP;
   private boolean myRecord = false;
@@ -253,6 +254,18 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
   @Override
   public List<? extends ClassField> getPersonalFields() {
     return myPersonalFields;
+  }
+
+  public boolean isCovariantField(ClassField field) {
+    return myCovariantFields.contains(field);
+  }
+
+  public Set<? extends ClassField> getCovariantFields() {
+    return myCovariantFields;
+  }
+
+  public void addCovariantField(ClassField field) {
+    myCovariantFields.add(field);
   }
 
   public int getNumberOfNotImplementedFields() {

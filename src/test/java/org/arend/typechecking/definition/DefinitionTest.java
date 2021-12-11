@@ -1,9 +1,7 @@
 package org.arend.typechecking.definition;
 
 import org.arend.core.context.param.DependentLink;
-import org.arend.core.definition.Definition;
-import org.arend.core.definition.FunctionDefinition;
-import org.arend.core.definition.UniverseKind;
+import org.arend.core.definition.*;
 import org.arend.core.expr.Expression;
 import org.arend.core.subst.LevelPair;
 import org.arend.typechecking.TypeCheckingTestCase;
@@ -195,5 +193,16 @@ public class DefinitionTest extends TypeCheckingTestCase {
       "\\instance NatC : C Nat 0 (\\lam _ => 0) (\\lam _ _ => 0)\n" +
       "\\func test : Nat => x0");
     assertEquals(UniverseKind.NO_UNIVERSES, getDefinition("test").getUniverseKind());
+  }
+
+  @Test
+  public void covariantField() {
+    typeCheckModule(
+      "\\record R (A : \\Type) (a : A)\n" +
+      "\\record S \\extends R\n" +
+      "  | f : A -> A");
+    ClassField field = (ClassField) getDefinition("R.A");
+    assertTrue(((ClassDefinition) getDefinition("R")).isCovariantField(field));
+    assertFalse(((ClassDefinition) getDefinition("S")).isCovariantField(field));
   }
 }

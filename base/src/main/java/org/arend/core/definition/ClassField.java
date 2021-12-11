@@ -21,7 +21,6 @@ public class ClassField extends Definition implements CoreClassField {
   private Expression myTypeLevel;
   private int myNumberOfParameters;
   private boolean myHideable;
-  private boolean myCovariant;
 
   public ClassField(TCFieldReferable referable, ClassDefinition parentClass) {
     super(referable, TypeCheckingStatus.NEEDS_TYPE_CHECKING);
@@ -117,14 +116,6 @@ public class ClassField extends Definition implements CoreClassField {
 
   public void setHideable(boolean isHideable) {
     myHideable = isHideable;
-  }
-
-  public boolean isCovariant() {
-    return myCovariant;
-  }
-
-  public void setCovariant(boolean isCovariant) {
-    myCovariant = isCovariant;
   }
 
   @Override

@@ -126,7 +126,7 @@ public abstract class CovarianceChecker {
         return true;
       }
       for (Map.Entry<ClassField, Expression> entry : classCall.getImplementedHere().entrySet()) {
-        if (entry.getKey().isCovariant()) {
+        if (classCall.getDefinition().isCovariantField(entry.getKey())) {
           if (checkConstructor(entry.getValue())) {
             return true;
           }

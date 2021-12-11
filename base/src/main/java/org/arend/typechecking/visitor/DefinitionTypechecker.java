@@ -2626,16 +2626,16 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     // Set fields covariance
-    Set<ClassField> covariantFields = new HashSet<>(typedDef.getPersonalFields());
+    Set<ClassField> covariantFields = new HashSet<>(typedDef.getFields());
     ParametersCovarianceChecker checker = new ParametersCovarianceChecker(covariantFields);
-    for (ClassField field : typedDef.getPersonalFields()) {
+    for (ClassField field : typedDef.getFields()) {
       checker.check(field.getType().getCodomain());
       if (covariantFields.isEmpty()) {
         break;
       }
     }
     for (ClassField field : covariantFields) {
-      field.setCovariant(true);
+      typedDef.addCovariantField(field);
     }
 
     // Process classifying field

@@ -131,7 +131,6 @@ public class DefinitionSerialization implements ArendSerializer {
       fBuilder.setIsParameter(field.getReferable().isParameterField());
       fBuilder.setIsProperty(field.isProperty());
       fBuilder.setIsHideable(field.isHideable());
-      fBuilder.setIsCovariant(field.isCovariant());
       fBuilder.setUniverseKind(defSerializer.writeUniverseKind(field.getUniverseKind()));
       fBuilder.putAllUserData(writeUserData(field));
       builder.addPersonalField(fBuilder.build());
@@ -154,6 +153,9 @@ public class DefinitionSerialization implements ArendSerializer {
     }
     for (Map.Entry<ClassField, PiExpression> entry : definition.getOverriddenFields()) {
       builder.putOverriddenField(myCallTargetIndexProvider.getDefIndex(entry.getKey()), defSerializer.visitPi(entry.getValue()));
+    }
+    for (ClassField field : definition.getCovariantFields()) {
+      builder.addCovariantField(myCallTargetIndexProvider.getDefIndex(field));
     }
     builder.setSort(defSerializer.writeSort(definition.getSort()));
 

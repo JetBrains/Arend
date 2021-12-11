@@ -48,6 +48,7 @@ message Definition {
         repeated int32 type_class_field = 10;
         repeated ClassParametersLevel parameters_level = 11;
         map<int32, Expression.Pi> overridden_field = 12;
+        repeated int32 covariant_field = 20;
         int32 squasher = 13;
         repeated LevelField level_field = 17;
         bool is_std_levels = 18;
@@ -62,7 +63,6 @@ message Definition {
             bool isParameter = 7;
             bool isProperty = 8;
             bool isHideable = 9;
-            bool isCovariant = 10;
             UniverseKind universe_kind = 11;
             map<string, bytes> user_data = 12;
         }
