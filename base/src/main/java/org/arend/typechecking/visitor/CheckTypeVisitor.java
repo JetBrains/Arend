@@ -2786,9 +2786,9 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           return null;
         }
 
-        Expression resultType;
-        if (expr.isHave()) {
-          if (expectedType == null) {
+        Expression resultType = expectedType;
+        if (resultType == null) {
+          if (expr.isHave()) {
             definedBindings.addAll(clauses);
             CoreBinding binding = result.type.findFreeBindings(definedBindings);
             if (binding != null) {
@@ -2797,14 +2797,24 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
             }
             resultType = result.type;
           } else {
-            resultType = expectedType;
+            Set<Binding> freeVars = FreeVariablesCollector.getFreeVariables(result.type);
+            boolean found = false;
+            for (HaveClause clause : clauses) {
+              if (freeVars.contains(clause)) {
+                found = true;
+                break;
+              }
+            }
+            if (found) {
+              ExprSubstitution substitution = new ExprSubstitution();
+              for (HaveClause clause : clauses) {
+                substitution.add(clause, clause.getExpression().subst(substitution));
+              }
+              resultType = result.type.subst(substitution);
+            } else {
+              resultType = result.type;
+            }
           }
-        } else {
-          ExprSubstitution substitution = new ExprSubstitution();
-          for (HaveClause clause : clauses) {
-            substitution.add(clause, clause.getExpression().subst(substitution));
-          }
-          resultType = result.type.subst(substitution);
         }
         return new TypecheckingResult(expr.isGeneratedFromLambda ? result.expression : new LetExpression(expr.isStrict(), clauses, result.expression), resultType);
       }
