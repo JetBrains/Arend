@@ -122,7 +122,17 @@ final public class MinimizedRepresentation {
         var verboseConfig = new PrettyPrinterConfig() {
             @Override
             public @NotNull EnumSet<PrettyPrinterFlag> getExpressionFlags() {
-                return EnumSet.of(PrettyPrinterFlag.SHOW_TYPES_IN_LAM, PrettyPrinterFlag.SHOW_CASE_RESULT_TYPE, PrettyPrinterFlag.SHOW_CON_PARAMS, PrettyPrinterFlag.SHOW_BIN_OP_IMPLICIT_ARGS, PrettyPrinterFlag.SHOW_COERCE_DEFINITIONS, PrettyPrinterFlag.SHOW_GLOBAL_FIELD_INSTANCE, PrettyPrinterFlag.SHOW_IMPLICIT_ARGS, PrettyPrinterFlag.SHOW_LOCAL_FIELD_INSTANCE, PrettyPrinterFlag.SHOW_TUPLE_TYPE, PrettyPrinterFlag.SHOW_PROOFS);
+                return EnumSet.of(
+                        PrettyPrinterFlag.SHOW_TYPES_IN_LAM,
+                        PrettyPrinterFlag.SHOW_CASE_RESULT_TYPE,
+                        PrettyPrinterFlag.SHOW_CON_PARAMS,
+                        PrettyPrinterFlag.SHOW_BIN_OP_IMPLICIT_ARGS,
+                        PrettyPrinterFlag.SHOW_COERCE_DEFINITIONS,
+                        PrettyPrinterFlag.SHOW_GLOBAL_FIELD_INSTANCE,
+                        PrettyPrinterFlag.SHOW_IMPLICIT_ARGS,
+                        PrettyPrinterFlag.SHOW_LOCAL_FIELD_INSTANCE,
+                        PrettyPrinterFlag.SHOW_TUPLE_TYPE,
+                        PrettyPrinterFlag.SHOW_PROOFS);
             }
 
             @Override
@@ -133,7 +143,7 @@ final public class MinimizedRepresentation {
         var emptyConfig = new PrettyPrinterConfig() {
             @Override
             public @NotNull EnumSet<PrettyPrinterFlag> getExpressionFlags() {
-                return EnumSet.of(PrettyPrinterFlag.SHOW_LOCAL_FIELD_INSTANCE, PrettyPrinterFlag.SHOW_COERCE_DEFINITIONS);
+                return EnumSet.of(PrettyPrinterFlag.SHOW_LOCAL_FIELD_INSTANCE, PrettyPrinterFlag.SHOW_COERCE_DEFINITIONS, PrettyPrinterFlag.SHOW_PROOFS);
             }
 
             @Override
