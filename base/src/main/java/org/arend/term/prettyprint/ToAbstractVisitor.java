@@ -3,38 +3,40 @@ package org.arend.term.prettyprint;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.PersistentEvaluatingBinding;
+import org.arend.core.context.param.DependentLink;
+import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.definition.*;
 import org.arend.core.elimtree.Body;
 import org.arend.core.elimtree.ElimBody;
+import org.arend.core.elimtree.ElimClause;
 import org.arend.core.elimtree.IntervalElim;
+import org.arend.core.expr.*;
 import org.arend.core.expr.let.HaveClause;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.let.LetClausePattern;
 import org.arend.core.expr.visitor.BaseExpressionVisitor;
-import org.arend.ext.core.definition.CoreFunctionDefinition;
-import org.arend.ext.core.level.LevelSubstitution;
-import org.arend.ext.util.Pair;
-import org.arend.extImpl.definitionRenamer.ConflictDefinitionRenamer;
-import org.arend.ext.variable.Variable;
-import org.arend.core.context.param.DependentLink;
-import org.arend.core.context.param.SingleDependentLink;
-import org.arend.core.elimtree.ElimClause;
-import org.arend.core.expr.*;
-import org.arend.core.pattern.*;
+import org.arend.core.pattern.BindingPattern;
+import org.arend.core.pattern.EmptyPattern;
+import org.arend.core.pattern.Pattern;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
+import org.arend.ext.concrete.definition.ClassFieldKind;
+import org.arend.ext.concrete.definition.FunctionKind;
+import org.arend.ext.core.definition.CoreFunctionDefinition;
+import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.module.LongName;
 import org.arend.ext.prettyprinting.DefinitionRenamer;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.PrettyPrinterFlag;
+import org.arend.ext.util.Pair;
+import org.arend.ext.variable.Variable;
+import org.arend.extImpl.definitionRenamer.ConflictDefinitionRenamer;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.LocalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.renamer.ReferableRenamer;
 import org.arend.prelude.Prelude;
-import org.arend.ext.concrete.definition.ClassFieldKind;
-import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.visitor.VoidConcreteVisitor;
 import org.arend.util.SingletonList;
@@ -243,7 +245,11 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
     Expression argument = expr.getArgument();
     if (argument instanceof ReferenceExpression && ((ReferenceExpression) argument).getBinding().isHidden()) {
-      return makeReference(expr);
+      if (((ReferenceExpression) argument).getBinding() instanceof ClassCallExpression.ClassCallBinding && hasFlag(PrettyPrinterFlag.SHOW_IMPLICIT_ARGS)) {
+        return Concrete.AppExpression.make(null, makeReference(expr), new Concrete.ThisExpression(null, null), false);
+      } else {
+        return makeReference(expr);
+      }
     }
 
 
