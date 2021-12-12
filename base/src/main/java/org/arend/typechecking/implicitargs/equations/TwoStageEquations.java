@@ -179,7 +179,7 @@ public class TwoStageEquations implements Equations {
         if (infRef == null || !(infRef.getVariable() instanceof TypeClassInferenceVariable)) {
           Expression typeType = cType.getType();
           boolean useOrig = !(typeType instanceof UniverseExpression || typeType instanceof DataCallExpression && ((DataCallExpression) typeType).getDefinition() == Prelude.FIN);
-          if (solve(cInf, useOrig ? (inf1 != null ? origExpr2 : origExpr1) : cType, false, cInf instanceof TypeClassInferenceVariable, true) != SolveResult.NOT_SOLVED) {
+          if (solve(cInf, useOrig ? (inf1 != null ? origExpr2 : origExpr1) : cType, false, cInf instanceof TypeClassInferenceVariable, true, true) != SolveResult.NOT_SOLVED) {
             return true;
           }
         }
@@ -382,7 +382,7 @@ public class TwoStageEquations implements Equations {
     while (!myProps.isEmpty()) {
       InferenceVariable var = myProps.remove(myProps.size() - 1);
       if (!var.isSolved()) {
-        solve(var, new UniverseExpression(Sort.PROP), false, false, true);
+        solve(var, new UniverseExpression(Sort.PROP), false, false, false, true);
       }
     }
 
@@ -613,7 +613,7 @@ public class TwoStageEquations implements Equations {
 
   @Override
   public boolean solve(InferenceVariable var, Expression expr) {
-    return solve(var, expr, false, false, false) == SolveResult.SOLVED;
+    return solve(var, expr, false, false, false, false) == SolveResult.SOLVED;
   }
 
   @Override
@@ -867,10 +867,10 @@ public class TwoStageEquations implements Equations {
   private enum SolveResult { SOLVED, NOT_SOLVED, ERROR }
 
   private SolveResult solve(InferenceVariable var, Expression expr, boolean isLowerBound) {
-    return solve(var, expr, isLowerBound, false, true);
+    return solve(var, expr, isLowerBound, false, false, true);
   }
 
-  private SolveResult solve(InferenceVariable var, Expression expr, boolean isLowerBound, boolean trySolve, boolean fromEquations) {
+  private SolveResult solve(InferenceVariable var, Expression expr, boolean isLowerBound, boolean trySolve, boolean trySolve2, boolean fromEquations) {
     assert !fromEquations || var.isSolvableFromEquations();
     if (var.isSolved()) {
       return SolveResult.NOT_SOLVED;
@@ -923,7 +923,7 @@ public class TwoStageEquations implements Equations {
       }
     }
     if (actualType == null) {
-      return inferenceError(var, expr);
+      return trySolve2 ? SolveResult.NOT_SOLVED : inferenceError(var, expr);
     }
 
     if (ok && new CompareVisitor(this, CMP.LE, var.getSourceNode()).normalizedCompare(actualType, expectedType, Type.OMEGA, false)) {
