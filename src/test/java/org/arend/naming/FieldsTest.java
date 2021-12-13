@@ -156,4 +156,12 @@ public class FieldsTest extends NameResolverTestCase {
       "\\data D | con A\n" +
       "\\func foo (d : D) : Nat | con (a : A) => a.f");
   }
+
+  @Test
+  public void metaTest() {
+    resolveNamesModule(
+      "\\record R (x : Nat)\n" +
+      "\\func test (m : M) => m.x\n" +
+      "\\meta M => R");
+  }
 }

@@ -38,6 +38,7 @@ public class DefinableMetaDefinition extends Concrete.ResolvableDefinition imple
     myHLevelParameters = hLevelParameters;
     myParameters = parameters;
     this.body = body;
+    stage = Concrete.Stage.NOT_RESOLVED;
   }
 
   public List<LevelReferable> getPLevelParameters() {

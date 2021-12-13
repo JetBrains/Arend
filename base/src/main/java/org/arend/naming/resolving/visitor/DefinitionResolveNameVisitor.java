@@ -167,6 +167,9 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
 
     myLocalErrorReporter = new ConcreteProxyErrorReporter(def);
     if (myResolveTypeClassReferences) {
+      if (def.getStage() == Concrete.Stage.NOT_RESOLVED && def.body != null) {
+        resolveTypeClassReference(def.getParameters(), def.body, scope, false);
+      }
       def.setTypeClassReferencesResolved();
       return null;
     }
