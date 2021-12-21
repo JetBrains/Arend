@@ -91,16 +91,22 @@ public abstract class Definition extends UserDataHolderImpl implements CoreDefin
   }
 
   public boolean isIdLevels(Levels levels) {
-    LevelSubstitution subst = levels.makeSubstitution(this);
     List<? extends LevelVariable> vars = getLevelParameters();
     if (vars == null) {
-      Level pLevel = (Level) subst.get(LevelVariable.PVAR);
-      Level hLevel = (Level) subst.get(LevelVariable.HVAR);
+      if (!(levels instanceof LevelPair)) {
+        return false;
+      }
+      Level pLevel = ((LevelPair) levels).getPLevel();
+      Level hLevel = ((LevelPair) levels).getHLevel();
       return pLevel != null && pLevel.isVarOnly() && pLevel.getVar().equals(LevelVariable.PVAR) && hLevel != null && hLevel.isVarOnly() && hLevel.getVar().equals(LevelVariable.HVAR);
     } else {
-      for (LevelVariable var : vars) {
-        Level level = (Level) subst.get(var);
-        if (!(level != null && level.isVarOnly() && level.getVar().equals(var))) {
+      List<? extends Level> list = levels.toList();
+      if (list.size() != vars.size()) {
+        return false;
+      }
+      for (int i = 0; i < vars.size(); i++) {
+        Level level = list.get(i);
+        if (!(level.isVarOnly() && level.getVar().equals(vars.get(i)))) {
           return false;
         }
       }

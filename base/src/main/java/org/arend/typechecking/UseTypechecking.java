@@ -176,7 +176,7 @@ public class UseTypechecking {
       for (; classCallLink.hasNext(); classCallLink = classCallLink.getNext()) {
         classCallLink = classCallLink.getNextTyped(null);
         classCall = classCallLink.getTypeExpr().cast(ClassCallExpression.class);
-        if (classCall != null && classCall.getDefinition() == useParent && (classCall.getUniverseKind() == UniverseKind.NO_UNIVERSES || classCall.getDefinition().isIdLevels(classCall.getLevels()))) {
+        if (classCall != null && classCall.getDefinition() == useParent && (classCall.getUniverseKind() == UniverseKind.NO_UNIVERSES || typedDef.isIdLevels(classCall.getLevels()))) {
           break;
         }
       }
@@ -184,7 +184,7 @@ public class UseTypechecking {
         PiExpression piType = resultType.normalize(NormalizationMode.WHNF).cast(PiExpression.class);
         if (piType != null) {
           classCall = piType.getParameters().getTypeExpr().normalize(NormalizationMode.WHNF).cast(ClassCallExpression.class);
-          if (classCall != null && classCall.getDefinition() == useParent && (classCall.getUniverseKind() == UniverseKind.NO_UNIVERSES || classCall.getDefinition().isIdLevels(classCall.getLevels()))) {
+          if (classCall != null && classCall.getDefinition() == useParent && (classCall.getUniverseKind() == UniverseKind.NO_UNIVERSES || typedDef.isIdLevels(classCall.getLevels()))) {
             classCallLink = piType.getParameters();
           }
         }
