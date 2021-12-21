@@ -111,7 +111,7 @@ public class Util {
 
     @Override
     public ConstructorExpressionPattern getPattern(List<ExpressionPattern> subPatterns) {
-      return new ConstructorExpressionPattern(new FunCallExpression(myConstructor, LevelPair.STD, myLength, myElementsType), myThisBinding, myEmpty, subPatterns);
+      return new ConstructorExpressionPattern(new FunCallExpression(myConstructor, myConstructor.makeIdLevels(), myLength, myElementsType), myThisBinding, myEmpty, subPatterns);
     }
   }
 

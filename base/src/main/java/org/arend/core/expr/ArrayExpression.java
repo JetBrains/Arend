@@ -50,6 +50,10 @@ public class ArrayExpression extends Expression implements CoreArrayExpression {
     myLevels = myLevels.subst(substitution);
   }
 
+  public void setLevels(LevelPair levels) {
+    myLevels = levels;
+  }
+
   public Expression drop(int n) {
     assert n <= myElements.size();
     if (n >= myElements.size()) {

@@ -151,11 +151,13 @@ public class LevelParametersTest extends TypeCheckingTestCase {
   @Test
   public void defaultTest() {
     typeCheckModule(
-      "\\record R \\plevels p1 <= p2\n" +
+      "\\record R \\plevels p1 <= p2 <= p3\n" +
       "  | f : Nat\n" +
       "\\record S \\extends R {\n" +
       "  \\default f : Nat => 0\n" +
       "}");
+    assertEquals(3, getDefinition("R").getLevelParameters().size());
+    assertEquals(3, getDefinition("S").getLevelParameters().size());
     assertEquals(3, getDefinition("S.f").getLevelParameters().size());
     ClassDefinition classDef = (ClassDefinition) getDefinition("S");
     Expression impl = classDef.getDefault((ClassField) getDefinition("R.f")).getExpression();
@@ -184,11 +186,11 @@ public class LevelParametersTest extends TypeCheckingTestCase {
   @Test
   public void coclauseTest() {
     typeCheckModule(
-      "\\record R (x : Nat)\n" +
+      "\\record R (A : \\Type)\n" +
       "\\func g \\plevels p1 <= p2 : R \\cowith\n" +
-      "  | x : Nat => 0");
-    assertEquals(3, getDefinition("g.x").getLevelParameters().size());
-    Expression impl = ((ClassCallExpression) ((FunctionDefinition) getDefinition("g")).getResultType()).getAbsImplementationHere((ClassField) getDefinition("R.x"));
+      "  | A : \\Type => \\Sigma");
+    assertEquals(3, getDefinition("g.A").getLevelParameters().size());
+    Expression impl = ((ClassCallExpression) ((FunctionDefinition) getDefinition("g")).getResultType()).getAbsImplementationHere((ClassField) getDefinition("R.A"));
     assertNotNull(impl);
     List<? extends Level> levels = ((FunCallExpression) impl).getLevels().toList();
     List<? extends LevelVariable> params = getDefinition("g").getLevelParameters();
@@ -216,7 +218,7 @@ public class LevelParametersTest extends TypeCheckingTestCase {
   @Test
   public void dynamicTest() {
     typeCheckModule(
-      "\\record R \\plevels p1 <= p2 {\n" +
+      "\\record R \\plevels p1 <= p2 <= p3 {\n" +
       "  \\func f => 0\n" +
       "}");
     assertEquals(3, getDefinition("R.f").getLevelParameters().size());

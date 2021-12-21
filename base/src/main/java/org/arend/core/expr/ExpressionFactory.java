@@ -4,7 +4,7 @@ import org.arend.core.context.param.*;
 import org.arend.core.definition.ClassField;
 import org.arend.core.expr.type.Type;
 import org.arend.core.sort.Sort;
-import org.arend.core.subst.LevelPair;
+import org.arend.core.subst.Levels;
 import org.arend.prelude.Prelude;
 import org.arend.util.SingletonList;
 
@@ -17,15 +17,15 @@ public class ExpressionFactory {
   }
 
   public static DataCallExpression Interval() {
-    return new DataCallExpression(Prelude.INTERVAL, LevelPair.PROP, Collections.emptyList());
+    return new DataCallExpression(Prelude.INTERVAL, Levels.EMPTY, Collections.emptyList());
   }
 
   public static ConCallExpression Left() {
-    return (ConCallExpression) ConCallExpression.make(Prelude.LEFT, LevelPair.PROP, Collections.emptyList(), Collections.emptyList());
+    return (ConCallExpression) ConCallExpression.make(Prelude.LEFT, Levels.EMPTY, Collections.emptyList(), Collections.emptyList());
   }
 
   public static ConCallExpression Right() {
-    return (ConCallExpression) ConCallExpression.make(Prelude.RIGHT, LevelPair.PROP, Collections.emptyList(), Collections.emptyList());
+    return (ConCallExpression) ConCallExpression.make(Prelude.RIGHT, Levels.EMPTY, Collections.emptyList(), Collections.emptyList());
   }
 
   public static DependentLink parameter(boolean explicit, String var, Type type) {
@@ -53,7 +53,7 @@ public class ExpressionFactory {
   }
 
   public static DataCallExpression Nat() {
-    return new DataCallExpression(Prelude.NAT, LevelPair.PROP, Collections.emptyList());
+    return new DataCallExpression(Prelude.NAT, Levels.EMPTY, Collections.emptyList());
   }
 
   public static DataCallExpression Fin(int cardinality) {
@@ -61,7 +61,7 @@ public class ExpressionFactory {
   }
 
   public static DataCallExpression Fin(Expression cardinality) {
-    return new DataCallExpression(Prelude.FIN, LevelPair.PROP, new SingletonList<>(cardinality));
+    return new DataCallExpression(Prelude.FIN, Levels.EMPTY, new SingletonList<>(cardinality));
   }
 
   public static SigmaExpression divModType(Type type) {
@@ -73,7 +73,7 @@ public class ExpressionFactory {
   }
 
   public static DataCallExpression Int() {
-    return new DataCallExpression(Prelude.INT, LevelPair.PROP, Collections.emptyList());
+    return new DataCallExpression(Prelude.INT, Levels.EMPTY, Collections.emptyList());
   }
 
   public static IntegerExpression Zero() {
@@ -81,7 +81,7 @@ public class ExpressionFactory {
   }
 
   public static Expression Suc(Expression expr) {
-    return ConCallExpression.make(Prelude.SUC, LevelPair.PROP, Collections.emptyList(), new SingletonList<>(expr));
+    return ConCallExpression.make(Prelude.SUC, Levels.EMPTY, Collections.emptyList(), new SingletonList<>(expr));
   }
 
   public static Expression add(Expression expr, int n) {
@@ -92,10 +92,10 @@ public class ExpressionFactory {
   }
 
   public static ConCallExpression Pos(Expression expr) {
-    return ConCallExpression.makeConCall(Prelude.POS, LevelPair.PROP, Collections.emptyList(), new SingletonList<>(expr));
+    return ConCallExpression.makeConCall(Prelude.POS, Levels.EMPTY, Collections.emptyList(), new SingletonList<>(expr));
   }
 
   public static ConCallExpression Neg(Expression expr) {
-    return ConCallExpression.makeConCall(Prelude.NEG, LevelPair.PROP, Collections.emptyList(), new SingletonList<>(expr));
+    return ConCallExpression.makeConCall(Prelude.NEG, Levels.EMPTY, Collections.emptyList(), new SingletonList<>(expr));
   }
 }

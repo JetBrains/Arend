@@ -26,6 +26,10 @@ public class PathExpression extends Expression implements CorePathExpression {
     return myLevels;
   }
 
+  public void setLevels(LevelPair levels) {
+    myLevels = levels;
+  }
+
   @Override
   public @Nullable Expression getArgumentType() {
     return myArgumentType;

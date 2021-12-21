@@ -5,7 +5,7 @@ import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.definition.DataDefinition;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.Expression;
-import org.arend.core.subst.LevelPair;
+import org.arend.core.subst.Levels;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
@@ -53,13 +53,12 @@ public class DataIndicesTest extends TypeCheckingTestCase {
         "\\data NatVec Nat \\with\n" +
         "  | zero  => nil\n" +
         "  | suc n => cons Nat (NatVec n)");
-    LevelPair set0 = LevelPair.SET0;
     DataDefinition data = (DataDefinition) getDefinition("NatVec");
-    assertEquals(DataCall(data, set0, Zero()), data.getConstructor("nil").getTypeWithParams(new ArrayList<>(), set0));
+    assertEquals(DataCall(data, Levels.EMPTY, Zero()), data.getConstructor("nil").getTypeWithParams(new ArrayList<>(), Levels.EMPTY));
     SingleDependentLink param = singleParams(false, vars("n"), Nat());
     List<DependentLink> consParams = new ArrayList<>();
-    Expression consType = data.getConstructor("cons").getTypeWithParams(consParams, set0);
-    assertEquals(Pi(param, Pi(Nat(), Pi(DataCall(data, set0, Ref(param)), DataCall(data, set0, Suc(Ref(param)))))), fromPiParameters(consType, consParams));
+    Expression consType = data.getConstructor("cons").getTypeWithParams(consParams, Levels.EMPTY);
+    assertEquals(Pi(param, Pi(Nat(), Pi(DataCall(data, Levels.EMPTY, Ref(param)), DataCall(data, Levels.EMPTY, Suc(Ref(param)))))), fromPiParameters(consType, consParams));
   }
 
   @Test

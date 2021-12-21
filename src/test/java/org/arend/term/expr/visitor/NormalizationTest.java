@@ -11,6 +11,7 @@ import org.arend.core.expr.let.LetClause;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.LevelPair;
+import org.arend.core.subst.Levels;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.naming.reference.LocalReferable;
 import org.arend.prelude.Prelude;
@@ -98,7 +99,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
   public void normalizeNelimZero() {
     // normalize( N-elim (suc zero) (\x. suc x) 0 ) = suc zero
     SingleDependentLink x = singleParam("x", Nat());
-    Expression expr = FunCall(nelim, LevelPair.SET0, Suc(Zero()), Lam(x, Suc(Ref(x))), Zero());
+    Expression expr = FunCall(nelim, Levels.EMPTY, Suc(Zero()), Lam(x, Suc(Ref(x))), Zero());
     assertEquals(Suc(Zero()), expr.normalize(NormalizationMode.NF));
   }
 
@@ -108,7 +109,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     DependentLink var0 = param("var0", Pi(Nat(), Nat()));
     SingleDependentLink x = singleParam("x", Nat());
     SingleDependentLink y = singleParam("y", Nat());
-    Expression expr = FunCall(nelim, LevelPair.SET0, Suc(Zero()), Lam(x, Lam(y, Apps(Ref(var0), Ref(y)))), Suc(Zero()));
+    Expression expr = FunCall(nelim, Levels.EMPTY, Suc(Zero()), Lam(x, Lam(y, Apps(Ref(var0), Ref(y)))), Suc(Zero()));
     assertEquals(Apps(Ref(var0), Suc(Zero())), expr.normalize(NormalizationMode.NF));
   }
 
@@ -118,7 +119,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     DependentLink var0 = param("var0", Universe(0));
     SingleDependentLink x = singleParam("x", Nat());
     Expression arg = Apps(Lam(x, Ref(x)), Zero());
-    Expression expr = FunCall(nelim, LevelPair.SET0, Suc(Zero()), Ref(var0), arg);
+    Expression expr = FunCall(nelim, Levels.EMPTY, Suc(Zero()), Ref(var0), arg);
     Expression result = expr.normalize(NormalizationMode.NF);
     assertEquals(Suc(Zero()), result);
   }
@@ -126,49 +127,49 @@ public class NormalizationTest extends TypeCheckingTestCase {
   @Test
   public void normalizePlus0a3() {
     // normalize (plus 0 3) = 3
-    Expression expr = FunCall(plus, LevelPair.SET0, Zero(), Suc(Suc(Suc(Zero()))));
+    Expression expr = FunCall(plus, Levels.EMPTY, Zero(), Suc(Suc(Suc(Zero()))));
     assertEquals(Suc(Suc(Suc(Zero()))), expr.normalize(NormalizationMode.NF));
   }
 
   @Test
   public void normalizePlus3a0() {
     // normalize (plus 3 0) = 3
-    Expression expr = FunCall(plus, LevelPair.SET0, Suc(Suc(Suc(Zero()))), Zero());
+    Expression expr = FunCall(plus, Levels.EMPTY, Suc(Suc(Suc(Zero()))), Zero());
     assertEquals(Suc(Suc(Suc(Zero()))), expr.normalize(NormalizationMode.NF));
   }
 
   @Test
   public void normalizePlus3a3() {
     // normalize (plus 3 3) = 6
-    Expression expr = FunCall(plus, LevelPair.SET0, Suc(Suc(Suc(Zero()))), Suc(Suc(Suc(Zero()))));
+    Expression expr = FunCall(plus, Levels.EMPTY, Suc(Suc(Suc(Zero()))), Suc(Suc(Suc(Zero()))));
     assertEquals(Suc(Suc(Suc(Suc(Suc(Suc(Zero())))))), expr.normalize(NormalizationMode.NF));
   }
 
   @Test
   public void normalizeMul3a0() {
     // normalize (mul 3 0) = 0
-    Expression expr = FunCall(mul, LevelPair.SET0, Suc(Suc(Suc(Zero()))), Zero());
+    Expression expr = FunCall(mul, Levels.EMPTY, Suc(Suc(Suc(Zero()))), Zero());
     assertEquals(Zero(), expr.normalize(NormalizationMode.NF));
   }
 
   @Test
   public void normalizeMul0a3() {
     // normalize (mul 0 3) = 0
-    Expression expr = FunCall(mul, LevelPair.SET0, Zero(), Suc(Suc(Suc(Zero()))));
+    Expression expr = FunCall(mul, Levels.EMPTY, Zero(), Suc(Suc(Suc(Zero()))));
     assertEquals(Zero(), expr.normalize(NormalizationMode.NF));
   }
 
   @Test
   public void normalizeMul3a3() {
     // normalize (mul 3 3) = 9
-    Expression expr = FunCall(mul, LevelPair.SET0, Suc(Suc(Suc(Zero()))), Suc(Suc(Suc(Zero()))));
+    Expression expr = FunCall(mul, Levels.EMPTY, Suc(Suc(Suc(Zero()))), Suc(Suc(Suc(Zero()))));
     assertEquals(Suc(Suc(Suc(Suc(Suc(Suc(Suc(Suc(Suc(Zero()))))))))), expr.normalize(NormalizationMode.NF));
   }
 
   @Test
   public void normalizeFac3() {
     // normalize (fac 3) = 6
-    Expression expr = FunCall(fac, LevelPair.SET0, Suc(Suc(Suc(Zero()))));
+    Expression expr = FunCall(fac, Levels.EMPTY, Suc(Suc(Suc(Zero()))));
     assertEquals(Suc(Suc(Suc(Suc(Suc(Suc(Zero())))))), expr.normalize(NormalizationMode.NF));
   }
 
@@ -227,7 +228,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
         "\\data D | d Nat\n" +
         "\\func test (x : D) : Nat | _ => 0");
     FunctionDefinition test = (FunctionDefinition) getDefinition("test");
-    assertEquals(Zero(), FunCall(test, LevelPair.SET0, Ref(var0)).normalize(NormalizationMode.NF));
+    assertEquals(Zero(), FunCall(test, Levels.EMPTY, Ref(var0)).normalize(NormalizationMode.NF));
   }
 
   @Test

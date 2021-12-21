@@ -2,7 +2,7 @@ package org.arend.typechecking.visitor;
 
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.param.DependentLink;
-import org.arend.core.definition.FunctionDefinition;
+import org.arend.core.definition.*;
 import org.arend.core.elimtree.Body;
 import org.arend.core.elimtree.ElimBody;
 import org.arend.core.elimtree.IntervalElim;
@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean> {
+public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean> implements DefinitionVisitor<P, Boolean> {
   protected CoreExpression.FindAction processDefCall(DefCallExpression expression, P param) {
     return CoreExpression.FindAction.CONTINUE;
   }
@@ -280,7 +280,7 @@ public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean>
     } else if (body instanceof IntervalElim) {
       IntervalElim elim = (IntervalElim) body;
       for (IntervalElim.CasePair pair : elim.getCases()) {
-        if (pair.proj1.accept(this, param) || pair.proj2.accept(this, param)) {
+        if (pair.proj1 != null && pair.proj1.accept(this, param) || pair.proj2 != null && pair.proj2.accept(this, param)) {
           return true;
         }
       }
@@ -290,10 +290,6 @@ public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean>
     } else {
       throw new IllegalStateException();
     }
-  }
-
-  public boolean visitFunction(FunctionDefinition definition, P params) {
-    return visitDependentLink(definition.getParameters(), params) || definition.getResultType().accept(this, params) || definition.getResultTypeLevel() != null && definition.getResultTypeLevel().accept(this, params) || visitBody(definition.getBody(), params);
   }
 
   @Override
@@ -322,5 +318,46 @@ public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean>
       }
     }
     return expr.getTail() != null && expr.getTail().accept(this, params);
+  }
+
+  @Override
+  public Boolean visitFunction(FunctionDefinition definition, P params) {
+    return visitDependentLink(definition.getParameters(), params) || definition.getResultType().accept(this, params) || definition.getResultTypeLevel() != null && definition.getResultTypeLevel().accept(this, params) || visitBody(definition.getReallyActualBody(), params);
+  }
+
+  @Override
+  public Boolean visitData(DataDefinition def, P params) {
+    if (visitDependentLink(def.getParameters(), params)) return true;
+    for (Constructor constructor : def.getConstructors()) {
+      if (visitConstructor(constructor, params)) return true;
+    }
+    return false;
+  }
+
+  @Override
+  public Boolean visitClass(ClassDefinition def, P params) {
+    for (ClassField field : def.getPersonalFields()) {
+      if (visitField(field, params)) return true;
+    }
+    for (Map.Entry<ClassField, AbsExpression> entry : def.getImplemented()) {
+      if (entry.getValue().getExpression().accept(this, params)) return true;
+    }
+    for (Map.Entry<ClassField, AbsExpression> entry : def.getDefaults()) {
+      if (entry.getValue().getExpression().accept(this, params)) return true;
+    }
+    for (Map.Entry<ClassField, PiExpression> entry : def.getOverriddenFields()) {
+      if (entry.getValue().getCodomain().accept(this, params)) return true;
+    }
+    return false;
+  }
+
+  @Override
+  public Boolean visitConstructor(Constructor constructor, P params) {
+    return visitDependentLink(constructor.getParameters(), params) || visitBody(constructor.getBody(), params);
+  }
+
+  @Override
+  public Boolean visitField(ClassField field, P params) {
+    return visitPi(field.getType(), params) || field.getTypeLevel() != null && field.getTypeLevel().accept(this, params);
   }
 }

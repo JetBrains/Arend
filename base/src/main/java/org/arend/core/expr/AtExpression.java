@@ -44,6 +44,10 @@ public class AtExpression extends Expression implements CoreAtExpression {
     return myLevels;
   }
 
+  public void setLevels(LevelPair levels) {
+    myLevels = levels;
+  }
+
   @Override
   public @NotNull Expression getPathArgument() {
     return myPathArgument;

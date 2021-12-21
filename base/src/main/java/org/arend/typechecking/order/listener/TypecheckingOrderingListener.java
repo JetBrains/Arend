@@ -230,6 +230,10 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
       typechecked = newDefinition(definition);
     }
 
+    if (!(definition instanceof Concrete.FunctionDefinition && ((Concrete.FunctionDefinition) definition).getKind().isCoclause())) {
+      FixLevelParameters.fix(Collections.singleton(typechecked));
+    }
+
     if (recursive && typechecked instanceof FunctionDefinition) {
       ((FunctionDefinition) typechecked).setRecursiveDefinitions(Collections.singleton(typechecked));
     }
@@ -353,6 +357,26 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
 
     myHeadersAreOK = true;
 
+    boolean fixLevels = true;
+    Set<Definition> allDefinitions = new LinkedHashSet<>();
+    for (Concrete.Definition definition : orderedDefinitions) {
+      Definition typechecked = definition.getData().getTypechecked();
+      if (typechecked instanceof FunctionDefinition) {
+        ((FunctionDefinition) typechecked).setRecursiveDefinitions(allDefinitions);
+        allDefinitions.add(typechecked);
+      } else if (typechecked instanceof DataDefinition) {
+        ((DataDefinition) typechecked).setRecursiveDefinitions(allDefinitions);
+        allDefinitions.add(typechecked);
+      }
+      if (definition instanceof Concrete.FunctionDefinition && ((Concrete.FunctionDefinition) definition).getKind().isCoclause()) {
+        fixLevels = false;
+      }
+    }
+
+    if (fixLevels) {
+      FixLevelParameters.fix(allDefinitions);
+    }
+
     if (!functionDefinitions.isEmpty()) {
       FindDefCallVisitor<DataDefinition> visitor = new FindDefCallVisitor<>(dataDefinitions, false);
       Iterator<Map.Entry<FunctionDefinition, Concrete.Definition>> it = functionDefinitions.entrySet().iterator();
@@ -374,17 +398,8 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
       }
     }
 
-    Set<Definition> allDefinitions = new HashSet<>();
-    for (Concrete.Definition definition : orderedDefinitions) {
-      Definition typechecked = definition.getData().getTypechecked();
-      if (typechecked instanceof FunctionDefinition) {
-        ((FunctionDefinition) typechecked).setRecursiveDefinitions(allDefinitions);
-        allDefinitions.add(typechecked);
-      } else if (typechecked instanceof DataDefinition) {
-        ((DataDefinition) typechecked).setRecursiveDefinitions(allDefinitions);
-        allDefinitions.add(typechecked);
-      }
-      typecheckingBodyFinished(definition.getData(), typechecked);
+    for (Definition definition : allDefinitions) {
+      typecheckingBodyFinished(definition.getReferable(), definition);
     }
 
     for (Pair<Definition, DefinitionListener> pair : listeners) {

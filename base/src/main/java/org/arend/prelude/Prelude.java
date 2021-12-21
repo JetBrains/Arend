@@ -13,6 +13,7 @@ import org.arend.core.pattern.ExpressionPattern;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.LevelPair;
+import org.arend.core.subst.Levels;
 import org.arend.error.DummyErrorReporter;
 import org.arend.ext.ArendPrelude;
 import org.arend.ext.core.definition.CoreClassDefinition;
@@ -107,7 +108,7 @@ public class Prelude implements ArendPrelude {
         if (FIN.getConstructors().isEmpty()) {
           FIN_ZERO = new Constructor(new LocatedReferableImpl(Precedence.DEFAULT, "zero", FIN.getRef(), GlobalReferable.Kind.CONSTRUCTOR), FIN);
           DependentLink binding = new TypedDependentLink(true, "n", ExpressionFactory.Nat(), EmptyDependentLink.getInstance());
-          List<ExpressionPattern> patterns = Collections.singletonList(new ConstructorExpressionPattern(new ConCallExpression(SUC, LevelPair.STD, Collections.emptyList(), Collections.emptyList()), Collections.singletonList(new BindingPattern(binding))));
+          List<ExpressionPattern> patterns = Collections.singletonList(new ConstructorExpressionPattern(new ConCallExpression(SUC, Levels.EMPTY, Collections.emptyList(), Collections.emptyList()), Collections.singletonList(new BindingPattern(binding))));
           FIN_ZERO.setPatterns(patterns);
           FIN_ZERO.setParameters(EmptyDependentLink.getInstance());
           FIN_ZERO.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
@@ -115,7 +116,7 @@ public class Prelude implements ArendPrelude {
           FIN.addConstructor(FIN_ZERO);
           FIN_SUC = new Constructor(new LocatedReferableImpl(Precedence.DEFAULT, "suc", FIN.getRef(), GlobalReferable.Kind.CONSTRUCTOR), FIN);
           FIN_SUC.setPatterns(patterns);
-          FIN_SUC.setParameters(new TypedDependentLink(true, null, new DataCallExpression(FIN, LevelPair.STD, new SingletonList<>(new ReferenceExpression(binding))), EmptyDependentLink.getInstance()));
+          FIN_SUC.setParameters(new TypedDependentLink(true, null, new DataCallExpression(FIN, Levels.EMPTY, new SingletonList<>(new ReferenceExpression(binding))), EmptyDependentLink.getInstance()));
           FIN_SUC.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
           FIN_SUC.getReferable().setTypechecked(FIN_SUC);
           FIN.addConstructor(FIN_SUC);

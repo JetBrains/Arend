@@ -11,7 +11,6 @@ import org.arend.core.definition.*;
 import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
 import org.arend.core.pattern.*;
-import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.Levels;
 import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
@@ -531,7 +530,7 @@ public class DefinitionDeserialization implements ArendDeserializer {
           patterns.add(readDPattern(defDeserializer, pattern));
         }
         if (expression instanceof SmallIntegerExpression && ((SmallIntegerExpression) expression).getInteger() == 0) {
-          return new ConstructorExpressionPattern(new ConCallExpression(Prelude.ZERO, LevelPair.PROP, Collections.emptyList(), Collections.emptyList()), patterns);
+          return new ConstructorExpressionPattern(new ConCallExpression(Prelude.ZERO, Levels.EMPTY, Collections.emptyList(), Collections.emptyList()), patterns);
         }
         if (expression instanceof ConCallExpression) {
           return new ConstructorExpressionPattern((ConCallExpression) expression, patterns);

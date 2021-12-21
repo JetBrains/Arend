@@ -3,7 +3,7 @@ package org.arend.typechecking.typeclass;
 import org.arend.core.definition.ClassDefinition;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.DataDefinition;
-import org.arend.core.subst.LevelPair;
+import org.arend.core.subst.Levels;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
@@ -191,7 +191,7 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
       "\\data Nat'\n" +
       "\\instance B-inst : B Nat | c => 0\n" +
       "\\func f : Nat' => c", 1);
-    assertThatErrorsAre(instanceInference(get("A"), DataCall((DataDefinition) getDefinition("Nat'"), LevelPair.STD)));
+    assertThatErrorsAre(instanceInference(get("A"), DataCall((DataDefinition) getDefinition("Nat'"), Levels.EMPTY)));
   }
 
   @Test

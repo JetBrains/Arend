@@ -3,7 +3,7 @@ package org.arend.typechecking.definition;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.ExpressionFactory;
-import org.arend.core.subst.LevelPair;
+import org.arend.core.subst.Levels;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.arend.util.SingletonList;
@@ -20,7 +20,7 @@ public class SFuncTest extends TypeCheckingTestCase {
   @Test
   public void normTest() {
     typeCheckModule("\\sfunc pred (n : Nat) : Nat | 0 => 0 | suc n => n");
-    Expression expr = getDefinition("pred").getDefCall(LevelPair.STD, new SingletonList<>(ExpressionFactory.Zero()));
+    Expression expr = getDefinition("pred").getDefCall(Levels.EMPTY, new SingletonList<>(ExpressionFactory.Zero()));
     assertSame(expr, expr.normalize(NormalizationMode.WHNF));
   }
 
@@ -29,7 +29,7 @@ public class SFuncTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\sfunc pred (n : Nat) : Nat | 0 => 0 | suc n => n\n" +
       "\\func test => \\eval pred 2");
-    Expression expr = getDefinition("test").getDefCall(LevelPair.STD, Collections.emptyList());
+    Expression expr = getDefinition("test").getDefCall(Levels.EMPTY, Collections.emptyList());
     assertEquals(ExpressionFactory.Suc(ExpressionFactory.Zero()), expr.normalize(NormalizationMode.WHNF));
   }
 

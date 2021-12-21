@@ -776,10 +776,22 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
     if (myNewDef) {
       typedDef.setLevelParameters(typecheckLevelParameters(def));
-      if (typedDef.getLevelParameters() == null && def.getKind() == FunctionKind.CLASS_COCLAUSE) {
-        List<? extends LevelVariable> params = def.enclosingClass.getTypechecked().getLevelParameters();
+      if (def.getKind() == FunctionKind.CLASS_COCLAUSE) {
+        Definition enclosingClass = def.enclosingClass.getTypechecked();
+        List<? extends LevelVariable> params = enclosingClass.getLevelParameters();
         if (params != null) {
-          typedDef.setLevelParameters(new ArrayList<>(params));
+          if (typedDef.getLevelParameters() == null) {
+            typedDef.setLevelParameters(new ArrayList<>(params));
+          } else {
+            boolean setPLevel = def.getPLevelParameters() == null && enclosingClass.hasNonTrivialPLevelParameters();
+            boolean setHLevel = def.getHLevelParameters() == null && enclosingClass.hasNonTrivialHLevelParameters();
+            if (setPLevel || setHLevel) {
+              List<LevelVariable> newParams = new ArrayList<>();
+              newParams.addAll(setPLevel ? enclosingClass.getLevelParameters().subList(0, enclosingClass.getNumberOfPLevelParameters()) : typedDef.getLevelParameters().subList(0, typedDef.getNumberOfPLevelParameters()));
+              newParams.addAll(setHLevel ? enclosingClass.getLevelParameters().subList(enclosingClass.getNumberOfPLevelParameters(), enclosingClass.getLevelParameters().size()) : typedDef.getLevelParameters().subList(typedDef.getNumberOfPLevelParameters(), typedDef.getLevelParameters().size()));
+              typedDef.setLevelParameters(newParams);
+            }
+          }
         }
       }
     }
@@ -926,9 +938,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       } catch (ArithmeticException e) {
         n = Concrete.NumberPattern.MAX_VALUE;
       }
-      ExpressionPattern pattern = new ConstructorExpressionPattern(new ConCallExpression(Prelude.ZERO, LevelPair.PROP, Collections.emptyList(), Collections.emptyList()), Collections.emptyList());
+      ExpressionPattern pattern = new ConstructorExpressionPattern(new ConCallExpression(Prelude.ZERO, Levels.EMPTY, Collections.emptyList(), Collections.emptyList()), Collections.emptyList());
       for (int i = 0; i < n; i++) {
-        pattern = new ConstructorExpressionPattern(new ConCallExpression(Prelude.SUC, LevelPair.PROP, Collections.emptyList(), Collections.emptyList()), Collections.singletonList(pattern));
+        pattern = new ConstructorExpressionPattern(new ConCallExpression(Prelude.SUC, Levels.EMPTY, Collections.emptyList(), Collections.emptyList()), Collections.singletonList(pattern));
       }
       return pattern;
     }
@@ -1182,7 +1194,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             for (DependentLink param = typedDef.getParameters(); param.hasNext(); param = param.getNext()) {
               args.add(new ReferenceExpression(param));
             }
-            Expression type = useParent.getDefCall(typedDef.makeIdLevels(), args);
+            Expression type = useParent.getDefCall(useParent.makeIdLevels(), args);
             Sort sort = type.getSortOfType();
             if (sort != null) {
               int level = ((UniverseExpression) typedDef.getResultType()).getSort().getHLevel().getConstant();
@@ -1480,7 +1492,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         TypedSingleDependentLink thisBinding = new TypedSingleDependentLink(false, "this", thisType, true);
         thisType.setSort(classDef.computeSort(levels, defaultImpl, thisBinding));
         thisType.updateHasUniverses();
-        Expression result = DefCallResult.makeTResult(new Concrete.ReferenceExpression(def.getData().getData(), def.getData()), typedDef, levels).applyExpression(new ReferenceExpression(thisBinding), false, typechecker, def).toResult(typechecker).expression;
+        Expression result = DefCallResult.makeTResult(new Concrete.ReferenceExpression(def.getData().getData(), def.getData()), typedDef, typedDef.makeIdLevels()).applyExpression(new ReferenceExpression(thisBinding), false, typechecker, def).toResult(typechecker).expression;
         Expression actualType = result.getType();
         Expression fieldType = ((ClassField) fieldDef).getType().applyExpression(new ReferenceExpression(thisBinding));
         if (actualType.isLessOrEquals(fieldType, DummyEquations.getInstance(), def)) {
@@ -1686,13 +1698,13 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           Iterator<Concrete.FunctionClause> it = constructor.getClauses().iterator();
           while (it.hasNext()) {
             Concrete.FunctionClause conClause = it.next();
-            if (visitor.visitClause(conClause) != null) {
+            if (visitor.visitClause(conClause, null) != null) {
               errorReporter.report(new ConstructorReferenceError(conClause));
               it.remove();
             }
           }
           boolean constructorOK = patternsOK;
-          if (visitor.visitParameters(constructor.getParameters()) != null) {
+          if (visitor.visitParameters(constructor.getParameters(), null) != null) {
             errorReporter.report(new ConstructorReferenceError(constructor));
             constructorOK = false;
           }
@@ -2115,7 +2127,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     int i = 0;
     for (ClassDefinition superClass : typedDef.getSuperClasses()) {
       Concrete.ReferenceExpression aSuperClass = def.getSuperClasses().get(i);
-      if (base == LevelVariable.PVAR && aSuperClass.getPLevels() != null || base == LevelVariable.HVAR && aSuperClass.getHLevels() != null) {
+      if (base == LevelVariable.PVAR && (aSuperClass.getPLevels() != null || !superClass.hasPLevelParameters()) || base == LevelVariable.HVAR && (aSuperClass.getHLevels() != null || !superClass.hasHLevelParameters())) {
         continue;
       }
       List<? extends LevelVariable> superLevelFields = superClass.getLevelParameters();
@@ -2153,12 +2165,12 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     return (levelField1 instanceof FieldLevelVariable) == (levelField2 instanceof FieldLevelVariable) && (!(levelField1 instanceof FieldLevelVariable) || ((FieldLevelVariable) levelField1).getLevelField().equals(((FieldLevelVariable) levelField2).getLevelField()));
   }
 
-  private boolean compareLevelFields(List<? extends LevelVariable> levelFields1, List<? extends LevelVariable> levelFields2, Concrete.ReferenceExpression superClass2, boolean isPLevels) {
-    if (levelFields1 == null && levelFields2 == null) return true;
+  private boolean compareLevelFields(List<? extends LevelVariable> levelFields1, List<? extends LevelVariable> levelFields2, Concrete.ReferenceExpression superClass2, LevelVariable base) {
+    if (levelFields1 == null && levelFields2 == null || levelFields2 != null && levelFields2.isEmpty()) return true;
     if (levelFields1 == null) {
-      levelFields1 = Collections.singletonList(isPLevels ? LevelVariable.PVAR : LevelVariable.HVAR);
+      levelFields1 = Collections.singletonList(base);
     } else if (levelFields2 == null) {
-      levelFields2 = Collections.singletonList(isPLevels ? LevelVariable.PVAR : LevelVariable.HVAR);
+      levelFields2 = Collections.singletonList(base);
     }
     boolean ok = levelFields1.size() == levelFields2.size();
     if (ok) {
@@ -2169,7 +2181,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
       }
     }
-    if (!ok && (isPLevels ? superClass2.getPLevels() : superClass2.getHLevels()) == null) {
+    if (!ok && (base == LevelVariable.PVAR ? superClass2.getPLevels() : superClass2.getHLevels()) == null) {
       errorReporter.report(new TypecheckingError(GeneralError.Level.WARNING, "The level parameters of the super class do not match the level parameters of the class", superClass2));
     }
     return ok;
@@ -2178,8 +2190,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   private boolean compareLevelFields(ClassDefinition classDef1, ClassDefinition classDef2, Concrete.ReferenceExpression superClass) {
     List<? extends LevelVariable> levelParams1 = classDef1.getLevelParameters();
     List<? extends LevelVariable> levelParams2 = classDef2.getLevelParameters();
-    return compareLevelFields(levelParams1 == null ? null : levelParams1.subList(0, classDef1.getNumberOfPLevelParameters()), levelParams2 == null ? null : levelParams2.subList(0, classDef2.getNumberOfPLevelParameters()), superClass, true)
-        && compareLevelFields(levelParams1 == null ? null : levelParams1.subList(classDef1.getNumberOfPLevelParameters(), levelParams1.size()), levelParams2 == null ? null : levelParams2.subList(classDef2.getNumberOfPLevelParameters(), levelParams2.size()), superClass, false);
+    return compareLevelFields(levelParams1 == null ? null : levelParams1.subList(0, classDef1.getNumberOfPLevelParameters()), levelParams2 == null ? null : levelParams2.subList(0, classDef2.getNumberOfPLevelParameters()), superClass, LevelVariable.PVAR)
+        && compareLevelFields(levelParams1 == null ? null : levelParams1.subList(classDef1.getNumberOfPLevelParameters(), levelParams1.size()), levelParams2 == null ? null : levelParams2.subList(classDef2.getNumberOfPLevelParameters(), levelParams2.size()), superClass, LevelVariable.HVAR);
   }
 
   private void typecheckClass(Concrete.ClassDefinition def, ClassDefinition typedDef) {
@@ -2240,7 +2252,18 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       boolean compareLevels = (def.getPLevelParameters() == null || def.pOriginalDef != null) && (def.getHLevelParameters() == null || def.hOriginalDef != null);
       for (ClassDefinition superClass : typedDef.getSuperClasses()) {
         boolean ok = (compareLevels || superClass.getLevelParameters() != null) && compareLevelFields(typedDef, superClass, def.getSuperClasses().get(i));
-        superLevels.put(superClass, typechecker.typecheckLevels(superClass, def.getSuperClasses().get(i++), ok ? idLevels : null, false));
+        Levels defLevels = idLevels;
+        if (ok && superClass.getLevelParameters() != null && defLevels.size() > superClass.getLevelParameters().size()) {
+          if (!superClass.hasPLevelParameters() && !superClass.hasHLevelParameters()) {
+            defLevels = Levels.EMPTY;
+          } else if (superClass.hasPLevelParameters() && !superClass.hasHLevelParameters()) {
+            defLevels = new ListLevels(new ArrayList<>(defLevels.toList().subList(0, superClass.getLevelParameters().size())));
+          } else if (superClass.hasHLevelParameters() && !superClass.hasPLevelParameters()) {
+            List<? extends Level> oldList = defLevels.toList();
+            defLevels = new ListLevels(new ArrayList<>(oldList.subList(oldList.size() - superClass.getLevelParameters().size(), oldList.size())));
+          }
+        }
+        superLevels.put(superClass, typechecker.typecheckLevels(superClass, def.getSuperClasses().get(i++), ok ? defLevels : null, false));
       }
       if (!superLevels.isEmpty()) {
         LevelEquationsSolver levelSolver = typechecker.getEquations().makeLevelEquationsSolver();
@@ -2249,16 +2272,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           for (Map.Entry<ClassDefinition, Levels> entry : superLevels.entrySet()) {
             entry.setValue(entry.getValue().subst(subst));
           }
-        }
-      }
-
-      for (Iterator<Map.Entry<ClassDefinition, Levels>> iterator = superLevels.entrySet().iterator(); iterator.hasNext(); ) {
-        Map.Entry<ClassDefinition, Levels> entry = iterator.next();
-        Levels levels = entry.getValue();
-        if (levels.compare(idLevels, CMP.EQ, DummyEquations.getInstance(), null)) {
-          iterator.remove();
-        } else {
-          entry.setValue(levels);
         }
       }
 
@@ -2318,8 +2331,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         Levels levels = entry.getValue();
         if (levels.compare(idLevels, CMP.EQ, DummyEquations.getInstance(), null)) {
           iterator.remove();
-        } else {
-          entry.setValue(levels);
         }
       }
 

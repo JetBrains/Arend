@@ -74,6 +74,10 @@ public class TypeConstructorExpression extends Expression implements CoreTypeCon
     return myLevels;
   }
 
+  public void setLevels(Levels levels) {
+    myLevels = levels;
+  }
+
   @Override
   public int getClauseIndex() {
     return myClauseIndex;

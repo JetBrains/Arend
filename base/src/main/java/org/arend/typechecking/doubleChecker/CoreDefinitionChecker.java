@@ -11,7 +11,7 @@ import org.arend.core.expr.*;
 import org.arend.core.expr.type.Type;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
-import org.arend.core.subst.LevelPair;
+import org.arend.core.subst.Levels;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
@@ -146,7 +146,7 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
 
         DataCallExpression dataCall = link.getTypeExpr().normalize(NormalizationMode.WHNF).cast(DataCallExpression.class);
         if (!(dataCall != null && dataCall.getDefinition() == Prelude.INTERVAL)) {
-          errorReporter.report(new TypeMismatchError(new DataCallExpression(Prelude.INTERVAL, LevelPair.PROP, Collections.emptyList()), link.getTypeExpr(), null));
+          errorReporter.report(new TypeMismatchError(new DataCallExpression(Prelude.INTERVAL, Levels.EMPTY, Collections.emptyList()), link.getTypeExpr(), null));
           return false;
         }
 
@@ -294,6 +294,10 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
     if (!fields.equals(new ArrayList<>(definition.getFields()))) {
       errorReporter.report(new TypecheckingError("Class '" + definition.getName() + "' should have fields " + fields + ", but has fields " + definition.getFields(), null));
       return false;
+    }
+
+    for (Map.Entry<ClassDefinition, Levels> entry : definition.getSuperLevels().entrySet()) {
+      myChecker.checkLevels(entry.getValue(), entry.getKey(), null);
     }
 
     for (ClassField field : definition.getPersonalFields()) {

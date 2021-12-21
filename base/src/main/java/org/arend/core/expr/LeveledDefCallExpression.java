@@ -11,13 +11,17 @@ public abstract class LeveledDefCallExpression extends DefCallExpression {
 
   public LeveledDefCallExpression(Definition definition, Levels levels) {
     super(definition);
-    assert definition.status().needsTypeChecking() || (definition.getLevelParameters() == null) == (levels instanceof LevelPair);
+    assert (definition.status().needsTypeChecking() || (definition.getLevelParameters() == null) == (levels instanceof LevelPair)) && (definition.getLevelParameters() == null || definition.getLevelParameters().size() == levels.toList().size());
     myLevels = levels;
   }
 
   @NotNull
   public Levels getLevels() {
     return myLevels;
+  }
+
+  public void setLevels(Levels levels) {
+    myLevels = levels;
   }
 
   public LevelSubstitution getLevelSubstitution() {

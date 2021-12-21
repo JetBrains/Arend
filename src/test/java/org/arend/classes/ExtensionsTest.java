@@ -5,7 +5,7 @@ import org.arend.core.definition.ClassField;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.*;
 import org.arend.core.sort.Sort;
-import org.arend.core.subst.LevelPair;
+import org.arend.core.subst.Levels;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
@@ -169,7 +169,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
       "\\class A { | n : Nat -> Nat | k : Nat }\n" +
       "\\class B { | m : Nat | a : A }\n" +
       "\\func f => \\new B { | m => 0 | a => \\new A { | n => \\lam x => x | k => 1 } }");
-    Expression funCall = FunCallExpression.make((FunctionDefinition) getDefinition("f"), LevelPair.STD, Collections.emptyList());
+    Expression funCall = FunCallExpression.make((FunctionDefinition) getDefinition("f"), Levels.EMPTY, Collections.emptyList());
 
     Expression fieldCallA = FieldCallExpression.make((ClassField) getDefinition("B.a"), funCall);
     Expression fieldCallANorm = fieldCallA.normalize(NormalizationMode.WHNF);
@@ -192,7 +192,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
       "\\class B { | m : Nat | a : A }\n" +
       "\\class C { | l : Nat | b : B }\n" +
       "\\func f => \\new C { | l => 2 | b { | m => 1 | a { | n => \\lam x => x | k => 0 } } }");
-    Expression funCall = FunCallExpression.make((FunctionDefinition) getDefinition("f"), LevelPair.STD, Collections.emptyList());
+    Expression funCall = FunCallExpression.make((FunctionDefinition) getDefinition("f"), Levels.EMPTY, Collections.emptyList());
 
     Expression fieldCallL = FieldCallExpression.make((ClassField) getDefinition("C.l"), funCall);
     fieldCallL = fieldCallL.normalize(NormalizationMode.WHNF);
@@ -222,7 +222,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
       "\\class A { | n : Nat -> Nat | k : Nat }\n" +
       "\\class B { | m : Nat | a : A }\n" +
       "\\class C \\extends B { | m => 0 | a { | n => \\lam x => x | k => 1 } }");
-    NewExpression newExpr = new NewExpression(null, new ClassCallExpression((ClassDefinition) getDefinition("C"), LevelPair.STD));
+    NewExpression newExpr = new NewExpression(null, new ClassCallExpression((ClassDefinition) getDefinition("C"), Levels.EMPTY));
 
     Expression fieldCallA = FieldCallExpression.make((ClassField) getDefinition("B.a"), newExpr);
     assertTrue(fieldCallA instanceof NewExpression);
@@ -242,7 +242,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
       "\\class A { | n : Nat -> Nat | k : Nat }\n" +
       "\\class B { | m : Nat | a : A }\n" +
       "\\func f => \\new B { | m => 0 | a { | n => \\lam x => x | k => 1 } }");
-    Expression funCall = FunCallExpression.make((FunctionDefinition) getDefinition("f"), LevelPair.STD, Collections.emptyList());
+    Expression funCall = FunCallExpression.make((FunctionDefinition) getDefinition("f"), Levels.EMPTY, Collections.emptyList());
 
     Expression fieldCallA = FieldCallExpression.make((ClassField) getDefinition("B.a"), funCall);
     Expression fieldCallANorm = fieldCallA.normalize(NormalizationMode.WHNF);
@@ -264,7 +264,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
       "\\class A { | n : Nat -> Nat | k : Nat }\n" +
       "\\class B { | m : Nat | a : A }\n" +
       "\\instance f : B | m => 0 | a { | n => \\lam x => x | k => 1 }");
-    Expression funCall = FunCallExpression.make((FunctionDefinition) getDefinition("f"), LevelPair.STD, Collections.emptyList());
+    Expression funCall = FunCallExpression.make((FunctionDefinition) getDefinition("f"), Levels.EMPTY, Collections.emptyList());
 
     Expression fieldCallA = FieldCallExpression.make((ClassField) getDefinition("B.a"), funCall);
     Expression fieldCallANorm = fieldCallA.normalize(NormalizationMode.WHNF);

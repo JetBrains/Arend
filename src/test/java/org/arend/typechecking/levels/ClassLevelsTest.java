@@ -11,6 +11,8 @@ import org.arend.typechecking.TypeCheckingTestCase;
 import org.arend.typechecking.error.local.SuperLevelsMismatchError;
 import org.junit.Test;
 
+import java.util.Collections;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -89,7 +91,7 @@ public class ClassLevelsTest extends TypeCheckingTestCase {
   @Test
   public void diamondTest() {
     typeCheckModule(
-      "\\record Base\n" +
+      "\\record Base (A : \\Type)\n" +
       "\\record R \\extends Base (\\suc \\lp)\n" +
       "\\record S \\extends Base (\\suc \\lp)\n" +
       "\\record T \\extends R, S");
@@ -111,7 +113,7 @@ public class ClassLevelsTest extends TypeCheckingTestCase {
   @Test
   public void diamondError() {
     typeCheckModule(
-      "\\record Base\n" +
+      "\\record Base (A : \\Type)\n" +
       "\\record R \\extends Base (\\suc \\lp)\n" +
       "\\record S \\extends Base\n" +
       "\\record T \\extends R, S", 1);
@@ -121,7 +123,7 @@ public class ClassLevelsTest extends TypeCheckingTestCase {
   @Test
   public void diamondError2() {
     typeCheckModule(
-      "\\record Base\n" +
+      "\\record Base (A : \\Type)\n" +
       "\\record R \\extends Base (\\suc (\\suc \\lp))\n" +
       "\\record S \\extends Base (\\suc \\lp)\n" +
       "\\record T \\extends R, S", 1);
@@ -137,8 +139,9 @@ public class ClassLevelsTest extends TypeCheckingTestCase {
       "\\record T \\extends R\n" +
       "\\record X \\extends S, T\n" +
       "  | B : \\Type p2");
+    assertEquals(2, getDefinition("R").getLevelParameters().size());
     assertEquals(3, getDefinition("S").getLevelParameters().size());
-    assertEquals(3, getDefinition("T").getLevelParameters().size());
+    assertEquals(2, getDefinition("T").getLevelParameters().size());
     assertEquals(3, getDefinition("X").getLevelParameters().size());
   }
 
@@ -183,7 +186,7 @@ public class ClassLevelsTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\record R \\plevels p1 <= p2\n" +
       "\\record S \\extends R (\\lp,\\lp)");
-    assertNull(getDefinition("S").getLevelParameters());
+    assertEquals(Collections.singletonList(LevelVariable.PVAR), getDefinition("S").getLevelParameters());
   }
 
   @Test
@@ -216,7 +219,7 @@ public class ClassLevelsTest extends TypeCheckingTestCase {
   public void extendsResolveTest() {
     typeCheckModule(
       "\\record R \\plevels p1 <= p2\n" +
-      "\\record S\n" +
+      "\\record S (A : \\Type)\n" +
       "\\record T \\extends R, S p2");
   }
 
@@ -227,5 +230,13 @@ public class ClassLevelsTest extends TypeCheckingTestCase {
       "\\record S\n" +
       "\\record T \\extends R, S p3", 1);
     assertThatErrorsAre(Matchers.notInScope("p3"));
+  }
+
+  @Test
+  public void derivedLevels() {
+    typeCheckModule(
+      "\\record R \\plevels p1 <= p2\n" +
+      "\\record S \\extends R");
+    assertNull(((ClassDefinition) getDefinition("S")).getSuperLevels().get((ClassDefinition) getDefinition("R")));
   }
 }

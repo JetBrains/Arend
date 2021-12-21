@@ -137,6 +137,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
 
   public Levels castLevels(ClassDefinition superClass, Levels levels) {
     if (superClass == this) return levels;
+    if (superClass.getLevelParameters() != null && superClass.getLevelParameters().isEmpty()) return Levels.EMPTY;
     Levels result = mySuperLevels.get(superClass);
     return result == null ? levels : result.subst(levels.makeSubstitution(this));
   }
@@ -440,7 +441,8 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
     return myLevelParameters;
   }
 
-  public void setLevelParameters(List<? extends LevelVariable> parameters) {
+  @Override
+  public void setLevelParameters(List<LevelVariable> parameters) {
     myLevelParameters = parameters;
   }
 

@@ -6,7 +6,7 @@ import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.elimtree.ElimBody;
 import org.arend.core.expr.*;
 import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelPair;
+import org.arend.core.subst.Levels;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.arend.typechecking.error.local.HigherConstructorMatchingError;
 import org.arend.util.SingletonList;
@@ -344,8 +344,8 @@ public class ConditionsTest extends TypeCheckingTestCase {
     DependentLink i = ((ElimBody) Objects.requireNonNull(((FunctionDefinition) getDefinition("f")).getBody())).getClauses().get(2).getPatterns().get(0).getFirstBinding();
     DependentLink j = i.getNext();
     Constructor loop = (Constructor) getDefinition("S1.loop");
-    Expression iResult = ConCallExpression.make(loop, LevelPair.STD, Collections.emptyList(), new SingletonList<>(new ReferenceExpression(j)));
-    Expression jResult = ConCallExpression.make(loop, LevelPair.STD, Collections.emptyList(), new SingletonList<>(new ReferenceExpression(i)));
+    Expression iResult = ConCallExpression.make(loop, Levels.EMPTY, Collections.emptyList(), new SingletonList<>(new ReferenceExpression(j)));
+    Expression jResult = ConCallExpression.make(loop, Levels.EMPTY, Collections.emptyList(), new SingletonList<>(new ReferenceExpression(i)));
 
     assertThatErrorsAre(goalError(
       new Condition(null, new ExprSubstitution(i, Left()), iResult), new Condition(null, new ExprSubstitution(i, Right()), iResult),
@@ -365,8 +365,8 @@ public class ConditionsTest extends TypeCheckingTestCase {
     DependentLink i = ((CaseExpression) Objects.requireNonNull(((FunctionDefinition) getDefinition("f")).getBody())).getElimBody().getClauses().get(2).getPatterns().get(0).getFirstBinding();
     DependentLink j = i.getNext();
     Constructor loop = (Constructor) getDefinition("S1.loop");
-    Expression iResult = ConCallExpression.make(loop, LevelPair.STD, Collections.emptyList(), new SingletonList<>(new ReferenceExpression(j)));
-    Expression jResult = ConCallExpression.make(loop, LevelPair.STD, Collections.emptyList(), new SingletonList<>(new ReferenceExpression(i)));
+    Expression iResult = ConCallExpression.make(loop, Levels.EMPTY, Collections.emptyList(), new SingletonList<>(new ReferenceExpression(j)));
+    Expression jResult = ConCallExpression.make(loop, Levels.EMPTY, Collections.emptyList(), new SingletonList<>(new ReferenceExpression(i)));
 
     assertThatErrorsAre(goalError(
       new Condition(null, new ExprSubstitution(i, Left()), iResult), new Condition(null, new ExprSubstitution(i, Right()), iResult),
@@ -403,7 +403,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
     DependentLink binding = ((LamExpression) ((PathExpression) Objects.requireNonNull(f.getBody())).getArgument()).getParameters();
     Constructor base = (Constructor) getDefinition("S1.base");
     assertThatErrorsAre(goalError(
-      new Condition(null, new ExprSubstitution(binding, Left()), ConCallExpression.make(base, LevelPair.STD, Collections.emptyList(), Collections.emptyList())),
+      new Condition(null, new ExprSubstitution(binding, Left()), ConCallExpression.make(base, Levels.EMPTY, Collections.emptyList(), Collections.emptyList())),
       new Condition(null, new ExprSubstitution(binding, Right()), new ReferenceExpression(f.getParameters()))));
   }
 

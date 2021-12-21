@@ -215,7 +215,7 @@ class ExpressionDeserialization {
         Expression expression = readExpr(conProto.getExpression());
         List<ExpressionPattern> patterns = readExpressionPatterns(conProto.getPatternList(), list);
         if (expression instanceof SmallIntegerExpression && ((SmallIntegerExpression) expression).getInteger() == 0) {
-          return new ConstructorExpressionPattern(new ConCallExpression(Prelude.ZERO, LevelPair.PROP, Collections.emptyList(), Collections.emptyList()), patterns);
+          return new ConstructorExpressionPattern(new ConCallExpression(Prelude.ZERO, Levels.EMPTY, Collections.emptyList(), Collections.emptyList()), patterns);
         }
         if (expression instanceof ConCallExpression) {
           return new ConstructorExpressionPattern((ConCallExpression) expression, patterns);

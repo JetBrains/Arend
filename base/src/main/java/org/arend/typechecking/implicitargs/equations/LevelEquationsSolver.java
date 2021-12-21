@@ -311,26 +311,26 @@ public class LevelEquationsSolver {
   }
 
   private void calculateUnBased(LevelEquations<InferenceLevelVariable> basedEquations, Set<InferenceLevelVariable> unBased, Map<InferenceLevelVariable, Integer> basedSolution) {
-    Map<InferenceLevelVariable,Boolean> unBasedMap = new HashMap<>();
+    Set<InferenceLevelVariable> unBasedSet = new HashSet<>();
     if (!myConstantUpperBounds.isEmpty()) {
       for (InferenceLevelVariable var : basedEquations.getVariables()) {
         Level ub = myConstantUpperBounds.get(var);
         if (ub != null) {
           if (ub.getVar() == null) {
-            unBasedMap.put(var, true);
+            unBasedSet.add(var);
           } else {
             int sol = basedSolution.get(var);
             if (sol == LevelEquations.INFINITY || ub.getConstant() < sol) {
-              unBasedMap.put(var, true);
+              unBasedSet.add(var);
             }
           }
         }
       }
     }
 
-    if (!unBasedMap.isEmpty()) {
+    if (!unBasedSet.isEmpty()) {
       Stack<InferenceLevelVariable> stack = new Stack<>();
-      for (InferenceLevelVariable var : unBasedMap.keySet()) {
+      for (InferenceLevelVariable var : unBasedSet) {
         stack.push(var);
       }
 
@@ -341,7 +341,7 @@ public class LevelEquationsSolver {
         if (lowerBounds != null) {
           for (LevelVariable lowerBound : lowerBounds) {
             if (lowerBound instanceof InferenceLevelVariable) {
-              if (unBasedMap.put((InferenceLevelVariable) lowerBound, true) == null) {
+              if (unBasedSet.add((InferenceLevelVariable) lowerBound)) {
                 stack.push((InferenceLevelVariable) lowerBound);
               }
             } else if (ok) {
@@ -353,20 +353,20 @@ public class LevelEquationsSolver {
       }
     }
 
-    if (!unBasedMap.isEmpty()) {
+    if (!unBasedSet.isEmpty()) {
       for (Map.Entry<LevelVariable, Set<InferenceLevelVariable>> entry : myUpperBounds.entrySet()) {
-        entry.getValue().removeAll(unBasedMap.keySet());
+        entry.getValue().removeAll(unBasedSet);
       }
     }
 
     MapDFS<LevelVariable> dfs = new MapDFS<>(myUpperBounds);
     for (LevelVariable var : myUpperBounds.keySet()) {
-      if (!(var instanceof InferenceLevelVariable) || ((InferenceLevelVariable) var).isUniverseLike()) {
+      if (!(var instanceof InferenceLevelVariable) || ((InferenceLevelVariable) var).isUniverseLike() && !unBasedSet.contains(var)) {
         dfs.visit(var);
       }
     }
     for (InferenceLevelVariable variable : basedEquations.getVariables()) {
-      if (Boolean.TRUE.equals(unBasedMap.get(variable)) || !variable.isUniverseLike() && !dfs.getVisited().contains(variable)) {
+      if (unBasedSet.contains(variable) || !variable.isUniverseLike() && !dfs.getVisited().contains(variable)) {
         unBased.add(variable);
       }
     }

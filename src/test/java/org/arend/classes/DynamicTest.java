@@ -4,6 +4,7 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.*;
 import org.arend.core.expr.*;
 import org.arend.core.subst.LevelPair;
+import org.arend.core.subst.Levels;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.TypeCheckingTestCase;
@@ -478,18 +479,18 @@ public class DynamicTest extends TypeCheckingTestCase {
     List<DependentLink> qParams = new ArrayList<>();
     Expression qType = qFun.getTypeWithParams(qParams, LevelPair.SET0);
     assertEquals(Pi(false, ClassCall(aClass), Nat()), fromPiParameters(qType, qParams));
-    assertEquals(FunCall(pFun, LevelPair.SET0), qFun.getBody());
+    assertEquals(FunCall(pFun, Levels.EMPTY), qFun.getBody());
 
     ClassDefinition bClass = (ClassDefinition) getDefinition("A.B");
     assertTrue(bClass.getFields().isEmpty());
     FunctionDefinition fFun = (FunctionDefinition) getDefinition("A.B.f");
     assertEquals(Nat(), fFun.getTypeWithParams(new ArrayList<>(), LevelPair.SET0));
-    assertEquals(FunCall(pFun, LevelPair.SET0), fFun.getBody());
+    assertEquals(FunCall(pFun, Levels.EMPTY), fFun.getBody());
     FunctionDefinition gFun = (FunctionDefinition) getDefinition("A.B.g");
     List<DependentLink> gParams = new ArrayList<>();
     Expression gType = gFun.getTypeWithParams(gParams, LevelPair.SET0);
     assertEquals(Pi(false, ClassCall(bClass), Nat()), fromPiParameters(gType, gParams));
-    assertEquals(FunCall(plus, LevelPair.SET0, FunCall(fFun, LevelPair.SET0), FunCall(pFun, LevelPair.SET0)), gFun.getBody());
+    assertEquals(FunCall(plus, Levels.EMPTY, FunCall(fFun, Levels.EMPTY), FunCall(pFun, Levels.EMPTY)), gFun.getBody());
 
     ClassDefinition cClass = (ClassDefinition) getDefinition("A.C");
     assertEquals(1, cClass.getFields().size());
@@ -500,14 +501,14 @@ public class DynamicTest extends TypeCheckingTestCase {
     Expression hType = hFun.getTypeWithParams(hParams, LevelPair.SET0);
     assertEquals(Pi(false, ClassCall(aClass), Nat()), fromPiParameters(hType, hParams));
     DependentLink hFunParam = param("\\this", ClassCall(aClass));
-    assertEquals(FunCall(plus, LevelPair.SET0, FunCall(pFun, LevelPair.SET0), FunCall(qFun, LevelPair.SET0, Ref(hFunParam))), hFun.getBody());
+    assertEquals(FunCall(plus, Levels.EMPTY, FunCall(pFun, Levels.EMPTY), FunCall(qFun, Levels.EMPTY, Ref(hFunParam))), hFun.getBody());
     FunctionDefinition kFun = (FunctionDefinition) getDefinition("A.C.k");
     List<DependentLink> kParams = new ArrayList<>();
     Expression kType = kFun.getTypeWithParams(kParams, LevelPair.SET0);
     assertEquals(Pi(false, ClassCall(cClass), Nat()), fromPiParameters(kType, kParams));
     DependentLink kFunParam = param("\\this", ClassCall(cClass));
     Expression aRef = FieldCall(cParent, Ref(kFunParam));
-    assertEquals(FunCall(plus, LevelPair.SET0, FunCall(hFun, LevelPair.SET0, aRef), FunCall(plus, LevelPair.SET0, FunCall(pFun, LevelPair.SET0), FunCall(qFun, LevelPair.SET0, aRef))), kFun.getBody());
+    assertEquals(FunCall(plus, Levels.EMPTY, FunCall(hFun, Levels.EMPTY, aRef), FunCall(plus, Levels.EMPTY, FunCall(pFun, Levels.EMPTY), FunCall(qFun, Levels.EMPTY, aRef))), kFun.getBody());
   }
 
   @Test

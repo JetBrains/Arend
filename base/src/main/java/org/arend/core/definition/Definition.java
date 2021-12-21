@@ -6,7 +6,6 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.expr.ClassCallExpression;
 import org.arend.core.expr.Expression;
-import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.sort.Level;
 import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.Levels;
@@ -54,6 +53,10 @@ public abstract class Definition extends UserDataHolderImpl implements CoreDefin
 
   public abstract List<? extends LevelVariable> getLevelParameters();
 
+  public void setLevelParameters(List<LevelVariable> levelParameters) {
+    throw new IllegalStateException();
+  }
+
   public int getNumberOfPLevelParameters() {
     List<? extends LevelVariable> vars = getLevelParameters();
     if (vars == null) return 1;
@@ -65,6 +68,26 @@ public abstract class Definition extends UserDataHolderImpl implements CoreDefin
       result++;
     }
     return result;
+  }
+
+  public boolean hasPLevelParameters() {
+    List<? extends LevelVariable> vars = getLevelParameters();
+    return vars == null || !vars.isEmpty() && vars.get(0).getType() == LevelVariable.LvlType.PLVL;
+  }
+
+  public boolean hasHLevelParameters() {
+    List<? extends LevelVariable> vars = getLevelParameters();
+    return vars == null || !vars.isEmpty() && vars.get(vars.size() - 1).getType() == LevelVariable.LvlType.HLVL;
+  }
+
+  public boolean hasNonTrivialPLevelParameters() {
+    List<? extends LevelVariable> params = getLevelParameters();
+    return params != null && (params.isEmpty() || params.get(0) != LevelVariable.PVAR);
+  }
+
+  public boolean hasNonTrivialHLevelParameters() {
+    List<? extends LevelVariable> params = getLevelParameters();
+    return params != null && (params.isEmpty() || params.get(params.size() - 1) != LevelVariable.HVAR);
   }
 
   public boolean isIdLevels(Levels levels) {
@@ -103,10 +126,6 @@ public abstract class Definition extends UserDataHolderImpl implements CoreDefin
       result.add(new Level(var.getMinValue()));
     }
     return new ListLevels(result);
-  }
-
-  public Levels makeLevelsFromList(List<Level> levels) {
-    return getLevelParameters() == null ? new LevelPair(levels.get(0), levels.get(1)) : new ListLevels(levels);
   }
 
   public Levels generateInferVars(Equations equations, boolean isUniverseLike, Concrete.SourceNode sourceNode) {

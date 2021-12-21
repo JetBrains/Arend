@@ -304,7 +304,7 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> impl
       entry.getValue().getExpression().accept(this, params);
     }
     for (Map.Entry<ClassField, PiExpression> entry : def.getOverriddenFields()) {
-      entry.getValue().getCodomain().accept(this, params);
+      visitPi(entry.getValue(), params);
     }
     return null;
   }
@@ -319,6 +319,9 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> impl
   @Override
   public Void visitField(ClassField field, P params) {
     visitPi(field.getType(), params);
+    if (field.getTypeLevel() != null) {
+      field.getTypeLevel().accept(this, params);
+    }
     return null;
   }
 }

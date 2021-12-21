@@ -80,7 +80,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     }
   }
 
-  private void checkLevels(Levels levels, Definition definition, Expression expr) {
+  void checkLevels(Levels levels, Definition definition, Expression expr) {
     List<? extends Level> list = levels.toList();
     int pNum = definition.getNumberOfPLevelParameters();
     for (int i = 0; i < pNum; i++) {
@@ -894,13 +894,13 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       length = Suc(tailLength);
     }
     Sort sort = Sort.STD.subst(expr.getLevels());
-    expr.getElementsType().accept(this, new PiExpression(sort.succ(), new TypedSingleDependentLink(true, null, new DataCallExpression(Prelude.FIN, LevelPair.PROP, Collections.singletonList(length))), new UniverseExpression(sort)));
+    expr.getElementsType().accept(this, new PiExpression(sort.succ(), new TypedSingleDependentLink(true, null, new DataCallExpression(Prelude.FIN, Levels.EMPTY, Collections.singletonList(length))), new UniverseExpression(sort)));
     List<Expression> elements = expr.getElements();
     for (int i = 0; i < elements.size(); i++) {
       elements.get(i).accept(this, AppExpression.make(expr.getElementsType(), new SmallIntegerExpression(i), true));
     }
     if (expr.getTail() != null) {
-      TypedSingleDependentLink lamParam = new TypedSingleDependentLink(true, "j", new DataCallExpression(Prelude.FIN, LevelPair.PROP, Collections.singletonList(tailLength)));
+      TypedSingleDependentLink lamParam = new TypedSingleDependentLink(true, "j", new DataCallExpression(Prelude.FIN, Levels.EMPTY, Collections.singletonList(tailLength)));
       expr.getTail().accept(this, new ClassCallExpression(Prelude.DEP_ARRAY, expr.getLevels(), Collections.singletonMap(Prelude.ARRAY_ELEMENTS_TYPE, new LamExpression(sort.succ(), lamParam, AppExpression.make(expr.getElementsType(), Suc(new ReferenceExpression(lamParam)), true))), new Sort(expr.getPLevel(), expr.getHLevel().max(new Level(0))), UniverseKind.NO_UNIVERSES));
     }
     return check(expectedType, expr.getType(), expr);

@@ -3,7 +3,7 @@ package org.arend.term.expr.visitor;
 import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.*;
-import org.arend.core.subst.LevelPair;
+import org.arend.core.subst.Levels;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.TypeCheckingTestCase;
@@ -22,7 +22,7 @@ public class BuiltinNormalizationTest extends TypeCheckingTestCase {
     List<Expression> args = new ArrayList<>(2);
     args.add(arg1);
     args.add(arg2);
-    return FunCallExpression.make(definition, LevelPair.STD, args);
+    return FunCallExpression.make(definition, Levels.EMPTY, args);
   }
 
   private static IntegerExpression val(int x) {

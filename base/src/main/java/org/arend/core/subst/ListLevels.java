@@ -11,6 +11,7 @@ import org.arend.typechecking.implicitargs.equations.Equations;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class ListLevels implements Levels {
@@ -20,10 +21,14 @@ public class ListLevels implements Levels {
     myLevels = levels;
   }
 
+  public ListLevels(Level level) {
+    myLevels = Collections.singletonList(level);
+  }
+
   @Override
   public LevelSubstitution makeSubstitution(@NotNull Definition definition) {
     List<? extends LevelVariable> vars = definition.getLevelParameters();
-    if (vars.size() != myLevels.size()) {
+    if (vars == null || vars.size() != myLevels.size()) {
       throw new IllegalStateException();
     }
     SimpleLevelSubstitution result = new SimpleLevelSubstitution();
@@ -44,11 +49,10 @@ public class ListLevels implements Levels {
 
   @Override
   public boolean compare(Levels other, CMP cmp, Equations equations, Concrete.SourceNode sourceNode) {
-    if (!(other instanceof ListLevels)) return false;
-    ListLevels otherList = (ListLevels) other;
-    if (myLevels.size() != otherList.myLevels.size()) return false;
+    if (myLevels.size() != other.size()) return false;
+    List<? extends Level> otherList = other.toList();
     for (int i = 0; i < myLevels.size(); i++) {
-      if (!Level.compare(myLevels.get(i), otherList.myLevels.get(i), cmp, equations, sourceNode)) {
+      if (!Level.compare(myLevels.get(i), otherList.get(i), cmp, equations, sourceNode)) {
         return false;
       }
     }
@@ -66,6 +70,11 @@ public class ListLevels implements Levels {
   @Override
   public List<? extends Level> toList() {
     return myLevels;
+  }
+
+  @Override
+  public int size() {
+    return myLevels.size();
   }
 
   @Override

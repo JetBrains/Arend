@@ -7,7 +7,7 @@ import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.sort.Sort;
-import org.arend.core.subst.LevelPair;
+import org.arend.core.subst.Levels;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.PrettyPrinterFlag;
 import org.arend.ext.reference.Precedence;
@@ -167,7 +167,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
   @Test
   public void fieldCallTest() {
     ClassDefinition def = (ClassDefinition) typeCheckDef("\\record R (f : Nat)");
-    Expression expr = FieldCallExpression.make(def.getPersonalFields().get(0), new ReferenceExpression(new TypedBinding("r", new ClassCallExpression(def, LevelPair.STD))));
+    Expression expr = FieldCallExpression.make(def.getPersonalFields().get(0), new ReferenceExpression(new TypedBinding("r", new ClassCallExpression(def, Levels.EMPTY))));
     assertEquals("r.f", expr.toString());
   }
 
@@ -175,7 +175,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
   public void boundRenamedTest() {
     FunctionDefinition def = (FunctionDefinition) typeCheckDef("\\func f (x y : Nat) => x");
     SingleDependentLink lamParam = singleParam("f", Nat());
-    Expression expr = new LamExpression(Sort.SET0, lamParam, FunCallExpression.make(def, LevelPair.STD, Arrays.asList(new ReferenceExpression(lamParam), new ReferenceExpression(lamParam))));
+    Expression expr = new LamExpression(Sort.SET0, lamParam, FunCallExpression.make(def, Levels.EMPTY, Arrays.asList(new ReferenceExpression(lamParam), new ReferenceExpression(lamParam))));
     assertEquals("\\lam (f1 : Nat) => f f1 f1", expr.toString());
   }
 
@@ -184,7 +184,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\func foo (x : Nat) => x\n" +
       "\\module M \\where { \\func foo => 1 }");
-    Expression expr = FunCallExpression.make((FunctionDefinition) getDefinition("foo"), LevelPair.STD, Collections.singletonList(FunCallExpression.make((FunctionDefinition) getDefinition("M.foo"), LevelPair.STD, Collections.emptyList())));
+    Expression expr = FunCallExpression.make((FunctionDefinition) getDefinition("foo"), Levels.EMPTY, Collections.singletonList(FunCallExpression.make((FunctionDefinition) getDefinition("M.foo"), Levels.EMPTY, Collections.emptyList())));
     assertEquals(MODULE_PATH + ".foo M.foo", expr.toString());
   }
 
@@ -193,7 +193,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\module M \\where { \\func foo (x : Nat) => x }\n" +
       "\\func foo => 1");
-    Expression expr = FunCallExpression.make((FunctionDefinition) getDefinition("M.foo"), LevelPair.STD, Collections.singletonList(FunCallExpression.make((FunctionDefinition) getDefinition("foo"), LevelPair.STD, Collections.emptyList())));
+    Expression expr = FunCallExpression.make((FunctionDefinition) getDefinition("M.foo"), Levels.EMPTY, Collections.singletonList(FunCallExpression.make((FunctionDefinition) getDefinition("foo"), Levels.EMPTY, Collections.emptyList())));
     assertEquals("M.foo " + MODULE_PATH + ".foo", expr.toString());
   }
 
@@ -202,7 +202,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\module M \\where { \\func foo (x : Nat) => x }\n" +
       "\\module N \\where { \\func foo => 1 }");
-    Expression expr = FunCallExpression.make((FunctionDefinition) getDefinition("M.foo"), LevelPair.STD, Collections.singletonList(FunCallExpression.make((FunctionDefinition) getDefinition("N.foo"), LevelPair.STD, Collections.emptyList())));
+    Expression expr = FunCallExpression.make((FunctionDefinition) getDefinition("M.foo"), Levels.EMPTY, Collections.singletonList(FunCallExpression.make((FunctionDefinition) getDefinition("N.foo"), Levels.EMPTY, Collections.emptyList())));
     assertEquals("M.foo N.foo", expr.toString());
   }
 
@@ -212,7 +212,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
       "\\module M \\where { \\func foo (x y : Nat) => x }\n" +
       "\\module N \\where { \\func foo => 1 }");
     SingleDependentLink lamParam = singleParam("foo", Nat());
-    Expression expr = new LamExpression(Sort.SET0, lamParam, FunCallExpression.make((FunctionDefinition) getDefinition("M.foo"), LevelPair.STD, Arrays.asList(new ReferenceExpression(lamParam), FunCallExpression.make((FunctionDefinition) getDefinition("N.foo"), LevelPair.STD, Collections.emptyList()))));
+    Expression expr = new LamExpression(Sort.SET0, lamParam, FunCallExpression.make((FunctionDefinition) getDefinition("M.foo"), Levels.EMPTY, Arrays.asList(new ReferenceExpression(lamParam), FunCallExpression.make((FunctionDefinition) getDefinition("N.foo"), Levels.EMPTY, Collections.emptyList()))));
     assertEquals("\\lam (foo : Nat) => M.foo foo N.foo", expr.toString());
   }
 

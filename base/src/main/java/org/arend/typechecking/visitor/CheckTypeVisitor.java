@@ -1382,7 +1382,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
                 if (!classCall.getDefinition().isSubClassOf(classDef)) {
                   errorReporter.report(new TypeMismatchError(new ClassCallExpression(classDef, classDef.makeMinLevels()), type, pair.proj2.implementation));
                 } else {
-                  if (classCall.getDefinition().getUniverseKind() != UniverseKind.NO_UNIVERSES && resultClassCall.getDefinition().getUniverseKind() != UniverseKind.NO_UNIVERSES && !resultClassCall.getLevels(classCall.getDefinition()).compare(classCall.getLevels(), CMP.EQ, myEquations, pair.proj2.implementation)) {
+                  if (classCall.getDefinition().getUniverseKind() != UniverseKind.NO_UNIVERSES && resultClassCall.getDefinition().getUniverseKind() != UniverseKind.NO_UNIVERSES && !resultClassCall.getLevels(classDef).compare(classCall.getLevels(classDef), CMP.EQ, myEquations, pair.proj2.implementation)) {
                     errorReporter.report(new TypeMismatchError(new ClassCallExpression(classDef, resultClassCall.getLevels(classDef)), classCall, pair.proj2.implementation));
                     return null;
                   }
@@ -1877,7 +1877,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     if (Prelude.ZERO != null && expr.getReferent() == Prelude.ZERO.getRef() && expectedType != null) {
       expectedType = expectedType.normalize(NormalizationMode.WHNF);
       if (expectedType instanceof DataCallExpression && ((DataCallExpression) expectedType).getDefinition() == Prelude.FIN) {
-        return checkResult(expectedType, new TypecheckingResult(new SmallIntegerExpression(0), new DataCallExpression(Prelude.FIN, LevelPair.PROP, new SingletonList<>(new SmallIntegerExpression(1)))), expr);
+        return checkResult(expectedType, new TypecheckingResult(new SmallIntegerExpression(0), new DataCallExpression(Prelude.FIN, Levels.EMPTY, new SingletonList<>(new SmallIntegerExpression(1)))), expr);
       }
     }
 
@@ -3072,7 +3072,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       if (!isMod) {
         type = ExpressionFactory.divModType(type);
       }
-      return checkResult(expectedType, new TypecheckingResult(FunCallExpression.make(isMod ? Prelude.MOD : Prelude.DIV_MOD, LevelPair.PROP, Arrays.asList(arg1.expression, arg2.expression)), type.getExpr()), expr);
+      return checkResult(expectedType, new TypecheckingResult(FunCallExpression.make(isMod ? Prelude.MOD : Prelude.DIV_MOD, Levels.EMPTY, Arrays.asList(arg1.expression, arg2.expression)), type.getExpr()), expr);
     }
 
     if (expectedType != null && (definition == Prelude.ARRAY_AT && expr.getNumberOfExplicitArguments() == 0 || definition == Prelude.ARRAY_INDEX && expr.getNumberOfExplicitArguments() == 1 || definition == Prelude.ARRAY_CONS && expr.getNumberOfExplicitArguments() == 2)) {

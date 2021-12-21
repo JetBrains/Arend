@@ -39,6 +39,10 @@ public class SigmaExpression extends Expression implements Type, CoreSigmaExpres
     return mySort;
   }
 
+  public void setSort(Sort sort) {
+    mySort = sort;
+  }
+
   @Override
   public Expression getExpr() {
     return this;

@@ -8,7 +8,6 @@ import org.arend.core.definition.Definition;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.PiExpression;
 import org.arend.core.expr.type.Type;
-import org.arend.core.subst.LevelPair;
 import org.arend.ext.concrete.expr.ConcreteArgument;
 import org.arend.ext.core.context.CoreParameter;
 import org.arend.term.concrete.Concrete;
@@ -66,7 +65,7 @@ public class ArgumentMappingIterator implements Iterator<Pair<CoreParameter, Con
 
     private Iterable<DependentLink> getParameters(@NotNull Definition definition) {
         if (definition instanceof ClassField) {
-            Expression type = ((ClassField) definition).getType(LevelPair.STD);
+            Expression type = ((ClassField) definition).getType(definition.makeIdLevels());
             ArrayList<DependentLink> parameters = new ArrayList<>();
             do {
                 parameters.add(((PiExpression) type).getParameters());

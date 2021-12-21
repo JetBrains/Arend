@@ -52,7 +52,7 @@ public class ExpressionFactory {
   }
 
   public static ClassCallExpression ClassCall(ClassDefinition definition) {
-    return new ClassCallExpression(definition, LevelPair.STD);
+    return new ClassCallExpression(definition, definition.makeIdLevels());
   }
 
   public static Expression ConCall(Constructor definition, Levels levels, List<Expression> dataTypeArguments, Expression... arguments) {
