@@ -19,6 +19,7 @@ import org.arend.ext.core.definition.CoreClassField;
 import org.arend.ext.core.expr.CoreClassCallExpression;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
+import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.typechecking.TypedExpression;
 import org.arend.naming.renamer.Renamer;
@@ -197,6 +198,10 @@ public class ClassCallExpression extends LeveledDefCallExpression implements Typ
     return impl == null ? null : impl.apply((Expression) thisExpr, getLevelSubstitution());
   }
 
+  public LevelSubstitution getLevelSubstitution(ClassDefinition superClass) {
+    return getLevels(superClass).makeSubstitution(superClass);
+  }
+
   private static void checkImplementation(CoreClassField field, Expression type) {
     type = type.normalize(NormalizationMode.WHNF);
     if (!(type instanceof CoreClassCallExpression && ((CoreClassCallExpression) type).getDefinition().isSubClassOf(field.getParentClass()))) {
@@ -313,7 +318,7 @@ public class ClassCallExpression extends LeveledDefCallExpression implements Typ
 
       PiExpression piExpr = getDefinition().getFieldType(field);
       Binding thisBindings = piExpr.getBinding();
-      Expression type = piExpr.getCodomain().accept(new SubstVisitor(new ExprSubstitution(thisBindings, newExpr), getLevelSubstitution()) {
+      Expression type = piExpr.getCodomain().accept(new SubstVisitor(new ExprSubstitution(thisBindings, newExpr), getLevels(field.getParentClass()).makeSubstitution(field.getParentClass())) {
         private Expression makeNewExpression(Expression arg, Expression type) {
           arg = arg.getUnderlyingExpression();
           if (arg instanceof ReferenceExpression && ((ReferenceExpression) arg).getBinding() == thisBindings) {
