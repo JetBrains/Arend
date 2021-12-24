@@ -2237,7 +2237,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       } else {
         typecheckLevelFields(typedDef, def, LevelVariable.HVAR, levelFields);
       }
-      if (myNewDef && !(levelFields.size() == 2 && levelFields.get(0).equals(LevelVariable.PVAR) && levelFields.get(1).equals(LevelVariable.HVAR))) {
+      if (myNewDef && !(levelFields.size() == 2 && levelFields.get(0) == LevelVariable.PVAR && levelFields.get(1) == LevelVariable.HVAR)) {
         typedDef.setLevelParameters(levelFields);
       }
       typechecker.setLevelContext(new LevelContext(variables, !levelFields.isEmpty() && levelFields.get(0).getType() == LevelVariable.LvlType.PLVL, !levelFields.isEmpty() && levelFields.get(levelFields.size() - 1).getType() == LevelVariable.LvlType.HLVL));

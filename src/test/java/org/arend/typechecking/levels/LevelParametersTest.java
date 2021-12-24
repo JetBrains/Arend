@@ -226,4 +226,10 @@ public class LevelParametersTest extends TypeCheckingTestCase {
     assertNotNull(type.getPLevels());
     assertNull(type.getHLevels());
   }
+
+  @Test
+  public void levelsNotErased() {
+    Definition def = typeCheckDef("\\record C \\hlevels lh (A : \\hType)");
+    assertEquals(2, def.getLevelParameters().size());
+  }
 }
