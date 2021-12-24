@@ -79,7 +79,7 @@ public class LevelEquationsSolver {
     if (var1 instanceof InferenceLevelVariable) {
       // ?x <= max(?y +- c, +-d) // 4
       if (var2 instanceof InferenceLevelVariable) {
-        LevelEquation<InferenceLevelVariable> equation = new LevelEquation<>((InferenceLevelVariable) var1, (InferenceLevelVariable) var2, constant, maxConstant < 0 ? null : maxConstant);
+        LevelEquation<InferenceLevelVariable> equation = new LevelEquation<>((InferenceLevelVariable) var1, (InferenceLevelVariable) var2, constant, maxConstant < 0 ? null : var1.getType() == LevelVariable.LvlType.PLVL ? maxConstant : maxConstant + 1);
         addEquation(equation, false);
         if ((myPBased || var1.getType() != LevelVariable.LvlType.PLVL) && (myHBased || var1.getType() != LevelVariable.LvlType.HLVL)) {
           addEquation(equation, true);
@@ -273,11 +273,12 @@ public class LevelEquationsSolver {
     }
 
     boolean useStd = true;
+    loop:
     for (Set<LevelVariable> vars : myLowerBounds.values()) {
       for (LevelVariable var : vars) {
         if (!(var instanceof InferenceLevelVariable) && var != LevelVariable.PVAR && var != LevelVariable.HVAR) {
           useStd = false;
-          break;
+          break loop;
         }
       }
     }

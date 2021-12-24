@@ -384,4 +384,12 @@ public class InferLevelTest extends TypeCheckingTestCase {
       "\\lemma test {A : \\Set} (a : A) : R A a \\cowith\n" +
       "  | p => idp");
   }
+
+  @Test
+  public void fieldLevelTest() {
+    typeCheckModule(
+      "\\record SomeSigma (A : \\Type) (J : \\Set)\n" +
+      "\\class SomeWrapper (X : SomeSigma Nat)\n" +
+      "\\func test (w : SomeWrapper) : \\Type => w.X.J");
+  }
 }
