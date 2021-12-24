@@ -113,15 +113,6 @@ public class DefinitionDeserialization implements ArendDeserializer {
     return result;
   }
 
-  private Concrete.LevelParameters makeLevelParameters(List<? extends LevelVariable> variables) {
-    if (variables.isEmpty()) return null;
-    List<LevelReferable> refs = new ArrayList<>(variables.size());
-    for (LevelVariable variable : variables) {
-      refs.add(new DataLevelReferable(null, variable.getName()));
-    }
-    return new Concrete.LevelParameters(null, refs, variables.size() == 1 || variables.get(0).getStd() == variables.get(0) || variables.get(0) instanceof ParamLevelVariable && variables.get(1) instanceof ParamLevelVariable && ((ParamLevelVariable) variables.get(0)).getSize() <= ((ParamLevelVariable) variables.get(1)).getSize());
-  }
-
   private void fillInClassDefinition(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.ClassData classProto, ClassDefinition classDef) throws DeserializationException {
     if (!classProto.getIsStdLevels()) {
       List<LevelVariable> fieldLevels = new ArrayList<>();
@@ -208,10 +199,10 @@ public class DefinitionDeserialization implements ArendDeserializer {
           classRef.addSuperLevels(classDef.getSuperLevels().get(superClass) != null);
         }
       }
-      if (classDef.getLevelParameters() != null && !classDef.getLevelParameters().isEmpty()) {
+      if (classDef.getLevelParameters() != null) {
         int n = classDef.getNumberOfPLevelParameters();
-        classRef.setPLevelParameters(makeLevelParameters(classDef.getLevelParameters().subList(0, n)));
-        classRef.setHLevelParameters(makeLevelParameters(classDef.getLevelParameters().subList(n, classDef.getLevelParameters().size())));
+        classRef.setPLevelParameters(Concrete.LevelParameters.makeLevelParameters(classDef.getLevelParameters().subList(0, n)));
+        classRef.setHLevelParameters(Concrete.LevelParameters.makeLevelParameters(classDef.getLevelParameters().subList(n, classDef.getLevelParameters().size())));
       }
     }
 

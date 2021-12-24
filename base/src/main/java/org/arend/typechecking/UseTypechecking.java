@@ -15,6 +15,7 @@ import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.CertainTypecheckingError;
 import org.arend.typechecking.error.local.CoerceCycleError;
+import org.arend.typechecking.error.local.LocalErrorReporter;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.order.DFS;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
@@ -34,14 +35,15 @@ public class UseTypechecking {
       }
 
       FunctionDefinition useDefinition = (FunctionDefinition) typedDefinition;
+      ErrorReporter localErrorReporter = new LocalErrorReporter(definition.getData(), errorReporter);
       if (definition.getKind() == FunctionKind.LEVEL && !useDefinition.getResultType().isError()) {
         Definition useParent = definition.getUseParent().getTypechecked();
-        ParametersLevel parametersLevel = typecheckLevel(definition, useDefinition, useParent, errorReporter);
+        ParametersLevel parametersLevel = typecheckLevel(definition, useDefinition, useParent, localErrorReporter);
         if (parametersLevel != null) {
           registerParametersLevel(useDefinition, useParent, parametersLevel);
         }
       } else if (definition.getKind() == FunctionKind.COERCE) {
-        typecheckCoerce(definition, useDefinition, errorReporter, fromMap, toMap);
+        typecheckCoerce(definition, useDefinition, localErrorReporter, fromMap, toMap);
       }
     }
 

@@ -774,6 +774,16 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     FunctionKind kind = implementedField == null ? def.getKind() : implementedField.isProperty() && implementedField.getTypeLevel() == null ? FunctionKind.LEMMA : FunctionKind.FUNC;
     checkFunctionLevel(def, kind);
 
+    if (def.getKind() == FunctionKind.LEVEL) {
+      Definition useParent = def.getUseParent().getTypechecked();
+      if (def.getPLevelParameters() == null && useParent.hasNonTrivialPLevelParameters()) {
+        def.setPLevelParameters(Concrete.LevelParameters.makeLevelParameters(useParent.getLevelParameters().subList(0, useParent.getNumberOfPLevelParameters())));
+      }
+      if (def.getHLevelParameters() == null && useParent.hasNonTrivialHLevelParameters()) {
+        def.setHLevelParameters(Concrete.LevelParameters.makeLevelParameters(useParent.getLevelParameters().subList(useParent.getNumberOfPLevelParameters(), useParent.getLevelParameters().size())));
+      }
+    }
+
     if (myNewDef) {
       typedDef.setLevelParameters(typecheckLevelParameters(def));
       if (def.getKind() == FunctionKind.CLASS_COCLAUSE) {

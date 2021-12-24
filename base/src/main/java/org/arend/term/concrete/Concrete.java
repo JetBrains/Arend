@@ -1,6 +1,7 @@
 package org.arend.term.concrete;
 
 import org.arend.core.context.binding.LevelVariable;
+import org.arend.core.context.binding.ParamLevelVariable;
 import org.arend.ext.concrete.*;
 import org.arend.ext.concrete.definition.*;
 import org.arend.ext.concrete.expr.*;
@@ -1747,6 +1748,14 @@ public final class Concrete {
         result.add(new DataLevelReferable(ref, ref.getRefName()));
       }
       return result;
+    }
+
+    public static Concrete.LevelParameters makeLevelParameters(List<? extends LevelVariable> variables) {
+      List<LevelReferable> refs = new ArrayList<>(variables.size());
+      for (LevelVariable variable : variables) {
+        refs.add(new DataLevelReferable(null, variable.getName()));
+      }
+      return new Concrete.LevelParameters(null, refs, variables.size() <= 1 || variables.get(0).getStd() == variables.get(0) || variables.get(0) instanceof ParamLevelVariable && variables.get(1) instanceof ParamLevelVariable && ((ParamLevelVariable) variables.get(0)).getSize() <= ((ParamLevelVariable) variables.get(1)).getSize());
     }
 
     @Override
