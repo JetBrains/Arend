@@ -341,6 +341,6 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
   @Override
   public Expression visitAt(AtExpression expr, Void params) {
     Expression intervalArg = expr.getIntervalArgument().accept(this, null);
-    return AtExpression.make(expr.getLevels().subst(myLevelSubstitution), expr.getPathArgument().accept(this, null), intervalArg, !expr.getIntervalArgument().getClass().equals(intervalArg.getClass()));
+    return AtExpression.make(expr.getPathArgument().accept(this, null), intervalArg, !expr.getIntervalArgument().getClass().equals(intervalArg.getClass()));
   }
 }

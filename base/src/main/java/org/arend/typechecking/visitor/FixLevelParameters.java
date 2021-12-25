@@ -172,12 +172,6 @@ public class FixLevelParameters extends VoidExpressionVisitor<Void> {
   }
 
   @Override
-  public Void visitAt(AtExpression expr, Void params) {
-    expr.setLevels(removeVars(expr.getLevels()));
-    return super.visitAt(expr, params);
-  }
-
-  @Override
   public Void visitTypeConstructor(TypeConstructorExpression expr, Void params) {
     if (expr.getLevels() instanceof LevelPair) {
       expr.setLevels(removeVars((LevelPair) expr.getLevels()));

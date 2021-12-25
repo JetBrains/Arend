@@ -567,7 +567,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
           args1.addAll(args.subList(defCallResult.getArguments().size(), args.size()));
           args1 = ((Constructor) defCallResult.getDefinition()).matchDataTypeArguments(args1);
           if (args1 != null) {
-            boolean ok = dataCall.getUniverseKind() == UniverseKind.NO_UNIVERSES || defCallResult.getLevels().compare(dataCall.getLevels(), dataCall.getUniverseKind() == UniverseKind.ONLY_COVARIANT ? CMP.LE : CMP.EQ, myVisitor.getEquations(), fun);
+            boolean ok = dataCall.getLevels().compare(defCallResult.getLevels(), CMP.LE, myVisitor.getEquations(), fun);
 
             if (ok && !defCallResult.getArguments().isEmpty()) {
               ok = new CompareVisitor(myVisitor.getEquations(), CMP.LE, fun).compareLists(defCallResult.getArguments(), dataCall.getDefCallArguments().subList(0, defCallResult.getArguments().size()), dataCall.getDefinition().getParameters(), dataCall.getDefinition(), new ExprSubstitution());
@@ -578,7 +578,6 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
               return null;
             }
 
-            result = DefCallResult.makeTResult(defCallResult.getDefCall(), defCallResult.getDefinition(), dataCall.getLevels());
             if (!args1.isEmpty()) {
               result = ((DefCallResult) result).applyExpressions(args1, myVisitor);
             }

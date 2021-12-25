@@ -152,8 +152,6 @@ message Expression {
         Expression argument = 4;
     }
     message At {
-        Level pLevel = 1;
-        Level hLevel = 2;
         Expression pathArgument = 3;
         Expression intervalArgument = 4;
     }

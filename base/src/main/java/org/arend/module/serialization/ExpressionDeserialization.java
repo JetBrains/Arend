@@ -511,7 +511,7 @@ class ExpressionDeserialization {
   }
 
   private Expression readAt(ExpressionProtos.Expression.At proto) throws DeserializationException {
-    return AtExpression.make(new LevelPair(readLevel(proto.getPLevel(), LevelVariable.PVAR), readLevel(proto.getHLevel(), LevelVariable.HVAR)), readExpr(proto.getPathArgument()), readExpr(proto.getIntervalArgument()), false);
+    return AtExpression.make(readExpr(proto.getPathArgument()), readExpr(proto.getIntervalArgument()), false);
   }
 
   private String validName(String name) {

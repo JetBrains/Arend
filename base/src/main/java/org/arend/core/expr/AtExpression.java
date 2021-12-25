@@ -3,27 +3,23 @@ package org.arend.core.expr;
 import org.arend.core.definition.Constructor;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
-import org.arend.core.subst.LevelPair;
 import org.arend.ext.core.expr.CoreAtExpression;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
-import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
 import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
 
 public class AtExpression extends Expression implements CoreAtExpression {
-  private LevelPair myLevels;
   private final Expression myPathArgument;
   private final Expression myIntervalArgument;
 
-  private AtExpression(LevelPair levels, Expression pathArgument, Expression intervalArgument) {
-    myLevels = levels;
+  private AtExpression(Expression pathArgument, Expression intervalArgument) {
     myPathArgument = pathArgument;
     myIntervalArgument = intervalArgument;
   }
 
-  public static Expression make(LevelPair levels, Expression pathArgument, Expression intervalArgument, boolean checkInterval) {
+  public static Expression make(Expression pathArgument, Expression intervalArgument, boolean checkInterval) {
     if (pathArgument instanceof PathExpression) {
       return AppExpression.make(((PathExpression) pathArgument).getArgument(), intervalArgument, true);
     }
@@ -36,16 +32,7 @@ public class AtExpression extends Expression implements CoreAtExpression {
         }
       }
     }
-    return new AtExpression(levels, pathArgument, intervalArgument);
-  }
-
-  @Override
-  public @NotNull LevelPair getLevels() {
-    return myLevels;
-  }
-
-  public void setLevels(LevelPair levels) {
-    myLevels = levels;
+    return new AtExpression(pathArgument, intervalArgument);
   }
 
   @Override
@@ -56,10 +43,6 @@ public class AtExpression extends Expression implements CoreAtExpression {
   @Override
   public @NotNull Expression getIntervalArgument() {
     return myIntervalArgument;
-  }
-
-  public void substLevels(LevelSubstitution substitution) {
-    myLevels = myLevels.subst(substitution);
   }
 
   @Override

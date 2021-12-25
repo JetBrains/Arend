@@ -20,6 +20,7 @@ import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.Levels;
+import org.arend.core.subst.UnfoldVisitor;
 import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.ops.CMP;
@@ -84,6 +85,8 @@ public class TwoStageEquations implements Equations {
 
   @Override
   public boolean addEquation(Expression origExpr1, Expression origExpr2, Expression type, CMP cmp, Concrete.SourceNode sourceNode, InferenceVariable stuckVar1, InferenceVariable stuckVar2, boolean normalize) {
+    origExpr1 = origExpr1.accept(new UnfoldVisitor(Collections.emptySet(), null, false, UnfoldVisitor.UnfoldFields.ONLY_PARAMETERS), null);
+    origExpr2 = origExpr2.accept(new UnfoldVisitor(Collections.emptySet(), null, false, UnfoldVisitor.UnfoldFields.ONLY_PARAMETERS), null);
     Expression expr1 = normalize ? origExpr1.normalize(NormalizationMode.WHNF) : origExpr1;
     Expression expr2 = normalize ? origExpr2.normalize(NormalizationMode.WHNF) : origExpr2;
     if (expr1 instanceof SubstExpression && !(expr2 instanceof SubstExpression)) {
@@ -177,9 +180,13 @@ public class TwoStageEquations implements Equations {
       if (cmp == CMP.EQ) {
         InferenceReferenceExpression infRef = cType instanceof FieldCallExpression ? ((FieldCallExpression) cType).getArgument().cast(InferenceReferenceExpression.class) : null;
         if (infRef == null || !(infRef.getVariable() instanceof TypeClassInferenceVariable)) {
-          Expression typeType = cType.getType();
+          Expression typeType = cType.getType().normalize(NormalizationMode.WHNF);
           boolean useOrig = !(typeType instanceof UniverseExpression || typeType instanceof DataCallExpression && ((DataCallExpression) typeType).getDefinition() == Prelude.FIN);
-          if (solve(cInf, useOrig ? (inf1 != null ? origExpr2 : origExpr1) : cType, false, cInf instanceof TypeClassInferenceVariable, true, true) != SolveResult.NOT_SOLVED) {
+          Expression solution = useOrig ? (inf1 != null ? origExpr2 : origExpr1) : cType;
+          if (solve(cInf, solution, false, cInf instanceof TypeClassInferenceVariable, true, true) != SolveResult.NOT_SOLVED) {
+            return true;
+          }
+          if (useOrig && solution != cType && solve(cInf, cType, false, cInf instanceof TypeClassInferenceVariable, true, true) != SolveResult.NOT_SOLVED) {
             return true;
           }
         }
@@ -777,10 +784,11 @@ public class TwoStageEquations implements Equations {
             if (remove) {
               Expression other = bound.getAbsImplementationHere(entry.getKey());
               if (other != null) {
-                Expression expr = entry.getValue().subst(solution.getThisBinding(), new ReferenceExpression(bound.getThisBinding()));
+                Expression expr = entry.getValue().subst(solution.getThisBinding(), new ReferenceExpression(bound.getThisBinding())).normalize(NormalizationMode.WHNF);
+                other = other.normalize(NormalizationMode.WHNF);
                 Expression type = expr.getType();
-                remove = !CompareVisitor.compare(wrapper, CMP.EQ, type, other.getType(), Type.OMEGA, pair.proj1.getSourceNode()) ||
-                         !CompareVisitor.compare(wrapper, CMP.EQ, expr, other, type, pair.proj1.getSourceNode());
+                CompareVisitor cmpVisitor = new CompareVisitor(wrapper, CMP.EQ, pair.proj1.getSourceNode());
+                remove = !cmpVisitor.compare(type, other.getType(), Type.OMEGA, false) || !cmpVisitor.normalizedCompare(expr, other, type, true);
               }
             }
             if (remove) {

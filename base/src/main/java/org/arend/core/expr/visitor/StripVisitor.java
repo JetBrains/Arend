@@ -342,12 +342,12 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
   @Override
   public Expression visitPath(PathExpression expr, Void params) {
     Expression arg = expr.getArgument().accept(this, null);
-    return expr.getArgumentType() == null || expr.getArgumentType().removeConstLam() != null ? new PathExpression(expr.getLevels(), null, arg) : new PathExpression(expr.getLevels(), expr.getArgumentType().accept(this, null), arg);
+    return new PathExpression(expr.getLevels(), expr.getArgumentType() == null ? null : expr.getArgumentType().accept(this, null), arg);
   }
 
   @Override
   public Expression visitAt(AtExpression expr, Void params) {
-    return AtExpression.make(expr.getLevels(), expr.getPathArgument().accept(this, null), expr.getIntervalArgument().accept(this, null), true);
+    return AtExpression.make(expr.getPathArgument().accept(this, null), expr.getIntervalArgument().accept(this, null), true);
   }
 
   @Override

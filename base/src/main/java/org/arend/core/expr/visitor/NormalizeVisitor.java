@@ -1119,7 +1119,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
         return (((ConCallExpression) intervalArg).getDefinition() == Prelude.LEFT ? ((DataCallExpression) pathType).getDefCallArguments().get(1) : ((DataCallExpression) pathType).getDefCallArguments().get(2)).accept(this, mode);
       }
     }
-    return mode == NormalizationMode.WHNF ? AtExpression.make(expr.getLevels(), pathArg, intervalArg, false) : AtExpression.make(expr.getLevels(), pathArg.accept(this, mode), intervalArg.accept(this, mode), false);
+    return mode == NormalizationMode.WHNF ? AtExpression.make(pathArg, intervalArg, false) : AtExpression.make(pathArg.accept(this, mode), intervalArg.accept(this, mode), false);
   }
 
   @Override

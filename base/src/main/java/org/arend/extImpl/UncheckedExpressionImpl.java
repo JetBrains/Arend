@@ -1,7 +1,6 @@
 package org.arend.extImpl;
 
 import org.arend.core.expr.Expression;
-import org.arend.core.subst.UnfoldVisitor;
 import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.expr.UncheckedExpression;
@@ -59,7 +58,7 @@ public class UncheckedExpressionImpl implements UncheckedExpression {
 
   @Override
   public @NotNull UncheckedExpression unfold(@NotNull Set<? extends Variable> variables, @Nullable Set<Variable> unfolded, boolean unfoldLet, boolean unfoldFields) {
-    return variables.isEmpty() && !unfoldLet && !unfoldFields ? this : wrap(myExpression.accept(new UnfoldVisitor(variables, unfolded, unfoldLet, unfoldFields), null));
+    return myExpression.unfold(variables, unfolded, unfoldLet, unfoldFields);
   }
 
   @Override

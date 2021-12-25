@@ -16,9 +16,11 @@ public class UnfoldVisitor extends SubstVisitor {
   private final Set<? extends Variable> myVariables;
   private final Set<Variable> myUnfolded;
   private final boolean myUnfoldLet;
-  private final boolean myUnfoldFields;
+  private final UnfoldFields myUnfoldFields;
 
-  public UnfoldVisitor(Set<? extends Variable> variables, Set<Variable> unfolded, boolean unfoldLet, boolean unfoldFields) {
+  public enum UnfoldFields { ALL_FIELDS, ONLY_PARAMETERS, ONLY_SPECIFIED }
+
+  public UnfoldVisitor(Set<? extends Variable> variables, Set<Variable> unfolded, boolean unfoldLet, UnfoldFields unfoldFields) {
     super(new ExprSubstitution(), LevelSubstitution.EMPTY);
     myVariables = variables;
     myUnfolded = unfolded;
@@ -28,13 +30,15 @@ public class UnfoldVisitor extends SubstVisitor {
 
   @Override
   public boolean isEmpty() {
-    return !myUnfoldLet && !myUnfoldFields && myVariables.isEmpty() && super.isEmpty();
+    return !myUnfoldLet && myUnfoldFields == UnfoldFields.ONLY_SPECIFIED && myVariables.isEmpty() && super.isEmpty();
   }
 
   @Override
   public Expression visitReference(ReferenceExpression expr, Void params) {
     if (expr.getBinding() instanceof EvaluatingBinding && myVariables.contains(expr.getBinding())) {
-      myUnfolded.add(expr.getBinding());
+      if (myUnfolded != null) {
+        myUnfolded.add(expr.getBinding());
+      }
       return ((EvaluatingBinding) expr.getBinding()).getExpression();
     } else {
       return super.visitReference(expr, params);
@@ -64,7 +68,7 @@ public class UnfoldVisitor extends SubstVisitor {
 
   @Override
   public Expression visitFieldCall(FieldCallExpression expr, Void params) {
-    if (!expr.getDefinition().isProperty() && (myUnfoldFields || myVariables.contains(expr.getDefinition()))) {
+    if (!expr.getDefinition().isProperty() && (myUnfoldFields == UnfoldFields.ALL_FIELDS || myUnfoldFields == UnfoldFields.ONLY_PARAMETERS && expr.getDefinition().getReferable().isParameterField() || myVariables.contains(expr.getDefinition()))) {
       Expression result = NormalizeVisitor.INSTANCE.evalFieldCall(expr.getDefinition(), expr.getArgument());
       if (result != null) {
         if (myUnfolded != null) {

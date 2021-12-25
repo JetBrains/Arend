@@ -189,23 +189,14 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(DocFactory.refDoc(expr.getDefinition().getParentClass().getRef()), argType, mySourceNode), expr));
     }
 
+    Levels levels = argClassCall.getLevels(expr.getDefinition().getParentClass());
+    PiExpression overriddenType = argClassCall.getDefinition().getOverriddenType(expr.getDefinition(), levels);
     Expression actualType = null;
-    if (!expr.getDefinition().isProperty()) {
-      Expression impl = argClassCall.getImplementation(expr.getDefinition(), expr.getArgument());
-      if (impl != null) {
-        actualType = impl.getType();
-      }
+    if (overriddenType != null) {
+      actualType = overriddenType.applyExpression(expr.getArgument());
     }
-
     if (actualType == null) {
-      Levels levels = argClassCall.getLevels(expr.getDefinition().getParentClass());
-      PiExpression overriddenType = argClassCall.getDefinition().getOverriddenType(expr.getDefinition(), levels);
-      if (overriddenType != null) {
-        actualType = overriddenType.applyExpression(expr.getArgument());
-      }
-      if (actualType == null) {
-        actualType = expr.getDefinition().getType(levels).applyExpression(expr.getArgument());
-      }
+      actualType = expr.getDefinition().getType(levels).applyExpression(expr.getArgument());
     }
 
     return check(expectedType, actualType, expr);
@@ -940,13 +931,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     if (!(type instanceof DataCallExpression && ((DataCallExpression) type).getDefinition() == Prelude.PATH)) {
       throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(DocFactory.refDoc(Prelude.PATH.getRef()), type, mySourceNode), expr.getPathArgument()));
     }
-    Expression fun = ((DataCallExpression) type).getDefCallArguments().get(0);
-    Expression actualSort = AppExpression.make(fun, new ReferenceExpression(new TypedBinding("i", Interval())), true).getType();
-    Expression expectedSort = new UniverseExpression(expr.getLevels().toSort());
-    if (!CompareVisitor.compare(myEquations, CMP.LE, actualSort, expectedSort, Type.OMEGA, mySourceNode)) {
-      throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError("Sort mismatch", expectedSort, actualSort, mySourceNode), expr));
-    }
     expr.getIntervalArgument().accept(this, Interval());
-    return check(expectedType, AppExpression.make(fun, expr.getIntervalArgument(), true), expr);
+    return check(expectedType, AppExpression.make(((DataCallExpression) type).getDefCallArguments().get(0), expr.getIntervalArgument(), true), expr);
   }
 }
