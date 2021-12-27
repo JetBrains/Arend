@@ -6,9 +6,9 @@ import org.arend.term.concrete.Concrete;
 import java.util.Map;
 
 public class MapReferableRenamer extends ReferableRenamer {
-  private final Map<Variable, Concrete.Expression> myMapper;
+  private final Map<? super Variable, ? extends Concrete.Expression> myMapper;
 
-  public MapReferableRenamer(Map<Variable, Concrete.Expression> mapper) {
+  public MapReferableRenamer(Map<? super Variable, ? extends Concrete.Expression> mapper) {
     myMapper = mapper;
   }
 
