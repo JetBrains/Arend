@@ -16,10 +16,10 @@ import static org.junit.Assert.assertEquals;
 
 public class MinimizationTest extends TypeCheckingTestCase {
 
-    private void selectiveCheck(String module, String expected, boolean isGround, boolean useReturnType, Function<? super FunctionDefinition, ? extends Expression> selector) {
+    private void selectiveCheck(String module, String expected, boolean isGround, Function<? super FunctionDefinition, ? extends Expression> selector) {
         typeCheckModule(module);
         var selected = selector.apply((FunctionDefinition) getDefinition("test"));
-        var minimizedConcrete = MinimizedRepresentation.generateMinimizedRepresentation(selected, null, null, useReturnType);
+        var minimizedConcrete = MinimizedRepresentation.generateMinimizedRepresentation(selected, null, null, null);
         assertEquals(expected, minimizedConcrete.toString());
         if (isGround) {
             typeCheckExpr(minimizedConcrete, selected.getType());
@@ -27,15 +27,11 @@ public class MinimizationTest extends TypeCheckingTestCase {
     }
 
     private void checkType(String module, String expected) {
-        selectiveCheck(module, expected, true, false, definition -> definition.getTypeWithParams(new ArrayList<>(), LevelPair.STD));
+        selectiveCheck(module, expected, true, definition -> definition.getTypeWithParams(new ArrayList<>(), LevelPair.STD));
     }
 
     private void checkLet(String module, String expected) {
-        selectiveCheck(module, expected, false, true, definition -> ((LetExpression) Objects.requireNonNull(definition.getBody())).getExpression());
-    }
-
-    private void checkBody(String module, String expected) {
-        selectiveCheck(module, expected, false, true, definition -> (Expression) definition.getBody());
+        selectiveCheck(module, expected, false, definition -> ((LetExpression) Objects.requireNonNull(definition.getBody())).getExpression());
     }
 
     @Test
@@ -94,13 +90,8 @@ public class MinimizationTest extends TypeCheckingTestCase {
     }
 
     @Test
-    public void lambda() {
-        checkBody("\\func test : Nat -> Nat => \\lam a => a", "\\lam a => a");
-    }
-
-    @Test
     public void lambdaWithoutKnownReturnType() {
-        selectiveCheck("\\func test : Nat -> Nat => \\lam a => a", "\\lam (a : Nat) => a", false, false, definition -> (Expression) definition.getBody());
+        selectiveCheck("\\func test : Nat -> Nat => \\lam a => a", "\\lam (a : Nat) => a", false, definition -> (Expression) definition.getBody());
     }
 
     @Test
