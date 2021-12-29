@@ -4,7 +4,6 @@ import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.core.definition.CoreClassDefinition;
 import org.arend.ext.core.definition.CoreClassField;
-import org.arend.ext.core.level.CoreLevels;
 import org.arend.ext.typechecking.TypedExpression;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -14,7 +13,6 @@ import java.util.Map;
 
 public interface CoreClassCallExpression extends CoreDefCallExpression {
   @Override @NotNull CoreClassDefinition getDefinition();
-  @NotNull CoreLevels getLevels();
   @NotNull CoreBinding getThisBinding();
   @NotNull Collection<? extends Map.Entry<? extends CoreClassField, ? extends CoreExpression>> getImplementations();
 

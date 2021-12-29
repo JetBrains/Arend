@@ -6,6 +6,7 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.*;
 import org.arend.core.expr.ClassCallExpression;
 import org.arend.core.expr.Expression;
+import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.Levels;
 import org.arend.naming.reference.ConcreteLocatedReferable;
 import org.arend.naming.reference.LocatedReferable;
@@ -46,7 +47,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   private Expression getThisFI() {
     FunctionDefinition function = (FunctionDefinition) getDefinition("Test.test");
-    return FieldCall(((ClassDefinition) getDefinition("Test")).getPersonalFields().get(0), Ref(function.getParameters()));
+    return FieldCall(((ClassDefinition) getDefinition("Test")).getPersonalFields().get(0), LevelPair.PROP, Ref(function.getParameters()));
   }
 
   private ClassCallExpression makeClassCall(Definition definition, Expression impl) {

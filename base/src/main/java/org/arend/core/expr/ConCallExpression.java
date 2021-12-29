@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Collections;
 import java.util.List;
 
-public class ConCallExpression extends LeveledDefCallExpression implements CoreConCallExpression {
+public class ConCallExpression extends DefCallExpression implements CoreConCallExpression {
   private final List<Expression> myDataTypeArguments;
   private final List<Expression> myArguments;
 

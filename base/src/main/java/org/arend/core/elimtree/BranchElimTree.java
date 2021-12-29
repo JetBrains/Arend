@@ -250,7 +250,7 @@ public class BranchElimTree extends ElimTree {
         for (ClassField field : classCon.getClassDefinition().getFields()) {
           if (!classCon.getClassDefinition().isImplemented(field) && !classCon.getImplementedFields().contains(field)) {
             if (field.isProperty()) {
-              args.add(FieldCallExpression.make(field, argument));
+              args.add(FieldCallExpression.make(field, classCall.getLevels(field.getParentClass()), argument));
             } else {
               args.add(classCall.getAbsImplementationHere(field));
             }

@@ -5,6 +5,7 @@ import org.arend.core.definition.ClassField;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.*;
 import org.arend.core.sort.Sort;
+import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.Levels;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.typechecking.TypeCheckingTestCase;
@@ -171,16 +172,16 @@ public class ExtensionsTest extends TypeCheckingTestCase {
       "\\func f => \\new B { | m => 0 | a => \\new A { | n => \\lam x => x | k => 1 } }");
     Expression funCall = FunCallExpression.make((FunctionDefinition) getDefinition("f"), Levels.EMPTY, Collections.emptyList());
 
-    Expression fieldCallA = FieldCallExpression.make((ClassField) getDefinition("B.a"), funCall);
+    Expression fieldCallA = FieldCallExpression.make((ClassField) getDefinition("B.a"), Levels.EMPTY, funCall);
     Expression fieldCallANorm = fieldCallA.normalize(NormalizationMode.WHNF);
     assertTrue(fieldCallANorm instanceof NewExpression);
 
-    Expression fieldCallM = FieldCallExpression.make((ClassField) getDefinition("B.m"), funCall);
+    Expression fieldCallM = FieldCallExpression.make((ClassField) getDefinition("B.m"), Levels.EMPTY, funCall);
     fieldCallM = fieldCallM.normalize(NormalizationMode.WHNF);
     assertTrue(fieldCallM instanceof SmallIntegerExpression);
     assertEquals(0, ((SmallIntegerExpression) fieldCallM).getInteger());
 
-    Expression fieldCallK = FieldCallExpression.make((ClassField) getDefinition("A.k"), fieldCallA);
+    Expression fieldCallK = FieldCallExpression.make((ClassField) getDefinition("A.k"), Levels.EMPTY, fieldCallA);
     fieldCallK = fieldCallK.normalize(NormalizationMode.WHNF);
     assertEquals(Suc(Zero()), fieldCallK);
   }
@@ -194,24 +195,24 @@ public class ExtensionsTest extends TypeCheckingTestCase {
       "\\func f => \\new C { | l => 2 | b { | m => 1 | a { | n => \\lam x => x | k => 0 } } }");
     Expression funCall = FunCallExpression.make((FunctionDefinition) getDefinition("f"), Levels.EMPTY, Collections.emptyList());
 
-    Expression fieldCallL = FieldCallExpression.make((ClassField) getDefinition("C.l"), funCall);
+    Expression fieldCallL = FieldCallExpression.make((ClassField) getDefinition("C.l"), Levels.EMPTY, funCall);
     fieldCallL = fieldCallL.normalize(NormalizationMode.WHNF);
     assertTrue(fieldCallL instanceof SmallIntegerExpression);
     assertEquals(2, ((SmallIntegerExpression) fieldCallL).getInteger());
 
-    Expression fieldCallB = FieldCallExpression.make((ClassField) getDefinition("C.b"), funCall);
+    Expression fieldCallB = FieldCallExpression.make((ClassField) getDefinition("C.b"), Levels.EMPTY, funCall);
     Expression fieldCallBNorm = fieldCallB.normalize(NormalizationMode.WHNF);
     assertTrue(fieldCallBNorm instanceof NewExpression);
 
-    Expression fieldCallM = FieldCallExpression.make((ClassField) getDefinition("B.m"), fieldCallB);
+    Expression fieldCallM = FieldCallExpression.make((ClassField) getDefinition("B.m"), Levels.EMPTY, fieldCallB);
     fieldCallM = fieldCallM.normalize(NormalizationMode.WHNF);
     assertEquals(Suc(Zero()), fieldCallM);
 
-    Expression fieldCallA = FieldCallExpression.make((ClassField) getDefinition("B.a"), fieldCallB);
+    Expression fieldCallA = FieldCallExpression.make((ClassField) getDefinition("B.a"), Levels.EMPTY, fieldCallB);
     Expression fieldCallANorm = fieldCallA.normalize(NormalizationMode.WHNF);
     assertTrue(fieldCallANorm instanceof NewExpression);
 
-    Expression fieldCallK = FieldCallExpression.make((ClassField) getDefinition("A.k"), fieldCallA);
+    Expression fieldCallK = FieldCallExpression.make((ClassField) getDefinition("A.k"), Levels.EMPTY, fieldCallA);
     fieldCallK = fieldCallK.normalize(NormalizationMode.WHNF);
     assertEquals(Zero(), fieldCallK);
   }
@@ -224,14 +225,14 @@ public class ExtensionsTest extends TypeCheckingTestCase {
       "\\class C \\extends B { | m => 0 | a { | n => \\lam x => x | k => 1 } }");
     NewExpression newExpr = new NewExpression(null, new ClassCallExpression((ClassDefinition) getDefinition("C"), Levels.EMPTY));
 
-    Expression fieldCallA = FieldCallExpression.make((ClassField) getDefinition("B.a"), newExpr);
+    Expression fieldCallA = FieldCallExpression.make((ClassField) getDefinition("B.a"), LevelPair.STD, newExpr);
     assertTrue(fieldCallA instanceof NewExpression);
 
-    Expression fieldCallM = FieldCallExpression.make((ClassField) getDefinition("B.m"), newExpr);
+    Expression fieldCallM = FieldCallExpression.make((ClassField) getDefinition("B.m"), LevelPair.STD, newExpr);
     assertTrue(fieldCallM instanceof SmallIntegerExpression);
     assertEquals(0, ((SmallIntegerExpression) fieldCallM).getInteger());
 
-    Expression fieldCallK = FieldCallExpression.make((ClassField) getDefinition("A.k"), fieldCallA);
+    Expression fieldCallK = FieldCallExpression.make((ClassField) getDefinition("A.k"), LevelPair.STD, fieldCallA);
     fieldCallK = fieldCallK.normalize(NormalizationMode.WHNF);
     assertEquals(Suc(Zero()), fieldCallK);
   }
@@ -244,16 +245,16 @@ public class ExtensionsTest extends TypeCheckingTestCase {
       "\\func f => \\new B { | m => 0 | a { | n => \\lam x => x | k => 1 } }");
     Expression funCall = FunCallExpression.make((FunctionDefinition) getDefinition("f"), Levels.EMPTY, Collections.emptyList());
 
-    Expression fieldCallA = FieldCallExpression.make((ClassField) getDefinition("B.a"), funCall);
+    Expression fieldCallA = FieldCallExpression.make((ClassField) getDefinition("B.a"), Levels.EMPTY, funCall);
     Expression fieldCallANorm = fieldCallA.normalize(NormalizationMode.WHNF);
     assertTrue(fieldCallANorm instanceof NewExpression);
 
-    Expression fieldCallM = FieldCallExpression.make((ClassField) getDefinition("B.m"), funCall);
+    Expression fieldCallM = FieldCallExpression.make((ClassField) getDefinition("B.m"), Levels.EMPTY, funCall);
     fieldCallM = fieldCallM.normalize(NormalizationMode.WHNF);
     assertTrue(fieldCallM instanceof SmallIntegerExpression);
     assertEquals(0, ((SmallIntegerExpression) fieldCallM).getInteger());
 
-    Expression fieldCallK = FieldCallExpression.make((ClassField) getDefinition("A.k"), fieldCallA);
+    Expression fieldCallK = FieldCallExpression.make((ClassField) getDefinition("A.k"), Levels.EMPTY, fieldCallA);
     fieldCallK = fieldCallK.normalize(NormalizationMode.WHNF);
     assertEquals(Suc(Zero()), fieldCallK);
   }
@@ -266,16 +267,16 @@ public class ExtensionsTest extends TypeCheckingTestCase {
       "\\instance f : B | m => 0 | a { | n => \\lam x => x | k => 1 }");
     Expression funCall = FunCallExpression.make((FunctionDefinition) getDefinition("f"), Levels.EMPTY, Collections.emptyList());
 
-    Expression fieldCallA = FieldCallExpression.make((ClassField) getDefinition("B.a"), funCall);
+    Expression fieldCallA = FieldCallExpression.make((ClassField) getDefinition("B.a"), Levels.EMPTY, funCall);
     Expression fieldCallANorm = fieldCallA.normalize(NormalizationMode.WHNF);
     assertTrue(fieldCallANorm instanceof NewExpression);
 
-    Expression fieldCallM = FieldCallExpression.make((ClassField) getDefinition("B.m"), funCall);
+    Expression fieldCallM = FieldCallExpression.make((ClassField) getDefinition("B.m"), Levels.EMPTY, funCall);
     fieldCallM = fieldCallM.normalize(NormalizationMode.WHNF);
     assertTrue(fieldCallM instanceof SmallIntegerExpression);
     assertEquals(0, ((SmallIntegerExpression) fieldCallM).getInteger());
 
-    Expression fieldCallK = FieldCallExpression.make((ClassField) getDefinition("A.k"), fieldCallA);
+    Expression fieldCallK = FieldCallExpression.make((ClassField) getDefinition("A.k"), Levels.EMPTY, fieldCallA);
     fieldCallK = fieldCallK.normalize(NormalizationMode.WHNF);
     assertEquals(Suc(Zero()), fieldCallK);
   }

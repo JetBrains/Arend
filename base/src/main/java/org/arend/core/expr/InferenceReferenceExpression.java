@@ -47,7 +47,7 @@ public class InferenceReferenceExpression extends Expression implements CoreInfe
       for (Map.Entry<ClassField, Expression> entry : classCall.getImplementedHere().entrySet()) {
         ClassField field = entry.getKey();
         if (field.isProperty()) continue;
-        equations.addEquation(FieldCallExpression.make(field, result), entry.getValue().normalize(NormalizationMode.WHNF), classCall.getDefinition().getFieldType(field, classCall.getLevels(field.getParentClass()), result), CMP.EQ, binding.getSourceNode(), binding, entry.getValue().getStuckInferenceVariable(), false);
+        equations.addEquation(FieldCallExpression.make(field, classCall.getLevels(field.getParentClass()), result), entry.getValue().normalize(NormalizationMode.WHNF), classCall.getDefinition().getFieldType(field, classCall.getLevels(field.getParentClass()), result), CMP.EQ, binding.getSourceNode(), binding, entry.getValue().getStuckInferenceVariable(), false);
         if (result.getSubstExpression() != null) {
           Expression solution = result.getSubstExpression();
           binding.setType(classCall);

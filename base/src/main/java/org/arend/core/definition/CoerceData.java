@@ -159,7 +159,10 @@ public class CoerceData {
   private static TypecheckingResult coerceResult(TypecheckingResult result, Collection<? extends Definition> defs, Expression expectedType, Concrete.SourceNode sourceNode, CheckTypeVisitor visitor, boolean argStrict, boolean resultStrict) {
     for (Definition def : defs) {
       if (def instanceof ClassField) {
-        Expression resultExpr = FieldCallExpression.make((ClassField) def, result.expression);
+        ClassField field = (ClassField) def;
+        ClassCallExpression classCall = result.type.cast(ClassCallExpression.class);
+        Levels levels = classCall == null ? field.getParentClass().generateInferVars(visitor.getEquations(), sourceNode) : classCall.getLevels(field.getParentClass());
+        Expression resultExpr = FieldCallExpression.make(field, levels, result.expression);
         result = new TypecheckingResult(resultExpr, resultExpr.getType());
       } else if (def instanceof FunctionDefinition || def instanceof Constructor) {
         List<Expression> arguments = new ArrayList<>();

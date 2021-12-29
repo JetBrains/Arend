@@ -46,9 +46,7 @@ public class InPlaceLevelSubstVisitor extends VoidExpressionVisitor<Void> {
 
   @Override
   public Void visitDefCall(DefCallExpression expr, Void params) {
-    if (expr instanceof LeveledDefCallExpression) {
-      ((LeveledDefCallExpression) expr).substSort(mySubstitution);
-    }
+    expr.substSort(mySubstitution);
     super.visitDefCall(expr, null);
     return null;
   }

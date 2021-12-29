@@ -3,6 +3,9 @@ package org.arend.core.expr;
 import org.arend.core.definition.Definition;
 import org.arend.core.definition.ParametersLevel;
 import org.arend.core.definition.UniverseKind;
+import org.arend.core.subst.LevelPair;
+import org.arend.ext.core.level.LevelSubstitution;
+import org.arend.core.subst.Levels;
 import org.arend.ext.core.expr.CoreDefCallExpression;
 import org.arend.util.Decision;
 import org.jetbrains.annotations.NotNull;
@@ -12,9 +15,12 @@ import java.util.List;
 
 public abstract class DefCallExpression extends Expression implements CoreDefCallExpression {
   private final Definition myDefinition;
+  private Levels myLevels;
 
-  public DefCallExpression(Definition definition) {
+  public DefCallExpression(Definition definition, Levels levels) {
+    assert definition.status().needsTypeChecking() || (definition.getLevelParameters() == null) == (levels instanceof LevelPair);
     myDefinition = definition;
+    myLevels = levels;
   }
 
   @Override
@@ -24,6 +30,24 @@ public abstract class DefCallExpression extends Expression implements CoreDefCal
 
   public List<? extends Expression> getConCallArguments() {
     return getDefCallArguments();
+  }
+
+  @Override
+  @NotNull
+  public Levels getLevels() {
+    return myLevels;
+  }
+
+  public void setLevels(Levels levels) {
+    myLevels = levels;
+  }
+
+  public LevelSubstitution getLevelSubstitution() {
+    return myLevels.makeSubstitution(getDefinition());
+  }
+
+  public void substSort(LevelSubstitution substitution) {
+    myLevels = myLevels.subst(substitution);
   }
 
   @Override

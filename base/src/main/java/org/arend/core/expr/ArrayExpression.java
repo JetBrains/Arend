@@ -14,7 +14,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -68,7 +67,7 @@ public class ArrayExpression extends Expression implements CoreArrayExpression {
       return new SmallIntegerExpression(myElements.size());
     }
 
-    Expression result = FieldCallExpression.make(Prelude.ARRAY_LENGTH, myTail);
+    Expression result = FieldCallExpression.make(Prelude.ARRAY_LENGTH, myLevels, myTail);
     for (Expression ignored : myElements) {
       result = ExpressionFactory.Suc(result);
     }

@@ -32,7 +32,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-public class ClassCallExpression extends LeveledDefCallExpression implements Type, CoreClassCallExpression {
+public class ClassCallExpression extends DefCallExpression implements Type, CoreClassCallExpression {
   private final ClassCallBinding myThisBinding = new ClassCallBinding();
   private final Map<ClassField, Expression> myImplementations;
   private Sort mySort;
@@ -358,9 +358,8 @@ public class ClassCallExpression extends LeveledDefCallExpression implements Typ
           if (expr instanceof FieldCallExpression) {
             return super.visitDefCall(expr, params);
           }
-          assert expr instanceof LeveledDefCallExpression;
           List<Expression> newArgs = visitArgs(expr.getDefCallArguments(), expr.getDefinition().getParameters());
-          return expr.getDefinition().getDefCall(((LeveledDefCallExpression) expr).getLevels().subst(getLevelSubstitution()), newArgs);
+          return expr.getDefinition().getDefCall(expr.getLevels().subst(getLevelSubstitution()), newArgs);
         }
 
         private Constructor constructor;

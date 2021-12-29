@@ -71,12 +71,12 @@ public class NewExpression extends Expression implements CoreNewExpression {
 
   public Expression getImplementationHere(ClassField field) {
     Expression impl = myClassCall.getImplementationHere(field, this);
-    return impl != null ? impl : FieldCallExpression.make(field, myRenewExpression);
+    return impl != null ? impl : FieldCallExpression.make(field, myClassCall.getLevels(field.getParentClass()), myRenewExpression);
   }
 
   public Expression getImplementation(ClassField field) {
     Expression impl = myClassCall.getImplementation(field, this);
-    return impl != null ? impl : FieldCallExpression.make(field, myRenewExpression);
+    return impl != null ? impl : FieldCallExpression.make(field, myClassCall.getLevels(field.getParentClass()), myRenewExpression);
   }
 
   @Override
@@ -123,7 +123,7 @@ public class NewExpression extends Expression implements CoreNewExpression {
       }
       Expression impl = field.isProperty() ? null : myClassCall.getImplementationHere(field, this);
       if (impl == null) {
-        impl = FieldCallExpression.make(field, myRenewExpression, false);
+        impl = FieldCallExpression.make(field, myClassCall.getLevels(field.getParentClass()), myRenewExpression, false);
       }
       implementations.put(field, impl);
     }

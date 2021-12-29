@@ -688,7 +688,7 @@ public class TwoStageEquations implements Equations {
       if (!needLength) {
         Expression constType = elementsType.removeConstLam();
         if (constType != null) {
-          elementsType = new LamExpression(result.getLevels().toLevelPair().toSort().max(Sort.SET0), new TypedSingleDependentLink(true, null, Fin(FieldCallExpression.make(Prelude.ARRAY_LENGTH, new ReferenceExpression(result.getThisBinding())))), constType);
+          elementsType = new LamExpression(result.getLevels().toLevelPair().toSort().max(Sort.SET0), new TypedSingleDependentLink(true, null, Fin(FieldCallExpression.make(Prelude.ARRAY_LENGTH, result.getLevels(), new ReferenceExpression(result.getThisBinding())))), constType);
         } else {
           needLength = true;
         }

@@ -183,22 +183,21 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   @Override
   public Expression visitFieldCall(FieldCallExpression expr, Expression expectedType) {
-    Expression argType = expr.getArgument().accept(this, null).normalize(NormalizationMode.WHNF);
-    ClassCallExpression argClassCall = argType.cast(ClassCallExpression.class);
-    if (argClassCall == null || !argClassCall.getDefinition().isSubClassOf(expr.getDefinition().getParentClass())) {
-      throw new CoreException(CoreErrorWrapper.make(new TypeMismatchError(DocFactory.refDoc(expr.getDefinition().getParentClass().getRef()), argType, mySourceNode), expr));
-    }
+    checkLevels(expr.getLevels(), expr.getDefinition(), expr);
+    PiExpression type = expr.getDefinition().getType(expr.getLevels());
+    Expression argType = expr.getArgument().accept(this, type.getParameters().getTypeExpr());
 
-    Levels levels = argClassCall.getLevels(expr.getDefinition().getParentClass());
-    PiExpression overriddenType = argClassCall.getDefinition().getOverriddenType(expr.getDefinition(), levels);
     Expression actualType = null;
-    if (overriddenType != null) {
-      actualType = overriddenType.applyExpression(expr.getArgument());
+    ClassCallExpression argClassCall = argType.normalize(NormalizationMode.WHNF).cast(ClassCallExpression.class);
+    if (argClassCall != null) {
+      PiExpression overriddenType = argClassCall.getDefinition().getOverriddenType(expr.getDefinition(), argClassCall.getLevels(expr.getDefinition().getParentClass()));
+      if (overriddenType != null) {
+        actualType = overriddenType.applyExpression(expr.getArgument());
+      }
     }
     if (actualType == null) {
-      actualType = expr.getDefinition().getType(levels).applyExpression(expr.getArgument());
+      actualType = type.applyExpression(expr.getArgument());
     }
-
     return check(expectedType, actualType, expr);
   }
 
@@ -379,22 +378,18 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   @Override
   public Expression visitLam(LamExpression expr, Expression expectedType) {
+    checkSort(expr.getResultSort(), expr);
     return checkLam(expr, expectedType, null);
   }
 
   @Override
   public Expression visitPi(PiExpression expr, Expression expectedType) {
-    checkDependentLink(expr.getParameters(), Type.OMEGA, expr);
-    Expression codType = expr.getCodomain().accept(this, Type.OMEGA).normalize(NormalizationMode.WHNF);
+    checkSort(expr.getResultSort(), expr);
+    UniverseExpression type = new UniverseExpression(expr.getResultSort());
+    checkDependentLink(expr.getParameters(), expr.getResultSort().isProp() ? null : new UniverseExpression(new Sort(expr.getResultSort().getPLevel(), Level.INFINITY)), expr);
+    expr.getCodomain().accept(this, type);
     freeDependentLink(expr.getParameters());
-    Sort codSort = ((UniverseExpression) codType).getSort();
-    Level pLevel = codSort.isProp() ? new Level(0) : codSort.getPLevel().max(expr.getParameters().getType().getSortOfType().getPLevel());
-    if (pLevel == null) {
-      checkSort(expr.getResultSort(), expr);
-      compareSort(expr.getResultSort(), new Sort(expr.getParameters().getType().getSortOfType().getPLevel(), expr.getResultSort().getHLevel()), expr);
-      compareSort(expr.getResultSort(), codSort, expr);
-    }
-    return check(expectedType, new UniverseExpression(pLevel == null ? expr.getResultSort() : new Sort(pLevel, codSort.getHLevel())), expr);
+    return check(expectedType, type, expr);
   }
 
   @Override
@@ -877,7 +872,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       if (expr.getElements().isEmpty()) {
         throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Empty array with a tail", mySourceNode), expr));
       }
-      tailLength = FieldCallExpression.make(Prelude.ARRAY_LENGTH, expr.getTail());
+      tailLength = FieldCallExpression.make(Prelude.ARRAY_LENGTH, expr.getLevels(), expr.getTail());
       int s = expr.getElements().size() - 1;
       for (int i = 0; i < s; i++) {
         tailLength = Suc(tailLength);

@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class DataCallExpression extends LeveledDefCallExpression implements Type, CoreDataCallExpression {
+public class DataCallExpression extends DefCallExpression implements Type, CoreDataCallExpression {
   private final List<Expression> myArguments;
 
   public DataCallExpression(DataDefinition definition, Levels levels, List<Expression> arguments) {

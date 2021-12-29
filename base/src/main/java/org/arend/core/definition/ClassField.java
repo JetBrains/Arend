@@ -158,6 +158,6 @@ public class ClassField extends Definition implements CoreClassField {
 
   @Override
   public Expression getDefCall(Levels levels, List<Expression> args) {
-    return FieldCallExpression.make(this, args.get(0));
+    return FieldCallExpression.make(this, levels, args.get(0));
   }
 }

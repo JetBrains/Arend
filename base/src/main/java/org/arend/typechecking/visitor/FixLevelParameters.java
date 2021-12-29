@@ -43,6 +43,8 @@ public class FixLevelParameters extends VoidExpressionVisitor<Void> {
         if (found) {
           extendedDefs.addAll(((DataDefinition) definition).getConstructors());
         }
+      } else if (definition instanceof ClassDefinition) {
+        extendedDefs.addAll(((ClassDefinition) definition).getPersonalFields());
       }
     }
     extendedDefs.addAll(definitions);
@@ -88,7 +90,7 @@ public class FixLevelParameters extends VoidExpressionVisitor<Void> {
     expr.accept(new FixLevelParameters(null, false, false), null);
   }
 
-  private static void removeLevels(LeveledDefCallExpression defCall, boolean removePLevels, boolean removeHLevels) {
+  private static void removeLevels(DefCallExpression defCall, boolean removePLevels, boolean removeHLevels) {
     Levels levels;
     if (removePLevels && removeHLevels) {
       levels = Levels.EMPTY;
@@ -105,7 +107,7 @@ public class FixLevelParameters extends VoidExpressionVisitor<Void> {
     defCall.setLevels(levels);
   }
 
-  private void processDefCall(LeveledDefCallExpression defCall) {
+  private void processDefCall(DefCallExpression defCall) {
     if (myDefinitions == null) {
       List<? extends LevelVariable> params = defCall.getDefinition().getLevelParameters();
       if (params != null && (defCall.getLevels() instanceof LevelPair || defCall.getLevels().toList().size() != params.size())) {
@@ -118,9 +120,7 @@ public class FixLevelParameters extends VoidExpressionVisitor<Void> {
 
   @Override
   public Void visitDefCall(DefCallExpression expr, Void params) {
-    if (expr instanceof LeveledDefCallExpression) {
-      processDefCall((LeveledDefCallExpression) expr);
-    }
+    processDefCall(expr);
     return super.visitDefCall(expr, params);
   }
 
