@@ -794,10 +794,14 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
   public Expression evalFieldCall(ClassField field, Expression arg) {
     if (arg instanceof FunCallExpression && ((FunCallExpression) arg).getDefinition().getResultType() instanceof ClassCallExpression) {
       FunCallExpression funCall = (FunCallExpression) arg;
-      AbsExpression impl = ((ClassCallExpression) funCall.getDefinition().getResultType()).getAbsImplementation(field);
+      ClassCallExpression classCall = (ClassCallExpression) funCall.getDefinition().getResultType();
+      Expression impl = classCall.getAbsImplementationHere(field);
       if (impl != null) {
-        ExprSubstitution substitution = new ExprSubstitution(impl.getBinding(), arg).add(funCall.getDefinition().getParameters(), funCall.getDefCallArguments());
-        return impl.getExpression().subst(substitution, funCall.getLevelSubstitution());
+        return impl.subst(new ExprSubstitution(classCall.getThisBinding(), arg).add(funCall.getDefinition().getParameters(), funCall.getDefCallArguments()), funCall.getLevelSubstitution());
+      }
+      AbsExpression absImpl = classCall.getDefinition().getImplementation(field);
+      if (absImpl != null) {
+        return absImpl.getExpression().subst(new ExprSubstitution(absImpl.getBinding(), arg).add(funCall.getDefinition().getParameters(), funCall.getDefCallArguments()), classCall.getLevelSubstitution().subst(funCall.getLevelSubstitution()));
       } else if (funCall.getDefinition().getBody() == null) {
         return null;
       }

@@ -1917,7 +1917,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           ClassField field = classCall.getDefinition().getClassifyingField();
           AbsExpression classExpr = field == null ? null : classCall.getAbsImplementation(field);
           if (field == null || classExpr != null) {
-            TypecheckingResult result = myInstancePool.findInstance(classExpr == null ? null : classExpr.getExpression(), expectedType, new SubclassSearchParameters(classCall.getDefinition()), expr, expr instanceof RecursiveInstanceHoleExpression ? (RecursiveInstanceHoleExpression) expr : null, myDefinition);
+            TypecheckingResult result = myInstancePool.findInstance(classExpr == null ? null : classExpr.getExpression().subst(classCall.getLevelSubstitution()), expectedType, new SubclassSearchParameters(classCall.getDefinition()), expr, expr instanceof RecursiveInstanceHoleExpression ? (RecursiveInstanceHoleExpression) expr : null, myDefinition);
             if (result != null) return result;
           }
         }
