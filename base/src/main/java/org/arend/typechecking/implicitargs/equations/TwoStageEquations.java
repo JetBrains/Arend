@@ -272,6 +272,11 @@ public class TwoStageEquations implements Equations {
   }
 
   private void addLevelEquation(final LevelVariable var1, LevelVariable var2, int constant, int maxConstant, Concrete.SourceNode sourceNode) {
+    // 0 <= max(_ + c, +-d) // 6
+    if (var1 == null && (constant >= 1 || constant == 0 && (var2 == null || var2.getType() == LevelVariable.LvlType.PLVL))) {
+      return;
+    }
+
     // _ <= max(-c, -d), _ <= max(l - c, -d) // 6
     if (!(var2 instanceof InferenceLevelVariable) && maxConstant < 0 && (constant < 0 || constant == 0 && var2 != null && var2.getType() == LevelVariable.LvlType.HLVL && var1 == null) && !(var2 == null && var1 instanceof InferenceLevelVariable && var1.getType() == LevelVariable.LvlType.HLVL && constant >= -1 && maxConstant >= -1)) {
       myVisitor.getErrorReporter().report(new SolveLevelEquationsError(Collections.singletonList(new LevelEquation<>(var1, var2, constant)), sourceNode));
