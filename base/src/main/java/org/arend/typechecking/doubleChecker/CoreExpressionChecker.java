@@ -124,7 +124,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
         sucs++;
         expression = ((ConCallExpression) expression).getDefCallArguments().get(0);
       }
-      DataCallExpression dataCall = expression.accept(this, null).cast(DataCallExpression.class);
+      DataCallExpression dataCall = expression.accept(this, null).normalize(NormalizationMode.WHNF).cast(DataCallExpression.class);
       if (dataCall != null && dataCall.getDefinition() == Prelude.FIN) {
         Expression arg = dataCall.getDefCallArguments().get(0);
         for (int i = 0; i < sucs; i++) {
