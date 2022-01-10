@@ -353,6 +353,8 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
           }
         }
       }
+
+      typecheckingBodyFinished(definition.getData(), def);
     }
     myCurrentDefinitions = Collections.emptyList();
 
@@ -376,6 +378,10 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
 
     if (fixLevels) {
       FixLevelParameters.fix(allDefinitions);
+    }
+
+    for (Definition definition : allDefinitions) {
+      typecheckingBodyStarted(definition.getReferable());
     }
 
     if (!functionDefinitions.isEmpty()) {
