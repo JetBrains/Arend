@@ -185,6 +185,7 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
           ClassField classField = new ClassField(((Concrete.ClassField) element).getData(), (ClassDefinition) typechecked, new PiExpression(Sort.PROP, new TypedSingleDependentLink(false, "this", new ClassCallExpression((ClassDefinition) typechecked, typechecked.makeIdLevels()), true), new ErrorExpression()), null);
           classField.setStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
           ((ClassDefinition) typechecked).addPersonalField(classField);
+          ((ClassDefinition) typechecked).addField(classField);
           classField.getReferable().setTypecheckedIfAbsent(classField);
         }
       }
