@@ -202,4 +202,20 @@ public class RecursiveTest extends TypeCheckingTestCase {
       "\\func f (n : Nat) : Nat | 0 => 0 | suc n => g n\n" +
       "\\func g (n : Nat) : Nat => f (suc n)", 2);
   }
+
+  @Test
+  public void levelsTest() {
+    typeCheckModule(
+      "\\func test (n : Nat) : Nat\n" +
+      "  | 0 => 0\n" +
+      "  | suc n => test \\lp n");
+  }
+
+  @Test
+  public void levelsError() {
+    typeCheckModule(
+      "\\func test (n : Nat) : Nat\n" +
+      "  | 0 => 0\n" +
+      "  | suc n => test (\\suc \\lp) n", 1);
+  }
 }

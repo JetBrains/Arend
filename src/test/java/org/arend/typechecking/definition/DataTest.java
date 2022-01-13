@@ -283,7 +283,7 @@ public class DataTest extends TypeCheckingTestCase {
   @Test
   public void recursiveNonCovariantTest() {
     typeCheckModule(
-      "\\data D (A : \\Type)\n" +
+      "\\data D (A : \\Set)\n" +
       "  | con1\n" +
       "  | con2 (D (A -> Nat))");
     DataDefinition d = (DataDefinition) getDefinition("D");
@@ -293,7 +293,7 @@ public class DataTest extends TypeCheckingTestCase {
   @Test
   public void recursiveNonCovariantTest2() {
     typeCheckModule(
-      "\\data D (A B : \\Type)\n" +
+      "\\data D (A B : \\Set)\n" +
       "  | con1\n" +
       "  | con2 A (D B (A -> Nat))");
     DataDefinition d = (DataDefinition) getDefinition("D");
@@ -304,7 +304,7 @@ public class DataTest extends TypeCheckingTestCase {
   @Test
   public void recursiveNonCovariantTest3() {
     typeCheckModule(
-      "\\data D (A B : \\Type)\n" +
+      "\\data D (A B : \\Set)\n" +
       "  | con1\n" +
       "  | con2 B (D (B -> Nat) A)");
     DataDefinition d = (DataDefinition) getDefinition("D");
