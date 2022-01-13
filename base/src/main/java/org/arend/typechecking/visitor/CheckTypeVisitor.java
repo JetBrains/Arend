@@ -698,12 +698,16 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     return new CoreParameterBuilderImpl(this);
   }
 
-  private void checkSubstExpr(Expression expr, Collection<? extends CoreBinding> bindings) {
+  private boolean checkSubstExpr(Expression expr, Collection<? extends CoreBinding> bindings, boolean alwaysCheckBindings) {
     Set<CoreBinding> bindingsSet = new HashSet<>(bindings);
 
     Set<Binding> freeBindings = FreeVariablesCollector.getFreeVariables(expr);
+    int size = freeBindings.size();
     //noinspection SuspiciousMethodCalls
     freeBindings.removeAll(bindings);
+    if (!alwaysCheckBindings && freeBindings.size() == size) {
+      return true;
+    }
     for (Binding binding : freeBindings) {
       if (binding.getTypeExpr().findFreeBindings(bindingsSet) != null) {
         throw new IllegalArgumentException("Invalid substitution");
@@ -716,6 +720,8 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         throw new IllegalArgumentException("Invalid substitution");
       }
     }
+
+    return freeBindings.size() == size;
   }
 
   @Override
@@ -729,7 +735,9 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     for (SubstitutionPair pair : substPairs) {
       substVars.add(pair.binding);
     }
-    checkSubstExpr((Expression) expression, substVars);
+    if (checkSubstExpr((Expression) expression, substVars, false)) {
+      return levelSubst.isEmpty() ? (Expression) expression : ((Expression) expression).subst(levelSubst);
+    }
 
     ExprSubstitution substitution = new ExprSubstitution();
     SubstVisitor substVisitor = new SubstVisitor(substitution, levelSubst);
@@ -820,7 +828,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       if (!(parameter instanceof DependentLink)) throw new IllegalArgumentException();
     }
     //noinspection unchecked
-    checkSubstExpr((Expression) body, (Collection<? extends CoreBinding>) parameters);
+    checkSubstExpr((Expression) body, (Collection<? extends CoreBinding>) parameters, true);
 
     Sort sort = getSortOfType(((Expression) body).computeType(), (Concrete.SourceNode) marker);
     if (parameters.size() == 1 && parameters.get(0) instanceof SingleDependentLink) {
@@ -3666,8 +3674,9 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           allowedBindings.add(origBinding);
         }
         addBinding(asRef, link);
-        expressions.add(exprResult.expression.subst(substitution));
-        substitution.add(link, exprResult.expression);
+        Expression substExpr = exprResult.expression.subst(substitution);
+        expressions.add(substExpr);
+        substitution.add(link, substExpr);
       }
 
       if (expr.getResultType() != null) {
