@@ -99,7 +99,7 @@ public abstract class CovarianceChecker {
       return false;
     }
 
-    if (expr instanceof DataCallExpression && (allowData() || ((DataCallExpression) expr).getDefinition() == Prelude.PATH)) {
+    if (expr instanceof DataCallExpression && allowData()) {
       DataCallExpression dataCall = (DataCallExpression) expr;
       if (checkLevels(dataCall.getLevels(), dataCall)) {
         return true;
@@ -139,7 +139,7 @@ public abstract class CovarianceChecker {
       return false;
     }
 
-    if (expr instanceof FunCallExpression && ((FunCallExpression) expr).getDefinition() == Prelude.PATH_INFIX) {
+    if (expr instanceof FunCallExpression && ((FunCallExpression) expr).getDefinition() == Prelude.PATH_INFIX && allowData()) {
       FunCallExpression funCall = (FunCallExpression) expr;
       if (checkLevels(funCall.getLevels(), funCall)) {
         return true;

@@ -8,6 +8,12 @@ import org.arend.typechecking.visitor.CheckForUniversesVisitor;
 
 public class UniverseInParametersChecker extends CovarianceChecker {
   private final CheckForUniversesVisitor myVisitor = new CheckForUniversesVisitor();
+  private UniverseKind myResult = UniverseKind.NO_UNIVERSES;
+
+  public UniverseKind getUniverseKind(Expression expression) {
+    myResult = UniverseKind.NO_UNIVERSES;
+    return check(expression) ? UniverseKind.WITH_UNIVERSES : myResult;
+  }
 
   @Override
   protected boolean allowData() {
@@ -21,6 +27,27 @@ public class UniverseInParametersChecker extends CovarianceChecker {
 
   @Override
   protected boolean checkLevels(Levels levels, DefCallExpression defCall) {
-    return defCall != null && defCall.getUniverseKind() == UniverseKind.WITH_UNIVERSES;
+    if (levels.isClosed()) {
+      return false;
+    }
+
+    if (defCall != null && defCall.getUniverseKind() == UniverseKind.WITH_UNIVERSES) {
+      return true;
+    }
+
+    if ((defCall == null || defCall.getUniverseKind() == UniverseKind.ONLY_COVARIANT) && myResult == UniverseKind.NO_UNIVERSES) {
+      boolean ok = true;
+      for (Level level : levels.toList()) {
+        if (level.getVar() != null && level.getConstant() > 0) {
+          ok = false;
+          break;
+        }
+      }
+      if (!ok) {
+        myResult = UniverseKind.ONLY_COVARIANT;
+      }
+    }
+
+    return false;
   }
 }

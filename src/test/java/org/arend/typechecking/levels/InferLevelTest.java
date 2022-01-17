@@ -1,16 +1,24 @@
 package org.arend.typechecking.levels;
 
+import org.arend.core.definition.DataDefinition;
 import org.arend.core.definition.FunctionDefinition;
+import org.arend.core.definition.UniverseKind;
+import org.arend.core.expr.DataCallExpression;
+import org.arend.core.expr.ExpressionFactory;
 import org.arend.core.expr.PathExpression;
 import org.arend.core.expr.UniverseExpression;
 import org.arend.core.sort.Level;
+import org.arend.core.sort.Sort;
 import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.Levels;
 import org.arend.ext.core.ops.CMP;
 import org.arend.typechecking.TypeCheckingTestCase;
+import org.arend.typechecking.doubleChecker.CoreExpressionChecker;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.junit.Test;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Objects;
 
 import static org.arend.Matchers.typeMismatchError;
@@ -391,5 +399,64 @@ public class InferLevelTest extends TypeCheckingTestCase {
       "\\record SomeSigma (A : \\Type) (J : \\Set)\n" +
       "\\class SomeWrapper (X : SomeSigma Nat)\n" +
       "\\func test (w : SomeWrapper) : \\Type => w.X.J");
+  }
+
+  @Test
+  public void noUniverseTest() {
+    typeCheckModule(
+      "\\data Wrap (A : \\Type) | wrap A\n" +
+      "\\func test : \\Set0 => Wrap \\levels 1 1 Nat");
+    DataDefinition wrap = (DataDefinition) getDefinition("Wrap");
+    assertEquals(UniverseKind.NO_UNIVERSES, wrap.getUniverseKind());
+    new DataCallExpression(wrap, new LevelPair(new Level(1), new Level(1)), Collections.singletonList(ExpressionFactory.Nat())).accept(new CoreExpressionChecker(new HashSet<>(), DummyEquations.getInstance(), null), new UniverseExpression(new Sort(new Level(0), new Level(0))));
+  }
+
+  @Test
+  public void noUniverseTest2() {
+    typeCheckModule(
+      "\\data Wrap (A : \\Type) | wrap A\n" +
+      "\\func test : \\Set0 => Wrap \\levels 1 0 Nat -> Wrap \\levels 0 1 Nat");
+  }
+
+  @Test
+  public void transitivityTest() {
+    typeCheckModule(
+      "\\class C (A : \\hType) (a : A)\n" +
+      "\\data Wrap (A : \\hType) | wrap A\n" +
+      "\\func foo {A : \\hType} (c : C (Wrap A)) => c.a\n" +
+      "\\func test {A : \\hType} (c : C (Wrap (\\suc \\lp) A)) => foo c");
+  }
+
+  @Test
+  public void transitivityTest2() {
+    typeCheckModule(
+      "\\class C {A : \\hType} (a : A)\n" +
+      "\\data Wrap (A : \\hType) | wrap A\n" +
+      "\\class D (B : \\hType) \\extends C\n" +
+      "  | A => Wrap B\n" +
+      "\\func foo (d : D) => d.a\n" +
+      "\\func test {B : \\hType} (d : D (\\suc \\lp) { | B => B }) => foo d");
+  }
+
+  @Test
+  public void transitivityTest3() {
+    typeCheckModule(
+      "\\class C (A : \\hType) (a : A)\n" +
+      "\\data Wrap (A : \\hType) | wrap A\n" +
+      "\\func test1 {A : \\hType} (c : C (Wrap (\\suc \\lp) A)) : C (Wrap \\lp A) => c\n" +
+      "\\func test2 {A : \\hType} (c : C (Wrap \\lp A)) : C \\lp => c\n" +
+      "\\func test {A : \\hType} (c : C (Wrap (\\suc \\lp) A)) : C \\lp => c");
+  }
+
+  @Test
+  public void transitivityTest4() {
+    typeCheckModule(
+      "\\class C {A : \\hType} (a : A)\n" +
+      "\\class D \\extends C\n" +
+      "  | A => Nat\n" +
+      "\\class E (B : \\hType) \\extends D\n" +
+      "\\func test1 (e : E (\\suc \\lp)) : D \\lp => e\n" +
+      "\\func test2 (d : D (\\suc \\lp)) : C \\lp => d\n" +
+      "\\func test (e : E (\\suc \\lp)) : C \\lp => e");
   }
 }

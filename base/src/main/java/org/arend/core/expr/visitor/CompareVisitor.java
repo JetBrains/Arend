@@ -977,21 +977,24 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     return classCall1.getLevels(classCall2.getDefinition()).compare(classCall2.getLevels(), cmp, equations, mySourceNode);
   }
 
+  private boolean doesImplementationFit(Expression implementation, ClassField field, ClassCallExpression classCall1, ClassCallExpression classCall2) {
+    Expression type = implementation.normalize(NormalizationMode.WHNF).getType();
+    if (type == null) {
+      return false;
+    }
+    CMP origCmp = myCMP;
+    myCMP = CMP.LE;
+    boolean ok = compare(type, classCall1.getDefinition().getFieldType(field, classCall2.getLevels(field.getParentClass()), new ReferenceExpression(classCall1.getThisBinding())), Type.OMEGA, false);
+    myCMP = origCmp;
+    return ok;
+  }
+
   private boolean checkClassCallLevels(ClassCallExpression classCall1, ClassCallExpression classCall2, CMP onSuccess, CMP onFailure) {
-    ReferenceExpression thisExpr = new ReferenceExpression(classCall1.getThisBinding());
     boolean ok = true;
     for (Map.Entry<ClassField, AbsExpression> entry : classCall1.getDefinition().getImplemented()) {
       if (!entry.getKey().isProperty() && entry.getKey().getUniverseKind() != UniverseKind.NO_UNIVERSES && classCall2.getDefinition().getFields().contains(entry.getKey()) && !classCall2.isImplemented(entry.getKey())) {
-        Expression type = entry.getValue().apply(thisExpr, classCall1.getLevelSubstitution()).normalize(NormalizationMode.WHNF).getType();
-        if (type == null) {
+        if (!doesImplementationFit(entry.getValue().apply(new ReferenceExpression(classCall1.getThisBinding()), classCall1.getLevelSubstitution()), entry.getKey(), classCall1, classCall2)) {
           ok = false;
-          break;
-        }
-        CMP origCmp = myCMP;
-        myCMP = CMP.LE;
-        ok = compare(type, classCall1.getDefinition().getFieldType(entry.getKey(), classCall2.getLevels(entry.getKey().getParentClass()), thisExpr), Type.OMEGA, false);
-        myCMP = origCmp;
-        if (!ok) {
           break;
         }
       }
@@ -999,16 +1002,8 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     if (ok) {
       for (Map.Entry<ClassField, Expression> entry : classCall1.getImplementedHere().entrySet()) {
         if (!entry.getKey().isProperty() && entry.getKey().getUniverseKind() != UniverseKind.NO_UNIVERSES && classCall2.getDefinition().getFields().contains(entry.getKey()) && !classCall2.isImplemented(entry.getKey())) {
-          Expression type = entry.getValue().normalize(NormalizationMode.WHNF).getType();
-          if (type == null) {
+          if (!doesImplementationFit(entry.getValue(), entry.getKey(), classCall1, classCall2)) {
             ok = false;
-            break;
-          }
-          CMP origCmp = myCMP;
-          myCMP = CMP.LE;
-          ok = compare(type, classCall1.getDefinition().getFieldType(entry.getKey(), classCall2.getLevels(entry.getKey().getParentClass()), thisExpr), Type.OMEGA, false);
-          myCMP = origCmp;
-          if (!ok) {
             break;
           }
         }

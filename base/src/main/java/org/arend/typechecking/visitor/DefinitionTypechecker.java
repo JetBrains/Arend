@@ -371,14 +371,17 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
   }
 
-  private boolean checkForUniverses(DependentLink link) {
+  private UniverseKind checkForUniverses(DependentLink link) {
+    UniverseInParametersChecker checker = new UniverseInParametersChecker();
+    UniverseKind universeKind = UniverseKind.NO_UNIVERSES;
     for (; link.hasNext(); link = link.getNext()) {
       link = link.getNextTyped(null);
-      if (new UniverseInParametersChecker().check(link.getTypeExpr())) {
-        return true;
+      universeKind = universeKind.max(checker.getUniverseKind(link.getTypeExpr()));
+      if (universeKind == UniverseKind.WITH_UNIVERSES) {
+        return UniverseKind.WITH_UNIVERSES;
       }
     }
-    return false;
+    return universeKind;
   }
 
   private Integer checkResultTypeLevel(TypecheckingResult result, boolean isLemma, boolean isProperty, Expression resultType, FunctionDefinition funDef, ClassField classField, boolean isOverridden, Concrete.SourceNode sourceNode) {
@@ -1415,10 +1418,11 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
       typedDef.setGoodThisParameters(goodThisParametersVisitor.getGoodParameters());
 
-      if (checkForUniverses(typedDef.getParameters()) || new UniverseKindChecker().check(typedDef.getResultType())) {
+      if (new UniverseKindChecker().check(typedDef.getResultType())) {
         typedDef.setUniverseKind(UniverseKind.WITH_UNIVERSES);
       } else {
-        typedDef.setUniverseKind(new UniverseKindChecker().getUniverseKind(typedDef.getBody()));
+        UniverseKind universeKind = checkForUniverses(typedDef.getParameters());
+        typedDef.setUniverseKind(universeKind == UniverseKind.WITH_UNIVERSES ? UniverseKind.WITH_UNIVERSES : universeKind.max(new UniverseKindChecker().getUniverseKind(typedDef.getBody())));
       }
     }
 
@@ -1830,11 +1834,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       typechecker.setStatus(def.getStatus().getTypecheckingStatus());
       dataDefinition.addStatus(typechecker.getStatus());
 
-      if (checkForUniverses(dataDefinition.getParameters())) {
-        dataDefinition.setUniverseKind(UniverseKind.WITH_UNIVERSES);
-      } else {
-        UniverseKind kind = UniverseKind.NO_UNIVERSES;
-        dataDefinition.setUniverseKind(UniverseKind.NO_UNIVERSES);
+      UniverseKind kind = checkForUniverses(dataDefinition.getParameters());
+      if (kind != UniverseKind.WITH_UNIVERSES) {
+        dataDefinition.setUniverseKind(kind);
         loop:
         for (Constructor constructor : dataDefinition.getConstructors()) {
           for (DependentLink link = constructor.getParameters(); link.hasNext(); link = link.getNext()) {
@@ -1845,8 +1847,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             }
           }
         }
-        dataDefinition.setUniverseKind(kind);
       }
+      dataDefinition.setUniverseKind(kind);
     }
 
     if (myNewDef) {
@@ -2676,15 +2678,16 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       typedDef.setStatus(!classOk ? Definition.TypeCheckingStatus.HAS_ERRORS : typechecker.getStatus());
       typedDef.updateSort();
 
-      typedDef.setUniverseKind(UniverseKind.NO_UNIVERSES);
+      UniverseKind universeKind = UniverseKind.NO_UNIVERSES;
       for (ClassField field : typedDef.getFields()) {
-        if (field.getUniverseKind().ordinal() > typedDef.getUniverseKind().ordinal() && !typedDef.isImplemented(field)) {
-          typedDef.setUniverseKind(field.getUniverseKind());
-          if (typedDef.getUniverseKind() == UniverseKind.WITH_UNIVERSES) {
+        if (field.getUniverseKind().ordinal() > universeKind.ordinal() && !typedDef.isImplemented(field)) {
+          universeKind = field.getUniverseKind();
+          if (universeKind == UniverseKind.WITH_UNIVERSES) {
             break;
           }
         }
       }
+      typedDef.setUniverseKind(universeKind);
 
       for (ClassField field : typedDef.getPersonalFields()) {
         field.getType().getParameters().setType(new ClassCallExpression(typedDef, idLevels));

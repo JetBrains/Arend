@@ -6,11 +6,14 @@ import org.arend.core.expr.DefCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.subst.Levels;
 import org.arend.ext.util.Pair;
+import org.arend.typechecking.visitor.CheckForUniversesVisitor;
 
-public class UniverseKindChecker extends UniverseInParametersChecker {
+public class UniverseKindChecker extends CovarianceChecker {
+  private final CheckForUniversesVisitor myVisitor = new CheckForUniversesVisitor();
   private UniverseKind myResult = UniverseKind.NO_UNIVERSES;
 
   public UniverseKind getUniverseKind(Expression expression) {
+    myResult = UniverseKind.NO_UNIVERSES;
     check(expression);
     return myResult;
   }
@@ -44,13 +47,8 @@ public class UniverseKindChecker extends UniverseInParametersChecker {
   }
 
   @Override
-  protected boolean allowData() {
-    return true;
-  }
-
-  @Override
   protected boolean checkNonCovariant(Expression expr) {
-    if (super.checkNonCovariant(expr)) {
+    if (expr.accept(myVisitor, null)) {
       myResult = UniverseKind.WITH_UNIVERSES;
       return true;
     } else {
