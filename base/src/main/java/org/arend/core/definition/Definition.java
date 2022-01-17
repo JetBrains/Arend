@@ -23,7 +23,6 @@ import java.util.*;
 public abstract class Definition extends UserDataHolderImpl implements CoreDefinition {
   private final TCDefReferable myReferable;
   private TypeCheckingStatus myStatus;
-  private UniverseKind myUniverseKind = UniverseKind.NO_UNIVERSES;
 
   public Definition(TCDefReferable referable, TypeCheckingStatus status) {
     myReferable = referable;
@@ -147,7 +146,7 @@ public abstract class Definition extends UserDataHolderImpl implements CoreDefin
   }
 
   public Levels generateInferVars(Equations equations, Concrete.SourceNode sourceNode) {
-    return generateInferVars(equations, myUniverseKind != UniverseKind.NO_UNIVERSES, sourceNode);
+    return generateInferVars(equations, getUniverseKind() != UniverseKind.NO_UNIVERSES, sourceNode);
   }
 
   @NotNull
@@ -237,13 +236,9 @@ public abstract class Definition extends UserDataHolderImpl implements CoreDefin
 
   }
 
-  public UniverseKind getUniverseKind() {
-    return myUniverseKind;
-  }
+  public abstract UniverseKind getUniverseKind();
 
-  public void setUniverseKind(UniverseKind kind) {
-    myUniverseKind = kind;
-  }
+  public abstract void setUniverseKind(UniverseKind kind);
 
   public List<? extends ParametersLevel> getParametersLevels() {
     return Collections.emptyList();

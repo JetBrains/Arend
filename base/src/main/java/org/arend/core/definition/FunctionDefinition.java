@@ -32,6 +32,7 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
   private boolean myHasEnclosingClass;
   private List<Boolean> myStrictParameters = Collections.emptyList();
   private List<LevelVariable> myLevelParameters;
+  private UniverseKind myUniverseKind = UniverseKind.NO_UNIVERSES;
 
   public enum HiddenStatus { NOT_HIDDEN, HIDDEN, REALLY_HIDDEN }
 
@@ -195,6 +196,16 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
   @Override
   public void setTypeClassParameters(List<TypeClassParameterKind> typeClassParameters) {
     myTypeClassParameters = typeClassParameters;
+  }
+
+  @Override
+  public UniverseKind getUniverseKind() {
+    return myUniverseKind;
+  }
+
+  @Override
+  public void setUniverseKind(UniverseKind kind) {
+    myUniverseKind = kind;
   }
 
   public void setTypeClassParameter(int index, TypeClassParameterKind kind) {

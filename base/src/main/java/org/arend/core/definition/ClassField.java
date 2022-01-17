@@ -21,6 +21,7 @@ public class ClassField extends Definition implements CoreClassField {
   private Expression myTypeLevel;
   private int myNumberOfParameters;
   private boolean myHideable;
+  private UniverseKind myUniverseKind = UniverseKind.NO_UNIVERSES;
 
   public ClassField(TCFieldReferable referable, ClassDefinition parentClass) {
     super(referable, TypeCheckingStatus.NEEDS_TYPE_CHECKING);
@@ -136,6 +137,16 @@ public class ClassField extends Definition implements CoreClassField {
   @Override
   public TypeClassParameterKind getTypeClassParameterKind(int index) {
     return index == 0 && !myParentClass.isRecord() ? TypeClassParameterKind.YES : TypeClassParameterKind.NO;
+  }
+
+  @Override
+  public UniverseKind getUniverseKind() {
+    return myUniverseKind;
+  }
+
+  @Override
+  public void setUniverseKind(UniverseKind kind) {
+    myUniverseKind = kind;
   }
 
   @Override

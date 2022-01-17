@@ -33,6 +33,7 @@ public class DataDefinition extends Definition implements CoreDataDefinition {
   private Set<Definition> myRecursiveDefinitions = Collections.emptySet();
   private boolean myHasEnclosingClass;
   private List<LevelVariable> myLevelParameters;
+  private UniverseKind myUniverseKind = UniverseKind.NO_UNIVERSES;
 
   public DataDefinition(TCDefReferable referable) {
     super(referable, TypeCheckingStatus.NEEDS_TYPE_CHECKING);
@@ -208,6 +209,16 @@ public class DataDefinition extends Definition implements CoreDataDefinition {
   @Override
   public void setTypeClassParameters(List<TypeClassParameterKind> typeClassParameters) {
     myTypeClassParameters = typeClassParameters;
+  }
+
+  @Override
+  public UniverseKind getUniverseKind() {
+    return myUniverseKind;
+  }
+
+  @Override
+  public void setUniverseKind(UniverseKind kind) {
+    myUniverseKind = kind;
   }
 
   @Override

@@ -2019,7 +2019,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           dataDefinition.setSort(Sort.SET0);
         }
         if (body != null) {
-          new ConditionsChecking(DummyEquations.getInstance(), errorReporter, def).check(body, clauses, def.getClauses(), oldConstructor);
+          new ConditionsChecking(typechecker.getEquations(), errorReporter, def).check(body, clauses, def.getClauses(), oldConstructor);
         }
         if (dataSortIsProp) {
           dataDefinition.setSort(Sort.PROP);

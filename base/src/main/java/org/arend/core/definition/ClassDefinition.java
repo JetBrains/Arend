@@ -42,6 +42,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
   private List<? extends LevelVariable> myLevelParameters;
   private Map<ClassDefinition, Levels> mySuperLevels = Collections.emptyMap();
   private UniverseKind myBaseUniverseKind = UniverseKind.NO_UNIVERSES;
+  private UniverseKind myUniverseKind = UniverseKind.NO_UNIVERSES;
 
   public ClassDefinition(TCDefReferable referable) {
     super(referable, TypeCheckingStatus.NEEDS_TYPE_CHECKING);
@@ -212,6 +213,16 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
   @Override
   public CoerceData getCoerceData() {
     return myCoerce;
+  }
+
+  @Override
+  public UniverseKind getUniverseKind() {
+    return myUniverseKind;
+  }
+
+  @Override
+  public void setUniverseKind(UniverseKind kind) {
+    myUniverseKind = kind;
   }
 
   public static boolean isSubClassOf(ArrayDeque<CoreClassDefinition> classDefs, CoreClassDefinition classDef) {
