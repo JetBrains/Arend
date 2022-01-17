@@ -53,6 +53,7 @@ message Definition {
         repeated LevelField level_field = 17;
         bool is_std_levels = 18;
         map<int32, Levels> super_levels = 19;
+        UniverseKind base_universe_kind = 21;
 
         message Field {
             Referable referable = 1;

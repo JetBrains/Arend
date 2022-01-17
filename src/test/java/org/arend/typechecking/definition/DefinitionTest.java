@@ -278,7 +278,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\data D (A : Nat -> \\Type) : \\Type (\\suc \\lp) | con (A 0)\n" +
       "\\func f (A : Nat -> \\Type) : \\Type (\\suc \\lp) => Nat");
-    assertEquals(UniverseKind.ONLY_COVARIANT, getDefinition("D").getUniverseKind());
-    assertEquals(UniverseKind.ONLY_COVARIANT, getDefinition("f").getUniverseKind());
+    assertEquals(UniverseKind.NO_UNIVERSES, getDefinition("D").getUniverseKind());
+    assertEquals(UniverseKind.NO_UNIVERSES, getDefinition("f").getUniverseKind());
   }
 }

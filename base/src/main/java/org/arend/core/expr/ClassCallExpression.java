@@ -83,7 +83,7 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
     assert implementations instanceof LinkedHashMap || implementations.size() <= 1;
     myImplementations = implementations;
     mySort = sort;
-    myUniverseKind = universeKind;
+    myUniverseKind = universeKind.max(definition.getBaseUniverseKind());
   }
 
   @NotNull
@@ -120,7 +120,11 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
       return;
     }
 
-    myUniverseKind = UniverseKind.NO_UNIVERSES;
+    myUniverseKind = getDefinition().getBaseUniverseKind();
+    if (myUniverseKind == UniverseKind.WITH_UNIVERSES) {
+      return;
+    }
+
     for (ClassField field : getDefinition().getFields()) {
       if (field.getUniverseKind().ordinal() > myUniverseKind.ordinal() && !isImplemented(field)) {
         myUniverseKind = field.getUniverseKind();

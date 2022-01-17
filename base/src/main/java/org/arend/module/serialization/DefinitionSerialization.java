@@ -106,6 +106,7 @@ public class DefinitionSerialization implements ArendSerializer {
     DefinitionProtos.Definition.ClassData.Builder builder = DefinitionProtos.Definition.ClassData.newBuilder();
 
     builder.setIsStdLevels(definition.getLevelParameters() == null);
+    builder.setBaseUniverseKind(defSerializer.writeUniverseKind(definition.getBaseUniverseKind()));
     if (definition.getLevelParameters() != null) {
       for (LevelVariable var : definition.getLevelParameters()) {
         DefinitionProtos.Definition.LevelField.Builder fieldBuilder = DefinitionProtos.Definition.LevelField.newBuilder();

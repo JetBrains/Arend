@@ -391,7 +391,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
   @Test
   public void comparisonTest3() {
     typeCheckModule(
-      "\\record C (A : \\Type -> \\Type)\n" +
+      "\\record C (A : Nat -> \\Type)\n" +
       "\\func f (c : C (\\lam _ => \\Type4)) : C (\\lam _ => \\Type5) => c");
   }
 

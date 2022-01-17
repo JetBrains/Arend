@@ -2678,7 +2678,26 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       typedDef.setStatus(!classOk ? Definition.TypeCheckingStatus.HAS_ERRORS : typechecker.getStatus());
       typedDef.updateSort();
 
-      UniverseKind universeKind = UniverseKind.NO_UNIVERSES;
+      UniverseKind baseUniverseKind = UniverseKind.NO_UNIVERSES;
+      for (ClassDefinition superClass : typedDef.getSuperClasses()) {
+        baseUniverseKind = baseUniverseKind.max(superClass.getBaseUniverseKind());
+        if (baseUniverseKind == UniverseKind.WITH_UNIVERSES) {
+          break;
+        }
+      }
+
+      if (baseUniverseKind != UniverseKind.WITH_UNIVERSES) {
+        UniverseInParametersChecker checker1 = new UniverseInParametersChecker();
+        for (ClassField field : typedDef.getPersonalFields()) {
+          baseUniverseKind = baseUniverseKind.max(checker1.getUniverseKind(field.getResultType()));
+          if (baseUniverseKind == UniverseKind.WITH_UNIVERSES) {
+            break;
+          }
+        }
+      }
+
+      typedDef.setBaseUniverseKind(baseUniverseKind);
+      UniverseKind universeKind = baseUniverseKind;
       for (ClassField field : typedDef.getFields()) {
         if (field.getUniverseKind().ordinal() > universeKind.ordinal() && !typedDef.isImplemented(field)) {
           universeKind = field.getUniverseKind();

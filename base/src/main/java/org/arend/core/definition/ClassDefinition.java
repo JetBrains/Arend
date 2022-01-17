@@ -41,6 +41,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
   private FunctionDefinition mySquasher;
   private List<? extends LevelVariable> myLevelParameters;
   private Map<ClassDefinition, Levels> mySuperLevels = Collections.emptyMap();
+  private UniverseKind myBaseUniverseKind = UniverseKind.NO_UNIVERSES;
 
   public ClassDefinition(TCDefReferable referable) {
     super(referable, TypeCheckingStatus.NEEDS_TYPE_CHECKING);
@@ -434,6 +435,14 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
 
   public void setTypeClassFields(Set<ClassField> typeClassFields) {
     myTypeClassParameters = typeClassFields;
+  }
+
+  public UniverseKind getBaseUniverseKind() {
+    return myBaseUniverseKind;
+  }
+
+  public void setBaseUniverseKind(UniverseKind universeKind) {
+    myBaseUniverseKind = universeKind;
   }
 
   @Override
