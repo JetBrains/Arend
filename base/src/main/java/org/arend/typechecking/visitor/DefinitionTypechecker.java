@@ -2973,8 +2973,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
   private static boolean implementField(ClassField classField, AbsExpression implementation, ClassDefinition classDef, List<FieldReferable> alreadyImplemented) {
     AbsExpression oldImpl = classDef.implementField(classField, implementation);
-    ReferenceExpression thisRef = new ReferenceExpression(classField.getType().getParameters());
-    if (oldImpl != null && !classField.isProperty() && !Expression.compare(oldImpl.apply(thisRef, LevelSubstitution.EMPTY), implementation.apply(thisRef, LevelSubstitution.EMPTY), classField.getType().getCodomain(), CMP.EQ)) {
+    if (oldImpl == null) return true;
+    ReferenceExpression thisRef = new ReferenceExpression(oldImpl.getBinding());
+    if (!classField.isProperty() && !Expression.compare(oldImpl.getExpression(), implementation.apply(thisRef, LevelSubstitution.EMPTY), classField.getType().getCodomain(), CMP.EQ)) {
       alreadyImplemented.add(classField.getReferable());
       return false;
     } else {
