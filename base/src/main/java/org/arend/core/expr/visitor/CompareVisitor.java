@@ -16,9 +16,8 @@ import org.arend.core.pattern.ConstructorExpressionPattern;
 import org.arend.core.pattern.Pattern;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
-import org.arend.core.subst.ExprSubstitution;
+import org.arend.core.subst.*;
 import org.arend.ext.core.level.LevelSubstitution;
-import org.arend.core.subst.SubstVisitor;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
@@ -977,8 +976,174 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     return classCall1.getLevels(classCall2.getDefinition()).compare(classCall2.getLevels(), cmp, equations, mySourceNode);
   }
 
+  private Level getMaxLevel(Level level1, Level level2) {
+    return level2 == null ? level1 : level2.max(level1);
+  }
+
+  private boolean matchLevels(Levels paramLevels, Levels argLevels, Map<LevelVariable, Level> levelMap) {
+    List<? extends Level> paramList = paramLevels.toList();
+    List<? extends Level> argList = argLevels.toList();
+    if (paramList.size() != argList.size()) {
+      return false;
+    }
+    for (int i = 0; i < paramList.size(); i++) {
+      if (paramList.get(i).getVar() != null) {
+        Level level = getMaxLevel(argList.get(i), levelMap.get(paramList.get(i).getVar()));
+        if (level == null) {
+          return false;
+        }
+        levelMap.put(paramList.get(i).getVar(), level);
+      }
+    }
+    return true;
+  }
+
+  private boolean matchArguments(Expression paramType, Expression argType, Map<LevelVariable, Level> levelMap) {
+    int skip = 0;
+    while (paramType instanceof PiExpression) {
+      skip += DependentLink.Helper.size(((PiExpression) paramType).getParameters());
+      paramType = ((PiExpression) paramType).getCodomain();
+    }
+
+    if (paramType instanceof UniverseExpression) {
+      argType = argType.dropPiParameter(skip);
+      argType = argType == null ? null : argType.normalize(NormalizationMode.WHNF);
+      if (!(argType instanceof UniverseExpression)) {
+        return false;
+      }
+      Sort paramSort = ((UniverseExpression) paramType).getSort();
+      Sort argSort = ((UniverseExpression) argType).getSort();
+      return matchLevels(new LevelPair(paramSort.getPLevel(), paramSort.getHLevel()), new LevelPair(argSort.getPLevel(), argSort.getHLevel()), levelMap);
+    } else if (paramType instanceof SigmaExpression) {
+      argType = argType.dropPiParameter(skip);
+      argType = argType == null ? null : argType.normalize(NormalizationMode.WHNF);
+      if (!(argType instanceof SigmaExpression)) {
+        return false;
+      }
+      DependentLink paramParam = ((SigmaExpression) paramType).getParameters();
+      DependentLink argParam = ((SigmaExpression) argType).getParameters();
+      while (paramParam.hasNext() && argParam.hasNext()) {
+        if (!matchArguments(paramParam.getTypeExpr(), argParam.getTypeExpr(), levelMap)) {
+          return false;
+        }
+        paramParam = paramParam.getNext();
+        argParam = argParam.getNext();
+      }
+      return !(paramParam.hasNext() || argParam.hasNext());
+    } else if (paramType instanceof ClassCallExpression) {
+      argType = argType.dropPiParameter(skip);
+      argType = argType == null ? null : argType.normalize(NormalizationMode.WHNF);
+      if (!(argType instanceof ClassCallExpression)) {
+        return false;
+      }
+      ClassCallExpression paramClassCall = (ClassCallExpression) paramType;
+      ClassCallExpression argClassCall = (ClassCallExpression) argType;
+      if (paramClassCall.getUniverseKind() != UniverseKind.NO_UNIVERSES && !matchLevels(paramClassCall.getLevels(), argClassCall.getLevels(paramClassCall.getDefinition()), levelMap)) {
+        return false;
+      }
+      for (Map.Entry<ClassField, Expression> entry : paramClassCall.getImplementedHere().entrySet()) {
+        Expression argImpl = argClassCall.getAbsImplementationHere(entry.getKey());
+        if (argImpl == null || !matchArguments(entry.getValue(), argImpl, levelMap)) {
+          return false;
+        }
+      }
+      return true;
+    } else {
+      return true;
+    }
+  }
+
+  private Expression getMinimalType(Expression expr) {
+    if (expr instanceof DefCallExpression) {
+      DefCallExpression defCall = (DefCallExpression) expr;
+      if (defCall.getUniverseKind() == UniverseKind.NO_UNIVERSES && defCall.getDefinition() != Prelude.DIV_MOD && defCall.getDefinition() != Prelude.MOD && !(defCall instanceof ConCallExpression)) {
+        Levels levels = null;
+        if (defCall instanceof FieldCallExpression) {
+          ClassCallExpression classCall = getMinimalType(((FieldCallExpression) defCall).getArgument()).normalize(NormalizationMode.WHNF).cast(ClassCallExpression.class);
+          if (classCall != null) levels = classCall.getLevels(((FieldCallExpression) defCall).getDefinition().getParentClass());
+        } else {
+          boolean ok = true;
+          Map<LevelVariable, Level> levelMap = new HashMap<>();
+          if (defCall instanceof ClassCallExpression) {
+            for (Map.Entry<ClassField, Expression> entry : ((ClassCallExpression) defCall).getImplementedHere().entrySet()) {
+              ok = matchArguments(entry.getKey().getResultType(), getMinimalType(entry.getValue()), levelMap);
+              if (!ok) break;
+            }
+          } else {
+            DependentLink param = defCall.getDefinition().getParameters();
+            for (Expression argument : defCall.getDefCallArguments()) {
+              ok = matchArguments(param.getTypeExpr(), getMinimalType(argument), levelMap);
+              if (!ok) break;
+              param = param.getNext();
+            }
+          }
+
+          if (ok) {
+            if (defCall.getDefinition().getLevelParameters() == null) {
+              Level pLevel = levelMap.get(LevelVariable.PVAR);
+              Level hLevel = levelMap.get(LevelVariable.HVAR);
+              levels = new LevelPair(pLevel == null ? new Level(0) : pLevel, hLevel == null ? new Level(-1) : hLevel);
+            } else {
+              List<Level> list = new ArrayList<>();
+              for (LevelVariable var : defCall.getDefinition().getLevelParameters()) {
+                Level level = levelMap.get(var);
+                list.add(level == null ? new Level(var.getMinValue()) : level);
+              }
+              levels = new ListLevels(list);
+            }
+          }
+        }
+
+        if (levels != null) {
+          if (defCall instanceof FunCallExpression) {
+            List<DependentLink> defParams = new ArrayList<>();
+            return defCall.getDefinition().getTypeWithParams(defParams, levels).subst(DependentLink.Helper.toSubstitution(defParams, defCall.getDefCallArguments()));
+          } else if (defCall instanceof DataCallExpression) {
+            return new UniverseExpression(((DataCallExpression) defCall).getDefinition().getSort().subst(levels.makeSubstitution(defCall.getDefinition())));
+          } else if (defCall instanceof ClassCallExpression) {
+            return new UniverseExpression(((ClassCallExpression) expr).getSort().subst(levels.makeSubstitution(defCall.getDefinition())));
+          } else if (defCall instanceof FieldCallExpression) {
+            FieldCallExpression fieldCall = (FieldCallExpression) defCall;
+            Expression type = fieldCall.getArgument().getType();
+            if (type != null) {
+              type = type.normalize(NormalizationMode.WHNF);
+              if (type instanceof ClassCallExpression) {
+                PiExpression fieldType = ((ClassCallExpression) type).getDefinition().getOverriddenType(fieldCall.getDefinition(), levels);
+                if (fieldType != null) {
+                  return fieldType.applyExpression(fieldCall.getArgument());
+                }
+              }
+            }
+            return fieldCall.getDefinition().getType(levels).applyExpression(fieldCall.getArgument());
+          } else {
+            throw new IllegalStateException();
+          }
+        }
+      }
+    } else if (expr instanceof PiExpression) {
+      PiExpression piExpr = (PiExpression) expr;
+      Sort sort1 = getMinimalType(piExpr.getParameters().getTypeExpr()).toSort();
+      Sort sort2 = sort1 == null ? null : getMinimalType(piExpr.getCodomain()).toSort();
+      Sort maxSort = sort2 == null ? null : sort1.max(sort2);
+      return new UniverseExpression(maxSort == null ? piExpr.getResultSort() : maxSort);
+    } else if (expr instanceof SigmaExpression) {
+      SigmaExpression sigmaExpr = (SigmaExpression) expr;
+      Sort maxSort = Sort.PROP;
+      for (DependentLink param = sigmaExpr.getParameters(); param.hasNext(); param = param.getNext()) {
+        param = param.getNextTyped(null);
+        Sort sort = getMinimalType(param.getTypeExpr()).toSort();
+        maxSort = sort == null ? null : maxSort.max(sort);
+        if (maxSort == null) {
+          break;
+        }
+      }
+      return new UniverseExpression(maxSort == null ? sigmaExpr.getSort() : maxSort);
+    }
+    return expr.getType();
+  }
+
   private boolean doesImplementationFit(Expression implementation, ClassField field, ClassCallExpression classCall1, ClassCallExpression classCall2) {
-    Expression type = implementation.normalize(NormalizationMode.WHNF).getType();
+    Expression type = getMinimalType(implementation.normalize(NormalizationMode.WHNF));
     if (type == null) {
       return false;
     }
