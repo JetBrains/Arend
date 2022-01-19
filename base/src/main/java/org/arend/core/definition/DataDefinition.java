@@ -34,6 +34,7 @@ public class DataDefinition extends Definition implements CoreDataDefinition {
   private boolean myHasEnclosingClass;
   private List<LevelVariable> myLevelParameters;
   private UniverseKind myUniverseKind = UniverseKind.NO_UNIVERSES;
+  private List<Boolean> myOmegaParameters = Collections.emptyList();
 
   public DataDefinition(TCDefReferable referable) {
     super(referable, TypeCheckingStatus.NEEDS_TYPE_CHECKING);
@@ -63,6 +64,20 @@ public class DataDefinition extends Definition implements CoreDataDefinition {
   @Override
   public void setLevelParameters(List<LevelVariable> parameters) {
     myLevelParameters = parameters;
+  }
+
+  @Override
+  public boolean isOmegaParameter(int index) {
+    return index < myOmegaParameters.size() && myOmegaParameters.get(index);
+  }
+
+  public List<Boolean> getOmegaParameters() {
+    return myOmegaParameters;
+  }
+
+  @Override
+  public void setOmegaParameters(List<Boolean> parameters) {
+    myOmegaParameters = parameters;
   }
 
   public void setRecursiveDefinitions(Set<Definition> recursiveDefinitions) {

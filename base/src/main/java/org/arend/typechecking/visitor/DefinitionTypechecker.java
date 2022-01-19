@@ -371,14 +371,33 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
   }
 
-  private UniverseKind checkForUniverses(DependentLink link) {
+  private UniverseKind checkForUniverses(Definition definition) {
     UniverseInParametersChecker checker = new UniverseInParametersChecker();
     UniverseKind universeKind = UniverseKind.NO_UNIVERSES;
-    for (; link.hasNext(); link = link.getNext()) {
-      link = link.getNextTyped(null);
+    int index = 0;
+    List<Boolean> omegaParameters = new ArrayList<>();
+    for (DependentLink link = definition.getParameters(); link.hasNext(); link = link.getNext(), index++) {
+      int start = index;
+      while (!(link instanceof TypedDependentLink)) {
+        link = link.getNext();
+        index++;
+      }
       universeKind = universeKind.max(checker.getUniverseKind(link.getTypeExpr()));
       if (universeKind == UniverseKind.WITH_UNIVERSES) {
         return UniverseKind.WITH_UNIVERSES;
+      }
+      for (; start <= index; start++) {
+        omegaParameters.add(checker.isOmega());
+      }
+    }
+    if (universeKind == UniverseKind.NO_UNIVERSES) {
+      int i = omegaParameters.size() - 1;
+      while (i >= 0 && !omegaParameters.get(i)) {
+        i--;
+      }
+      omegaParameters.subList(i + 1, omegaParameters.size()).clear();
+      if (!omegaParameters.isEmpty()) {
+        definition.setOmegaParameters(omegaParameters);
       }
     }
     return universeKind;
@@ -1421,7 +1440,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       if (new UniverseKindChecker().check(typedDef.getResultType())) {
         typedDef.setUniverseKind(UniverseKind.WITH_UNIVERSES);
       } else {
-        UniverseKind universeKind = checkForUniverses(typedDef.getParameters());
+        UniverseKind universeKind = checkForUniverses(typedDef);
         typedDef.setUniverseKind(universeKind == UniverseKind.WITH_UNIVERSES ? UniverseKind.WITH_UNIVERSES : universeKind.max(new UniverseKindChecker().getUniverseKind(typedDef.getBody())));
       }
     }
@@ -1834,7 +1853,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       typechecker.setStatus(def.getStatus().getTypecheckingStatus());
       dataDefinition.addStatus(typechecker.getStatus());
 
-      UniverseKind kind = checkForUniverses(dataDefinition.getParameters());
+      UniverseKind kind = checkForUniverses(dataDefinition);
       if (kind != UniverseKind.WITH_UNIVERSES) {
         dataDefinition.setUniverseKind(kind);
         loop:
@@ -2692,6 +2711,12 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           baseUniverseKind = baseUniverseKind.max(checker1.getUniverseKind(field.getResultType()));
           if (baseUniverseKind == UniverseKind.WITH_UNIVERSES) {
             break;
+          }
+          field.setOmegaType(checker1.isOmega());
+        }
+        if (baseUniverseKind != UniverseKind.NO_UNIVERSES) {
+          for (ClassField field : typedDef.getPersonalFields()) {
+            field.setOmegaType(false);
           }
         }
       }

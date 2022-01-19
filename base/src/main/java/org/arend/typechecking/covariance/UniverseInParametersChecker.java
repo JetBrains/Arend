@@ -9,10 +9,16 @@ import org.arend.typechecking.visitor.CheckForUniversesVisitor;
 public class UniverseInParametersChecker extends CovarianceChecker {
   private final CheckForUniversesVisitor myVisitor = new CheckForUniversesVisitor();
   private UniverseKind myResult = UniverseKind.NO_UNIVERSES;
+  private boolean myOmega;
 
   public UniverseKind getUniverseKind(Expression expression) {
+    myOmega = false;
     myResult = UniverseKind.NO_UNIVERSES;
     return check(expression) ? UniverseKind.WITH_UNIVERSES : myResult;
+  }
+
+  public boolean isOmega() {
+    return myOmega;
   }
 
   @Override
@@ -43,7 +49,9 @@ public class UniverseInParametersChecker extends CovarianceChecker {
           break;
         }
       }
-      if (!ok) {
+      if (ok) {
+        myOmega = true;
+      } else {
         myResult = UniverseKind.ONLY_COVARIANT;
       }
     }

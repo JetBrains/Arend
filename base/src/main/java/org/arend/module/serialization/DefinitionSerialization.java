@@ -134,6 +134,7 @@ public class DefinitionSerialization implements ArendSerializer {
       fBuilder.setIsHideable(field.isHideable());
       fBuilder.setUniverseKind(defSerializer.writeUniverseKind(field.getUniverseKind()));
       fBuilder.putAllUserData(writeUserData(field));
+      fBuilder.setIsOmegaType(field.isOmegaType());
       builder.addPersonalField(fBuilder.build());
     }
 
@@ -234,6 +235,7 @@ public class DefinitionSerialization implements ArendSerializer {
   private DefinitionProtos.Definition.DataData writeDataDefinition(ExpressionSerialization defSerializer, DataDefinition definition) {
     DefinitionProtos.Definition.DataData.Builder builder = DefinitionProtos.Definition.DataData.newBuilder();
 
+    builder.addAllOmegaParameter(definition.getOmegaParameters());
     builder.setIsStdLevels(definition.getLevelParameters() == null);
     if (definition.getLevelParameters() != null) {
       builder.addAllLevelParam(writeLevelParameters(definition.getLevelParameters()));
@@ -357,6 +359,7 @@ public class DefinitionSerialization implements ArendSerializer {
       builder.addAllLevelParam(writeLevelParameters(definition.getLevelParameters()));
     }
 
+    builder.addAllOmegaParameter(definition.getOmegaParameters());
     builder.addAllStrictParameters(definition.getStrictParameters());
     builder.setHasEnclosingClass(definition.getEnclosingClass() != null);
     builder.addAllParam(defSerializer.writeParameters(definition.getParameters()));

@@ -11,7 +11,6 @@ import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.Levels;
 import org.arend.core.subst.ListLevels;
 import org.arend.ext.core.definition.CoreDefinition;
-import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.extImpl.userData.UserDataHolderImpl;
 import org.arend.naming.reference.TCDefReferable;
 import org.arend.term.concrete.Concrete;
@@ -165,6 +164,14 @@ public abstract class Definition extends UserDataHolderImpl implements CoreDefin
 
   public boolean isStrict(int parameter) {
     return false;
+  }
+
+  public boolean isOmegaParameter(int index) {
+    return false;
+  }
+
+  public void setOmegaParameters(List<Boolean> omegaParameters) {
+    throw new IllegalStateException();
   }
 
   protected boolean hasEnclosingClass() {

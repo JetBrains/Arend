@@ -153,6 +153,7 @@ public class DefinitionDeserialization implements ArendDeserializer {
       field.setHideable(fieldProto.getIsHideable());
       field.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
       field.setUniverseKind(defDeserializer.readUniverseKind(fieldProto.getUniverseKind()));
+      field.setOmegaType(fieldProto.getIsOmegaType());
       loadKeys(fieldProto.getUserDataMap(), field);
     }
 
@@ -293,6 +294,7 @@ public class DefinitionDeserialization implements ArendDeserializer {
   }
 
   private void fillInDataDefinition(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.DataData dataProto, DataDefinition dataDef) throws DeserializationException {
+    dataDef.setOmegaParameters(dataProto.getOmegaParameterList());
     dataDef.setLevelParameters(readLevelParameters(dataProto.getLevelParamList(), dataProto.getIsStdLevels()));
     if (dataProto.getHasEnclosingClass()) {
       dataDef.setHasEnclosingClass(true);
@@ -435,6 +437,7 @@ public class DefinitionDeserialization implements ArendDeserializer {
   }
 
   private void fillInFunctionDefinition(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.FunctionData functionProto, FunctionDefinition functionDef) throws DeserializationException {
+    functionDef.setOmegaParameters(functionProto.getOmegaParameterList());
     functionDef.setLevelParameters(readLevelParameters(functionProto.getLevelParamList(), functionProto.getIsStdLevels()));
     if (functionProto.getHasEnclosingClass()) {
       functionDef.setHasEnclosingClass(true);

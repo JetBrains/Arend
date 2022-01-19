@@ -64,6 +64,7 @@ message Definition {
             bool isParameter = 7;
             bool isProperty = 8;
             bool isHideable = 9;
+            bool is_omega_type = 13;
             UniverseKind universe_kind = 11;
             map<string, bytes> user_data = 12;
         }
@@ -101,6 +102,7 @@ message Definition {
         bool has_enclosing_class = 16;
         repeated LevelParameter level_param = 17;
         bool is_std_levels = 18;
+        repeated bool omega_parameter = 19;
 
         message Constructor {
             Referable referable = 1;
@@ -132,6 +134,7 @@ message Definition {
         repeated bool strict_parameters = 15;
         repeated LevelParameter level_param = 17;
         bool is_std_levels = 18;
+        repeated bool omega_parameter = 19;
 
         enum HiddenStatus {
             NOT_HIDDEN = 0;
