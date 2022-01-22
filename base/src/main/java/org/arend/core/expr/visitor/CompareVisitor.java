@@ -1069,9 +1069,16 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       boolean ok = true;
       Map<LevelVariable, Level> levelMap = new HashMap<>();
       if (defCall instanceof ClassCallExpression) {
-        for (Map.Entry<ClassField, Expression> entry : ((ClassCallExpression) defCall).getImplementedHere().entrySet()) {
-          ok = !entry.getKey().isOmegaType() || matchArguments(entry.getKey().getResultType(), getMinimalType(entry.getValue()), levelMap);
-          if (!ok) break;
+        ClassCallExpression classCall = (ClassCallExpression) defCall;
+        Levels idLevels = classCall.getDefinition().makeIdLevels();
+        for (Map.Entry<ClassField, Expression> entry : classCall.getImplementedHere().entrySet()) {
+          ClassField field = entry.getKey();
+          if (classCall.getDefinition().isOmegaField(field)) {
+            Levels superLevels = classCall.getDefinition().getSuperLevels().get(field.getParentClass());
+            if (superLevels == null) superLevels = idLevels;
+            ok = matchArguments(field.getResultType().subst(superLevels.makeSubstitution(field)), getMinimalType(entry.getValue()), levelMap);
+            if (!ok) break;
+          }
         }
       } else {
         DependentLink param = defCall.getDefinition().getParameters();

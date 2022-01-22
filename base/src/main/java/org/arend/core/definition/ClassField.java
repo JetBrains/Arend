@@ -22,7 +22,6 @@ public class ClassField extends Definition implements CoreClassField {
   private int myNumberOfParameters;
   private boolean myHideable;
   private UniverseKind myUniverseKind = UniverseKind.NO_UNIVERSES;
-  private boolean myOmegaType;
 
   public ClassField(TCFieldReferable referable, ClassDefinition parentClass) {
     super(referable, TypeCheckingStatus.NEEDS_TYPE_CHECKING);
@@ -128,14 +127,6 @@ public class ClassField extends Definition implements CoreClassField {
   @Override
   public boolean isGoodParameter(int index) {
     return index == 0;
-  }
-
-  public boolean isOmegaType() {
-    return myOmegaType;
-  }
-
-  public void setOmegaType(boolean isOmegaType) {
-    myOmegaType = isOmegaType;
   }
 
   @Override

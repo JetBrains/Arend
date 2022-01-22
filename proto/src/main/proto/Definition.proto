@@ -54,6 +54,7 @@ message Definition {
         bool is_std_levels = 18;
         map<int32, Levels> super_levels = 19;
         UniverseKind base_universe_kind = 21;
+        repeated int32 omega_field = 22;
 
         message Field {
             Referable referable = 1;
@@ -64,7 +65,6 @@ message Definition {
             bool isParameter = 7;
             bool isProperty = 8;
             bool isHideable = 9;
-            bool is_omega_type = 13;
             UniverseKind universe_kind = 11;
             map<string, bytes> user_data = 12;
         }

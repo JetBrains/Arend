@@ -281,4 +281,29 @@ public class DefinitionTest extends TypeCheckingTestCase {
     assertEquals(UniverseKind.NO_UNIVERSES, getDefinition("D").getUniverseKind());
     assertEquals(UniverseKind.NO_UNIVERSES, getDefinition("f").getUniverseKind());
   }
+
+  @Test
+  public void extensionLevelsTest() {
+    typeCheckModule(
+      "\\record A \\plevels p1 <= p2 <= p3\n" +
+      "  | f : \\Sigma (\\hType p1) (\\hType p2)\n" +
+      "\\record B \\plevels q1 <= q2 \\extends A (0, q1, \\suc q2)\n" +
+      "\\record C \\plevels q1 <= q2 \\extends A (q1, q2, \\suc q2)\n" +
+      "\\record D \\plevels q1 <= q2 \\extends A (1, 2, \\suc (\\suc q2))\n" +
+      "\\record E \\plevels q1 <= q2 \\extends A (q1, \\suc q2, \\suc q2)");
+
+    ClassField field = (ClassField) getDefinition("A.f");
+    ClassDefinition bClass = (ClassDefinition) getDefinition("B");
+    ClassDefinition cClass = (ClassDefinition) getDefinition("C");
+    ClassDefinition dClass = (ClassDefinition) getDefinition("D");
+    ClassDefinition eClass = (ClassDefinition) getDefinition("E");
+
+    assertEquals(UniverseKind.NO_UNIVERSES, bClass.getBaseUniverseKind());
+    assertTrue(bClass.isOmegaField(field));
+    assertEquals(UniverseKind.NO_UNIVERSES, cClass.getBaseUniverseKind());
+    assertTrue(cClass.isOmegaField(field));
+    assertEquals(UniverseKind.NO_UNIVERSES, dClass.getBaseUniverseKind());
+    assertFalse(dClass.isOmegaField(field));
+    assertEquals(UniverseKind.ONLY_COVARIANT, eClass.getBaseUniverseKind());
+  }
 }

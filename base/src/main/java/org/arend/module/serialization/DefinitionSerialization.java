@@ -134,7 +134,6 @@ public class DefinitionSerialization implements ArendSerializer {
       fBuilder.setIsHideable(field.isHideable());
       fBuilder.setUniverseKind(defSerializer.writeUniverseKind(field.getUniverseKind()));
       fBuilder.putAllUserData(writeUserData(field));
-      fBuilder.setIsOmegaType(field.isOmegaType());
       builder.addPersonalField(fBuilder.build());
     }
 
@@ -158,6 +157,9 @@ public class DefinitionSerialization implements ArendSerializer {
     }
     for (ClassField field : definition.getCovariantFields()) {
       builder.addCovariantField(myCallTargetIndexProvider.getDefIndex(field));
+    }
+    for (ClassField field : definition.getOmegaFields()) {
+      builder.addOmegaField(myCallTargetIndexProvider.getDefIndex(field));
     }
     builder.setSort(defSerializer.writeSort(definition.getSort()));
 

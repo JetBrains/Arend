@@ -41,6 +41,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
   private FunctionDefinition mySquasher;
   private List<? extends LevelVariable> myLevelParameters;
   private Map<ClassDefinition, Levels> mySuperLevels = Collections.emptyMap();
+  private final Set<ClassField> myOmegaFields = new HashSet<>();
   private UniverseKind myBaseUniverseKind = UniverseKind.NO_UNIVERSES;
   private UniverseKind myUniverseKind = UniverseKind.NO_UNIVERSES;
 
@@ -454,6 +455,18 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
 
   public void setBaseUniverseKind(UniverseKind universeKind) {
     myBaseUniverseKind = universeKind;
+  }
+
+  public boolean isOmegaField(ClassField field) {
+    return myOmegaFields.contains(field);
+  }
+
+  public Set<? extends ClassField> getOmegaFields() {
+    return myOmegaFields;
+  }
+
+  public void addOmegaField(ClassField field) {
+    myOmegaFields.add(field);
   }
 
   @Override

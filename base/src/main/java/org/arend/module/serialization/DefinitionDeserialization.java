@@ -153,10 +153,12 @@ public class DefinitionDeserialization implements ArendDeserializer {
       field.setHideable(fieldProto.getIsHideable());
       field.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
       field.setUniverseKind(defDeserializer.readUniverseKind(fieldProto.getUniverseKind()));
-      field.setOmegaType(fieldProto.getIsOmegaType());
       loadKeys(fieldProto.getUserDataMap(), field);
     }
 
+    for (int classFieldRef : classProto.getFieldRefList()) {
+      classDef.addField(myCallTargetProvider.getCallTarget(classFieldRef, ClassField.class));
+    }
     for (int classFieldRef : classProto.getFieldRefList()) {
       classDef.addField(myCallTargetProvider.getCallTarget(classFieldRef, ClassField.class));
     }
@@ -177,6 +179,9 @@ public class DefinitionDeserialization implements ArendDeserializer {
     }
     for (Integer fieldRef : classProto.getCovariantFieldList()) {
       classDef.addCovariantField(myCallTargetProvider.getCallTarget(fieldRef, ClassField.class));
+    }
+    for (Integer fieldRef : classProto.getOmegaFieldList()) {
+      classDef.addOmegaField(myCallTargetProvider.getCallTarget(fieldRef, ClassField.class));
     }
     classDef.setSort(defDeserializer.readSort(classProto.getSort()));
 

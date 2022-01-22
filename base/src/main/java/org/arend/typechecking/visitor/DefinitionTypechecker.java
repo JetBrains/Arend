@@ -2710,17 +2710,18 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
       if (baseUniverseKind != UniverseKind.WITH_UNIVERSES) {
         UniverseInParametersChecker checker1 = new UniverseInParametersChecker();
-        for (ClassField field : typedDef.getPersonalFields()) {
-          baseUniverseKind = baseUniverseKind.max(checker1.getUniverseKind(field.getResultType()));
+        for (ClassField field : typedDef.getFields()) {
+          Levels levels = typedDef.getSuperLevels().get(field.getParentClass());
+          baseUniverseKind = baseUniverseKind.max(checker1.getUniverseKind(levels == null ? field.getResultType() : field.getResultType().subst(levels.makeSubstitution(field.getParentClass()))));
           if (baseUniverseKind == UniverseKind.WITH_UNIVERSES) {
             break;
           }
-          field.setOmegaType(checker1.isOmega());
+          if (checker1.isOmega()) {
+            typedDef.addOmegaField(field);
+          }
         }
         if (baseUniverseKind != UniverseKind.NO_UNIVERSES) {
-          for (ClassField field : typedDef.getPersonalFields()) {
-            field.setOmegaType(false);
-          }
+          typedDef.getOmegaFields().clear();
         }
       }
 
