@@ -928,8 +928,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       typechecker.checkAllImplemented(classCall, pseudoImplemented, def);
       if (classCall.getDefinition() == Prelude.DEP_ARRAY) {
         classCall.getImplementedHere().remove(Prelude.ARRAY_AT);
-        LevelPair levels = classCall.getLevels().toLevelPair();
-        classCall.setSort(new Sort(levels.get(LevelVariable.PVAR), levels.get(LevelVariable.HVAR).max(new Level(0))));
+        classCall.setSort(Sort.STD);
       }
       return new Pair<>(new NewExpression(null, classCall), type);
     } else {
@@ -1082,7 +1081,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     if (type != null && !type.isError() && (expr == null || expr.isBoxed() && !expr.isError())) {
       type = type.normalize(NormalizationMode.WHNF);
       if (expr != null) {
-        return !(type instanceof ClassCallExpression) || ((ClassCallExpression) type).getSort().isProp();
+        return !(type instanceof ClassCallExpression) || type.getSortOfType().isProp();
       } else {
         Sort sort = type.getSortOfType();
         return sort != null && sort.isProp();
@@ -1514,8 +1513,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       if (fieldDef instanceof ClassField && useParent instanceof ClassDefinition) {
         Map<ClassField, Expression> defaultImpl = new LinkedHashMap<>();
         ClassDefinition classDef = (ClassDefinition) useParent;
-        Levels levels = classDef.makeIdLevels();
-        ClassCallExpression thisType = new ClassCallExpression(classDef, levels, defaultImpl, classDef.getSort(), classDef.getUniverseKind());
+        ClassCallExpression thisType = new ClassCallExpression(classDef, classDef.makeIdLevels(), defaultImpl, classDef.getSort(), classDef.getUniverseKind());
         for (ClassField field : classDef.getFields()) {
           AbsExpression defaultExpr = classDef.getDefault(field);
           if (defaultExpr != null) {
@@ -1523,7 +1521,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           }
         }
         TypedSingleDependentLink thisBinding = new TypedSingleDependentLink(false, "this", thisType, true);
-        thisType.setSort(classDef.computeSort(levels, defaultImpl, thisBinding));
+        thisType.setSort(classDef.computeSort(defaultImpl, thisBinding));
         thisType.updateHasUniverses();
         Expression result = DefCallResult.makeTResult(new Concrete.ReferenceExpression(def.getData().getData(), def.getData()), typedDef, typedDef.makeIdLevels()).applyExpression(new ReferenceExpression(thisBinding), false, typechecker, def).toResult(typechecker).expression;
         Expression actualType = result.getType();

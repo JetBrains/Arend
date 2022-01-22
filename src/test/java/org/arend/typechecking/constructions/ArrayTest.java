@@ -16,7 +16,6 @@ import org.arend.typechecking.error.local.NotEqualExpressionsError;
 import org.arend.util.SingletonList;
 import org.junit.Test;
 
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -36,36 +35,35 @@ public class ArrayTest extends TypeCheckingTestCase {
       "\\func test2 : Array Nat \\cowith\n" +
       "  | len => 3\n" +
       "  | at _ => 1");
-    Sort sort = Sort.STD.max(Sort.SET0);
     assertTrue(((ClassCallExpression) ((FunctionDefinition) getDefinition("test1")).getResultType()).isImplemented(Prelude.ARRAY_AT));
-    assertEquals(Sort.PROP, ((ClassCallExpression) ((FunctionDefinition) getDefinition("test1")).getResultType()).getSort());
+    assertEquals(Sort.PROP, ((FunctionDefinition) getDefinition("test1")).getResultType().getSortOfType());
     assertTrue(((ClassCallExpression) ((FunctionDefinition) getDefinition("test2")).getResultType()).isImplemented(Prelude.ARRAY_AT));
-    assertEquals(Sort.PROP, ((ClassCallExpression) ((FunctionDefinition) getDefinition("test2")).getResultType()).getSort());
+    assertEquals(Sort.PROP, ((FunctionDefinition) getDefinition("test2")).getResultType().getSortOfType());
     assertFalse(((ClassCallExpression) Prelude.EMPTY_ARRAY.getResultType()).isImplemented(Prelude.ARRAY_AT));
-    assertEquals(sort, ((ClassCallExpression) Prelude.EMPTY_ARRAY.getResultType()).getSort());
+    assertEquals(Sort.STD, Prelude.EMPTY_ARRAY.getResultType().getSortOfType());
     assertFalse(((ClassCallExpression) Prelude.ARRAY_CONS.getResultType()).isImplemented(Prelude.ARRAY_AT));
-    assertEquals(sort, ((ClassCallExpression) Prelude.ARRAY_CONS.getResultType()).getSort());
+    assertEquals(Sort.STD, Prelude.ARRAY_CONS.getResultType().getSortOfType());
   }
 
   @Test
   public void consTest() {
     FunctionDefinition def = (FunctionDefinition) typeCheckDef("\\func test (n : Nat) (x : Array Nat n) : Array Nat (suc n) => n :: x");
     assertTrue(def.getBody() instanceof ArrayExpression);
-    assertEquals(Sort.SET0, ((ClassCallExpression) def.getResultType()).getSort());
+    assertEquals(Sort.SET0, def.getResultType().getSortOfType());
   }
 
   @Test
   public void consTest1() {
     FunctionDefinition def = (FunctionDefinition) typeCheckDef("\\func foo => 1 :: nil");
     assertTrue(def.getBody() instanceof ArrayExpression);
-    assertEquals(Sort.SET0, ((ClassCallExpression) def.getResultType()).getSort());
+    assertEquals(Sort.SET0, def.getResultType().getSortOfType());
   }
 
   @Test
   public void consTest2() {
     FunctionDefinition def = (FunctionDefinition) typeCheckDef("\\func foo => 1 :: 2 :: nil");
     assertTrue(def.getBody() instanceof ArrayExpression);
-    assertEquals(Sort.SET0, ((ClassCallExpression) def.getResultType()).getSort());
+    assertEquals(Sort.SET0, def.getResultType().getSortOfType());
   }
 
   @Test
@@ -285,7 +283,7 @@ public class ArrayTest extends TypeCheckingTestCase {
     Expression length = new ReferenceExpression(def.getParameters());
     impls.put(Prelude.ARRAY_LENGTH, length);
     impls.put(Prelude.ARRAY_ELEMENTS_TYPE, new LamExpression(Sort.SET0, new TypedSingleDependentLink(true, null, new DataCallExpression(Prelude.FIN, Levels.EMPTY, new SingletonList<>(length))), Nat()));
-    assertThatErrorsAre(Matchers.goal(1), Matchers.goal(new ClassCallExpression(Prelude.DEP_ARRAY, LevelPair.SET0, impls, Sort.SET0, UniverseKind.NO_UNIVERSES)));
+    assertThatErrorsAre(Matchers.goal(1), Matchers.goal(new ClassCallExpression(Prelude.DEP_ARRAY, LevelPair.SET0, impls, Sort.STD, UniverseKind.NO_UNIVERSES)));
   }
 
   @Test
@@ -295,7 +293,7 @@ public class ArrayTest extends TypeCheckingTestCase {
     Expression length = new SmallIntegerExpression(5);
     impls.put(Prelude.ARRAY_LENGTH, length);
     impls.put(Prelude.ARRAY_ELEMENTS_TYPE, new LamExpression(Sort.SET0, new TypedSingleDependentLink(true, null, new DataCallExpression(Prelude.FIN, Levels.EMPTY, new SingletonList<>(length))), Nat()));
-    assertThatErrorsAre(Matchers.goal(0), Matchers.goal(0), Matchers.goal(new ClassCallExpression(Prelude.DEP_ARRAY, LevelPair.SET0, impls, Sort.SET0, UniverseKind.NO_UNIVERSES)));
+    assertThatErrorsAre(Matchers.goal(0), Matchers.goal(0), Matchers.goal(new ClassCallExpression(Prelude.DEP_ARRAY, LevelPair.SET0, impls, Sort.STD, UniverseKind.NO_UNIVERSES)));
   }
 
   @Test

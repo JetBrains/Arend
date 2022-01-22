@@ -50,7 +50,7 @@ public class DConstructor extends FunctionDefinition {
 
   public DependentLink getArrayParameters(LevelPair levels, Expression length, Binding thisBinding, Expression elementsType) {
     if (this == Prelude.EMPTY_ARRAY) {
-      return elementsType != null ? EmptyDependentLink.getInstance() : DependentLink.Helper.subst(getParameters(), new ExprSubstitution(thisBinding, new NewExpression(null, new ClassCallExpression(Prelude.DEP_ARRAY, levels, Collections.singletonMap(Prelude.ARRAY_LENGTH, Zero()), levels.toSort(), UniverseKind.NO_UNIVERSES))), levels);
+      return elementsType != null ? EmptyDependentLink.getInstance() : DependentLink.Helper.subst(getParameters(), new ExprSubstitution(thisBinding, new NewExpression(null, new ClassCallExpression(Prelude.DEP_ARRAY, levels, Collections.singletonMap(Prelude.ARRAY_LENGTH, Zero()), Sort.STD.succ(), UniverseKind.NO_UNIVERSES))), levels);
     }
 
     if ((elementsType == null || thisBinding == null) && length == null) {
@@ -67,13 +67,13 @@ public class DConstructor extends FunctionDefinition {
 
     TypedDependentLink nat = new TypedDependentLink(false, "n", new DataCallExpression(Prelude.NAT, Levels.EMPTY, Collections.emptyList()), EmptyDependentLink.getInstance());
     ReferenceExpression natRef = new ReferenceExpression(nat);
-    Sort sort = levels.toSort();
-    Expression newElementsType = elementsType.subst(thisBinding, new NewExpression(null, new ClassCallExpression(Prelude.DEP_ARRAY, levels, Collections.singletonMap(Prelude.ARRAY_LENGTH, natRef), sort, UniverseKind.ONLY_COVARIANT)));
+    Expression newElementsType = elementsType.subst(thisBinding, new NewExpression(null, new ClassCallExpression(Prelude.DEP_ARRAY, levels, Collections.singletonMap(Prelude.ARRAY_LENGTH, natRef), Sort.STD.succ(), UniverseKind.ONLY_COVARIANT)));
     Map<ClassField, Expression> impls = new LinkedHashMap<>();
     impls.put(Prelude.ARRAY_LENGTH, natRef);
     TypedSingleDependentLink lamParam = new TypedSingleDependentLink(true, "j", new DataCallExpression(Prelude.FIN, Levels.EMPTY, new SingletonList<>(natRef)));
+    Sort sort = levels.toSort();
     impls.put(Prelude.ARRAY_ELEMENTS_TYPE, new LamExpression(sort.max(Sort.SET0), lamParam, AppExpression.make(newElementsType, Suc(new ReferenceExpression(lamParam)), true)));
-    nat.setNext(new TypedDependentLink(true, "a", new TypeExpression(AppExpression.make(newElementsType, Zero(), true), sort), new TypedDependentLink(true, "arr", new ClassCallExpression(Prelude.DEP_ARRAY, levels, impls, sort, UniverseKind.NO_UNIVERSES), EmptyDependentLink.getInstance())));
+    nat.setNext(new TypedDependentLink(true, "a", new TypeExpression(AppExpression.make(newElementsType, Zero(), true), sort), new TypedDependentLink(true, "arr", new ClassCallExpression(Prelude.DEP_ARRAY, levels, impls, Sort.STD, UniverseKind.NO_UNIVERSES), EmptyDependentLink.getInstance())));
     return nat;
   }
 

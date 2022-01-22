@@ -146,7 +146,7 @@ public class ElimBindingVisitor extends ExpressionTransformer<Void> {
       myKeepVisitor.getBindings().remove(expr.getThisBinding());
     }
 
-    result.setSort(result.getDefinition().computeSort(result.getLevels(), result.getImplementedHere(), result.getThisBinding()));
+    result.setSort(result.getDefinition().computeSort(result.getImplementedHere(), result.getThisBinding()));
     result.updateHasUniverses();
     return result;
   }

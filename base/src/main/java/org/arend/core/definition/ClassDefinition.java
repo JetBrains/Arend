@@ -166,13 +166,14 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
     return null;
   }
 
-  public Sort computeSort(Levels levels, Map<ClassField,Expression> implemented, Binding thisBinding) {
+  public Sort computeSort(Map<ClassField,Expression> implemented, Binding thisBinding) {
     Integer hLevel = getUseLevel(implemented, thisBinding, true);
     if (hLevel != null && hLevel == -1) {
       return Sort.PROP;
     }
 
-    ReferenceExpression thisExpr = new ReferenceExpression(ExpressionFactory.parameter("this", new ClassCallExpression(this, levels, Collections.emptyMap(), mySort.subst(levels.makeSubstitution(this)), getUniverseKind())));
+    Levels levels = makeIdLevels();
+    ReferenceExpression thisExpr = new ReferenceExpression(ExpressionFactory.parameter("this", new ClassCallExpression(this, levels, Collections.emptyMap(), mySort, getUniverseKind())));
     Sort sort = Sort.PROP;
 
     for (ClassField field : myFields) {
@@ -189,7 +190,6 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
       Sort sort1 = type == null ? null : type.toSort();
       if (sort1 != null) {
         sort = sort.max(sort1);
-        if (sort == null) return null;
       }
     }
 
@@ -197,7 +197,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
   }
 
   public void updateSort() {
-    mySort = computeSort(makeIdLevels(), Collections.emptyMap(), null);
+    mySort = computeSort(Collections.emptyMap(), null);
   }
 
   @NotNull
@@ -473,7 +473,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
 
   @Override
   public ClassCallExpression getDefCall(Levels levels, List<Expression> args) {
-    return new ClassCallExpression(this, levels, Collections.emptyMap(), mySort.subst(levels.makeSubstitution(this)), getUniverseKind());
+    return new ClassCallExpression(this, levels, Collections.emptyMap(), mySort, getUniverseKind());
   }
 
   public void clear() {

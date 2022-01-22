@@ -863,8 +863,8 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
         }
       } else {
         Map<ClassField, Expression> implementations = new LinkedHashMap<>();
-        codSort = classCall1.getSort();
-        ClassCallExpression classCall = new ClassCallExpression(classCall1.getDefinition(), classCall1.getLevels(), implementations, codSort, classCall1.getUniverseKind());
+        codSort = classCall1.getSortOfType();
+        ClassCallExpression classCall = new ClassCallExpression(classCall1.getDefinition(), classCall1.getLevels(), implementations, classCall1.getSort(), classCall1.getUniverseKind());
         int i = 0;
         for (ClassField field : classCall1.getDefinition().getFields()) {
           if (!classCall1.getDefinition().isImplemented(field)) {

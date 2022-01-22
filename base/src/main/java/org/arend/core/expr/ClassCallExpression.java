@@ -408,7 +408,7 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
         @Override
         public Expression visitClassCall(ClassCallExpression expr, Void params) {
           Map<ClassField, Expression> fieldSet = new LinkedHashMap<>();
-          ClassCallExpression result = new ClassCallExpression(expr.getDefinition(), expr.getLevels().subst(getLevelSubstitution()), fieldSet, expr.getSort().subst(getLevelSubstitution()), expr.getUniverseKind());
+          ClassCallExpression result = new ClassCallExpression(expr.getDefinition(), expr.getLevels().subst(getLevelSubstitution()), fieldSet, expr.getSort(), expr.getUniverseKind());
           getExprSubstitution().add(expr.getThisBinding(), new ReferenceExpression(result.getThisBinding()));
           for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
             Expression newArg = makeNewExpression(entry.getValue(), entry.getKey().getType().getCodomain());
@@ -445,7 +445,7 @@ public class ClassCallExpression extends DefCallExpression implements Type, Core
 
   @Override
   public Sort getSortOfType() {
-    return getSort();
+    return mySort.subst(getLevelSubstitution());
   }
 
   @Override

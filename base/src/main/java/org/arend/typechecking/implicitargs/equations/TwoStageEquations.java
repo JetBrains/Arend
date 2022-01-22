@@ -805,19 +805,7 @@ public class TwoStageEquations implements Equations {
         if (classDef != Prelude.DEP_ARRAY) {
           solution.removeDependencies(minClassCall.getImplementedHere().keySet());
         }
-        Sort sort = classDef.computeSort(solution.getLevels(), implementations, solution.getThisBinding());
-        if (sort == null) {
-          sort = Sort.generateInferVars(this, false, pair.proj1.getSourceNode());
-          for (ClassField field : classDef.getFields()) {
-            if (!field.isProperty() && !classDef.isImplemented(field) && !implementations.containsKey(field)) {
-              Sort fieldSort = classDef.getFieldType(field, classDef.castLevels(field.getParentClass(), levels)).getCodomain().normalize(NormalizationMode.WHNF).getSortOfType();
-              if (fieldSort != null) {
-                Sort.compare(fieldSort, sort, CMP.LE, this, pair.proj1.getSourceNode());
-              }
-            }
-          }
-        }
-        solution.setSort(sort);
+        solution.setSort(classDef.computeSort(implementations, solution.getThisBinding()));
         solution.updateHasUniverses();
 
         if (!pair.proj2.get(0).getLevels().compare(levels, CMP.LE, this, pair.proj1.getSourceNode())) {

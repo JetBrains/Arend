@@ -109,7 +109,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitClassCall(ClassCallExpression expr, Void params) {
-    return new UniverseExpression(expr.getSort().subst(expr.getLevelSubstitution()));
+    return new UniverseExpression(expr.getSortOfType());
   }
 
   @Override
@@ -274,7 +274,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
       implementations.put(Prelude.ARRAY_LENGTH, length);
     }
     implementations.put(Prelude.ARRAY_ELEMENTS_TYPE, expr.getElementsType());
-    return new ClassCallExpression(Prelude.DEP_ARRAY, expr.getLevels(), implementations, new Sort(expr.getPLevel(), expr.getHLevel().max(new Level(0))), UniverseKind.NO_UNIVERSES);
+    return new ClassCallExpression(Prelude.DEP_ARRAY, expr.getLevels(), implementations, Sort.STD, UniverseKind.NO_UNIVERSES);
   }
 
   @Override
