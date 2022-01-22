@@ -872,9 +872,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
       calculateTypeClassParameters(def, typedDef);
       calculateParametersTypecheckingOrder(typedDef);
-    }
 
-    if (myNewDef) {
       GoodThisParametersVisitor goodThisParametersVisitor;
       goodThisParametersVisitor = new GoodThisParametersVisitor(typedDef.getParameters());
       expectedType.accept(goodThisParametersVisitor, null);
@@ -882,6 +880,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         typedDef.getResultTypeLevel().accept(goodThisParametersVisitor, null);
       }
       typedDef.setGoodThisParameters(goodThisParametersVisitor.getGoodParameters());
+
+      typedDef.setUniverseKind(checkForUniverses(typedDef));
     }
 
     return pair != null;
@@ -1137,8 +1137,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   }
 
   private List<ExtElimClause> typecheckFunctionBody(FunctionDefinition typedDef, Concrete.BaseFunctionDefinition def) {
+    UniverseKind universeKind = typedDef.getUniverseKind();
     if (myNewDef) {
-      typedDef.setUniverseKind(UniverseKind.NO_UNIVERSES);
+      typedDef.setUniverseKind(UniverseKind.WITH_UNIVERSES);
     }
 
     FunctionKind kind = def.getKind();
@@ -1436,11 +1437,13 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
       typedDef.setGoodThisParameters(goodThisParametersVisitor.getGoodParameters());
 
-      if (new UniverseKindChecker().check(typedDef.getResultType())) {
-        typedDef.setUniverseKind(UniverseKind.WITH_UNIVERSES);
-      } else {
-        UniverseKind universeKind = checkForUniverses(typedDef);
-        typedDef.setUniverseKind(universeKind == UniverseKind.WITH_UNIVERSES ? UniverseKind.WITH_UNIVERSES : universeKind.max(new UniverseKindChecker().getUniverseKind(typedDef.getBody())));
+      if (universeKind != UniverseKind.WITH_UNIVERSES) {
+        if (new UniverseKindChecker().check(typedDef.getResultType())) {
+          typedDef.setUniverseKind(UniverseKind.WITH_UNIVERSES);
+        } else {
+          typedDef.setUniverseKind(universeKind);
+          typedDef.setUniverseKind(universeKind.max(new UniverseKindChecker().getUniverseKind(typedDef.getBody())));
+        }
       }
     }
 
@@ -1644,9 +1647,12 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     dataDefinition.setGoodThisParameters(new GoodThisParametersVisitor(dataDefinition.getParameters()).getGoodParameters());
+
+    dataDefinition.setUniverseKind(checkForUniverses(dataDefinition));
   }
 
   private boolean typecheckDataBody(DataDefinition dataDefinition, Concrete.DataDefinition def, Set<DataDefinition> dataDefinitions) {
+    UniverseKind universeKind = dataDefinition.getUniverseKind();
     if (myNewDef) {
       dataDefinition.setUniverseKind(UniverseKind.WITH_UNIVERSES);
       dataDefinition.getConstructors().clear();
@@ -1851,21 +1857,20 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       typechecker.setStatus(def.getStatus().getTypecheckingStatus());
       dataDefinition.addStatus(typechecker.getStatus());
 
-      UniverseKind kind = checkForUniverses(dataDefinition);
-      if (kind != UniverseKind.WITH_UNIVERSES) {
-        dataDefinition.setUniverseKind(kind);
+      if (universeKind != UniverseKind.WITH_UNIVERSES) {
+        dataDefinition.setUniverseKind(universeKind);
         loop:
         for (Constructor constructor : dataDefinition.getConstructors()) {
           for (DependentLink link = constructor.getParameters(); link.hasNext(); link = link.getNext()) {
             link = link.getNextTyped(null);
-            kind = kind.max(new UniverseKindChecker().getUniverseKind(link.getTypeExpr()));
-            if (kind == UniverseKind.WITH_UNIVERSES) {
+            universeKind = universeKind.max(new UniverseKindChecker().getUniverseKind(link.getTypeExpr()));
+            if (universeKind == UniverseKind.WITH_UNIVERSES) {
               break loop;
             }
           }
         }
+        dataDefinition.setUniverseKind(universeKind);
       }
-      dataDefinition.setUniverseKind(kind);
     }
 
     if (myNewDef) {
