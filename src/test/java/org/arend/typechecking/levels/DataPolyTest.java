@@ -120,7 +120,7 @@ public class DataPolyTest extends TypeCheckingTestCase {
 
   @Test
   public void recursiveDataError() {
-    typeCheckDef("\\data D | con (D \\levels 0 \\lh)");
+    typeCheckDef("\\data D | con (D \\levels 0 \\lh)", 1);
   }
 
   @Test

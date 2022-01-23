@@ -16,7 +16,7 @@ import java.util.Arrays;
 import static org.arend.Matchers.*;
 import static org.junit.Assert.assertEquals;
 
-public class Case extends TypeCheckingTestCase {
+public class CaseTest extends TypeCheckingTestCase {
   @Test
   public void testCase() {
     typeCheckModule(
@@ -255,5 +255,23 @@ public class Case extends TypeCheckingTestCase {
   public void typeTest() {
     Definition def = typeCheckDef("\\func test (n : Nat) (x : \\case n \\with { | 0 => Nat | suc _ => Nat }) : Nat => 0");
     assertEquals(Sort.SET0, def.getParameters().getNext().getType().getSortOfType());
+  }
+
+  @Test
+  public void depTest() {
+  typeCheckModule(
+    "\\data D (n : Nat) | con1 | con2\n" +
+    "\\func foo (n : Nat) (d : D n) : n = n\n" +
+    "  | 0, con1 => idp\n" +
+    "  | 0, con2 => idp\n" +
+    "  | suc n, con1 => idp\n" +
+    "  | suc n, con2 => idp\n" +
+    "\\lemma test (g : Nat -> Nat) (f : \\Pi (n : Nat) -> D n) : foo (g 0) (f (g 0)) = idp\n" +
+    "  => \\case g 0 \\as x, f x \\as y \\return foo x y = idp \\with {\n" +
+    "    | 0, con1 => idp\n" +
+    "    | 0, con2 => idp\n" +
+    "    | suc x, con1 => idp\n" +
+    "    | suc x, con2 => idp\n" +
+    "  }");
   }
 }

@@ -63,7 +63,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     return convert(expression, config, new ReferableRenamer());
   }
 
-  public static Concrete.Expression convert(Expression expression, PrettyPrinterConfig config, ReferableRenamer renamer) {
+  public static Concrete.Expression convert(Expression expression, PrettyPrinterConfig config, @NotNull ReferableRenamer renamer) {
     DefinitionRenamer definitionRenamer = config.getDefinitionRenamer();
     if (definitionRenamer == null) {
       definitionRenamer = new ConflictDefinitionRenamer();
@@ -164,6 +164,11 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   private void visitArgument(Expression arg, boolean isExplicit, List<Concrete.Argument> arguments, boolean genGoal) {
     ReferenceExpression refExpr = arg.cast(ReferenceExpression.class);
     if (refExpr != null && refExpr.getBinding().isHidden()) {
+      Concrete.Expression mappedExpression = myRenamer.getConcreteExpression(refExpr.getBinding());
+      if (mappedExpression != null) {
+        arguments.add(new Concrete.Argument(mappedExpression, isExplicit));
+        return;
+      }
       if (isExplicit) {
         arguments.add(new Concrete.Argument(new Concrete.ThisExpression(null, null), true));
       }

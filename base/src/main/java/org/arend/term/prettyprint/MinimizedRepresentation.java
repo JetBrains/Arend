@@ -4,10 +4,7 @@ import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
-import org.arend.core.expr.DefCallExpression;
-import org.arend.core.expr.Expression;
-import org.arend.core.expr.ProjExpression;
-import org.arend.core.expr.ReferenceExpression;
+import org.arend.core.expr.*;
 import org.arend.core.expr.visitor.FreeVariablesCollector;
 import org.arend.core.expr.visitor.VoidExpressionVisitor;
 import org.arend.ext.concrete.ConcreteFactory;
@@ -18,8 +15,10 @@ import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.PrettyPrinterFlag;
 import org.arend.ext.util.Pair;
 import org.arend.extImpl.ConcreteFactoryImpl;
+import org.arend.naming.reference.DataLocalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCDefReferable;
+import org.arend.naming.renamer.ReferableRenamer;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.SubstConcreteExpressionVisitor;
 import org.arend.typechecking.error.local.GoalError;
@@ -35,6 +34,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 final public class MinimizedRepresentation {
@@ -49,9 +49,9 @@ final public class MinimizedRepresentation {
             @NotNull Expression expressionToPrint,
             @Nullable InstanceProvider instanceProvider,
             @Nullable DefinitionRenamer definitionRenamer,
-            boolean mayUseReturnType) {
+            @Nullable Supplier<@NotNull ReferableRenamer> referableRenamer) {
         Expression actualExpression = expressionToPrint.normalize(NormalizationMode.RNF);
-        var pair = generateRepresentations(actualExpression, definitionRenamer, mayUseReturnType);
+        var pair = generateRepresentations(actualExpression, definitionRenamer, referableRenamer);
         Concrete.Expression verboseRepresentation = pair.proj1;
         Concrete.Expression incompleteRepresentation = pair.proj2;
         List<GeneralError> errorsCollector = new ArrayList<>();
@@ -59,9 +59,8 @@ final public class MinimizedRepresentation {
         induceContext(typechecker, verboseRepresentation, incompleteRepresentation, actualExpression);
 
         int limit = 50;
-        Expression returnType = mayUseReturnType ? actualExpression.getType() : null;
         while (true) {
-            var fixedExpression = tryFixError(typechecker, verboseRepresentation, incompleteRepresentation, errorsCollector, returnType);
+            var fixedExpression = tryFixError(typechecker, verboseRepresentation, incompleteRepresentation, errorsCollector);
             if (fixedExpression == null) {
                 return incompleteRepresentation;
             } else {
@@ -86,6 +85,13 @@ final public class MinimizedRepresentation {
             }
             for (var referable : referables) {
                 typechecker.addBinding(referable, nameToBinding.getValue());
+            }
+        }
+        List<Referable> thisEntries = freeReferables.get("this");
+        if (thisEntries != null && thisEntries.size() == 1) {
+            var ref = thisEntries.get(0);
+            if (ref instanceof DataLocalReferable && ((DataLocalReferable) ref).getData() instanceof ClassCallExpression) {
+                typechecker.addBinding(ref, ((ClassCallExpression) ((DataLocalReferable) ref).getData()).getThisBinding());
             }
         }
     }
@@ -118,7 +124,10 @@ final public class MinimizedRepresentation {
         return Concrete.AppExpression.make(null, incompleteRepresentation, trailingImplicitArguments);
     }
 
-    private static Pair<Concrete.Expression, Concrete.Expression> generateRepresentations(Expression core, @Nullable DefinitionRenamer definitionRenamer, boolean mayUseReturnType) {
+    private static Pair<Concrete.Expression, Concrete.Expression>
+    generateRepresentations(Expression core,
+                            @Nullable DefinitionRenamer definitionRenamer,
+                            @Nullable Supplier<@NotNull ReferableRenamer> referableRenamer) {
         var verboseConfig = new PrettyPrinterConfig() {
             @Override
             public @NotNull EnumSet<PrettyPrinterFlag> getExpressionFlags() {
@@ -136,6 +145,11 @@ final public class MinimizedRepresentation {
             }
 
             @Override
+            public @Nullable NormalizationMode getNormalizationMode() {
+                return null;
+            }
+
+            @Override
             public @Nullable DefinitionRenamer getDefinitionRenamer() {
                 return definitionRenamer;
             }
@@ -147,38 +161,46 @@ final public class MinimizedRepresentation {
             }
 
             @Override
+            public @Nullable NormalizationMode getNormalizationMode() {
+                return null;
+            }
+
+            @Override
             public @Nullable DefinitionRenamer getDefinitionRenamer() {
                 return definitionRenamer;
             }
         };
 
-        var verboseRepresentation = ToAbstractVisitor.convert(core, verboseConfig);
-        var incompleteRepresentation = ToAbstractVisitor.convert(core, emptyConfig)
-                .accept(new BiConcreteVisitor() {
-                    @Override
-                    public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Concrete.SourceNode params) {
-                        if (params instanceof Concrete.AppExpression) {
-                            return ((Concrete.AppExpression) params).getFunction();
-                        } else {
-                            return (Concrete.Expression) params;
-                        }
-                    }
-
-                    @Override
-                    protected Concrete.Parameter visitParameter(Concrete.Parameter parameter, Concrete.Parameter wideParameter) {
-                        //noinspection DuplicatedCode
-                        if (parameter.getType() == null) {
-                            return (Concrete.Parameter) myFactory.param(parameter.isExplicit(), wideParameter.getRefList().get(0));
-                        } else if (wideParameter.getRefList().stream().anyMatch(Objects::nonNull)) {
-                            return (Concrete.Parameter) myFactory.param(parameter.isExplicit(), wideParameter.getRefList(), ((Concrete.TypeParameter) parameter).type.accept(this, ((Concrete.TypeParameter) wideParameter).type));
-                        } else {
-                            return (Concrete.Parameter) myFactory.param(parameter.isExplicit(), ((Concrete.TypeParameter) parameter).type.accept(this, ((Concrete.TypeParameter) wideParameter).type));
-                        }
-                    }
-                }, verboseRepresentation);
-        if (!mayUseReturnType) {
-            incompleteRepresentation = addTrailingImplicitArguments(verboseRepresentation, incompleteRepresentation);
+        Supplier<ReferableRenamer> notNullRenamer = referableRenamer == null ? ReferableRenamer::new : referableRenamer;
+        var verboseRepresentation = ToAbstractVisitor.convert(core, verboseConfig, notNullRenamer.get());
+        var incompleteRepresentation = ToAbstractVisitor.convert(core, emptyConfig, notNullRenamer.get());
+        if (verboseRepresentation instanceof Concrete.ClassExtExpression && incompleteRepresentation instanceof Concrete.ClassExtExpression) {
+            verboseRepresentation = ((Concrete.ClassExtExpression) verboseRepresentation).getBaseClassExpression();
+            incompleteRepresentation = ((Concrete.ClassExtExpression) incompleteRepresentation).getBaseClassExpression();
         }
+        incompleteRepresentation = incompleteRepresentation.accept(new BiConcreteVisitor() {
+            @Override
+            public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Concrete.SourceNode params) {
+                if (params instanceof Concrete.AppExpression) {
+                    return ((Concrete.AppExpression) params).getFunction();
+                } else {
+                    return (Concrete.Expression) params;
+                }
+            }
+
+            @Override
+            protected Concrete.Parameter visitParameter(Concrete.Parameter parameter, Concrete.Parameter wideParameter) {
+                //noinspection DuplicatedCode
+                if (parameter.getType() == null) {
+                    return (Concrete.Parameter) myFactory.param(parameter.isExplicit(), wideParameter.getRefList().get(0));
+                } else if (wideParameter.getRefList().stream().anyMatch(Objects::nonNull)) {
+                    return (Concrete.Parameter) myFactory.param(parameter.isExplicit(), wideParameter.getRefList(), ((Concrete.TypeParameter) parameter).type.accept(this, ((Concrete.TypeParameter) wideParameter).type));
+                } else {
+                    return (Concrete.Parameter) myFactory.param(parameter.isExplicit(), ((Concrete.TypeParameter) parameter).type.accept(this, ((Concrete.TypeParameter) wideParameter).type));
+                }
+            }
+        }, verboseRepresentation);
+        incompleteRepresentation = addTrailingImplicitArguments(verboseRepresentation, incompleteRepresentation);
         return new Pair<>(verboseRepresentation, incompleteRepresentation);
     }
 
@@ -223,9 +245,9 @@ final public class MinimizedRepresentation {
         return checkTypeVisitor;
     }
 
-    private static Concrete.Expression tryFixError(CheckTypeVisitor checkTypeVisitor, Concrete.Expression completeConcrete, Concrete.Expression minimizedConcrete, List<GeneralError> errorsCollector, Expression type) {
+    private static Concrete.Expression tryFixError(CheckTypeVisitor checkTypeVisitor, Concrete.Expression completeConcrete, Concrete.Expression minimizedConcrete, List<GeneralError> errorsCollector) {
         var factory = new ConcreteFactoryImpl(null);
-        checkTypeVisitor.finalCheckExpr(minimizedConcrete, type);
+        checkTypeVisitor.finalCheckExpr(minimizedConcrete, null);
         if (!errorsCollector.isEmpty()) {
             return minimizedConcrete.accept(new ErrorFixingConcreteExpressionVisitor(errorsCollector, factory), completeConcrete);
         } else {

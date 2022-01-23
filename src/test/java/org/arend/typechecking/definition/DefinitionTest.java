@@ -308,4 +308,18 @@ public class DefinitionTest extends TypeCheckingTestCase {
     assertFalse(dClass.isOmegaField(field));
     assertEquals(UniverseKind.ONLY_COVARIANT, eClass.getBaseUniverseKind());
   }
+
+  @Test
+  public void cycleTest() {
+    typeCheckModule(
+      "\\record R\n" +
+      "  | X : \\Set\n" +
+      "  | A : X -> D\n" +
+      "\\record D (Y : R)\n" +
+      "\\func f (e : \\Set) : R \\cowith\n" +
+      "  | X => e\n" +
+      "  | A x => \\new D {\n" +
+      "    | Y => (\\this : R)\n" +
+      "  }", -1);
+  }
 }
