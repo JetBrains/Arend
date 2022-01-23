@@ -115,15 +115,6 @@ public class DefinitionDeserialization implements ArendDeserializer {
 
   private void fillInClassDefinition(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.ClassData classProto, ClassDefinition classDef) throws DeserializationException {
     classDef.setBaseUniverseKind(defDeserializer.readUniverseKind(classProto.getBaseUniverseKind()));
-    if (!classProto.getIsStdLevels()) {
-      List<LevelVariable> fieldLevels = new ArrayList<>();
-      for (DefinitionProtos.Definition.LevelField levelFieldProto : classProto.getLevelFieldList()) {
-        DefinitionProtos.Definition.LevelParameter parameter = levelFieldProto.getParameter();
-        int ref = levelFieldProto.getRef();
-        fieldLevels.add(ref == -1 ? (parameter.getIsPlevel() ? LevelVariable.PVAR : LevelVariable.HVAR) : new FieldLevelVariable(parameter.getIsPlevel() ? LevelVariable.LvlType.PLVL : LevelVariable.LvlType.HLVL, parameter.getName(), parameter.getIndex(), parameter.getSize(), myCallTargetProvider.getLevelCallTarget(ref)));
-      }
-      classDef.setLevelParameters(fieldLevels);
-    }
 
     Map<Integer, LevelProtos.Levels> superLevelsProto = classProto.getSuperLevelsMap();
     if (!superLevelsProto.isEmpty()) {

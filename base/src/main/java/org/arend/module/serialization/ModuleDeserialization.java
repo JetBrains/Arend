@@ -1,5 +1,7 @@
 package org.arend.module.serialization;
 
+import org.arend.core.context.binding.FieldLevelVariable;
+import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.definition.*;
 import org.arend.ext.module.ModulePath;
 import org.arend.ext.reference.Precedence;
@@ -278,12 +280,14 @@ public class ModuleDeserialization {
         invisibleRefs.add(myCallTargetProvider.getCallTarget(index));
       }
       List<Group.InternalReferable> internalReferables = new ArrayList<>();
-      for (DefinitionProtos.Definition.ClassData.Field field : groupProto.getDefinition().getClass_().getPersonalFieldList()) {
+      DefinitionProtos.Definition.ClassData classProto = groupProto.getDefinition().getClass_();
+      for (DefinitionProtos.Definition.ClassData.Field field : classProto.getPersonalFieldList()) {
         ClassField fieldDef = myCallTargetProvider.getCallTarget(field.getReferable().getIndex(), ClassField.class);
         TCFieldReferable fieldReferable = fieldDef.getReferable();
         internalReferables.add(new SimpleInternalReferable(fieldReferable, !invisibleRefs.contains(fieldDef)));
         fieldReferables.add(fieldReferable);
       }
+      fillClassLevelParameters(classProto, (ClassDefinition) def);
 
       List<Group> dynamicGroups = new ArrayList<>(groupProto.getDynamicSubgroupCount());
       group = new ClassGroup((ClassReferable) referable, internalReferables, dynamicGroups, subgroups, Collections.emptyList(), parent);
@@ -303,13 +307,26 @@ public class ModuleDeserialization {
     return group;
   }
 
+  private void fillClassLevelParameters(DefinitionProtos.Definition.ClassData classProto, ClassDefinition classDef) throws DeserializationException {
+    if (!classProto.getIsStdLevels()) {
+      List<LevelVariable> fieldLevels = new ArrayList<>();
+      for (DefinitionProtos.Definition.LevelField levelFieldProto : classProto.getLevelFieldList()) {
+        DefinitionProtos.Definition.LevelParameter parameter = levelFieldProto.getParameter();
+        int ref = levelFieldProto.getRef();
+        fieldLevels.add(ref == -1 ? (parameter.getIsPlevel() ? LevelVariable.PVAR : LevelVariable.HVAR) : new FieldLevelVariable(parameter.getIsPlevel() ? LevelVariable.LvlType.PLVL : LevelVariable.LvlType.HLVL, parameter.getName(), parameter.getIndex(), parameter.getSize(), myCallTargetProvider.getLevelCallTarget(ref)));
+      }
+      classDef.setLevelParameters(fieldLevels);
+    }
+  }
+
   private Definition readDefinition(DefinitionProtos.Definition defProto, TCDefReferable referable, boolean fillInternalDefinitions) throws DeserializationException {
     final Definition def;
     switch (defProto.getDefinitionDataCase()) {
-      case CLASS:
+      case CLASS: {
+        DefinitionProtos.Definition.ClassData classProto = defProto.getClass_();
         ClassDefinition classDef = new ClassDefinition(referable);
         if (fillInternalDefinitions) {
-          for (DefinitionProtos.Definition.ClassData.Field fieldProto : defProto.getClass_().getPersonalFieldList()) {
+          for (DefinitionProtos.Definition.ClassData.Field fieldProto : classProto.getPersonalFieldList()) {
             DefinitionProtos.Referable fieldReferable = fieldProto.getReferable();
             TCFieldReferable absField = new FieldReferableImpl(readPrecedence(fieldReferable.getPrecedence()), fieldReferable.getName(), fieldProto.getIsExplicit(), fieldProto.getIsParameter(), referable);
             ClassField res = new ClassField(absField, classDef);
@@ -318,8 +335,10 @@ public class ModuleDeserialization {
             myCallTargetProvider.putCallTarget(fieldReferable.getIndex(), res);
           }
         }
+        fillClassLevelParameters(classProto, classDef);
         def = classDef;
         break;
+      }
       case DATA:
         DataDefinition dataDef = new DataDefinition(referable);
         if (fillInternalDefinitions) {

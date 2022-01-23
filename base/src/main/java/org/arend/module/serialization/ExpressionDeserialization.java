@@ -68,9 +68,13 @@ class ExpressionDeserialization {
   // Sorts and levels
 
   private Level readLevel(LevelProtos.Level proto, LevelVariable base) {
+    return readLevel(proto, base, myDefinition);
+  }
+
+  private Level readLevel(LevelProtos.Level proto, LevelVariable base, Definition definition) {
     LevelVariable var;
     int index = proto.getVariable();
-    var = index == -2 ? null : index == -1 ? base : myDefinition.getLevelParameters().get(index);
+    var = index == -2 ? null : index == -1 ? base : definition.getLevelParameters().get(index);
 
     int constant = proto.getConstant();
     if (var == null && constant == Level.INFINITY.getConstant()) {
@@ -420,7 +424,8 @@ class ExpressionDeserialization {
     myDependencyListener.dependsOn(myDefinition.getRef(), classDefinition.getReferable());
 
     Map<ClassField, Expression> fieldSet = new LinkedHashMap<>();
-    ClassCallExpression classCall = new ClassCallExpression(classDefinition, readLevels(proto.getLevels()), fieldSet, readSort(proto.getSort()), readUniverseKind(proto.getUniverseKind()));
+    LevelProtos.Sort sort = proto.getSort();
+    ClassCallExpression classCall = new ClassCallExpression(classDefinition, readLevels(proto.getLevels()), fieldSet, new Sort(readLevel(sort.getPLevel(), LevelVariable.PVAR, classDefinition), readLevel(sort.getHLevel(), LevelVariable.HVAR, classDefinition)), readUniverseKind(proto.getUniverseKind()));
     registerBinding(classCall.getThisBinding());
     for (ExpressionProtos.Expression.ClassCall.ImplEntry entry : proto.getFieldImplList()) {
       fieldSet.put(myCallTargetProvider.getCallTarget(entry.getField(), ClassField.class), readExpr(entry.getImpl()));
