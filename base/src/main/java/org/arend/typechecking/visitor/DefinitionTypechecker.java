@@ -2727,11 +2727,19 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
       typedDef.setBaseUniverseKind(baseUniverseKind);
       UniverseKind universeKind = baseUniverseKind;
-      for (ClassField field : typedDef.getFields()) {
-        if (field.getUniverseKind().ordinal() > universeKind.ordinal() && !typedDef.isImplemented(field)) {
-          universeKind = field.getUniverseKind();
-          if (universeKind == UniverseKind.WITH_UNIVERSES) {
-            break;
+      for (ClassDefinition superClass : typedDef.getSuperClasses()) {
+        universeKind = universeKind.max(superClass.getUniverseKind());
+        if (universeKind == UniverseKind.WITH_UNIVERSES) {
+          break;
+        }
+      }
+      if (universeKind != UniverseKind.WITH_UNIVERSES) {
+        for (ClassField field : typedDef.getFields()) {
+          if (field.getUniverseKind().ordinal() > universeKind.ordinal() && !typedDef.isImplemented(field)) {
+            universeKind = field.getUniverseKind();
+            if (universeKind == UniverseKind.WITH_UNIVERSES) {
+              break;
+            }
           }
         }
       }

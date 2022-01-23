@@ -455,8 +455,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
       "\\class D \\extends C\n" +
       "  | A => Nat\n" +
       "\\class E (B : \\hType) \\extends D\n" +
-      "\\func test1 (e : E (\\suc \\lp)) : D \\lp => e\n" +
-      "\\func test2 (d : D (\\suc \\lp)) : C \\lp => d\n" +
-      "\\func test (e : E (\\suc \\lp)) : C \\lp => e");
+      "\\func test1 (e : E (\\suc \\lp)) : D \\lp => e", 1);
+    assertThatErrorsAre(typeMismatchError());
   }
 }

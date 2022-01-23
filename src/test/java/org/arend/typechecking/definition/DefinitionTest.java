@@ -219,7 +219,8 @@ public class DefinitionTest extends TypeCheckingTestCase {
     assertEquals(UniverseKind.NO_UNIVERSES, getDefinition("D").getUniverseKind());
     assertEquals(UniverseKind.NO_UNIVERSES, getDefinition("f").getUniverseKind());
     assertEquals(UniverseKind.NO_UNIVERSES, ((ClassCallExpression) Objects.requireNonNull(((FunctionDefinition) getDefinition("g")).getBody())).getUniverseKind());
-    assertEquals(UniverseKind.NO_UNIVERSES, getDefinition("R").getUniverseKind());
+    assertEquals(UniverseKind.NO_UNIVERSES, ((ClassDefinition) getDefinition("R")).getBaseUniverseKind());
+    assertEquals(UniverseKind.ONLY_COVARIANT, getDefinition("R").getUniverseKind());
   }
 
   @Test
@@ -247,7 +248,8 @@ public class DefinitionTest extends TypeCheckingTestCase {
     assertEquals(UniverseKind.NO_UNIVERSES, getDefinition("D").getUniverseKind());
     assertEquals(UniverseKind.NO_UNIVERSES, getDefinition("f").getUniverseKind());
     assertEquals(UniverseKind.NO_UNIVERSES, ((ClassCallExpression) Objects.requireNonNull(((FunctionDefinition) getDefinition("g")).getBody())).getUniverseKind());
-    assertEquals(UniverseKind.NO_UNIVERSES, getDefinition("R").getUniverseKind());
+    assertEquals(UniverseKind.NO_UNIVERSES, ((ClassDefinition) getDefinition("R")).getBaseUniverseKind());
+    assertEquals(UniverseKind.ONLY_COVARIANT, getDefinition("R").getUniverseKind());
   }
 
   @Test
