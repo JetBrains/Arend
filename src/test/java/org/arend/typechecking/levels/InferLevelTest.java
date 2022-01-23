@@ -15,6 +15,7 @@ import org.arend.ext.core.ops.CMP;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.arend.typechecking.doubleChecker.CoreExpressionChecker;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -401,6 +402,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
       "\\func test (w : SomeWrapper) : \\Type => w.X.J");
   }
 
+  @Ignore
   @Test
   public void noUniverseTest() {
     typeCheckModule(
@@ -411,6 +413,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
     new DataCallExpression(wrap, new LevelPair(new Level(1), new Level(1)), Collections.singletonList(ExpressionFactory.Nat())).accept(new CoreExpressionChecker(new HashSet<>(), DummyEquations.getInstance(), null), new UniverseExpression(new Sort(new Level(0), new Level(0))));
   }
 
+  @Ignore
   @Test
   public void noUniverseTest2() {
     typeCheckModule(
