@@ -94,11 +94,10 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
   @Override
   public Expression visitFunCall(FunCallExpression expr, Expression expectedType) {
     checkLevels(expr.getLevels(), expr.getDefinition(), expr);
-    LevelSubstitution levelSubst = expr.getLevelSubstitution();
     ExprSubstitution substitution = new ExprSubstitution();
     List<? extends Expression> args = expr.getDefCallArguments();
-    checkList(args, expr.getDefinition().getParameters(), substitution, levelSubst);
-    var resultType = expr.getDefinition().getResultType().subst(substitution, levelSubst);
+    checkList(args, expr.getDefinition().getParameters(), substitution, expr.getLevelSubstitution());
+    var resultType = expr.getDefinition().getResultType().subst(substitution, expr.minimizeLevels().makeSubstitution(expr.getDefinition()));
     if (expr.getDefinition() == Prelude.MOD || expr.getDefinition() == Prelude.DIV_MOD) {
       Expression arg2 = args.get(1);
       IntegerExpression integer = arg2.cast(IntegerExpression.class);
@@ -176,27 +175,26 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
   @Override
   public Expression visitDataCall(DataCallExpression expr, Expression expectedType) {
     checkLevels(expr.getLevels(), expr.getDefinition(), expr);
-    LevelSubstitution levelSubst = expr.getLevelSubstitution();
-    checkList(expr.getDefCallArguments(), expr.getDefinition().getParameters(), new ExprSubstitution(), levelSubst);
-    return check(expectedType, new UniverseExpression(expr.getDefinition().getSort().subst(levelSubst)), expr);
+    checkList(expr.getDefCallArguments(), expr.getDefinition().getParameters(), new ExprSubstitution(), expr.getLevelSubstitution());
+    return check(expectedType, GetTypeVisitor.INSTANCE.visitDataCall(expr, null), expr);
   }
 
   @Override
   public Expression visitFieldCall(FieldCallExpression expr, Expression expectedType) {
     checkLevels(expr.getLevels(), expr.getDefinition(), expr);
-    PiExpression type = expr.getDefinition().getType(expr.getLevels());
-    Expression argType = expr.getArgument().accept(this, type.getParameters().getTypeExpr());
+    Levels levels = expr.minimizeLevels();
+    Expression argType = expr.getArgument().accept(this, expr.getDefinition().getType().getParameters().getTypeExpr().subst(levels.makeSubstitution(expr.getDefinition())));
 
     Expression actualType = null;
     ClassCallExpression argClassCall = argType.normalize(NormalizationMode.WHNF).cast(ClassCallExpression.class);
     if (argClassCall != null) {
-      PiExpression overriddenType = argClassCall.getDefinition().getOverriddenType(expr.getDefinition(), argClassCall.getLevels(expr.getDefinition().getParentClass()));
+      PiExpression overriddenType = argClassCall.getDefinition().getOverriddenType(expr.getDefinition(), levels);
       if (overriddenType != null) {
         actualType = overriddenType.applyExpression(expr.getArgument());
       }
     }
     if (actualType == null) {
-      actualType = type.applyExpression(expr.getArgument());
+      actualType = expr.getDefinition().getResultType().subst(new ExprSubstitution(expr.getDefinition().getType().getParameters(), expr.getArgument()), levels.makeSubstitution(expr.getDefinition()));
     }
     return check(expectedType, actualType, expr);
   }
@@ -251,7 +249,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
       }
     }
 
-    return check(expectedType, new UniverseExpression(expr.getSortOfType()), expr);
+    return check(expectedType, GetTypeVisitor.INSTANCE.visitClassCall(expr, null), expr);
   }
 
   @Override
@@ -307,6 +305,21 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
 
   void removeBinding(Binding binding) {
     if (myContext != null) myContext.remove(binding);
+  }
+
+  Sort checkDependentLinkWithResult(DependentLink link, Expression type, Expression expr) {
+    Sort result = Sort.PROP;
+    for (; link.hasNext(); link = link.getNext()) {
+      addBinding(link, expr);
+      if (link instanceof TypedDependentLink) {
+        Expression paramType = link.getTypeExpr().accept(this, type);
+        if (result != null) {
+          Sort sort = paramType.toSort();
+          result = sort == null ? null : result.max(sort);
+        }
+      }
+    }
+    return result;
   }
 
   void checkDependentLink(DependentLink link, Expression type, Expression expr) {
@@ -386,19 +399,27 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
   public Expression visitPi(PiExpression expr, Expression expectedType) {
     checkSort(expr.getResultSort(), expr);
     UniverseExpression type = new UniverseExpression(expr.getResultSort());
-    checkDependentLink(expr.getParameters(), expr.getResultSort().isProp() ? null : new UniverseExpression(new Sort(expr.getResultSort().getPLevel(), Level.INFINITY)), expr);
-    expr.getCodomain().accept(this, type);
+    Sort sort1 = checkDependentLinkWithResult(expr.getParameters(), expr.getResultSort().isProp() ? null : new UniverseExpression(new Sort(expr.getResultSort().getPLevel(), Level.INFINITY)), expr);
+    Sort sort2 = expr.getCodomain().accept(this, type).toSort();
     freeDependentLink(expr.getParameters());
-    return check(expectedType, type, expr);
+
+    Expression actualType;
+    if (sort1 != null && sort1.isProp() || sort2 != null && sort2.isProp()) {
+      actualType = new UniverseExpression(sort2);
+    } else {
+      Level maxPLevel = sort1 == null || sort2 == null ? null : sort1.getPLevel().max(sort2.getPLevel());
+      actualType = maxPLevel == null ? type : new UniverseExpression(new Sort(maxPLevel, sort2.getHLevel()));
+    }
+    return check(expectedType, actualType, expr);
   }
 
   @Override
   public Expression visitSigma(SigmaExpression expr, Expression expectedType) {
     checkSort(expr.getSort(), expr);
     UniverseExpression type = new UniverseExpression(expr.getSort());
-    checkDependentLink(expr.getParameters(), type, expr);
+    Sort sort = checkDependentLinkWithResult(expr.getParameters(), type, expr);
     freeDependentLink(expr.getParameters());
-    return check(expectedType, type, expr);
+    return check(expectedType, sort == null ? type : new UniverseExpression(sort), expr);
   }
 
   private void checkLevel(Level level, LevelVariable.LvlType type, Expression expr) {

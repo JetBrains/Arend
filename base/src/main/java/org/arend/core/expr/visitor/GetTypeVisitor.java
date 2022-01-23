@@ -1,5 +1,6 @@
 package org.arend.core.expr.visitor;
 
+import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.FunctionDefinition;
@@ -11,7 +12,10 @@ import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelPair;
+import org.arend.core.subst.Levels;
+import org.arend.core.subst.ListLevels;
 import org.arend.error.IncorrectExpressionException;
+import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
 import org.arend.util.SingletonList;
@@ -39,6 +43,152 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
     return result;
   }
 
+  private Level getMaxLevel(Level level1, Level level2) {
+    return level2 == null ? level1 : level2.max(level1);
+  }
+
+  private boolean matchLevels(Levels paramLevels, Levels argLevels, Map<LevelVariable, Level> levelMap) {
+    List<? extends Level> paramList = paramLevels.toList();
+    List<? extends Level> argList = argLevels.toList();
+    if (paramList.size() != argList.size()) {
+      return false;
+    }
+    for (int i = 0; i < paramList.size(); i++) {
+      if (paramList.get(i).getVar() != null) {
+        Level level = getMaxLevel(argList.get(i), levelMap.get(paramList.get(i).getVar()));
+        if (level == null) {
+          return false;
+        }
+        levelMap.put(paramList.get(i).getVar(), level);
+      }
+    }
+    return true;
+  }
+
+  private boolean matchArguments(Expression paramType, Expression argType, Map<LevelVariable, Level> levelMap) {
+    int skip = 0;
+    while (paramType instanceof PiExpression) {
+      skip += DependentLink.Helper.size(((PiExpression) paramType).getParameters());
+      paramType = ((PiExpression) paramType).getCodomain();
+    }
+
+    if (paramType instanceof UniverseExpression) {
+      argType = argType.dropPiParameter(skip);
+      argType = argType == null ? null : argType.normalize(NormalizationMode.WHNF);
+      if (!(argType instanceof UniverseExpression)) {
+        return false;
+      }
+      Sort paramSort = ((UniverseExpression) paramType).getSort();
+      Sort argSort = ((UniverseExpression) argType).getSort();
+      return matchLevels(new LevelPair(paramSort.getPLevel(), paramSort.getHLevel()), new LevelPair(argSort.getPLevel(), argSort.getHLevel()), levelMap);
+    } else if (paramType instanceof SigmaExpression) {
+      argType = argType.dropPiParameter(skip);
+      argType = argType == null ? null : argType.normalize(NormalizationMode.WHNF);
+      if (!(argType instanceof SigmaExpression)) {
+        return false;
+      }
+      DependentLink paramParam = ((SigmaExpression) paramType).getParameters();
+      DependentLink argParam = ((SigmaExpression) argType).getParameters();
+      while (paramParam.hasNext() && argParam.hasNext()) {
+        if (!matchArguments(paramParam.getTypeExpr(), argParam.getTypeExpr(), levelMap)) {
+          return false;
+        }
+        paramParam = paramParam.getNext();
+        argParam = argParam.getNext();
+      }
+      return !(paramParam.hasNext() || argParam.hasNext());
+    } else if (paramType instanceof ClassCallExpression) {
+      argType = argType.dropPiParameter(skip);
+      argType = argType == null ? null : argType.normalize(NormalizationMode.WHNF);
+      if (!(argType instanceof ClassCallExpression)) {
+        return false;
+      }
+      ClassCallExpression paramClassCall = (ClassCallExpression) paramType;
+      ClassCallExpression argClassCall = (ClassCallExpression) argType;
+      if (paramClassCall.getUniverseKind() != UniverseKind.NO_UNIVERSES && !matchLevels(paramClassCall.getLevels(), argClassCall.getDefinition().castLevels(paramClassCall.getDefinition(), minimizeLevels(argClassCall)), levelMap)) {
+        return false;
+      }
+      for (Map.Entry<ClassField, Expression> entry : paramClassCall.getImplementedHere().entrySet()) {
+        Expression argImpl = argClassCall.getAbsImplementationHere(entry.getKey());
+        if (argImpl == null || !matchArguments(entry.getValue(), argImpl, levelMap)) {
+          return false;
+        }
+      }
+      return true;
+    } else {
+      return true;
+    }
+  }
+
+  public Levels minimizeLevels(DefCallExpression defCall) {
+    if (!(defCall instanceof FieldCallExpression || defCall.getUniverseKind() == UniverseKind.NO_UNIVERSES && defCall.getDefinition() != Prelude.DIV_MOD && defCall.getDefinition() != Prelude.MOD && !(defCall instanceof ConCallExpression))) {
+      return defCall.getLevels();
+    }
+    Levels levels = defCall.getLevels();
+    if (defCall instanceof FieldCallExpression) {
+      Expression type = ((FieldCallExpression) defCall).getArgument().accept(this, null);
+      type = myNormalizing ? type.normalize(NormalizationMode.WHNF) : type.getUnderlyingExpression();
+      if (type instanceof ClassCallExpression) {
+        levels = ((ClassCallExpression) type).getDefinition().castLevels(((FieldCallExpression) defCall).getDefinition().getParentClass(), minimizeLevels((ClassCallExpression) type));
+      }
+    } else {
+      boolean ok = true;
+      Map<LevelVariable, Level> levelMap = new HashMap<>();
+      if (defCall instanceof ClassCallExpression) {
+        ClassCallExpression classCall = (ClassCallExpression) defCall;
+        Levels idLevels = classCall.getDefinition().makeIdLevels();
+        for (Map.Entry<ClassField, Expression> entry : classCall.getImplementedHere().entrySet()) {
+          ClassField field = entry.getKey();
+          if (classCall.getDefinition().isOmegaField(field)) {
+            Levels superLevels = classCall.getDefinition().getSuperLevels().get(field.getParentClass());
+            if (superLevels == null) superLevels = idLevels;
+            ok = matchArguments(field.getResultType().subst(superLevels.makeSubstitution(field)), entry.getValue().accept(this, null), levelMap);
+            if (!ok) break;
+          }
+        }
+      } else {
+        DependentLink param = defCall.getDefinition().getParameters();
+        List<? extends Expression> defCallArguments = defCall.getDefCallArguments();
+        for (int i = 0; i < defCallArguments.size(); i++) {
+          ok = !defCall.getDefinition().isOmegaParameter(i) || matchArguments(param.getTypeExpr(), defCallArguments.get(i).accept(this, null), levelMap);
+          if (!ok) break;
+          param = param.getNext();
+        }
+      }
+
+      if (ok) {
+        if (defCall.getDefinition().getLevelParameters() == null) {
+          Level pLevel = levelMap.get(LevelVariable.PVAR);
+          Level hLevel = levelMap.get(LevelVariable.HVAR);
+          levels = new LevelPair(pLevel == null ? new Level(0) : pLevel, hLevel == null ? new Level(-1) : hLevel);
+        } else {
+          List<Level> list = new ArrayList<>();
+          List<? extends LevelVariable> vars = defCall.getDefinition().getLevelParameters();
+          for (LevelVariable var : vars) {
+            Level level = levelMap.get(var);
+            list.add(level == null ? new Level(var.getMinValue()) : level);
+          }
+          for (int i = 0; i < list.size() - 1; i++) {
+            Level maxLevel = list.get(i).max(list.get(i + 1));
+            if (maxLevel == null) {
+              ok = false;
+              break;
+            }
+            if (vars.get(i).compare(vars.get(i + 1), CMP.LE)) {
+              list.set(i + 1, maxLevel);
+            } else {
+              list.set(i, maxLevel);
+            }
+          }
+          if (ok) {
+            levels = new ListLevels(list);
+          }
+        }
+      }
+    }
+    return levels;
+  }
+
   @Override
   public Expression visitFunCall(FunCallExpression expr, Void params) {
     FunctionDefinition definition = expr.getDefinition();
@@ -55,31 +205,32 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
     }
 
     List<DependentLink> defParams = new ArrayList<>();
-    Expression type = definition.getTypeWithParams(defParams, expr.getLevels());
+    Expression type = definition.getTypeWithParams(defParams, minimizeLevels(expr));
     assert arguments.size() == defParams.size();
     return type.subst(DependentLink.Helper.toSubstitution(defParams, arguments));
   }
 
   @Override
   public UniverseExpression visitDataCall(DataCallExpression expr, Void params) {
-    return new UniverseExpression(expr.getDefinition().getSort().subst(expr.getLevelSubstitution()));
+    return new UniverseExpression(expr.getDefinition().getSort().subst(minimizeLevels(expr).makeSubstitution(expr.getDefinition())));
   }
 
   @Override
   public Expression visitFieldCall(FieldCallExpression expr, Void params) {
     Expression type = expr.getArgument().accept(this, null);
+    Levels levels = minimizeLevels(expr);
     if (type != null) {
       if (myNormalizing) {
         type = type.normalize(NormalizationMode.WHNF);
       }
       if (type instanceof ClassCallExpression) {
-        PiExpression fieldType = ((ClassCallExpression) type).getDefinition().getOverriddenType(expr.getDefinition(), expr.getLevels());
+        PiExpression fieldType = ((ClassCallExpression) type).getDefinition().getOverriddenType(expr.getDefinition(), levels);
         if (fieldType != null) {
           return fieldType.applyExpression(expr.getArgument());
         }
       }
     }
-    return expr.getDefinition().getType(expr.getLevels()).applyExpression(expr.getArgument());
+    return expr.getDefinition().getResultType().subst(new ExprSubstitution(expr.getDefinition().getType().getParameters(), expr.getArgument()), levels.makeSubstitution(expr.getDefinition()));
   }
 
   @Override
@@ -109,7 +260,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitClassCall(ClassCallExpression expr, Void params) {
-    return new UniverseExpression(expr.getSortOfType());
+    return new UniverseExpression(expr.getSort().subst(minimizeLevels(expr).makeSubstitution(expr.getDefinition())));
   }
 
   @Override
@@ -124,8 +275,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitSubst(SubstExpression expr, Void params) {
-    Expression type = expr.getExpression().accept(this, null);
-    return type == null ? null : type.subst(expr.getSubstitution(), expr.getLevelSubstitution());
+    return expr.getExpression().accept(this, null).subst(expr.getSubstitution(), expr.getLevelSubstitution());
   }
 
   @Override
@@ -135,12 +285,24 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitPi(PiExpression expr, Void params) {
-    return new UniverseExpression(expr.getResultSort());
+    Sort sort1 = expr.getParameters().getTypeExpr().accept(this, null).toSort();
+    Sort sort2 = sort1 == null ? null : expr.getCodomain().accept(this, null).toSort();
+    Level maxPLevel = sort2 == null ? null : sort1.getPLevel().max(sort2.getPLevel());
+    return new UniverseExpression(maxPLevel == null ? expr.getResultSort() : new Sort(maxPLevel, sort2.getHLevel()));
   }
 
   @Override
   public Expression visitSigma(SigmaExpression expr, Void params) {
-    return new UniverseExpression(expr.getSort());
+    Sort maxSort = Sort.PROP;
+    for (DependentLink param = expr.getParameters(); param.hasNext(); param = param.getNext()) {
+      param = param.getNextTyped(null);
+      Sort sort = param.getTypeExpr().accept(this, null).toSort();
+      maxSort = sort == null ? null : maxSort.max(sort);
+      if (maxSort == null) {
+        break;
+      }
+    }
+    return new UniverseExpression(maxSort == null ? expr.getSort() : maxSort);
   }
 
   @Override
@@ -163,8 +325,9 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
     Expression type = expr.getExpression().accept(this, null);
     if (myNormalizing) {
       type = type.normalize(NormalizationMode.WHNF);
+    } else {
+      type = type.getUnderlyingExpression();
     }
-    type = type.getUnderlyingExpression();
     if (type instanceof ErrorExpression) {
       return type;
     }

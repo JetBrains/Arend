@@ -893,7 +893,7 @@ public class TwoStageEquations implements Equations {
     Expression expectedType = var.getType().normalize(NormalizationMode.WHNF);
     Expression result = ElimBindingVisitor.keepBindings(expr, var.getBounds(), isLowerBound);
 
-    boolean ok = true;
+    // boolean ok = true;
     Expression actualType;
     if (result == null) {
       actualType = null;
@@ -906,12 +906,13 @@ public class TwoStageEquations implements Equations {
         if (actualType instanceof ClassCallExpression && expectedType instanceof ClassCallExpression) {
           ClassCallExpression actualClassCall = (ClassCallExpression) actualType;
           ClassCallExpression expectedClassCall = (ClassCallExpression) expectedType;
+          /* I don't know if this is necessary or not
           if (var.compareClassCallsExactly()) {
-            if (!expectedClassCall.getLevels().compare(actualClassCall.getLevels(expectedClassCall.getDefinition()), CMP.LE, this, var.getSourceNode())) {
+            if (!expectedClassCall.getLevels().compare(actualClassCall.getLevels(expectedClassCall.getDefinition()), CMP.GE, this, var.getSourceNode())) {
               ok = false;
             }
-          }
-          if (ok) {
+          } */
+          // if (ok) {
             for (ClassField field : actualClassCall.getDefinition().getFields()) {
               if (!actualClassCall.isImplemented(field) && (expectedClassCall.isImplemented(field) || var.isFieldImplemented(field))) {
                 result = new NewExpression(result, actualClassCall);
@@ -919,7 +920,7 @@ public class TwoStageEquations implements Equations {
                 break;
               }
             }
-          }
+          // }
         }
       }
     }
@@ -927,7 +928,7 @@ public class TwoStageEquations implements Equations {
       return trySolve2 ? SolveResult.NOT_SOLVED : inferenceError(var, expr);
     }
 
-    if (ok && new CompareVisitor(this, CMP.LE, var.getSourceNode()).normalizedCompare(actualType, expectedType, Type.OMEGA, false)) {
+    if (/* ok && */ new CompareVisitor(this, CMP.LE, var.getSourceNode()).normalizedCompare(actualType, expectedType, Type.OMEGA, false)) {
       var.solve(myVisitor, OfTypeExpression.make(result, actualType, expectedType));
       return SolveResult.SOLVED;
     } else {

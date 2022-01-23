@@ -3,7 +3,9 @@ package org.arend.core.expr;
 import org.arend.core.definition.Definition;
 import org.arend.core.definition.ParametersLevel;
 import org.arend.core.definition.UniverseKind;
+import org.arend.core.expr.visitor.GetTypeVisitor;
 import org.arend.core.subst.LevelPair;
+import org.arend.error.IncorrectExpressionException;
 import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.core.subst.Levels;
 import org.arend.ext.core.expr.CoreDefCallExpression;
@@ -66,6 +68,14 @@ public abstract class DefCallExpression extends Expression implements CoreDefCal
 
   public UniverseKind getUniverseKind() {
     return myDefinition.getUniverseKind();
+  }
+
+  public Levels minimizeLevels() {
+    try {
+      return GetTypeVisitor.INSTANCE.minimizeLevels(this);
+    } catch (IncorrectExpressionException e) {
+      return null;
+    }
   }
 
   @Override

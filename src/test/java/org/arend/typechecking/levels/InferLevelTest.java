@@ -375,7 +375,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
   @Test
   public void pathPropTest() {
     typeCheckModule(
-      "\\lemma test {A B : \\Prop} (f : A -> B) (g : B -> A) : A = B" +
+      "\\lemma test {A B : \\Prop} (f : A -> B) (g : B -> A) : A = B\n" +
       "  => path (iso f g (\\lam _ => Path.inProp _ _) (\\lam _ => Path.inProp _ _))");
   }
 

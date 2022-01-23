@@ -839,7 +839,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
       }
     }
 
-    return FieldCallExpression.make(expr.getDefinition(), expr.getLevels(), mode == NormalizationMode.NF ? thisExpr.accept(this, mode) : thisExpr);
+    return FieldCallExpression.make(expr.getDefinition(), expr.getLevels(), thisExpr);
   }
 
   @Override
