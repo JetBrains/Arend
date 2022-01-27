@@ -43,7 +43,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
         if (myErrorLevel == null || error.level.ordinal() > myErrorLevel.ordinal()) {
           myErrorLevel = error.level;
         }
-        errorReporter.report(error);
+        super.report(error);
       }
     };
   }

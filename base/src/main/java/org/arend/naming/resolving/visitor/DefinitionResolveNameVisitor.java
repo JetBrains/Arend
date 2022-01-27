@@ -204,7 +204,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     @Override
     public void report(GeneralError error) {
       definition.setStatus(error.level);
-      myErrorReporter.report(error);
+      super.report(error);
     }
   }
 
