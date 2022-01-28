@@ -25,13 +25,16 @@ import java.util.*;
 import static org.arend.core.expr.ExpressionFactory.*;
 
 public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
-  public final static GetTypeVisitor INSTANCE = new GetTypeVisitor(true);
-  public final static GetTypeVisitor NN_INSTANCE = new GetTypeVisitor(false);
+  public final static GetTypeVisitor INSTANCE = new GetTypeVisitor(true, false);
+  public final static GetTypeVisitor NN_INSTANCE = new GetTypeVisitor(false, false);
+  public final static GetTypeVisitor MIN_INSTANCE = new GetTypeVisitor(true, true);
 
   private final boolean myNormalizing;
+  private final boolean myMinimal;
 
-  private GetTypeVisitor(boolean normalizing) {
+  private GetTypeVisitor(boolean normalizing, boolean minimal) {
     myNormalizing = normalizing;
+    myMinimal = minimal;
   }
 
   @Override
@@ -197,14 +200,14 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
     }
 
     List<DependentLink> defParams = new ArrayList<>();
-    Expression type = definition.getTypeWithParams(defParams, minimizeLevels(expr));
+    Expression type = definition.getTypeWithParams(defParams, myMinimal ? minimizeLevels(expr) : expr.getLevels());
     assert arguments.size() == defParams.size();
     return type.subst(DependentLink.Helper.toSubstitution(defParams, arguments));
   }
 
   @Override
   public UniverseExpression visitDataCall(DataCallExpression expr, Void params) {
-    return new UniverseExpression(expr.getDefinition().getSort().subst(minimizeLevels(expr).makeSubstitution(expr.getDefinition())));
+    return new UniverseExpression(expr.getDefinition().getSort().subst((myMinimal ? minimizeLevels(expr) : expr.getLevels()).makeSubstitution(expr.getDefinition())));
   }
 
   @Override
@@ -216,7 +219,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
       }
       if (type instanceof ClassCallExpression) {
         ClassCallExpression classCall = (ClassCallExpression) type;
-        Levels levels = minimizeLevels(classCall);
+        Levels levels = myMinimal ? minimizeLevels(classCall) : classCall.getLevels();
         PiExpression fieldType = classCall.getDefinition().getOverriddenType(expr.getDefinition(), levels);
         if (fieldType != null) {
           return fieldType.applyExpression(expr.getArgument());
@@ -254,7 +257,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitClassCall(ClassCallExpression expr, Void params) {
-    return new UniverseExpression(expr.getSort().subst(minimizeLevels(expr).makeSubstitution(expr.getDefinition())));
+    return new UniverseExpression(expr.getSort().subst((myMinimal ? minimizeLevels(expr) : expr.getLevels()).makeSubstitution(expr.getDefinition())));
   }
 
   @Override

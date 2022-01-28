@@ -2014,7 +2014,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   // Sorts
 
   public Sort getSortOfType(Expression expr, Concrete.SourceNode sourceNode) {
-    Expression type = expr.getType(true);
+    Expression type = expr.getType();
     Sort sort = type == null ? null : type.toSort();
     if (sort == null) {
       assert type != null;

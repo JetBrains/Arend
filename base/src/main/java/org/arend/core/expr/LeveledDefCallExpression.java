@@ -36,7 +36,7 @@ public abstract class LeveledDefCallExpression extends DefCallExpression {
 
   public Levels minimizeLevels() {
     try {
-      return GetTypeVisitor.INSTANCE.minimizeLevels(this);
+      return GetTypeVisitor.MIN_INSTANCE.minimizeLevels(this);
     } catch (IncorrectExpressionException e) {
       return null;
     }

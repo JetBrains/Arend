@@ -127,25 +127,21 @@ public abstract class Expression implements Body, CoreExpression {
     return type == null ? null : type.toSort();
   }
 
-  public Expression getType(boolean normalizing) {
-    if (normalizing) {
-      try {
-        return accept(GetTypeVisitor.INSTANCE, null);
-      } catch (IncorrectExpressionException e) {
-        return new ErrorExpression(new TypeComputationError(null, this, null));
-      }
-    } else {
-      return accept(GetTypeVisitor.NN_INSTANCE, null);
+  public Expression getType(boolean minimal) {
+    try {
+      return accept(minimal ? GetTypeVisitor.MIN_INSTANCE : GetTypeVisitor.INSTANCE, null);
+    } catch (IncorrectExpressionException e) {
+      return new ErrorExpression(new TypeComputationError(null, this, null));
     }
   }
 
   public Expression getType() {
-    return getType(true);
+    return getType(false);
   }
 
   @Override
   public @NotNull Expression computeType() {
-    Expression type = getType(true);
+    Expression type = getType();
     return type != null ? type : new ErrorExpression(new TypeComputationError(null, this, null));
   }
 

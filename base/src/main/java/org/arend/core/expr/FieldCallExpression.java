@@ -3,6 +3,7 @@ package org.arend.core.expr;
 import org.arend.core.definition.ClassField;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
+import org.arend.core.expr.visitor.GetTypeVisitor;
 import org.arend.ext.core.expr.CoreExpressionVisitor;
 import org.arend.ext.core.expr.CoreFieldCallExpression;
 import org.arend.prelude.Prelude;
@@ -111,7 +112,7 @@ public class FieldCallExpression extends DefCallExpression implements CoreFieldC
     if (myArgument.isInstance(NewExpression.class)) {
       return Decision.NO;
     }
-    Expression type = myArgument.getType(false);
+    Expression type = myArgument.accept(GetTypeVisitor.NN_INSTANCE, null);
     if (type == null) {
       return Decision.MAYBE;
     }

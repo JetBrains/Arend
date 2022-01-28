@@ -977,7 +977,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
   }
 
   private boolean doesImplementationFit(Expression implementation, ClassField field, ClassCallExpression classCall1, ClassCallExpression classCall2) {
-    Expression type = implementation.normalize(NormalizationMode.WHNF).getType();
+    Expression type = implementation.normalize(NormalizationMode.WHNF).getType(true);
     if (type == null) {
       return false;
     }
