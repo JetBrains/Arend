@@ -216,17 +216,15 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
       }
       if (type instanceof ClassCallExpression) {
         ClassCallExpression classCall = (ClassCallExpression) type;
-        PiExpression fieldType = classCall.getDefinition().getOverriddenType(expr.getDefinition(), classCall.getLevels());
+        Levels levels = minimizeLevels(classCall);
+        PiExpression fieldType = classCall.getDefinition().getOverriddenType(expr.getDefinition(), levels);
         if (fieldType != null) {
           return fieldType.applyExpression(expr.getArgument());
         }
-        return expr.getDefinition().getType(classCall.getLevels(expr.getDefinition().getParentClass())).applyExpression(expr.getArgument());
+        return expr.getDefinition().getType(classCall.getDefinition().castLevels(expr.getDefinition().getParentClass(), levels)).applyExpression(expr.getArgument());
       }
     }
-    if (myNormalizing) {
-      throw new IncorrectExpressionException("Expression " + expr.getArgument() + " does not have a class type");
-    }
-    return null;
+    return new ErrorExpression();
   }
 
   @Override
