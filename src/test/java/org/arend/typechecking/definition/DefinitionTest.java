@@ -14,6 +14,7 @@ import java.util.Objects;
 
 import static org.arend.ExpressionFactory.Pi;
 import static org.arend.ExpressionFactory.fromPiParameters;
+import static org.arend.Matchers.typeMismatchError;
 import static org.arend.core.expr.ExpressionFactory.Nat;
 import static org.junit.Assert.*;
 
@@ -195,6 +196,16 @@ public class DefinitionTest extends TypeCheckingTestCase {
       "\\instance NatC : C Nat 0 (\\lam _ => 0) (\\lam _ _ => 0)\n" +
       "\\func test : Nat => x0");
     assertEquals(UniverseKind.NO_UNIVERSES, getDefinition("test").getUniverseKind());
+  }
+
+  @Test
+  public void fieldTyping() {
+    typeCheckModule(
+      "\\record C (x : Nat)\n" +
+      "\\record D (y : Nat) \\extends C\n" +
+      "\\record E (c : C)\n" +
+      "\\func f (d : D) (e : E d) => D.y {e.c}", 1);
+    assertThatErrorsAre(typeMismatchError());
   }
 
   @Test
