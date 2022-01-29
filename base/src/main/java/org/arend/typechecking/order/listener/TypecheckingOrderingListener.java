@@ -5,13 +5,14 @@ import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.context.param.TypedSingleDependentLink;
 import org.arend.core.definition.*;
 import org.arend.core.elimtree.ElimClause;
-import org.arend.core.expr.ClassCallExpression;
-import org.arend.core.expr.ErrorExpression;
-import org.arend.core.expr.PiExpression;
+import org.arend.core.expr.*;
+import org.arend.core.expr.visitor.VoidExpressionVisitor;
 import org.arend.core.pattern.ExpressionPattern;
 import org.arend.core.sort.Sort;
 import org.arend.error.CountingErrorReporter;
 import org.arend.ext.ArendExtension;
+import org.arend.ext.core.expr.CoreExpression;
+import org.arend.ext.core.ops.CMP;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.typechecking.DefinitionListener;
@@ -28,6 +29,7 @@ import org.arend.typechecking.computation.CancellationIndicator;
 import org.arend.typechecking.error.CycleError;
 import org.arend.typechecking.error.TerminationCheckError;
 import org.arend.typechecking.error.local.LocalErrorReporter;
+import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
 import org.arend.typechecking.order.Ordering;
@@ -402,6 +404,17 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
 
       if (!functionDefinitions.isEmpty()) {
         checkRecursiveFunctions(functionDefinitions, clausesMap);
+      }
+    }
+
+    for (Concrete.Definition definition : orderedDefinitions) {
+      if (definition.getData().getTypechecked().accept(new SearchVisitor<Void>() {
+        @Override
+        protected CoreExpression.FindAction processDefCall(DefCallExpression expr, Void param) {
+          return expr instanceof LeveledDefCallExpression && allDefinitions.contains(expr.getDefinition()) && !((LeveledDefCallExpression) expr).getLevels().compare(expr.getDefinition().makeIdLevels(), CMP.EQ, DummyEquations.getInstance(), null) ? CoreExpression.FindAction.STOP : CoreExpression.FindAction.CONTINUE;
+        }
+      }, null)) {
+        myErrorReporter.report(new TypecheckingError("Recursive call must have the same levels as the definition", definition));
       }
     }
 
