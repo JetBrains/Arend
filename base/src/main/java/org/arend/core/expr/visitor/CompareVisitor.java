@@ -327,7 +327,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     FieldCallExpression fieldCall1 = (FieldCallExpression) e1;
     FieldCallExpression fieldCall2 = (FieldCallExpression) e2;
     if (fieldCall1.getDefinition() == fieldCall2.getDefinition() && (fieldCall1.getArgument().getInferenceVariable() != null && isInstance(fieldCall2) || fieldCall2.getArgument().getInferenceVariable() != null && isInstance(fieldCall1))) {
-      if (!expr1.accept(this, expr2, type)) {
+      if (!e1.accept(this, e2, type)) {
         return false;
       }
       e1 = expr1;
