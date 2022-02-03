@@ -47,7 +47,7 @@ public class UnfoldVisitor extends SubstVisitor {
 
   @Override
   public Expression visitFunCall(FunCallExpression expr, Void params) {
-    if (expr.getDefinition().getBody() instanceof Expression && myVariables.contains(expr.getDefinition())) {
+    if (expr.getDefinition().getActualBody() instanceof Expression && myVariables.contains(expr.getDefinition())) {
       if (myUnfolded != null) {
         myUnfolded.add(expr.getDefinition());
       }
@@ -58,7 +58,7 @@ public class UnfoldVisitor extends SubstVisitor {
 
       ExprSubstitution substitution = getExprSubstitution();
       substitution.add(expr.getDefinition().getParameters(), newArgs);
-      Expression result = ((Expression) expr.getDefinition().getBody()).accept(new SubstVisitor(substitution, expr.getLevelSubstitution().subst(getLevelSubstitution())), null);
+      Expression result = ((Expression) expr.getDefinition().getActualBody()).accept(new SubstVisitor(substitution, expr.getLevelSubstitution().subst(getLevelSubstitution())), null);
       DependentLink.Helper.freeSubsts(expr.getDefinition().getParameters(), substitution);
       return result;
     } else {
