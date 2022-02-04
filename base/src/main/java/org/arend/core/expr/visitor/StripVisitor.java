@@ -139,7 +139,13 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
   @Override
   public Expression visitReference(ReferenceExpression expr, Void params) {
     Binding binding = expr.getBinding();
-    if (binding instanceof EvaluatingBinding && !(binding instanceof PersistentEvaluatingBinding) && !myBoundEvaluatingBindings.contains(binding)) {
+    if (binding instanceof EvaluatingBinding && !myBoundEvaluatingBindings.contains(binding)) {
+      if (binding instanceof PersistentEvaluatingBinding) {
+        PersistentEvaluatingBinding evaluating = (PersistentEvaluatingBinding) binding;
+        evaluating.setExpression(evaluating.getExpression().accept(this, null));
+        myBoundEvaluatingBindings.add(evaluating);
+        return expr;
+      }
       return ((EvaluatingBinding) binding).getExpression().accept(this, null);
     }
     return expr;
