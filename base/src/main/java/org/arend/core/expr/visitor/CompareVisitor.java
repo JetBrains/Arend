@@ -289,6 +289,8 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       ok = visitTuple((TupleExpression) expr2, expr1, false);
     } else if (expr2 instanceof TypeConstructorExpression) {
       ok = visitTypeConstructor((TypeConstructorExpression) expr2, expr1, false);
+    } else if (expr2 instanceof FunCallExpression && ((FunCallExpression) expr2).getDefinition() == Prelude.ARRAY_INDEX && !(expr1 instanceof FunCallExpression && ((FunCallExpression) expr1).getDefinition() == Prelude.ARRAY_INDEX)) {
+      ok = compareConstArray((FunCallExpression) expr2, expr1, type, false);
     } else {
       ok = expr1.accept(this, expr2, type);
     }
@@ -516,9 +518,30 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
   }
   */
 
+  private boolean compareConstArray(FunCallExpression atExpr, Expression otherExpr, Expression type, boolean correctOrder) {
+    Expression arg = atExpr.getDefCallArguments().get(0).normalize(NormalizationMode.WHNF);
+    if (!(arg instanceof ArrayExpression)) {
+      return correctOrder ? visitDefCall(atExpr, otherExpr) : otherExpr.accept(this, atExpr, type);
+    }
+    for (Expression element : ((ArrayExpression) arg).getElements()) {
+      if (!compare(element, otherExpr, type, false)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   @Override
   public Boolean visitFunCall(FunCallExpression expr1, Expression expr2, Expression type) {
-    return visitDefCall(expr1, expr2);
+    if (expr1.getDefinition() == Prelude.ARRAY_INDEX) {
+      if (expr2 instanceof FunCallExpression && ((FunCallExpression) expr2).getDefinition() == Prelude.ARRAY_INDEX) {
+        return visitDefCall(expr1, expr2) || compareConstArray(expr1, expr2, type, true) || compareConstArray((FunCallExpression) expr2, expr1, type, false);
+      } else {
+        return compareConstArray(expr1, expr2, type, true);
+      }
+    } else {
+      return visitDefCall(expr1, expr2);
+    }
   }
 
   @Override

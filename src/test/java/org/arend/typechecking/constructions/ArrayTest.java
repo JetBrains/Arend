@@ -379,4 +379,31 @@ public class ArrayTest extends TypeCheckingTestCase {
       "\\func arr => 1 :: nil\n" +
       "\\func test : 0 :: arr = 0 :: 1 :: nil => idp");
   }
+
+  @Test
+  public void newAppTest() {
+    typeCheckDef("\\func test (j : Fin 2) => (\\new Array Nat 2 (\\lam _ => 7)) j");
+  }
+
+  @Test
+  public void newAppTest2() {
+    typeCheckDef("\\func test (j : Fin 2) => (\\new Array { | A => Nat | len => 2 | at _ => 7 }) j");
+  }
+
+  @Test
+  public void constEtaTest() {
+    typeCheckDef("\\func test (x : Nat) (j : Fin 2) : (x :: x :: nil) j = (\\new Array Nat 2 (\\lam _ => x)) j => idp");
+  }
+
+  @Test
+  public void constEtaTest2() {
+    typeCheckModule(
+      "\\func test1 (x y : Nat) (j : Fin 2) : ((x :: y :: nil) j :: (x :: y :: nil) j :: nil) j = (x :: y :: nil) j => idp\n" +
+      "\\func test2 (x y : Nat) (j : Fin 2) : (x :: y :: nil) j = ((x :: y :: nil) j :: (x :: y :: nil) j :: nil) j => idp");
+  }
+
+  @Test
+  public void constEtaTest3() {
+    typeCheckDef("\\func test (x : Nat) (j : Fin 2) (k : Fin 3) : (x :: x :: nil) j = (x :: x :: x :: nil) k => idp");
+  }
 }
