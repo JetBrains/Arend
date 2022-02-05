@@ -359,9 +359,6 @@ public class ClassCallExpression extends LeveledDefCallExpression implements Typ
 
         @Override
         public Expression visitDefCall(DefCallExpression expr, Void params) {
-          if (expr instanceof FieldCallExpression) {
-            return super.visitDefCall(expr, params);
-          }
           assert expr instanceof LeveledDefCallExpression;
           List<Expression> newArgs = visitArgs(expr.getDefCallArguments(), expr.getDefinition().getParameters());
           return expr.getDefinition().getDefCall(((LeveledDefCallExpression) expr).getLevels().subst(getLevelSubstitution()), newArgs);
@@ -369,6 +366,20 @@ public class ClassCallExpression extends LeveledDefCallExpression implements Typ
 
         private Constructor constructor;
         private Map<Wrapper<Expression>, Expression> constructorArgMap = Collections.emptyMap();
+
+        @Override
+        public Expression visitFieldCall(FieldCallExpression expr, Void params) {
+          if (expr.getDefinition().isProperty()) {
+            Expression arg = expr.getArgument().getUnderlyingExpression();
+            if (arg instanceof ReferenceExpression && ((ReferenceExpression) arg).getBinding() == thisBindings) {
+              Expression impl = implementations.get(expr.getDefinition());
+              if (impl != null) {
+                return impl;
+              }
+            }
+          }
+          return super.visitFieldCall(expr, params);
+        }
 
         @Override
         protected Expression preVisitConCall(ConCallExpression expr, Void params) {
