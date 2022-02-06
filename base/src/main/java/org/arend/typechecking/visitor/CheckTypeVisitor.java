@@ -3592,7 +3592,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
       @Override
       public Expression visitFieldCall(FieldCallExpression expr, Void params) {
-        if (expr.getArgument() instanceof ReferenceExpression) {
+        if (!expr.getDefinition().isProperty() && expr.getArgument() instanceof ReferenceExpression) {
           Binding binding = ((ReferenceExpression) expr.getArgument()).getBinding();
           if (binding instanceof ClassCallExpression.ClassCallBinding) {
             Expression impl = ((ClassCallExpression.ClassCallBinding) binding).getTypeExpr().getImplementation(expr.getDefinition(), expr.getArgument());
