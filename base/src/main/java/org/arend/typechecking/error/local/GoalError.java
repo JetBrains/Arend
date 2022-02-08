@@ -15,6 +15,7 @@ import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.TypecheckingContext;
 import org.arend.typechecking.patternmatching.Condition;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -37,8 +38,13 @@ public class GoalError extends TypecheckingError {
     this.result = result;
     this.errors = errors;
     this.goalSolver = goalSolver;
+    substitution = calculateSubstitution(typecheckingContext);
+    this.expectedType = expectedType == null ? null : expectedType.subst(substitution);
+  }
 
-    substitution = new ExprSubstitution();
+  @NotNull
+  private static ExprSubstitution calculateSubstitution(TypecheckingContext typecheckingContext) {
+    ExprSubstitution substitution = new ExprSubstitution();
     if (typecheckingContext != null) {
       for (Iterator<Map.Entry<Referable, Binding>> iterator = typecheckingContext.localContext.entrySet().iterator(); iterator.hasNext(); ) {
         Map.Entry<Referable, Binding> entry = iterator.next();
@@ -48,8 +54,7 @@ public class GoalError extends TypecheckingError {
         }
       }
     }
-
-    this.expectedType = expectedType == null ? null : expectedType.subst(substitution);
+    return substitution;
   }
 
   @Override
@@ -59,9 +64,20 @@ public class GoalError extends TypecheckingError {
 
   @Override
   public Doc getBodyDoc(PrettyPrinterConfig ppConfig) {
-    Doc expectedDoc = expectedType == null ? nullDoc() : hang(text("Expected type:"), expectedType.prettyPrint(ppConfig));
+    Doc expectedDoc = getExpectedDoc(ppConfig);
+    Doc contextDoc = getContextDoc(ppConfig);
+    Doc conditionsDoc = getConditionsDoc(ppConfig);
+    Doc errorsDoc = getErrorsDoc(ppConfig);
+    return vList(expectedDoc, contextDoc, conditionsDoc, errorsDoc);
+  }
 
-    Doc contextDoc;
+  @NotNull
+  private Doc getExpectedDoc(PrettyPrinterConfig ppConfig) {
+    return expectedType == null ? nullDoc() : hang(text("Expected type:"), expectedType.prettyPrint(ppConfig));
+  }
+
+  @NotNull
+  private Doc getContextDoc(PrettyPrinterConfig ppConfig) {
     Map<Referable, Binding> context = typecheckingContext == null ? Collections.emptyMap() : typecheckingContext.localContext;
     if (!context.isEmpty()) {
       List<Doc> contextDocs = new ArrayList<>(context.size());
@@ -73,41 +89,39 @@ public class GoalError extends TypecheckingError {
           contextDocs.add(hang(hList(entry.getKey() == null ? text("_") : refDoc(entry.getKey()), text(" :")), type == null ? text("{?}") : termDoc(type, ppConfig)));
         }
       }
-      contextDoc = contextDocs.isEmpty() ? nullDoc() : hang(text("Context:"), vList(contextDocs));
-    } else {
-      contextDoc = nullDoc();
+      return contextDocs.isEmpty() ? nullDoc() : hang(text("Context:"), vList(contextDocs));
     }
+    return nullDoc();
+  }
 
-    Doc conditionsDoc;
+  @NotNull
+  private Doc getConditionsDoc(PrettyPrinterConfig ppConfig) {
     if (!myConditions.isEmpty()) {
       List<Doc> conditionsDocs = new ArrayList<>(myConditions.size());
       for (Condition condition : myConditions) {
         conditionsDocs.add(condition.toDoc(ppConfig));
       }
-      conditionsDoc = hang(text("Conditions:"), vList(conditionsDocs));
-    } else {
-      conditionsDoc = nullDoc();
+      return hang(text("Conditions:"), vList(conditionsDocs));
     }
+    return nullDoc();
+  }
 
-    Doc errorsDoc;
+  @NotNull
+  private Doc getErrorsDoc(PrettyPrinterConfig ppConfig) {
     if (!errors.isEmpty()) {
       List<Doc> errorsDocs = new ArrayList<>(errors.size());
       for (GeneralError error : errors) {
         errorsDocs.add(hang(error.getHeaderDoc(ppConfig), error.getBodyDoc(ppConfig)));
       }
-      errorsDoc = hang(text("Errors:"), vList(errorsDocs));
-    } else {
-      errorsDoc = nullDoc();
+      return hang(text("Errors:"), vList(errorsDocs));
     }
-
-    return vList(expectedDoc, contextDoc, conditionsDoc, errorsDoc);
+    return nullDoc();
   }
 
   @Override
   public boolean hasExpressions() {
     return true;
   }
-
 
   public void addCondition(Condition condition) {
     if (myConditions.isEmpty()) {
