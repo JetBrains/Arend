@@ -3481,7 +3481,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     return new TypecheckingResult(result, expectedType != null && !(expectedType instanceof Type && ((Type) expectedType).isOmega()) ? expectedType : result);
   }
 
-  private Map<Binding, Expression> getBindingTypes() {
+  protected Map<Binding, Expression> getBindingTypes() {
     Map<Binding, Expression> result = new HashMap<>();
     for (Binding binding : context.values()) {
       if (binding instanceof TypedHaveClause || binding instanceof TypedLetClause) {
