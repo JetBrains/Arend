@@ -105,12 +105,15 @@ public class CoerceData {
     if (expectedCoerceData != null && expectedCoerceData.myMapFrom.isEmpty()) {
       expectedCoerceData = null;
     }
-    if (actualCoerceData == null && expectedCoerceData == null) {
+    ClassCallExpression classCall = actualDefCall instanceof ClassCallExpression ? (ClassCallExpression) actualDefCall : null;
+    if (classCall != null && classCall.getDefinition().getClassifyingField() == null) classCall = null;
+    if (actualCoerceData == null && expectedCoerceData == null && classCall == null) {
       return null;
     }
 
     Key actualKey = getKey(result.type);
-    Key expectedKey = getKey(expectedType);
+    Key originalExpectedKey = getKey(expectedType);
+    Key expectedKey = originalExpectedKey;
 
     // Coerce from a definition
     if (expectedCoerceData != null && !(actualKey instanceof AnyKey)) {
@@ -148,12 +151,36 @@ public class CoerceData {
     if (actualCoerceData != null) {
       List<Definition> defs = actualCoerceData.myMapTo.get(expectedKey);
       if (defs != null) {
-        return coerceResult(result, defs, expectedType, sourceNode, visitor, false, true);
+        TypecheckingResult tcResult = coerceResult(result, defs, expectedType, sourceNode, visitor, false, true);
+        if (tcResult != null) return tcResult;
+      }
+    }
+
+    // Coerce using classifying field
+    if (classCall != null) {
+      List<Definition> defs = new ArrayList<>();
+      while (true) {
+        ClassField classifyingField = classCall.getDefinition().getClassifyingField();
+        if (classifyingField == null) break;
+        defs.add(classifyingField);
+        Expression type = getClassifyingFieldType(classCall);
+        Key key = getKey(type);
+        if (key.equals(originalExpectedKey)) {
+          return coerceResult(result, defs, expectedType, sourceNode, visitor, false, originalExpectedKey instanceof AnyKey);
+        }
+        if (!(type instanceof ClassCallExpression)) break;
+        classCall = (ClassCallExpression) type;
       }
     }
 
     // Can't coerce
     return null;
+  }
+
+  private static Expression getClassifyingFieldType(ClassCallExpression classCall) {
+    ClassField field = classCall.getDefinition().getClassifyingField();
+    assert field != null;
+    return field.getResultType().subst(field.getType().getParameters(), new NewExpression(null, classCall)).normalize(NormalizationMode.WHNF);
   }
 
   private static TypecheckingResult coerceResult(TypecheckingResult result, Collection<? extends Definition> defs, Expression expectedType, Concrete.SourceNode sourceNode, CheckTypeVisitor visitor, boolean argStrict, boolean resultStrict) {
@@ -221,18 +248,7 @@ public class CoerceData {
     return result;
   }
 
-  public Definition addCoerceFrom(Expression type, FunctionDefinition coercingDefinition) {
-    Key key = getKey(type);
-    if (key instanceof DefinitionKey && ((DefinitionKey) key).definition == myDefinition) {
-      return null;
-    }
-
-    List<Definition> newList = myMapFrom.compute(key, (k, oldList) -> oldList != null && oldList.size() == 1 ? oldList : Collections.singletonList(coercingDefinition));
-    Definition oldDef = newList.size() == 1 && newList.get(0) != coercingDefinition ? newList.get(0) : null;
-    if (oldDef != null) {
-      return oldDef;
-    }
-
+  private void addTransitiveClosureFrom(Key key, Definition coercingDefinition) {
     CoerceData coerceData = key instanceof DefinitionKey ? ((DefinitionKey) key).definition.getCoerceData() : null;
     if (coerceData != null) {
       for (Map.Entry<Key, List<Definition>> entry : coerceData.myMapFrom.entrySet()) {
@@ -246,22 +262,24 @@ public class CoerceData {
         }
       }
     }
-
-    return null;
   }
 
-  public FunctionDefinition addCoerceTo(Expression type, FunctionDefinition coercingDefinition) {
+  public Definition addCoerceFrom(Expression type, FunctionDefinition coercingDefinition) {
     Key key = getKey(type);
     if (key instanceof DefinitionKey && ((DefinitionKey) key).definition == myDefinition) {
       return null;
     }
 
-    List<Definition> newList = myMapTo.compute(key, (k, oldList) -> oldList != null && oldList.size() == 1 && oldList.get(0) instanceof FunctionDefinition ? oldList : Collections.singletonList(coercingDefinition));
-    FunctionDefinition oldDef = newList.size() == 1 && newList.get(0) != coercingDefinition ? (FunctionDefinition) newList.get(0) : null;
+    List<Definition> newList = myMapFrom.compute(key, (k, oldList) -> oldList != null && oldList.size() == 1 ? oldList : Collections.singletonList(coercingDefinition));
+    Definition oldDef = newList.size() == 1 && newList.get(0) != coercingDefinition ? newList.get(0) : null;
     if (oldDef != null) {
       return oldDef;
     }
+    addTransitiveClosureFrom(key, coercingDefinition);
+    return null;
+  }
 
+  private void addTransitiveClosureTo(Key key, Definition coercingDefinition) {
     CoerceData coerceData = key instanceof DefinitionKey ? ((DefinitionKey) key).definition.getCoerceData() : null;
     if (coerceData != null) {
       for (Map.Entry<Key, List<Definition>> entry : coerceData.myMapTo.entrySet()) {
@@ -275,7 +293,20 @@ public class CoerceData {
         }
       }
     }
+  }
 
+  public FunctionDefinition addCoerceTo(Expression type, FunctionDefinition coercingDefinition) {
+    Key key = getKey(type);
+    if (key instanceof DefinitionKey && ((DefinitionKey) key).definition == myDefinition) {
+      return null;
+    }
+
+    List<Definition> newList = myMapTo.compute(key, (k, oldList) -> oldList != null && oldList.size() == 1 && oldList.get(0) instanceof FunctionDefinition ? oldList : Collections.singletonList(coercingDefinition));
+    FunctionDefinition oldDef = newList.size() == 1 && newList.get(0) != coercingDefinition ? (FunctionDefinition) newList.get(0) : null;
+    if (oldDef != null) {
+      return oldDef;
+    }
+    addTransitiveClosureTo(key, coercingDefinition);
     return null;
   }
 
@@ -306,7 +337,9 @@ public class CoerceData {
 
   public void addCoercingField(ClassField coercingField, @Nullable ErrorReporter errorReporter, @Nullable Concrete.SourceNode cause) {
     Key key = getKey(coercingField.getType().getCodomain());
-    if (myMapTo.putIfAbsent(key, Collections.singletonList(coercingField)) != null && errorReporter != null) {
+    if (myMapTo.putIfAbsent(key, Collections.singletonList(coercingField)) == null) {
+      addTransitiveClosureTo(key, coercingField);
+    } else if (errorReporter != null) {
       errorReporter.report(new CoerceClashError(key, cause));
     }
   }
@@ -318,7 +351,9 @@ public class CoerceData {
     }
 
     Key key = getKey(param.getTypeExpr());
-    if (myMapFrom.putIfAbsent(key, Collections.singletonList(constructor)) != null && errorReporter != null) {
+    if (myMapFrom.putIfAbsent(key, Collections.singletonList(constructor)) == null) {
+      addTransitiveClosureFrom(key, constructor);
+    } else if (errorReporter != null) {
       errorReporter.report(new CoerceClashError(key, cause));
     }
   }

@@ -331,4 +331,20 @@ public class CoerceTest extends TypeCheckingTestCase {
       "}\n" +
       "\\func test (s : S) : \\Set => s");
   }
+
+  @Test
+  public void transitiveField() {
+    typeCheckModule(
+      "\\class R (X : \\Type)\n" +
+      "\\class S (Y : R)\n" +
+      "\\func test (s : S) (x : s) => x");
+  }
+
+  @Test
+  public void transitiveField2() {
+    typeCheckModule(
+      "\\class R (X : \\Type)\n" +
+      "\\class S {n : Nat} (Y : \\case n \\with { | 0 => R | suc _ => \\Sigma })\n" +
+      "\\func test (s : S {0}) (x : s) => x");
+  }
 }
