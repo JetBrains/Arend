@@ -5,6 +5,7 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.expr.*;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.Levels;
+import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.term.concrete.Concrete;
@@ -180,7 +181,7 @@ public class CoerceData {
   private static Expression getClassifyingFieldType(ClassCallExpression classCall) {
     ClassField field = classCall.getDefinition().getClassifyingField();
     assert field != null;
-    return field.getResultType().subst(field.getType().getParameters(), new NewExpression(null, classCall)).normalize(NormalizationMode.WHNF);
+    return classCall.getDefinition().getFieldType(field, LevelSubstitution.EMPTY, new NewExpression(null, classCall)).normalize(NormalizationMode.WHNF);
   }
 
   private static TypecheckingResult coerceResult(TypecheckingResult result, Collection<? extends Definition> defs, Expression expectedType, Concrete.SourceNode sourceNode, CheckTypeVisitor visitor, boolean argStrict, boolean resultStrict) {
