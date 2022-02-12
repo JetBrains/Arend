@@ -812,6 +812,7 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
       }
     }
 
+    arg = arg.normalize(NormalizationMode.WHNF);
     Expression type = arg.getType();
     Expression normType = type == null ? null : type.accept(this, NormalizationMode.WHNF);
     return normType instanceof ClassCallExpression ? ((ClassCallExpression) normType).getImplementation(field, arg) : null;
