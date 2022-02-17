@@ -914,9 +914,6 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
     if (mode == NormalizationMode.WHNF) {
       return expr;
     }
-    if (mode != NormalizationMode.NF) {
-      return new LamExpression(expr.getResultSort(), expr.getParameters(), expr.getBody().accept(this, mode));
-    }
 
     ExprSubstitution substitution = new ExprSubstitution();
     SingleDependentLink link = normalizeSingleParameters(expr.getParameters(), mode, substitution);
