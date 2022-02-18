@@ -20,6 +20,11 @@ public class MetaInferenceVariable extends InferenceVariable {
   }
 
   @Override
+  public boolean useSubstExpr() {
+    return true;
+  }
+
+  @Override
   public boolean isSolvableFromEquations() {
     return false;
   }

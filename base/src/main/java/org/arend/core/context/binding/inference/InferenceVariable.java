@@ -38,6 +38,10 @@ public abstract class InferenceVariable implements Variable, CoreInferenceVariab
     return false;
   }
 
+  public boolean useSubstExpr() {
+    return false;
+  }
+
   @NotNull
   @Override
   public String getName() {

@@ -107,7 +107,7 @@ public class AppHoleTest extends TypeCheckingTestCase {
 
   @Test
   public void implicit() {
-    assertTrue(typeCheckExpr("idp {__}", null)
+    assertTrue(typeCheckExpr("idp {__} {__}", null)
         .expression instanceof LamExpression);
   }
 

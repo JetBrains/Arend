@@ -20,6 +20,11 @@ public class LambdaInferenceVariable extends InferenceVariable {
   }
 
   @Override
+  public boolean useSubstExpr() {
+    return true;
+  }
+
+  @Override
   public LocalError getErrorInfer(Expression... candidates) {
     return new LambdaInferenceError(myParameter, myLevel, getSourceNode(), candidates);
   }

@@ -130,7 +130,7 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
       return expr.getSubstExpression().accept(this, null);
     }
 
-    if (!myClearInferenceVariables || expr.getVariable() instanceof MetaInferenceVariable || expr.getVariable() instanceof LambdaInferenceVariable || expr.getVariable() instanceof DerivedInferenceVariable) {
+    if (!myClearInferenceVariables || expr.getVariable().useSubstExpr()) {
       if (myLevelSubstitution.isEmpty() && Collections.disjoint(expr.getVariable().getBounds(), myExprSubstitution.getKeys())) {
         return expr;
       }

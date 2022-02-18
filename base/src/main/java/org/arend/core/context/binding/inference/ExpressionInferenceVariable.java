@@ -10,10 +10,21 @@ import java.util.Set;
 
 public class ExpressionInferenceVariable extends InferenceVariable {
   private final boolean mySolvableFromEquations;
+  private final boolean myUseSubstExpr;
 
-  public ExpressionInferenceVariable(Expression type, Concrete.SourceNode sourceNode, Set<Binding> bounds, boolean solvableFromEquations) {
+  public ExpressionInferenceVariable(Expression type, Concrete.SourceNode sourceNode, Set<Binding> bounds, boolean solvableFromEquations, boolean useSubstExpr) {
     super("H", type, sourceNode, bounds);
     mySolvableFromEquations = solvableFromEquations;
+    myUseSubstExpr = useSubstExpr;
+  }
+
+  public ExpressionInferenceVariable(Expression type, Concrete.SourceNode sourceNode, Set<Binding> bounds, boolean solvableFromEquations) {
+    this(type, sourceNode, bounds, solvableFromEquations, false);
+  }
+
+  @Override
+  public boolean useSubstExpr() {
+    return myUseSubstExpr;
   }
 
   @Override

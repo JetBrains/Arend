@@ -9,10 +9,12 @@ import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.LevelPair;
 import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.ext.error.GeneralError;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.prettyprint.ToAbstractVisitor;
+import org.arend.typechecking.error.local.GoalError;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.junit.Assert;
 import org.junit.Test;
@@ -25,8 +27,7 @@ import static org.arend.ExpressionFactory.Ref;
 import static org.arend.Matchers.error;
 import static org.arend.Matchers.typeMismatchError;
 import static org.arend.core.expr.ExpressionFactory.Nat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 public class TypeCheckingTest extends TypeCheckingTestCase {
   @Test
@@ -309,5 +310,16 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
                             .getBody()))
             .getClauses().get(0).getExpression()).cast(AppExpression.class).getFunction().cast(GoalErrorExpression.class);
     Assert.assertNotNull(goal.getType());
+  }
+
+  @Test
+  public void piGoalTest() {
+    typeCheckModule(
+      "\\func foo {A B : \\Type} (f : A -> B) => f\n" +
+      "\\func test : Nat -> \\Pi (n : Nat) -> n = n => foo (\\lam x y => {?})", 1);
+    GeneralError error = errorList.get(0);
+    assertTrue(error instanceof GoalError);
+    assertNotNull(((GoalError) error).expectedType);
+    assertFalse(((GoalError) error).expectedType.getUnderlyingExpression() instanceof InferenceReferenceExpression);
   }
 }
