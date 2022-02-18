@@ -519,6 +519,9 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
   */
 
   private boolean compareConstArray(FunCallExpression atExpr, Expression otherExpr, Expression type, boolean correctOrder) {
+    if (otherExpr.getStuckInferenceVariable() != null) {
+      return false;
+    }
     Expression arg = atExpr.getDefCallArguments().get(0).normalize(NormalizationMode.WHNF);
     if (!(arg instanceof ArrayExpression)) {
       return correctOrder ? visitDefCall(atExpr, otherExpr) : otherExpr instanceof FunCallExpression && ((FunCallExpression) otherExpr).getDefinition() == Prelude.ARRAY_INDEX ? visitDefCall((FunCallExpression) otherExpr, atExpr) : otherExpr.accept(this, atExpr, type);
