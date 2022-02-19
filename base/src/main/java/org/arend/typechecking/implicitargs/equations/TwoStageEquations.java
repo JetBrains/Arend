@@ -929,7 +929,13 @@ public class TwoStageEquations implements Equations {
     }
 
     if (/* ok && */ new CompareVisitor(this, CMP.LE, var.getSourceNode()).normalizedCompare(actualType, expectedType, Type.OMEGA, false)) {
-      var.solve(myVisitor, OfTypeExpression.make(result, actualType, expectedType));
+      if (var.isSolved()) {
+        if (!new CompareVisitor(this, CMP.EQ, var.getSourceNode()).compare(var.getSolution(), result, expectedType, true)) {
+          myVisitor.getErrorReporter().report(new SolveEquationError(var.getSolution(), result, var.getSourceNode()));
+        }
+      } else {
+        var.solve(myVisitor, OfTypeExpression.make(result, actualType, expectedType));
+      }
       return SolveResult.SOLVED;
     } else {
       if (trySolve) {
