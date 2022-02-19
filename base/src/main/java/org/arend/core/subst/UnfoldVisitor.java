@@ -74,7 +74,7 @@ public class UnfoldVisitor extends SubstVisitor {
         if (myUnfolded != null) {
           myUnfolded.add(expr.getDefinition());
         }
-        return result.accept(this, null);
+        return myUnfoldFields == UnfoldFields.ONLY_PARAMETERS ? result.accept(this, null) : result;
       }
     }
     return super.visitFieldCall(expr, params);
