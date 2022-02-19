@@ -99,7 +99,7 @@ public class ImplementTest extends TypeCheckingTestCase {
 
   @Test
   public void implementExistingFunction() {
-    resolveNamesModule(
+    typeCheckModule(
       "\\class A {\n" +
       "  \\func a => \\Type0\n" +
       "}\n" +

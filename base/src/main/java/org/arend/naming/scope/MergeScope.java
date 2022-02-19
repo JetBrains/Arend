@@ -12,13 +12,26 @@ import java.util.function.Predicate;
 
 public class MergeScope implements Scope {
   private final Collection<Scope> myScopes;
+  private final boolean myMergeNamespaces;
 
   public MergeScope(Collection<Scope> scopes) {
     myScopes = scopes;
+    myMergeNamespaces = false;
   }
 
   public MergeScope(Scope... scopes) {
     myScopes = Arrays.asList(scopes);
+    myMergeNamespaces = false;
+  }
+
+  public MergeScope(boolean mergeNamespaces, Collection<Scope> scopes) {
+    myScopes = scopes;
+    myMergeNamespaces = mergeNamespaces;
+  }
+
+  public MergeScope(boolean mergeNamespaces, Scope... scopes) {
+    myScopes = Arrays.asList(scopes);
+    myMergeNamespaces = mergeNamespaces;
   }
 
   @NotNull
@@ -45,10 +58,21 @@ public class MergeScope implements Scope {
   @Nullable
   @Override
   public Scope resolveNamespace(String name, boolean onlyInternal) {
-    for (Scope scope : myScopes) {
-      Scope result = scope.resolveNamespace(name, onlyInternal);
-      if (result != null) {
-        return result;
+    if (myMergeNamespaces) {
+      List<Scope> scopes = new ArrayList<>(myScopes.size());
+      for (Scope scope : myScopes) {
+        Scope result = scope.resolveNamespace(name, onlyInternal);
+        if (result != null) {
+          scopes.add(result);
+        }
+      }
+      return scopes.isEmpty() ? null : scopes.size() == 1 ? scopes.get(0) : new MergeScope(true, scopes);
+    } else {
+      for (Scope scope : myScopes) {
+        Scope result = scope.resolveNamespace(name, onlyInternal);
+        if (result != null) {
+          return result;
+        }
       }
     }
     return null;

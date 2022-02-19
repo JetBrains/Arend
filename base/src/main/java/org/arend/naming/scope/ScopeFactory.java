@@ -15,6 +15,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.function.Function;
 
 public class ScopeFactory {
   public static @NotNull Scope forGroup(@Nullable Group group, @NotNull ModuleScopeProvider moduleScopeProvider) {
@@ -141,7 +142,7 @@ public class ScopeFactory {
     }
   }
 
-  public static Scope forSourceNode(Scope parentScope, Abstract.SourceNode sourceNode, Scope importElements) {
+  public static Scope forSourceNode(Scope parentScope, Abstract.SourceNode sourceNode, Scope importElements, Function<ClassReferable, Scope> classFieldImplScope) {
     if (sourceNode == null) {
       return parentScope;
     }
@@ -269,7 +270,11 @@ public class ScopeFactory {
       Abstract.SourceNode parentParent = parentSourceNode.getParentSourceNode();
       if (parentParent instanceof Abstract.ClassReferenceHolder) {
         ClassReferable classRef = ((Abstract.ClassReferenceHolder) parentParent).getClassReference();
-        return classRef == null ? EmptyScope.INSTANCE : new ClassFieldImplScope(classRef, true);
+        if (classRef == null) {
+          return EmptyScope.INSTANCE;
+        }
+        Scope result = classFieldImplScope.apply(classRef);
+        return new MergeScope(true, result != null ? result : new ClassFieldImplScope(classRef, true), parentScope);
       }
     }
 

@@ -58,7 +58,7 @@ public class ClassesResolveTest extends NameResolverTestCase {
     resolveNamesModule(
       "\\class C { | A : \\Set }\n" +
       "\\class D { | B : \\Set }\n" +
-      "\\func f => \\new D { | A => \\Prop }", 1);
+      "\\func f => \\new D { | A => \\Prop }");
   }
 
   @Test
@@ -96,7 +96,7 @@ public class ClassesResolveTest extends NameResolverTestCase {
     resolveNamesModule(
       "\\class A { | x : Nat }\n" +
       "\\class B { | y : Nat }\n" +
-      "\\class C \\extends B { | A => \\new A { | x => 0 } }", 1);
+      "\\class C \\extends B { | A => \\new A { | x => 0 } }");
   }
 
   @Test
@@ -243,5 +243,25 @@ public class ClassesResolveTest extends NameResolverTestCase {
     resolveNamesModule(
       "\\record A \\extends B\n" +
       "  \\where \\record B");
+  }
+
+  @Test
+  public void implTest() {
+    resolveNamesModule(
+      "\\record R \\where\n" +
+      "  \\record D (x : Nat)\n" +
+      "\\record S \\extends R.D\n" +
+      "\\func test (d : R.D) : S \\cowith\n" +
+      "  | R.D => d");
+  }
+
+  @Test
+  public void implTest2() {
+    resolveNamesModule(
+      "\\record R \\where\n" +
+      "  \\record D (x : Nat)\n" +
+      "\\record S \\extends R, R.D\n" +
+      "\\func test (d : R.D) : S \\cowith\n" +
+      "  | R.D => d");
   }
 }

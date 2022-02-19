@@ -363,4 +363,29 @@ public class RecordsTest extends TypeCheckingTestCase {
       "\\func b : D (\\new B) => ddd");
     assertEquals(getDefinition("B"), ((NewExpression) ((DataCallExpression) ((FunctionDefinition) getDefinition("b")).getResultType()).getDefCallArguments().get(0)).getClassCall().getDefinition());
   }
+
+  @Test
+  public void resolveIncorrect() {
+    typeCheckModule(
+      "\\class C { | A : \\Set }\n" +
+      "\\class D { | B : \\Set }\n" +
+      "\\func f => \\new D { | A => \\Prop }", 1);
+  }
+
+  @Test
+  public void resolveIncorrect2() {
+    typeCheckModule(
+      "\\class C { | A : \\Set }\n" +
+      "\\class D { | B : \\Set }\n" +
+      "\\class E \\extends D\n" +
+      "\\func f => \\new E { | C => \\new C \\Prop }", 1);
+  }
+
+  @Test
+  public void resolveNotSuperImplement() {
+    typeCheckModule(
+      "\\class A { | x : Nat }\n" +
+      "\\class B { | y : Nat }\n" +
+      "\\class C \\extends B { | A => \\new A { | x => 0 } }", 1);
+  }
 }
