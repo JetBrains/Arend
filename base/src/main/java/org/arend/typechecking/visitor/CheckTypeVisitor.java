@@ -2299,7 +2299,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       if (param instanceof Concrete.NameParameter) {
         if (piParam == null) {
           TypedSingleDependentLink link = visitNameParameter((Concrete.NameParameter) param, expr);
-          TypecheckingResult bodyResult = visitLam(parameters.subList(1, parameters.size()), expr, new ExpressionParametersProvider(new InferenceReferenceExpression(new ExpressionInferenceVariable(Type.OMEGA, expr, getAllBindings(), true, true))));
+          TypecheckingResult bodyResult = visitLam(parameters.subList(1, parameters.size()), expr, new ExpressionParametersProvider(new InferenceReferenceExpression(new ExpressionInferenceVariable(new UniverseExpression(Sort.generateInferVars(myEquations, false, expr)), expr, getAllBindings(), true, true))));
           if (bodyResult == null) return new Pair<>(null, true);
           Sort sort = PiExpression.generateUpperBound(link.getType().getSortOfType(), getSortOfType(bodyResult.type, expr), myEquations, expr);
           TypecheckingResult result = new TypecheckingResult(new LamExpression(sort, link, bodyResult.expression), new PiExpression(sort, link, bodyResult.type));
