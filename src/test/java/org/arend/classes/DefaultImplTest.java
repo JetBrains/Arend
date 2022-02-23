@@ -313,4 +313,18 @@ public class DefaultImplTest extends TypeCheckingTestCase {
       "\\func test : D \\cowith", 1);
     assertThatErrorsAre(Matchers.fieldsImplementation(false, Arrays.asList(get("C.x"), get("C.y"))));
   }
+
+  @Test
+  public void mutualRecursionError3() {
+    typeCheckModule(
+      "\\record C\n" +
+      "  | x : 0 = 1\n" +
+      "  | y : 0 = 1\n" +
+      "\\record D \\extends C {\n" +
+      "  \\default x \\as xImpl => y\n" +
+      "  \\default y \\as yImpl => x\n" +
+      "}\n" +
+      "\\func test : D \\cowith", 1);
+    assertThatErrorsAre(Matchers.fieldsImplementation(false, Arrays.asList(get("C.x"), get("C.y"))));
+  }
 }

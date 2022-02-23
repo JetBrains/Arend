@@ -3047,26 +3047,30 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
     }
 
+    Map<FunctionDefinition, ClassField> functions = new HashMap<>();
     for (Concrete.ClassElement element : concreteDef.getElements()) {
       if (element instanceof Concrete.CoClauseFunctionReference) {
         Definition def = ((Concrete.CoClauseFunctionReference) element).getFunctionReference().getTypechecked();
         Referable ref = ((Concrete.CoClauseFunctionReference) element).getImplementedRef();
         Definition field = ref instanceof TCDefReferable ? ((TCDefReferable) ref).getTypechecked() : null;
         if (def instanceof FunctionDefinition && field instanceof ClassField) {
-          FindDefCallVisitor<FunctionDefinition> visitor = new FindDefCallVisitor<>(funcMap.keySet(), true);
-          visitor.visitFunction((FunctionDefinition) def, null);
-          if (!visitor.getFoundDefinitions().isEmpty()) {
-            for (FunctionDefinition func : visitor.getFoundDefinitions()) {
-              ClassField field2 = funcMap.get(func);
-              if (field2 != null) {
-                ((ClassDefinition) classDef).addDefaultDependency(field2, (ClassField) field);
-              }
-            }
-          }
-
-          ((ClassDefinition) classDef).addDefaultImplDependencies((ClassField) field, FieldsCollector.getFields(((FunctionDefinition) def).getBody(), def.getParameters(), ((ClassDefinition) classDef).getFields()));
+          functions.put((FunctionDefinition) def, (ClassField) field);
         }
       }
+    }
+
+    for (Map.Entry<FunctionDefinition, ClassField> entry : functions.entrySet()) {
+      FindDefCallVisitor<FunctionDefinition> visitor = new FindDefCallVisitor<>(funcMap.keySet(), true);
+      visitor.visitFunction(entry.getKey(), null);
+      if (!visitor.getFoundDefinitions().isEmpty()) {
+        for (FunctionDefinition func : visitor.getFoundDefinitions()) {
+          ClassField field2 = funcMap.get(func);
+          if (field2 != null) {
+            ((ClassDefinition) classDef).addDefaultDependency(field2, entry.getValue());
+          }
+        }
+      }
+      ((ClassDefinition) classDef).addDefaultImplDependencies(entry.getValue(), FieldsCollector.getFields(entry.getKey().getActualBody(), entry.getKey().getParameters(), ((ClassDefinition) classDef).getFields(), functions));
     }
   }
 

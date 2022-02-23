@@ -3,25 +3,23 @@ package org.arend.core.expr.visitor;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
+import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.elimtree.Body;
-import org.arend.core.elimtree.ElimBody;
-import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.*;
 import org.arend.ext.core.ops.NormalizationMode;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class FieldsCollector extends VoidExpressionVisitor<Void> {
   private final Binding myThisBinding;
   private final Set<? extends ClassField> myFields;
   private final Set<ClassField> myResult;
+  private final Map<FunctionDefinition, ClassField> myFunctions;
 
-  private FieldsCollector(Binding thisParameter, Set<? extends ClassField> fields, Set<ClassField> result) {
+  private FieldsCollector(Binding thisParameter, Set<? extends ClassField> fields, Map<FunctionDefinition, ClassField> functions, Set<ClassField> result) {
     myThisBinding = thisParameter;
     myFields = fields;
+    myFunctions = functions;
     myResult = result;
   }
 
@@ -31,14 +29,18 @@ public class FieldsCollector extends VoidExpressionVisitor<Void> {
 
   public static void getFields(Expression expr, Binding thisBinding, Set<? extends ClassField> fields, Set<ClassField> result) {
     if (expr != null && !fields.isEmpty()) {
-      expr.accept(new FieldsCollector(thisBinding, fields, result), null);
+      expr.accept(new FieldsCollector(thisBinding, fields, Collections.emptyMap(), result), null);
     }
   }
 
   public static Set<ClassField> getFields(Body body, Binding thisBinding, Set<? extends ClassField> fields) {
+    return getFields(body, thisBinding, fields, Collections.emptyMap());
+  }
+
+  public static Set<ClassField> getFields(Body body, Binding thisBinding, Set<? extends ClassField> fields, Map<FunctionDefinition, ClassField> functions) {
     Set<ClassField> result = new HashSet<>();
     if (!fields.isEmpty()) {
-      new FieldsCollector(thisBinding, fields, result).visitBody(body, null);
+      new FieldsCollector(thisBinding, fields, functions, result).visitBody(body, null);
     }
     return result;
   }
@@ -109,6 +111,33 @@ public class FieldsCollector extends VoidExpressionVisitor<Void> {
       checkArgument(entry.getValue(), entry.getKey().getType().getCodomain());
     }
     return super.visitClassCall(expr, params);
+  }
+
+  @Override
+  public Void visitFunCall(FunCallExpression expr, Void params) {
+    ClassField field = myFunctions.get(expr.getDefinition());
+    if (field == null) {
+      return super.visitFunCall(expr, params);
+    }
+
+    List<? extends Expression> args = expr.getDefCallArguments();
+    if (args.isEmpty()) {
+      return null;
+    }
+
+    ReferenceExpression refExpr = args.get(0).cast(ReferenceExpression.class);
+    if (refExpr != null && refExpr.getBinding() == myThisBinding && (myFields == null || myFields.contains(field))) {
+      myResult.add(field);
+    }
+    args.get(0).accept(this, null);
+
+    DependentLink link = expr.getDefinition().getParameters().getNext();
+    for (int i = 1; i < args.size(); i++) {
+      checkArgument(args.get(i), link.getTypeExpr());
+      link = link.getNext();
+    }
+
+    return null;
   }
 
   @Override
