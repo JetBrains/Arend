@@ -14,7 +14,7 @@ import static org.arend.ExpressionFactory.*;
 import static org.arend.ExpressionFactory.Universe;
 import static org.junit.Assert.assertEquals;
 
-public class Sigma extends TypeCheckingTestCase {
+public class SigmaTest extends TypeCheckingTestCase {
   @Test
   public void sigmaUniverse() {
     List<Binding> context = new ArrayList<>();
@@ -60,5 +60,10 @@ public class Sigma extends TypeCheckingTestCase {
   @Test
   public void oneParameter() {
     typeCheckExpr("\\Sigma Nat", null, 1);
+  }
+
+  @Test
+  public void projImplicitPi() {
+    typeCheckDef("\\func test (f : \\Pi {x : Nat} -> \\Sigma (y : Nat) (x = y)) : 0 = f.1 => f.2");
   }
 }

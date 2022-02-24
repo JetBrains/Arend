@@ -2596,6 +2596,19 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
   private TypecheckingResult checkProj(TypecheckingResult exprResult, Concrete.ProjExpression projExpr, Expression expectedType) {
     Concrete.Expression expr = projExpr.expression;
+    {
+      ExprSubstitution subst = new ExprSubstitution();
+      while (exprResult.type instanceof PiExpression && !((PiExpression) exprResult.type).getParameters().isExplicit()) {
+        for (DependentLink param = ((PiExpression) exprResult.type).getParameters(); param.hasNext(); param = param.getNext()) {
+          Expression arg = new InferenceReferenceExpression(new ExpressionInferenceVariable(param.getTypeExpr(), expr, getAllBindings(), true));
+          exprResult.expression = AppExpression.make(exprResult.expression, arg, false);
+          subst.add(param, arg);
+        }
+        exprResult.type = ((PiExpression) exprResult.type).getCodomain().subst(subst).normalize(NormalizationMode.WHNF);
+      }
+      exprResult.type = exprResult.type.subst(subst);
+    }
+
     if (!(exprResult.type instanceof SigmaExpression)) {
       TypecheckingResult coercedResult = CoerceData.coerceToKey(exprResult, new CoerceData.SigmaKey(), expr, this);
       if (coercedResult != null) {
