@@ -181,7 +181,7 @@ public class CoerceData {
   private static Expression getClassifyingFieldType(ClassCallExpression classCall) {
     ClassField field = classCall.getDefinition().getClassifyingField();
     assert field != null;
-    return classCall.getDefinition().getFieldType(field, LevelSubstitution.EMPTY, new NewExpression(null, classCall)).normalize(NormalizationMode.WHNF);
+    return classCall.getDefinition().getFieldType(field, LevelSubstitution.EMPTY, new ReferenceExpression(classCall.getThisBinding())).normalize(NormalizationMode.WHNF);
   }
 
   private static TypecheckingResult coerceResult(TypecheckingResult result, Collection<? extends Definition> defs, Expression expectedType, Concrete.SourceNode sourceNode, CheckTypeVisitor visitor, boolean argStrict, boolean resultStrict) {
