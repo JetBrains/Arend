@@ -2567,16 +2567,24 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           }
         }
 
-        if (result != null && classFieldImpl.isDefault()) {
-          typedDef.addDefaultImplDependencies(field, FieldsCollector.getFields(result.expression, thisBinding, typedDef.getFields()));
-        }
-
         if (myNewDef) {
-          AbsExpression abs = new AbsExpression(thisBinding, checkImplementations && result != null ? result.expression : new ErrorExpression());
-          if (classFieldImpl.isDefault()) {
-            typedDef.addDefault(field, abs);
-          } else {
-            typedDef.implementField(field, abs);
+          boolean ok = true;
+          if (result != null && classFieldImpl.isDefault()) {
+            Set<ClassField> dependencies = FieldsCollector.getFields(result.expression, thisBinding, typedDef.getFields());
+            if (dependencies.contains(field)) {
+              errorReporter.report(new TypecheckingError("The implementation depends on the field itself", classFieldImpl));
+              ok = false;
+            } else {
+              typedDef.addDefaultImplDependencies(field, dependencies);
+            }
+          }
+          if (ok) {
+            AbsExpression abs = new AbsExpression(thisBinding, checkImplementations && result != null ? result.expression : new ErrorExpression());
+            if (classFieldImpl.isDefault()) {
+              typedDef.addDefault(field, abs);
+            } else {
+              typedDef.implementField(field, abs);
+            }
           }
         }
       } else if (element instanceof Concrete.OverriddenField) {
