@@ -557,9 +557,20 @@ public class TwoStageEquations implements Equations {
   private ClassDefinition checkClasses(InferenceVariable var, List<ClassCallExpression> bounds, CMP cmp) {
     ClassDefinition classDef = bounds.get(0).getDefinition();
     for (ClassCallExpression classCall : bounds) {
-      if (classCall.getDefinition() != classDef) {
-        reportBoundsError(var, bounds, cmp);
-        return null;
+      if (cmp == CMP.LE) {
+        if (!classCall.getDefinition().isSubClassOf(classDef)) {
+          if (classDef.isSubClassOf(classCall.getDefinition())) {
+            classDef = classCall.getDefinition();
+          } else {
+            reportBoundsError(var, bounds, cmp);
+            return null;
+          }
+        }
+      } else {
+        if (classDef != classCall.getDefinition()) {
+          reportBoundsError(var, bounds, cmp);
+          return null;
+        }
       }
     }
 
@@ -570,7 +581,7 @@ public class TwoStageEquations implements Equations {
     List<Equation> equations = new ArrayList<>();
     Expression infRefExpr = new InferenceReferenceExpression(var, null);
     for (ClassCallExpression bound : bounds) {
-      equations.add(cmp == CMP.GE ? new Equation(bound, infRefExpr, Type.OMEGA, CMP.LE, var.getSourceNode()) : new Equation(infRefExpr, bound, Type.OMEGA, CMP.LE, var.getSourceNode()));
+      equations.add(cmp == CMP.GE ? new Equation(infRefExpr, bound, Type.OMEGA, CMP.LE, var.getSourceNode()) : new Equation(bound, infRefExpr, Type.OMEGA, CMP.LE, var.getSourceNode()));
     }
     myVisitor.getErrorReporter().report(new SolveEquationsError(equations, var.getSourceNode()));
   }
@@ -763,10 +774,9 @@ public class TwoStageEquations implements Equations {
 
         int minIndex = 0;
         int minValue = Integer.MAX_VALUE;
-        List<ClassCallExpression> proj2 = pair.proj2;
-        for (int i = 0; i < proj2.size(); i++) {
-          ClassCallExpression classCall = proj2.get(i);
-          if (classCall.getImplementedHere().size() < minValue) {
+        for (int i = 0; i < pair.proj2.size(); i++) {
+          ClassCallExpression classCall = pair.proj2.get(i);
+          if (classCall.getDefinition() == classDef && classCall.getImplementedHere().size() < minValue) {
             minIndex = i;
             minValue = classCall.getImplementedHere().size();
           }
