@@ -335,7 +335,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       e1 = expr1;
       e2 = expr2;
       while (e1 instanceof AppExpression && e2 instanceof AppExpression) {
-        if (!compare(((AppExpression) e1).getArgument(), ((AppExpression) e2).getArgument(), null, false)) {
+        if (!compare(((AppExpression) e1).getArgument(), ((AppExpression) e2).getArgument(), null, true)) {
           return false;
         }
         e1 = e1.getFunction().getUnderlyingExpression();
