@@ -1346,19 +1346,29 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       }
 
       AbsExpression absImpl1 = classCall1.getAbsImplementation(field);
-      if (absImpl1 != null && absImpl1 == classCall2.getAbsImplementation(field)) {
+      AbsExpression absImpl2 = classCall2.getAbsImplementation(field);
+      if (absImpl1 != null && absImpl1 == absImpl2) {
         return true;
       }
-      Expression impl1 = classCall1.getImplementation(field, expr1);
-      Expression impl2 = classCall2.getImplementation(field, expr2);
-      if (impl1 == null) {
-        impl1 = FieldCallExpression.make(field, expr1);
-      }
-      if (impl2 == null) {
-        impl2 = FieldCallExpression.make(field, expr2);
-      }
-      if (!compare(impl1, impl2, field.getType(classCall1.getLevels(field.getParentClass())).applyExpression(expr1), true)) {
-        return false;
+      if (absImpl1 == null || absImpl2 == null) {
+        Expression impl1 = absImpl1 == null ? FieldCallExpression.make(field, expr1) : classCall1.getImplementation(field, expr1);
+        Expression impl2 = absImpl2 == null ? FieldCallExpression.make(field, expr2) : classCall2.getImplementation(field, expr2);
+        if (!compare(impl1, impl2, field.getType(classCall1.getLevels(field.getParentClass())).applyExpression(expr1), true)) {
+          return false;
+        }
+      } else {
+        mySubstitution.put(classCall2.getThisBinding(), classCall1.getThisBinding());
+        Expression impl1 = classCall1.getAbsImplementationHere(field);
+        Expression impl2 = classCall2.getAbsImplementationHere(field);
+        if (impl1 == null) {
+          impl1 = Objects.requireNonNull(classCall1.getDefinition().getImplementation(field)).apply(new ReferenceExpression(classCall1.getThisBinding()), LevelSubstitution.EMPTY);
+        }
+        if (impl2 == null) {
+          impl2 = Objects.requireNonNull(classCall2.getDefinition().getImplementation(field)).apply(new ReferenceExpression(classCall2.getThisBinding()), LevelSubstitution.EMPTY);
+        }
+        boolean ok = compare(impl1, impl2, field.getType(classCall1.getLevels(field.getParentClass())).applyExpression(expr1), true);
+        mySubstitution.remove(classCall2.getThisBinding());
+        if (!ok) return false;
       }
     }
 
