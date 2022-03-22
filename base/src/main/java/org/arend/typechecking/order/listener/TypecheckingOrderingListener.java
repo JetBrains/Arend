@@ -6,7 +6,6 @@ import org.arend.core.context.param.TypedSingleDependentLink;
 import org.arend.core.definition.*;
 import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.*;
-import org.arend.core.expr.visitor.VoidExpressionVisitor;
 import org.arend.core.pattern.ExpressionPattern;
 import org.arend.core.sort.Sort;
 import org.arend.error.CountingErrorReporter;
@@ -338,7 +337,7 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
       Pair<CheckTypeVisitor, Boolean> pair = mySuspensions.remove(definition.getData());
       if (myHeadersAreOK && pair != null) {
         typechecking.setTypechecker(pair.proj1);
-        typechecking.updateState(!pair.proj2);
+        typechecking.updateState(pair.proj2);
         List<? extends ElimClause<ExpressionPattern>> clauses = typechecking.typecheckBody(def, definition, dataDefinitions);
         if (def instanceof FunctionDefinition) {
           functionDefinitions.put((FunctionDefinition) def, definition);

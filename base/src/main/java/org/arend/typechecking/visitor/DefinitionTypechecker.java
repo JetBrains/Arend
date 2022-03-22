@@ -80,7 +80,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   }
 
   public void updateState(boolean update) {
-    myNewDef = !update;
+    myNewDef = update;
   }
 
   public Definition typecheckHeader(Definition typechecked, GlobalInstancePool instancePool, Concrete.Definition definition) {
