@@ -10,6 +10,8 @@ public interface CoreParameterBuilder {
   @NotNull CoreParameter getLast();
   @NotNull CoreParameter addCopyFirst(@NotNull CoreParameter parameter);
   @NotNull CoreParameter addCopyLast(@NotNull CoreParameter parameter);
+  @NotNull CoreParameter addCopyFirst(@NotNull CoreParameter parameter, boolean isExplicit);
+  @NotNull CoreParameter addCopyLast(@NotNull CoreParameter parameter, boolean isExplicit);
   @NotNull CoreParameter addFirst(boolean isExplicit, @Nullable String name, @NotNull CoreExpression type, @NotNull ConcreteSourceNode marker);
   @NotNull CoreParameter addLast(boolean isExplicit, @Nullable String name, @NotNull CoreExpression type, @NotNull ConcreteSourceNode marker);
 }

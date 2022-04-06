@@ -24,7 +24,7 @@ public class CoreParameterBuilderImpl extends LinkList implements CoreParameterB
   }
 
   @Override
-  public @NotNull CoreParameter addCopyFirst(@NotNull CoreParameter parameter) {
+  public @NotNull DependentLink addCopyFirst(@NotNull CoreParameter parameter) {
     if (!(parameter instanceof DependentLink)) {
       throw new IllegalArgumentException();
     }
@@ -34,13 +34,30 @@ public class CoreParameterBuilderImpl extends LinkList implements CoreParameterB
   }
 
   @Override
-  public @NotNull CoreParameter addCopyLast(@NotNull CoreParameter parameter) {
+  public @NotNull DependentLink addCopyLast(@NotNull CoreParameter parameter) {
     if (!(parameter instanceof DependentLink)) {
       throw new IllegalArgumentException();
     }
     DependentLink copy = DependentLink.Helper.copy((DependentLink) parameter);
     append(copy);
     return copy;
+  }
+
+  private DependentLink setExplicit(DependentLink copy, boolean isExplicit) {
+    for (DependentLink link = copy; link.hasNext(); link = link.getNext()) {
+      link.setExplicit(isExplicit);
+    }
+    return copy;
+  }
+
+  @Override
+  public @NotNull DependentLink addCopyFirst(@NotNull CoreParameter parameter, boolean isExplicit) {
+    return setExplicit(addCopyFirst(parameter), isExplicit);
+  }
+
+  @Override
+  public @NotNull DependentLink addCopyLast(@NotNull CoreParameter parameter, boolean isExplicit) {
+    return setExplicit(addCopyLast(parameter), isExplicit);
   }
 
   private @NotNull DependentLink makeParameter(boolean isExplicit, @Nullable String name, @NotNull CoreExpression type, @NotNull ConcreteSourceNode marker) {
