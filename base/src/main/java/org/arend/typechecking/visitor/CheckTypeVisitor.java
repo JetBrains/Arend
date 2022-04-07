@@ -1016,8 +1016,9 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
 
     ErrorReporterCounter counter = new ErrorReporterCounter(GeneralError.Level.ERROR, errorReporter);
-    StripVisitor stripVisitor = new StripVisitor(counter);
+    StripVisitor stripVisitor = new StripVisitor(counter, false);
     invokeDeferredMetas(substVisitor, stripVisitor, true);
+    stripVisitor.setEvaluateBindings(true);
     if (result.expression != null) {
       result.expression = result.expression.accept(stripVisitor, null);
     }

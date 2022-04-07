@@ -28,24 +28,32 @@ import java.util.*;
 public class StripVisitor implements ExpressionVisitor<Void, Expression> {
   private final Set<EvaluatingBinding> myBoundEvaluatingBindings;
   private ErrorReporter myErrorReporter;
+  private boolean myEvaluateBindings;
 
   public StripVisitor() {
-    myBoundEvaluatingBindings = new HashSet<>();
-    myErrorReporter = null;
+    this(null);
   }
 
   public StripVisitor(ErrorReporter errorReporter) {
-    myBoundEvaluatingBindings = new HashSet<>();
-    myErrorReporter = errorReporter;
+    this(errorReporter, true);
   }
 
-  private StripVisitor(Set<EvaluatingBinding> boundEvaluatingBindings, ErrorReporter errorReporter) {
+  public StripVisitor(ErrorReporter errorReporter, boolean evaluateBindings) {
+    this(new HashSet<>(), errorReporter, evaluateBindings);
+  }
+
+  private StripVisitor(Set<EvaluatingBinding> boundEvaluatingBindings, ErrorReporter errorReporter, boolean evaluateBindings) {
     myBoundEvaluatingBindings = boundEvaluatingBindings;
     myErrorReporter = errorReporter;
+    myEvaluateBindings = evaluateBindings;
   }
 
   public void setErrorReporter(ErrorReporter errorReporter) {
     myErrorReporter = errorReporter;
+  }
+
+  public void setEvaluateBindings(boolean evaluateBindings) {
+    myEvaluateBindings = evaluateBindings;
   }
 
   @Override
@@ -139,7 +147,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
   @Override
   public Expression visitReference(ReferenceExpression expr, Void params) {
     Binding binding = expr.getBinding();
-    if (binding instanceof EvaluatingBinding && !myBoundEvaluatingBindings.contains(binding)) {
+    if (binding instanceof EvaluatingBinding && myEvaluateBindings && !myBoundEvaluatingBindings.contains(binding)) {
       if (binding instanceof PersistentEvaluatingBinding) {
         PersistentEvaluatingBinding evaluating = (PersistentEvaluatingBinding) binding;
         evaluating.setExpression(evaluating.getExpression().accept(this, null));
@@ -222,7 +230,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
       return expr;
     }
     if (expr instanceof GoalErrorExpression) {
-      return expr.replaceExpression(expr.getExpression().accept(new StripVisitor(myBoundEvaluatingBindings, new ListErrorReporter(((GoalErrorExpression) expr).goalError.errors)), null));
+      return expr.replaceExpression(expr.getExpression().accept(new StripVisitor(myBoundEvaluatingBindings, new ListErrorReporter(((GoalErrorExpression) expr).goalError.errors), myEvaluateBindings), null));
     } else {
       return new ErrorExpression(null, expr.isGoal(), expr.useExpression());
     }
