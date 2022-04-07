@@ -23,7 +23,6 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
-import org.arend.error.IncorrectExpressionException;
 import org.arend.ext.core.context.CoreBinding;
 import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.core.ops.CMP;
@@ -128,11 +127,7 @@ public abstract class Expression implements Body, CoreExpression {
   }
 
   public Expression getType(boolean minimal) {
-    try {
-      return accept(minimal ? GetTypeVisitor.MIN_INSTANCE : GetTypeVisitor.INSTANCE, null);
-    } catch (IncorrectExpressionException e) {
-      return new ErrorExpression(new TypeComputationError(null, this, null));
-    }
+    return accept(minimal ? GetTypeVisitor.MIN_INSTANCE : GetTypeVisitor.INSTANCE, null);
   }
 
   public Expression getType() {

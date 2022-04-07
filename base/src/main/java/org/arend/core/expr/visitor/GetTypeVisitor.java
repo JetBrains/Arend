@@ -14,7 +14,6 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.Levels;
 import org.arend.core.subst.ListLevels;
-import org.arend.error.IncorrectExpressionException;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
@@ -40,10 +39,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
   @Override
   public Expression visitApp(AppExpression expr, Void params) {
     Expression result = expr.getFunction().accept(this, null).applyExpression(expr.getArgument(), myNormalizing);
-    if (result == null && myNormalizing) {
-      throw new IncorrectExpressionException("Expression " + expr.getFunction() + " does not have a pi type, but is applied to " + expr.getArgument());
-    }
-    return result;
+    return result == null ? new ErrorExpression() : result;
   }
 
   private Level getMaxLevel(Level level1, Level level2) {
@@ -213,19 +209,17 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
   @Override
   public Expression visitFieldCall(FieldCallExpression expr, Void params) {
     Expression type = expr.getArgument().accept(this, null);
-    if (type != null) {
-      if (myNormalizing) {
-        type = type.normalize(NormalizationMode.WHNF);
+    if (myNormalizing) {
+      type = type.normalize(NormalizationMode.WHNF);
+    }
+    if (type instanceof ClassCallExpression) {
+      ClassCallExpression classCall = (ClassCallExpression) type;
+      Levels levels = myMinimal ? minimizeLevels(classCall) : classCall.getLevels();
+      PiExpression fieldType = classCall.getDefinition().getOverriddenType(expr.getDefinition(), levels);
+      if (fieldType != null) {
+        return fieldType.applyExpression(expr.getArgument());
       }
-      if (type instanceof ClassCallExpression) {
-        ClassCallExpression classCall = (ClassCallExpression) type;
-        Levels levels = myMinimal ? minimizeLevels(classCall) : classCall.getLevels();
-        PiExpression fieldType = classCall.getDefinition().getOverriddenType(expr.getDefinition(), levels);
-        if (fieldType != null) {
-          return fieldType.applyExpression(expr.getArgument());
-        }
-        return expr.getDefinition().getType(classCall.getDefinition().castLevels(expr.getDefinition().getParentClass(), levels)).applyExpression(expr.getArgument());
-      }
+      return expr.getDefinition().getType(classCall.getDefinition().castLevels(expr.getDefinition().getParentClass(), levels)).applyExpression(expr.getArgument());
     }
     return new ErrorExpression();
   }
@@ -240,15 +234,14 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
         expression = ((ConCallExpression) expression).getDefCallArguments().get(0);
       }
       Expression argType = expression.accept(this, null);
-      if (argType != null) {
-        DataCallExpression dataCall = argType.cast(DataCallExpression.class);
-        if (dataCall != null && dataCall.getDefinition() == Prelude.FIN) {
-          Expression arg = dataCall.getDefCallArguments().get(0);
-          for (int i = 0; i < sucs; i++) {
-            arg = Suc(arg);
-          }
-          return new DataCallExpression(dataCall.getDefinition(), dataCall.getLevels(), new SingletonList<>(arg));
+      if (myNormalizing) argType = argType.normalize(NormalizationMode.WHNF);
+      DataCallExpression dataCall = argType.cast(DataCallExpression.class);
+      if (dataCall != null && dataCall.getDefinition() == Prelude.FIN) {
+        Expression arg = dataCall.getDefCallArguments().get(0);
+        for (int i = 0; i < sucs; i++) {
+          arg = Suc(arg);
         }
+        return new DataCallExpression(dataCall.getDefinition(), dataCall.getLevels(), new SingletonList<>(arg));
       }
       return Nat();
     }
@@ -325,17 +318,10 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
     } else {
       type = type.getUnderlyingExpression();
     }
-    if (type instanceof ErrorExpression) {
-      return type;
+    if (!(type instanceof SigmaExpression)) {
+      return type instanceof ErrorExpression ? type : new ErrorExpression();
     }
 
-    if (!(type instanceof SigmaExpression)) {
-      if (myNormalizing) {
-        throw new IncorrectExpressionException("Expression " + expr + " should have a sigma type");
-      } else {
-        return null;
-      }
-    }
     DependentLink params = ((SigmaExpression) type).getParameters();
     if (expr.getField() == 0) {
       return params.getTypeExpr();
@@ -391,18 +377,11 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
     Expression type = expr.getArgument().accept(this, null);
     if (myNormalizing) {
       type = type.normalize(NormalizationMode.WHNF);
+    } else {
+      type = type.getUnderlyingExpression();
     }
-    type = type.getUnderlyingExpression();
-    if (type instanceof ErrorExpression) {
-      return type;
-    }
-
     if (!(type instanceof FunCallExpression && ((FunCallExpression) type).getDefinition() == expr.getDefinition())) {
-      if (myNormalizing) {
-        throw new IncorrectExpressionException("Expression " + expr + " should have a sigma type");
-      } else {
-        return null;
-      }
+      return type instanceof ErrorExpression ? type : new ErrorExpression();
     }
 
     FunCallExpression funCall = (FunCallExpression) type;
@@ -444,8 +423,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
     if (expr.getArgumentType() != null) {
       return new DataCallExpression(Prelude.PATH, expr.getLevels(), Arrays.asList(expr.getArgumentType(), left, right));
     } else {
-      Expression type = left.accept(this, null);
-      return FunCallExpression.make(Prelude.PATH_INFIX, expr.getLevels(), Arrays.asList(type, left, right));
+      return FunCallExpression.make(Prelude.PATH_INFIX, expr.getLevels(), Arrays.asList(left.accept(this, null), left, right));
     }
   }
 
@@ -454,11 +432,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
     Expression type = expr.getPathArgument().accept(this, null);
     type = myNormalizing ? type.normalize(NormalizationMode.WHNF) : type.getUnderlyingExpression();
     if (!(type instanceof DataCallExpression && ((DataCallExpression) type).getDefinition() == Prelude.PATH)) {
-      if (myNormalizing) {
-        throw new IncorrectExpressionException("Expression " + expr.getPathArgument() + " should have a path type");
-      } else {
-        return null;
-      }
+      return type instanceof ErrorExpression ? type : new ErrorExpression();
     }
     return AppExpression.make(((DataCallExpression) type).getDefCallArguments().get(0), expr.getIntervalArgument(), true);
   }
@@ -467,13 +441,13 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
   public Expression visitPEval(PEvalExpression expr, Void params) {
     Expression normExpr = expr.eval();
     if (normExpr == null) {
-      return null;
+      return new ErrorExpression();
     }
 
     Expression type = expr.getExpression().accept(this, null);
-    Sort sort = type == null ? null : type.getSortOfType();
+    Sort sort = type.getSortOfType();
     if (sort == null) {
-      return null;
+      return new ErrorExpression();
     }
 
     List<Expression> args = new ArrayList<>(3);

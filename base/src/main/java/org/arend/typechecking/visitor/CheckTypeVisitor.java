@@ -911,12 +911,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   public TypecheckingResult checkExpr(Concrete.Expression expr, Expression expectedType) {
-    try {
-      return expr.accept(this, expectedType);
-    } catch (IncorrectExpressionException e) {
-      errorReporter.report(new TypecheckingError(e.getMessage(), expr));
-      return null;
-    }
+    return expr.accept(this, expectedType);
   }
 
   public TypecheckingResult finalCheckExpr(Concrete.Expression expr, Expression expectedType) {
@@ -1039,24 +1034,19 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
 
     TypecheckingResult result;
-    try {
-      Expression expectedType1 = expectedType;
-      boolean isOmega = expectedType instanceof Type && ((Type) expectedType).isOmega();
-      if (!isOmega) {
-        expectedType = expectedType.normalize(NormalizationMode.WHNF);
-        if (expectedType.getStuckInferenceVariable() != null) {
-          expectedType1 = Type.OMEGA;
-        }
+    Expression expectedType1 = expectedType;
+    boolean isOmega = expectedType instanceof Type && ((Type) expectedType).isOmega();
+    if (!isOmega) {
+      expectedType = expectedType.normalize(NormalizationMode.WHNF);
+      if (expectedType.getStuckInferenceVariable() != null) {
+        expectedType1 = Type.OMEGA;
       }
+    }
 
-      result = expr.accept(this, expectedType1);
-      if (result != null && expectedType1 != expectedType) {
-        result.type = result.type.normalize(NormalizationMode.WHNF);
-        result = checkResultExpr(expectedType, result, expr);
-      }
-    } catch (IncorrectExpressionException e) {
-      errorReporter.report(new TypecheckingError(e.getMessage(), expr));
-      return null;
+    result = expr.accept(this, expectedType1);
+    if (result != null && expectedType1 != expectedType) {
+      result.type = result.type.normalize(NormalizationMode.WHNF);
+      result = checkResultExpr(expectedType, result, expr);
     }
     if (result == null) {
       return null;

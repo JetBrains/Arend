@@ -22,7 +22,6 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.*;
 import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.error.CountingErrorReporter;
-import org.arend.error.IncorrectExpressionException;
 import org.arend.ext.ArendExtension;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.expr.CoreExpression;
@@ -97,11 +96,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         functionDef.setResultType(new ErrorExpression());
       }
       functionDef.setStatus(Definition.TypeCheckingStatus.TYPE_CHECKING);
-      try {
-        typecheckFunctionHeader(functionDef, (Concrete.BaseFunctionDefinition) definition, localInstancePool);
-      } catch (IncorrectExpressionException e) {
-        errorReporter.report(new TypecheckingError(e.getMessage(), definition));
-      }
+      typecheckFunctionHeader(functionDef, (Concrete.BaseFunctionDefinition) definition, localInstancePool);
       return functionDef;
     } else
     if (definition instanceof Concrete.DataDefinition) {
@@ -110,11 +105,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         myNewDef = typechecked == null || typechecked.status().needsTypeChecking();
       }
       dataDef.setStatus(Definition.TypeCheckingStatus.TYPE_CHECKING);
-      try {
-        typecheckDataHeader(dataDef, (Concrete.DataDefinition) definition, localInstancePool);
-      } catch (IncorrectExpressionException e) {
-        errorReporter.report(new TypecheckingError(e.getMessage(), definition));
-      }
+      typecheckDataHeader(dataDef, (Concrete.DataDefinition) definition, localInstancePool);
       if (dataDef.getSort() == null || dataDef.getSort().getPLevel().isInfinity()) {
         errorReporter.report(new TypecheckingError("Cannot infer the sort of a recursive data type", definition));
         if (typechecked == null) {
@@ -130,19 +121,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
   public List<ExtElimClause> typecheckBody(Definition definition, Concrete.Definition def, Set<DataDefinition> dataDefinitions) {
     if (definition instanceof FunctionDefinition) {
-      try {
-        return typecheckFunctionBody((FunctionDefinition) definition, (Concrete.BaseFunctionDefinition) def);
-      } catch (IncorrectExpressionException e) {
-        errorReporter.report(new TypecheckingError(e.getMessage(), def));
-      }
-    } else
-    if (definition instanceof DataDefinition) {
-      try {
-        if (!typecheckDataBody((DataDefinition) definition, (Concrete.DataDefinition) def, dataDefinitions) && myNewDef) {
-          definition.addStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
-        }
-      } catch (IncorrectExpressionException e) {
-        errorReporter.report(new TypecheckingError(e.getMessage(), def));
+      return typecheckFunctionBody((FunctionDefinition) definition, (Concrete.BaseFunctionDefinition) def);
+    } else if (definition instanceof DataDefinition) {
+      if (!typecheckDataBody((DataDefinition) definition, (Concrete.DataDefinition) def, dataDefinitions) && myNewDef) {
+        definition.addStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
       }
     } else {
       throw new IllegalStateException();
@@ -165,16 +147,11 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       definition.setResultType(new ErrorExpression());
     }
     definition.setStatus(Definition.TypeCheckingStatus.TYPE_CHECKING);
-    try {
-      typecheckFunctionHeader(definition, def, localInstancePool);
-      if (myNewDef) {
-        myNewDef = typechecked == null;
-      }
-      return typecheckFunctionBody(definition, def);
-    } catch (IncorrectExpressionException e) {
-      errorReporter.report(new TypecheckingError(e.getMessage(), def));
-      return null;
+    typecheckFunctionHeader(definition, def, localInstancePool);
+    if (myNewDef) {
+      myNewDef = typechecked == null;
     }
+    return typecheckFunctionBody(definition, def);
   }
 
   @Override
@@ -189,17 +166,12 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       myNewDef = typechecked == null || typechecked.status().needsTypeChecking();
     }
     definition.setStatus(Definition.TypeCheckingStatus.TYPE_CHECKING);
-    try {
-      typecheckDataHeader(definition, def, localInstancePool);
-      if (definition.status().headerIsOK()) {
-        if (myNewDef) {
-          myNewDef = typechecked == null;
-        }
-        typecheckDataBody(definition, def, Collections.singleton(definition));
+    typecheckDataHeader(definition, def, localInstancePool);
+    if (definition.status().headerIsOK()) {
+      if (myNewDef) {
+        myNewDef = typechecked == null;
       }
-    } catch (IncorrectExpressionException e) {
-      errorReporter.report(new TypecheckingError(e.getMessage(), def));
-      return null;
+      typecheckDataBody(definition, def, Collections.singleton(definition));
     }
     return null;
   }
@@ -234,11 +206,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
       }
     } else {
-      try {
-        typecheckClass(def, definition);
-      } catch (IncorrectExpressionException e) {
-        errorReporter.report(new TypecheckingError(e.getMessage(), def));
-      }
+      typecheckClass(def, definition);
     }
     return null;
   }
