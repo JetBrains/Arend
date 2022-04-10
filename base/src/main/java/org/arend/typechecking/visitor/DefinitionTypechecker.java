@@ -2568,12 +2568,24 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     for (ClassDefinition superClass : typedDef.getSuperClasses()) {
+      for (Map.Entry<ClassField, Set<ClassField>> entry : superClass.getDefaultDependencies().entrySet()) {
+        Set<ClassField> dependencies = entry.getValue();
+        if (!typedDef.getDefaults().isEmpty()) {
+          Set<ClassField> newDependencies = new HashSet<>();
+          for (ClassField dependency : dependencies) {
+            if (typedDef.getDefault(dependency) == null) {
+              newDependencies.add(dependency);
+            }
+          }
+          if (newDependencies.size() != dependencies.size()) {
+            dependencies = newDependencies;
+          }
+        }
+        typedDef.addDefaultDependencies(entry.getKey(), dependencies);
+      }
       for (Map.Entry<ClassField, AbsExpression> entry : superClass.getDefaults()) {
         Levels levels = typedDef.getSuperLevels().get(superClass);
         typedDef.addDefaultIfAbsent(entry.getKey(), entry.getValue().subst(new ExprSubstitution(), levels == null ? idLevels.makeSubstitution(superClass) : levels.makeSubstitution(superClass)));
-      }
-      for (Map.Entry<ClassField, Set<ClassField>> entry : superClass.getDefaultDependencies().entrySet()) {
-        typedDef.addDefaultDependencies(entry.getKey(), entry.getValue());
       }
       for (Map.Entry<ClassField, Set<ClassField>> entry : superClass.getDefaultImplDependencies().entrySet()) {
         typedDef.addDefaultImplDependencies(entry.getKey(), entry.getValue());

@@ -144,9 +144,9 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> {
   public Concrete.Expression visitClassExt(Concrete.ClassExtExpression expr, Void params) {
     expr.setBaseClassExpression(expr.getBaseClassExpression().accept(this, params));
     myClassCallNumber++;
-    for (Concrete.ClassElement element : expr.getStatements()) {
-      if (myClassCallNumber == 1 && element instanceof Concrete.ClassFieldImpl && ((Concrete.ClassFieldImpl) element).implementation instanceof Concrete.ThisExpression && ((Concrete.ClassFieldImpl) element).getImplementedRef() instanceof TCDefReferable && ((TCDefReferable) ((Concrete.ClassFieldImpl) element).getImplementedRef()).getTypechecked() instanceof ClassDefinition) {
-        ((Concrete.ThisExpression) ((Concrete.ClassFieldImpl) element).implementation).setReferent(myThisParameter);
+    for (Concrete.ClassFieldImpl element : expr.getStatements()) {
+      if (myClassCallNumber == 1 && element.implementation instanceof Concrete.ThisExpression && element.getImplementedRef() instanceof TCDefReferable && ((TCDefReferable) element.getImplementedRef()).getTypechecked() instanceof ClassDefinition) {
+        ((Concrete.ThisExpression) element.implementation).setReferent(myThisParameter);
       }
       visitClassElement(element, params);
     }
