@@ -481,11 +481,8 @@ public class ElimBindingVisitor extends ExpressionTransformer<Void> {
 
   @Override
   public Expression visitPath(PathExpression expr, Void params) {
-    Expression argumentType = null;
-    if (expr.getArgumentType() != null) {
-      argumentType = acceptSelf(expr.getArgumentType(), true);
-      if (argumentType == null) return null;
-    }
+    Expression argumentType = acceptSelf(expr.getArgumentType(), true);
+    if (argumentType == null) return null;
     Expression argument = acceptSelf(expr.getArgument(), true);
     return argument == null ? null : new PathExpression(expr.getLevels(), argumentType, argument);
   }

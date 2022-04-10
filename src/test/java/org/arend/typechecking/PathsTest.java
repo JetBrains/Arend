@@ -15,6 +15,7 @@ import org.junit.Test;
 import java.util.Collections;
 
 import static org.arend.ExpressionFactory.*;
+import static org.arend.core.expr.ExpressionFactory.Interval;
 import static org.junit.Assert.assertEquals;
 
 public class PathsTest extends TypeCheckingTestCase {
@@ -28,7 +29,7 @@ public class PathsTest extends TypeCheckingTestCase {
     TypecheckingResult idp = typeCheckExpr("\\lam {A : \\Type0} (a : A) => path (\\lam _ => a)", null);
     SingleDependentLink A = singleParam(false, Collections.singletonList("A"), Universe(new Level(0), new Level(LevelVariable.HVAR)));
     SingleDependentLink a = singleParam("a", Ref(A));
-    Expression pathCall = new PathExpression(new LevelPair(new Level(0), Level.INFINITY), null, Lam(UnusedIntervalDependentLink.INSTANCE, Ref(a)));
+    Expression pathCall = new PathExpression(new LevelPair(new Level(0), Level.INFINITY), Lam(singleParam(null, Interval()), Ref(A)), Lam(UnusedIntervalDependentLink.INSTANCE, Ref(a)));
     assertEquals(Lam(A, Lam(a, pathCall)).normalize(NormalizationMode.NF), idp.expression);
     assertEquals(Pi(A, Pi(a, FunCall(Prelude.PATH_INFIX, new LevelPair(new Level(0), Level.INFINITY), Ref(A), Ref(a), Ref(a)))).normalize(NormalizationMode.NF), idp.type.normalize(NormalizationMode.NF));
   }

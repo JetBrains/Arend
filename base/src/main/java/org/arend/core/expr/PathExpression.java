@@ -31,7 +31,7 @@ public class PathExpression extends Expression implements CorePathExpression {
   }
 
   @Override
-  public @Nullable Expression getArgumentType() {
+  public @NotNull Expression getArgumentType() {
     return myArgumentType;
   }
 

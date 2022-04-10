@@ -420,11 +420,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
   public Expression visitPath(PathExpression expr, Void params) {
     Expression left = AppExpression.make(expr.getArgument(), ExpressionFactory.Left(), true);
     Expression right = AppExpression.make(expr.getArgument(), ExpressionFactory.Right(), true);
-    if (expr.getArgumentType() != null) {
-      return new DataCallExpression(Prelude.PATH, expr.getLevels(), Arrays.asList(expr.getArgumentType(), left, right));
-    } else {
-      return FunCallExpression.make(Prelude.PATH_INFIX, expr.getLevels(), Arrays.asList(left.accept(this, null), left, right));
-    }
+    return new DataCallExpression(Prelude.PATH, expr.getLevels(), Arrays.asList(expr.getArgumentType(), left, right));
   }
 
   @Override

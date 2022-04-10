@@ -47,7 +47,7 @@ public class NormalizingFindBindingVisitor extends SearchVisitor<Void> {
 
   @Override
   public Boolean visitPath(PathExpression expr, Void params) {
-    return expr.getArgumentType() != null && findBinding(expr.getArgumentType(), true) || findBinding(expr.getArgument(), true);
+    return findBinding(expr.getArgumentType(), true) || findBinding(expr.getArgument(), true);
   }
 
   @Override

@@ -453,10 +453,6 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     ReferenceExpression paramRef = new ReferenceExpression(param);
     Expression argumentType = pathExpr1.getArgumentType();
     Sort sort = new Sort(pathExpr1.getLevels().toLevelPair().get(LevelVariable.PVAR), Level.INFINITY);
-    if (argumentType == null) {
-      argumentType = type instanceof DataCallExpression && ((DataCallExpression) type).getDefinition() == Prelude.PATH ? ((DataCallExpression) type).getDefCallArguments().get(0) : new LamExpression(sort, param, AppExpression.make(pathExpr1.getArgument(), paramRef, true).getType());
-    }
-
     expr2 = new LamExpression(sort, param, AtExpression.make(expr2, paramRef, false));
     Expression argType = new PiExpression(sort, param, AppExpression.make(argumentType, paramRef, true));
     return correctOrder ? compare(pathExpr1.getArgument(), expr2, argType, true) : compare(expr2, pathExpr1.getArgument(), argType, true);

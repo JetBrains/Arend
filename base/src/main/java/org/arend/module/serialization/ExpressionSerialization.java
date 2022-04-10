@@ -653,9 +653,7 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
     LevelPair levelPair = expr.getLevels().toLevelPair();
     builder.setPLevel(writeLevel(levelPair.get(LevelVariable.PVAR)));
     builder.setHLevel(writeLevel(levelPair.get(LevelVariable.HVAR)));
-    if (expr.getArgumentType() != null) {
-      builder.setArgumentType(writeExpr(expr.getArgumentType()));
-    }
+    builder.setArgumentType(writeExpr(expr.getArgumentType()));
     builder.setArgument(writeExpr(expr.getArgument()));
     return ExpressionProtos.Expression.newBuilder().setPath(builder.build()).build();
   }

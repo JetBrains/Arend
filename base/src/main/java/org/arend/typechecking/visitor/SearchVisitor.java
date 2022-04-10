@@ -126,7 +126,7 @@ public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean>
 
   @Override
   public Boolean visitPath(PathExpression expr, P params) {
-    return checkPathArgumentType() && expr.getArgumentType() != null && expr.getArgumentType().accept(this, params) || expr.getArgument().accept(this, params);
+    return checkPathArgumentType() && expr.getArgumentType().accept(this, params) || expr.getArgument().accept(this, params);
   }
 
   @Override

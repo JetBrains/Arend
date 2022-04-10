@@ -335,7 +335,7 @@ public class SubstVisitor extends ExpressionTransformer<Void> {
 
   @Override
   public Expression visitPath(PathExpression expr, Void params) {
-    return new PathExpression(expr.getLevels().subst(myLevelSubstitution), expr.getArgumentType() == null ? null : expr.getArgumentType().accept(this, null), expr.getArgument().accept(this, null));
+    return new PathExpression(expr.getLevels().subst(myLevelSubstitution), expr.getArgumentType().accept(this, null), expr.getArgument().accept(this, null));
   }
 
   @Override

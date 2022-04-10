@@ -260,9 +260,7 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> impl
 
   @Override
   public Void visitPath(PathExpression expr, P params) {
-    if (expr.getArgumentType() != null) {
-      expr.getArgumentType().accept(this, params);
-    }
+    expr.getArgumentType().accept(this, params);
     expr.getArgument().accept(this, params);
     return null;
   }
