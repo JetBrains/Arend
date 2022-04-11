@@ -1,5 +1,6 @@
 package org.arend.ext.prettyprinting;
 
+import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -29,6 +30,16 @@ public interface PrettyPrinterConfig {
   default @Nullable DefinitionRenamer getDefinitionRenamer() {
     return null;
   }
+
+  /**
+   * If an expression has a positive verbose level, then it is printed with additional information.
+   * The kind of the information depends on runtime class of the expression.
+   * For example, if a {@link org.arend.ext.core.expr.CoreAppExpression} has verbose level = 2,
+   * then it will be printed with two additional implicit arguments.
+   */
+  default int getVerboseLevel(@NotNull CoreExpression expression) {
+        return 0;
+    }
 
   PrettyPrinterConfig DEFAULT = new PrettyPrinterConfig() {};
 }
