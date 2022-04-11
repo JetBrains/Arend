@@ -114,6 +114,10 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     return myConfig.getExpressionFlags().contains(flag);
   }
 
+  private int getVerboseLevel(Expression coreExpression) {
+    return myConfig.getVerboseLevel(coreExpression);
+  }
+
   private Concrete.Expression checkPath(DataCallExpression expr) {
     if (expr.getDefinition() != Prelude.PATH || hasFlag(PrettyPrinterFlag.SHOW_PREFIX_PATH)) {
       return null;
@@ -161,7 +165,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     return arg != null ? checkApp(Concrete.AppExpression.make(expr, function, arg, expr.isExplicit())) : function;
   }
 
-  private void visitArgument(Expression arg, boolean isExplicit, List<Concrete.Argument> arguments, boolean genGoal) {
+  private void visitArgument(Expression arg, boolean isExplicit, List<Concrete.Argument> arguments, boolean genGoal, boolean alwaysShow) {
     ReferenceExpression refExpr = arg.cast(ReferenceExpression.class);
     if (refExpr != null && refExpr.getBinding().isHidden()) {
       Concrete.Expression mappedExpression = myRenamer.getConcreteExpression(refExpr.getBinding());
@@ -172,15 +176,17 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       if (isExplicit) {
         arguments.add(new Concrete.Argument(new Concrete.ThisExpression(arg, null), true));
       }
-    } else if (isExplicit || hasFlag(PrettyPrinterFlag.SHOW_IMPLICIT_ARGS)) {
+    } else if (isExplicit || alwaysShow || hasFlag(PrettyPrinterFlag.SHOW_IMPLICIT_ARGS)) {
       arguments.add(new Concrete.Argument(genGoal ? generateHiddenGoal() : arg.accept(this, null), isExplicit));
     }
   }
 
-  private Concrete.Expression visitParameters(Concrete.Expression expr, DependentLink parameters, List<? extends Expression> arguments) {
+  private Concrete.Expression visitParameters(Concrete.Expression expr, DependentLink parameters, List<? extends Expression> arguments, int parentVerboseLevel) {
     List<Concrete.Argument> concreteArguments = new ArrayList<>(arguments.size());
+    int implicitArgumentsCounter = 0;
     for (Expression arg : arguments) {
-      visitArgument(arg, parameters.isExplicit(), concreteArguments, false);
+      implicitArgumentsCounter += parameters.isExplicit() ? 0 : 1;
+      visitArgument(arg, parameters.isExplicit(), concreteArguments, false, (parentVerboseLevel >= implicitArgumentsCounter));
       if (parameters.hasNext()) {
         parameters = parameters.getNext();
       }
@@ -240,7 +246,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     }
 
     int skip = hasFlag(PrettyPrinterFlag.SHOW_CON_PARAMS) || !(expr.getDefinition() instanceof DConstructor) ? 0 : ((DConstructor) expr.getDefinition()).getNumberOfParameters();
-    return visitParameters(makeReference(expr), DependentLink.Helper.get(expr.getDefinition().getParameters(), skip), skip == 0 || DependentLink.Helper.size(expr.getDefinition().getParameters()) != expr.getDefCallArguments().size() ? expr.getDefCallArguments() : expr.getDefCallArguments().subList(skip, expr.getDefCallArguments().size()));
+    return visitParameters(makeReference(expr), DependentLink.Helper.get(expr.getDefinition().getParameters(), skip), skip == 0 || DependentLink.Helper.size(expr.getDefinition().getParameters()) != expr.getDefCallArguments().size() ? expr.getDefCallArguments() : expr.getDefCallArguments().subList(skip, expr.getDefCallArguments().size()), getVerboseLevel(expr));
   }
 
   @Override
@@ -307,14 +313,14 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       if (showImplicitArgs && expr.getDefinition().status().headerIsOK() && hasFlag(PrettyPrinterFlag.SHOW_CON_PARAMS)) {
         List<Concrete.Argument> arguments = new ArrayList<>(expr.getDataTypeArguments().size());
         for (Expression arg : expr.getDataTypeArguments()) {
-          visitArgument(arg, false, arguments, false);
+          visitArgument(arg, false, arguments, false, false);
         }
         cExpr = Concrete.AppExpression.make(expr, cExpr, arguments);
       }
 
       int recursiveParam = expr.getDefinition().getRecursiveParameter();
       if (recursiveParam < 0) {
-        cExpr = visitParameters(cExpr, expr.getDefinition().getParameters(), expr.getDefCallArguments());
+        cExpr = visitParameters(cExpr, expr.getDefinition().getParameters(), expr.getDefCallArguments(), getVerboseLevel(expr));
         if (args != null) {
           args.set(concreteParam, new Concrete.Argument(cExpr, concreteExplicit));
         } else {
@@ -330,7 +336,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       for (int i = 0; i < expr.getDefCallArguments().size(); i++) {
         if (i != recursiveParam) {
           if (showImplicitArgs || parameters.isExplicit()) {
-            visitArgument(expr.getDefCallArguments().get(i), parameters.isExplicit(), newArgs, false);
+            visitArgument(expr.getDefCallArguments().get(i), parameters.isExplicit(), newArgs, false, false);
           }
         } else {
           if (parameters.isExplicit() || showImplicitArgs && hasFlag(PrettyPrinterFlag.SHOW_IMPLICIT_ARGS)) {
@@ -394,7 +400,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       if (implementation != null) {
         boolean genGoal = !hasFlag(PrettyPrinterFlag.SHOW_PROOFS) && field.isProperty();
         if (canBeArgument && field.getReferable().isParameterField()) {
-          visitArgument(implementation, field.getReferable().isExplicitField(), arguments, genGoal);
+          visitArgument(implementation, field.getReferable().isExplicitField(), arguments, genGoal, false);
         } else {
           statements.add(cImplStatement(field.getReferable(), genGoal ? generateHiddenGoal() : implementation.accept(this, null)));
           canBeArgument = false;
