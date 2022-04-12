@@ -1150,14 +1150,19 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
 
   @Override
   public Concrete.LamExpression visitLam(LamContext ctx) {
-    List<Concrete.Parameter> parameters = new ArrayList<>();
-    return Concrete.PatternLamExpression.make(tokenPosition(ctx.start), parameters, visitLamParams(ctx.lamParam(), parameters), visitIncompleteExpression(ctx.expr(), ctx));
+    return visitLamExpr(ctx.lamExpr());
   }
 
   @Override
   public Concrete.LamExpression visitLam2(Lam2Context ctx) {
     List<Concrete.Parameter> parameters = new ArrayList<>();
     return Concrete.PatternLamExpression.make(tokenPosition(ctx.start), parameters, visitLamParams(ctx.lamParam(), parameters), visitIncompleteExpression(ctx.expr2(), ctx));
+  }
+
+  @Override
+  public Concrete.LamExpression visitLamExpr(LamExprContext ctx) {
+    List<Concrete.Parameter> parameters = new ArrayList<>();
+    return Concrete.PatternLamExpression.make(tokenPosition(ctx.start), parameters, visitLamParams(ctx.lamParam(), parameters), visitIncompleteExpression(ctx.expr(), ctx));
   }
 
   private Concrete.Expression visitAppExpr(AppExprContext ctx) {
@@ -1239,6 +1244,16 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   @Override
   public Concrete.BinOpSequenceElem visitArgumentImplicit(ArgumentImplicitContext ctx) {
     return new Concrete.BinOpSequenceElem(visitTupleExprs(ctx.tupleExpr(), ctx.COMMA(), ctx), Fixity.NONFIX, false);
+  }
+
+  @Override
+  public Object visitArgumentLam(ArgumentLamContext ctx) {
+    return new Concrete.BinOpSequenceElem(visitLamExpr(ctx.lamExpr()), Fixity.NONFIX, true);
+  }
+
+  @Override
+  public Object visitArgumentCase(ArgumentCaseContext ctx) {
+    return new Concrete.BinOpSequenceElem(visitCaseExpr(ctx.caseExpr()), Fixity.NONFIX, true);
   }
 
   private Concrete.CoClauseElement visitCoClause(CoClauseContext ctx, List<Group> subgroups, ChildGroup parentGroup, TCDefReferable enclosingClass, TCDefReferable enclosingDefinition, boolean isDefault) {

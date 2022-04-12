@@ -146,7 +146,7 @@ expr  : appPrefix? appExpr (implementStatements argument*)? withBody?     # app
       | <assoc=right> expr '->' expr                                      # arr
       | '\\Pi' tele+ '->' expr                                            # pi
       | '\\Sigma' tele*                                                   # sigma
-      | '\\lam' lamParam+ ('=>' expr?)?                                   # lam
+      | lamExpr                                                           # lam
       | letKw '|'? letClause ('|' letClause)* ('\\in' expr?)?             # let
       | caseExpr                                                          # case
       ;
@@ -163,6 +163,8 @@ expr2 : appPrefix? appExpr (implementStatements argument*)?               # app2
 lamParam : nameTele     # lamTele
          | atomPattern  # lamPattern
          ;
+
+lamExpr : '\\lam' lamParam+ ('=>' expr?)?;
 
 caseExpr : (EVAL | PEVAL)? (CASE | SCASE) caseArg (',' caseArg)* ('\\return' returnExpr2)? withBody?;
 
@@ -188,6 +190,8 @@ argument : atomFieldsAcc                            # argumentExplicit
          | appPrefix appExpr implementStatements?   # argumentNew
          | universeAtom                             # argumentUniverse
          | '{' tupleExpr (',' tupleExpr)* ','? '}'  # argumentImplicit
+         | lamExpr                                  # argumentLam
+         | caseExpr                                 # argumentCase
          ;
 
 clauses : '{' clause? ('|' clause)* '}' # clausesWithBraces
