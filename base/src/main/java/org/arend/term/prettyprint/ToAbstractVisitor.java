@@ -118,6 +118,15 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     return myConfig.getVerboseLevel(coreExpression);
   }
 
+  private boolean shouldBeVerbose(DependentLink link) {
+    for (DependentLink thisLink = link; thisLink.hasNext(); thisLink = thisLink.getNext()) {
+      if (myConfig.getVerboseLevel(thisLink) > 0) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   private Concrete.Expression checkPath(DataCallExpression expr) {
     if (expr.getDefinition() != Prelude.PATH || hasFlag(PrettyPrinterFlag.SHOW_PREFIX_PATH)) {
       return null;
@@ -548,13 +557,13 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     List<Concrete.Parameter> parameters = new ArrayList<>();
     Expression expr = lamExpr;
     for (; lamExpr != null; lamExpr = expr.cast(LamExpression.class)) {
-      if (hasFlag(PrettyPrinterFlag.SHOW_TYPES_IN_LAM)) {
+      if (hasFlag(PrettyPrinterFlag.SHOW_TYPES_IN_LAM) || shouldBeVerbose(lamExpr.getParameters())) {
         visitDependentLink(lamExpr.getParameters(), parameters, true);
       } else {
         SingleDependentLink params = lamExpr.getParameters();
         Set<Variable> freeVars = myFreeVariablesCollector.getFreeVariables(params.getNextTyped(null));
         for (SingleDependentLink link = params; link.hasNext(); link = link.getNext()) {
-          parameters.add(cName(link.isExplicit(), makeLocalReference(link, freeVars, false)));
+          parameters.add(cName(link, link.isExplicit(), makeLocalReference(link, freeVars, false)));
         }
       }
       expr = lamExpr.getBody();

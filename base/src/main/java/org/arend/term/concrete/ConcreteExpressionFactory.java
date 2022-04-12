@@ -118,8 +118,8 @@ public class ConcreteExpressionFactory {
     return new Concrete.NameParameter(null, true, referable);
   }
 
-  public static Concrete.NameParameter cName(boolean explicit, Referable referable) {
-    return new Concrete.NameParameter(null, explicit, referable);
+  public static Concrete.NameParameter cName(Object data, boolean explicit, Referable referable) {
+    return new Concrete.NameParameter(data, explicit, referable);
   }
 
   public static Concrete.TypeParameter cTypeArg(boolean explicit, Concrete.Expression type) {
