@@ -1,5 +1,6 @@
 package org.arend.ext.prettyprinting;
 
+import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.jetbrains.annotations.NotNull;
@@ -40,6 +41,9 @@ public interface PrettyPrinterConfig {
   default int getVerboseLevel(@NotNull CoreExpression expression) {
         return 0;
     }
+  default int getVerboseLevel(@NotNull CoreParameter parameter) {
+    return 0;
+  }
 
   PrettyPrinterConfig DEFAULT = new PrettyPrinterConfig() {};
 }
