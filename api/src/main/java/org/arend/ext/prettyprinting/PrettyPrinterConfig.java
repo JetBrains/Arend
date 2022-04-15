@@ -39,8 +39,8 @@ public interface PrettyPrinterConfig {
    * then it will be printed with two additional implicit arguments.
    */
   default int getVerboseLevel(@NotNull CoreExpression expression) {
-        return 0;
-    }
+    return 0;
+  }
   default int getVerboseLevel(@NotNull CoreParameter parameter) {
     return 0;
   }
