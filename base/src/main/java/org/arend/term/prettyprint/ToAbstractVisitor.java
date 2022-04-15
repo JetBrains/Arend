@@ -587,7 +587,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
         args.add(cTypeArg(link.isExplicit(), link.getTypeExpr().accept(this, null)));
       } else {
         referableList.add(referable);
-        args.add(cTele(link.isExplicit(), new ArrayList<>(referableList), link.getTypeExpr().accept(this, null)));
+        args.add(cTele(link, link.isExplicit(), new ArrayList<>(referableList), link.getTypeExpr().accept(this, null)));
         referableList.clear();
       }
     }

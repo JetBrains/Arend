@@ -118,6 +118,10 @@ public class ConcreteExpressionFactory {
     return new Concrete.NameParameter(null, true, referable);
   }
 
+  public static Concrete.NameParameter cName(boolean explicit, Referable referable) {
+    return new Concrete.NameParameter(null, explicit, referable);
+  }
+
   public static Concrete.NameParameter cName(Object data, boolean explicit, Referable referable) {
     return new Concrete.NameParameter(data, explicit, referable);
   }
@@ -138,6 +142,10 @@ public class ConcreteExpressionFactory {
     return new Concrete.TelescopeParameter(null, explicit, referableList, type);
   }
 
+  public static Concrete.TelescopeParameter cTele(Object data, boolean explicit, List<? extends Referable> referableList, Concrete.Expression type) {
+    return new Concrete.TelescopeParameter(data, explicit, referableList, type);
+  }
+
   public static Concrete.PiExpression cPi(Concrete.Expression domain, Concrete.Expression codomain) {
     return new Concrete.PiExpression(null, ctypeArgs(cTypeArg(domain)), codomain);
   }
@@ -147,7 +155,7 @@ public class ConcreteExpressionFactory {
   }
 
   public static Concrete.PiExpression cPi(boolean explicit, Referable var, Concrete.Expression domain, Concrete.Expression codomain) {
-    return new Concrete.PiExpression(null, ctypeArgs(cTele(explicit, cvars(var), domain)), codomain);
+    return new Concrete.PiExpression(null, ctypeArgs(cTele(null, explicit, cvars(var), domain)), codomain);
   }
 
   public static Concrete.PiExpression cPi(Referable var, Concrete.Expression domain, Concrete.Expression codomain) {
