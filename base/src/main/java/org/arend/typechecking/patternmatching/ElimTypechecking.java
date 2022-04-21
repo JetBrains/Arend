@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
 import static org.arend.core.expr.ExpressionFactory.*;
 
 public class ElimTypechecking {
-  private final ErrorReporter myErrorReporter;
+  private final @Nullable ErrorReporter myErrorReporter;
   private final Equations myEquations;
   private Set<Integer> myUnusedClauses;
   private final PatternTypechecking.Mode myMode;
@@ -61,7 +61,7 @@ public class ElimTypechecking {
     return result == null ? null : result + 1;
   }
 
-  public ElimTypechecking(ErrorReporter errorReporter, Equations equations, Expression expectedType, PatternTypechecking.Mode mode, @Nullable Integer level, @NotNull Level actualLevel, boolean isSFunc, List<? extends Concrete.FunctionClause> clauses, Concrete.SourceNode sourceNode) {
+  public ElimTypechecking(@Nullable ErrorReporter errorReporter, Equations equations, Expression expectedType, PatternTypechecking.Mode mode, @Nullable Integer level, @NotNull Level actualLevel, boolean isSFunc, List<? extends Concrete.FunctionClause> clauses, Concrete.SourceNode sourceNode) {
     myErrorReporter = errorReporter;
     myEquations = equations;
     myExpectedType = expectedType;
@@ -70,7 +70,7 @@ public class ElimTypechecking {
     mySourceNode = sourceNode;
 
     int actualLevelSub = 0;
-    if (!actualLevel.isProp()) {
+    if (!actualLevel.isProp() && expectedType != null) {
       Expression pathType = expectedType.getPiParameters(null, false);
       for (DataCallExpression dataCall = pathType.cast(DataCallExpression.class); dataCall != null; dataCall = pathType.cast(DataCallExpression.class)) {
         if (dataCall.getDefinition() == Prelude.PATH) {
@@ -103,7 +103,7 @@ public class ElimTypechecking {
     myActualLevelSub = isSFunc ? 0 : actualLevelSub;
   }
 
-  public ElimTypechecking(ErrorReporter errorReporter, Equations equations, Expression expectedType, PatternTypechecking.Mode mode, List<? extends Concrete.FunctionClause> clauses, Concrete.SourceNode sourceNode) {
+  public ElimTypechecking(@Nullable ErrorReporter errorReporter, Equations equations, Expression expectedType, PatternTypechecking.Mode mode, List<? extends Concrete.FunctionClause> clauses, Concrete.SourceNode sourceNode) {
     myErrorReporter = errorReporter;
     myEquations = equations;
     myExpectedType = expectedType;
@@ -224,12 +224,12 @@ public class ElimTypechecking {
         }
         if (hasNonIntervals || intervals == 0) {
           nonIntervalClauses.add(new ExtElimClause(clause.getPatterns(), clause.getExpression(), i));
-          if (!intervalClauses.isEmpty() && errorClause == null) {
+          if (!intervalClauses.isEmpty() && errorClause == null && myErrorReporter != null) {
             errorClause = getClause(i, null);
           }
         } else {
           if (intervals > 1) {
-            myErrorReporter.report(new TypecheckingError("Only a single interval pattern per row is allowed", getClause(i, null)));
+            if (myErrorReporter != null) myErrorReporter.report(new TypecheckingError("Only a single interval pattern per row is allowed", getClause(i, null)));
             myUnusedClauses.remove(i);
           } else {
             intervalClauses.add(clause);
@@ -259,7 +259,7 @@ public class ElimTypechecking {
 
       for (int k = 0; k < nonIntervalClauses.size(); k++) {
         for (int j = i; j < nonIntervalClauses.get(k).getPatterns().size(); j++) {
-          if (!(nonIntervalClauses.get(k).getPatterns().get(j) instanceof BindingPattern)) {
+          if (!(nonIntervalClauses.get(k).getPatterns().get(j) instanceof BindingPattern) && myErrorReporter != null) {
             myErrorReporter.report(new TypecheckingError("A pattern matching on a data type is allowed only before the pattern matching on the interval", getClause(k, null)));
             myOK = false;
           }
@@ -311,7 +311,7 @@ public class ElimTypechecking {
 
       reportMissingClauses(elimTree, parameters, elimParams);
 
-      if (myOK) {
+      if (myOK && myErrorReporter != null) {
         for (Integer clauseIndex : myUnusedClauses) {
           myErrorReporter.report(new RedundantClauseError(getClause(clauseIndex, null)));
         }
@@ -487,6 +487,7 @@ public class ElimTypechecking {
   }
 
   private Map<DependentLink, List<Pair<ExpressionPattern, Map<DependentLink, Constructor>>>> computeParamSpec(DependentLink param, DataCallExpression dataCall, List<DependentLink> elimParams, Map<DependentLink, List<ConCallExpression>> paramSpec2, DependentLink parameters) {
+    if (myErrorReporter == null) return null;
     Map<DependentLink, List<Pair<ExpressionPattern, Map<DependentLink, Constructor>>>> paramSpec = new HashMap<>();
 
     for (Constructor constructor : dataCall.getDefinition().getConstructors()) {
@@ -524,6 +525,7 @@ public class ElimTypechecking {
   }
 
   private DependentLink reportNoClauses(DependentLink parameters, List<DependentLink> elimParams) {
+    if (myErrorReporter == null) return null;
     if (parameters.hasNext() && !parameters.getNext().hasNext()) {
       DataCallExpression dataCall = parameters.getTypeExpr().cast(DataCallExpression.class);
       if (dataCall != null && dataCall.getDefinition() == Prelude.INTERVAL) {
@@ -636,6 +638,7 @@ public class ElimTypechecking {
   }
 
   private boolean reportMissingClauses(ElimTree elimTree, DependentLink parameters, List<DependentLink> elimParams) {
+    if (myErrorReporter == null) return true;
     if (myMissingClauses == null || myMissingClauses.isEmpty()) {
       return false;
     }
@@ -644,13 +647,9 @@ public class ElimTypechecking {
     loop:
     for (Pair<List<Util.ClauseElem>, Boolean> missingClause : myMissingClauses) {
       List<ExpressionPattern> patterns = Util.unflattenClauses(missingClause.proj1);
-      List<Expression> expressions = new ArrayList<>(patterns.size());
-      for (ExpressionPattern pattern : patterns) {
-        expressions.add(pattern.toExpression());
-      }
 
       if (!missingClause.proj2) {
-        if (elimTree != null && NormalizeVisitor.INSTANCE.doesEvaluate(elimTree, expressions, false)) {
+        if (elimTree != null && NormalizeVisitor.INSTANCE.doesEvaluate(elimTree, ExpressionPattern.toExpressions(patterns), false)) {
           continue;
         }
 
@@ -837,7 +836,7 @@ public class ElimTypechecking {
           }
           conCalls = dataCall.getMatchedConstructors();
           if (conCalls == null) {
-            myErrorReporter.report(new ImpossibleEliminationError(dataCall, getClause(conClause.index, someConPattern), null, null, null, null, null));
+            if (myErrorReporter != null) myErrorReporter.report(new ImpossibleEliminationError(dataCall, getClause(conClause.index, someConPattern), null, null, null, null, null));
             myOK = false;
             return null;
           }
@@ -872,12 +871,12 @@ public class ElimTypechecking {
       }
 
       if (dataType == Prelude.INTERVAL) {
-        myErrorReporter.report(new TypecheckingError("Pattern matching on the interval is not allowed here", getClause(conClause.index, someConPattern)));
+        if (myErrorReporter != null) myErrorReporter.report(new TypecheckingError("Pattern matching on the interval is not allowed here", getClause(conClause.index, someConPattern)));
         myOK = false;
         return null;
       }
 
-      if (dataType != null && dataType.isSquashed()) {
+      if (dataType != null && dataType.isSquashed() && myErrorReporter != null) {
         if (myActualLevel != null && !Level.compare(myActualLevel, dataType.getSort().getHLevel().add(myActualLevelSub), CMP.LE, myEquations, getClause(conClause.index, someConPattern))) {
           myErrorReporter.report(new SquashedDataError(dataType, myActualLevel, myActualLevelSub, getClause(conClause.index, someConPattern)));
         }
@@ -1052,7 +1051,7 @@ public class ElimTypechecking {
         // we need to check that it isn't mapped to a clause with a variable
         // unless constructors to which the current one evaluates is also mapped to the same clause.
         // We need this because condition checker doesn't check clauses with variables.
-        if (hasVars && dataType != null && branchKey instanceof Constructor && branchKey.getBody() != null) {
+        if (hasVars && dataType != null && branchKey instanceof Constructor && branchKey.getBody() != null && myErrorReporter != null) {
           Set<Integer> indices = new HashSet<>();
           collectClauseIndices(elimTree, indices);
           for (ExtElimClause clause : clauses) {

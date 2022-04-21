@@ -784,12 +784,10 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
         InternalConcreteLocatedReferable reference = new InternalConcreteLocatedReferable(tokenPosition(defId.ID().getSymbol()), defId.ID().getText(), visitPrecedence(defId.precedence()), alias.proj1, alias.proj2, true, def.getData(), LocatedReferableImpl.Kind.CONSTRUCTOR);
         Concrete.Constructor constructor = new Concrete.Constructor(reference, def, visitTeles(conCtx.tele(), true), visitElim(elimCtx), clauses, conCtx.COERCE() != null);
         reference.setDefinition(constructor);
-        /* TODO[hits]
-        ExprContext type = conCtx.expr();
+        Expr2Context type = conCtx.expr2();
         if (type != null) {
           constructor.setResultType(visitExpr(type));
         }
-        */
         constructors.add(reference);
         result.add(constructor);
       } catch (ParseException ignored) {

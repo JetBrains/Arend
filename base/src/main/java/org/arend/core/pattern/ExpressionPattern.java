@@ -37,6 +37,14 @@ public interface ExpressionPattern extends Pattern, CoreExpressionPattern {
     return DocFactory.pattern(this, ppConfig);
   }
 
+  static List<Expression> toExpressions(List<? extends ExpressionPattern> patterns) {
+    List<Expression> result = new ArrayList<>(patterns.size());
+    for (ExpressionPattern pattern : patterns) {
+      result.add(pattern.toExpression());
+    }
+    return result;
+  }
+
   static List<Pattern> removeExpressions(List<? extends ExpressionPattern> patterns) {
     List<Pattern> result = new ArrayList<>();
     for (ExpressionPattern pattern : patterns) {

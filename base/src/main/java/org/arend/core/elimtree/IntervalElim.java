@@ -43,6 +43,10 @@ public class IntervalElim implements Body, CoreIntervalElim {
     }
   }
 
+  public int getNumberOfParameters() {
+    return myNumberOfParameters;
+  }
+
   @NotNull
   @Override
   public List<CasePair> getCases() {

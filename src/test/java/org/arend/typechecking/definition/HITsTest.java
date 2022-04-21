@@ -1,11 +1,12 @@
 package org.arend.typechecking.definition;
 
+import org.arend.Matchers;
 import org.arend.typechecking.TypeCheckingTestCase;
+import org.arend.typechecking.error.local.NotEnoughPatternsError;
 import org.junit.Ignore;
 import org.junit.Test;
 
-@Ignore // TODO[hits]
-public class HITs extends TypeCheckingTestCase {
+public class HITsTest extends TypeCheckingTestCase {
   @Test
   public void typedData() {
     typeCheckModule("\\data Nat' | zero' : Nat' | suc' Nat' : Nat'");
@@ -23,7 +24,7 @@ public class HITs extends TypeCheckingTestCase {
 
   @Test
   public void pathTypedDataError2() {
-    typeCheckModule("\\data S1 | loop : base = base | base", 2);
+    typeCheckModule("\\data S1 | loop : base = base | base", 1);
   }
 
   @Test
@@ -37,13 +38,45 @@ public class HITs extends TypeCheckingTestCase {
   }
 
   @Test
+  public void goalTest() {
+    typeCheckModule(
+      "\\data S1 | base | loop : base = base\n" +
+      "\\func f : base = base => loop\n" +
+      "\\func g (x : S1) : S1\n" +
+      "  | base => base\n" +
+      "  | loop => {?}", 1);
+    assertThatErrorsAre(Matchers.goal(0));
+  }
+
+  @Test
+  public void depTest() {
+    typeCheckModule(
+      "\\data S1 | base | loop : base = base\n" +
+      "\\func f : base = base => loop\n" +
+      "\\func g (x : S1) : x = x\n" +
+      "  | base => idp\n" +
+      "  | loop => path (\\lam i => idp)");
+  }
+
+  @Test
   public void s1TestError() {
     typeCheckModule(
       "\\data S1 | base | base' | loop : base = base\n" +
       "\\func g (x : S1) : S1\n" +
       "  | base => base'\n" +
       "  | base' => base'\n" +
-      "  | loop => loop", 1);
+      "  | loop => loop", 2);
+  }
+
+  @Test
+  public void s1TestError2() {
+    typeCheckModule(
+      "\\data S1 | base | loop I : base = base\n" +
+      "\\func f : base = base => loop left\n" +
+      "\\func g (x : S1) : S1\n" +
+      "  | base => base\n" +
+      "  | loop => f", 1);
+    assertThatErrorsAre(Matchers.typecheckingError(NotEnoughPatternsError.class));
   }
 
   @Test
@@ -53,7 +86,7 @@ public class HITs extends TypeCheckingTestCase {
       "\\data S1' | base' | loop' Nat : base' = base' \\with { | zero => idp }\n" +
       "\\func f : base' = base' => loop' 0\n" +
       "\\func f' => loop'\n" +
-      "\\func f'' : Nat -> base' = base' => f'\n" +
+      "\\func f'' : Nat -> base' = base' => \\lam n => f' n\n" +
       "\\func fTest : f = idp => idp\n" +
       "\\func g (x : S1') : S1\n" +
       "  | base' => base\n" +
@@ -91,7 +124,7 @@ public class HITs extends TypeCheckingTestCase {
     typeCheckModule(
       "\\func idpe {A : \\Type} (a : A) : a = a => idp\n" +
       "\\data S2 | base | loop I : base = base \\with { | left => idp | right => idp }\n" +
-      "\\func f : I -> base = base => loop\n" +
+      "\\func f : I -> base = base => \\lam i => loop i\n" +
       "\\func f' (i : I) : base = base => loop i\n" +
       "\\func fLeft : loop left = idpe base => idp\n" +
       "\\func fRight : loop right = idpe base => idp\n" +
@@ -137,48 +170,37 @@ public class HITs extends TypeCheckingTestCase {
   public void typed1Error() {
     typeCheckModule(
       "\\data D | con | con' : con = con\n" +
-      "\\func g (d : D) : Nat | con => 1 | con' => path (\\lam _ => 0)", 1);
-  }
-
-  @Test
-  public void typed2() {
-    typeCheckModule(
-      "\\data D | con | con' (p : con = con) : p = p\n" +
-      "\\func f : idp = idp => con' idp\n" +
-      "\\func g (d : D) : Nat | con => 0 | con' p => idp\n" +
-      "\\func h (d : D) : Nat | con => 0 | con' p => idp {_} {path (\\lam i => h (p @ i))}");
+      "\\func g (d : D) : Nat | con => 1 | con' => path (\\lam _ => 0)", 2);
   }
 
   @Test
   public void square() {
-    typeCheckModule(
-      "\\func \\infixr 9 *> {A : \\Type} {a a' a'' : A} (p : a = a') (q : a' = a'') => coe (\\lam i => a = q @ i) p right\n" +
-      "\\data Square\n" +
-      "  | v00 | v01 | v10 | v11\n" +
-      "  | v-0 : v00 = v10 | v-1 : v01 = v11 | v0- : v00 = v01 | v1- : v10 = v11\n" +
-      "  | square : v-0 *> v1- = v0- *> v-1\n" +
-      "\\func f : v-0 *> v1- = v0- *> v-1 => square\n" +
-      "\\func g (s : Square) : Nat\n" +
-      "  | v00 => 0 | v01 => 0 | v10 => 0 | v11 => 0\n" +
-      "  | v0- => idp | v1- => idp | v-0 => idp | v-1 => idp\n" +
-      "  | square => idp {_} {idp}\n" +
-      "\\func h (s : Square) (p : 0 = 0) (q : p *> p = p) \\elim s\n" +
-      "  | v00 => 0 | v01 => 0 | v10 => 0 | v11 => 0\n" +
-      "  | v0- => p | v-1 => idp | v-0 => p | v1- => p\n" +
-      "  | square => q");
-  }
-
-  @Test
-  public void square2() {
     typeCheckModule(
       "\\data Square\n" +
       "  | v00 | v01 | v10 | v11\n" +
       "  | v-0 : v00 = v10 | v-1 : v01 = v11 | v0- : v00 = v01 | v1- : v10 = v11\n" +
       "  | square : Path (\\lam i => v-0 @ i = v-1 @ i) v0- v1-\n" +
       "\\func f : Path (\\lam i => v-0 @ i = v-1 @ i) v0- v1- => square\n" +
-      "\\func g (s : Square) (p : 0 = 0) : Nat \\elim s\n" +
-      "  | v00 => 0 | v01 => 0 | v10 => 0 | v11 => 0\n" +
+      "\\func g {A : \\Type} (a : A) (s : Square) (p : a = a) : A \\elim s\n" +
+      "  | v00 => a | v01 => a | v10 => a | v11 => a\n" +
       "  | v0- => p | v1- => p | v-0 => idp | v-1 => idp\n" +
       "  | square => idp {_} {p}");
+  }
+
+  @Test
+  public void threeArgs() {
+    typeCheckModule(
+      "\\data S1 | base | loop : base = base\n" +
+      "\\func f : base = base => loop\n" +
+      "\\func g (x y z : S1) (p : Path (\\lam i => loop i = loop i) (path loop) (path loop))\n" +
+      "         (q : Path (\\lam i => Path (\\lam j => p i j = p i j) (p i) (p i)) p p) : S1 \\elim x, y, z\n" +
+      "  | base, base, base => base\n" +
+      "  | loop, base, base => loop\n" +
+      "  | base, loop, base => loop\n" +
+      "  | base, base, loop => loop\n" +
+      "  | base, loop, loop => p\n" +
+      "  | loop, base, loop => p\n" +
+      "  | loop, loop, base => p\n" +
+      "  | loop, loop, loop => q");
   }
 }

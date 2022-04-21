@@ -116,7 +116,7 @@ atomPatternOrID : atomPattern     # patternOrIDAtom
                 | longName        # patternID
                 ;
 
-constructor : COERCE? defId tele* /* TODO[hits] (':' expr)? */ (elim? '{' clause? ('|' clause)* '}')?;
+constructor : COERCE? defId tele* (':' expr2)? (elim? '{' clause? ('|' clause)* '}')?;
 
 topDefId : defId plevelParams? hlevelParams?;
 

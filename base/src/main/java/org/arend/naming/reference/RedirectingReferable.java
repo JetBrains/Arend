@@ -9,6 +9,9 @@ public interface RedirectingReferable extends GlobalReferable {
     while (ref instanceof RedirectingReferable) {
       ref = ((RedirectingReferable) ref).getOriginalReferable();
     }
+    if (ref == null) {
+      throw new IllegalStateException();
+    }
     return ref;
   }
 

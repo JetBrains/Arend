@@ -455,7 +455,41 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         }
       }
     } else if (expectedType instanceof DataCallExpression && ((DataCallExpression) expectedType).getDefinition() == Prelude.PATH && result.type instanceof PiExpression) {
-      return checkExpr(Concrete.AppExpression.make(expr.getData(), new Concrete.ReferenceExpression(expr.getData(), Prelude.PATH_CON.getRef()), new Concrete.ReferenceExpression(expr.getData(), new CoreReferable(null, result)), true), expectedType);
+      int n1 = 0;
+      Expression actualType = result.type;
+      while (actualType instanceof PiExpression && ((PiExpression) actualType).getParameters().isExplicit()) {
+        n1 += DependentLink.Helper.size(((PiExpression) actualType).getParameters());
+        actualType = ((PiExpression) actualType).getCodomain().normalize(NormalizationMode.WHNF);
+      }
+
+      int n2 = 0;
+      Expression eType = expectedType;
+      while (eType instanceof DataCallExpression && ((DataCallExpression) eType).getDefinition() == Prelude.PATH) {
+        n2++;
+        eType = AppExpression.make(((DataCallExpression) eType).getDefCallArguments().get(0), new ReferenceExpression(new TypedBinding("i", ExpressionFactory.Interval())), true).normalize(NormalizationMode.WHNF);
+      }
+
+      int n = Math.min(n1, n2);
+      if (n > 0) {
+        List<Referable> refs = new ArrayList<>(n - 1);
+        for (int i = 1; i < n; i++) {
+          refs.add(new GeneratedLocalReferable("i" + i));
+        }
+        Concrete.Expression newExpr = new Concrete.ReferenceExpression(expr.getData(), new CoreReferable(null, result));
+        if (!refs.isEmpty()) {
+          List<Concrete.Argument> args = new ArrayList<>(refs.size());
+          for (Referable ref : refs) {
+            args.add(new Concrete.Argument(new Concrete.ReferenceExpression(expr.getData(), ref), true));
+          }
+          newExpr = Concrete.AppExpression.make(expr.getData(), newExpr, args);
+        }
+        Concrete.Expression pathRef = new Concrete.ReferenceExpression(expr.getData(), Prelude.PATH_CON.getRef());
+        newExpr = Concrete.AppExpression.make(expr.getData(), pathRef, newExpr, true);
+        for (int i = refs.size() - 1; i >= 0; i--) {
+          newExpr = Concrete.AppExpression.make(expr.getData(), pathRef, new Concrete.LamExpression(expr.getData(), Collections.singletonList(new Concrete.NameParameter(expr.getData(), true, refs.get(i))), newExpr), true);
+        }
+        return checkExpr(newExpr, expectedType);
+      }
     } else if (expectedType instanceof PiExpression && result.type instanceof DataCallExpression && ((DataCallExpression) result.type).getDefinition() == Prelude.PATH) {
       return checkExpr(Concrete.AppExpression.make(expr.getData(), new Concrete.ReferenceExpression(expr.getData(), Prelude.AT.getRef()), new Concrete.ReferenceExpression(expr.getData(), new CoreReferable(null, result)), true), expectedType);
     }
@@ -632,7 +666,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       patterns1.add((Concrete.Pattern) pattern);
     }
     try (var ignored = new Utils.SetContextSaver<>(context)) {
-      PatternTypechecking.Result result = new PatternTypechecking(errorReporter, PatternTypechecking.Mode.CASE, this, false, null, Collections.emptyList()).typecheckPatterns(patterns1, null, (DependentLink) parameters, new ExprSubstitution(), new ExprSubstitution(), marker);
+      PatternTypechecking.Result result = new PatternTypechecking(PatternTypechecking.Mode.CASE, this, false, null, Collections.emptyList()).typecheckPatterns(patterns1, null, (DependentLink) parameters, new ExprSubstitution(), new ExprSubstitution(), marker);
       //noinspection unchecked
       return result == null ? null : (List<CoreExpressionPattern>) (List<?>) result.getPatterns();
     }
@@ -3760,7 +3794,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
     List<ExtElimClause> clauses;
     try {
-      PatternTypechecking patternTypechecking = new PatternTypechecking(errorReporter, PatternTypechecking.Mode.CASE, this, false, expressions, Collections.emptyList());
+      PatternTypechecking patternTypechecking = new PatternTypechecking(PatternTypechecking.Mode.CASE, this, false, expressions, Collections.emptyList());
       clauses = patternTypechecking.typecheckClauses(expr.getClauses(), list.getFirst(), resultExpr);
     } finally {
       for (Referable ref : addedRefs) {

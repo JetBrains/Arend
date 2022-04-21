@@ -171,11 +171,6 @@ public class ConditionsChecking {
         defCallArgs1.add(i == index ? (isLeft ? ExpressionFactory.Left() : ExpressionFactory.Right()) : new ReferenceExpression(link));
       }
 
-      List<Expression> defCallArgs2 = new ArrayList<>(clause.getPatterns().size());
-      for (ExpressionPattern pattern : clause.getPatterns()) {
-        defCallArgs2.add(pattern.toExpression());
-      }
-
       if (!pathSubstitution.isEmpty()) {
         substitution1 = new ExprSubstitution();
         link = definition.getParameters();
@@ -188,7 +183,7 @@ public class ConditionsChecking {
       }
 
       Levels levels = definition.makeMinLevels();
-      myErrorReporter.report(new ConditionsError(new Condition(definition.getDefCall(levels, defCallArgs1), substitution1, evaluatedExpr1), new Condition(definition.getDefCall(levels, defCallArgs2), substitution2, evaluatedExpr2), sourceNode));
+      myErrorReporter.report(new ConditionsError(new Condition(definition.getDefCall(levels, defCallArgs1), substitution1, evaluatedExpr1), new Condition(definition.getDefCall(levels, ExpressionPattern.toExpressions(clause.getPatterns())), substitution2, evaluatedExpr2), sourceNode));
       return false;
     } else {
       return true;
@@ -267,9 +262,7 @@ public class ConditionsChecking {
     boolean ok = true;
     for (Pair<List<Expression>, ExprSubstitution> pair : collectPatterns(clause.getPatterns(), clause.getSubstitution(), sourceNode)) {
       if (!clause.getSubstitution().isEmpty()) {
-        for (int i = 0; i < pair.proj1.size(); i++) {
-          pair.proj1.set(i, pair.proj1.get(i).subst(clause.getSubstitution()));
-        }
+        pair.proj1.replaceAll(expression -> expression.subst(clause.getSubstitution()));
       }
 
       Expression evaluatedExpr1;
@@ -302,10 +295,7 @@ public class ConditionsChecking {
   private boolean checkCondition(Expression expr, Pair<List<Expression>, ExprSubstitution> pair, Expression evaluatedExpr1, ExtElimClause clause, Definition definition, Concrete.SourceNode sourceNode, ErrorReporter errorReporter) {
     Expression evaluatedExpr2 = expr.subst(pair.proj2);
     if (evaluatedExpr1 == null || !CompareVisitor.compare(myEquations, CMP.EQ, evaluatedExpr1, evaluatedExpr2, null, sourceNode)) {
-      List<Expression> args = new ArrayList<>();
-      for (ExpressionPattern pattern : clause.getPatterns()) {
-        args.add(pattern.toExpression());
-      }
+      List<Expression> args = ExpressionPattern.toExpressions(clause.getPatterns());
       Expression expr1 = definition == null ? new CaseExpression(false, EmptyDependentLink.getInstance(), new ErrorExpression(), null, new ElimBody(Collections.emptyList(), new BranchElimTree(0, false)), args) : definition.getDefCall(definition.makeMinLevels(), args);
       errorReporter.report(new ConditionsError(new Condition(expr1, pair.proj2, evaluatedExpr1), new Condition(clause.getExpression(), pair.proj2, evaluatedExpr2), sourceNode));
       return false;

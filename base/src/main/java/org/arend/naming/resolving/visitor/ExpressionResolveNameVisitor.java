@@ -171,16 +171,10 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
 
   private void resolveLevels(Concrete.ReferenceExpression expr) {
     if (expr.getPLevels() != null) {
-      List<Concrete.LevelExpression> pLevels = expr.getPLevels();
-      for (int i = 0; i < pLevels.size(); i++) {
-        pLevels.set(i, pLevels.get(i).accept(this, LevelVariable.PVAR));
-      }
+      expr.getPLevels().replaceAll(levelExpression -> levelExpression.accept(this, LevelVariable.PVAR));
     }
     if (expr.getHLevels() != null) {
-      List<Concrete.LevelExpression> hLevels = expr.getHLevels();
-      for (int i = 0; i < hLevels.size(); i++) {
-        hLevels.set(i, hLevels.get(i).accept(this, LevelVariable.HVAR));
-      }
+      expr.getHLevels().replaceAll(levelExpression -> levelExpression.accept(this, LevelVariable.HVAR));
     }
   }
 
@@ -612,7 +606,8 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       }
 
       if (namePattern.type == null) {
-        Referable ref = myReferableConverter.convert(RedirectingReferable.getOriginalReferable(myParentScope.resolveName(referable.getRefName())));
+        Referable resolved = myParentScope.resolveName(referable.getRefName());
+        Referable ref = resolved == null ? null : myReferableConverter.convert(RedirectingReferable.getOriginalReferable(resolved));
         if (ref instanceof GlobalReferable && ((GlobalReferable) ref).getKind().isConstructor()) {
           return (GlobalReferable) ref;
         }

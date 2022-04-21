@@ -243,15 +243,7 @@ public class ConstructorExpressionPattern extends ConstructorPattern<Object> imp
 
   @Override
   public Expression toExpression() {
-    List<Expression> arguments = new ArrayList<>();
-    for (ExpressionPattern pattern : getSubPatterns()) {
-      Expression argument = pattern.toExpression();
-      if (argument == null) {
-        return null;
-      }
-      arguments.add(argument);
-    }
-    return toExpression(arguments);
+    return toExpression(ExpressionPattern.toExpressions(getSubPatterns()));
   }
 
   @Override

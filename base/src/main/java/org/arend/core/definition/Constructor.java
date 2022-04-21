@@ -150,10 +150,7 @@ public class Constructor extends Definition implements Function, BranchKey, Core
       }
     } else {
       if (dataTypeArguments == null) {
-        arguments = new ArrayList<>(myPatterns.size());
-        for (ExpressionPattern pattern : myPatterns) {
-          arguments.add(pattern.toExpression());
-        }
+        arguments = ExpressionPattern.toExpressions(myPatterns);
       } else {
         arguments = ExpressionPattern.applyClauseArguments(myPatterns, dataTypeArguments, levels.makeSubstitution(getDataType()));
       }

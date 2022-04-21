@@ -1217,7 +1217,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     } else if (body instanceof Concrete.ElimFunctionBody) {
       Concrete.ElimFunctionBody elimBody = (Concrete.ElimFunctionBody) body;
       List<DependentLink> elimParams = ElimTypechecking.getEliminatedParameters(elimBody.getEliminatedReferences(), elimBody.getClauses(), typedDef.getParameters(), typechecker);
-      clauses = elimParams == null ? null : new PatternTypechecking(errorReporter, PatternTypechecking.Mode.FUNCTION, typechecker, true, null, elimParams).typecheckClauses(elimBody.getClauses(), def.getParameters(), typedDef.getParameters(), expectedType);
+      CountingErrorReporter countingErrorReporter = new CountingErrorReporter(PathEndpointMismatchError.class, errorReporter);
+      if (elimParams != null) {
+        clauses = typechecker.withErrorReporter(countingErrorReporter, tc -> new PatternTypechecking(PatternTypechecking.Mode.FUNCTION, typechecker, true, null, elimParams).typecheckClauses(elimBody.getClauses(), def.getParameters(), typedDef.getParameters(), expectedType));
+      }
       Sort sort = expectedType.getSortOfType();
       Body typedBody = clauses == null ? null : new ElimTypechecking(errorReporter, typechecker.getEquations(), expectedType, PatternTypechecking.Mode.FUNCTION, typeLevel, sort != null ? sort.getHLevel() : Level.INFINITY, kind.isSFunc() && kind != FunctionKind.TYPE, elimBody.getClauses(), def).typecheckElim(clauses, typedDef.getParameters(), elimParams);
       if (typedBody != null) {
@@ -1225,7 +1228,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           typedDef.setBody(typedBody);
           typedDef.addStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         }
-        boolean conditionsResult = typedDef.getKind() == CoreFunctionDefinition.Kind.LEMMA || new ConditionsChecking(DummyEquations.getInstance(), errorReporter, def).check(typedBody, clauses, elimBody.getClauses(), typedDef);
+        boolean conditionsResult = countingErrorReporter.getErrorsNumber() > 0 || typedDef.getKind() == CoreFunctionDefinition.Kind.LEMMA || new ConditionsChecking(DummyEquations.getInstance(), errorReporter, def).check(typedBody, clauses, elimBody.getClauses(), typedDef);
         if (myNewDef && !conditionsResult) {
           typedDef.addStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
         }
@@ -1647,7 +1650,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
     if (!def.getConstructorClauses().isEmpty()) {
       Map<Referable, Binding> context = typechecker.getContext();
-      PatternTypechecking dataPatternTypechecking = elimParams == null ? null : new PatternTypechecking(errorReporter, PatternTypechecking.Mode.DATA, typechecker, true, null, elimParams);
+      PatternTypechecking dataPatternTypechecking = elimParams == null ? null : new PatternTypechecking(PatternTypechecking.Mode.DATA, typechecker, true, null, elimParams);
 
       Set<TCReferable> notAllowedConstructors = new HashSet<>();
       for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
@@ -1753,7 +1756,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       // Check if constructors pattern match on the interval
       for (Constructor constructor : dataDefinition.getConstructors()) {
         if (constructor.getBody() instanceof IntervalElim && !inferredSort.getHLevel().isInfinity()) {
-          inferredSort = new Sort(inferredSort.getPLevel(), Level.INFINITY);
+          Sort.compare(new Sort(inferredSort.getPLevel(), Level.INFINITY), inferredSort, CMP.LE, typechecker.getEquations(), def);
+          break;
         }
       }
 
@@ -1876,7 +1880,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     Expression expectedType = constructor.getDataTypeExpression(constructor.makeIdLevels());
-    if (type == null || !Expression.compare(type, expectedType, Type.OMEGA, CMP.EQ)) {
+    if (type == null || !CompareVisitor.compare(typechecker.getEquations(), CMP.EQ, type, expectedType, Type.OMEGA, sourceNode)) {
       errorReporter.report(new TypecheckingError("Expected an iterated path type in " + expectedType, sourceNode));
       return null;
     }
@@ -1944,7 +1948,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
     Constructor oldConstructor = constructor != null ? constructor : (Constructor) def.getData().getTypechecked();
 
-    List<DependentLink> elimParams = null;
+    List<DependentLink> elimParams;
     Expression constructorType = null;
     LinkList list = new LinkList();
     boolean ok;
@@ -1979,44 +1983,14 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         def.setResultType(null);
       }
 
-      if (!def.getClauses().isEmpty()) {
-        elimParams = ElimTypechecking.getEliminatedParameters(def.getEliminatedReferences(), def.getClauses(), list.getFirst(), typechecker);
-      }
+      elimParams = def.getClauses().isEmpty() ? null : ElimTypechecking.getEliminatedParameters(def.getEliminatedReferences(), def.getClauses(), list.getFirst(), typechecker);
     }
 
     if (constructor != null && def.isCoerce()) {
       dataDefinition.getCoerceData().addCoercingConstructor(constructor, errorReporter, def);
     }
 
-    if (elimParams != null) {
-      try (var ignored = new Utils.SetContextSaver<>(typechecker.getContext())) {
-        Expression expectedType = oldConstructor.getDataTypeExpression(oldConstructor.makeIdLevels());
-        PatternTypechecking patternTypechecking = new PatternTypechecking(errorReporter, PatternTypechecking.Mode.CONSTRUCTOR, typechecker, false, null, elimParams);
-        List<ExtElimClause> clauses = patternTypechecking.typecheckClauses(def.getClauses(), def.getParameters(), oldConstructor.getParameters(), expectedType);
-        if (clauses != null) {
-          for (int i = 0; i < clauses.size(); i++) {
-            checkConstructorsOnlyOnTop(clauses.get(i).getExpression(), dataDefinition, def.getClauses().get(i).getExpression());
-          }
-        }
-        Body body = clauses == null ? null : new ElimTypechecking(errorReporter, typechecker.getEquations(), expectedType, PatternTypechecking.Mode.CONSTRUCTOR, def.getClauses(), def).typecheckElim(clauses, oldConstructor.getParameters(), elimParams);
-        if (constructor != null) {
-          constructor.setBody(body);
-          constructor.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-        }
-
-        boolean dataSortIsProp = dataDefinition.getSort().isProp();
-        if (dataSortIsProp) {
-          dataDefinition.setSort(Sort.SET0);
-        }
-        if (body != null) {
-          new ConditionsChecking(typechecker.getEquations(), errorReporter, def).check(body, clauses, def.getClauses(), oldConstructor);
-        }
-        if (dataSortIsProp) {
-          dataDefinition.setSort(Sort.PROP);
-        }
-      }
-    }
-
+    List<DependentLink> newParams = new ArrayList<>();
     if (constructor != null && constructorType != null) {
       int numberOfNewParameters = 0;
       for (Expression type = constructorType; type instanceof DataCallExpression && ((DataCallExpression) type).getDefinition() == Prelude.PATH; type = ((LamExpression) ((DataCallExpression) type).getDefCallArguments().get(0)).getBody()) {
@@ -2024,9 +1998,15 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
 
       if (numberOfNewParameters != 0) {
+        if (elimParams != null && elimParams.isEmpty()) {
+          elimParams = DependentLink.Helper.toList(list.getFirst());
+        }
+
         DependentLink newParam = new TypedDependentLink(true, "i" + numberOfNewParameters, Interval(), EmptyDependentLink.getInstance());
+        newParams.add(newParam);
         for (int i = numberOfNewParameters - 1; i >= 1; i--) {
           newParam = new UntypedDependentLink("i" + i, newParam);
+          newParams.add(newParam);
         }
         list.append(newParam);
         constructor.setParameters(list.getFirst());
@@ -2044,16 +2024,74 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           elimBody = constructor.getBody() instanceof ElimBody ? (ElimBody) constructor.getBody() : null;
         }
 
-        while (constructorType instanceof DataCallExpression && ((DataCallExpression) constructorType).getDefinition() == Prelude.PATH) {
-          List<Expression> pathArgs = ((DataCallExpression) constructorType).getDefCallArguments();
+        int i = 0;
+        Expression type = constructorType;
+        while (type instanceof DataCallExpression && ((DataCallExpression) type).getDefinition() == Prelude.PATH) {
+          List<Expression> pathArgs = ((DataCallExpression) type).getDefCallArguments();
           LamExpression lamExpr = (LamExpression) pathArgs.get(0);
-          constructorType = lamExpr.getBody();
-          pairs.add(new IntervalElim.CasePair(addAts(pathArgs.get(1), newParam, constructorType.subst(lamExpr.getParameters(), Left())), addAts(pathArgs.get(2), newParam, constructorType.subst(lamExpr.getParameters(), Right()))));
-          constructorType = constructorType.subst(lamExpr.getParameters(), new ReferenceExpression(newParam));
+          type = lamExpr.getBody();
+          DependentLink param = newParams.get(i++);
+          pairs.add(new IntervalElim.CasePair(addAts(pathArgs.get(1), param, type.subst(lamExpr.getParameters(), Left())), addAts(pathArgs.get(2), param, type.subst(lamExpr.getParameters(), Right()))));
+          type = type.subst(lamExpr.getParameters(), new ReferenceExpression(newParam));
           newParam = newParam.getNext();
         }
 
         constructor.setBody(new IntervalElim(DependentLink.Helper.size(list.getFirst()), pairs, elimBody));
+      }
+    }
+
+    if (elimParams != null) {
+      try (var ignored = new Utils.SetContextSaver<>(typechecker.getContext())) {
+        Expression expectedType = constructorType != null ? constructorType : oldConstructor.getDataTypeExpression(oldConstructor.makeIdLevels());
+        CountingErrorReporter countingErrorReporter = new CountingErrorReporter(PathEndpointMismatchError.class, errorReporter);
+        List<DependentLink> finalElimParams = elimParams;
+        List<ExtElimClause> clauses = typechecker.withErrorReporter(countingErrorReporter, tc -> new PatternTypechecking(PatternTypechecking.Mode.CONSTRUCTOR, typechecker, false, null, finalElimParams).typecheckClauses(def.getClauses(), def.getParameters(), oldConstructor.getParameters(), expectedType));
+        if (clauses != null) {
+          if (!newParams.isEmpty()) {
+            for (ExtElimClause clause : clauses) {
+              Expression expr = clause.getExpression();
+              if (expr == null) continue;
+              for (DependentLink param : newParams) {
+                expr = AtExpression.make(expr.normalize(NormalizationMode.WHNF), new ReferenceExpression(param), true);
+              }
+              clause.setExpression(expr);
+            }
+          }
+          for (int i = 0; i < clauses.size(); i++) {
+            checkConstructorsOnlyOnTop(clauses.get(i).getExpression(), dataDefinition, def.getClauses().get(i).getExpression());
+          }
+        }
+        Body body = clauses == null ? null : new ElimTypechecking(errorReporter, typechecker.getEquations(), expectedType, PatternTypechecking.Mode.CONSTRUCTOR, def.getClauses(), def).typecheckElim(clauses, oldConstructor.getParameters(), elimParams);
+        if (constructor != null) {
+          if (body != null) {
+            if (constructor.getBody() instanceof IntervalElim) {
+              IntervalElim intervalElim = (IntervalElim) constructor.getBody();
+              if (body instanceof IntervalElim) {
+                IntervalElim oldIntervalElim = (IntervalElim) body;
+                List<IntervalElim.CasePair> cases = new ArrayList<>();
+                cases.addAll(oldIntervalElim.getCases().subList(0, oldIntervalElim.getCases().size() - intervalElim.getCases().size()));
+                cases.addAll(intervalElim.getCases());
+                constructor.setBody(new IntervalElim(intervalElim.getNumberOfParameters(), cases, oldIntervalElim.getOtherwise()));
+              } else if (body instanceof ElimBody) {
+                constructor.setBody(new IntervalElim(intervalElim.getNumberOfParameters(), intervalElim.getCases(), (ElimBody) body));
+              }
+            } else {
+              constructor.setBody(body);
+            }
+          }
+          constructor.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+        }
+
+        boolean dataSortIsProp = dataDefinition.getSort().isProp();
+        if (dataSortIsProp) {
+          dataDefinition.setSort(Sort.SET0);
+        }
+        if (body != null && countingErrorReporter.getErrorsNumber() == 0) {
+          new ConditionsChecking(typechecker.getEquations(), errorReporter, def).check(body, clauses, def.getClauses(), oldConstructor);
+        }
+        if (dataSortIsProp) {
+          dataDefinition.setSort(Sort.PROP);
+        }
       }
     }
 
