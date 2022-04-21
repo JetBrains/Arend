@@ -225,9 +225,15 @@ public class PatternTypechecking {
 
             intervalSubst.add(intervalBinding, Left());
             Expression leftArg = evalBody(intervalSubst, (ElimBody) body, args);
+            if (leftArg == null && definition != null) {
+              leftArg = makeFunCall(definition, args, intervalSubst, clause);
+            }
 
             intervalSubst.add(intervalBinding, Right());
             Expression rightArg = evalBody(intervalSubst, (ElimBody) body, args);
+            if (rightArg == null && definition != null) {
+              rightArg = makeFunCall(definition, args, intervalSubst, clause);
+            }
 
             if (leftArg == null || rightArg == null) {
               myErrorReporter.report(new TypecheckingError("Cannot evaluate conditions", clause));
@@ -280,14 +286,43 @@ public class PatternTypechecking {
       return true;
     }
   }
-  private Expression normalizeRecursiveCalls(Expression expr, Definition def) {
+
+  private Expression makeFunCall(FunctionDefinition definition, List<Expression> args, ExprSubstitution substitution, Concrete.SourceNode sourceNode) {
+    List<Expression> newArgs = new ArrayList<>(args.size());
+    for (Expression arg : args) {
+      newArgs.add(arg.subst(substitution));
+    }
+    Levels levels = definition.generateInferVars(myVisitor.getEquations(), sourceNode);
+    LevelSubstitution levelSubst = levels.makeSubstitution(definition);
+    ExprSubstitution paramSubst = new ExprSubstitution();
+    DependentLink param = definition.getParameters();
+    for (Expression arg : newArgs) {
+      Expression paramType = param.getTypeExpr().subst(paramSubst, levelSubst);
+      if (!CompareVisitor.compare(myVisitor.getEquations(), CMP.LE, arg.getType(), paramType, Type.OMEGA, sourceNode)) {
+        return null;
+      }
+      paramSubst.add(param, arg);
+      param = param.getNext();
+    }
+    return FunCallExpression.makeFunCall(definition, levels, newArgs);
+  }
+
+  private Expression normalizeRecursiveCalls(Expression expr, FunctionDefinition def) {
     return expr.accept(new SubstVisitor(new ExprSubstitution(), LevelSubstitution.EMPTY) {
       @Override
       public Expression visitFunCall(FunCallExpression expr, Void params) {
         if (expr.getDefinition() == def) {
           Expression result = NormalizeVisitor.INSTANCE.eval(expr);
           if (result != null) {
-            return result;
+            if (result instanceof FunCallExpression && ((FunCallExpression) result).getDefinition() == def) {
+              FunCallExpression funCall = (FunCallExpression) result;
+              List<Expression> args = new ArrayList<>();
+              for (Expression arg : funCall.getDefCallArguments()) {
+                args.add(arg.accept(this, null).normalize(NormalizationMode.WHNF));
+              }
+              return FunCallExpression.make(def, funCall.getLevels(), args);
+            }
+            return result.accept(this, null);
           }
         }
         return super.visitDefCall(expr, params);

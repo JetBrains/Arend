@@ -85,7 +85,7 @@ public class HITsTest extends TypeCheckingTestCase {
       "\\data S1' | base' | loop' Nat : base' = base' \\with { | zero => idp }\n" +
       "\\func f : base' = base' => loop' 0\n" +
       "\\func f' => loop'\n" +
-      "\\func f'' : Nat -> base' = base' => \\lam n => path (loop' n)\n" + // TODO
+      "\\func f'' : Nat -> base' = base' => \\lam n => f' n\n" +
       "\\func fTest : f = idp => idp\n" +
       "\\func g (x : S1') : S1\n" +
       "  | base' => base\n" +
@@ -212,5 +212,15 @@ public class HITsTest extends TypeCheckingTestCase {
       "  | con2 d => test d\n" +
       "  | con3 d => test d\n" +
       "  | con4 d => idp");
+  }
+
+  @Test
+  public void sideNotConstructor() {
+    typeCheckModule(
+      "\\data D | con1 | con2 D | con3 (d : D) : con2 d = d \n" +
+      "\\func test (d : D) : Nat\n" +
+      "  | con1 => 0\n" +
+      "  | con2 d => test d\n" +
+      "  | con3 d => idp");
   }
 }
