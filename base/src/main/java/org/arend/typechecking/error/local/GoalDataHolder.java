@@ -5,7 +5,6 @@ import org.arend.core.context.binding.EvaluatingBinding;
 import org.arend.core.expr.Expression;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.ext.concrete.ConcreteSourceNode;
-import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.doc.Doc;
@@ -35,9 +34,9 @@ public class GoalDataHolder extends TypecheckingError {
                         @Nullable Expression expectedType) {
     super(level, message, cause);
     this.typecheckingContext = typecheckingContext;
-    this.bindingTypes = normalizeValues(bindingTypes);
+    this.bindingTypes = bindingTypes;
     this.substitution = calculateSubstitution(typecheckingContext);
-    this.expectedType = expectedType == null ? null : expectedType.subst(substitution).normalize(NormalizationMode.RNF);
+    this.expectedType = expectedType == null ? null : expectedType.subst(substitution);
   }
 
   @NotNull
@@ -88,13 +87,5 @@ public class GoalDataHolder extends TypecheckingError {
   @Override
   public boolean hasExpressions() {
     return true;
-  }
-
-  private Map<Binding, Expression> normalizeValues(Map<Binding, Expression> baseMap) {
-    Map<Binding, Expression> newMap = new LinkedHashMap<>(baseMap.size());
-    for (Map.Entry<Binding, Expression> entry : baseMap.entrySet()) {
-      newMap.put(entry.getKey(), entry.getValue().normalize(NormalizationMode.RNF));
-    }
-    return newMap;
   }
 }
