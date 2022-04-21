@@ -1219,7 +1219,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       List<DependentLink> elimParams = ElimTypechecking.getEliminatedParameters(elimBody.getEliminatedReferences(), elimBody.getClauses(), typedDef.getParameters(), typechecker);
       CountingErrorReporter countingErrorReporter = new CountingErrorReporter(PathEndpointMismatchError.class, errorReporter);
       if (elimParams != null) {
-        clauses = typechecker.withErrorReporter(countingErrorReporter, tc -> new PatternTypechecking(PatternTypechecking.Mode.FUNCTION, typechecker, true, null, elimParams).typecheckClauses(elimBody.getClauses(), def.getParameters(), typedDef.getParameters(), expectedType));
+        clauses = typechecker.withErrorReporter(countingErrorReporter, tc -> new PatternTypechecking(PatternTypechecking.Mode.FUNCTION, typechecker, true, null, elimParams).typecheckClauses(elimBody.getClauses(), def.getParameters(), typedDef.getParameters(), expectedType, myNewDef ? typedDef : null));
       }
       Sort sort = expectedType.getSortOfType();
       Body typedBody = clauses == null ? null : new ElimTypechecking(errorReporter, typechecker.getEquations(), expectedType, PatternTypechecking.Mode.FUNCTION, typeLevel, sort != null ? sort.getHLevel() : Level.INFINITY, kind.isSFunc() && kind != FunctionKind.TYPE, elimBody.getClauses(), def).typecheckElim(clauses, typedDef.getParameters(), elimParams);
@@ -2045,7 +2045,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         Expression expectedType = constructorType != null ? constructorType : oldConstructor.getDataTypeExpression(oldConstructor.makeIdLevels());
         CountingErrorReporter countingErrorReporter = new CountingErrorReporter(PathEndpointMismatchError.class, errorReporter);
         List<DependentLink> finalElimParams = elimParams;
-        List<ExtElimClause> clauses = typechecker.withErrorReporter(countingErrorReporter, tc -> new PatternTypechecking(PatternTypechecking.Mode.CONSTRUCTOR, typechecker, false, null, finalElimParams).typecheckClauses(def.getClauses(), def.getParameters(), oldConstructor.getParameters(), expectedType));
+        List<ExtElimClause> clauses = typechecker.withErrorReporter(countingErrorReporter, tc -> new PatternTypechecking(PatternTypechecking.Mode.CONSTRUCTOR, typechecker, false, null, finalElimParams).typecheckClauses(def.getClauses(), def.getParameters(), oldConstructor.getParameters(), expectedType, null));
         if (clauses != null) {
           if (!newParams.isEmpty()) {
             for (ExtElimClause clause : clauses) {

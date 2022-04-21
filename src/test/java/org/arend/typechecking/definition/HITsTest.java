@@ -3,7 +3,6 @@ package org.arend.typechecking.definition;
 import org.arend.Matchers;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.arend.typechecking.error.local.NotEnoughPatternsError;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class HITsTest extends TypeCheckingTestCase {
@@ -86,7 +85,7 @@ public class HITsTest extends TypeCheckingTestCase {
       "\\data S1' | base' | loop' Nat : base' = base' \\with { | zero => idp }\n" +
       "\\func f : base' = base' => loop' 0\n" +
       "\\func f' => loop'\n" +
-      "\\func f'' : Nat -> base' = base' => \\lam n => f' n\n" +
+      "\\func f'' : Nat -> base' = base' => \\lam n => path (loop' n)\n" + // TODO
       "\\func fTest : f = idp => idp\n" +
       "\\func g (x : S1') : S1\n" +
       "  | base' => base\n" +
@@ -202,5 +201,16 @@ public class HITsTest extends TypeCheckingTestCase {
       "  | loop, base, loop => p\n" +
       "  | loop, loop, base => p\n" +
       "  | loop, loop, loop => q");
+  }
+
+  @Test
+  public void recursiveFunction() {
+    typeCheckModule(
+      "\\data D | con1 | con2 D | con3 D | con4 (d : D) : con2 (con3 d) = con3 (con2 d)\n" +
+      "\\func test (d : D) : Nat\n" +
+      "  | con1 => 0\n" +
+      "  | con2 d => test d\n" +
+      "  | con3 d => test d\n" +
+      "  | con4 d => idp");
   }
 }

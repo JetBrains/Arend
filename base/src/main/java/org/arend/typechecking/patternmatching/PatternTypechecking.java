@@ -118,23 +118,23 @@ public class PatternTypechecking {
   }
 
   public List<ExtElimClause> typecheckClauses(List<Concrete.FunctionClause> clauses, DependentLink parameters, Expression expectedType) {
-    return typecheckClauses(clauses, null, parameters, expectedType);
+    return typecheckClauses(clauses, null, parameters, expectedType, null);
   }
 
-  public List<ExtElimClause> typecheckClauses(List<Concrete.FunctionClause> clauses, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, Expression expectedType) {
+  public List<ExtElimClause> typecheckClauses(List<Concrete.FunctionClause> clauses, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, Expression expectedType, FunctionDefinition definition) {
     this.clausesParameters = parameters;
 
     List<ExtElimClause> result = new ArrayList<>(clauses.size());
     boolean ok = true;
     for (Concrete.FunctionClause clause : clauses) {
-      if (!typecheckClause(clause, abstractParameters, parameters, expectedType, result)) {
+      if (!typecheckClause(clause, abstractParameters, parameters, expectedType, result, definition)) {
         ok = false;
       }
     }
     return ok ? result : null;
   }
 
-  private boolean typecheckClause(Concrete.FunctionClause clause, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, Expression expectedType, List<ExtElimClause> resultClauses) {
+  private boolean typecheckClause(Concrete.FunctionClause clause, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, Expression expectedType, List<ExtElimClause> resultClauses, FunctionDefinition definition) {
     assert myVisitor != null;
     try (var ignored = new Utils.SetContextSaver<>(myVisitor.getContext())) {
       // Typecheck patterns
@@ -182,82 +182,92 @@ public class PatternTypechecking {
         globalInstancePool.setInstancePool(instancePool.subst(substitution));
       }
 
-      List<Binding> intervalBindings;
-      Expression exprType = expectedType;
-      if (!myPathPatterns.isEmpty()) {
-        Body body = new ElimTypechecking(null, null, null, myMode, null, Level.INFINITY, false, null, null).typecheckElim(resultClauses, parameters, myElimParams);
-        if (body == null) {
-          myErrorReporter.report(new TypecheckingError("Cannot compute body", clause));
-          return false;
-        }
-        if (!(body instanceof ElimBody)) {
-          myErrorReporter.report(new TypecheckingError("Incorrect body", clause));
-          return false;
-        }
-        Sort sort = expectedType.getSortOfType();
-        if (sort == null) {
-          myErrorReporter.report(new TypecheckingError("Cannot infer the sort of the type", clause));
-          return false;
-        }
-
-        intervalBindings = new ArrayList<>();
-        getIntervalBindings(result.patterns, 0, intervalBindings);
-
-        List<TypedSingleDependentLink> lamBindings = new ArrayList<>(intervalBindings.size());
-        ExprSubstitution intervalSubst = new ExprSubstitution();
-        for (Binding binding : intervalBindings) {
-          TypedSingleDependentLink link = new TypedSingleDependentLink(true, binding.getName(), binding.getType());
-          lamBindings.add(link);
-          intervalSubst.add(binding, new ReferenceExpression(link));
-        }
-
-        LevelPair levels = new LevelPair(sort.getPLevel(), sort.getHLevel());
-        Sort hSort = new Sort(sort.getPLevel(), Level.INFINITY);
-        exprType = expectedType.subst(intervalSubst);
-        List<Expression> exprTypes = new ArrayList<>(intervalBindings.size());
-        List<Expression> args = ExpressionPattern.toExpressions(result.patterns);
-        for (int i = intervalBindings.size() - 1; i >= 0; i--) {
-          exprTypes.add(exprType);
-          Binding intervalBinding = intervalBindings.get(i);
-
-          intervalSubst.add(intervalBinding, Left());
-          Expression leftArg = evalBody(intervalSubst, (ElimBody) body, args);
-
-          intervalSubst.add(intervalBinding, Right());
-          Expression rightArg = evalBody(intervalSubst, (ElimBody) body, args);
-
-          if (leftArg == null || rightArg == null) {
-            myErrorReporter.report(new TypecheckingError("Cannot evaluate conditions", clause));
+      TypecheckingResult tcResult;
+      try {
+        List<Binding> intervalBindings;
+        Expression exprType = expectedType;
+        if (!myPathPatterns.isEmpty()) {
+          Body body = new ElimTypechecking(null, null, null, myMode, null, Level.INFINITY, false, null, null).typecheckElim(resultClauses, parameters, myElimParams);
+          if (body == null) {
+            myErrorReporter.report(new TypecheckingError("Cannot compute body", clause));
+            return false;
+          }
+          if (!(body instanceof ElimBody)) {
+            myErrorReporter.report(new TypecheckingError("Incorrect body", clause));
+            return false;
+          }
+          Sort sort = expectedType.getSortOfType();
+          if (sort == null) {
+            myErrorReporter.report(new TypecheckingError("Cannot infer the sort of the type", clause));
             return false;
           }
 
-          for (int j = intervalBindings.size() - 1, k = 0; j > i; j--, k++) {
-            leftArg  = new PathExpression(levels, new LamExpression(hSort, lamBindings.get(j), exprTypes.get(k).subst(lamBindings.get(i), Left())),  new LamExpression(hSort, lamBindings.get(j), leftArg));
-            rightArg = new PathExpression(levels, new LamExpression(hSort, lamBindings.get(j), exprTypes.get(k).subst(lamBindings.get(i), Right())), new LamExpression(hSort, lamBindings.get(j), rightArg));
-          }
+          if (definition != null) definition.setBody(body);
+          intervalBindings = new ArrayList<>();
+          getIntervalBindings(result.patterns, 0, intervalBindings);
 
-          intervalSubst.add(intervalBinding, new ReferenceExpression(lamBindings.get(i)));
-          exprType = new DataCallExpression(Prelude.PATH, levels, Arrays.asList(new LamExpression(hSort, lamBindings.get(i), exprType), leftArg, rightArg));
-        }
-      } else {
-        intervalBindings = null;
-      }
-
-      // Typecheck the RHS
-      TypecheckingResult tcResult;
-      tcResult = myVisitor.checkExpr(clause.getExpression(), exprType);
-      if (intervalBindings != null && tcResult != null) {
-        ErrorExpression errorExpr = tcResult.expression.cast(ErrorExpression.class);
-        if (!(errorExpr != null && errorExpr.isGoal())) {
-          Expression resultExpr = tcResult.expression;
+          List<TypedSingleDependentLink> lamBindings = new ArrayList<>(intervalBindings.size());
+          ExprSubstitution intervalSubst = new ExprSubstitution();
           for (Binding binding : intervalBindings) {
-            resultExpr = AtExpression.make(resultExpr, new ReferenceExpression(binding), false);
+            TypedSingleDependentLink link = new TypedSingleDependentLink(true, binding.getName(), binding.getType());
+            lamBindings.add(link);
+            intervalSubst.add(binding, new ReferenceExpression(link));
           }
-          tcResult = new TypecheckingResult(resultExpr, expectedType);
+
+          LevelPair levels = new LevelPair(sort.getPLevel(), sort.getHLevel());
+          Sort hSort = new Sort(sort.getPLevel(), Level.INFINITY);
+          exprType = expectedType.subst(intervalSubst);
+          List<Expression> exprTypes = new ArrayList<>(intervalBindings.size());
+          List<Expression> args = ExpressionPattern.toExpressions(result.patterns);
+          for (int i = intervalBindings.size() - 1; i >= 0; i--) {
+            exprTypes.add(exprType);
+            Binding intervalBinding = intervalBindings.get(i);
+
+            intervalSubst.add(intervalBinding, Left());
+            Expression leftArg = evalBody(intervalSubst, (ElimBody) body, args);
+
+            intervalSubst.add(intervalBinding, Right());
+            Expression rightArg = evalBody(intervalSubst, (ElimBody) body, args);
+
+            if (leftArg == null || rightArg == null) {
+              myErrorReporter.report(new TypecheckingError("Cannot evaluate conditions", clause));
+              return false;
+            }
+
+            if (definition != null) {
+              leftArg = normalizeRecursiveCalls(leftArg, definition);
+              rightArg = normalizeRecursiveCalls(rightArg, definition);
+            }
+
+            for (int j = intervalBindings.size() - 1, k = 0; j > i; j--, k++) {
+              leftArg = new PathExpression(levels, new LamExpression(hSort, lamBindings.get(j), exprTypes.get(k).subst(lamBindings.get(i), Left())), new LamExpression(hSort, lamBindings.get(j), leftArg));
+              rightArg = new PathExpression(levels, new LamExpression(hSort, lamBindings.get(j), exprTypes.get(k).subst(lamBindings.get(i), Right())), new LamExpression(hSort, lamBindings.get(j), rightArg));
+            }
+
+            intervalSubst.add(intervalBinding, new ReferenceExpression(lamBindings.get(i)));
+            exprType = new DataCallExpression(Prelude.PATH, levels, Arrays.asList(new LamExpression(hSort, lamBindings.get(i), exprType), leftArg, rightArg));
+          }
+        } else {
+          intervalBindings = null;
         }
-      }
-      if (myFinal) {
-        tcResult = myVisitor.finalize(tcResult, clause.getExpression(), false);
+
+        // Typecheck the RHS
+        tcResult = myVisitor.checkExpr(clause.getExpression(), exprType);
+        if (intervalBindings != null && tcResult != null) {
+          ErrorExpression errorExpr = tcResult.expression.cast(ErrorExpression.class);
+          if (!(errorExpr != null && errorExpr.isGoal())) {
+            Expression resultExpr = tcResult.expression;
+            for (Binding binding : intervalBindings) {
+              resultExpr = AtExpression.make(resultExpr, new ReferenceExpression(binding), false);
+            }
+            tcResult = new TypecheckingResult(resultExpr, expectedType);
+          }
+        }
+        if (myFinal) {
+          tcResult = myVisitor.finalize(tcResult, clause.getExpression(), false);
+        }
+      } finally {
+        if (definition != null) definition.setBody(null);
       }
       if (instancePool != null) {
         globalInstancePool.setInstancePool(instancePool);
@@ -269,6 +279,20 @@ public class PatternTypechecking {
       resultClauses.add(elimClause);
       return true;
     }
+  }
+  private Expression normalizeRecursiveCalls(Expression expr, Definition def) {
+    return expr.accept(new SubstVisitor(new ExprSubstitution(), LevelSubstitution.EMPTY) {
+      @Override
+      public Expression visitFunCall(FunCallExpression expr, Void params) {
+        if (expr.getDefinition() == def) {
+          Expression result = NormalizeVisitor.INSTANCE.eval(expr);
+          if (result != null) {
+            return result;
+          }
+        }
+        return super.visitDefCall(expr, params);
+      }
+    }, null);
   }
 
   private Expression evalBody(ExprSubstitution substitution, ElimBody body, List<Expression> args) {

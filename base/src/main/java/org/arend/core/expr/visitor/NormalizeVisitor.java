@@ -476,13 +476,13 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
   }
 
   public Expression eval(Expression expr) {
-    if (expr instanceof FunCallExpression) {
-      FunCallExpression funCall = (FunCallExpression) expr;
-      Body body = funCall.getDefinition().getActualBody();
+    if (expr instanceof LeveledDefCallExpression) {
+      LeveledDefCallExpression defCall = (LeveledDefCallExpression) expr;
+      Body body = defCall instanceof FunCallExpression ? ((FunCallExpression) defCall).getDefinition().getActualBody() : defCall instanceof ConCallExpression ? ((ConCallExpression) defCall).getDefinition().getBody() : null;
       if (body instanceof Expression) {
-        return ((Expression) body).subst(new ExprSubstitution().add(funCall.getDefinition().getParameters(), funCall.getDefCallArguments()), funCall.getLevelSubstitution());
+        return ((Expression) body).subst(new ExprSubstitution().add(defCall.getDefinition().getParameters(), defCall.getDefCallArguments()), defCall.getLevelSubstitution());
       } else if (body instanceof ElimBody) {
-        return eval((ElimBody) body, funCall.getDefCallArguments(), new ExprSubstitution(), funCall.getLevelSubstitution(), expr, null);
+        return eval((ElimBody) body, defCall.getDefCallArguments(), new ExprSubstitution(), defCall.getLevelSubstitution(), expr, null);
       } else {
         return null;
       }
