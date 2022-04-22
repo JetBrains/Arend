@@ -380,29 +380,6 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       }
     }
 
-    if (result.type instanceof ClassCallExpression && expectedType instanceof ClassCallExpression) {
-      ClassCallExpression actualClassCall = (ClassCallExpression) result.type;
-      ClassCallExpression expectedClassCall = (ClassCallExpression) expectedType;
-      if (actualClassCall.getDefinition().isSubClassOf(expectedClassCall.getDefinition()) && actualClassCall.getDefinition() != Prelude.DEP_ARRAY) {
-        boolean replace = false;
-        for (ClassField field : expectedClassCall.getImplementedHere().keySet()) {
-          if (!actualClassCall.isImplemented(field)) {
-            replace = true;
-            break;
-          }
-        }
-
-        if (replace) {
-          if (!actualClassCall.getImplementedHere().isEmpty()) {
-            actualClassCall = new ClassCallExpression(actualClassCall.getDefinition(), actualClassCall.getLevels(), Collections.emptyMap(), actualClassCall.getSort(), actualClassCall.getUniverseKind());
-          }
-          result.expression = new NewExpression(result.expression, actualClassCall);
-          result.type = result.expression.getType();
-          return checkResultExpr(expectedClassCall, result, expr);
-        }
-      }
-    }
-
     boolean actualIsType = result.type instanceof FunCallExpression && ((FunCallExpression) result.type).getDefinition().getKind() == CoreFunctionDefinition.Kind.TYPE;
     boolean expectedIsType = expectedType instanceof FunCallExpression && ((FunCallExpression) expectedType).getDefinition().getKind() == CoreFunctionDefinition.Kind.TYPE;
     if (!(actualIsType && expectedIsType && ((FunCallExpression) result.type).getDefinition() == ((FunCallExpression) expectedType).getDefinition())) {
@@ -427,6 +404,29 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
           return new Pair<>(result.expression, true);
         });
         if (coerceResult != null) return coerceResult.proj1;
+      }
+    }
+
+    if (result.type instanceof ClassCallExpression && expectedType instanceof ClassCallExpression) {
+      ClassCallExpression actualClassCall = (ClassCallExpression) result.type;
+      ClassCallExpression expectedClassCall = (ClassCallExpression) expectedType;
+      if (actualClassCall.getDefinition().isSubClassOf(expectedClassCall.getDefinition()) && actualClassCall.getDefinition() != Prelude.DEP_ARRAY) {
+        boolean replace = false;
+        for (ClassField field : expectedClassCall.getImplementedHere().keySet()) {
+          if (!actualClassCall.isImplemented(field)) {
+            replace = true;
+            break;
+          }
+        }
+
+        if (replace) {
+          if (!actualClassCall.getImplementedHere().isEmpty()) {
+            actualClassCall = new ClassCallExpression(actualClassCall.getDefinition(), actualClassCall.getLevels(), Collections.emptyMap(), actualClassCall.getSort(), actualClassCall.getUniverseKind());
+          }
+          result.expression = new NewExpression(result.expression, actualClassCall);
+          result.type = result.expression.getType();
+          return checkResultExpr(expectedClassCall, result, expr);
+        }
       }
     }
 
@@ -1570,19 +1570,17 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       }
     }
     if (isClassExtOrRef) {
-      if (expectedType != null) {
-        expectedType = expectedType.normalize(NormalizationMode.WHNF);
-      }
+      Expression unfoldedType = expectedType == null ? null : TypeConstructorExpression.unfoldType(expectedType);
       Concrete.Expression baseExpr = classExpr instanceof Concrete.ClassExtExpression ? ((Concrete.ClassExtExpression) classExpr).getBaseClassExpression() : classExpr;
-      Definition actualDef = expectedType instanceof ClassCallExpression && baseExpr instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) baseExpr).getReferent() instanceof TCDefReferable ? ((TCDefReferable) ((Concrete.ReferenceExpression) baseExpr).getReferent()).getTypechecked() : null;
+      Definition actualDef = unfoldedType instanceof ClassCallExpression && baseExpr instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) baseExpr).getReferent() instanceof TCDefReferable ? ((TCDefReferable) ((Concrete.ReferenceExpression) baseExpr).getReferent()).getTypechecked() : null;
       if (baseExpr instanceof Concrete.HoleExpression || actualDef instanceof ClassDefinition) {
         ClassCallExpression actualClassCall = null;
-        if (baseExpr instanceof Concrete.HoleExpression && !(expectedType instanceof ClassCallExpression)) {
+        if (baseExpr instanceof Concrete.HoleExpression && !(unfoldedType instanceof ClassCallExpression)) {
           errorReporter.report(new TypecheckingError("Cannot infer an expression", baseExpr));
           return null;
         }
 
-        ClassCallExpression expectedClassCall = (ClassCallExpression) expectedType;
+        ClassCallExpression expectedClassCall = (ClassCallExpression) unfoldedType;
         if (baseExpr instanceof Concrete.ReferenceExpression) {
           Concrete.ReferenceExpression baseRefExpr = (Concrete.ReferenceExpression) baseExpr;
           boolean ok = ((ClassDefinition) actualDef).isSubClassOf(expectedClassCall.getDefinition());
@@ -1600,7 +1598,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
             }
           }
           if (!ok) {
-            errorReporter.report(new TypeMismatchError(expectedType, baseExpr, baseExpr));
+            errorReporter.report(new TypeMismatchError(unfoldedType, baseExpr, baseExpr));
             return null;
           }
         }

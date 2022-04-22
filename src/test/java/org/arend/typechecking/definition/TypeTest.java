@@ -209,4 +209,31 @@ public class TypeTest extends TypeCheckingTestCase {
       "\\type F => \\Sigma E Nat\n" +
       "\\func test (x : F) => \\let ((_,a),_) => x \\in a");
   }
+
+  @Test
+  public void recordTest() {
+    typeCheckModule(
+      "\\record R (a x y : Nat)\n" +
+      "\\type S => R 0\n" +
+      "\\func test : S => \\new R { | x => 0 | y => 0 }");
+  }
+
+  @Test
+  public void recordEtaTest() {
+    typeCheckModule(
+      "\\record R (a x y : Nat)\n" +
+      "\\type S => R 0\n" +
+      "\\func test1 (s : S) : s = \\new R 0 s.x s.y => idp\n" +
+      "\\func test2 (s : S) : s = \\new R s.a s.x s.y => idp");
+  }
+
+  @Test
+  public void newExtTest() {
+    typeCheckModule(
+      "\\record R (x y : Nat)\n" +
+      "\\record S (r : R) (a : Nat)\n" +
+      "\\type R' => R\n" +
+      "\\func wrap (r : R) : R' => r\n" +
+      "\\func test (s : S) : R s.r.x => wrap s.r");
+  }
 }
