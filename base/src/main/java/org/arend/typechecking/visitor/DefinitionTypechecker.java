@@ -2434,10 +2434,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
 
       for (ClassField field : typedDef.getFields()) {
-        if (overriddenHere.contains(field)) {
-          continue;
-        }
-
         ClassDefinition originalSuperClass = null;
         PiExpression type = null;
         for (ClassDefinition superClass : typedDef.getSuperClasses()) {
@@ -2447,7 +2443,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
               originalSuperClass = superClass;
               TypedSingleDependentLink thisParam = new TypedSingleDependentLink(false, "this", new ClassCallExpression(typedDef, idLevels), true);
               type = new PiExpression(superType.getResultSort(), thisParam, superType.applyExpression(new ReferenceExpression(thisParam)));
-            } else {
+            } else if (!overriddenHere.contains(field)) {
               if (!CompareVisitor.compare(DummyEquations.getInstance(), CMP.EQ, type.getCodomain(), superType.applyExpression(new ReferenceExpression(type.getParameters())), Type.OMEGA, def)) {
                 if (!type.getCodomain().reportIfError(errorReporter, def) && !superType.getCodomain().reportIfError(errorReporter, def)) {
                   errorReporter.report(new TypecheckingError("The types of the field '" + field.getName() + "' differ in super classes '" + originalSuperClass.getName() + "' and '" + superClass.getName() + "'", def));
@@ -2458,8 +2454,14 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             }
           }
         }
-        if (myNewDef && type != null) {
-          overrideField(field, type, typedDef, def);
+        if (type != null) {
+          typedDef.overrideField(field, type);
+        }
+      }
+
+      for (Map.Entry<ClassField, PiExpression> entry : typedDef.getOverriddenFields()) {
+        if (!overriddenHere.contains(entry.getKey())) {
+          overrideField(entry.getKey(), entry.getValue(), typedDef, def);
         }
       }
     }
@@ -3055,7 +3057,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         return;
       }
     }
-    classDef.overrideField(field, type);
+    if (myNewDef) {
+      classDef.overrideField(field, type);
+    }
   }
 
   public static void setDefaultDependencies(Concrete.ClassDefinition concreteDef) {

@@ -422,7 +422,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
   }
 
   public PiExpression overrideField(ClassField field, PiExpression type) {
-    return myOverridden.putIfAbsent(field, type);
+    return myOverridden.put(field, type);
   }
 
   public Set<? extends ClassField> getGoodThisFields() {
