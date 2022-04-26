@@ -538,7 +538,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
       } else {
         appExpr = goalCheckingResult.expression;
       }
-      return new TypecheckingResult(appExpr, expectedType);
+      return new TypecheckingResult(appExpr, expectedType != null && !(expectedType instanceof Type && ((Type) expectedType).isOmega()) ? expectedType : goalCheckingResult.expression);
     } else {
       result = myVisitor.checkExpr(fun, null);
     }
