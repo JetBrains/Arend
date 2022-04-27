@@ -684,8 +684,8 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     for (Expression field : expr.getFields()) {
       fields.add(field.accept(this, null));
     }
-    Concrete.Expression result = cTuple(fields);
-    if (hasFlag(PrettyPrinterFlag.SHOW_TUPLE_TYPE)) {
+    Concrete.Expression result = cTuple(expr, fields);
+    if (hasFlag(PrettyPrinterFlag.SHOW_TUPLE_TYPE) || getVerboseLevel(expr) > 0) {
       result = new Concrete.TypedExpression(expr, result, visitSigma(expr.getSigmaType(), null));
     }
     return result;
