@@ -85,13 +85,13 @@ public class ModuleSerialization {
 
     TCReferable tcReferable = referableConverter.toDataLocatedReferable(referable);
     Definition typechecked = tcReferable instanceof TCDefReferable ? ((TCDefReferable) tcReferable).getTypechecked() : null;
-    if (typechecked != null && typechecked.status() == Definition.TypeCheckingStatus.NO_ERRORS && !(typechecked instanceof Constructor || typechecked instanceof ClassField)) {
+    if (typechecked != null && typechecked.status().withoutErrors() && !(typechecked instanceof Constructor || typechecked instanceof ClassField)) {
       builder.setDefinition(myDefinitionSerialization.writeDefinition(typechecked));
       int index = myCallTargetIndexProvider.getDefIndex(typechecked);
       refBuilder.setIndex(index);
       myCurrentDefinitions.add(index);
     }
-    if (tcReferable != null && (typechecked == null || typechecked.status() != Definition.TypeCheckingStatus.NO_ERRORS) && tcReferable.getKind() != GlobalReferable.Kind.OTHER) {
+    if (tcReferable != null && (typechecked == null || !typechecked.status().withoutErrors()) && tcReferable.getKind() != GlobalReferable.Kind.OTHER) {
       myComplete = false;
     }
     builder.setReferable(refBuilder.build());
