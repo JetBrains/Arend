@@ -171,7 +171,11 @@ public class ConcreteExpressionFactory {
   }
 
   public static Concrete.TupleExpression cTuple(List<Concrete.Expression> fields) {
-    return new Concrete.TupleExpression(null, fields);
+    return cTuple(null, fields);
+  }
+
+  public static Concrete.TupleExpression cTuple(Object data, List<Concrete.Expression> fields) {
+    return new Concrete.TupleExpression(data, fields);
   }
 
   public static Concrete.SigmaExpression cSigma(List<Concrete.TypeParameter> args) {

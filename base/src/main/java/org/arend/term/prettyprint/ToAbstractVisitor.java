@@ -281,7 +281,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     String name = null;
     Concrete.Expression qualifier = null;
     boolean ok = false;
-    if (argument instanceof ReferenceExpression && hasFlag(PrettyPrinterFlag.SHOW_LOCAL_FIELD_INSTANCE)) {
+    if (argument instanceof ReferenceExpression && (hasFlag(PrettyPrinterFlag.SHOW_LOCAL_FIELD_INSTANCE) || getVerboseLevel(argument) > 0)) {
       ok = true;
       qualifier = visitReference((ReferenceExpression) argument, null);
       name = ((ReferenceExpression) argument).getBinding().getName();
@@ -303,7 +303,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     }
 
     Concrete.ReferenceExpression result = makeReference(expr);
-    return !isGlobalInstance && hasFlag(PrettyPrinterFlag.SHOW_LOCAL_FIELD_INSTANCE) || isGlobalInstance && hasFlag(PrettyPrinterFlag.SHOW_GLOBAL_FIELD_INSTANCE)
+    return (!isGlobalInstance && hasFlag(PrettyPrinterFlag.SHOW_LOCAL_FIELD_INSTANCE) || isGlobalInstance && hasFlag(PrettyPrinterFlag.SHOW_GLOBAL_FIELD_INSTANCE) || getVerboseLevel(expr) > 0)
       ? Concrete.AppExpression.make(null, result, argument.accept(this, null), false) : result;
   }
 
@@ -684,8 +684,8 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     for (Expression field : expr.getFields()) {
       fields.add(field.accept(this, null));
     }
-    Concrete.Expression result = cTuple(fields);
-    if (hasFlag(PrettyPrinterFlag.SHOW_TUPLE_TYPE)) {
+    Concrete.Expression result = cTuple(expr, fields);
+    if (hasFlag(PrettyPrinterFlag.SHOW_TUPLE_TYPE) || getVerboseLevel(expr) > 0) {
       result = new Concrete.TypedExpression(expr, result, visitSigma(expr.getSigmaType(), null));
     }
     return result;
