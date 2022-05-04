@@ -15,7 +15,7 @@ antlrVersion = "4.8"
 
 allprojects {
     group = "org.arend"
-    version = "1.7.0"
+    version = "1.8.0"
     repositories {
         jcenter()
         mavenCentral()
@@ -92,6 +92,6 @@ dependencies {
     testImplementation(project(":parser"))
     testImplementation(project(":cli"))
 
-    testImplementation("junit:junit:4.12")
+    testImplementation("junit:junit:4.13.1")
     testImplementation("org.hamcrest:hamcrest-library:1.3")
 }

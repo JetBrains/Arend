@@ -14,8 +14,10 @@ import java.util.List;
 import static org.arend.Matchers.goal;
 import static org.arend.Matchers.typecheckingError;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class CachingTest extends LibraryTestCase {
   @Test

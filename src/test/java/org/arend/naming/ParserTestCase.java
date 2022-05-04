@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public abstract class ParserTestCase extends ArendTestCase {
   protected static final ModuleLocation MODULE_PATH = new ModuleLocation(null, false, null, new ModulePath("$TestCase$"));

@@ -18,6 +18,7 @@ import static org.arend.ExpressionFactory.*;
 import static org.arend.Matchers.typeMismatchError;
 import static org.arend.core.expr.ExpressionFactory.*;
 import static org.arend.term.concrete.ConcreteExpressionFactory.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.*;

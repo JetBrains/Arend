@@ -1743,8 +1743,10 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       errorReporter.report(new HasErrors(GeneralError.Level.ERROR, definition, expr));
       return null;
     } else {
-      if (typeCheckedDefinition.status().hasDepProblems()) {
-        setStatus(Definition.TypeCheckingStatus.DEP_PROBLEMS);
+      if (typeCheckedDefinition.status().hasDepErrors()) {
+        setStatus(Definition.TypeCheckingStatus.DEP_ERRORS);
+      } else if (typeCheckedDefinition.status().hasDepWarnings()) {
+        setStatus(Definition.TypeCheckingStatus.DEP_WARNiNGS);
       }
       return typeCheckedDefinition;
     }

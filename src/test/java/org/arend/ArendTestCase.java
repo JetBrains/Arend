@@ -31,7 +31,7 @@ import java.util.*;
 
 import static org.arend.ext.prettyprinting.doc.DocFactory.text;
 import static org.arend.ext.prettyprinting.doc.DocFactory.vList;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public abstract class ArendTestCase {
   protected LibraryManager libraryManager;
