@@ -34,6 +34,8 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
   private List<Boolean> myOmegaParameters = Collections.emptyList();
   private List<LevelVariable> myLevelParameters;
   private UniverseKind myUniverseKind = UniverseKind.NO_UNIVERSES;
+  private Definition myPLevelsParent;
+  private Definition myHLevelsParent;
 
   public enum HiddenStatus { NOT_HIDDEN, HIDDEN, REALLY_HIDDEN }
 
@@ -107,6 +109,26 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
   @Override
   public @NotNull Set<? extends Definition> getRecursiveDefinitions() {
     return myRecursiveDefinitions;
+  }
+
+  @Override
+  public Definition getPLevelsParent() {
+    return myPLevelsParent;
+  }
+
+  @Override
+  public Definition getHLevelsParent() {
+    return myHLevelsParent;
+  }
+
+  @Override
+  public void setPLevelsParent(Definition parent) {
+    myPLevelsParent = parent;
+  }
+
+  @Override
+  public void setHLevelsParent(Definition parent) {
+    myHLevelsParent = parent;
   }
 
   @Override

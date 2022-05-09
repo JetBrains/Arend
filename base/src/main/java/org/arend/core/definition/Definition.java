@@ -49,6 +49,22 @@ public abstract class Definition extends UserDataHolderImpl implements CoreDefin
     return Collections.emptySet();
   }
 
+  public Definition getPLevelsParent() {
+    return null;
+  }
+
+  public Definition getHLevelsParent() {
+    return null;
+  }
+
+  public void setPLevelsParent(Definition levelsParent) {
+    throw new IllegalStateException();
+  }
+
+  public void setHLevelsParent(Definition levelsParent) {
+    throw new IllegalStateException();
+  }
+
   public abstract List<? extends LevelVariable> getLevelParameters();
 
   public void setLevelParameters(List<LevelVariable> levelParameters) {

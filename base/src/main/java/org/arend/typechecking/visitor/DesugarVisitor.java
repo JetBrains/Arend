@@ -3,10 +3,12 @@ package org.arend.typechecking.visitor;
 import org.arend.core.definition.ClassDefinition;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Definition;
+import org.arend.core.definition.FunctionDefinition;
 import org.arend.ext.core.definition.CoreClassDefinition;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.LocalError;
 import org.arend.ext.error.RedundantCoclauseError;
+import org.arend.ext.util.Pair;
 import org.arend.naming.reference.*;
 import org.arend.prelude.Prelude;
 import org.arend.ext.concrete.definition.FunctionKind;
@@ -89,7 +91,6 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
         }
       }
     }
-
     return null;
   }
 

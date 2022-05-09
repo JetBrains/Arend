@@ -44,6 +44,8 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
   private final Set<ClassField> myOmegaFields = new HashSet<>();
   private UniverseKind myBaseUniverseKind = UniverseKind.NO_UNIVERSES;
   private UniverseKind myUniverseKind = UniverseKind.NO_UNIVERSES;
+  private Definition myPLevelsParent;
+  private Definition myHLevelsParent;
 
   public ClassDefinition(TCDefReferable referable) {
     super(referable, TypeCheckingStatus.NEEDS_TYPE_CHECKING);
@@ -467,6 +469,26 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
 
   public void addOmegaField(ClassField field) {
     myOmegaFields.add(field);
+  }
+
+  @Override
+  public Definition getPLevelsParent() {
+    return myPLevelsParent;
+  }
+
+  @Override
+  public Definition getHLevelsParent() {
+    return myHLevelsParent;
+  }
+
+  @Override
+  public void setPLevelsParent(Definition parent) {
+    myPLevelsParent = parent;
+  }
+
+  @Override
+  public void setHLevelsParent(Definition parent) {
+    myHLevelsParent = parent;
   }
 
   @Override

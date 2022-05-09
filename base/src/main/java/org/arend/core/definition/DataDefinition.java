@@ -35,6 +35,8 @@ public class DataDefinition extends Definition implements CoreDataDefinition {
   private List<LevelVariable> myLevelParameters;
   private UniverseKind myUniverseKind = UniverseKind.NO_UNIVERSES;
   private List<Boolean> myOmegaParameters = Collections.emptyList();
+  private Definition myPLevelsParent;
+  private Definition myHLevelsParent;
 
   public DataDefinition(TCDefReferable referable) {
     super(referable, TypeCheckingStatus.NEEDS_TYPE_CHECKING);
@@ -54,6 +56,26 @@ public class DataDefinition extends Definition implements CoreDataDefinition {
   @Override
   public @NotNull Set<? extends Definition> getRecursiveDefinitions() {
     return myRecursiveDefinitions;
+  }
+
+  @Override
+  public Definition getPLevelsParent() {
+    return myPLevelsParent;
+  }
+
+  @Override
+  public Definition getHLevelsParent() {
+    return myHLevelsParent;
+  }
+
+  @Override
+  public void setPLevelsParent(Definition parent) {
+    myPLevelsParent = parent;
+  }
+
+  @Override
+  public void setHLevelsParent(Definition parent) {
+    myHLevelsParent = parent;
   }
 
   @Override
