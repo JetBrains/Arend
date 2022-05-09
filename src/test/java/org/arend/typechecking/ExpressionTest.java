@@ -212,4 +212,11 @@ public class ExpressionTest extends TypeCheckingTestCase {
   public void caseNoExpectedError() {
     typeCheckDef("\\func test => \\case 1 \\with { zero => 0 | suc y => y }", 1);
   }
+
+  @Test
+  public void noNormalizationForFields(){
+    typeCheckModule("\\data Unit | unit \n " +
+            "\\func x : \\Sigma Unit Nat => (unit, 0)" +
+            "\\func f : x.1 = unit => idp", 1);
+  }
 }

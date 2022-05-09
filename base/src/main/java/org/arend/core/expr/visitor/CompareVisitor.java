@@ -1242,13 +1242,13 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
 
     TupleExpression tuple2 = expr2.cast(TupleExpression.class);
     if (tuple2 != null) {
-      return correctOrder ? compareLists(expr1.getFields(), tuple2.getFields(), expr1.getSigmaType().getParameters(), null, new ExprSubstitution()) : compareLists(tuple2.getFields(), expr1.getFields(), tuple2.getSigmaType().getParameters(), null, new ExprSubstitution());
+      return correctOrder ? compareLists(expr1.getFields(), tuple2.getFields(), expr1.getSigmaType().getParameters(), null, new ExprSubstitution(), true) : compareLists(tuple2.getFields(), expr1.getFields(), tuple2.getSigmaType().getParameters(), null, new ExprSubstitution(), true);
     } else {
       List<Expression> args2 = new ArrayList<>(expr1.getFields().size());
       for (int i = 0; i < expr1.getFields().size(); i++) {
         args2.add(ProjExpression.make(expr2, i));
       }
-      return correctOrder ? compareLists(expr1.getFields(), args2, expr1.getSigmaType().getParameters(), null, new ExprSubstitution()) : compareLists(args2, expr1.getFields(), expr1.getSigmaType().getParameters(), null, new ExprSubstitution());
+      return correctOrder ? compareLists(expr1.getFields(), args2, expr1.getSigmaType().getParameters(), null, new ExprSubstitution(), true) : compareLists(args2, expr1.getFields(), expr1.getSigmaType().getParameters(), null, new ExprSubstitution(), true);
     }
   }
 
@@ -1382,6 +1382,10 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
   }
 
   public boolean compareLists(List<? extends Expression> list1, List<? extends Expression> list2, DependentLink link, Definition definition, ExprSubstitution substitution) {
+    return compareLists(list1, list2, link, definition, substitution, false);
+  }
+
+  private boolean compareLists(List<? extends Expression> list1, List<? extends Expression> list2, DependentLink link, Definition definition, ExprSubstitution substitution, boolean skipBoxed) {
     if (list1.size() != list2.size()) {
       return false;
     }
@@ -1391,7 +1395,14 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       if (definition instanceof DataDefinition) {
         myCMP = ((DataDefinition) definition).isCovariant(i) ? origCMP : CMP.EQ;
       }
-      if (!compare(list1.get(i), list2.get(i), substitution != null && link.hasNext() ? link.getTypeExpr().subst(substitution) : null, true)) {
+      
+      boolean skipFromBoxing;
+      if (skipBoxed) {
+        skipFromBoxing = link.getType().getSortOfType().isProp();
+      } else {
+        skipFromBoxing = false;
+      }
+      if (!skipFromBoxing && !compare(list1.get(i), list2.get(i), substitution != null && link.hasNext() ? link.getTypeExpr().subst(substitution) : null, true)) {
         myCMP = origCMP;
         return false;
       }
