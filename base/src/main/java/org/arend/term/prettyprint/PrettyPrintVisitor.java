@@ -1508,7 +1508,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   public void prettyPrintLevelParameters(Concrete.LevelParameters parameters) {
     List<LevelReferable> referables = parameters.referables;
     for (int i = 0; i < referables.size(); i++) {
-      if (i > 0 && i < referables.size() - 1) {
+      if (i > 0) {
         myBuilder.append(parameters.isIncreasing ? " <= " : " >= ");
       }
       myBuilder.append(referables.get(i).getRefName());
@@ -1544,12 +1544,14 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
     public void doPrettyPrint(PrettyPrintVisitor pp, List<? extends E> l, boolean disabled){
       if (disabled) {
-        if (l.size() > 0)
-        printListElement(pp, l.get(0));
-        if (l.size() > 1)
-        for (E e : l.subList(1, l.size())) {
-          pp.myBuilder.append(getSeparator());
-          printListElement(pp, e);
+        if (l.size() > 0) {
+          printListElement(pp, l.get(0));
+        }
+        if (l.size() > 1) {
+          for (E e : l.subList(1, l.size())) {
+            pp.myBuilder.append(getSeparator());
+            printListElement(pp, e);
+          }
         }
         return;
       }

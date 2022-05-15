@@ -1,7 +1,6 @@
 package org.arend.module.serialization;
 
 import com.google.protobuf.ByteString;
-import org.arend.core.context.binding.FieldLevelVariable;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.ParamLevelVariable;
 import org.arend.core.context.param.DependentLink;
@@ -94,7 +93,7 @@ public class DefinitionSerialization implements ArendSerializer {
     return builder.build();
   }
 
-  private List<DefinitionProtos.Definition.LevelParameter> writeLevelParameters(List<LevelVariable> parameters) {
+  private List<DefinitionProtos.Definition.LevelParameter> writeLevelParameters(List<? extends LevelVariable> parameters) {
     List<DefinitionProtos.Definition.LevelParameter> result = new ArrayList<>(parameters.size());
     for (LevelVariable parameter : parameters) {
       result.add(writeLevelParameter(parameter));
@@ -108,12 +107,7 @@ public class DefinitionSerialization implements ArendSerializer {
     builder.setIsStdLevels(definition.getLevelParameters() == null);
     builder.setBaseUniverseKind(defSerializer.writeUniverseKind(definition.getBaseUniverseKind()));
     if (definition.getLevelParameters() != null) {
-      for (LevelVariable var : definition.getLevelParameters()) {
-        DefinitionProtos.Definition.LevelField.Builder fieldBuilder = DefinitionProtos.Definition.LevelField.newBuilder();
-        fieldBuilder.setParameter(writeLevelParameter(var));
-        fieldBuilder.setRef(var instanceof FieldLevelVariable ? myCallTargetIndexProvider.getDefIndex(((FieldLevelVariable) var).getLevelField()) : -1);
-        builder.addLevelField(fieldBuilder.build());
-      }
+      builder.addAllLevelParam(writeLevelParameters(definition.getLevelParameters()));
     }
 
     for (Map.Entry<ClassDefinition, Levels> entry : definition.getSuperLevels().entrySet()) {

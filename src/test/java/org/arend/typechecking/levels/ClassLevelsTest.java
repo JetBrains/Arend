@@ -135,10 +135,10 @@ public class ClassLevelsTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\record R \\plevels p1 <= p2\n" +
       "\\record S \\extends R\n" +
-      "  | A : \\Type p1\n" +
+      "  | A : \\Type \\lp\n" +
       "\\record T \\extends R\n" +
       "\\record X \\extends S, T\n" +
-      "  | B : \\Type p2");
+      "  | B : \\Type \\lp");
     assertEquals(2, getDefinition("R").getLevelParameters().size());
     assertEquals(3, getDefinition("S").getLevelParameters().size());
     assertEquals(2, getDefinition("T").getLevelParameters().size());
@@ -149,7 +149,7 @@ public class ClassLevelsTest extends TypeCheckingTestCase {
   public void extendsMin() {
     typeCheckModule(
       "\\record R \\plevels p1 <= p2\n" +
-      "\\record S \\plevels p3 <= p4 \\extends R", 1);
+      "\\record S \\plevels p3 <= p4 \\extends R");
   }
 
   @Test
@@ -158,7 +158,7 @@ public class ClassLevelsTest extends TypeCheckingTestCase {
       "\\record R \\plevels p1 <= p2\n" +
       "\\record S \\plevels p1 <= p2\n" +
       "\\record T \\extends R, S\n" +
-      "  | A : \\Type p2", 1);
+      "  | A : \\Type \\lp");
   }
 
   @Test
@@ -166,7 +166,7 @@ public class ClassLevelsTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\record R \\plevels p1 <= p2\n" +
       "\\record S \\plevels p3 >= p4\n" +
-      "\\record T \\extends R, S", 1);
+      "\\record T \\extends R, S");
   }
 
   @Test
@@ -220,7 +220,7 @@ public class ClassLevelsTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\record R \\plevels p1 <= p2\n" +
       "\\record S (A : \\Type)\n" +
-      "\\record T \\extends R, S p2");
+      "\\record T \\extends R, S \\lp");
   }
 
   @Test

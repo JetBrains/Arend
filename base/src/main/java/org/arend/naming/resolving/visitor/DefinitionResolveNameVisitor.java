@@ -7,7 +7,6 @@ import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.error.NameResolverError;
-import org.arend.ext.error.TypecheckingError;
 import org.arend.ext.reference.Precedence;
 import org.arend.naming.error.DuplicateNameError;
 import org.arend.naming.error.DuplicateOpenedNameError;
@@ -24,16 +23,13 @@ import org.arend.ext.concrete.definition.ClassFieldKind;
 import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.term.NameRenaming;
 import org.arend.term.NamespaceCommand;
-import org.arend.term.abs.Abstract;
 import org.arend.term.concrete.*;
 import org.arend.term.group.ChildGroup;
 import org.arend.term.group.Group;
 import org.arend.typechecking.error.local.LocalErrorReporter;
-import org.arend.typechecking.order.DFS;
 import org.arend.typechecking.provider.ConcreteProvider;
 import org.arend.typechecking.visitor.SyntacticDesugarVisitor;
 import org.arend.ext.util.Pair;
-import org.arend.util.SingletonList;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -234,23 +230,6 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     return params == null ? Collections.emptyMap() : visitLevelParameters(params.referables);
   }
 
-  private void copyLevelParameters(Concrete.Definition def) {
-    if (def.enclosingClass != null && (def.getPLevelParameters() == null || def.getHLevelParameters() == null)) {
-      Concrete.GeneralDefinition enclosingDef = myConcreteProvider.getConcrete(def.enclosingClass);
-      if (enclosingDef instanceof Concrete.ClassDefinition) {
-        Concrete.ClassDefinition classDef = (Concrete.ClassDefinition) enclosingDef;
-        if (def.getPLevelParameters() == null && classDef.getPLevelParameters() != null) {
-          def.setPLevelParameters(classDef.getPLevelParameters());
-          def.pOriginalDef = classDef.getData();
-        }
-        if (def.getHLevelParameters() == null && classDef.getHLevelParameters() != null) {
-          def.setHLevelParameters(classDef.getHLevelParameters());
-          def.hOriginalDef = classDef.getData();
-        }
-      }
-    }
-  }
-
   @Override
   public Void visitFunction(Concrete.BaseFunctionDefinition def, Scope scope) {
     if (def.getStage().ordinal() >= Concrete.Stage.RESOLVED.ordinal()) {
@@ -275,27 +254,15 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       return null;
     }
 
-    copyLevelParameters(def);
-
     if (def instanceof Concrete.UseDefinition) {
       Concrete.GeneralDefinition enclosingDef = myConcreteProvider.getConcrete(def.getUseParent());
-      boolean setPLevels = false;
-      boolean setHLevels = false;
-      if (def.getPLevelParameters() == null) {
-        setPLevels = true;
-        if (enclosingDef instanceof Concrete.Definition && ((Concrete.Definition) enclosingDef).getPLevelParameters() != null) {
+      if (enclosingDef instanceof Concrete.Definition) {
+        if (def.getPLevelParameters() == null && ((Concrete.Definition) enclosingDef).getPLevelParameters() != null) {
           def.setPLevelParameters(((Concrete.Definition) enclosingDef).getPLevelParameters());
         }
-      } else if (def.getKind().isUse() && enclosingDef instanceof Concrete.Definition) {
-        compareUseLevelParameters(def.getPLevelParameters(), ((Concrete.Definition) enclosingDef).getPLevelParameters());
-      }
-      if (def.getHLevelParameters() == null) {
-        setHLevels = true;
-        if (enclosingDef instanceof Concrete.Definition && ((Concrete.Definition) enclosingDef).getHLevelParameters() != null) {
+        if (def.getHLevelParameters() == null && ((Concrete.Definition) enclosingDef).getHLevelParameters() != null) {
           def.setHLevelParameters(((Concrete.Definition) enclosingDef).getHLevelParameters());
         }
-      } else if (def.getKind().isUse() && enclosingDef instanceof Concrete.Definition) {
-        compareUseLevelParameters(def.getHLevelParameters(), ((Concrete.Definition) enclosingDef).getHLevelParameters());
       }
 
       if (def instanceof Concrete.CoClauseFunctionDefinition && ((Concrete.CoClauseFunctionDefinition) def).getImplementedField() instanceof UnresolvedReference) {
@@ -338,29 +305,6 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
             }
             if (functionRef != null) {
               function.setImplementedField(new ExpressionResolveNameVisitor(myReferableConverter, scope, null, myLocalErrorReporter, myResolverListener, Collections.emptyMap(), Collections.emptyMap()).visitClassFieldReference(functionRef, function.getImplementedField(), (ClassReferable) classRef));
-              Concrete.ReferenceExpression refExpr = functionRef.getReferenceExpression();
-              if (setPLevels) {
-                if (function.getPLevelParameters() == null) {
-                  refExpr.setPLevels(new SingletonList<>(new Concrete.PLevelExpression(refExpr.getData())));
-                } else {
-                  List<Concrete.LevelExpression> args = new ArrayList<>();
-                  for (Referable ref : function.getPLevelParameters().referables) {
-                    args.add(new Concrete.IdLevelExpression(refExpr.getData(), ref));
-                  }
-                  refExpr.setPLevels(args);
-                }
-              }
-              if (setHLevels) {
-                if (function.getHLevelParameters() == null) {
-                  refExpr.setHLevels(new SingletonList<>(new Concrete.HLevelExpression(refExpr.getData())));
-                } else {
-                  List<Concrete.LevelExpression> args = new ArrayList<>();
-                  for (Referable ref : function.getHLevelParameters().referables) {
-                    args.add(new Concrete.IdLevelExpression(refExpr.getData(), ref));
-                  }
-                  refExpr.setHLevels(args);
-                }
-              }
             }
           }
           if (function.getData() instanceof LocatedReferableImpl && !((LocatedReferableImpl) function.getData()).isPrecedenceSet() && function.getImplementedField() instanceof GlobalReferable) {
@@ -546,7 +490,6 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
 
     myLocalErrorReporter = new ConcreteProxyErrorReporter(def);
 
-    copyLevelParameters(def);
     checkNameAndPrecedence(def);
 
     Map<String, TCReferable> constructorNames = new HashMap<>();
@@ -645,16 +588,6 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     }
   }
 
-  private boolean compareLevelParameters(Concrete.LevelParameters params1, Concrete.LevelParameters params2) {
-    return params1 == null && params2 == null || params1 != null && params2 != null && params1.isIncreasing == params2.isIncreasing && params1.referables.size() == params2.referables.size();
-  }
-
-  private void compareUseLevelParameters(Concrete.LevelParameters useParams, Concrete.LevelParameters parentParams) {
-    if (!compareLevelParameters(useParams, parentParams)) {
-      myErrorReporter.report(new TypecheckingError("The levels parameters of the \\use definition do not match the level parameters of the parent", useParams));
-    }
-  }
-
   @Override
   public Void visitClass(Concrete.ClassDefinition def, Scope scope) {
     if (def.getStage().ordinal() >= Concrete.Stage.RESOLVED.ordinal()) {
@@ -697,60 +630,6 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       TCReferable oldRef = fieldNames.putIfAbsent(ref.textRepresentation(), ref);
       if (oldRef != null) {
         myLocalErrorReporter.report(new DuplicateNameError(GeneralError.Level.ERROR, ref, oldRef));
-      }
-    }
-
-    if (!def.getSuperClasses().isEmpty() && (def.getPLevelParameters() == null || def.getHLevelParameters() == null)) {
-      List<Pair<ClassReferable, Abstract.LevelParameters>> levelParams = new ArrayList<>(2);
-      levelParams.add(null);
-      levelParams.add(null);
-      DFS<ClassReferable, Void> dfs = new DFS<>() {
-        @Override
-        protected Void forDependencies(ClassReferable ref) {
-          if (levelParams.get(0) == null) {
-            Abstract.LevelParameters params = ref.getPLevelParameters();
-            if (params != null) {
-              levelParams.set(0, new Pair<>(ref, params));
-            }
-          }
-          if (levelParams.get(1) == null) {
-            Abstract.LevelParameters params = ref.getHLevelParameters();
-            if (params != null) {
-              levelParams.set(1, new Pair<>(ref, params));
-            }
-          }
-          if (levelParams.get(0) != null && levelParams.get(1) != null) return null;
-          int i = 0;
-          for (ClassReferable superClass : ref.getSuperClassReferences()) {
-            if (!ref.hasLevels(i++)) {
-              visit(superClass);
-              if (levelParams.get(0) != null && levelParams.get(1) != null) break;
-            }
-          }
-          return null;
-        }
-      };
-
-      Referable classRef = def.getData();
-      if (!(classRef instanceof ClassReferable)) {
-        classRef = classRef.getUnderlyingReferable();
-      }
-      if (classRef instanceof ClassReferable) {
-        dfs.visit((ClassReferable) classRef);
-        if (def.getPLevelParameters() == null && levelParams.get(0) != null) {
-          TCReferable ref = myReferableConverter.toDataLocatedReferable(levelParams.get(0).proj1);
-          if (ref instanceof TCDefReferable) {
-            def.pOriginalDef = (TCDefReferable) ref;
-            def.setPLevelParameters(Concrete.LevelParameters.fromAbstract(levelParams.get(0).proj2));
-          }
-        }
-        if (def.getHLevelParameters() == null && levelParams.get(1) != null) {
-          TCReferable ref = myReferableConverter.toDataLocatedReferable(levelParams.get(1).proj1);
-          if (ref instanceof TCDefReferable) {
-            def.hOriginalDef = (TCDefReferable) ref;
-            def.setHLevelParameters(Concrete.LevelParameters.fromAbstract(levelParams.get(1).proj2));
-          }
-        }
       }
     }
 

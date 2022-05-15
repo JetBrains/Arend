@@ -1,6 +1,5 @@
 package org.arend.module.serialization;
 
-import org.arend.core.context.binding.FieldLevelVariable;
 import org.arend.core.definition.Definition;
 import org.arend.ext.serialization.DeserializationException;
 import org.arend.naming.reference.MetaReferable;
@@ -35,15 +34,6 @@ public class SimpleCallTargetProvider implements CallTargetProvider {
       throw new DeserializationException("Not a meta");
     }
     return (MetaReferable) definition;
-  }
-
-  @Override
-  public FieldLevelVariable.LevelField getLevelCallTarget(int index) throws DeserializationException {
-    Object definition = myMap.computeIfAbsent(index, k -> new FieldLevelVariable.LevelField());
-    if (!(definition instanceof FieldLevelVariable.LevelField)) {
-      throw new DeserializationException("Not a level field");
-    }
-    return (FieldLevelVariable.LevelField) definition;
   }
 
   public void putCallTarget(int index, TCReferable callTarget) throws DeserializationException {

@@ -224,7 +224,22 @@ public class LevelParametersTest extends TypeCheckingTestCase {
     assertEquals(3, getDefinition("R.f").getLevelParameters().size());
     Concrete.ReferenceExpression type = (Concrete.ReferenceExpression) ((Concrete.ClassExtExpression) Objects.requireNonNull(((Concrete.FunctionDefinition) getConcrete("R.f")).getParameters().get(0).getType())).getBaseClassExpression();
     assertNotNull(type.getPLevels());
-    assertNull(type.getHLevels());
+    assertNotNull(type.getHLevels());
+    assertTrue(type.getHLevels().isEmpty());
+  }
+
+  @Test
+  public void dynamicTest2() {
+    typeCheckModule(
+      "\\record S \\plevels p1 <= p2 <= p3\n" +
+      "\\record R \\extends S {\n" +
+      "  \\func f => 0\n" +
+      "}");
+    assertEquals(3, getDefinition("R.f").getLevelParameters().size());
+    Concrete.ReferenceExpression type = (Concrete.ReferenceExpression) ((Concrete.ClassExtExpression) Objects.requireNonNull(((Concrete.FunctionDefinition) getConcrete("R.f")).getParameters().get(0).getType())).getBaseClassExpression();
+    assertNotNull(type.getPLevels());
+    assertNotNull(type.getHLevels());
+    assertTrue(type.getHLevels().isEmpty());
   }
 
   @Test

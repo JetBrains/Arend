@@ -1,6 +1,5 @@
 package org.arend.module.serialization;
 
-import org.arend.core.context.binding.FieldLevelVariable;
 import org.arend.core.definition.Definition;
 import org.arend.naming.reference.TCReferable;
 
@@ -19,11 +18,6 @@ public class SimpleCallTargetIndexProvider implements CallTargetIndexProvider {
   @Override
   public int getDefIndex(TCReferable definition) {
     return myCallTargets.computeIfAbsent(definition, k -> myCallTargets.size() + 1);
-  }
-
-  @Override
-  public int getDefIndex(FieldLevelVariable.LevelField levelField) {
-    return myCallTargets.computeIfAbsent(levelField, k -> myCallTargets.size() + 1);
   }
 
   public Collection<? extends Map.Entry<Object, Integer>> getCallTargets() {

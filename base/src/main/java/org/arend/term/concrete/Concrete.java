@@ -18,6 +18,7 @@ import org.arend.ext.prettyprinting.doc.DocFactory;
 import org.arend.ext.reference.ArendRef;
 import org.arend.ext.reference.Precedence;
 import org.arend.ext.typechecking.GoalSolver;
+import org.arend.ext.typechecking.MetaDefinition;
 import org.arend.naming.reference.*;
 import org.arend.ext.concrete.definition.ClassFieldKind;
 import org.arend.term.Fixity;
@@ -256,11 +257,24 @@ public final class Concrete {
 
     public ReferenceExpression getUnderlyingReferenceExpression() {
       Expression expr = this;
-      if (expr instanceof ClassExtExpression) {
-        expr = ((ClassExtExpression) expr).getBaseClassExpression();
-      }
-      if (expr instanceof AppExpression) {
-        expr = ((AppExpression) expr).getFunction();
+      while (true) {
+        if (expr instanceof ClassExtExpression) {
+          expr = ((ClassExtExpression) expr).getBaseClassExpression();
+        } else if (expr instanceof AppExpression) {
+          expr = ((AppExpression) expr).getFunction();
+        } else if (expr instanceof ReferenceExpression) {
+          Referable ref = ((ReferenceExpression) expr).getReferent();
+          if (ref instanceof MetaReferable) {
+            MetaDefinition metaDef = ((MetaReferable) ref).getDefinition();
+            if (metaDef instanceof DefinableMetaDefinition) {
+              expr = ((DefinableMetaDefinition) metaDef).body;
+              continue;
+            }
+          }
+          break;
+        } else {
+          break;
+        }
       }
       return expr instanceof ReferenceExpression ? (ReferenceExpression) expr : null;
     }

@@ -1,7 +1,5 @@
 package org.arend.module.serialization;
 
-import org.arend.core.context.binding.FieldLevelVariable;
-import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.definition.*;
 import org.arend.ext.module.ModulePath;
 import org.arend.ext.reference.Precedence;
@@ -287,7 +285,6 @@ public class ModuleDeserialization {
         internalReferables.add(new SimpleInternalReferable(fieldReferable, !invisibleRefs.contains(fieldDef)));
         fieldReferables.add(fieldReferable);
       }
-      fillClassLevelParameters(classProto, (ClassDefinition) def);
 
       List<Group> dynamicGroups = new ArrayList<>(groupProto.getDynamicSubgroupCount());
       group = new ClassGroup((ClassReferable) referable, internalReferables, dynamicGroups, subgroups, Collections.emptyList(), parent);
@@ -307,18 +304,6 @@ public class ModuleDeserialization {
     return group;
   }
 
-  private void fillClassLevelParameters(DefinitionProtos.Definition.ClassData classProto, ClassDefinition classDef) throws DeserializationException {
-    if (!classProto.getIsStdLevels()) {
-      List<LevelVariable> fieldLevels = new ArrayList<>();
-      for (DefinitionProtos.Definition.LevelField levelFieldProto : classProto.getLevelFieldList()) {
-        DefinitionProtos.Definition.LevelParameter parameter = levelFieldProto.getParameter();
-        int ref = levelFieldProto.getRef();
-        fieldLevels.add(ref == -1 ? (parameter.getIsPlevel() ? LevelVariable.PVAR : LevelVariable.HVAR) : new FieldLevelVariable(parameter.getIsPlevel() ? LevelVariable.LvlType.PLVL : LevelVariable.LvlType.HLVL, parameter.getName(), parameter.getIndex(), parameter.getSize(), myCallTargetProvider.getLevelCallTarget(ref)));
-      }
-      classDef.setLevelParameters(fieldLevels);
-    }
-  }
-
   private Definition readDefinition(DefinitionProtos.Definition defProto, TCDefReferable referable, boolean fillInternalDefinitions) throws DeserializationException {
     final Definition def;
     switch (defProto.getDefinitionDataCase()) {
@@ -335,7 +320,6 @@ public class ModuleDeserialization {
             myCallTargetProvider.putCallTarget(fieldReferable.getIndex(), res);
           }
         }
-        fillClassLevelParameters(classProto, classDef);
         def = classDef;
         break;
       }
