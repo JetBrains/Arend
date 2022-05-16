@@ -277,7 +277,7 @@ public class ConditionsChecking {
 
       if (expr instanceof GoalErrorExpression) {
         GoalErrorExpression goalExpr = (GoalErrorExpression) expr;
-        if (evaluatedExpr1 != null) {
+        if (evaluatedExpr1 != null && goalExpr.goalError.hasConditions()) {
           goalExpr.goalError.addCondition(new Condition(null, pair.proj2, evaluatedExpr1));
         }
         if (goalExpr.useExpression() && !checkCondition(goalExpr.getExpression(), pair, evaluatedExpr1, clause, definition, sourceNode, new ListErrorReporter(goalExpr.goalError.errors))) {

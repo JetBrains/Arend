@@ -55,7 +55,7 @@ public class GoalError extends GoalDataHolder {
 
   @NotNull
   private Doc getConditionsDoc(PrettyPrinterConfig ppConfig) {
-    if (!myConditions.isEmpty()) {
+    if (myConditions != null && !myConditions.isEmpty()) {
       List<Doc> conditionsDocs = new ArrayList<>(myConditions.size());
       for (Condition condition : myConditions) {
         conditionsDocs.add(condition.toDoc(ppConfig));
@@ -77,14 +77,24 @@ public class GoalError extends GoalDataHolder {
     return nullDoc();
   }
 
+  public void removeConditions() {
+    myConditions = null;
+  }
+
+  public boolean hasConditions() {
+    return myConditions != null;
+  }
+
   public void addCondition(Condition condition) {
-    if (myConditions.isEmpty()) {
-      myConditions = new ArrayList<>();
+    if (myConditions != null) {
+      if (myConditions.isEmpty()) {
+        myConditions = new ArrayList<>();
+      }
+      myConditions.add(condition);
     }
-    myConditions.add(condition);
   }
 
   public List<? extends Condition> getConditions() {
-    return myConditions;
+    return myConditions == null ? Collections.emptyList() : myConditions;
   }
 }

@@ -268,6 +268,9 @@ public class PatternTypechecking {
             }
             tcResult = new TypecheckingResult(resultExpr, expectedType);
           }
+          if (errorExpr instanceof GoalErrorExpression) {
+            ((GoalErrorExpression) errorExpr).goalError.removeConditions();
+          }
         }
         if (myFinal) {
           tcResult = myVisitor.finalize(tcResult, clause.getExpression(), false);

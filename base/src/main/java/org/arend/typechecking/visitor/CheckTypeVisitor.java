@@ -2900,12 +2900,14 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       if (pathExpr != null) {
         Expression arg = pathExpr.getArgument();
         if (arg instanceof LamExpression && ((LamExpression) arg).getBody() instanceof GoalErrorExpression && !((LamExpression) arg).getParameters().getNext().hasNext()) {
-          DependentLink param = ((LamExpression) arg).getParameters();
           GoalErrorExpression goalExpr = (GoalErrorExpression) ((LamExpression) arg).getBody();
-          ExprSubstitution leftSubst = new ExprSubstitution(param, ExpressionFactory.Left());
-          ExprSubstitution rightSubst = new ExprSubstitution(param, ExpressionFactory.Right());
-          goalExpr.goalError.addCondition(new Condition(null, leftSubst, AppExpression.make(arg, ExpressionFactory.Left(), true)));
-          goalExpr.goalError.addCondition(new Condition(null, rightSubst, AppExpression.make(arg, ExpressionFactory.Right(), true)));
+          if (goalExpr.goalError.hasConditions()) {
+            DependentLink param = ((LamExpression) arg).getParameters();
+            ExprSubstitution leftSubst = new ExprSubstitution(param, ExpressionFactory.Left());
+            ExprSubstitution rightSubst = new ExprSubstitution(param, ExpressionFactory.Right());
+            goalExpr.goalError.addCondition(new Condition(null, leftSubst, AppExpression.make(arg, ExpressionFactory.Left(), true)));
+            goalExpr.goalError.addCondition(new Condition(null, rightSubst, AppExpression.make(arg, ExpressionFactory.Right(), true)));
+          }
         }
       }
     }
