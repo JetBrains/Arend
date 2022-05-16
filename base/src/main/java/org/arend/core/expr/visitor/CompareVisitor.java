@@ -1402,9 +1402,15 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       } else {
         skipFromBoxing = false;
       }
-      if (!skipFromBoxing && !compare(list1.get(i), list2.get(i), substitution != null && link.hasNext() ? link.getTypeExpr().subst(substitution) : null, true)) {
-        myCMP = origCMP;
-        return false;
+      boolean oldVarsValue = myOnlySolveVars;
+      try {
+        myOnlySolveVars |= skipFromBoxing;
+        if (!compare(list1.get(i), list2.get(i), substitution != null && link.hasNext() ? link.getTypeExpr().subst(substitution) : null, true) && !skipFromBoxing) {
+          myCMP = origCMP;
+          return false;
+        }
+      } finally {
+        myOnlySolveVars = oldVarsValue;
       }
       if (substitution != null && link.hasNext()) {
         substitution.add(link, (myCMP == CMP.LE ? list2 : list1).get(i));
