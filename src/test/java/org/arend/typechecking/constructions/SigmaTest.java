@@ -66,4 +66,11 @@ public class SigmaTest extends TypeCheckingTestCase {
   public void projImplicitPi() {
     typeCheckDef("\\func test (f : \\Pi {x : Nat} -> \\Sigma (y : Nat) (x = y)) : 0 = f.1 => f.2");
   }
+
+  @Test
+  public void testProofIrrelevanceForProps() {
+    typeCheckModule("\\data Unit | unit\n" +
+            "\\lemma u : Unit => unit\n" +
+            "\\func f : (u, unit) = (unit, u) => idp");
+  }
 }
