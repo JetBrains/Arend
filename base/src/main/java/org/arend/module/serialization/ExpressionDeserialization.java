@@ -107,6 +107,10 @@ class ExpressionDeserialization {
   // Parameters
 
   DependentLink readParameters(List<ExpressionProtos.Telescope> protos) throws DeserializationException {
+    return readParameters(protos, false);
+  }
+
+  DependentLink readParameters(List<ExpressionProtos.Telescope> protos, boolean forSigma) throws DeserializationException {
     LinkList list = new LinkList();
     for (ExpressionProtos.Telescope proto : protos) {
       List<String> unfixedNames = new ArrayList<>(proto.getNameList().size());
@@ -116,6 +120,7 @@ class ExpressionDeserialization {
       Type type = readType(proto.getType());
       DependentLink tele = proto.getIsHidden() && unfixedNames.size() == 1
         ? new TypedDependentLink(!proto.getIsNotExplicit(), unfixedNames.get(0), type, true, EmptyDependentLink.getInstance())
+        : forSigma ? ExpressionFactory.sigmaParameter(proto.getIsProperty(), unfixedNames, type)
         : ExpressionFactory.parameter(!proto.getIsNotExplicit(), unfixedNames, type);
       for (DependentLink link = tele; link.hasNext(); link = link.getNext()) {
         registerBinding(link);
@@ -480,7 +485,7 @@ class ExpressionDeserialization {
   }
 
   private SigmaExpression readSigma(ExpressionProtos.Expression.Sigma proto) throws DeserializationException {
-    return new SigmaExpression(new Sort(readLevel(proto.getPLevel(), LevelVariable.PVAR), readLevel(proto.getHLevel(), LevelVariable.HVAR)), readParameters(proto.getParamList()));
+    return new SigmaExpression(new Sort(readLevel(proto.getPLevel(), LevelVariable.PVAR), readLevel(proto.getHLevel(), LevelVariable.HVAR)), readParameters(proto.getParamList(), true));
   }
 
   private Expression readProj(ExpressionProtos.Expression.Proj proto) throws DeserializationException {
