@@ -685,7 +685,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   private boolean checkLevel(boolean isLemma, boolean isProperty, Integer level, Sort actualSort, Concrete.SourceNode sourceNode) {
     if ((isLemma || isProperty) && (level == null || level != -1)) {
       Sort sort = level != null ? new Sort(new Level(LevelVariable.PVAR), new Level(actualSort == null || !actualSort.getHLevel().isClosed() ? level : Math.min(level, actualSort.getHLevel().getConstant()))) : actualSort;
-      errorReporter.report(new LevelMismatchError(isLemma, sort, sourceNode));
+      errorReporter.report(new LevelMismatchError(isLemma ? LevelMismatchError.TargetKind.LEMMA : LevelMismatchError.TargetKind.PROPERTY, sort, sourceNode));
       return false;
     } else {
       return true;
