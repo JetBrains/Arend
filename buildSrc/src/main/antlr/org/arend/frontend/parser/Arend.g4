@@ -145,7 +145,7 @@ letKw : HAVE | LET | HAVES | LETS;
 expr  : appPrefix? appExpr (implementStatements argument*)? withBody?     # app
       | <assoc=right> expr '->' expr                                      # arr
       | '\\Pi' tele+ '->' expr                                            # pi
-      | '\\Sigma' tele*                                                   # sigma
+      | '\\Sigma' sigmaTele*                                                   # sigma
       | lamExpr                                                           # lam
       | letKw '|'? letClause ('|' letClause)* ('\\in' expr?)?             # let
       | caseExpr                                                          # case
@@ -154,7 +154,7 @@ expr  : appPrefix? appExpr (implementStatements argument*)? withBody?     # app
 expr2 : appPrefix? appExpr (implementStatements argument*)?               # app2
       | <assoc=right> expr2 '->' expr2                                    # arr2
       | '\\Pi' tele+ '->' expr2                                           # pi2
-      | '\\Sigma' tele*                                                   # sigma2
+      | '\\Sigma' sigmaTele*                                                   # sigma2
       | '\\lam' lamParam+ ('=>' expr2?)?                                  # lam2
       | letKw '|'? letClause ('|' letClause)* ('\\in' expr2?)?            # let2
       | caseExpr                                                          # case2
@@ -284,6 +284,15 @@ universeAtom : TRUNCATED_UNIVERSE       # uniTruncatedUniverse
              | UNIVERSE                 # uniUniverse
              | SET                      # uniSetUniverse
              ;
+
+sigmaTele : literal                       # sigmaTeleLiteral
+          | universeAtom                  # sigmaTeleUniverse
+          | '(' sigmaMod? typedExpr ')'   # sigmaEntry
+          ;
+
+sigmaMod : '\\property' # sigmaProperty
+         | '\\field'    # sigmaField
+         ;
 
 tele : literal                          # teleLiteral
      | universeAtom                     # teleUniverse
