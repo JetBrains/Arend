@@ -85,6 +85,7 @@ public interface ConcreteFactory {
   @NotNull ArendRef fieldRef(@NotNull ArendRef parent, @NotNull String name, @NotNull Precedence precedence, @Nullable String alias, @Nullable Precedence aliasPrec, boolean isExplicit, boolean isParameter);
   @NotNull ConcreteParameter param(boolean explicit, @Nullable ArendRef ref);
   @NotNull ConcreteParameter param(boolean explicit, @NotNull Collection<? extends ArendRef> refs, @NotNull ConcreteExpression type);
+  @NotNull ConcreteParameter sigmaParam(@NotNull SigmaFieldKind kind, @NotNull Collection<? extends ArendRef> refs, @NotNull ConcreteExpression type);
   @NotNull ConcreteParameter param(boolean explicit, @NotNull ConcreteExpression type);
 
   default @NotNull ConcreteParameter param(@Nullable ArendRef ref) {

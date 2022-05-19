@@ -49,10 +49,21 @@ public abstract class BiConcreteVisitor extends BaseConcreteExpressionVisitor<Co
         //noinspection DuplicatedCode
         if (parameter.getType() == null) {
             return (Concrete.Parameter) myFactory.param(parameter.isExplicit(), parameter.getRefList().get(0));
-        } else if (wideParameter.getRefList().stream().anyMatch(Objects::nonNull)) {
-            return (Concrete.Parameter) myFactory.param(parameter.isExplicit(), parameter.getRefList(), ((Concrete.TypeParameter) parameter).type.accept(this, ((Concrete.TypeParameter) wideParameter).type));
         } else {
-            return (Concrete.Parameter) myFactory.param(parameter.isExplicit(), ((Concrete.TypeParameter) parameter).type.accept(this, ((Concrete.TypeParameter) wideParameter).type));
+            Concrete.Expression processedType = ((Concrete.TypeParameter) parameter).type.accept(this, ((Concrete.TypeParameter) wideParameter).type);
+            if (wideParameter.getRefList().stream().anyMatch(Objects::nonNull)) {
+                if (parameter instanceof Concrete.SigmaParameter) {
+                    return myFactory.sigmaParam(((Concrete.SigmaParameter) parameter).getKind(), parameter.getRefList(), processedType);
+                } else {
+                    return myFactory.param(parameter.isExplicit(), parameter.getRefList(), processedType);
+                }
+            } else {
+                if (parameter instanceof Concrete.SigmaParameter) {
+                    return myFactory.sigmaParam(((Concrete.SigmaParameter) parameter).getKind(), List.of(), processedType);
+                } else {
+                    return (Concrete.Parameter) myFactory.param(parameter.isExplicit(), processedType);
+                }
+            }
         }
     }
 
@@ -105,7 +116,7 @@ public abstract class BiConcreteVisitor extends BaseConcreteExpressionVisitor<Co
 
     @Override
     public Concrete.Expression visitUniverse(Concrete.UniverseExpression expr, Concrete.SourceNode params) {
-        return (Concrete.Expression) myFactory.universe(expr.getPLevel(), expr.getHLevel());
+        return myFactory.universe(expr.getPLevel(), expr.getHLevel());
     }
 
     @Override

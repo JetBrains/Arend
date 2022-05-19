@@ -231,6 +231,43 @@ public final class Concrete {
     }
   }
 
+  public interface SigmaParameter extends ConcreteSourceNode {
+    SigmaFieldKind getKind();
+  }
+
+  public static class SigmaTypeParameter extends TypeParameter implements SigmaParameter {
+    private final SigmaFieldKind mySigmaFieldKind;
+
+    public SigmaTypeParameter(Object data, Expression type, @NotNull SigmaFieldKind mySigmaFieldKind) {
+      super(data, true, type);
+      this.mySigmaFieldKind = mySigmaFieldKind;
+    }
+
+    public SigmaTypeParameter(Expression type, @NotNull SigmaFieldKind mySigmaFieldKind) {
+      super(true, type);
+      this.mySigmaFieldKind = mySigmaFieldKind;
+    }
+
+    @Override
+    public SigmaFieldKind getKind() {
+      return mySigmaFieldKind;
+    }
+  }
+
+  public static class SigmaTelescopeParameter extends TelescopeParameter implements SigmaParameter {
+    private final SigmaFieldKind mySigmaFieldKind;
+
+    public SigmaTelescopeParameter(Object data, @NotNull List<? extends Referable> referableList, Expression type, @NotNull SigmaFieldKind mySigmaFieldKind) {
+      super(data, true, referableList, type);
+      this.mySigmaFieldKind = mySigmaFieldKind;
+    }
+
+    @Override
+    public SigmaFieldKind getKind() {
+      return mySigmaFieldKind;
+    }
+  }
+
   public static int getNumberOfParameters(Collection<? extends Parameter> parameters) {
     int sum = 0;
     for (Parameter parameter : parameters) {

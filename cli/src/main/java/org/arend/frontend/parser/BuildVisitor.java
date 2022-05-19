@@ -5,6 +5,7 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.arend.ext.concrete.definition.ClassFieldKind;
 import org.arend.ext.concrete.definition.FunctionKind;
+import org.arend.ext.concrete.expr.SigmaFieldKind;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.reference.Precedence;
@@ -1628,6 +1629,50 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return parameters;
   }
 
+  private List<Concrete.TypeParameter> visitSigmaTeles(List<SigmaTeleContext> teles) {
+    List<Concrete.TypeParameter> parameters = new ArrayList<>(teles.size());
+    for (SigmaTeleContext tele : teles) {
+      if (tele instanceof SigmaTeleLiteralContext) {
+        parameters.add(new Concrete.SigmaTypeParameter(visitExpr(((SigmaTeleLiteralContext) tele).literal()), SigmaFieldKind.ANY));
+      } else if (tele instanceof SigmaTeleUniverseContext) {
+        parameters.add(new Concrete.SigmaTypeParameter(visitExpr(((SigmaTeleUniverseContext) tele).universeAtom()), SigmaFieldKind.ANY));
+      } else if (tele instanceof SigmaEntryContext) {
+        TypedExprContext typedExprContext = ((SigmaEntryContext) tele).typedExpr();
+        SigmaModContext modContext = ((SigmaEntryContext) tele).sigmaMod();
+        SigmaFieldKind kind;
+        if (modContext instanceof SigmaPropertyContext) {
+          kind = visitSigmaProperty((SigmaPropertyContext) modContext);
+        } else if (modContext instanceof SigmaFieldContext) {
+          kind = visitSigmaField((SigmaFieldContext) modContext);
+        } else {
+          kind = SigmaFieldKind.ANY;
+        }
+        List<ExprContext> exprs = typedExprContext.expr();
+        checkStrict(typedExprContext);
+        if (exprs.size() == 2) {
+          List<ParsedLocalReferable> vars = new ArrayList<>();
+          getVarList(exprs.get(0), vars);
+          parameters.add(new Concrete.SigmaTelescopeParameter(tokenPosition(tele.getStart()), vars, visitExpr(exprs.get(1)), kind));
+        } else {
+          parameters.add(new Concrete.SigmaTypeParameter(visitExpr(exprs.get(0)), kind));
+        }
+      }
+    }
+    return parameters;
+  }
+
+
+
+  @Override
+  public SigmaFieldKind visitSigmaProperty(SigmaPropertyContext ctx) {
+    return SigmaFieldKind.PROPERTY;
+  }
+
+  @Override
+  public SigmaFieldKind visitSigmaField(SigmaFieldContext ctx) {
+    return SigmaFieldKind.FIELD;
+  }
+
   private void visitFieldTeles(List<FieldTeleContext> teles, Concrete.ClassDefinition classDef, List<Concrete.ClassElement> fields) {
     for (FieldTeleContext tele : teles) {
       boolean explicit;
@@ -1705,12 +1750,12 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
 
   @Override
   public Concrete.SigmaExpression visitSigma(SigmaContext ctx) {
-    return new Concrete.SigmaExpression(tokenPosition(ctx.start), visitTeles(ctx.tele(), false));
+    return new Concrete.SigmaExpression(tokenPosition(ctx.start), visitSigmaTeles(ctx.sigmaTele()));
   }
 
   @Override
   public Concrete.SigmaExpression visitSigma2(Sigma2Context ctx) {
-    return new Concrete.SigmaExpression(tokenPosition(ctx.start), visitTeles(ctx.tele(), false));
+    return new Concrete.SigmaExpression(tokenPosition(ctx.start), visitSigmaTeles(ctx.sigmaTele()));
   }
 
   @Override
