@@ -218,6 +218,7 @@ message Telescope {
     bool is_not_explicit = 2;
     Type type = 3;
     bool is_hidden = 4;
+    bool is_property = 5;
 }
 
 message TypedBinding {
