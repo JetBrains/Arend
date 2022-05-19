@@ -1386,6 +1386,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
   }
 
   private boolean compareLists(List<? extends Expression> list1, List<? extends Expression> list2, DependentLink link, Definition definition, ExprSubstitution substitution, boolean skipBoxed) {
+    assert !skipBoxed || list1.isEmpty() || list2.isEmpty() || link instanceof SigmaTypedDependentLink || link instanceof UntypedDependentLink;
     if (list1.size() != list2.size()) {
       return false;
     }
@@ -1398,7 +1399,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       
       boolean skipFromBoxing;
       if (skipBoxed) {
-        skipFromBoxing = link.getType().getSortOfType().isProp();
+        skipFromBoxing = ((SigmaTypedDependentLink)link.getNextTyped(null)).isProperty();
       } else {
         skipFromBoxing = false;
       }

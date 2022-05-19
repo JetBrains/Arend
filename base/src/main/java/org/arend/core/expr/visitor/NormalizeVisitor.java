@@ -8,6 +8,7 @@ import org.arend.core.context.binding.EvaluatingBinding;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.inference.TypeClassInferenceVariable;
 import org.arend.core.context.param.DependentLink;
+import org.arend.core.context.param.SigmaTypedDependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.context.param.TypedSingleDependentLink;
 import org.arend.core.definition.*;

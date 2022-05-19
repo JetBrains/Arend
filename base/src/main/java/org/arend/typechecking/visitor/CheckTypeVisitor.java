@@ -18,6 +18,7 @@ import org.arend.core.subst.*;
 import org.arend.error.*;
 import org.arend.ext.ArendExtension;
 import org.arend.ext.FreeBindingsModifier;
+import org.arend.ext.concrete.expr.SigmaFieldKind;
 import org.arend.ext.concrete.pattern.ConcreteNumberPattern;
 import org.arend.ext.concrete.ConcreteParameter;
 import org.arend.ext.concrete.pattern.ConcretePattern;
@@ -2532,10 +2533,69 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     }
 
     List<Sort> sorts = new ArrayList<>(expr.getParameters().size());
-    DependentLink args = visitParameters(expr.getParameters(), expectedType, sorts);
+    DependentLink args = visitSigmaParameters(expr.getParameters(), expectedType, sorts);
     if (args == null || !args.hasNext()) return null;
     Sort sort = generateUpperBound(sorts, expr);
     return checkResult(expectedType, new TypecheckingResult(new SigmaExpression(sort, args), new UniverseExpression(sort)), expr);
+  }
+
+  private DependentLink visitSigmaParameters(Collection<? extends ConcreteParameter> parameters, Expression expectedType, List<Sort> resultSorts) {
+    LinkList list = new LinkList();
+
+    try (var ignored = new Utils.SetContextSaver<>(context)) {
+      for (ConcreteParameter parameter : parameters) {
+        if (!(parameter instanceof Concrete.SigmaParameter && parameter instanceof Concrete.TypeParameter)) {
+          throw new IllegalArgumentException();
+        }
+        if (!visitSigmaParameter((Concrete.TypeParameter) parameter, expectedType, resultSorts, list)) {
+          return null;
+        }
+      }
+    }
+
+    return list.getFirst();
+  }
+
+  private boolean visitSigmaParameter(Concrete.TypeParameter arg, Expression expectedType, List<Sort> resultSorts, LinkList list) {
+    assert arg instanceof Concrete.SigmaParameter;
+    Type result = checkType(arg.getType(), expectedType == null ? Type.OMEGA : expectedType);
+    if (result == null) return false;
+
+    if (arg instanceof Concrete.TelescopeParameter) {
+      List<? extends Referable> referableList = arg.getReferableList();
+      DependentLink link = ExpressionFactory.sigmaParameter(isProperty((Concrete.SigmaParameter) arg, result), arg.getNames(), result);
+      list.append(link);
+      int i = 0;
+      for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext(), i++) {
+        addBinding(referableList.get(i), link1);
+      }
+    } else {
+      DependentLink link = ExpressionFactory.sigmaParameter(isProperty((Concrete.SigmaParameter) arg, result), (String) null, result);
+      list.append(link);
+      addBinding(null, link);
+    }
+
+    if (resultSorts != null) {
+      resultSorts.add(result.getSortOfType());
+    }
+    return true;
+  }
+
+  private boolean isProperty(Concrete.SigmaParameter arg, Type type) {
+    Sort sort = type.getSortOfType();
+    SigmaFieldKind kind = arg.getKind();
+    switch (kind) {
+      case PROPERTY:
+        if (!sort.isProp()) {
+          errorReporter.report(new LevelMismatchError(LevelMismatchError.TargetKind.SIGMA_FIELD, sort, arg));
+        }
+        return true;
+      case FIELD:
+        return false;
+      case ANY:
+        return sort.isProp();
+    }
+    throw new IllegalStateException("Unreachable");
   }
 
   @Override
@@ -2586,7 +2646,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       fields.add(result.expression);
       Sort sort = getSortOfType(result.type, expr);
       sorts.add(sort);
-      list.append(ExpressionFactory.parameter(null, result.type instanceof Type ? (Type) result.type : new TypeExpression(result.type, sort)));
+      list.append(ExpressionFactory.sigmaParameter(sort.isProp(), (String) null, result.type instanceof Type ? (Type) result.type : new TypeExpression(result.type, sort)));
     }
 
     SigmaExpression type = new SigmaExpression(generateUpperBound(sorts, expr), list.getFirst());

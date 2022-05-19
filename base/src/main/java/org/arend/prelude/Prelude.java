@@ -36,8 +36,7 @@ import org.arend.util.Version;
 import java.util.*;
 import java.util.function.Consumer;
 
-import static org.arend.core.expr.ExpressionFactory.Nat;
-import static org.arend.core.expr.ExpressionFactory.parameter;
+import static org.arend.core.expr.ExpressionFactory.*;
 
 public class Prelude implements ArendPrelude {
   public static final Version VERSION = GeneratedVersion.VERSION;
@@ -100,7 +99,7 @@ public class Prelude implements ArendPrelude {
         NAT = (DataDefinition) definition;
         ZERO = NAT.getConstructor("zero");
         SUC = NAT.getConstructor("suc");
-        DIV_MOD_TYPE = new SigmaExpression(Sort.SET0, parameter(true, Arrays.asList(null, null), Nat()));
+        DIV_MOD_TYPE = new SigmaExpression(Sort.SET0, sigmaParameter(false, Arrays.asList(null, null), Nat()));
         break;
       case "Fin":
         FIN = (DataDefinition) definition;
