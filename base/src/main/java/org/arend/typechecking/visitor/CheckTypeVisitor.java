@@ -2563,14 +2563,22 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
 
     if (arg instanceof Concrete.TelescopeParameter) {
       List<? extends Referable> referableList = arg.getReferableList();
-      DependentLink link = ExpressionFactory.sigmaParameter(isProperty((Concrete.SigmaParameter) arg, result), arg.getNames(), result);
+      SigmaFieldKind kind = ((Concrete.SigmaParameter) arg).getKind();
+      if (!result.getSortOfType().isProp() && kind == SigmaFieldKind.PROPERTY) {
+        errorReporter.report(new LevelMismatchError(LevelMismatchError.TargetKind.SIGMA_FIELD, result.getSortOfType(), arg));
+      }
+      DependentLink link = ExpressionFactory.sigmaParameter(kind, arg.getNames(), result);
       list.append(link);
       int i = 0;
       for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext(), i++) {
         addBinding(referableList.get(i), link1);
       }
     } else {
-      DependentLink link = ExpressionFactory.sigmaParameter(isProperty((Concrete.SigmaParameter) arg, result), (String) null, result);
+      SigmaFieldKind kind = ((Concrete.SigmaParameter) arg).getKind();
+      if (!result.getSortOfType().isProp() && kind == SigmaFieldKind.PROPERTY) {
+       errorReporter.report(new LevelMismatchError(LevelMismatchError.TargetKind.SIGMA_FIELD, result.getSortOfType(), arg));
+      }
+      DependentLink link = ExpressionFactory.sigmaParameter(kind, (String) null, result);
       list.append(link);
       addBinding(null, link);
     }
@@ -2579,23 +2587,6 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       resultSorts.add(result.getSortOfType());
     }
     return true;
-  }
-
-  private boolean isProperty(Concrete.SigmaParameter arg, Type type) {
-    Sort sort = type.getSortOfType();
-    SigmaFieldKind kind = arg.getKind();
-    switch (kind) {
-      case PROPERTY:
-        if (!sort.isProp()) {
-          errorReporter.report(new LevelMismatchError(LevelMismatchError.TargetKind.SIGMA_FIELD, sort, arg));
-        }
-        return true;
-      case FIELD:
-        return false;
-      case ANY:
-        return sort.isProp();
-    }
-    throw new IllegalStateException("Unreachable");
   }
 
   @Override
@@ -2646,7 +2637,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       fields.add(result.expression);
       Sort sort = getSortOfType(result.type, expr);
       sorts.add(sort);
-      list.append(ExpressionFactory.sigmaParameter(sort.isProp(), (String) null, result.type instanceof Type ? (Type) result.type : new TypeExpression(result.type, sort)));
+      list.append(ExpressionFactory.sigmaParameter(SigmaFieldKind.ANY, (String) null, result.type instanceof Type ? (Type) result.type : new TypeExpression(result.type, sort)));
     }
 
     SigmaExpression type = new SigmaExpression(generateUpperBound(sorts, expr), list.getFirst());

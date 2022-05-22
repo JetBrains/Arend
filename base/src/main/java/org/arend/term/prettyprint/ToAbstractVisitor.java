@@ -589,7 +589,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       if (referable == null && !isNamed && referableList.isEmpty()) {
         Concrete.TypeParameter arg;
         if (link instanceof SigmaTypedDependentLink) {
-          arg = cSigmaTypeArg(getSigmaFieldKind((SigmaTypedDependentLink) link, link.getType()), link.getTypeExpr().accept(this, null));
+          arg = cSigmaTypeArg(((SigmaTypedDependentLink) link).getFieldKind(), link.getTypeExpr().accept(this, null));
         } else {
           arg = cTypeArg(link.isExplicit(), link.getTypeExpr().accept(this, null));
         }
@@ -598,21 +598,13 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
         referableList.add(referable);
         Concrete.TelescopeParameter arg;
         if (link instanceof SigmaTypedDependentLink) {
-          arg = cSigmaTele(getSigmaFieldKind((SigmaTypedDependentLink) link, link.getType()), new ArrayList<>(referableList), link.getTypeExpr().accept(this, null));
+          arg = cSigmaTele(((SigmaTypedDependentLink) link).getFieldKind(), new ArrayList<>(referableList), link.getTypeExpr().accept(this, null));
         } else {
           arg = cTele(link, link.isExplicit(), new ArrayList<>(referableList), link.getTypeExpr().accept(this, null));
         }
         args.add(arg);
         referableList.clear();
       }
-    }
-  }
-
-  private static SigmaFieldKind getSigmaFieldKind(SigmaTypedDependentLink link, Type type) {
-    if (type.getSortOfType().isProp() && !link.isProperty()) {
-      return SigmaFieldKind.FIELD;
-    } else {
-      return SigmaFieldKind.ANY;
     }
   }
 
