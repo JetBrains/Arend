@@ -98,4 +98,10 @@ public class SigmaTest extends TypeCheckingTestCase {
             "\\lemma u : Unit => unit\n" +
             "\\func f : (u, unit) = {\\Sigma (\\field Unit) (\\field Unit)} (unit, u) => idp", 1);
   }
+
+  @Test
+  public void testTypeComparison() {
+    typeCheckModule("\\data Unit | unit\n" +
+            "\\func f : (\\Sigma Unit Unit) = (\\Sigma (\\field Unit) Unit) => idp", 1);
+  }
 }
