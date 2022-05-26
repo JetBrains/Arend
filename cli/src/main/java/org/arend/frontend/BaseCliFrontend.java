@@ -433,8 +433,12 @@ public abstract class BaseCliFrontend {
       if (recompile) {
         library.addFlag(SourceLibrary.Flag.RECOMPILE);
       }
-      if (!myLibraryManager.loadLibrary(library, typechecking)) {
-        continue;
+      try {
+        if (!myLibraryManager.loadLibrary(library, typechecking)) {
+          continue;
+        }
+      } finally {
+        flushErrors();
       }
 
       List<Concrete.Definition> forcedDefs;
@@ -496,34 +500,37 @@ public abstract class BaseCliFrontend {
         System.out.println();
         System.out.println("--- Typechecking " + library.getName() + " ---");
         long time = System.currentTimeMillis();
-        if (forcedDefs == null) {
-          typechecking.typecheckLibrary(library);
-        } else {
-          typechecking.typecheckDefinitions(forcedDefs, null);
-        }
-        time = System.currentTimeMillis() - time;
-        flushErrors();
-
-        // Output nice per-module typechecking results
-        int numWithGoals = 0;
-        for (ModulePath module : modules) {
-          GeneralError.Level result = myModuleResults.get(module);
-          if (result == null && library.getModuleGroup(module, false) == null && library.getModuleGroup(module, true) == null) {
-            result = GeneralError.Level.ERROR;
+        try {
+          if (forcedDefs == null) {
+            typechecking.typecheckLibrary(library);
+          } else {
+            typechecking.typecheckDefinitions(forcedDefs, null);
           }
-          reportTypeCheckResult(module, result);
-          if (result == GeneralError.Level.ERROR) numWithErrors++;
-          if (result == GeneralError.Level.GOAL) numWithGoals++;
-        }
+        } finally {
+          time = System.currentTimeMillis() - time;
+          flushErrors();
 
-        if (numWithErrors > 0) {
-          myExitWithError = true;
-          System.out.println("Number of modules with errors: " + numWithErrors);
+          // Output nice per-module typechecking results
+          int numWithGoals = 0;
+          for (ModulePath module : modules) {
+            GeneralError.Level result = myModuleResults.get(module);
+            if (result == null && library.getModuleGroup(module, false) == null && library.getModuleGroup(module, true) == null) {
+              result = GeneralError.Level.ERROR;
+            }
+            reportTypeCheckResult(module, result);
+            if (result == GeneralError.Level.ERROR) numWithErrors++;
+            if (result == GeneralError.Level.GOAL) numWithGoals++;
+          }
+
+          if (numWithErrors > 0) {
+            myExitWithError = true;
+            System.out.println("Number of modules with errors: " + numWithErrors);
+          }
+          if (numWithGoals > 0) {
+            System.out.println("Number of modules with goals: " + numWithGoals);
+          }
+          System.out.println("--- Done (" + timeToString(time) + ") ---");
         }
-        if (numWithGoals > 0) {
-          System.out.println("Number of modules with goals: " + numWithGoals);
-        }
-        System.out.println("--- Done (" + timeToString(time) + ") ---");
 
         // Persist updated modules
         if (library.supportsPersisting()) {
@@ -567,17 +574,19 @@ public abstract class BaseCliFrontend {
         System.out.println("--- Checking " + library.getName() + " ---");
         long time = System.currentTimeMillis();
 
-        CoreModuleChecker checker = new CoreModuleChecker(myErrorReporter);
-        for (ModulePath module : library.getLoadedModules()) {
-          Group group = library.getModuleGroup(module, false);
-          if (group != null) {
-            checker.checkGroup(group);
+        try {
+          CoreModuleChecker checker = new CoreModuleChecker(myErrorReporter);
+          for (ModulePath module : library.getLoadedModules()) {
+            Group group = library.getModuleGroup(module, false);
+            if (group != null) {
+              checker.checkGroup(group);
+            }
           }
+        } finally {
+          time = System.currentTimeMillis() - time;
+          flushErrors();
+          System.out.println("--- Done (" + timeToString(time) + ") ---");
         }
-
-        time = System.currentTimeMillis() - time;
-        flushErrors();
-        System.out.println("--- Done (" + timeToString(time) + ") ---");
       }
     }
 
@@ -604,30 +613,32 @@ public abstract class BaseCliFrontend {
         typechecking.clear();
         time = System.currentTimeMillis();
 
-        typechecking.typecheckTests(library, null);
-        if (doubleCheck) {
-          boolean doCheck = true;
-          for (GeneralError error : myErrorReporter.getErrorList()) {
-            if (error.level == GeneralError.Level.ERROR) {
-              doCheck = false;
-              break;
+        try {
+          typechecking.typecheckTests(library, null);
+          if (doubleCheck) {
+            boolean doCheck = true;
+            for (GeneralError error : myErrorReporter.getErrorList()) {
+              if (error.level == GeneralError.Level.ERROR) {
+                doCheck = false;
+                break;
+              }
             }
-          }
-          if (doCheck) {
-            CoreModuleChecker checker = new CoreModuleChecker(myErrorReporter);
-            for (ModulePath module : modules) {
-              Group group = library.getModuleGroup(module, true);
-              if (group != null) {
-                checker.checkGroup(group);
+            if (doCheck) {
+              CoreModuleChecker checker = new CoreModuleChecker(myErrorReporter);
+              for (ModulePath module : modules) {
+                Group group = library.getModuleGroup(module, true);
+                if (group != null) {
+                  checker.checkGroup(group);
+                }
               }
             }
           }
+        } finally {
+          time = System.currentTimeMillis() - time;
+          flushErrors();
+          System.out.println("Tests completed: " + typechecking.total + ", Failed: " + typechecking.failed);
+          System.out.println("--- Done (" + timeToString(time) + ") ---");
         }
-
-        time = System.currentTimeMillis() - time;
-        flushErrors();
-        System.out.println("Tests completed: " + typechecking.total + ", Failed: " + typechecking.failed);
-        System.out.println("--- Done (" + timeToString(time) + ") ---");
       }
     }
 
