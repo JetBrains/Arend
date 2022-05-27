@@ -193,10 +193,21 @@ final public class MinimizedRepresentation {
                 //noinspection DuplicatedCode
                 if (parameter.getType() == null) {
                     return (Concrete.Parameter) myFactory.param(parameter.isExplicit(), wideParameter.getRefList().get(0));
-                } else if (wideParameter.getRefList().stream().anyMatch(Objects::nonNull)) {
-                    return (Concrete.Parameter) myFactory.param(parameter.isExplicit(), wideParameter.getRefList(), ((Concrete.TypeParameter) parameter).type.accept(this, ((Concrete.TypeParameter) wideParameter).type));
                 } else {
-                    return (Concrete.Parameter) myFactory.param(parameter.isExplicit(), ((Concrete.TypeParameter) parameter).type.accept(this, ((Concrete.TypeParameter) wideParameter).type));
+                    Concrete.Expression processedType = ((Concrete.TypeParameter) parameter).type.accept(this, ((Concrete.TypeParameter) wideParameter).type);
+                    if (wideParameter.getRefList().stream().anyMatch(Objects::nonNull)) {
+                        if (parameter instanceof Concrete.SigmaParameter) {
+                            return myFactory.sigmaParam(((Concrete.SigmaParameter) parameter).getKind(), wideParameter.getRefList(), processedType);
+                        } else {
+                            return myFactory.param(parameter.isExplicit(), parameter.getRefList(), processedType);
+                        }
+                    } else {
+                        if (parameter instanceof Concrete.SigmaParameter) {
+                            return myFactory.sigmaParam(((Concrete.SigmaParameter) parameter).getKind(), List.of(), processedType);
+                        } else {
+                            return (Concrete.Parameter) myFactory.param(parameter.isExplicit(), processedType);
+                        }
+                    }
                 }
             }
         }, verboseRepresentation);

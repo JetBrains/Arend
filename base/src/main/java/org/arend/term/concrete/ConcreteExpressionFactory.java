@@ -1,9 +1,11 @@
 package org.arend.term.concrete;
 
+import org.arend.ext.concrete.expr.SigmaFieldKind;
 import org.arend.ext.module.LongName;
 import org.arend.naming.reference.LocalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.prelude.Prelude;
+import org.jetbrains.annotations.NotNull;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -130,6 +132,10 @@ public class ConcreteExpressionFactory {
     return new Concrete.TypeParameter(explicit, type);
   }
 
+  public static Concrete.SigmaTypeParameter cSigmaTypeArg(@NotNull SigmaFieldKind kind, Concrete.Expression type) {
+    return new Concrete.SigmaTypeParameter(type, kind);
+  }
+
   public static Concrete.TypeParameter cTypeArg(Concrete.Expression type) {
     return new Concrete.TypeParameter(true, type);
   }
@@ -144,6 +150,10 @@ public class ConcreteExpressionFactory {
 
   public static Concrete.TelescopeParameter cTele(Object data, boolean explicit, List<? extends Referable> referableList, Concrete.Expression type) {
     return new Concrete.TelescopeParameter(data, explicit, referableList, type);
+  }
+
+  public static Concrete.SigmaTelescopeParameter cSigmaTele(@NotNull SigmaFieldKind kind, List<? extends Referable> referableList, Concrete.Expression type) {
+    return new Concrete.SigmaTelescopeParameter(null, referableList, type, kind);
   }
 
   public static Concrete.PiExpression cPi(Concrete.Expression domain, Concrete.Expression codomain) {

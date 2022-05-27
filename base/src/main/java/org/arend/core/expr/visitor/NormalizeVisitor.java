@@ -15,6 +15,7 @@ import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.HaveClause;
 import org.arend.core.expr.let.LetClause;
+import org.arend.core.expr.type.Type;
 import org.arend.core.pattern.Pattern;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
@@ -976,6 +977,14 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
 
   @Override
   public Expression visitProj(ProjExpression expr, NormalizationMode mode) {
+    var holderType = expr.getExpression().getType();
+    var sigmaType = holderType == null ? null : holderType.cast(SigmaExpression.class);
+    if (sigmaType != null) {
+      Type linkType = DependentLink.Helper.get(sigmaType.getParameters(), expr.getField()).getType();
+      if (linkType != null && linkType.getSortOfType().isProp()) {
+        return expr;
+      }
+    }
     Expression newExpr = expr.getExpression().accept(this, mode);
     TupleExpression exprNorm = newExpr.cast(TupleExpression.class);
     if (exprNorm != null) {

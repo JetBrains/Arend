@@ -17,6 +17,7 @@ import org.arend.core.pattern.Pattern;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.*;
+import org.arend.ext.concrete.expr.SigmaFieldKind;
 import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.ops.CMP;
@@ -1204,14 +1205,18 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
 
     CMP origCMP = myCMP;
     for (int i = 0; i < list1.size() && i < list2.size(); ++i) {
-      if (!compare(list1.get(i).getTypeExpr(), list2.get(i).getTypeExpr(), Type.OMEGA, false)) {
+      DependentLink param1 = list1.get(i);
+      DependentLink param2 = list2.get(i);
+      boolean differentBoxing = param1 instanceof SigmaTypedDependentLink && param2 instanceof SigmaTypedDependentLink &&
+              ((SigmaTypedDependentLink) param1).getFieldKind() != ((SigmaTypedDependentLink) param2).getFieldKind();
+      if (differentBoxing || !compare(param1.getTypeExpr(), param2.getTypeExpr(), Type.OMEGA, false)) {
         for (int j = 0; j < i; j++) {
           mySubstitution.remove(list2.get(j));
         }
         myCMP = origCMP;
         return false;
       }
-      mySubstitution.put(list2.get(i), list1.get(i));
+      mySubstitution.put(param2, param1);
       myCMP = origCMP;
     }
 
@@ -1242,13 +1247,13 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
 
     TupleExpression tuple2 = expr2.cast(TupleExpression.class);
     if (tuple2 != null) {
-      return correctOrder ? compareLists(expr1.getFields(), tuple2.getFields(), expr1.getSigmaType().getParameters(), null, new ExprSubstitution()) : compareLists(tuple2.getFields(), expr1.getFields(), tuple2.getSigmaType().getParameters(), null, new ExprSubstitution());
+      return correctOrder ? compareLists(expr1.getFields(), tuple2.getFields(), expr1.getSigmaType().getParameters(), null, new ExprSubstitution(), true) : compareLists(tuple2.getFields(), expr1.getFields(), tuple2.getSigmaType().getParameters(), null, new ExprSubstitution(), true);
     } else {
       List<Expression> args2 = new ArrayList<>(expr1.getFields().size());
       for (int i = 0; i < expr1.getFields().size(); i++) {
         args2.add(ProjExpression.make(expr2, i));
       }
-      return correctOrder ? compareLists(expr1.getFields(), args2, expr1.getSigmaType().getParameters(), null, new ExprSubstitution()) : compareLists(args2, expr1.getFields(), expr1.getSigmaType().getParameters(), null, new ExprSubstitution());
+      return correctOrder ? compareLists(expr1.getFields(), args2, expr1.getSigmaType().getParameters(), null, new ExprSubstitution(), true) : compareLists(args2, expr1.getFields(), expr1.getSigmaType().getParameters(), null, new ExprSubstitution(), true);
     }
   }
 
@@ -1382,6 +1387,11 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
   }
 
   public boolean compareLists(List<? extends Expression> list1, List<? extends Expression> list2, DependentLink link, Definition definition, ExprSubstitution substitution) {
+    return compareLists(list1, list2, link, definition, substitution, false);
+  }
+
+  private boolean compareLists(List<? extends Expression> list1, List<? extends Expression> list2, DependentLink link, Definition definition, ExprSubstitution substitution, boolean skipBoxed) {
+    assert !skipBoxed || list1.isEmpty() || list2.isEmpty() || link instanceof SigmaTypedDependentLink || link instanceof UntypedDependentLink;
     if (list1.size() != list2.size()) {
       return false;
     }
@@ -1391,9 +1401,23 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       if (definition instanceof DataDefinition) {
         myCMP = ((DataDefinition) definition).isCovariant(i) ? origCMP : CMP.EQ;
       }
-      if (!compare(list1.get(i), list2.get(i), substitution != null && link.hasNext() ? link.getTypeExpr().subst(substitution) : null, true)) {
-        myCMP = origCMP;
-        return false;
+      
+      boolean skipFromBoxing;
+      if (skipBoxed) {
+        SigmaTypedDependentLink typed = (SigmaTypedDependentLink)link.getNextTyped(null);
+        skipFromBoxing = typed.getFieldKind() != SigmaFieldKind.FIELD && typed.getType().getSortOfType().isProp();
+      } else {
+        skipFromBoxing = false;
+      }
+      boolean oldVarsValue = myOnlySolveVars;
+      try {
+        myOnlySolveVars |= skipFromBoxing;
+        if (!compare(list1.get(i), list2.get(i), substitution != null && link.hasNext() ? link.getTypeExpr().subst(substitution) : null, true)) {
+          myCMP = origCMP;
+          return false;
+        }
+      } finally {
+        myOnlySolveVars = oldVarsValue;
       }
       if (substitution != null && link.hasNext()) {
         substitution.add(link, (myCMP == CMP.LE ? list2 : list1).get(i));

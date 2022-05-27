@@ -693,7 +693,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
 
   @NotNull
   @Override
-  public ConcreteParameter param(boolean explicit, @NotNull Collection<? extends ArendRef> refs, @NotNull ConcreteExpression type) {
+  public Concrete.Parameter param(boolean explicit, @NotNull Collection<? extends ArendRef> refs, @NotNull ConcreteExpression type) {
     if (!(type instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }
@@ -705,6 +705,21 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
       cRefs.add(makeLocalRef(ref));
     }
     return new Concrete.TelescopeParameter(myData, explicit, cRefs, (Concrete.Expression) type);
+  }
+
+  @Override
+  public @NotNull Concrete.Parameter sigmaParam(@NotNull SigmaFieldKind kind, @NotNull Collection<? extends ArendRef> refs, @NotNull ConcreteExpression type) {
+    if (!(type instanceof Concrete.Expression)) {
+      throw new IllegalArgumentException();
+    }
+    if (refs.isEmpty()) {
+      return new Concrete.SigmaTypeParameter(myData, (Concrete.Expression) type, kind);
+    }
+    List<Referable> cRefs = new ArrayList<>(refs.size());
+    for (ArendRef ref : refs) {
+      cRefs.add(makeLocalRef(ref));
+    }
+    return new Concrete.SigmaTelescopeParameter(myData, cRefs, (Concrete.Expression) type, kind);
   }
 
   @Override

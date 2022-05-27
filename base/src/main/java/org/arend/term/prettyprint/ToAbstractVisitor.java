@@ -4,6 +4,7 @@ import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.PersistentEvaluatingBinding;
 import org.arend.core.context.param.DependentLink;
+import org.arend.core.context.param.SigmaTypedDependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.definition.*;
 import org.arend.core.elimtree.Body;
@@ -14,6 +15,7 @@ import org.arend.core.expr.*;
 import org.arend.core.expr.let.HaveClause;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.let.LetClausePattern;
+import org.arend.core.expr.type.Type;
 import org.arend.core.expr.visitor.BaseExpressionVisitor;
 import org.arend.core.pattern.BindingPattern;
 import org.arend.core.pattern.EmptyPattern;
@@ -22,6 +24,7 @@ import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.ext.concrete.definition.ClassFieldKind;
 import org.arend.ext.concrete.definition.FunctionKind;
+import org.arend.ext.concrete.expr.SigmaFieldKind;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.core.ops.NormalizationMode;
@@ -584,10 +587,22 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
       Referable referable = makeLocalReference(link, freeVars, !link.isExplicit());
       if (referable == null && !isNamed && referableList.isEmpty()) {
-        args.add(cTypeArg(link.isExplicit(), link.getTypeExpr().accept(this, null)));
+        Concrete.TypeParameter arg;
+        if (link instanceof SigmaTypedDependentLink) {
+          arg = cSigmaTypeArg(((SigmaTypedDependentLink) link).getFieldKind(), link.getTypeExpr().accept(this, null));
+        } else {
+          arg = cTypeArg(link.isExplicit(), link.getTypeExpr().accept(this, null));
+        }
+        args.add(arg);
       } else {
         referableList.add(referable);
-        args.add(cTele(link, link.isExplicit(), new ArrayList<>(referableList), link.getTypeExpr().accept(this, null)));
+        Concrete.TelescopeParameter arg;
+        if (link instanceof SigmaTypedDependentLink) {
+          arg = cSigmaTele(((SigmaTypedDependentLink) link).getFieldKind(), new ArrayList<>(referableList), link.getTypeExpr().accept(this, null));
+        } else {
+          arg = cTele(link, link.isExplicit(), new ArrayList<>(referableList), link.getTypeExpr().accept(this, null));
+        }
+        args.add(arg);
         referableList.clear();
       }
     }

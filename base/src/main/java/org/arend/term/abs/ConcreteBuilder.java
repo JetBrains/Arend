@@ -410,6 +410,9 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
         if (isStrict) {
           myErrorReporter.report(new AbstractExpressionError(GeneralError.Level.ERROR, "\\strict is not allowed here", parameter.getData()));
         }
+        if (parameter instanceof Abstract.SigmaParameter) {
+          return new Concrete.SigmaTypeParameter(parameter.getData(), cType, ((Abstract.SigmaParameter) parameter).getFieldKind());
+        }
         return new Concrete.TypeParameter(parameter.getData(), parameter.isExplicit(), cType);
       }
     } else {
@@ -422,6 +425,9 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
       } else {
         if (isStrict) {
           myErrorReporter.report(new AbstractExpressionError(GeneralError.Level.ERROR, "\\strict is not allowed here", parameter.getData()));
+        }
+        if (parameter instanceof Abstract.SigmaParameter) {
+          return new Concrete.SigmaTelescopeParameter(parameter.getData(), dataReferableList, cType, ((Abstract.SigmaParameter) parameter).getFieldKind());
         }
         return new Concrete.TelescopeParameter(parameter.getData(), parameter.isExplicit(), dataReferableList, cType);
       }

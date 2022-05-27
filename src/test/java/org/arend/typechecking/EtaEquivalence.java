@@ -175,4 +175,17 @@ public class EtaEquivalence extends TypeCheckingTestCase {
   public void sigmaUnitTest() {
     typeCheckModule("\\func f (x y : \\Sigma) : x = y => idp");
   }
+
+  @Test
+  public void sigmaUnitTest2() {
+    typeCheckModule("\\data Unit | unit \n " +
+            "\\func f (x : \\Sigma Unit Nat) : x = (x.1, x.2) => idp");
+  }
+
+  @Test
+  public void sigmaUnitTest3() {
+    typeCheckModule("\\data Unit | unit \n " +
+            "\\func x : \\Sigma Unit Nat => (unit, 0)" +
+            "\\func f : x = (x.1, x.2) => idp");
+  }
 }

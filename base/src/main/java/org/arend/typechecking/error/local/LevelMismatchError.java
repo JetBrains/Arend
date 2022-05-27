@@ -14,9 +14,21 @@ public class LevelMismatchError extends TypecheckingError {
   public final boolean isLemma;
   public final Sort actualSort;
 
-  public LevelMismatchError(boolean isLemma, Sort sort, @Nullable ConcreteSourceNode cause) {
-    super("The type of a " + (isLemma ? "lemma" : "property") + " must be a proposition", cause);
-    this.isLemma = isLemma;
+  public enum TargetKind {
+    LEMMA("lemma"),
+    PROPERTY("property"),
+    SIGMA_FIELD("sigma field");
+
+    private final String representation;
+
+    TargetKind(String representation) {
+      this.representation = representation;
+    }
+  }
+
+  public LevelMismatchError(TargetKind kind, Sort sort, @Nullable ConcreteSourceNode cause) {
+    super("The type of a " + kind.representation + " must be a proposition", cause);
+    this.isLemma = kind == TargetKind.LEMMA;
     actualSort = sort != null ? sort : new Sort(new org.arend.core.sort.Level(LevelVariable.PVAR), org.arend.core.sort.Level.INFINITY);
   }
 

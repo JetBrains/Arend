@@ -109,6 +109,10 @@ public class SubstConcreteExpressionVisitor implements DataContainer, ConcreteEx
       return (T) new Concrete.TelescopeParameter(data, parameter.isExplicit(), new ArrayList<>(parameter.getReferableList()), nullableMap(parameter.getType()));
     } else if (Concrete.DefinitionTelescopeParameter.class.equals(parameter.getClass())) {
       return (T) new Concrete.DefinitionTelescopeParameter(data, parameter.isExplicit(), parameter.isStrict(), new ArrayList<>(parameter.getReferableList()), nullableMap(parameter.getType()));
+    } else if (Concrete.SigmaTypeParameter.class.equals(parameter.getClass())) {
+      return (T) new Concrete.SigmaTypeParameter(data, nullableMap(parameter.getType()), ((Concrete.SigmaTypeParameter) parameter).getKind());
+    } else if (Concrete.SigmaTelescopeParameter.class.equals(parameter.getClass())) {
+      return (T) new Concrete.SigmaTelescopeParameter(data, new ArrayList<>(parameter.getReferableList()), nullableMap(parameter.getType()), ((Concrete.SigmaTelescopeParameter) parameter).getKind());
     } else {
       throw new IllegalArgumentException("Unhandled parameter: " + parameter.getClass());
     }

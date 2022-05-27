@@ -66,4 +66,42 @@ public class SigmaTest extends TypeCheckingTestCase {
   public void projImplicitPi() {
     typeCheckDef("\\func test (f : \\Pi {x : Nat} -> \\Sigma (y : Nat) (x = y)) : 0 = f.1 => f.2");
   }
+
+  @Test
+  public void testProofIrrelevanceForProps() {
+    typeCheckModule("\\data Unit | unit\n" +
+            "\\lemma u : Unit => unit\n" +
+            "\\func f : (u, unit) = (unit, u) => idp");
+  }
+
+  @Test
+  public void testProperty() {
+    typeCheckModule("\\data Unit | unit\n" +
+            "\\func f : \\Sigma (\\property Unit) Unit => (unit, unit)");
+  }
+
+  @Test
+  public void testField() {
+    typeCheckModule("\\data Unit | unit\n" +
+            "\\func f : \\Sigma Unit (\\field Unit) => (unit, unit)");
+  }
+
+  @Test
+  public void testBadPropertyIndication() {
+    typeCheckModule("\\data Unit | unit\n" +
+            "\\func f : \\Sigma Unit (\\property Nat) => (unit, 1)", 1);
+  }
+
+  @Test
+  public void testFieldNormalization() {
+    typeCheckModule("\\data Unit | unit\n" +
+            "\\lemma u : Unit => unit\n" +
+            "\\func f : (u, unit) = {\\Sigma (\\field Unit) (\\field Unit)} (unit, u) => idp", 1);
+  }
+
+  @Test
+  public void testTypeComparison() {
+    typeCheckModule("\\data Unit | unit\n" +
+            "\\func f : (\\Sigma Unit Unit) = (\\Sigma (\\field Unit) Unit) => idp", 1);
+  }
 }
