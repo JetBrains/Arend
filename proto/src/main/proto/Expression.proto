@@ -213,18 +213,12 @@ message SingleParameter {
     bool is_hidden = 4;
 }
 
-enum PropertyKind {
-    ANY = 0;
-    FIELD = 1;
-    PROPERTY = 2;
-};
-
 message Telescope {
     repeated string name = 1;
     bool is_not_explicit = 2;
     Type type = 3;
     bool is_hidden = 4;
-    PropertyKind property_kind = 5;
+    bool is_property = 5;
 }
 
 message TypedBinding {

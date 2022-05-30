@@ -16,7 +16,6 @@ import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.Levels;
 import org.arend.error.DummyErrorReporter;
 import org.arend.ext.ArendPrelude;
-import org.arend.ext.concrete.expr.SigmaFieldKind;
 import org.arend.ext.core.definition.CoreClassDefinition;
 import org.arend.ext.core.definition.CoreClassField;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
@@ -100,7 +99,7 @@ public class Prelude implements ArendPrelude {
         NAT = (DataDefinition) definition;
         ZERO = NAT.getConstructor("zero");
         SUC = NAT.getConstructor("suc");
-        DIV_MOD_TYPE = new SigmaExpression(Sort.SET0, sigmaParameter(SigmaFieldKind.ANY, Arrays.asList(null, null), Nat()));
+        DIV_MOD_TYPE = new SigmaExpression(Sort.SET0, sigmaParameter(false, Arrays.asList(null, null), Nat()));
         break;
       case "Fin":
         FIN = (DataDefinition) definition;

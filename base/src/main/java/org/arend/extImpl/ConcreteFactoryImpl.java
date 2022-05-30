@@ -239,6 +239,11 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
       if (type == null) throw new IllegalArgumentException();
       return type;
     }
+    for (ConcreteParameter parameter : parameters) {
+      if (!(parameter instanceof Concrete.SigmaTypeParameter || parameter instanceof Concrete.SigmaTelescopeParameter)) {
+        throw new IllegalArgumentException();
+      }
+    }
     return new Concrete.SigmaExpression(myData, typeParameters(new ArrayList<>(parameters)));
   }
 
@@ -720,6 +725,14 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
       cRefs.add(makeLocalRef(ref));
     }
     return new Concrete.SigmaTelescopeParameter(myData, cRefs, (Concrete.Expression) type, kind);
+  }
+
+  @Override
+  public @NotNull ConcreteParameter sigmaParam(@NotNull SigmaFieldKind kind, @NotNull ConcreteExpression type) {
+    if (!(type instanceof Concrete.Expression)) {
+      throw new IllegalArgumentException();
+    }
+    return new Concrete.SigmaTypeParameter(myData, (Concrete.Expression) type, kind);
   }
 
   @Override

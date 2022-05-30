@@ -26,7 +26,6 @@ import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.Levels;
-import org.arend.ext.concrete.expr.SigmaFieldKind;
 import org.arend.prelude.Prelude;
 
 import java.util.ArrayList;
@@ -149,21 +148,12 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
     tBuilder.setIsNotExplicit(!typed.isExplicit());
     tBuilder.setIsHidden(typed.isHidden());
     tBuilder.setType(writeType(typed.getType()));
-    tBuilder.setPropertyKind(typed instanceof SigmaTypedDependentLink ? getProtoKind(((SigmaTypedDependentLink) typed).getFieldKind()) : ExpressionProtos.PropertyKind.ANY);
+    tBuilder.setIsProperty(typed instanceof SigmaTypedDependentLink && ((SigmaTypedDependentLink) typed).isProperty());
     for (; link != typed; link = link.getNext()) {
       registerBinding(link);
     }
     registerBinding(typed);
     return tBuilder.build();
-  }
-
-  private static ExpressionProtos.PropertyKind getProtoKind(SigmaFieldKind kind) {
-    switch (kind) {
-      case PROPERTY: return ExpressionProtos.PropertyKind.PROPERTY;
-      case FIELD: return ExpressionProtos.PropertyKind.FIELD;
-      case ANY: return ExpressionProtos.PropertyKind.ANY;
-    }
-    return null;
   }
 
   ExpressionProtos.SingleParameter writeParameter(DependentLink link) {
