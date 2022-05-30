@@ -22,7 +22,6 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.Levels;
 import org.arend.core.subst.ListLevels;
-import org.arend.ext.concrete.expr.SigmaFieldKind;
 import org.arend.ext.serialization.DeserializationException;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.order.dependency.DependencyListener;
@@ -121,7 +120,7 @@ class ExpressionDeserialization {
       Type type = readType(proto.getType());
       DependentLink tele = proto.getIsHidden() && unfixedNames.size() == 1
         ? new TypedDependentLink(!proto.getIsNotExplicit(), unfixedNames.get(0), type, true, EmptyDependentLink.getInstance())
-        : forSigma ? ExpressionFactory.sigmaParameter(getSigmaFieldKind(proto.getPropertyKind()), unfixedNames, type)
+        : forSigma ? ExpressionFactory.sigmaParameter(proto.getIsProperty(), unfixedNames, type)
         : ExpressionFactory.parameter(!proto.getIsNotExplicit(), unfixedNames, type);
       for (DependentLink link = tele; link.hasNext(); link = link.getNext()) {
         registerBinding(link);
@@ -129,15 +128,6 @@ class ExpressionDeserialization {
       list.append(tele);
     }
     return list.getFirst();
-  }
-
-  private static SigmaFieldKind getSigmaFieldKind(ExpressionProtos.PropertyKind kind) {
-    switch (kind) {
-      case PROPERTY: return SigmaFieldKind.PROPERTY;
-      case FIELD: return SigmaFieldKind.FIELD;
-      case ANY: return SigmaFieldKind.ANY;
-    }
-    return null;
   }
 
   private SingleDependentLink readSingleParameter(ExpressionProtos.Telescope proto) throws DeserializationException {

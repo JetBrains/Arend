@@ -418,6 +418,13 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     UniverseExpression type = new UniverseExpression(expr.getSort());
     Sort sort = checkDependentLinkWithResult(expr.getParameters(), type, expr);
     freeDependentLink(expr.getParameters());
+
+    for (DependentLink param = expr.getParameters(); param.hasNext(); param = param.getNext()) {
+      if (param instanceof SigmaTypedDependentLink && ((SigmaTypedDependentLink) param).isProperty() && !param.getType().getSortOfType().isProp()) {
+        throw new CoreException(CoreErrorWrapper.make(new LevelMismatchError(LevelMismatchError.TargetKind.SIGMA_FIELD, param.getType().getSortOfType(), mySourceNode), expr));
+      }
+    }
+
     return check(expectedType, sort == null ? type : new UniverseExpression(sort), expr);
   }
 

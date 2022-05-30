@@ -8,6 +8,7 @@ import org.arend.core.context.binding.EvaluatingBinding;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.inference.TypeClassInferenceVariable;
 import org.arend.core.context.param.DependentLink;
+import org.arend.core.context.param.SigmaTypedDependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.context.param.TypedSingleDependentLink;
 import org.arend.core.definition.*;
@@ -15,7 +16,6 @@ import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.HaveClause;
 import org.arend.core.expr.let.LetClause;
-import org.arend.core.expr.type.Type;
 import org.arend.core.pattern.Pattern;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
@@ -977,11 +977,9 @@ public class NormalizeVisitor extends ExpressionTransformer<NormalizationMode>  
 
   @Override
   public Expression visitProj(ProjExpression expr, NormalizationMode mode) {
-    var holderType = expr.getExpression().getType();
-    var sigmaType = holderType == null ? null : holderType.cast(SigmaExpression.class);
-    if (sigmaType != null) {
-      Type linkType = DependentLink.Helper.get(sigmaType.getParameters(), expr.getField()).getType();
-      if (linkType != null && linkType.getSortOfType().isProp()) {
+    Expression holderType = expr.getExpression().getType().accept(this, NormalizationMode.WHNF);
+    if (holderType instanceof SigmaExpression) {
+      if (((SigmaTypedDependentLink) DependentLink.Helper.get(((SigmaExpression) holderType).getParameters(), expr.getField()).getNextTyped(null)).isProperty()) {
         return expr;
       }
     }

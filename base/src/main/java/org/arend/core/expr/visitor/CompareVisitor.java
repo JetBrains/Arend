@@ -17,7 +17,6 @@ import org.arend.core.pattern.Pattern;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.*;
-import org.arend.ext.concrete.expr.SigmaFieldKind;
 import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.ext.core.ops.CMP;
@@ -1208,7 +1207,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
       DependentLink param1 = list1.get(i);
       DependentLink param2 = list2.get(i);
       boolean differentBoxing = param1 instanceof SigmaTypedDependentLink && param2 instanceof SigmaTypedDependentLink &&
-              ((SigmaTypedDependentLink) param1).getFieldKind() != ((SigmaTypedDependentLink) param2).getFieldKind();
+              ((SigmaTypedDependentLink) param1).isProperty() != ((SigmaTypedDependentLink) param2).isProperty();
       if (differentBoxing || !compare(param1.getTypeExpr(), param2.getTypeExpr(), Type.OMEGA, false)) {
         for (int j = 0; j < i; j++) {
           mySubstitution.remove(list2.get(j));
@@ -1402,16 +1401,9 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
         myCMP = ((DataDefinition) definition).isCovariant(i) ? origCMP : CMP.EQ;
       }
       
-      boolean skipFromBoxing;
-      if (skipBoxed) {
-        SigmaTypedDependentLink typed = (SigmaTypedDependentLink)link.getNextTyped(null);
-        skipFromBoxing = typed.getFieldKind() != SigmaFieldKind.FIELD && typed.getType().getSortOfType().isProp();
-      } else {
-        skipFromBoxing = false;
-      }
       boolean oldVarsValue = myOnlySolveVars;
       try {
-        myOnlySolveVars |= skipFromBoxing;
+        myOnlySolveVars |= skipBoxed && ((SigmaTypedDependentLink) link.getNextTyped(null)).isProperty();
         if (!compare(list1.get(i), list2.get(i), substitution != null && link.hasNext() ? link.getTypeExpr().subst(substitution) : null, true)) {
           myCMP = origCMP;
           return false;

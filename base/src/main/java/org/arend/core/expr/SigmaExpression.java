@@ -1,8 +1,6 @@
 package org.arend.core.expr;
 
 import org.arend.core.context.param.DependentLink;
-import org.arend.core.context.param.SigmaTypedDependentLink;
-import org.arend.core.context.param.TypedDependentLink;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.ExpressionVisitor2;
