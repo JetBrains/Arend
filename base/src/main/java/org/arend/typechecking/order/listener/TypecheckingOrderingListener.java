@@ -441,6 +441,9 @@ public class TypecheckingOrderingListener extends BooleanComputationRunner imple
     boolean ok = true;
     DefinitionCallGraph definitionCallGraph = new DefinitionCallGraph();
     for (Map.Entry<FunctionDefinition, Concrete.Definition> entry : definitions.entrySet()) {
+      if (!entry.getValue().isRecursive()) {
+        continue;
+      }
       List<? extends ElimClause<ExpressionPattern>> functionClauses = clauses.get(entry.getKey());
       definitionCallGraph.add(entry.getKey(), functionClauses == null ? Collections.emptyList() : functionClauses, definitions.keySet());
       for (DependentLink link = entry.getKey().getParameters(); link.hasNext(); link = link.getNext()) {

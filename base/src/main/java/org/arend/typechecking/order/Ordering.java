@@ -2,7 +2,6 @@ package org.arend.typechecking.order;
 
 import org.arend.core.definition.Definition;
 import org.arend.naming.reference.LocatedReferable;
-import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCDefReferable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.naming.reference.converter.ReferableConverter;
@@ -30,8 +29,9 @@ public class Ordering extends BellmanFord<Concrete.ResolvableDefinition> {
   private final PartialComparator<TCDefReferable> myComparator;
   private final Set<TCReferable> myAllowedDependencies;
   private final Stage myStage;
+  private boolean myBodiesOnly;
 
-  private enum Stage { EVERYTHING, WITHOUT_INSTANCES, WITHOUT_USE, WITHOUT_BODIES }
+  private enum Stage { EVERYTHING, WITHOUT_INSTANCES, WITHOUT_USE, WITHOUT_COCLAUSE, WITHOUT_BODIES }
 
   private Ordering(InstanceProviderSet instanceProviderSet, ConcreteProvider concreteProvider, OrderingListener orderingListener, DependencyListener dependencyListener, ReferableConverter referableConverter, PartialComparator<TCDefReferable> comparator, Set<TCReferable> allowedDependencies, Stage stage) {
     myInstanceProviderSet = instanceProviderSet;
@@ -145,13 +145,7 @@ public class Ordering extends BellmanFord<Concrete.ResolvableDefinition> {
     if (definition.getEnclosingClass() != null) {
       visitor.addDependency(definition.getEnclosingClass());
     }
-    if (definition instanceof Concrete.CoClauseFunctionDefinition) {
-      Referable ref = ((Concrete.CoClauseFunctionDefinition) definition).getImplementedField();
-      if (ref instanceof TCReferable) {
-        visitor.addDependency((TCReferable) ref);
-      }
-    }
-    if (definition instanceof Concrete.UseDefinition && (!(definition instanceof Concrete.CoClauseFunctionDefinition) || ((Concrete.CoClauseFunctionDefinition) definition).getKind() == FunctionKind.CLASS_COCLAUSE)) {
+    if (definition instanceof Concrete.UseDefinition && (myStage.ordinal() < Stage.WITHOUT_COCLAUSE.ordinal() || !(definition instanceof Concrete.CoClauseFunctionDefinition) || ((Concrete.CoClauseFunctionDefinition) definition).getKind() == FunctionKind.CLASS_COCLAUSE)) {
       visitor.addDependency(((Concrete.UseDefinition) definition).getUseParent());
     }
     definition.accept(visitor, null);
@@ -183,7 +177,11 @@ public class Ordering extends BellmanFord<Concrete.ResolvableDefinition> {
   @Override
   protected void unitFound(Concrete.ResolvableDefinition unit, boolean withLoops) {
     if (myStage.ordinal() < Stage.WITHOUT_BODIES.ordinal()) {
-      myOrderingListener.unitFound(unit, withLoops);
+      if (myBodiesOnly && unit instanceof Concrete.Definition) {
+        myOrderingListener.bodiesFound(Collections.singletonList((Concrete.Definition) unit));
+      } else {
+        myOrderingListener.unitFound(unit, withLoops);
+      }
     } else {
       if (withLoops) {
         myOrderingListener.cycleFound(Collections.singletonList(unit));
@@ -209,25 +207,23 @@ public class Ordering extends BellmanFord<Concrete.ResolvableDefinition> {
 
     boolean hasUse = false;
     boolean hasInstances = false;
+    boolean hasCoclauseFunctions = false;
     for (Concrete.ResolvableDefinition definition : scc) {
       if (definition instanceof Concrete.FunctionDefinition && ((Concrete.FunctionDefinition) definition).getKind() == FunctionKind.INSTANCE) {
-        if (myStage.ordinal() >= Stage.WITHOUT_INSTANCES.ordinal()) {
-          myOrderingListener.cycleFound(scc);
-          return;
-        }
         hasInstances = true;
-        break;
       }
-      if (definition instanceof Concrete.UseDefinition && ((Concrete.UseDefinition) definition).getKind() != FunctionKind.FUNC_COCLAUSE) {
-        if (myStage.ordinal() >= Stage.WITHOUT_USE.ordinal()) {
-          myOrderingListener.cycleFound(scc);
-          return;
+      if (definition instanceof Concrete.UseDefinition) {
+        if (((Concrete.UseDefinition) definition).getKind() == FunctionKind.FUNC_COCLAUSE) {
+          if (myStage.ordinal() < Stage.WITHOUT_COCLAUSE.ordinal()) {
+            hasCoclauseFunctions = true;
+          }
+        } else {
+          if (myStage.ordinal() >= Stage.WITHOUT_USE.ordinal()) {
+            myOrderingListener.cycleFound(scc);
+            return;
+          }
+          hasUse = true;
         }
-        hasUse = true;
-      }
-      if (!(definition instanceof Concrete.Definition)) {
-        myOrderingListener.cycleFound(scc);
-        return;
       }
     }
 
@@ -236,7 +232,53 @@ public class Ordering extends BellmanFord<Concrete.ResolvableDefinition> {
       dependencies.add(definition.getData());
     }
 
+    if (hasCoclauseFunctions) {
+      Set<TCReferable> parents = new HashSet<>();
+      for (Concrete.ResolvableDefinition definition : scc) {
+        if (definition instanceof Concrete.UseDefinition && ((Concrete.UseDefinition) definition).getKind() == FunctionKind.FUNC_COCLAUSE) {
+          parents.add(((Concrete.UseDefinition) definition).getUseParent());
+        }
+      }
+
+      Ordering ordering = new Ordering(this, dependencies, Stage.WITHOUT_BODIES);
+      for (Concrete.ResolvableDefinition definition : scc) {
+        if (parents.contains(definition.getData())) {
+          if (definition instanceof Concrete.Definition) {
+            ((Concrete.Definition) definition).setRecursiveDefinitions(Collections.singleton(((Concrete.Definition) definition).getData()));
+          }
+          ordering.order(definition);
+        }
+      }
+
+      ordering = new Ordering(this, dependencies, Stage.WITHOUT_COCLAUSE);
+      for (Concrete.ResolvableDefinition definition : scc) {
+        if (parents.contains(definition.getData())) {
+          ((Concrete.Definition) definition).setRecursiveDefinitions(Collections.emptySet());
+        } else {
+          ordering.order(definition);
+        }
+      }
+
+      for (Concrete.ResolvableDefinition definition : scc) {
+        if (!parents.contains(definition.getData())) {
+          dependencies.remove(definition.getData());
+        }
+      }
+
+      ordering.myBodiesOnly = true;
+      for (Concrete.ResolvableDefinition definition : scc) {
+        if (parents.contains(definition.getData())) {
+          ordering.order(definition);
+        }
+      }
+      return;
+    }
+
     if (hasInstances) {
+      if (myStage.ordinal() >= Stage.WITHOUT_INSTANCES.ordinal()) {
+        myOrderingListener.cycleFound(scc);
+        return;
+      }
       Ordering ordering = new Ordering(this, dependencies, Stage.WITHOUT_INSTANCES);
       for (Concrete.ResolvableDefinition definition : scc) {
         ordering.order(definition);
