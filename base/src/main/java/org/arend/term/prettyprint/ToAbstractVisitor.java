@@ -188,7 +188,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
         arguments.add(new Concrete.Argument(new Concrete.ThisExpression(arg, null), true));
       }
     } else if (isExplicit || alwaysShow || hasFlag(PrettyPrinterFlag.SHOW_IMPLICIT_ARGS)) {
-      arguments.add(new Concrete.Argument(genGoal ? generateHiddenGoal() : arg.accept(this, null), isExplicit));
+      arguments.add(new Concrete.Argument(genGoal ? generateHiddenGoal(null) : arg.accept(this, null), isExplicit));
     }
   }
 
@@ -400,8 +400,8 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     return result != null ? result : visitDefCall(expr, params);
   }
 
-  private Concrete.Expression generateHiddenGoal() {
-    return new Concrete.GoalExpression(null, "hidden", null);
+  private Concrete.Expression generateHiddenGoal(Object data) {
+    return new Concrete.GoalExpression(data, "hidden", null);
   }
 
   private List<Concrete.ClassFieldImpl> visitClassFieldImpls(ClassCallExpression expr, List<Concrete.Argument> arguments) {
@@ -410,11 +410,11 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     for (ClassField field : expr.getDefinition().getFields()) {
       Expression implementation = expr.getAbsImplementationHere(field);
       if (implementation != null) {
-        boolean genGoal = !hasFlag(PrettyPrinterFlag.SHOW_PROOFS) && field.isProperty();
+        boolean genGoal = getVerboseLevel(implementation) == 0 && !hasFlag(PrettyPrinterFlag.SHOW_PROOFS) && field.isProperty();
         if (canBeArgument && field.getReferable().isParameterField()) {
           visitArgument(implementation, field.getReferable().isExplicitField(), arguments, genGoal, false);
         } else {
-          statements.add(cImplStatement(field.getReferable(), genGoal ? generateHiddenGoal() : implementation.accept(this, null)));
+          statements.add(cImplStatement(field.getReferable(), genGoal ? generateHiddenGoal(implementation) : implementation.accept(this, null)));
           canBeArgument = false;
         }
       } else if (canBeArgument && !expr.getDefinition().isImplemented(field)) {
