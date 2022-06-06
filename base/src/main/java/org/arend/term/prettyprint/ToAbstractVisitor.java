@@ -575,9 +575,8 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     return body.isInstance(ClassCallExpression.class) ? result : etaReduce(result);
   }
 
-  private SigmaFieldKind getSigmaFieldKind(boolean isProperty, Expression type) {
-    Sort sort = type.getSortOfType();
-    return sort == null || sort.isProp() == isProperty ? SigmaFieldKind.ANY : isProperty ? SigmaFieldKind.PROPERTY : SigmaFieldKind.FIELD;
+  private SigmaFieldKind getSigmaFieldKind(boolean isProperty) {
+    return isProperty ? SigmaFieldKind.PROPERTY : SigmaFieldKind.ANY;
   }
 
   private void visitDependentLink(DependentLink parameters, List<? super Concrete.TypeParameter> args, boolean isNamed) {
@@ -593,7 +592,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       if (referable == null && !isNamed && referableList.isEmpty()) {
         Concrete.TypeParameter arg;
         if (link instanceof SigmaTypedDependentLink) {
-          arg = cSigmaTypeArg(getSigmaFieldKind(((SigmaTypedDependentLink) link).isProperty(), link.getTypeExpr()), link.getTypeExpr().accept(this, null));
+          arg = cSigmaTypeArg(getSigmaFieldKind(((SigmaTypedDependentLink) link).isProperty()), link.getTypeExpr().accept(this, null));
         } else {
           arg = cTypeArg(link.isExplicit(), link.getTypeExpr().accept(this, null));
         }
@@ -602,7 +601,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
         referableList.add(referable);
         Concrete.TelescopeParameter arg;
         if (link instanceof SigmaTypedDependentLink) {
-          arg = cSigmaTele(getSigmaFieldKind(((SigmaTypedDependentLink) link).isProperty(), link.getTypeExpr()), new ArrayList<>(referableList), link.getTypeExpr().accept(this, null));
+          arg = cSigmaTele(getSigmaFieldKind(((SigmaTypedDependentLink) link).isProperty()), new ArrayList<>(referableList), link.getTypeExpr().accept(this, null));
         } else {
           arg = cTele(link, link.isExplicit(), new ArrayList<>(referableList), link.getTypeExpr().accept(this, null));
         }

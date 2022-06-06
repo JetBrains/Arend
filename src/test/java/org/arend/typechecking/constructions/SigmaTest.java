@@ -71,7 +71,15 @@ public class SigmaTest extends TypeCheckingTestCase {
   public void testProofIrrelevanceForProps() {
     typeCheckModule("\\data Unit | unit\n" +
             "\\lemma u : Unit => unit\n" +
-            "\\func f : (u, unit) = (unit, u) => idp");
+            "\\func f : (u, unit) = {\\Sigma (\\property Unit) (\\property Unit)} (unit, u) => idp");
+  }
+
+
+  @Test
+  public void testNoProofIrrelevanceInDefaultCase() {
+    typeCheckModule("\\data Unit | unit\n" +
+            "\\lemma u : Unit => unit\n" +
+            "\\func f : (u, unit) = {\\Sigma (Unit) (\\property Unit)} (unit, u) => idp", 1);
   }
 
   @Test
@@ -81,27 +89,14 @@ public class SigmaTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void testField() {
-    typeCheckModule("\\data Unit | unit\n" +
-            "\\func f : \\Sigma Unit (\\field Unit) => (unit, unit)");
-  }
-
-  @Test
   public void testBadPropertyIndication() {
     typeCheckModule("\\data Unit | unit\n" +
             "\\func f : \\Sigma Unit (\\property Nat) => (unit, 1)", 1);
   }
 
   @Test
-  public void testFieldNormalization() {
-    typeCheckModule("\\data Unit | unit\n" +
-            "\\lemma u : Unit => unit\n" +
-            "\\func f : (u, unit) = {\\Sigma (\\field Unit) (\\field Unit)} (unit, u) => idp", 1);
-  }
-
-  @Test
   public void testTypeComparison() {
     typeCheckModule("\\data Unit | unit\n" +
-            "\\func f : (\\Sigma Unit Unit) = (\\Sigma (\\field Unit) Unit) => idp", 1);
+            "\\func f : (\\Sigma Unit Unit) = (\\Sigma (\\property Unit) Unit) => idp", 1);
   }
 }

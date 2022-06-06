@@ -1642,8 +1642,6 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
         SigmaFieldKind kind;
         if (modContext instanceof SigmaPropertyContext) {
           kind = visitSigmaProperty((SigmaPropertyContext) modContext);
-        } else if (modContext instanceof SigmaFieldContext) {
-          kind = visitSigmaField((SigmaFieldContext) modContext);
         } else {
           kind = SigmaFieldKind.ANY;
         }
@@ -1668,10 +1666,6 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return SigmaFieldKind.PROPERTY;
   }
 
-  @Override
-  public SigmaFieldKind visitSigmaField(SigmaFieldContext ctx) {
-    return SigmaFieldKind.FIELD;
-  }
 
   private void visitFieldTeles(List<FieldTeleContext> teles, Concrete.ClassDefinition classDef, List<Concrete.ClassElement> fields) {
     for (FieldTeleContext tele : teles) {

@@ -1,3 +1,3 @@
 package org.arend.ext.concrete.expr;
 
-public enum SigmaFieldKind { FIELD, PROPERTY, ANY }
+public enum SigmaFieldKind { PROPERTY, ANY }
