@@ -291,7 +291,6 @@ sigmaTele : literal                       # sigmaTeleLiteral
           ;
 
 sigmaMod : '\\property' # sigmaProperty
-         | '\\field'    # sigmaField
          ;
 
 tele : literal                          # teleLiteral

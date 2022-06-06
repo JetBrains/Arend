@@ -214,9 +214,16 @@ public class ExpressionTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void noNormalizationForFields(){
+  public void noNormalizationForProperties(){
+    typeCheckModule("\\data Unit | unit \n " +
+            "\\func x : \\Sigma (\\property Unit) Nat => (unit, 0)" +
+            "\\func f : x.1 = unit => idp", 1);
+  }
+
+  @Test
+  public void doNormalizationForFields(){
     typeCheckModule("\\data Unit | unit \n " +
             "\\func x : \\Sigma Unit Nat => (unit, 0)" +
-            "\\func f : x.1 = unit => idp", 1);
+            "\\func f : x.1 = unit => idp");
   }
 }

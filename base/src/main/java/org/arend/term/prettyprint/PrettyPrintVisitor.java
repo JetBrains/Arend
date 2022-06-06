@@ -372,7 +372,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
   @NotNull
   private static String getKindRepresentation(SigmaFieldKind kind) {
-    return kind == SigmaFieldKind.PROPERTY ? "\\property " : kind == SigmaFieldKind.FIELD ? "\\field " : "";
+    return kind == SigmaFieldKind.PROPERTY ? "\\property " : "";
   }
 
   @Override
