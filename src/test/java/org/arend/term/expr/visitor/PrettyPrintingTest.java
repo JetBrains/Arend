@@ -31,6 +31,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
 
 import java.util.*;
+import java.util.function.Function;
 
 import static org.arend.ExpressionFactory.*;
 import static org.arend.core.expr.ExpressionFactory.*;
@@ -304,16 +305,27 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
     assertEquals(expr, printTestExpr());
   }
 
-  @Test
-  public void revealing1() {
-    TypecheckingResult result = typeCheckExpr("idp = {1 = 1} idp", null);
-    Expression firstIdp = result.expression.cast(FunCallExpression.class).getDefCallArguments().get(1);
+  private void testRevealing(String expression, String expected, Function<TypecheckingResult, Expression> selector) {
+    TypecheckingResult result = typeCheckExpr(expression, null);
+    Expression expr = selector.apply(result);
     PrettyPrinterConfig config = new PrettyPrinterConfigImpl(EMPTY) {
       @Override
       public int getVerboseLevel(@NotNull CoreExpression expression) {
-        return expression == firstIdp ? 1 : 0;
+        return expression == expr ? 1 : 0;
       }
     };
-    assertEquals("idp {Nat} = idp", ToAbstractVisitor.convert(result.expression, config).toString());
+    assertEquals(expected, ToAbstractVisitor.convert(result.expression, config).toString());
+  }
+
+  @Test
+  public void revealing1() {
+    testRevealing("idp = {1 = 1} idp", "idp {Nat} = idp",
+            (result) -> result.expression.cast(FunCallExpression.class).getDefCallArguments().get(1));
+  }
+
+  @Test
+  public void revealing2() {
+    testRevealing("idp = {1 = 1} idp", "idp = {1 = 1} idp",
+            (result) -> result.expression);
   }
 }

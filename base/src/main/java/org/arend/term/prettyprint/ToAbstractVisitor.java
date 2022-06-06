@@ -141,8 +141,8 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     return null;
   }
 
-  private Concrete.Expression checkApp(Concrete.Expression expression) {
-    if (hasFlag(PrettyPrinterFlag.SHOW_BIN_OP_IMPLICIT_ARGS) || !(expression instanceof Concrete.AppExpression)) {
+  private Concrete.Expression checkApp(Concrete.Expression expression, boolean isVerbose) {
+    if (isVerbose || hasFlag(PrettyPrinterFlag.SHOW_BIN_OP_IMPLICIT_ARGS) || !(expression instanceof Concrete.AppExpression)) {
       return expression;
     }
 
@@ -171,7 +171,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   public Concrete.Expression visitApp(AppExpression expr, Void params) {
     Concrete.Expression function = expr.getFunction().accept(this, null);
     Concrete.Expression arg = expr.isExplicit() || hasFlag(PrettyPrinterFlag.SHOW_IMPLICIT_ARGS) ? expr.getArgument().accept(this, null) : null;
-    return arg != null ? checkApp(Concrete.AppExpression.make(expr, function, arg, expr.isExplicit())) : function;
+    return arg != null ? checkApp(Concrete.AppExpression.make(expr, function, arg, expr.isExplicit()), false) : function;
   }
 
   private void visitArgument(Expression arg, boolean isExplicit, List<Concrete.Argument> arguments, boolean genGoal, boolean alwaysShow) {
@@ -200,7 +200,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
         parameters = parameters.getNext();
       }
     }
-    return checkApp(Concrete.AppExpression.make(expr, expr, concreteArguments));
+    return checkApp(Concrete.AppExpression.make(expr, expr, concreteArguments), parentVerboseLevel > 0);
   }
 
   private Concrete.ReferenceExpression makeReference(DefCallExpression defCall) {
@@ -446,7 +446,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
     List<Concrete.Argument> arguments = new ArrayList<>();
     List<Concrete.ClassFieldImpl> statements = visitClassFieldImpls(expr, arguments);
-    Concrete.Expression defCallExpr = checkApp(Concrete.AppExpression.make(expr, makeReference(expr), arguments));
+    Concrete.Expression defCallExpr = checkApp(Concrete.AppExpression.make(expr, makeReference(expr), arguments), false);
     if (statements.isEmpty()) {
       return defCallExpr;
     } else {
@@ -548,7 +548,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       varsCounter -= refList.size();
     }
 
-    Concrete.Expression body = args.size() == numberOfVars ? fun : checkApp(Concrete.AppExpression.make(lamExpr.body.getData(), fun, args.subList(0, args.size() - numberOfVars)));
+    Concrete.Expression body = args.size() == numberOfVars ? fun : checkApp(Concrete.AppExpression.make(lamExpr.body.getData(), fun, args.subList(0, args.size() - numberOfVars)), false);
     return parameters.isEmpty() ? body : new Concrete.LamExpression(lamExpr.getData(), parameters, body);
   }
 
