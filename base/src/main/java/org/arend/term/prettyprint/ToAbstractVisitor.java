@@ -254,8 +254,9 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       }
     }
 
-    int skip = hasFlag(PrettyPrinterFlag.SHOW_CON_PARAMS) || !(expr.getDefinition() instanceof DConstructor) ? 0 : ((DConstructor) expr.getDefinition()).getNumberOfParameters();
-    return visitParameters(makeReference(expr), DependentLink.Helper.get(expr.getDefinition().getParameters(), skip), skip == 0 || DependentLink.Helper.size(expr.getDefinition().getParameters()) != expr.getDefCallArguments().size() ? expr.getDefCallArguments() : expr.getDefCallArguments().subList(skip, expr.getDefCallArguments().size()), getVerboseLevel(expr));
+    int verbosity = getVerboseLevel(expr);
+    int skip = verbosity != 0 || hasFlag(PrettyPrinterFlag.SHOW_CON_PARAMS) || !(expr.getDefinition() instanceof DConstructor) ? 0 : ((DConstructor) expr.getDefinition()).getNumberOfParameters();
+    return visitParameters(makeReference(expr), DependentLink.Helper.get(expr.getDefinition().getParameters(), skip), skip == 0 || DependentLink.Helper.size(expr.getDefinition().getParameters()) != expr.getDefCallArguments().size() ? expr.getDefCallArguments() : expr.getDefCallArguments().subList(skip, expr.getDefCallArguments().size()), verbosity);
   }
 
   @Override

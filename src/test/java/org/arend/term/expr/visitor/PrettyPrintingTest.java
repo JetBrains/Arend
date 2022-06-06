@@ -8,7 +8,12 @@ import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.Levels;
+import org.arend.ext.core.context.CoreParameter;
+import org.arend.ext.core.expr.CoreExpression;
+import org.arend.ext.core.ops.NormalizationMode;
+import org.arend.ext.prettyprinting.DefinitionRenamer;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
+import org.arend.ext.prettyprinting.PrettyPrinterConfigImpl;
 import org.arend.ext.prettyprinting.PrettyPrinterFlag;
 import org.arend.ext.reference.Precedence;
 import org.arend.naming.reference.ConcreteLocatedReferable;
@@ -20,7 +25,9 @@ import org.arend.term.expr.ConcreteCompareVisitor;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
 import org.arend.term.prettyprint.ToAbstractVisitor;
 import org.arend.typechecking.TypeCheckingTestCase;
+import org.arend.typechecking.result.TypecheckingResult;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
 
 import java.util.*;
@@ -31,6 +38,24 @@ import static org.arend.term.concrete.ConcreteExpressionFactory.*;
 import static org.junit.Assert.*;
 
 public class PrettyPrintingTest extends TypeCheckingTestCase {
+
+  public static PrettyPrinterConfig EMPTY = new PrettyPrinterConfig() {
+    @Override
+    public boolean isSingleLine() {
+      return false;
+    }
+
+    @Override
+    public @NotNull EnumSet<PrettyPrinterFlag> getExpressionFlags() {
+      return EnumSet.noneOf(PrettyPrinterFlag.class);
+    }
+
+    @Override
+    public @Nullable NormalizationMode getNormalizationMode() {
+      return null;
+    }
+  };
+
   @Test
   public void prettyPrintingLam() {
     // \x. x x
@@ -277,5 +302,18 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
     String expr = "\n  \\let (x,y) => (0, 1)\n  \\in (x, y)";
     typeCheckModule("\\func test =>" + expr);
     assertEquals(expr, printTestExpr());
+  }
+
+  @Test
+  public void revealing1() {
+    TypecheckingResult result = typeCheckExpr("idp = {1 = 1} idp", null);
+    Expression firstIdp = result.expression.cast(FunCallExpression.class).getDefCallArguments().get(1);
+    PrettyPrinterConfig config = new PrettyPrinterConfigImpl(EMPTY) {
+      @Override
+      public int getVerboseLevel(@NotNull CoreExpression expression) {
+        return expression == firstIdp ? 1 : 0;
+      }
+    };
+    assertEquals("idp {Nat} = idp", ToAbstractVisitor.convert(result.expression, config).toString());
   }
 }
