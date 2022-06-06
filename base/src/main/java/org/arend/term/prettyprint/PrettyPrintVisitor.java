@@ -200,7 +200,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     }
   }
 
-  private void printReferenceName(Concrete.ReferenceExpression expr, Precedence prec) {
+  protected void printReferenceName(Concrete.ReferenceExpression expr, Precedence prec) {
     Referable ref = expr.getReferent();
     if (ref instanceof CoreReferable && ((CoreReferable) ref).printExpression()) {
       ToAbstractVisitor.convert(((CoreReferable) ref).result.expression, PrettyPrinterConfig.DEFAULT).accept(this, prec == null ? new Precedence(ReferenceExpression.PREC) : prec);
