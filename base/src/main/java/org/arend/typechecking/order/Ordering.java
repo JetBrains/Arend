@@ -29,9 +29,10 @@ public class Ordering extends BellmanFord<Concrete.ResolvableDefinition> {
   private final PartialComparator<TCDefReferable> myComparator;
   private final Set<TCReferable> myAllowedDependencies;
   private final Stage myStage;
-  private boolean myBodiesOnly;
+  private final Set<TCReferable> myBodyOnlyRefs = new HashSet<>();
+  private final Set<TCReferable> myHeaderOnlyRefs = new HashSet<>();
 
-  private enum Stage { EVERYTHING, WITHOUT_INSTANCES, WITHOUT_USE, WITHOUT_COCLAUSE, WITHOUT_BODIES }
+  private enum Stage { EVERYTHING, WITHOUT_COCLAUSE, WITHOUT_INSTANCES, WITHOUT_USE, WITHOUT_BODIES }
 
   private Ordering(InstanceProviderSet instanceProviderSet, ConcreteProvider concreteProvider, OrderingListener orderingListener, DependencyListener dependencyListener, ReferableConverter referableConverter, PartialComparator<TCDefReferable> comparator, Set<TCReferable> allowedDependencies, Stage stage) {
     myInstanceProviderSet = instanceProviderSet;
@@ -126,7 +127,7 @@ public class Ordering extends BellmanFord<Concrete.ResolvableDefinition> {
   @Override
   protected boolean forDependencies(Concrete.ResolvableDefinition definition, Consumer<Concrete.ResolvableDefinition> consumer) {
     Set<TCReferable> dependencies = new LinkedHashSet<>();
-    CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(dependencies, myStage.ordinal() < Stage.WITHOUT_BODIES.ordinal());
+    CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(dependencies, myStage.ordinal() < Stage.WITHOUT_BODIES.ordinal() && !myHeaderOnlyRefs.contains(definition.getData()));
     if (myStage.ordinal() < Stage.WITHOUT_USE.ordinal()) {
       if (myStage.ordinal() < Stage.WITHOUT_INSTANCES.ordinal()) {
         InstanceProvider instanceProvider = myInstanceProviderSet.get(definition.getData());
@@ -177,8 +178,10 @@ public class Ordering extends BellmanFord<Concrete.ResolvableDefinition> {
   @Override
   protected void unitFound(Concrete.ResolvableDefinition unit, boolean withLoops) {
     if (myStage.ordinal() < Stage.WITHOUT_BODIES.ordinal()) {
-      if (myBodiesOnly && unit instanceof Concrete.Definition) {
+      if (unit instanceof Concrete.Definition && myBodyOnlyRefs.contains(unit.getData())) {
         myOrderingListener.bodiesFound(Collections.singletonList((Concrete.Definition) unit));
+      } else if (unit instanceof Concrete.Definition && myHeaderOnlyRefs.contains(unit.getData())) {
+        myOrderingListener.headerFound((Concrete.Definition) unit);
       } else {
         myOrderingListener.unitFound(unit, withLoops);
       }
@@ -240,7 +243,10 @@ public class Ordering extends BellmanFord<Concrete.ResolvableDefinition> {
         }
       }
 
-      Ordering ordering = new Ordering(this, dependencies, Stage.WITHOUT_BODIES);
+      Ordering ordering = new Ordering(this, dependencies, Stage.WITHOUT_COCLAUSE);
+      ordering.myHeaderOnlyRefs.addAll(myHeaderOnlyRefs);
+      ordering.myBodyOnlyRefs.addAll(myBodyOnlyRefs);
+      ordering.myHeaderOnlyRefs.addAll(parents);
       for (Concrete.ResolvableDefinition definition : scc) {
         if (parents.contains(definition.getData())) {
           if (definition instanceof Concrete.Definition) {
@@ -251,6 +257,8 @@ public class Ordering extends BellmanFord<Concrete.ResolvableDefinition> {
       }
 
       ordering = new Ordering(this, dependencies, Stage.WITHOUT_COCLAUSE);
+      ordering.myHeaderOnlyRefs.addAll(myHeaderOnlyRefs);
+      ordering.myBodyOnlyRefs.addAll(myBodyOnlyRefs);
       for (Concrete.ResolvableDefinition definition : scc) {
         if (parents.contains(definition.getData())) {
           ((Concrete.Definition) definition).setRecursiveDefinitions(Collections.emptySet());
@@ -265,7 +273,7 @@ public class Ordering extends BellmanFord<Concrete.ResolvableDefinition> {
         }
       }
 
-      ordering.myBodiesOnly = true;
+      ordering.myBodyOnlyRefs.addAll(parents);
       for (Concrete.ResolvableDefinition definition : scc) {
         if (parents.contains(definition.getData())) {
           ordering.order(definition);
@@ -280,6 +288,8 @@ public class Ordering extends BellmanFord<Concrete.ResolvableDefinition> {
         return;
       }
       Ordering ordering = new Ordering(this, dependencies, Stage.WITHOUT_INSTANCES);
+      ordering.myHeaderOnlyRefs.addAll(myHeaderOnlyRefs);
+      ordering.myBodyOnlyRefs.addAll(myBodyOnlyRefs);
       for (Concrete.ResolvableDefinition definition : scc) {
         ordering.order(definition);
       }
@@ -288,6 +298,8 @@ public class Ordering extends BellmanFord<Concrete.ResolvableDefinition> {
 
     if (hasUse) {
       Ordering ordering = new Ordering(this, dependencies, Stage.WITHOUT_USE);
+      ordering.myHeaderOnlyRefs.addAll(myHeaderOnlyRefs);
+      ordering.myBodyOnlyRefs.addAll(myBodyOnlyRefs);
       for (Concrete.ResolvableDefinition definition : scc) {
         ordering.order(definition);
       }
@@ -320,6 +332,8 @@ public class Ordering extends BellmanFord<Concrete.ResolvableDefinition> {
     }
 
     Ordering ordering = new Ordering(this, dependencies, Stage.WITHOUT_BODIES);
+    ordering.myHeaderOnlyRefs.addAll(myHeaderOnlyRefs);
+    ordering.myBodyOnlyRefs.addAll(myBodyOnlyRefs);
     for (Concrete.ResolvableDefinition definition : scc) {
       ordering.order(definition);
     }
