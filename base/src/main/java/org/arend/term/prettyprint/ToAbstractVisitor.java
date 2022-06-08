@@ -177,12 +177,12 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   private void visitArgument(Expression arg, boolean isExplicit, List<Concrete.Argument> arguments, boolean genGoal, boolean alwaysShow) {
     ReferenceExpression refExpr = arg.cast(ReferenceExpression.class);
     if (refExpr != null && refExpr.getBinding().isHidden()) {
-      Concrete.Expression mappedExpression = myRenamer.getConcreteExpression(refExpr.getBinding());
-      if (mappedExpression != null) {
-        arguments.add(new Concrete.Argument(mappedExpression, isExplicit));
-        return;
-      }
       if (isExplicit) {
+        Concrete.Expression mappedExpression = myRenamer.getConcreteExpression(refExpr.getBinding());
+        if (mappedExpression != null) {
+          arguments.add(new Concrete.Argument(mappedExpression, isExplicit));
+          return;
+        }
         arguments.add(new Concrete.Argument(new Concrete.ThisExpression(arg, null), true));
       }
     } else if (isExplicit || alwaysShow || hasFlag(PrettyPrinterFlag.SHOW_IMPLICIT_ARGS)) {
