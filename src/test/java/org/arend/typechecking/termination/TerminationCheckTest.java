@@ -213,6 +213,11 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void testBug(){
+    typeCheckModule("\\data Bool | true | false\n\\func f (p : \\Sigma Bool Nat) => f p\n", 1);
+  }
+
+  @Test
   public void test34() {
     TestVertex ack = new TestVertex("ack", "x", "y");
     Set<BaseCallMatrix<TestVertex>> cms = new HashSet<>();
