@@ -217,7 +217,7 @@ coClauseDefBody : '=>' expr                                 # coClauseExpr
 
 localCoClause : longName lamParam* ('=>' expr | '{' ('|' localCoClause)* '}');
 
-letClause : (ID tele* typeAnnotation? | atomPattern) '=>' expr;
+letClause : (ID tele* | atomPattern) typeAnnotation? '=>' expr;
 
 typeAnnotation : ':' expr;
 
