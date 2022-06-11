@@ -171,6 +171,22 @@ public class LevelParametersTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void useDerivedError() {
+    typeCheckModule(
+      "\\record R \\plevels p1 <= p2\n" +
+      "\\data D (r : R) | con Nat\n" +
+      "  \\where \\use \\coerce test \\plevels p1 >= p2 (n : Nat) => con n", 1);
+  }
+
+  @Test
+  public void useDerivedError2() {
+    typeCheckModule(
+      "\\record R \\plevels p1 <= p2\n" +
+      "\\data D (r : R) | con Nat\n" +
+      "  \\where \\use \\coerce test \\plevels p1 >= p2 (r : R) (n : Nat) => con n", 1);
+  }
+
+  @Test
   public void defaultTest() {
     typeCheckModule(
       "\\record R \\plevels p1 <= p2 <= p3\n" +

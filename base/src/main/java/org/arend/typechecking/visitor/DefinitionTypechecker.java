@@ -823,6 +823,16 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
   }
 
+  private boolean compareLevelParameters(Concrete.LevelParameters params1, Concrete.LevelParameters params2) {
+    return params1 == null && params2 == null || params1 != null && params2 != null && params1.isIncreasing == params2.isIncreasing && params1.referables.size() == params2.referables.size();
+  }
+
+  private void compareUseLevelParameters(Concrete.LevelParameters useParams, Concrete.LevelParameters parentParams) {
+    if (!compareLevelParameters(useParams, parentParams)) {
+      errorReporter.report(new TypecheckingError("The levels parameters of the \\use definition do not match the level parameters of the parent", useParams));
+    }
+  }
+
   private Concrete.LevelParameters levelVariablesToParameters(Object data, List<? extends LevelVariable> levelVars) {
     List<LevelReferable> levelRefs = new ArrayList<>(levelVars.size());
     for (LevelVariable levelVar : levelVars) {
@@ -871,6 +881,20 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
     }
     findLevelsParents(typedDef, cdef, refs);
+
+    if (cdef instanceof Concrete.UseDefinition && ((Concrete.UseDefinition) cdef).getKind().isUse()) {
+      Definition def = ((Concrete.UseDefinition) cdef).getUseParent().getTypechecked();
+      var levelParams = def.getLevelParameters();
+      if (levelParams != null) {
+        int n = def.getNumberOfPLevelParameters();
+        if (cdef.getPLevelParameters() == null) {
+          cdef.setPLevelParameters(levelVariablesToParameters(cdef.getData(), levelParams.subList(0, n)));
+        }
+        if (cdef.getPLevelParameters() == null) {
+          cdef.setPLevelParameters(levelVariablesToParameters(cdef.getData(), levelParams.subList(n, levelParams.size())));
+        }
+      }
+    }
 
     var levelParams = cdef.enclosingClass == null ? null : cdef.enclosingClass.getTypechecked().getLevelParameters();
     if (levelParams != null && !levelParams.isEmpty() && (cdef.getPLevelParameters() == null || cdef.getHLevelParameters() == null) && !parameters.isEmpty()) {
@@ -997,6 +1021,16 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           }
         }
       } else {
+        if (def.getKind().isUse()) {
+          Definition useParent = def.getUseParent().getTypechecked();
+          int n = useParent.getNumberOfPLevelParameters();
+          if (def.getPLevelParameters() != null) {
+            compareUseLevelParameters(def.getPLevelParameters(), levelVariablesToParameters(def.getPLevelParameters(), useParent.getLevelParameters().subList(0, n)));
+          }
+          if (def.getHLevelParameters() != null) {
+            compareUseLevelParameters(def.getHLevelParameters(), levelVariablesToParameters(def.getHLevelParameters(), useParent.getLevelParameters().subList(n, useParent.getLevelParameters().size())));
+          }
+        }
         findLevelsParentsInParameters(typedDef, def, def.getParameters());
         typedDef.setLevelParameters(typecheckLevelParameters(def));
       }
