@@ -7,6 +7,7 @@ import org.arend.core.definition.*;
 import org.arend.core.expr.*;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
+import org.arend.core.subst.ListLevels;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Ignore;
@@ -143,9 +144,30 @@ public class LevelParametersTest extends TypeCheckingTestCase {
 
   @Test
   public void useError() {
-    resolveNamesModule(
+    typeCheckModule(
       "\\data D \\plevels p1 <= p2 | con Nat\n" +
       "  \\where \\use \\coerce test \\plevels p1 >= p2 (n : Nat) => con n", 1);
+  }
+
+  @Test
+  public void useDerived() {
+    typeCheckModule(
+      "\\record R \\plevels p1 <= p2\n" +
+      "\\data D (r : R) | con Nat\n" +
+      "  \\where \\use \\coerce test (n : Nat) => con n");
+    assertEquals(2, getDefinition("D.test").getLevelParameters().size());
+  }
+
+  @Test
+  public void useDerived2() {
+    typeCheckModule(
+      "\\record R \\plevels p1 <= p2\n" +
+      "\\data D (r : R) | con Nat\n" +
+      "  \\where \\use \\coerce test (r : R) (n : Nat) => con n");
+    Definition def = getDefinition("D.test");
+    List<? extends LevelVariable> params = def.getLevelParameters();
+    assertEquals(2, params.size());
+    assertEquals(new ListLevels(Arrays.asList(new Level(params.get(0)), new Level(params.get(1)))), ((ClassCallExpression) def.getParameters().getTypeExpr()).getLevels());
   }
 
   @Test
@@ -224,8 +246,7 @@ public class LevelParametersTest extends TypeCheckingTestCase {
     assertEquals(3, getDefinition("R.f").getLevelParameters().size());
     Concrete.ReferenceExpression type = (Concrete.ReferenceExpression) ((Concrete.ClassExtExpression) Objects.requireNonNull(((Concrete.FunctionDefinition) getConcrete("R.f")).getParameters().get(0).getType())).getBaseClassExpression();
     assertNotNull(type.getPLevels());
-    assertNotNull(type.getHLevels());
-    assertTrue(type.getHLevels().isEmpty());
+    assertNull(type.getHLevels());
   }
 
   @Test
@@ -238,8 +259,7 @@ public class LevelParametersTest extends TypeCheckingTestCase {
     assertEquals(3, getDefinition("R.f").getLevelParameters().size());
     Concrete.ReferenceExpression type = (Concrete.ReferenceExpression) ((Concrete.ClassExtExpression) Objects.requireNonNull(((Concrete.FunctionDefinition) getConcrete("R.f")).getParameters().get(0).getType())).getBaseClassExpression();
     assertNotNull(type.getPLevels());
-    assertNotNull(type.getHLevels());
-    assertTrue(type.getHLevels().isEmpty());
+    assertNull(type.getHLevels());
   }
 
   @Test

@@ -336,4 +336,32 @@ public class CoClauseFunctionTest extends TypeCheckingTestCase {
       "    | suc m => idp\n" +
       "  }");
   }
+
+  @Test
+  public void addedLevels() {
+    typeCheckModule(
+      "\\record C \\plevels p1 <= p2\n" +
+      "\\record D \\plevels p3 <= p4\n" +
+      "\\record E (f : D -> Nat)\n" +
+      "\\func test (c : C) : E \\cowith\n" +
+      "  | f (d : D) : Nat => 0");
+  }
+
+  @Test
+  public void addedLevels2() {
+    typeCheckModule(
+      "\\record C \\plevels p1 <= p2\n" +
+      "\\record E (f : C -> Nat)\n" +
+      "\\func test (c : C) : E \\cowith\n" +
+      "  | f (c : C) : Nat => 0");
+  }
+
+  @Test
+  public void addedLevels3() {
+    typeCheckModule(
+      "\\record C \\plevels p1 <= p2\n" +
+      "\\record E (f : C -> Nat)\n" +
+      "\\func test : E \\cowith\n" +
+      "  | f (c : C) : Nat => 0");
+  }
 }
