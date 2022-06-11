@@ -377,7 +377,7 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
 
   public PiExpression getOverriddenType(ClassField field, Levels levels) {
     PiExpression type = myOverridden.get(field);
-    return type == null ? null : (PiExpression) new SubstVisitor(new ExprSubstitution(), levels.makeSubstitution(field)).visitPi(type, null);
+    return type == null ? null : (PiExpression) new SubstVisitor(new ExprSubstitution(), castLevels(field.getParentClass(), levels).makeSubstitution(field)).visitPi(type, null);
   }
 
   public PiExpression getFieldType(ClassField field) {

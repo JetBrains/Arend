@@ -188,13 +188,13 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     }
 
     Expression actualType = null;
-    Levels levels = argClassCall.getDefinition().castLevels(expr.getDefinition().getParentClass(), GetTypeVisitor.MIN_INSTANCE.minimizeLevels(argClassCall));
+    Levels levels = GetTypeVisitor.MIN_INSTANCE.minimizeLevels(argClassCall);
     PiExpression overriddenType = argClassCall.getDefinition().getOverriddenType(expr.getDefinition(), levels);
     if (overriddenType != null) {
       actualType = overriddenType.applyExpression(expr.getArgument());
     }
     if (actualType == null) {
-      actualType = expr.getDefinition().getResultType().subst(new ExprSubstitution(expr.getDefinition().getType().getParameters(), expr.getArgument()), levels.makeSubstitution(expr.getDefinition()));
+      actualType = expr.getDefinition().getResultType().subst(new ExprSubstitution(expr.getDefinition().getType().getParameters(), expr.getArgument()), argClassCall.getDefinition().castLevels(expr.getDefinition().getParentClass(), levels).makeSubstitution(expr.getDefinition()));
     }
     return check(expectedType, actualType, expr);
   }
