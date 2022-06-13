@@ -61,6 +61,22 @@ public abstract class Definition extends UserDataHolderImpl implements CoreDefin
     throw new IllegalStateException();
   }
 
+  public boolean arePLevelsDerived() {
+    return false;
+  }
+
+  public boolean areHLevelsDerived() {
+    return false;
+  }
+
+  public void setPLevelsDerived(boolean derived) {
+    throw new IllegalStateException();
+  }
+
+  public void setHLevelsDerived(boolean derived) {
+    throw new IllegalStateException();
+  }
+
   public void setHLevelsParent(Definition levelsParent) {
     throw new IllegalStateException();
   }

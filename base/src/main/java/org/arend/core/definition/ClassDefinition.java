@@ -46,6 +46,8 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
   private UniverseKind myUniverseKind = UniverseKind.NO_UNIVERSES;
   private Definition myPLevelsParent;
   private Definition myHLevelsParent;
+  private boolean myPLevelsDerived;
+  private boolean myHLevelsDerived;
 
   public ClassDefinition(TCDefReferable referable) {
     super(referable, TypeCheckingStatus.NEEDS_TYPE_CHECKING);
@@ -489,6 +491,26 @@ public class ClassDefinition extends Definition implements CoreClassDefinition {
   @Override
   public void setHLevelsParent(Definition parent) {
     myHLevelsParent = parent;
+  }
+
+  @Override
+  public boolean arePLevelsDerived() {
+    return myPLevelsDerived;
+  }
+
+  @Override
+  public boolean areHLevelsDerived() {
+    return myHLevelsDerived;
+  }
+
+  @Override
+  public void setPLevelsDerived(boolean derived) {
+    myPLevelsDerived = derived;
+  }
+
+  @Override
+  public void setHLevelsDerived(boolean derived) {
+    myHLevelsDerived = derived;
   }
 
   @Override

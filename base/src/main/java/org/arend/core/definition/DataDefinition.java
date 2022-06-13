@@ -37,6 +37,8 @@ public class DataDefinition extends Definition implements CoreDataDefinition {
   private List<Boolean> myOmegaParameters = Collections.emptyList();
   private Definition myPLevelsParent;
   private Definition myHLevelsParent;
+  private boolean myPLevelsDerived;
+  private boolean myHLevelsDerived;
 
   public DataDefinition(TCDefReferable referable) {
     super(referable, TypeCheckingStatus.NEEDS_TYPE_CHECKING);
@@ -76,6 +78,26 @@ public class DataDefinition extends Definition implements CoreDataDefinition {
   @Override
   public void setHLevelsParent(Definition parent) {
     myHLevelsParent = parent;
+  }
+
+  @Override
+  public boolean arePLevelsDerived() {
+    return myPLevelsDerived;
+  }
+
+  @Override
+  public boolean areHLevelsDerived() {
+    return myHLevelsDerived;
+  }
+
+  @Override
+  public void setPLevelsDerived(boolean derived) {
+    myPLevelsDerived = derived;
+  }
+
+  @Override
+  public void setHLevelsDerived(boolean derived) {
+    myHLevelsDerived = derived;
   }
 
   @Override

@@ -858,7 +858,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         getCovariantDefinitions(((Concrete.ClassField) element).getResultType(), refs);
       }
     }
-    findLevelsParents(typedDef, cdef, refs);
+    findLevelsParents(typedDef, cdef, refs, cdef.getSuperClasses().size());
   }
 
   private void findLevelsParentsInParameters(Definition typedDef, Concrete.Definition cdef, List<? extends Concrete.Parameter> parameters) {
@@ -880,7 +880,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         getCovariantDefinitions(type, refs);
       }
     }
-    findLevelsParents(typedDef, cdef, refs);
+    findLevelsParents(typedDef, cdef, refs, 0);
 
     if (cdef instanceof Concrete.UseDefinition && ((Concrete.UseDefinition) cdef).getKind().isUse()) {
       Definition def = ((Concrete.UseDefinition) cdef).getUseParent().getTypechecked();
@@ -917,25 +917,42 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
   }
 
-  private void findLevelsParents(Definition typedDef, Concrete.Definition cdef, List<? extends Concrete.ReferenceExpression> refs) {
+  private void findLevelsParents(Definition typedDef, Concrete.Definition cdef, List<? extends Concrete.ReferenceExpression> refs, int setLevelsParentsUpTo) {
     boolean searchPLevels = cdef.getPLevelParameters() == null;
     boolean searchHLevels = cdef.getHLevelParameters() == null;
     Definition pLevelsParent = null;
     Definition hLevelsParent = null;
+    boolean pLevelsNotDerived = false;
+    boolean hLevelsNotDerived = false;
+    boolean allPLevelsDerived = true;
+    boolean allHLevelsDerived = true;
 
-    for (Concrete.ReferenceExpression ref : refs) {
+    for (int i = 0; i < refs.size(); i++) {
+      Concrete.ReferenceExpression ref = refs.get(i);
       Definition def = ((TCDefReferable) ref.getReferent()).getTypechecked();
-      if (searchPLevels && def.getPLevelsParent() != null && ref.getPLevels() == null) {
+      if (searchPLevels && def.getPLevelsParent() != null && (i < setLevelsParentsUpTo || !def.arePLevelsDerived()) && ref.getPLevels() == null) {
         if (pLevelsParent == null) {
           pLevelsParent = def.getPLevelsParent();
+          if (i < setLevelsParentsUpTo) {
+            pLevelsNotDerived = true;
+          }
+          if (!def.arePLevelsDerived()) {
+            allPLevelsDerived = false;
+          }
         } else if (pLevelsParent != def.getPLevelsParent()) {
           pLevelsParent = null;
           searchPLevels = false;
         }
       }
-      if (searchHLevels && def.getHLevelsParent() != null && ref.getHLevels() == null) {
+      if (searchHLevels && def.getHLevelsParent() != null && (i < setLevelsParentsUpTo || !def.areHLevelsDerived()) && ref.getHLevels() == null) {
         if (hLevelsParent == null) {
           hLevelsParent = def.getHLevelsParent();
+          if (i < setLevelsParentsUpTo) {
+            hLevelsNotDerived = true;
+          }
+          if (!def.areHLevelsDerived()) {
+            allHLevelsDerived = false;
+          }
         } else if (hLevelsParent != def.getHLevelsParent()) {
           hLevelsParent = null;
           searchHLevels = false;
@@ -950,12 +967,14 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     if (pLevelsParent != null) {
       cdef.setPLevelParameters(levelVariablesToParameters(cdef.getData(), pLevelsParent.getLevelParameters().subList(0, pLevelsParent.getNumberOfPLevelParameters())));
       typedDef.setPLevelsParent(pLevelsParent);
+      typedDef.setPLevelsDerived(!pLevelsNotDerived || allPLevelsDerived);
       pLevelExprs = levelParametersToExpressions(null, cdef.getPLevelParameters());
     }
     List<Concrete.LevelExpression> hLevelExprs = null;
     if (hLevelsParent != null) {
       cdef.setHLevelParameters(levelVariablesToParameters(cdef.getData(), hLevelsParent.getLevelParameters().subList(hLevelsParent.getNumberOfPLevelParameters(), hLevelsParent.getLevelParameters().size())));
       typedDef.setHLevelsParent(hLevelsParent);
+      typedDef.setHLevelsDerived(!hLevelsNotDerived || allHLevelsDerived);
       hLevelExprs = levelParametersToExpressions(null, cdef.getHLevelParameters());
     }
 

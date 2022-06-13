@@ -62,6 +62,16 @@ public class DefinitionDeserialization implements ArendDeserializer {
 
     def.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     def.setUniverseKind(defDeserializer.readUniverseKind(defProto.getUniverseKind()));
+    int pLevelsParent = defProto.getPLevelsParent();
+    if (pLevelsParent != 0) {
+      def.setPLevelsParent(myCallTargetProvider.getCallTarget(pLevelsParent - 1));
+    }
+    int hLevelsParent = defProto.getHLevelsParent();
+    if (hLevelsParent != 0) {
+      def.setHLevelsParent(myCallTargetProvider.getCallTarget(hLevelsParent - 1));
+    }
+    def.setPLevelsDerived(defProto.getPLevelsDerived());
+    def.setHLevelsDerived(defProto.getHLevelsDerived());
 
     for (Integer index : defProto.getMetaRefList()) {
       myDependencyListener.dependsOn(def.getRef(), myCallTargetProvider.getMetaCallTarget(index));

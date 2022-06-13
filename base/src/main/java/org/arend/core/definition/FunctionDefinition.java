@@ -36,6 +36,8 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
   private UniverseKind myUniverseKind = UniverseKind.NO_UNIVERSES;
   private Definition myPLevelsParent;
   private Definition myHLevelsParent;
+  private boolean myPLevelsDerived;
+  private boolean myHLevelsDerived;
 
   public enum HiddenStatus { NOT_HIDDEN, HIDDEN, REALLY_HIDDEN }
 
@@ -129,6 +131,26 @@ public class FunctionDefinition extends Definition implements Function, CoreFunc
   @Override
   public void setHLevelsParent(Definition parent) {
     myHLevelsParent = parent;
+  }
+
+  @Override
+  public boolean arePLevelsDerived() {
+    return myPLevelsDerived;
+  }
+
+  @Override
+  public boolean areHLevelsDerived() {
+    return myHLevelsDerived;
+  }
+
+  @Override
+  public void setPLevelsDerived(boolean derived) {
+    myPLevelsDerived = derived;
+  }
+
+  @Override
+  public void setHLevelsDerived(boolean derived) {
+    myHLevelsDerived = derived;
   }
 
   @Override
