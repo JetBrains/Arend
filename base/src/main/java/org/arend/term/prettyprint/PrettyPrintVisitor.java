@@ -588,7 +588,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
       @Override
       String getSeparator() {
-        return ",";
+        return ", ";
       }
     }.doPrettyPrint(this, expr.getFields(), noIndent);
 
