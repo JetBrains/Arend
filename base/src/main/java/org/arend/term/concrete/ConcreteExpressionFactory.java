@@ -42,6 +42,12 @@ public class ConcreteExpressionFactory {
             : new Concrete.LongReferenceExpression(null, qualifierExpression, longName, referable);
   }
 
+  public static Concrete.ReferenceExpression cVar(Object data, Concrete.ReferenceExpression qualifierExpression, LongName longName, Referable referable) {
+    return longName == null
+            ? new Concrete.ReferenceExpression(data, referable)
+            : new Concrete.LongReferenceExpression(data, qualifierExpression, longName, referable);
+  }
+
   public static Concrete.ReferenceExpression cDefCall(Object data, LongName longName, Referable referable, List<Concrete.LevelExpression> pLevels, List<Concrete.LevelExpression> hLevels) {
     return longName == null
       ? new Concrete.ReferenceExpression(data, referable, pLevels, hLevels)

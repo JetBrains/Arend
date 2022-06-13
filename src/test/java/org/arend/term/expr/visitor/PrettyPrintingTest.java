@@ -8,10 +8,8 @@ import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.Levels;
-import org.arend.ext.core.context.CoreParameter;
 import org.arend.ext.core.expr.CoreExpression;
 import org.arend.ext.core.ops.NormalizationMode;
-import org.arend.ext.prettyprinting.DefinitionRenamer;
 import org.arend.ext.prettyprinting.PrettyPrinterConfig;
 import org.arend.ext.prettyprinting.PrettyPrinterConfigImpl;
 import org.arend.ext.prettyprinting.PrettyPrinterFlag;
@@ -20,12 +18,14 @@ import org.arend.naming.reference.ConcreteLocatedReferable;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.LocalReferable;
 import org.arend.ext.concrete.definition.FunctionKind;
+import org.arend.naming.reference.TCDefReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.expr.ConcreteCompareVisitor;
+import org.arend.term.group.Group;
+import org.arend.term.group.StaticGroup;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
 import org.arend.term.prettyprint.ToAbstractVisitor;
 import org.arend.typechecking.TypeCheckingTestCase;
-import org.arend.typechecking.result.TypecheckingResult;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
@@ -48,7 +48,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
 
     @Override
     public @NotNull EnumSet<PrettyPrinterFlag> getExpressionFlags() {
-      return EnumSet.noneOf(PrettyPrinterFlag.class);
+      return EnumSet.of(PrettyPrinterFlag.SHOW_LOCAL_FIELD_INSTANCE);
     }
 
     @Override
@@ -305,27 +305,40 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
     assertEquals(expr, printTestExpr());
   }
 
-  private void testRevealing(String expression, String expected, Function<TypecheckingResult, Expression> selector) {
-    TypecheckingResult result = typeCheckExpr(expression, null);
-    Expression expr = selector.apply(result);
+  private void testRevealing(String module, Function<Group, Expression> moduleSelector, String expected, Function<Expression, Expression> selector) {
+    Group result = typeCheckModule(module);
+    Expression baseExpr = moduleSelector.apply(result);
+    Expression incremented = selector.apply(baseExpr);
     PrettyPrinterConfig config = new PrettyPrinterConfigImpl(EMPTY) {
       @Override
       public int getVerboseLevel(@NotNull CoreExpression expression) {
-        return expression == expr ? 1 : 0;
+        return expression == incremented ? 1 : 0;
       }
     };
-    assertEquals(expected, ToAbstractVisitor.convert(result.expression, config).toString());
+    assertEquals(expected, ToAbstractVisitor.convert(baseExpr, config).toString());
   }
 
   @Test
   public void revealing1() {
-    testRevealing("idp = {1 = 1} idp", "idp {Nat} = idp",
-            (result) -> result.expression.cast(FunCallExpression.class).getDefCallArguments().get(1));
+    testRevealing("\\func f : idp = {1 = 1} idp => idp",
+            (group) -> ((FunctionDefinition) ((TCDefReferable) ((StaticGroup) group.getSubgroups().toArray()[0]).getReferable()).getTypechecked()).getResultType(),
+            "idp {Nat} = idp",
+            (result) -> result.cast(FunCallExpression.class).getDefCallArguments().get(1));
   }
 
   @Test
   public void revealing2() {
-    testRevealing("idp = {1 = 1} idp", "idp = {1 = 1} idp",
-            (result) -> result.expression);
+    testRevealing("\\func f : idp = {1 = 1} idp => idp",
+            (group) -> ((FunctionDefinition) ((TCDefReferable) ((StaticGroup) group.getSubgroups().toArray()[0]).getReferable()).getTypechecked()).getResultType(),
+            "idp = {1 = 1} idp",
+            (result) -> result);
+  }
+
+  @Test
+  public void revealing3() {
+    testRevealing("\\class A { | f {n : Nat} : n = 1 } \\func e (q : A) : q.f = idp => Path.inProp _ _",
+            (module) -> ((FunctionDefinition) ((TCDefReferable) ((StaticGroup) module.getSubgroups().toArray()[1]).getReferable()).getTypechecked()).getResultType(),
+            "q.f {1} = idp",
+            (result) -> result.cast(FunCallExpression.class).getDefCallArguments().get(1).cast(AppExpression.class).getFunction());
   }
 }

@@ -120,6 +120,19 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     return myConfig.getVerboseLevel(coreExpression);
   }
 
+  private boolean checkAppArgExplicitness(AppExpression app) {
+    Expression expr = app;
+    int implicits = 0;
+    while (expr instanceof AppExpression) {
+      if (!((AppExpression) expr).isExplicit()) {
+        implicits += 1;
+      }
+      expr = expr.getFunction();
+    }
+    int baseVerboseLevel = getVerboseLevel(expr);
+    return baseVerboseLevel >= implicits;
+  }
+
   private boolean shouldBeVerbose(DependentLink link) {
     for (DependentLink thisLink = link; thisLink.hasNext(); thisLink = thisLink.getNext()) {
       if (myConfig.getVerboseLevel(thisLink) > 0) {
@@ -172,7 +185,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   @Override
   public Concrete.Expression visitApp(AppExpression expr, Void params) {
     Concrete.Expression function = expr.getFunction().accept(this, null);
-    Concrete.Expression arg = expr.isExplicit() || hasFlag(PrettyPrinterFlag.SHOW_IMPLICIT_ARGS) ? expr.getArgument().accept(this, null) : null;
+    Concrete.Expression arg = expr.isExplicit() || hasFlag(PrettyPrinterFlag.SHOW_IMPLICIT_ARGS) || checkAppArgExplicitness(expr) ? expr.getArgument().accept(this, null) : null;
     return arg != null ? checkApp(Concrete.AppExpression.make(expr, function, arg, expr.isExplicit()), false) : function;
   }
 
@@ -302,7 +315,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     }
     if (ok && qualifier instanceof Concrete.ReferenceExpression) {
       GlobalReferable ref = expr.getDefinition().getReferable();
-      return cVar((Concrete.ReferenceExpression) qualifier, new LongName(name == null ? "_" : name, ref.getRepresentableName()), ref);
+      return cVar(expr, (Concrete.ReferenceExpression) qualifier, new LongName(name == null ? "_" : name, ref.getRepresentableName()), ref);
     }
 
     Concrete.ReferenceExpression result = makeReference(expr);
