@@ -1,5 +1,7 @@
 package org.arend.module.serialization;
 
+import org.arend.core.context.binding.LevelVariable;
+import org.arend.core.context.binding.ParamLevelVariable;
 import org.arend.core.definition.*;
 import org.arend.ext.module.ModulePath;
 import org.arend.ext.reference.Precedence;
@@ -304,12 +306,28 @@ public class ModuleDeserialization {
     return group;
   }
 
+  private List<LevelVariable> readLevelParameters(List<DefinitionProtos.Definition.LevelParameter> parameters, boolean isStd) {
+    if (isStd) return null;
+    List<LevelVariable> result = new ArrayList<>(parameters.size());
+    for (DefinitionProtos.Definition.LevelParameter parameter : parameters) {
+      LevelVariable base = parameter.getIsPlevel() ? LevelVariable.PVAR : LevelVariable.HVAR;
+      int size = parameter.getSize();
+      if (size == -1) {
+        result.add(base);
+      } else {
+        result.add(new ParamLevelVariable(base.getType(), parameter.getName(), parameter.getIndex(), size));
+      }
+    }
+    return result;
+  }
+
   private Definition readDefinition(DefinitionProtos.Definition defProto, TCDefReferable referable, boolean fillInternalDefinitions) throws DeserializationException {
     final Definition def;
     switch (defProto.getDefinitionDataCase()) {
       case CLASS: {
         DefinitionProtos.Definition.ClassData classProto = defProto.getClass_();
         ClassDefinition classDef = new ClassDefinition(referable);
+        classDef.setLevelParameters(readLevelParameters(classProto.getLevelParamList(), classProto.getIsStdLevels()));
         if (fillInternalDefinitions) {
           for (DefinitionProtos.Definition.ClassData.Field fieldProto : classProto.getPersonalFieldList()) {
             DefinitionProtos.Referable fieldReferable = fieldProto.getReferable();
@@ -323,8 +341,10 @@ public class ModuleDeserialization {
         def = classDef;
         break;
       }
-      case DATA:
+      case DATA: {
+        DefinitionProtos.Definition.DataData dataProto = defProto.getData();
         DataDefinition dataDef = new DataDefinition(referable);
+        dataDef.setLevelParameters(readLevelParameters(dataProto.getLevelParamList(), dataProto.getIsStdLevels()));
         if (fillInternalDefinitions) {
           for (DefinitionProtos.Definition.DataData.Constructor constructor : defProto.getData().getConstructorList()) {
             DefinitionProtos.Referable conReferable = constructor.getReferable();
@@ -337,9 +357,13 @@ public class ModuleDeserialization {
         }
         def = dataDef;
         break;
-      case FUNCTION:
+      }
+      case FUNCTION: {
+        DefinitionProtos.Definition.FunctionData functionProto = defProto.getFunction();
         def = new FunctionDefinition(referable);
+        def.setLevelParameters(readLevelParameters(functionProto.getLevelParamList(), functionProto.getIsStdLevels()));
         break;
+      }
       case CONSTRUCTOR:
         def = new DConstructor(referable);
         break;

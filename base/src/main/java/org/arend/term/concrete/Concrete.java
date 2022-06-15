@@ -1850,7 +1850,7 @@ public final class Concrete {
 
     @Override
     public void setPLevelParameters(ConcreteLevelParameters parameters) {
-      if (!(parameters instanceof LevelParameters)) {
+      if (!(parameters instanceof LevelParameters || parameters == null)) {
         throw new IllegalArgumentException();
       }
       myPLevelParameters = (LevelParameters) parameters;
@@ -1863,7 +1863,7 @@ public final class Concrete {
 
     @Override
     public void setHLevelParameters(ConcreteLevelParameters parameters) {
-      if (!(parameters instanceof LevelParameters)) {
+      if (!(parameters instanceof LevelParameters || parameters == null)) {
         throw new IllegalArgumentException();
       }
       myHLevelParameters = (LevelParameters) parameters;
