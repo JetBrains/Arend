@@ -364,9 +364,12 @@ public class ModuleDeserialization {
         def.setLevelParameters(readLevelParameters(functionProto.getLevelParamList(), functionProto.getIsStdLevels()));
         break;
       }
-      case CONSTRUCTOR:
+      case CONSTRUCTOR: {
+        DefinitionProtos.Definition.FunctionData functionProto = defProto.getConstructor().getFunction();
         def = new DConstructor(referable);
+        def.setLevelParameters(readLevelParameters(functionProto.getLevelParamList(), functionProto.getIsStdLevels()));
         break;
+      }
       default:
         throw new DeserializationException("Unknown Definition kind: " + defProto.getDefinitionDataCase());
     }
