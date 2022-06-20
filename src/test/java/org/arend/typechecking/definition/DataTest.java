@@ -14,6 +14,7 @@ import org.arend.naming.reference.LocalReferable;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.TypeCheckingTestCase;
+import org.arend.typechecking.error.local.DataUniverseError;
 import org.arend.typechecking.error.local.TruncatedDataError;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.junit.Ignore;
@@ -23,6 +24,7 @@ import java.util.*;
 
 import static org.arend.ExpressionFactory.*;
 import static org.arend.Matchers.typeMismatchError;
+import static org.arend.Matchers.typecheckingError;
 import static org.arend.core.expr.ExpressionFactory.*;
 import static org.arend.term.concrete.ConcreteExpressionFactory.*;
 import static org.junit.Assert.*;
@@ -351,5 +353,20 @@ public class DataTest extends TypeCheckingTestCase {
       "\\func test (d : D) : Nat\n" +
       "  | con1 (r : R) => test (r.field 0)\n" +
       "  | con2 => 1");
+  }
+
+  @Test
+  public void truncatedLevelTest() {
+    typeCheckModule(
+      "\\truncated \\data D : \\Set0\n" +
+      "  | con \\Set0", 1);
+    assertThatErrorsAre(typecheckingError(DataUniverseError.class));
+  }
+
+  @Test
+  public void truncatedLevelTest2() {
+    typeCheckModule(
+      "\\truncated \\data D \\plevels p1 >= p2 (A : \\hType p1) : \\Set\n" +
+      "  | con A");
   }
 }

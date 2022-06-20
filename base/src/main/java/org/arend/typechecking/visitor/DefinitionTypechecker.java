@@ -2118,6 +2118,13 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           dataDefinition.setSquashed(true);
         }
       }
+      if (countingErrorReporter.getErrorsNumber() == 0 && userSort != null && !userSort.isProp() && !Level.compare(inferredSort.getPLevel(), userSort.getPLevel(), CMP.LE, DummyEquations.getInstance(), null)) {
+        if (!def.isRecursive() && def.getUniverse() != null && def.getUniverse().getPLevel() == null) {
+          userSort = new Sort(inferredSort.getPLevel(), userSort.getHLevel());
+        } else {
+          countingErrorReporter.report(new DataUniverseError(new Sort(inferredSort.getPLevel(), userSort.getHLevel()), userSort, def.getUniverse() == null ? def : def.getUniverse()));
+        }
+      }
     } else if (countingErrorReporter.getErrorsNumber() == 0 && userSort != null && !inferredSort.isLessOrEquals(userSort)) {
       countingErrorReporter.report(new DataUniverseError(inferredSort, userSort, def.getUniverse() == null ? def : def.getUniverse()));
     }
