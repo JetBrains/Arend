@@ -37,20 +37,20 @@ public class BinOpParser {
   }
 
   public Concrete.Expression parse(Concrete.BinOpSequenceExpression expr) {
-    List<Concrete.BinOpSequenceElem> sequence = expr.getSequence();
-    Concrete.BinOpSequenceElem first = sequence.get(0);
+    List<Concrete.BinOpSequenceElem<Concrete.Expression>> sequence = expr.getSequence();
+    Concrete.BinOpSequenceElem<Concrete.Expression> first = sequence.get(0);
     if (first.fixity == Fixity.INFIX || first.fixity == Fixity.POSTFIX) {
       LocalReferable firstArg = new LocalReferable(Renamer.UNNAMED);
-      List<Concrete.BinOpSequenceElem> newSequence = new ArrayList<>(sequence.size() + 1);
-      newSequence.add(new Concrete.BinOpSequenceElem(new Concrete.ReferenceExpression(expr.getData(), firstArg)));
+      List<Concrete.BinOpSequenceElem<Concrete.Expression>> newSequence = new ArrayList<>(sequence.size() + 1);
+      newSequence.add(new Concrete.BinOpSequenceElem<>(new Concrete.ReferenceExpression(expr.getData(), firstArg)));
       newSequence.addAll(sequence);
       return new Concrete.LamExpression(expr.getData(), Collections.singletonList(new Concrete.NameParameter(expr.getData(), true, firstArg)), parse(new Concrete.BinOpSequenceExpression(expr.getData(), newSequence, expr.getClauses())));
     }
 
-    for (Concrete.BinOpSequenceElem elem : sequence) {
-      Concrete.ReferenceExpression reference = elem.expression instanceof Concrete.ReferenceExpression ? (Concrete.ReferenceExpression) elem.expression : null;
-      if (reference == null && elem.fixity != Fixity.NONFIX && elem.expression instanceof Concrete.AppExpression && ((Concrete.AppExpression) elem.expression).getFunction() instanceof Concrete.ReferenceExpression) {
-        reference = (Concrete.ReferenceExpression) ((Concrete.AppExpression) elem.expression).getFunction();
+    for (Concrete.BinOpSequenceElem<Concrete.Expression> elem : sequence) {
+      Concrete.ReferenceExpression reference = elem.getComponent() instanceof Concrete.ReferenceExpression ? (Concrete.ReferenceExpression) elem.getComponent() : null;
+      if (reference == null && elem.fixity != Fixity.NONFIX && elem.getComponent() instanceof Concrete.AppExpression && ((Concrete.AppExpression) elem.getComponent()).getFunction() instanceof Concrete.ReferenceExpression) {
+        reference = (Concrete.ReferenceExpression) ((Concrete.AppExpression) elem.getComponent()).getFunction();
       }
       Precedence precedence = reference != null && reference.getReferent() instanceof GlobalReferable ? ((GlobalReferable) reference.getReferent()).getPrecedence() : null;
 
@@ -59,13 +59,13 @@ public class BinOpParser {
           precedence = Precedence.DEFAULT;
         }
         push(reference, precedence, elem.fixity == Fixity.POSTFIX && !precedence.isInfix);
-        if (elem.expression instanceof Concrete.AppExpression) {
-          for (Concrete.Argument argument : ((Concrete.AppExpression) elem.expression).getArguments()) {
+        if (elem.getComponent() instanceof Concrete.AppExpression) {
+          for (Concrete.Argument argument : ((Concrete.AppExpression) elem.getComponent()).getArguments()) {
             push(argument.expression, argument.isExplicit());
           }
         }
       } else {
-        push(elem.expression, elem.isExplicit);
+        push(elem.getComponent(), elem.isExplicit);
       }
     }
 

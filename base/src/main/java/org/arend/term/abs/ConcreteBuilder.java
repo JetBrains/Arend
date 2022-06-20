@@ -645,12 +645,12 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
       return new Concrete.BinOpSequenceExpression(left.getData(), ((Concrete.BinOpSequenceExpression) left).getSequence(), new Concrete.FunctionClauses(clauses.getData(), buildClauses(clauses.getClauseList())));
     }
 
-    List<Concrete.BinOpSequenceElem> elems = new ArrayList<>();
-    elems.add(new Concrete.BinOpSequenceElem(left));
+    List<Concrete.BinOpSequenceElem<Concrete.Expression>> elems = new ArrayList<>();
+    elems.add(new Concrete.BinOpSequenceElem<>(left));
     for (Abstract.BinOpSequenceElem elem : sequence) {
       Abstract.Expression arg = elem.getExpression();
       if (arg != null) {
-        elems.add(new Concrete.BinOpSequenceElem(arg.accept(this, null), elem.isVariable() ? Fixity.UNKNOWN : Fixity.NONFIX, elem.isExplicit()));
+        elems.add(new Concrete.BinOpSequenceElem<>(arg.accept(this, null), elem.isVariable() ? Fixity.UNKNOWN : Fixity.NONFIX, elem.isExplicit()));
       }
     }
 

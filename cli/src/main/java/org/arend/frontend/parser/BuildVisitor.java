@@ -1220,7 +1220,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       return expr;
     }
 
-    List<Concrete.BinOpSequenceElem> sequence = new ArrayList<>(argumentCtxs.size());
+    List<Concrete.BinOpSequenceElem<Concrete.Expression>> sequence = new ArrayList<>(argumentCtxs.size());
     sequence.add(new Concrete.BinOpSequenceElem(expr));
     for (ArgumentContext argumentCtx : argumentCtxs) {
       sequence.add(visitArgument(argumentCtx));
@@ -1229,14 +1229,15 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return new Concrete.BinOpSequenceExpression(expr.getData(), sequence, null);
   }
 
-  private Concrete.BinOpSequenceElem visitArgument(ArgumentContext ctx) {
-    return (Concrete.BinOpSequenceElem) visit(ctx);
+  private Concrete.BinOpSequenceElem<Concrete.Expression> visitArgument(ArgumentContext ctx) {
+    //noinspection unchecked
+    return (Concrete.BinOpSequenceElem<Concrete.Expression>) visit(ctx);
   }
 
   @Override
-  public Concrete.BinOpSequenceElem visitArgumentExplicit(ArgumentExplicitContext ctx) {
+  public Concrete.BinOpSequenceElem<Concrete.Expression> visitArgumentExplicit(ArgumentExplicitContext ctx) {
     AtomFieldsAccContext atomFieldsAcc = ctx.atomFieldsAcc();
-    return new Concrete.BinOpSequenceElem(visitAtomFieldsAcc(atomFieldsAcc), atomFieldsAcc.atom() instanceof AtomLiteralContext && isName(((AtomLiteralContext) atomFieldsAcc.atom()).literal()) && atomFieldsAcc.NUMBER().isEmpty() ? Fixity.UNKNOWN : Fixity.NONFIX, true);
+    return new Concrete.BinOpSequenceElem<>(visitAtomFieldsAcc(atomFieldsAcc), atomFieldsAcc.atom() instanceof AtomLiteralContext && isName(((AtomLiteralContext) atomFieldsAcc.atom()).literal()) && atomFieldsAcc.NUMBER().isEmpty() ? Fixity.UNKNOWN : Fixity.NONFIX, true);
   }
 
   private boolean isName(LiteralContext ctx) {
@@ -1244,28 +1245,28 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   }
 
   @Override
-  public Concrete.BinOpSequenceElem visitArgumentNew(ArgumentNewContext ctx) {
-    return new Concrete.BinOpSequenceElem(visitNew(ctx.appPrefix(), ctx.appExpr(), ctx.implementStatements()), Fixity.NONFIX, true);
+  public Concrete.BinOpSequenceElem<Concrete.Expression> visitArgumentNew(ArgumentNewContext ctx) {
+    return new Concrete.BinOpSequenceElem<>(visitNew(ctx.appPrefix(), ctx.appExpr(), ctx.implementStatements()), Fixity.NONFIX, true);
   }
 
   @Override
-  public Concrete.BinOpSequenceElem visitArgumentUniverse(ArgumentUniverseContext ctx) {
-    return new Concrete.BinOpSequenceElem(visitExpr(ctx.universeAtom()), Fixity.NONFIX, true);
+  public Concrete.BinOpSequenceElem<Concrete.Expression> visitArgumentUniverse(ArgumentUniverseContext ctx) {
+    return new Concrete.BinOpSequenceElem<>(visitExpr(ctx.universeAtom()), Fixity.NONFIX, true);
   }
 
   @Override
-  public Concrete.BinOpSequenceElem visitArgumentImplicit(ArgumentImplicitContext ctx) {
-    return new Concrete.BinOpSequenceElem(visitTupleExprs(ctx.tupleExpr(), ctx.COMMA(), ctx), Fixity.NONFIX, false);
+  public Concrete.BinOpSequenceElem<Concrete.Expression> visitArgumentImplicit(ArgumentImplicitContext ctx) {
+    return new Concrete.BinOpSequenceElem<>(visitTupleExprs(ctx.tupleExpr(), ctx.COMMA(), ctx), Fixity.NONFIX, false);
   }
 
   @Override
   public Object visitArgumentLam(ArgumentLamContext ctx) {
-    return new Concrete.BinOpSequenceElem(visitLamExpr(ctx.lamExpr()), Fixity.NONFIX, true);
+    return new Concrete.BinOpSequenceElem<>(visitLamExpr(ctx.lamExpr()), Fixity.NONFIX, true);
   }
 
   @Override
   public Object visitArgumentCase(ArgumentCaseContext ctx) {
-    return new Concrete.BinOpSequenceElem(visitCaseExpr(ctx.caseExpr()), Fixity.NONFIX, true);
+    return new Concrete.BinOpSequenceElem<>(visitCaseExpr(ctx.caseExpr()), Fixity.NONFIX, true);
   }
 
   private Concrete.CoClauseElement visitCoClause(CoClauseContext ctx, List<? super EmptyGroup> statements, ChildGroup parentGroup, TCDefReferable enclosingClass, TCDefReferable enclosingDefinition, boolean isDefault) {
@@ -1782,8 +1783,8 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
         return new Concrete.BinOpSequenceExpression(expr.getData(), ((Concrete.BinOpSequenceExpression) expr).getSequence(), new Concrete.FunctionClauses(tokenPosition(body.start), visitWithBody(body)));
       }
 
-      List<Concrete.BinOpSequenceElem> sequence = new ArrayList<>(argumentCtxs.size() + 1);
-      sequence.add(new Concrete.BinOpSequenceElem(expr));
+      List<Concrete.BinOpSequenceElem<Concrete.Expression>> sequence = new ArrayList<>(argumentCtxs.size() + 1);
+      sequence.add(new Concrete.BinOpSequenceElem<>(expr));
       for (ArgumentContext argCtx : argumentCtxs) {
         sequence.add(visitArgument(argCtx));
       }

@@ -82,8 +82,8 @@ public class SearchConcreteVisitor<P,R> implements ConcreteExpressionVisitor<P,R
 
   @Override
   public R visitBinOpSequence(Concrete.BinOpSequenceExpression expr, P params) {
-    for (Concrete.BinOpSequenceElem elem : expr.getSequence()) {
-      R result = elem.expression.accept(this, params);
+    for (Concrete.BinOpSequenceElem<Concrete.Expression> elem : expr.getSequence()) {
+      R result = elem.getComponent().accept(this, params);
       if (result != null) return result;
     }
     return visitClauses(expr.getClauseList(), params);

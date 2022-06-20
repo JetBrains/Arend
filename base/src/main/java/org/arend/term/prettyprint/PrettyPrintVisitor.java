@@ -627,8 +627,8 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     return null;
   }
 
-  private AbstractLayout createBinOpLayout(List<BinOpSequenceElem> elems) {
-    Concrete.Expression lhs = elems.get(0).expression;
+  private AbstractLayout createBinOpLayout(List<BinOpSequenceElem<Expression>> elems) {
+    Concrete.Expression lhs = elems.get(0).getComponent();
     if (lhs instanceof Concrete.AppExpression && elems.size() > 1) {
       lhs = Concrete.AppExpression.make(lhs.getData(), ((Concrete.AppExpression) lhs).getFunction(), new ArrayList<>(((Concrete.AppExpression) lhs).getArguments()));
     }
@@ -636,11 +636,11 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     int i = 1;
     for (; i < elems.size(); i++) {
       if (elems.get(i).isPostfixReference()) {
-        lhs = Concrete.AppExpression.make(elems.get(i).expression.getData(), elems.get(i).expression, lhs, true);
+        lhs = Concrete.AppExpression.make(elems.get(i).getComponent().getData(), elems.get(i).getComponent(), lhs, true);
       } else if (elems.get(i).isInfixReference()) {
         break;
       } else {
-        lhs = Concrete.AppExpression.make(lhs.getData(), lhs, elems.get(i).expression, elems.get(i).isExplicit);
+        lhs = Concrete.AppExpression.make(lhs.getData(), lhs, elems.get(i).getComponent(), elems.get(i).isExplicit);
       }
     }
 
@@ -654,7 +654,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     }
 
     // TODO[pretty]
-    List<BinOpSequenceElem> ops = new ArrayList<>();
+    List<BinOpSequenceElem<Expression>> ops = new ArrayList<>();
     for (; i < elems.size(); i++) {
       if (!elems.get(i).isExplicit || elems.get(i).fixity == Fixity.INFIX || elems.get(i).fixity == Fixity.POSTFIX || elems.get(i).isInfixReference()) {
         ops.add(elems.get(i));
@@ -681,9 +681,9 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       @Override
       String getOpText() {
         StringBuilder builder = new StringBuilder();
-        for (BinOpSequenceElem elem : ops) {
-          if (elem.fixity == Fixity.INFIX || elem.fixity == Fixity.POSTFIX && elem.expression instanceof Concrete.ReferenceExpression) {
-            builder.append('`').append(((ReferenceExpression) elem.expression).getReferent().textRepresentation());
+        for (BinOpSequenceElem<Expression> elem : ops) {
+          if (elem.fixity == Fixity.INFIX || elem.fixity == Fixity.POSTFIX && elem.getComponent() instanceof Concrete.ReferenceExpression) {
+            builder.append('`').append(((ReferenceExpression) elem.getComponent()).getReferent().textRepresentation());
             if (elem.fixity == Fixity.INFIX) {
               builder.append('`');
             }
@@ -691,10 +691,10 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
             if (!elem.isExplicit) {
               builder.append(" {");
             }
-            if (elem.expression instanceof Concrete.ReferenceExpression) {
-              builder.append(((ReferenceExpression) elem.expression).getReferent().textRepresentation());
+            if (elem.getComponent() instanceof Concrete.ReferenceExpression) {
+              builder.append(((ReferenceExpression) elem.getComponent()).getReferent().textRepresentation());
             } else {
-              elem.expression.accept(new PrettyPrintVisitor(builder, myIndent, !noIndent), new Precedence(Expression.PREC));
+              elem.getComponent().accept(new PrettyPrintVisitor(builder, myIndent, !noIndent), new Precedence(Expression.PREC));
             }
             if (!elem.isExplicit) {
               printClosingBrace();
@@ -709,7 +709,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   @Override
   public Void visitBinOpSequence(Concrete.BinOpSequenceExpression expr, Precedence prec) {
     if (expr.getSequence().size() == 1) {
-      expr.getSequence().get(0).expression.accept(this, prec);
+      expr.getSequence().get(0).getComponent().accept(this, prec);
       return null;
     }
     if (prec.priority > Concrete.BinOpSequenceExpression.PREC) myBuilder.append('(');

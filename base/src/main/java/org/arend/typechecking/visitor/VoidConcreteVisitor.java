@@ -181,8 +181,8 @@ public class VoidConcreteVisitor<P, R> implements ConcreteExpressionVisitor<P,Vo
 
   @Override
   public Void visitBinOpSequence(Concrete.BinOpSequenceExpression expr, P params) {
-    for (Concrete.BinOpSequenceElem elem : expr.getSequence()) {
-      elem.expression.accept(this, params);
+    for (Concrete.BinOpSequenceElem<Concrete.Expression> elem : expr.getSequence()) {
+      elem.getComponent().accept(this, params);
     }
     if (expr.getClauses() != null) {
       visitClauses(expr.getClauseList(), params);
