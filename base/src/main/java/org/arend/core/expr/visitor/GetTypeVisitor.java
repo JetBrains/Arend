@@ -2,6 +2,7 @@ package org.arend.core.expr.visitor;
 
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.param.DependentLink;
+import org.arend.core.definition.ClassDefinition;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.definition.UniverseKind;
@@ -14,6 +15,7 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.Levels;
 import org.arend.core.subst.ListLevels;
+import org.arend.ext.core.level.LevelSubstitution;
 import org.arend.ext.core.ops.CMP;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.prelude.Prelude;
@@ -104,7 +106,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
       }
       ClassCallExpression paramClassCall = (ClassCallExpression) paramType;
       ClassCallExpression argClassCall = (ClassCallExpression) argType;
-      if (paramClassCall.getUniverseKind() != UniverseKind.NO_UNIVERSES && !matchLevels(paramClassCall.getLevels(), argClassCall.getDefinition().castLevels(paramClassCall.getDefinition(), minimizeLevels(argClassCall)), levelMap)) {
+      if (paramClassCall.getUniverseKind() != UniverseKind.NO_UNIVERSES && !matchLevels(paramClassCall.getLevels(), minimizeLevelsToSuperClass(argClassCall, paramClassCall.getDefinition()), levelMap)) {
         return false;
       }
       for (Map.Entry<ClassField, Expression> entry : paramClassCall.getImplementedHere().entrySet()) {
@@ -206,6 +208,27 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
     return new UniverseExpression(expr.getDefinition().getSort().subst((myMinimal ? minimizeLevels(expr) : expr.getLevels()).makeSubstitution(expr.getDefinition())));
   }
 
+  private Levels minimizeLevelsToSuperClass(ClassCallExpression classCall, ClassDefinition superClass) {
+    Levels argLevels = classCall.getLevels(superClass);
+    if (argLevels != classCall.getLevels() && classCall.getUniverseKind() == UniverseKind.NO_UNIVERSES) {
+      Map<ClassField, Expression> impls = new LinkedHashMap<>();
+      ClassCallExpression newClassCall = new ClassCallExpression(superClass, argLevels, impls, classCall.getSort(), UniverseKind.NO_UNIVERSES);
+      for (Map.Entry<ClassField, AbsExpression> entry : classCall.getDefinition().getImplemented()) {
+        if (entry.getKey().getUniverseKind() != UniverseKind.NO_UNIVERSES && superClass.isSubClassOf(entry.getKey().getParentClass())) {
+          impls.put(entry.getKey(), entry.getValue().apply(new ReferenceExpression(classCall.getThisBinding()), LevelSubstitution.EMPTY).accept(new FieldCallSubstVisitor(classCall, new ReferenceExpression(newClassCall.getThisBinding())), null));
+        }
+      }
+      for (Map.Entry<ClassField, Expression> entry : classCall.getImplementedHere().entrySet()) {
+        if (entry.getKey().getUniverseKind() != UniverseKind.NO_UNIVERSES && superClass.isSubClassOf(entry.getKey().getParentClass())) {
+          impls.put(entry.getKey(), entry.getValue().subst(classCall.getThisBinding(), new ReferenceExpression(newClassCall.getThisBinding())));
+        }
+      }
+      return minimizeLevels(newClassCall);
+    } else {
+      return classCall.getDefinition().castLevels(superClass, minimizeLevels(classCall));
+    }
+  }
+
   @Override
   public Expression visitFieldCall(FieldCallExpression expr, Void params) {
     Expression type = expr.getArgument().accept(this, null);
@@ -214,12 +237,14 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
     }
     if (type instanceof ClassCallExpression) {
       ClassCallExpression classCall = (ClassCallExpression) type;
-      Levels levels = myMinimal ? minimizeLevels(classCall) : classCall.getLevels();
-      PiExpression fieldType = classCall.getDefinition().getOverriddenType(expr.getDefinition(), levels);
-      if (fieldType != null) {
-        return fieldType.applyExpression(expr.getArgument());
+      if (classCall.getDefinition().getOverriddenType(expr.getDefinition()) != null) {
+        return classCall.getDefinition().getOverriddenType(expr.getDefinition(), myMinimal ? minimizeLevels(classCall) : classCall.getLevels()).applyExpression(expr.getArgument());
       }
-      return expr.getDefinition().getType(classCall.getDefinition().castLevels(expr.getDefinition().getParentClass(), levels)).applyExpression(expr.getArgument());
+      if (myMinimal) {
+        return expr.getDefinition().getType(minimizeLevelsToSuperClass(classCall, expr.getDefinition().getParentClass())).applyExpression(expr.getArgument());
+      } else {
+        return expr.getDefinition().getType(classCall.getDefinition().castLevels(expr.getDefinition().getParentClass(), classCall.getLevels())).applyExpression(expr.getArgument());
+      }
     }
     return new ErrorExpression();
   }
