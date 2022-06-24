@@ -86,6 +86,10 @@ public final class Concrete {
       return false;
     }
 
+    public SigmaFieldKind getSigmaFieldKind() {
+      return SigmaFieldKind.ANY;
+    }
+
     @Override
     @NotNull
     public abstract List<? extends Referable> getReferableList();
@@ -231,11 +235,7 @@ public final class Concrete {
     }
   }
 
-  public interface SigmaParameter extends ConcreteSourceNode {
-    SigmaFieldKind getKind();
-  }
-
-  public static class SigmaTypeParameter extends TypeParameter implements SigmaParameter {
+  public static class SigmaTypeParameter extends TypeParameter implements SourceNode {
     private final SigmaFieldKind mySigmaFieldKind;
 
     public SigmaTypeParameter(Object data, Expression type, @NotNull SigmaFieldKind mySigmaFieldKind) {
@@ -249,12 +249,12 @@ public final class Concrete {
     }
 
     @Override
-    public SigmaFieldKind getKind() {
+    public SigmaFieldKind getSigmaFieldKind() {
       return mySigmaFieldKind;
     }
   }
 
-  public static class SigmaTelescopeParameter extends TelescopeParameter implements SigmaParameter {
+  public static class SigmaTelescopeParameter extends TelescopeParameter implements SourceNode {
     private final SigmaFieldKind mySigmaFieldKind;
 
     public SigmaTelescopeParameter(Object data, @NotNull List<? extends Referable> referableList, Expression type, @NotNull SigmaFieldKind mySigmaFieldKind) {
@@ -263,7 +263,7 @@ public final class Concrete {
     }
 
     @Override
-    public SigmaFieldKind getKind() {
+    public SigmaFieldKind getSigmaFieldKind() {
       return mySigmaFieldKind;
     }
   }

@@ -239,11 +239,6 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
       if (type == null) throw new IllegalArgumentException();
       return type;
     }
-    for (ConcreteParameter parameter : parameters) {
-      if (!(parameter instanceof Concrete.SigmaTypeParameter || parameter instanceof Concrete.SigmaTelescopeParameter)) {
-        throw new IllegalArgumentException();
-      }
-    }
     return new Concrete.SigmaExpression(myData, typeParameters(new ArrayList<>(parameters)));
   }
 
@@ -692,7 +687,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
 
   @NotNull
   @Override
-  public ConcreteParameter param(boolean explicit, @Nullable ArendRef ref) {
+  public Concrete.Parameter param(boolean explicit, @Nullable ArendRef ref) {
     return new Concrete.NameParameter(myData, explicit, makeLocalRef(ref));
   }
 
@@ -714,6 +709,9 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
 
   @Override
   public @NotNull Concrete.Parameter sigmaParam(@NotNull SigmaFieldKind kind, @NotNull Collection<? extends ArendRef> refs, @NotNull ConcreteExpression type) {
+    if (kind == SigmaFieldKind.ANY) {
+      return param(true, refs, type);
+    }
     if (!(type instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }
@@ -736,7 +734,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
   }
 
   @Override
-  public @NotNull ConcreteParameter param(boolean explicit, @NotNull ConcreteExpression type) {
+  public @NotNull Concrete.Parameter param(boolean explicit, @NotNull ConcreteExpression type) {
     if (!(type instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }

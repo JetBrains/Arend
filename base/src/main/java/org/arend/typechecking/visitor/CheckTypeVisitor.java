@@ -2539,15 +2539,12 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     return checkResult(expectedType, new TypecheckingResult(new SigmaExpression(sort, args), new UniverseExpression(sort)), expr);
   }
 
-  private DependentLink visitSigmaParameters(Collection<? extends ConcreteParameter> parameters, Expression expectedType, List<Sort> resultSorts) {
+  private DependentLink visitSigmaParameters(Collection<? extends Concrete.TypeParameter> parameters, Expression expectedType, List<Sort> resultSorts) {
     LinkList list = new LinkList();
 
     try (var ignored = new Utils.SetContextSaver<>(context)) {
-      for (ConcreteParameter parameter : parameters) {
-        if (!(parameter instanceof Concrete.SigmaParameter && parameter instanceof Concrete.TypeParameter)) {
-          throw new IllegalArgumentException();
-        }
-        if (!visitSigmaParameter((Concrete.TypeParameter) parameter, expectedType, resultSorts, list)) {
+      for (Concrete.TypeParameter parameter : parameters) {
+        if (!visitSigmaParameter(parameter, expectedType, resultSorts, list)) {
           return null;
         }
       }
@@ -2557,7 +2554,6 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
   }
 
   private boolean visitSigmaParameter(Concrete.TypeParameter arg, Expression expectedType, List<Sort> resultSorts, LinkList list) {
-    assert arg instanceof Concrete.SigmaParameter;
     Type result = checkType(arg.getType(), expectedType == null ? Type.OMEGA : expectedType);
     if (result == null) return false;
 
@@ -2565,7 +2561,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     boolean isProp = sort != null && sort.isProp();
     if (arg instanceof Concrete.TelescopeParameter) {
       List<? extends Referable> referableList = arg.getReferableList();
-      SigmaFieldKind kind = ((Concrete.SigmaParameter) arg).getKind();
+      SigmaFieldKind kind = arg.getSigmaFieldKind();
       if (!isProp && kind == SigmaFieldKind.PROPERTY) {
         errorReporter.report(new LevelMismatchError(LevelMismatchError.TargetKind.SIGMA_FIELD, result.getSortOfType(), arg));
       }
@@ -2576,7 +2572,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
         addBinding(referableList.get(i), link1);
       }
     } else {
-      SigmaFieldKind kind = ((Concrete.SigmaParameter) arg).getKind();
+      SigmaFieldKind kind = arg.getSigmaFieldKind();
       if (!isProp && kind == SigmaFieldKind.PROPERTY) {
        errorReporter.report(new LevelMismatchError(LevelMismatchError.TargetKind.SIGMA_FIELD, result.getSortOfType(), arg));
       }

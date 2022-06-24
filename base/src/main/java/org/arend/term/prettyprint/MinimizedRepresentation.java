@@ -8,6 +8,7 @@ import org.arend.core.expr.*;
 import org.arend.core.expr.visitor.FreeVariablesCollector;
 import org.arend.core.expr.visitor.VoidExpressionVisitor;
 import org.arend.ext.concrete.ConcreteFactory;
+import org.arend.ext.concrete.expr.SigmaFieldKind;
 import org.arend.ext.core.ops.NormalizationMode;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.prettyprinting.DefinitionRenamer;
@@ -192,20 +193,20 @@ final public class MinimizedRepresentation {
             protected Concrete.Parameter visitParameter(Concrete.Parameter parameter, Concrete.Parameter wideParameter) {
                 //noinspection DuplicatedCode
                 if (parameter.getType() == null) {
-                    return (Concrete.Parameter) myFactory.param(parameter.isExplicit(), wideParameter.getRefList().get(0));
+                    return myFactory.param(parameter.isExplicit(), wideParameter.getRefList().get(0));
                 } else {
                     Concrete.Expression processedType = ((Concrete.TypeParameter) parameter).type.accept(this, ((Concrete.TypeParameter) wideParameter).type);
                     if (wideParameter.getRefList().stream().anyMatch(Objects::nonNull)) {
-                        if (parameter instanceof Concrete.SigmaParameter) {
-                            return myFactory.sigmaParam(((Concrete.SigmaParameter) parameter).getKind(), wideParameter.getRefList(), processedType);
+                        if (parameter.getSigmaFieldKind() != SigmaFieldKind.ANY) {
+                            return myFactory.sigmaParam(parameter.getSigmaFieldKind(), wideParameter.getRefList(), processedType);
                         } else {
                             return myFactory.param(parameter.isExplicit(), parameter.getRefList(), processedType);
                         }
                     } else {
-                        if (parameter instanceof Concrete.SigmaParameter) {
-                            return myFactory.sigmaParam(((Concrete.SigmaParameter) parameter).getKind(), List.of(), processedType);
+                        if (parameter.getSigmaFieldKind() != SigmaFieldKind.ANY) {
+                            return myFactory.sigmaParam(parameter.getSigmaFieldKind(), List.of(), processedType);
                         } else {
-                            return (Concrete.Parameter) myFactory.param(parameter.isExplicit(), processedType);
+                            return myFactory.param(parameter.isExplicit(), processedType);
                         }
                     }
                 }

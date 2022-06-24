@@ -100,9 +100,9 @@ public class SubstConcreteExpressionVisitor implements DataContainer, ConcreteEx
   protected <T extends Concrete.Parameter> T visitParameter(T parameter) {
     var data = myData != null ? myData : parameter.getData();
     if (Concrete.SigmaTelescopeParameter.class.equals(parameter.getClass())) {
-      return (T) new Concrete.SigmaTelescopeParameter(data, new ArrayList<>(parameter.getReferableList()), nullableMap(parameter.getType()), ((Concrete.SigmaTelescopeParameter) parameter).getKind());
+      return (T) new Concrete.SigmaTelescopeParameter(data, new ArrayList<>(parameter.getReferableList()), nullableMap(parameter.getType()), parameter.getSigmaFieldKind());
     } else if (Concrete.SigmaTypeParameter.class.equals(parameter.getClass())) {
-      return (T) new Concrete.SigmaTypeParameter(data, nullableMap(parameter.getType()), ((Concrete.SigmaTypeParameter) parameter).getKind());
+      return (T) new Concrete.SigmaTypeParameter(data, nullableMap(parameter.getType()), parameter.getSigmaFieldKind());
     } else if (Concrete.NameParameter.class.equals(parameter.getClass())) {
       return (T) new Concrete.NameParameter(data, parameter.isExplicit(), ((Concrete.NameParameter) parameter).getReferable());
     } else if (Concrete.TypeParameter.class.equals(parameter.getClass())) {

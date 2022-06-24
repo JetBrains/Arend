@@ -325,7 +325,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     } else if (parameter instanceof Concrete.TelescopeParameter) {
       myBuilder.append(parameter.isExplicit() ? '(' : '{');
       if (parameter instanceof Concrete.SigmaTelescopeParameter) {
-        SigmaFieldKind kind = ((Concrete.SigmaTelescopeParameter) parameter).getKind();
+        SigmaFieldKind kind = parameter.getSigmaFieldKind();
         myBuilder.append(getKindRepresentation(kind));
       }
       if (parameter.isStrict()) {
@@ -349,14 +349,14 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
           if (parameter.isStrict()) {
             myBuilder.append("(\\strict ");
           }
-          if (parameter instanceof Concrete.SigmaTypeParameter && ((Concrete.SigmaTypeParameter) parameter).getKind() != SigmaFieldKind.ANY) {
-            myBuilder.append("(").append(getKindRepresentation(((Concrete.SigmaTypeParameter) parameter).getKind()));
+          if (parameter instanceof Concrete.SigmaTypeParameter && parameter.getSigmaFieldKind() != SigmaFieldKind.ANY) {
+            myBuilder.append("(").append(getKindRepresentation(parameter.getSigmaFieldKind()));
           }
           type.accept(this, new Precedence((byte) (ReferenceExpression.PREC + 1)));
-          if (parameter.isStrict())
+          if (parameter.isStrict()) {
             myBuilder.append(")");
           }
-          if (parameter instanceof Concrete.SigmaTypeParameter && ((Concrete.SigmaTypeParameter) parameter).getKind() != SigmaFieldKind.ANY) {
+          if (parameter instanceof Concrete.SigmaTypeParameter && parameter.getSigmaFieldKind() != SigmaFieldKind.ANY) {
             myBuilder.append(")");
           }
         } else {
@@ -369,6 +369,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
         }
       }
     }
+  }
 
   @NotNull
   private static String getKindRepresentation(SigmaFieldKind kind) {

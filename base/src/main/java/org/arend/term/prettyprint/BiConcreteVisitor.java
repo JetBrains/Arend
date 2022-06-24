@@ -1,6 +1,7 @@
 package org.arend.term.prettyprint;
 
 import org.arend.ext.concrete.expr.ConcreteArgument;
+import org.arend.ext.concrete.expr.SigmaFieldKind;
 import org.arend.extImpl.ConcreteFactoryImpl;
 import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
@@ -48,20 +49,20 @@ public abstract class BiConcreteVisitor extends BaseConcreteExpressionVisitor<Co
     protected Concrete.Parameter visitParameter(Concrete.Parameter parameter, Concrete.Parameter wideParameter) {
         //noinspection DuplicatedCode
         if (parameter.getType() == null) {
-            return (Concrete.Parameter) myFactory.param(parameter.isExplicit(), parameter.getRefList().get(0));
+            return myFactory.param(parameter.isExplicit(), parameter.getRefList().get(0));
         } else {
             Concrete.Expression processedType = ((Concrete.TypeParameter) parameter).type.accept(this, ((Concrete.TypeParameter) wideParameter).type);
             if (wideParameter.getRefList().stream().anyMatch(Objects::nonNull)) {
-                if (parameter instanceof Concrete.SigmaParameter) {
-                    return myFactory.sigmaParam(((Concrete.SigmaParameter) parameter).getKind(), parameter.getRefList(), processedType);
+                if (parameter.getSigmaFieldKind() != SigmaFieldKind.ANY) {
+                    return myFactory.sigmaParam(parameter.getSigmaFieldKind(), parameter.getRefList(), processedType);
                 } else {
                     return myFactory.param(parameter.isExplicit(), parameter.getRefList(), processedType);
                 }
             } else {
-                if (parameter instanceof Concrete.SigmaParameter) {
-                    return myFactory.sigmaParam(((Concrete.SigmaParameter) parameter).getKind(), List.of(), processedType);
+                if (parameter.getSigmaFieldKind() != SigmaFieldKind.ANY) {
+                    return myFactory.sigmaParam(parameter.getSigmaFieldKind(), List.of(), processedType);
                 } else {
-                    return (Concrete.Parameter) myFactory.param(parameter.isExplicit(), processedType);
+                    return myFactory.param(parameter.isExplicit(), processedType);
                 }
             }
         }
@@ -100,7 +101,7 @@ public abstract class BiConcreteVisitor extends BaseConcreteExpressionVisitor<Co
             if (existingParameter instanceof Concrete.TelescopeParameter) {
                 for (Referable innerParameter : existingParameter.getReferableList()) {
                   Concrete.TelescopeParameter param = existingParameter instanceof Concrete.SigmaTelescopeParameter ?
-                          new Concrete.SigmaTelescopeParameter(null, List.of(innerParameter), existingParameter.getType(), ((Concrete.SigmaTelescopeParameter) existingParameter).getKind()) :
+                          new Concrete.SigmaTelescopeParameter(null, List.of(innerParameter), existingParameter.getType(), existingParameter.getSigmaFieldKind()) :
                           new Concrete.TelescopeParameter(null, existingParameter.isExplicit(), List.of(innerParameter), existingParameter.getType());
                   flattenedParameters.add(param);
                 }
