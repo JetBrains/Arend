@@ -2558,25 +2558,21 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
     if (result == null) return false;
 
     Sort sort = result.getSortOfType();
-    boolean isProp = sort != null && sort.isProp();
+    SigmaFieldKind kind = arg.getSigmaFieldKind();
+    boolean isProp = kind == SigmaFieldKind.PROPERTY && Sort.compare(sort, Sort.PROP, CMP.LE, myEquations, arg);
+    if (!isProp && kind == SigmaFieldKind.PROPERTY) {
+      errorReporter.report(new LevelMismatchError(LevelMismatchError.TargetKind.SIGMA_FIELD, result.getSortOfType(), arg));
+    }
     if (arg instanceof Concrete.TelescopeParameter) {
       List<? extends Referable> referableList = arg.getReferableList();
-      SigmaFieldKind kind = arg.getSigmaFieldKind();
-      if (!isProp && kind == SigmaFieldKind.PROPERTY) {
-        errorReporter.report(new LevelMismatchError(LevelMismatchError.TargetKind.SIGMA_FIELD, result.getSortOfType(), arg));
-      }
-      DependentLink link = ExpressionFactory.sigmaParameter(kind == SigmaFieldKind.PROPERTY, arg.getNames(), result);
+      DependentLink link = ExpressionFactory.sigmaParameter(isProp, arg.getNames(), result);
       list.append(link);
       int i = 0;
       for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext(), i++) {
         addBinding(referableList.get(i), link1);
       }
     } else {
-      SigmaFieldKind kind = arg.getSigmaFieldKind();
-      if (!isProp && kind == SigmaFieldKind.PROPERTY) {
-       errorReporter.report(new LevelMismatchError(LevelMismatchError.TargetKind.SIGMA_FIELD, result.getSortOfType(), arg));
-      }
-      DependentLink link = ExpressionFactory.sigmaParameter(kind == SigmaFieldKind.PROPERTY, (String) null, result);
+      DependentLink link = ExpressionFactory.sigmaParameter(isProp, (String) null, result);
       list.append(link);
       addBinding(null, link);
     }
