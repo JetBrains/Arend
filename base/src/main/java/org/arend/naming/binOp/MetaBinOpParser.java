@@ -1,4 +1,4 @@
-package org.arend.naming;
+package org.arend.naming.binOp;
 
 import org.arend.ext.concrete.expr.ConcreteExpression;
 import org.arend.ext.reference.Precedence;
@@ -20,7 +20,7 @@ import java.util.List;
  * This class extracts and invokes meta resolvers from a binOp sequences and replaces corresponding subsequences with results
  */
 public class MetaBinOpParser {
-  public static class ResolvedReference {
+  public static final class ResolvedReference {
     public final Concrete.ReferenceExpression refExpr;
     public final UnresolvedReference originalReference;
     public final List<Referable> resolvedList;

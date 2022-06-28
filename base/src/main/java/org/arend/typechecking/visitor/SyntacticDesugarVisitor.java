@@ -1,7 +1,7 @@
 package org.arend.typechecking.visitor;
 
 import org.arend.ext.error.ErrorReporter;
-import org.arend.naming.BinOpParser;
+import org.arend.naming.binOp.BinOpParser;
 import org.arend.naming.reference.*;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;

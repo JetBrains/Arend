@@ -13,7 +13,7 @@ import org.arend.ext.reference.ArendRef;
 import org.arend.ext.reference.ExpressionResolver;
 import org.arend.ext.typechecking.MetaResolver;
 import org.arend.extImpl.ContextDataImpl;
-import org.arend.naming.MetaBinOpParser;
+import org.arend.naming.binOp.MetaBinOpParser;
 import org.arend.naming.error.DuplicateNameError;
 import org.arend.ext.error.NameResolverError;
 import org.arend.naming.error.ReferenceError;

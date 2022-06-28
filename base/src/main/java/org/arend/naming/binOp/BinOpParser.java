@@ -1,4 +1,4 @@
-package org.arend.naming;
+package org.arend.naming.binOp;
 
 import org.arend.error.ParsingError;
 import org.arend.ext.error.ErrorReporter;
