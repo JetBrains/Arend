@@ -386,12 +386,22 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   @Override
   public Concrete.Pattern visitPatternID(PatternIDContext ctx) {
     Position position = tokenPosition(ctx.start);
-    List<String> longName = visitLongNamePath(ctx.longName());
-    return
-            longName.size() == 1
-//      ? new Concrete.NamePattern(position, true, new ParsedLocalReferable(position, longName.get(0)), null)
-      ? new Concrete.NamePattern(position, true, new NamedUnresolvedReference(position, longName.get(0)), null)
-      : new Concrete.NamePattern(position, true, LongUnresolvedReference.make(position, longName), null);
+    TerminalNode infixCtx = ctx.INFIX();
+    TerminalNode postfixCtx = infixCtx == null ? ctx.POSTFIX() : null;
+    TerminalNode idCtx = postfixCtx == null ? ctx.ID() : null;
+    TerminalNode targetCtx = infixCtx != null ? infixCtx : postfixCtx != null ? postfixCtx : idCtx;
+    Fixity fixity = infixCtx != null ? Fixity.INFIX : postfixCtx != null ? Fixity.POSTFIX : Fixity.NONFIX;
+    LongNameContext longName = ctx.longName();
+    Referable targetReferable;
+    String refText = infixCtx != null ? getInfixText(infixCtx) : postfixCtx != null ? getPostfixText(postfixCtx) : idCtx.getText();
+    if (longName != null) {
+      Concrete.ReferenceExpression expression = visitLongNameRef(longName, refText, infixCtx != null ? Fixity.INFIX : postfixCtx != null ? Fixity.POSTFIX : null);
+      targetReferable = expression.getReferent();
+    } else {
+      targetReferable = new NamedUnresolvedReference(tokenPosition(targetCtx.getSymbol()), refText);
+    }
+
+    return new Concrete.NamePattern(position, true, targetReferable, null, fixity);
   }
 
   @Override

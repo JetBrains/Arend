@@ -74,7 +74,7 @@ public class PatternBinOpEngine implements BinOpEngine<Concrete.Pattern> {
     return "pattern";
   }
 
-  public static @NotNull Concrete.Pattern parse(@NotNull Concrete.UnparsedConstructorPattern expression, @NotNull ErrorReporter reporter) {
-    return new BinOpParser<>(reporter, engine).parse(expression.getUnparsedPatterns());
+  public static @NotNull Concrete.Pattern parse(@NotNull Concrete.UnparsedConstructorPattern pattern, @NotNull ErrorReporter reporter) {
+    return new BinOpParser<>(reporter, engine).parse(pattern.getUnparsedPatterns());
   }
 }

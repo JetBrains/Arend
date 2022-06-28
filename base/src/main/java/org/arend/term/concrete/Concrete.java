@@ -2733,12 +2733,18 @@ public final class Concrete {
   public static class NamePattern extends Pattern implements ConcreteReferencePattern {
     private @Nullable Referable myReferable;
     public @Nullable Expression type;
+    public @NotNull Fixity fixity;
 
     public NamePattern(Object data, boolean isExplicit, @Nullable Referable referable, @Nullable Expression type) {
+      this(data, isExplicit, referable, type, Fixity.NONFIX);
+    }
+
+    public NamePattern(Object data, boolean isExplicit, @Nullable Referable referable, @Nullable Expression type, @NotNull Fixity fixity) {
       super(data, null);
       setExplicit(isExplicit);
       myReferable = referable;
       this.type = type;
+      this.fixity = fixity;
     }
 
     @Override
@@ -2753,6 +2759,10 @@ public final class Concrete {
 
     public void setReferable(Referable ref) {
       myReferable = ref;
+    }
+
+    public @NotNull Fixity getFixity() {
+      return fixity;
     }
 
     @Override

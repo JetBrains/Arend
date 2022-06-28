@@ -114,8 +114,8 @@ atomPattern : '(' (pattern (',' pattern)*)? ')'   # patternExplicit
             | '_'                                 # patternAny
             ;
 
-atomPatternOrID : atomPattern     # patternOrIDAtom
-                | longName        # patternID
+atomPatternOrID : atomPattern                            # patternOrIDAtom
+                | (longName '.')? (INFIX | POSTFIX | ID) # patternID
                 ;
 
 constructor : COERCE? defId tele* (':' expr2)? (elim? '{' clause? ('|' clause)* '}')?;

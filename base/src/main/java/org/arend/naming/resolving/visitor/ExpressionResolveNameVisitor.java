@@ -690,10 +690,10 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
         } else {
           Concrete.Pattern newInnerPattern = new Concrete.NamePattern(subPattern.getData(), subPattern.isExplicit(), resolved, ((Concrete.NamePattern) subPattern).type);
           if (resolved instanceof GlobalReferable) {
-            Fixity fixity = ((GlobalReferable) resolved).getPrecedence().isInfix ? Fixity.INFIX : Fixity.NONFIX;
+            Fixity fixity = ((GlobalReferable) resolved).getPrecedence().isInfix ? Fixity.INFIX : ((Concrete.NamePattern) subPattern).fixity;
             corrected = new Concrete.BinOpSequenceElem<>(newInnerPattern, fixity, true);
           } else {
-            corrected = new Concrete.BinOpSequenceElem<>(newInnerPattern, Fixity.NONFIX, newInnerPattern.isExplicit());
+            corrected = new Concrete.BinOpSequenceElem<>(newInnerPattern, ((Concrete.NamePattern) subPattern).fixity, newInnerPattern.isExplicit());
           }
         }
       } else {

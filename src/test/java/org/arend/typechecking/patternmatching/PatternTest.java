@@ -530,10 +530,10 @@ public class PatternTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void postfixPatterns() {
+  public void infixPatternFromNonfix() {
     typeCheckModule(
             "\\data List | cons Nat List\n" +
                     "\\func test (r : List) : Nat\n" +
-                    "  | n `cons m => n");
+                    "  | n `cons` m => n");
   }
 }
