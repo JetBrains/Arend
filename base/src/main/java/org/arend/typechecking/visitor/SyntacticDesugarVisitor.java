@@ -1,7 +1,7 @@
 package org.arend.typechecking.visitor;
 
 import org.arend.ext.error.ErrorReporter;
-import org.arend.naming.binOp.BinOpParser;
+import org.arend.naming.binOp.ExpressionBinOpEngine;
 import org.arend.naming.reference.*;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
@@ -35,8 +35,8 @@ public class SyntacticDesugarVisitor extends BaseConcreteExpressionVisitor<Void>
     List<Concrete.Parameter> parameters = new ArrayList<>();
     convertBinOpAppHoles(expr, parameters);
     return !parameters.isEmpty()
-        ? new Concrete.LamExpression(expr.getData(), parameters, expr).accept(this, null)
-        : new BinOpParser(myErrorReporter).parse(expr).accept(this, null);
+            ? new Concrete.LamExpression(expr.getData(), parameters, expr).accept(this, null)
+            : ExpressionBinOpEngine.parse(expr, myErrorReporter).accept(this, null);
   }
 
   @Override

@@ -29,6 +29,10 @@ public class Pair<T, S> {
     return result;
   }
 
+  public static <T, S> Pair<T, S> create(T t, S s) {
+    return new Pair<>(t, s);
+  }
+
   @Override
   public String toString() {
     return "(" + (proj1 == null ? "null" : proj1) + ", " + (proj2 == null ? "null" : proj2) + ')';

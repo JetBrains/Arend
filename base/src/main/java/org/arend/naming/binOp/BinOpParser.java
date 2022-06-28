@@ -4,6 +4,7 @@ import org.arend.error.ParsingError;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.reference.Precedence;
 import org.arend.ext.error.NameResolverError;
+import org.arend.ext.util.Pair;
 import org.arend.naming.error.PrecedenceError;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.LocalReferable;
@@ -12,155 +13,133 @@ import org.arend.naming.renamer.Renamer;
 import org.arend.term.Fixity;
 import org.arend.term.concrete.Concrete;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
-public class BinOpParser {
+// package-local on purpose, this class should be accessed via its users like ExpressionBinOpEngine
+class BinOpParser<T extends Concrete.SourceNode> {
   private final ErrorReporter myErrorReporter;
-  private final List<StackElem> myStack;
+  private final List<StackElem<T>> myStack;
+  private final BinOpEngine<T> myEngine;
 
-  public BinOpParser(ErrorReporter errorReporter) {
+  BinOpParser(ErrorReporter errorReporter, BinOpEngine<T> engine) {
     myErrorReporter = errorReporter;
+    myEngine = engine;
     myStack = new ArrayList<>();
   }
 
-  private static class StackElem {
-    public Concrete.Expression expression;
-    public Precedence precedence;
+  private static class StackElem<T> {
+    public @NotNull T component;
+    public @Nullable Precedence precedence;
 
-    StackElem(Concrete.Expression expression, Precedence precedence) {
-      this.expression = expression;
+    StackElem(@NotNull T component, @Nullable Precedence precedence) {
+      this.component = component;
       this.precedence = precedence;
     }
   }
 
-  public Concrete.Expression parse(Concrete.BinOpSequenceExpression expr) {
-    List<Concrete.BinOpSequenceElem<Concrete.Expression>> sequence = expr.getSequence();
-    Concrete.BinOpSequenceElem<Concrete.Expression> first = sequence.get(0);
-    if (first.fixity == Fixity.INFIX || first.fixity == Fixity.POSTFIX) {
-      LocalReferable firstArg = new LocalReferable(Renamer.UNNAMED);
-      List<Concrete.BinOpSequenceElem<Concrete.Expression>> newSequence = new ArrayList<>(sequence.size() + 1);
-      newSequence.add(new Concrete.BinOpSequenceElem<>(new Concrete.ReferenceExpression(expr.getData(), firstArg)));
-      newSequence.addAll(sequence);
-      return new Concrete.LamExpression(expr.getData(), Collections.singletonList(new Concrete.NameParameter(expr.getData(), true, firstArg)), parse(new Concrete.BinOpSequenceExpression(expr.getData(), newSequence, expr.getClauses())));
-    }
+  @NotNull T parse(@NotNull List<Concrete.BinOpSequenceElem<T>> sequence) {
+    for (Concrete.BinOpSequenceElem<T> elem : sequence) {
+      Referable referable = myEngine.getReferable(elem.getComponent());
+      Precedence precedence = referable instanceof GlobalReferable ? ((GlobalReferable) referable).getPrecedence() : null;
 
-    for (Concrete.BinOpSequenceElem<Concrete.Expression> elem : sequence) {
-      Concrete.ReferenceExpression reference = elem.getComponent() instanceof Concrete.ReferenceExpression ? (Concrete.ReferenceExpression) elem.getComponent() : null;
-      if (reference == null && elem.fixity != Fixity.NONFIX && elem.getComponent() instanceof Concrete.AppExpression && ((Concrete.AppExpression) elem.getComponent()).getFunction() instanceof Concrete.ReferenceExpression) {
-        reference = (Concrete.ReferenceExpression) ((Concrete.AppExpression) elem.getComponent()).getFunction();
-      }
-      Precedence precedence = reference != null && reference.getReferent() instanceof GlobalReferable ? ((GlobalReferable) reference.getReferent()).getPrecedence() : null;
-
-      if (reference != null && (elem.fixity == Fixity.INFIX || elem.fixity == Fixity.POSTFIX || elem.fixity == Fixity.UNKNOWN && precedence != null && precedence.isInfix)) {
+      if (referable != null && (elem.fixity == Fixity.INFIX || elem.fixity == Fixity.POSTFIX || elem.fixity == Fixity.UNKNOWN && precedence != null && precedence.isInfix)) {
         if (precedence == null) {
           precedence = Precedence.DEFAULT;
         }
-        push(reference, precedence, elem.fixity == Fixity.POSTFIX && !precedence.isInfix);
-        if (elem.getComponent() instanceof Concrete.AppExpression) {
-          for (Concrete.Argument argument : ((Concrete.AppExpression) elem.getComponent()).getArguments()) {
-            push(argument.expression, argument.isExplicit());
-          }
-        }
+        push(elem.getComponent(), precedence, elem.fixity == Fixity.POSTFIX && !precedence.isInfix);
       } else {
         push(elem.getComponent(), elem.isExplicit);
       }
     }
 
-    Concrete.Expression result = rollUp();
-    return result instanceof Concrete.AppExpression && result.getData() != expr.getData() ? Concrete.AppExpression.make(expr.getData(), ((Concrete.AppExpression) result).getFunction(), ((Concrete.AppExpression) result).getArguments()) : result;
+    return rollUp();
   }
 
-  public void push(Concrete.Expression expression, boolean isExplicit) {
+  public void push(T component, boolean isExplicit) {
     if (myStack.isEmpty()) {
       if (!isExplicit) {
         // This should never happen if the binOp expression is correct
-        myErrorReporter.report(new ParsingError("Expected an explicit expression", expression));
+        myErrorReporter.report(new ParsingError("Expected an explicit " + myEngine.getPresentableComponentName(), component));
       }
-      myStack.add(new StackElem(expression, null));
+      myStack.add(new StackElem<>(component, null));
       return;
     }
 
-    StackElem topElem = myStack.get(myStack.size() - 1);
+    StackElem<T> topElem = myStack.get(myStack.size() - 1);
     if (topElem.precedence == null || !isExplicit) {
-      topElem.expression = Concrete.AppExpression.make(topElem.expression.getData(), topElem.expression, expression, isExplicit);
+      topElem.component = myEngine.wrapSequence(topElem.component.getData(), topElem.component, List.of(Pair.create(component, isExplicit)));
     } else {
-      myStack.add(new StackElem(expression, null));
+      myStack.add(new StackElem<>(component, null));
     }
   }
 
-  public void push(Concrete.ReferenceExpression reference, @NotNull Precedence precedence, boolean isPostfix) {
+  public void push(T component, @NotNull Precedence precedence, boolean isPostfix) {
     if (myStack.isEmpty()) {
-      myStack.add(new StackElem(reference, precedence));
+      myStack.add(new StackElem<>(component, precedence));
       return;
     }
 
     while (true) {
-      StackElem topElem = myStack.get(myStack.size() - 1);
+      StackElem<T> topElem = myStack.get(myStack.size() - 1);
       if (topElem.precedence != null) {
-        myErrorReporter.report(new NameResolverError("Expected an expression after an infix operator", topElem.expression));
+        myErrorReporter.report(new NameResolverError("Expected " + myEngine.getPresentableComponentName() + " after an infix operator", topElem.component));
         return;
       }
 
-      StackElem nextElem = myStack.size() == 1 ? null : myStack.get(myStack.size() - 2);
-      if (nextElem == null || nextElem.precedence.priority < precedence.priority || nextElem.precedence.priority == precedence.priority && nextElem.precedence.associativity == Precedence.Associativity.RIGHT_ASSOC && (isPostfix || precedence.associativity == Precedence.Associativity.RIGHT_ASSOC)) {
+      StackElem<T> nextElem = myStack.size() == 1 ? null : myStack.get(myStack.size() - 2);
+      if (nextElem == null || nextElem.precedence == null || nextElem.precedence.priority < precedence.priority || nextElem.precedence.priority == precedence.priority && nextElem.precedence.associativity == Precedence.Associativity.RIGHT_ASSOC && (isPostfix || precedence.associativity == Precedence.Associativity.RIGHT_ASSOC)) {
         if (isPostfix) {
-          myStack.set(myStack.size() - 1, new StackElem(Concrete.AppExpression.make(reference.getData(), reference, topElem.expression, true), null));
+          myStack.set(myStack.size() - 1, new StackElem<>(myEngine.wrapSequence(component.getData(), component, List.of(Pair.create(topElem.component, true))), null));
         } else {
-          myStack.add(new StackElem(reference, precedence));
+          myStack.add(new StackElem<>(component, precedence));
         }
         return;
       }
 
       if (!(nextElem.precedence.priority > precedence.priority || nextElem.precedence.associativity == Precedence.Associativity.LEFT_ASSOC && (isPostfix || precedence.associativity == Precedence.Associativity.LEFT_ASSOC))) {
-        myErrorReporter.report(new PrecedenceError(getOperator(nextElem.expression), nextElem.precedence, reference.getReferent(), precedence, reference));
+        myErrorReporter.report(new PrecedenceError(myEngine.getReferable(nextElem.component), nextElem.precedence, myEngine.getReferable(component), precedence, component));
       }
 
       foldTop();
     }
-  }
-
-  private Referable getOperator(Concrete.Expression expr) {
-    if (expr instanceof Concrete.AppExpression) {
-      expr = ((Concrete.AppExpression) expr).getFunction();
-    }
-    return ((Concrete.ReferenceExpression) expr).getReferent();
   }
 
   private void foldTop() {
-    StackElem topElem = myStack.remove(myStack.size() - 1);
+    StackElem<T> topElem = myStack.remove(myStack.size() - 1);
     if (topElem.precedence != null && myStack.size() > 1) {
-      StackElem nextElem = myStack.get(myStack.size() - 2);
-      myErrorReporter.report(new NameResolverError("The operator " + getOperator(topElem.expression) + " [" + topElem.precedence + "] of a section must have lower precedence than that of the operand, namely " + getOperator(nextElem.expression) + " [" + nextElem.precedence + "]", topElem.expression));
+      StackElem<T> nextElem = myStack.get(myStack.size() - 2);
+      myErrorReporter.report(new NameResolverError("The operator " + myEngine.getReferable(topElem.component) + " [" + topElem.precedence + "] of a section must have lower precedence than that of the operand, namely " + myEngine.getReferable(nextElem.component) + " [" + nextElem.precedence + "]", topElem.component));
       topElem = myStack.remove(myStack.size() - 1);
     }
-    StackElem midElem = myStack.remove(myStack.size() - 1);
-    StackElem botElem = myStack.isEmpty() ? null : myStack.remove(myStack.size() - 1);
+    StackElem<T> midElem = myStack.remove(myStack.size() - 1);
+    StackElem<T> botElem = myStack.isEmpty() ? null : myStack.remove(myStack.size() - 1);
 
     if (botElem == null) {
       if (topElem.precedence != null) {
-        myStack.add(new StackElem(Concrete.AppExpression.make(midElem.expression.getData(), topElem.expression, midElem.expression, true), null));
+        myStack.add(new StackElem<>(myEngine.wrapSequence(midElem.component.getData(), topElem.component, List.of(Pair.create(midElem.component, true))), null));
       } else {
         Referable leftRef = new LocalReferable(Renamer.UNNAMED);
-        myStack.add(new StackElem(new Concrete.LamExpression(midElem.expression.getData(), Collections.singletonList(new Concrete.NameParameter(midElem.expression.getData(), true, leftRef)), makeBinOp(new Concrete.ReferenceExpression(midElem.expression.getData(), leftRef), midElem.expression, topElem.expression)), null));
+        myStack.add(new StackElem<>(myEngine.augmentWithLeftReferable(midElem.component.getData(), leftRef, midElem.component, topElem.component), null));
       }
     } else {
-      myStack.add(new StackElem(makeBinOp(botElem.expression, midElem.expression, topElem.expression), null));
+      myStack.add(new StackElem<>(makeBinOp(botElem.component, midElem.component, topElem.component, myEngine), null));
     }
   }
 
-  private static Concrete.Expression makeBinOp(Concrete.Expression left, Concrete.Expression var, Concrete.Expression right) {
-    Concrete.Expression expr = Concrete.AppExpression.make(var.getData(), var, left, true);
-    return right == null ? expr : Concrete.AppExpression.make(var.getData(), expr, right, true);
+  static <T extends Concrete.SourceNode> T makeBinOp(T left, T var, T right, BinOpEngine<T> engine) {
+    T expr = engine.wrapSequence(var.getData(), var, List.of(Pair.create(left, true)));
+    return right == null ? expr : engine.wrapSequence(var.getData(), expr, List.of(Pair.create(right, true)));
   }
 
-  public Concrete.Expression rollUp() {
+  public T rollUp() {
     while (myStack.size() > 1) {
       foldTop();
     }
-    Concrete.Expression result = myStack.get(0).expression;
+
+    T result = myStack.get(0).component;
     myStack.clear();
     return result;
   }

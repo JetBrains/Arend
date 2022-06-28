@@ -472,4 +472,68 @@ public class PatternTest extends TypeCheckingTestCase {
       "  | {0} => idp\n" +
       "  | {suc n} => idp");
   }
+
+  @Test
+  public void infixPatterns() {
+    typeCheckModule(
+            "\\data List | \\infix 10 :: Nat List\n" +
+            "\\func test (n : List) : 0 = 0\n" +
+            "  | n :: m => idp");
+  }
+
+  @Test
+  public void infixPatterns2() {
+    typeCheckModule(
+            "\\data List | \\infix 10 :: Nat List\n" +
+                    "\\func test (r : List) : Nat\n" +
+                    "  | n :: m => n");
+  }
+
+  @Test
+  public void infixPatternsChain() {
+    typeCheckModule(
+            "\\data List | \\infixr 10 :: Nat List\n" +
+                    "\\func test (r : List) : Nat\n" +
+                    "  | n :: m :: q => m");
+  }
+
+  @Test
+  public void definedInfixPatterns() {
+    typeCheckModule(
+            "\\data List | cons Nat List\n" +
+                    "\\cons \\infix 10 :: (n : Nat) (m : List) => cons n m" +
+                    "\\func test (r : List) : Nat\n" +
+                    "  | n :: m => n");
+  }
+
+  @Test
+  public void infixPatternsInTuple() {
+    typeCheckModule(
+            "\\data List | cons Nat List\n" +
+                    "\\cons \\infix 10 :: (n : Nat) (m : List) => cons n m" +
+                    "\\func test (r : \\Sigma List List) : Nat\n" +
+                    "  | (n :: m, k :: l) => n");
+  }
+
+  @Test
+  public void infixPatternsInLambda() {
+    typeCheckModule(
+            "\\data List | \\infixr 10 :: Nat List\n" +
+                    "\\func test (r : List ) : List -> Nat => \\lam (n :: m) => n\n");
+  }
+
+  @Test
+  public void infixPatternsInLet() {
+    typeCheckModule(
+            "\\data List | \\infixr 10 :: Nat List\n" +
+                    "\\func test (r : List ) : Nat => \\let (n :: m) => r \\in n \n");
+  }
+
+  @Test
+  public void postfixPatterns() {
+    typeCheckModule(
+            "\\data List | cons Nat List\n" +
+                    "\\func test (r : List) : Nat\n" +
+                    "  | n `cons m => n");
+  }
 }

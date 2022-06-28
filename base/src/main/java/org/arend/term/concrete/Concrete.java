@@ -9,6 +9,7 @@ import org.arend.ext.concrete.pattern.ConcreteConstructorPattern;
 import org.arend.ext.concrete.pattern.ConcreteNumberPattern;
 import org.arend.ext.concrete.pattern.ConcretePattern;
 import org.arend.ext.concrete.pattern.ConcreteReferencePattern;
+import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
 import org.arend.ext.error.LocalError;
 import org.arend.ext.module.LongName;
@@ -2792,12 +2793,16 @@ public final class Concrete {
     }
   }
 
+  /**
+   * Requires additional parsing by {@link org.arend.naming.binOp.PatternBinOpEngine#parse(UnparsedConstructorPattern, ErrorReporter)}
+   * Immutable.
+   */
   public static class UnparsedConstructorPattern extends Pattern implements PatternHolder {
     private final @NotNull List<BinOpSequenceElem<Pattern>> myUnparsedPatterns;
 
     public UnparsedConstructorPattern(@Nullable Object data, boolean isExplicit, @NotNull List<BinOpSequenceElem<Pattern>> patterns, @Nullable TypedReferable asReferable) {
       super(data, asReferable);
-      myUnparsedPatterns = patterns;
+      myUnparsedPatterns = List.copyOf(patterns);
       setExplicit(isExplicit);
     }
 

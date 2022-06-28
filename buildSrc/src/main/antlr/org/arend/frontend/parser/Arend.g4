@@ -103,8 +103,8 @@ elim : '\\with' | '\\elim' ID (',' ID)*;
 
 where : '\\where' ('{' statement* '}' | statement);
 
-pattern : atomPattern (AS ID (':' expr)?)?                # patternAtom
-        | longName atomPatternOrID* (AS ID)? (':' expr)?  # patternConstructor
+pattern : atomPattern (AS ID (':' expr)?)?       # patternAtom
+        | atomPatternOrID+ (AS ID)? (':' expr)?  # patternConstructor
         ;
 
 atomPattern : '(' (pattern (',' pattern)*)? ')'   # patternExplicit

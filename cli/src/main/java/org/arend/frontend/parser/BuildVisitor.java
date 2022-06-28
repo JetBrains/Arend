@@ -3,6 +3,7 @@ package org.arend.frontend.parser;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
+import org.arend.core.pattern.Pattern;
 import org.arend.ext.concrete.definition.ClassFieldKind;
 import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.ext.concrete.expr.SigmaFieldKind;
@@ -325,24 +326,25 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   public Concrete.Pattern visitPatternConstructor(PatternConstructorContext ctx) {
     List<AtomPatternOrIDContext> atomPatternOrIDs = ctx.atomPatternOrID();
     Position position = tokenPosition(ctx.start);
-    List<String> longName = visitLongNamePath(ctx.longName());
+    Concrete.Pattern basePattern = visitAtomPattern(atomPatternOrIDs.get(0));
     ExprContext typeCtx = ctx.expr();
     TerminalNode id = ctx.ID();
 
-    if (atomPatternOrIDs.isEmpty() && longName.size() == 1 && id == null) {
-      return new Concrete.NamePattern(position, true, new ParsedLocalReferable(position, longName.get(0)), typeCtx == null ? null : visitExpr(typeCtx));
+    if (atomPatternOrIDs.size() == 1 && basePattern instanceof Concrete.NamePattern && id == null) {
+      return new Concrete.NamePattern(position, true, new ParsedLocalReferable(position, ((Concrete.NamePattern) basePattern).getRef().getRefName()), typeCtx == null ? null : visitExpr(typeCtx));
     } else {
       if (typeCtx != null && id == null) {
         myErrorReporter.report(new ParserError(tokenPosition(typeCtx.start), "Type annotation is allowed only for variables"));
       }
-      List<Concrete.Pattern> patterns = new ArrayList<>(atomPatternOrIDs.size());
+      List<Concrete.BinOpSequenceElem<Concrete.Pattern>> patterns = new ArrayList<>(atomPatternOrIDs.size());
       for (AtomPatternOrIDContext atomCtx : atomPatternOrIDs) {
-        patterns.add(visitAtomPattern(atomCtx));
+        Concrete.Pattern pattern = visitAtomPattern(atomCtx);
+        patterns.add(new Concrete.BinOpSequenceElem<>(pattern, Fixity.NONFIX, pattern.isExplicit()));
       }
 
       Position pos = id == null ? null : tokenPosition(id.getSymbol());
-      return new Concrete.ConstructorPattern(position, LongUnresolvedReference.make(position, longName), patterns,
-        pos == null ? null : new Concrete.TypedReferable(pos, new ParsedLocalReferable(pos, id.getText()), typeCtx == null ? null : visitExpr(typeCtx)));
+      return new Concrete.UnparsedConstructorPattern(position, true, patterns,
+              pos == null ? null : new Concrete.TypedReferable(pos, new ParsedLocalReferable(pos, id.getText()), typeCtx == null ? null : visitExpr(typeCtx)));
     }
   }
 
@@ -385,9 +387,11 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   public Concrete.Pattern visitPatternID(PatternIDContext ctx) {
     Position position = tokenPosition(ctx.start);
     List<String> longName = visitLongNamePath(ctx.longName());
-    return longName.size() == 1
-      ? new Concrete.NamePattern(position, true, new ParsedLocalReferable(position, longName.get(0)), null)
-      : new Concrete.ConstructorPattern(position, true, LongUnresolvedReference.make(position, longName), Collections.emptyList(), null);
+    return
+            longName.size() == 1
+//      ? new Concrete.NamePattern(position, true, new ParsedLocalReferable(position, longName.get(0)), null)
+      ? new Concrete.NamePattern(position, true, new NamedUnresolvedReference(position, longName.get(0)), null)
+      : new Concrete.NamePattern(position, true, LongUnresolvedReference.make(position, longName), null);
   }
 
   @Override
