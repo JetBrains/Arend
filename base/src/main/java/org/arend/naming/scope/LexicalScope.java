@@ -8,11 +8,11 @@ import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.term.NamespaceCommand;
 import org.arend.term.group.Group;
+import org.arend.term.group.Statement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 @SuppressWarnings("Duplicates")
@@ -69,13 +69,11 @@ public class LexicalScope implements Scope {
     }
   }
 
-  private void addSubgroups(Collection<? extends Group> subgroups, List<Referable> elements) {
-    for (Group subgroup : subgroups) {
-      addReferable(subgroup.getReferable(), elements);
-      for (Group.InternalReferable internalRef : subgroup.getInternalReferables()) {
-        if (internalRef.isVisible()) {
-          addReferable(internalRef.getReferable(), elements);
-        }
+  private void addSubgroup(Group subgroup, List<Referable> elements) {
+    addReferable(subgroup.getReferable(), elements);
+    for (Group.InternalReferable internalRef : subgroup.getInternalReferables()) {
+      if (internalRef.isVisible()) {
+        addReferable(internalRef.getReferable(), elements);
       }
     }
   }
@@ -85,9 +83,16 @@ public class LexicalScope implements Scope {
   public List<Referable> getElements() {
     List<Referable> elements = new ArrayList<>();
 
-    addSubgroups(myGroup.getSubgroups(), elements);
+    for (Statement statement : myGroup.getStatements()) {
+      Group subgroup = statement.getGroup();
+      if (subgroup != null) {
+        addSubgroup(subgroup, elements);
+      }
+    }
     if (myExtent == Extent.EVERYTHING) {
-      addSubgroups(myGroup.getDynamicSubgroups(), elements);
+      for (Group subgroup : myGroup.getDynamicSubgroups()) {
+        addSubgroup(subgroup, elements);
+      }
     }
 
     if (myExtent != Extent.ONLY_EXTERNAL) {
@@ -105,8 +110,9 @@ public class LexicalScope implements Scope {
     }
 
     Scope cachingScope = null;
-    for (NamespaceCommand cmd : myGroup.getNamespaceCommands()) {
-      if (ignoreOpens() && cmd.getKind() == NamespaceCommand.Kind.OPEN) {
+    for (Statement statement : myGroup.getStatements()) {
+      NamespaceCommand cmd = statement.getNamespaceCommand();
+      if (cmd == null || ignoreOpens() && cmd.getKind() == NamespaceCommand.Kind.OPEN) {
         continue;
       }
 
@@ -194,10 +200,13 @@ public class LexicalScope implements Scope {
       return null;
     }
 
-    for (Group subgroup : myGroup.getSubgroups()) {
-      Object result = resolveSubgroup(subgroup, name, resolveType);
-      if (result != null) {
-        return result;
+    for (Statement statement : myGroup.getStatements()) {
+      Group subgroup = statement.getGroup();
+      if (subgroup != null) {
+        Object result = resolveSubgroup(subgroup, name, resolveType);
+        if (result != null) {
+          return result;
+        }
       }
     }
     if (myExtent == Extent.EVERYTHING) {
@@ -217,8 +226,9 @@ public class LexicalScope implements Scope {
     }
 
     Scope cachingScope = null;
-    for (NamespaceCommand cmd : myGroup.getNamespaceCommands()) {
-      if (ignoreOpens() && cmd.getKind() == NamespaceCommand.Kind.OPEN) {
+    for (Statement statement : myGroup.getStatements()) {
+      NamespaceCommand cmd = statement.getNamespaceCommand();
+      if (cmd == null || ignoreOpens() && cmd.getKind() == NamespaceCommand.Kind.OPEN) {
         continue;
       }
 

@@ -21,9 +21,9 @@ import org.arend.naming.resolving.visitor.ExpressionResolveNameVisitor;
 import org.arend.naming.scope.Scope;
 import org.arend.naming.scope.ScopeFactory;
 import org.arend.repl.action.*;
-import org.arend.term.NamespaceCommand;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.Group;
+import org.arend.term.group.Statement;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
 import org.arend.term.prettyprint.ToAbstractVisitor;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
@@ -145,14 +145,14 @@ public abstract class Repl {
 
   protected abstract @Nullable Concrete.Expression parseExpr(@NotNull String text);
 
-  protected void loadPotentialUnloadedModules(Collection<? extends NamespaceCommand> namespaceCommands) {
+  protected void loadPotentialUnloadedModules(Collection<? extends Statement> statements) {
   }
 
   public final void checkStatements(@NotNull String line) {
     var group = parseStatements(line);
     if (group == null) return;
     var moduleScopeProvider = getAvailableModuleScopeProvider();
-    loadPotentialUnloadedModules(group.getNamespaceCommands());
+    loadPotentialUnloadedModules(group.getStatements());
     var scope = ScopeFactory.forGroup(group, moduleScopeProvider);
     myReplScope.addScope(scope);
     myReplScope.setCurrentLineScope(null);

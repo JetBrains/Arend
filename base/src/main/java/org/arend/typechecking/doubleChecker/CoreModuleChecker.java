@@ -5,6 +5,7 @@ import org.arend.ext.error.ErrorReporter;
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.reference.TCDefReferable;
 import org.arend.term.group.Group;
+import org.arend.term.group.Statement;
 import org.arend.typechecking.error.local.LocalErrorReporter;
 
 public class CoreModuleChecker {
@@ -27,8 +28,9 @@ public class CoreModuleChecker {
       }
     }
 
-    for (Group subgroup : group.getSubgroups()) {
-      if (!checkGroup(subgroup)) {
+    for (Statement statement : group.getStatements()) {
+      Group subgroup = statement.getGroup();
+      if (subgroup != null && !checkGroup(subgroup)) {
         ok = false;
       }
     }

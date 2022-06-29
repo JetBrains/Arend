@@ -26,6 +26,7 @@ import org.arend.term.NamespaceCommand;
 import org.arend.term.concrete.*;
 import org.arend.term.group.ChildGroup;
 import org.arend.term.group.Group;
+import org.arend.term.group.Statement;
 import org.arend.typechecking.error.local.LocalErrorReporter;
 import org.arend.typechecking.provider.ConcreteProvider;
 import org.arend.typechecking.visitor.SyntacticDesugarVisitor;
@@ -713,20 +714,12 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
   }
 
   private static Scope makeScope(Group group, Scope parentScope, LexicalScope.Extent extent) {
-    if (parentScope == null) {
-      return null;
-    }
-
-    if (group.getNamespaceCommands().isEmpty()) {
-      return new MergeScope(LexicalScope.insideOf(group, EmptyScope.INSTANCE, extent), parentScope);
-    } else {
-      return LexicalScope.insideOf(group, parentScope, extent);
-    }
+    return parentScope == null ? null : LexicalScope.insideOf(group, parentScope, extent);
   }
 
   public void resolveGroup(Group group, Scope scope) {
     LocatedReferable groupRef = group.getReferable();
-    Collection<? extends Group> subgroups = group.getSubgroups();
+    Collection<? extends Statement> statements = group.getStatements();
     Collection<? extends Group> dynamicSubgroups = group.getDynamicSubgroups();
 
     var def = myConcreteProvider.getConcrete(groupRef);
@@ -740,11 +733,14 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       myLocalErrorReporter = new LocalErrorReporter(groupRef, myErrorReporter);
     }
 
-    if (def instanceof Concrete.ClassDefinition && (!subgroups.isEmpty() || !dynamicSubgroups.isEmpty())) {
+    if (def instanceof Concrete.ClassDefinition && (!statements.isEmpty() || !dynamicSubgroups.isEmpty())) {
       cachedScope = CachingScope.make(makeScope(group, scope, LexicalScope.Extent.EVERYTHING));
     }
-    for (Group subgroup : subgroups) {
-      resolveGroup(subgroup, cachedScope);
+    for (Statement statement : statements) {
+      Group subgroup = statement.getGroup();
+      if (subgroup != null) {
+        resolveGroup(subgroup, cachedScope);
+      }
     }
     for (Group subgroup : dynamicSubgroups) {
       resolveGroup(subgroup, cachedScope);
@@ -757,8 +753,13 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     myLocalErrorReporter = myErrorReporter;
 
     boolean isTopLevel = !(group instanceof ChildGroup) || ((ChildGroup) group).getParentGroup() == null;
-    Collection<? extends NamespaceCommand> namespaceCommands = group.getNamespaceCommands();
-    for (NamespaceCommand namespaceCommand : namespaceCommands) {
+    boolean hasNamespaceCommands = false;
+    for (Statement statement : statements) {
+      NamespaceCommand namespaceCommand = statement.getNamespaceCommand();
+      if (namespaceCommand == null) {
+        continue;
+      }
+      hasNamespaceCommands = true;
       List<String> path = namespaceCommand.getPath();
       NamespaceCommand.Kind kind = namespaceCommand.getKind();
       if (path.isEmpty() || kind == NamespaceCommand.Kind.IMPORT && !isTopLevel) {
@@ -848,32 +849,43 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       }
     }
 
-    for (Group subgroup : subgroups) {
-      checkReference(subgroup.getReferable(), referables, false);
+    for (Statement statement : statements) {
+      Group subgroup = statement.getGroup();
+      if (subgroup != null) {
+        checkReference(subgroup.getReferable(), referables, false);
+      }
     }
 
     for (Group subgroup : dynamicSubgroups) {
       checkReference(subgroup.getReferable(), referables, false);
     }
 
-    checkSubgroups(dynamicSubgroups, referables);
+    for (Group subgroup : dynamicSubgroups) {
+      checkSubgroup(subgroup, referables);
+    }
 
-    checkSubgroups(subgroups, referables);
+    for (Statement statement : statements) {
+      Group subgroup = statement.getGroup();
+      if (subgroup != null) {
+        checkSubgroup(subgroup, referables);
+      }
+    }
 
-    if (namespaceCommands.isEmpty()) {
+    if (!hasNamespaceCommands) {
       return;
     }
 
-    for (NamespaceCommand cmd : namespaceCommands) {
+    List<Pair<NamespaceCommand, Map<String, Referable>>> namespaces = new ArrayList<>();
+    for (Statement statement : statements) {
+      NamespaceCommand cmd = statement.getNamespaceCommand();
+      if (cmd == null) {
+        continue;
+      }
       if (!isTopLevel && cmd.getKind() == NamespaceCommand.Kind.IMPORT) {
         myLocalErrorReporter.report(new ParsingError(ParsingError.Kind.MISPLACED_IMPORT, cmd));
       } else {
         checkNamespaceCommand(cmd, referables.keySet());
       }
-    }
-
-    List<Pair<NamespaceCommand, Map<String, Referable>>> namespaces = new ArrayList<>(namespaceCommands.size());
-    for (NamespaceCommand cmd : namespaceCommands) {
       Collection<? extends Referable> elements = NamespaceCommandNamespace.resolveNamespace(cmd.getKind() == NamespaceCommand.Kind.IMPORT ? cachedScope.getImportedSubscope() : cachedScope, cmd).getElements();
       if (!elements.isEmpty()) {
         Map<String, Referable> map = new LinkedHashMap<>();
@@ -969,20 +981,18 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     }
   }
 
-  private void checkSubgroups(Collection<? extends Group> subgroups, Map<String, LocatedReferable> referables) {
-    for (Group subgroup : subgroups) {
-      for (Group.InternalReferable internalReferable : subgroup.getInternalReferables()) {
-        if (internalReferable.isVisible()) {
-          checkReference(internalReferable.getReferable(), referables, true);
-        }
+  private void checkSubgroup(Group subgroup, Map<String, LocatedReferable> referables) {
+    for (Group.InternalReferable internalReferable : subgroup.getInternalReferables()) {
+      if (internalReferable.isVisible()) {
+        checkReference(internalReferable.getReferable(), referables, true);
       }
-      for (Group.InternalReferable internalReferable : subgroup.getInternalReferables()) {
-        if (internalReferable.isVisible()) {
-          LocatedReferable newRef = internalReferable.getReferable();
-          String name = newRef.textRepresentation();
-          if (!name.isEmpty() && !"_".equals(name)) {
-            referables.putIfAbsent(name, newRef);
-          }
+    }
+    for (Group.InternalReferable internalReferable : subgroup.getInternalReferables()) {
+      if (internalReferable.isVisible()) {
+        LocatedReferable newRef = internalReferable.getReferable();
+        String name = newRef.textRepresentation();
+        if (!name.isEmpty() && !"_".equals(name)) {
+          referables.putIfAbsent(name, newRef);
         }
       }
     }

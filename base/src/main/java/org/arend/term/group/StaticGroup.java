@@ -1,7 +1,7 @@
 package org.arend.term.group;
 
 import org.arend.naming.reference.LocatedReferable;
-import org.arend.term.ChildNamespaceCommand;
+import org.arend.term.NamespaceCommand;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -9,16 +9,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-public class StaticGroup implements ChildGroup {
+public class StaticGroup implements ChildGroup, Statement {
   private final LocatedReferable myReferable;
-  private final List<Group> myStaticGroups;
-  private final List<ChildNamespaceCommand> myNamespaceCommands;
+  private final List<Statement> myStatements;
   private final ChildGroup myParent;
 
-  public StaticGroup(LocatedReferable referable, List<Group> staticGroups, List<ChildNamespaceCommand> namespaceCommands, ChildGroup parent) {
+  public StaticGroup(LocatedReferable referable, List<Statement> statements, ChildGroup parent) {
     myReferable = referable;
-    myStaticGroups = staticGroups;
-    myNamespaceCommands = namespaceCommands;
+    myStatements = statements;
     myParent = parent;
   }
 
@@ -28,16 +26,9 @@ public class StaticGroup implements ChildGroup {
     return myReferable;
   }
 
-  @NotNull
   @Override
-  public List<Group> getSubgroups() {
-    return myStaticGroups;
-  }
-
-  @NotNull
-  @Override
-  public List<ChildNamespaceCommand> getNamespaceCommands() {
-    return myNamespaceCommands;
+  public @NotNull Collection<? extends Statement> getStatements() {
+    return myStatements;
   }
 
   @NotNull
@@ -50,5 +41,15 @@ public class StaticGroup implements ChildGroup {
   @Override
   public ChildGroup getParentGroup() {
     return myParent;
+  }
+
+  @Override
+  public Group getGroup() {
+    return this;
+  }
+
+  @Override
+  public NamespaceCommand getNamespaceCommand() {
+    return null;
   }
 }

@@ -7,6 +7,7 @@ import org.arend.naming.reference.ModuleReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.term.NamespaceCommand;
 import org.arend.term.group.Group;
+import org.arend.term.group.Statement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -28,9 +29,10 @@ public class ImportedScope implements Scope {
       myExpectedNamesTree.addPath(location.getModulePath().toList());
     }
 
-    for (NamespaceCommand command : group.getNamespaceCommands()) {
-      if (command.getKind() == NamespaceCommand.Kind.IMPORT) {
-        myExpectedNamesTree.addPath(command.getPath());
+    for (Statement statement : group.getStatements()) {
+      NamespaceCommand cmd = statement.getNamespaceCommand();
+      if (cmd != null && cmd.getKind() == NamespaceCommand.Kind.IMPORT) {
+        myExpectedNamesTree.addPath(cmd.getPath());
       }
     }
   }

@@ -11,6 +11,7 @@ import org.arend.term.abs.Abstract;
 import org.arend.term.abs.AbstractParameterPattern;
 import org.arend.term.group.ChildGroup;
 import org.arend.term.group.Group;
+import org.arend.term.group.Statement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -31,8 +32,9 @@ public class ScopeFactory {
     Scope parentScope;
     if (parentGroup == null) {
       if (prelude && group != null) {
-        for (NamespaceCommand command : group.getNamespaceCommands()) {
-          if (command.getKind() == NamespaceCommand.Kind.IMPORT && command.getPath().equals(Prelude.MODULE_PATH.toList())) {
+        for (Statement statement : group.getStatements()) {
+          NamespaceCommand cmd = statement.getNamespaceCommand();
+          if (cmd != null && cmd.getKind() == NamespaceCommand.Kind.IMPORT && cmd.getPath().equals(Prelude.MODULE_PATH.toList())) {
             prelude = false;
           }
         }
