@@ -8,6 +8,7 @@ import org.arend.naming.reference.Referable;
 import org.arend.term.ChildNamespaceCommand;
 import org.arend.term.NameRenaming;
 import org.arend.term.NamespaceCommand;
+import org.arend.term.abs.Abstract;
 import org.arend.term.group.ChildGroup;
 import org.arend.term.group.Group;
 import org.arend.term.group.Statement;
@@ -84,11 +85,6 @@ public class SimpleNamespaceCommand implements ChildNamespaceCommand, SourceInfo
   @Override
   public ChildGroup getParentGroup() {
     return myParent;
-  }
-
-  @Override
-  public Group getGroup() {
-    return null;
   }
 
   @Override

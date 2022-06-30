@@ -1532,6 +1532,11 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     }
   }
 
+  public void prettyPrintLevelsDefinition(Concrete.LevelsDefinition def) {
+    myBuilder.append(def.isPLevels() ? "\\plevels " : "\\hlevels ");
+    prettyPrintLevelParameters(def.getParameters());
+  }
+
   static public void printArguments(PrettyPrintVisitor pp, List<Concrete.Argument> args, boolean noIndent) {
     new ListLayout<Concrete.Argument>() {
       @Override

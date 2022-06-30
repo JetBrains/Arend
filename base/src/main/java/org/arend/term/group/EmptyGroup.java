@@ -2,6 +2,7 @@ package org.arend.term.group;
 
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.term.NamespaceCommand;
+import org.arend.term.abs.Abstract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -43,10 +44,5 @@ public class EmptyGroup implements ChildGroup, Statement {
   @Override
   public Group getGroup() {
     return this;
-  }
-
-  @Override
-  public NamespaceCommand getNamespaceCommand() {
-    return null;
   }
 }

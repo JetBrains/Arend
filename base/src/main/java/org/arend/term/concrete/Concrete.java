@@ -23,6 +23,7 @@ import org.arend.naming.reference.*;
 import org.arend.ext.concrete.definition.ClassFieldKind;
 import org.arend.term.Fixity;
 import org.arend.term.abs.Abstract;
+import org.arend.term.group.Statement;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -1812,6 +1813,40 @@ public final class Concrete {
     @Override
     public void prettyPrint(PrettyPrintVisitor visitor, Precedence prec) {
       visitor.prettyPrintLevelParameters(this);
+    }
+  }
+
+  public static class LevelsDefinition extends SourceNodeImpl implements Statement {
+    private final LevelParameters myParameters;
+    private final boolean myPLevels;
+
+    public LevelsDefinition(Object data, LevelParameters myParameters, boolean myPLevels) {
+      super(data);
+      this.myParameters = myParameters;
+      this.myPLevels = myPLevels;
+    }
+
+    public LevelParameters getParameters() {
+      return myParameters;
+    }
+
+    public boolean isPLevels() {
+      return myPLevels;
+    }
+
+    @Override
+    public Abstract.LevelParameters getPLevelsDefinition() {
+      return myPLevels ? myParameters : null;
+    }
+
+    @Override
+    public Abstract.LevelParameters getHLevelsDefinition() {
+      return myPLevels ? null : myParameters;
+    }
+
+    @Override
+    public void prettyPrint(PrettyPrintVisitor visitor, Precedence prec) {
+      visitor.prettyPrintLevelsDefinition(this);
     }
   }
 

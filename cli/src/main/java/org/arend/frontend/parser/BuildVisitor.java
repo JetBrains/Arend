@@ -141,13 +141,20 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     }
   }
 
-  private Statement visitStatement(StatementContext statementCtx, ChildGroup parent, TCDefReferable enclosingClass) {
-    if (statementCtx instanceof StatCmdContext) {
-      return visitStatCmd((StatCmdContext) statementCtx, parent);
-    } else if (statementCtx instanceof StatDefContext) {
-      return visitDefinition(((StatDefContext) statementCtx).definition(), parent, enclosingClass);
+  private Statement visitStatement(StatementContext ctx, ChildGroup parent, TCDefReferable enclosingClass) {
+    if (ctx instanceof StatCmdContext) {
+      return visitStatCmd((StatCmdContext) ctx, parent);
+    } else if (ctx instanceof StatDefContext) {
+      return visitDefinition(((StatDefContext) ctx).definition(), parent, enclosingClass);
+    } else if (ctx instanceof StatPLevelsContext) {
+      return visitStatPLevels((StatPLevelsContext) ctx);
+    } else if (ctx instanceof StatHLevelsContext) {
+      return visitStatHLevels((StatHLevelsContext) ctx);
     } else {
-      return null;
+      if (ctx != null) {
+        myErrorReporter.report(new ParserError(tokenPosition(ctx.start), "Unknown statement"));
+      }
+      throw new ParseException();
     }
   }
 
@@ -178,6 +185,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
         myErrorReporter.report(new ParserError(tokenPosition(ctx.start), "Unknown definition"));
       }
       throw new ParseException();
+
     }
   }
 
@@ -610,6 +618,16 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     var resultGroup = new StaticGroup(reference, statements, parent);
     visitWhere(where, statements, resultGroup, enclosingClass);
     return resultGroup;
+  }
+
+  @Override
+  public Concrete.LevelsDefinition visitStatPLevels(StatPLevelsContext ctx) {
+    return new Concrete.LevelsDefinition(tokenPosition(ctx.start), parseLevelParameters(ctx.start, ctx.ID()), true);
+  }
+
+  @Override
+  public Concrete.LevelsDefinition visitStatHLevels(StatHLevelsContext ctx) {
+    return new Concrete.LevelsDefinition(tokenPosition(ctx.start), parseLevelParameters(ctx.start, ctx.ID()), false);
   }
 
   private StaticGroup visitDefFunction(DefFunctionContext ctx, ChildGroup parent, TCDefReferable enclosingClass) {
