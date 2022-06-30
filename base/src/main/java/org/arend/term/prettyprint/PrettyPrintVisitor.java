@@ -1093,11 +1093,11 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
     if (def.getPLevelParameters() != null) {
       myBuilder.append(" ");
-      prettyPrintLevelParameters(def.getPLevelParameters());
+      prettyPrintLevelParameters(def.getPLevelParameters(), true);
     }
     if (def.getHLevelParameters() != null) {
       myBuilder.append(" ");
-      prettyPrintLevelParameters(def.getHLevelParameters());
+      prettyPrintLevelParameters(def.getHLevelParameters(), false);
     }
 
     myBuilder.append(" ");
@@ -1162,11 +1162,11 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
     if (def.getPLevelParameters() != null) {
       myBuilder.append(" ");
-      prettyPrintLevelParameters(def.getPLevelParameters());
+      prettyPrintLevelParameters(def.getPLevelParameters(), true);
     }
     if (def.getHLevelParameters() != null) {
       myBuilder.append(" ");
-      prettyPrintLevelParameters(def.getHLevelParameters());
+      prettyPrintLevelParameters(def.getHLevelParameters(), false);
     }
 
     List<? extends Concrete.TypeParameter> parameters = def.getParameters();
@@ -1426,11 +1426,11 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
     if (def.getPLevelParameters() != null) {
       myBuilder.append(" ");
-      prettyPrintLevelParameters(def.getPLevelParameters());
+      prettyPrintLevelParameters(def.getPLevelParameters(), true);
     }
     if (def.getHLevelParameters() != null) {
       myBuilder.append(" ");
-      prettyPrintLevelParameters(def.getHLevelParameters());
+      prettyPrintLevelParameters(def.getHLevelParameters(), false);
     }
 
     if (!def.getElements().isEmpty()) {
@@ -1522,7 +1522,10 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     return null;
   }
 
-  public void prettyPrintLevelParameters(Concrete.LevelParameters parameters) {
+  public void prettyPrintLevelParameters(Concrete.LevelParameters parameters, Boolean isPLevels) {
+    if (isPLevels != null) {
+      myBuilder.append(isPLevels ? "\\plevels " : "\\hlevels ");
+    }
     List<LevelReferable> referables = parameters.referables;
     for (int i = 0; i < referables.size(); i++) {
       if (i > 0) {

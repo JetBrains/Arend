@@ -2,6 +2,7 @@ package org.arend.term.prettyprint;
 
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.LevelVariable;
+import org.arend.core.context.binding.ParamLevelVariable;
 import org.arend.core.context.binding.PersistentEvaluatingBinding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SigmaTypedDependentLink;
@@ -34,9 +35,7 @@ import org.arend.ext.prettyprinting.PrettyPrinterFlag;
 import org.arend.ext.util.Pair;
 import org.arend.ext.variable.Variable;
 import org.arend.extImpl.definitionRenamer.ConflictDefinitionRenamer;
-import org.arend.naming.reference.GlobalReferable;
-import org.arend.naming.reference.LocalReferable;
-import org.arend.naming.reference.Referable;
+import org.arend.naming.reference.*;
 import org.arend.naming.renamer.ReferableRenamer;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
@@ -986,9 +985,19 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     }
   }
 
-  private Pair<Concrete.LevelParameters, Concrete.LevelParameters> visitLevelParameters(List<? extends LevelVariable> parameters) {
-    // TODO
-    return new Pair<>(null, null);
+  public static Concrete.LevelParameters visitLevelParameters(List<? extends LevelVariable> parameters) {
+    if (parameters.size() == 1 && parameters.get(0).equals(parameters.get(0).getStd())) {
+      return null;
+    }
+    List<LevelReferable> refs = new ArrayList<>(parameters.size());
+    for (LevelVariable var : parameters) {
+      refs.add(new DataLevelReferable(null, var.toString()));
+    }
+    return new Concrete.LevelParameters(null, refs, !(parameters.size() > 1 && parameters.get(0) instanceof ParamLevelVariable && parameters.get(1) instanceof ParamLevelVariable && ((ParamLevelVariable) parameters.get(0)).getSize() > ((ParamLevelVariable) parameters.get(1)).getSize()));
+  }
+
+  private Pair<Concrete.LevelParameters, Concrete.LevelParameters> visitLevelParameters(List<? extends LevelVariable> parameters, int n) {
+    return new Pair<>(visitLevelParameters(parameters.subList(0, n)), visitLevelParameters(parameters.subList(n, parameters.size())));
   }
 
   private List<Concrete.FunctionClause> visitIntervalElim(DependentLink parameters, Body body) {
@@ -1009,7 +1018,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   public Concrete.FunctionDefinition visitFunction(FunctionDefinition def, Void params) {
     List<Concrete.Parameter> parameters = new ArrayList<>();
     visitDependentLink(def.getParameters(), parameters, true);
-    Pair<Concrete.LevelParameters, Concrete.LevelParameters> pair = visitLevelParameters(def.getLevelParameters());
+    Pair<Concrete.LevelParameters, Concrete.LevelParameters> pair = visitLevelParameters(def.getLevelParameters(), def.getNumberOfPLevelParameters());
     Body body = def.getReallyActualBody();
     Concrete.FunctionBody cBody;
     if (body instanceof Expression) {
@@ -1029,7 +1038,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   @Override
   public Concrete.DataDefinition visitData(DataDefinition def, Void params) {
-    Pair<Concrete.LevelParameters, Concrete.LevelParameters> pair = visitLevelParameters(def.getLevelParameters());
+    Pair<Concrete.LevelParameters, Concrete.LevelParameters> pair = visitLevelParameters(def.getLevelParameters(), def.getNumberOfPLevelParameters());
     List<Concrete.TypeParameter> parameters = new ArrayList<>();
     visitDependentLink(def.getParameters(), parameters, false);
     boolean hasPatterns = !def.getConstructors().isEmpty() && def.getConstructors().get(0).getPatterns() != null;
@@ -1055,7 +1064,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   @Override
   public Concrete.ClassDefinition visitClass(ClassDefinition def, Void params) {
-    Pair<Concrete.LevelParameters, Concrete.LevelParameters> pair = visitLevelParameters(def.getLevelParameters());
+    Pair<Concrete.LevelParameters, Concrete.LevelParameters> pair = visitLevelParameters(def.getLevelParameters(), def.getNumberOfPLevelParameters());
     List<Concrete.ReferenceExpression> superClasses = new ArrayList<>(def.getSuperClasses().size());
     for (ClassDefinition superClass : def.getSuperClasses()) {
       superClasses.add(new Concrete.ReferenceExpression(null, superClass.getRef()));

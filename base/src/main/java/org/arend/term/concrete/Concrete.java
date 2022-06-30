@@ -1811,7 +1811,7 @@ public final class Concrete {
 
     @Override
     public void prettyPrint(PrettyPrintVisitor visitor, Precedence prec) {
-      visitor.prettyPrintLevelParameters(this);
+      visitor.prettyPrintLevelParameters(this, null);
     }
   }
 
