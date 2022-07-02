@@ -36,7 +36,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitionVisitor<Scope, Void> {
+public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitionVisitor<Scopes, Void> {
   private boolean myResolveTypeClassReferences;
   private final ConcreteProvider myConcreteProvider;
   private final ReferableConverter myReferableConverter;
@@ -68,7 +68,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     myResolverListener = resolverListener;
   }
 
-  private void resolveTypeClassReference(List<? extends Concrete.Parameter> parameters, Concrete.Expression expr, Scope scope, boolean isType) {
+  private void resolveTypeClassReference(List<? extends Concrete.Parameter> parameters, Concrete.Expression expr, Scopes scopes, boolean isType) {
     if (isType) {
       for (Concrete.Parameter parameter : parameters) {
         if (parameter.isExplicit()) {
@@ -87,7 +87,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       }
     }
 
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myReferableConverter, scope, new ArrayList<>(), DummyErrorReporter.INSTANCE, myResolverListener);
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myReferableConverter, scopes, new ArrayList<>(), DummyErrorReporter.INSTANCE, myResolverListener);
     exprVisitor.updateScope(parameters);
     if (isType) {
       while (expr instanceof Concrete.PiExpression) {
@@ -153,7 +153,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
   }
 
   @Override
-  public Void visitMeta(DefinableMetaDefinition def, Scope scope) {
+  public Void visitMeta(DefinableMetaDefinition def, Scopes scopes) {
     if (def.getStage().ordinal() >= Concrete.Stage.RESOLVED.ordinal()) {
       return null;
     }
@@ -165,7 +165,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     myLocalErrorReporter = new ConcreteProxyErrorReporter(def);
     if (myResolveTypeClassReferences) {
       if (def.getStage() == Concrete.Stage.NOT_RESOLVED && def.body != null) {
-        resolveTypeClassReference(def.getParameters(), def.body, scope, false);
+        resolveTypeClassReference(def.getParameters(), def.body, scopes, false);
       }
       def.setTypeClassReferencesResolved();
       return null;
@@ -174,7 +174,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     checkNameAndPrecedence(def, def.getData());
 
     List<Referable> context = new ArrayList<>();
-    var exprVisitor = new ExpressionResolveNameVisitor(myReferableConverter, scope, context, myLocalErrorReporter, myResolverListener, visitLevelParameters(def.getPLevelParameters()), visitLevelParameters(def.getHLevelParameters()));
+    var exprVisitor = new ExpressionResolveNameVisitor(myReferableConverter, addLevelParameters(scopes, def.getPLevelParameters(), def.getHLevelParameters()), context, myLocalErrorReporter, myResolverListener);
     exprVisitor.visitParameters(def.getParameters(), null);
 
     if (def.body != null) {
@@ -218,21 +218,17 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     }
   }
 
-  private static Map<String, Referable> visitLevelParameters(List<LevelReferable> params) {
-    if (params == null) return Collections.emptyMap();
-    Map<String, Referable> result = new HashMap<>();
-    for (Referable ref : params) {
-      result.put(ref.getRefName(), ref);
-    }
-    return result;
+  private static Scopes addLevelParameters(Scopes scopes, List<LevelReferable> pParams, List<LevelReferable> hParams) {
+    if (pParams == null && hParams == null) return scopes;
+    return new Scopes(scopes.getExpressionScope(), pParams == null ? scopes.getPLevelScope() : new MergeScope(new ListScope(pParams), scopes.getPLevelScope()), new MergeScope(new ListScope(hParams), scopes.getHLevelScope()));
   }
 
-  private static Map<String, Referable> visitLevelParameters(Concrete.LevelParameters params) {
-    return params == null ? Collections.emptyMap() : visitLevelParameters(params.referables);
+  private static Scopes addLevelParameters(Scopes scopes, Concrete.LevelParameters pParams, Concrete.LevelParameters hParams) {
+    return addLevelParameters(scopes, pParams == null ? null : pParams.referables, hParams == null ? null : hParams.referables);
   }
 
   @Override
-  public Void visitFunction(Concrete.BaseFunctionDefinition def, Scope scope) {
+  public Void visitFunction(Concrete.BaseFunctionDefinition def, Scopes scopes) {
     if (def.getStage().ordinal() >= Concrete.Stage.RESOLVED.ordinal()) {
       return null;
     }
@@ -245,10 +241,10 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     if (myResolveTypeClassReferences) {
       if (def.getStage() == Concrete.Stage.NOT_RESOLVED) {
         if (def.getBody() instanceof Concrete.TermFunctionBody) {
-          resolveTypeClassReference(def.getParameters(), ((Concrete.TermFunctionBody) def.getBody()).getTerm(), scope, false);
+          resolveTypeClassReference(def.getParameters(), ((Concrete.TermFunctionBody) def.getBody()).getTerm(), scopes, false);
         }
         if (def.getResultType() != null) {
-          resolveTypeClassReference(def.getParameters(), def.getResultType(), scope, true);
+          resolveTypeClassReference(def.getParameters(), def.getResultType(), scopes, true);
         }
       }
       def.setTypeClassReferencesResolved();
@@ -283,7 +279,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
             Concrete.BaseFunctionDefinition enclosingFunction = (Concrete.BaseFunctionDefinition) enclosingDef;
             if (enclosingFunction.getResultType() != null) {
               if (enclosingFunction.getStage().ordinal() < Concrete.Stage.RESOLVED.ordinal()) {
-                resolveTypeClassReference(enclosingFunction.getParameters(), enclosingFunction.getResultType(), scope, true);
+                resolveTypeClassReference(enclosingFunction.getParameters(), enclosingFunction.getResultType(), scopes, true);
               }
               classRef = new TypeClassReferenceExtractVisitor().getTypeClassReference(enclosingFunction.getResultType());
               elements = enclosingFunction.getBody().getCoClauseElements();
@@ -305,7 +301,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
               }
             }
             if (functionRef != null) {
-              function.setImplementedField(new ExpressionResolveNameVisitor(myReferableConverter, scope, null, myLocalErrorReporter, myResolverListener, Collections.emptyMap(), Collections.emptyMap()).visitClassFieldReference(functionRef, function.getImplementedField(), (ClassReferable) classRef));
+              function.setImplementedField(new ExpressionResolveNameVisitor(myReferableConverter, scopes, null, myLocalErrorReporter, myResolverListener).visitClassFieldReference(functionRef, function.getImplementedField(), (ClassReferable) classRef));
             }
           }
           if (function.getData() instanceof LocatedReferableImpl && !((LocatedReferableImpl) function.getData()).isPrecedenceSet() && function.getImplementedField() instanceof GlobalReferable) {
@@ -319,7 +315,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
 
     Concrete.FunctionBody body = def.getBody();
     List<Referable> context = new ArrayList<>();
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myReferableConverter, scope, context, myLocalErrorReporter, myResolverListener, visitLevelParameters(def.getPLevelParameters()), visitLevelParameters(def.getHLevelParameters()));
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myReferableConverter, addLevelParameters(scopes, def.getPLevelParameters(), def.getHLevelParameters()), context, myLocalErrorReporter, myResolverListener);
 
     exprVisitor.visitParameters(def.getParameters(), null);
     if (def.getResultType() != null) {
@@ -477,7 +473,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
   }
 
   @Override
-  public Void visitData(Concrete.DataDefinition def, Scope scope) {
+  public Void visitData(Concrete.DataDefinition def, Scopes scopes) {
     if (myResolveTypeClassReferences) {
       return null;
     }
@@ -508,16 +504,15 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     }
 
     List<Referable> context = new ArrayList<>();
-    Map<String, Referable> pLevels = visitLevelParameters(def.getPLevelParameters());
-    Map<String, Referable> hLevels = visitLevelParameters(def.getHLevelParameters());
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myReferableConverter, scope, context, myLocalErrorReporter, myResolverListener, pLevels, hLevels);
+    Scopes newScopes = addLevelParameters(scopes, def.getPLevelParameters(), def.getHLevelParameters());
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myReferableConverter, newScopes, context, myLocalErrorReporter, myResolverListener);
     exprVisitor.visitParameters(def.getParameters(), null);
     if (def.getEliminatedReferences() != null) {
       visitEliminatedReferences(exprVisitor, def.getEliminatedReferences());
     } else {
       for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
         for (Concrete.Constructor constructor : clause.getConstructors()) {
-          visitConstructor(constructor, scope, context, pLevels, hLevels);
+          visitConstructor(constructor, newScopes, context);
         }
       }
     }
@@ -529,7 +524,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
         try (Utils.ContextSaver ignore = new Utils.ContextSaver(context)) {
           visitConstructorClause(clause, exprVisitor);
           for (Concrete.Constructor constructor : clause.getConstructors()) {
-            visitConstructor(constructor, scope, context, pLevels, hLevels);
+            visitConstructor(constructor, newScopes, context);
           }
         }
       }
@@ -544,10 +539,10 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     return null;
   }
 
-  private void visitConstructor(Concrete.Constructor def, Scope parentScope, List<Referable> context, Map<String, Referable> pLevels, Map<String, Referable> hLevels) {
+  private void visitConstructor(Concrete.Constructor def, Scopes parentScopes, List<Referable> context) {
     checkNameAndPrecedence(def);
 
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myReferableConverter, parentScope, context, myLocalErrorReporter, myResolverListener, pLevels, hLevels);
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myReferableConverter, parentScopes, context, myLocalErrorReporter, myResolverListener);
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(context)) {
       exprVisitor.visitParameters(def.getParameters(), null);
       if (def.getResultType() != null) {
@@ -569,11 +564,11 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     }
   }
 
-  private void resolveSuperClasses(Concrete.ClassDefinition def, Scope scope, boolean resolveLevels) {
+  private void resolveSuperClasses(Concrete.ClassDefinition def, Scopes scopes, boolean resolveLevels) {
     if (def.getSuperClasses().isEmpty()) {
       return;
     }
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myReferableConverter, Prelude.DEP_ARRAY == null ? scope : new ElimScope(scope, Collections.singleton(Prelude.DEP_ARRAY.getRef())), null, myErrorReporter, myResolverListener, visitLevelParameters(def.getPLevelParameters()), visitLevelParameters(def.getHLevelParameters()));
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myReferableConverter, addLevelParameters(Prelude.DEP_ARRAY == null ? scopes : new Scopes(new ElimScope(scopes.getExpressionScope(), Collections.singleton(Prelude.DEP_ARRAY.getRef())), scopes.getPLevelScope(), scopes.getHLevelScope()), def.getPLevelParameters(), def.getHLevelParameters()), null, myErrorReporter, myResolverListener);
     for (int i = 0; i < def.getSuperClasses().size(); i++) {
       Concrete.ReferenceExpression superClass = def.getSuperClasses().get(i);
       Concrete.Expression resolved = exprVisitor.visitReference(superClass, true, resolveLevels);
@@ -590,7 +585,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
   }
 
   @Override
-  public Void visitClass(Concrete.ClassDefinition def, Scope scope) {
+  public Void visitClass(Concrete.ClassDefinition def, Scopes scopes) {
     if (def.getStage().ordinal() >= Concrete.Stage.RESOLVED.ordinal()) {
       return null;
     }
@@ -604,7 +599,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       if (def.getStage() == Concrete.Stage.NOT_RESOLVED) {
         for (Concrete.ClassElement element : def.getElements()) {
           if (element instanceof Concrete.ClassField) {
-            resolveTypeClassReference(((Concrete.ClassField) element).getParameters(), ((Concrete.ClassField) element).getResultType(), scope, true);
+            resolveTypeClassReference(((Concrete.ClassField) element).getParameters(), ((Concrete.ClassField) element).getResultType(), scopes, true);
           }
         }
       }
@@ -634,10 +629,10 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       }
     }
 
-    resolveSuperClasses(def, scope, true);
+    resolveSuperClasses(def, scopes, true);
 
     List<Referable> context = new ArrayList<>();
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myReferableConverter, scope, context, myLocalErrorReporter, myResolverListener, visitLevelParameters(def.getPLevelParameters()), visitLevelParameters(def.getHLevelParameters()));
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myReferableConverter, addLevelParameters(scopes, def.getPLevelParameters(), def.getHLevelParameters()), context, myLocalErrorReporter, myResolverListener);
     Concrete.Expression previousType = null;
     for (int i = 0; i < classFields.size(); i++) {
       Concrete.ClassField field = classFields.get(i);
@@ -706,44 +701,45 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     return null;
   }
 
-  public void resolveGroupWithTypes(Group group, Scope scope) {
+  public void resolveGroupWithTypes(Group group, Scopes scopes) {
     myResolveTypeClassReferences = true;
-    resolveGroup(group, scope);
+    resolveGroup(group, scopes);
     myResolveTypeClassReferences = false;
-    resolveGroup(group, scope);
+    resolveGroup(group, scopes);
   }
 
   private static Scope makeScope(Group group, Scope parentScope, LexicalScope.Extent extent) {
-    return parentScope == null ? null : LexicalScope.insideOf(group, parentScope, extent);
+    return CachingScope.make(LexicalScope.insideOf(group, parentScope, extent));
   }
 
-  public void resolveGroup(Group group, Scope scope) {
+  public void resolveGroup(Group group, Scopes scopes) {
     LocatedReferable groupRef = group.getReferable();
     Collection<? extends Statement> statements = group.getStatements();
     Collection<? extends Group> dynamicSubgroups = group.getDynamicSubgroups();
 
     var def = myConcreteProvider.getConcrete(groupRef);
-    Scope cachedScope = CachingScope.make(makeScope(group, scope, def instanceof Concrete.ClassDefinition ? LexicalScope.Extent.EXTERNAL_AND_FIELDS : LexicalScope.Extent.EVERYTHING));
+    Scope cachedScope = makeScope(group, scopes.getExpressionScope(), def instanceof Concrete.ClassDefinition ? LexicalScope.Extent.EXTERNAL_AND_FIELDS : LexicalScope.Extent.EVERYTHING);
+    Scopes newScopes = new Scopes(cachedScope, NameCachingScope.make(LevelLexicalScope.insideOf(group, scopes.getPLevelScope(), true)), NameCachingScope.make(LevelLexicalScope.insideOf(group, scopes.getHLevelScope(), false)));
     if (def instanceof Concrete.ClassDefinition) {
-      resolveSuperClasses((Concrete.ClassDefinition) def, cachedScope, false);
+      resolveSuperClasses((Concrete.ClassDefinition) def, newScopes, false);
     }
     if (def instanceof Concrete.ResolvableDefinition) {
-      ((Concrete.ResolvableDefinition) def).accept(this, cachedScope);
+      ((Concrete.ResolvableDefinition) def).accept(this, newScopes);
     } else {
       myLocalErrorReporter = new LocalErrorReporter(groupRef, myErrorReporter);
     }
 
     if (def instanceof Concrete.ClassDefinition && (!statements.isEmpty() || !dynamicSubgroups.isEmpty())) {
-      cachedScope = CachingScope.make(makeScope(group, scope, LexicalScope.Extent.EVERYTHING));
+      newScopes = new Scopes(makeScope(group, scopes.getExpressionScope(), LexicalScope.Extent.EVERYTHING), newScopes.getPLevelScope(), newScopes.getHLevelScope());
     }
     for (Statement statement : statements) {
       Group subgroup = statement.getGroup();
       if (subgroup != null) {
-        resolveGroup(subgroup, cachedScope);
+        resolveGroup(subgroup, newScopes);
       }
     }
     for (Group subgroup : dynamicSubgroups) {
-      resolveGroup(subgroup, cachedScope);
+      resolveGroup(subgroup, newScopes);
     }
 
     if (myResolveTypeClassReferences) {
