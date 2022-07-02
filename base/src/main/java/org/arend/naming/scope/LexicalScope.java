@@ -109,26 +109,28 @@ public class LexicalScope implements Scope {
       }
     }
 
-    Scope cachingScope = null;
-    for (Statement statement : myGroup.getStatements()) {
-      NamespaceCommand cmd = statement.getNamespaceCommand();
-      if (cmd == null || ignoreOpens() && cmd.getKind() == NamespaceCommand.Kind.OPEN) {
-        continue;
-      }
-
-      Scope scope;
-      if (cmd.getKind() == NamespaceCommand.Kind.IMPORT) {
-        if (myModule != null && cmd.getPath().equals(myModule.toList())) {
+    if (!ignoreOpens()) {
+      Scope cachingScope = null;
+      for (Statement statement : myGroup.getStatements()) {
+        NamespaceCommand cmd = statement.getNamespaceCommand();
+        if (cmd == null) {
           continue;
         }
-        scope = getImportedSubscope();
-      } else {
-        if (cachingScope == null) {
-          cachingScope = CachingScope.make(new LexicalScope(myParent, myGroup, null, Kind.OPENED, myExtent));
+
+        Scope scope;
+        if (cmd.getKind() == NamespaceCommand.Kind.IMPORT) {
+          if (myModule != null && cmd.getPath().equals(myModule.toList())) {
+            continue;
+          }
+          scope = getImportedSubscope();
+        } else {
+          if (cachingScope == null) {
+            cachingScope = CachingScope.make(new LexicalScope(myParent, myGroup, null, Kind.OPENED, myExtent));
+          }
+          scope = cachingScope;
         }
-        scope = cachingScope;
+        elements.addAll(NamespaceCommandNamespace.resolveNamespace(scope, cmd).getElements());
       }
-      elements.addAll(NamespaceCommandNamespace.resolveNamespace(scope, cmd).getElements());
     }
 
     elements.addAll(myParent.getElements());
@@ -225,30 +227,32 @@ public class LexicalScope implements Scope {
       }
     }
 
-    Scope cachingScope = null;
-    for (Statement statement : myGroup.getStatements()) {
-      NamespaceCommand cmd = statement.getNamespaceCommand();
-      if (cmd == null || ignoreOpens() && cmd.getKind() == NamespaceCommand.Kind.OPEN) {
-        continue;
-      }
-
-      Scope scope;
-      if (cmd.getKind() == NamespaceCommand.Kind.IMPORT) {
-        if (myModule != null && cmd.getPath().equals(myModule.toList())) {
+    if (!ignoreOpens()) {
+      Scope cachingScope = null;
+      for (Statement statement : myGroup.getStatements()) {
+        NamespaceCommand cmd = statement.getNamespaceCommand();
+        if (cmd == null) {
           continue;
         }
-        scope = getImportedSubscope();
-      } else {
-        if (cachingScope == null) {
-          cachingScope = CachingScope.make(new LexicalScope(myParent, myGroup, null, Kind.OPENED, myExtent));
-        }
-        scope = cachingScope;
-      }
 
-      scope = NamespaceCommandNamespace.resolveNamespace(scope, cmd);
-      Object result = resolveType == ResolveType.REF ? scope.resolveName(name) : scope.resolveNamespace(name, resolveType == ResolveType.INTERNAL_SCOPE);
-      if (result != null) {
-        return result;
+        Scope scope;
+        if (cmd.getKind() == NamespaceCommand.Kind.IMPORT) {
+          if (myModule != null && cmd.getPath().equals(myModule.toList())) {
+            continue;
+          }
+          scope = getImportedSubscope();
+        } else {
+          if (cachingScope == null) {
+            cachingScope = CachingScope.make(new LexicalScope(myParent, myGroup, null, Kind.OPENED, myExtent));
+          }
+          scope = cachingScope;
+        }
+
+        scope = NamespaceCommandNamespace.resolveNamespace(scope, cmd);
+        Object result = resolveType == ResolveType.REF ? scope.resolveName(name) : scope.resolveNamespace(name, resolveType == ResolveType.INTERNAL_SCOPE);
+        if (result != null) {
+          return result;
+        }
       }
     }
 
