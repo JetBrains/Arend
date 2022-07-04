@@ -3,12 +3,11 @@ package org.arend.typechecking.visitor;
 import org.arend.core.definition.ClassDefinition;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Definition;
-import org.arend.core.definition.FunctionDefinition;
 import org.arend.ext.core.definition.CoreClassDefinition;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.LocalError;
 import org.arend.ext.error.RedundantCoclauseError;
-import org.arend.ext.util.Pair;
+import org.arend.ext.error.TypecheckingError;
 import org.arend.naming.reference.*;
 import org.arend.prelude.Prelude;
 import org.arend.ext.concrete.definition.FunctionKind;
@@ -22,14 +21,54 @@ import java.util.*;
 
 public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
   private final ErrorReporter myErrorReporter;
+  private final Set<TCLevelReferable> myLevelRefs = new HashSet<>();
 
   private DesugarVisitor(ErrorReporter errorReporter) {
     myErrorReporter = errorReporter;
   }
 
   public static void desugar(Concrete.ResolvableDefinition definition, ErrorReporter errorReporter) {
-    definition.accept(new DesugarVisitor(errorReporter), null);
+    DesugarVisitor visitor = new DesugarVisitor(errorReporter);
+    definition.accept(visitor, null);
+
+    if (!visitor.myLevelRefs.isEmpty() && definition instanceof Concrete.Definition) {
+      Set<LevelDefReferable> pDefs = new LinkedHashSet<>();
+      Set<LevelDefReferable> hDefs = new LinkedHashSet<>();
+      for (TCLevelReferable ref : visitor.myLevelRefs) {
+        LevelDefReferable def = ref.getDefParent();
+        (def.isPLevels() ? pDefs : hDefs).add(def);
+      }
+      processLevelDefinitions((Concrete.Definition) definition, pDefs, errorReporter, "p");
+      processLevelDefinitions((Concrete.Definition) definition, hDefs, errorReporter, "h");
+    }
+
     definition.setDesugarized();
+  }
+
+  private static void processLevelDefinitions(Concrete.Definition def, Set<LevelDefReferable> defs, ErrorReporter errorReporter, String kind) {
+    if (defs.size() > 1) {
+      errorReporter.report(new TypecheckingError("Definition refers to different " + kind + "-levels", def));
+    }
+    if (defs.isEmpty()) {
+      return;
+    }
+
+    if (def.getPLevelParameters() != null) {
+      errorReporter.report(new TypecheckingError("Definition already has p-levels, but refers to different ones", def));
+    }
+    LevelDefReferable firstDef = defs.iterator().next();
+    if (defs.size() == 1 && def.getPLevelParameters() == null) {
+      def.setPLevelParameters(new Concrete.LevelParameters(def.getData(), firstDef.getReferables(), firstDef.isIncreasing()));
+    } else {
+      List<LevelReferable> refs = new ArrayList<>();
+      if (def.getPLevelParameters() != null) {
+        refs.addAll(def.getPLevelParameters().referables);
+      }
+      for (LevelDefReferable pDef : defs) {
+        refs.addAll(pDef.getReferables());
+      }
+      def.setPLevelParameters(new Concrete.LevelParameters(def.getData(), refs, def.getPLevelParameters() != null ? def.getPLevelParameters().isIncreasing : firstDef.isIncreasing()));
+    }
   }
 
   public static Concrete.Expression desugar(Concrete.Expression expression, ErrorReporter errorReporter) {
@@ -464,9 +503,34 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
     return desugarLet(expr.getData(), expr.isHave(), expr.isStrict(), expr.getClauses(), expr.getExpression().accept(this, null));
   }
 
+  private void visitLevelExpression(Concrete.LevelExpression expr) {
+    if (expr instanceof Concrete.IdLevelExpression) {
+      Referable ref = ((Concrete.IdLevelExpression) expr).getReferent();
+      if (ref instanceof TCLevelReferable) {
+        myLevelRefs.add((TCLevelReferable) ref);
+      }
+    }
+  }
+
+  private void visitLevelExpressions(List<Concrete.LevelExpression> exprs) {
+    if (exprs == null) return;
+    for (Concrete.LevelExpression expr : exprs) {
+      visitLevelExpression(expr);
+    }
+  }
+
   @Override
   public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Void params) {
+    visitLevelExpressions(expr.getPLevels());
+    visitLevelExpressions(expr.getHLevels());
     return Prelude.ARRAY != null && expr.getReferent() == Prelude.ARRAY.getRef() ? new Concrete.ReferenceExpression(expr.getData(), Prelude.DEP_ARRAY.getRef()) : super.visitReference(expr, params);
+  }
+
+  @Override
+  public Concrete.Expression visitUniverse(Concrete.UniverseExpression expr, Void params) {
+    visitLevelExpression(expr.getPLevel());
+    visitLevelExpression(expr.getHLevel());
+    return expr;
   }
 
   @Override

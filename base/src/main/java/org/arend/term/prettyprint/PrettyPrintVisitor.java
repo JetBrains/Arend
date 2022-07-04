@@ -1523,7 +1523,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   }
 
   public void prettyPrintLevelParameters(Concrete.LevelParameters parameters) {
-    List<LevelReferable> referables = parameters.referables;
+    List<? extends LevelReferable> referables = parameters.referables;
     for (int i = 0; i < referables.size(); i++) {
       if (i > 0) {
         myBuilder.append(parameters.isIncreasing ? " <= " : " >= ");
@@ -1534,7 +1534,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
   public void prettyPrintLevelsDefinition(Concrete.LevelsDefinition def) {
     myBuilder.append(def.isPLevels() ? "\\plevels " : "\\hlevels ");
-    prettyPrintLevelParameters(def.getParameters());
+    prettyPrintLevelParameters(new Concrete.LevelParameters(def.getData(), def.getReferables(), def.isIncreasing()));
   }
 
   static public void printArguments(PrettyPrintVisitor pp, List<Concrete.Argument> args, boolean noIndent) {

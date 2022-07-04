@@ -147,9 +147,9 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     } else if (ctx instanceof StatDefContext) {
       return visitDefinition(((StatDefContext) ctx).definition(), parent, enclosingClass);
     } else if (ctx instanceof StatPLevelsContext) {
-      return visitStatPLevels((StatPLevelsContext) ctx);
+      return visitStatPLevels((StatPLevelsContext) ctx, parent.getReferable());
     } else if (ctx instanceof StatHLevelsContext) {
-      return visitStatHLevels((StatHLevelsContext) ctx);
+      return visitStatHLevels((StatHLevelsContext) ctx, parent.getReferable());
     } else {
       if (ctx != null) {
         myErrorReporter.report(new ParserError(tokenPosition(ctx.start), "Unknown statement"));
@@ -427,14 +427,15 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       : new ConcreteLocatedReferable(position, name, precedence, aliasName, aliasPrecedence, parent.getReferable(), kind);
   }
 
-  private Concrete.LevelParameters parseLevelParameters(Token token, List<TerminalNode> ids) {
-    if (ids.isEmpty()) return new Concrete.LevelParameters(tokenPosition(token), Collections.emptyList(), true);
+  private Object parseLevelParameters(Token token, List<TerminalNode> ids, LocatedReferable parent, boolean isPLevels) {
+    if (ids.isEmpty()) return parent == null ? new Concrete.LevelParameters(tokenPosition(token), Collections.emptyList(), true) : new Concrete.LevelsDefinition(tokenPosition(token), Collections.emptyList(), true, isPLevels);
     if (ids.size() % 2 == 0) {
       myErrorReporter.report(new ParserError(tokenPosition(ids.get(0).getSymbol()), "Cannot parse level parameters"));
       return null;
     }
     boolean linear = true;
     List<LevelReferable> refs = new ArrayList<>();
+    LevelDefReferable defParent = parent == null ? null : new LevelDefReferable(isPLevels, true, refs, parent);
     Boolean increasing = null;
     for (int i = -1; i < ids.size(); i += 2) {
       if (i >= 0) {
@@ -451,19 +452,26 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
           linear = false;
         }
       }
-      refs.add(new DataLevelReferable(tokenPosition(ids.get(i + 1).getSymbol()), ids.get(i + 1).getText()));
+
+      Position position = tokenPosition(ids.get(i + 1).getSymbol());
+      String name = ids.get(i + 1).getText();
+      refs.add(defParent == null ? new DataLevelReferable(position, name) : new TCLevelReferable(position, name, defParent));
     }
-    return new Concrete.LevelParameters(tokenPosition(token), refs, increasing == null || increasing);
+    if (defParent != null) {
+      defParent.setIsIncreasing(increasing == null || increasing);
+    }
+    //noinspection unchecked
+    return parent == null ? new Concrete.LevelParameters(tokenPosition(token), refs, increasing == null || increasing) : new Concrete.LevelsDefinition(tokenPosition(token), (List<TCLevelReferable>) (List<? extends LevelReferable>) refs, defParent.isIncreasing(), isPLevels);
   }
 
   @Override
   public Concrete.LevelParameters visitPlevelParams(PlevelParamsContext ctx) {
-    return ctx == null ? null : parseLevelParameters(ctx.start, ctx.ID());
+    return ctx == null ? null : (Concrete.LevelParameters) parseLevelParameters(ctx.start, ctx.ID(), null, true);
   }
 
   @Override
   public Concrete.LevelParameters visitHlevelParams(HlevelParamsContext ctx) {
-    return ctx == null ? null : parseLevelParameters(ctx.start, ctx.ID());
+    return ctx == null ? null : (Concrete.LevelParameters) parseLevelParameters(ctx.start, ctx.ID(), null, false);
   }
 
   private List<LevelReferable> visitMetaLevels(List<TerminalNode> ids) {
@@ -620,14 +628,12 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return resultGroup;
   }
 
-  @Override
-  public Concrete.LevelsDefinition visitStatPLevels(StatPLevelsContext ctx) {
-    return new Concrete.LevelsDefinition(tokenPosition(ctx.start), parseLevelParameters(ctx.start, ctx.ID()), true);
+  private Concrete.LevelsDefinition visitStatPLevels(StatPLevelsContext ctx, LocatedReferable parent) {
+    return (Concrete.LevelsDefinition) parseLevelParameters(ctx.start, ctx.ID(), parent, true);
   }
 
-  @Override
-  public Concrete.LevelsDefinition visitStatHLevels(StatHLevelsContext ctx) {
-    return new Concrete.LevelsDefinition(tokenPosition(ctx.start), parseLevelParameters(ctx.start, ctx.ID()), false);
+  private Concrete.LevelsDefinition visitStatHLevels(StatHLevelsContext ctx, LocatedReferable parent) {
+    return (Concrete.LevelsDefinition) parseLevelParameters(ctx.start, ctx.ID(), parent, false);
   }
 
   private StaticGroup visitDefFunction(DefFunctionContext ctx, ChildGroup parent, TCDefReferable enclosingClass) {

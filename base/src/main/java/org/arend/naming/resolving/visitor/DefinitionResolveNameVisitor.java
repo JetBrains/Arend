@@ -218,7 +218,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     }
   }
 
-  private static Scopes addLevelParameters(Scopes scopes, List<LevelReferable> pParams, List<LevelReferable> hParams) {
+  private static Scopes addLevelParameters(Scopes scopes, List<? extends LevelReferable> pParams, List<? extends LevelReferable> hParams) {
     if (pParams == null && hParams == null) return scopes;
     return new Scopes(scopes.getExpressionScope(), pParams == null ? scopes.getPLevelScope() : new MergeScope(new ListScope(pParams), scopes.getPLevelScope()), new MergeScope(new ListScope(hParams), scopes.getHLevelScope()));
   }
