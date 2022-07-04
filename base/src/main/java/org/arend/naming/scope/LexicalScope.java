@@ -23,7 +23,7 @@ public class LexicalScope implements Scope {
   private final Kind myKind;
   private final Extent myExtent;
 
-  private enum Kind { INSIDE, OPENED, OPENED_INTERNAL }
+  private enum Kind { INSIDE, OPENED_WITH_IMPORTS, OPENED, OPENED_INTERNAL }
 
   public enum Extent { EVERYTHING, EXTERNAL_AND_FIELDS, ONLY_EXTERNAL }
 
@@ -113,7 +113,7 @@ public class LexicalScope implements Scope {
       Scope cachingScope = null;
       for (Statement statement : myGroup.getStatements()) {
         NamespaceCommand cmd = statement.getNamespaceCommand();
-        if (cmd == null) {
+        if (cmd == null || myKind == Kind.OPENED_WITH_IMPORTS && cmd.getKind() == NamespaceCommand.Kind.OPEN) {
           continue;
         }
 
@@ -125,11 +125,11 @@ public class LexicalScope implements Scope {
           scope = getImportedSubscope();
         } else {
           if (cachingScope == null) {
-            cachingScope = CachingScope.make(new LexicalScope(myParent, myGroup, null, Kind.OPENED, myExtent));
+            cachingScope = CachingScope.make(new LexicalScope(myParent, myGroup, null, Kind.OPENED_WITH_IMPORTS, myExtent));
           }
           scope = cachingScope;
         }
-        elements.addAll(NamespaceCommandNamespace.resolveNamespace(scope, cmd).getElements());
+        elements.addAll(NamespaceCommandNamespace.resolveNamespace(scope, cmd).getGlobalSubscopeWithoutOpens().getElements());
       }
     }
 
@@ -231,7 +231,7 @@ public class LexicalScope implements Scope {
       Scope cachingScope = null;
       for (Statement statement : myGroup.getStatements()) {
         NamespaceCommand cmd = statement.getNamespaceCommand();
-        if (cmd == null) {
+        if (cmd == null || myKind == Kind.OPENED_WITH_IMPORTS && cmd.getKind() == NamespaceCommand.Kind.OPEN) {
           continue;
         }
 
@@ -243,12 +243,12 @@ public class LexicalScope implements Scope {
           scope = getImportedSubscope();
         } else {
           if (cachingScope == null) {
-            cachingScope = CachingScope.make(new LexicalScope(myParent, myGroup, null, Kind.OPENED, myExtent));
+            cachingScope = CachingScope.make(new LexicalScope(myParent, myGroup, null, Kind.OPENED_WITH_IMPORTS, myExtent));
           }
           scope = cachingScope;
         }
 
-        scope = NamespaceCommandNamespace.resolveNamespace(scope, cmd);
+        scope = NamespaceCommandNamespace.resolveNamespace(scope, cmd).getGlobalSubscopeWithoutOpens();
         Object result = resolveType == ResolveType.REF ? scope.resolveName(name) : scope.resolveNamespace(name, resolveType == ResolveType.INTERNAL_SCOPE);
         if (result != null) {
           return result;
