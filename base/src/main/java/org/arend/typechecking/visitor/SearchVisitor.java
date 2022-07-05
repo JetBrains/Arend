@@ -41,55 +41,63 @@ public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean>
     return arg.accept(this, param);
   }
 
+  protected boolean useStack(ConCallExpression expression) {
+    return preserveOrder() && expression.getDefinition().getRecursiveParameter() >= 0 && expression.getDefinition().getRecursiveParameter() < expression.getDefCallArguments().size() - 1;
+  }
+
+  private Boolean visitConCallWithStack(ConCallExpression expression, P param) {
+    List<ConCallExpression> stack = new ArrayList<>();
+    while (true) {
+      switch (processDefCall(expression, param)) {
+        case STOP: return true;
+        case SKIP: break;
+      }
+
+      for (Expression arg : expression.getDataTypeArguments()) {
+        if (visitConCallArgument(arg, param)) {
+          return true;
+        }
+      }
+
+      for (int i = 0; i < expression.getDefinition().getRecursiveParameter(); i++) {
+        if (visitConCallArgument(expression.getDefCallArguments().get(i), param)) {
+          return true;
+        }
+      }
+
+      stack.add(expression);
+
+      Expression rec = expression.getDefCallArguments().get(expression.getDefinition().getRecursiveParameter());
+      if (!(rec instanceof ConCallExpression && ((ConCallExpression) rec).getDefinition().getRecursiveParameter() >= 0)) {
+        if (visitConCallArgument(rec, param)) {
+          return true;
+        }
+        break;
+      }
+
+      expression = (ConCallExpression) rec;
+    }
+
+    for (int i = stack.size() - 1; i >= 0; i--) {
+      expression = stack.get(i);
+      for (int j = expression.getDefinition().getRecursiveParameter() + 1; j < expression.getDefCallArguments().size(); j++) {
+        if (visitConCallArgument(expression.getDefCallArguments().get(j), param)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
   @Override
   public Boolean visitConCall(ConCallExpression expression, P param) {
-    if (preserveOrder() && expression.getDefinition().getRecursiveParameter() >= 0 && expression.getDefinition().getRecursiveParameter() < expression.getDefCallArguments().size() - 1) {
-      List<ConCallExpression> stack = new ArrayList<>();
-      while (true) {
-        switch (processDefCall(expression, param)) {
-          case STOP: return true;
-          case SKIP: break;
-        }
-
-        for (Expression arg : expression.getDataTypeArguments()) {
-          if (visitConCallArgument(arg, param)) {
-            return true;
-          }
-        }
-
-        for (int i = 0; i < expression.getDefinition().getRecursiveParameter(); i++) {
-          if (visitConCallArgument(expression.getDefCallArguments().get(i), param)) {
-            return true;
-          }
-        }
-
-        stack.add(expression);
-
-        Expression rec = expression.getDefCallArguments().get(expression.getDefinition().getRecursiveParameter());
-        if (!(rec instanceof ConCallExpression)) {
-          if (visitConCallArgument(rec, param)) {
-            return true;
-          }
-          break;
-        }
-
-        expression = (ConCallExpression) rec;
-      }
-
-      for (int i = stack.size() - 1; i >= 0; i--) {
-        expression = stack.get(i);
-        for (int j = expression.getDefinition().getRecursiveParameter() + 1; j < expression.getDefCallArguments().size(); j++) {
-          if (visitConCallArgument(expression.getDefCallArguments().get(j), param)) {
-            return true;
-          }
-        }
-      }
-
-      return false;
+    if (useStack(expression)) {
+      return visitConCallWithStack(expression, param);
     }
 
     Expression it = expression;
-    do {
+    while (true) {
       expression = (ConCallExpression) it;
       switch (processDefCall(expression, param)) {
         case STOP: return true;
@@ -119,7 +127,13 @@ public abstract class SearchVisitor<P> extends BaseExpressionVisitor<P, Boolean>
       }
 
       it = expression.getDefCallArguments().get(recursiveParam);
-    } while (it instanceof ConCallExpression);
+      if (!(it instanceof ConCallExpression)) {
+        break;
+      }
+      if (useStack((ConCallExpression) it)) {
+        return visitConCallWithStack((ConCallExpression) it, param);
+      }
+    }
 
     return visitConCallArgument(it, param);
   }
