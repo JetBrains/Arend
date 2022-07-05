@@ -55,8 +55,8 @@ public class ListScope implements Scope {
 
   @NotNull
   @Override
-  public Scope getGlobalSubscopeWithoutOpens() {
-    return myParent.getGlobalSubscopeWithoutOpens();
+  public Scope getGlobalSubscopeWithoutOpens(boolean withImports) {
+    return myParent.getGlobalSubscopeWithoutOpens(withImports);
   }
 
   @Nullable

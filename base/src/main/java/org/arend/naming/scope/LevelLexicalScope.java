@@ -114,7 +114,7 @@ public class LevelLexicalScope implements Scope {
 
   @NotNull
   @Override
-  public Scope getGlobalSubscopeWithoutOpens() {
+  public Scope getGlobalSubscopeWithoutOpens(boolean withImports) {
     return myWithOpens ? new LevelLexicalScope(myParent, myGroup, myPLevels, false) : this;
   }
 

@@ -39,8 +39,8 @@ public class CachingScope extends NameCachingScope {
 
   @NotNull
   @Override
-  public Scope getGlobalSubscopeWithoutOpens() {
-    Scope result = myScope.getGlobalSubscopeWithoutOpens();
+  public Scope getGlobalSubscopeWithoutOpens(boolean withImports) {
+    Scope result = myScope.getGlobalSubscopeWithoutOpens(withImports);
     return result == myScope ? this : result;
   }
 

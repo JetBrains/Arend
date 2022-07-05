@@ -231,12 +231,6 @@ public abstract class Repl {
    * @return true if there is indeed a scope removed
    */
   public final boolean removeScope(@NotNull Scope scope) {
-    var isRemoved = removeScopeImpl(scope.getGlobalSubscopeWithoutOpens());
-    var isRemoved2 = removeScopeImpl(scope);
-    return isRemoved || isRemoved2;
-  }
-
-  private boolean removeScopeImpl(Scope scope) {
     for (Referable element : scope.getElements())
       if (element instanceof TCDefReferable)
         ((TCDefReferable) element).setTypechecked(null);

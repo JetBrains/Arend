@@ -50,7 +50,7 @@ public class ListScope implements Scope {
 
   @NotNull
   @Override
-  public Scope getGlobalSubscopeWithoutOpens() {
+  public Scope getGlobalSubscopeWithoutOpens(boolean withImports) {
     return EmptyScope.INSTANCE;
   }
 }

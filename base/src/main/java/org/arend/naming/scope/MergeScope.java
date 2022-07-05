@@ -91,10 +91,10 @@ public class MergeScope implements Scope {
 
   @NotNull
   @Override
-  public Scope getGlobalSubscopeWithoutOpens() {
+  public Scope getGlobalSubscopeWithoutOpens(boolean withImports) {
     List<Scope> scopes = new ArrayList<>(myScopes.size());
     for (Scope scope : myScopes) {
-      scopes.add(scope.getGlobalSubscopeWithoutOpens());
+      scopes.add(scope.getGlobalSubscopeWithoutOpens(withImports));
     }
     return new MergeScope(scopes);
   }

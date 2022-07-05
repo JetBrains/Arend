@@ -2,21 +2,19 @@ package org.arend.naming.scope.local;
 
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.Referable;
-import org.arend.naming.scope.ImportedScope;
+import org.arend.naming.scope.DelegateScope;
 import org.arend.naming.scope.Scope;
 import org.arend.term.abs.Abstract;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.function.Predicate;
 
-public class PatternScope implements Scope {
-  private final Scope myParent;
+public class PatternScope extends DelegateScope {
   private final List<? extends Abstract.Pattern> myPatterns;
 
   public PatternScope(Scope parent, List<? extends Abstract.Pattern> patterns) {
-    myParent = parent;
+    super(parent);
     myPatterns = patterns;
   }
 
@@ -40,7 +38,7 @@ public class PatternScope implements Scope {
         ref = args.get(i).getHeadReference();
         if (ref != null && !(ref instanceof GlobalReferable)) {
           if (globalScope == null) {
-            globalScope = myParent.getGlobalSubscope();
+            globalScope = parent.getGlobalSubscope();
           }
           Referable resolved = globalScope.resolveName(ref.textRepresentation());
           if ((resolved == null || !(resolved instanceof GlobalReferable && ((GlobalReferable) resolved).getKind().isConstructor())) && pred.test(ref)) {
@@ -55,37 +53,13 @@ public class PatternScope implements Scope {
   @Override
   public Referable find(Predicate<Referable> pred) {
     Referable ref = find(myPatterns, pred);
-    return ref != null ? ref : myParent.find(pred);
+    return ref != null ? ref : parent.find(pred);
   }
 
   @Nullable
   @Override
   public Referable resolveName(String name) {
     Referable ref = find(myPatterns, ref2 -> ref2.textRepresentation().equals(name));
-    return ref != null ? ref : myParent.resolveName(name);
-  }
-
-  @Nullable
-  @Override
-  public Scope resolveNamespace(String name, boolean onlyInternal) {
-    return myParent.resolveNamespace(name, onlyInternal);
-  }
-
-  @NotNull
-  @Override
-  public Scope getGlobalSubscope() {
-    return myParent.getGlobalSubscope();
-  }
-
-  @NotNull
-  @Override
-  public Scope getGlobalSubscopeWithoutOpens() {
-    return myParent.getGlobalSubscopeWithoutOpens();
-  }
-
-  @Nullable
-  @Override
-  public ImportedScope getImportedSubscope() {
-    return myParent.getImportedSubscope();
+    return ref != null ? ref : parent.resolveName(name);
   }
 }

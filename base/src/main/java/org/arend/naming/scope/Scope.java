@@ -43,7 +43,7 @@ public interface Scope {
     return this;
   }
 
-  default @NotNull Scope getGlobalSubscopeWithoutOpens() {
+  default @NotNull Scope getGlobalSubscopeWithoutOpens(boolean withImports) {
     return this;
   }
 

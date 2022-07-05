@@ -34,8 +34,8 @@ public class ConstructorFilteredScope implements Scope {
 
   @NotNull
   @Override
-  public Scope getGlobalSubscopeWithoutOpens() {
-    return new ConstructorFilteredScope(myScope.getGlobalSubscopeWithoutOpens());
+  public Scope getGlobalSubscopeWithoutOpens(boolean withImports) {
+    return new ConstructorFilteredScope(myScope.getGlobalSubscopeWithoutOpens(withImports));
   }
 
   @Nullable

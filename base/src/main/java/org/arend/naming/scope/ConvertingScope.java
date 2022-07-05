@@ -82,8 +82,8 @@ public class ConvertingScope implements Scope {
 
   @NotNull
   @Override
-  public Scope getGlobalSubscopeWithoutOpens() {
-    Scope subscope = myScope.getGlobalSubscopeWithoutOpens();
+  public Scope getGlobalSubscopeWithoutOpens(boolean withImports) {
+    Scope subscope = myScope.getGlobalSubscopeWithoutOpens(withImports);
     return subscope == myScope ? this : new ConvertingScope(myConverter, subscope);
   }
 

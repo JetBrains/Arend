@@ -129,7 +129,7 @@ public class LexicalScope implements Scope {
           }
           scope = cachingScope;
         }
-        elements.addAll(NamespaceCommandNamespace.resolveNamespace(scope, cmd).getGlobalSubscopeWithoutOpens().getElements());
+        elements.addAll(NamespaceCommandNamespace.resolveNamespace(scope, cmd).getGlobalSubscopeWithoutOpens(false).getElements());
       }
     }
 
@@ -248,7 +248,7 @@ public class LexicalScope implements Scope {
           scope = cachingScope;
         }
 
-        scope = NamespaceCommandNamespace.resolveNamespace(scope, cmd).getGlobalSubscopeWithoutOpens();
+        scope = NamespaceCommandNamespace.resolveNamespace(scope, cmd).getGlobalSubscopeWithoutOpens(false);
         Object result = resolveType == ResolveType.REF ? scope.resolveName(name) : scope.resolveNamespace(name, resolveType == ResolveType.INTERNAL_SCOPE);
         if (result != null) {
           return result;
@@ -275,13 +275,12 @@ public class LexicalScope implements Scope {
 
   @NotNull
   @Override
-  public Scope getGlobalSubscopeWithoutOpens() {
-    return ignoreOpens() ? this : new LexicalScope(myParent, myGroup, null, Kind.OPENED, myExtent);
+  public Scope getGlobalSubscopeWithoutOpens(boolean withImports) {
+    return ignoreOpens() ? this : new LexicalScope(myParent, myGroup, null, withImports ? Kind.OPENED_WITH_IMPORTS : Kind.OPENED, myExtent);
   }
 
-  @Nullable
   @Override
-  public ImportedScope getImportedSubscope() {
+  public @Nullable ImportedScope getImportedSubscope() {
     return myParent.getImportedSubscope();
   }
 }

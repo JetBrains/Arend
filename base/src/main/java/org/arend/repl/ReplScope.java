@@ -63,11 +63,11 @@ public class ReplScope implements Scope {
   }
 
   @Override
-  public @NotNull Scope getGlobalSubscopeWithoutOpens() {
+  public @NotNull Scope getGlobalSubscopeWithoutOpens(boolean withImports) {
     var previousScopes = new ArrayList<Scope>(myPreviousScopes.size());
-    var currentLineSubscope = myCurrentLineScope != null ? myCurrentLineScope.getGlobalSubscopeWithoutOpens() : null;
+    var currentLineSubscope = myCurrentLineScope != null ? myCurrentLineScope.getGlobalSubscopeWithoutOpens(withImports) : null;
     for (Scope previousScope : myPreviousScopes)
-      previousScopes.add(previousScope.getGlobalSubscopeWithoutOpens());
+      previousScopes.add(previousScope.getGlobalSubscopeWithoutOpens(withImports));
     return new ReplScope(currentLineSubscope, previousScopes);
   }
 
