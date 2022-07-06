@@ -44,6 +44,59 @@ public abstract class ExpressionTransformer<P> extends BaseExpressionVisitor<P, 
     return new ConCallExpression(constructor, levels, dataTypeArguments, arguments);
   }
 
+  protected boolean useStack(ConCallExpression expression) {
+    return preserveOrder() && expression.getDefinition().getRecursiveParameter() >= 0 && expression.getDefinition().getRecursiveParameter() < expression.getDefCallArguments().size() - 1;
+  }
+
+  private Expression visitConCallWithStack(ConCallExpression expr, P params) {
+    int recursiveParam = expr.getDefinition().getRecursiveParameter();
+    List<ConCallExpression> argStack = new ArrayList<>();
+    List<ConCallExpression> resultStack = new ArrayList<>();
+    while (true) {
+      List<Expression> dataTypeArgs = visitDataTypeArguments(expr.getDataTypeArguments(), params);
+      if (dataTypeArgs == null) return null;
+      List<Expression> args = new ArrayList<>();
+      ConCallExpression result = makeConCall(expr.getDefinition(), expr.getLevels(), dataTypeArgs, args);
+      for (int i = 0; i < recursiveParam; i++) {
+        Expression newArg = visit(expr.getDefCallArguments().get(i), params);
+        if (newArg == null) {
+          return null;
+        }
+        args.add(newArg);
+      }
+
+      argStack.add(expr);
+      resultStack.add(result);
+
+      Expression rec = expr.getDefCallArguments().get(recursiveParam);
+      if (!(rec instanceof ConCallExpression && ((ConCallExpression) rec).getDefinition().getRecursiveParameter() >= 0)) {
+        Expression newArg = visit(rec, params);
+        if (newArg == null) {
+          return null;
+        }
+        args.add(newArg);
+        break;
+      }
+
+      expr = (ConCallExpression) rec;
+      recursiveParam = expr.getDefinition().getRecursiveParameter();
+    }
+
+    for (int i = argStack.size() - 1; i >= 0; i--) {
+      expr = argStack.get(i);
+      ConCallExpression result = resultStack.get(i);
+      for (int j = expr.getDefinition().getRecursiveParameter() + 1; j < expr.getDefCallArguments().size(); j++) {
+        Expression newArg = visit(expr.getDefCallArguments().get(j), params);
+        if (newArg == null) {
+          return null;
+        }
+        result.getDefCallArguments().add(newArg);
+      }
+    }
+
+    return resultStack.get(0);
+  }
+
   @Override
   public Expression visitConCall(ConCallExpression expr, P params) {
     Expression it = expr;
@@ -74,58 +127,14 @@ public abstract class ExpressionTransformer<P> extends BaseExpressionVisitor<P, 
       return ExpressionFactory.add(it, n);
     }
 
-    int recursiveParam = expr.getDefinition().getRecursiveParameter();
-    if (recursiveParam >= 0 && recursiveParam < expr.getDefCallArguments().size() - 1 && preserveOrder()) {
-      List<ConCallExpression> argStack = new ArrayList<>();
-      List<ConCallExpression> resultStack = new ArrayList<>();
-      while (true) {
-        List<Expression> dataTypeArgs = visitDataTypeArguments(expr.getDataTypeArguments(), params);
-        if (dataTypeArgs == null) return null;
-        List<Expression> args = new ArrayList<>();
-        ConCallExpression result = makeConCall(expr.getDefinition(), expr.getLevels(), dataTypeArgs, args);
-        for (int i = 0; i < recursiveParam; i++) {
-          Expression newArg = visit(expr.getDefCallArguments().get(i), params);
-          if (newArg == null) {
-            return null;
-          }
-          args.add(newArg);
-        }
-
-        argStack.add(expr);
-        resultStack.add(result);
-
-        Expression rec = expr.getDefCallArguments().get(recursiveParam);
-        if (!(rec instanceof ConCallExpression)) {
-          Expression newArg = visit(rec, params);
-          if (newArg == null) {
-            return null;
-          }
-          args.add(newArg);
-          break;
-        }
-
-        expr = (ConCallExpression) rec;
-        recursiveParam = expr.getDefinition().getRecursiveParameter();
-      }
-
-      for (int i = argStack.size() - 1; i >= 0; i--) {
-        expr = argStack.get(i);
-        ConCallExpression result = resultStack.get(i);
-        for (int j = expr.getDefinition().getRecursiveParameter() + 1; j < expr.getDefCallArguments().size(); j++) {
-          Expression newArg = visit(expr.getDefCallArguments().get(j), params);
-          if (newArg == null) {
-            return null;
-          }
-          result.getDefCallArguments().add(newArg);
-        }
-      }
-
-      return resultStack.get(0);
+    if (useStack(expr)) {
+      return visitConCallWithStack(expr, params);
     }
 
+    int recursiveParam = expr.getDefinition().getRecursiveParameter();
     Expression result = null;
     List<Expression> args = null;
-    do {
+    while (true) {
       ConCallExpression conCall = (ConCallExpression) it;
       it = preVisitConCall(conCall, params);
       if (it != null) {
@@ -173,7 +182,13 @@ public abstract class ExpressionTransformer<P> extends BaseExpressionVisitor<P, 
       }
 
       it = conCall.getDefCallArguments().get(recursiveParam);
-    } while (it instanceof ConCallExpression);
+      if (!(it instanceof ConCallExpression)) {
+        break;
+      }
+      if (useStack((ConCallExpression) it)) {
+        return visitConCallWithStack((ConCallExpression) it, params);
+      }
+    }
 
     Expression newArg = visit(it, params);
     if (newArg == null) {
