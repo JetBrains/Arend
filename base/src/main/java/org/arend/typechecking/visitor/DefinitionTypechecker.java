@@ -2307,7 +2307,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           elimParams = DependentLink.Helper.toList(list.getFirst());
         }
 
-        DependentLink newParam = new TypedDependentLink(true, "i" + numberOfNewParameters, Interval(), EmptyDependentLink.getInstance());
+        DependentLink newParam = new TypedDependentLink(true, "i" + (numberOfNewParameters == 1 ? "" : numberOfNewParameters), Interval(), EmptyDependentLink.getInstance());
         newParams.add(newParam);
         for (int i = numberOfNewParameters - 1; i >= 1; i--) {
           newParam = new UntypedDependentLink("i" + i, newParam);
