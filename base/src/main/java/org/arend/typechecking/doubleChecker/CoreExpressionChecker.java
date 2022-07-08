@@ -811,7 +811,7 @@ public class CoreExpressionChecker implements ExpressionVisitor<Expression, Expr
     if (newBody == null) {
       throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("Cannot check the body", mySourceNode), errorExpr));
     }
-    if (!new CompareVisitor(myEquations, CMP.EQ, mySourceNode).compare(elimBody.getElimTree(), newBody.getElimTree())) {
+    if (!new CompareVisitor(myEquations, CMP.LE, mySourceNode).compare(newBody.getElimTree(), elimBody.getElimTree())) {
       throw new CoreException(CoreErrorWrapper.make(new TypecheckingError("The elim tree of the body is incorrect", mySourceNode), errorExpr));
     }
 

@@ -66,6 +66,12 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
   }
 
   public boolean compare(ElimTree elimTree1, ElimTree elimTree2) {
+    if (myCMP == CMP.GE) {
+      myCMP = CMP.LE;
+      boolean result = compare(elimTree2, elimTree1);
+      myCMP = CMP.GE;
+      return result;
+    }
     if (elimTree1.getSkip() != elimTree2.getSkip()) {
       return false;
     }
@@ -75,7 +81,7 @@ public class CompareVisitor implements ExpressionVisitor2<Expression, Expression
     } else if (elimTree1 instanceof BranchElimTree && elimTree2 instanceof BranchElimTree) {
       BranchElimTree branchElimTree1 = (BranchElimTree) elimTree1;
       BranchElimTree branchElimTree2 = (BranchElimTree) elimTree2;
-      if (branchElimTree1.keepConCall() != branchElimTree2.keepConCall() || branchElimTree1.getChildren().size() != branchElimTree2.getChildren().size()) {
+      if (branchElimTree1.keepConCall() != branchElimTree2.keepConCall() || branchElimTree1.getChildren().size() > branchElimTree2.getChildren().size() || myCMP == CMP.EQ && branchElimTree1.getChildren().size() != branchElimTree2.getChildren().size() ) {
         return false;
       }
       SingleConstructor single1 = branchElimTree1.getSingleConstructorKey();
