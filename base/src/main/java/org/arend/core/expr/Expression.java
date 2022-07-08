@@ -11,6 +11,7 @@ import org.arend.core.subst.UnfoldVisitor;
 import org.arend.ext.concrete.ConcreteSourceNode;
 import org.arend.ext.core.expr.*;
 import org.arend.ext.error.ErrorReporter;
+import org.arend.ext.typechecking.TypedExpression;
 import org.arend.ext.variable.Variable;
 import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.context.param.DependentLink;
@@ -135,14 +136,24 @@ public abstract class Expression implements Body, CoreExpression {
   }
 
   @Override
-  public @NotNull Expression computeType() {
-    Expression type = getType(true);
+  public @NotNull Expression computeType(boolean minimal) {
+    Expression type = getType(minimal);
     return type != null ? type : new ErrorExpression(new TypeComputationError(null, this, null));
   }
 
   @Override
+  public @NotNull Expression computeType() {
+    return computeType(false);
+  }
+
+  @Override
+  public @NotNull TypecheckingResult computeTyped(boolean minimal) {
+    return new TypecheckingResult(this, computeType(minimal));
+  }
+
+  @Override
   public @NotNull TypecheckingResult computeTyped() {
-    return new TypecheckingResult(this, computeType());
+    return computeTyped(false);
   }
 
   public boolean findBinding(Variable binding) {
