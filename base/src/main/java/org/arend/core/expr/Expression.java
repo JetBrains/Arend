@@ -136,7 +136,7 @@ public abstract class Expression implements Body, CoreExpression {
 
   @Override
   public @NotNull Expression computeType() {
-    Expression type = getType();
+    Expression type = getType(true);
     return type != null ? type : new ErrorExpression(new TypeComputationError(null, this, null));
   }
 
