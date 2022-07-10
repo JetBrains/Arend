@@ -1662,10 +1662,18 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             typedDef.reallyHideBody();
             if (typedDef.getReallyActualBody() instanceof NewExpression && ((NewExpression) typedDef.getReallyActualBody()).getRenewExpression() == null) {
               ClassCallExpression bodyClassCall = ((NewExpression) typedDef.getReallyActualBody()).getClassCall();
-              bodyClassCall.getImplementedHere().keySet().removeIf(field -> !field.isProperty());
-              if (bodyClassCall.getImplementedHere().isEmpty()) {
-                typedDef.setBody(null);
+              Map<ClassField, Expression> newBodyImpls = new LinkedHashMap<>();
+              ClassCallExpression newBodyClassCall = new ClassCallExpression(bodyClassCall.getDefinition(), bodyClassCall.getLevels(), newBodyImpls, bodyClassCall.getSort(), bodyClassCall.getUniverseKind());
+              Expression newBodyThisBinding = new ReferenceExpression(newBodyClassCall.getThisBinding());
+              for (ClassField field : bodyClassCall.getDefinition().getFields()) {
+                if (field.isProperty()) {
+                  Expression impl = bodyClassCall.getAbsImplementationHere(field);
+                  if (impl != null) {
+                    newBodyImpls.put(field, impl.subst(bodyClassCall.getThisBinding(), newBodyThisBinding));
+                  }
+                }
               }
+              typedDef.setBody(newBodyClassCall.getImplementedHere().isEmpty() ? null : new NewExpression(null, newBodyClassCall));
             }
           } else {
             typedDef.setBody(null);
