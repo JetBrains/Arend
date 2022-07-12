@@ -1554,7 +1554,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
       if (baseClassExpr instanceof Concrete.AppExpression) {
         baseClassExpr = ((Concrete.AppExpression) baseClassExpr).getFunction();
       }
-      if (baseClassExpr instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) baseClassExpr).getReferent() instanceof MetaReferable) {
+      if (baseClassExpr instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) baseClassExpr).getReferent() instanceof MetaReferable && ((MetaReferable) ((Concrete.ReferenceExpression) baseClassExpr).getReferent()).getDefinition() == null) {
         return makeNew(checkMeta((Concrete.ReferenceExpression) baseClassExpr, classExt.getBaseClassExpression() instanceof Concrete.AppExpression ? ((Concrete.AppExpression) classExt.getBaseClassExpression()).getArguments() : Collections.emptyList(), classExt.getCoclauses(), null), expr, expectedType, Collections.emptySet());
       }
     }
