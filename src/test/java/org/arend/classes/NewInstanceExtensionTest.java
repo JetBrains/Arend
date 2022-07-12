@@ -62,7 +62,7 @@ public class NewInstanceExtensionTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\record R (x : Nat) (p : x = x)\n" +
       "\\record S \\extends R | x => 2\n" +
-      "\\func f (s : S) => \\new s");
+      "\\lemma f (s : S) => \\new s");
   }
 
   @Test

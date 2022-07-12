@@ -1459,6 +1459,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
     boolean bodyIsOK = false;
     ClassCallExpression consType = null;
+    boolean checkCanBeLemma = true;
     if (def.getKind() == FunctionKind.LEVEL && typedDef.getResultType() instanceof UniverseExpression && ((UniverseExpression) typedDef.getResultType()).getSort().getHLevel().isClosed() && (body instanceof Concrete.TermFunctionBody || body instanceof Concrete.ElimFunctionBody && body.getClauses().isEmpty())) {
       ArendExtension extension = typechecker.getExtension();
       LevelProver prover = extension == null ? null : extension.getLevelProver();
@@ -1532,6 +1533,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       if (def.getResultType() != null) {
         if (def.getStatus() != Concrete.Status.HAS_ERRORS) {
           fixClassElements(typedDef, def, body.getCoClauseElements());
+          checkCanBeLemma = false;
           Pair<Expression, ClassCallExpression> result = typecheckCoClauses(typedDef, def, kind, body.getCoClauseElements());
           if (result != null) {
             if (myNewDef && !def.isRecursive()) {
@@ -1580,11 +1582,15 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       Concrete.Expression bodyTerm = ((Concrete.TermFunctionBody) body).getTerm();
       boolean useExpectedType = !expectedType.isError();
       TypecheckingResult nonFinalResult = typechecker.checkExpr(bodyTerm, useExpectedType ? expectedType : null);
-      if (useExpectedType && (kind == FunctionKind.LEMMA || def.getData().getKind() == GlobalReferable.Kind.DEFINED_CONSTRUCTOR || nonFinalResult == null || !nonFinalResult.type.isInstance(ClassCallExpression.class)) && !(expectedType instanceof Type && ((Type) expectedType).isOmega())) {
-        if (nonFinalResult == null) {
-          nonFinalResult = new TypecheckingResult(null, expectedType);
+      if (useExpectedType && !(expectedType instanceof Type && ((Type) expectedType).isOmega())) {
+        if (kind == FunctionKind.LEMMA || def.getData().getKind() == GlobalReferable.Kind.DEFINED_CONSTRUCTOR || nonFinalResult == null || !nonFinalResult.type.isInstance(ClassCallExpression.class)) {
+          if (nonFinalResult == null) {
+            nonFinalResult = new TypecheckingResult(null, expectedType);
+          } else {
+            nonFinalResult.type = expectedType;
+          }
         } else {
-          nonFinalResult.type = expectedType;
+          checkCanBeLemma = false;
         }
       }
       TypecheckingResult termResult = typechecker.finalize(nonFinalResult, bodyTerm, kind == FunctionKind.LEMMA);
@@ -1633,8 +1639,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       errorReporter.report(new TypecheckingError("\\sfunc cannot be defined by pattern matching on the interval", def));
       typedDef.setKind(CoreFunctionDefinition.Kind.FUNC);
     }
-
-    checkCanBeLemma(typedDef, def);
 
     if (myNewDef) {
       ClassCallExpression typeClassCall = typedDef.getResultType().cast(ClassCallExpression.class);
@@ -1720,6 +1724,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
     }
 
+    if (checkCanBeLemma) {
+      checkCanBeLemma(typedDef, def);
+    }
     if (!checkLevelNow) {
       checkTypeLevel(def, typedDef, true);
     }

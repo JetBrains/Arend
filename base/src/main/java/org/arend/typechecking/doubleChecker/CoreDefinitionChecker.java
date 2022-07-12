@@ -75,7 +75,7 @@ public class CoreDefinitionChecker extends BaseDefinitionTypechecker {
       Map<ClassField, Expression> newImpls = new LinkedHashMap<>();
       ClassCallExpression typeClassCall = (ClassCallExpression) definition.getResultType();
       ClassCallExpression bodyClassCall = ((NewExpression) body).getClassCall();
-      ClassCallExpression newClassCall = new ClassCallExpression(typeClassCall.getDefinition(), typeClassCall.getLevels(), newImpls, Sort.PROP, UniverseKind.NO_UNIVERSES);
+      ClassCallExpression newClassCall = new ClassCallExpression(bodyClassCall.getDefinition(), typeClassCall.getLevels(), newImpls, Sort.PROP, UniverseKind.NO_UNIVERSES);
       Expression newThisBinding = new ReferenceExpression(newClassCall.getThisBinding());
       boolean ok = true;
       for (ClassField field : typeClassCall.getDefinition().getFields()) {

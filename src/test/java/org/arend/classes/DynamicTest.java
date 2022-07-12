@@ -91,7 +91,7 @@ public class DynamicTest extends TypeCheckingTestCase {
       "    | n : Nat\n" +
       "  }\n" +
       "}\n" +
-      "\\func x => \\new X\n" +
+      "\\lemma x => \\new X\n" +
       "\\class B \\extends X.A {\n" +
       "  \\func my : Nat => X.A.n\n" +
       "}");
@@ -590,7 +590,7 @@ public class DynamicTest extends TypeCheckingTestCase {
         "\\class A {\n" +
         "  \\class B \\where {\n" +
         "    \\class C \\where {\n" +
-        "      \\func d : D => \\new D\n" +
+        "      \\lemma d : D => \\new D\n" +
         "    }\n" +
         "  }\n" +
         "}\n" +
@@ -622,7 +622,7 @@ public class DynamicTest extends TypeCheckingTestCase {
         "\\class A {\n" +
         "  \\class B \\where {\n" +
         "    \\class C \\where {\n" +
-        "      \\func d : D => \\new D\n" +
+        "      \\lemma d : D => \\new D\n" +
         "        \\where\n" +
         "          \\func E => 0\n" +
         "    }\n" +
@@ -772,7 +772,7 @@ public class DynamicTest extends TypeCheckingTestCase {
       "\\class X {\n" +
       "  \\class A\n" +
       "}\n" +
-      "\\func x : X => \\new X\n" +
+      "\\lemma x : X => \\new X\n" +
       "\\class B \\extends x.A");
   }
 

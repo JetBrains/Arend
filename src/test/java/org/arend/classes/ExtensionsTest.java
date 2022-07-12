@@ -312,7 +312,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\record A (x : Nat) (y : x = x)\n" +
       "\\record B \\extends A | x => 0\n" +
-      "\\func f (a : A) : A 0 => \\new B { | A => a }", 1);
+      "\\lemma f (a : A) : A 0 => \\new B { | A => a }", 1);
     assertThatErrorsAre(fieldsImplementation(true, Collections.singletonList(get("A.x"))));
   }
 
@@ -321,7 +321,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\record A (x : Nat) (y : x = x)\n" +
       "\\record B \\extends A | x => 0\n" +
-      "\\func f (a : A 0) : A 0 => \\new B { | A => a }");
+      "\\lemma f (a : A 0) : A 0 => \\new B { | A => a }");
   }
 
   @Test
@@ -329,7 +329,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\record A (x : Nat) (y : x = x)\n" +
       "\\record B \\extends A | x => 0\n" +
-      "\\func f (a : A 1) : A 0 => \\new B { | A => a }", 1);
+      "\\lemma f (a : A 1) : A 0 => \\new B { | A => a }", 1);
     assertThatErrorsAre(fieldsImplementation(true, Collections.singletonList(get("A.x"))));
   }
 

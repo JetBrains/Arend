@@ -93,4 +93,13 @@ public class LemmaTest extends TypeCheckingTestCase {
     typeCheckModule("\\lemma f (x : Nat) : \\level Nat (\\lam (x y : Nat) (p q : x = y) => Path.inProp p q) => x", 2);
     assertThatErrorsAre(typeMismatchError(), typecheckingError(LevelMismatchError.class));
   }
+
+  @Test
+  public void canBeLemmaTest() {
+    typeCheckModule(
+      "\\record R (x y : Nat) (p : x = x)\n" +
+      "\\func test : R { | x => 0 } \\cowith\n" +
+      "  | y => 1\n" +
+      "  | p => idp");
+  }
 }

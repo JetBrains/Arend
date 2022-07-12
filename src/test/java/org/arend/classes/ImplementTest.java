@@ -131,7 +131,7 @@ public class ImplementTest extends TypeCheckingTestCase {
       "\\class B \\extends A {\n" +
       "  | a => 0\n" +
       "}\n" +
-      "\\func f => \\new B { | a => 1 }", 1);
+      "\\lemma f => \\new B { | a => 1 }", 1);
   }
 
   @Test
