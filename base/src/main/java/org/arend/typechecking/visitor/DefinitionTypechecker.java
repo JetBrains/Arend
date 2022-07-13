@@ -2929,6 +2929,13 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
     }
 
+    // Copy coerce functions from super classes
+    for (ClassDefinition superClass : typedDef.getSuperClasses()) {
+      for (Map.Entry<CoerceData.Key, List<Definition>> entry : superClass.getCoerceData().getMapTo()) {
+        typedDef.getCoerceData().putCoerceTo(entry.getKey(), entry.getValue());
+      }
+    }
+
     if (!alreadyImplementFields.isEmpty()) {
       errorReporter.report(new FieldsImplementationError(true, def.getData(), alreadyImplementFields, alreadyImplementFields.size() > 1 ? def : alreadyImplementedSourceNode));
     }

@@ -75,11 +75,11 @@ public class CoerceData {
   }
 
   public void putCoerceFrom(Key key, List<Definition> coercingDefinitions) {
-    myMapFrom.put(key, coercingDefinitions);
+    myMapFrom.putIfAbsent(key, coercingDefinitions);
   }
 
   public void putCoerceTo(Key key, List<Definition> coercingDefinitions) {
-    myMapTo.put(key, coercingDefinitions);
+    myMapTo.putIfAbsent(key, coercingDefinitions);
   }
 
   public static TypecheckingResult coerceToKey(TypecheckingResult result, Key key, Concrete.Expression sourceNode, CheckTypeVisitor visitor) {

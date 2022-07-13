@@ -219,7 +219,7 @@ public class CoerceTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void coerceSubclass() {
+  public void coerceFieldSubclass() {
     typeCheckModule(
       "\\record R (\\coerce f : Nat)\n" +
       "\\record S \\extends R" +
@@ -346,5 +346,14 @@ public class CoerceTest extends TypeCheckingTestCase {
       "\\class R (X : \\Type)\n" +
       "\\class S {n : Nat} (Y : \\case n \\with { | 0 => R | suc _ => \\Sigma })\n" +
       "\\func test (s : S {0}) (x : s) => x");
+  }
+
+  @Test
+  public void coerceSubclass() {
+    typeCheckModule(
+      "\\record R (n : Nat)\n" +
+      "  \\where \\use \\coerce toNat (r : R) => r.n\n" +
+      "\\record S \\extends R\n" +
+      "\\func test (s : S) : Nat => s");
   }
 }
