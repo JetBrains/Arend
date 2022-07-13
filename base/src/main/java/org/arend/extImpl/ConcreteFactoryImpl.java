@@ -416,7 +416,7 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
   }
 
   @Override
-  public @NotNull ConcreteExpression app(@NotNull ConcreteExpression function, @NotNull Collection<? extends ConcreteArgument> arguments) {
+  public @NotNull Concrete.Expression app(@NotNull ConcreteExpression function, @NotNull Collection<? extends ConcreteArgument> arguments) {
     if (!(function instanceof Concrete.Expression)) {
       throw new IllegalArgumentException();
     }

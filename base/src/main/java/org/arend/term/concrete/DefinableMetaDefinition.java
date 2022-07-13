@@ -13,6 +13,7 @@ import org.arend.ext.typechecking.ContextData;
 import org.arend.ext.typechecking.ExpressionTypechecker;
 import org.arend.ext.typechecking.MetaDefinition;
 import org.arend.ext.typechecking.TypedExpression;
+import org.arend.extImpl.ConcreteFactoryImpl;
 import org.arend.naming.reference.LevelReferable;
 import org.arend.naming.reference.MetaReferable;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
@@ -67,7 +68,7 @@ public class DefinableMetaDefinition extends Concrete.ResolvableDefinition imple
         return false;
       }
     }
-    boolean ok = arguments.size() == myParameters.size();
+    boolean ok = arguments.size() >= myParameters.size();
     if (!ok && errorReporter != null) {
       errorReporter.report(new TypecheckingError("Expected " + myParameters.size() + " arguments, found " + arguments.size(), marker));
     }
@@ -86,7 +87,7 @@ public class DefinableMetaDefinition extends Concrete.ResolvableDefinition imple
 
   protected @Nullable ConcreteExpression getConcreteRepresentation(@Nullable Object data, @Nullable List<Concrete.LevelExpression> pLevels, @Nullable List<Concrete.LevelExpression> hLevels, @NotNull List<? extends ConcreteArgument> arguments, @Nullable ConcreteCoclauses coclauses) {
     if (body == null) return null;
-    assert myParameters.size() == arguments.size();
+    assert myParameters.size() <= arguments.size();
     var subst = new SubstConcreteExpressionVisitor(data);
     for (int i = 0; i < myParameters.size(); i++) {
       subst.bind(Objects.requireNonNull(myParameters.get(i).getReferable()),
@@ -94,7 +95,18 @@ public class DefinableMetaDefinition extends Concrete.ResolvableDefinition imple
     }
     binLevelParameters(subst, pLevels, myPLevelParameters);
     binLevelParameters(subst, hLevels, myHLevelParameters);
-    return body.accept(subst, null);
+    Concrete.Expression result = body.accept(subst, null);
+    if (result == null) return null;
+    if (arguments.size() > myParameters.size()) {
+      result = new ConcreteFactoryImpl(result.getData()).app(result, arguments.subList(myParameters.size(), arguments.size()));
+    }
+    if (coclauses != null) {
+      if (!(coclauses instanceof Concrete.Coclauses)) {
+        throw new IllegalArgumentException();
+      }
+      result = Concrete.ClassExtExpression.make(result.getData(), result, (Concrete.Coclauses) coclauses);
+    }
+    return result;
   }
 
   private void binLevelParameters(SubstConcreteExpressionVisitor subst, @Nullable List<Concrete.LevelExpression> levels, List<LevelReferable> levelParameters) {
