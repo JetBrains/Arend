@@ -3,6 +3,7 @@ package org.arend.typechecking.order.listener;
 import org.arend.term.concrete.Concrete;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class CollectingOrderingListener implements OrderingListener {
@@ -10,6 +11,7 @@ public class CollectingOrderingListener implements OrderingListener {
     void feedTo(OrderingListener listener);
     void getDefinitions(List<Concrete.ResolvableDefinition> result);
     Concrete.ResolvableDefinition getAnyDefinition();
+    List<? extends Concrete.ResolvableDefinition> getAllDefinitions();
   }
 
   private static class MyHeader implements Element {
@@ -32,6 +34,11 @@ public class CollectingOrderingListener implements OrderingListener {
     @Override
     public Concrete.ResolvableDefinition getAnyDefinition() {
       return definition;
+    }
+
+    @Override
+    public List<? extends Concrete.ResolvableDefinition> getAllDefinitions() {
+      return Collections.singletonList(definition);
     }
   }
 
@@ -57,6 +64,11 @@ public class CollectingOrderingListener implements OrderingListener {
     @Override
     public Concrete.ResolvableDefinition getAnyDefinition() {
       return definition;
+    }
+
+    @Override
+    public List<? extends Concrete.ResolvableDefinition> getAllDefinitions() {
+      return Collections.singletonList(definition);
     }
   }
 
@@ -91,6 +103,11 @@ public class CollectingOrderingListener implements OrderingListener {
     @Override
     public Concrete.ResolvableDefinition getAnyDefinition() {
       return definitions.get(0);
+    }
+
+    @Override
+    public List<? extends Concrete.ResolvableDefinition> getAllDefinitions() {
+      return definitions;
     }
   }
 

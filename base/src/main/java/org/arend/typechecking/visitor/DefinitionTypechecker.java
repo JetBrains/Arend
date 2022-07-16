@@ -92,10 +92,12 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       if (myNewDef) {
         myNewDef = typechecked == null || typechecked.status().needsTypeChecking();
       }
-      if (functionDef.getResultType() == null) {
-        functionDef.setResultType(new ErrorExpression());
+      if (myNewDef) {
+        if (functionDef.getResultType() == null) {
+          functionDef.setResultType(new ErrorExpression());
+        }
+        functionDef.setStatus(Definition.TypeCheckingStatus.TYPE_CHECKING);
       }
-      functionDef.setStatus(Definition.TypeCheckingStatus.TYPE_CHECKING);
       typecheckFunctionHeader(functionDef, (Concrete.BaseFunctionDefinition) definition, localInstancePool);
       return functionDef;
     } else
@@ -104,7 +106,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       if (myNewDef) {
         myNewDef = typechecked == null || typechecked.status().needsTypeChecking();
       }
-      dataDef.setStatus(Definition.TypeCheckingStatus.TYPE_CHECKING);
+      if (myNewDef) {
+        dataDef.setStatus(Definition.TypeCheckingStatus.TYPE_CHECKING);
+      }
       typecheckDataHeader(dataDef, (Concrete.DataDefinition) definition, localInstancePool);
       if (dataDef.getSort() == null || dataDef.getSort().getPLevel().isInfinity()) {
         errorReporter.report(new TypecheckingError("Cannot infer the sort of a recursive data type", definition));
@@ -146,7 +150,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     if (definition.getResultType() == null) {
       definition.setResultType(new ErrorExpression());
     }
-    definition.setStatus(Definition.TypeCheckingStatus.TYPE_CHECKING);
+    if (myNewDef) {
+      definition.setStatus(Definition.TypeCheckingStatus.TYPE_CHECKING);
+    }
     typecheckFunctionHeader(definition, def, localInstancePool);
     if (myNewDef) {
       myNewDef = typechecked == null;
@@ -165,7 +171,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     if (myNewDef) {
       myNewDef = typechecked == null || typechecked.status().needsTypeChecking();
     }
-    definition.setStatus(Definition.TypeCheckingStatus.TYPE_CHECKING);
+    if (myNewDef) {
+      definition.setStatus(Definition.TypeCheckingStatus.TYPE_CHECKING);
+    }
     typecheckDataHeader(definition, def, localInstancePool);
     if (definition.status().headerIsOK()) {
       if (myNewDef) {
@@ -193,7 +201,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     if (myNewDef) {
       myNewDef = typechecked == null || typechecked.status().needsTypeChecking();
     }
-    definition.setStatus(Definition.TypeCheckingStatus.TYPE_CHECKING);
+    if (myNewDef) {
+      definition.setStatus(Definition.TypeCheckingStatus.TYPE_CHECKING);
+    }
     if (typechecked == null) {
       def.getData().setTypecheckedIfNotCancelled(definition);
     }
