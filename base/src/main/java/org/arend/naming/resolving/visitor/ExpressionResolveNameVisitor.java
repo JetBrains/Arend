@@ -182,13 +182,14 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     Referable origRef = expr.getReferent();
     if (origRef instanceof UnresolvedReference) {
       List<Referable> resolvedList = myResolverListener == null ? null : new ArrayList<>();
-      resolve(expr, myContext == null ? EmptyScope.INSTANCE : new ListScope(myContext), true, resolvedList);
+      Scope scope = myContext == null ? EmptyScope.INSTANCE : new ListScope(myContext);
+      resolve(expr, scope, true, resolvedList);
       convertExpr(expr);
       if (expr.getReferent() instanceof ErrorReference) {
         myErrorReporter.report(((ErrorReference) expr.getReferent()).getError());
       }
       if (myResolverListener != null) {
-        myResolverListener.referenceResolved(null, origRef, expr, resolvedList, myScope);
+        myResolverListener.referenceResolved(null, origRef, expr, resolvedList, scope);
       }
     }
   }
