@@ -3392,31 +3392,38 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
             break;
           }
           case CLEAR:
-            context.clear();
-            break;
+          case RETAIN:
           case REMOVE: {
             Set<?> bindings = (Set<?>) command.bindings;
-            context.entrySet().removeIf(entry -> bindings.contains(entry.getValue()));
-            break;
-          }
-          case RETAIN: {
-            Set<?> bindings = (Set<?>) command.bindings;
-            context.entrySet().removeIf(entry -> !bindings.contains(entry.getValue()));
+            Set<Map.Entry<Referable, Binding>> removed = new HashSet<>();
+            for (Map.Entry<Referable, Binding> entry : context.entrySet()) {
+              if (!(entry.getKey() instanceof VeryFakeLocalReferable) && (bindings == null || command.kind == FreeBindingsModifier.Command.Kind.REMOVE && bindings.contains(entry.getKey()) || command.kind == FreeBindingsModifier.Command.Kind.RETAIN && !bindings.contains(entry.getKey()))) {
+                removed.add(entry);
+              }
+            }
+            for (var entry : removed) {
+              context.put(new VeryFakeLocalReferable(entry.getValue().getName()), entry.getValue());
+            }
             break;
           }
           case REPLACE:
           case REPLACE_REMOVE: {
             Map<?, ?> replacement = (Map<?, ?>) command.bindings;
-            for (Iterator<Map.Entry<Referable, Binding>> iterator = context.entrySet().iterator(); iterator.hasNext(); ) {
-              Map.Entry<Referable, Binding> entry = iterator.next();
+            Set<Map.Entry<Referable, Binding>> removed = command.kind == FreeBindingsModifier.Command.Kind.REPLACE_REMOVE ? new HashSet<>() : null;
+            for (Map.Entry<Referable, Binding> entry : context.entrySet()) {
               Object newBinding = replacement.get(entry.getValue());
               if (newBinding != null) {
                 if (!(newBinding instanceof Binding)) {
                   throw new IllegalArgumentException();
                 }
                 entry.setValue((Binding) newBinding);
-              } else if (command.kind == FreeBindingsModifier.Command.Kind.REPLACE_REMOVE) {
-                iterator.remove();
+              } else if (removed != null) {
+                removed.add(entry);
+              }
+            }
+            if (removed != null) {
+              for (var entry : removed) {
+                context.put(new VeryFakeLocalReferable(entry.getValue().getName()), entry.getValue());
               }
             }
             break;
