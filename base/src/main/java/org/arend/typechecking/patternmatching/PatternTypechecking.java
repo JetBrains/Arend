@@ -956,6 +956,13 @@ public class PatternTypechecking {
       result.add(resultPattern);
       if (conResult.addedIntervalVars > 0) {
         myPathPatterns.add(new Pair<>(resultPattern, conResult.addedIntervalVars));
+        for (DependentLink param = parameters.getNext(); param.hasNext(); param = param.getNext()) {
+          param = param.getNextTyped(null);
+          if (param.getTypeExpr().findBinding(parameters)) {
+            myErrorReporter.report(new TypecheckingError("Partially applied constructor is not allowed because parameter '" + param.getName() + "' depends on '" + parameters.getName() + "'", conPattern));
+            return null;
+          }
+        }
       }
 
       if (conResult.exprs == null) {

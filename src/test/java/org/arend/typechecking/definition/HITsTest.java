@@ -223,4 +223,14 @@ public class HITsTest extends TypeCheckingTestCase {
       "  | con2 d => test d\n" +
       "  | con3 d => idp");
   }
+
+  @Test
+  public void freeVarTest() {
+    typeCheckModule(
+      "\\data D | con1 | con2 | con3 : con1 = con2\n" +
+      "\\func test (d : D) (s : d = con1) : Nat \\elim d\n" +
+      "  | con1 => 0\n" +
+      "  | con2 => 0\n" +
+      "  | con3 => idp", 1);
+  }
 }
