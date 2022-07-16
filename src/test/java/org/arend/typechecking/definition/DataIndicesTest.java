@@ -70,4 +70,12 @@ public class DataIndicesTest extends TypeCheckingTestCase {
         "\\func f (n : Nat) (x : Fin n) => fsuc (fsuc x)");
     assertEquals("fsuc {suc n} (fsuc {n} x)", ((Expression) Objects.requireNonNull(((FunctionDefinition) getDefinition("f")).getBody())).normalize(NormalizationMode.NF).toString());
   }
+
+  @Test
+  public void hitTest() {
+    typeCheckModule(
+      "\\data D | con1 | con2 | con3 : con1 = con2\n" +
+      "\\data Test (d : D) \\with\n" +
+      " | con1 => con", 1);
+  }
 }

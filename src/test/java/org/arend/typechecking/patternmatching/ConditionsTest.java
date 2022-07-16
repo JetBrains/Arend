@@ -229,17 +229,6 @@ public class ConditionsTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void dataCondition() {
-    typeCheckModule(
-      "\\data D | c | c' | l I\n" +
-      "  { left => c\n" +
-      "  | right => c'\n" +
-      "  }\n" +
-      "\\data E D \\with\n" +
-      " | c => e");
-  }
-
-  @Test
   public void dataCondition2() {
     typeCheckModule(
       "\\data D | c | l Nat\n" +

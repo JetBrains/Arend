@@ -1935,6 +1935,22 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     dataDefinition.setUniverseKind(checkForUniverses(dataDefinition));
   }
 
+  private boolean checkNoHITs(ExpressionPattern pattern, Concrete.SourceNode sourceNode) {
+    Definition def = pattern.getDefinition();
+    if (def instanceof Constructor && ((Constructor) def).getDataType().isHIT()) {
+      errorReporter.report(new TypecheckingError("Data types with conditions cannot be used in data type patterns", sourceNode));
+      return false;
+    }
+
+    for (ExpressionPattern subPattern : pattern.getSubPatterns()) {
+      if (!checkNoHITs(subPattern, sourceNode)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   private boolean typecheckDataBody(DataDefinition dataDefinition, Concrete.DataDefinition def, Set<DataDefinition> dataDefinitions) {
     UniverseKind universeKind = dataDefinition.getUniverseKind();
     if (myNewDef) {
@@ -1972,6 +1988,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
       }
 
+      boolean noHITs = true;
       LocalInstancePool instancePool = typechecker.getInstancePool().getLocalInstancePool();
       for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
         typechecker.copyContextFrom(context);
@@ -1989,6 +2006,15 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             result = dataPatternTypechecking.typecheckPatterns(clause.getPatterns(), def.getParameters(), dataDefinition.getParameters(), substitution, null, def);
             if (instancePool != null) {
               typechecker.getInstancePool().setInstancePool(instancePool.subst(substitution));
+            }
+            if (result != null && noHITs) {
+              for (ExpressionPattern pattern : result.getPatterns()) {
+                if (!checkNoHITs(pattern, clause)) {
+                  result = null;
+                  noHITs = false;
+                  break;
+                }
+              }
             }
             if (result != null && result.hasEmptyPattern()) {
               originalErrorReporter.report(new RedundantClauseError(clause));
