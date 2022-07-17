@@ -25,11 +25,7 @@ public class Scopes {
     return myHLevelScope;
   }
 
-  public Scope getScope(Scope.Kind kind) {
-    return kind == Scope.Kind.EXPR ? myExpressionScope : kind == Scope.Kind.PLEVEL ? myPLevelScope : myHLevelScope;
-  }
-
   public Scopes caching() {
-    return new Scopes(CachingScope.make(myExpressionScope), CachingScope.make(myPLevelScope), CachingScope.make(myHLevelScope));
+    return new Scopes(CachingScope.make(myExpressionScope), NameCachingScope.make(myPLevelScope), NameCachingScope.make(myHLevelScope));
   }
 }

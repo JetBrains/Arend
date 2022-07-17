@@ -90,9 +90,9 @@ public abstract class BaseLibrary implements Library {
   @NotNull
   @Override
   public ModuleScopeProvider getDeclaredModuleScopeProvider() {
-    return (module, kind) -> {
+    return module -> {
       Group group = getModuleGroup(module, false);
-      return group == null ? null : LexicalScope.opened(group, kind);
+      return group == null ? null : LexicalScope.opened(group);
     };
   }
 
@@ -104,9 +104,9 @@ public abstract class BaseLibrary implements Library {
 
   @Override
   public @NotNull ModuleScopeProvider getTestsModuleScopeProvider() {
-    return (module, kind) -> {
+    return module -> {
       Group group = getModuleGroup(module, true);
-      return group == null ? null : LexicalScope.opened(group, kind);
+      return group == null ? null : LexicalScope.opened(group);
     };
   }
 

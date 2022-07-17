@@ -67,19 +67,19 @@ public class LibraryManager {
   public @NotNull ModuleScopeProvider getAvailableModuleScopeProvider(Library library) {
     Collection<? extends LibraryDependency> dependencies = library.getDependencies();
     ModuleScopeProvider libraryModuleScopeProvider = library.getModuleScopeProvider();
-    return CachingModuleScopeProvider.make((modulePath, kind) -> {
+    return new CachingModuleScopeProvider(modulePath -> {
       if (modulePath.equals(Prelude.MODULE_PATH)) {
         Library lib = getRegisteredLibrary(Prelude.LIBRARY_NAME);
-        return lib == null ? null : lib.getModuleScopeProvider().forModule(modulePath, kind);
+        return lib == null ? null : lib.getModuleScopeProvider().forModule(modulePath);
       }
-      Scope scope = libraryModuleScopeProvider.forModule(modulePath, kind);
+      Scope scope = libraryModuleScopeProvider.forModule(modulePath);
       if (scope != null) {
         return scope;
       }
       for (LibraryDependency dependency : dependencies) {
         Library lib = getRegisteredLibrary(dependency.name);
         if (lib != null) {
-          scope = lib.getModuleScopeProvider().forModule(modulePath, kind);
+          scope = lib.getModuleScopeProvider().forModule(modulePath);
           if (scope != null) {
             return scope;
           }

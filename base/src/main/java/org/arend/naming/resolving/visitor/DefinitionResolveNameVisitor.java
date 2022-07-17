@@ -709,7 +709,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
   }
 
   private static Scope makeScope(Group group, Scope parentScope, LexicalScope.Extent extent) {
-    return CachingScope.make(LexicalScope.insideOf(group, parentScope, extent, Scope.Kind.EXPR));
+    return CachingScope.make(LexicalScope.insideOf(group, parentScope, extent));
   }
 
   public void resolveGroup(Group group, Scopes scopes) {
@@ -719,7 +719,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
 
     var def = myConcreteProvider.getConcrete(groupRef);
     Scope cachedScope = makeScope(group, scopes.getExpressionScope(), def instanceof Concrete.ClassDefinition ? LexicalScope.Extent.EXTERNAL_AND_FIELDS : LexicalScope.Extent.EVERYTHING);
-    Scopes newScopes = new Scopes(cachedScope, CachingScope.make(LexicalScope.insideOf(group, scopes.getPLevelScope(), Scope.Kind.PLEVEL)), CachingScope.make(LexicalScope.insideOf(group, scopes.getHLevelScope(), Scope.Kind.HLEVEL)));
+    Scopes newScopes = new Scopes(cachedScope, NameCachingScope.make(LevelLexicalScope.insideOf(group, scopes.getPLevelScope(), true)), NameCachingScope.make(LevelLexicalScope.insideOf(group, scopes.getHLevelScope(), false)));
     if (def instanceof Concrete.ClassDefinition) {
       resolveSuperClasses((Concrete.ClassDefinition) def, newScopes, false);
     }

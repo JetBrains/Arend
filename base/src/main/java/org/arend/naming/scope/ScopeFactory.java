@@ -19,15 +19,15 @@ import java.util.*;
 import java.util.function.Function;
 
 public class ScopeFactory {
-  public static @NotNull Scope forGroup(@Nullable Group group, @NotNull ModuleScopeProvider moduleScopeProvider, Scope.Kind kind) {
-    return forGroup(group, moduleScopeProvider, true, LexicalScope.Extent.EXTERNAL_AND_FIELDS, kind);
+  public static @NotNull Scope forGroup(@Nullable Group group, @NotNull ModuleScopeProvider moduleScopeProvider) {
+    return forGroup(group, moduleScopeProvider, true, LexicalScope.Extent.EXTERNAL_AND_FIELDS);
   }
 
-  public static @NotNull Scope forGroup(@Nullable Group group, @NotNull ModuleScopeProvider moduleScopeProvider, boolean prelude, Scope.Kind kind) {
-    return forGroup(group, moduleScopeProvider, prelude, LexicalScope.Extent.EXTERNAL_AND_FIELDS, kind);
+  public static @NotNull Scope forGroup(@Nullable Group group, @NotNull ModuleScopeProvider moduleScopeProvider, boolean prelude) {
+    return forGroup(group, moduleScopeProvider, prelude, LexicalScope.Extent.EXTERNAL_AND_FIELDS);
   }
 
-  public static @NotNull Scope parentScopeForGroup(@Nullable Group group, @NotNull ModuleScopeProvider moduleScopeProvider, boolean prelude, Scope.Kind kind) {
+  public static @NotNull Scope parentScopeForGroup(@Nullable Group group, @NotNull ModuleScopeProvider moduleScopeProvider, boolean prelude) {
     ChildGroup parentGroup = group instanceof ChildGroup ? ((ChildGroup) group).getParentGroup() : null;
     Scope parentScope;
     if (parentGroup == null) {
@@ -39,22 +39,22 @@ public class ScopeFactory {
           }
         }
       }
-      Scope preludeScope = prelude ? moduleScopeProvider.forModule(Prelude.MODULE_PATH, kind) : null;
+      Scope preludeScope = prelude ? moduleScopeProvider.forModule(Prelude.MODULE_PATH) : null;
       if (group == null) {
         return preludeScope == null ? EmptyScope.INSTANCE : preludeScope;
       }
 
-      ImportedScope importedScope = new ImportedScope(group, moduleScopeProvider, kind);
+      ImportedScope importedScope = new ImportedScope(group, moduleScopeProvider);
       parentScope = preludeScope == null ? importedScope : new MergeScope(preludeScope, importedScope);
     } else {
-      parentScope = forGroup(parentGroup, moduleScopeProvider, prelude, LexicalScope.Extent.EVERYTHING, kind);
+      parentScope = forGroup(parentGroup, moduleScopeProvider, prelude, LexicalScope.Extent.EVERYTHING);
     }
     return parentScope;
   }
 
-  private static @NotNull Scope forGroup(@Nullable Group group, @NotNull ModuleScopeProvider moduleScopeProvider, boolean prelude, LexicalScope.Extent extent, Scope.Kind kind) {
-    Scope parent = parentScopeForGroup(group, moduleScopeProvider, prelude, kind);
-    return group == null ? parent : LexicalScope.insideOf(group, parent, extent, kind);
+  public static @NotNull Scope forGroup(@Nullable Group group, @NotNull ModuleScopeProvider moduleScopeProvider, boolean prelude, LexicalScope.Extent extent) {
+    Scope parent = parentScopeForGroup(group, moduleScopeProvider, prelude);
+    return group == null ? parent : LexicalScope.insideOf(group, parent, extent);
   }
 
   public static boolean isGlobalScopeVisible(Abstract.SourceNode sourceNode) {

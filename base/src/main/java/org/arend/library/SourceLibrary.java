@@ -106,9 +106,9 @@ public abstract class SourceLibrary extends BaseLibrary {
 
   @Override
   public final @NotNull ModuleScopeProvider getModuleScopeProvider() {
-    return (module, kind) -> {
-      Scope scope = myAdditionalModuleScopeProvider.forModule(module, kind);
-      return scope != null ? scope : getDeclaredModuleScopeProvider().forModule(module, kind);
+    return module -> {
+      Scope scope = myAdditionalModuleScopeProvider.forModule(module);
+      return scope != null ? scope : getDeclaredModuleScopeProvider().forModule(module);
     };
   }
 

@@ -3,6 +3,7 @@ package org.arend.term.group;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.scope.*;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
@@ -17,12 +18,23 @@ public class FileGroup extends StaticGroup {
     if (myScopes.getExpressionScope() != EmptyScope.INSTANCE) {
       throw new IllegalStateException();
     }
-    myScopes = new Scopes(ScopeFactory.forGroup(this, moduleScopeProvider, Scope.Kind.EXPR), ScopeFactory.forGroup(this, moduleScopeProvider, Scope.Kind.PLEVEL), ScopeFactory.forGroup(this, moduleScopeProvider, Scope.Kind.HLEVEL)).caching();
+    myScopes = new Scopes(ScopeFactory.forGroup(this, moduleScopeProvider), LevelLexicalScope.insideOf(this, EmptyScope.INSTANCE, true), LevelLexicalScope.insideOf(this, EmptyScope.INSTANCE, false)).caching();
+  }
+
+  @NotNull
+  @Override
+  public Scope getGroupScope(LexicalScope.Extent extent) {
+    return myScopes.getExpressionScope();
   }
 
   @Override
-  public Scope getGroupScope(Scope.Kind kind) {
-    return myScopes.getScope(kind);
+  public Scope getGroupPLevelScope() {
+    return myScopes.getPLevelScope();
+  }
+
+  @Override
+  public Scope getGroupHLevelScope() {
+    return myScopes.getHLevelScope();
   }
 
   @Override

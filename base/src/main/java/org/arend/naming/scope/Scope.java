@@ -14,8 +14,6 @@ import java.util.function.Predicate;
 
 // Minimal definition: (find or getElements) and resolveNamespace
 public interface Scope {
-  enum Kind { EXPR, PLEVEL, HLEVEL }
-
   default @Nullable Referable find(Predicate<Referable> pred) {
     for (Referable referable : getElements()) {
       if (pred.test(referable)) {

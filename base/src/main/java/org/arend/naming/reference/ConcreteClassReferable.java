@@ -61,7 +61,7 @@ public class ConcreteClassReferable extends ConcreteResolvedClassReferable imple
   protected void resolve() {
     if (!myResolved) {
       ChildGroup parent = myGroup.getParentGroup();
-      resolve(CachingScope.make(parent == null ? ScopeFactory.forGroup(myGroup, EmptyModuleScopeProvider.INSTANCE, Scope.Kind.EXPR) : LexicalScope.insideOf(myGroup, parent.getGroupScope(), LexicalScope.Extent.ONLY_EXTERNAL, Scope.Kind.EXPR)));
+      resolve(CachingScope.make(parent == null ? ScopeFactory.forGroup(myGroup, EmptyModuleScopeProvider.INSTANCE) : LexicalScope.insideOf(myGroup, parent.getGroupScope(), LexicalScope.Extent.ONLY_EXTERNAL)));
       myResolved = true;
     }
   }

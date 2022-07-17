@@ -6,7 +6,6 @@ import org.arend.module.ModuleLocation;
 import org.arend.naming.reference.*;
 import org.arend.naming.scope.EmptyScope;
 import org.arend.naming.scope.ListScope;
-import org.arend.naming.scope.Scope;
 import org.arend.naming.scope.SingletonScope;
 import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.term.concrete.Concrete;
@@ -638,7 +637,7 @@ public class NameResolverTest extends NameResolverTestCase {
 
   @Test
   public void importHidingName() {
-    setModuleScopeProvider((module, kind) -> EmptyScope.INSTANCE);
+    setModuleScopeProvider(module -> EmptyScope.INSTANCE);
     resolveNamesModule(
       "\\import Mod\n" +
       "\\import Mod.Path\n" +
@@ -647,7 +646,7 @@ public class NameResolverTest extends NameResolverTestCase {
 
   @Test
   public void importHidingNamespace() {
-    setModuleScopeProvider((module, kind) -> EmptyScope.INSTANCE);
+    setModuleScopeProvider(module -> EmptyScope.INSTANCE);
     resolveNamesModule(
       "\\import Mod\n" +
       "\\import Mod.Path\n" +
@@ -656,8 +655,8 @@ public class NameResolverTest extends NameResolverTestCase {
 
   @Test
   public void importOrder() {
-    setModuleScopeProvider((module, kind) ->
-      kind == Scope.Kind.EXPR && module.equals(new ModulePath("Mod"))
+    setModuleScopeProvider(module ->
+      module.equals(new ModulePath("Mod"))
         ? new SingletonScope(new LocatedReferableImpl(Precedence.DEFAULT, "foo", new FullModuleReferable(new ModuleLocation(null, false, null, module)), GlobalReferable.Kind.FUNCTION))
         : EmptyScope.INSTANCE);
     /*

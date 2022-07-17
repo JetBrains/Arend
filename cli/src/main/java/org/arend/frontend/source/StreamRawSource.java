@@ -12,7 +12,6 @@ import org.arend.module.error.ExceptionError;
 import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.naming.resolving.visitor.DefinitionResolveNameVisitor;
 import org.arend.naming.scope.CachingScope;
-import org.arend.naming.scope.Scope;
 import org.arend.naming.scope.ScopeFactory;
 import org.arend.source.Source;
 import org.arend.source.SourceLoader;
@@ -115,7 +114,7 @@ public abstract class StreamRawSource implements Source {
       myPass = 2;
       return LoadResult.CONTINUE;
     }
-    sourceLoader.getInstanceProviderSet().collectInstances(myGroup, CachingScope.make(ScopeFactory.parentScopeForGroup(myGroup, sourceLoader.getModuleScopeProvider(myInTests), true, Scope.Kind.EXPR)), IdReferableConverter.INSTANCE);
+    sourceLoader.getInstanceProviderSet().collectInstances(myGroup, CachingScope.make(ScopeFactory.parentScopeForGroup(myGroup, sourceLoader.getModuleScopeProvider(myInTests), true)), IdReferableConverter.INSTANCE);
     return LoadResult.SUCCESS;
   }
 }

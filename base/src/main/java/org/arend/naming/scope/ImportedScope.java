@@ -19,20 +19,20 @@ public class ImportedScope implements Scope {
   private final ModuleScopeProvider myProvider;
   private final Scope myElementsScope;
 
-  public ImportedScope(@NotNull Group group, ModuleScopeProvider provider, Scope.Kind kind) {
+  public ImportedScope(@NotNull Group group, ModuleScopeProvider provider) {
     myExpectedNamesTree = new Tree();
     myProvider = provider;
     myElementsScope = null;
 
     ModuleLocation location = group.getReferable().getLocation();
     if (location != null) {
-      myExpectedNamesTree.addPath(location.getModulePath().toList(), kind);
+      myExpectedNamesTree.addPath(location.getModulePath().toList());
     }
 
     for (Statement statement : group.getStatements()) {
       NamespaceCommand cmd = statement.getNamespaceCommand();
       if (cmd != null && cmd.getKind() == NamespaceCommand.Kind.IMPORT) {
-        myExpectedNamesTree.addPath(cmd.getPath(), kind);
+        myExpectedNamesTree.addPath(cmd.getPath());
       }
     }
   }
@@ -138,7 +138,7 @@ public class ImportedScope implements Scope {
   private class Tree {
     final Map<String, Triple> map = new LinkedHashMap<>();
 
-    void addPath(List<String> path, Scope.Kind kind) {
+    void addPath(List<String> path) {
       if (path.isEmpty()) {
         return;
       }
@@ -149,12 +149,12 @@ public class ImportedScope implements Scope {
         Triple triple = tree.map.compute(path.get(i), (k,oldTriple) -> {
           ModulePath modulePath = new ModulePath(path.subList(0, finalI));
           if (oldTriple == null) {
-            return new Triple(new ModuleReferable(modulePath), finalI == path.size() ? modulePath : null, new Tree(), finalI == path.size() ? myProvider.forModule(modulePath, kind) : EmptyScope.INSTANCE);
+            return new Triple(new ModuleReferable(modulePath), finalI == path.size() ? modulePath : null, new Tree(), finalI == path.size() ? myProvider.forModule(modulePath) : EmptyScope.INSTANCE);
           }
           if (oldTriple.modulePath != null || finalI != path.size()) {
             return oldTriple;
           }
-          return new Triple(oldTriple.referable, modulePath, oldTriple.tree, myProvider.forModule(modulePath, kind));
+          return new Triple(oldTriple.referable, modulePath, oldTriple.tree, myProvider.forModule(modulePath));
         });
         if (triple.modulePath == null && finalI == path.size()) {
           triple.modulePath = triple.referable.path;

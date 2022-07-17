@@ -7,13 +7,5 @@ import org.jetbrains.annotations.Nullable;
 
 public interface ModuleScopeProvider {
   @Nullable
-  Scope forModule(@NotNull ModulePath module, @NotNull Scope.Kind kind);
-
-  default @Nullable Scope forModule(@NotNull ModulePath module) {
-    return forModule(module, Scope.Kind.EXPR);
-  }
-
-  default boolean isCaching() {
-    return false;
-  }
+  Scope forModule(@NotNull ModulePath module);
 }
