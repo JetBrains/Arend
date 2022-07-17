@@ -218,7 +218,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     }
   }
 
-  private static Map<String, Referable> visitLevelParameters(List<LevelReferable> params) {
+  private static Map<String, Referable> visitLevelParameters(List<? extends LevelReferable> params) {
     if (params == null) return Collections.emptyMap();
     Map<String, Referable> result = new HashMap<>();
     for (Referable ref : params) {
