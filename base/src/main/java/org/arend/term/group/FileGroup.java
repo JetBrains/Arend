@@ -8,37 +8,22 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 
 public class FileGroup extends StaticGroup {
-  private Scopes myScopes = Scopes.EMPTY;
+  private Scope myScope = EmptyScope.INSTANCE;
 
   public FileGroup(LocatedReferable referable, List<Statement> statements) {
     super(referable, statements, null);
   }
 
   public void setModuleScopeProvider(ModuleScopeProvider moduleScopeProvider) {
-    if (myScopes.getExpressionScope() != EmptyScope.INSTANCE) {
+    if (myScope != EmptyScope.INSTANCE) {
       throw new IllegalStateException();
     }
-    myScopes = new Scopes(ScopeFactory.forGroup(this, moduleScopeProvider), LevelLexicalScope.insideOf(this, EmptyScope.INSTANCE, true), LevelLexicalScope.insideOf(this, EmptyScope.INSTANCE, false)).caching();
+    myScope = CachingScope.make(ScopeFactory.forGroup(this, moduleScopeProvider));
   }
 
   @NotNull
   @Override
   public Scope getGroupScope(LexicalScope.Extent extent) {
-    return myScopes.getExpressionScope();
-  }
-
-  @Override
-  public Scope getGroupPLevelScope() {
-    return myScopes.getPLevelScope();
-  }
-
-  @Override
-  public Scope getGroupHLevelScope() {
-    return myScopes.getHLevelScope();
-  }
-
-  @Override
-  public Scopes getGroupScopes() {
-    return myScopes;
+    return myScope;
   }
 }

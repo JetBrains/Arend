@@ -20,7 +20,6 @@ import org.arend.naming.resolving.visitor.DefinitionResolveNameVisitor;
 import org.arend.naming.resolving.visitor.ExpressionResolveNameVisitor;
 import org.arend.naming.scope.Scope;
 import org.arend.naming.scope.ScopeFactory;
-import org.arend.naming.scope.Scopes;
 import org.arend.repl.action.*;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.Group;
@@ -45,16 +44,14 @@ public abstract class Repl {
   protected final List<Scope> myMergedScopes = new LinkedList<>();
   private final List<ReplHandler> myHandlers = new ArrayList<>();
   private final TCDefReferable myModuleReferable;
-  protected final ReplScope replScope = new ReplScope(null, myMergedScopes);
-  protected final ReplScope pLevelScope = new ReplScope(null, myMergedScopes);
-  protected final ReplScope hLevelScope = new ReplScope(null, myMergedScopes);
-  protected @NotNull Scopes scopes = new Scopes(replScope, pLevelScope, hLevelScope);
+  protected final ReplScope myReplScope = new ReplScope(null, myMergedScopes);
+  protected @NotNull Scope myScope = myReplScope;
   protected @NotNull TypecheckingOrderingListener typechecking;
-  protected final @NotNull PrettyPrinterConfig ppConfig = new PrettyPrinterConfig() {
+  protected final @NotNull PrettyPrinterConfig myPpConfig = new PrettyPrinterConfig() {
     @Contract(" -> new")
     @Override
     public @NotNull DefinitionRenamer getDefinitionRenamer() {
-      return new CachingDefinitionRenamer(new ScopeDefinitionRenamer(scopes.getExpressionScope()));
+      return new CachingDefinitionRenamer(new ScopeDefinitionRenamer(myScope));
     }
 
     @Override
@@ -82,7 +79,7 @@ public abstract class Repl {
   protected abstract void loadLibraries();
 
   protected final @NotNull List<Referable> getInScopeElements() {
-    return replScope.getElements();
+    return myReplScope.getElements();
   }
 
   public final void initialize() {
@@ -92,7 +89,7 @@ public abstract class Repl {
   }
 
   public @NotNull PrettyPrinterConfig getPrettyPrinterConfig() {
-    return ppConfig;
+    return myPpConfig;
   }
 
   public abstract @NotNull EnumSet<PrettyPrinterFlag> getPrettyPrinterFlags();
@@ -152,15 +149,15 @@ public abstract class Repl {
   }
 
   public final void checkStatements(@NotNull String line) {
-    var group = parseStatements(line); // TODO: Allow level definitions
+    var group = parseStatements(line);
     if (group == null) return;
     var moduleScopeProvider = getAvailableModuleScopeProvider();
     loadPotentialUnloadedModules(group.getStatements());
     var scope = ScopeFactory.forGroup(group, moduleScopeProvider);
-    replScope.addScope(scope);
-    replScope.setCurrentLineScope(null);
+    myReplScope.addScope(scope);
+    myReplScope.setCurrentLineScope(null);
     new DefinitionResolveNameVisitor(typechecking.getConcreteProvider(), null, myErrorReporter)
-        .resolveGroupWithTypes(group, scopes);
+        .resolveGroupWithTypes(group, myScope);
     if (checkErrors()) {
       myMergedScopes.remove(scope);
     } else {
@@ -180,7 +177,7 @@ public abstract class Repl {
   protected void onScopeAdded(Group group) {
     typechecking.getInstanceProviderSet().collectInstances(
       group,
-      scopes.getExpressionScope(),
+      myScope,
       myModuleReferable,
       typechecking.getReferableConverter()
     );
@@ -222,7 +219,7 @@ public abstract class Repl {
    * Multiplex the scope into the current REPL scope.
    */
   public void addScope(@NotNull Scope scope) {
-    replScope.addScope(scope);
+    myReplScope.addScope(scope);
   }
 
   /**
@@ -277,7 +274,7 @@ public abstract class Repl {
 
   @Contract("_, _ -> param1")
   public @NotNull StringBuilder prettyExpr(@NotNull StringBuilder builder, @NotNull Expression expression) {
-    var abs = ToAbstractVisitor.convert(expression, ppConfig);
+    var abs = ToAbstractVisitor.convert(expression, myPpConfig);
     abs.accept(new PrettyPrintVisitor(builder, 0), new Precedence(Concrete.Expression.PREC));
     return builder;
   }
@@ -307,7 +304,7 @@ public abstract class Repl {
     if (expr == null || checkErrors()) return null;
     expr = expr
         .accept(new ExpressionResolveNameVisitor(typechecking.getReferableConverter(),
-                scopes, new ArrayList<>(), myErrorReporter, null), null)
+            myScope, new ArrayList<>(), myErrorReporter, null), null)
         .accept(new SyntacticDesugarVisitor(myErrorReporter), null);
     if (checkErrors()) return null;
     return expr;
@@ -328,7 +325,7 @@ public abstract class Repl {
     var errorList = myErrorReporter.getErrorList();
     boolean hasErrors = false;
     for (GeneralError error : errorList) {
-      printlnOpt(error.getDoc(ppConfig), ERROR_LEVELS.contains(error.level));
+      printlnOpt(error.getDoc(myPpConfig), ERROR_LEVELS.contains(error.level));
       if (error.level == GeneralError.Level.ERROR) hasErrors = true;
     }
     errorList.clear();

@@ -1,12 +1,17 @@
 package org.arend.naming.scope;
 
+import org.arend.naming.reference.ModuleReferable;
+import org.arend.naming.reference.Referable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class CachingScope extends NameCachingScope {
+public class CachingScope implements Scope {
+  private final Map<String, Referable> myElements = new LinkedHashMap<>();
   private final Map<String, Scope> myNamespaces = new HashMap<>();
   private final Map<String, Scope> myOnlyInternalNamespaces = new HashMap<>();
   private final Scope myScope;
@@ -14,13 +19,30 @@ public class CachingScope extends NameCachingScope {
   private final boolean myWithModules;
 
   private CachingScope(Scope scope, boolean withModules) {
-    super(scope, withModules);
     myScope = scope;
     myWithModules = withModules;
+    scope.find(ref -> {
+      if (withModules || !(ref instanceof ModuleReferable)) {
+        myElements.putIfAbsent(ref instanceof ModuleReferable ? ((ModuleReferable) ref).path.getLastName() : ref.textRepresentation(), ref);
+      }
+      return false;
+    });
   }
 
   public static Scope make(Scope scope) {
-    return isCached(scope) ? scope : new CachingScope(scope, true);
+    return scope instanceof CachingScope || scope instanceof ImportedScope || scope == EmptyScope.INSTANCE || scope instanceof SimpleScope ? scope : new CachingScope(scope, true);
+  }
+
+  @NotNull
+  @Override
+  public Collection<? extends Referable> getElements() {
+    return myElements.values();
+  }
+
+  @Nullable
+  @Override
+  public Referable resolveName(String name) {
+    return myElements.get(name);
   }
 
   @Nullable
