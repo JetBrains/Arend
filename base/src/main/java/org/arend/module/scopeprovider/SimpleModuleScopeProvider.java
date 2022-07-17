@@ -15,10 +15,14 @@ import java.util.Map;
 
 public class SimpleModuleScopeProvider implements ModuleScopeProvider, ModuleRegistry {
   private final Map<ModulePath, Scope> myMap = new LinkedHashMap<>();
+  private final Map<ModulePath, Scope> myPLevelMap = new LinkedHashMap<>();
+  private final Map<ModulePath, Scope> myHLevelMap = new LinkedHashMap<>();
 
   @Override
   public void registerModule(ModulePath module, Group group) {
-    myMap.put(module, CachingScope.make(LexicalScope.opened(group)));
+    myMap.put(module, CachingScope.make(LexicalScope.opened(group, Scope.Kind.EXPR)));
+    myPLevelMap.put(module, CachingScope.make(LexicalScope.opened(group, Scope.Kind.PLEVEL)));
+    myHLevelMap.put(module, CachingScope.make(LexicalScope.opened(group, Scope.Kind.HLEVEL)));
   }
 
   public void addModule(ModulePath module, Scope scope) {
@@ -53,7 +57,12 @@ public class SimpleModuleScopeProvider implements ModuleScopeProvider, ModuleReg
 
   @Nullable
   @Override
-  public Scope forModule(@NotNull ModulePath module) {
-    return myMap.get(module);
+  public Scope forModule(@NotNull ModulePath module, @NotNull Scope.Kind kind) {
+    return (kind == Scope.Kind.EXPR ? myMap : kind == Scope.Kind.PLEVEL ? myPLevelMap : myHLevelMap).get(module);
+  }
+
+  @Override
+  public boolean isCaching() {
+    return true;
   }
 }

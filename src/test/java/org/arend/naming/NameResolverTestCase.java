@@ -45,7 +45,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
 
   public TCReferable get(String path) {
     ChildGroup parent = lastGroup.getParentGroup();
-    Scope scope = parent == null ? LexicalScope.insideOf(lastGroup, EmptyScope.INSTANCE, LexicalScope.Extent.EXTERNAL_AND_FIELDS) : LexicalScope.insideOf(lastGroup, parent.getGroupScope());
+    Scope scope = parent == null ? LexicalScope.insideOf(lastGroup, EmptyScope.INSTANCE, LexicalScope.Extent.EXTERNAL_AND_FIELDS, Scope.Kind.EXPR) : LexicalScope.insideOf(lastGroup, parent.getGroupScope(), LexicalScope.Extent.EVERYTHING, Scope.Kind.EXPR);
     return get(scope, path);
   }
 
@@ -94,7 +94,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   ChildGroup resolveNamesDefGroup(String text, int errors) {
     ChildGroup group = parseDef(text);
     Scope parentScope = new MergeScope(new SingletonScope(group.getReferable()), metaScope, PreludeLibrary.getPreludeScope());
-    new DefinitionResolveNameVisitor(ConcreteReferableProvider.INSTANCE, null, errorReporter).resolveGroupWithTypes(group, new Scopes(CachingScope.make(LexicalScope.insideOf(group, parentScope)), EmptyScope.INSTANCE, EmptyScope.INSTANCE));
+    new DefinitionResolveNameVisitor(ConcreteReferableProvider.INSTANCE, null, errorReporter).resolveGroupWithTypes(group, new Scopes(CachingScope.make(LexicalScope.insideOf(group, parentScope, Scope.Kind.EXPR)), EmptyScope.INSTANCE, EmptyScope.INSTANCE));
     assertThat(errorList, containsErrors(errors));
     return group;
   }
@@ -114,9 +114,9 @@ public abstract class NameResolverTestCase extends ParserTestCase {
 
 
   private void resolveNamesModule(ChildGroup group, int errors) {
-    Scope scope = CachingScope.make(new MergeScope(ScopeFactory.forGroup(group, moduleScopeProvider), metaScope));
+    Scope scope = CachingScope.make(new MergeScope(ScopeFactory.forGroup(group, moduleScopeProvider, Scope.Kind.EXPR), metaScope));
     new DefinitionResolveNameVisitor(ConcreteReferableProvider.INSTANCE, null, errorReporter).resolveGroupWithTypes(group, new Scopes(scope, EmptyScope.INSTANCE, EmptyScope.INSTANCE));
-    libraryManager.getInstanceProviderSet().collectInstances(group, CachingScope.make(ScopeFactory.parentScopeForGroup(group, moduleScopeProvider, true)), IdReferableConverter.INSTANCE);
+    libraryManager.getInstanceProviderSet().collectInstances(group, CachingScope.make(ScopeFactory.parentScopeForGroup(group, moduleScopeProvider, true, Scope.Kind.EXPR)), IdReferableConverter.INSTANCE);
     assertThat(errorList, containsErrors(errors));
   }
 

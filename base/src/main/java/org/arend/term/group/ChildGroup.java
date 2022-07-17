@@ -9,28 +9,20 @@ public interface ChildGroup extends Group {
   @Nullable ChildGroup getParentGroup();
 
   @NotNull
-  default Scope getGroupScope(LexicalScope.Extent extent) {
+  default Scope getGroupScope(LexicalScope.Extent extent, Scope.Kind kind) {
     ChildGroup parent = getParentGroup();
-    return parent == null ? ScopeFactory.forGroup(this, EmptyModuleScopeProvider.INSTANCE) : LexicalScope.insideOf(this, parent.getGroupScope(LexicalScope.Extent.EVERYTHING), extent);
+    return parent == null ? ScopeFactory.forGroup(this, EmptyModuleScopeProvider.INSTANCE, kind) : LexicalScope.insideOf(this, parent.getGroupScope(LexicalScope.Extent.EVERYTHING, kind), extent, kind);
+  }
+
+  default Scope getGroupScope(Scope.Kind kind) {
+    return getGroupScope(LexicalScope.Extent.EXTERNAL_AND_FIELDS, kind);
   }
 
   default Scope getGroupScope() {
-    return getGroupScope(LexicalScope.Extent.EXTERNAL_AND_FIELDS);
-  }
-
-  default Scope getGroupPLevelScope() {
-    ChildGroup parent = getParentGroup();
-    Scope parentScope = parent == null ? EmptyScope.INSTANCE : parent.getGroupPLevelScope();
-    return LevelLexicalScope.insideOf(this, parentScope, true);
-  }
-
-  default Scope getGroupHLevelScope() {
-    ChildGroup parent = getParentGroup();
-    Scope parentScope = parent == null ? EmptyScope.INSTANCE : parent.getGroupHLevelScope();
-    return LevelLexicalScope.insideOf(this, parentScope, false);
+    return getGroupScope(Scope.Kind.EXPR);
   }
 
   default Scopes getGroupScopes() {
-    return new Scopes(getGroupScope(), getGroupPLevelScope(), getGroupHLevelScope());
+    return new Scopes(getGroupScope(Scope.Kind.EXPR), getGroupScope(Scope.Kind.PLEVEL), getGroupScope(Scope.Kind.HLEVEL));
   }
 }

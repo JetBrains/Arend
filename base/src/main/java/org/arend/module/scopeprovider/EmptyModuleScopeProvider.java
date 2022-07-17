@@ -10,9 +10,13 @@ public class EmptyModuleScopeProvider implements ModuleScopeProvider {
 
   private EmptyModuleScopeProvider() {}
 
-  @Nullable
   @Override
-  public Scope forModule(@NotNull ModulePath module) {
+  public @Nullable Scope forModule(@NotNull ModulePath module, Scope.@NotNull Kind kind) {
     return null;
+  }
+
+  @Override
+  public boolean isCaching() {
+    return true;
   }
 }

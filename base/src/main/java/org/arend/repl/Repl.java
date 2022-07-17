@@ -129,11 +129,11 @@ public abstract class Repl {
 
   @Contract(pure = true)
   public final @NotNull ModuleScopeProvider getAvailableModuleScopeProvider() {
-    return module -> {
+    return (module, kind) -> {
       for (Library registeredLibrary : myLibraryManager.getRegisteredLibraries()) {
-        Scope scope = registeredLibrary.getModuleScopeProvider().forModule(module);
+        Scope scope = registeredLibrary.getModuleScopeProvider().forModule(module, kind);
         if (scope != null) return scope;
-        scope = registeredLibrary.getTestsModuleScopeProvider().forModule(module);
+        scope = registeredLibrary.getTestsModuleScopeProvider().forModule(module, kind);
         if (scope != null) return scope;
       }
       return null;
@@ -156,7 +156,7 @@ public abstract class Repl {
     if (group == null) return;
     var moduleScopeProvider = getAvailableModuleScopeProvider();
     loadPotentialUnloadedModules(group.getStatements());
-    var scope = ScopeFactory.forGroup(group, moduleScopeProvider);
+    var scope = ScopeFactory.forGroup(group, moduleScopeProvider, Scope.Kind.EXPR);
     replScope.addScope(scope);
     replScope.setCurrentLineScope(null);
     new DefinitionResolveNameVisitor(typechecking.getConcreteProvider(), null, myErrorReporter)

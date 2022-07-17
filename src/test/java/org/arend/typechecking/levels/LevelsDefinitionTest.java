@@ -41,4 +41,24 @@ public class LevelsDefinitionTest extends TypeCheckingTestCase {
       "\\plevels p1 <= p2\n" +
       "\\func test \\plevels p3 (A : \\Type p1) : \\Type p2 => A", 1);
   }
+
+  @Test
+  public void openTest() {
+    typeCheckModule(
+      "\\module M \\where {\n" +
+      "  \\plevels p1 <= p2\n" +
+      "}\n" +
+      "\\open M\n" +
+      "\\func test (A : \\Type p1) : \\Type p2 => A");
+  }
+
+  @Test
+  public void openTest2() {
+    typeCheckModule(
+      "\\module M \\where {\n" +
+      "  \\plevels p1 <= p2\n" +
+      "}\n" +
+      "\\open M(p1,p2)\n" +
+      "\\func test (A : \\Type p1) : \\Type p2 => A");
+  }
 }

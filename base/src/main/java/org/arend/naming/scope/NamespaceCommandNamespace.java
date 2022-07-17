@@ -23,14 +23,14 @@ public class NamespaceCommandNamespace implements Scope {
   }
 
   public static @NotNull Scope resolveNamespace(Scope parentScope, NamespaceCommand cmd) {
-    if (cmd.getOpenedReferences().isEmpty() && !cmd.isUsing()) {
+    if (parentScope == null || cmd.getOpenedReferences().isEmpty() && !cmd.isUsing()) {
       return EmptyScope.INSTANCE;
     }
     List<String> path = cmd.getPath();
     if (path.isEmpty()) {
       return EmptyScope.INSTANCE;
     }
-    parentScope = parentScope == null ? null : parentScope.resolveNamespace(path);
+    parentScope = parentScope.resolveNamespace(path);
     return parentScope == null ? EmptyScope.INSTANCE : new NamespaceCommandNamespace(parentScope, cmd);
   }
 

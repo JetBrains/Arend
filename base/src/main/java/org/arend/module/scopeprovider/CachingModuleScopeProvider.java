@@ -11,26 +11,37 @@ import java.util.Map;
 
 public class CachingModuleScopeProvider implements ModuleScopeProvider {
   private final ModuleScopeProvider myModuleScopeProvider;
-  private final Map<ModulePath, Scope> myScopes = new HashMap<>();
+  private final Map<ModulePath, Scope> myExprScopes = new HashMap<>();
+  private final Map<ModulePath, Scope> myPLevelScopes = new HashMap<>();
+  private final Map<ModulePath, Scope> myHLevelScopes = new HashMap<>();
 
   private final static Scope NULL_SCOPE = new Scope() {};
 
-  public CachingModuleScopeProvider(ModuleScopeProvider moduleScopeProvider) {
+  private CachingModuleScopeProvider(ModuleScopeProvider moduleScopeProvider) {
     myModuleScopeProvider = moduleScopeProvider;
   }
 
+  public static ModuleScopeProvider make(ModuleScopeProvider moduleScopeProvider) {
+    return moduleScopeProvider.isCaching() ? moduleScopeProvider : new CachingModuleScopeProvider(moduleScopeProvider);
+  }
+
   public void reset(ModulePath modulePath) {
-    myScopes.remove(modulePath);
+    myExprScopes.remove(modulePath);
+    myPLevelScopes.remove(modulePath);
+    myHLevelScopes.remove(modulePath);
   }
 
   public void reset() {
-    myScopes.clear();
+    myExprScopes.clear();
+    myPLevelScopes.clear();
+    myHLevelScopes.clear();
   }
 
   @Nullable
   @Override
-  public Scope forModule(@NotNull ModulePath module) {
-    Scope scope = myScopes.get(module);
+  public Scope forModule(@NotNull ModulePath module, @NotNull Scope.Kind kind) {
+    Map<ModulePath, Scope> scopes = kind == Scope.Kind.EXPR ? myExprScopes : kind == Scope.Kind.PLEVEL ? myPLevelScopes : myHLevelScopes;
+    Scope scope = scopes.get(module);
     if (scope == NULL_SCOPE) {
       return null;
     }
@@ -38,11 +49,16 @@ public class CachingModuleScopeProvider implements ModuleScopeProvider {
       return scope;
     }
 
-    scope = myModuleScopeProvider.forModule(module);
+    scope = myModuleScopeProvider.forModule(module, kind);
     if (scope != null) {
       scope = CachingScope.make(scope);
     }
-    myScopes.put(module, scope == null ? NULL_SCOPE : scope);
+    scopes.put(module, scope == null ? NULL_SCOPE : scope);
     return scope;
+  }
+
+  @Override
+  public boolean isCaching() {
+    return true;
   }
 }

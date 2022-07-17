@@ -8,6 +8,7 @@ import org.arend.library.SourceLibrary;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.scope.CachingScope;
+import org.arend.naming.scope.EmptyScope;
 import org.arend.naming.scope.LexicalScope;
 import org.arend.naming.scope.Scope;
 import org.arend.term.group.ChildGroup;
@@ -48,7 +49,7 @@ public abstract class PreludeLibrary extends SourceLibrary {
       throw new IllegalStateException();
     }
     myGroup = group;
-    myScope = CachingScope.make(LexicalScope.opened(group));
+    myScope = CachingScope.make(LexicalScope.opened(group, Scope.Kind.EXPR));
   }
 
   @Nullable
@@ -80,7 +81,17 @@ public abstract class PreludeLibrary extends SourceLibrary {
   @NotNull
   @Override
   public ModuleScopeProvider getDeclaredModuleScopeProvider() {
-    return module -> module.equals(Prelude.MODULE_PATH) ? myScope : null;
+    return new ModuleScopeProvider() {
+      @Override
+      public @Nullable Scope forModule(@NotNull ModulePath module, Scope.@NotNull Kind kind) {
+        return module.equals(Prelude.MODULE_PATH) ? (kind == Scope.Kind.EXPR ? myScope : EmptyScope.INSTANCE) : null;
+      }
+
+      @Override
+      public boolean isCaching() {
+        return true;
+      }
+    };
   }
 
   @NotNull

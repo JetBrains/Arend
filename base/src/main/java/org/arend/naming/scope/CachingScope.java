@@ -1,26 +1,44 @@
 package org.arend.naming.scope;
 
+import org.arend.naming.reference.ModuleReferable;
+import org.arend.naming.reference.Referable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class CachingScope extends NameCachingScope {
+public class CachingScope implements Scope {
+  private final Map<String, Referable> myElements = new LinkedHashMap<>();
   private final Map<String, Scope> myNamespaces = new HashMap<>();
   private final Map<String, Scope> myOnlyInternalNamespaces = new HashMap<>();
   private final Scope myScope;
   private final static Scope EMPTY_SCOPE = new Scope() {};
-  private final boolean myWithModules;
 
-  private CachingScope(Scope scope, boolean withModules) {
-    super(scope, withModules);
+  private CachingScope(Scope scope) {
+    scope.find(ref -> {
+      myElements.putIfAbsent(ref instanceof ModuleReferable ? ((ModuleReferable) ref).path.getLastName() : ref.textRepresentation(), ref);
+      return false;
+    });
     myScope = scope;
-    myWithModules = withModules;
   }
 
   public static Scope make(Scope scope) {
-    return isCached(scope) ? scope : new CachingScope(scope, true);
+    return scope instanceof ImportedScope || scope == EmptyScope.INSTANCE || scope instanceof SimpleScope ? scope : new CachingScope(scope);
+  }
+
+  @NotNull
+  @Override
+  public Collection<? extends Referable> getElements() {
+    return myElements.values();
+  }
+
+  @Nullable
+  @Override
+  public Referable resolveName(String name) {
+    return myElements.get(name);
   }
 
   @Nullable
@@ -30,7 +48,7 @@ public class CachingScope extends NameCachingScope {
     Scope namespace = namespaces.get(name);
     if (namespace == null) {
       namespace = myScope.resolveNamespace(name, onlyInternal);
-      namespace = namespace == null ? EMPTY_SCOPE : namespace instanceof CachingScope || namespace instanceof ImportedScope ? namespace : new CachingScope(namespace, myWithModules);
+      namespace = namespace == null ? EMPTY_SCOPE : namespace instanceof CachingScope || namespace instanceof ImportedScope ? namespace : new CachingScope(namespace);
       namespaces.put(name, namespace);
     }
 

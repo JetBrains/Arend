@@ -97,7 +97,7 @@ public class InstanceProviderSet {
       return;
     }
 
-    parentScope = CachingScope.make(LexicalScope.insideOf(group, parentScope));
+    parentScope = CachingScope.make(LexicalScope.insideOf(group, parentScope, Scope.Kind.EXPR));
     List<Group> subgroups = new ArrayList<>();
     for (Statement statement : statements) {
       NamespaceCommand command = statement.getNamespaceCommand();

@@ -2,6 +2,7 @@ package org.arend;
 
 import org.arend.ext.error.ListErrorReporter;
 import org.arend.ext.error.GeneralError;
+import org.arend.ext.module.ModulePath;
 import org.arend.ext.prettyprinting.doc.Doc;
 import org.arend.extImpl.DefinitionRequester;
 import org.arend.frontend.ConcreteReferableProvider;
@@ -25,6 +26,8 @@ import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Before;
 
 import java.util.*;
@@ -53,7 +56,7 @@ public abstract class ArendTestCase {
   }
 
   public void setModuleScopeProvider(ModuleScopeProvider moduleScopeProvider) {
-    this.moduleScopeProvider = module -> module.equals(Prelude.MODULE_PATH) ? PreludeLibrary.getPreludeScope() : moduleScopeProvider.forModule(module);
+    this.moduleScopeProvider = (module, kind) -> module.equals(Prelude.MODULE_PATH) ? (kind == Scope.Kind.EXPR ? PreludeLibrary.getPreludeScope() : EmptyScope.INSTANCE) : moduleScopeProvider.forModule(module, kind);
   }
 
   public TCReferable get(Scope scope, String path) {

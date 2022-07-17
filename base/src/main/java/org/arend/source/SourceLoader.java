@@ -101,10 +101,10 @@ public final class SourceLoader {
     }
     if (withTests) {
       if (myTestsModuleScopeProvider == null) {
-        ModuleScopeProvider testsProvider = new CachingModuleScopeProvider(myLibrary.getTestsModuleScopeProvider());
-        myTestsModuleScopeProvider = module -> {
-          Scope scope = myModuleScopeProvider.forModule(module);
-          return scope != null ? scope : testsProvider.forModule(module);
+        ModuleScopeProvider testsProvider = CachingModuleScopeProvider.make(myLibrary.getTestsModuleScopeProvider());
+        myTestsModuleScopeProvider = (module, kind) -> {
+          Scope scope = myModuleScopeProvider.forModule(module, kind);
+          return scope != null ? scope : testsProvider.forModule(module, kind);
         };
       }
       return myTestsModuleScopeProvider;
