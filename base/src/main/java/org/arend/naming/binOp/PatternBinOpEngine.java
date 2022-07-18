@@ -34,7 +34,7 @@ public class PatternBinOpEngine implements BinOpEngine<Concrete.Pattern> {
         newPatterns.add(comp.proj1);
       }
       return new Concrete.ConstructorPattern(data, ((Concrete.ConstructorPattern) base).getConstructor(), newPatterns, base.getAsReferable());
-    } else if (base instanceof Concrete.UnparsedConstructorPattern) {
+    } else if (base instanceof Concrete.UnparsedConstructorPattern || base instanceof Concrete.NumberPattern || base instanceof Concrete.TuplePattern) {
       ArrayList<Concrete.BinOpSequenceElem<Concrete.Pattern>> newPatterns = new ArrayList<>(List.of(new Concrete.BinOpSequenceElem<>(base, Fixity.NONFIX, base.isExplicit())));
       for (Pair<? extends Concrete.Pattern, Boolean> comp : explicitComponents) {
         newPatterns.add(new Concrete.BinOpSequenceElem<>(comp.proj1, Fixity.NONFIX, comp.proj2));

@@ -531,6 +531,11 @@ public final class Concrete {
     public void setComponent(@NotNull T value) {
       binOpComponent = value;
     }
+
+    @Override
+    public String toString() {
+      return binOpComponent.toString();
+    }
   }
 
   public static class FunctionClauses extends SourceNodeImpl implements ConcreteClauses {
@@ -2837,7 +2842,7 @@ public final class Concrete {
     @Override
     @NotNull
     public List<Pattern> getPatterns() {
-      throw new IllegalStateException("Access to unparsed constructor pattern");
+      throw new IllegalStateException("Access to unparsed constructor pattern\nPlease use PatternBinOpEngine");
     }
 
     public @NotNull List<BinOpSequenceElem<Pattern>> getUnparsedPatterns() {

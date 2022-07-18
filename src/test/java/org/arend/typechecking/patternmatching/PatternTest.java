@@ -536,4 +536,26 @@ public class PatternTest extends TypeCheckingTestCase {
                     "\\func test (r : List) : Nat\n" +
                     "  | n `cons` m => n");
   }
+
+  @Test
+  public void redundantClause() {
+    typeCheckModule(
+            "\\data List (A : \\Type) | nil | \\infix 6 :: A (List A)\n" +
+                    "\\func indices {A : \\Type} (is : List Nat) (l : List A) : List A \\elim is, l\n" +
+                    "  | nil, _ => nil\n" +
+                    "  | :: _ _, nil => nil\n" +
+                    "  | :: 0 is, :: a l => a :: indices is l\n" +
+                    "  | :: (suc n) is, :: _ l => indices (n :: is) l");
+  }
+
+  @Test
+  public void redundantClause2() {
+    typeCheckModule(
+            "\\data List (A : \\Type) | nil | \\infix 6 :: (\\Sigma A A) (List A)\n" +
+                    "\\func indices {A : \\Type} (is : List Nat) (l : List A) : List A \\elim is, l\n" +
+                    "  | nil, _ => nil\n" +
+                    "  | :: _ _, nil => nil\n" +
+                    "  | :: (0, _) is, :: a l => a :: indices is l\n" +
+                    "  | :: (suc n, _) is, :: _ l => indices ((n, 0) :: is) l");
+  }
 }
