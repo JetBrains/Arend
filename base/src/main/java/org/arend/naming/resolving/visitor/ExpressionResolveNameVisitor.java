@@ -664,9 +664,12 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     }
     List<Concrete.Pattern> newPatterns = new ArrayList<>(parsedPattern.getPatterns());
     for (int i = 0; i < newPatterns.size(); i++) {
-      Concrete.Pattern currentPattern = newPatterns.get(i);
-      if (currentPattern instanceof Concrete.NamePattern && ((Concrete.NamePattern) currentPattern).getReferable() instanceof GlobalReferable) {
-        newPatterns.set(i, new Concrete.ConstructorPattern(currentPattern.getData(), currentPattern.isExplicit(), myReferableConverter.convert(((Concrete.NamePattern) currentPattern).getReferable()), List.of(), currentPattern.getAsReferable()));
+      Concrete.Pattern subPattern = newPatterns.get(i);
+      if (subPattern instanceof Concrete.NamePattern && ((Concrete.NamePattern) subPattern).getReferable() instanceof GlobalReferable) {
+        newPatterns.set(i, new Concrete.ConstructorPattern(subPattern.getData(), subPattern.isExplicit(), myReferableConverter.convert(((Concrete.NamePattern) subPattern).getReferable()), List.of(), subPattern.getAsReferable()));
+      } else if (subPattern instanceof Concrete.ConstructorPattern) {
+        Map<String, Referable> copy = new HashMap<>(usedNames);
+        newPatterns.set(i, fixParsedConstructorPattern(subPattern.getData(), pattern, copy, subPattern));
       }
     }
     visitPatterns(newPatterns, usedNames, false);
