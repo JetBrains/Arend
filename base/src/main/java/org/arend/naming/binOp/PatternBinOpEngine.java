@@ -56,6 +56,9 @@ public class PatternBinOpEngine implements BinOpEngine<Concrete.Pattern> {
         patterns.addAll(right.getPatterns().stream().map(pt -> Pair.create(pt, pt.isExplicit())).collect(Collectors.toList()));
       } else if (right instanceof Concrete.UnparsedConstructorPattern) {
         patterns = ((Concrete.UnparsedConstructorPattern) right).getUnparsedPatterns().stream().map(pt -> Pair.create(pt.getComponent(), pt.isExplicit)).collect(Collectors.toList());
+      } else if (right instanceof Concrete.ConstructorPattern && !((GlobalReferable) ((Concrete.ConstructorPattern) right).getConstructor()).getPrecedence().isInfix) {
+        patterns = new ArrayList<>(List.of(Pair.create(new Concrete.ConstructorPattern(right.getData(), right.isExplicit(), ((Concrete.ConstructorPattern) right).getConstructor(), List.of(), right.getAsReferable()), right.isExplicit())));
+        patterns.addAll(right.getPatterns().stream().map(it -> Pair.create(it, it.isExplicit())).collect(Collectors.toList()));
       } else {
         patterns = new ArrayList<>(List.of(Pair.create(new Concrete.NamePattern(null, true, leftRef, null), true), Pair.create(right, right.isExplicit())));
       }

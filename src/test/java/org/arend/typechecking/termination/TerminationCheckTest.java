@@ -64,7 +64,7 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
   public void test36_1() {
     typeCheckModule(list + "\\func flatten {A : \\Type0} (l : List (List A)) : List A \\elim l\n" +
       "| nil => nil\n" +
-      "| nil :-: xs => flatten xs\n" +
+      "| :-: nil xs => flatten xs\n" +
       "| :-: (:-: y ys) xs => y :-: flatten (ys :-: xs)", 0);
   }
 

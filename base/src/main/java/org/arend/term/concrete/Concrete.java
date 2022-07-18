@@ -495,10 +495,13 @@ public final class Concrete {
     public BinOpSequenceElem(@NotNull T binOpComponent) {
       this.binOpComponent = binOpComponent;
       this.fixity = binOpComponent instanceof FixityReferenceExpression ? ((FixityReferenceExpression) binOpComponent).fixity : Fixity.NONFIX;
+      boolean explicit = true;
       if (binOpComponent instanceof FixityReferenceExpression) {
         ((FixityReferenceExpression) binOpComponent).fixity = Fixity.NONFIX;
+      } else if (binOpComponent instanceof Concrete.Pattern) {
+        explicit = ((Pattern) binOpComponent).isExplicit();
       }
-      this.isExplicit = true;
+      this.isExplicit = explicit;
     }
 
     public boolean isInfixReference() {
