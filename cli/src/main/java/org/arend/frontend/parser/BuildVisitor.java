@@ -292,32 +292,6 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return (Concrete.Pattern) visit(ctx);
   }
 
-//  @Override
-//  public Concrete.Pattern visitPatternConstructor(PatternConstructorContext ctx) {
-//    Concrete.Pattern pattern = (Concrete.Pattern) visit(ctx.atomPattern());
-//    TerminalNode id = ctx.ID();
-//    if (id == null) {
-//      return pattern;
-//    }
-//
-//    ExprContext type = ctx.expr();
-//    Position position = tokenPosition(id.getSymbol());
-//    Concrete.TypedReferable typedRef = new Concrete.TypedReferable(position, new ParsedLocalReferable(position, id.getText()), type == null ? null : visitExpr(type));
-//
-//    if (pattern instanceof Concrete.NamePattern) {
-//      Concrete.NamePattern namePattern = (Concrete.NamePattern) pattern;
-//      Referable referable = namePattern.getReferable();
-//      if (namePattern.type != null || !(referable instanceof ParsedLocalReferable)) {
-//        myErrorReporter.report(new ParserError(tokenPosition(ctx.AS().getSymbol()), "As-patterns are not allowed for variables"));
-//        return pattern;
-//      }
-//      return new Concrete.ConstructorPattern(namePattern.getData(), namePattern.isExplicit(), new NamedUnresolvedReference(((ParsedLocalReferable) referable).getPosition(), referable.textRepresentation()), Collections.emptyList(), typedRef);
-//    }
-//
-
-//    return pattern;
-//  }
-
   public Concrete.Pattern visitPatternConstructor(PatternConstructorContext ctx) {
     List<AtomPatternContext> atomPatterns = ctx.atomPattern();
     Position position = tokenPosition(ctx.start);
@@ -342,10 +316,6 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
         innerPattern.setAsReferable(typedRef);
       }
       return innerPattern;
-//          TerminalNode id = ctx.ID();
-//    if (id == null) {
-//      return pattern;
-//    }
     } else {
       if (typeCtx != null && id == null) {
         myErrorReporter.report(new ParserError(tokenPosition(typeCtx.start), "Type annotation is allowed only for variables"));
@@ -392,10 +362,6 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return pattern;
   }
 
-//  @Override
-//  public Concrete.Pattern visitPatternAtom(PatternAtomContext ctx) {
-//    return (Concrete.Pattern) visit(ctx.atomPattern());
-//  }
 
   @Override
   public Concrete.Pattern visitPatternID(PatternIDContext ctx) {

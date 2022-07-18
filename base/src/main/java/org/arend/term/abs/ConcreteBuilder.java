@@ -512,14 +512,6 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
         binOps.add(new Concrete.BinOpSequenceElem<>(buildPattern(abstractPattern)));
       }
       return new Concrete.UnparsedConstructorPattern(pattern.getData(), pattern.isExplicit(), binOps, buildTypedReferables(pattern.getAsPatterns()));
-//      if (reference instanceof GlobalReferable || reference instanceof LongUnresolvedReference || !args.isEmpty()) {
-//        if (type != null) {
-//          myErrorReporter.report(new AbstractExpressionError(GeneralError.Level.ERROR, "Type annotation is allowed only for variables", type.getData()));
-//        }
-//        return new Concrete.ConstructorPattern(pattern.getData(), pattern.isExplicit(), reference, buildPatterns(args), buildTypedReferables(pattern.getAsPatterns()));
-//      } else {
-//        return new Concrete.NamePattern(pattern.getData(), pattern.isExplicit(), DataLocalReferable.make(reference), type == null ? null : type.accept(this, null));
-//      }
     }
   }
 
