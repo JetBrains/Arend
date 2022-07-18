@@ -651,7 +651,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       addReferable(pattern.getAsReferable().referable, pattern.getAsReferable().type, usedNames);
     }
 
-    return null;
+    return pattern;
   }
 
   private Concrete.@NotNull ConstructorPattern fixParsedConstructorPattern(@Nullable Object data, Concrete.Pattern pattern, Map<String, Referable> usedNames, Concrete.Pattern parsedPattern) {
