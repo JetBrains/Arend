@@ -89,9 +89,10 @@ public final class Abstract {
   public interface Pattern extends LamParameter {
     boolean isUnnamed();
     boolean isExplicit();
+    boolean isTuplePattern();
     @Nullable Integer getInteger();
-    @Nullable Referable getHeadReference();
-    @NotNull List<? extends Pattern> getArguments();
+    @Nullable Referable getSingleReferable();
+    @NotNull List<? extends Pattern> getSequence();
     @Nullable Expression getType();
     @NotNull List<? extends TypedReferable> getAsPatterns();
   }

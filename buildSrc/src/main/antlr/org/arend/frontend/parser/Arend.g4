@@ -103,20 +103,16 @@ elim : '\\with' | '\\elim' ID (',' ID)*;
 
 where : '\\where' ('{' statement* '}' | statement);
 
-pattern : atomPattern (AS ID (':' expr)?)?       # patternAtom
-        | atomPatternOrID+ (AS ID)? (':' expr)?  # patternConstructor
+pattern : atomPattern+ (AS ID)? (':' expr)?  # patternConstructor
         ;
 
-atomPattern : '(' (pattern (',' pattern)*)? ')'   # patternExplicit
-            | '{' pattern '}'                     # patternImplicit
-            | NUMBER                              # patternNumber
-            | NEGATIVE_NUMBER                     # patternNegativeNumber
-            | '_'                                 # patternAny
+atomPattern : (longName '.')? (INFIX | POSTFIX | ID) # patternID
+            | '(' (pattern (',' pattern)*)? ')'      # patternExplicit
+            | '{' pattern '}'                        # patternImplicit
+            | NUMBER                                 # patternNumber
+            | NEGATIVE_NUMBER                        # patternNegativeNumber
+            | '_'                                    # patternAny
             ;
-
-atomPatternOrID : atomPattern                            # patternOrIDAtom
-                | (longName '.')? (INFIX | POSTFIX | ID) # patternID
-                ;
 
 constructor : COERCE? defId tele* (':' expr2)? (elim? '{' clause? ('|' clause)* '}')?;
 

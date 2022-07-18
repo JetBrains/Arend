@@ -2804,6 +2804,7 @@ public final class Concrete {
   }
 
   /**
+   * This representation is internal, it should not be visible to users or plugin API.
    * Requires additional parsing by {@link org.arend.naming.binOp.PatternBinOpEngine#parse(UnparsedConstructorPattern, ErrorReporter)}
    * Immutable.
    */
@@ -2812,6 +2813,10 @@ public final class Concrete {
 
     public UnparsedConstructorPattern(@Nullable Object data, boolean isExplicit, @NotNull List<BinOpSequenceElem<Pattern>> patterns, @Nullable TypedReferable asReferable) {
       super(data, asReferable);
+      if (patterns.size() == 0) {
+        int x = 1;
+      }
+//      assert patterns.size() > 0;
       myUnparsedPatterns = List.copyOf(patterns);
       setExplicit(isExplicit);
     }

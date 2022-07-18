@@ -292,52 +292,66 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return (Concrete.Pattern) visit(ctx);
   }
 
-  @Override
-  public Concrete.Pattern visitPatternAtom(PatternAtomContext ctx) {
-    Concrete.Pattern pattern = (Concrete.Pattern) visit(ctx.atomPattern());
-    TerminalNode id = ctx.ID();
-    if (id == null) {
-      return pattern;
-    }
+//  @Override
+//  public Concrete.Pattern visitPatternConstructor(PatternConstructorContext ctx) {
+//    Concrete.Pattern pattern = (Concrete.Pattern) visit(ctx.atomPattern());
+//    TerminalNode id = ctx.ID();
+//    if (id == null) {
+//      return pattern;
+//    }
+//
+//    ExprContext type = ctx.expr();
+//    Position position = tokenPosition(id.getSymbol());
+//    Concrete.TypedReferable typedRef = new Concrete.TypedReferable(position, new ParsedLocalReferable(position, id.getText()), type == null ? null : visitExpr(type));
+//
+//    if (pattern instanceof Concrete.NamePattern) {
+//      Concrete.NamePattern namePattern = (Concrete.NamePattern) pattern;
+//      Referable referable = namePattern.getReferable();
+//      if (namePattern.type != null || !(referable instanceof ParsedLocalReferable)) {
+//        myErrorReporter.report(new ParserError(tokenPosition(ctx.AS().getSymbol()), "As-patterns are not allowed for variables"));
+//        return pattern;
+//      }
+//      return new Concrete.ConstructorPattern(namePattern.getData(), namePattern.isExplicit(), new NamedUnresolvedReference(((ParsedLocalReferable) referable).getPosition(), referable.textRepresentation()), Collections.emptyList(), typedRef);
+//    }
+//
 
-    ExprContext type = ctx.expr();
-    Position position = tokenPosition(id.getSymbol());
-    Concrete.TypedReferable typedRef = new Concrete.TypedReferable(position, new ParsedLocalReferable(position, id.getText()), type == null ? null : visitExpr(type));
+//    return pattern;
+//  }
 
-    if (pattern instanceof Concrete.NamePattern) {
-      Concrete.NamePattern namePattern = (Concrete.NamePattern) pattern;
-      Referable referable = namePattern.getReferable();
-      if (namePattern.type != null || !(referable instanceof ParsedLocalReferable)) {
-        myErrorReporter.report(new ParserError(tokenPosition(ctx.AS().getSymbol()), "As-patterns are not allowed for variables"));
-        return pattern;
-      }
-      return new Concrete.ConstructorPattern(namePattern.getData(), namePattern.isExplicit(), new NamedUnresolvedReference(((ParsedLocalReferable) referable).getPosition(), referable.textRepresentation()), Collections.emptyList(), typedRef);
-    }
-
-    if (pattern.getAsReferable() != null) {
-      myErrorReporter.report(new ParserError(GeneralError.Level.WARNING_UNUSED, tokenPosition(ctx.AS().getSymbol()), "\\as binding is ignored"));
-    } else {
-      pattern.setAsReferable(typedRef);
-    }
-    return pattern;
-  }
-
-  @Override
   public Concrete.Pattern visitPatternConstructor(PatternConstructorContext ctx) {
-    List<AtomPatternOrIDContext> atomPatternOrIDs = ctx.atomPatternOrID();
+    List<AtomPatternContext> atomPatterns = ctx.atomPattern();
     Position position = tokenPosition(ctx.start);
-    Concrete.Pattern basePattern = visitAtomPattern(atomPatternOrIDs.get(0));
+    Concrete.Pattern basePattern = visitAtomPattern(atomPatterns.get(0));
     ExprContext typeCtx = ctx.expr();
     TerminalNode id = ctx.ID();
 
-    if (atomPatternOrIDs.size() == 1 && basePattern instanceof Concrete.NamePattern && id == null) {
-      return new Concrete.NamePattern(position, true, new ParsedLocalReferable(position, ((Concrete.NamePattern) basePattern).getRef().getRefName()), typeCtx == null ? null : visitExpr(typeCtx));
+    if (atomPatterns.size() == 1 && basePattern instanceof Concrete.NamePattern && id == null) {
+      Referable referable = ((Concrete.NamePattern) basePattern).getRef() == null ? null : new NamedUnresolvedReference(position, ((Concrete.NamePattern) basePattern).getRef().getRefName());
+      return new Concrete.NamePattern(position, basePattern.isExplicit(), referable, typeCtx == null ? null : visitExpr(typeCtx));
+    } if (atomPatterns.size() == 1) {
+      Concrete.Pattern innerPattern = (Concrete.Pattern) visit(ctx.atomPattern(0));
+      if (id == null) {
+        return innerPattern;
+      }
+      ExprContext type = ctx.expr();
+      Concrete.TypedReferable typedRef = new Concrete.TypedReferable(position, new ParsedLocalReferable(position, id.getText()), type == null ? null : visitExpr(type));
+
+      if (innerPattern.getAsReferable() != null) {
+        myErrorReporter.report(new ParserError(GeneralError.Level.WARNING_UNUSED, tokenPosition(ctx.AS().getSymbol()), "\\as binding is ignored"));
+      } else {
+        innerPattern.setAsReferable(typedRef);
+      }
+      return innerPattern;
+//          TerminalNode id = ctx.ID();
+//    if (id == null) {
+//      return pattern;
+//    }
     } else {
       if (typeCtx != null && id == null) {
         myErrorReporter.report(new ParserError(tokenPosition(typeCtx.start), "Type annotation is allowed only for variables"));
       }
-      List<Concrete.BinOpSequenceElem<Concrete.Pattern>> patterns = new ArrayList<>(atomPatternOrIDs.size());
-      for (AtomPatternOrIDContext atomCtx : atomPatternOrIDs) {
+      List<Concrete.BinOpSequenceElem<Concrete.Pattern>> patterns = new ArrayList<>(atomPatterns.size());
+      for (AtomPatternContext atomCtx : atomPatterns) {
         Concrete.Pattern pattern = visitAtomPattern(atomCtx);
         patterns.add(new Concrete.BinOpSequenceElem<>(pattern, Fixity.NONFIX, pattern.isExplicit()));
       }
@@ -348,7 +362,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     }
   }
 
-  private Concrete.Pattern visitAtomPattern(AtomPatternOrIDContext ctx) {
+  private Concrete.Pattern visitAtomPattern(AtomPatternContext ctx) {
     return (Concrete.Pattern) visit(ctx);
   }
 
@@ -378,10 +392,10 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return pattern;
   }
 
-  @Override
-  public Concrete.Pattern visitPatternOrIDAtom(PatternOrIDAtomContext ctx) {
-    return (Concrete.Pattern) visit(ctx.atomPattern());
-  }
+//  @Override
+//  public Concrete.Pattern visitPatternAtom(PatternAtomContext ctx) {
+//    return (Concrete.Pattern) visit(ctx.atomPattern());
+//  }
 
   @Override
   public Concrete.Pattern visitPatternID(PatternIDContext ctx) {

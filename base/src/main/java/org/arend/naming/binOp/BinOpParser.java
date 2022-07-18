@@ -139,6 +139,10 @@ class BinOpParser<T extends Concrete.SourceNode> {
       foldTop();
     }
 
+    if (myStack.isEmpty()) {
+      var x = 1;
+    }
+
     T result = myStack.get(0).component;
     myStack.clear();
     return result;

@@ -8,6 +8,8 @@ import org.arend.term.abs.Abstract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Predicate;
 
@@ -30,14 +32,14 @@ public class PatternScope extends DelegateScope {
         }
       }
 
-      List<? extends Abstract.Pattern> argArgs = args.get(i).getArguments();
+      List<? extends Abstract.Pattern> argArgs = args.get(i).getSequence();
       Referable ref = find(argArgs, pred);
       if (ref != null) {
         return ref;
       }
-      if (argArgs.isEmpty()) {
-        ref = args.get(i).getHeadReference();
-        if (ref != null && !(ref instanceof GlobalReferable)) {
+      ref = args.get(i).getSingleReferable();
+      if (ref != null) {
+        if (!(ref instanceof GlobalReferable)) {
           if (globalScope == null) {
             globalScope = parent.getGlobalSubscope();
           }

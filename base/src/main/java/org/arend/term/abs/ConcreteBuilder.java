@@ -4,13 +4,14 @@ import org.arend.core.context.binding.LevelVariable;
 import org.arend.error.CountingErrorReporter;
 import org.arend.error.DummyErrorReporter;
 import org.arend.error.ParsingError;
+import org.arend.ext.concrete.definition.ClassFieldKind;
+import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.ext.error.ErrorReporter;
 import org.arend.ext.error.GeneralError;
 import org.arend.naming.reference.*;
 import org.arend.naming.reference.converter.ReferableConverter;
-import org.arend.ext.concrete.definition.ClassFieldKind;
+import org.arend.naming.scope.ScopeFactory;
 import org.arend.term.Fixity;
-import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.DefinableMetaDefinition;
 import org.arend.typechecking.error.local.LocalErrorReporter;
@@ -71,7 +72,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
     return convertExpression(expression, DummyErrorReporter.INSTANCE);
   }
 
-  public static @NotNull Concrete.Pattern convertPattern(Abstract.Pattern clause, ReferableConverter referableConverter, ErrorReporter errorReporter, TCReferable definition ) {
+  public static @NotNull Concrete.Pattern convertPattern(Abstract.Pattern clause, ReferableConverter referableConverter, ErrorReporter errorReporter, TCReferable definition) {
     return (new ConcreteBuilder(referableConverter, errorReporter, definition)).buildPattern(clause);
   }
 
@@ -104,12 +105,12 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
   @Override
   public DefinableMetaDefinition visitMeta(Abstract.MetaDefinition def) {
     var parameters = buildParameters(def.getParameters(), true).stream()
-      .map(parameter -> {
-        if (parameter instanceof Concrete.NameParameter)
-          return (Concrete.NameParameter) parameter;
-        myErrorReporter.report(new AbstractExpressionError(GeneralError.Level.ERROR, "Definable meta parameters can only be identifiers", parameter));
-        return null;
-      }).collect(Collectors.toList());
+            .map(parameter -> {
+              if (parameter instanceof Concrete.NameParameter)
+                return (Concrete.NameParameter) parameter;
+              myErrorReporter.report(new AbstractExpressionError(GeneralError.Level.ERROR, "Definable meta parameters can only be identifiers", parameter));
+              return null;
+            }).collect(Collectors.toList());
     var term = def.getTerm();
     var body = term != null ? term.accept(this, null) : null;
     var referable = myReferableConverter.toDataLocatedReferable(def.getReferable());
@@ -472,29 +473,53 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
   }
 
   public Concrete.Pattern buildPattern(Abstract.Pattern pattern) {
-    Referable reference = pattern.getHeadReference();
-    if (reference == null) {
-      Integer number = pattern.getInteger();
-      if (number != null) {
-        Concrete.Pattern cPattern = new Concrete.NumberPattern(pattern.getData(), number, buildTypedReferables(pattern.getAsPatterns()));
-        cPattern.setExplicit(pattern.isExplicit());
-        return cPattern;
+    List<? extends Abstract.Pattern> subPatterns = pattern.getSequence();
+    if (subPatterns.size() == 1) {
+      Concrete.Pattern innerPattern = buildPattern(subPatterns.get(0));
+      if (!subPatterns.get(0).isExplicit() || !pattern.isExplicit()) {
+        innerPattern.setExplicit(false);
       }
+      Concrete.TypedReferable typedReferables = buildTypedReferables(pattern.getAsPatterns());
+      if (typedReferables != null) {
+        innerPattern.setAsReferable(typedReferables);
+      }
+      Abstract.Expression type = pattern.getType();
+      if (type != null) {
+        return new Concrete.NamePattern(innerPattern.getData(), pattern.isExplicit(), ((Concrete.NamePattern)innerPattern).getReferable(), type.accept(this, null));
+      }
+
+      return innerPattern;
+    }
+    Integer number = pattern.getInteger();
+    if (number != null) {
+      Concrete.Pattern cPattern = new Concrete.NumberPattern(pattern.getData(), number, buildTypedReferables(pattern.getAsPatterns()));
+      cPattern.setExplicit(pattern.isExplicit());
+      return cPattern;
     }
 
-    if (reference == null && !pattern.isUnnamed()) {
-      return new Concrete.TuplePattern(pattern.getData(), pattern.isExplicit(), buildPatterns(pattern.getArguments()), buildTypedReferables(pattern.getAsPatterns()));
+    Referable longRef = pattern.getSingleReferable();
+
+    Abstract.Expression type = pattern.getType();
+
+    if (longRef != null || pattern.isUnnamed()) {
+      return new Concrete.NamePattern(pattern.getData(), pattern.isExplicit(), longRef, type == null ? null : type.accept(this, null));
+    } else if (pattern.isTuplePattern()) {
+      return new Concrete.TuplePattern(pattern.getData(), pattern.isExplicit(), buildPatterns(pattern.getSequence()), buildTypedReferables(pattern.getAsPatterns()));
     } else {
-      Abstract.Expression type = pattern.getType();
-      List<? extends Abstract.Pattern> args = pattern.getArguments();
-      if (reference instanceof GlobalReferable || reference instanceof LongUnresolvedReference || !args.isEmpty()) {
-        if (type != null) {
-          myErrorReporter.report(new AbstractExpressionError(GeneralError.Level.ERROR, "Type annotation is allowed only for variables", type.getData()));
-        }
-        return new Concrete.ConstructorPattern(pattern.getData(), pattern.isExplicit(), reference, buildPatterns(args), buildTypedReferables(pattern.getAsPatterns()));
-      } else {
-        return new Concrete.NamePattern(pattern.getData(), pattern.isExplicit(), DataLocalReferable.make(reference), type == null ? null : type.accept(this, null));
+      List<? extends Abstract.Pattern> args = pattern.getSequence();
+      List<Concrete.BinOpSequenceElem<Concrete.Pattern>> binOps = new ArrayList<>();
+      for (Abstract.Pattern abstractPattern : args) {
+        binOps.add(new Concrete.BinOpSequenceElem<>(buildPattern(abstractPattern)));
       }
+      return new Concrete.UnparsedConstructorPattern(pattern.getData(), pattern.isExplicit(), binOps, buildTypedReferables(pattern.getAsPatterns()));
+//      if (reference instanceof GlobalReferable || reference instanceof LongUnresolvedReference || !args.isEmpty()) {
+//        if (type != null) {
+//          myErrorReporter.report(new AbstractExpressionError(GeneralError.Level.ERROR, "Type annotation is allowed only for variables", type.getData()));
+//        }
+//        return new Concrete.ConstructorPattern(pattern.getData(), pattern.isExplicit(), reference, buildPatterns(args), buildTypedReferables(pattern.getAsPatterns()));
+//      } else {
+//        return new Concrete.NamePattern(pattern.getData(), pattern.isExplicit(), DataLocalReferable.make(reference), type == null ? null : type.accept(this, null));
+//      }
     }
   }
 
@@ -604,8 +629,8 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
     }
 
     return new Concrete.UniverseExpression(data,
-      pLevelNum != null ? new Concrete.NumberLevelExpression(data, pLevelNum) : pLevel != null ? pLevel.accept(this, LevelVariable.PVAR) : null,
-      hLevelNum != null ? (hLevelNum == Abstract.INFINITY_LEVEL ? new Concrete.InfLevelExpression(data) : new Concrete.NumberLevelExpression(data, hLevelNum)) : hLevel != null ? hLevel.accept(this, LevelVariable.HVAR) : null);
+            pLevelNum != null ? new Concrete.NumberLevelExpression(data, pLevelNum) : pLevel != null ? pLevel.accept(this, LevelVariable.PVAR) : null,
+            hLevelNum != null ? (hLevelNum == Abstract.INFINITY_LEVEL ? new Concrete.InfLevelExpression(data) : new Concrete.NumberLevelExpression(data, hLevelNum)) : hLevel != null ? hLevel.accept(this, LevelVariable.HVAR) : null);
   }
 
   @Override
@@ -824,12 +849,12 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Resol
       myErrorLevel = GeneralError.Level.ERROR;
     }
     return left == null && right == null
-      ? (base == LevelVariable.PVAR ? new Concrete.PLevelExpression(data) : new Concrete.HLevelExpression(data))
-      : left == null
-        ? right.accept(this, base)
-        : right == null
-          ? left.accept(this, base)
-          : new Concrete.MaxLevelExpression(data, left.accept(this, base), right.accept(this, base));
+            ? (base == LevelVariable.PVAR ? new Concrete.PLevelExpression(data) : new Concrete.HLevelExpression(data))
+            : left == null
+            ? right.accept(this, base)
+            : right == null
+            ? left.accept(this, base)
+            : new Concrete.MaxLevelExpression(data, left.accept(this, base), right.accept(this, base));
   }
 
   @Override

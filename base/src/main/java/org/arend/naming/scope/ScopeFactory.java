@@ -121,14 +121,12 @@ public class ScopeFactory {
   }
 
   private static void addPatternReferables(Abstract.Pattern pattern, List<Referable> referables, Scope parentScope) {
-    List<? extends Abstract.Pattern> patterns = pattern.getArguments();
-    if (patterns.isEmpty()) {
-      Referable ref = pattern.getHeadReference();
-      if (ref != null) {
-        ref = ExpressionResolveNameVisitor.resolve(ref, parentScope);
-        if (!(ref instanceof GlobalReferable && ((GlobalReferable) ref).getKind().isConstructor())) {
-          referables.add(ref);
-        }
+    List<? extends Abstract.Pattern> patterns = pattern.getSequence();
+    Referable headReference = pattern.getSingleReferable();
+    if (headReference != null) {
+      Referable resolved = ExpressionResolveNameVisitor.resolve(headReference, parentScope);
+      if (!(resolved instanceof GlobalReferable && ((GlobalReferable) resolved).getKind().isConstructor())) {
+        referables.add(resolved);
       }
     } else {
       for (Abstract.Pattern subPattern : patterns) {
@@ -164,7 +162,7 @@ public class ScopeFactory {
     if (sourceNode instanceof Abstract.Pattern) {
       List<? extends Abstract.Pattern> patterns;
       if (parentSourceNode instanceof Abstract.Pattern) {
-        patterns = ((Abstract.Pattern) parentSourceNode).getArguments();
+        patterns = ((Abstract.Pattern) parentSourceNode).getSequence();
       } else if (parentSourceNode instanceof Abstract.Clause) {
         patterns = ((Abstract.Clause) parentSourceNode).getPatterns();
       } else {
