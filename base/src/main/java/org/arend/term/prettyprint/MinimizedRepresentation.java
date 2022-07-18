@@ -197,13 +197,13 @@ final public class MinimizedRepresentation {
                 } else {
                     Concrete.Expression processedType = ((Concrete.TypeParameter) parameter).type.accept(this, ((Concrete.TypeParameter) wideParameter).type);
                     if (wideParameter.getRefList().stream().anyMatch(Objects::nonNull)) {
-                        if (parameter.getSigmaFieldKind() != SigmaFieldKind.ANY) {
+                        if (parameter instanceof Concrete.SigmaTelescopeParameter || parameter instanceof Concrete.SigmaTypeParameter) {
                             return myFactory.sigmaParam(parameter.getSigmaFieldKind(), wideParameter.getRefList(), processedType);
                         } else {
                             return myFactory.param(parameter.isExplicit(), parameter.getRefList(), processedType);
                         }
                     } else {
-                        if (parameter.getSigmaFieldKind() != SigmaFieldKind.ANY) {
+                        if (parameter instanceof Concrete.SigmaTelescopeParameter || parameter instanceof Concrete.SigmaTypeParameter) {
                             return myFactory.sigmaParam(parameter.getSigmaFieldKind(), List.of(), processedType);
                         } else {
                             return myFactory.param(parameter.isExplicit(), processedType);
