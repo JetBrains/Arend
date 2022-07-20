@@ -4,6 +4,7 @@ import org.arend.naming.reference.Referable;
 import org.arend.naming.scope.Scope;
 import org.arend.naming.scope.DelegateScope;
 import org.arend.term.abs.Abstract;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -76,23 +77,25 @@ public class LetScope extends DelegateScope {
 
   @Nullable
   @Override
-  public Referable resolveName(String name) {
-    for (int i = myClauses.size() - 1; i >= 0; i--) {
-      Referable ref = myClauses.get(i).getReferable();
-      if (ref != null) {
-        if (ref.textRepresentation().equals(name)) {
-          return ref;
-        }
-      } else {
-        Abstract.Pattern pattern = myClauses.get(i).getPattern();
-        if (pattern != null) {
-          ref = resolveName(pattern, name);
-          if (ref != null) {
+  public Referable resolveName(@NotNull String name, @Nullable Referable.RefKind kind) {
+    if (kind == Referable.RefKind.EXPR || kind == null) {
+      for (int i = myClauses.size() - 1; i >= 0; i--) {
+        Referable ref = myClauses.get(i).getReferable();
+        if (ref != null) {
+          if (ref.textRepresentation().equals(name)) {
             return ref;
+          }
+        } else {
+          Abstract.Pattern pattern = myClauses.get(i).getPattern();
+          if (pattern != null) {
+            ref = resolveName(pattern, name);
+            if (ref != null) {
+              return ref;
+            }
           }
         }
       }
     }
-    return parent.resolveName(name);
+    return parent.resolveName(name, kind);
   }
 }

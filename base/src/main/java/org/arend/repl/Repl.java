@@ -79,7 +79,7 @@ public abstract class Repl {
   protected abstract void loadLibraries();
 
   protected final @NotNull List<Referable> getInScopeElements() {
-    return myReplScope.getElements();
+    return new ArrayList<>(myReplScope.getElements());
   }
 
   public final void initialize() {

@@ -9,10 +9,15 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 public interface UnresolvedReference extends Referable, DataContainer {
-  @NotNull Referable resolve(Scope scope, List<Referable> resolvedRefs);
+  @NotNull Referable resolve(Scope scope, List<Referable> resolvedRefs, @Nullable RefKind kind);
   @Nullable Referable tryResolve(Scope scope, List<Referable> resolvedRefs);
   @Nullable Concrete.Expression resolveArgument(Scope scope, List<Referable> resolvedRefs);
   void reset();
+
+  @NotNull
+  default Referable resolve(Scope scope, List<Referable> resolvedRefs) {
+    return resolve(scope, resolvedRefs, RefKind.EXPR);
+  }
 
   @Override
   default boolean isLocalRef() {

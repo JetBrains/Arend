@@ -4,6 +4,8 @@ import org.arend.ext.reference.ArendRef;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.scope.Scope;
 import org.arend.naming.scope.DelegateScope;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Set;
 import java.util.function.Predicate;
@@ -22,8 +24,8 @@ public class ElimScope extends DelegateScope {
   }
 
   @Override
-  public Referable resolveName(String name) {
-    Referable ref = parent.resolveName(name);
+  public Referable resolveName(@NotNull String name, @Nullable Referable.RefKind kind) {
+    Referable ref = parent.resolveName(name, kind);
     return ref != null && myExcluded.contains(ref) ? null : ref;
   }
 }

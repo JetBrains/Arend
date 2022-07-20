@@ -35,15 +35,9 @@ public class ListScope implements Scope {
     return ref != null ? ref : myParent.find(pred);
   }
 
-  @Override
-  public Referable resolveName(String name) {
-    Referable ref = findHere(ref2 -> ref2.textRepresentation().equals(name));
-    return ref != null ? ref : myParent.resolveName(name);
-  }
-
   @Nullable
   @Override
-  public Scope resolveNamespace(String name, boolean onlyInternal) {
+  public Scope resolveNamespace(@NotNull String name, boolean onlyInternal) {
     return myParent.resolveNamespace(name, onlyInternal);
   }
 

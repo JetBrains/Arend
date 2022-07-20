@@ -17,19 +17,19 @@ public class SingletonScope implements Scope {
 
   @NotNull
   @Override
-  public List<Referable> getElements() {
-    return Collections.singletonList(myReferable);
+  public List<Referable> getElements(Referable.RefKind kind) {
+    return myReferable.getRefKind() == kind ? Collections.singletonList(myReferable) : Collections.emptyList();
   }
 
   @Nullable
   @Override
-  public Referable resolveName(String name) {
-    return myReferable.textRepresentation().equals(name) ? myReferable : null;
+  public Referable resolveName(@NotNull String name, Referable.RefKind kind) {
+    return (kind == null || myReferable.getRefKind() == kind) && myReferable.textRepresentation().equals(name) ? myReferable : null;
   }
 
   @Nullable
   @Override
-  public Scope resolveNamespace(String name, boolean onlyInternal) {
+  public Scope resolveNamespace(@NotNull String name, boolean onlyInternal) {
     return myReferable.textRepresentation().equals(name) ? EmptyScope.INSTANCE : null;
   }
 

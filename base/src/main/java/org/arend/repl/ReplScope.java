@@ -47,7 +47,7 @@ public class ReplScope implements Scope {
   }
 
   @Override
-  public @Nullable Scope resolveNamespace(String name, boolean onlyInternal) {
+  public @Nullable Scope resolveNamespace(@NotNull String name, boolean onlyInternal) {
     return Optional
       .ofNullable(myCurrentLineScope)
       .map(scope -> scope.resolveNamespace(name, onlyInternal))
@@ -55,11 +55,11 @@ public class ReplScope implements Scope {
   }
 
   @Override
-  public @Nullable Referable resolveName(String name) {
+  public @Nullable Referable resolveName(@NotNull String name, Referable.RefKind kind) {
     return Optional
       .ofNullable(myCurrentLineScope)
-      .map(scope -> scope.resolveName(name))
-      .orElseGet(() -> myPreviousMergeScope.resolveName(name));
+      .map(scope -> scope.resolveName(name, kind))
+      .orElseGet(() -> myPreviousMergeScope.resolveName(name, kind));
   }
 
   @Override
@@ -72,10 +72,10 @@ public class ReplScope implements Scope {
   }
 
   @Override
-  public @NotNull List<Referable> getElements() {
-    var list = myPreviousMergeScope.getElements();
+  public @NotNull List<Referable> getElements(Referable.RefKind kind) {
+    var list = myPreviousMergeScope.getElements(kind);
     if (myCurrentLineScope != null)
-      list.addAll(myCurrentLineScope.getElements());
+      list.addAll(myCurrentLineScope.getElements(kind));
     return list;
   }
 

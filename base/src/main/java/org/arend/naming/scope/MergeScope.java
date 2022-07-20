@@ -36,18 +36,18 @@ public class MergeScope implements Scope {
 
   @NotNull
   @Override
-  public List<Referable> getElements() {
+  public List<Referable> getElements(Referable.RefKind kind) {
     List<Referable> result = new ArrayList<>();
     for (Scope scope : myScopes) {
-      result.addAll(scope.getElements());
+      result.addAll(scope.getElements(kind));
     }
     return result;
   }
 
   @Override
-  public Referable resolveName(String name) {
+  public Referable resolveName(@NotNull String name, @Nullable Referable.RefKind kind) {
     for (Scope scope : myScopes) {
-      Referable ref = scope.resolveName(name);
+      Referable ref = scope.resolveName(name, kind);
       if (ref != null) {
         return ref;
       }
@@ -57,7 +57,7 @@ public class MergeScope implements Scope {
 
   @Nullable
   @Override
-  public Scope resolveNamespace(String name, boolean onlyInternal) {
+  public Scope resolveNamespace(@NotNull String name, boolean onlyInternal) {
     if (myMergeNamespaces) {
       List<Scope> scopes = new ArrayList<>(myScopes.size());
       for (Scope scope : myScopes) {

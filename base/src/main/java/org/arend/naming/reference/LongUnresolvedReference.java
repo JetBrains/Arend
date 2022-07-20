@@ -8,8 +8,6 @@ import org.arend.term.concrete.Concrete;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class LongUnresolvedReference implements UnresolvedReference {
@@ -21,28 +19,6 @@ public class LongUnresolvedReference implements UnresolvedReference {
     assert !path.isEmpty();
     myData = data;
     myPath = path;
-  }
-
-  public LongUnresolvedReference(Object data, @NotNull List<String> path, @NotNull String name) {
-    myData = data;
-    if (path.isEmpty()) {
-      myPath = Collections.singletonList(name);
-    } else {
-      myPath = new ArrayList<>(path.size() + 1);
-      myPath.addAll(path);
-      myPath.add(name);
-    }
-  }
-
-  public LongUnresolvedReference(Object data, @NotNull String name, @NotNull List<String> path) {
-    myData = data;
-    if (path.isEmpty()) {
-      myPath = Collections.singletonList(name);
-    } else {
-      myPath = new ArrayList<>(path.size() + 1);
-      myPath.add(name);
-      myPath.addAll(path);
-    }
   }
 
   public static UnresolvedReference make(Object data, @NotNull List<String> path) {
@@ -93,7 +69,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
     return result;
   }
 
-  private Referable resolve(Scope scope, List<Referable> resolvedRefs, boolean onlyTry) {
+  private Referable resolve(Scope scope, List<Referable> resolvedRefs, boolean onlyTry, RefKind kind) {
     if (resolved != null) {
       return resolved;
     }
@@ -116,7 +92,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
     }
 
     String name = myPath.get(myPath.size() - 1);
-    resolved = scope.resolveName(name);
+    resolved = scope.resolveName(name, kind);
     if (resolved == null && !onlyTry) {
       Object data = getData();
       resolved = new ErrorReference(data, myPath.size() == 1 ? null : make(data, myPath.subList(0, myPath.size() - 1)), myPath.size() - 1, name);
@@ -130,14 +106,14 @@ public class LongUnresolvedReference implements UnresolvedReference {
 
   @NotNull
   @Override
-  public Referable resolve(Scope scope, List<Referable> resolvedRefs) {
-    return resolve(scope, resolvedRefs, false);
+  public Referable resolve(Scope scope, List<Referable> resolvedRefs, RefKind kind) {
+    return resolve(scope, resolvedRefs, false, kind);
   }
 
   @Nullable
   @Override
   public Referable tryResolve(Scope scope, List<Referable> resolvedRefs) {
-    return resolve(scope, resolvedRefs, true);
+    return resolve(scope, resolvedRefs, true, RefKind.EXPR);
   }
 
   @Nullable

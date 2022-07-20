@@ -51,9 +51,9 @@ public class ImportedScope implements Scope {
 
   @NotNull
   @Override
-  public Collection<? extends Referable> getElements() {
+  public Collection<? extends Referable> getElements(Referable.RefKind kind) {
     if (myElementsScope != null) {
-      return myElementsScope.getElements();
+      return myElementsScope.getElements(kind);
     }
 
     List<Referable> result = new ArrayList<>();
@@ -63,6 +63,11 @@ public class ImportedScope implements Scope {
       }
     }
     return result;
+  }
+
+  @Override
+  public @NotNull Collection<? extends Referable> getAllElements() {
+    return myElementsScope != null ? myElementsScope.getAllElements() : Scope.super.getAllElements();
   }
 
   @Nullable
@@ -78,14 +83,14 @@ public class ImportedScope implements Scope {
 
   @Nullable
   @Override
-  public Referable resolveName(String name) {
+  public Referable resolveName(@NotNull String name, @Nullable Referable.RefKind kind) {
     Triple triple = myExpectedNamesTree.map.get(name);
     return triple == null || triple.scope == null ? null : triple.referable;
   }
 
   @Nullable
   @Override
-  public Scope resolveNamespace(String name, boolean onlyInternal) {
+  public Scope resolveNamespace(@NotNull String name, boolean onlyInternal) {
     Triple triple = myExpectedNamesTree.map.get(name);
     if (triple == null) {
       return null;

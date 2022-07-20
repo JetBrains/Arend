@@ -174,7 +174,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     checkNameAndPrecedence(def, def.getData());
 
     List<Referable> context = new ArrayList<>();
-    var exprVisitor = new ExpressionResolveNameVisitor(myReferableConverter, scope, context, myLocalErrorReporter, myResolverListener, visitLevelParameters(def.getPLevelParameters()), visitLevelParameters(def.getHLevelParameters()));
+    var exprVisitor = new ExpressionResolveNameVisitor(myReferableConverter, scope, context, myLocalErrorReporter, myResolverListener, def.getPLevelParameters(), def.getHLevelParameters());
     exprVisitor.visitParameters(def.getParameters(), null);
 
     if (def.body != null) {
@@ -218,17 +218,8 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     }
   }
 
-  private static Map<String, Referable> visitLevelParameters(List<? extends LevelReferable> params) {
-    if (params == null) return Collections.emptyMap();
-    Map<String, Referable> result = new HashMap<>();
-    for (Referable ref : params) {
-      result.put(ref.getRefName(), ref);
-    }
-    return result;
-  }
-
-  private static Map<String, Referable> visitLevelParameters(Concrete.LevelParameters params) {
-    return params == null ? Collections.emptyMap() : visitLevelParameters(params.referables);
+  private static List<? extends Referable> visitLevelParameters(Concrete.LevelParameters params) {
+    return params == null ? Collections.emptyList() : params.referables;
   }
 
   @Override
@@ -305,7 +296,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
               }
             }
             if (functionRef != null) {
-              function.setImplementedField(new ExpressionResolveNameVisitor(myReferableConverter, scope, null, myLocalErrorReporter, myResolverListener, Collections.emptyMap(), Collections.emptyMap()).visitClassFieldReference(functionRef, function.getImplementedField(), (ClassReferable) classRef));
+              function.setImplementedField(new ExpressionResolveNameVisitor(myReferableConverter, scope, null, myLocalErrorReporter, myResolverListener).visitClassFieldReference(functionRef, function.getImplementedField(), (ClassReferable) classRef));
             }
           }
           if (function.getData() instanceof LocatedReferableImpl && !((LocatedReferableImpl) function.getData()).isPrecedenceSet() && function.getImplementedField() instanceof GlobalReferable) {
@@ -508,8 +499,8 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     }
 
     List<Referable> context = new ArrayList<>();
-    Map<String, Referable> pLevels = visitLevelParameters(def.getPLevelParameters());
-    Map<String, Referable> hLevels = visitLevelParameters(def.getHLevelParameters());
+    List<? extends Referable> pLevels = visitLevelParameters(def.getPLevelParameters());
+    List<? extends Referable> hLevels = visitLevelParameters(def.getHLevelParameters());
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myReferableConverter, scope, context, myLocalErrorReporter, myResolverListener, pLevels, hLevels);
     exprVisitor.visitParameters(def.getParameters(), null);
     if (def.getEliminatedReferences() != null) {
@@ -544,7 +535,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     return null;
   }
 
-  private void visitConstructor(Concrete.Constructor def, Scope parentScope, List<Referable> context, Map<String, Referable> pLevels, Map<String, Referable> hLevels) {
+  private void visitConstructor(Concrete.Constructor def, Scope parentScope, List<Referable> context, List<? extends Referable> pLevels, List<? extends Referable> hLevels) {
     checkNameAndPrecedence(def);
 
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myReferableConverter, parentScope, context, myLocalErrorReporter, myResolverListener, pLevels, hLevels);
@@ -781,7 +772,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       if (curScope != null) {
         for (NameRenaming renaming : namespaceCommand.getOpenedReferences()) {
           Referable oldRef = renaming.getOldReference();
-          Referable ref = ExpressionResolveNameVisitor.resolve(oldRef, curScope);
+          Referable ref = ExpressionResolveNameVisitor.resolve(oldRef, curScope, null);
           if (myResolverListener != null) {
             myResolverListener.renamingResolved(renaming, oldRef, ref);
           }
@@ -822,7 +813,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
         });
 
         for (Referable ref : namespaceCommand.getHiddenReferences()) {
-          ref = ExpressionResolveNameVisitor.resolve(ref, curScope);
+          ref = ExpressionResolveNameVisitor.resolve(ref, curScope, null);
           if (ref instanceof ErrorReference) {
             myLocalErrorReporter.report(((ErrorReference) ref).getError());
           }
@@ -886,7 +877,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       } else {
         checkNamespaceCommand(cmd, referables.keySet());
       }
-      Collection<? extends Referable> elements = NamespaceCommandNamespace.resolveNamespace(cmd.getKind() == NamespaceCommand.Kind.IMPORT ? cachedScope.getImportedSubscope() : cachedScope, cmd).getElements();
+      Collection<? extends Referable> elements = NamespaceCommandNamespace.resolveNamespace(cmd.getKind() == NamespaceCommand.Kind.IMPORT ? cachedScope.getImportedSubscope() : cachedScope, cmd).getAllElements();
       if (!elements.isEmpty()) {
         Map<String, Referable> map = new LinkedHashMap<>();
         for (Referable element : elements) {

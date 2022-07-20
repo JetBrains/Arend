@@ -12,10 +12,10 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-// Minimal definition: (find or getElements) and resolveNamespace
+// Minimal definition: (find or getAllElements) and resolveNamespace
 public interface Scope {
   default @Nullable Referable find(Predicate<Referable> pred) {
-    for (Referable referable : getElements()) {
+    for (Referable referable : getAllElements()) {
       if (pred.test(referable)) {
         return referable;
       }
@@ -24,18 +24,35 @@ public interface Scope {
   }
 
   @NotNull
-  default Collection<? extends Referable> getElements() {
+  default Collection<? extends Referable> getAllElements() {
     List<Referable> result = new ArrayList<>();
     find(ref -> { result.add(ref); return false; });
     return result;
   }
 
-  @Nullable
-  default Referable resolveName(String name) {
-    return find(ref -> Objects.equals(name, ref.textRepresentation()));
+  @NotNull
+  default Collection<? extends Referable> getElements(Referable.RefKind kind) {
+    List<Referable> result = new ArrayList<>();
+    find(ref -> { if (ref.getRefKind() == kind) result.add(ref); return false; });
+    return result;
   }
 
-  default @Nullable Scope resolveNamespace(String name, boolean onlyInternal) {
+  @NotNull
+  default Collection<? extends Referable> getElements() {
+    return getElements(Referable.RefKind.EXPR);
+  }
+
+  @Nullable
+  default Referable resolveName(@NotNull String name, @Nullable Referable.RefKind kind) {
+    return find(ref -> (kind == null || ref.getRefKind() == kind) && Objects.equals(name, ref.textRepresentation()));
+  }
+
+  @Nullable
+  default Referable resolveName(@NotNull String name) {
+    return resolveName(name, Referable.RefKind.EXPR);
+  }
+
+  default @Nullable Scope resolveNamespace(@NotNull String name, boolean onlyInternal) {
     return null;
   }
 

@@ -455,7 +455,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
 
       Position position = tokenPosition(ids.get(i + 1).getSymbol());
       String name = ids.get(i + 1).getText();
-      refs.add(defParent == null ? new DataLevelReferable(position, name) : new TCLevelReferable(position, name, defParent));
+      refs.add(defParent == null ? new DataLevelReferable(position, name, isPLevels) : new TCLevelReferable(position, name, defParent));
     }
     if (defParent != null) {
       defParent.setIsIncreasing(increasing == null || increasing);
@@ -474,22 +474,22 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return ctx == null ? null : (Concrete.LevelParameters) parseLevelParameters(ctx.start, ctx.ID(), null, false);
   }
 
-  private List<LevelReferable> visitMetaLevels(List<TerminalNode> ids) {
+  private List<LevelReferable> visitMetaLevels(List<TerminalNode> ids, boolean isPLevels) {
     List<LevelReferable> refs = new ArrayList<>();
     for (TerminalNode id : ids) {
-      refs.add(new DataLevelReferable(tokenPosition(id.getSymbol()), id.getText()));
+      refs.add(new DataLevelReferable(tokenPosition(id.getSymbol()), id.getText(), isPLevels));
     }
     return refs;
   }
 
   @Override
   public List<LevelReferable> visitMetaPLevels(MetaPLevelsContext ctx) {
-    return ctx == null ? null : visitMetaLevels(ctx.ID());
+    return ctx == null ? null : visitMetaLevels(ctx.ID(), true);
   }
 
   @Override
   public List<LevelReferable> visitMetaHLevels(MetaHLevelsContext ctx) {
-    return ctx == null ? null : visitMetaLevels(ctx.ID());
+    return ctx == null ? null : visitMetaLevels(ctx.ID(), false);
   }
 
   private StaticGroup visitDefInstance(DefInstanceContext ctx, ChildGroup parent, TCDefReferable enclosingClass) {

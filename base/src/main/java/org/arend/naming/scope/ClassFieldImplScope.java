@@ -98,7 +98,7 @@ public class ClassFieldImplScope implements Scope {
 
   @Nullable
   @Override
-  public Scope resolveNamespace(String name, boolean onlyInternal) {
+  public Scope resolveNamespace(@NotNull String name, boolean onlyInternal) {
     Referable referable = resolveName(name);
     if (myExtent == Extent.WITH_SUPER_CLASSES && referable instanceof ClassReferable) {
       return new ClassFieldImplScope((ClassReferable) referable, Extent.WITH_SUPER_CLASSES);

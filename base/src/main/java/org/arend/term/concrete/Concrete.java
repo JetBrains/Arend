@@ -1793,19 +1793,19 @@ public final class Concrete {
       return isIncreasing;
     }
 
-    public static List<LevelReferable> getLevelParametersRefs(Abstract.LevelParameters params) {
+    public static List<LevelReferable> getLevelParametersRefs(Abstract.LevelParameters params, boolean isPLevels) {
       if (params == null) return null;
       List<LevelReferable> result = new ArrayList<>();
       for (Referable ref : params.getReferables()) {
-        result.add(new DataLevelReferable(ref, ref.getRefName()));
+        result.add(new DataLevelReferable(ref, ref.getRefName(), isPLevels));
       }
       return result;
     }
 
-    public static Concrete.LevelParameters makeLevelParameters(List<? extends LevelVariable> variables) {
+    public static Concrete.LevelParameters makeLevelParameters(List<? extends LevelVariable> variables, boolean isPLevels) {
       List<LevelReferable> refs = new ArrayList<>(variables.size());
       for (LevelVariable variable : variables) {
-        refs.add(new DataLevelReferable(null, variable.getName()));
+        refs.add(new DataLevelReferable(null, variable.getName(), isPLevels));
       }
       return new Concrete.LevelParameters(null, refs, variables.size() <= 1 || variables.get(0).getStd() == variables.get(0) || variables.get(0) instanceof ParamLevelVariable && variables.get(1) instanceof ParamLevelVariable && ((ParamLevelVariable) variables.get(0)).getSize() <= ((ParamLevelVariable) variables.get(1)).getSize());
     }

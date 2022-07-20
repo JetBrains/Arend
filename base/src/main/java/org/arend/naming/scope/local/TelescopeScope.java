@@ -4,6 +4,8 @@ import org.arend.naming.reference.Referable;
 import org.arend.naming.scope.Scope;
 import org.arend.naming.scope.DelegateScope;
 import org.arend.term.abs.Abstract;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -45,8 +47,8 @@ public class TelescopeScope extends DelegateScope {
   }
 
   @Override
-  public Referable resolveName(String name) {
-    Referable ref = findHere(ref2 -> ref2.textRepresentation().equals(name));
-    return ref != null ? ref : parent.resolveName(name);
+  public Referable resolveName(@NotNull String name, @Nullable Referable.RefKind kind) {
+    Referable ref = findHere(ref2 -> (kind == null || ref2.getRefKind() == kind) && ref2.textRepresentation().equals(name));
+    return ref != null ? ref : parent.resolveName(name, kind);
   }
 }

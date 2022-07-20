@@ -19,12 +19,12 @@ public class EmptyScope implements Scope {
 
   @NotNull
   @Override
-  public Collection<? extends Referable> getElements() {
+  public Collection<? extends Referable> getElements(Referable.RefKind kind) {
     return Collections.emptyList();
   }
 
   @Override
-  public Referable resolveName(String name) {
+  public Referable resolveName(@NotNull String name, Referable.RefKind kind) {
     return null;
   }
 }

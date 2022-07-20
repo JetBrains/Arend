@@ -48,8 +48,8 @@ public class ConvertingScope implements Scope {
 
   @NotNull
   @Override
-  public Collection<? extends Referable> getElements() {
-    Collection<? extends Referable> elements = myScope.getElements();
+  public Collection<? extends Referable> getElements(Referable.RefKind kind) {
+    Collection<? extends Referable> elements = myScope.getElements(kind);
     List<Referable> result = new ArrayList<>(elements.size());
     for (Referable element : elements) {
       Referable ref = convertReferable(element);
@@ -62,13 +62,13 @@ public class ConvertingScope implements Scope {
 
   @Nullable
   @Override
-  public Referable resolveName(String name) {
-    return convertReferable(myScope.resolveName(name));
+  public Referable resolveName(@NotNull String name, Referable.RefKind kind) {
+    return convertReferable(myScope.resolveName(name, kind));
   }
 
   @Nullable
   @Override
-  public Scope resolveNamespace(String name, boolean onlyInternal) {
+  public Scope resolveNamespace(@NotNull String name, boolean onlyInternal) {
     Scope scope = myScope.resolveNamespace(name, onlyInternal);
     return scope == null ? null : new ConvertingScope(myConverter, scope);
   }

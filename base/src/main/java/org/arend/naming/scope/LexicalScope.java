@@ -7,12 +7,14 @@ import org.arend.naming.reference.ClassReferable;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.term.NamespaceCommand;
+import org.arend.term.abs.Abstract;
 import org.arend.term.group.Group;
 import org.arend.term.group.Statement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 @SuppressWarnings("Duplicates")
@@ -80,31 +82,48 @@ public class LexicalScope implements Scope {
 
   @NotNull
   @Override
-  public List<Referable> getElements() {
+  public List<Referable> getElements(Referable.RefKind kind) {
     List<Referable> elements = new ArrayList<>();
 
     for (Statement statement : myGroup.getStatements()) {
-      Group subgroup = statement.getGroup();
-      if (subgroup != null) {
-        addSubgroup(subgroup, elements);
+      if (kind == Referable.RefKind.EXPR || kind == null) {
+        Group subgroup = statement.getGroup();
+        if (subgroup != null) {
+          addSubgroup(subgroup, elements);
+        }
       }
-    }
-    if (myExtent == Extent.EVERYTHING) {
-      for (Group subgroup : myGroup.getDynamicSubgroups()) {
-        addSubgroup(subgroup, elements);
+      if (kind == Referable.RefKind.PLEVEL || kind == null) {
+        Abstract.LevelParameters pDef = statement.getPLevelsDefinition();
+        if (pDef != null) {
+          elements.addAll(pDef.getReferables());
+        }
+      }
+      if (kind == Referable.RefKind.HLEVEL || kind == null) {
+        Abstract.LevelParameters hDef = statement.getHLevelsDefinition();
+        if (hDef != null) {
+          elements.addAll(hDef.getReferables());
+        }
       }
     }
 
-    if (myExtent != Extent.ONLY_EXTERNAL) {
-      for (Group.InternalReferable constructor : myGroup.getConstructors()) {
-        addReferable(constructor.getReferable(), elements);
+    if (kind == Referable.RefKind.EXPR || kind == null) {
+      if (myExtent == Extent.EVERYTHING) {
+        for (Group subgroup : myGroup.getDynamicSubgroups()) {
+          addSubgroup(subgroup, elements);
+        }
       }
-      GlobalReferable groupRef = myGroup.getReferable();
-      if (myKind != Kind.OPENED_INTERNAL && groupRef instanceof ClassReferable) {
-        elements.addAll(new ClassFieldImplScope((ClassReferable) groupRef, ClassFieldImplScope.Extent.WITH_SUPER_DYNAMIC).getElements());
-      } else {
-        for (Group.InternalReferable field : myGroup.getFields()) {
-          addReferable(field.getReferable(), elements);
+
+      if (myExtent != Extent.ONLY_EXTERNAL) {
+        for (Group.InternalReferable constructor : myGroup.getConstructors()) {
+          addReferable(constructor.getReferable(), elements);
+        }
+        GlobalReferable groupRef = myGroup.getReferable();
+        if (myKind != Kind.OPENED_INTERNAL && groupRef instanceof ClassReferable) {
+          elements.addAll(new ClassFieldImplScope((ClassReferable) groupRef, ClassFieldImplScope.Extent.WITH_SUPER_DYNAMIC).getElements());
+        } else {
+          for (Group.InternalReferable field : myGroup.getFields()) {
+            addReferable(field.getReferable(), elements);
+          }
         }
       }
     }
@@ -129,12 +148,18 @@ public class LexicalScope implements Scope {
           }
           scope = cachingScope;
         }
-        elements.addAll(NamespaceCommandNamespace.resolveNamespace(scope, cmd).getGlobalSubscopeWithoutOpens(false).getElements());
+        scope = NamespaceCommandNamespace.resolveNamespace(scope, cmd);
+        elements.addAll(kind == null ? scope.getAllElements() : scope.getElements(kind));
       }
     }
 
-    elements.addAll(myParent.getElements());
+    elements.addAll(kind == null ? myParent.getAllElements() : myParent.getElements(kind));
     return elements;
+  }
+
+  @Override
+  public @NotNull Collection<? extends Referable> getAllElements() {
+    return getElements(null);
   }
 
   private static GlobalReferable resolveInternal(Group group, String name, boolean onlyInternal) {
@@ -197,33 +222,58 @@ public class LexicalScope implements Scope {
 
   private enum ResolveType { REF, SCOPE, INTERNAL_SCOPE }
 
-  private Object resolve(String name, ResolveType resolveType) {
-    if (name == null || name.isEmpty() || "_".equals(name)) {
+  private Object resolve(String name, ResolveType resolveType, Referable.RefKind refKind) {
+    if (name.isEmpty() || "_".equals(name)) {
       return null;
     }
 
     for (Statement statement : myGroup.getStatements()) {
-      Group subgroup = statement.getGroup();
-      if (subgroup != null) {
-        Object result = resolveSubgroup(subgroup, name, resolveType);
-        if (result != null) {
-          return result;
+      if (resolveType != ResolveType.REF || refKind == null || refKind == Referable.RefKind.EXPR) {
+        Group subgroup = statement.getGroup();
+        if (subgroup != null) {
+          Object result = resolveSubgroup(subgroup, name, resolveType);
+          if (result != null) {
+            return result;
+          }
         }
       }
-    }
-    if (myExtent == Extent.EVERYTHING) {
-      for (Group subgroup : myGroup.getDynamicSubgroups()) {
-        Object result = resolveSubgroup(subgroup, name, resolveType);
-        if (result != null) {
-          return result;
+      if (refKind == null || refKind == Referable.RefKind.PLEVEL) {
+        Abstract.LevelParameters levelParams = statement.getPLevelsDefinition();
+        if (levelParams != null) {
+          for (Referable ref : levelParams.getReferables()) {
+            if (name.equals(ref.getRefName())) {
+              return ref;
+            }
+          }
+        }
+      }
+      if (refKind == null || refKind == Referable.RefKind.HLEVEL) {
+        Abstract.LevelParameters levelParams = statement.getHLevelsDefinition();
+        if (levelParams != null) {
+          for (Referable ref : levelParams.getReferables()) {
+            if (name.equals(ref.getRefName())) {
+              return ref;
+            }
+          }
         }
       }
     }
 
-    if (resolveType == ResolveType.REF && myExtent != Extent.ONLY_EXTERNAL) {
-      Object result = resolveInternal(myGroup, name, myKind == Kind.OPENED_INTERNAL);
-      if (result != null) {
-        return result;
+    if (resolveType != ResolveType.REF || refKind == null || refKind == Referable.RefKind.EXPR) {
+      if (myExtent == Extent.EVERYTHING) {
+        for (Group subgroup : myGroup.getDynamicSubgroups()) {
+          Object result = resolveSubgroup(subgroup, name, resolveType);
+          if (result != null) {
+            return result;
+          }
+        }
+      }
+
+      if (resolveType == ResolveType.REF && myExtent != Extent.ONLY_EXTERNAL) {
+        Object result = resolveInternal(myGroup, name, myKind == Kind.OPENED_INTERNAL);
+        if (result != null) {
+          return result;
+        }
       }
     }
 
@@ -248,28 +298,28 @@ public class LexicalScope implements Scope {
           scope = cachingScope;
         }
 
-        scope = NamespaceCommandNamespace.resolveNamespace(scope, cmd).getGlobalSubscopeWithoutOpens(false);
-        Object result = resolveType == ResolveType.REF ? scope.resolveName(name) : scope.resolveNamespace(name, resolveType == ResolveType.INTERNAL_SCOPE);
+        scope = NamespaceCommandNamespace.resolveNamespace(scope, cmd);
+        Object result = resolveType == ResolveType.REF ? scope.resolveName(name, refKind) : scope.resolveNamespace(name, resolveType == ResolveType.INTERNAL_SCOPE);
         if (result != null) {
           return result;
         }
       }
     }
 
-    return resolveType == ResolveType.REF ? myParent.resolveName(name) : myParent.resolveNamespace(name, resolveType == ResolveType.INTERNAL_SCOPE);
+    return resolveType == ResolveType.REF ? myParent.resolveName(name, refKind) : myParent.resolveNamespace(name, resolveType == ResolveType.INTERNAL_SCOPE);
   }
 
   @Nullable
   @Override
-  public Referable resolveName(String name) {
-    Object result = resolve(name, ResolveType.REF);
+  public Referable resolveName(@NotNull String name, Referable.RefKind kind) {
+    Object result = resolve(name, ResolveType.REF, kind);
     return result instanceof Referable ? (Referable) result : null;
   }
 
   @Nullable
   @Override
-  public Scope resolveNamespace(String name, boolean onlyInternal) {
-    Object result = resolve(name, onlyInternal ? ResolveType.INTERNAL_SCOPE : ResolveType.SCOPE);
+  public Scope resolveNamespace(@NotNull String name, boolean onlyInternal) {
+    Object result = resolve(name, onlyInternal ? ResolveType.INTERNAL_SCOPE : ResolveType.SCOPE, null);
     return result instanceof Scope ? (Scope) result : null;
   }
 

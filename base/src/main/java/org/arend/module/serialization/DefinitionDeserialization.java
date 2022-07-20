@@ -193,8 +193,8 @@ public class DefinitionDeserialization implements ArendDeserializer {
       }
       if (classDef.getLevelParameters() != null) {
         int n = classDef.getNumberOfPLevelParameters();
-        classRef.setPLevelParameters(Concrete.LevelParameters.makeLevelParameters(classDef.getLevelParameters().subList(0, n)));
-        classRef.setHLevelParameters(Concrete.LevelParameters.makeLevelParameters(classDef.getLevelParameters().subList(n, classDef.getLevelParameters().size())));
+        classRef.setPLevelParameters(Concrete.LevelParameters.makeLevelParameters(classDef.getLevelParameters().subList(0, n), true));
+        classRef.setHLevelParameters(Concrete.LevelParameters.makeLevelParameters(classDef.getLevelParameters().subList(n, classDef.getLevelParameters().size()), false));
       }
     }
 
