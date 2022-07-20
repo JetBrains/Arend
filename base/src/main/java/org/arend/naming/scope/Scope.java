@@ -12,10 +12,10 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-// Minimal definition: (find or getAllElements) and resolveNamespace
+// Minimal definition: (find or getElements) and resolveNamespace
 public interface Scope {
   default @Nullable Referable find(Predicate<Referable> pred) {
-    for (Referable referable : getAllElements()) {
+    for (Referable referable : getElements(null)) {
       if (pred.test(referable)) {
         return referable;
       }
@@ -23,17 +23,15 @@ public interface Scope {
     return null;
   }
 
+  /**
+   * Returns elements in this scope.
+   *
+   * @param kind  the kind of elements to return, or null to return all elements
+   */
   @NotNull
-  default Collection<? extends Referable> getAllElements() {
+  default Collection<? extends Referable> getElements(@Nullable Referable.RefKind kind) {
     List<Referable> result = new ArrayList<>();
-    find(ref -> { result.add(ref); return false; });
-    return result;
-  }
-
-  @NotNull
-  default Collection<? extends Referable> getElements(Referable.RefKind kind) {
-    List<Referable> result = new ArrayList<>();
-    find(ref -> { if (ref.getRefKind() == kind) result.add(ref); return false; });
+    find(ref -> { if (kind == null || ref.getRefKind() == kind) result.add(ref); return false; });
     return result;
   }
 
@@ -42,6 +40,12 @@ public interface Scope {
     return getElements(Referable.RefKind.EXPR);
   }
 
+  /**
+   * Resolves a name in this scope.
+   *
+   * @param name  the name to resolve
+   * @param kind  the kind of element to resolve, or null to resolve an element of any kind
+   */
   @Nullable
   default Referable resolveName(@NotNull String name, @Nullable Referable.RefKind kind) {
     return find(ref -> (kind == null || ref.getRefKind() == kind) && Objects.equals(name, ref.textRepresentation()));

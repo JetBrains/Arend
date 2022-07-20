@@ -38,13 +38,8 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     }
 
     @Override
-    public @NotNull Collection<? extends Referable> getAllElements() {
-      return metaDefs.values();
-    }
-
-    @Override
     public @NotNull Collection<? extends Referable> getElements(Referable.RefKind kind) {
-      return kind == Referable.RefKind.EXPR ? metaDefs.values() : Collections.emptyList();
+      return kind == null || kind == Referable.RefKind.EXPR ? metaDefs.values() : Collections.emptyList();
     }
   };
 

@@ -65,11 +65,6 @@ public class ImportedScope implements Scope {
     return result;
   }
 
-  @Override
-  public @NotNull Collection<? extends Referable> getAllElements() {
-    return myElementsScope != null ? myElementsScope.getAllElements() : Scope.super.getAllElements();
-  }
-
   @Nullable
   @Override
   public Referable find(Predicate<Referable> pred) {

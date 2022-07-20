@@ -45,7 +45,10 @@ public class CachingScope implements Scope {
 
   @NotNull
   @Override
-  public Collection<Referable> getElements(Referable.RefKind kind) {
+  public Collection<? extends Referable> getElements(Referable.RefKind kind) {
+    if (kind == null) {
+      return Scope.super.getElements(null);
+    }
     Map<String, Referable> map = myElements.get(kind);
     return map == null ? Collections.emptyList() : map.values();
   }

@@ -34,11 +34,6 @@ public class NamespaceCommandNamespace implements Scope {
     return parentScope == null ? EmptyScope.INSTANCE : new NamespaceCommandNamespace(parentScope, cmd);
   }
 
-  @Override
-  public @NotNull Collection<? extends Referable> getAllElements() {
-    return getElements(null);
-  }
-
   @NotNull
   @Override
   public Collection<? extends Referable> getElements(Referable.RefKind refKind) {
@@ -77,7 +72,7 @@ public class NamespaceCommandNamespace implements Scope {
 
     if (myNamespaceCommand.isUsing()) {
       elemLoop:
-      for (Referable ref : refKind == null ? myModuleNamespace.getAllElements() : myModuleNamespace.getElements(refKind)) {
+      for (Referable ref : refKind == null ? myModuleNamespace.getElements(null) : myModuleNamespace.getElements(refKind)) {
         if (hidden.contains(ref.textRepresentation())) {
           continue;
         }

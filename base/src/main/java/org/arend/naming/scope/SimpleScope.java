@@ -12,14 +12,8 @@ public class SimpleScope implements Scope {
 
   @NotNull
   @Override
-  public Collection<? extends Referable> getAllElements() {
-    return names.values();
-  }
-
-  @NotNull
-  @Override
   public Collection<? extends Referable> getElements(Referable.RefKind kind) {
-    return kind == Referable.RefKind.EXPR ? names.values() : Collections.emptyList();
+    return kind == null || kind == Referable.RefKind.EXPR ? names.values() : Collections.emptyList();
   }
 
   @Nullable

@@ -23,12 +23,6 @@ public class LazyScope implements Scope {
   }
 
   @Override
-  public @NotNull Collection<? extends Referable> getAllElements() {
-    updateScope();
-    return myScope.getAllElements();
-  }
-
-  @Override
   public @NotNull Collection<? extends Referable> getElements(Referable.RefKind kind) {
     updateScope();
     return myScope.getElements(kind);

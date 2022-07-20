@@ -877,7 +877,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       } else {
         checkNamespaceCommand(cmd, referables.keySet());
       }
-      Collection<? extends Referable> elements = NamespaceCommandNamespace.resolveNamespace(cmd.getKind() == NamespaceCommand.Kind.IMPORT ? cachedScope.getImportedSubscope() : cachedScope, cmd).getAllElements();
+      Collection<? extends Referable> elements = NamespaceCommandNamespace.resolveNamespace(cmd.getKind() == NamespaceCommand.Kind.IMPORT ? cachedScope.getImportedSubscope() : cachedScope, cmd).getElements(null);
       if (!elements.isEmpty()) {
         Map<String, Referable> map = new LinkedHashMap<>();
         for (Referable element : elements) {

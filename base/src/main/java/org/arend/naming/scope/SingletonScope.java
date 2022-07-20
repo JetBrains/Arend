@@ -18,7 +18,7 @@ public class SingletonScope implements Scope {
   @NotNull
   @Override
   public List<Referable> getElements(Referable.RefKind kind) {
-    return myReferable.getRefKind() == kind ? Collections.singletonList(myReferable) : Collections.emptyList();
+    return kind == null || myReferable.getRefKind() == kind ? Collections.singletonList(myReferable) : Collections.emptyList();
   }
 
   @Nullable

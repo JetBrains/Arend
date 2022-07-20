@@ -5,6 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
@@ -32,7 +33,10 @@ public class ListScope implements Scope {
 
   @NotNull
   @Override
-  public List<? extends Referable> getElements(Referable.RefKind kind) {
+  public Collection<? extends Referable> getElements(Referable.RefKind kind) {
+    if (kind == null) {
+      return Scope.super.getElements(null);
+    }
     return kind == Referable.RefKind.EXPR ? myContext : kind == Referable.RefKind.PLEVEL ? myPLevels : myHLevels;
   }
 

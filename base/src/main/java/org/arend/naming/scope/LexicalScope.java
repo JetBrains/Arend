@@ -14,7 +14,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 @SuppressWarnings("Duplicates")
@@ -149,17 +148,12 @@ public class LexicalScope implements Scope {
           scope = cachingScope;
         }
         scope = NamespaceCommandNamespace.resolveNamespace(scope, cmd);
-        elements.addAll(kind == null ? scope.getAllElements() : scope.getElements(kind));
+        elements.addAll(kind == null ? scope.getElements(null) : scope.getElements(kind));
       }
     }
 
-    elements.addAll(kind == null ? myParent.getAllElements() : myParent.getElements(kind));
+    elements.addAll(kind == null ? myParent.getElements(null) : myParent.getElements(kind));
     return elements;
-  }
-
-  @Override
-  public @NotNull Collection<? extends Referable> getAllElements() {
-    return getElements(null);
   }
 
   private static GlobalReferable resolveInternal(Group group, String name, boolean onlyInternal) {
