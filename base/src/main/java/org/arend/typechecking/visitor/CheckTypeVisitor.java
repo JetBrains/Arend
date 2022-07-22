@@ -3397,11 +3397,12 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
             Set<?> bindings = (Set<?>) command.bindings;
             Set<Map.Entry<Referable, Binding>> removed = new HashSet<>();
             for (Map.Entry<Referable, Binding> entry : context.entrySet()) {
-              if (!(entry.getKey() instanceof VeryFakeLocalReferable) && (bindings == null || command.kind == FreeBindingsModifier.Command.Kind.REMOVE && bindings.contains(entry.getKey()) || command.kind == FreeBindingsModifier.Command.Kind.RETAIN && !bindings.contains(entry.getKey()))) {
+              if (!(entry.getKey() instanceof VeryFakeLocalReferable) && (bindings == null || command.kind == FreeBindingsModifier.Command.Kind.REMOVE && bindings.contains(entry.getValue()) || command.kind == FreeBindingsModifier.Command.Kind.RETAIN && !bindings.contains(entry.getValue()))) {
                 removed.add(entry);
               }
             }
             for (var entry : removed) {
+              context.remove(entry.getKey());
               context.put(new VeryFakeLocalReferable(entry.getValue().getName()), entry.getValue());
             }
             break;
@@ -3423,6 +3424,7 @@ public class CheckTypeVisitor extends UserDataHolderImpl implements ConcreteExpr
             }
             if (removed != null) {
               for (var entry : removed) {
+                context.remove(entry.getKey());
                 context.put(new VeryFakeLocalReferable(entry.getValue().getName()), entry.getValue());
               }
             }
