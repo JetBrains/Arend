@@ -2,13 +2,14 @@ package org.arend.term.group;
 
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.term.NamespaceCommand;
+import org.arend.term.abs.Abstract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.Collections;
 
-public class EmptyGroup implements ChildGroup {
+public class EmptyGroup implements ChildGroup, Statement {
   private final LocatedReferable myReferable;
   private final ChildGroup myParent;
 
@@ -29,15 +30,8 @@ public class EmptyGroup implements ChildGroup {
     return myReferable;
   }
 
-  @NotNull
   @Override
-  public Collection<? extends Group> getSubgroups() {
-    return Collections.emptyList();
-  }
-
-  @NotNull
-  @Override
-  public Collection<? extends NamespaceCommand> getNamespaceCommands() {
+  public @NotNull Collection<? extends Statement> getStatements() {
     return Collections.emptyList();
   }
 
@@ -45,5 +39,10 @@ public class EmptyGroup implements ChildGroup {
   @Override
   public Collection<? extends InternalReferable> getInternalReferables() {
     return Collections.emptyList();
+  }
+
+  @Override
+  public Group getGroup() {
+    return this;
   }
 }

@@ -22,22 +22,21 @@ public class LazyScope implements Scope {
     }
   }
 
-  @NotNull
   @Override
-  public Collection<? extends Referable> getElements() {
+  public @NotNull Collection<? extends Referable> getElements(Referable.RefKind kind) {
     updateScope();
-    return myScope.getElements();
+    return myScope.getElements(kind);
   }
 
   @Override
-  public Referable resolveName(String name) {
+  public Referable resolveName(@NotNull String name, @Nullable Referable.RefKind kind) {
     updateScope();
-    return myScope.resolveName(name);
+    return myScope.resolveName(name, kind);
   }
 
   @Nullable
   @Override
-  public Scope resolveNamespace(String name, boolean onlyInternal) {
+  public Scope resolveNamespace(@NotNull String name, boolean onlyInternal) {
     updateScope();
     return myScope.resolveNamespace(name, onlyInternal);
   }
@@ -57,9 +56,9 @@ public class LazyScope implements Scope {
 
   @NotNull
   @Override
-  public Scope getGlobalSubscopeWithoutOpens() {
+  public Scope getGlobalSubscopeWithoutOpens(boolean withImports) {
     updateScope();
-    return myScope.getGlobalSubscopeWithoutOpens();
+    return myScope.getGlobalSubscopeWithoutOpens(withImports);
   }
 
   @Nullable

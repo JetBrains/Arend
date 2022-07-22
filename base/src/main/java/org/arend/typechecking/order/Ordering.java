@@ -9,6 +9,7 @@ import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.ext.concrete.definition.FunctionKind;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.Group;
+import org.arend.term.group.Statement;
 import org.arend.typechecking.computation.ComputationRunner;
 import org.arend.typechecking.instance.provider.InstanceProvider;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
@@ -88,8 +89,11 @@ public class Ordering extends BellmanFord<Concrete.ResolvableDefinition> {
       }
     }
 
-    for (Group subgroup : group.getSubgroups()) {
-      orderModule(subgroup);
+    for (Statement statement : group.getStatements()) {
+      Group subgroup = statement.getGroup();
+      if (subgroup != null) {
+        orderModule(subgroup);
+      }
     }
     for (Group subgroup : group.getDynamicSubgroups()) {
       orderModule(subgroup);

@@ -7,6 +7,7 @@ import org.arend.naming.reference.ModuleReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.term.NamespaceCommand;
 import org.arend.term.group.Group;
+import org.arend.term.group.Statement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -28,9 +29,10 @@ public class ImportedScope implements Scope {
       myExpectedNamesTree.addPath(location.getModulePath().toList());
     }
 
-    for (NamespaceCommand command : group.getNamespaceCommands()) {
-      if (command.getKind() == NamespaceCommand.Kind.IMPORT) {
-        myExpectedNamesTree.addPath(command.getPath());
+    for (Statement statement : group.getStatements()) {
+      NamespaceCommand cmd = statement.getNamespaceCommand();
+      if (cmd != null && cmd.getKind() == NamespaceCommand.Kind.IMPORT) {
+        myExpectedNamesTree.addPath(cmd.getPath());
       }
     }
   }
@@ -49,9 +51,9 @@ public class ImportedScope implements Scope {
 
   @NotNull
   @Override
-  public Collection<? extends Referable> getElements() {
+  public Collection<? extends Referable> getElements(Referable.RefKind kind) {
     if (myElementsScope != null) {
-      return myElementsScope.getElements();
+      return myElementsScope.getElements(kind);
     }
 
     List<Referable> result = new ArrayList<>();
@@ -76,14 +78,14 @@ public class ImportedScope implements Scope {
 
   @Nullable
   @Override
-  public Referable resolveName(String name) {
+  public Referable resolveName(@NotNull String name, @Nullable Referable.RefKind kind) {
     Triple triple = myExpectedNamesTree.map.get(name);
     return triple == null || triple.scope == null ? null : triple.referable;
   }
 
   @Nullable
   @Override
-  public Scope resolveNamespace(String name, boolean onlyInternal) {
+  public Scope resolveNamespace(@NotNull String name, boolean onlyInternal) {
     Triple triple = myExpectedNamesTree.map.get(name);
     if (triple == null) {
       return null;

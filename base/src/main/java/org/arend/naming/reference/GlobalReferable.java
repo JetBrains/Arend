@@ -15,6 +15,7 @@ public interface GlobalReferable extends Referable {
       @Override public boolean isConstructor() { return true; }
     },
     FIELD { @Override public boolean isTypecheckable() { return false; } },
+    LEVEL { @Override public boolean isTypecheckable() { return false; } },
     OTHER { @Override public boolean isTypecheckable() { return false; } };
 
     public boolean isTypecheckable() {

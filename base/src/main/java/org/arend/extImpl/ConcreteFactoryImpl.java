@@ -630,10 +630,10 @@ public class ConcreteFactoryImpl implements ConcreteFactory {
   }
 
   @Override
-  public @NotNull ConcreteLevelParameters levelParameters(@NotNull List<String> names, boolean isIncreasing) {
+  public @NotNull ConcreteLevelParameters levelParameters(boolean isPLevels, @NotNull List<String> names, boolean isIncreasing) {
     List<LevelReferable> refs = new ArrayList<>(names.size());
     for (String name : names) {
-      refs.add(new DataLevelReferable(myData, name));
+      refs.add(new DataLevelReferable(myData, name, isPLevels));
     }
     return new Concrete.LevelParameters(myData, refs, isIncreasing);
   }

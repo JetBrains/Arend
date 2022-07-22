@@ -4,10 +4,7 @@ import org.arend.naming.reference.Referable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 public class SimpleScope implements Scope {
   public final Map<String, Referable> names = new LinkedHashMap<>();
@@ -15,19 +12,19 @@ public class SimpleScope implements Scope {
 
   @NotNull
   @Override
-  public Collection<? extends Referable> getElements() {
-    return names.values();
+  public Collection<? extends Referable> getElements(Referable.RefKind kind) {
+    return kind == null || kind == Referable.RefKind.EXPR ? names.values() : Collections.emptyList();
   }
 
   @Nullable
   @Override
-  public Referable resolveName(String name) {
-    return names.get(name);
+  public Referable resolveName(@NotNull String name, Referable.RefKind kind) {
+    return kind == null || kind == Referable.RefKind.EXPR ? names.get(name) : null;
   }
 
   @Nullable
   @Override
-  public Scope resolveNamespace(String name, boolean onlyInternal) {
+  public Scope resolveNamespace(@NotNull String name, boolean onlyInternal) {
     return namespaces.get(name);
   }
 }

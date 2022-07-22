@@ -1,7 +1,6 @@
 package org.arend.term.group;
 
 import org.arend.naming.reference.LocatedReferable;
-import org.arend.term.NamespaceCommand;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
@@ -11,8 +10,7 @@ import java.util.function.Consumer;
 public interface Group {
   @NotNull LocatedReferable getReferable();
 
-  @NotNull Collection<? extends Group> getSubgroups();
-  @NotNull Collection<? extends NamespaceCommand> getNamespaceCommands();
+  @NotNull Collection<? extends Statement> getStatements();
 
   @NotNull Collection<? extends InternalReferable> getInternalReferables();
 
@@ -35,8 +33,11 @@ public interface Group {
 
   default void traverseGroup(Consumer<Group> consumer) {
     consumer.accept(this);
-    for (Group subgroup : getSubgroups()) {
-      subgroup.traverseGroup(consumer);
+    for (Statement statement : getStatements()) {
+      Group subgroup = statement.getGroup();
+      if (subgroup != null) {
+        subgroup.traverseGroup(consumer);
+      }
     }
     for (Group subgroup : getDynamicSubgroups()) {
       subgroup.traverseGroup(consumer);

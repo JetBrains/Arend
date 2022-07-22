@@ -1,42 +1,78 @@
 package org.arend.naming.scope;
 
-import org.arend.ext.reference.ArendRef;
 import org.arend.naming.reference.Referable;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
 
 public class ListScope implements Scope {
-  private final List<? extends ArendRef> myContext;
+  private final List<? extends Referable> myContext;
+  private final List<? extends Referable> myPLevels;
+  private final List<? extends Referable> myHLevels;
 
-  public ListScope(List<? extends ArendRef> context) {
+  public ListScope(List<? extends Referable> context, List<? extends Referable> pLevels, List<? extends Referable> hLevels) {
     myContext = context;
+    myPLevels = pLevels;
+    myHLevels = hLevels;
+  }
+
+  public ListScope(List<? extends Referable> context) {
+    myContext = context;
+    myPLevels = Collections.emptyList();
+    myHLevels = Collections.emptyList();
   }
 
   public ListScope(Referable... context) {
-    myContext = Arrays.asList(context);
+    this(Arrays.asList(context));
   }
 
   @NotNull
   @Override
-  public List<Referable> getElements() {
-    List<Referable> elements = new ArrayList<>(myContext.size());
-    for (int i = myContext.size() - 1; i >= 0; i--) {
-      if (myContext.get(i) instanceof Referable) {
-        elements.add((Referable) myContext.get(i));
-      }
+  public Collection<? extends Referable> getElements(Referable.RefKind kind) {
+    if (kind == null) {
+      return Scope.super.getElements(null);
     }
-    return elements;
+    return kind == Referable.RefKind.EXPR ? myContext : kind == Referable.RefKind.PLEVEL ? myPLevels : myHLevels;
   }
 
   @Override
   public Referable find(Predicate<Referable> pred) {
     for (int i = myContext.size() - 1; i >= 0; i--) {
-      if (myContext.get(i) instanceof Referable && pred.test((Referable) myContext.get(i))) {
-        return (Referable) myContext.get(i);
+      if (pred.test(myContext.get(i))) {
+        return myContext.get(i);
+      }
+    }
+    for (int i = myPLevels.size() - 1; i >= 0; i--) {
+      if (pred.test(myPLevels.get(i))) {
+        return myPLevels.get(i);
+      }
+    }
+    for (int i = myHLevels.size() - 1; i >= 0; i--) {
+      if (pred.test(myHLevels.get(i))) {
+        return myHLevels.get(i);
+      }
+    }
+    return null;
+  }
+
+  @Override
+  public @Nullable Referable resolveName(@NotNull String name, Referable.RefKind kind) {
+    if (kind == null) {
+      for (Referable.RefKind refKind : Referable.RefKind.values()) {
+        Referable ref = resolveName(name, refKind);
+        if (ref != null) return ref;
+      }
+    } else {
+      List<? extends Referable> list = kind == Referable.RefKind.EXPR ? myContext : kind == Referable.RefKind.PLEVEL ? myPLevels : myHLevels;
+      for (int i = list.size() - 1; i >= 0; i--) {
+        if (list.get(i).getRefName().equals(name)) {
+          return list.get(i);
+        }
       }
     }
     return null;
@@ -50,7 +86,7 @@ public class ListScope implements Scope {
 
   @NotNull
   @Override
-  public Scope getGlobalSubscopeWithoutOpens() {
+  public Scope getGlobalSubscopeWithoutOpens(boolean withImports) {
     return EmptyScope.INSTANCE;
   }
 }

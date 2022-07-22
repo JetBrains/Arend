@@ -36,6 +36,7 @@ import org.arend.repl.action.ReplCommand;
 import org.arend.term.NamespaceCommand;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.FileGroup;
+import org.arend.term.group.Statement;
 import org.arend.typechecking.LibraryArendExtensionProvider;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
 import org.arend.typechecking.order.dependency.DummyDependencyListener;
@@ -234,12 +235,13 @@ public abstract class CommonCliRepl extends Repl {
   }
 
   @Override
-  protected void loadPotentialUnloadedModules(Collection<? extends NamespaceCommand> namespaceCommands) {
+  protected void loadPotentialUnloadedModules(Collection<? extends Statement> statements) {
     var moduleScopeProvider = getAvailableModuleScopeProvider();
     List<ModulePath> modules = new ArrayList<>();
-    for (var namespaceCommand : namespaceCommands) {
-      if (namespaceCommand.getKind() == NamespaceCommand.Kind.IMPORT) {
-        var module = new ModulePath(namespaceCommand.getPath());
+    for (var statement : statements) {
+      NamespaceCommand command = statement.getNamespaceCommand();
+      if (command != null && command.getKind() == NamespaceCommand.Kind.IMPORT) {
+        var module = new ModulePath(((NamespaceCommand) statement).getPath());
         var scope = moduleScopeProvider.forModule(module);
         if (scope == null) {
           modules.add(module);

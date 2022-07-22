@@ -7,14 +7,18 @@ import org.arend.frontend.parser.Position;
 import org.arend.naming.reference.Referable;
 import org.arend.term.ChildNamespaceCommand;
 import org.arend.term.NameRenaming;
+import org.arend.term.NamespaceCommand;
+import org.arend.term.abs.Abstract;
 import org.arend.term.group.ChildGroup;
+import org.arend.term.group.Group;
+import org.arend.term.group.Statement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.List;
 
-public class SimpleNamespaceCommand implements ChildNamespaceCommand, SourceInfo, DataContainer {
+public class SimpleNamespaceCommand implements ChildNamespaceCommand, SourceInfo, DataContainer, Statement {
   private final Position myPosition;
   private final Kind myKind;
   private final List<String> myPath;
@@ -81,6 +85,11 @@ public class SimpleNamespaceCommand implements ChildNamespaceCommand, SourceInfo
   @Override
   public ChildGroup getParentGroup() {
     return myParent;
+  }
+
+  @Override
+  public NamespaceCommand getNamespaceCommand() {
+    return this;
   }
 
   public static class SimpleNameRenaming implements NameRenaming, SourceInfo {

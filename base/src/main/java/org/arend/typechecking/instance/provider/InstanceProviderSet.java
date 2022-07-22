@@ -8,6 +8,7 @@ import org.arend.naming.scope.NamespaceCommandNamespace;
 import org.arend.naming.scope.Scope;
 import org.arend.term.NamespaceCommand;
 import org.arend.term.group.Group;
+import org.arend.term.group.Statement;
 
 import java.util.*;
 import java.util.function.Function;
@@ -91,17 +92,24 @@ public class InstanceProviderSet {
   }
 
   private void processGroup(Group group, Scope parentScope, MyPredicate predicate) {
-    Collection<? extends NamespaceCommand> namespaceCommands = group.getNamespaceCommands();
-    Collection<? extends Group> subgroups = group.getSubgroups();
-    if (namespaceCommands.isEmpty() && subgroups.isEmpty()) {
+    Collection<? extends Statement> statements = group.getStatements();
+    if (statements.isEmpty()) {
       return;
     }
 
     parentScope = CachingScope.make(LexicalScope.insideOf(group, parentScope));
-    for (NamespaceCommand command : namespaceCommands) {
-      int size = predicate.instanceProvider.getInstances().size();
-      NamespaceCommandNamespace.resolveNamespace(command.getKind() == NamespaceCommand.Kind.IMPORT ? parentScope.getImportedSubscope() : parentScope, command).find(predicate);
-      predicate.instanceProvider.reverseFrom(size);
+    List<Group> subgroups = new ArrayList<>();
+    for (Statement statement : statements) {
+      NamespaceCommand command = statement.getNamespaceCommand();
+      if (command != null) {
+        int size = predicate.instanceProvider.getInstances().size();
+        NamespaceCommandNamespace.resolveNamespace(command.getKind() == NamespaceCommand.Kind.IMPORT ? parentScope.getImportedSubscope() : parentScope, command).find(predicate);
+        predicate.instanceProvider.reverseFrom(size);
+      }
+      Group subgroup = statement.getGroup();
+      if (subgroup != null) {
+        subgroups.add(subgroup);
+      }
     }
     processSubgroups(parentScope, predicate, subgroups);
   }
@@ -116,12 +124,15 @@ public class InstanceProviderSet {
       processGroup(subgroup, parentScope, predicate);
 
       if (!predicate.instanceProvider.isEmpty()) {
-        for (Group subSubgroup : subgroup.getSubgroups()) {
-          LocatedReferable subRef = subSubgroup.getReferable();
-          if (subRef.getKind() == GlobalReferable.Kind.COCLAUSE_FUNCTION) {
-            subRef = predicate.referableConverter.toDataLocatedReferable(subRef);
-            if (subRef instanceof TCDefReferable) {
-              myProviders.put((TCDefReferable) subRef, predicate.instanceProvider);
+        for (Statement statement : subgroup.getStatements()) {
+          Group subSubgroup = statement.getGroup();
+          if (subSubgroup != null) {
+            LocatedReferable subRef = subSubgroup.getReferable();
+            if (subRef.getKind() == GlobalReferable.Kind.COCLAUSE_FUNCTION) {
+              subRef = predicate.referableConverter.toDataLocatedReferable(subRef);
+              if (subRef instanceof TCDefReferable) {
+                myProviders.put((TCDefReferable) subRef, predicate.instanceProvider);
+              }
             }
           }
         }

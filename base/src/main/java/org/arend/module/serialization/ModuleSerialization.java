@@ -10,6 +10,7 @@ import org.arend.naming.reference.*;
 import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.source.error.LocationError;
 import org.arend.term.group.Group;
+import org.arend.term.group.Statement;
 import org.arend.typechecking.order.dependency.DependencyListener;
 
 import java.util.*;
@@ -97,8 +98,11 @@ public class ModuleSerialization {
     builder.setReferable(refBuilder.build());
 
     // Write subgroups
-    for (Group subgroup : group.getSubgroups()) {
-      builder.addSubgroup(writeGroup(subgroup, referableConverter));
+    for (Statement statement : group.getStatements()) {
+      Group subgroup = statement.getGroup();
+      if (subgroup != null) {
+        builder.addSubgroup(writeGroup(subgroup, referableConverter));
+      }
     }
     for (Group subgroup : group.getDynamicSubgroups()) {
       builder.addDynamicSubgroup(writeGroup(subgroup, referableConverter));

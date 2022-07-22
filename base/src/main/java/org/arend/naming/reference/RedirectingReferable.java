@@ -18,4 +18,10 @@ public interface RedirectingReferable extends GlobalReferable {
     Referable orig = getOriginalReferable();
     return orig instanceof GlobalReferable ? ((GlobalReferable) orig).getKind() : Kind.OTHER;
   }
+
+  @Override
+  @NotNull
+  default Referable.RefKind getRefKind() {
+    return getOriginalReferable().getRefKind();
+  }
 }

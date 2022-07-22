@@ -69,7 +69,7 @@ public class ConcreteClassReferable extends ConcreteResolvedClassReferable imple
   protected void resolve(Scope scope) {
     superClasses.clear();
     for (Reference superClass : myUnresolvedSuperClasses) {
-      Referable ref = ExpressionResolveNameVisitor.resolve(superClass.getReferent(), scope, true, null);
+      Referable ref = ExpressionResolveNameVisitor.resolve(superClass.getReferent(), scope, true, null, RefKind.EXPR);
       if (ref instanceof ClassReferable) {
         superClasses.add((ClassReferable) ref);
       }

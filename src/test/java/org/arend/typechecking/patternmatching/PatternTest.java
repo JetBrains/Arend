@@ -18,6 +18,7 @@ import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCDefReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.Group;
+import org.arend.term.group.Statement;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.arend.typechecking.error.local.LocalErrorReporter;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
@@ -150,9 +151,9 @@ public class PatternTest extends TypeCheckingTestCase {
       "\\data D | con\n" +
       "\\func f (n : Nat) (d : D) (k : Nat) : Nat\n" +
       "  | suc n, zero, suc k => k");
-    Iterator<? extends Group> it = module.getSubgroups().iterator();
-    TCDefReferable dataDef = (TCDefReferable) it.next().getReferable();
-    Concrete.FunctionDefinition funDef = (Concrete.FunctionDefinition) ((ConcreteLocatedReferable) it.next().getReferable()).getDefinition();
+    Iterator<? extends Statement> it = module.getStatements().iterator();
+    TCDefReferable dataDef = (TCDefReferable) it.next().getGroup().getReferable();
+    Concrete.FunctionDefinition funDef = (Concrete.FunctionDefinition) ((ConcreteLocatedReferable) it.next().getGroup().getReferable()).getDefinition();
     DataDefinition data = new DataDefinition(dataDef);
     data.setParameters(EmptyDependentLink.getInstance());
     data.setSort(Sort.STD);
@@ -205,9 +206,9 @@ public class PatternTest extends TypeCheckingTestCase {
       "\\data D\n" +
       "\\func f (n : Nat) (d : D) (k : Nat) : Nat\n" +
       "  | suc n, (), k => k");
-    Iterator<? extends Group> it = module.getSubgroups().iterator();
-    TCDefReferable dataDef = (TCDefReferable) it.next().getReferable();
-    Concrete.FunctionDefinition funDef = (Concrete.FunctionDefinition) ((ConcreteLocatedReferable) it.next().getReferable()).getDefinition();
+    Iterator<? extends Statement> it = module.getStatements().iterator();
+    TCDefReferable dataDef = (TCDefReferable) it.next().getGroup().getReferable();
+    Concrete.FunctionDefinition funDef = (Concrete.FunctionDefinition) ((ConcreteLocatedReferable) it.next().getGroup().getReferable()).getDefinition();
     DataDefinition data = new DataDefinition(dataDef);
     data.setParameters(EmptyDependentLink.getInstance());
     data.setSort(Sort.STD);
@@ -226,9 +227,9 @@ public class PatternTest extends TypeCheckingTestCase {
       "\\data D\n" +
       "\\func f (n : Nat) (d : D) (k : Nat) : Nat\n" +
       "  | suc n, (), suc k => k");
-    Iterator<? extends Group> it = module.getSubgroups().iterator();
-    TCDefReferable dataDef = (TCDefReferable) it.next().getReferable();
-    Concrete.FunctionDefinition funDef = (Concrete.FunctionDefinition) ((ConcreteLocatedReferable) it.next().getReferable()).getDefinition();
+    Iterator<? extends Statement> it = module.getStatements().iterator();
+    TCDefReferable dataDef = (TCDefReferable) it.next().getGroup().getReferable();
+    Concrete.FunctionDefinition funDef = (Concrete.FunctionDefinition) ((ConcreteLocatedReferable) it.next().getGroup().getReferable()).getDefinition();
     DataDefinition data = new DataDefinition(dataDef);
     data.setParameters(EmptyDependentLink.getInstance());
     data.setSort(Sort.STD);

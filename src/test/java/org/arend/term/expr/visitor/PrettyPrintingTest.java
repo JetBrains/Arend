@@ -18,11 +18,9 @@ import org.arend.naming.reference.ConcreteLocatedReferable;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.LocalReferable;
 import org.arend.ext.concrete.definition.FunctionKind;
-import org.arend.naming.reference.TCDefReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.expr.ConcreteCompareVisitor;
-import org.arend.term.group.Group;
-import org.arend.term.group.StaticGroup;
+import org.arend.term.group.ChildGroup;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
 import org.arend.term.prettyprint.ToAbstractVisitor;
 import org.arend.typechecking.TypeCheckingTestCase;
@@ -305,8 +303,8 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
     assertEquals(expr, printTestExpr());
   }
 
-  private void testRevealing(String module, Function<Group, Expression> moduleSelector, String expected, Function<Expression, Expression> selector) {
-    Group result = typeCheckModule(module);
+  private void testRevealing(String module, Function<ChildGroup, Expression> moduleSelector, String expected, Function<Expression, Expression> selector) {
+    ChildGroup result = typeCheckModule(module);
     Expression baseExpr = moduleSelector.apply(result);
     Expression incremented = selector.apply(baseExpr);
     PrettyPrinterConfig config = new PrettyPrinterConfigImpl(EMPTY) {
@@ -321,7 +319,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
   @Test
   public void revealing1() {
     testRevealing("\\func f : idp = {1 = 1} idp => idp",
-            (group) -> ((FunctionDefinition) ((TCDefReferable) ((StaticGroup) group.getSubgroups().toArray()[0]).getReferable()).getTypechecked()).getResultType(),
+            (group) -> ((FunctionDefinition) getDefinition(group, "f")).getResultType(),
             "idp {Nat} = idp",
             (result) -> result.cast(FunCallExpression.class).getDefCallArguments().get(1));
   }
@@ -329,7 +327,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
   @Test
   public void revealing2() {
     testRevealing("\\func f : idp = {1 = 1} idp => idp",
-            (group) -> ((FunctionDefinition) ((TCDefReferable) ((StaticGroup) group.getSubgroups().toArray()[0]).getReferable()).getTypechecked()).getResultType(),
+            (group) -> ((FunctionDefinition) getDefinition(group, "f")).getResultType(),
             "idp = {1 = 1} idp",
             (result) -> result);
   }
@@ -337,7 +335,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
   @Test
   public void revealing3() {
     testRevealing("\\class A { | f {n : Nat} : n = 1 } \\func e (q : A) : q.f = idp => Path.inProp _ _",
-            (module) -> ((FunctionDefinition) ((TCDefReferable) ((StaticGroup) module.getSubgroups().toArray()[1]).getReferable()).getTypechecked()).getResultType(),
+            (group) -> ((FunctionDefinition) getDefinition(group, "e")).getResultType(),
             "q.f {1} = idp",
             (result) -> result.cast(FunCallExpression.class).getDefCallArguments().get(1).cast(AppExpression.class).getFunction());
   }

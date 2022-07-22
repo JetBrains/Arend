@@ -15,7 +15,7 @@ import java.util.function.Predicate;
 // Minimal definition: (find or getElements) and resolveNamespace
 public interface Scope {
   default @Nullable Referable find(Predicate<Referable> pred) {
-    for (Referable referable : getElements()) {
+    for (Referable referable : getElements(null)) {
       if (pred.test(referable)) {
         return referable;
       }
@@ -23,19 +23,40 @@ public interface Scope {
     return null;
   }
 
+  /**
+   * Returns elements in this scope.
+   *
+   * @param kind  the kind of elements to return, or null to return all elements
+   */
   @NotNull
-  default Collection<? extends Referable> getElements() {
+  default Collection<? extends Referable> getElements(@Nullable Referable.RefKind kind) {
     List<Referable> result = new ArrayList<>();
-    find(ref -> { result.add(ref); return false; });
+    find(ref -> { if (kind == null || ref.getRefKind() == kind) result.add(ref); return false; });
     return result;
   }
 
-  @Nullable
-  default Referable resolveName(String name) {
-    return find(ref -> Objects.equals(name, ref.textRepresentation()));
+  @NotNull
+  default Collection<? extends Referable> getElements() {
+    return getElements(Referable.RefKind.EXPR);
   }
 
-  default @Nullable Scope resolveNamespace(String name, boolean onlyInternal) {
+  /**
+   * Resolves a name in this scope.
+   *
+   * @param name  the name to resolve
+   * @param kind  the kind of element to resolve, or null to resolve an element of any kind
+   */
+  @Nullable
+  default Referable resolveName(@NotNull String name, @Nullable Referable.RefKind kind) {
+    return find(ref -> (kind == null || ref.getRefKind() == kind) && Objects.equals(name, ref.textRepresentation()));
+  }
+
+  @Nullable
+  default Referable resolveName(@NotNull String name) {
+    return resolveName(name, Referable.RefKind.EXPR);
+  }
+
+  default @Nullable Scope resolveNamespace(@NotNull String name, boolean onlyInternal) {
     return null;
   }
 
@@ -43,7 +64,7 @@ public interface Scope {
     return this;
   }
 
-  default @NotNull Scope getGlobalSubscopeWithoutOpens() {
+  default @NotNull Scope getGlobalSubscopeWithoutOpens(boolean withImports) {
     return this;
   }
 

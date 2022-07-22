@@ -6,13 +6,12 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.*;
 import org.arend.core.expr.ClassCallExpression;
 import org.arend.core.expr.Expression;
-import org.arend.core.subst.LevelPair;
 import org.arend.core.subst.Levels;
 import org.arend.naming.reference.ConcreteLocatedReferable;
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.ChildGroup;
-import org.arend.term.group.Group;
+import org.arend.term.group.Statement;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.util.SingletonList;
@@ -26,7 +25,7 @@ import static org.arend.core.expr.ExpressionFactory.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-public class DefCall extends TypeCheckingTestCase {
+public class DefCallTest extends TypeCheckingTestCase {
   private void test(Expression expected) {
     assertEquals(expected, ((FunctionDefinition) getDefinition("test")).getBody());
   }
@@ -772,10 +771,10 @@ public class DefCall extends TypeCheckingTestCase {
         "\\data TrP (A : \\Type) | inP A\n" +
         "\\func isequiv {A B : \\Type0} (f : A -> B) => 0\n" +
         "\\func inP-isequiv (P : \\Prop) => isequiv (inP {P})");
-    Iterator<? extends Group> it = cd.getSubgroups().iterator();
-    LocatedReferable inP = it.next().getInternalReferables().iterator().next().getReferable();
+    Iterator<? extends Statement> it = cd.getStatements().iterator();
+    LocatedReferable inP = it.next().getGroup().getInternalReferables().iterator().next().getReferable();
     it.next();
-    Concrete.FunctionDefinition lastDef = (Concrete.FunctionDefinition) ((ConcreteLocatedReferable) it.next().getReferable()).getDefinition();
+    Concrete.FunctionDefinition lastDef = (Concrete.FunctionDefinition) ((ConcreteLocatedReferable) it.next().getGroup().getReferable()).getDefinition();
     ((Concrete.ReferenceExpression) ((Concrete.AppExpression) ((Concrete.AppExpression) ((Concrete.TermFunctionBody) lastDef.getBody()).getTerm()).getArguments().get(0).getExpression()).getFunction()).setReferent(inP);
     typeCheckModule(cd);
   }

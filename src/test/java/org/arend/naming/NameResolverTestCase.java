@@ -33,13 +33,13 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   private final Map<String, MetaReferable> metaDefs = new HashMap<>();
   private final Scope metaScope = new Scope() {
     @Override
-    public @Nullable Referable resolveName(String name) {
-      return metaDefs.get(name);
+    public @Nullable Referable resolveName(@NotNull String name, Referable.RefKind kind) {
+      return kind == null || kind == Referable.RefKind.EXPR ? metaDefs.get(name) : null;
     }
 
     @Override
-    public @NotNull Collection<? extends Referable> getElements() {
-      return metaDefs.values();
+    public @NotNull Collection<? extends Referable> getElements(Referable.RefKind kind) {
+      return kind == null || kind == Referable.RefKind.EXPR ? metaDefs.values() : Collections.emptyList();
     }
   };
 

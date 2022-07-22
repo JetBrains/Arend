@@ -23,6 +23,7 @@ import org.arend.naming.reference.*;
 import org.arend.ext.concrete.definition.ClassFieldKind;
 import org.arend.term.Fixity;
 import org.arend.term.abs.Abstract;
+import org.arend.term.group.Statement;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -1543,7 +1544,7 @@ public final class Concrete {
   }
 
   public static class IdLevelExpression extends LevelExpression {
-    private final Referable myReferent;
+    private Referable myReferent;
 
     public IdLevelExpression(Object data, Referable referable) {
       super(data);
@@ -1552,6 +1553,10 @@ public final class Concrete {
 
     public Referable getReferent() {
       return myReferent;
+    }
+
+    public void setReferent(Referable referent) {
+      myReferent = referent;
     }
 
     @Override
@@ -1758,11 +1763,20 @@ public final class Concrete {
     }
   }
 
+  private static List<Abstract.Comparison> makeComparisonList(List<? extends LevelReferable> referables, boolean isIncreasing) {
+    if (referables.isEmpty()) return Collections.emptyList();
+    List<Abstract.Comparison> result = new ArrayList<>(referables.size() - 1);
+    for (int i = 0; i < referables.size() - 1; i++) {
+      result.add(isIncreasing ? Abstract.Comparison.LESS_OR_EQUALS : Abstract.Comparison.GREATER_OR_EQUALS);
+    }
+    return result;
+  }
+
   public static class LevelParameters extends SourceNodeImpl implements Abstract.LevelParameters, ConcreteLevelParameters {
-    public final List<LevelReferable> referables;
+    public final List<? extends LevelReferable> referables;
     public final boolean isIncreasing;
 
-    public LevelParameters(Object data, List<LevelReferable> referables, boolean isIncreasing) {
+    public LevelParameters(Object data, List<? extends LevelReferable> referables, boolean isIncreasing) {
       super(data);
       this.referables = referables;
       this.isIncreasing = isIncreasing;
@@ -1775,12 +1789,7 @@ public final class Concrete {
 
     @Override
     public @NotNull Collection<Abstract.Comparison> getComparisonList() {
-      if (referables.isEmpty()) return Collections.emptyList();
-      List<Abstract.Comparison> result = new ArrayList<>(referables.size() - 1);
-      for (int i = 0; i < referables.size() - 1; i++) {
-        result.add(isIncreasing ? Abstract.Comparison.LESS_OR_EQUALS : Abstract.Comparison.GREATER_OR_EQUALS);
-      }
-      return result;
+      return makeComparisonList(referables, isIncreasing);
     }
 
     @Override
@@ -1788,23 +1797,19 @@ public final class Concrete {
       return isIncreasing;
     }
 
-    public static LevelParameters fromAbstract(Abstract.LevelParameters parameters) {
-      return new LevelParameters(parameters.getData(), getLevelParametersRefs(parameters), parameters.isIncreasing());
-    }
-
-    public static List<LevelReferable> getLevelParametersRefs(Abstract.LevelParameters params) {
+    public static List<LevelReferable> getLevelParametersRefs(Abstract.LevelParameters params, boolean isPLevels) {
       if (params == null) return null;
       List<LevelReferable> result = new ArrayList<>();
       for (Referable ref : params.getReferables()) {
-        result.add(new DataLevelReferable(ref, ref.getRefName()));
+        result.add(new DataLevelReferable(ref, ref.getRefName(), isPLevels));
       }
       return result;
     }
 
-    public static Concrete.LevelParameters makeLevelParameters(List<? extends LevelVariable> variables) {
+    public static Concrete.LevelParameters makeLevelParameters(List<? extends LevelVariable> variables, boolean isPLevels) {
       List<LevelReferable> refs = new ArrayList<>(variables.size());
       for (LevelVariable variable : variables) {
-        refs.add(new DataLevelReferable(null, variable.getName()));
+        refs.add(new DataLevelReferable(null, variable.getName(), isPLevels));
       }
       return new Concrete.LevelParameters(null, refs, variables.size() <= 1 || variables.get(0).getStd() == variables.get(0) || variables.get(0) instanceof ParamLevelVariable && variables.get(1) instanceof ParamLevelVariable && ((ParamLevelVariable) variables.get(0)).getSize() <= ((ParamLevelVariable) variables.get(1)).getSize());
     }
@@ -1812,6 +1817,53 @@ public final class Concrete {
     @Override
     public void prettyPrint(PrettyPrintVisitor visitor, Precedence prec) {
       visitor.prettyPrintLevelParameters(this, null);
+    }
+  }
+
+  public static class LevelsDefinition extends SourceNodeImpl implements Statement, Abstract.LevelParameters {
+    private final List<TCLevelReferable> myReferables;
+    private final boolean myIncreasing;
+    private final boolean myPLevels;
+
+    public LevelsDefinition(Object data, List<TCLevelReferable> referables, boolean isIncreasing, boolean isPLevels) {
+      super(data);
+      myReferables = referables;
+      myIncreasing = isIncreasing;
+      myPLevels = isPLevels;
+    }
+
+    @Override
+    public @NotNull List<? extends TCLevelReferable> getReferables() {
+      return myReferables;
+    }
+
+    @Override
+    public @NotNull Collection<Abstract.Comparison> getComparisonList() {
+      return makeComparisonList(myReferables, myIncreasing);
+    }
+
+    @Override
+    public boolean isIncreasing() {
+      return myIncreasing;
+    }
+
+    public boolean isPLevels() {
+      return myPLevels;
+    }
+
+    @Override
+    public Abstract.LevelParameters getPLevelsDefinition() {
+      return myPLevels ? this : null;
+    }
+
+    @Override
+    public Abstract.LevelParameters getHLevelsDefinition() {
+      return myPLevels ? null : this;
+    }
+
+    @Override
+    public void prettyPrint(PrettyPrintVisitor visitor, Precedence prec) {
+      visitor.prettyPrintLevelsDefinition(this);
     }
   }
 

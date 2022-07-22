@@ -4,6 +4,8 @@ statements : statement* EOF;
 
 statement : definition                                                      # statDef
           | nsCmd longName nsUsing? ('\\hiding' '(' ID (',' ID)* ')')?      # statCmd
+          | '\\plevels' ID*                                                 # statPLevels
+          | '\\hlevels' ID*                                                 # statHLevels
           ;
 
 nsCmd : '\\open'                        # openCmd

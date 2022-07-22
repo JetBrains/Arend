@@ -1,8 +1,8 @@
 package org.arend.naming.scope.local;
 
 import org.arend.naming.reference.Referable;
-import org.arend.naming.scope.ImportedScope;
 import org.arend.naming.scope.Scope;
+import org.arend.naming.scope.DelegateScope;
 import org.arend.term.abs.Abstract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -10,12 +10,11 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.function.Predicate;
 
-public class LetScope implements Scope {
-  private final Scope myParent;
+public class LetScope extends DelegateScope {
   private final List<? extends Abstract.LetClause> myClauses;
 
   public LetScope(Scope parent, List<? extends Abstract.LetClause> clauses) {
-    myParent = parent;
+    super(parent);
     myClauses = clauses;
   }
 
@@ -55,7 +54,7 @@ public class LetScope implements Scope {
         }
       }
     }
-    return myParent.find(pred);
+    return parent.find(pred);
   }
 
   private Referable resolveName(Abstract.Pattern pattern, String name) {
@@ -78,47 +77,25 @@ public class LetScope implements Scope {
 
   @Nullable
   @Override
-  public Referable resolveName(String name) {
-    for (int i = myClauses.size() - 1; i >= 0; i--) {
-      Referable ref = myClauses.get(i).getReferable();
-      if (ref != null) {
-        if (ref.textRepresentation().equals(name)) {
-          return ref;
-        }
-      } else {
-        Abstract.Pattern pattern = myClauses.get(i).getPattern();
-        if (pattern != null) {
-          ref = resolveName(pattern, name);
-          if (ref != null) {
+  public Referable resolveName(@NotNull String name, @Nullable Referable.RefKind kind) {
+    if (kind == Referable.RefKind.EXPR || kind == null) {
+      for (int i = myClauses.size() - 1; i >= 0; i--) {
+        Referable ref = myClauses.get(i).getReferable();
+        if (ref != null) {
+          if (ref.textRepresentation().equals(name)) {
             return ref;
+          }
+        } else {
+          Abstract.Pattern pattern = myClauses.get(i).getPattern();
+          if (pattern != null) {
+            ref = resolveName(pattern, name);
+            if (ref != null) {
+              return ref;
+            }
           }
         }
       }
     }
-    return myParent.resolveName(name);
-  }
-
-  @Nullable
-  @Override
-  public Scope resolveNamespace(String name, boolean onlyInternal) {
-    return myParent.resolveNamespace(name, onlyInternal);
-  }
-
-  @NotNull
-  @Override
-  public Scope getGlobalSubscope() {
-    return myParent.getGlobalSubscope();
-  }
-
-  @NotNull
-  @Override
-  public Scope getGlobalSubscopeWithoutOpens() {
-    return myParent.getGlobalSubscopeWithoutOpens();
-  }
-
-  @Nullable
-  @Override
-  public ImportedScope getImportedSubscope() {
-    return myParent.getImportedSubscope();
+    return parent.resolveName(name, kind);
   }
 }

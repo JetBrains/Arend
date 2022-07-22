@@ -1526,13 +1526,18 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     if (isPLevels != null) {
       myBuilder.append(isPLevels ? "\\plevels " : "\\hlevels ");
     }
-    List<LevelReferable> referables = parameters.referables;
+    List<? extends LevelReferable> referables = parameters.referables;
     for (int i = 0; i < referables.size(); i++) {
       if (i > 0) {
         myBuilder.append(parameters.isIncreasing ? " <= " : " >= ");
       }
       myBuilder.append(referables.get(i).getRefName());
     }
+  }
+
+  public void prettyPrintLevelsDefinition(Concrete.LevelsDefinition def) {
+    myBuilder.append(def.isPLevels() ? "\\plevels " : "\\hlevels ");
+    prettyPrintLevelParameters(new Concrete.LevelParameters(def.getData(), def.getReferables(), def.isIncreasing()));
   }
 
   static public void printArguments(PrettyPrintVisitor pp, List<Concrete.Argument> args, boolean noIndent) {

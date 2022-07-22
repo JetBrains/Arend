@@ -22,20 +22,20 @@ public class ConstructorFilteredScope implements Scope {
 
   @Nullable
   @Override
-  public Referable resolveName(String name) {
-    return myScope.resolveName(name);
+  public Referable resolveName(@NotNull String name, Referable.RefKind kind) {
+    return myScope.resolveName(name, kind);
   }
 
   @Nullable
   @Override
-  public Scope resolveNamespace(String name, boolean onlyInternal) {
+  public Scope resolveNamespace(@NotNull String name, boolean onlyInternal) {
     return myScope.resolveNamespace(name, onlyInternal);
   }
 
   @NotNull
   @Override
-  public Scope getGlobalSubscopeWithoutOpens() {
-    return new ConstructorFilteredScope(myScope.getGlobalSubscopeWithoutOpens());
+  public Scope getGlobalSubscopeWithoutOpens(boolean withImports) {
+    return new ConstructorFilteredScope(myScope.getGlobalSubscopeWithoutOpens(withImports));
   }
 
   @Nullable

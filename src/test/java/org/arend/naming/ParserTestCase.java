@@ -11,10 +11,10 @@ import org.arend.term.concrete.Concrete;
 import org.arend.term.expr.ConcreteCompareVisitor;
 import org.arend.term.group.ChildGroup;
 import org.arend.term.group.FileGroup;
-import org.arend.term.group.Group;
+import org.arend.term.group.Statement;
+import org.arend.term.group.StaticGroup;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -41,11 +41,11 @@ public abstract class ParserTestCase extends ArendTestCase {
 
   ChildGroup parseDef(String text, int errors) {
     ArendParser.DefinitionContext ctx = _parse(text).definition();
-    List<Group> subgroups = new ArrayList<>(1);
-    FileGroup fileGroup = new FileGroup(new FullModuleReferable(MODULE_PATH), subgroups, Collections.emptyList());
-    ChildGroup definition = errorList.isEmpty() ? new BuildVisitor(MODULE_PATH, errorReporter).visitDefinition(ctx, fileGroup, null) : null;
+    List<Statement> statements = new ArrayList<>(1);
+    FileGroup fileGroup = new FileGroup(new FullModuleReferable(MODULE_PATH), statements);
+    StaticGroup definition = errorList.isEmpty() ? new BuildVisitor(MODULE_PATH, errorReporter).visitDefinition(ctx, fileGroup, null) : null;
     if (definition != null) {
-      subgroups.add(definition);
+      statements.add(definition);
     }
     assertThat(errorList, containsErrors(errors));
     return definition;

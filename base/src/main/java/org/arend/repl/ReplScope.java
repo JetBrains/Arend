@@ -47,7 +47,7 @@ public class ReplScope implements Scope {
   }
 
   @Override
-  public @Nullable Scope resolveNamespace(String name, boolean onlyInternal) {
+  public @Nullable Scope resolveNamespace(@NotNull String name, boolean onlyInternal) {
     return Optional
       .ofNullable(myCurrentLineScope)
       .map(scope -> scope.resolveNamespace(name, onlyInternal))
@@ -55,27 +55,27 @@ public class ReplScope implements Scope {
   }
 
   @Override
-  public @Nullable Referable resolveName(String name) {
+  public @Nullable Referable resolveName(@NotNull String name, Referable.RefKind kind) {
     return Optional
       .ofNullable(myCurrentLineScope)
-      .map(scope -> scope.resolveName(name))
-      .orElseGet(() -> myPreviousMergeScope.resolveName(name));
+      .map(scope -> scope.resolveName(name, kind))
+      .orElseGet(() -> myPreviousMergeScope.resolveName(name, kind));
   }
 
   @Override
-  public @NotNull Scope getGlobalSubscopeWithoutOpens() {
+  public @NotNull Scope getGlobalSubscopeWithoutOpens(boolean withImports) {
     var previousScopes = new ArrayList<Scope>(myPreviousScopes.size());
-    var currentLineSubscope = myCurrentLineScope != null ? myCurrentLineScope.getGlobalSubscopeWithoutOpens() : null;
+    var currentLineSubscope = myCurrentLineScope != null ? myCurrentLineScope.getGlobalSubscopeWithoutOpens(withImports) : null;
     for (Scope previousScope : myPreviousScopes)
-      previousScopes.add(previousScope.getGlobalSubscopeWithoutOpens());
+      previousScopes.add(previousScope.getGlobalSubscopeWithoutOpens(withImports));
     return new ReplScope(currentLineSubscope, previousScopes);
   }
 
   @Override
-  public @NotNull List<Referable> getElements() {
-    var list = myPreviousMergeScope.getElements();
+  public @NotNull List<Referable> getElements(Referable.RefKind kind) {
+    var list = myPreviousMergeScope.getElements(kind);
     if (myCurrentLineScope != null)
-      list.addAll(myCurrentLineScope.getElements());
+      list.addAll(myCurrentLineScope.getElements(kind));
     return list;
   }
 

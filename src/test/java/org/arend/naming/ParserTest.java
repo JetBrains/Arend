@@ -7,6 +7,7 @@ import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.ChildGroup;
 import org.arend.term.group.Group;
+import org.arend.term.group.Statement;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -232,10 +233,10 @@ public class ParserTest extends NameResolverTestCase {
       "\\func \\fix 5 " + name + " (A : \\Prop) => A\n" +
       "\\func \\infixl 5 $ (A B : \\Prop) => A\n" +
       "\\func f (A B C : \\Prop) => A $ B `" + name + " $ C");
-    Iterator<? extends Group> it = module.getSubgroups().iterator();
-    GlobalReferable named = it.next().getReferable();
-    GlobalReferable d = it.next().getReferable();
-    Concrete.FunctionDefinition function = (Concrete.FunctionDefinition) ((ConcreteLocatedReferable) it.next().getReferable()).getDefinition();
+    Iterator<? extends Statement> it = module.getStatements().iterator();
+    GlobalReferable named = it.next().getGroup().getReferable();
+    GlobalReferable d = it.next().getGroup().getReferable();
+    Concrete.FunctionDefinition function = (Concrete.FunctionDefinition) ((ConcreteLocatedReferable) it.next().getGroup().getReferable()).getDefinition();
     List<? extends Referable> refs = function.getParameters().get(0).getReferableList();
     Concrete.Expression actualTerm = ((Concrete.TermFunctionBody) function.getBody()).getTerm();
     Concrete.Expression expectedTerm = cApps(cVar(d), cApps(cVar(named), cApps(cVar(d), cVar(refs.get(0)), cVar(refs.get(1)))), cVar(refs.get(2)));
@@ -267,10 +268,10 @@ public class ParserTest extends NameResolverTestCase {
       "\\func \\fix 5 " + name + " (A : \\Prop) => A\n" +
       "\\func \\infixr 5 $ (A B : \\Prop) => A\n" +
       "\\func f (A B C : \\Prop) => A $ B `" + name + " $ C");
-    Iterator<? extends Group> it = module.getSubgroups().iterator();
-    GlobalReferable named = it.next().getReferable();
-    GlobalReferable d = it.next().getReferable();
-    Concrete.FunctionDefinition function = (Concrete.FunctionDefinition) ((ConcreteLocatedReferable) it.next().getReferable()).getDefinition();
+    Iterator<? extends Statement> it = module.getStatements().iterator();
+    GlobalReferable named = it.next().getGroup().getReferable();
+    GlobalReferable d = it.next().getGroup().getReferable();
+    Concrete.FunctionDefinition function = (Concrete.FunctionDefinition) ((ConcreteLocatedReferable) it.next().getGroup().getReferable()).getDefinition();
     List<? extends Referable> refs = function.getParameters().get(0).getReferableList();
     Concrete.Expression actualTerm = ((Concrete.TermFunctionBody) function.getBody()).getTerm();
     Concrete.Expression expectedTerm = cApps(cVar(d), cVar(refs.get(0)), cApps(cVar(d), cApps(cVar(named), cVar(refs.get(1))), cVar(refs.get(2))));
@@ -288,10 +289,10 @@ public class ParserTest extends NameResolverTestCase {
       "\\func \\fix 6 " + name + " (A : \\Prop) => A\n" +
       "\\func \\infix 5 $ (A B : \\Prop) => A\n" +
       "\\func f (A B : \\Prop) => A $ B `" + name);
-    Iterator<? extends Group> it = module.getSubgroups().iterator();
-    GlobalReferable named = it.next().getReferable();
-    GlobalReferable d = it.next().getReferable();
-    Concrete.FunctionDefinition function = (Concrete.FunctionDefinition) ((ConcreteLocatedReferable) it.next().getReferable()).getDefinition();
+    Iterator<? extends Statement> it = module.getStatements().iterator();
+    GlobalReferable named = it.next().getGroup().getReferable();
+    GlobalReferable d = it.next().getGroup().getReferable();
+    Concrete.FunctionDefinition function = (Concrete.FunctionDefinition) ((ConcreteLocatedReferable) it.next().getGroup().getReferable()).getDefinition();
     List<? extends Referable> refs = function.getParameters().get(0).getReferableList();
     Concrete.Expression actualTerm = ((Concrete.TermFunctionBody) function.getBody()).getTerm();
     Concrete.Expression expectedTerm = cApps(cVar(d), cVar(refs.get(0)), cApps(cVar(named), cVar(refs.get(1))));
@@ -309,10 +310,10 @@ public class ParserTest extends NameResolverTestCase {
       "\\func \\fix 4 " + name + " (A : \\Prop) => A\n" +
       "\\func \\infix 5 $ (A B : \\Prop) => A\n" +
       "\\func f (A B : \\Prop) => A $ B `" + name);
-    Iterator<? extends Group> it = module.getSubgroups().iterator();
-    GlobalReferable named = it.next().getReferable();
-    GlobalReferable d = it.next().getReferable();
-    Concrete.FunctionDefinition function = (Concrete.FunctionDefinition) ((ConcreteLocatedReferable) it.next().getReferable()).getDefinition();
+    Iterator<? extends Statement> it = module.getStatements().iterator();
+    GlobalReferable named = it.next().getGroup().getReferable();
+    GlobalReferable d = it.next().getGroup().getReferable();
+    Concrete.FunctionDefinition function = (Concrete.FunctionDefinition) ((ConcreteLocatedReferable) it.next().getGroup().getReferable()).getDefinition();
     List<? extends Referable> refs = function.getParameters().get(0).getReferableList();
     Concrete.Expression actualTerm = ((Concrete.TermFunctionBody) function.getBody()).getTerm();
     Concrete.Expression expectedTerm = cApps(cVar(named), cApps(cVar(d), cVar(refs.get(0)), cVar(refs.get(1))));
@@ -330,10 +331,10 @@ public class ParserTest extends NameResolverTestCase {
       "\\func " + pr1 + " " + name1 + " (A : \\Prop) => A\n" +
       "\\func " + pr2 + " " + name2 + " (A : \\Prop) => A\n" +
       "\\func f (A : \\Prop) => A `" + name1 + " `" + name2);
-    Iterator<? extends Group> it = module.getSubgroups().iterator();
-    GlobalReferable named1 = it.next().getReferable();
-    GlobalReferable named2 = it.next().getReferable();
-    Concrete.FunctionDefinition function = (Concrete.FunctionDefinition) ((ConcreteLocatedReferable) it.next().getReferable()).getDefinition();
+    Iterator<? extends Statement> it = module.getStatements().iterator();
+    GlobalReferable named1 = it.next().getGroup().getReferable();
+    GlobalReferable named2 = it.next().getGroup().getReferable();
+    Concrete.FunctionDefinition function = (Concrete.FunctionDefinition) ((ConcreteLocatedReferable) it.next().getGroup().getReferable()).getDefinition();
     Referable refA = function.getParameters().get(0).getReferableList().get(0);
     Concrete.Expression actualTerm = ((Concrete.TermFunctionBody) function.getBody()).getTerm();
     Concrete.Expression expectedTerm = cApps(cVar(named2), cApps(cVar(named1), cVar(refA)));
@@ -365,12 +366,12 @@ public class ParserTest extends NameResolverTestCase {
       "\\func \\fix 2 qed (A : \\Prop) => A\n" +
       "\\func g (A : \\Prop) => A\n" +
       "\\func f (A B C : \\Prop) => g A ==< g B >== g C `qed");
-    Iterator<? extends Group> it = module.getSubgroups().iterator();
-    GlobalReferable rightP = it.next().getReferable();
-    GlobalReferable leftP = it.next().getReferable();
-    GlobalReferable qed = it.next().getReferable();
-    GlobalReferable g = it.next().getReferable();
-    Concrete.FunctionDefinition function = (Concrete.FunctionDefinition) ((ConcreteLocatedReferable) it.next().getReferable()).getDefinition();
+    Iterator<? extends Statement> it = module.getStatements().iterator();
+    GlobalReferable rightP = it.next().getGroup().getReferable();
+    GlobalReferable leftP = it.next().getGroup().getReferable();
+    GlobalReferable qed = it.next().getGroup().getReferable();
+    GlobalReferable g = it.next().getGroup().getReferable();
+    Concrete.FunctionDefinition function = (Concrete.FunctionDefinition) ((ConcreteLocatedReferable) it.next().getGroup().getReferable()).getDefinition();
     List<? extends Referable> refs = function.getParameters().get(0).getReferableList();
 
     Concrete.Expression actualTerm = ((Concrete.TermFunctionBody) function.getBody()).getTerm();

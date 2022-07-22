@@ -8,6 +8,7 @@ import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.reference.TCDefReferable;
 import org.arend.naming.scope.LexicalScope;
 import org.arend.term.group.Group;
+import org.arend.term.group.Statement;
 import org.arend.typechecking.order.Ordering;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.jetbrains.annotations.NotNull;
@@ -58,8 +59,11 @@ public abstract class BaseLibrary implements Library {
 
   public void resetGroup(Group group) {
     resetDefinition(group.getReferable());
-    for (Group subgroup : group.getSubgroups()) {
-      resetGroup(subgroup);
+    for (Statement statement : group.getStatements()) {
+      Group subgroup = statement.getGroup();
+      if (subgroup != null) {
+        resetGroup(subgroup);
+      }
     }
     for (Group subgroup : group.getDynamicSubgroups()) {
       resetGroup(subgroup);

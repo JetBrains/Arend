@@ -17,6 +17,7 @@ import org.arend.source.Source;
 import org.arend.source.SourceLoader;
 import org.arend.term.NamespaceCommand;
 import org.arend.term.group.FileGroup;
+import org.arend.term.group.Statement;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -76,8 +77,9 @@ public abstract class StreamRawSource implements Source {
       myGroup = new BuildVisitor(new ModuleLocation(library, myInTests ? ModuleLocation.LocationKind.TEST : ModuleLocation.LocationKind.SOURCE, modulePath), errorReporter).visitStatements(tree);
       library.groupLoaded(modulePath, myGroup, true, myInTests);
 
-      for (NamespaceCommand command : myGroup.getNamespaceCommands()) {
-        if (command.getKind() == NamespaceCommand.Kind.IMPORT) {
+      for (Statement statement : myGroup.getStatements()) {
+        NamespaceCommand command = statement.getNamespaceCommand();
+        if (command != null && command.getKind() == NamespaceCommand.Kind.IMPORT) {
           ModulePath module = new ModulePath(command.getPath());
           if (library.containsModule(module) && !sourceLoader.preloadRaw(module, myInTests)) {
             library.groupLoaded(modulePath, null, true, myInTests);

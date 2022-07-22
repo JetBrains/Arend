@@ -21,9 +21,9 @@ import org.arend.naming.resolving.visitor.ExpressionResolveNameVisitor;
 import org.arend.naming.scope.Scope;
 import org.arend.naming.scope.ScopeFactory;
 import org.arend.repl.action.*;
-import org.arend.term.NamespaceCommand;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.Group;
+import org.arend.term.group.Statement;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
 import org.arend.term.prettyprint.ToAbstractVisitor;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
@@ -79,7 +79,7 @@ public abstract class Repl {
   protected abstract void loadLibraries();
 
   protected final @NotNull List<Referable> getInScopeElements() {
-    return myReplScope.getElements();
+    return new ArrayList<>(myReplScope.getElements());
   }
 
   public final void initialize() {
@@ -145,14 +145,14 @@ public abstract class Repl {
 
   protected abstract @Nullable Concrete.Expression parseExpr(@NotNull String text);
 
-  protected void loadPotentialUnloadedModules(Collection<? extends NamespaceCommand> namespaceCommands) {
+  protected void loadPotentialUnloadedModules(Collection<? extends Statement> statements) {
   }
 
   public final void checkStatements(@NotNull String line) {
     var group = parseStatements(line);
     if (group == null) return;
     var moduleScopeProvider = getAvailableModuleScopeProvider();
-    loadPotentialUnloadedModules(group.getNamespaceCommands());
+    loadPotentialUnloadedModules(group.getStatements());
     var scope = ScopeFactory.forGroup(group, moduleScopeProvider);
     myReplScope.addScope(scope);
     myReplScope.setCurrentLineScope(null);
@@ -228,12 +228,6 @@ public abstract class Repl {
    * @return true if there is indeed a scope removed
    */
   public final boolean removeScope(@NotNull Scope scope) {
-    var isRemoved = removeScopeImpl(scope.getGlobalSubscopeWithoutOpens());
-    var isRemoved2 = removeScopeImpl(scope);
-    return isRemoved || isRemoved2;
-  }
-
-  private boolean removeScopeImpl(Scope scope) {
     for (Referable element : scope.getElements())
       if (element instanceof TCDefReferable)
         ((TCDefReferable) element).setTypechecked(null);
