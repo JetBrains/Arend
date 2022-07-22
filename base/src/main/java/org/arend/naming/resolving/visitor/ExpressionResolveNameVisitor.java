@@ -886,12 +886,12 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     if (ref instanceof ErrorReference) {
       myErrorReporter.report(((ErrorReference) ref).getError());
     }
-    ref = convertReferable(ref, expr.getData());
-    Concrete.IdLevelExpression result = new Concrete.IdLevelExpression(expr.getData(), ref);
+    Referable convertedRef = convertReferable(ref, expr.getData());
+    Concrete.IdLevelExpression result = new Concrete.IdLevelExpression(expr.getData(), convertedRef);
     if (myResolverListener != null) {
       myResolverListener.levelResolved(expr.getReferent(), result, ref, new ArrayList<>(myScope.getElements(refKind)));
     }
-    expr.setReferent(ref);
+    expr.setReferent(convertedRef);
     return result;
   }
 
