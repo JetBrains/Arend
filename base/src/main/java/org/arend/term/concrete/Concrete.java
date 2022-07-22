@@ -1544,7 +1544,7 @@ public final class Concrete {
   }
 
   public static class IdLevelExpression extends LevelExpression {
-    private final Referable myReferent;
+    private Referable myReferent;
 
     public IdLevelExpression(Object data, Referable referable) {
       super(data);
@@ -1553,6 +1553,10 @@ public final class Concrete {
 
     public Referable getReferent() {
       return myReferent;
+    }
+
+    public void setReferent(Referable referent) {
+      myReferent = referent;
     }
 
     @Override

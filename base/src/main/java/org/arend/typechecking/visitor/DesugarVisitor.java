@@ -32,10 +32,10 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
     definition.accept(visitor, null);
 
     if (!visitor.myLevelRefs.isEmpty() && definition instanceof Concrete.Definition) {
-      Set<LevelDefReferable> pDefs = new LinkedHashSet<>();
-      Set<LevelDefReferable> hDefs = new LinkedHashSet<>();
+      Set<LevelDefinition> pDefs = new LinkedHashSet<>();
+      Set<LevelDefinition> hDefs = new LinkedHashSet<>();
       for (TCLevelReferable ref : visitor.myLevelRefs) {
-        LevelDefReferable def = ref.getDefParent();
+        LevelDefinition def = ref.getDefParent();
         (def.isPLevels() ? pDefs : hDefs).add(def);
       }
       processLevelDefinitions((Concrete.Definition) definition, pDefs, errorReporter, "p");
@@ -45,7 +45,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
     definition.setDesugarized();
   }
 
-  private static void processLevelDefinitions(Concrete.Definition def, Set<LevelDefReferable> defs, ErrorReporter errorReporter, String kind) {
+  private static void processLevelDefinitions(Concrete.Definition def, Set<LevelDefinition> defs, ErrorReporter errorReporter, String kind) {
     if (defs.size() > 1) {
       errorReporter.report(new TypecheckingError("Definition refers to different " + kind + "-levels", def));
     }
@@ -56,7 +56,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
     if (def.getPLevelParameters() != null) {
       errorReporter.report(new TypecheckingError("Definition already has p-levels, but refers to different ones", def));
     }
-    LevelDefReferable firstDef = defs.iterator().next();
+    LevelDefinition firstDef = defs.iterator().next();
     if (defs.size() == 1 && def.getPLevelParameters() == null) {
       def.setPLevelParameters(new Concrete.LevelParameters(def.getData(), firstDef.getReferables(), firstDef.isIncreasing()));
     } else {
@@ -64,7 +64,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
       if (def.getPLevelParameters() != null) {
         refs.addAll(def.getPLevelParameters().referables);
       }
-      for (LevelDefReferable pDef : defs) {
+      for (LevelDefinition pDef : defs) {
         refs.addAll(pDef.getReferables());
       }
       def.setPLevelParameters(new Concrete.LevelParameters(def.getData(), refs, def.getPLevelParameters() != null ? def.getPLevelParameters().isIncreasing : firstDef.isIncreasing()));

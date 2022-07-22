@@ -16,7 +16,6 @@ import org.arend.extImpl.ContextDataImpl;
 import org.arend.naming.MetaBinOpParser;
 import org.arend.naming.error.DuplicateNameError;
 import org.arend.ext.error.NameResolverError;
-import org.arend.naming.error.NotInScopeError;
 import org.arend.naming.error.ReferenceError;
 import org.arend.naming.reference.*;
 import org.arend.naming.reference.converter.ReferableConverter;
@@ -883,16 +882,16 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   @Override
   public Concrete.LevelExpression visitId(Concrete.IdLevelExpression expr, LevelVariable type) {
     Referable.RefKind refKind = type == LevelVariable.HVAR ? Referable.RefKind.HLEVEL : Referable.RefKind.PLEVEL;
-    Referable ref = myScope.resolveName(expr.getReferent().getRefName(), refKind);
-    if (ref == null) {
-      NotInScopeError error = new NotInScopeError(expr.getData(), null, -1, expr.getReferent().getRefName());
-      ref = new ErrorReference(error, expr.getReferent().getRefName());
-      myErrorReporter.report(error);
+    Referable ref = resolve(expr.getReferent(), myScope, refKind);
+    if (ref instanceof ErrorReference) {
+      myErrorReporter.report(((ErrorReference) ref).getError());
     }
+    ref = convertReferable(ref, expr.getData());
     Concrete.IdLevelExpression result = new Concrete.IdLevelExpression(expr.getData(), ref);
     if (myResolverListener != null) {
       myResolverListener.levelResolved(expr.getReferent(), result, ref, new ArrayList<>(myScope.getElements(refKind)));
     }
+    expr.setReferent(ref);
     return result;
   }
 

@@ -8,9 +8,9 @@ import org.jetbrains.annotations.Nullable;
 public class TCLevelReferable implements TCReferable, LevelReferable {
   private final Object myData;
   private final String myName;
-  private final LevelDefReferable myParent;
+  private final LevelDefinition myParent;
 
-  public TCLevelReferable(Object data, String name, LevelDefReferable parent) {
+  public TCLevelReferable(Object data, String name, LevelDefinition parent) {
     myData = data;
     myName = name;
     myParent = parent;
@@ -28,10 +28,10 @@ public class TCLevelReferable implements TCReferable, LevelReferable {
 
   @Override
   public @NotNull TCReferable getTypecheckable() {
-    return myParent;
+    return this;
   }
 
-  public LevelDefReferable getDefParent() {
+  public LevelDefinition getDefParent() {
     return myParent;
   }
 
@@ -47,12 +47,13 @@ public class TCLevelReferable implements TCReferable, LevelReferable {
 
   @Override
   public @Nullable ModuleLocation getLocation() {
-    return myParent.getLocation();
+    LocatedReferable parent = myParent.getParent();
+    return parent == null ? null : parent.getLocation();
   }
 
   @Override
   public @Nullable LocatedReferable getLocatedReferableParent() {
-    return myParent.getLocatedReferableParent();
+    return myParent.getParent();
   }
 
   @Override

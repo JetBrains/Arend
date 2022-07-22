@@ -435,7 +435,8 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     }
     boolean linear = true;
     List<LevelReferable> refs = new ArrayList<>();
-    LevelDefReferable defParent = parent == null ? null : new LevelDefReferable(isPLevels, true, refs, parent);
+    //noinspection unchecked
+    LevelDefinition defParent = parent == null ? null : new LevelDefinition(isPLevels, true, (List<TCLevelReferable>) (List<? extends LevelReferable>) refs, parent);
     Boolean increasing = null;
     for (int i = -1; i < ids.size(); i += 2) {
       if (i >= 0) {
