@@ -1522,22 +1522,24 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     return null;
   }
 
-  public void prettyPrintLevelParameters(Concrete.LevelParameters parameters, Boolean isPLevels) {
+  private void prettyPrintLevelParameters(List<? extends Referable> referables, boolean isIncreasing, Boolean isPLevels) {
     if (isPLevels != null) {
       myBuilder.append(isPLevels ? "\\plevels " : "\\hlevels ");
     }
-    List<? extends LevelReferable> referables = parameters.referables;
     for (int i = 0; i < referables.size(); i++) {
       if (i > 0) {
-        myBuilder.append(parameters.isIncreasing ? " <= " : " >= ");
+        myBuilder.append(isIncreasing ? " <= " : " >= ");
       }
       myBuilder.append(referables.get(i).getRefName());
     }
   }
 
+  public void prettyPrintLevelParameters(Concrete.LevelParameters parameters, Boolean isPLevels) {
+    prettyPrintLevelParameters(parameters.getReferables(), parameters.isIncreasing, isPLevels);
+  }
+
   public void prettyPrintLevelsDefinition(Concrete.LevelsDefinition def) {
-    myBuilder.append(def.isPLevels() ? "\\plevels " : "\\hlevels ");
-    prettyPrintLevelParameters(new Concrete.LevelParameters(def.getData(), def.getReferables(), def.isIncreasing()));
+    prettyPrintLevelParameters(def.getReferables(), def.isIncreasing(), def.isPLevels());
   }
 
   static public void printArguments(PrettyPrintVisitor pp, List<Concrete.Argument> args, boolean noIndent) {

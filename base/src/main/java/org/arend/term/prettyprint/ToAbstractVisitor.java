@@ -985,19 +985,19 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     }
   }
 
-  public static Concrete.LevelParameters visitLevelParameters(List<? extends LevelVariable> parameters) {
+  public static Concrete.LevelParameters visitLevelParameters(List<? extends LevelVariable> parameters, boolean isPLevels) {
     if (parameters.size() == 1 && parameters.get(0).equals(parameters.get(0).getStd())) {
       return null;
     }
     List<LevelReferable> refs = new ArrayList<>(parameters.size());
     for (LevelVariable var : parameters) {
-      refs.add(new DataLevelReferable(null, var.toString()));
+      refs.add(new DataLevelReferable(null, var.toString(), isPLevels));
     }
     return new Concrete.LevelParameters(null, refs, !(parameters.size() > 1 && parameters.get(0) instanceof ParamLevelVariable && parameters.get(1) instanceof ParamLevelVariable && ((ParamLevelVariable) parameters.get(0)).getSize() > ((ParamLevelVariable) parameters.get(1)).getSize()));
   }
 
   private Pair<Concrete.LevelParameters, Concrete.LevelParameters> visitLevelParameters(List<? extends LevelVariable> parameters, int n) {
-    return new Pair<>(visitLevelParameters(parameters.subList(0, n)), visitLevelParameters(parameters.subList(n, parameters.size())));
+    return new Pair<>(visitLevelParameters(parameters.subList(0, n), true), visitLevelParameters(parameters.subList(n, parameters.size()), false));
   }
 
   private List<Concrete.FunctionClause> visitIntervalElim(DependentLink parameters, Body body) {
