@@ -686,7 +686,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       Concrete.BinOpSequenceElem<Concrete.Pattern> corrected;
       if (subPattern instanceof Concrete.NamePattern) {
         Referable originalUnresolvedReferable = ((Concrete.NamePattern) subPattern).getReferable();
-        Referable resolved = resolve(originalUnresolvedReferable, myParentScope, false, new ArrayList<>());
+        Referable resolved = resolve(originalUnresolvedReferable, myParentScope);
         if (resolved instanceof ErrorReference || (resolved instanceof GlobalReferable && (!((GlobalReferable) resolved).getKind().isConstructor()))) {
           String name = originalUnresolvedReferable == null ? null : originalUnresolvedReferable.getRefName();
           Object data = originalUnresolvedReferable instanceof UnresolvedReference ? ((UnresolvedReference) originalUnresolvedReferable).getData() : null;
