@@ -18,6 +18,7 @@ import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.naming.resolving.ResolverListener;
 import org.arend.naming.scope.*;
 import org.arend.naming.scope.local.ElimScope;
+import org.arend.naming.scope.local.ListScope;
 import org.arend.prelude.Prelude;
 import org.arend.ext.concrete.definition.ClassFieldKind;
 import org.arend.ext.concrete.definition.FunctionKind;
@@ -182,7 +183,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     }
 
     def.setResolved();
-    def.accept(new SyntacticDesugarVisitor(myLocalErrorReporter), null);
+    SyntacticDesugarVisitor.desugar(def, myLocalErrorReporter);
     if (myResolverListener != null) {
       myResolverListener.definitionResolved(def);
     }
@@ -395,7 +396,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       }
     }
 
-    def.accept(new SyntacticDesugarVisitor(myLocalErrorReporter), null);
+    SyntacticDesugarVisitor.desugar(def, myLocalErrorReporter);
 
     if (def instanceof Concrete.CoClauseFunctionDefinition && def.getKind() == FunctionKind.FUNC_COCLAUSE && ((Concrete.CoClauseFunctionDefinition) def).getNumberOfExternalParameters() > 0) {
       Concrete.CoClauseFunctionDefinition function = (Concrete.CoClauseFunctionDefinition) def;
@@ -527,7 +528,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     }
 
     def.setResolved();
-    def.accept(new SyntacticDesugarVisitor(myLocalErrorReporter), null);
+    SyntacticDesugarVisitor.desugar(def, myLocalErrorReporter);
     if (myResolverListener != null) {
       myResolverListener.definitionResolved(def);
     }
@@ -689,7 +690,7 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
     }
 
     def.setResolved();
-    def.accept(new SyntacticDesugarVisitor(myLocalErrorReporter), null);
+    SyntacticDesugarVisitor.desugar(def, myLocalErrorReporter);
     if (myResolverListener != null) {
       myResolverListener.definitionResolved(def);
     }
@@ -709,6 +710,10 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
   }
 
   public void resolveGroup(Group group, Scope scope) {
+    resolveGroup(group, scope, 0);
+  }
+
+  private void resolveGroup(Group group, Scope scope, int level) {
     LocatedReferable groupRef = group.getReferable();
     Collection<? extends Statement> statements = group.getStatements();
     Collection<? extends Group> dynamicSubgroups = group.getDynamicSubgroups();
@@ -724,17 +729,30 @@ public class DefinitionResolveNameVisitor implements ConcreteResolvableDefinitio
       myLocalErrorReporter = new LocalErrorReporter(groupRef, myErrorReporter);
     }
 
-    if (def instanceof Concrete.ClassDefinition && (!statements.isEmpty() || !dynamicSubgroups.isEmpty())) {
+    List<? extends Concrete.Parameter> defParams = def == null ? Collections.emptyList() : def.getParameters();
+    if (!defParams.isEmpty()) {
+      List<Referable> refs = new ArrayList<>();
+      for (Concrete.Parameter defParam : defParams) {
+        if (defParam.getType() != null) {
+          for (Referable referable : defParam.getRefList()) {
+            refs.add(new ParameterReferable(def, referable, level));
+          }
+        }
+      }
+      scope = new ListScope(scope, refs);
+    }
+
+    if (!defParams.isEmpty() || def instanceof Concrete.ClassDefinition && (!statements.isEmpty() || !dynamicSubgroups.isEmpty())) {
       cachedScope = CachingScope.make(makeScope(group, scope, LexicalScope.Extent.EVERYTHING));
     }
     for (Statement statement : statements) {
       Group subgroup = statement.getGroup();
       if (subgroup != null) {
-        resolveGroup(subgroup, cachedScope);
+        resolveGroup(subgroup, cachedScope, level + 1);
       }
     }
     for (Group subgroup : dynamicSubgroups) {
-      resolveGroup(subgroup, cachedScope);
+      resolveGroup(subgroup, cachedScope, level + 1);
     }
 
     if (myResolveTypeClassReferences) {

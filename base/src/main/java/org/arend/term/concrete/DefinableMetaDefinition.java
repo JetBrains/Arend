@@ -50,8 +50,14 @@ public class DefinableMetaDefinition extends Concrete.ResolvableDefinition imple
     return myHLevelParameters;
   }
 
+  @Override
   public List<? extends Concrete.NameParameter> getParameters() {
     return myParameters;
+  }
+
+  @Override
+  public void addParameters(List<? extends Concrete.Parameter> parameters) {
+    throw new IllegalStateException();
   }
 
   @Override

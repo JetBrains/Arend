@@ -1,30 +1,42 @@
 package org.arend.typechecking.visitor;
 
 import org.arend.ext.error.ErrorReporter;
+import org.arend.ext.error.TypecheckingError;
 import org.arend.naming.BinOpParser;
 import org.arend.naming.reference.*;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
+import org.arend.term.concrete.DefinableMetaDefinition;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class SyntacticDesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
   private final ErrorReporter myErrorReporter;
+  private final boolean myParametersRefsSupported;
 
-  public SyntacticDesugarVisitor(ErrorReporter errorReporter) {
+  private SyntacticDesugarVisitor(ErrorReporter errorReporter, boolean parametersRefsSupported) {
     myErrorReporter = errorReporter;
+    myParametersRefsSupported = parametersRefsSupported;
+  }
+
+  public static void desugar(Concrete.ResolvableDefinition definition, ErrorReporter errorReporter) {
+    definition.accept(new SyntacticDesugarVisitor(errorReporter, !(definition instanceof DefinableMetaDefinition)), null);
+  }
+
+  public static Concrete.Expression desugar(Concrete.Expression expression, ErrorReporter errorReporter) {
+    return expression.accept(new SyntacticDesugarVisitor(errorReporter, false), null);
   }
 
   @Override
   public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Void params) {
     Referable ref = expr.getReferent();
-    if (!(ref instanceof RedirectingReferable)) {
-      return expr;
-    }
     while (ref instanceof RedirectingReferable) {
       ref = ((RedirectingReferable) ref).getOriginalReferable();
+    }
+    if (ref instanceof ParameterReferable && !myParametersRefsSupported) {
+      myErrorReporter.report(new TypecheckingError("External variables are not allowed here", expr));
+      ref = ((ParameterReferable) ref).getReferable();
     }
     expr.setReferent(ref);
     return expr;

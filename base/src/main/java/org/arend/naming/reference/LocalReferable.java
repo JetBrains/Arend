@@ -12,7 +12,7 @@ public class LocalReferable implements Referable {
   @NotNull
   @Override
   public String textRepresentation() {
-    return myName;
+    return myName == null ? "_" : myName;
   }
 
   public boolean isHidden() {

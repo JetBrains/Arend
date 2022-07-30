@@ -302,10 +302,7 @@ public abstract class Repl {
   public final @Nullable Concrete.Expression preprocessExpr(@NotNull String text) {
     var expr = parseExpr(text);
     if (expr == null || checkErrors()) return null;
-    expr = expr
-        .accept(new ExpressionResolveNameVisitor(typechecking.getReferableConverter(),
-            myScope, new ArrayList<>(), myErrorReporter, null), null)
-        .accept(new SyntacticDesugarVisitor(myErrorReporter), null);
+    expr = SyntacticDesugarVisitor.desugar(expr.accept(new ExpressionResolveNameVisitor(typechecking.getReferableConverter(), myScope, new ArrayList<>(), myErrorReporter, null), null), myErrorReporter);
     if (checkErrors()) return null;
     return expr;
   }

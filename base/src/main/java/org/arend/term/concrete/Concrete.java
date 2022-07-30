@@ -1702,6 +1702,10 @@ public final class Concrete {
     @NotNull Stage getStage();
 
     @NotNull ResolvableDefinition getRelatedDefinition();
+
+    List<? extends Parameter> getParameters();
+
+    void addParameters(List<? extends Parameter> parameters);
   }
 
   public static abstract class ResolvableDefinition implements GeneralDefinition {
@@ -2048,6 +2052,29 @@ public final class Concrete {
     public <P, R> R accept(ConcreteDefinitionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitClass(this, params);
     }
+
+    @Override
+    public List<? extends Parameter> getParameters() {
+      return Collections.emptyList();
+    }
+
+    @Override
+    public void addParameters(List<? extends Parameter> parameters) {
+      List<ClassElement> elements = new ArrayList<>();
+      for (Parameter parameter : parameters) {
+        Concrete.Expression type = parameter.getType();
+        if (type == null) {
+          throw new IllegalArgumentException();
+        }
+        for (Referable referable : parameter.getReferableList()) {
+          if (!(referable instanceof TCFieldReferable)) {
+            throw new IllegalArgumentException();
+          }
+          elements.add(new ClassField((TCFieldReferable) referable, this, parameter.isExplicit(), ClassFieldKind.ANY, new ArrayList<>(), type, null, false));
+        }
+      }
+      myElements.addAll(0, elements);
+    }
   }
 
   public static class CoClauseFunctionDefinition extends UseDefinition {
@@ -2141,6 +2168,12 @@ public final class Concrete {
     @Override
     public List<TypeParameter> getParameters() {
       return myParameters;
+    }
+
+    @Override
+    public void addParameters(List<? extends Parameter> parameters) {
+      //noinspection unchecked
+      myParameters.addAll(0, (List<? extends TypeParameter>) parameters);
     }
 
     @NotNull
@@ -2365,8 +2398,14 @@ public final class Concrete {
     }
 
     @NotNull
+    @Override
     public List<Parameter> getParameters() {
       return myParameters;
+    }
+
+    @Override
+    public void addParameters(List<? extends Parameter> parameters) {
+      myParameters.addAll(0, parameters);
     }
 
     @Nullable
@@ -2465,8 +2504,15 @@ public final class Concrete {
     }
 
     @NotNull
+    @Override
     public List<TypeParameter> getParameters() {
       return myParameters;
+    }
+
+    @Override
+    public void addParameters(List<? extends Parameter> parameters) {
+      //noinspection unchecked
+      myParameters.addAll(0, (List<? extends TypeParameter>) parameters);
     }
 
     @Nullable
@@ -2575,8 +2621,15 @@ public final class Concrete {
     }
 
     @NotNull
+    @Override
     public List<TypeParameter> getParameters() {
       return myParameters;
+    }
+
+    @Override
+    public void addParameters(List<? extends Parameter> parameters) {
+      //noinspection unchecked
+      myParameters.addAll(0, (List<? extends TypeParameter>) parameters);
     }
 
     @NotNull

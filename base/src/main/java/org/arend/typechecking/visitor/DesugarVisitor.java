@@ -22,6 +22,7 @@ import java.util.*;
 public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
   private final ErrorReporter myErrorReporter;
   private final Set<TCLevelReferable> myLevelRefs = new HashSet<>();
+  private final Set<ParameterReferable> myWhereRefs = new HashSet<>();
 
   private DesugarVisitor(ErrorReporter errorReporter) {
     myErrorReporter = errorReporter;
@@ -40,6 +41,23 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
       }
       processLevelDefinitions((Concrete.Definition) definition, pDefs, errorReporter, "p");
       processLevelDefinitions((Concrete.Definition) definition, hDefs, errorReporter, "h");
+    }
+
+    if (!visitor.myWhereRefs.isEmpty()) {
+      List<Concrete.Parameter> newParams = new ArrayList<>();
+      for (ParameterReferable ref : visitor.myWhereRefs) {
+        Referable origRef = ref.getReferable();
+        loop:
+        for (Concrete.Parameter parameter : ref.getDefinition().getParameters()) {
+          for (Referable referable : parameter.getRefList()) {
+            if (referable == origRef) {
+              newParams.add(new Concrete.TelescopeParameter(definition.getData(), parameter.isExplicit(), Collections.singletonList(referable), parameter.getType()));
+              break loop;
+            }
+          }
+        }
+      }
+      definition.addParameters(newParams);
     }
 
     definition.setDesugarized();
@@ -523,7 +541,16 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
   public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Void params) {
     visitLevelExpressions(expr.getPLevels());
     visitLevelExpressions(expr.getHLevels());
-    return Prelude.ARRAY != null && expr.getReferent() == Prelude.ARRAY.getRef() ? new Concrete.ReferenceExpression(expr.getData(), Prelude.DEP_ARRAY.getRef()) : super.visitReference(expr, params);
+    if (Prelude.ARRAY != null && expr.getReferent() == Prelude.ARRAY.getRef()) {
+      return new Concrete.ReferenceExpression(expr.getData(), Prelude.DEP_ARRAY.getRef(), expr.getPLevels(), expr.getHLevels());
+    }
+
+    Referable ref = expr.getReferent();
+    if (ref instanceof ParameterReferable) {
+      myWhereRefs.add((ParameterReferable) ref);
+      expr.setReferent(((ParameterReferable) ref).getReferable());
+    }
+    return expr;
   }
 
   @Override

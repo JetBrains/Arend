@@ -62,9 +62,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     Concrete.Expression expression = parseExpr(text);
     assertThat(expression, is(notNullValue()));
 
-    expression = expression
-      .accept(new ExpressionResolveNameVisitor(IdReferableConverter.INSTANCE, parentScope, context, new TestLocalErrorReporter(errorReporter), null), null)
-      .accept(new SyntacticDesugarVisitor(errorReporter), null);
+    expression = SyntacticDesugarVisitor.desugar(expression.accept(new ExpressionResolveNameVisitor(IdReferableConverter.INSTANCE, parentScope, context, new TestLocalErrorReporter(errorReporter), null), null), errorReporter);
     assertThat(errorList, containsErrors(errors));
     return expression;
   }
